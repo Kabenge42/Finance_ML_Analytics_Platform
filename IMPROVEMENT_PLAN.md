@@ -29,7 +29,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - **Modular Python package** (`finance_ml`): Clean, tested, reusable code for data loading, feature engineering, modeling, and analytics
 - **Interactive notebook**: Jupyter-based workflow (`ml_finance_model_v8_2.ipynb`) for exploration and prototyping
 - **CLI tools**: Three command-line interfaces for batch processing and automation
-- **Production-ready**: Modern packaging, comprehensive tests (144+), CI/CD, configuration management
+- **Production-ready**: Modern packaging, comprehensive tests, configuration management
 
 ### Use Cases
 - Quantitative equity analysis and valuation
@@ -245,7 +245,7 @@ Three command-line tools available after package installation:
 **a) `finance-ml` — Main Analysis Pipeline**
 ```bash
 finance-ml --data-source auto --limit 5000
-finance-ml --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 finance-ml --data-source csv --data-dir ./data --dry-run
 ```
 
@@ -258,7 +258,7 @@ finance-ml-analyze --data-source db --limit 1000 -v
 **c) `finance-ml-validate` — Data Validation**
 ```bash
 finance-ml-validate --data-source csv --data-dir ./data -v
-finance-ml-validate --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml-validate --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 ```
 
 ### Database Scripts
@@ -416,7 +416,7 @@ Alternatively, use JSON or YAML config files:
 {
   "data_dir": "data",
   "output_dir": "outputs",
-  "db_url": "postgresql://postgres:@localhost/postgres",
+  "db_url": "postgresql+psycopg2://postgres:@localhost:5432/postgres",
   "model_version": "v8_2",
   "random_seed": 42,
   "n_jobs": -1
@@ -457,7 +457,7 @@ python -m unittest tests.test_finance_ml_data -v
 
 ### Test Suite Overview
 
-**18 test modules** with **144+ tests** covering:
+**18 test modules** with **comprehensive coverage** covering:
 
 #### Core Package Tests
 - `test_finance_ml_data.py` — Data loading, normalization, validation
@@ -504,11 +504,31 @@ flake8 finance_ml
 
 ### CI/CD
 
-GitHub Actions workflow configured in `.github/workflows/tests.yml`:
-- Multi-OS testing (Ubuntu, Windows, macOS)
-- Multi-Python version testing (3.10, 3.11)
-- Code quality checks (black, isort, flake8, mypy)
-- Coverage reporting with codecov integration
+Currently, no CI workflows are included in this repository (no .github/workflows directory).
+
+TODO:
+
+- Add a GitHub Actions workflow for automated tests across Windows, Ubuntu, and macOS on Python 3.10 and 3.11.
+- Optionally add code quality checks (black, isort, flake8, mypy) and coverage reporting.
+
+You can run equivalent checks locally:
+
+```bash
+# Run tests
+python -m unittest discover -s tests -v
+
+# Check code formatting
+black --check finance_ml tests
+
+# Check import sorting
+isort --check-only finance_ml tests
+
+# Lint code
+flake8 finance_ml
+
+# Type checking
+mypy finance_ml --ignore-missing-imports
+```
 
 ---
 
@@ -525,7 +545,7 @@ Finance_ML_Analytics_Platform/
 │   ├── config.py                 # Configuration management (200+ lines)
 │   └── cli.py                    # Command-line interface (300+ lines)
 │
-├── tests/                        # Comprehensive test suite (18 modules, 144+ tests)
+├── tests/                        # Unit tests (see tests/ for modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
@@ -549,9 +569,6 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_eu.csv
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
-│
-├── .github/workflows/            # CI/CD pipelines
-│   └── tests.yml                 # Automated testing workflow
 │
 ├── ml_finance_model_v8_2.ipynb  # Interactive Jupyter notebook (main entry point)
 ├── ml_finance_model_v8_2.py     # Python script with CLI (uses finance_ml package)

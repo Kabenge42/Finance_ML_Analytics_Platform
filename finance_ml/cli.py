@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import pathlib
 import sys
-from pathlib import Path
 from typing import Optional
 
 from finance_ml.config import load_config, FinanceMLConfig
@@ -22,7 +22,7 @@ from finance_ml.data import (
     setup_logging,
     validate_schema,
     check_missing_values,
-)
+    )
 from finance_ml.eval import simple_eda
 from finance_ml.models import train_and_evaluate_regression, train_and_evaluate_regression_by_sector
 
@@ -39,8 +39,8 @@ Examples:
   # Run with auto data source detection
   finance-ml --data-source auto --limit 5000
 
-  # Run with database
-  finance-ml --data-source db --db-url postgresql://postgres:@localhost/postgres
+  # Run with database (ensure you've run create_equities_schema.sql and import_equities_data.sql)
+  finance-ml --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 
   # Run with CSV files
   finance-ml --data-source csv --data-dir ./data
@@ -57,7 +57,7 @@ Examples:
     parser.add_argument("--config", type=str, help="Path to JSON/YAML config file")
     parser.add_argument("--data-source", choices=["auto", "csv", "db"], default="auto",
                         help="Data source: auto (try db then csv), csv, or db")
-    parser.add_argument("--db-url", help="Database URL (e.g., postgresql://user:pass@host/db)")
+    parser.add_argument("--db-url", help="Database URL (e.g., postgresql+psycopg2://user:pass@host:5432/postgres)")
     parser.add_argument("--data-dir", type=str, help="Directory containing CSV files")
     parser.add_argument("--output-dir", type=str, help="Output directory for artifacts")
 
@@ -98,9 +98,9 @@ Examples:
     if args.db_url:
         config.db_url = args.db_url
     if args.data_dir:
-        config.data_dir = Path(args.data_dir)
+        config.data_dir = pathlib.Path(args.data_dir)
     if args.output_dir:
-        config.output_dir = Path(args.output_dir)
+        config.output_dir = pathlib.Path(args.output_dir)
     if args.n_jobs is not None:
         config.n_jobs = args.n_jobs
     if args.seed is not None:
@@ -182,7 +182,7 @@ def analyze_main() -> int:
                 return 1
             df = load_from_db(args.db_url, limit=args.limit)
         else:
-            df = load_from_csv(Path(args.data_dir), limit=args.limit)
+            df = load_from_csv(pathlib.Path(args.data_dir), limit=args.limit)
 
         logger.info(f"Loaded {len(df)} rows")
 
@@ -191,7 +191,7 @@ def analyze_main() -> int:
         logger.info(f"After preprocessing: {len(df)} rows")
 
         # Run EDA
-        output_dir = Path(args.output_dir)
+        output_dir = pathlib.Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         simple_eda(df, output_dir)
 
@@ -231,7 +231,7 @@ def validate_main() -> int:
                 return 1
             df = load_from_db(args.db_url, limit=args.limit)
         else:
-            df = load_from_csv(Path(args.data_dir), limit=args.limit)
+            df = load_from_csv(pathlib.Path(args.data_dir), limit=args.limit)
 
         logger.info(f"Loaded {len(df)} rows")
 

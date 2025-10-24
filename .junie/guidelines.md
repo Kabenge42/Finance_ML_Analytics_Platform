@@ -261,7 +261,7 @@ Key Features (aligns with README)
 - 📈 Analytics: Mispricing scores, stock ranking, interactive visualizations
 - ⚙️ Configuration: Flexible config via Anaconda (optional) or venv/pip with environment variables and CLI options;
   avoid mixing Conda with venv
-- 🧪 Tested: 144+ unit tests with comprehensive coverage
+- 🧪 Tested: Comprehensive unit tests with good coverage
 - 🚀 CLI: Three command-line tools for different workflows (see CLI Tools below)
 
 Finance_ML_Analytics_Platform — Main Scripts
@@ -270,11 +270,11 @@ Finance_ML_Analytics_Platform — Main Scripts
 
 CLI Tools (installed via pyproject’s console scripts)
 - finance-ml — Primary pipeline runner (data load, preprocess, features, models, outputs).
-  Example: finance-ml --data-source auto --limit 5000 --out-dir outputs
+  Example: finance-ml --data-source auto --limit 5000 --output-dir outputs
 - finance-ml-analyze — EDA/analytics-only workflows.
-  Example: finance-ml-analyze --data-source csv --out-dir outputs
+  Example: finance-ml-analyze --data-source csv --output-dir outputs
 - finance-ml-validate — Validation-only workflows (schema checks, data quality, etc.).
-  Example: finance-ml-validate --data-source csv --out-dir outputs
+  Example: finance-ml-validate --data-source csv --output-dir outputs
 Notes:
 - The script ml_finance_model_v8_2.py provides equivalent capabilities via Python directly:
   - python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs

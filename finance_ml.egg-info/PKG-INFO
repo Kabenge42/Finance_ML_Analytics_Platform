@@ -61,7 +61,6 @@ Requires-Dist: finance-ml[advanced-features,database,dev,tensorflow]; extra == "
 
 **Version 0.3.0** — A professional, modular Python package for equity screening, feature engineering, and machine learning models across global regions.
 
-[![Tests](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/workflows/Tests/badge.svg)](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -80,7 +79,7 @@ Finance ML Analytics Platform is a comprehensive toolkit for quantitative equity
 - 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models, stacking ensembles
 - 📈 **Analytics**: Mispricing scores, stock ranking, interactive visualizations
 - ⚙️ **Configuration**: Flexible config via environment variables, JSON, or YAML
-- 🧪 **Tested**: 144+ unit tests with comprehensive coverage
+- 🧪 **Tested**: Comprehensive unit tests with good coverage
 - 🚀 **CLI**: Three command-line tools for different workflows
 
 
@@ -267,7 +266,7 @@ Finance_ML_Analytics_Platform/
 │   ├── config.py                 # Configuration management
 │   └── cli.py                    # Command-line interface
 │
-├── tests/                        # Comprehensive test suite (144+ tests)
+├── tests/                        # Unit tests (see tests/ for modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
@@ -280,9 +279,6 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_eu.csv
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
-│
-├── .github/workflows/            # CI/CD pipelines
-│   └── tests.yml                 # Automated testing workflow
 │
 ├── ml_finance_model_v8_2.ipynb  # Interactive Jupyter notebook
 ├── ml_finance_model_v8_2.py     # Legacy script (uses finance_ml package)
@@ -412,7 +408,7 @@ Full ML pipeline with data loading, EDA, feature engineering, and model training
 finance-ml --data-source auto --limit 5000
 
 # Use database
-finance-ml --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 
 # Use CSV files
 finance-ml --data-source csv --data-dir ./data
@@ -441,7 +437,7 @@ Fast EDA and data profiling.
 finance-ml-analyze --data-source csv --data-dir ./data
 
 # Analyze database
-finance-ml-analyze --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml-analyze --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 
 # Limit rows for quick check
 finance-ml-analyze --data-source csv --limit 1000 -v
@@ -456,7 +452,7 @@ Validate data quality and schema.
 finance-ml-validate --data-source csv --data-dir ./data
 
 # Validate database
-finance-ml-validate --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml-validate --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 
 # Verbose output
 finance-ml-validate --data-source csv -v
@@ -506,7 +502,7 @@ Create `config.json` or `config.yaml` for project settings:
 {
   "data_dir": "data",
   "output_dir": "outputs",
-  "db_url": "postgresql://postgres:@localhost/postgres",
+  "db_url": "postgresql+psycopg2://postgres:@localhost:5432/postgres",
   "model_version": "v8_2",
   "random_seed": 42,
   "n_jobs": -1
@@ -517,7 +513,7 @@ Create `config.json` or `config.yaml` for project settings:
 ```yaml
 data_dir: data
 output_dir: outputs
-db_url: postgresql://postgres:@localhost/postgres
+db_url: postgresql+psycopg2://postgres:@localhost:5432/postgres
 model_version: v8_2
 random_seed: 42
 n_jobs: -1
@@ -579,21 +575,13 @@ pip install -e ".[all]"
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and testing.
+Currently, no CI workflows are included in this repository (no .github/workflows directory).
 
-### Automated Testing Workflow
-- **Location**: `.github/workflows/tests.yml`
-- **Triggers**: Push to main branch, pull requests
-- **Test Matrix**: 
-  - Operating Systems: Ubuntu, Windows, macOS
-  - Python Versions: 3.10, 3.11
-- **Checks**:
-  - Unit tests with unittest
-  - Code quality (black, isort, flake8, mypy)
-  - Test coverage reporting
+TODO:
+- Add a GitHub Actions workflow for automated tests across Windows, Ubuntu, and macOS on Python 3.10 and 3.11.
+- Optionally add code quality checks (black, isort, flake8, mypy) and coverage reporting.
 
-### Running CI Locally
-You can run the same checks locally before pushing:
+You can run equivalent checks locally:
 
 ```bash
 # Run tests

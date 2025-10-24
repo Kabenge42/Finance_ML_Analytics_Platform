@@ -16,7 +16,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Modular Python package (`finance_ml`) with clean, tested, reusable code
 - Interactive Jupyter notebook for exploration and prototyping
 - CLI tools for batch processing and automation
-- Comprehensive test suite (144+ unit tests)
+- Comprehensive unit tests with good coverage
 - Configuration management via environment variables, JSON, or YAML
 
 
@@ -191,7 +191,7 @@ Three console commands installed via `pyproject.toml` entry points:
 **a) `finance-ml`** — Main analysis pipeline
 ```bash
 finance-ml --data-source auto --limit 5000
-finance-ml --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 finance-ml --config config.json
 ```
 
@@ -333,7 +333,7 @@ Create a `.env` file in the project root with the variables above. Tools that su
 ### Test Framework
 - **Framework**: Python's built-in `unittest`
 - **Location**: `tests/` directory
-- **Count**: 144+ unit tests
+- **Count**: Comprehensive unit tests
 - **Coverage**: Tracked in `.coverage` file
 
 ### Running Tests
@@ -393,7 +393,7 @@ Finance_ML_Analytics_Platform/
 │   ├── config.py                  # Configuration management
 │   └── cli.py                     # Command-line interface
 │
-├── tests/                         # Comprehensive test suite (144+ tests)
+├── tests/                         # Unit tests (see tests/ for modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
@@ -519,7 +519,7 @@ Command-line interface tools.
 {
   "data_dir": "data",
   "output_dir": "outputs",
-  "db_url": "postgresql://postgres:@localhost/postgres",
+  "db_url": "postgresql+psycopg2://postgres:@localhost:5432/postgres",
   "model_version": "v8_2",
   "random_seed": 42,
   "n_jobs": -1
@@ -530,7 +530,7 @@ Command-line interface tools.
 ```yaml
 data_dir: data
 output_dir: outputs
-db_url: postgresql://postgres:@localhost/postgres
+db_url: postgresql+psycopg2://postgres:@localhost:5432/postgres
 model_version: v8_2
 random_seed: 42
 n_jobs: -1

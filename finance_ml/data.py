@@ -157,34 +157,50 @@ def load_from_csv(data_dir: Path, limit: Optional[int] = None) -> pd.DataFrame:
 
 def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
     """Load equity data from PostgreSQL database.
-    
-    Connects to PostgreSQL and loads data from the equities table
-    for all regions (US, EU, APAC, ROTW).
-    
+
+    Connects to PostgreSQL and loads data from the main equities table
+    declared in the postgres database (schema: public by default), for all
+    regions (US, EU, APAC, ROTW).
+
+    This function expects the database to be initialized with the provided SQL
+    scripts in the repository root:
+      - create_equities_schema.sql
+      - import_equities_data.sql
+
+    Environment overrides:
+      - DB_SCHEMA (default: 'public')
+      - DB_TABLE (default: 'equities')
+
     Args:
-        db_url: SQLAlchemy database URL (e.g., postgresql+psycopg2://user:pass@host/db)
+        db_url: SQLAlchemy database URL (e.g., postgresql+psycopg2://user:pass@host:5432/postgres)
         limit: Optional row limit for loaded data
-        
+
     Returns:
         DataFrame with normalized columns
-        
+
     Raises:
         ImportError: If SQLAlchemy not available
-        RuntimeError: If SQLAlchemy not available
     """
     if create_engine is None:
         raise ImportError("SQLAlchemy not available. Install psycopg2-binary and SQLAlchemy or use CSV data source.")
-    
-    logging.info("Loading from PostgreSQL: %s", db_url)
+
+    # Resolve schema and table from environment, default to public.equities
+    schema = os.environ.get("DB_SCHEMA", "public")
+    table = os.environ.get("DB_TABLE", "equities")
+    # Fully qualified table reference
+    table_ref = f"{schema}.{table}"
+
+    logging.info("Loading from PostgreSQL: %s (table: %s)", db_url, table_ref)
     engine = create_engine(db_url)
-    query = 'SELECT * FROM equities WHERE "Region" IN (\'US\', \'EU\', \'APAC\', \'ROTW\')'
-    if limit is not None:
-        query = f"SELECT * FROM ( {query} ) q LIMIT {int(limit)}"
+
+    base_query = f"SELECT * FROM {table_ref} WHERE \"Region\" IN ('US','EU','APAC','ROTW')"
+    query = base_query if limit is None else f"SELECT * FROM ( {base_query} ) q LIMIT {int(limit)}"
+
     df = pd.read_sql(query, engine)
-    
+
     # Normalize column names
     df = normalize_columns(df)
-    
+
     return df
 
 

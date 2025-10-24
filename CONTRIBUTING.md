@@ -153,11 +153,10 @@ Write clear, concise commit messages that explain what and why:
 **Good commit messages:**
 
 ```
-Add RSI and MACD momentum indicators
+Add basic ratio and volatility features
 
-- Implement calculate_rsi() function in features.py
-- Implement calculate_macd() function in features.py
-- Add unit tests for momentum indicators
+- Enhance engineer_basic_ratios() and engineer_volatility_features() in features.py
+- Add unit tests for feature engineering functions
 - Update documentation with usage examples
 ```
 
@@ -195,23 +194,20 @@ Example test structure:
 
 ```python
 import unittest
-from finance_ml.features import calculate_rsi
+import pandas as pd
+from finance_ml.data import validate_schema
 
 
-class TestMomentumIndicators(unittest.TestCase):
-    def setUp(self):
-        """Set up test fixtures"""
-        self.sample_prices = [100, 102, 101, 105, 103, 107, 110]
-
-    def test_calculate_rsi_returns_valid_range(self):
-        """Test that RSI values are between 0 and 100"""
-        rsi = calculate_rsi(self.sample_prices)
-        self.assertTrue(0 <= rsi <= 100)
-
-    def test_calculate_rsi_with_empty_data(self):
-        """Test RSI calculation with empty data"""
+class TestDataValidation(unittest.TestCase):
+    def test_validate_schema_missing_columns_raises(self):
+        df = pd.DataFrame({"ticker": ["AAPL"], "last_price": [150.0]})
         with self.assertRaises(ValueError):
-            calculate_rsi([])
+            validate_schema(df, require_target=False)
+
+    def test_validate_schema_passes_with_required_columns(self):
+        df = pd.DataFrame({"ticker": ["AAPL"], "sector": ["Tech"], "last_price": [150.0]})
+        # Should not raise
+        self.assertIsNone(validate_schema(df, require_target=False))
 
 
 if __name__ == '__main__':
@@ -277,33 +273,31 @@ We use automated tools to enforce consistent style:
 Use **Google-style docstrings**:
 
 ```python
-def calculate_rsi(prices: list[float], period: int = 14) -> float:
-    """Calculate the Relative Strength Index (RSI) for a price series.
+def calculate_moving_average(prices: list[float], window: int = 3) -> float:
+    """Calculate a simple moving average for a price series.
 
-    The RSI is a momentum oscillator that measures the speed and magnitude
-    of price changes. Values range from 0 to 100, with readings above 70
-    indicating overbought conditions and below 30 indicating oversold.
+    This is a general example to demonstrate Google-style docstrings.
 
     Args:
         prices: List of historical prices in chronological order
-        period: Number of periods to use in calculation (default: 14)
+        window: Window length for the moving average (default: 3)
 
     Returns:
-        RSI value between 0 and 100
+        The moving average as a float.
 
     Raises:
-        ValueError: If prices list is empty or period is invalid
+        ValueError: If prices list is empty or window <= 0
 
     Example:
         >>> prices = [44, 44.34, 44.09, 43.61, 44.33, 44.83]
-        >>> rsi = calculate_rsi(prices, period=5)
-        >>> print(f"RSI: {rsi:.2f}")
-        RSI: 62.45
+        >>> ma = calculate_moving_average(prices, window=3)
+        >>> print(f"MA: {ma:.2f}")
+        MA: 44.08
     """
-    if not prices:
-        raise ValueError("Prices list cannot be empty")
+    if not prices or window <= 0:
+        raise ValueError("Invalid inputs")
 
-    # Implementation here...
+    return sum(prices[-window:]) / min(window, len(prices))
 ```
 
 ### Type Hints

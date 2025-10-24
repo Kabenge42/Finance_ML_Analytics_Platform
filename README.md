@@ -2,9 +2,28 @@
 
 **Version 0.3.0** — A professional, modular Python package for equity screening, feature engineering, and machine learning models across global regions.
 
-[![Tests](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/workflows/Tests/badge.svg)](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## Quick Start (TL;DR)
+
+- Python: 3.10 or 3.11
+- Create and activate a virtual environment:
+    - Windows (PowerShell):
+        - python -m venv .venv
+        - .venv\Scripts\Activate.ps1
+    - macOS/Linux (bash):
+        - python3 -m venv .venv
+        - source .venv/bin/activate
+- Upgrade pip tools: python -m pip install --upgrade pip setuptools wheel
+- Install dependencies: pip install -r requirements.txt
+- PostgreSQL: ensure local Postgres is running; create schema:
+    - psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
+- Load data from CSVs into PostgreSQL:
+    - psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
+- Notebook: open ml_finance_model_v8_2.ipynb and run cells in order
+- Script (optional): python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+- Tests: python -m unittest -v
 
 ## Overview
 
@@ -21,7 +40,7 @@ Finance ML Analytics Platform is a comprehensive toolkit for quantitative equity
 - 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models, stacking ensembles
 - 📈 **Analytics**: Mispricing scores, stock ranking, interactive visualizations
 - ⚙️ **Configuration**: Flexible config via environment variables, JSON, or YAML
-- 🧪 **Tested**: 144+ unit tests with comprehensive coverage
+- 🧪 **Tested**: Comprehensive unit tests with good coverage
 - 🚀 **CLI**: Three command-line tools for different workflows
 
 
@@ -150,13 +169,20 @@ Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if i
 
 ### Main Entry Points
 - **ml_finance_model_v8_2.ipynb** — Main Jupyter notebook for interactive exploration and modeling
-- **ml_finance_model_v8_2.py** — Python script with CLI for batch processing:
+- **ml_finance_model_v8_2.py** — Lightweight Python script with a minimal CLI:
   - `--data-source {auto|csv|db}` — Data source selection (default: auto)
   - `--db-url <url>` — Database connection string (or use DB_URL env var)
   - `--limit <n>` — Limit rows for testing
   - `--out-dir <path>` — Output directory (default: outputs)
   - `--dry-run` — Skip model training
-  - See "Running as a Python script" section below for examples
+  - Note: Advanced options (skip-eda, per-sector, etc.) are available via the console script `finance-ml`.
+  - See "Legacy Script" example in CLI Usage below
+
+### Console Scripts (installed via pyproject)
+
+- `finance-ml` — Main pipeline (finance_ml.cli:main)
+- `finance-ml-analyze` — EDA/analytics-only (finance_ml.cli:analyze_main)
+- `finance-ml-validate` — Validation-only (finance_ml.cli:validate_main)
 
 ### Database Setup Scripts
 - **create_equities_schema.sql** — SQL script to initialize the equities table in PostgreSQL
@@ -206,15 +232,21 @@ Finance_ML_Analytics_Platform/
 │   ├── models.py                 # ML models (classification, regression, ensembles)
 │   ├── eval.py                   # Analytics, visualizations, reporting
 │   ├── config.py                 # Configuration management
-│   └── cli.py                    # Command-line interface
+│   ├── cli.py                    # Command-line interface
+│   ├── risk_metrics.py           # Risk metrics and portfolio risk analysis
+│   └── portfolio_optimization.py # Portfolio optimization utilities
 │
-├── tests/                        # Comprehensive test suite (144+ tests)
-│   ├── test_finance_ml_data.py
-│   ├── test_finance_ml_features.py
-│   ├── test_finance_ml_models.py
-│   ├── test_finance_ml_eval.py
+├── tests/                        # Unit tests (see tests/ for modules)
 │   ├── test_repository_setup.py
-│   └── ... (10+ test modules)
+│   ├── test_finance_ml_data.py
+│   ├── test_features.py
+│   ├── test_build_features.py
+│   ├── test_eda.py
+│   ├── test_preprocess_and_training.py
+│   ├── test_regression.py
+│   ├── test_classification.py
+│   ├── test_analytics.py
+│   └── ...
 │
 ├── data/                         # Regional equity data (CSV files)
 │   ├── screening_us.csv
@@ -222,24 +254,37 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
 │
-├── .github/workflows/            # CI/CD pipelines
-│   └── tests.yml                 # Automated testing workflow
+├── ml_finance_model_v8_2.ipynb   # Interactive Jupyter notebook
+├── ml_finance_model_v8_2.py      # Script version (uses finance_ml package)
 │
-├── ml_finance_model_v8_2.ipynb  # Interactive Jupyter notebook
-├── ml_finance_model_v8_2.py     # Legacy script (uses finance_ml package)
+├── analyze_notebook.py           # Notebook analysis utility
+├── refactor_notebook.py          # Notebook refactoring helper
+├── update_notebook.py            # Sync functions between .py and .ipynb
+├── update_notebook_imports.py    # Update notebook imports
+├── verify_notebook.py            # Verify notebook functions
+├── verify_preprocessing_improvements.py # Verify preprocessing pipeline improvements
+├── validate_csv_import.py        # CSV data validation helper
 │
-├── pyproject.toml               # Modern Python packaging configuration
-├── setup.py                     # Backward-compatible setup
-├── requirements.txt             # Core dependencies
-├── CHANGELOG.md                 # Version history
-├── README.md                    # This file
-├── IMPROVEMENT_PLAN.md          # Development roadmap
+├── create_equities_schema.sql    # PostgreSQL schema setup
+├── import_equities_data.sql      # Data import script
 │
-├── create_equities_schema.sql   # PostgreSQL schema setup
-├── import_equities_data.sql     # Data import script
-├── environment_variables.txt    # Environment configuration examples
-│
-└── .junie/guidelines.md         # Development guidelines
+├── environment_variables.txt     # Environment configuration examples
+├── requirements.txt              # Core dependencies
+├── Pipfile                       # Pipenv (optional)
+├── pyproject.toml                # Modern packaging configuration (console scripts)
+├── setup.py                      # Legacy setup (editable installs)
+├── qodana.yaml                   # Static analysis configuration
+├── README.md                     # This file
+├── LICENSE                       # License
+├── CHANGELOG.md                  # Version history
+├── IMPROVEMENT_PLAN.md           # Development roadmap
+├── IMPLEMENTATION_SUMMARY.md     # Implementation notes
+├── PREPROCESSING_PIPELINE_IMPROVEMENTS.md # Docs
+├── REFACTORING_COMPLETE.md       # Docs
+├── REFACTORING_SUMMARY.md        # Docs
+├── TDD_IMPLEMENTATION_COMPLETE.md # Docs
+├── TDD_IMPLEMENTATION_SUMMARY.md  # Docs
+└── reports/                      # Generated reports (if any)
 ```
 
 ### Package Modules
@@ -353,7 +398,7 @@ Full ML pipeline with data loading, EDA, feature engineering, and model training
 finance-ml --data-source auto --limit 5000
 
 # Use database
-finance-ml --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 
 # Use CSV files
 finance-ml --data-source csv --data-dir ./data
@@ -382,7 +427,7 @@ Fast EDA and data profiling.
 finance-ml-analyze --data-source csv --data-dir ./data
 
 # Analyze database
-finance-ml-analyze --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml-analyze --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 
 # Limit rows for quick check
 finance-ml-analyze --data-source csv --limit 1000 -v
@@ -397,7 +442,7 @@ Validate data quality and schema.
 finance-ml-validate --data-source csv --data-dir ./data
 
 # Validate database
-finance-ml-validate --data-source db --db-url postgresql://postgres:@localhost/postgres
+finance-ml-validate --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
 
 # Verbose output
 finance-ml-validate --data-source csv -v
@@ -419,6 +464,7 @@ python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir output
 Set these in your shell or via `.env` file:
 
 ```bash
+# macOS/Linux (bash/zsh)
 # Data paths
 export DATA_DIR=data
 export MODEL_DIR=models
@@ -438,6 +484,27 @@ export LOG_LEVEL=INFO
 export TF_CPP_MIN_LOG_LEVEL=2
 ```
 
+```powershell
+# Windows (PowerShell)
+# Data paths
+$env:DATA_DIR = "data"
+$env:MODEL_DIR = "models"
+$env:CACHE_DIR = ".cache"
+$env:OUTPUT_DIR = "outputs"
+
+# Database
+$env:DB_URL = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
+
+# Model settings
+$env:MODEL_VERSION = "v8_2"
+$env:RANDOM_SEED = "42"
+$env:N_JOBS = "-1"
+
+# Logging
+$env:LOG_LEVEL = "INFO"
+$env:TF_CPP_MIN_LOG_LEVEL = "2"
+```
+
 ### Configuration Files
 
 Create `config.json` or `config.yaml` for project settings:
@@ -447,7 +514,7 @@ Create `config.json` or `config.yaml` for project settings:
 {
   "data_dir": "data",
   "output_dir": "outputs",
-  "db_url": "postgresql://postgres:@localhost/postgres",
+  "db_url": "postgresql+psycopg2://postgres:@localhost:5432/postgres",
   "model_version": "v8_2",
   "random_seed": 42,
   "n_jobs": -1
@@ -458,7 +525,7 @@ Create `config.json` or `config.yaml` for project settings:
 ```yaml
 data_dir: data
 output_dir: outputs
-db_url: postgresql://postgres:@localhost/postgres
+db_url: postgresql+psycopg2://postgres:@localhost:5432/postgres
 model_version: v8_2
 random_seed: 42
 n_jobs: -1
@@ -520,21 +587,14 @@ pip install -e ".[all]"
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and testing.
+Currently, no CI workflows are included in this repository (no .github/workflows directory).
 
-### Automated Testing Workflow
-- **Location**: `.github/workflows/tests.yml`
-- **Triggers**: Push to main branch, pull requests
-- **Test Matrix**: 
-  - Operating Systems: Ubuntu, Windows, macOS
-  - Python Versions: 3.10, 3.11
-- **Checks**:
-  - Unit tests with unittest
-  - Code quality (black, isort, flake8, mypy)
-  - Test coverage reporting
+TODO:
 
-### Running CI Locally
-You can run the same checks locally before pushing:
+- Add a GitHub Actions workflow for automated tests across Windows, Ubuntu, and macOS on Python 3.10 and 3.11.
+- Optionally add code quality checks (black, isort, flake8, mypy) and coverage reporting.
+
+You can run equivalent checks locally:
 
 ```bash
 # Run tests
