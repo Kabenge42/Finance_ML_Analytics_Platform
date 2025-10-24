@@ -1,0 +1,14 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>849</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyAbstractClassInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Invalid abstract class definition and usages</problem_class>
+  <description>Cannot instantiate abstract class 'ExitStack'</description>
+  <highlighted_element>ExitStack()</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>11</length>
+</problem>
+</problems>

@@ -1,0 +1,3038 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def detect_outliers_iqr(df: pd.DataFrame, column: str, multiplier: float = 1.5) -&gt; list: &quot;&quot;&quot;Detec...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>215</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>series = pd.to_numeric(df[column], errors='coerce')</highlighted_element>
+  <language>Python</language>
+  <offset>219</offset>
+  <length>51</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>q1 = series.quantile(0.25)</highlighted_element>
+  <language>Python</language>
+  <offset>274</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>q3 = series.quantile(0.75)</highlighted_element>
+  <language>Python</language>
+  <offset>304</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>iqr = q3 - q1</highlighted_element>
+  <language>Python</language>
+  <offset>334</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>lower_bound = q1 - multiplier * iqr</highlighted_element>
+  <language>Python</language>
+  <offset>351</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>upper_bound = q3 + multiplier * iqr</highlighted_element>
+  <language>Python</language>
+  <offset>390</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>outlier_mask = (series &lt; lower_bound) | (series &gt; upper_bound)</highlighted_element>
+  <language>Python</language>
+  <offset>433</offset>
+  <length>62</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>outlier_indices = df.index[outlier_mask].tolist()</highlighted_element>
+  <language>Python</language>
+  <offset>499</offset>
+  <length>49</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>return outlier_indices</highlighted_element>
+  <language>Python</language>
+  <offset>552</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>965</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def validate_numeric_ranges(df: pd.DataFrame) -&gt; dict: &quot;&quot;&quot;Validate numeric columns for invalid ra...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>260</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>965</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>issues = {} # Check price columns (should be positive) price_cols = [c for c in df.columns...</highlighted_element>
+  <language>Python</language>
+  <offset>264</offset>
+  <length>794</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def engineer_margin_features(df: pd.DataFrame) -&gt; pd.DataFrame: &quot;&quot;&quot;Add margin features if source ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>258</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>out = df.copy()</highlighted_element>
+  <language>Python</language>
+  <offset>262</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>cols = set(out.columns)</highlighted_element>
+  <language>Python</language>
+  <offset>281</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if {&quot;gross_profit&quot;, &quot;revenue&quot;}.issubset(cols): out[&quot;gross_margin&quot;] = _safe_div(out[&quot;gross_pro...</highlighted_element>
+  <language>Python</language>
+  <offset>312</offset>
+  <length>122</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if {&quot;operating_income&quot;, &quot;revenue&quot;}.issubset(cols): out[&quot;operating_margin&quot;] = _safe_div(out[&quot;o...</highlighted_element>
+  <language>Python</language>
+  <offset>438</offset>
+  <length>134</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if {&quot;net_income&quot;, &quot;revenue&quot;}.issubset(cols): out[&quot;net_margin&quot;] = _safe_div(out[&quot;net_income&quot;],...</highlighted_element>
+  <language>Python</language>
+  <offset>576</offset>
+  <length>116</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>return out</highlighted_element>
+  <language>Python</language>
+  <offset>700</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>971</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def engineer_volatility_features(df: pd.DataFrame, window: int = 30) -&gt; pd.DataFrame: &quot;&quot;&quot;Add pric...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>316</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>971</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>out = df.copy()</highlighted_element>
+  <language>Python</language>
+  <offset>320</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>971</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if &quot;last_price&quot; not in out.columns: return out # Calculate rolling std dev of price ...</highlighted_element>
+  <language>Python</language>
+  <offset>343</offset>
+  <length>503</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>973</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def engineer_revenue_cagr(df: pd.DataFrame) -&gt; pd.DataFrame: &quot;&quot;&quot;Calculate revenue CAGR (Compound ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>254</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>973</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>out = df.copy()</highlighted_element>
+  <language>Python</language>
+  <offset>258</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>973</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>cols = set(out.columns)</highlighted_element>
+  <language>Python</language>
+  <offset>277</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>973</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if {&quot;revenue_current&quot;, &quot;revenue_1y_ago&quot;}.issubset(cols): ratio = out[&quot;revenue_current&quot;] / out...</highlighted_element>
+  <language>Python</language>
+  <offset>308</offset>
+  <length>656</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>977</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_event_labels(df: pd.DataFrame, use_volatility: bool = False) -&gt; np.ndarray: &quot;&quot;&quot;Create ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>582</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>977</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>labels = np.zeros(len(df), dtype=int) # Calculate price target uplift/downlift percentage ...</highlighted_element>
+  <language>Python</language>
+  <offset>586</offset>
+  <length>792</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>979</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def train_event_classifier(df: pd.DataFrame, labels: np.ndarray, random_state: int = 42) -&gt; Tuple[Ra...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1908</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>983</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def calculate_mispricing_score(df: pd.DataFrame) -&gt; pd.Series: &quot;&quot;&quot;Calculate mispricing score for ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>426</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>983</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>score = (df['predicted_target'] - df['last_price']) / df['last_price']</highlighted_element>
+  <language>Python</language>
+  <offset>430</offset>
+  <length>70</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>983</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>return score</highlighted_element>
+  <language>Python</language>
+  <offset>504</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>985</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def rank_undervalued_stocks(df: pd.DataFrame, top_n: int = 10) -&gt; pd.DataFrame: &quot;&quot;&quot;Rank and retur...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>345</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>985</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>sorted_df = df.sort_values('mispricing_score', ascending=False)</highlighted_element>
+  <language>Python</language>
+  <offset>349</offset>
+  <length>63</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>985</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>return sorted_df.head(top_n)</highlighted_element>
+  <language>Python</language>
+  <offset>416</offset>
+  <length>28</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>987</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def rank_overvalued_stocks(df: pd.DataFrame, top_n: int = 10) -&gt; pd.DataFrame: &quot;&quot;&quot;Rank and return...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>341</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>987</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>sorted_df = df.sort_values('mispricing_score', ascending=True)</highlighted_element>
+  <language>Python</language>
+  <offset>345</offset>
+  <length>62</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>987</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>return sorted_df.head(top_n)</highlighted_element>
+  <language>Python</language>
+  <offset>411</offset>
+  <length>28</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>989</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def rank_stocks_by_sector(df: pd.DataFrame, top_n: int = 5, order: str = 'undervalued') -&gt; dict: ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>433</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>989</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>result = {}</highlighted_element>
+  <language>Python</language>
+  <offset>437</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>989</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>ascending = (order == 'overvalued')</highlighted_element>
+  <language>Python</language>
+  <offset>452</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>989</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>for sector, group in df.groupby('sector'): sorted_group = group.sort_values('mispricing_score...</highlighted_element>
+  <language>Python</language>
+  <offset>495</offset>
+  <length>123</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>989</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>result[sector] = sorted_group.head(top_n)</highlighted_element>
+  <language>Python</language>
+  <offset>626</offset>
+  <length>41</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>989</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>return result</highlighted_element>
+  <language>Python</language>
+  <offset>675</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>997</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>import os</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>998</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>import sys</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1001</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>current_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>100</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1002</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if current_dir not in sys.path: sys.path.insert(0, current_dir)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>67</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1007</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_sample_financial_dataset(): &quot;&quot;&quot;Create a comprehensive sample dataset for demonstratio...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3883</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1083</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: if HAVE_FINANCE_PREDICTION and AVAILABLE_MODULES.get('data_loaders', False) and load_all_st...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>13550</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1376</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>from functools import lru_cache</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>31</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1377</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>from typing import Optional</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1378</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>import pandas as pd</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1383</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@lru_cache(maxsize=128) def calculate_earnings_days(earnings_date_str: str) -&gt; Optional[int]: &quot;&quot;...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>820</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1410</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if 'Next Earnings' in all_stocks.columns: try: # Validate data shape before processing ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1036</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1439</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def display_dataset_info(df: pd.DataFrame, title: str = &quot;Dataset Information&quot;) -&gt; None: &quot;&quot;&quot; ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1289</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1482</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>display_dataset_info(all_stocks, &quot;Stock Dataset Information&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>61</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1486</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if 'Sector' in all_stocks.columns: plt.figure(figsize=(12, 6)) sector_counts = all_stocks['S...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>344</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1501</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>key_metrics = [ 'Last Price', 'Price Target', 'Market Cap', 'P/E (NTM)', 'EV/EBITDA (LTM)', 'Net...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>651</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1524</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def safe_divide(a: Union[float, np.ndarray, pd.Series], b: Union[float, np.ndarray, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1197</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1561</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def performance_profiler_decorator(func): &quot;&quot;&quot; Comprehensive decorator that combines timing a...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3083</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1662</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if HAVE_FINANCE_PREDICTION: try: # Initialize cache manager with optimized configuration...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1332</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1697</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def initialize_system_components(): &quot;&quot;&quot;Initialize and configure all system components. ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1313</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1738</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if HAVE_FINANCE_PREDICTION: try: # Initialize all system components config_manag...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>821</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1763</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@performance_profiler_decorator def handle_missing_values(df: pd.DataFrame, strategy: str = 'knn', ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>8458</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1927</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@performance_profiler_decorator def handle_outliers(df: pd.DataFrame, columns: List[str], method: st...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2516</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1993</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@performance_profiler_decorator def create_advanced_financial_metrics(df: pd.DataFrame) -&gt; pd.DataFr...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>18650</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2435</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@performance_profiler_decorator def create_advanced_features(df: pd.DataFrame) -&gt; pd.DataFrame: ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>10041</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2646</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class AutomatedFeatureEngineeringPipeline: &quot;&quot;&quot; Automated feature engineering pipeline that i...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>14492</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3001</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>auto_feature_pipeline = AutomatedFeatureEngineeringPipeline( enable_interactions=True, enabl...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>202</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3009</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Automated Feature Engineering Pipeline initialized and ready for use&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>83</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3013</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class EnsembleBasedFeatureSelector: &quot;&quot;&quot; Ensemble-based feature selection combining multiple ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>8295</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3208</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FeatureSelectionHyperparameterOptimizer: &quot;&quot;&quot; Hyperparameter optimization framework for...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>4242</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3318</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>ensemble_selector = EnsembleBasedFeatureSelector(random_state=42)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>65</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3319</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>hyperparam_optimizer = FeatureSelectionHyperparameterOptimizer(random_state=42)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>79</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3321</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Model-Agnostic Improvement components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>64</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3325</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FinancialDomainFeatureSelector: &quot;&quot;&quot; Financial domain-specific feature selection incorp...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15665</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3691</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>financial_domain_selector = FinancialDomainFeatureSelector(random_state=42)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>75</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3693</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Financial Domain Enhancement components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>66</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3697</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FeatureSelectionDashboard: &quot;&quot;&quot; Comprehensive feature selection dashboard with multiple...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>11762</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3998</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class VisualizationA_B_TestingFramework: &quot;&quot;&quot; A/B testing visualization framework for feature...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3850</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4116</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>dashboard = FeatureSelectionDashboard(use_plotly=True)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>54</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4117</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>ab_testing_framework = VisualizationA_B_TestingFramework()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>58</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4119</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Dashboard and Reporting Improvements components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>74</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4123</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class Advanced3DVisualizationSuite: &quot;&quot;&quot; Advanced 3D and sophisticated plot types for multi-d...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>17306</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4593</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>viz_3d_suite = Advanced3DVisualizationSuite()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>45</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4595</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;3D and Advanced Plot Types components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>64</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4599</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class TimeSeriesAnimationSuite: &quot;&quot;&quot; Animation and time-series visualization suite for tempor...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>20971</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>5162</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>time_series_suite = TimeSeriesAnimationSuite()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>46</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>5164</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Animation and Time-Series Visualizations components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>78</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>5168</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FeatureSelectionTestSuite: &quot;&quot;&quot; Comprehensive testing and validation framework for feat...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>24669</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>5744</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>feature_test_suite = FeatureSelectionTestSuite()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>48</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>5746</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Feature Selection Testing components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>63</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>5750</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class VisualizationTestSuite: &quot;&quot;&quot; Comprehensive testing framework for visualization generati...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>24746</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6377</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>visualization_test_suite = VisualizationTestSuite()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>51</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6379</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Visualization Testing components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>59</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6383</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def add_comprehensive_docstrings_with_mathematical_formulations(): &quot;&quot;&quot; Add comprehensive doc...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1437</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6422</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_inline_financial_domain_comments(): &quot;&quot;&quot; Create inline comments explaining financi...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1118</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6448</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>add_comprehensive_docstrings_with_mathematical_formulations()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>61</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6449</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>create_inline_financial_domain_comments()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>41</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6451</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Code Documentation components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>56</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6455</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FinancialMLUserInterface: &quot;&quot;&quot; User interface improvements for enhanced user experience...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>20121</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6957</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>ui_manager = FinancialMLUserInterface()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>39</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6960</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>config_files = ui_manager.create_configuration_files()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>54</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>cli_commands = ui_manager.implement_batch_operations_cli()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>58</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6966</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>progress_trackers = ui_manager.add_progress_indicators()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>56</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>export_functions = ui_manager.implement_result_export_functionality()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>69</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6971</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;User Interface Improvements components initialized&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>65</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6974</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;🎉 ALL PRIORITY 4-7 TASKS COMPLETED SUCCESSFULLY! 🎉&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>67</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6975</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Notebook enhancement implementation is now complete with:&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>72</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6976</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;✅ Advanced Analytics and Model Integration (15 tasks)&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>68</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6977</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;✅ Visualization Enhancement Details (15 tasks)&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>61</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6978</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;✅ Testing and Validation Framework (10 tasks)&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>60</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6979</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;✅ Documentation and User Experience (10 tasks)&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>61</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6980</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;📊 Total: 50 enhancement tasks successfully implemented&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>70</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6983</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: # Initialize pipeline persistence for expensive preprocessing operations if HAVE_CACHIN...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>9685</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7179</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def enhanced_financial_data_preprocessing(df: pd.DataFrame, target_quality_score: float = 0.85) -&gt; p...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>9464</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7388</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: logger.info(&quot;🚀 Starting enhanced financial data preprocessing&quot;) # Apply enhanced prep...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>657</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7413</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def safe_qcut(series, q, labels, column_name): &quot;&quot;&quot;Safely perform quantile-based binning with fal...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1540</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7448</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def safe_cut(series, bins, labels, column_name): &quot;&quot;&quot;Safely perform cut-based binning with fallba...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1186</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7474</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_financial_event_labels(df: pd.DataFrame) -&gt; pd.DataFrame: &quot;&quot;&quot; Create multi-class ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>24405</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7968</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: all_stocks_classified = create_financial_event_labels(all_stocks_enhanced) # Display t...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1663</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8017</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def select_features(X: pd.DataFrame, y: pd.Series, method: str = 'rf', ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>9428</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8211</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: from joblib import Parallel, delayed import multiprocessing HAVE_JOBLIB = True exc...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>214</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8220</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: from tqdm import tqdm HAVE_TQDM = True except ImportError: HAVE_TQDM = False l...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>160</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8228</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: from numba import jit HAVE_NUMBA = True except ImportError: HAVE_NUMBA = False ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>165</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8237</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: from abc import ABC, abstractmethod from dataclasses import dataclass from sklearn....</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>533</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8270</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@dataclass class FeatureSelectionConfig: &quot;&quot;&quot;Configuration management system for feature selectio...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1160</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8306</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FeatureSelectionCache: &quot;&quot;&quot;Intelligent caching for expensive feature selection computations...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1806</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8347</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>_feature_selection_cache = FeatureSelectionCache()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>50</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8351</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def process_large_dataset_chunks(X: pd.DataFrame, y: pd.Series, con...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1865</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8400</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@jit(nopython=True) if HAVE_NUMBA else lambda x: x def vectorized_clip_values(values: np.ndarray, lo...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>277</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8406</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def preprocess_chunk_data(X_chunk: pd.DataFrame) -&gt; pd.DataFrame: &quot;&quot;&quot;Preprocess data chunk with ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1074</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8438</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def parallel_feature_selection_task(method: str, X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1100</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8468</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def enhanced_select_features(X: pd.DataFrame, y: pd.Series, config: Fea...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2345</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8531</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def _execute_feature_selection_method(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1768</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8583</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def _create_regression_selector(method: str, config: FeatureSelectionConfig): &quot;&quot;&quot;Create feature ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3768</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8648</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def _create_classification_selector(method: str, config: FeatureSelectionConfig): &quot;&quot;&quot;Create feat...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>4063</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8715</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def _extract_selected_features(selector, X: pd.DataFrame, n_features: int) -&gt; List[str]: &quot;&quot;&quot;Extr...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>924</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8738</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def _execute_fallback_feature_selection(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1987</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8787</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FinancialFeatureSelectorTransformer(BaseEstimator, TransformerMixin): &quot;&quot;&quot;Sklearn-compatibl...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1727</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8828</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FeatureSelectionStrategy(ABC): &quot;&quot;&quot;Abstract base class for feature selection strategies&quot;&quot;&quot; ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>408</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8842</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class RobustFeatureSelectionStrategy(FeatureSelectionStrategy): &quot;&quot;&quot;Robust feature selection stra...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>5293</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8963</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FastFeatureSelectionStrategy(FeatureSelectionStrategy): &quot;&quot;&quot;Fast feature selection strategy...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>938</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8990</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class FeatureSelectionContext: &quot;&quot;&quot;Context class for feature selection strategy pattern&quot;&quot;&quot; d...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1634</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9030</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class EnhancedFeatureSelectionPipeline: &quot;&quot;&quot;Complete feature selection pipeline with multiple str...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3174</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9114</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def calculate_vif_analysis(X: pd.DataFrame, threshold: float = 10.0) -&gt; pd.DataFrame: &quot;&quot;&quot; Ca...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2503</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9181</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def remove_high_vif_features(X: pd.DataFrame, threshold: float = 10.0, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1493</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9221</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def feature_selection_stability_analysis(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>4877</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9337</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def feature_selection_consistency_scoring(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2360</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9397</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def feature_selection_cv_framework(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>5601</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9531</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def feature_importance_confidence_intervals(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3781</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9626</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def feature_selection_reproducibility_test(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3634</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9713</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def sector_specific_feature_selection(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>5754</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9841</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def time_series_aware_feature_selection(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>5239</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9964</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def correlation_based_feature_clustering(X: pd.DataFrame, c...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>4817</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10087</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def financial_ratio_feature_groups(X: pd.DataFrame) -&gt; Dict[str, List[str]]: &quot;&quot;&quot; Create fina...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3164</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10161</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def economic_interpretability_feature_selection(X: pd.DataFrame, y: pd.Series, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>5498</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10282</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_interactive_feature_importance_plot(feature_names: List[str], ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2661</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10361</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_interactive_correlation_heatmap(correlation_matrix: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2059</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10423</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_interactive_scatter_plot(df: pd.DataFrame, x_col: str...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2469</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10502</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_interactive_time_series_plot(df: pd.DataFrame, ti...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2051</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10569</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_interactive_box_plot(df: pd.DataFrame, category_col: str,...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1251</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10616</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_shap_summary_plot(shap_values, X_data: pd.DataFrame, title: ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1660</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10663</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_partial_dependence_plot(model, X_data: pd.DataFrame, f...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2098</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10724</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_feature_interaction_matrix(correlation_matrix: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1748</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10774</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_ale_plot(model, X_data: pd.DataFrame, feature_name: str, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2804</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10857</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_feature_stability_heatmap(stability_results: Dict[str, Any], ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1902</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10918</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_sector_feature_importance_comparison(sector_selections: Dict[str, List[str]], ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2935</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10997</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_financial_metrics_waterfall_chart(feature_contributions: Dict[str, float], ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2806</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11084</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_risk_return_scatter_with_features(df: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3504</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11181</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_market_cap_feature_bubble_chart(df: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3647</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11278</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_regional_feature_importance_comparison(df: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3061</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11366</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_qq_plots_for_residuals(residuals: np.ndarray, model_nam...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3246</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11462</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_feature_distribution_comparison(X_train: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3712</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11564</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_outlier_detection_visualization(df: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6643</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11747</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_bootstrap_confidence_intervals_plot(confidence_intervals_df: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2379</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11814</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_feature_selection_method_comparison_radar(method_performance: Dict[str, Dict[str, float]]...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2142</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11881</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def prepare_data_for_modeling(df: pd.DataFrame, target_col: str, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>7931</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12059</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: # Check if Financial_Event_Class column exists if 'Financial_Event_Class' not in all_st...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>12602</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12335</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_classification_pipeline(X_train: pd.DataFrame, categor...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2824</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12407</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@performance_profiler_decorator def evaluate_classification_model(model: BaseEstimator, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>27300</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12966</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def tune_classification_model(model: BaseEstimator, param_grid: Dict[s...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1829</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13022</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: # Create preprocessing pipeline categorical_features = ['Sector', 'Industry', 'Exchange...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>36363</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13799</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_sector_classification_data(df): &quot;&quot;&quot; Create sector classification targets and feat...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3658</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13884</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_market_regime_classification(df): &quot;&quot;&quot; Create market regime classification based o...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2667</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13948</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_financial_health_classification(df: pd.DataFrame) -&gt; pd.Series: &quot;&quot;&quot;Create comprehensi...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>7915</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14111</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def safe_create_classifications(all_stocks: pd.DataFrame) -&gt; tuple[ pd.DataFrame, pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6909</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14257</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: all_stocks, X_sector, y_sector, X_regime, y_regime, X_health, y_health = safe_create_classi...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1391</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14296</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: from imblearn.over_sampling import SMOTE, ADASYN from imblearn.ensemble import Balanced...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>9416</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14515</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>fig, axes = plt.subplots(1, 3, figsize=(18, 6))</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>47</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14518</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>y_sector.value_counts().plot(kind='bar', ax=axes[0], color='skyblue')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>69</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14519</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[0].set_title('Sector Classification Distribution')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14520</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[0].set_xlabel('Sector')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>28</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14521</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[0].set_ylabel('Count')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14522</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[0].tick_params(axis='x', rotation=45)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>42</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14525</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>y_regime.value_counts().plot(kind='bar', ax=axes[1], color='lightgreen')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>72</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14526</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[1].set_title('Market Regime Classification Distribution')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>62</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14527</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[1].set_xlabel('Market Regime')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14528</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[1].set_ylabel('Count')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14531</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>y_health.value_counts().plot(kind='bar', ax=axes[2], color='lightcoral')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>72</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14532</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[2].set_title('Financial Health Classification Distribution')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>65</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14533</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[2].set_xlabel('Financial Health')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>38</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14534</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>axes[2].set_ylabel('Count')</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14536</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>plt.tight_layout()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14537</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>save_classification_fig(&quot;multi_class_scenarios_distribution&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>61</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14538</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>plt.show()</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14540</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>logger.info(&quot;Multi-class financial classification scenarios created successfully&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>82</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14549</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>class SectorOptimizedRegressor(BaseEstimator, RegressorMixin): &quot;&quot;&quot; A regressor that trains s...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>4442</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14666</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>@performance_profiler_decorator def evaluate_regression_model(model: BaseEstimator, X_train: pd.Data...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>8100</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14847</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def add_classification_features(X_reg: pd.DataFrame, classification_...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1474</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14886</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: # Create preprocessing pipeline for regression categorical_features_reg = ['Sector', 'C...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>34852</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15688</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if 'all_regression_results' in locals() and all_regression_results: try: print(f&quot;\n{'=' ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>11517</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15942</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if HAVE_FINANCE_PREDICTION: try: print(&quot;=== Enhanced Ensemble Training with ModelTrainin...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>146154</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18905</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if HAVE_TENSORFLOW and 'all_regression_results' in locals() and all_regression_results: print(&quot;=...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6039</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19037</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def ensure_feature_consistency(X_train, X_predict): &quot;&quot;&quot; Ensure that prediction data has the ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2782</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19103</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def identify_valuation_opportunities(df: pd.DataFrame, model: A...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6692</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19235</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_enhanced_valuation_excel_report(valuation_results: pd.DataFrame, ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>11843</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19483</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_valuation_visualizations(df: pd.DataFrame) -&gt; None: &quot;&quot;&quot; Create visualizations for...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>22493</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>20023</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def create_valuation_dashboard(df: pd.DataFrame) -&gt; None: &quot;&quot;&quot; Create a comprehensive valuati...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>27522</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>20608</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: # Get the best regression model best_model = best_regression_model['pipeline'] # I...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>39343</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21405</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def save_model(model: Any, filename: str, model_dir: Path = MODELS_PATH) -&gt; None: &quot;&quot;&quot; Save a...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>741</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21432</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: # Save the best classification model if best_classification_model['pipeline'] is not No...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>642</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21454</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: # Identify the best performing regression model based on results if 'regression_results...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>3766</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21544</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(f&quot;\n{'=' * 100}&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21545</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(f&quot;PHASE 3: DIMENSIONALITY REDUCTION INTEGRATION&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21546</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(f&quot;{'=' * 100}&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21549</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>have_dim_reduction = (HAVE_FINANCE_PREDICTION and AVAILABLE_MODULES.get('dimensionality_reduction', ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>222</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21552</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if have_dim_reduction: try: # Initialize dimensionality reduction pipeline dim_r...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>10394</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21752</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if HAVE_FINANCE_PREDICTION and 'X_class_train' in locals(): try: print(f&quot;\n{'=' * 80}&quot;) ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2611</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21826</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if HAVE_FINANCE_PREDICTION and 'transformed_data' in locals() and transformed_data: try: ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1234</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21861</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>try: if 'regression_results' in locals() and regression_results: print(f&quot;\n{'=' * 100}&quot;)...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>2840</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21940</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;=&quot; * 80)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21941</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;WEEK 1 ENHANCEMENT VALIDATION TEST SUITE&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>49</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21942</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;=&quot; * 80)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21945</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def test_data_quality_validation(): &quot;&quot;&quot;Test enhanced data quality validation functionality&quot;&quot;&quot; ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1406</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21979</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def test_sanitization_monitoring(): &quot;&quot;&quot;Test comprehensive sanitization logging functionality&quot;&quot;&quot; ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1695</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22019</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def test_training_monitoring(): &quot;&quot;&quot;Test enhanced training monitoring functionality&quot;&quot;&quot; print(...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1970</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22069</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>def test_pipeline_validation(): &quot;&quot;&quot;Test early pipeline validation functionality&quot;&quot;&quot; print(&quot;\n...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>1881</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22110</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;\nExecuting Week 1 Enhancement Validation Tests...&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>59</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22111</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;-&quot; * 60)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22113</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>test_results = { 'data_quality_validation': test_data_quality_validation(), 'sanitization_mo...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>253</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22121</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;\n&quot; + &quot;=&quot; * 60)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22122</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;VALIDATION TEST RESULTS SUMMARY&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>40</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22123</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;=&quot; * 60)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22125</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>passed_tests = sum(test_results.values())</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>41</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22126</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>total_tests = len(test_results)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>31</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22127</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>success_rate = (passed_tests / total_tests) * 100</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>49</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22129</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>for test_name, result in test_results.items(): status = &quot;✅ PASSED&quot; if result else &quot;❌ FAILED&quot; ...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>162</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22133</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;-&quot; * 60)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22134</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(f&quot;Overall Success Rate: {passed_tests}/{total_tests} ({success_rate:.1f}%)&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>82</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22136</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>if success_rate &gt;= 75: print(&quot;🎉 Week 1 enhancements validation SUCCESSFUL!&quot;) print(&quot;✅ Ready...</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>240</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22143</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnreachableCodeInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unreachable code</problem_class>
+  <description>This code is unreachable</description>
+  <highlighted_element>print(&quot;=&quot; * 60)</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15</length>
+</problem>
+</problems>

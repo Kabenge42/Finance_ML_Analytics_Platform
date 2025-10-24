@@ -1,0 +1,26 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/requirements.txt</file>
+  <line>2</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/requirements.txt" />
+  <problem_class id="OutdatedRequirementInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Requirement is outdated</problem_class>
+  <description>'numpy' version 1.26.4 is outdated (latest: 2.3.4)</description>
+  <highlighted_element>numpy&gt;=1.24.0,&lt;2.0.0</highlighted_element>
+  <language>Requirements</language>
+  <offset>0</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/requirements.txt</file>
+  <line>16</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/requirements.txt" />
+  <problem_class id="OutdatedRequirementInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Requirement is outdated</problem_class>
+  <description>'xgboost' version 2.1.4 is outdated (latest: 3.1.1)</description>
+  <highlighted_element>xgboost&gt;=2.0.0,&lt;3.0.0</highlighted_element>
+  <language>Requirements</language>
+  <offset>0</offset>
+  <length>21</length>
+</problem>
+</problems>

@@ -1,0 +1,110 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2888</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>values</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2888</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>values</highlighted_element>
+  <language>Python</language>
+  <offset>46</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4341</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>col_max</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4341</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>col_min</highlighted_element>
+  <language>Python</language>
+  <offset>38</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4362</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>col_max</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4362</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>col_min</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11616</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>std_val</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11634</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>std_val</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11643</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPandasTruthValueIsAmbiguousInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The truth value of a DataFrame is ambiguous</problem_class>
+  <description>The truth value of a Series is ambiguous</description>
+  <highlighted_element>std_val</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>7</length>
+</problem>
+</problems>

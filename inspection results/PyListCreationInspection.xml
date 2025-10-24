@@ -1,0 +1,14 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/update_notebook.py</file>
+  <line>67</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/update_notebook.py" />
+  <problem_class id="PyListCreationInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Non-optimal list declaration</problem_class>
+  <description>Multi-step list initialization can be replaced with a list literal</description>
+  <highlighted_element>new_cells = []</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>14</length>
+</problem>
+</problems>

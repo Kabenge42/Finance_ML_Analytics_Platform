@@ -1,0 +1,38 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyInconsistentReturnsInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Inconsistent return statements</problem_class>
+  <description>Missing return statement on some paths</description>
+  <highlighted_element>if html:</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>524</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyInconsistentReturnsInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Inconsistent return statements</problem_class>
+  <description>Missing return statement on some paths</description>
+  <highlighted_element>for idx in range(1, max_length):</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>32</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>892</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="PyInconsistentReturnsInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Inconsistent return statements</problem_class>
+  <description>Missing return statement on some paths</description>
+  <highlighted_element>for metric in trial.final_measurement.metrics:</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>46</length>
+</problem>
+</problems>

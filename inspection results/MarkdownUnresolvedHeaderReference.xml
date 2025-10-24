@@ -1,0 +1,14 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>1105</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="MarkdownUnresolvedHeaderReference" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved header reference</problem_class>
+  <description>Cannot resolve anchor Distributed-Training</description>
+  <highlighted_element>Distributed-Training</highlighted_element>
+  <language>Markdown</language>
+  <offset>55</offset>
+  <length>20</length>
+</problem>
+</problems>

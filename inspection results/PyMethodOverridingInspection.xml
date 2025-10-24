@@ -1,0 +1,14 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8816</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyMethodOverridingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Method signature does not match signature of overridden method</problem_class>
+  <description>Signature of method 'FinancialFeatureSelectorTransformer.fit_transform()' does not match signature of the base method in class 'TransformerMixin'</description>
+  <highlighted_element>(self, X: pd.DataFrame, y: pd.Series = None)</highlighted_element>
+  <language>Python</language>
+  <offset>21</offset>
+  <length>44</length>
+</problem>
+</problems>

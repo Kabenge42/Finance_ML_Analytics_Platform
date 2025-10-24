@@ -1,0 +1,50 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>310</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyTrailingSemicolonInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Prohibited trailing semicolon in a statement</problem_class>
+  <description>Trailing semicolon in the statement</description>
+  <highlighted_element>;</highlighted_element>
+  <language>Python</language>
+  <offset>17</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>312</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyTrailingSemicolonInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Prohibited trailing semicolon in a statement</problem_class>
+  <description>Trailing semicolon in the statement</description>
+  <highlighted_element>;</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>313</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyTrailingSemicolonInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Prohibited trailing semicolon in a statement</problem_class>
+  <description>Trailing semicolon in the statement</description>
+  <highlighted_element>;</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>314</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyTrailingSemicolonInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Prohibited trailing semicolon in a statement</problem_class>
+  <description>Trailing semicolon in the statement</description>
+  <highlighted_element>;</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>1</length>
+</problem>
+</problems>

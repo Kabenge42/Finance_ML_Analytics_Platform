@@ -1,0 +1,2534 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>1309</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str | int | list[Any] | dict[Any, Any]' (matched generic type '_VT'), got 'float' instead</description>
+  <highlighted_element>validation_score</highlighted_element>
+  <language>Python</language>
+  <offset>49</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2874</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'timedelta', got 'int' instead</description>
+  <highlighted_element>2</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2882</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'timedelta', got 'int' instead</description>
+  <highlighted_element>5</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2892</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'timedelta', got 'int' instead</description>
+  <highlighted_element>1</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3923</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (str, int) Possible type(s): (str, str) (str, str) (str, str)</description>
+  <highlighted_element>'total_features_analyzed'</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3928</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (str, int) Possible type(s): (str, str) (str, str) (str, str)</description>
+  <highlighted_element>'selection_methods_used'</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3941</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (str, list[Any]) Possible type(s): (str, str) (str, str) (str, str)</description>
+  <highlighted_element>'key_insights'</highlighted_element>
+  <language>Python</language>
+  <offset>36</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6084</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str', got 'Index[str]' instead</description>
+  <highlighted_element>large_test_data.columns[0]</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6085</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str', got 'Index[str]' instead</description>
+  <highlighted_element>large_test_data.columns[1]</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6086</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str', got 'Index[str]' instead</description>
+  <highlighted_element>large_test_data.columns[2]</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>6087</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str | None', got 'Index[str]' instead</description>
+  <highlighted_element>color_col=large_test_data.columns[3]</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>36</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7938</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Timestamp | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date' (matched generic type 'S1 ≤: str | bytes | date | time | bool | int | float | complex | ExtensionDtype | dtype[generic] | type[str] | type[complex] | type[bool] | type[object] | datetime | timedelta | Period | Interval | CategoricalDtype | BaseOffset | list[str] | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date'), got 'int' instead</description>
+  <highlighted_element>5</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7939</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Timestamp | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date' (matched generic type 'S1 ≤: str | bytes | date | time | bool | int | float | complex | ExtensionDtype | dtype[generic] | type[str] | type[complex] | type[bool] | type[object] | datetime | timedelta | Period | Interval | CategoricalDtype | BaseOffset | list[str] | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date'), got 'int' instead</description>
+  <highlighted_element>3</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7940</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Timestamp | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date' (matched generic type 'S1 ≤: str | bytes | date | time | bool | int | float | complex | ExtensionDtype | dtype[generic] | type[str] | type[complex] | type[bool] | type[object] | datetime | timedelta | Period | Interval | CategoricalDtype | BaseOffset | list[str] | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date'), got 'int' instead</description>
+  <highlighted_element>5</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7941</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Timestamp | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date' (matched generic type 'S1 ≤: str | bytes | date | time | bool | int | float | complex | ExtensionDtype | dtype[generic] | type[str] | type[complex] | type[bool] | type[object] | datetime | timedelta | Period | Interval | CategoricalDtype | BaseOffset | list[str] | ExtensionArray | ndarray | dict[str, ndarray] | SequenceNotStr[Any] | Series[Any] | datetime | timedelta | date'), got 'int' instead</description>
+  <highlighted_element>3</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9265</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'str | bytes | date | datetime | timedelta | datetime64 | timedelta64 | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating' instead</description>
+  <highlighted_element>X_bootstrap</highlighted_element>
+  <language>Python</language>
+  <offset>52</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9571</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (list[float], float) Possible type(s): (LiteralString, LiteralString) (str, str) (Buffer, Buffer) (SupportsIndex, SupportsIndex) (SupportsIndex, SupportsIndex) (int | None, int | None)</description>
+  <highlighted_element>([np.inf, -np.inf], np.nan)</highlighted_element>
+  <language>Python</language>
+  <offset>45</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9616</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (floating[Any]) Possible type(s): (bool) (bool)</description>
+  <highlighted_element>lower_ci</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9799</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_sector[available_preferred]</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>29</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9814</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_sector[remaining_features]</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>28</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9828</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_sector</highlighted_element>
+  <language>Python</language>
+  <offset>50</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9832</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_sector</highlighted_element>
+  <language>Python</language>
+  <offset>46</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9985</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Literal[&quot;pearson&quot;, &quot;kendall&quot;, &quot;spearman&quot;]', got 'str' instead</description>
+  <highlighted_element>method=method</highlighted_element>
+  <language>Python</language>
+  <offset>36</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10312</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int' (matched generic type 'SupportsRichComparisonT ≤: SupportsDunderLT[Any] | SupportsDunderGT[Any]'), got 'float' instead</description>
+  <highlighted_element>len(features) * 0.3</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10465</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Series[Any] | str' (matched generic type '_VT'), got 'dict[str, Series[Any] | str | bool | dict[str, str | None]]' instead</description>
+  <highlighted_element>dict( color=df[color_col], colorscale='Viridis', showscale=True,...</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>153</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10475</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Series[Any] | str' (matched generic type '_VT'), got 'dict[Any, Any]' instead</description>
+  <highlighted_element>{}</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10487</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Series[Any] | str' (matched generic type '_VT'), got 'list[tuple[Any]]' instead</description>
+  <highlighted_element>list(zip(*custom_data))</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11128</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Series[Any] | str' (matched generic type '_VT'), got 'dict[str, Series[Any] | str | bool | dict[str, str | None] | int]' instead</description>
+  <highlighted_element>dict( color=df[color_feature], colorscale='RdYlGn', showscale=Tr...</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>180</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11136</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Series[Any] | str' (matched generic type '_VT'), got 'dict[str, str | int]' instead</description>
+  <highlighted_element>dict(color='blue', size=8)</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11144</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Series[Any] | str' (matched generic type '_VT'), got 'list[tuple[Any]]' instead</description>
+  <highlighted_element>list(zip(*custom_data))</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11434</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Iterable[SupportsRichComparisonT ≤: SupportsDunderLT[Any] | SupportsDunderGT[Any]]', got 'float | floating[_64Bit]' instead</description>
+  <highlighted_element>theoretical_quantiles</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11434</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Iterable[SupportsRichComparisonT ≤: SupportsDunderLT[Any] | SupportsDunderGT[Any]]', got 'float | floating[_64Bit]' instead</description>
+  <highlighted_element>theoretical_quantiles</highlighted_element>
+  <language>Python</language>
+  <offset>55</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12021</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str | tuple[int, int] | int | dict[Any, Any]' (matched generic type '_VT'), got 'float' instead</description>
+  <highlighted_element>round((time.time() - start_time) * 1000, 2)</highlighted_element>
+  <language>Python</language>
+  <offset>51</offset>
+  <length>43</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13035</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_class_train[selected_features_class]</highlighted_element>
+  <language>Python</language>
+  <offset>56</offset>
+  <length>38</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14898</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_reg_train[selected_features_reg]</highlighted_element>
+  <language>Python</language>
+  <offset>54</offset>
+  <length>34</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14907</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_class_train[selected_features_class]</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>38</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14913</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_class_test[selected_features_class]</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>37</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15248</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Tuple index out of range</description>
+  <highlighted_element>1</highlighted_element>
+  <language>Python</language>
+  <offset>64</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15608</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_reg_train[selected_features_reg + ([ 'Sector'...</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>225</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15610</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_reg_test[selected_features_reg + ([ 'Sector'] ...</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>222</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15630</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_reg_train_enhanced[selected_features_reg_enhanced + ([ ...</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>232</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15632</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>X_reg_test_enhanced[selected_features_reg_enhanced + ([ ...</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>229</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16522</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'bool', got 'float' instead</description>
+  <highlighted_element>(1 + self.drift_threshold)</highlighted_element>
+  <language>Python</language>
+  <offset>55</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18274</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (floating[Any]) Possible type(s): (float) (bool)</description>
+  <highlighted_element>np.mean(differences)</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19400</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'tuple[int, Any]' instead</description>
+  <highlighted_element>value</highlighted_element>
+  <language>Python</language>
+  <offset>65</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19400</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'SupportsAbs[_T]', got 'tuple[int, Any]' instead</description>
+  <highlighted_element>value</highlighted_element>
+  <language>Python</language>
+  <offset>84</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19401</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'SupportsAbs[_T]', got 'tuple[int, Any]' instead</description>
+  <highlighted_element>value</highlighted_element>
+  <language>Python</language>
+  <offset>69</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19479</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str', got 'None' instead</description>
+  <highlighted_element>None</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19569</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'str', got 'Series[Any]' instead</description>
+  <highlighted_element>row['Sector']</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19570</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float]', got 'tuple[Series[Any], Series[Any]]' instead</description>
+  <highlighted_element>(row['Market Cap'], row['Predicted_Upside'])</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>44</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>20132</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (tuple[int, Any]) Possible type(s): (LiteralString) (str)</description>
+  <highlighted_element>sector</highlighted_element>
+  <language>Python</language>
+  <offset>51</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>20665</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'DataFrame', got 'Series[Any]' instead</description>
+  <highlighted_element>all_stocks_classified[selected_features_class]</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>46</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21223</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'bool', got 'int' instead</description>
+  <highlighted_element>100</highlighted_element>
+  <language>Python</language>
+  <offset>62</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>22044</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'LinearRegression' doesn't have expected attribute 'named_steps'</description>
+  <highlighted_element>test_model</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.py</file>
+  <line>155</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.py" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (Series[Any], Literal[&quot;ignore&quot;]) Possible type(s): (str | bytes | date | datetime | timedelta | datetime64 | timedelta64 | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating, Literal[&quot;raise&quot;, &quot;coerce&quot;]) (list | tuple | ndarray, Literal[&quot;raise&quot;, &quot;coerce&quot;]) (Series[Any], Literal[&quot;raise&quot;, &quot;coerce&quot;])</description>
+  <highlighted_element>(df[c], errors=&quot;ignore&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>31</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>64</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[23_500, 62_500, 4, 9]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>212</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[min_gdp, max_gdp, min_life_sat, max_life_sat]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>46</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>240</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[min_gdp, max_gdp, min_life_sat, max_life_sat]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>46</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>267</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[min_gdp, max_gdp, min_life_sat, max_life_sat]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>46</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>295</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[min_gdp, max_gdp, min_life_sat, max_life_sat]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>46</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>338</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 115_000, min_life_sat, max_life_sat]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>40</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>361</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 115_000, min_life_sat, max_life_sat]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>40</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>389</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 115_000, min_life_sat, max_life_sat]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>40</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>709</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'dict', got 'str' instead</description>
+  <highlighted_element>simpleimputer__strategy=&quot;median&quot;</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>32</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>967</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-1, 8, 0, 0.2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>973</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-1, 8, 0, 0.2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>980</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 7, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>987</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 7, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1016</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 7, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1022</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-5, 3, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1030</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float | int]' instead</description>
+  <highlighted_element>[0.001, 1000, 0, 0.005]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1037</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-8, 1, 0, 0.2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>134</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (bool) Possible type(s): (Iterable[Any]) (Iterable[_SupportsSumNoDefaultT])</description>
+  <highlighted_element>y_pred == y_test_fold</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>214</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-50000, 50000, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>241</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 1, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>283</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 1, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>323</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 1, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>467</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 2 * size + pad, 0, 2 * size + pad]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>38</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>72</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 2, 0, 15]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>98</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 2, 0, 15]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>159</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 2, 0, 15]</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>218</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 2, 0, 15]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>282</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[2.6, 4.6, 2.3, 3.4]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>299</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-3, 3, 0, 10]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>328</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-3, 3, 0, 10]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>354</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-3, 3, 0, 10]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>378</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 80, 0, 2.5]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>405</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 80, 0, 2.5]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>427</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 3, 0, 3.5]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>457</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 3, 0, 3.5]</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>648</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float]', got 'tuple[signedinteger[Any], float | array.pyi | Any]' instead</description>
+  <highlighted_element>xy=(best_epoch, best_valid_rmse)</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>32</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>649</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float] | None', got 'tuple[signedinteger[Any], float | Any]' instead</description>
+  <highlighted_element>xytext=(best_epoch, best_valid_rmse + 0.5)</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>42</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>659</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, n_epochs, 0, 3.5]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>682</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-lim, lim, -0.1, 1.1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>725</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[floating[Any]]]' instead</description>
+  <highlighted_element>x=decision_boundary</highlighted_element>
+  <language>Python</language>
+  <offset>10</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>727</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[floating[Any]]]' instead</description>
+  <highlighted_element>x=decision_boundary</highlighted_element>
+  <language>Python</language>
+  <offset>10</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>734</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 3, -0.02, 1.02]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>775</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float | int]' instead</description>
+  <highlighted_element>[2.9, 7, 0.8, 2.7]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>820</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float | int]' instead</description>
+  <highlighted_element>[0.5, 7, 0, 3.5]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>1064</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 7, 0, 3.5]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>113</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 5.5, 0, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>122</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 5.5, 0, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>145</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'object' doesn't have expected attributes 'coef_', 'intercept_', 'support_vectors_'</description>
+  <highlighted_element>svm_clf</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>149</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 6, 0, 90]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>155</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'object' doesn't have expected attributes 'coef_', 'intercept_', 'support_vectors_'</description>
+  <highlighted_element>svm_clf_scaled</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>159</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-2, 2, -2, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>189</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float]', got 'tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]' instead</description>
+  <highlighted_element>xy=(X_outliers[0][0], X_outliers[0][1])</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>39</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>194</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 5.5, 0, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>204</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float]', got 'tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]' instead</description>
+  <highlighted_element>xy=(X_outliers[1][0], X_outliers[1][1])</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>39</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>209</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 5.5, 0, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>270</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'LinearSVC' doesn't have expected attribute 'support_vectors_'</description>
+  <highlighted_element>svm_clf1</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>275</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 5.9, 0.8, 2.8]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>281</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'LinearSVC' doesn't have expected attribute 'support_vectors_'</description>
+  <highlighted_element>svm_clf2</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>284</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 5.9, 0.8, 2.8]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>307</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-4.5, 4.5, -0.2, 0.2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>319</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float | int]' instead</description>
+  <highlighted_element>[-4.5, 4.5, -1, 17]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>427</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float]', got 'tuple[ndarray[Any, dtype[floating[Any]]], int]' instead</description>
+  <highlighted_element>xy=(X1D[3, 0], 0)</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>435</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-4.5, 4.5, -0.1, 1.1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>454</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-0.1, 1.1, -0.1, 1.1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>547</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'Pipeline' doesn't have expected attribute '_support'</description>
+  <highlighted_element>svm_reg</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>552</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'Pipeline' doesn't have expected attribute '_support'</description>
+  <highlighted_element>svm_reg2</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>586</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'Pipeline' doesn't have expected attribute '_support'</description>
+  <highlighted_element>svm_poly_reg</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>594</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'Pipeline' doesn't have expected attribute '_support'</description>
+  <highlighted_element>svm_poly_reg2</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>623</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>x1_lim + [-2, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>740</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, svm_clf.n_epochs, 0, 100]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>29</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>761</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 6, 0.8, 2.8]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>771</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 6, 0.8, 2.8]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>795</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'SGDClassifier' doesn't have expected attribute 'support_vectors_'</description>
+  <highlighted_element>sgd_clf</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>799</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 6, 0.8, 2.8]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>859</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'object' doesn't have expected attributes 'coef_', 'intercept_'</description>
+  <highlighted_element>lin_clf</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>860</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'object' doesn't have expected attributes 'coef_', 'intercept_'</description>
+  <highlighted_element>svc_clf</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>861</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'object' doesn't have expected attributes 'coef_', 'intercept_'</description>
+  <highlighted_element>sgd_clf</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>873</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 5.5, 0, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>118</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 7.2, 0, 3]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>226</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>axes</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>274</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-0.5, 0.5, -0.05, 0.25]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>283</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-0.5, 0.5, -0.05, 0.25]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>356</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>axes</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>387</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 7.2, 0, 3]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb</file>
+  <line>73</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 10000, 0.42, 0.58]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb</file>
+  <line>140</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float | int]' instead</description>
+  <highlighted_element>axes</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>180</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float | int]' instead</description>
+  <highlighted_element>axes[:4]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>187</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 14.8, axes[2], axes[3]]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>211</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'Axes' doesn't have expected attributes 'zaxis', 'set_zlabel', 'set_zlim'</description>
+  <highlighted_element>ax</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>219</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 15, axes[2], axes[3]]</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>241</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float | tuple[float, float] | None', got 'list[float | int]' instead</description>
+  <highlighted_element>axes[0:2]</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>242</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float | tuple[float, float] | None', got 'list[float | int]' instead</description>
+  <highlighted_element>axes[2:4]</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>252</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[4, 15, axes[2], axes[3]]</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>288</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[Any]]' instead</description>
+  <highlighted_element>u1[0]</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>288</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[Any]]' instead</description>
+  <highlighted_element>u1[1]</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>290</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[Any]]' instead</description>
+  <highlighted_element>u3[0]</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>290</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[Any]]' instead</description>
+  <highlighted_element>u3[1]</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>292</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[floating[Any]]]' instead</description>
+  <highlighted_element>u1[0] + 0.1</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>292</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[floating[Any]]]' instead</description>
+  <highlighted_element>u1[1] - 0.05</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>293</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[floating[Any]]]' instead</description>
+  <highlighted_element>u3[0] + 0.1</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>293</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[Any]]' instead</description>
+  <highlighted_element>u3[1]</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>296</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-1.4, 1.4, -1.4, 1.4]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>304</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-2, 2, -1, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>312</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-2, 2, -1, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>319</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-2, 2, -1, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>383</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'bool', got 'int' instead</description>
+  <highlighted_element>1</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>400</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 400, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>455</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 5, 0, 5]</highlighted_element>
+  <language>Python</language>
+  <offset>21</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>554</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-0.055, 0.060, -0.070, 0.090]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>30</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>467</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[1, max_k, 0, 100]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>475</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[1, max_k, 0, 4]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>515</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[1, 8.5, 0, 1300]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>523</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Type 'object' doesn't have expected attribute 'predict'</description>
+  <highlighted_element>kmeans_per_k[4 - 1]</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>543</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[1.8, 8.5, 0.55, 0.7]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>579</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Sequence[str]', got 'range' instead</description>
+  <highlighted_element>range(k)</highlighted_element>
+  <language>Python</language>
+  <offset>55</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1154</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[floating[Any]]]' instead</description>
+  <highlighted_element>stds[max_idx]+ 0.01</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1155</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float', got 'ndarray[Any, dtype[floating[Any]]]' instead</description>
+  <highlighted_element>stds[max_idx]+ 0.01</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1160</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[1, 2, 0.08, 0.12]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1164</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'bool', got 'int' instead</description>
+  <highlighted_element>1</highlighted_element>
+  <language>Python</language>
+  <offset>52</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1165</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'bool', got 'int' instead</description>
+  <highlighted_element>1</highlighted_element>
+  <language>Python</language>
+  <offset>66</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1170</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-6, 4, 0, 0.25]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1184</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[1, 2, -2.5, -2.1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1225</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float | Any]' instead</description>
+  <highlighted_element>[1, 9.5, min(aics) - 50, max(aics) + 50]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>40</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>118</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>axes</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>147</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-max_z, max_z, -1.65, 2.4]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>164</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float]' instead</description>
+  <highlighted_element>[-max_z, max_z, -0.2, 1.2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>349</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Unexpected type(s): (list[list[float]], int) Possible type(s): (Buffer | _SupportsArray[dtype[Any]] | _NestedSequence[_SupportsArray[dtype[Any]]] | bool | int | float | complex | str | bytes | _NestedSequence[bool | int | float | complex | str | bytes], None) (Buffer | _SupportsArray[dtype[Any]] | _NestedSequence[_SupportsArray[dtype[Any]]] | bool | int | float | complex | str | bytes | _NestedSequence[bool | int | float | complex | str | bytes], SupportsIndex | None) (Buffer | _SupportsArray[dtype[Any]] | _NestedSequence[_SupportsArray[dtype[Any]]] | bool | int | float | complex | str | bytes | _NestedSequence[bool | int | float | complex | str | bytes], SupportsIndex | None)</description>
+  <highlighted_element>( [[1., 0., 0., 0., 0., 0., 0., 0., 0., 0.], [0., 0., 0., 0., 0., 1., 0., 0., 0., 0.], ...</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>203</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>382</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[float | int]' instead</description>
+  <highlighted_element>[-0.5, 29, 0., 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>970</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[SupportsDunderLT[Any] | SupportsDunderGT[Any] | int | Any]' instead</description>
+  <highlighted_element>[min(expon_lr.rates), max(expon_lr.rates), 0, expon_lr.losses[0]]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>65</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>78</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-5, 5, -0.2, 1.2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>113</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-5, 5, -1, 3.7]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>175</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[-5, 5, -2.2, 3.2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>252</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'float' instead</description>
+  <highlighted_element>beta=1.702</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>267</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'float' instead</description>
+  <highlighted_element>beta</highlighted_element>
+  <language>Python</language>
+  <offset>21</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>274</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-4, 2, -1, 2]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>557</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 9, 0.1, 0.7]</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>596</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float | Any]' instead</description>
+  <highlighted_element>[0, steps.max(), 0, 0.0105]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>632</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float | Any]' instead</description>
+  <highlighted_element>[0, steps.max(), 0, 0.0105]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>728</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float | Any]' instead</description>
+  <highlighted_element>[0, steps.max(), 0, 0.0105]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>752</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'bool', got 'int' instead</description>
+  <highlighted_element>1</highlighted_element>
+  <language>Python</language>
+  <offset>54</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>858</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | Any]' instead</description>
+  <highlighted_element>[min(rates), max(rates), 0, max_loss]</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>37</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>311</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[-4, 4, 0, 4]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>551</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, 1, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>418</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'float | tuple[float, float] | None', got 'list[int]' instead</description>
+  <highlighted_element>[200_000, 800_000]</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>843</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 200, 0, 0.03]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>1116</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'float' instead</description>
+  <highlighted_element>temperature=0.8</highlighted_element>
+  <language>Python</language>
+  <offset>66</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>1119</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'float' instead</description>
+  <highlighted_element>temperature=1.0</highlighted_element>
+  <language>Python</language>
+  <offset>68</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>1122</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'float' instead</description>
+  <highlighted_element>temperature=1.5</highlighted_element>
+  <language>Python</language>
+  <offset>65</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>181</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'float' instead</description>
+  <highlighted_element>temperature=0.01</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>271</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'int', got 'float' instead</description>
+  <highlighted_element>temperature=0.01</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>397</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'Buffer | _SupportsArray[dtype[Any]] | _NestedSequence[_SupportsArray[dtype[Any]]] | bool | int | float | complex | str | bytes | _NestedSequence[bool | int | float | complex | str | bytes]', got 'list[list[str]]' instead</description>
+  <highlighted_element>pairs</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>965</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'collections.Iterable', got 'int' instead</description>
+  <highlighted_element>ordinals</highlighted_element>
+  <language>Python</language>
+  <offset>54</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>442</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int | float]' instead</description>
+  <highlighted_element>[0, 1, 0, 0.95]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>709</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'tuple[float, float, float, float] | bool | str | None', got 'list[int]' instead</description>
+  <highlighted_element>[0, T, 0, 1]</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/tests/test_features.py</file>
+  <line>32</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_features.py" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'SupportsFloat | SupportsIndex', got 'DataFrame' instead</description>
+  <highlighted_element>got.loc[1, 'ev_to_ebitda']</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/tests/test_features.py</file>
+  <line>35</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_features.py" />
+  <problem_class id="PydanticTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Type checker compatible with Pydantic</problem_class>
+  <description>Expected type 'SupportsFloat | SupportsIndex', got 'DataFrame' instead</description>
+  <highlighted_element>got.loc[1, 'net_debt_to_ebitda']</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>32</length>
+</problem>
+</problems>

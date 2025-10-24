@@ -1,0 +1,220 @@
+"""
+Configuration management module for Finance ML Analytics Platform.
+
+This module provides configuration management via YAML/JSON files
+and environment variables, with sensible defaults.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FinanceMLConfig:
+    """Configuration dataclass for Finance ML platform."""
+
+    # Data paths
+    data_dir: Path = field(default_factory=lambda: Path("data"))
+    model_dir: Path = field(default_factory=lambda: Path("models"))
+    cache_dir: Path = field(default_factory=lambda: Path(".cache"))
+    output_dir: Path = field(default_factory=lambda: Path("outputs"))
+
+    # Database configuration
+    db_url: Optional[str] = None
+    db_table: str = "equities"
+
+    # Model configuration
+    model_version: str = "v8_2"
+    random_seed: int = 42
+    n_jobs: int = -1
+
+    # Memory and performance
+    memory_limit: Optional[str] = None
+
+    # Feature engineering
+    feature_engineering_enabled: bool = True
+    target_column: str = "price_target"
+
+    # Logging
+    log_level: str = "INFO"
+    tf_cpp_min_log_level: str = "2"
+
+    def __post_init__(self):
+        """Convert string paths to Path objects."""
+        for attr in ['data_dir', 'model_dir', 'cache_dir', 'output_dir']:
+            value = getattr(self, attr)
+            if isinstance(value, str):
+                setattr(self, attr, Path(value))
+
+    @classmethod
+    def from_env(cls) -> FinanceMLConfig:
+        """Create configuration from environment variables."""
+        return cls(
+            data_dir=Path(os.getenv("DATA_DIR", "data")),
+            model_dir=Path(os.getenv("MODEL_DIR", "models")),
+            cache_dir=Path(os.getenv("CACHE_DIR", ".cache")),
+            output_dir=Path(os.getenv("OUTPUT_DIR", "outputs")),
+            db_url=os.getenv("DB_URL"),
+            db_table=os.getenv("DB_TABLE", "equities"),
+            model_version=os.getenv("MODEL_VERSION", "v8_2"),
+            random_seed=int(os.getenv("RANDOM_SEED", "42")),
+            n_jobs=int(os.getenv("N_JOBS", "-1")),
+            memory_limit=os.getenv("MEMORY_LIMIT"),
+            log_level=os.getenv("LOG_LEVEL", "INFO"),
+            tf_cpp_min_log_level=os.getenv("TF_CPP_MIN_LOG_LEVEL", "2"),
+        )
+
+    @classmethod
+    def from_json(cls, path: Path | str) -> FinanceMLConfig:
+        """Load configuration from JSON file."""
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
+
+        with open(path, 'r') as f:
+            data = json.load(f)
+
+        return cls(**data)
+
+    @classmethod
+    def from_yaml(cls, path: Path | str) -> FinanceMLConfig:
+        """Load configuration from YAML file."""
+        try:
+            import yaml
+        except ImportError:
+            raise ImportError("PyYAML is required for YAML config. Install with: pip install pyyaml")
+
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
+
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+
+        return cls(**data)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary."""
+        result = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, Path):
+                result[key] = str(value)
+            else:
+                result[key] = value
+        return result
+
+    def to_json(self, path: Path | str) -> None:
+        """Save configuration to JSON file."""
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(path, 'w') as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+        logger.info(f"Configuration saved to {path}")
+
+    def to_yaml(self, path: Path | str) -> None:
+        """Save configuration to YAML file."""
+        try:
+            import yaml
+        except ImportError:
+            raise ImportError("PyYAML is required for YAML config. Install with: pip install pyyaml")
+
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(path, 'w') as f:
+            yaml.dump(self.to_dict(), f, default_flow_style=False)
+
+        logger.info(f"Configuration saved to {path}")
+
+    def apply_to_env(self) -> None:
+        """Apply configuration to environment variables."""
+        os.environ["DATA_DIR"] = str(self.data_dir)
+        os.environ["MODEL_DIR"] = str(self.model_dir)
+        os.environ["CACHE_DIR"] = str(self.cache_dir)
+        os.environ["OUTPUT_DIR"] = str(self.output_dir)
+
+        if self.db_url:
+            os.environ["DB_URL"] = self.db_url
+
+        os.environ["DB_TABLE"] = self.db_table
+        os.environ["MODEL_VERSION"] = self.model_version
+        os.environ["RANDOM_SEED"] = str(self.random_seed)
+        os.environ["N_JOBS"] = str(self.n_jobs)
+        os.environ["LOG_LEVEL"] = self.log_level
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = self.tf_cpp_min_log_level
+
+        if self.memory_limit:
+            os.environ["MEMORY_LIMIT"] = self.memory_limit
+
+
+def load_config(
+    config_path: Optional[Path | str] = None,
+    use_env: bool = True
+) -> FinanceMLConfig:
+    """
+    Load configuration from file or environment variables.
+
+    Args:
+        config_path: Path to JSON or YAML config file (optional)
+        use_env: If True, load from environment variables when config_path is None
+
+    Returns:
+        FinanceMLConfig instance
+
+    Examples:
+        >>> # Load from environment variables
+        >>> config = load_config()
+
+        >>> # Load from JSON file
+        >>> config = load_config("config.json")
+
+        >>> # Load from YAML file
+        >>> config = load_config("config.yaml")
+    """
+    if config_path is not None:
+        config_path = Path(config_path)
+
+        if config_path.suffix == '.json':
+            return FinanceMLConfig.from_json(config_path)
+        elif config_path.suffix in ['.yaml', '.yml']:
+            return FinanceMLConfig.from_yaml(config_path)
+        else:
+            raise ValueError(f"Unsupported config format: {config_path.suffix}")
+
+    if use_env:
+        return FinanceMLConfig.from_env()
+
+    return FinanceMLConfig()
+
+
+# Global configuration instance (lazy-loaded)
+_global_config: Optional[FinanceMLConfig] = None
+
+
+def get_config() -> FinanceMLConfig:
+    """Get the global configuration instance."""
+    global _global_config
+    if _global_config is None:
+        _global_config = load_config()
+    return _global_config
+
+
+def set_config(config: FinanceMLConfig) -> None:
+    """Set the global configuration instance."""
+    global _global_config
+    _global_config = config
+
+
+def reset_config() -> None:
+    """Reset the global configuration to None (will be reloaded on next get_config)."""
+    global _global_config
+    _global_config = None

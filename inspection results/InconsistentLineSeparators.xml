@@ -1,0 +1,254 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/.run/Template Python.run.xml</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.run/Template Python.run.xml" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>&lt;component name=&quot;ProjectRunConfigurationManager&quot;&gt; &lt;configuration default=&quot;true&quot; type=&quot;PythonConfig...</highlighted_element>
+  <language>XML</language>
+  <offset>0</offset>
+  <length>1115</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/qodana.yaml</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/qodana.yaml" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#-------------------------------------------------------------------------------# # Qo...</highlighted_element>
+  <language>yaml</language>
+  <offset>0</offset>
+  <length>1776</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/01_the_machine_learning_landscape.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 1 – The Machine Learning landscape** _This notebook contains the code examples in ...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>18754</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 2 – End-to-end Machine Learning project** #%% md *This notebook contains all the sa...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>56466</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 3 – Classification** #%% md _This notebook contains all the sample code and solutio...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>46817</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 4 – Training Models** #%% md _This notebook contains all the sample code and soluti...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>42246</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Support Vector Machines** #%% md _This notebook contains all the sample code and solutions ...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>37979</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 6 – Decision Trees** #%% md _This notebook contains all the sample code and solutio...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>22687</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 7 – Ensemble Learning and Random Forests** #%% md _This notebook contains all the s...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>27409</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 8 – Dimensionality Reduction** #%% md _This notebook contains all the sample code a...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>37518</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 9 – Unsupervised Learning** #%% md _This notebook contains all the sample code and ...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>63560</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 10 – Introduction to Artificial Neural Networks with Keras** #%% md _This notebook ...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>44241</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 11 – Training Deep Neural Networks** #%% md _This notebook contains all the sample ...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>58676</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 12 – Custom Models and Training with TensorFlow** #%% md _This notebook contains al...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>56286</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 13 – Loading and Preprocessing Data with TensorFlow** #%% md _This notebook contain...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>52074</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 14 – Deep Computer Vision Using Convolutional Neural Networks** #%% md _This notebo...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>34759</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 15 – Processing Sequences Using RNNs and CNNs** #%% md _This notebook contains all ...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>55966</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 16 – Natural Language Processing with RNNs and Attention** #%% md _This notebook co...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>61299</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 17 – Autoencoders, GANs, and Diffusion Models** #%% md _This notebook contains all ...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>49377</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 18 – Reinforcement Learning** #%% md _This notebook contains all the sample code an...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>55093</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>1</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="InconsistentLineSeparators" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Inconsistent line separators</problem_class>
+  <description>Line separators in the current file (\n) differ from the project defaults (\r\n)</description>
+  <highlighted_element>#%% md **Chapter 19 – Training and Deploying TensorFlow Models at Scale** #%% md _This notebook cont...</highlighted_element>
+  <language>Jupyter</language>
+  <offset>0</offset>
+  <length>55464</length>
+</problem>
+</problems>

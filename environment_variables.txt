@@ -1,0 +1,43 @@
+# =============================================================================
+# Finance ML Analytics Platform - Environment Configuration
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+# TensorFlow log level: 0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR
+TF_CPP_MIN_LOG_LEVEL=2
+
+# -----------------------------------------------------------------------------
+# Directory Paths
+# -----------------------------------------------------------------------------
+# DATA_DIR=/path/to/data
+# MODEL_DIR=/path/to/saved_models
+# CACHE_DIR=/path/to/cache
+
+# -----------------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------------
+# SQLAlchemy connection URL (required only if --data-source=db)
+# Format: postgresql+psycopg2://user:password@host:port/database
+# DB_URL=postgresql+psycopg2://postgres:password@localhost:5432/postgres
+
+# -----------------------------------------------------------------------------
+# External API Keys
+# -----------------------------------------------------------------------------
+# ALPHA_VANTAGE_API_KEY=your_api_key_here
+# FINANCIAL_API_KEY=your_api_key_here
+
+# -----------------------------------------------------------------------------
+# Model Configuration
+# -----------------------------------------------------------------------------
+# MODEL_VERSION=v8_2
+# RANDOM_SEED=42
+
+# -----------------------------------------------------------------------------
+# Performance Settings
+# -----------------------------------------------------------------------------
+# Number of parallel jobs: -1=all cores, positive integer=specific count
+# N_JOBS=-1
+# Maximum memory allocation for operations
+# MEMORY_LIMIT=8GB

@@ -1,0 +1,326 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>567</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute mean_ defined outside __init__</description>
+  <highlighted_element>self.mean_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>568</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute scale_ defined outside __init__</description>
+  <highlighted_element>self.scale_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>569</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute n_features_in_ defined outside __init__</description>
+  <highlighted_element>self.n_features_in_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>589</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute kmeans_ defined outside __init__</description>
+  <highlighted_element>self.kmeans_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1230</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute estimator_ defined outside __init__</description>
+  <highlighted_element>self.estimator_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1232</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute n_features_in_ defined outside __init__</description>
+  <highlighted_element>self.n_features_in_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1234</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute feature_names_in_ defined outside __init__</description>
+  <highlighted_element>self.feature_names_in_</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1334</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute n_features_in_ defined outside __init__</description>
+  <highlighted_element>self.n_features_in_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1336</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute mean_ defined outside __init__</description>
+  <highlighted_element>self.mean_</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1337</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute scale_ defined outside __init__</description>
+  <highlighted_element>self.scale_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>1064</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute vocabulary_ defined outside __init__</description>
+  <highlighted_element>self.vocabulary_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>703</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute Js defined outside __init__</description>
+  <highlighted_element>self.Js</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>721</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute intercept_ defined outside __init__</description>
+  <highlighted_element>self.intercept_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>722</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute coef_ defined outside __init__</description>
+  <highlighted_element>self.coef_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>724</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute support_vectors_ defined outside __init__</description>
+  <highlighted_element>self.support_vectors_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>823</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute sum_of_epoch_losses defined outside __init__</description>
+  <highlighted_element>self.sum_of_epoch_losses</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>829</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute sum_of_epoch_losses defined outside __init__</description>
+  <highlighted_element>self.sum_of_epoch_losses</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>631</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute kernel defined outside __init__</description>
+  <highlighted_element>self.kernel</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>634</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute bias defined outside __init__</description>
+  <highlighted_element>self.bias</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>793</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute reconstruct defined outside __init__</description>
+  <highlighted_element>self.reconstruct</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1246</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute kernel defined outside __init__</description>
+  <highlighted_element>self.kernel</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1250</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute biases defined outside __init__</description>
+  <highlighted_element>self.biases</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1338</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute alpha defined outside __init__</description>
+  <highlighted_element>self.alpha</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1341</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute beta defined outside __init__</description>
+  <highlighted_element>self.beta</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>600</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute mean_ defined outside __init__</description>
+  <highlighted_element>self.mean_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>601</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute std_ defined outside __init__</description>
+  <highlighted_element>self.std_</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>221</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyAttributeOutsideInitInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">An instance attribute is defined outside `__init__`</problem_class>
+  <description>Instance attribute biases defined outside __init__</description>
+  <highlighted_element>self.biases</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>11</length>
+</problem>
+</problems>

@@ -1,0 +1,14 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
+  <line>202</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
+  <problem_class id="MarkdownUnresolvedFileReference" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved file references</problem_class>
+  <description>Cannot resolve file 'tools_matplotlib.ipynb'</description>
+  <highlighted_element>tools_matplotlib.ipynb</highlighted_element>
+  <language>Markdown</language>
+  <offset>114</offset>
+  <length>22</length>
+</problem>
+</problems>

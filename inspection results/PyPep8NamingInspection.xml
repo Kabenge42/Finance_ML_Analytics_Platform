@@ -1,0 +1,2222 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>501</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>56</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>540</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>610</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>623</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3057</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3116</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>46</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3151</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3221</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>48</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3998</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Class names should use CapWords convention</description>
+  <highlighted_element>VisualizationA_B_TestingFramework</highlighted_element>
+  <language>Python</language>
+  <offset>6</offset>
+  <length>33</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8017</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8314</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8321</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8330</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8351</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8406</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_chunk: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8438</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>49</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8468</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8531</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>38</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8715</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8738</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8795</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8803</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8816</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>28</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8832</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8849</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8857</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8892</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>36</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8969</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9000</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9039</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>44</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9114</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9181</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9221</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9337</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9397</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9531</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>44</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9626</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9713</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>38</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9841</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>9964</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10087</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10161</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>48</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10616</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_data: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10663</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_data: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>10774</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_data: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>27</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11462</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>11463</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_test: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12335</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12409</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12410</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_test: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>12968</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13201</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13244</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13249</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>36</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13281</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13281</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_test</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13532</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14351</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>45</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14574</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14633</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14667</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>52</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14667</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_test: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>75</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14847</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_reg: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14849</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_class: pd.DataFrame</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15069</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: np.ndarray</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15107</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X: np.ndarray</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15181</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15197</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15241</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15269</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15295</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15325</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15495</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>15527</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16165</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16216</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16242</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>51</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16281</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>60</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16382</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16406</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>38</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16460</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16626</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>51</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16685</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16727</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16862</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16938</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>16992</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17123</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17151</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X=None</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17179</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>48</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17199</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>56</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17309</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>50</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17356</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17389</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X=None</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17442</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>48</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17612</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>49</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17658</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17708</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X=None</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17742</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>48</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17911</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>17958</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>53</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18009</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>38</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18046</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18139</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>48</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18295</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>45</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18311</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train</highlighted_element>
+  <language>Python</language>
+  <offset>45</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18311</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_test</highlighted_element>
+  <language>Python</language>
+  <offset>63</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18546</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18613</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>18637</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19037</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train</highlighted_element>
+  <language>Python</language>
+  <offset>31</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>19037</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_predict</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>555</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>47</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>565</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>572</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>588</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>594</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>742</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>17</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1094</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>17</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1228</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1237</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1332</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1341</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1348</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>1016</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>1018</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>1058</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>1067</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
+  <line>530</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>340</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>17</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>515</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>521</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>608</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Function name should be lowercase</description>
+  <highlighted_element>plot_2D_decision_function</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>683</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>C=1</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>694</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>727</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
+  <line>730</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>153</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
+  <line>223</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb</file>
+  <line>126</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb</file>
+  <line>303</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
+  <line>793</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>146</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>185</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>14</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>198</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>308</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>54</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>805</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>890</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1003</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1061</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
+  <line>1511</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>31</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
+  <line>821</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>359</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>837</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>1274</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>1278</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>637</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>664</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>691</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>958</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>17</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1255</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1345</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>594</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>599</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>236</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>431</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>433</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>434</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>469</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>S</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>478</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>S</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>640</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>44</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>640</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>Y</highlighted_element>
+  <language>Python</language>
+  <offset>47</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>641</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>44</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>641</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>Y</highlighted_element>
+  <language>Python</language>
+  <offset>47</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>143</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>265</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>1112</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>Y</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>264</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_train</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>264</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_valid</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>688</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>T</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>721</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>735</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>749</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X_noisy</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>776</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>T</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>761</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="PyPep8NamingInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">PEP 8 naming convention violation</problem_class>
+  <description>Argument name should be lowercase</description>
+  <highlighted_element>X</highlighted_element>
+  <language>Python</language>
+  <offset>38</offset>
+  <length>1</length>
+</problem>
+</problems>

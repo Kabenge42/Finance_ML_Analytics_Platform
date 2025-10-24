@@ -1,0 +1,254 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.py</file>
+  <line>131</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.py" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'None' object is not callable</description>
+  <highlighted_element>create_engine(db_url)</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>519</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'HuberMetric' object is not callable</description>
+  <highlighted_element>m(tf.constant([[2.]]), tf.constant([[10.]]))</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>44</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>524</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'HuberMetric' object is not callable</description>
+  <highlighted_element>m(tf.constant([[0.], [5.]]), tf.constant([[1.], [9.25]]))</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>57</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>674</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'MyMultiLayer' object is not callable</description>
+  <highlighted_element>MyMultiLayer()((inputs1, inputs2))</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>34</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>682</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'MyMultiLayer' object is not callable</description>
+  <highlighted_element>MyMultiLayer()((X1, X2))</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>741</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'ResidualBlock' object is not callable</description>
+  <highlighted_element>self.block1(Z)</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>742</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'ResidualBlock' object is not callable</description>
+  <highlighted_element>self.block2(Z)</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1271</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'hidden1' is not callable</description>
+  <highlighted_element>self.hidden1(input)</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1272</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'hidden2' is not callable</description>
+  <highlighted_element>self.hidden2(hidden1)</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1274</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'output_' is not callable</description>
+  <highlighted_element>self.output_(concat)</highlighted_element>
+  <language>Python</language>
+  <offset>17</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1368</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'LayerNormalization' object is not callable</description>
+  <highlighted_element>custom_layer_norm(X)</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
+  <line>1380</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'LayerNormalization' object is not callable</description>
+  <highlighted_element>custom_layer_norm(X)</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
+  <line>609</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'MyNormalization' object is not callable</description>
+  <highlighted_element>my_norm_layer(X_train)</highlighted_element>
+  <language>Python</language>
+  <offset>17</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>212</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'DepthPool' object is not callable</description>
+  <highlighted_element>DepthPool(pool_size=3)(fmaps)</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>29</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
+  <line>216</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'DepthPool' object is not callable</description>
+  <highlighted_element>DepthPool(pool_size=3)(images)</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>30</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
+  <line>693</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'GatedActivationUnit' object is not callable</description>
+  <highlighted_element>GatedActivationUnit()(z)</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>24</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>622</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'PositionalEncoding' object is not callable</description>
+  <highlighted_element>pos_embed_layer(encoder_embeddings)</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>623</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'PositionalEncoding' object is not callable</description>
+  <highlighted_element>pos_embed_layer(decoder_embeddings)</highlighted_element>
+  <language>Python</language>
+  <offset>13</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>630</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'PositionalEncoding' object is not callable</description>
+  <highlighted_element>pos_emb(zeros)</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>505</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'Sampling' object is not callable</description>
+  <highlighted_element>Sampling()([codings_mean, codings_log_var])</highlighted_element>
+  <language>Python</language>
+  <offset>10</offset>
+  <length>43</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
+  <line>796</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+  <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
+  <description>'TimeEncoding' object is not callable</description>
+  <highlighted_element>TimeEncoding(T, embed_size)(time_input)</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>39</length>
+</problem>
+</problems>

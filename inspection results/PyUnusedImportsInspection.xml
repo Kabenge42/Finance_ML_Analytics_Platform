@@ -1,0 +1,1058 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/__init__.py</file>
+  <line>17</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/__init__.py" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'sys' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>sys</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/__init__.py</file>
+  <line>18</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/__init__.py" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'Path' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>Path</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/__init__.py</file>
+  <line>24</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/__init__.py" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'_core' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>_core</highlighted_element>
+  <language>Python</language>
+  <offset>36</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>25</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import sys&lt;/code&gt;</description>
+  <highlighted_element>import sys</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>26</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import subprocess&lt;/code&gt;</description>
+  <highlighted_element>import subprocess</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>30</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;List&lt;/code&gt;</description>
+  <highlighted_element>List</highlighted_element>
+  <language>Python</language>
+  <offset>19</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>30</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;Tuple&lt;/code&gt;</description>
+  <highlighted_element>Tuple</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>30</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;Union&lt;/code&gt;</description>
+  <highlighted_element>Union</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>30</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;Dict&lt;/code&gt;</description>
+  <highlighted_element>Dict</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>33</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import pandas as pd&lt;/code&gt;</description>
+  <highlighted_element>import pandas as pd</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>35</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import matplotlib.pyplot as plt&lt;/code&gt;</description>
+  <highlighted_element>import matplotlib.pyplot as plt</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>31</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>36</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import seaborn as sns&lt;/code&gt;</description>
+  <highlighted_element>import seaborn as sns</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>39</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.svm import SVR&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.svm import SVR</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>51</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'get_logger' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>get_logger</highlighted_element>
+  <language>Python</language>
+  <offset>49</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>114</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'psutil' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>psutil</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>127</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;Union&lt;/code&gt;</description>
+  <highlighted_element>Union</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>130</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import matplotlib.pyplot as plt&lt;/code&gt;</description>
+  <highlighted_element>import matplotlib.pyplot as plt</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>31</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>221</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'pyo' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>pyo</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>319</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'DataValidationError' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>DataValidationError</highlighted_element>
+  <language>Python</language>
+  <offset>26</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>319</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'ModelTrainingError' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>ModelTrainingError</highlighted_element>
+  <language>Python</language>
+  <offset>47</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>331</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'performance_profiler_decorator' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>performance_profiler_decorator</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>30</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>402</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'FinancialDimensionalityReduction' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>FinancialDimensionalityReduction</highlighted_element>
+  <language>Python</language>
+  <offset>60</offset>
+  <length>32</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>416</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'DimensionalityReductionVisualizer' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>DimensionalityReductionVisualizer</highlighted_element>
+  <language>Python</language>
+  <offset>60</offset>
+  <length>33</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>437</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'ConfigManager' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>ConfigManager</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>437</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'ModelConfig' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>ModelConfig</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>437</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'DataConfig' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>DataConfig</highlighted_element>
+  <language>Python</language>
+  <offset>36</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>437</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'TrainingConfig' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>TrainingConfig</highlighted_element>
+  <language>Python</language>
+  <offset>48</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>451</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'PerformanceReporter' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>PerformanceReporter</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>451</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'ModelReportGenerator' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>ModelReportGenerator</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>462</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'FinancialDataVisualizer' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>FinancialDataVisualizer</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>462</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'ModelPerformanceVisualizer' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>ModelPerformanceVisualizer</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>658</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;Any&lt;/code&gt;</description>
+  <highlighted_element>Any</highlighted_element>
+  <language>Python</language>
+  <offset>31</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>662</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;LabelEncoder&lt;/code&gt;</description>
+  <highlighted_element>LabelEncoder</highlighted_element>
+  <language>Python</language>
+  <offset>49</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>665</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;RandomForestRegressor&lt;/code&gt;</description>
+  <highlighted_element>RandomForestRegressor</highlighted_element>
+  <language>Python</language>
+  <offset>31</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>665</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;RandomForestClassifier&lt;/code&gt;</description>
+  <highlighted_element>RandomForestClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>54</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>665</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;GradientBoostingClassifier&lt;/code&gt;</description>
+  <highlighted_element>GradientBoostingClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>78</offset>
+  <length>26</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>666</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;VotingClassifier&lt;/code&gt;</description>
+  <highlighted_element>VotingClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>666</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;ExtraTreesRegressor&lt;/code&gt;</description>
+  <highlighted_element>ExtraTreesRegressor</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>691</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;Ridge&lt;/code&gt;</description>
+  <highlighted_element>Ridge</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>691</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;HuberRegressor&lt;/code&gt;</description>
+  <highlighted_element>HuberRegressor</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>692</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;SGDRegressor&lt;/code&gt;</description>
+  <highlighted_element>SGDRegressor</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>692</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;SGDClassifier&lt;/code&gt;</description>
+  <highlighted_element>SGDClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>700</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;SVC&lt;/code&gt;</description>
+  <highlighted_element>SVC</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>703</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.base import RegressorMixin&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.base import RegressorMixin</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>39</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>704</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.pipeline import Pipeline&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.pipeline import Pipeline</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>37</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>709</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'BorutaPy' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>BorutaPy</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>721</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'variance_inflation_factor' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>variance_inflation_factor</highlighted_element>
+  <language>Python</language>
+  <offset>53</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>733</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'os' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>os</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>737</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'tf' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>tf</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>744</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'EarlyStopping' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>EarlyStopping</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>744</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'ReduceLROnPlateau' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>ReduceLROnPlateau</highlighted_element>
+  <language>Python</language>
+  <offset>58</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2709</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'mutual_info_regression' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>mutual_info_regression</highlighted_element>
+  <language>Python</language>
+  <offset>50</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>2710</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'combinations' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>combinations</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>3720</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'pyo' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>pyo</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>4628</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'animation' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>animation</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>5783</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'Image' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>Image</highlighted_element>
+  <language>Python</language>
+  <offset>28</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>7067</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'handle_missing_values_knn_first' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>handle_missing_values_knn_first</highlighted_element>
+  <language>Python</language>
+  <offset>53</offset>
+  <length>31</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8212</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'Parallel' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>Parallel</highlighted_element>
+  <language>Python</language>
+  <offset>23</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8212</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'delayed' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>delayed</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8213</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'multiprocessing' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>multiprocessing</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8221</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'tqdm' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>tqdm</highlighted_element>
+  <language>Python</language>
+  <offset>21</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>8229</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'jit' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>jit</highlighted_element>
+  <language>Python</language>
+  <offset>22</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13088</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'CatBoostClassifier' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>CatBoostClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13103</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'VotingClassifier' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>VotingClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13120</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'StackingClassifier' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>StackingClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13121</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'Ridge' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>Ridge</highlighted_element>
+  <language>Python</language>
+  <offset>41</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13140</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'AdaBoostClassifier' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>AdaBoostClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>37</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13141</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'DecisionTreeClassifier' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>DecisionTreeClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13156</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'BalancedRandomForestClassifier' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>BalancedRandomForestClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>38</offset>
+  <length>30</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13156</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'EasyEnsembleClassifier' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>EasyEnsembleClassifier</highlighted_element>
+  <language>Python</language>
+  <offset>70</offset>
+  <length>22</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>13206</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'SMOTE' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>SMOTE</highlighted_element>
+  <language>Python</language>
+  <offset>59</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14297</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'SMOTE' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>SMOTE</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14297</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'ADASYN' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>ADASYN</highlighted_element>
+  <language>Python</language>
+  <offset>46</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14299</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'compute_class_weight' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>compute_class_weight</highlighted_element>
+  <language>Python</language>
+  <offset>43</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14363</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'np' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>np</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>14364</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'pd' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>pd</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>21322</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
+  <description>'StockPredictionReporter' in the try block with 'except ImportError' should also be defined in the except block</description>
+  <highlighted_element>StockPredictionReporter</highlighted_element>
+  <language>Python</language>
+  <offset>53</offset>
+  <length>23</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>559</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.utils.validation import check_array, check_is_fitted&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.utils.validation import check_array, check_is_fitted</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>65</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>580</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.cluster import KMeans&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.cluster import KMeans</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>34</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>659</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import pandas as pd&lt;/code&gt;</description>
+  <highlighted_element>import pandas as pd</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>661</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.pipeline import make_pipeline, Pipeline&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.pipeline import make_pipeline, Pipeline</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>52</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>905</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.experimental import enable_halving_search_cv&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.experimental import enable_halving_search_cv</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>57</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>906</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;from sklearn.model_selection import HalvingRandomSearchCV&lt;/code&gt;</description>
+  <highlighted_element>from sklearn.model_selection import HalvingRandomSearchCV</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>57</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1221</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;clone&lt;/code&gt;</description>
+  <highlighted_element>clone</highlighted_element>
+  <language>Python</language>
+  <offset>45</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>651</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import tarfile&lt;/code&gt;</description>
+  <highlighted_element>import tarfile</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
+  <line>207</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import numpy as np&lt;/code&gt;</description>
+  <highlighted_element>import numpy as np</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>811</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;import argparse&lt;/code&gt;</description>
+  <highlighted_element>import argparse</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/setup_environment.py</file>
+  <line>23</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/setup_environment.py" />
+  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
+  <description>Unused import statement &lt;code&gt;Optional&lt;/code&gt;</description>
+  <highlighted_element>Optional</highlighted_element>
+  <language>Python</language>
+  <offset>32</offset>
+  <length>8</length>
+</problem>
+</problems>
