@@ -319,3 +319,34 @@ Notes on Configuration Consistency
 
 Versioning Reminder
 - When modifying modeling behavior materially, bump MODEL_VERSION (e.g., v8_3) and record changes (features, labels, metrics) in this file and IMPROVEMENT_PLAN.md.
+
+## SQLite Local Setup and Data Load
+
+For quick local testing without PostgreSQL, you can use SQLite.
+
+1) Create the SQLite schema:
+
+- sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
+
+2) Import CSVs into SQLite using the provided CLI SQL script (recommended):
+
+- sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
+
+This import script:
+
+- Uses per‑region staging tables (US, EU, APAC, ROTW)
+- Deletes header rows when imported as data
+- Backfills missing Region values per file
+- Inserts with INSERT OR IGNORE honoring the UNIQUE("Ticker","Region") index
+- Prints a post‑import validation summary
+
+3) Python alternative: chunked importer for very large CSVs:
+
+- python tools/import_sqlite.py --db equities.sqlite --data-dir data --chunksize 2000
+- python tools/import_sqlite.py --db equities.sqlite --regions US,EU
+
+Notes:
+
+- The Python importer uses pandas (already listed in requirements.txt). It reads CSVs with dtype=str, converts empty
+  strings to NULLs, and backfills Region.
+- sqlite3 is included with Python; no extra dependency is required.

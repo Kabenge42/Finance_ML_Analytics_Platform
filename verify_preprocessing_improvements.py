@@ -9,6 +9,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+
 def verify_feature_return_signature():
     """Verify that build_features_and_target returns 4 values"""
     print("=" * 80)
@@ -20,15 +21,17 @@ def verify_feature_return_signature():
         from finance_ml.features import build_features_and_target
 
         # Create test dataframe
-        df = pd.DataFrame({
-            'ticker': ['AAPL', 'MSFT', 'GOOGL'],
-            'sector': ['Technology', 'Technology', 'Technology'],
-            'region': ['US', 'US', 'US'],
-            'last_price': [150.0, 200.0, 100.0],
-            'market_cap': [1e9, 2e9, 1.5e9],
-            'p_e_ntm': [25.0, 30.0, 22.0],
-            'price_target': [160.0, 220.0, 110.0]
-        })
+        df = pd.DataFrame(
+            {
+                "ticker": ["AAPL", "MSFT", "GOOGL"],
+                "sector": ["Technology", "Technology", "Technology"],
+                "region": ["US", "US", "US"],
+                "last_price": [150.0, 200.0, 100.0],
+                "market_cap": [1e9, 2e9, 1.5e9],
+                "p_e_ntm": [25.0, 30.0, 22.0],
+                "price_target": [160.0, 220.0, 110.0],
+            }
+        )
 
         # Call function - should return 4 values
         result = build_features_and_target(df)
@@ -52,6 +55,7 @@ def verify_feature_return_signature():
     except Exception as e:
         print(f"❌ FAIL: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -78,49 +82,56 @@ def verify_preprocessing_pipeline():
         np.random.seed(42)
         n_samples = 100
 
-        sectors = ['Technology', 'Healthcare', 'Finance', 'Energy']
-        regions = ['US', 'EU', 'APAC']
+        sectors = ["Technology", "Healthcare", "Finance", "Energy"]
+        regions = ["US", "EU", "APAC"]
 
-        df = pd.DataFrame({
-            'ticker': [f'STOCK{i:03d}' for i in range(n_samples)],
-            'sector': np.random.choice(sectors, n_samples),
-            'region': np.random.choice(regions, n_samples),
-            'last_price': np.random.uniform(50, 500, n_samples),
-            'market_cap': np.random.lognormal(20, 2, n_samples),
-            'p_e_ntm': np.random.uniform(5, 50, n_samples),
-            'profit_margin': np.random.uniform(-0.1, 0.3, n_samples),
-            'price_target': np.random.uniform(60, 550, n_samples)
-        })
+        df = pd.DataFrame(
+            {
+                "ticker": [f"STOCK{i:03d}" for i in range(n_samples)],
+                "sector": np.random.choice(sectors, n_samples),
+                "region": np.random.choice(regions, n_samples),
+                "last_price": np.random.uniform(50, 500, n_samples),
+                "market_cap": np.random.lognormal(20, 2, n_samples),
+                "p_e_ntm": np.random.uniform(5, 50, n_samples),
+                "profit_margin": np.random.uniform(-0.1, 0.3, n_samples),
+                "price_target": np.random.uniform(60, 550, n_samples),
+            }
+        )
 
         # Build features
         X, y, numeric_features, categorical_features = build_features_and_target(df)
 
         print(f"\n📊 Dataset prepared:")
         print(f"  Total samples: {len(X)}")
-        print(f"  Features: {X.shape[1]} ({len(numeric_features)} numeric, {len(categorical_features)} categorical)")
+        print(
+            f"  Features: {X.shape[1]} ({len(numeric_features)} numeric, {len(categorical_features)} categorical)"
+        )
 
         # Build preprocessing pipeline
         print(f"\n🔧 Building ColumnTransformer with separate transformers...")
 
         preprocessor = ColumnTransformer(
             transformers=[
-                ('numeric', StandardScaler(with_mean=False), numeric_features),
-                ('categorical', OneHotEncoder(handle_unknown='ignore', sparse_output=False),
-                 categorical_features)
+                ("numeric", StandardScaler(with_mean=False), numeric_features),
+                (
+                    "categorical",
+                    OneHotEncoder(handle_unknown="ignore", sparse_output=False),
+                    categorical_features,
+                ),
             ],
-            remainder='drop'
+            remainder="drop",
         )
 
         # Create full pipeline
-        pipeline = Pipeline([
-            ('preprocessor', preprocessor),
-            ('regressor', RandomForestRegressor(n_estimators=50, random_state=42, n_jobs=-1))
-        ])
+        pipeline = Pipeline(
+            [
+                ("preprocessor", preprocessor),
+                ("regressor", RandomForestRegressor(n_estimators=50, random_state=42, n_jobs=-1)),
+            ]
+        )
 
         # Split data
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
         print(f"\n📈 Training pipeline...")
         print(f"  Training samples: {len(X_train)}")
@@ -153,6 +164,7 @@ def verify_preprocessing_pipeline():
     except Exception as e:
         print(f"❌ FAIL: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -169,8 +181,8 @@ def verify_model_functions():
         from finance_ml.models import build_regression_pipeline
 
         # Test build_regression_pipeline
-        numeric_features = ['last_price', 'market_cap', 'p_e_ntm']
-        categorical_features = ['sector', 'region']
+        numeric_features = ["last_price", "market_cap", "p_e_ntm"]
+        categorical_features = ["sector", "region"]
 
         print(f"\n🔧 Testing build_regression_pipeline...")
         print(f"  Numeric features: {numeric_features}")
@@ -182,10 +194,10 @@ def verify_model_functions():
         print(f"  Pipeline steps: {[step[0] for step in pipeline.steps]}")
 
         # Verify preprocessor transformers
-        preprocessor = pipeline.named_steps['preprocessor']
+        preprocessor = pipeline.named_steps["preprocessor"]
         print(f"\n🔍 Preprocessor transformers:")
         for name, transformer, columns in preprocessor.transformers:
-            if name == 'remainder':
+            if name == "remainder":
                 continue
             print(f"  - {name}: {type(transformer).__name__} on {len(columns)} features")
 
@@ -194,6 +206,7 @@ def verify_model_functions():
     except Exception as e:
         print(f"❌ FAIL: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -205,9 +218,9 @@ def main():
     print("=" * 80)
 
     results = {
-        'Feature return signature': verify_feature_return_signature(),
-        'Preprocessing pipeline': verify_preprocessing_pipeline(),
-        'Model functions': verify_model_functions()
+        "Feature return signature": verify_feature_return_signature(),
+        "Preprocessing pipeline": verify_preprocessing_pipeline(),
+        "Model functions": verify_model_functions(),
     }
 
     print("\n" + "=" * 80)
@@ -236,6 +249,6 @@ def main():
     return success_rate == 100
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     success = main()
     sys.exit(0 if success else 1)

@@ -624,3 +624,34 @@ mypy finance_ml --ignore-missing-imports
 - ✅ **CHANGELOG.md**: Track version history
 
 See [CHANGELOG.md](CHANGELOG.md) for complete version history.
+
+## SQLite Local Setup and Data Load
+
+If you prefer a lightweight local database for quick testing, you can use SQLite alongside or instead of PostgreSQL.
+
+1) Create the SQLite schema (from project root):
+
+- sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
+
+2) Import CSVs into SQLite using the CLI script (recommended):
+
+- sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
+
+This script:
+
+- Uses per‑region staging tables
+- Deletes header rows if they are imported as data
+- Backfills missing Region values per file (US/EU/APAC/ROTW)
+- Inserts with INSERT OR IGNORE honoring the UNIQUE("Ticker","Region") index
+- Prints a post‑import validation summary
+
+3) Python alternative: chunked importer (useful for very large CSVs):
+
+- python tools/import_sqlite.py --db equities.sqlite --data-dir data --chunksize 2000
+- python tools/import_sqlite.py --db equities.sqlite --regions US,EU
+
+Notes:
+
+- The Python importer uses pandas to read CSVs with dtype=str to preserve raw values, converts empty strings to NULL,
+  and backfills Region per file.
+- sqlite3 is included with Python; no additional dependency is required for SQLite.

@@ -4,6 +4,7 @@ Configuration management module for Finance ML Analytics Platform.
 This module provides configuration management via YAML/JSON files
 and environment variables, with sensible defaults.
 """
+
 from __future__ import annotations
 
 import json
@@ -49,7 +50,7 @@ class FinanceMLConfig:
 
     def __post_init__(self):
         """Convert string paths to Path objects."""
-        for attr in ['data_dir', 'model_dir', 'cache_dir', 'output_dir']:
+        for attr in ["data_dir", "model_dir", "cache_dir", "output_dir"]:
             value = getattr(self, attr)
             if isinstance(value, str):
                 setattr(self, attr, Path(value))
@@ -80,7 +81,7 @@ class FinanceMLConfig:
         if not path.exists():
             raise FileNotFoundError(f"Config file not found: {path}")
 
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = json.load(f)
 
         return cls(**data)
@@ -91,13 +92,15 @@ class FinanceMLConfig:
         try:
             import yaml
         except ImportError:
-            raise ImportError("PyYAML is required for YAML config. Install with: pip install pyyaml")
+            raise ImportError(
+                "PyYAML is required for YAML config. Install with: pip install pyyaml"
+            )
 
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Config file not found: {path}")
 
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = yaml.safe_load(f)
 
         return cls(**data)
@@ -117,7 +120,7 @@ class FinanceMLConfig:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(self.to_dict(), f, indent=2)
 
         logger.info(f"Configuration saved to {path}")
@@ -127,12 +130,14 @@ class FinanceMLConfig:
         try:
             import yaml
         except ImportError:
-            raise ImportError("PyYAML is required for YAML config. Install with: pip install pyyaml")
+            raise ImportError(
+                "PyYAML is required for YAML config. Install with: pip install pyyaml"
+            )
 
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             yaml.dump(self.to_dict(), f, default_flow_style=False)
 
         logger.info(f"Configuration saved to {path}")
@@ -159,10 +164,7 @@ class FinanceMLConfig:
             os.environ["MEMORY_LIMIT"] = self.memory_limit
 
 
-def load_config(
-    config_path: Optional[Path | str] = None,
-    use_env: bool = True
-) -> FinanceMLConfig:
+def load_config(config_path: Optional[Path | str] = None, use_env: bool = True) -> FinanceMLConfig:
     """
     Load configuration from file or environment variables.
 
@@ -186,9 +188,9 @@ def load_config(
     if config_path is not None:
         config_path = Path(config_path)
 
-        if config_path.suffix == '.json':
+        if config_path.suffix == ".json":
             return FinanceMLConfig.from_json(config_path)
-        elif config_path.suffix in ['.yaml', '.yml']:
+        elif config_path.suffix in [".yaml", ".yml"]:
             return FinanceMLConfig.from_yaml(config_path)
         else:
             raise ValueError(f"Unsupported config format: {config_path.suffix}")

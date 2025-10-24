@@ -36,6 +36,7 @@ Phase 7 Refactoring (TDD):
 This file has been refactored to import all functions from the finance_ml package
 instead of duplicating code. All functionality is now in the modular finance_ml package.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -47,43 +48,16 @@ from finance_ml import (
     # Utilities and data loading
     setup_logging,
     get_env,
-    normalize_columns,
-    infer_region_from_filename,
     load_from_csv,
     load_from_db,
     preprocess,
-    validate_schema,
-    check_missing_values,
-    detect_outliers_iqr,
-    validate_numeric_ranges,
     # Feature engineering
-    engineer_basic_ratios,
-    engineer_margin_features,
-    engineer_volatility_features,
-    engineer_revenue_cagr,
-    build_features_and_target,
     # Modeling
-    create_event_labels,
-    train_event_classifier,
-    build_regression_pipeline,
     train_and_evaluate_regression,
     train_and_evaluate_regression_by_sector,
-    train_quantile_regression,
-    predict_quantile_regression,
-    train_quantile_regression_by_sector,
-    train_stacking_ensemble,
-    train_stacking_ensemble_by_sector,
     # Evaluation and analytics
     simple_eda,
-    calculate_mispricing_score,
-    rank_undervalued_stocks,
-    rank_overvalued_stocks,
-    rank_stocks_by_sector,
-    export_predictions_to_excel,
-    create_sector_heatmap,
-    create_interactive_prediction_plot,
-    create_region_sector_heatmap,
-)
+    )
 
 # Optional imports for DB access (kept optional per guidelines)
 try:
@@ -98,7 +72,9 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description="Finance ML Analytics Platform — main script")
     parser.add_argument("--data-source", choices=["auto", "csv", "db"], default="auto")
-    parser.add_argument("--db-url", default=None, help="SQLAlchemy URL; if not provided, use DB_URL env var")
+    parser.add_argument(
+        "--db-url", default=None, help="SQLAlchemy URL; if not provided, use DB_URL env var"
+    )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--out-dir", default="outputs")
     parser.add_argument("--dry-run", action="store_true")
@@ -121,13 +97,21 @@ def main() -> int:
     if source == "auto":
         source = "db" if (db_url and create_engine is not None) else "csv"
 
-    logging.info("Configuration: source=%s, limit=%s, out_dir=%s, n_jobs=%d, seed=%d", 
-                 source, args.limit, out_dir, n_jobs, random_seed)
+    logging.info(
+        "Configuration: source=%s, limit=%s, out_dir=%s, n_jobs=%d, seed=%d",
+        source,
+        args.limit,
+        out_dir,
+        n_jobs,
+        random_seed,
+    )
 
     # Load data
     if source == "db":
         if not db_url:
-            logging.error("--data-source db requested but DB URL is missing. Provide --db-url or DB_URL env variable.")
+            logging.error(
+                "--data-source db requested but DB URL is missing. Provide --db-url or DB_URL env variable."
+            )
             return 2
         df_raw = load_from_db(db_url, limit=args.limit)
     else:
