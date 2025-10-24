@@ -244,3 +244,78 @@ Appendix: IDE Data Source Settings (for JetBrains tools)
 
 Versioning
 - When modifying modeling behavior materially, bump MODEL_VERSION (e.g., v8_3) and document in this file what changed (features, labels, metrics).
+
+
+
+---
+
+Addendum: Key Features, Main Scripts, CLI, and Testing/Coverage
+
+This addendum supplements the core guidelines with quick-reference details aligned with the README and packaging configuration. It is intended to speed up onboarding and future development.
+
+Key Features (aligns with README)
+
+- 📊 Data Management: Load from PostgreSQL or CSV, with validation and quality checks
+- 🔧 Feature Engineering: Financial ratios, margins, volatility, revenue CAGR, and more
+- 🤖 ML Models: Event classification, sector-optimized regression, quantile models, stacking ensembles
+- 📈 Analytics: Mispricing scores, stock ranking, interactive visualizations
+- ⚙️ Configuration: Flexible config via Anaconda (optional) or venv/pip with environment variables and CLI options;
+  avoid mixing Conda with venv
+- 🧪 Tested: 144+ unit tests with comprehensive coverage
+- 🚀 CLI: Three command-line tools for different workflows (see CLI Tools below)
+
+Finance_ML_Analytics_Platform — Main Scripts
+- ml_finance_model_v8_2.ipynb — Primary notebook for end-to-end workflow and exploration.
+- ml_finance_model_v8_2.py — Lightweight script version with a CLI for batch runs and automation.
+
+CLI Tools (installed via pyproject’s console scripts)
+- finance-ml — Primary pipeline runner (data load, preprocess, features, models, outputs).
+  Example: finance-ml --data-source auto --limit 5000 --out-dir outputs
+- finance-ml-analyze — EDA/analytics-only workflows.
+  Example: finance-ml-analyze --data-source csv --out-dir outputs
+- finance-ml-validate — Validation-only workflows (schema checks, data quality, etc.).
+  Example: finance-ml-validate --data-source csv --out-dir outputs
+Notes:
+- The script ml_finance_model_v8_2.py provides equivalent capabilities via Python directly:
+  - python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+- Data sources: --data-source auto|csv|db as described earlier. Use DB_URL or --db-url for database access.
+
+Testing and Coverage
+- Test runner (unittest):
+  - python -m unittest -v
+- Creating new tests:
+  - Add files under tests/ named test_*.py and use unittest.TestCase.
+  - Keep tests isolated from external services; prefer pure functions and mocks.
+- Coverage (option A: coverage.py):
+  1) pip install coverage
+  2) coverage run -m unittest -v
+  3) coverage report -m
+  4) coverage html  # optional HTML report under htmlcov/
+- Coverage (option B: pytest + pytest-cov):
+  1) pip install pytest pytest-cov
+  2) pytest --cov=finance_ml --cov-report=term-missing
+- Demonstration test included: tests/test_coverage_smoke.py — a minimal smoke test that verifies arithmetic and imports the finance_ml package. Use it as a template for adding more tests and to confirm the coverage commands above work end-to-end.
+
+Documentation and Artifact Update Checklist
+When making significant changes, ensure the following files are updated accordingly (as applicable):
+- environment_variables.txt — Add or adjust env vars; keep TF_CPP_MIN_LOG_LEVEL=2 default.
+- Pipfile — Reflect dependency changes for Pipenv users.
+- requirements.txt — Keep constraints aligned with pyproject.toml; consider optional extras.
+- README.md — Key Features, setup, CLI usage, examples, and links.
+- ml_finance_model_v8_2.ipynb — Ensure cells align with the current pipeline functions and APIs.
+- ml_finance_model_v8_2.py — Keep CLI options and defaults in sync with package functions.
+- IMPROVEMENT_PLAN.md — Log changes to features/labels/metrics; note version bumps.
+- pyproject.toml — Update version, console scripts, optional dependencies, and tooling configs.
+- qodana.yaml — Static analysis and quality gates configuration.
+- import_equities_data.sql — Data loading procedure updates (staging, NULL handling, validation steps).
+- create_equities_schema.sql — Schema changes; ensure quoted identifiers and ownership.
+- .aiassistant/rules/promt_rules.md — Assistant and prompt rules if the dev workflow changes.
+- LICENSE — Copyright years and ownership.
+
+Notes on Configuration Consistency
+- Prefer environment variables and CLI flags for configuration in code and notebooks.
+- Avoid hard-coded paths; use pathlib.Path and env vars (DATA_DIR, MODEL_DIR, OUTPUT_DIR, etc.).
+- Keep the notebook and script aligned with the finance_ml package APIs to reduce duplication.
+
+Versioning Reminder
+- When modifying modeling behavior materially, bump MODEL_VERSION (e.g., v8_3) and record changes (features, labels, metrics) in this file and IMPROVEMENT_PLAN.md.

@@ -10,6 +10,9 @@ Modules:
 - finance_ml.eval: Analytics, visualizations, and reporting
 - finance_ml.config: Configuration management
 - finance_ml.cli: Command-line interface
+- finance_ml.risk_metrics: Risk metrics and portfolio risk analysis
+- finance_ml.logging_config: Logging configuration and file handlers
+- finance_ml.portfolio_optimization: Modern Portfolio Theory and optimization
 """
 
 __version__ = "0.3.0"
@@ -75,6 +78,41 @@ from finance_ml.config import (
     reset_config,
 )
 
+# Import risk metrics module (TDD implementation)
+from finance_ml.risk_metrics import (
+    calculate_var_historical,
+    calculate_var_parametric,
+    calculate_cvar,
+    calculate_sharpe_ratio,
+    calculate_sortino_ratio,
+    calculate_max_drawdown,
+    calculate_portfolio_risk_metrics,
+)
+
+# Import logging configuration module (TDD implementation)
+from finance_ml.logging_config import (
+    setup_file_logging,
+    configure_logging,
+    get_logger,
+    add_file_handler,
+    remove_file_handlers,
+    get_log_level,
+    set_log_level,
+)
+
+# Import portfolio optimization module (TDD implementation)
+from finance_ml.portfolio_optimization import (
+    calculate_portfolio_return,
+    calculate_portfolio_volatility,
+    calculate_portfolio_sharpe_ratio,
+    validate_weights,
+    generate_efficient_frontier,
+    optimize_portfolio_max_sharpe,
+    optimize_portfolio_min_volatility,
+    optimize_portfolio_target_return,
+    rebalance_portfolio,
+)
+
 __all__ = [
     # Version
     '__version__',
@@ -124,4 +162,30 @@ __all__ = [
     'create_sector_heatmap',
     'create_interactive_prediction_plot',
     'create_region_sector_heatmap',
+    # Risk metrics module
+    'calculate_var_historical',
+    'calculate_var_parametric',
+    'calculate_cvar',
+    'calculate_sharpe_ratio',
+    'calculate_sortino_ratio',
+    'calculate_max_drawdown',
+    'calculate_portfolio_risk_metrics',
+    # Logging configuration module
+    'setup_file_logging',
+    'configure_logging',
+    'get_logger',
+    'add_file_handler',
+    'remove_file_handlers',
+    'get_log_level',
+    'set_log_level',
+    # Portfolio optimization module
+    'calculate_portfolio_return',
+    'calculate_portfolio_volatility',
+    'calculate_portfolio_sharpe_ratio',
+    'validate_weights',
+    'generate_efficient_frontier',
+    'optimize_portfolio_max_sharpe',
+    'optimize_portfolio_min_volatility',
+    'optimize_portfolio_target_return',
+    'rebalance_portfolio',
 ]

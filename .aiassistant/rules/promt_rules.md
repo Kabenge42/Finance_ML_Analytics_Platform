@@ -547,9 +547,9 @@ config.apply_to_env()
 
 ## License
 
-**Status**: MIT License indicated in README badge, but LICENSE file status unclear from inspection.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-**TODO**: Verify LICENSE file exists and matches badge claim. If missing, add LICENSE file to repository root.
+Copyright (c) 2025 Finance ML Analytics Platform Contributors
 
 
 ## Development Guidelines
@@ -599,18 +599,13 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 - **Permission denied errors**: Use `\copy` (client-side) instead of `COPY` (server-side)
 
 
-## TODOs and Unknown Items
-
-### High Priority
-- [ ] Verify LICENSE file exists and matches MIT badge claim in README
-- [ ] Document purpose and usage of `refactor_notebook.py`
-- [ ] Document purpose and usage of `update_notebook_imports.py`
-- [ ] Consider adding console_scripts entry point in setup.cfg/pyproject.toml for easier CLI access (may already be done)
+## TODOs and Open Items
 
 ### Documentation
-- [ ] Document CI/CD workflow in `.github/workflows/tests.yml` (mentioned but not inspected)
-- [ ] Document coverage reporting setup (`.coverage` file exists but tooling unclear)
-- [ ] Clarify relationship between `ml_finance_model_v8_2.py` (legacy) and new CLI tools
+- [ ] Document purpose and usage of `refactor_notebook.py`
+- [ ] Document purpose and usage of `update_notebook_imports.py`
+- [ ] Create detailed `CONTRIBUTING.md` file with comprehensive contribution guidelines
+- [ ] Update GitHub username/organization in badge URLs in README.md
 
 ### Nice to Have
 - [ ] Document recommended IDE setup (DataGrip/PyCharm configuration)

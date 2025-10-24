@@ -1,0 +1,4 @@
+[console_scripts]
+finance-ml = finance_ml.cli:main
+finance-ml-analyze = finance_ml.cli:analyze_main
+finance-ml-validate = finance_ml.cli:validate_main

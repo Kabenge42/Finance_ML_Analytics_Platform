@@ -693,6 +693,15 @@ This section tracks the phased development roadmap that brought the Finance ML A
 
 ### Completed Milestones (2025-10-24)
 
+**Session 5 — Portfolio Optimization Implementation (TDD):**
+- Portfolio optimization module: 0% → 89% coverage
+- Created `finance_ml/portfolio_optimization.py` with Modern Portfolio Theory implementation
+- Created `tests/test_portfolio_optimization.py` with 30 comprehensive test cases
+- Implemented 9 functions: portfolio metrics, efficient frontier, optimization algorithms, rebalancing
+- Total tests: 267 → 297
+- All tests passing (1 skipped)
+- Module fully integrated into finance_ml package
+
 **Session 4 — TDD Coverage Improvement:**
 - CLI module testing: 0% → 98% coverage
 - Created `tests/test_cli.py` with 27 comprehensive test cases
@@ -738,8 +747,8 @@ The Finance ML Analytics Platform is now a production-ready Python package with:
 
 #### Features
 - [ ] Add time-series analysis for temporal patterns
-- [ ] Implement portfolio optimization algorithms
-- [ ] Add risk metrics (VaR, CVaR, Sharpe ratio)
+- [x] Implement portfolio optimization algorithms (✓ Session 5 - TDD)
+- [x] Add risk metrics (VaR, CVaR, Sharpe ratio) (✓ Session 4 - TDD)
 - [ ] Create dashboard for real-time monitoring (Streamlit/Dash)
 - [ ] Add support for alternative data sources (APIs)
 
@@ -764,28 +773,38 @@ The Finance ML Analytics Platform is now a production-ready Python package with:
 
 ## License
 
-**Status**: TODO — License file needs to be created
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-- **Declared license**: MIT (specified in `pyproject.toml`)
-- **License file**: Not present in repository
-- **Action required**: Add `LICENSE` file to repository root with MIT license text
+**Copyright**: (c) 2025 Finance ML Analytics Platform Contributors
 
-Until a LICENSE file is provided, assume all rights reserved.
-
-**To add MIT license:**
-1. Create `LICENSE` file in project root
-2. Copy MIT license text (https://opensource.org/licenses/MIT)
-3. Update copyright holder and year
+**License Details**:
+- Type: MIT License
+- File: `LICENSE` (in repository root)
+- Also declared in: `pyproject.toml`, `README.md`
 
 ---
 
 ## Contributing
 
-TODO: Add `CONTRIBUTING.md` with guidelines for:
-- Code style (black, isort, flake8)
-- Testing requirements
-- Pull request process
-- Issue reporting
+Contributions are welcome! This project follows standard open-source contribution practices.
+
+### Current Contribution Guidelines
+
+See README.md for current contribution guidelines including:
+- How to contribute workflow (fork, branch, PR)
+- Code style requirements (PEP 8, black, isort, type hints)
+- Testing requirements (unit tests, coverage maintenance)
+- Code quality checks (black, flake8, mypy, isort)
+
+### TODO
+
+**Action Required**: Create detailed `CONTRIBUTING.md` file with comprehensive guidelines for:
+- Detailed development workflow
+- Testing requirements and best practices
+- Pull request process and templates
+- Issue reporting templates
+- Code of conduct
+- Review process and timelines
 
 ---
 

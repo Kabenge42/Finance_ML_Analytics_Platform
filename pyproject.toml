@@ -76,10 +76,10 @@ finance-ml-analyze = "finance_ml.cli:analyze_main"
 finance-ml-validate = "finance_ml.cli:validate_main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/Finance_ML_Analytics_Platform"
-Documentation = "https://github.com/yourusername/Finance_ML_Analytics_Platform/blob/main/README.md"
-Repository = "https://github.com/yourusername/Finance_ML_Analytics_Platform"
-Issues = "https://github.com/yourusername/Finance_ML_Analytics_Platform/issues"
+Homepage = "https://github.com/Kabenge42/Finance_ML_Analytics_Platform"
+Documentation = "https://github.com/Kabenge42/Finance_ML_Analytics_Platform/blob/main/README.md"
+Repository = "https://github.com/Kabenge42/Finance_ML_Analytics_Platform"
+Issues = "https://github.com/Kabenge42/Finance_ML_Analytics_Platform/issues"
 
 [tool.setuptools]
 packages = ["finance_ml"]

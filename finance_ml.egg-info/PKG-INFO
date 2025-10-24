@@ -1,3 +1,62 @@
+Metadata-Version: 2.1
+Name: finance-ml
+Version: 0.3.0
+Summary: A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions
+Author: Finance ML Team
+License: MIT
+Project-URL: Homepage, https://github.com/Kabenge42/Finance_ML_Analytics_Platform
+Project-URL: Documentation, https://github.com/Kabenge42/Finance_ML_Analytics_Platform/blob/main/README.md
+Project-URL: Repository, https://github.com/Kabenge42/Finance_ML_Analytics_Platform
+Project-URL: Issues, https://github.com/Kabenge42/Finance_ML_Analytics_Platform/issues
+Keywords: finance,machine-learning,analytics,equity-screening,feature-engineering
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Financial and Insurance Industry
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Office/Business :: Financial :: Investment
+Requires-Python: <3.12,>=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy<2.0.0,>=1.24.0
+Requires-Dist: pandas<3.0.0,>=2.0.0
+Requires-Dist: scipy<2.0.0,>=1.10.0
+Requires-Dist: statsmodels<1.0.0,>=0.14.0
+Requires-Dist: scikit-learn<2.0.0,>=1.3.0
+Requires-Dist: imbalanced-learn<1.0.0,>=0.11.0
+Requires-Dist: xgboost<3.0.0,>=2.0.0
+Requires-Dist: lightgbm<5.0.0,>=4.0.0
+Requires-Dist: catboost<2.0.0,>=1.2.0
+Requires-Dist: shap<1.0.0,>=0.42.0
+Requires-Dist: matplotlib<4.0.0,>=3.7.0
+Requires-Dist: seaborn<1.0.0,>=0.12.0
+Requires-Dist: plotly<6.0.0,>=5.14.0
+Requires-Dist: tqdm<5.0.0,>=4.65.0
+Requires-Dist: joblib<2.0.0,>=1.3.0
+Requires-Dist: xlsxwriter<4.0.0,>=3.1.0
+Requires-Dist: psutil<6.0.0,>=5.9.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: mypy>=1.5.0; extra == "dev"
+Requires-Dist: isort>=5.12.0; extra == "dev"
+Provides-Extra: tensorflow
+Requires-Dist: tensorflow<3.0.0,>=2.13.0; extra == "tensorflow"
+Requires-Dist: scikeras<1.0.0,>=0.12.0; extra == "tensorflow"
+Provides-Extra: database
+Requires-Dist: psycopg2-binary>=2.9.0; extra == "database"
+Requires-Dist: SQLAlchemy>=2.0.0; extra == "database"
+Provides-Extra: advanced-features
+Requires-Dist: boruta>=0.3.0; extra == "advanced-features"
+Requires-Dist: numba<1.0.0,>=0.57.0; extra == "advanced-features"
+Provides-Extra: all
+Requires-Dist: finance-ml[advanced-features,database,dev,tensorflow]; extra == "all"
+
 # Finance ML Analytics Platform
 
 **Version 0.3.0** — A professional, modular Python package for equity screening, feature engineering, and machine learning models across global regions.
