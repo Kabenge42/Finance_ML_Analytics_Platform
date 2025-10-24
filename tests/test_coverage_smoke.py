@@ -2,6 +2,7 @@
 Simple smoke test to demonstrate how to run the test suite and collect coverage.
 This test is intentionally trivial and has no external dependencies.
 """
+
 import unittest
 
 

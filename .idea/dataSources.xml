@@ -13,5 +13,90 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="project_filebrowser" uuid="399c46e4-0983-4232-8524-c48fb65a966f">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/anaconda_projects/db/project_filebrowser.db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <libraries>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/com/github/waffle/waffle-jna/1.9.1/waffle-jna-1.9.1.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/net/java/dev/jna/jna/4.5.1/jna-4.5.1.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/net/java/dev/jna/jna-platform/4.5.1/jna-platform-4.5.1.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/slf4j/jcl-over-slf4j/1.7.25/jcl-over-slf4j-1.7.25.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/com/github/ben-manes/caffeine/caffeine/2.6.2/caffeine-2.6.2.jar</url>
+        </library>
+      </libraries>
+    </data-source>
+    <data-source source="LOCAL" name="all_stocks driver - identifier.sqlite" uuid="4c7d7116-531f-4a9b-b60a-b5d604105661">
+      <driver-ref>b3b86024-160d-428e-9350-cb3540b5691c</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/identifier.sqlite</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name=".coverage" uuid="139ad83c-6e5f-4306-8f33-efb2f8190032">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/.coverage</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <libraries>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/sqlite-jdbc-3.45.1.0.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar</url>
+        </library>
+        <library>
+          <url>file://$USER_HOME$/AppData/Local/JetBrains/PyCharm2025.2/jdbc-native-deps/JetBrains SQL Server/1.0.0/jb_sql_driver_13_01_2025/JbMsDriver/Frontend/jetbrains-mssql-jdbc-1.0.0.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/com/github/waffle/waffle-jna/1.9.1/waffle-jna-1.9.1.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/net/java/dev/jna/jna/4.5.1/jna-4.5.1.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/net/java/dev/jna/jna-platform/4.5.1/jna-platform-4.5.1.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/slf4j/jcl-over-slf4j/1.7.25/jcl-over-slf4j-1.7.25.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/PostgreSQL/42.7.3/com/github/ben-manes/caffeine/caffeine/2.6.2/caffeine-2.6.2.jar</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Databricks/2.7.1/com/databricks/databricks-jdbc/2.7.1/databricks-jdbc-2.7.1.jar</url>
+        </library>
+      </libraries>
+    </data-source>
   </component>
 </project>

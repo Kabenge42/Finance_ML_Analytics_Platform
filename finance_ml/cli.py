@@ -6,6 +6,7 @@ Provides console_scripts entry points for:
 - finance-ml-analyze: Quick data analysis
 - finance-ml-validate: Data validation
 """
+
 from __future__ import annotations
 
 import argparse
@@ -50,14 +51,20 @@ Examples:
 
   # Use config file
   finance-ml --config config.json
-        """
+        """,
     )
 
     # Configuration options
     parser.add_argument("--config", type=str, help="Path to JSON/YAML config file")
-    parser.add_argument("--data-source", choices=["auto", "csv", "db"], default="auto",
-                        help="Data source: auto (try db then csv), csv, or db")
-    parser.add_argument("--db-url", help="Database URL (e.g., postgresql+psycopg2://user:pass@host:5432/postgres)")
+    parser.add_argument(
+        "--data-source",
+        choices=["auto", "csv", "db"],
+        default="auto",
+        help="Data source: auto (try db then csv), csv, or db",
+    )
+    parser.add_argument(
+        "--db-url", help="Database URL (e.g., postgresql+psycopg2://user:pass@host:5432/postgres)"
+    )
     parser.add_argument("--data-dir", type=str, help="Directory containing CSV files")
     parser.add_argument("--output-dir", type=str, help="Output directory for artifacts")
 
@@ -65,19 +72,25 @@ Examples:
     parser.add_argument("--limit", type=int, help="Limit number of rows to process")
 
     # Execution options
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Run pipeline without training models")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Run pipeline without training models"
+    )
     parser.add_argument("--skip-eda", action="store_true", help="Skip EDA step")
-    parser.add_argument("--skip-sector-models", action="store_true",
-                        help="Skip per-sector model training")
+    parser.add_argument(
+        "--skip-sector-models", action="store_true", help="Skip per-sector model training"
+    )
 
     # Performance options
     parser.add_argument("--n-jobs", type=int, help="Number of parallel jobs (-1 for all cores)")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
 
     # Logging
-    parser.add_argument("--log-level", choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-                        default="INFO", help="Logging level")
+    parser.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="INFO",
+        help="Logging level",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
@@ -112,8 +125,10 @@ Examples:
     # Create output directory
     config.output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"Configuration: source={args.data_source}, limit={args.limit}, "
-                f"out_dir={config.output_dir}, n_jobs={config.n_jobs}, seed={config.random_seed}")
+    logger.info(
+        f"Configuration: source={args.data_source}, limit={args.limit}, "
+        f"out_dir={config.output_dir}, n_jobs={config.n_jobs}, seed={config.random_seed}"
+    )
 
     try:
         # Load data
@@ -158,13 +173,14 @@ def analyze_main() -> int:
         description="Finance ML Quick Analysis — Fast EDA and data profiling"
     )
 
-    parser.add_argument("--data-source", choices=["csv", "db"], default="csv",
-                        help="Data source: csv or db")
+    parser.add_argument(
+        "--data-source", choices=["csv", "db"], default="csv", help="Data source: csv or db"
+    )
     parser.add_argument("--db-url", help="Database URL")
-    parser.add_argument("--data-dir", type=str, default="data",
-                        help="Directory containing CSV files")
-    parser.add_argument("--output-dir", type=str, default="outputs",
-                        help="Output directory")
+    parser.add_argument(
+        "--data-dir", type=str, default="data", help="Directory containing CSV files"
+    )
+    parser.add_argument("--output-dir", type=str, default="outputs", help="Output directory")
     parser.add_argument("--limit", type=int, help="Limit rows")
     parser.add_argument("-v", "--verbose", action="store_true")
 
@@ -209,11 +225,13 @@ def validate_main() -> int:
         description="Finance ML Data Validator — Validate data quality"
     )
 
-    parser.add_argument("--data-source", choices=["csv", "db"], default="csv",
-                        help="Data source: csv or db")
+    parser.add_argument(
+        "--data-source", choices=["csv", "db"], default="csv", help="Data source: csv or db"
+    )
     parser.add_argument("--db-url", help="Database URL")
-    parser.add_argument("--data-dir", type=str, default="data",
-                        help="Directory containing CSV files")
+    parser.add_argument(
+        "--data-dir", type=str, default="data", help="Directory containing CSV files"
+    )
     parser.add_argument("--limit", type=int, help="Limit rows")
     parser.add_argument("-v", "--verbose", action="store_true")
 
@@ -236,7 +254,7 @@ def validate_main() -> int:
         logger.info(f"Loaded {len(df)} rows")
 
         # Validate schema
-        required_cols = ['ticker', 'sector', 'last_price']
+        required_cols = ["ticker", "sector", "last_price"]
         is_valid = validate_schema(df, required_cols)
 
         if is_valid:
@@ -268,6 +286,7 @@ def _load_data(source: str, config: FinanceMLConfig, limit: Optional[int] = None
     if source == "auto":
         try:
             from sqlalchemy import create_engine
+
             has_sqlalchemy = True
         except ImportError:
             has_sqlalchemy = False

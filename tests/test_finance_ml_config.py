@@ -3,6 +3,7 @@ Tests for finance_ml.config module.
 
 Following strict TDD methodology to achieve ≥80% coverage.
 """
+
 import json
 import os
 import tempfile
@@ -16,7 +17,7 @@ from finance_ml.config import (
     get_config,
     set_config,
     reset_config,
-)
+    )
 
 
 class TestFinanceMLConfig(unittest.TestCase):
@@ -25,7 +26,7 @@ class TestFinanceMLConfig(unittest.TestCase):
     def test_default_config_creation(self):
         """Should create config with default values."""
         config = FinanceMLConfig()
-        
+
         self.assertIsInstance(config.data_dir, Path)
         self.assertEqual(config.data_dir, Path("data"))
         self.assertIsInstance(config.model_dir, Path)
@@ -34,7 +35,7 @@ class TestFinanceMLConfig(unittest.TestCase):
         self.assertEqual(config.cache_dir, Path(".cache"))
         self.assertIsInstance(config.output_dir, Path)
         self.assertEqual(config.output_dir, Path("outputs"))
-        
+
         self.assertIsNone(config.db_url)
         self.assertEqual(config.db_table, "equities")
         self.assertEqual(config.model_version, "v8_2")
@@ -44,12 +45,9 @@ class TestFinanceMLConfig(unittest.TestCase):
     def test_post_init_converts_string_paths(self):
         """Should convert string paths to Path objects in __post_init__."""
         config = FinanceMLConfig(
-            data_dir="my_data",
-            model_dir="my_models",
-            cache_dir="my_cache",
-            output_dir="my_outputs"
+            data_dir="my_data", model_dir="my_models", cache_dir="my_cache", output_dir="my_outputs"
         )
-        
+
         self.assertIsInstance(config.data_dir, Path)
         self.assertEqual(config.data_dir, Path("my_data"))
         self.assertIsInstance(config.model_dir, Path)
@@ -65,9 +63,9 @@ class TestFinanceMLConfig(unittest.TestCase):
             db_url="postgresql://localhost:5432/testdb",
             model_version="v9_0",
             random_seed=123,
-            n_jobs=4
+            n_jobs=4,
         )
-        
+
         self.assertEqual(config.db_url, "postgresql://localhost:5432/testdb")
         self.assertEqual(config.model_version, "v9_0")
         self.assertEqual(config.random_seed, 123)
@@ -89,12 +87,20 @@ class TestConfigFromEnv(unittest.TestCase):
     def test_from_env_with_defaults(self):
         """Should use default values when env vars not set."""
         # Clear relevant env vars
-        for key in ["DATA_DIR", "MODEL_DIR", "CACHE_DIR", "OUTPUT_DIR", 
-                    "DB_URL", "MODEL_VERSION", "RANDOM_SEED", "N_JOBS"]:
+        for key in [
+            "DATA_DIR",
+            "MODEL_DIR",
+            "CACHE_DIR",
+            "OUTPUT_DIR",
+            "DB_URL",
+            "MODEL_VERSION",
+            "RANDOM_SEED",
+            "N_JOBS",
+        ]:
             os.environ.pop(key, None)
-        
+
         config = FinanceMLConfig.from_env()
-        
+
         self.assertEqual(config.data_dir, Path("data"))
         self.assertEqual(config.model_dir, Path("models"))
         self.assertEqual(config.cache_dir, Path(".cache"))
@@ -114,9 +120,9 @@ class TestConfigFromEnv(unittest.TestCase):
         os.environ["RANDOM_SEED"] = "999"
         os.environ["N_JOBS"] = "8"
         os.environ["MEMORY_LIMIT"] = "4GB"
-        
+
         config = FinanceMLConfig.from_env()
-        
+
         self.assertEqual(config.data_dir, Path("test_data"))
         self.assertEqual(config.model_dir, Path("test_models"))
         self.assertEqual(config.cache_dir, Path("test_cache"))
@@ -133,14 +139,10 @@ class TestConfigToDict(unittest.TestCase):
 
     def test_to_dict_converts_paths_to_strings(self):
         """Should convert Path objects to strings in dictionary."""
-        config = FinanceMLConfig(
-            data_dir=Path("my_data"),
-            model_version="v8_3",
-            random_seed=100
-        )
-        
+        config = FinanceMLConfig(data_dir=Path("my_data"), model_version="v8_3", random_seed=100)
+
         result = config.to_dict()
-        
+
         self.assertIsInstance(result, dict)
         self.assertIsInstance(result["data_dir"], str)
         self.assertEqual(result["data_dir"], "my_data")
@@ -150,9 +152,9 @@ class TestConfigToDict(unittest.TestCase):
     def test_to_dict_preserves_none_values(self):
         """Should preserve None values in dictionary."""
         config = FinanceMLConfig(db_url=None, memory_limit=None)
-        
+
         result = config.to_dict()
-        
+
         self.assertIsNone(result["db_url"])
         self.assertIsNone(result["memory_limit"])
 
@@ -162,19 +164,19 @@ class TestConfigJsonSerialization(unittest.TestCase):
 
     def test_from_json_loads_config(self):
         """Should load configuration from JSON file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             config_data = {
                 "data_dir": "json_data",
                 "model_version": "v9_0",
                 "random_seed": 777,
-                "n_jobs": 4
+                "n_jobs": 4,
             }
             json.dump(config_data, f)
             json_path = f.name
-        
+
         try:
             config = FinanceMLConfig.from_json(json_path)
-            
+
             self.assertEqual(config.data_dir, Path("json_data"))
             self.assertEqual(config.model_version, "v9_0")
             self.assertEqual(config.random_seed, 777)
@@ -186,27 +188,23 @@ class TestConfigJsonSerialization(unittest.TestCase):
         """Should raise FileNotFoundError for non-existent file."""
         with self.assertRaises(FileNotFoundError) as cm:
             FinanceMLConfig.from_json("nonexistent.json")
-        
+
         self.assertIn("Config file not found", str(cm.exception))
 
     def test_to_json_saves_config(self):
         """Should save configuration to JSON file."""
-        config = FinanceMLConfig(
-            data_dir="test_data",
-            model_version="v8_5",
-            random_seed=555
-        )
-        
+        config = FinanceMLConfig(data_dir="test_data", model_version="v8_5", random_seed=555)
+
         with tempfile.TemporaryDirectory() as tmpdir:
             json_path = Path(tmpdir) / "test_config.json"
             config.to_json(json_path)
-            
+
             self.assertTrue(json_path.exists())
-            
+
             # Load and verify
-            with open(json_path, 'r') as f:
+            with open(json_path, "r") as f:
                 loaded = json.load(f)
-            
+
             self.assertEqual(loaded["data_dir"], "test_data")
             self.assertEqual(loaded["model_version"], "v8_5")
             self.assertEqual(loaded["random_seed"], 555)
@@ -214,11 +212,11 @@ class TestConfigJsonSerialization(unittest.TestCase):
     def test_to_json_creates_parent_directory(self):
         """Should create parent directory if it doesn't exist."""
         config = FinanceMLConfig()
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             json_path = Path(tmpdir) / "subdir" / "config.json"
             config.to_json(json_path)
-            
+
             self.assertTrue(json_path.exists())
             self.assertTrue(json_path.parent.exists())
 
@@ -228,32 +226,34 @@ class TestConfigYamlSerialization(unittest.TestCase):
 
     def test_from_yaml_raises_import_error_when_yaml_not_available(self):
         """Should raise ImportError when PyYAML is not installed."""
-        with patch.dict('sys.modules', {'yaml': None}):
+        with patch.dict("sys.modules", {"yaml": None}):
             with self.assertRaises(ImportError) as cm:
                 # Force import error by making yaml unavailable
                 import sys
-                yaml_module = sys.modules.get('yaml')
-                sys.modules['yaml'] = None
+
+                yaml_module = sys.modules.get("yaml")
+                sys.modules["yaml"] = None
                 try:
                     FinanceMLConfig.from_yaml("test.yaml")
                 finally:
                     if yaml_module is not None:
-                        sys.modules['yaml'] = yaml_module
-            
+                        sys.modules["yaml"] = yaml_module
+
             self.assertIn("PyYAML is required", str(cm.exception))
 
     def test_from_yaml_raises_on_missing_file(self):
         """Should raise FileNotFoundError for non-existent file."""
         try:
             import yaml  # noqa: F401
+
             yaml_available = True
         except ImportError:
             yaml_available = False
-        
+
         if yaml_available:
             with self.assertRaises(FileNotFoundError) as cm:
                 FinanceMLConfig.from_yaml("nonexistent.yaml")
-            
+
             self.assertIn("Config file not found", str(cm.exception))
         else:
             self.skipTest("PyYAML not installed")
@@ -264,20 +264,20 @@ class TestConfigYamlSerialization(unittest.TestCase):
             import yaml
         except ImportError:
             self.skipTest("PyYAML not installed")
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             config_data = {
                 "data_dir": "yaml_data",
                 "model_version": "v9_1",
                 "random_seed": 888,
-                "n_jobs": 2
+                "n_jobs": 2,
             }
             yaml.dump(config_data, f)
             yaml_path = f.name
-        
+
         try:
             config = FinanceMLConfig.from_yaml(yaml_path)
-            
+
             self.assertEqual(config.data_dir, Path("yaml_data"))
             self.assertEqual(config.model_version, "v9_1")
             self.assertEqual(config.random_seed, 888)
@@ -291,19 +291,15 @@ class TestConfigYamlSerialization(unittest.TestCase):
             import yaml  # noqa: F401
         except ImportError:
             self.skipTest("PyYAML not installed")
-        
-        config = FinanceMLConfig(
-            data_dir="test_yaml_data",
-            model_version="v8_6",
-            random_seed=666
-        )
-        
+
+        config = FinanceMLConfig(data_dir="test_yaml_data", model_version="v8_6", random_seed=666)
+
         with tempfile.TemporaryDirectory() as tmpdir:
             yaml_path = Path(tmpdir) / "test_config.yaml"
             config.to_yaml(yaml_path)
-            
+
             self.assertTrue(yaml_path.exists())
-            
+
             # Load and verify using from_yaml
             loaded_config = FinanceMLConfig.from_yaml(yaml_path)
             self.assertEqual(loaded_config.data_dir, Path("test_yaml_data"))
@@ -313,18 +309,19 @@ class TestConfigYamlSerialization(unittest.TestCase):
     def test_to_yaml_raises_import_error_when_yaml_not_available(self):
         """Should raise ImportError when PyYAML is not installed."""
         config = FinanceMLConfig()
-        
-        with patch.dict('sys.modules', {'yaml': None}):
+
+        with patch.dict("sys.modules", {"yaml": None}):
             with self.assertRaises(ImportError) as cm:
                 import sys
-                yaml_module = sys.modules.get('yaml')
-                sys.modules['yaml'] = None
+
+                yaml_module = sys.modules.get("yaml")
+                sys.modules["yaml"] = None
                 try:
                     config.to_yaml("test.yaml")
                 finally:
                     if yaml_module is not None:
-                        sys.modules['yaml'] = yaml_module
-            
+                        sys.modules["yaml"] = yaml_module
+
             self.assertIn("PyYAML is required", str(cm.exception))
 
 
@@ -351,11 +348,11 @@ class TestConfigApplyToEnv(unittest.TestCase):
             model_version="v10_0",
             random_seed=123,
             n_jobs=4,
-            memory_limit="8GB"
+            memory_limit="8GB",
         )
-        
+
         config.apply_to_env()
-        
+
         self.assertEqual(os.environ["DATA_DIR"], "env_data")
         self.assertEqual(os.environ["MODEL_DIR"], "env_models")
         self.assertEqual(os.environ["CACHE_DIR"], "env_cache")
@@ -369,24 +366,24 @@ class TestConfigApplyToEnv(unittest.TestCase):
     def test_apply_to_env_skips_none_db_url(self):
         """Should not set DB_URL when it's None."""
         config = FinanceMLConfig(db_url=None)
-        
+
         # Clear DB_URL if set
         os.environ.pop("DB_URL", None)
-        
+
         config.apply_to_env()
-        
+
         # DB_URL should not be set
         self.assertNotIn("DB_URL", os.environ)
 
     def test_apply_to_env_skips_none_memory_limit(self):
         """Should not set MEMORY_LIMIT when it's None."""
         config = FinanceMLConfig(memory_limit=None)
-        
+
         # Clear MEMORY_LIMIT if set
         os.environ.pop("MEMORY_LIMIT", None)
-        
+
         config.apply_to_env()
-        
+
         # MEMORY_LIMIT should not be set
         self.assertNotIn("MEMORY_LIMIT", os.environ)
 
@@ -405,18 +402,18 @@ class TestLoadConfig(unittest.TestCase):
 
     def test_load_config_from_json(self):
         """Should load config from JSON file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             config_data = {
                 "data_dir": "load_json_data",
                 "model_version": "v11_0",
-                "random_seed": 321
+                "random_seed": 321,
             }
             json.dump(config_data, f)
             json_path = f.name
-        
+
         try:
             config = load_config(json_path)
-            
+
             self.assertEqual(config.data_dir, Path("load_json_data"))
             self.assertEqual(config.model_version, "v11_0")
             self.assertEqual(config.random_seed, 321)
@@ -429,19 +426,19 @@ class TestLoadConfig(unittest.TestCase):
             import yaml
         except ImportError:
             self.skipTest("PyYAML not installed")
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             config_data = {
                 "data_dir": "load_yaml_data",
                 "model_version": "v11_1",
-                "random_seed": 456
+                "random_seed": 456,
             }
             yaml.dump(config_data, f)
             yaml_path = f.name
-        
+
         try:
             config = load_config(yaml_path)
-            
+
             self.assertEqual(config.data_dir, Path("load_yaml_data"))
             self.assertEqual(config.model_version, "v11_1")
             self.assertEqual(config.random_seed, 456)
@@ -452,23 +449,23 @@ class TestLoadConfig(unittest.TestCase):
         """Should raise ValueError for unsupported file format."""
         with self.assertRaises(ValueError) as cm:
             load_config("config.txt")
-        
+
         self.assertIn("Unsupported config format", str(cm.exception))
 
     def test_load_config_from_env_when_no_path(self):
         """Should load from environment when no path provided and use_env=True."""
         os.environ["DATA_DIR"] = "env_load_data"
         os.environ["MODEL_VERSION"] = "v12_0"
-        
+
         config = load_config(use_env=True)
-        
+
         self.assertEqual(config.data_dir, Path("env_load_data"))
         self.assertEqual(config.model_version, "v12_0")
 
     def test_load_config_returns_default_when_no_path_and_no_env(self):
         """Should return default config when no path and use_env=False."""
         config = load_config(use_env=False)
-        
+
         self.assertEqual(config.data_dir, Path("data"))
         self.assertEqual(config.model_version, "v8_2")
         self.assertEqual(config.random_seed, 42)
@@ -484,23 +481,23 @@ class TestGlobalConfigManagement(unittest.TestCase):
     def test_get_config_returns_instance(self):
         """Should return a FinanceMLConfig instance."""
         config = get_config()
-        
+
         self.assertIsInstance(config, FinanceMLConfig)
 
     def test_get_config_returns_same_instance(self):
         """Should return the same instance on subsequent calls."""
         config1 = get_config()
         config2 = get_config()
-        
+
         self.assertIs(config1, config2)
 
     def test_set_config_changes_global_instance(self):
         """Should change the global config instance."""
         custom_config = FinanceMLConfig(model_version="v_custom", random_seed=999)
-        
+
         set_config(custom_config)
         retrieved = get_config()
-        
+
         self.assertIs(retrieved, custom_config)
         self.assertEqual(retrieved.model_version, "v_custom")
         self.assertEqual(retrieved.random_seed, 999)
@@ -510,12 +507,12 @@ class TestGlobalConfigManagement(unittest.TestCase):
         # Get initial config
         config1 = get_config()
         config1_id = id(config1)
-        
+
         # Reset and get again
         reset_config()
         config2 = get_config()
         config2_id = id(config2)
-        
+
         # Should be a new instance
         self.assertNotEqual(config1_id, config2_id)
 
@@ -523,22 +520,22 @@ class TestGlobalConfigManagement(unittest.TestCase):
         """Should reload from environment after reset."""
         # Save original env
         original_env = os.environ.copy()
-        
+
         try:
             # Set environment variable
             os.environ["MODEL_VERSION"] = "v_reset_test"
-            
+
             # Get config (should load from env)
             config1 = get_config()
             self.assertEqual(config1.model_version, "v_reset_test")
-            
+
             # Change environment
             os.environ["MODEL_VERSION"] = "v_reset_test_2"
-            
+
             # Get config again (should return cached)
             config2 = get_config()
             self.assertEqual(config2.model_version, "v_reset_test")  # Still cached
-            
+
             # Reset and get again (should reload from new env)
             reset_config()
             config3 = get_config()
@@ -550,5 +547,5 @@ class TestGlobalConfigManagement(unittest.TestCase):
             reset_config()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
