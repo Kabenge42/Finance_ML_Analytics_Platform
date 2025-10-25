@@ -1,31 +1,7 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>1977</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
-  <description>Assignment can be replaced with an augmented assignment</description>
-  <highlighted_element>keep_mask = keep_mask &amp; col_mask</highlighted_element>
-  <language>Python</language>
-  <offset>12</offset>
-  <length>32</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>20670</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
-  <description>Assignment can be replaced with an augmented assignment</description>
-  <highlighted_element>features_to_use = features_to_use + classification_features</highlighted_element>
-  <language>Python</language>
-  <offset>12</offset>
-  <length>59</length>
-</problem>
-<problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>606</line>
+  <line>612</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
@@ -37,7 +13,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>938</line>
+  <line>945</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
@@ -49,7 +25,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>891</line>
+  <line>900</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
@@ -61,7 +37,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1162</line>
+  <line>1168</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
@@ -73,7 +49,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
-  <line>586</line>
+  <line>590</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
@@ -85,7 +61,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
-  <line>587</line>
+  <line>591</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
@@ -97,7 +73,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>971</line>
+  <line>983</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>
@@ -109,7 +85,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>972</line>
+  <line>984</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyAugmentAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assignment can be replaced with augmented assignment</problem_class>

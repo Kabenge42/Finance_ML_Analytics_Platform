@@ -1,9 +1,9 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.py</file>
-  <line>131</line>
+  <file>file://$PROJECT_DIR$/finance_ml/data.py</file>
+  <line>193</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.py" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/data.py" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
   <description>'None' object is not callable</description>
   <highlighted_element>create_engine(db_url)</highlighted_element>
@@ -13,7 +13,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>519</line>
+  <line>523</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -25,7 +25,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>524</line>
+  <line>528</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -37,7 +37,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>674</line>
+  <line>678</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -49,7 +49,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>682</line>
+  <line>686</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -61,7 +61,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>741</line>
+  <line>745</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -73,7 +73,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>742</line>
+  <line>746</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -85,7 +85,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1271</line>
+  <line>1281</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -97,7 +97,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1272</line>
+  <line>1282</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -109,7 +109,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1274</line>
+  <line>1284</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -121,31 +121,31 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1368</line>
+  <line>1379</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
   <description>'LayerNormalization' object is not callable</description>
   <highlighted_element>custom_layer_norm(X)</highlighted_element>
   <language>Python</language>
-  <offset>25</offset>
+  <offset>29</offset>
   <length>20</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1380</line>
+  <line>1391</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
   <description>'LayerNormalization' object is not callable</description>
   <highlighted_element>custom_layer_norm(X)</highlighted_element>
   <language>Python</language>
-  <offset>25</offset>
+  <offset>29</offset>
   <length>20</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>609</line>
+  <line>627</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -157,7 +157,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
-  <line>212</line>
+  <line>214</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -169,7 +169,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
-  <line>216</line>
+  <line>218</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -181,7 +181,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>693</line>
+  <line>696</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -193,7 +193,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>622</line>
+  <line>626</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -205,7 +205,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>623</line>
+  <line>627</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -217,7 +217,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>630</line>
+  <line>634</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -229,7 +229,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>505</line>
+  <line>510</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>
@@ -241,7 +241,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>796</line>
+  <line>807</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyCallingNonCallableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attempt to call a non-callable object</problem_class>

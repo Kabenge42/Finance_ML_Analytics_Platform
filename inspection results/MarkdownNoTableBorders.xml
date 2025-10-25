@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
-  <line>290</line>
+  <line>292</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
   <problem_class id="MarkdownNoTableBorders" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Table doesn't have side borders</problem_class>

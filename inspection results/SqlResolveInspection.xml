@@ -1,0 +1,38 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/import_equities_data.sql</file>
+  <line>20</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/import_equities_data.sql" />
+  <problem_class id="SqlResolveInspection" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Unresolved reference</problem_class>
+  <description>Unable to resolve table 'pg_tables'</description>
+  <highlighted_element>pg_tables</highlighted_element>
+  <language>PostgreSQL</language>
+  <offset>31</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/import_equities_data.sql</file>
+  <line>20</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/import_equities_data.sql" />
+  <problem_class id="SqlResolveInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved reference</problem_class>
+  <description>Unable to resolve column 'schemaname'</description>
+  <highlighted_element>schemaname</highlighted_element>
+  <language>PostgreSQL</language>
+  <offset>47</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/import_equities_data.sql</file>
+  <line>20</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/import_equities_data.sql" />
+  <problem_class id="SqlResolveInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved reference</problem_class>
+  <description>Unable to resolve column 'tablename'</description>
+  <highlighted_element>tablename</highlighted_element>
+  <language>PostgreSQL</language>
+  <offset>73</offset>
+  <length>9</length>
+</problem>
+</problems>

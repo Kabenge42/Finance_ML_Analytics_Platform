@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>569</line>
+  <line>573</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PySuperArgumentsInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Wrong arguments to call super</problem_class>

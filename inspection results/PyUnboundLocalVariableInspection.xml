@@ -1,79 +1,19 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
+  <line>249</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'col' can be undefined</description>
-  <highlighted_element>col</highlighted_element>
+  <description>Name 'regression_results' can be undefined</description>
+  <highlighted_element>regression_results</highlighted_element>
   <language>Python</language>
-  <offset>345</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'missing_count' can be undefined</description>
-  <highlighted_element>missing_count</highlighted_element>
-  <language>Python</language>
-  <offset>374</offset>
-  <length>13</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'col' can be undefined</description>
-  <highlighted_element>col</highlighted_element>
-  <language>Python</language>
-  <offset>411</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'missing_count' can be undefined</description>
-  <highlighted_element>missing_count</highlighted_element>
-  <language>Python</language>
-  <offset>444</offset>
-  <length>13</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'missing_count' can be undefined</description>
-  <highlighted_element>missing_count</highlighted_element>
-  <language>Python</language>
-  <offset>489</offset>
-  <length>13</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'total_rows' can be undefined</description>
-  <highlighted_element>total_rows</highlighted_element>
-  <language>Python</language>
-  <offset>505</offset>
-  <length>10</length>
+  <offset>24</offset>
+  <length>18</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>426</line>
+  <line>439</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -85,7 +25,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>437</line>
+  <line>451</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -97,7 +37,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>879</line>
+  <line>885</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -109,7 +49,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>890</line>
+  <line>896</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -121,7 +61,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>618</line>
+  <line>624</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -133,7 +73,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>633</line>
+  <line>645</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -145,7 +85,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>643</line>
+  <line>655</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -157,7 +97,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>780</line>
+  <line>797</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -169,7 +109,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>781</line>
+  <line>798</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -181,31 +121,31 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>787</line>
+  <line>804</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
   <description>Name 'server_image' can be undefined</description>
   <highlighted_element>server_image</highlighted_element>
   <language>Python</language>
-  <offset>38</offset>
+  <offset>42</offset>
   <length>12</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>789</line>
+  <line>806</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
   <description>Name 'bucket_name' can be undefined</description>
   <highlighted_element>bucket_name</highlighted_element>
   <language>Python</language>
-  <offset>27</offset>
+  <offset>31</offset>
   <length>11</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>792</line>
+  <line>809</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -217,7 +157,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>803</line>
+  <line>820</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -229,7 +169,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>803</line>
+  <line>820</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
@@ -241,19 +181,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>813</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'argparse' can be undefined</description>
-  <highlighted_element>argparse</highlighted_element>
-  <language>Python</language>
-  <offset>9</offset>
-  <length>8</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>818</line>
+  <line>833</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>

@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
-  <line>608</line>
+  <line>617</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
   <problem_class id="PyDefaultArgumentInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The default argument is mutable</problem_class>
@@ -13,7 +13,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
-  <line>223</line>
+  <line>226</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
   <problem_class id="PyDefaultArgumentInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The default argument is mutable</problem_class>

@@ -1,0 +1,62 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/REFACTORING_COMPLETE.md</file>
+  <line>61</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/REFACTORING_COMPLETE.md" />
+  <problem_class id="PyRedeclarationInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Redeclared names without usages</problem_class>
+  <description>Redeclared 'config' defined above without usage</description>
+  <highlighted_element>config</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/REFACTORING_SUMMARY.md</file>
+  <line>157</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/REFACTORING_SUMMARY.md" />
+  <problem_class id="PyRedeclarationInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Redeclared names without usages</problem_class>
+  <description>Redeclared 'config' defined above without usage</description>
+  <highlighted_element>config</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/REFACTORING_SUMMARY.md</file>
+  <line>160</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/REFACTORING_SUMMARY.md" />
+  <problem_class id="PyRedeclarationInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Redeclared names without usages</problem_class>
+  <description>Redeclared 'config' defined above without usage</description>
+  <highlighted_element>config</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/REFACTORING_SUMMARY.md</file>
+  <line>163</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/REFACTORING_SUMMARY.md" />
+  <problem_class id="PyRedeclarationInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Redeclared names without usages</problem_class>
+  <description>Redeclared 'config' defined above without usage</description>
+  <highlighted_element>config</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/REFACTORING_SUMMARY.md</file>
+  <line>255</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/REFACTORING_SUMMARY.md" />
+  <problem_class id="PyRedeclarationInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Redeclared names without usages</problem_class>
+  <description>Redeclared '   config' defined above without usage</description>
+  <highlighted_element>config</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>9</length>
+</problem>
+</problems>

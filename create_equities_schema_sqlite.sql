@@ -3,8 +3,8 @@
 -- =============================================================================
 -- This script creates the equities table in a local SQLite database using the
 -- same column layout as the PostgreSQL schema. It removes PostgreSQL-specific
--- options (TABLESPACE, OWNER, COMMENT) and adds a helpful UNIQUE index on
--- ("Ticker","Region") to support de-duplication during imports.
+-- options and adds a helpful UNIQUE index on ("Ticker","Region") to support 
+-- de-duplication during imports.
 --
 -- Usage (from project root):
 --   sqlite3 equities.db ".read create_equities_schema_sqlite.sql"

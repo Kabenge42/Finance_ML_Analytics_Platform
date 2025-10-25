@@ -1,7 +1,19 @@
 <problems>
 <problem>
+  <file>file://$PROJECT_DIR$/.aiassistant/rules/promt_rules.md</file>
+  <line>550</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.aiassistant/rules/promt_rules.md" />
+  <problem_class id="MarkdownUnresolvedFileReference" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved file references</problem_class>
+  <description>Cannot resolve file 'LICENSE'</description>
+  <highlighted_element>LICENSE</highlighted_element>
+  <language>Markdown</language>
+  <offset>66</offset>
+  <length>7</length>
+</problem>
+<problem>
   <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>202</line>
+  <line>206</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
   <problem_class id="MarkdownUnresolvedFileReference" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved file references</problem_class>

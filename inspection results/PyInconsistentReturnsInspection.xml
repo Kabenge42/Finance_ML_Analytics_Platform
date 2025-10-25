@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>969</line>
+  <line>978</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyInconsistentReturnsInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Inconsistent return statements</problem_class>
@@ -13,7 +13,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>524</line>
+  <line>528</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyInconsistentReturnsInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Inconsistent return statements</problem_class>
@@ -25,7 +25,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>892</line>
+  <line>910</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyInconsistentReturnsInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Inconsistent return statements</problem_class>

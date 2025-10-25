@@ -1,211 +1,19 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>248</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>220</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
   <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;show&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>show</highlighted_element>
+  <description>Method &lt;code&gt;transform&lt;/code&gt; may be 'static'</description>
+  <highlighted_element>transform</highlighted_element>
   <language>Python</language>
-  <offset>16</offset>
-  <length>4</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3471</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;apply_financial_statement_analysis&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>apply_financial_statement_analysis</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>34</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3897</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_generate_report_content&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_generate_report_content</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>24</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3945</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_export_html_report&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_export_html_report</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>19</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4101</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_determine_winner&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_determine_winner</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>17</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>5225</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_test_automated_pipeline&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_test_automated_pipeline</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>24</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>5276</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_test_ensemble_selector&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_test_ensemble_selector</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>23</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>5336</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_test_financial_domain_selector&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_test_financial_domain_selector</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>31</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>6589</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;implement_batch_operations_cli&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>implement_batch_operations_cli</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>30</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>6675</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;add_progress_indicators&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>add_progress_indicators</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>23</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>6772</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;implement_result_export_functionality&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>implement_result_export_functionality</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>37</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>8314</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_generate_cache_key&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_generate_cache_key</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>19</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16281</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_estimate_model_complexity&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_estimate_model_complexity</highlighted_element>
-  <language>Python</language>
-  <offset>20</offset>
-  <length>26</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16359</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_get_default_online_models&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_get_default_online_models</highlighted_element>
-  <language>Python</language>
-  <offset>20</offset>
-  <length>26</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16599</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_get_default_regime_models&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_get_default_regime_models</highlighted_element>
-  <language>Python</language>
-  <offset>20</offset>
-  <length>26</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16851</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_get_default_robust_models&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_get_default_robust_models</highlighted_element>
-  <language>Python</language>
-  <offset>20</offset>
-  <length>26</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>18253</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
-  <description>Method &lt;code&gt;_calculate_regime_balance_score&lt;/code&gt; may be 'static'</description>
-  <highlighted_element>_calculate_regime_balance_score</highlighted_element>
-  <language>Python</language>
-  <offset>20</offset>
-  <length>31</length>
+  <offset>11</offset>
+  <length>9</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>653</line>
+  <line>659</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
@@ -217,7 +25,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>818</line>
+  <line>827</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
@@ -229,7 +37,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>821</line>
+  <line>830</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
@@ -241,7 +49,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>664</line>
+  <line>668</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
   <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
@@ -253,7 +61,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>491</line>
+  <line>496</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
@@ -316,6 +124,42 @@
   <line>18</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_regression.py" />
+  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
+  <description>Method &lt;code&gt;small_df&lt;/code&gt; may be 'static'</description>
+  <highlighted_element>small_df</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/tests/test_regression.py</file>
+  <line>60</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_regression.py" />
+  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
+  <description>Method &lt;code&gt;small_df&lt;/code&gt; may be 'static'</description>
+  <highlighted_element>small_df</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/tests/test_regression.py</file>
+  <line>157</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_regression.py" />
+  <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
+  <description>Method &lt;code&gt;small_df&lt;/code&gt; may be 'static'</description>
+  <highlighted_element>small_df</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/tests/test_visualizations.py</file>
+  <line>20</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_visualizations.py" />
   <problem_class id="PyMethodMayBeStaticInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Method is not declared static</problem_class>
   <description>Method &lt;code&gt;small_df&lt;/code&gt; may be 'static'</description>
   <highlighted_element>small_df</highlighted_element>

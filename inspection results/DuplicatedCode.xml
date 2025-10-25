@@ -1,0 +1,170 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/cli.py</file>
+  <line>183</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/cli.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 183-191</description>
+  <highlighted_element>parser.add_argument(&quot;--output-dir&quot;, type=str, default=&quot;outputs&quot;, help=&quot;Output directory&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>89</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/cli.py</file>
+  <line>195</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/cli.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 195-203</description>
+  <highlighted_element>if args.data_source == &quot;db&quot;:</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>28</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/cli.py</file>
+  <line>246</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/cli.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 246-254</description>
+  <highlighted_element>if args.data_source == &quot;db&quot;:</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>28</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/eval.py</file>
+  <line>332</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/eval.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 332-341</description>
+  <highlighted_element>ax.set_title(f&quot;{metric} by Sector&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>35</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/eval.py</file>
+  <line>440</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/eval.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 440-449</description>
+  <highlighted_element>ax.set_title(f&quot;{metric} by Region and Sector&quot;)</highlighted_element>
+  <language>Python</language>
+  <offset>8</offset>
+  <length>46</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/features.py</file>
+  <line>52</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/features.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 52-62</description>
+  <highlighted_element>out = df.copy()</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/features.py</file>
+  <line>84</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/features.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 84-97</description>
+  <highlighted_element>out = df.copy()</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>15</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/logging_config.py</file>
+  <line>61</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/logging_config.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 61-78</description>
+  <highlighted_element>log_path = Path(log_file)</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/logging_config.py</file>
+  <line>192</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/logging_config.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 192-209</description>
+  <highlighted_element>log_path = Path(log_file)</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/models.py</file>
+  <line>333</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/models.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 333-342</description>
+  <highlighted_element>X = df[feature_cols].copy()</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/models.py</file>
+  <line>460</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/models.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 460-469</description>
+  <highlighted_element>X = df[feature_cols].copy()</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>27</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py</file>
+  <line>260</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 260-286</description>
+  <highlighted_element>constraints = [{&quot;type&quot;: &quot;eq&quot;, &quot;fun&quot;: lambda w: np.sum(w) - 1.0}]</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>64</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py</file>
+  <line>338</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 338-364</description>
+  <highlighted_element>constraints = [{&quot;type&quot;: &quot;eq&quot;, &quot;fun&quot;: lambda w: np.sum(w) - 1.0}]</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>64</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py</file>
+  <line>431</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" />
+  <problem_class id="DuplicatedCode" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Duplicated code fragment</problem_class>
+  <description>Duplicate code: lines 431-447</description>
+  <highlighted_element>if allow_short:</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>15</length>
+</problem>
+</problems>

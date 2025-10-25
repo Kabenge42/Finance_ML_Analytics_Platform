@@ -1,5 +1,5 @@
 ---
-apply: always
+apply: off
 ---
 
 # Finance ML Analytics Platform — Project Rules

@@ -1,605 +1,215 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>24</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>249</offset>
-  <length>1</length>
+  <description>Invalid list item indent #loc</description>
+  <highlighted_element>- name: Set up Python ${{ matrix.python-version }}</highlighted_element>
+  <language>yaml</language>
+  <offset>4</offset>
+  <length>50</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>30</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>264</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>288</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>363</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>537</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return report</highlighted_element>
-  <language>Python</language>
-  <offset>541</offset>
-  <length>13</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>215</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>270</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>300</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>330</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>347</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>386</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>425</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>495</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>548</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>963</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return outlier_indices</highlighted_element>
-  <language>Python</language>
-  <offset>552</offset>
-  <length>22</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>965</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>260</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>969</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>258</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>969</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>277</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>969</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>304</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>969</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>434</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>969</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>572</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>969</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>692</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>969</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return out</highlighted_element>
-  <language>Python</language>
-  <offset>700</offset>
-  <length>10</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>971</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>316</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>971</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>335</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>971</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return out # Calculate rolling std dev of price col_name = f&quot;price_volatility_{window}d&quot; ...</highlighted_element>
-  <language>Python</language>
-  <offset>386</offset>
-  <length>460</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>973</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>254</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>973</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>273</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>973</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>300</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>977</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>582</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>983</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>426</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>983</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>500</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>983</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return score</highlighted_element>
-  <language>Python</language>
-  <offset>504</offset>
-  <length>12</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>985</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>345</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>985</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>412</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>985</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return sorted_df.head(top_n)</highlighted_element>
-  <language>Python</language>
-  <offset>416</offset>
+  <description>Invalid list item indent #loc</description>
+  <highlighted_element>- name: Install dependencies</highlighted_element>
+  <language>yaml</language>
+  <offset>4</offset>
   <length>28</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>987</line>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>31</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>341</offset>
-  <length>1</length>
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>| python -m pip install --upgrade pip setuptools wheel pip install -r requirements.t...</highlighted_element>
+  <language>yaml</language>
+  <offset>11</offset>
+  <length>139</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>987</line>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>36</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>407</offset>
-  <length>1</length>
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>| pip install pytest pytest-cov coverage - name: Run unit tests with unittest</highlighted_element>
+  <language>yaml</language>
+  <offset>11</offset>
+  <length>92</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>987</line>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>40</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return sorted_df.head(top_n)</highlighted_element>
-  <language>Python</language>
-  <offset>411</offset>
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>| python -m unittest discover -s tests -v - name: Run tests with coverage using pytes...</highlighted_element>
+  <language>yaml</language>
+  <offset>11</offset>
+  <length>101</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>44</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>| pytest tests/ -v --cov=finance_ml --cov-report=xml --cov-report=term --cov-report=html ...</highlighted_element>
+  <language>yaml</language>
+  <offset>11</offset>
+  <length>295</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>54</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid list item indent #loc</description>
+  <highlighted_element>- name: Upload coverage to Codecov</highlighted_element>
+  <language>yaml</language>
+  <offset>4</offset>
+  <length>34</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>63</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>- name: Upload coverage artifacts</highlighted_element>
+  <language>yaml</language>
+  <offset>6</offset>
+  <length>33</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>136</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid list item indent #loc</description>
+  <highlighted_element>- name: Set up Python</highlighted_element>
+  <language>yaml</language>
+  <offset>4</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>142</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>- name: Install code quality tools</highlighted_element>
+  <language>yaml</language>
+  <offset>6</offset>
+  <length>34</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>143</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>| python -m pip install --upgrade pip pip install black isort flake8 mypy - n...</highlighted_element>
+  <language>yaml</language>
+  <offset>11</offset>
+  <length>209</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>157</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid list item indent #loc</description>
+  <highlighted_element>- name: Check import sorting with isort</highlighted_element>
+  <language>yaml</language>
+  <offset>4</offset>
+  <length>39</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>159</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid child element in a block mapping #loc</description>
+  <highlighted_element>| echo &quot;Checking import order with isort...&quot; isort --check-only --diff --color finan...</highlighted_element>
+  <language>yaml</language>
+  <offset>11</offset>
+  <length>607</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/.github/workflows/tests.yml</file>
+  <line>172</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/.github/workflows/tests.yml" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Invalid list item indent #loc</description>
+  <highlighted_element>- name: Type check with mypy</highlighted_element>
+  <language>yaml</language>
+  <offset>4</offset>
   <length>28</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>989</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>End of statement expected #loc</description>
+  <description>':' expected #loc</description>
   <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>433</offset>
-  <length>1</length>
+  <language>Markdown</language>
+  <offset>113</offset>
+  <length>0</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>989</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>End of statement expected #loc</description>
+  <description>Indent expected #loc</description>
   <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>448</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>989</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>487</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>989</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>618</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>989</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>667</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>989</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>'return' outside of function #loc</description>
-  <highlighted_element>return result</highlighted_element>
-  <language>Python</language>
-  <offset>675</offset>
-  <length>13</length>
+  <language>Markdown</language>
+  <offset>113</offset>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>477</line>
+  <line>480</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -612,33 +222,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>311</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>7</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>311</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>14</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>312</line>
+  <line>319</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -647,11 +231,11 @@
   <highlighted_element />
   <language>JupyterPython</language>
   <offset>10</offset>
-  <length>1</length>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>313</line>
+  <line>321</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -659,12 +243,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>9</offset>
-  <length>1</length>
+  <offset>5</offset>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>314</line>
+  <line>323</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -672,12 +256,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>12</offset>
-  <length>1</length>
+  <offset>8</offset>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>314</line>
+  <line>324</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -685,12 +269,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>19</offset>
-  <length>1</length>
+  <offset>6</offset>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>315</line>
+  <line>326</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -703,94 +287,16 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>105</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Unexpected indent #loc</description>
-  <highlighted_element>-</highlighted_element>
-  <language>Python</language>
-  <offset>22</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>105</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>37</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>105</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Statement expected, found Py:DEDENT #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>53</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>132</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Cannot assign to operator #loc</description>
-  <highlighted_element>tensorflow_model_server \ --port</highlighted_element>
-  <language>Python</language>
-  <offset>0</offset>
-  <length>36</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>133</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Cannot assign to operator #loc</description>
-  <highlighted_element>8500 \ --rest_api_port</highlighted_element>
-  <language>Python</language>
-  <offset>11</offset>
-  <length>26</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>134</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Cannot assign to operator #loc</description>
-  <highlighted_element>8501 \ --model_name</highlighted_element>
-  <language>Python</language>
-  <offset>20</offset>
-  <length>23</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
   <line>135</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
   <description>Cannot assign to operator #loc</description>
-  <highlighted_element>my_mnist_model \ --model_base_path</highlighted_element>
+  <highlighted_element>tensorflow_model_server \ - -port</highlighted_element>
   <language>Python</language>
-  <offset>17</offset>
-  <length>38</length>
+  <offset>0</offset>
+  <length>33</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
@@ -799,67 +305,67 @@
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>51</offset>
-  <length>1</length>
+  <description>Cannot assign to operator #loc</description>
+  <highlighted_element>8500 \ - -rest_api_port</highlighted_element>
+  <language>Python</language>
+  <offset>10</offset>
+  <length>33</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>136</line>
+  <line>137</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Cannot assign to operator #loc</description>
+  <highlighted_element>8501 \ - -model_name</highlighted_element>
+  <language>Python</language>
+  <offset>29</offset>
+  <length>49</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>138</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Cannot assign to operator #loc</description>
+  <highlighted_element>my_mnist_model \ - -model_base_path</highlighted_element>
+  <language>Python</language>
+  <offset>45</offset>
+  <length>80</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>140</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
   <description>Expression expected #loc</description>
-  <highlighted_element>&amp;</highlighted_element>
-  <language>Python</language>
-  <offset>54</offset>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>3</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>136</line>
+  <line>140</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
   <description>Statement expected, found Py:AND #loc</description>
-  <highlighted_element>1</highlighted_element>
-  <language>Python</language>
-  <offset>55</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>698</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>6</offset>
+  <offset>5</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>699</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>6</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>699</line>
+  <line>710</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -867,12 +373,12 @@
   <description>Missing closing quote ['] #loc</description>
   <highlighted_element>'{&quot;cluster&quot;: {&quot;worker&quot;: [&quot;127.0.0.1:9901&quot;, &quot;127.0.0.1:9902&quot;]},</highlighted_element>
   <language>Python</language>
-  <offset>17</offset>
+  <offset>12</offset>
   <length>62</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
+  <line>711</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -880,25 +386,12 @@
   <description>An illegal target for a variable annotation #loc</description>
   <highlighted_element>&quot;task&quot;</highlighted_element>
   <language>Python</language>
-  <offset>19</offset>
+  <offset>0</offset>
   <length>6</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Unexpected indent #loc</description>
-  <highlighted_element>&quot;</highlighted_element>
-  <language>Python</language>
-  <offset>19</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
+  <line>711</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -906,12 +399,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element>}</highlighted_element>
   <language>Python</language>
-  <offset>57</offset>
+  <offset>38</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
+  <line>711</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -919,12 +412,12 @@
   <description>Missing closing quote ['] #loc</description>
   <highlighted_element>'</highlighted_element>
   <language>Python</language>
-  <offset>58</offset>
+  <offset>39</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
+  <line>711</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -932,12 +425,12 @@
   <description>Statement expected, found Py:RBRACE #loc</description>
   <highlighted_element>'</highlighted_element>
   <language>Python</language>
-  <offset>58</offset>
+  <offset>39</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
+  <line>711</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -945,12 +438,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>59</offset>
+  <offset>40</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>701</line>
+  <line>712</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -959,11 +452,11 @@
   <highlighted_element />
   <language>JupyterPython</language>
   <offset>6</offset>
-  <length>1</length>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>701</line>
+  <line>713</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -971,25 +464,25 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>53</offset>
-  <length>1</length>
+  <offset>46</offset>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>701</line>
+  <line>714</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
   <description>Expression expected #loc</description>
-  <highlighted_element>&amp;</highlighted_element>
-  <language>Python</language>
-  <offset>56</offset>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>3</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>701</line>
+  <line>714</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -997,12 +490,12 @@
   <description>Statement expected, found Py:AND #loc</description>
   <highlighted_element>1</highlighted_element>
   <language>Python</language>
-  <offset>57</offset>
+  <offset>5</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>703</line>
+  <line>716</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1015,7 +508,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>703</line>
+  <line>716</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1028,7 +521,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>705</line>
+  <line>718</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1037,24 +530,24 @@
   <highlighted_element />
   <language>JupyterPython</language>
   <offset>6</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>705</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>30</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>706</line>
+  <line>719</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>25</offset>
+  <length>0</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>720</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1063,11 +556,11 @@
   <highlighted_element />
   <language>JupyterPython</language>
   <offset>6</offset>
-  <length>1</length>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>706</line>
+  <line>721</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1075,12 +568,12 @@
   <description>Missing closing quote ['] #loc</description>
   <highlighted_element>'{&quot;cluster&quot;: {&quot;worker&quot;: [&quot;127.0.0.1:9901&quot;, &quot;127.0.0.1:9902&quot;]},</highlighted_element>
   <language>Python</language>
-  <offset>17</offset>
+  <offset>12</offset>
   <length>62</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>707</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1088,12 +581,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element>:</highlighted_element>
   <language>Python</language>
-  <offset>25</offset>
+  <offset>18</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>707</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1101,12 +594,12 @@
   <description>Statement expected, found Py:COLON #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>26</offset>
+  <offset>19</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>707</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1114,12 +607,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element>}</highlighted_element>
   <language>Python</language>
-  <offset>57</offset>
+  <offset>50</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>707</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1127,12 +620,12 @@
   <description>Missing closing quote ['] #loc</description>
   <highlighted_element>'</highlighted_element>
   <language>Python</language>
-  <offset>58</offset>
+  <offset>51</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>707</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1140,12 +633,12 @@
   <description>Statement expected, found Py:RBRACE #loc</description>
   <highlighted_element>'</highlighted_element>
   <language>Python</language>
-  <offset>58</offset>
+  <offset>51</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>707</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1153,12 +646,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>59</offset>
+  <offset>52</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>708</line>
+  <line>723</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1167,11 +660,11 @@
   <highlighted_element />
   <language>JupyterPython</language>
   <offset>6</offset>
-  <length>1</length>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>708</line>
+  <line>724</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1179,25 +672,25 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>53</offset>
-  <length>1</length>
+  <offset>46</offset>
+  <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>708</line>
+  <line>725</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
   <description>Expression expected #loc</description>
-  <highlighted_element>&amp;</highlighted_element>
-  <language>Python</language>
-  <offset>56</offset>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>3</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>708</line>
+  <line>725</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1205,12 +698,12 @@
   <description>Statement expected, found Py:AND #loc</description>
   <highlighted_element>1</highlighted_element>
   <language>Python</language>
-  <offset>57</offset>
+  <offset>5</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>716</line>
+  <line>733</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1223,20 +716,20 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>716</line>
+  <line>733</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
   <hints />
   <description>Cannot assign to operator #loc</description>
-  <highlighted_element>tensorboard %tensorboard --logdir</highlighted_element>
+  <highlighted_element>tensorboard % tensorboard - -logdir</highlighted_element>
   <language>Python</language>
   <offset>10</offset>
-  <length>33</length>
+  <length>45</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>717</line>
+  <line>734</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1244,12 +737,12 @@
   <description>Expression expected #loc</description>
   <highlighted_element>.</highlighted_element>
   <language>Python</language>
-  <offset>22</offset>
+  <offset>35</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>717</line>
+  <line>734</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1257,77 +750,12 @@
   <description>Statement expected, found Py:DOT #loc</description>
   <highlighted_element>/</highlighted_element>
   <language>Python</language>
-  <offset>23</offset>
+  <offset>36</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>758</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Statement expected, found Py:DEDENT #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>33</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>758</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Unindent does not match any outer indentation level #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>33</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>761</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Unexpected indent #loc</description>
-  <highlighted_element>t</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>773</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Statement expected, found Py:DEDENT #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>62</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>773</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Unindent does not match any outer indentation level #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>62</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>774</line>
+  <line>791</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1335,12 +763,12 @@
   <description>Statement expected, found Py:RBRACKET #loc</description>
   <highlighted_element>)</highlighted_element>
   <language>Python</language>
-  <offset>5</offset>
+  <offset>1</offset>
   <length>1</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>774</line>
+  <line>791</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1348,12 +776,12 @@
   <description>Statement expected, found Py:RPAR #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>6</offset>
+  <offset>2</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>777</line>
+  <line>794</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1361,46 +789,7 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>39</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>780</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>30</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>781</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>39</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>790</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>1</offset>
+  <offset>35</offset>
   <length>0</length>
 </problem>
 <problem>
@@ -1413,12 +802,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>1</offset>
+  <offset>30</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>801</line>
+  <line>798</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1426,12 +815,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>21</offset>
+  <offset>39</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>802</line>
+  <line>807</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1439,85 +828,7 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>28</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>803</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>64</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>809</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>Expression expected #loc</description>
-  <highlighted_element>%</highlighted_element>
-  <language>Python</language>
-  <offset>1</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>809</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>11</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>809</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>33</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>811</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>15</offset>
-  <length>0</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>813</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
-  <hints />
-  <description>End of statement expected #loc</description>
-  <highlighted_element />
-  <language>JupyterPython</language>
-  <offset>34</offset>
+  <offset>9</offset>
   <length>0</length>
 </problem>
 <problem>
@@ -1530,12 +841,12 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>54</offset>
+  <offset>9</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>815</line>
+  <line>818</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1543,12 +854,25 @@
   <description>End of statement expected #loc</description>
   <highlighted_element />
   <language>JupyterPython</language>
-  <offset>57</offset>
+  <offset>21</offset>
   <length>0</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>816</line>
+  <line>819</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>28</offset>
+  <length>0</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>820</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1561,7 +885,98 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>817</line>
+  <line>826</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>Expression expected #loc</description>
+  <highlighted_element>%</highlighted_element>
+  <language>Python</language>
+  <offset>1</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>826</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>11</offset>
+  <length>1</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>826</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>33</offset>
+  <length>0</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>828</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>34</offset>
+  <length>0</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>829</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>54</offset>
+  <length>0</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>830</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>57</offset>
+  <length>0</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>831</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+  <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
+  <hints />
+  <description>End of statement expected #loc</description>
+  <highlighted_element />
+  <language>JupyterPython</language>
+  <offset>64</offset>
+  <length>0</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
+  <line>832</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>
@@ -1574,7 +989,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>818</line>
+  <line>833</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="Annotator" severity="ERROR" attribute_key="WRONG_REFERENCES_ATTRIBUTES">Annotator</problem_class>

@@ -1,0 +1,14 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/import_equities_data_sqlite.sql</file>
+  <line>46</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/import_equities_data_sqlite.sql" />
+  <problem_class id="SqlMissingColumnAliasesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Missing column aliases</problem_class>
+  <description>Missing column alias</description>
+  <highlighted_element>1</highlighted_element>
+  <language>SQLite</language>
+  <offset>31</offset>
+  <length>1</length>
+</problem>
+</problems>

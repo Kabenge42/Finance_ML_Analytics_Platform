@@ -43,8 +43,7 @@ from finance_ml.data import (
     sanitize_dataframe_with_logging,
     perform_early_pipeline_validation,
     _safe_div as _data_safe_div,
-)
-
+    )
 # Import from eval module (Phase 7 TDD implementation complete)
 from finance_ml.eval import (
     calculate_mispricing_score,
@@ -88,8 +87,9 @@ from finance_ml.models import (
     train_stacking_ensemble,
     train_stacking_ensemble_by_sector,
     monitor_ensemble_training,
-)
-
+    )
+# Import notebook configuration module
+from finance_ml.notebook_config import NotebookConfig
 # Notebook utility helpers (display + loading strategy)
 from finance_ml.notebook_utils import (
     display_config_summary,
@@ -135,6 +135,8 @@ __all__ = [
     "get_config",
     "set_config",
     "reset_config",
+    # Notebook configuration
+    "NotebookConfig",
     # Data module
     "normalize_columns",
     "infer_region_from_filename",

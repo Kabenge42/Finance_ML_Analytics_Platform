@@ -1,26 +1,14 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>21095</line>
+  <file>file://$PROJECT_DIR$/finance_ml/risk_metrics.py</file>
+  <line>310</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/risk_metrics.py" />
   <problem_class id="PyDictCreationInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Dictionary creation can be rewritten by dictionary literal</problem_class>
   <description>This dictionary creation could be rewritten as a dictionary literal</description>
-  <highlighted_element>confidence_data = { 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ...</highlighted_element>
+  <highlighted_element>metrics = {}</highlighted_element>
   <language>Python</language>
-  <offset>16</offset>
-  <length>425</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>21244</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyDictCreationInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Dictionary creation can be rewritten by dictionary literal</problem_class>
-  <description>This dictionary creation could be rewritten as a dictionary literal</description>
-  <highlighted_element>monitoring_results = {}</highlighted_element>
-  <language>Python</language>
-  <offset>12</offset>
-  <length>23</length>
+  <offset>4</offset>
+  <length>12</length>
 </problem>
 </problems>

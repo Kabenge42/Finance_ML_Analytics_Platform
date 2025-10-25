@@ -619,7 +619,7 @@ mypy finance_ml --ignore-missing-imports
 - ✅ **Configuration Management**: Centralized config via environment, JSON, or YAML
 - ✅ **CLI Tools**: Three console commands for different workflows
 - ✅ **Modern Packaging**: `pyproject.toml` with optional dependency groups
-- ✅ **CI/CD**: GitHub Actions workflow for automated testing
+- 📝 **CI/CD**: Planned — Add GitHub Actions workflow for automated testing (see TODOs in the CI/CD section)
 - ✅ **Updated Notebook**: Now imports from `finance_ml` package
 - ✅ **CHANGELOG.md**: Track version history
 

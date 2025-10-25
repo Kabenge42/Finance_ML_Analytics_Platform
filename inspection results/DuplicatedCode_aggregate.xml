@@ -1,0 +1,35 @@
+<root>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="183" start="5992" end="6349" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="232" start="7585" end="7965" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="195" start="6388" end="6743" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="246" start="8004" end="8359" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/eval.py" line="332" start="12053" end="12353" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/eval.py" line="440" start="15710" end="16025" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/features.py" line="52" start="1378" end="1928" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/features.py" line="84" start="2530" end="3206" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/logging_config.py" line="61" start="1808" end="2383" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/logging_config.py" line="192" start="5767" end="6331" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/models.py" line="333" start="11061" end="11346" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/models.py" line="460" start="14985" end="15270" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="260" start="7903" end="8726" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="338" start="10252" end="11075" />
+</duplicate>
+<duplicate cost="1" hash="0">
+  <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="263" start="7986" end="8462" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="341" start="10335" end="10811" />
+  <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="431" start="13184" end="13660" />
+</duplicate>
+</root>

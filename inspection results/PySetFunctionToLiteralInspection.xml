@@ -1,7 +1,7 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>363</line>
+  <line>375</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
   <problem_class id="PySetFunctionToLiteralInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Function call can be replaced with set literal</problem_class>

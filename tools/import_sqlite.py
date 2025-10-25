@@ -21,6 +21,15 @@ from typing import List, Optional
 
 import pandas as pd
 
+# Optional progress bar; falls back to no-op if tqdm isn't installed
+try:
+    from tqdm import tqdm  # type: ignore
+except Exception:
+
+    def tqdm(iterable, **kwargs):
+        return iterable
+
+
 REGION_TO_FILE = {
     "US": "screening_us.csv",
     "EU": "screening_eu.csv",
@@ -31,6 +40,8 @@ REGION_TO_FILE = {
 
 def quote_identifier(name: str) -> str:
     """Quote a SQL identifier with double quotes, escaping internal quotes."""
+    if not isinstance(name, str) or not name:
+        raise ValueError(f"Invalid identifier: {name!r}")
     return '"' + name.replace('"', '""') + '"'
 
 
@@ -52,21 +63,25 @@ def chunk_insert_dataframe(conn: sqlite3.Connection, df: pd.DataFrame) -> int:
     """
     # Ensure column order is exactly as in the CSV/file
     columns = list(df.columns)
-    # Convert empty strings to None (NULL in SQLite)
-    df = df.replace({"": None})
+    # Convert empty strings to None (NULL in SQLite) without making a full copy
+    df.replace({"": None}, inplace=True)
 
     # Build SQL
     cols_sql = ", ".join(quote_identifier(c) for c in columns)
     placeholders = ",".join(["?"] * len(columns))
     sql = f"INSERT OR IGNORE INTO equities ({cols_sql}) VALUES ({placeholders})"
 
-    # Prepare data as list of tuples in column order
-    records = [tuple(row[c] for c in columns) for _, row in df.iterrows()]
+    # Prepare data as list of tuples using vectorized access for performance
+    records = [tuple(row) for row in df.values]
     if not records:
         return 0
 
-    with conn:
-        conn.executemany(sql, records)
+    try:
+        with conn:
+            conn.executemany(sql, records)
+    except sqlite3.Error as e:
+        # Provide context for debugging; re-raise to allow caller handling
+        raise sqlite3.Error(f"executemany failed for {len(records)} records into equities: {e}")
     return len(records)
 
 
@@ -83,16 +98,29 @@ def import_region(
         return 0
 
     total = 0
-    # dtype=str preserves original strings; na_filter=False keeps empty strings
-    for chunk in pd.read_csv(
-        csv_path, dtype=str, chunksize=chunksize, encoding="utf-8", na_filter=False
-    ):
-        # Ensure Region is correctly set/backfilled
-        if "Region" in chunk.columns:
-            chunk["Region"] = chunk["Region"].replace({"": None}).fillna(region)
-        else:
-            chunk["Region"] = region
-        total += chunk_insert_dataframe(conn, chunk)
+    try:
+        # dtype=str preserves original strings; na_filter=False keeps empty strings
+        chunks = pd.read_csv(
+            csv_path, dtype=str, chunksize=chunksize, encoding="utf-8", na_filter=False
+        )
+        for chunk in tqdm(chunks, desc=f"Importing {region}", unit="chunk"):
+            # Ensure Region is correctly set/backfilled
+            if "Region" in chunk.columns:
+                # Replace empty strings with None then fill with region
+                chunk["Region"] = chunk["Region"].replace({"": None}).fillna(region)
+            else:
+                chunk["Region"] = region
+            try:
+                total += chunk_insert_dataframe(conn, chunk)
+            except sqlite3.Error as e:
+                print(f"[ERROR] Database error inserting chunk for {region}: {e}")
+                raise
+    except pd.errors.ParserError as e:
+        print(f"[ERROR] CSV parsing error for {region} at {csv_path}: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Unexpected error importing {region}: {e}")
+        raise
     return total
 
 

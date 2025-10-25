@@ -136,3 +136,23 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def check_missing_values():
+    return None
+
+
+def validate_schema():
+    return None
+
+
+def detect_outliers_iqr():
+    return None
+
+
+def validate_numeric_ranges():
+    return None
+
+
+def normalize_columns():
+    return None

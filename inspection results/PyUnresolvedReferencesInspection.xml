@@ -1,823 +1,739 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>6416</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>17</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'financial_data'</description>
-  <highlighted_element>financial_data</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>14</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>6417</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'financial_data'</description>
-  <highlighted_element>financial_data</highlighted_element>
-  <language>Python</language>
-  <offset>61</offset>
-  <length>14</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>11915</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'stocks_df'</description>
-  <highlighted_element>stocks_df</highlighted_element>
-  <language>Python</language>
-  <offset>16</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>13979</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'financial_df'</description>
-  <highlighted_element>financial_df</highlighted_element>
-  <language>Python</language>
-  <offset>68</offset>
-  <length>12</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>14142</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'stocks'</description>
-  <highlighted_element>stocks</highlighted_element>
-  <language>Python</language>
-  <offset>75</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>803</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>No module named 'plotly'</description>
-  <highlighted_element>plotly</highlighted_element>
+  <description>Unresolved reference 'build_features_and_target'</description>
+  <highlighted_element>build_features_and_target</highlighted_element>
   <language>Python</language>
-  <offset>11</offset>
-  <length>6</length>
+  <offset>22</offset>
+  <length>25</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>17</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'df'</description>
-  <highlighted_element>df</highlighted_element>
+  <description>Unresolved reference 'all_stocks_processed'</description>
+  <highlighted_element>all_stocks_processed</highlighted_element>
   <language>Python</language>
-  <offset>285</offset>
+  <offset>48</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>22</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'build_features_and_target'</description>
+  <highlighted_element>build_features_and_target</highlighted_element>
+  <language>Python</language>
+  <offset>47</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>22</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'all_stocks_processed'</description>
+  <highlighted_element>all_stocks_processed</highlighted_element>
+  <language>Python</language>
+  <offset>73</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'pd'</description>
+  <highlighted_element>pd</highlighted_element>
+  <language>Python</language>
+  <offset>34</offset>
   <length>2</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'df'</description>
-  <highlighted_element>df</highlighted_element>
-  <language>Python</language>
-  <offset>303</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'df'</description>
-  <highlighted_element>df</highlighted_element>
-  <language>Python</language>
-  <offset>342</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'col'</description>
-  <highlighted_element>col</highlighted_element>
-  <language>Python</language>
-  <offset>345</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'missing_count'</description>
-  <highlighted_element>missing_count</highlighted_element>
-  <language>Python</language>
-  <offset>444</offset>
-  <length>13</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'missing_count'</description>
-  <highlighted_element>missing_count</highlighted_element>
-  <language>Python</language>
-  <offset>489</offset>
-  <length>13</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>961</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'total_rows'</description>
-  <highlighted_element>total_rows</highlighted_element>
-  <language>Python</language>
-  <offset>505</offset>
-  <length>10</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>1549</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'index' for class 'float'</description>
-  <highlighted_element>index</highlighted_element>
+  <description>Unresolved reference 'Tuple'</description>
+  <highlighted_element>Tuple</highlighted_element>
   <language>Python</language>
   <offset>51</offset>
   <length>5</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>1552</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'isna' for class 'float'</description>
-  <highlighted_element>isna</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'pd'</description>
+  <highlighted_element>pd</highlighted_element>
   <language>Python</language>
-  <offset>48</offset>
+  <offset>57</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'Optional'</description>
+  <highlighted_element>Optional</highlighted_element>
+  <language>Python</language>
+  <offset>71</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'pd'</description>
+  <highlighted_element>pd</highlighted_element>
+  <language>Python</language>
+  <offset>80</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'List'</description>
+  <highlighted_element>List</highlighted_element>
+  <language>Python</language>
+  <offset>92</offset>
   <length>4</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>1552</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>27</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'isna' for class 'float'</description>
-  <highlighted_element>isna</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'List'</description>
+  <highlighted_element>List</highlighted_element>
   <language>Python</language>
-  <offset>70</offset>
+  <offset>103</offset>
   <length>4</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>1555</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>34</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Class 'float' does not define '__getitem__', so the '[]' operator cannot be used on its instances</description>
-  <highlighted_element>[</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'train_event_classifier'</description>
+  <highlighted_element>train_event_classifier</highlighted_element>
   <language>Python</language>
-  <offset>34</offset>
-  <length>1</length>
+  <offset>21</offset>
+  <length>22</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>1555</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>34</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Class 'float' does not define '__getitem__', so the '[]' operator cannot be used on its instances</description>
-  <highlighted_element>[</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'all_stocks_processed'</description>
+  <highlighted_element>all_stocks_processed</highlighted_element>
   <language>Python</language>
-  <offset>58</offset>
-  <length>1</length>
+  <offset>44</offset>
+  <length>20</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3758</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>34</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference '_create_model_performance_plot' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>_create_model_performance_plot</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'event_labels'</description>
+  <highlighted_element>event_labels</highlighted_element>
   <language>Python</language>
-  <offset>61</offset>
-  <length>30</length>
+  <offset>66</offset>
+  <length>12</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3768</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>49</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference '_create_stability_analysis_plot' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>_create_stability_analysis_plot</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'train_and_evaluate_regression'</description>
+  <highlighted_element>train_and_evaluate_regression</highlighted_element>
   <language>Python</language>
-  <offset>62</offset>
-  <length>31</length>
+  <offset>21</offset>
+  <length>29</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3774</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>50</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference '_create_static_dashboard_plots' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>_create_static_dashboard_plots</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'all_stocks_processed'</description>
+  <highlighted_element>all_stocks_processed</highlighted_element>
   <language>Python</language>
-  <offset>56</offset>
-  <length>30</length>
+  <offset>4</offset>
+  <length>20</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3787</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>51</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'make_subplots' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>make_subplots</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'output_dir'</description>
+  <highlighted_element>output_dir</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>52</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'config'</description>
+  <highlighted_element>config</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>68</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'ColumnTransformer'</description>
+  <highlighted_element>ColumnTransformer</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>70</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'StandardScaler'</description>
+  <highlighted_element>StandardScaler</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>70</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'numeric_features'</description>
+  <highlighted_element>numeric_features</highlighted_element>
+  <language>Python</language>
+  <offset>53</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>71</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'OneHotEncoder'</description>
+  <highlighted_element>OneHotEncoder</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>71</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'categorical_features'</description>
+  <highlighted_element>categorical_features</highlighted_element>
+  <language>Python</language>
+  <offset>85</offset>
+  <length>20</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>76</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'Pipeline'</description>
+  <highlighted_element>Pipeline</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>78</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'RandomForestRegressor'</description>
+  <highlighted_element>RandomForestRegressor</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>142</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'build_features_and_target'</description>
+  <highlighted_element>build_features_and_target</highlighted_element>
+  <language>Python</language>
+  <offset>47</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>142</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'df'</description>
+  <highlighted_element>df</highlighted_element>
+  <language>Python</language>
+  <offset>73</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>145</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'ColumnTransformer'</description>
+  <highlighted_element>ColumnTransformer</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>147</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'StandardScaler'</description>
+  <highlighted_element>StandardScaler</highlighted_element>
+  <language>Python</language>
+  <offset>20</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>148</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'OneHotEncoder'</description>
+  <highlighted_element>OneHotEncoder</highlighted_element>
+  <language>Python</language>
+  <offset>24</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>153</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'Pipeline'</description>
+  <highlighted_element>Pipeline</highlighted_element>
+  <language>Python</language>
+  <offset>11</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>155</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'YourModel'</description>
+  <highlighted_element>YourModel</highlighted_element>
+  <language>Python</language>
+  <offset>14</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>159</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'train_test_split'</description>
+  <highlighted_element>train_test_split</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>168</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'df'</description>
+  <highlighted_element>df</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>2</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>169</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'build_features_and_target'</description>
+  <highlighted_element>build_features_and_target</highlighted_element>
+  <language>Python</language>
+  <offset>33</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>171</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'build_regression_pipeline'</description>
+  <highlighted_element>build_regression_pipeline</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>25</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>173</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'train_test_split'</description>
+  <highlighted_element>train_test_split</highlighted_element>
+  <language>Python</language>
+  <offset>39</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>201</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'Pipeline'</description>
+  <highlighted_element>Pipeline</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>202</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'SimpleImputer'</description>
+  <highlighted_element>SimpleImputer</highlighted_element>
   <language>Python</language>
   <offset>19</offset>
   <length>13</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3801</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>203</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>go</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'StandardScaler'</description>
+  <highlighted_element>StandardScaler</highlighted_element>
   <language>Python</language>
-  <offset>21</offset>
-  <length>2</length>
+  <offset>18</offset>
+  <length>14</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3815</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>204</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>go</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'numeric_features'</description>
+  <highlighted_element>numeric_features</highlighted_element>
   <language>Python</language>
-  <offset>21</offset>
-  <length>2</length>
+  <offset>7</offset>
+  <length>16</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3853</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>209</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>go</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'Pipeline'</description>
+  <highlighted_element>Pipeline</highlighted_element>
   <language>Python</language>
-  <offset>19</offset>
-  <length>2</length>
+  <offset>15</offset>
+  <length>8</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3853</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>210</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>go</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'StandardScaler'</description>
+  <highlighted_element>StandardScaler</highlighted_element>
   <language>Python</language>
-  <offset>39</offset>
-  <length>2</length>
+  <offset>18</offset>
+  <length>14</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>3892</line>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>211</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference '_export_json_report' for class 'FeatureSelectionDashboard'</description>
-  <highlighted_element>_export_json_report</highlighted_element>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'SelectKBest'</description>
+  <highlighted_element>SelectKBest</highlighted_element>
   <language>Python</language>
-  <offset>24</offset>
-  <length>19</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4183</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>23</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4183</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>43</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4220</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'plt' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>plt</highlighted_element>
-  <language>Python</language>
-  <offset>23</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4235</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'plt' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>plt</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4289</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>23</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4289</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>43</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4325</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>23</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4347</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>39</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4368</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>35</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4414</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4414</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>42</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4454</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4454</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>42</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4492</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'nx' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>nx</highlighted_element>
-  <language>Python</language>
-  <offset>17</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4511</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'nx' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>nx</highlighted_element>
-  <language>Python</language>
-  <offset>19</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4543</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>19</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4546</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>4555</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'go' for class 'Advanced3DVisualizationSuite'</description>
-  <highlighted_element>go</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>2</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>14594</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>26</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>14609</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>29</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>15204</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'any' for class 'bool'</description>
-  <highlighted_element>any</highlighted_element>
-  <language>Python</language>
-  <offset>90</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>15206</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'sum' for class 'bool'</description>
-  <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-  <offset>62</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16389</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>56</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16713</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>60</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16971</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>60</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>16977</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>60</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>17219</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>17222</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'predict' for class 'object'</description>
-  <highlighted_element>predict</highlighted_element>
-  <language>Python</language>
-  <offset>49</offset>
-  <length>7</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>17477</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>17480</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'predict' for class 'object'</description>
-  <highlighted_element>predict</highlighted_element>
-  <language>Python</language>
-  <offset>49</offset>
-  <length>7</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>17801</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>44</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>17804</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'predict' for class 'object'</description>
-  <highlighted_element>predict</highlighted_element>
-  <language>Python</language>
-  <offset>49</offset>
-  <length>7</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>18167</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'fit' for class 'object'</description>
-  <highlighted_element>fit</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>18170</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'predict' for class 'object'</description>
-  <highlighted_element>predict</highlighted_element>
-  <language>Python</language>
-  <offset>49</offset>
-  <length>7</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>18975</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'split' for class '(int, Any)'</description>
-  <highlighted_element>split</highlighted_element>
-  <language>Python</language>
-  <offset>38</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>20623</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Cannot find reference 'named_steps' in 'str | dict'</description>
-  <highlighted_element>named_steps</highlighted_element>
-  <language>Python</language>
-  <offset>76</offset>
+  <offset>20</offset>
   <length>11</length>
 </problem>
 <problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>212</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'numeric_features'</description>
+  <highlighted_element>numeric_features</highlighted_element>
+  <language>Python</language>
+  <offset>7</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>217</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'BaseEstimator'</description>
+  <highlighted_element>BaseEstimator</highlighted_element>
+  <language>Python</language>
+  <offset>35</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>217</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'TransformerMixin'</description>
+  <highlighted_element>TransformerMixin</highlighted_element>
+  <language>Python</language>
+  <offset>50</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>227</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'Pipeline'</description>
+  <highlighted_element>Pipeline</highlighted_element>
+  <language>Python</language>
+  <offset>15</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>228</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'StandardScaler'</description>
+  <highlighted_element>StandardScaler</highlighted_element>
+  <language>Python</language>
+  <offset>18</offset>
+  <length>14</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>229</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'PolynomialFeatures'</description>
+  <highlighted_element>PolynomialFeatures</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>18</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
+  <line>230</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'numeric_features'</description>
+  <highlighted_element>numeric_features</highlighted_element>
+  <language>Python</language>
+  <offset>7</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/notebook_utils.py</file>
+  <line>167</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/notebook_utils.py" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved attribute reference 'get' for class 'None'</description>
+  <highlighted_element>get</highlighted_element>
+  <language>Python</language>
+  <offset>46</offset>
+  <length>3</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/finance_ml/notebook_utils.py</file>
+  <line>168</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/notebook_utils.py" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved attribute reference 'get' for class 'None'</description>
+  <highlighted_element>get</highlighted_element>
+  <language>Python</language>
+  <offset>50</offset>
+  <length>3</length>
+</problem>
+<problem>
   <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>21673</line>
+  <line>397</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'astype' for class 'bool'</description>
-  <highlighted_element>astype</highlighted_element>
-  <language>Python</language>
-  <offset>71</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>301</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'housing'</description>
-  <highlighted_element>housing</highlighted_element>
+  <description>Unresolved reference 'HAVE_FINANCE_PREDICTION'</description>
+  <highlighted_element>HAVE_FINANCE_PREDICTION</highlighted_element>
   <language>Python</language>
-  <offset>0</offset>
-  <length>7</length>
+  <offset>3</offset>
+  <length>23</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>303</line>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>397</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'housing'</description>
-  <highlighted_element>housing</highlighted_element>
+  <description>Unresolved reference 'transformed_data'</description>
+  <highlighted_element>transformed_data</highlighted_element>
   <language>Python</language>
-  <offset>0</offset>
-  <length>7</length>
+  <offset>66</offset>
+  <length>16</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>305</line>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>404</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'housing'</description>
-  <highlighted_element>housing</highlighted_element>
+  <description>Unresolved reference 'dim_reduction_results'</description>
+  <highlighted_element>dim_reduction_results</highlighted_element>
   <language>Python</language>
-  <offset>9</offset>
-  <length>7</length>
+  <offset>20</offset>
+  <length>21</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>306</line>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>405</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'housing'</description>
-  <highlighted_element>housing</highlighted_element>
+  <description>Unresolved reference 'dim_reduction_results'</description>
+  <highlighted_element>dim_reduction_results</highlighted_element>
   <language>Python</language>
-  <offset>0</offset>
-  <length>7</length>
+  <offset>25</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>407</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'visualizer'</description>
+  <highlighted_element>visualizer</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>411</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'transformed_data'</description>
+  <highlighted_element>transformed_data</highlighted_element>
+  <language>Python</language>
+  <offset>42</offset>
+  <length>16</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>417</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'visualizer'</description>
+  <highlighted_element>visualizer</highlighted_element>
+  <language>Python</language>
+  <offset>12</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
+  <line>417</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'y_class_train'</description>
+  <highlighted_element>y_class_train</highlighted_element>
+  <language>Python</language>
+  <offset>72</offset>
+  <length>13</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>153</line>
+  <line>159</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -829,7 +745,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>353</line>
+  <line>360</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -841,7 +757,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>431</line>
+  <line>438</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -853,7 +769,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>567</line>
+  <line>574</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -865,7 +781,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>568</line>
+  <line>575</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -877,7 +793,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>569</line>
+  <line>576</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -889,7 +805,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>575</line>
+  <line>582</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -901,7 +817,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>577</line>
+  <line>584</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -913,7 +829,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>1231</line>
+  <line>1246</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -925,7 +841,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>1232</line>
+  <line>1247</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -937,7 +853,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>1239</line>
+  <line>1254</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -949,7 +865,19 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>1364</line>
+  <line>1380</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved attribute reference 'feature_names_in_' for class 'StandardScalerClone'</description>
+  <highlighted_element>feature_names_in_</highlighted_element>
+  <language>Python</language>
+  <offset>25</offset>
+  <length>17</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>1428</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -961,19 +889,67 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>1412</line>
+  <line>308</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'feature_names_in_' for class 'StandardScalerClone'</description>
-  <highlighted_element>feature_names_in_</highlighted_element>
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'housing'</description>
+  <highlighted_element>housing</highlighted_element>
   <language>Python</language>
-  <offset>21</offset>
-  <length>17</length>
+  <offset>0</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>310</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'housing'</description>
+  <highlighted_element>housing</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>312</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'housing'</description>
+  <highlighted_element>housing</highlighted_element>
+  <language>Python</language>
+  <offset>9</offset>
+  <length>7</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
+  <line>313</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'housing'</description>
+  <highlighted_element>housing</highlighted_element>
+  <language>Python</language>
+  <offset>0</offset>
+  <length>7</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>128</line>
+  <line>480</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'X_aa'</description>
+  <highlighted_element>X_aa</highlighted_element>
+  <language>Python</language>
+  <offset>4</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
+  <line>131</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -985,7 +961,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>130</line>
+  <line>133</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -997,7 +973,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>132</line>
+  <line>135</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1009,7 +985,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>133</line>
+  <line>136</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1021,7 +997,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>265</line>
+  <line>268</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1033,7 +1009,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>308</line>
+  <line>311</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1045,7 +1021,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>871</line>
+  <line>878</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1057,7 +1033,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>976</line>
+  <line>985</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1069,7 +1045,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>995</line>
+  <line>1004</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1080,20 +1056,8 @@
   <length>10</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>477</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'X_aa'</description>
-  <highlighted_element>X_aa</highlighted_element>
-  <language>Python</language>
-  <offset>4</offset>
-  <length>4</length>
-</problem>
-<problem>
   <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
-  <line>153</line>
+  <line>155</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1105,7 +1069,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
-  <line>203</line>
+  <line>208</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1117,7 +1081,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
-  <line>768</line>
+  <line>779</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1129,7 +1093,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
-  <line>956</line>
+  <line>967</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1141,7 +1105,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
-  <line>990</line>
+  <line>1001</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1153,7 +1117,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
-  <line>1031</line>
+  <line>1042</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1165,7 +1129,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb</file>
-  <line>1074</line>
+  <line>1085</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/04_training_linear_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1177,7 +1141,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
-  <line>355</line>
+  <line>359</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1189,7 +1153,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
-  <line>356</line>
+  <line>360</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1201,7 +1165,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
-  <line>749</line>
+  <line>759</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1213,7 +1177,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
-  <line>752</line>
+  <line>762</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1225,31 +1189,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
-  <line>78</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'graphviz'</description>
-  <highlighted_element>graphviz</highlighted_element>
-  <language>Python</language>
-  <offset>5</offset>
-  <length>8</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
-  <line>78</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'Source'</description>
-  <highlighted_element>Source</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
-  <line>559</line>
+  <line>564</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1261,7 +1201,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
-  <line>561</line>
+  <line>566</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1273,7 +1213,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
-  <line>571</line>
+  <line>576</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1285,7 +1225,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb</file>
-  <line>62</line>
+  <line>63</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/07_ensemble_learning_and_random_forests.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1297,7 +1237,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>161</line>
+  <line>164</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1309,7 +1249,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>207</line>
+  <line>210</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1321,7 +1261,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>209</line>
+  <line>212</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1333,7 +1273,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>232</line>
+  <line>235</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1345,7 +1285,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>235</line>
+  <line>238</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1357,7 +1297,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>236</line>
+  <line>239</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1369,7 +1309,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>237</line>
+  <line>240</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1381,7 +1321,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>240</line>
+  <line>243</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1393,7 +1333,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>243</line>
+  <line>246</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1405,7 +1345,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>759</line>
+  <line>762</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1417,7 +1357,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>802</line>
+  <line>806</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1429,7 +1369,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>843</line>
+  <line>847</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1441,7 +1381,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>850</line>
+  <line>854</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1453,7 +1393,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>859</line>
+  <line>863</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1465,7 +1405,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>869</line>
+  <line>873</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1477,7 +1417,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>882</line>
+  <line>886</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1489,7 +1429,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb</file>
-  <line>893</line>
+  <line>897</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/08_dimensionality_reduction.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1501,7 +1441,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>98</line>
+  <line>99</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1513,19 +1453,19 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>118</line>
+  <line>119</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved attribute reference 'sum' for class 'bool'</description>
   <highlighted_element>sum</highlighted_element>
   <language>Python</language>
-  <offset>12</offset>
+  <offset>14</offset>
   <length>3</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>506</line>
+  <line>512</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1537,7 +1477,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>536</line>
+  <line>542</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1549,7 +1489,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>562</line>
+  <line>568</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1561,7 +1501,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>572</line>
+  <line>578</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1573,7 +1513,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>648</line>
+  <line>654</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1585,7 +1525,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>653</line>
+  <line>659</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1597,7 +1537,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>653</line>
+  <line>659</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1609,7 +1549,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>662</line>
+  <line>668</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1621,7 +1561,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>662</line>
+  <line>668</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1633,7 +1573,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>782</line>
+  <line>788</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1645,7 +1585,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>929</line>
+  <line>936</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1657,19 +1597,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>1129</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'sum' for class 'float'</description>
-  <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-  <offset>10</offset>
-  <length>3</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>1217</line>
+  <line>1228</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1681,7 +1609,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb</file>
-  <line>1218</line>
+  <line>1229</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/09_unsupervised_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1705,7 +1633,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>87</line>
+  <line>88</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1717,7 +1645,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>88</line>
+  <line>89</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1729,7 +1657,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>228</line>
+  <line>233</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1741,7 +1669,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>714</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1753,7 +1681,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>714</line>
+  <line>722</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved references</problem_class>
@@ -1765,7 +1693,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>749</line>
+  <line>757</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1777,7 +1705,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>749</line>
+  <line>757</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1789,7 +1717,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>775</line>
+  <line>783</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -1801,102 +1729,6 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>565</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'initial_learning_rate'</description>
-  <highlighted_element>initial_learning_rate</highlighted_element>
-  <language>Python</language>
-  <offset>16</offset>
-  <length>21</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>565</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'step'</description>
-  <highlighted_element>step</highlighted_element>
-  <language>Python</language>
-  <offset>45</offset>
-  <length>4</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>565</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'decay_steps'</description>
-  <highlighted_element>decay_steps</highlighted_element>
-  <language>Python</language>
-  <offset>52</offset>
-  <length>11</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>565</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'power'</description>
-  <highlighted_element>power</highlighted_element>
-  <language>Python</language>
-  <offset>66</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>607</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'initial_learning_rate'</description>
-  <highlighted_element>initial_learning_rate</highlighted_element>
-  <language>Python</language>
-  <offset>16</offset>
-  <length>21</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>607</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'decay_rate'</description>
-  <highlighted_element>decay_rate</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>10</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>607</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'step'</description>
-  <highlighted_element>step</highlighted_element>
-  <language>Python</language>
-  <offset>55</offset>
-  <length>4</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>607</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'decay_steps'</description>
-  <highlighted_element>decay_steps</highlighted_element>
-  <language>Python</language>
-  <offset>62</offset>
-  <length>11</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
   <line>26</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
@@ -1909,7 +1741,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>362</line>
+  <line>374</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1921,7 +1753,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>1001</line>
+  <line>1022</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1933,19 +1765,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>1213</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>No module named 'keras'</description>
-  <highlighted_element>keras</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>1287</line>
+  <line>1309</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -1954,6 +1774,102 @@
   <language>Python</language>
   <offset>37</offset>
   <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>579</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'initial_learning_rate'</description>
+  <highlighted_element>initial_learning_rate</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>579</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'step'</description>
+  <highlighted_element>step</highlighted_element>
+  <language>Python</language>
+  <offset>45</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>579</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'decay_steps'</description>
+  <highlighted_element>decay_steps</highlighted_element>
+  <language>Python</language>
+  <offset>52</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>579</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'power'</description>
+  <highlighted_element>power</highlighted_element>
+  <language>Python</language>
+  <offset>66</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>621</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'initial_learning_rate'</description>
+  <highlighted_element>initial_learning_rate</highlighted_element>
+  <language>Python</language>
+  <offset>16</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>621</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'decay_rate'</description>
+  <highlighted_element>decay_rate</highlighted_element>
+  <language>Python</language>
+  <offset>40</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>621</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'step'</description>
+  <highlighted_element>step</highlighted_element>
+  <language>Python</language>
+  <offset>55</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
+  <line>621</line>
+  <module>Finance_ML_Analytics_Platform</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
+  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
+  <description>Unresolved reference 'decay_steps'</description>
+  <highlighted_element>decay_steps</highlighted_element>
+  <language>Python</language>
+  <offset>62</offset>
+  <length>11</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
@@ -1966,30 +1882,6 @@
   <language>Python</language>
   <offset>7</offset>
   <length>10</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1008</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'tqdm'</description>
-  <highlighted_element>tqdm</highlighted_element>
-  <language>Python</language>
-  <offset>5</offset>
-  <length>4</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1008</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'trange'</description>
-  <highlighted_element>trange</highlighted_element>
-  <language>Python</language>
-  <offset>26</offset>
-  <length>6</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
@@ -2017,7 +1909,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>311</line>
+  <line>316</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2029,19 +1921,19 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>311</line>
+  <line>317</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'Person'</description>
   <highlighted_element>Person</highlighted_element>
   <language>Python</language>
-  <offset>8</offset>
+  <offset>0</offset>
   <length>6</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>312</line>
+  <line>319</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2053,43 +1945,43 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>313</line>
+  <line>321</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'int32'</description>
   <highlighted_element>int32</highlighted_element>
   <language>Python</language>
-  <offset>4</offset>
+  <offset>0</offset>
   <length>5</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>314</line>
+  <line>323</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'repeated'</description>
   <highlighted_element>repeated</highlighted_element>
   <language>Python</language>
-  <offset>4</offset>
+  <offset>0</offset>
   <length>8</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>314</line>
+  <line>324</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'string'</description>
   <highlighted_element>string</highlighted_element>
   <language>Python</language>
-  <offset>13</offset>
+  <offset>0</offset>
   <length>6</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>336</line>
+  <line>347</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2101,7 +1993,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>336</line>
+  <line>347</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2113,7 +2005,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>395</line>
+  <line>406</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2125,7 +2017,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>395</line>
+  <line>406</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2137,7 +2029,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>395</line>
+  <line>406</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2149,7 +2041,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>395</line>
+  <line>406</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2161,7 +2053,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>396</line>
+  <line>407</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2173,7 +2065,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>396</line>
+  <line>407</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2185,7 +2077,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>396</line>
+  <line>407</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2197,7 +2089,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>396</line>
+  <line>407</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2209,7 +2101,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>506</line>
+  <line>522</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2221,7 +2113,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>506</line>
+  <line>522</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2233,7 +2125,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>506</line>
+  <line>522</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2245,7 +2137,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>506</line>
+  <line>522</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2257,7 +2149,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>742</line>
+  <line>760</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2269,7 +2161,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>766</line>
+  <line>784</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2281,7 +2173,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>1123</line>
+  <line>1145</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2317,7 +2209,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
-  <line>178</line>
+  <line>180</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -2329,7 +2221,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb</file>
-  <line>391</line>
+  <line>394</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/14_deep_computer_vision_with_cnns.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2353,67 +2245,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>152</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'statsmodels'</description>
-  <highlighted_element>statsmodels</highlighted_element>
-  <language>Python</language>
-  <offset>5</offset>
-  <length>11</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>152</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'ARIMA'</description>
-  <highlighted_element>ARIMA</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>197</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'statsmodels'</description>
-  <highlighted_element>statsmodels</highlighted_element>
-  <language>Python</language>
-  <offset>5</offset>
-  <length>11</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>197</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'plot_acf'</description>
-  <highlighted_element>plot_acf</highlighted_element>
-  <language>Python</language>
-  <offset>42</offset>
-  <length>8</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>197</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
-  <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved reference 'plot_pacf'</description>
-  <highlighted_element>plot_pacf</highlighted_element>
-  <language>Python</language>
-  <offset>52</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>206</line>
+  <line>207</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2425,7 +2257,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>27</line>
+  <line>28</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2437,7 +2269,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>32</line>
+  <line>33</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2449,7 +2281,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>75</line>
+  <line>77</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2461,7 +2293,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>275</line>
+  <line>279</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2473,7 +2305,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>371</line>
+  <line>375</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2485,7 +2317,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>716</line>
+  <line>720</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2497,7 +2329,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>716</line>
+  <line>720</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2509,7 +2341,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>730</line>
+  <line>734</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2521,7 +2353,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>730</line>
+  <line>734</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2533,7 +2365,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>730</line>
+  <line>734</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2545,7 +2377,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>747</line>
+  <line>751</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2557,7 +2389,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>774</line>
+  <line>778</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2569,7 +2401,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>774</line>
+  <line>778</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2581,7 +2413,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>774</line>
+  <line>778</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2593,7 +2425,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>774</line>
+  <line>778</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2605,7 +2437,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>774</line>
+  <line>778</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2617,7 +2449,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>775</line>
+  <line>779</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2629,7 +2461,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>775</line>
+  <line>779</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2641,7 +2473,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>776</line>
+  <line>780</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2653,7 +2485,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>1192</line>
+  <line>1207</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2665,7 +2497,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>1192</line>
+  <line>1207</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2677,7 +2509,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>1198</line>
+  <line>1213</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2689,7 +2521,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>1198</line>
+  <line>1213</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2701,7 +2533,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>34</line>
+  <line>35</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2713,7 +2545,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>38</line>
+  <line>39</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2725,7 +2557,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>79</line>
+  <line>81</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2737,7 +2569,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>192</line>
+  <line>196</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -2749,7 +2581,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>201</line>
+  <line>205</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -2761,19 +2593,19 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>202</line>
+  <line>206</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
   <description>Cannot find reference 'offsetbox' in '__init__.pyi'</description>
   <highlighted_element>offsetbox</highlighted_element>
   <language>Python</language>
-  <offset>16</offset>
+  <offset>20</offset>
   <length>9</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>27</line>
+  <line>28</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2785,7 +2617,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>32</line>
+  <line>33</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2797,7 +2629,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>88</line>
+  <line>90</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2809,7 +2641,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>242</line>
+  <line>249</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2821,31 +2653,31 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
+  <line>711</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'index'</description>
   <highlighted_element>index</highlighted_element>
   <language>Python</language>
-  <offset>47</offset>
+  <offset>28</offset>
   <length>5</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>700</line>
+  <line>711</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'worker'</description>
   <highlighted_element>worker</highlighted_element>
   <language>Python</language>
-  <offset>37</offset>
+  <offset>18</offset>
   <length>6</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>27</line>
+  <line>28</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2857,7 +2689,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>32</line>
+  <line>33</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2869,7 +2701,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>67</line>
+  <line>69</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2881,43 +2713,43 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>105</line>
+  <line>107</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'signature_def'</description>
   <highlighted_element>signature_def</highlighted_element>
   <language>Python</language>
-  <offset>24</offset>
+  <offset>2</offset>
   <length>13</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>105</line>
+  <line>108</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'serving_default'</description>
   <highlighted_element>serving_default</highlighted_element>
   <language>Python</language>
-  <offset>38</offset>
+  <offset>0</offset>
   <length>15</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>136</line>
+  <line>139</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'my_server'</description>
   <highlighted_element>my_server</highlighted_element>
   <language>Python</language>
-  <offset>38</offset>
+  <offset>83</offset>
   <length>9</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>181</line>
+  <line>185</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2929,7 +2761,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>181</line>
+  <line>185</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2941,7 +2773,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>189</line>
+  <line>193</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2953,7 +2785,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>190</line>
+  <line>194</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2965,7 +2797,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>190</line>
+  <line>194</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2977,7 +2809,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>266</line>
+  <line>270</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -2989,7 +2821,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>266</line>
+  <line>270</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved references</problem_class>
@@ -3001,7 +2833,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>269</line>
+  <line>274</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3013,7 +2845,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>269</line>
+  <line>274</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved references</problem_class>
@@ -3025,7 +2857,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>274</line>
+  <line>280</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3037,7 +2869,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>274</line>
+  <line>280</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3049,7 +2881,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>329</line>
+  <line>338</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3061,7 +2893,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>329</line>
+  <line>338</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3073,7 +2905,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>649</line>
+  <line>658</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3085,7 +2917,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>698</line>
+  <line>707</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3097,7 +2929,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>699</line>
+  <line>709</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3109,7 +2941,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>701</line>
+  <line>712</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3121,31 +2953,31 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>701</line>
+  <line>713</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'my_mnist_multiworker_task'</description>
   <highlighted_element>my_mnist_multiworker_task</highlighted_element>
   <language>Python</language>
-  <offset>7</offset>
+  <offset>0</offset>
   <length>25</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>701</line>
+  <line>713</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'my_worker_0'</description>
   <highlighted_element>my_worker_0</highlighted_element>
   <language>Python</language>
-  <offset>38</offset>
+  <offset>31</offset>
   <length>11</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>703</line>
+  <line>716</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3157,7 +2989,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>703</line>
+  <line>716</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3169,7 +3001,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>705</line>
+  <line>718</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3181,7 +3013,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>706</line>
+  <line>720</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3193,7 +3025,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>708</line>
+  <line>723</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3205,31 +3037,31 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>708</line>
+  <line>724</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'my_mnist_multiworker_task'</description>
   <highlighted_element>my_mnist_multiworker_task</highlighted_element>
   <language>Python</language>
-  <offset>7</offset>
+  <offset>0</offset>
   <length>25</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>708</line>
+  <line>724</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'my_worker_1'</description>
   <highlighted_element>my_worker_1</highlighted_element>
   <language>Python</language>
-  <offset>38</offset>
+  <offset>31</offset>
   <length>11</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>716</line>
+  <line>733</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3241,7 +3073,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>780</line>
+  <line>797</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3253,7 +3085,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>781</line>
+  <line>798</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3265,7 +3097,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>783</line>
+  <line>800</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3277,31 +3109,31 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>787</line>
+  <line>804</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'server_image'</description>
   <highlighted_element>server_image</highlighted_element>
   <language>Python</language>
-  <offset>38</offset>
+  <offset>42</offset>
   <length>12</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>789</line>
+  <line>806</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved reference 'bucket_name'</description>
   <highlighted_element>bucket_name</highlighted_element>
   <language>Python</language>
-  <offset>27</offset>
+  <offset>31</offset>
   <length>11</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>792</line>
+  <line>809</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3313,7 +3145,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>803</line>
+  <line>820</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3325,7 +3157,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>803</line>
+  <line>820</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3337,7 +3169,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>809</line>
+  <line>826</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3349,7 +3181,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>809</line>
+  <line>826</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3361,7 +3193,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>813</line>
+  <line>828</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3373,7 +3205,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>818</line>
+  <line>833</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3385,7 +3217,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>820</line>
+  <line>835</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3397,7 +3229,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>856</line>
+  <line>874</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3409,7 +3241,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>874</line>
+  <line>892</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3421,7 +3253,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>874</line>
+  <line>892</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3433,7 +3265,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>949</line>
+  <line>968</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3445,7 +3277,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>950</line>
+  <line>969</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3457,7 +3289,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>1065</line>
+  <line>1086</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
@@ -3469,7 +3301,7 @@
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>1065</line>
+  <line>1086</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
   <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Unresolved references</problem_class>
