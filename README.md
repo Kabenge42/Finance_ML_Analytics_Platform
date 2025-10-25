@@ -21,8 +21,8 @@
     - psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
 - Load data from CSVs into PostgreSQL:
     - psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
-- Notebook: open ml_finance_model_v8_2.ipynb and run cells in order
-- Script (optional): python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+- Notebook: open ml_finance_model_main.ipynb and run cells in order
+- Script (optional): python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
 - Tests: python -m unittest -v
 
 ## Overview
@@ -104,6 +104,34 @@ The package supports optional dependency groups via `pyproject.toml`:
 
 **Note**: TensorFlow is optional. If you encounter installation issues, you can skip it—the core workflow uses scikit-learn and gradient boosting libraries.
 
+### Optional: Conda environment (Anaconda/Miniconda)
+
+If you prefer Conda, an environment file is provided:
+
+- Finance_ML_Analytics_Platform.yaml
+
+Create and activate the Conda env:
+
+- conda env create -f Finance_ML_Analytics_Platform.yaml
+- conda activate Finance_ML_Analytics_Platform
+
+Note: The primary, tested path is venv + pip. Avoid mixing Conda envs with Python venv in the same project.
+
+### Automated setup helper (optional)
+
+Use the setup helper to streamline local setup in one command:
+
+- python setup_environment.py
+
+Common flags:
+
+- --skip-db — Skip PostgreSQL setup
+- --skip-data-load — Skip CSV import into DB
+- --recreate-venv — Recreate the .venv
+- --install-db-libs — Also install psycopg2-binary and SQLAlchemy
+- --force — Continue even if a step fails (not recommended)
+
+See setup_environment.py --help for full usage.
 
 ## PostgreSQL Setup and Data Load
 1) Ensure PostgreSQL is installed and running locally, and psql is on your PATH.
@@ -159,7 +187,7 @@ This project is notebook‑first.
 1) Start Jupyter
 - jupyter notebook  (or: jupyter lab)
 
-2) Open and run ml_finance_model_v8_2.ipynb
+2) Open and run ml_finance_model_main.ipynb
 - Run cells in order. Use environment variables and Path from pathlib to avoid hard‑coded paths.
 
 Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if implemented in the notebook cells).
@@ -168,8 +196,9 @@ Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if i
 ## Scripts and Entry Points
 
 ### Main Entry Points
-- **ml_finance_model_v8_2.ipynb** — Main Jupyter notebook for interactive exploration and modeling
-- **ml_finance_model_v8_2.py** — Lightweight Python script with a minimal CLI:
+
+- **ml_finance_model_main.ipynb** — Main Jupyter notebook for interactive exploration and modeling
+- **ml_finance_model_main.py** — Lightweight Python script with a minimal CLI:
   - `--data-source {auto|csv|db}` — Data source selection (default: auto)
   - `--db-url <url>` — Database connection string (or use DB_URL env var)
   - `--limit <n>` — Limit rows for testing
@@ -198,9 +227,25 @@ Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if i
   - Runs tests
   - Provides activation instructions
 - **validate_csv_import.py** — CSV data quality validator (runs validation functions before import)
+- **load_equities_data.py** — Legacy PostgreSQL CSV importer used to insert CSV data into the equities table.
+    - WARNING: Contains a hard-coded password in the sample; update it or prefer env vars/DB_URL.
+    - TODO: Replace inline credentials with environment variables or remove password entirely.
 - **analyze_notebook.py** — Notebook structure analyzer (counts cells, previews content, searches for functions)
 - **update_notebook.py** — Notebook synchronizer (extracts TDD functions from .py and inserts into .ipynb)
 - **verify_notebook.py** — Notebook verification utility (checks for presence of TDD functions)
+- **tools/import_sqlite.py** — Chunked CSV-to-SQLite importer for quick local testing
+
+### Important files at a glance
+
+- Finance_ML_Analytics_Platform.yaml — Conda environment definition (optional)
+- environment_variables.txt — Default/env examples (includes TF_CPP_MIN_LOG_LEVEL=2)
+- requirements.txt — Python dependencies for pip installs
+- ml_finance_model_main.ipynb — Primary notebook for end-to-end workflow
+- create_equities_schema_sqlite.sql — SQLite schema for equities table
+- import_equities_data_sqlite.sql — SQLite CSV import script with validation
+- equities.sqlite — Example/working SQLite database file for local runs
+- identifier.sqlite — Auxiliary SQLite DB present in repo
+    - TODO: Clarify its role and whether it’s required by any scripts/tests
 
 
 ## Tests
@@ -233,6 +278,7 @@ Finance_ML_Analytics_Platform/
 │   ├── eval.py                   # Analytics, visualizations, reporting
 │   ├── config.py                 # Configuration management
 │   ├── cli.py                    # Command-line interface
+│   ├── notebook_config.py        # Notebook-specific helpers/config (if used)
 │   ├── risk_metrics.py           # Risk metrics and portfolio risk analysis
 │   └── portfolio_optimization.py # Portfolio optimization utilities
 │
@@ -246,6 +292,8 @@ Finance_ML_Analytics_Platform/
 │   ├── test_regression.py
 │   ├── test_classification.py
 │   ├── test_analytics.py
+│   ├── test_visualizations.py
+│   ├── test_notebook_enhancements.py
 │   └── ...
 │
 ├── data/                         # Regional equity data (CSV files)
@@ -255,7 +303,11 @@ Finance_ML_Analytics_Platform/
 │   └── screening_rotw.csv
 │
 ├── ml_finance_model_v8_2.ipynb   # Interactive Jupyter notebook
+├── ml_finance_model_v8_3.ipynb   # Newer notebook (if present)
 ├── ml_finance_model_v8_2.py      # Script version (uses finance_ml package)
+│
+├── tools/
+│   └── import_sqlite.py          # Chunked CSV→SQLite importer
 │
 ├── analyze_notebook.py           # Notebook analysis utility
 ├── refactor_notebook.py          # Notebook refactoring helper
@@ -265,8 +317,10 @@ Finance_ML_Analytics_Platform/
 ├── verify_preprocessing_improvements.py # Verify preprocessing pipeline improvements
 ├── validate_csv_import.py        # CSV data validation helper
 │
-├── create_equities_schema.sql    # PostgreSQL schema setup
-├── import_equities_data.sql      # Data import script
+├── create_equities_schema.sql           # PostgreSQL schema setup
+├── import_equities_data.sql             # Data import script (PostgreSQL)
+├── create_equities_schema_sqlite.sql    # SQLite schema setup
+├── import_equities_data_sqlite.sql      # SQLite data import script
 │
 ├── environment_variables.txt     # Environment configuration examples
 ├── requirements.txt              # Core dependencies
@@ -280,6 +334,7 @@ Finance_ML_Analytics_Platform/
 ├── IMPROVEMENT_PLAN.md           # Development roadmap
 ├── IMPLEMENTATION_SUMMARY.md     # Implementation notes
 ├── PREPROCESSING_PIPELINE_IMPROVEMENTS.md # Docs
+├── NOTEBOOK_ENHANCEMENTS.md      # Docs
 ├── REFACTORING_COMPLETE.md       # Docs
 ├── REFACTORING_SUMMARY.md        # Docs
 ├── TDD_IMPLEMENTATION_COMPLETE.md # Docs

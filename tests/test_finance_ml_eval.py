@@ -626,10 +626,15 @@ class TestVisualizationExceptionHandling(unittest.TestCase):
         df = pd.DataFrame(
             {"region": ["US", "EU"], "sector": ["Tech", "Tech"], "mispricing_score": [0.1, 0.2]}
         )
-        # Mock pivot_table to raise exception
-        with patch.object(df, "pivot_table", side_effect=RuntimeError("Pivot error")):
-            with self.assertRaises(RuntimeError):
-                create_region_sector_heatmap(df)
+        # Mock plt and sns to be available (not None)
+        with patch("finance_ml.eval.plt") as mock_plt:
+            with patch("finance_ml.eval.sns") as mock_sns:
+                # Ensure they're not None
+                mock_plt.subplots.return_value = (MagicMock(), MagicMock())
+                # Mock pivot_table to raise exception
+                with patch.object(df, "pivot_table", side_effect=RuntimeError("Pivot error")):
+                    with self.assertRaises(RuntimeError):
+                        create_region_sector_heatmap(df)
 
 
 class TestEdgeCases(unittest.TestCase):

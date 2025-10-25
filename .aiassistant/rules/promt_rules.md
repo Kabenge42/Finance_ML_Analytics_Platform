@@ -146,7 +146,7 @@ python -m unittest -v
 **Notebook** (primary workflow):
 ```bash
 jupyter notebook
-# Open ml_finance_model_v8_3.ipynb and run cells in order
+# Open ml_finance_model_main.ipynb and run cells in order
 ```
 
 **CLI**:

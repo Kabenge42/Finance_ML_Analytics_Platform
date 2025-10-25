@@ -1,5 +1,5 @@
 """
-Update ml_finance_model_v8_3.ipynb to import from finance_ml package.
+Update ml_finance_model_main.ipynb to import from finance_ml package.
 
 This script updates the notebook to use the modular finance_ml package
 instead of defining functions inline.
@@ -190,7 +190,7 @@ print(f"  DB URL: {'configured' if config.db_url else 'not configured'}")
 
 
 if __name__ == "__main__":
-    notebook_path = Path("ml_finance_model_v8_3.ipynb")
+    notebook_path = Path("ml_finance_model_main.ipynb")
 
     if not notebook_path.exists():
         print(f"Error: Notebook not found: {notebook_path}")

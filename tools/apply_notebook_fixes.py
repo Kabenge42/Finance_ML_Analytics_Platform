@@ -2,9 +2,7 @@ import json
 from pathlib import Path
 
 # Paths
-nb_path = Path(
-    r"C:\Users\markm\PycharmProjects\Finance_ML_Analytics_Platform\ml_finance_model_v8_3.ipynb"
-)
+nb_path = Path(r"/ml_finance_model_main.ipynb")
 
 # Load notebook JSON
 with nb_path.open("r", encoding="utf-8") as f:

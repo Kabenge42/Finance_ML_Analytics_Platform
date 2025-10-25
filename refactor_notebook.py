@@ -151,7 +151,7 @@ def refactor_notebook(input_path, output_path):
 
 
 def main():
-    notebook_path = Path("ml_finance_model_v8_3.ipynb")
+    notebook_path = Path("ml_finance_model_main.ipynb")
     backup_path = Path("ml_finance_model_v8_2.ipynb.bak_refactor")
 
     if not notebook_path.exists():

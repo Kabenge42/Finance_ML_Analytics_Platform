@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-NB_PATH = PROJECT_ROOT / "ml_finance_model_v8_3.ipynb"
+NB_PATH = PROJECT_ROOT / "ml_finance_model_main.ipynb"
 ENH_MD_PATH = PROJECT_ROOT / "NOTEBOOK_ENHANCEMENTS.md"
 
 
