@@ -860,3 +860,24 @@ See README.md for current contribution guidelines including:
 **Document Version**: 2.0 (2025-10-24)  
 **Project Version**: 0.3.0  
 **Maintainers**: Finance ML Team
+
+
+
+---
+
+## Notebook Enhancements Guide (v8_3 proposed)
+
+A focused, notebook-first plan for upgrading ml_finance_model_v8_2.ipynb is provided in NOTEBOOK_ENHANCEMENTS.md. It
+covers:
+
+- Building the unified all_stocks dataframe from PostgreSQL or CSV with validation and preprocessing
+- Feature engineering (financial ratios, margins, volatility, revenue CAGR, categorical encodings)
+- ML models (multi-class event classification, sector-optimized regression, quantile models, stacking ensembles)
+- Analytics and reporting (mispricing scores, stock ranking, interactive plots, Excel export)
+
+Reference artifact for reporting/layout:
+
+- reports/Stock_Prediction_Analysis_Report_20250806_131704.xlsx
+
+When implementing these enhancements in the notebook, bump MODEL_VERSION to v8_3 and record changes here and in
+README.md.

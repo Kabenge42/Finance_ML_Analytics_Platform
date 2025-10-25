@@ -1,5 +1,5 @@
 """
-Finance ML Analytics Platform — Python script version of ml_finance_model_v8_2.ipynb
+Finance ML Analytics Platform — Python script version of ml_finance_model_v8_3.ipynb
 
 This script provides a notebook-to-script translation with a focus on:
 - Loading and preprocessing data (from PostgreSQL if available, else from CSVs in data/)

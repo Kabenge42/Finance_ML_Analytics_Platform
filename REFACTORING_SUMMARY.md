@@ -284,7 +284,7 @@ finance-ml-validate --data-source db --db-url postgresql://postgres:@localhost/p
    finance-ml --data-source auto --limit 5000
 
    # Or notebook
-   jupyter notebook ml_finance_model_v8_2.ipynb
+   jupyter notebook ml_finance_model_v8_3.ipynb
 
    # Or Python script
    python ml_finance_model_v8_2.py --data-source csv
