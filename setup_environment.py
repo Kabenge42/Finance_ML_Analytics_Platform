@@ -11,12 +11,13 @@ This script automates the complete environment recreation process including:
 - Test execution and validation
 
 Supports: Windows, macOS, and Linux
-Python: 3.10 or 3.11
+Python: 3.10+
 """
 
 import argparse
 import os
 import platform
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -33,6 +34,15 @@ class Color:
     BOLD = "\033[1m"
     END = "\033[0m"
 
+    @staticmethod
+    def supports_color() -> bool:
+        """Check if terminal supports ANSI color codes"""
+        # Windows 10+ supports ANSI, but check for environment variables
+        if platform.system() == "Windows":
+            return os.environ.get("TERM") is not None or sys.stdout.isatty()
+        # Unix-like systems: check if stdout is a TTY and TERM is set
+        return sys.stdout.isatty() and os.environ.get("TERM", "").lower() != "dumb"
+
 
 class EnvironmentSetup:
     """Automated environment setup for Finance ML Analytics Platform"""
@@ -44,40 +54,76 @@ class EnvironmentSetup:
         self.platform = platform.system()
         self.python_cmd = self._detect_python_command()
         self.errors = []
+        self.color_enabled = Color.supports_color()
 
     def _detect_python_command(self) -> str:
         """Detect the appropriate Python command for this system"""
+        # Validate that detected Python matches running version
+        current_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+
         if self.platform == "Windows":
-            return "python"
+            python_cmd = "python"
         else:
             # Try python3 first, fall back to python
             try:
                 subprocess.run(["python3", "--version"], check=True, capture_output=True)
-                return "python3"
+                python_cmd = "python3"
             except (subprocess.CalledProcessError, FileNotFoundError):
-                return "python"
+                python_cmd = "python"
+
+        # Verify the detected Python version matches current interpreter
+        try:
+            result = subprocess.run(
+                [python_cmd, "--version"], capture_output=True, text=True, check=True
+            )
+            detected_version = result.stdout.strip()
+            if current_version not in detected_version:
+                print(
+                    f"Warning: Detected Python ({detected_version}) may not match running version ({current_version})"
+                )
+        except Exception:
+            pass  # Continue anyway
+
+        return python_cmd
 
     def _print_section(self, message: str):
         """Print a formatted section header"""
-        print(f"\n{Color.BOLD}{Color.BLUE}{'='*60}{Color.END}")
-        print(f"{Color.BOLD}{Color.BLUE}{message}{Color.END}")
-        print(f"{Color.BOLD}{Color.BLUE}{'='*60}{Color.END}\n")
+        if self.color_enabled:
+            print(f"\n{Color.BOLD}{Color.BLUE}{'='*60}{Color.END}")
+            print(f"{Color.BOLD}{Color.BLUE}{message}{Color.END}")
+            print(f"{Color.BOLD}{Color.BLUE}{'='*60}{Color.END}\n")
+        else:
+            print(f"\n{'='*60}")
+            print(message)
+            print(f"{'='*60}\n")
 
     def _print_success(self, message: str):
         """Print a success message"""
-        print(f"{Color.GREEN}✓ {message}{Color.END}")
+        # Use safe ASCII characters for Windows console compatibility
+        if self.color_enabled:
+            print(f"{Color.GREEN}[OK] {message}{Color.END}", flush=True)
+        else:
+            print(f"[OK] {message}", flush=True)
 
     def _print_warning(self, message: str):
         """Print a warning message"""
-        print(f"{Color.YELLOW}⚠ {message}{Color.END}")
+        # Use safe ASCII characters for Windows console compatibility
+        if self.color_enabled:
+            print(f"{Color.YELLOW}[WARNING] {message}{Color.END}", flush=True)
+        else:
+            print(f"[WARNING] {message}", flush=True)
 
     def _print_error(self, message: str):
         """Print an error message"""
-        print(f"{Color.RED}✗ {message}{Color.END}")
+        # Use safe ASCII characters for Windows console compatibility
+        if self.color_enabled:
+            print(f"{Color.RED}[ERROR] {message}{Color.END}", flush=True)
+        else:
+            print(f"[ERROR] {message}", flush=True)
         self.errors.append(message)
 
     def _run_command(
-        self, cmd: List[str], check: bool = True, capture_output: bool = False, shell: bool = False
+        self, cmd: List[str], check: bool = True, capture_output: bool = False, env: dict = None
     ) -> Tuple[int, str, str]:
         """
         Run a command and return exit code, stdout, stderr
@@ -86,32 +132,49 @@ class EnvironmentSetup:
             cmd: Command as list of strings
             check: Raise exception on non-zero exit
             capture_output: Capture stdout/stderr
-            shell: Run command through shell
+            env: Environment variables to use
 
         Returns:
             Tuple of (exit_code, stdout, stderr)
         """
         try:
-            if shell:
-                cmd_str = " ".join(cmd) if isinstance(cmd, list) else cmd
-                result = subprocess.run(
-                    cmd_str, shell=True, capture_output=capture_output, text=True, check=check
-                )
-            else:
-                result = subprocess.run(cmd, capture_output=capture_output, text=True, check=check)
+            result = subprocess.run(
+                cmd, capture_output=capture_output, text=True, check=check, env=env
+            )
             return (
                 result.returncode,
                 result.stdout if capture_output else "",
                 result.stderr if capture_output else "",
             )
         except subprocess.CalledProcessError as e:
-            if not check:
-                return (
-                    e.returncode,
-                    e.stdout if capture_output else "",
-                    e.stderr if capture_output else "",
-                )
-            raise
+            if check:
+                # Only print errors and raise when check=True (critical failures)
+                self._print_error(f"Command failed: {' '.join(cmd)}")
+                if e.stdout:
+                    self._print_error(f"stdout: {e.stdout}")
+                if e.stderr:
+                    self._print_error(f"stderr: {e.stderr}")
+                raise
+            # When check=False, return error tuple without printing
+            return (
+                e.returncode,
+                e.stdout if capture_output else "",
+                e.stderr if capture_output else "",
+            )
+        except FileNotFoundError as e:
+            # Handle missing executable (e.g., psql not in PATH)
+            if check:
+                self._print_error(f"Command not found: {cmd[0]}")
+                raise
+            # When check=False, return error tuple
+            return (-1, "", str(e))
+        except Exception as e:
+            # Handle other unexpected errors
+            if check:
+                self._print_error(f"Command execution error: {e}")
+                raise
+            # When check=False, return error tuple
+            return (-1, "", str(e))
 
     def check_prerequisites(self) -> bool:
         """Check if required prerequisites are installed"""
@@ -121,13 +184,13 @@ class EnvironmentSetup:
 
         # Check Python version
         version_info = sys.version_info
-        if version_info.major == 3 and version_info.minor in (10, 11):
+        if version_info.major == 3 and version_info.minor >= 10:
             self._print_success(
                 f"Python {version_info.major}.{version_info.minor}.{version_info.micro} found"
             )
         else:
             self._print_error(
-                f"Python 3.10 or 3.11 required, found {version_info.major}.{version_info.minor}.{version_info.micro}"
+                f"Python 3.10+ required, found {version_info.major}.{version_info.minor}.{version_info.micro}"
             )
             all_ok = False
 
@@ -147,19 +210,12 @@ class EnvironmentSetup:
 
         # Check PostgreSQL (if database setup requested)
         if not self.args.skip_db:
-            try:
-                code, stdout, _ = self._run_command(
-                    ["psql", "--version"], capture_output=True, check=False
-                )
-                if code == 0:
-                    self._print_success(f"PostgreSQL found: {stdout.strip()}")
-                else:
-                    self._print_warning(
-                        "PostgreSQL 'psql' not found in PATH (use --skip-db to skip database setup)"
-                    )
-                    if not self.args.force:
-                        all_ok = False
-            except FileNotFoundError:
+            code, stdout, stderr = self._run_command(
+                ["psql", "--version"], capture_output=True, check=False
+            )
+            if code == 0 and stdout:
+                self._print_success(f"PostgreSQL found: {stdout.strip()}")
+            else:
                 self._print_warning(
                     "PostgreSQL 'psql' not found in PATH (use --skip-db to skip database setup)"
                 )
@@ -202,8 +258,6 @@ class EnvironmentSetup:
 
         if self.venv_path.exists() and self.args.recreate_venv:
             self._print_warning(f"Removing existing virtual environment at {self.venv_path}")
-            import shutil
-
             shutil.rmtree(self.venv_path)
 
         try:
@@ -306,12 +360,10 @@ class EnvironmentSetup:
                 str(schema_file),
             ]
 
+            env = os.environ.copy()
             if self.args.db_password:
-                env = os.environ.copy()
                 env["PGPASSWORD"] = self.args.db_password
-                subprocess.run(psql_cmd, env=env, check=True)
-            else:
-                self._run_command(psql_cmd)
+            self._run_command(psql_cmd, env=env)
 
             self._print_success("Database table created successfully")
         except Exception as e:
@@ -374,10 +426,7 @@ class EnvironmentSetup:
                     copy_cmd,
                 ]
 
-                if self.args.db_password:
-                    subprocess.run(psql_cmd, env=env, check=True)
-                else:
-                    self._run_command(psql_cmd)
+                self._run_command(psql_cmd, env=env)
 
                 # Update Region column if needed
                 update_cmd = (
@@ -397,10 +446,7 @@ class EnvironmentSetup:
                     update_cmd,
                 ]
 
-                if self.args.db_password:
-                    subprocess.run(psql_update, env=env, check=True)
-                else:
-                    self._run_command(psql_update)
+                self._run_command(psql_update, env=env)
 
                 self._print_success(f"Loaded {region_code} data successfully")
             except Exception as e:
@@ -467,51 +513,56 @@ class EnvironmentSetup:
         """Print instructions for activating the virtual environment"""
         self._print_section("Setup Complete!")
 
+        # Print error summary if there were any errors
         if self.errors:
-            self._print_warning(f"\nSetup completed with {len(self.errors)} error(s):")
-            for error in self.errors:
-                print(f"  - {error}")
-            print()
+            print(f"\n{self.color.warning('[WARNING]')} ")
+            print(f"Setup completed with {len(self.errors)} error(s):")
+            for idx, err in enumerate(self.errors, 1):
+                print(f"  {idx}. {self.color.error('[ERROR]')} {err}")
 
-        print(f"{Color.BOLD}To activate the virtual environment:{Color.END}\n")
+        bold = Color.BOLD if self.color_enabled else ""
+        green = Color.GREEN if self.color_enabled else ""
+        end = Color.END if self.color_enabled else ""
+
+        print(f"{bold}To activate the virtual environment:{end}\n")
 
         if self.platform == "Windows":
             print(f"  PowerShell:")
-            print(f"    {Color.GREEN}.venv\\Scripts\\Activate.ps1{Color.END}\n")
+            print(f"    {green}.venv\\Scripts\\Activate.ps1{end}\n")
             print(f"  Command Prompt:")
-            print(f"    {Color.GREEN}.venv\\Scripts\\activate.bat{Color.END}\n")
+            print(f"    {green}.venv\\Scripts\\activate.bat{end}\n")
         else:
             print(f"  Bash/Zsh:")
-            print(f"    {Color.GREEN}source .venv/bin/activate{Color.END}\n")
+            print(f"    {green}source .venv/bin/activate{end}\n")
 
-        print(f"{Color.BOLD}To start working with the project:{Color.END}\n")
+        print(f"{bold}To start working with the project:{end}\n")
         print(f"  1. Activate the virtual environment (see above)")
-        print(f"  2. Start Jupyter: {Color.GREEN}jupyter notebook{Color.END}")
-        print(f"  3. Open: {Color.GREEN}ml_finance_model_v8_2.ipynb{Color.END}")
-        print(
-            f"\n  Or run the script: {Color.GREEN}python ml_finance_model_v8_2.py --help{Color.END}\n"
-        )
+        print(f"  2. Start Jupyter: {green}jupyter notebook{end}")
+        print(f"  3. Open: {green}ml_finance_model_v8_2.ipynb{end}")
+        print(f"\n  Or run the script: {green}python ml_finance_model_v8_2.py --help{end}\n")
 
         if not self.args.skip_db:
-            print(f"{Color.BOLD}Database connection:{Color.END}")
+            print(f"{bold}Database connection:{end}")
             print(f"  Host: {self.args.db_host}")
             print(f"  Port: {self.args.db_port}")
             print(f"  Database: {self.args.db_name}")
             print(f"  User: {self.args.db_user}\n")
 
-        print(f"{Color.BOLD}Next steps:{Color.END}")
+        print(f"{bold}Next steps:{end}")
         print(f"  - Review and update .env with your specific configuration")
         print(f"  - Check the README.md for detailed usage instructions")
         print(f"  - Review IMPROVEMENT_PLAN.md for development roadmap\n")
 
     def run(self) -> int:
         """Run the complete setup process"""
-        print(
-            f"\n{Color.BOLD}{Color.BLUE}Finance ML Analytics Platform - Environment Setup{Color.END}"
-        )
-        print(f"{Color.BOLD}Platform: {self.platform}{Color.END}")
-        print(f"{Color.BOLD}Python: {self.python_cmd}{Color.END}")
-        print(f"{Color.BOLD}Project: {self.project_root}{Color.END}\n")
+        bold = Color.BOLD if self.color_enabled else ""
+        blue = Color.BLUE if self.color_enabled else ""
+        end = Color.END if self.color_enabled else ""
+
+        print(f"\n{bold}{blue}Finance ML Analytics Platform - Environment Setup{end}")
+        print(f"{bold}Platform: {self.platform}{end}")
+        print(f"{bold}Python: {self.python_cmd}{end}")
+        print(f"{bold}Project: {self.project_root}{end}\n")
 
         steps = [
             ("Prerequisites", self.check_prerequisites),
@@ -531,7 +582,16 @@ class EnvironmentSetup:
                     return 1
 
         self.print_activation_instructions()
-        return 0 if not self.errors else 1
+
+        # Print final error summary
+        if self.errors:
+            self._print_section("Error Summary")
+            self._print_error(f"Setup completed with {len(self.errors)} error(s):")
+            for i, error in enumerate(self.errors, 1):
+                print(f"  {i}. {error}")
+            return 1
+
+        return 0
 
 
 def main():

@@ -1,6 +1,6 @@
 # Finance ML Analytics Platform — Improvement Plan
 
-**Version 0.3.0** — Last Updated: 2025-10-24
+**Version 0.3.1** — Last Updated: 2025-10-25
 
 This document provides a comprehensive overview of the Finance ML Analytics Platform project, including its technology stack, setup instructions, project structure, and phased development roadmap.
 
@@ -15,8 +15,9 @@ This document provides a comprehensive overview of the Finance ML Analytics Plat
 6. [Environment Variables](#environment-variables)
 7. [Testing](#testing)
 8. [Project Structure](#project-structure)
-9. [Development Phases](#development-phases)
-10. [License](#license)
+9. [Code Quality Improvement Tasks](#code-quality-improvement-tasks)
+10. [Development Phases](#development-phases)
+11. [License](#license)
 
 ---
 
@@ -651,9 +652,29 @@ Finance_ML_Analytics_Platform/
 
 ---
 
-## Development Phases
+## Code Quality Improvement Tasks
 
-This section tracks the phased development roadmap that brought the Finance ML Analytics Platform to its current state (v0.3.0). All major phases are complete.
+Based on recent PyCharm inspection analysis, the following improvements have been identified to enhance code quality,
+maintainability, and adherence to Python best practices.
+
+### Priority 1: Critical Issues (High Impact)
+
+#### 1.1 Type Hints and Type Checking
+
+**Status**: 🔴 High Priority  
+**Effort**: Medium (2-3 days)  
+**Impact**: Improves IDE support, reduces runtime errors, enhances documentation
+
+**Tasks**:
+
+- [ ] Add comprehensive type hints to all public functions in `finance_ml/` modules
+- [ ] Add type hints to function parameters and return types
+- [ ] Use `typing` module for complex types (List, Dict, Optional, Union, Tuple)
+- [ ] Enable and configure `mypy` for strict type checking
+- [ ] Fix all type checker warnings identified in inspection results
+- [ ] Add type hints to CLI interface functions in `finance_ml/cli.py`
+
+**Example**:
 
 ### Phase 0 — Foundations and Housekeeping (Week 0) ✓
 - Align environment and packaging ✓
