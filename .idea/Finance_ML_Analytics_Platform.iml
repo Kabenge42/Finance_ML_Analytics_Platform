@@ -13,6 +13,7 @@
       <sourceFolder url="file://$MODULE_DIR$/anaconda_projects/db" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/inspection results" />
+      <excludeFolder url="file://$MODULE_DIR$/.venv1" />
     </content>
     <content url="file://$MODULE_DIR$/data" />
     <orderEntry type="jdk" jdkName="Finance_ML_Analytics_Platform" jdkType="Python SDK" />
