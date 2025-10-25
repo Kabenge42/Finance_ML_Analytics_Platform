@@ -36,6 +36,16 @@ numba>=0.57.0,<1.0.0
 # Image & File Processing
 Pillow>=10.0.0,<11.0.0
 xlsxwriter>=3.1.0,<4.0.0
+openpyxl>=3.1.0,<4.0.0
 
 # System Monitoring
 psutil>=5.9.0,<6.0.0
+
+# Database Connectivity (optional; needed for PostgreSQL integration)
+psycopg2-binary>=2.9.0
+SQLAlchemy>=2.0.0
+
+# Jupyter Notebook Support
+jupyter>=1.0.0
+notebook>=7.0.0
+ipykernel>=6.25.0
