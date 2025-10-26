@@ -227,6 +227,10 @@ Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if i
   - Runs tests
   - Provides activation instructions
 - **validate_csv_import.py** — CSV data quality validator (runs validation functions before import)
+    - Validates schema compliance and critical column presence
+    - Checks for non-numeric values in numeric columns
+    - Identifies data quality issues before database import
+    - Produces validation reports for each region (US, EU, APAC, ROTW)
 - **load_equities_data.py** — Legacy PostgreSQL CSV importer used to insert CSV data into the equities table.
     - WARNING: Contains a hard-coded password in the sample; update it or prefer env vars/DB_URL.
     - TODO: Replace inline credentials with environment variables or remove password entirely.
@@ -234,6 +238,10 @@ Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if i
 - **update_notebook.py** — Notebook synchronizer (extracts TDD functions from .py and inserts into .ipynb)
 - **verify_notebook.py** — Notebook verification utility (checks for presence of TDD functions)
 - **tools/import_sqlite.py** — Chunked CSV-to-SQLite importer for quick local testing
+    - Supports per-region imports with automatic Region backfilling
+    - Handles header removal and NULL value mapping
+    - Configurable chunk size for large CSV files
+    - Implements UNIQUE("Ticker","Region") constraint for deduplication
 
 ### Important files at a glance
 
@@ -264,6 +272,8 @@ Test suite in tests/ directory:
 - test_regression.py — Regression model evaluation
 - test_classification.py — Event classification model tests
 - test_analytics.py — Analytics and stock ranking tests
+- test_sqlite_import.py — SQLite import functionality tests (header removal, NULL handling, region backfilling)
+- test_validate_csv_import.py — CSV validation tests (schema validation, data quality checks)
 
 
 ## Project Structure
@@ -294,6 +304,8 @@ Finance_ML_Analytics_Platform/
 │   ├── test_analytics.py
 │   ├── test_visualizations.py
 │   ├── test_notebook_enhancements.py
+│   ├── test_sqlite_import.py
+│   ├── test_validate_csv_import.py
 │   └── ...
 │
 ├── data/                         # Regional equity data (CSV files)

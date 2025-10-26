@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 CSV Data Validation Script for Equities Import
-This script validates CSV files before importing them into PostgreSQL,
-using the validation functions from ml_finance_model_v8_2.py.
+This script validates CSV files before importing them into PostgreSQL or SQLite,
+using the validation functions from the finance_ml package.
 Usage:
     python validate_csv_import.py [--region {us|eu|apac|rotw|all}] [--fix-issues]
 Examples:
@@ -21,10 +21,11 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 # Import validation functions from the main script
-from ml_finance_model_v8_2 import (
+from finance_ml import (
     validate_schema,
     check_missing_values,
     validate_numeric_ranges,
+    normalize_columns,
     )
 
 
@@ -70,9 +71,9 @@ class ValidationResult:
             print(f"\n❌ Please fix errors before importing")
 
 
-def get_csv_files(region: Optional[str] = None) -> Dict[str, Path]:
+def get_csv_files(region: Optional[str] = None, base_dir: Optional[Path] = None) -> Dict[str, Path]:
     """Get CSV file paths for specified region(s)."""
-    data_dir = Path("data")
+    data_dir = Path(base_dir) if base_dir is not None else Path("data")
     all_files = {
         "us": data_dir / "screening_us.csv",
         "eu": data_dir / "screening_eu.csv",
@@ -122,10 +123,13 @@ def validate_csv_file(csv_path: Path, region_name: str) -> ValidationResult:
         results.column_count = len(df.columns)
         print(f"✓ Loaded {results.row_count:,} rows × {results.column_count} columns")
 
+        # Normalize columns to match finance_ml schema expectations
+        df_norm = normalize_columns(df)
+
         # Validate schema
         print(f"\nValidating schema...")
         try:
-            validate_schema(df, require_target=False)
+            validate_schema(df_norm, require_target=False)
             results.schema_valid = True
             print(f"✓ Schema validation passed")
         except ValueError as e:
@@ -135,15 +139,17 @@ def validate_csv_file(csv_path: Path, region_name: str) -> ValidationResult:
 
         # Check missing values
         print(f"\nChecking for missing values...")
-        missing_report = check_missing_values(df)
+        missing_report = check_missing_values(df_norm)
         results.missing_values = missing_report
 
         # Display missing value summary
         if missing_report:
             print(f"⚠ Missing values found in {len(missing_report)} columns:")
             for col, stats in list(missing_report.items())[:10]:  # Show top 10
-                pct = stats["percent"]
-                count = stats["count"]
+                pct = stats.get("percentage") if isinstance(stats, dict) else None
+                count = stats.get("count") if isinstance(stats, dict) else None
+                if pct is None or count is None:
+                    continue
                 if pct > 50:
                     print(f"  ⚠ {col}: {count:,} missing ({pct:.1f}%)")
                     results.add_warning(f"{col}: {pct:.1f}% missing")
@@ -228,3 +234,68 @@ def validate_csv_file(csv_path: Path, region_name: str) -> ValidationResult:
     results.print_summary()
 
     return results
+
+
+def _result_to_dict(res: ValidationResult) -> Dict:
+    return {
+        "region": res.region,
+        "file": res.file,
+        "exists": res.exists,
+        "row_count": res.row_count,
+        "column_count": res.column_count,
+        "schema_valid": res.schema_valid,
+        "warnings_count": len(res.warnings),
+        "errors_count": len(res.errors),
+        "numeric_issues_count": len(res.numeric_issues),
+        "warnings": res.warnings,
+        "errors": res.errors,
+        "numeric_issues": res.numeric_issues,
+    }
+
+
+def main() -> int:
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description="Validate equities CSV files before import")
+    parser.add_argument("--region", default="all", help="us|eu|apac|rotw|all (default: all)")
+    parser.add_argument(
+        "--data-dir", default="data", help="Directory containing screening_*.csv files"
+    )
+    parser.add_argument("--out", default="outputs", help="Directory to write JSON report")
+    parser.add_argument(
+        "--strict", action="store_true", help="Return 1 if any warnings or errors are found"
+    )
+    args = parser.parse_args()
+
+    base_dir = Path(args.data_dir)
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    files = get_csv_files(args.region, base_dir)
+
+    results = []
+    has_errors = False
+    for reg, path in files.items():
+        res = validate_csv_file(path, reg.upper())
+        results.append(_result_to_dict(res))
+        if len(res.errors) > 0:
+            has_errors = True
+
+    report = {
+        "results": results,
+    }
+    report_path = out_dir / "data_quality_import.json"
+    with report_path.open("w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+    print(f"\n✓ Wrote JSON report to {report_path}")
+
+    if has_errors:
+        return 1
+    if args.strict and any(r["warnings_count"] > 0 for r in results):
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

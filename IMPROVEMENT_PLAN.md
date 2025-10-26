@@ -902,39 +902,43 @@ README.md.
 
 #### Tasks (to be tracked under Phase 2 — Data Ingestion and Validation)
 
-1) SQLite import hardening (shell-based)
+1) SQLite import hardening (shell-based) ✓
 
-- Add `import_equities_data_sqlite.sql` with:
-  - `.bail on`, `.echo on`
-  - TEMP staging `col1..colN` per region
-  - Explicit header-row deletion
-  - `NULLIF` mapping to `equities` and default Region per file
-  - `INSERT OR IGNORE` for deduplication via `UNIQUE("Ticker","Region")`
-  - Per-region transactions and basic validation summaries
+- [x] Add `import_equities_data_sqlite.sql` with:
+    - [x] `.bail on`, `.echo on`
+    - [x] TEMP staging `col1..colN` per region
+    - [x] Explicit header-row deletion
+    - [x] `NULLIF` mapping to `equities` and default Region per file
+    - [x] `INSERT OR IGNORE` for deduplication via `UNIQUE("Ticker","Region")`
+    - [x] Per-region transactions and basic validation summaries
 
-2) Python import alternative for SQLite
+2) Python import alternative for SQLite ✓
 
-- Create `tools/import_sqlite.py` that:
-  - Reads CSVs with `dtype=str`, normalizes empty strings to `None`
-  - Backfills Region, supports `--chunksize` and per-region selection
-  - Appends with de-duplication via the unique index or temp-table merge
+- [x] Create `tools/import_sqlite.py` that:
+    - [x] Reads CSVs with `dtype=str`, normalizes empty strings to `None`
+    - [x] Backfills Region, supports `--chunksize` and per-region selection
+    - [x] Appends with de-duplication via the unique index or temp-table merge
 
-3) Validation utilities parity
+3) Validation utilities parity (Partial)
 
-- Validate header matches expected columns, sample numeric fields, per-region counts.
-- Emit a machine-readable JSON report for CI.
+- [ ] Validate header matches expected columns, sample numeric fields, per-region counts.
+- [ ] Emit a machine-readable JSON report for CI.
 
-4) Documentation updates
+4) Documentation updates (Partial)
 
-- README: add a “SQLite local path” subsection with exact commands and caveats
+- [ ] README: add a "SQLite local path" subsection with exact commands and caveats
   (header handling, NULLs, `.bail on`).
 
-5) Tests for SQLite path
+5) Tests for SQLite path ✓ **COMPLETED 2025-10-26**
 
-- Add `tests/test_sqlite_import.py`:
-  - Build a temp SQLite DB, apply schema, import tiny CSV fixtures
-  - Assert header removed, empty strings mapped to NULL, Region backfilled
-  - Ensure `UNIQUE("Ticker","Region")` prevents duplicates
+- [x] Add `tests/test_sqlite_import.py`:
+    - [x] Build a temp SQLite DB, apply schema, import tiny CSV fixtures
+    - [x] Assert header removed, empty strings mapped to NULL, Region backfilled
+    - [x] Ensure `UNIQUE("Ticker","Region")` prevents duplicates
+    - [x] Test error handling paths (CSV parser errors, database errors)
+    - [x] Test main CLI function with various scenarios
+    - [x] Test tqdm fallback functionality
+    - [x] **Coverage achieved: 97% for tools/import_sqlite.py (37 tests passing)**
 
 #### Rationale
 

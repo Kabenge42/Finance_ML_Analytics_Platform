@@ -208,6 +208,10 @@ The project includes a comprehensive test suite with the following test modules:
 - tests/test_eda.py — Exploratory data analysis utilities
 - tests/test_preprocess_and_training.py — Preprocessing and training workflows
 - tests/test_regression.py — Regression model evaluation
+- tests/test_sqlite_import.py — SQLite import functionality tests (header removal, NULL handling, region backfilling,
+  UNIQUE constraint)
+- tests/test_validate_csv_import.py — CSV validation tests (schema validation, missing columns, non-numeric data
+  detection)
 
 4) Additional Development Information
 A. Code style and quality
@@ -345,8 +349,30 @@ This import script:
 - python tools/import_sqlite.py --db equities.sqlite --data-dir data --chunksize 2000
 - python tools/import_sqlite.py --db equities.sqlite --regions US,EU
 
+The Python importer (tools/import_sqlite.py) features:
+
+- Configurable chunk size for memory-efficient processing of large CSVs
+- Automatic header detection and removal
+- NULL handling (converts empty strings to NULL)
+- Per-region import with automatic Region column backfilling
+- UNIQUE("Ticker","Region") constraint enforcement for deduplication
+- Comprehensive test coverage via tests/test_sqlite_import.py
+
+4) Data validation before import (recommended):
+
+- python validate_csv_import.py
+
+This validation script:
+
+- Checks schema compliance and critical column presence (Ticker, Sector, Last Price, etc.)
+- Detects non-numeric values in numeric columns
+- Identifies data quality issues before database import
+- Produces detailed validation reports per region
+- Comprehensive test coverage via tests/test_validate_csv_import.py
+
 Notes:
 
 - The Python importer uses pandas (already listed in requirements.txt). It reads CSVs with dtype=str, converts empty
   strings to NULLs, and backfills Region.
 - sqlite3 is included with Python; no extra dependency is required.
+- All SQLite import paths are fully tested with ≥80% coverage targets.

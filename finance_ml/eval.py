@@ -103,13 +103,23 @@ def rank_stocks_by_sector(
     return result
 
 
-def simple_eda(df: pd.DataFrame, out_dir: Path, save_plots: bool = False) -> None:
-    """Perform exploratory data analysis and save summary.
+def simple_eda(
+    df: pd.DataFrame,
+    out_dir: Optional[Path] = None,
+    save_plots: bool = False,
+) -> dict:
+    """Perform exploratory data analysis.
+
+    When out_dir is provided, write eda_summary.json (and optional plots) to disk.
+    Always return the computed summary as a dictionary for programmatic use.
 
     Args:
         df: DataFrame to analyze
-        out_dir: Directory to save output files
-        save_plots: If True, generate and save matplotlib visualizations
+        out_dir: Optional directory to save output files. If None, files are not written.
+        save_plots: If True and out_dir is provided, generate and save matplotlib visualizations
+
+    Returns:
+        A dictionary with EDA summary statistics.
     """
     logging.info("Rows: %d, Columns: %d", df.shape[0], df.shape[1])
     numeric_cols = [c for c in df.columns if df[c].dtype != object]
@@ -126,69 +136,81 @@ def simple_eda(df: pd.DataFrame, out_dir: Path, save_plots: bool = False) -> Non
         "sector_counts": df["sector"].value_counts().to_dict() if "sector" in df.columns else {},
         "basic_stats": basic_stats,
     }
-    out_path = out_dir / "eda_summary.json"
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(summary, f)
-    logging.info("Wrote EDA summary to %s", out_path)
 
-    # Generate visualizations if requested
-    if save_plots and numeric_cols:
-        if plt is None or sns is None:
-            logging.warning("Matplotlib/seaborn not available for plots")
-            return
-
+    # Persist summary and plots only if an output directory is provided
+    if out_dir is not None:
         try:
-            # Create distribution plots for key numeric features
-            n_cols = min(len(numeric_cols), 6)
-            if n_cols > 0:
-                fig, axes = plt.subplots(
-                    nrows=(n_cols + 2) // 3, ncols=3, figsize=(15, 5 * ((n_cols + 2) // 3))
-                )
-                if n_cols == 1:
-                    axes = [axes]
+            out_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            # If out_dir cannot be created, continue without writing files
+            logging.warning("Could not create out_dir=%s; skipping file outputs", out_dir)
+        else:
+            out_path = out_dir / "eda_summary.json"
+            with out_path.open("w", encoding="utf-8") as f:
+                json.dump(summary, f)
+            logging.info("Wrote EDA summary to %s", out_path)
+
+            # Generate visualizations if requested
+            if save_plots and numeric_cols:
+                if plt is None or sns is None:
+                    logging.warning("Matplotlib/seaborn not available for plots")
                 else:
-                    axes = axes.flatten() if hasattr(axes, "flatten") else axes
+                    try:
+                        # Create distribution plots for key numeric features
+                        n_cols = min(len(numeric_cols), 6)
+                        if n_cols > 0:
+                            fig, axes = plt.subplots(
+                                nrows=(n_cols + 2) // 3,
+                                ncols=3,
+                                figsize=(15, 5 * ((n_cols + 2) // 3)),
+                            )
+                            if n_cols == 1:
+                                axes = [axes]
+                            else:
+                                axes = axes.flatten() if hasattr(axes, "flatten") else axes
 
-                for idx, col in enumerate(numeric_cols[:n_cols]):
-                    ax = axes[idx] if n_cols > 1 else axes[0]
-                    df[col].hist(bins=30, ax=ax, edgecolor="black")
-                    ax.set_title(f"Distribution of {col}")
-                    ax.set_xlabel(col)
-                    ax.set_ylabel("Frequency")
+                            for idx, col in enumerate(numeric_cols[:n_cols]):
+                                ax = axes[idx] if n_cols > 1 else axes[0]
+                                df[col].hist(bins=30, ax=ax, edgecolor="black")
+                                ax.set_title(f"Distribution of {col}")
+                                ax.set_xlabel(col)
+                                ax.set_ylabel("Frequency")
 
-                # Hide unused subplots
-                for idx in range(n_cols, len(axes)):
-                    axes[idx].set_visible(False)
+                            # Hide unused subplots
+                            for idx in range(n_cols, len(axes)):
+                                axes[idx].set_visible(False)
 
-                plt.tight_layout()
-                dist_plot_path = out_dir / "eda_distributions.png"
-                plt.savefig(dist_plot_path, dpi=100, bbox_inches="tight")
-                plt.close()
-                logging.info("Saved distribution plots to %s", dist_plot_path)
+                            plt.tight_layout()
+                            dist_plot_path = out_dir / "eda_distributions.png"
+                            plt.savefig(dist_plot_path, dpi=100, bbox_inches="tight")
+                            plt.close()
+                            logging.info("Saved distribution plots to %s", dist_plot_path)
 
-            # Create correlation heatmap
-            if len(numeric_cols) >= 2:
-                fig, ax = plt.subplots(figsize=(10, 8))
-                corr_matrix = df[numeric_cols].corr()
-                sns.heatmap(
-                    corr_matrix,
-                    annot=True,
-                    fmt=".2f",
-                    cmap="coolwarm",
-                    center=0,
-                    ax=ax,
-                    square=True,
-                    linewidths=1,
-                )
-                ax.set_title("Correlation Heatmap")
-                plt.tight_layout()
-                corr_plot_path = out_dir / "eda_correlation.png"
-                plt.savefig(corr_plot_path, dpi=100, bbox_inches="tight")
-                plt.close()
-                logging.info("Saved correlation heatmap to %s", corr_plot_path)
+                        # Create correlation heatmap
+                        if len(numeric_cols) >= 2:
+                            fig, ax = plt.subplots(figsize=(10, 8))
+                            corr_matrix = df[numeric_cols].corr()
+                            sns.heatmap(
+                                corr_matrix,
+                                annot=True,
+                                fmt=".2f",
+                                cmap="coolwarm",
+                                center=0,
+                                ax=ax,
+                                square=True,
+                                linewidths=1,
+                            )
+                            ax.set_title("Correlation Heatmap")
+                            plt.tight_layout()
+                            corr_plot_path = out_dir / "eda_correlation.png"
+                            plt.savefig(corr_plot_path, dpi=100, bbox_inches="tight")
+                            plt.close()
+                            logging.info("Saved correlation heatmap to %s", corr_plot_path)
 
-        except Exception as e:
-            logging.warning("Error generating visualizations: %s", e)
+                    except Exception as e:
+                        logging.warning("Error generating visualizations: %s", e)
+
+    return summary
 
 
 def export_predictions_to_excel(

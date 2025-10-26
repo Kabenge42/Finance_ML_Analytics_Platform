@@ -43,6 +43,13 @@ import argparse
 import logging
 from pathlib import Path
 
+# Fix for _ARRAY_API AttributeError - ensure NumPy is imported first
+import numpy as np
+
+# Verify NumPy array API is available (workaround for version compatibility)
+if not hasattr(np, "_ARRAY_API"):
+    np._ARRAY_API = True  # Set a default value if missing
+
 # Import all functions from the finance_ml package (Phase 7 TDD refactoring complete)
 from finance_ml import (
     # Utilities and data loading
@@ -95,7 +102,15 @@ def main() -> int:
     db_url = args.db_url or get_env("DB_URL")
     source = args.data_source
     if source == "auto":
-        source = "db" if (db_url and create_engine is not None) else "csv"
+        if db_url and create_engine is not None:
+            source = "db"
+        else:
+            if db_url and create_engine is None:
+                logging.info(
+                    "DB_URL is set but SQLAlchemy is not installed; falling back to CSV. "
+                    "Hint: pip install SQLAlchemy psycopg2-binary to enable database access."
+                )
+            source = "csv"
 
     logging.info(
         "Configuration: source=%s, limit=%s, out_dir=%s, n_jobs=%d, seed=%d",

@@ -354,9 +354,12 @@ class TestAnalyzeMain(unittest.TestCase):
 
         with patch.object(sys, "argv", test_args):
             with patch("finance_ml.cli.load_from_csv", side_effect=Exception("Test error")):
-                result = analyze_main()
+                with self.assertLogs("finance_ml.cli", level="ERROR") as log_context:
+                    result = analyze_main()
 
-                self.assertEqual(result, 1)
+                    self.assertEqual(result, 1)
+                    # Optionally verify error message
+                    self.assertTrue(any("Analysis failed" in msg for msg in log_context.output))
 
     def test_analyze_main_with_verbose_flag(self):
         """Should set DEBUG logging when verbose flag is used."""
