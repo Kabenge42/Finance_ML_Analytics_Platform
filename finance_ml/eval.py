@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional, Dict
 
 import pandas as pd
+import numpy as np
 
 # Optional imports for visualizations
 try:
@@ -122,18 +123,49 @@ def simple_eda(
         A dictionary with EDA summary statistics.
     """
     logging.info("Rows: %d, Columns: %d", df.shape[0], df.shape[1])
-    numeric_cols = [c for c in df.columns if df[c].dtype != object]
-    basic_stats = df[numeric_cols].describe().to_dict() if numeric_cols else {}
+    # Robust dtype handling: some objects may raise AttributeError on dtype access
+    try:
+        numeric_cols = [c for c in df.columns if getattr(df[c], "dtype", object) != object]
+    except AttributeError:
+        # Fallback: treat no columns as numeric if dtype access fails
+        logging.warning(
+            "simple_eda: dtype inspection failed due to AttributeError; skipping numeric stats"
+        )
+        numeric_cols = []
+    except Exception as e:
+        logging.warning("simple_eda: dtype inspection failed: %s", e)
+        numeric_cols = []
+
+    try:
+        basic_stats = df[numeric_cols].describe().to_dict() if numeric_cols else {}
+        numeric_count = int((df.dtypes != object).sum())
+        categorical_count = int((df.dtypes == object).sum())
+    except AttributeError:
+        basic_stats = {}
+        numeric_count = 0
+        categorical_count = 0
+    except Exception as e:
+        logging.warning("simple_eda: basic stats computation failed: %s", e)
+        basic_stats = {}
+        numeric_count = 0
+        categorical_count = 0
+
+    # Safe value_counts extraction
+    def _safe_counts(series_name: str):
+        try:
+            return df[series_name].value_counts().to_dict()
+        except Exception:
+            return {}
 
     summary = {
         "row_count": int(df.shape[0]),
         "column_count": int(df.shape[1]),
         "columns": list(df.columns),
-        "numeric_cols_count": int((df.dtypes != object).sum()),
-        "categorical_cols_count": int((df.dtypes == object).sum()),
+        "numeric_cols_count": numeric_count,
+        "categorical_cols_count": categorical_count,
         "null_counts": df.isnull().sum().to_dict(),
-        "region_counts": df["region"].value_counts().to_dict() if "region" in df.columns else {},
-        "sector_counts": df["sector"].value_counts().to_dict() if "sector" in df.columns else {},
+        "region_counts": _safe_counts("region") if "region" in df.columns else {},
+        "sector_counts": _safe_counts("sector") if "sector" in df.columns else {},
         "basic_stats": basic_stats,
     }
 
@@ -328,7 +360,13 @@ def create_sector_heatmap(
             f"Error creating sector heatmap: 'Column not found: {metric if metric not in df.columns else 'sector'}'"
         )
         return None
-    
+
+    # Filter out rows with null sector or metric values
+    df_clean = df[df["sector"].notna() & df[metric].notna()].copy()
+    if df_clean.empty:
+        logging.warning("Sector heatmap skipped: no non-null data for sector and %s", metric)
+        return None
+
     # Now check if visualization libraries are available
     if plt is None or sns is None:
         raise ImportError("Matplotlib and seaborn required for heatmap visualization")
@@ -337,11 +375,18 @@ def create_sector_heatmap(
 
         # Aggregate metric by sector
         sector_stats = (
-            df.groupby("sector")[metric].agg(["mean", "median", "std", "count"]).reset_index()
+            df_clean.groupby("sector")[metric].agg(["mean", "median", "std", "count"]).reset_index()
         )
+
+        if sector_stats.empty:
+            logging.warning("Sector heatmap skipped: no data after aggregation")
+            return None
 
         # Create pivot for heatmap
         pivot_data = sector_stats.set_index("sector")[["mean", "median", "std"]]
+        if pivot_data.empty:
+            logging.warning("Sector heatmap skipped: pivot is empty")
+            return None
 
         # Create heatmap
         fig, ax = plt.subplots(figsize=(10, max(6, len(sector_stats) * 0.5)))
@@ -391,29 +436,36 @@ def create_interactive_prediction_plot(df: pd.DataFrame, out_path: Optional[Path
             )
             return None
 
+        # Drop rows with NaNs in required columns to avoid zero-size issues
+        df_plot = df.dropna(subset=["last_price", "predicted_target"]).copy()
+        if df_plot.empty:
+            logging.warning("Interactive plot skipped: no valid rows after dropping NaNs")
+            return None
+
         # Create scatter plot
         fig = px.scatter(
-            df,
+            df_plot,
             x="last_price",
             y="predicted_target",
-            color="sector" if "sector" in df.columns else None,
-            hover_data=["ticker"] if "ticker" in df.columns else None,
+            color="sector" if "sector" in df_plot.columns else None,
+            hover_data=["ticker"] if "ticker" in df_plot.columns else None,
             title="Predicted Target vs Current Price",
             labels={"last_price": "Current Price", "predicted_target": "Predicted Target Price"},
         )
 
         # Add diagonal line (y=x) for reference
-        min_val = min(df["last_price"].min(), df["predicted_target"].min())
-        max_val = max(df["last_price"].max(), df["predicted_target"].max())
-        fig.add_trace(
-            go.Scatter(
-                x=[min_val, max_val],
-                y=[min_val, max_val],
-                mode="lines",
-                name="Perfect Prediction",
-                line=dict(dash="dash", color="gray"),
+        min_val = float(min(df_plot["last_price"].min(), df_plot["predicted_target"].min()))
+        max_val = float(max(df_plot["last_price"].max(), df_plot["predicted_target"].max()))
+        if np.isfinite(min_val) and np.isfinite(max_val) and min_val != max_val:
+            fig.add_trace(
+                go.Scatter(
+                    x=[min_val, max_val],
+                    y=[min_val, max_val],
+                    mode="lines",
+                    name="Perfect Prediction",
+                    line=dict(dash="dash", color="gray"),
+                )
             )
-        )
 
         if out_path:
             fig.write_html(str(out_path))
@@ -448,8 +500,19 @@ def create_region_sector_heatmap(
             logging.warning("Missing region, sector, or metric columns for heatmap")
             return None
 
+        # Filter out nulls to avoid zero-size or treemap-like errors
+        df_clean = df[df["region"].notna() & df["sector"].notna() & df[metric].notna()].copy()
+        if df_clean.empty:
+            logging.warning("Region-sector heatmap skipped: no non-null data for required fields")
+            return None
+
         # Create pivot table
-        pivot_data = df.pivot_table(values=metric, index="sector", columns="region", aggfunc="mean")
+        pivot_data = df_clean.pivot_table(
+            values=metric, index="sector", columns="region", aggfunc="mean"
+        )
+        if pivot_data.empty or pivot_data.shape[0] == 0 or pivot_data.shape[1] == 0:
+            logging.warning("Region-sector heatmap skipped: pivot is empty")
+            return None
 
         # Create heatmap
         fig, ax = plt.subplots(figsize=(12, max(8, len(pivot_data) * 0.6)))

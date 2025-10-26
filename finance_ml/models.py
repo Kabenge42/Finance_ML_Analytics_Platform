@@ -91,6 +91,12 @@ def train_event_classifier(
     drop_cols = [c for c in drop_cols if c in X.columns]
     X = X.drop(columns=drop_cols)
 
+    # Remove any duplicate columns to avoid downstream transformer issues
+    if X.columns.duplicated().any():
+        dup_count = int(X.columns.duplicated().sum())
+        logging.warning("train_event_classifier: removing %d duplicate column(s)", dup_count)
+        X = X.loc[:, ~X.columns.duplicated(keep="first")]
+
     # Split categorical and numeric
     cat_cols = [c for c in X.columns if X[c].dtype == "object"]
     num_cols = [c for c in X.columns if c not in cat_cols]

@@ -597,10 +597,12 @@ class TestVisualizationExceptionHandling(unittest.TestCase):
         from finance_ml.eval import create_sector_heatmap
 
         df = pd.DataFrame({"sector": ["Tech", "Finance"], "mispricing_score": [0.1, 0.2]})
-        # Mock groupby to raise exception
-        with patch.object(df, "groupby", side_effect=RuntimeError("Groupby error")):
-            with self.assertRaises(RuntimeError):
-                create_sector_heatmap(df)
+        # Mock sns.heatmap to raise exception (this is called inside the function)
+        with patch("finance_ml.eval.sns") as mock_sns:
+            with patch("finance_ml.eval.plt"):
+                mock_sns.heatmap.side_effect = RuntimeError("Heatmap error")
+                with self.assertRaises(RuntimeError):
+                    create_sector_heatmap(df)
 
     def test_create_interactive_plot_raises_on_exception(self):
         """Should raise exception when interactive plot generation fails"""
@@ -626,15 +628,15 @@ class TestVisualizationExceptionHandling(unittest.TestCase):
         df = pd.DataFrame(
             {"region": ["US", "EU"], "sector": ["Tech", "Tech"], "mispricing_score": [0.1, 0.2]}
         )
-        # Mock plt and sns to be available (not None)
+        # Mock sns.heatmap to raise exception (this is what actually gets called)
         with patch("finance_ml.eval.plt") as mock_plt:
             with patch("finance_ml.eval.sns") as mock_sns:
                 # Ensure they're not None
                 mock_plt.subplots.return_value = (MagicMock(), MagicMock())
-                # Mock pivot_table to raise exception
-                with patch.object(df, "pivot_table", side_effect=RuntimeError("Pivot error")):
-                    with self.assertRaises(RuntimeError):
-                        create_region_sector_heatmap(df)
+                # Mock the actual seaborn heatmap call that happens inside
+                mock_sns.heatmap.side_effect = RuntimeError("Heatmap error")
+                with self.assertRaises(RuntimeError):
+                    create_region_sector_heatmap(df)
 
 
 class TestEdgeCases(unittest.TestCase):
