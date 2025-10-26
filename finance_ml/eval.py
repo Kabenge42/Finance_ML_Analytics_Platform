@@ -1,3 +1,7 @@
+# Configure matplotlib backend before importing pyplot
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for headless environments
+
 """
 Finance ML Evaluation Module
 
@@ -16,9 +20,6 @@ import pandas as pd
 
 # Optional imports for visualizations
 try:
-    import matplotlib
-
-    matplotlib.use("Agg")  # Non-interactive backend
     import matplotlib.pyplot as plt
     import seaborn as sns
 except ImportError:
@@ -299,16 +300,18 @@ def create_sector_heatmap(
     Returns:
         Matplotlib figure object, or None if required columns are missing
     """
+    # Check if required columns exist FIRST (before checking library availability)
+    if "sector" not in df.columns or metric not in df.columns:
+        logging.error(
+            f"Error creating sector heatmap: 'Column not found: {metric if metric not in df.columns else 'sector'}'"
+        )
+        return None
+    
+    # Now check if visualization libraries are available
     if plt is None or sns is None:
         raise ImportError("Matplotlib and seaborn required for heatmap visualization")
 
     try:
-        # Check if required columns exist
-        if "sector" not in df.columns or metric not in df.columns:
-            logging.error(
-                f"Error creating sector heatmap: 'Column not found: {metric if metric not in df.columns else 'sector'}'"
-            )
-            return None
 
         # Aggregate metric by sector
         sector_stats = (
