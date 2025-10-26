@@ -20,4 +20,22 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Python 3.13 interpreter library" level="application" />
   </component>
+  <component name="TemplatesService">
+    <option name="templateFileTypes">
+      <list>
+        <option value=".env file" />
+        <option value="HTML" />
+        <option value="JSON" />
+        <option value="Jupyter" />
+        <option value="PowerShell" />
+        <option value="Requirements.txt" />
+        <option value="Shell Script" />
+        <option value="SQL" />
+        <option value="TOML" />
+        <option value="XHTML" />
+        <option value="XML" />
+        <option value="YAML" />
+      </list>
+    </option>
+  </component>
 </module>
