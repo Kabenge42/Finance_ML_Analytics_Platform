@@ -43,6 +43,8 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 
 ## Technology Stack
 
+<!-- SQLite parity section will be appended by tools/apply_improvement_plan_updates.py if missing -->
+
 ### Language
 - **Python**: 3.10 or 3.11 (required)
 
@@ -881,3 +883,61 @@ Reference artifact for reporting/layout:
 
 When implementing these enhancements in the notebook, bump MODEL_VERSION to v8_3 and record changes here and in
 README.md.
+
+### New Section: Robust SQLite Ingestion Path and Parity With PostgreSQL
+
+#### Problem summary
+
+- SQLite shell `.import` treats the first row as data (no automatic header skip).
+- Empty strings are not coerced to NULL by default, causing downstream issues.
+- Errors are not isolated across regions; limited validation and mapping safeguards.
+
+#### Proposed approach
+
+- Use per-region TEMP staging tables with generic `col1..colN` schema.
+- Delete the header row explicitly and map with `NULLIF(colN, '')` into `equities`.
+- Wrap each region import in its own transaction with `.bail on` for fail-fast.
+- Default missing "Region" per file (US/EU/APAC/ROTW) and rely on `UNIQUE("Ticker","Region")`.
+- Provide a Python importer alternative with chunking using pandas for reliability.
+
+#### Tasks (to be tracked under Phase 2 — Data Ingestion and Validation)
+
+1) SQLite import hardening (shell-based)
+
+- Add `import_equities_data_sqlite.sql` with:
+  - `.bail on`, `.echo on`
+  - TEMP staging `col1..colN` per region
+  - Explicit header-row deletion
+  - `NULLIF` mapping to `equities` and default Region per file
+  - `INSERT OR IGNORE` for deduplication via `UNIQUE("Ticker","Region")`
+  - Per-region transactions and basic validation summaries
+
+2) Python import alternative for SQLite
+
+- Create `tools/import_sqlite.py` that:
+  - Reads CSVs with `dtype=str`, normalizes empty strings to `None`
+  - Backfills Region, supports `--chunksize` and per-region selection
+  - Appends with de-duplication via the unique index or temp-table merge
+
+3) Validation utilities parity
+
+- Validate header matches expected columns, sample numeric fields, per-region counts.
+- Emit a machine-readable JSON report for CI.
+
+4) Documentation updates
+
+- README: add a “SQLite local path” subsection with exact commands and caveats
+  (header handling, NULLs, `.bail on`).
+
+5) Tests for SQLite path
+
+- Add `tests/test_sqlite_import.py`:
+  - Build a temp SQLite DB, apply schema, import tiny CSV fixtures
+  - Assert header removed, empty strings mapped to NULL, Region backfilled
+  - Ensure `UNIQUE("Ticker","Region")` prevents duplicates
+
+#### Rationale
+
+- Eliminates header-as-data issues; enforces consistent NULL semantics.
+- Improves debuggability via explicit mapping and per-region transactions.
+- Python importer provides a robust, cross-platform alternative with chunked loads.

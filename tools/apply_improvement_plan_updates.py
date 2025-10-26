@@ -7,6 +7,7 @@ and parity with PostgreSQL, plus related tasks and testing notes.
 
 The updater is idempotent and safe to run multiple times.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
