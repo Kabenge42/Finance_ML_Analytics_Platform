@@ -1,6 +1,7 @@
 # Configure matplotlib backend before importing pyplot
 import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend for headless environments
+
+matplotlib.use("Agg")  # Use non-interactive backend for headless environments
 
 """
 Finance ML Evaluation Module

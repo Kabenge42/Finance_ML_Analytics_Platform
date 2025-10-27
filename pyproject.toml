@@ -10,7 +10,7 @@ name = "finance-ml"
 version = "0.3.0"
 description = "A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions"
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.13"
 license = { text = "MIT" }
 authors = [{ name = "Finance ML Team" }]
 
@@ -30,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Office/Business :: Financial :: Investment",
 ]
@@ -87,6 +88,7 @@ tensorflow = [
 database = [
     "psycopg2-binary>=2.9.0,<3.0.0",
     "SQLAlchemy>=2.0.0,<3.0.0",
+    "openpyxl>=3.1.0,<4.0.0",
 ]
 
 # Advanced feature selection and optimization
@@ -95,9 +97,16 @@ advanced-features = [
     "numba>=0.57.0,<1.0.0",
 ]
 
+# Jupyter notebook support
+notebook = [
+    "jupyter>=1.0.0,<2.0.0",
+    "notebook>=7.0.0,<8.0.0",
+    "ipykernel>=6.25.0,<7.0.0",
+]
+
 # Complete installation with all optional features
 all = [
-    "finance-ml[dev,tensorflow,database,advanced-features]",
+    "finance-ml[dev,tensorflow,database,advanced-features,notebook]",
 ]
 
 # ============================================================================
@@ -133,7 +142,7 @@ finance_ml = ["py.typed"]
 # Black - Code Formatter
 [tool.black]
 line-length = 100
-target-version = ["py310", "py311"]
+target-version = ["py310", "py311", "py312"]
 include = '\.pyi?$'
 extend-exclude = '''
 /(

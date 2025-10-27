@@ -22,8 +22,14 @@ from sklearn.ensemble import (
     StackingRegressor,
     )
 from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, f1_score, \
-    classification_report
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+    accuracy_score,
+    f1_score,
+    classification_report,
+    )
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler

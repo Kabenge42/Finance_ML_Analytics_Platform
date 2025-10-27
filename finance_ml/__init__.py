@@ -24,7 +24,8 @@ from finance_ml.config import (
     get_config,
     set_config,
     reset_config,
-    )
+)
+
 # Import from new modular structure (Phase 7 TDD implementation)
 from finance_ml.data import (
     setup_logging,
@@ -43,7 +44,8 @@ from finance_ml.data import (
     sanitize_dataframe_with_logging,
     perform_early_pipeline_validation,
     _safe_div as _data_safe_div,
-    )
+)
+
 # Import from eval module (Phase 7 TDD implementation complete)
 from finance_ml.eval import (
     calculate_mispricing_score,
@@ -55,7 +57,7 @@ from finance_ml.eval import (
     create_sector_heatmap,
     create_interactive_prediction_plot,
     create_region_sector_heatmap,
-    )
+)
 from finance_ml.features import (
     _safe_div,
     engineer_basic_ratios,
@@ -63,7 +65,8 @@ from finance_ml.features import (
     engineer_volatility_features,
     engineer_revenue_cagr,
     build_features_and_target,
-    )
+)
+
 # Import logging configuration module (TDD implementation)
 from finance_ml.logging_config import (
     setup_file_logging,
@@ -73,7 +76,8 @@ from finance_ml.logging_config import (
     remove_file_handlers,
     get_log_level,
     set_log_level,
-    )
+)
+
 # Import from models module (Phase 7 TDD implementation complete)
 from finance_ml.models import (
     create_event_labels,
@@ -87,9 +91,11 @@ from finance_ml.models import (
     train_stacking_ensemble,
     train_stacking_ensemble_by_sector,
     monitor_ensemble_training,
-    )
+)
+
 # Import notebook configuration module
 from finance_ml.notebook_config import NotebookConfig
+
 # Notebook utility helpers (display + loading strategy)
 from finance_ml.notebook_utils import (
     display_config_summary,
@@ -99,7 +105,8 @@ from finance_ml.notebook_utils import (
     display_missing_values_summary,
     validate_and_display_data,
     perform_and_display_eda,
-    )
+)
+
 # Import portfolio optimization module (TDD implementation)
 from finance_ml.portfolio_optimization import (
     calculate_portfolio_return,
@@ -111,7 +118,8 @@ from finance_ml.portfolio_optimization import (
     optimize_portfolio_min_volatility,
     optimize_portfolio_target_return,
     rebalance_portfolio,
-    )
+)
+
 # Import risk metrics module (TDD implementation)
 from finance_ml.risk_metrics import (
     calculate_var_historical,
@@ -121,7 +129,7 @@ from finance_ml.risk_metrics import (
     calculate_sortino_ratio,
     calculate_max_drawdown,
     calculate_portfolio_risk_metrics,
-    )
+)
 
 __all__ = [
     # Version

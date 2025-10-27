@@ -1,5 +1,5 @@
 # Core Data Science Libraries
-numpy>=1.24.0,<2.0.0
+numpy>=1.24.0,<2.1.0
 pandas>=2.0.0,<3.0.0
 scipy>=1.10.0,<2.0.0
 statsmodels>=0.14.0,<1.0.0
@@ -18,7 +18,7 @@ lightgbm>=4.0.0,<5.0.0
 catboost>=1.2.0,<2.0.0
 
 # Feature Engineering & Selection
-boruta>=0.3.0
+boruta>=0.3.0,<1.0.0
 
 # Model Interpretation & Explainability
 shap>=0.42.0,<1.0.0
@@ -47,5 +47,5 @@ SQLAlchemy>=2.0.0
 
 # Jupyter Notebook Support
 jupyter>=1.0.0
-notebook>=7.0.0
-ipykernel>=6.25.0
+notebook>=7.0.0,<8.0.0
+ipykernel>=6.25.0,<7.0.0

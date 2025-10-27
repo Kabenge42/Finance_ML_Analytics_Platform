@@ -1,6 +1,6 @@
 # Finance ML Analytics Platform — Improvement Plan
 
-**Version 0.3.1** — Last Updated: 2025-10-25
+**Version 0.4.0** — Last Updated: 2025-10-27
 
 This document provides a comprehensive overview of the Finance ML Analytics Platform project, including its technology stack, setup instructions, project structure, and phased development roadmap.
 
@@ -722,6 +722,795 @@ maintainability, and adherence to Python best practices.
 ### Phase 8 — Documentation and Versioning (Ongoing) ✓
 - Documentation ✓
 - Versioning ✓
+
+### Phase 9 — Advanced Stock Prediction ML System (In Progress)
+
+**Business Objective**: Predict Stock Price Targets for all stocks in the `all_stocks` dataframe  
+**Target Variable**: "Predicted Price Target" for regression modeling  
+**Primary Notebook**: `ml_finance_model_main.ipynb` (v8_3/v0.3.0)  
+**Reference Report**: `Stock_Prediction_Analysis_Report_20250806_131704.xlsx`  
+**Alignment**: ML Project Checklist (`reference material/ml-project-checklist.md`)  
+**Reference Materials**: 19 Jupyter notebooks (01-19) covering ML landscape through deployment at scale
+
+This phase implements a sophisticated Stock Prediction Machine Learning System with 8 key workflow steps, integrating
+advanced techniques from industry-standard ML references:
+
+#### 9.1 Loading and Preprocessing Financial Data from Multiple Regions
+
+**Reference**: `13_loading_and_preprocessing_data.ipynb`, `02_end_to_end_machine_learning_project.ipynb`  
+**Data Source**: `all_stocks` dataframe from PostgreSQL/CSV (US, EU, APAC, ROTW)  
+**Schema**: 234 columns mapped via `COLUMN_MAPPING_SUMMARY.md` with LTM/NTM/FY time periods
+
+**Implementation Strategy**:
+
+- [ ] Enhance `finance_ml.data` module with TensorFlow Dataset API patterns
+  - [ ] Implement data pipeline with prefetching and caching for large datasets
+  - [ ] Add robust outlier detection: IQR by sector, z-score thresholding, isolation forest
+  - [ ] Implement winsorization (1-99th percentile) for extreme values by sector
+  - [ ] Add data quality scoring: completeness, consistency, validity checks
+  - [ ] Create data quality dashboard with pandas-profiling or sweetviz integration
+- [ ] Implement temporal validation and time-aware splits
+  - [ ] Add support for temporal features (snapshot dates, quarterly reporting cycles)
+  - [ ] Implement time-series cross-validation (expanding window, rolling window)
+  - [ ] Ensure no data leakage: strict past→future splits, group by ticker in CV
+- [ ] Add data versioning and lineage tracking
+  - [ ] Implement data versioning with timestamp and hash-based tracking
+  - [ ] Add provenance tracking: source, transformations, quality metrics
+  - [ ] Create data catalog with metadata (schema, statistics, data quality)
+- [ ] Advanced preprocessing techniques
+  - [ ] Handle missing values: sector-specific imputation (median/mean/KNN/iterative)
+  - [ ] Implement custom transformers for financial ratios (handle division by zero, infinities)
+  - [ ] Add categorical encoding: one-hot, target encoding, frequency encoding
+  - [ ] Implement feature scaling pipelines: StandardScaler, RobustScaler, MinMaxScaler by sector
+- [ ] **Testing**: Add integration tests for multi-region data loading with edge cases
+- [ ] **Documentation**: Document preprocessing decisions and their business rationale
+
+#### 9.2 Exploratory Data Analysis of Financial Metrics
+
+**Reference**: `02_end_to_end_machine_learning_project.ipynb`, `08_dimensionality_reduction.ipynb`,
+`09_unsupervised_learning.ipynb`  
+**Current Implementation**: `ml_finance_model_main.ipynb` cells with matplotlib/seaborn/plotly visualizations
+
+**Implementation Strategy**:
+
+- [ ] Enhance `finance_ml.eval.simple_eda()` with comprehensive statistical analysis
+  - [ ] Add automated correlation analysis: Pearson, Spearman, Kendall tau, distance correlation
+  - [ ] Implement feature importance via random forest, mutual information, SHAP values
+  - [ ] Add distribution analysis: normality tests (Shapiro-Wilk, Kolmogorov-Smirnov), skewness, kurtosis
+  - [ ] Implement outlier detection visualization: box plots, violin plots, scatter with z-scores
+  - [ ] Add multivariate analysis: PCA visualization, t-SNE, UMAP for high-dimensional exploration
+- [ ] Sector and region-specific benchmarking
+  - [ ] Create sector-wise distribution comparisons (P/E, P/B, EV/EBITDA, margins)
+  - [ ] Add regional valuation metric comparisons with statistical significance tests
+  - [ ] Implement peer group analysis within sectors
+  - [ ] Add time-series trend analysis for key metrics (if temporal data available)
+- [ ] Automated EDA report generation
+  - [ ] Integrate pandas-profiling for comprehensive data profiling
+  - [ ] Generate HTML/PDF reports with executive summary, data quality, correlations, distributions
+  - [ ] Add custom financial metric dashboards (valuation, profitability, growth, leverage)
+  - [ ] Implement alert system for data quality issues and anomalies
+- [ ] Interactive EDA dashboards
+  - [ ] Create Plotly Dash or Streamlit dashboard with drill-down capabilities
+  - [ ] Add interactive filters: sector, region, market cap, valuation ranges
+  - [ ] Implement comparison tools: stock vs. sector average, peer comparisons
+  - [ ] Add real-time data quality monitoring dashboard
+- [ ] Statistical hypothesis testing framework
+  - [ ] Implement sector mean comparison tests (ANOVA, Kruskal-Wallis)
+  - [ ] Add region performance comparison tests (t-tests, Mann-Whitney U)
+  - [ ] Test for market efficiency hypotheses using price/target relationships
+- [ ] **Testing**: Add tests for EDA report generation, statistical calculations, visualization outputs
+- [ ] **Documentation**: Document EDA insights and their implications for modeling
+
+#### 9.3 Advanced Feature Engineering with Sector-Specific Optimizations
+
+**Reference**: `02_end_to_end_machine_learning_project.ipynb`, `13_loading_and_preprocessing_data.ipynb`  
+**Data Schema**: 234 columns from `COLUMN_MAPPING_SUMMARY.md` with LTM/NTM/FY variants  
+**Current Features**: Basic ratios (EV/EBITDA, P/E, P/B), margins, volatility, revenue CAGR
+
+**Implementation Strategy**:
+
+- [ ] Expand `finance_ml.features` module with comprehensive financial features
+  - [ ] **Core Financial Ratios** (using LTM/NTM variants):
+    - [ ] Valuation: P/E, P/B, P/S, EV/EBITDA, EV/Sales, PEG ratio, dividend yield
+    - [ ] Profitability: ROE, ROA, ROIC, gross/operating/net margins
+    - [ ] Leverage: Debt/Equity, Net Debt/EBITDA, Interest Coverage, Debt/Assets
+    - [ ] Liquidity: Current ratio, Quick ratio, Cash ratio, Working Capital/Sales
+    - [ ] Efficiency: Asset turnover, Inventory turnover, Receivables turnover
+    - [ ] Growth: Revenue CAGR, EPS growth, EBITDA growth, Book Value growth
+  - [ ] **Sector-Specific Features**:
+    - [ ] **Financials**: Tangible Book Value (TBV), P/TBV, Tier 1 Capital Ratio, Loan-to-Deposit ratio, Net Interest
+      Margin, Efficiency Ratio, Non-Performing Loans ratio
+    - [ ] **Energy/Materials**: CAPEX intensity, Reserves/Production ratio, Finding & Development costs, Operating cost
+      per barrel/ton, Asset turnover, Commodity price sensitivity
+    - [ ] **Technology**: R&D intensity (R&D/Revenue), SG&A efficiency, Rule of 40 (Growth% + Margin%), Cash burn rate,
+      Customer Acquisition Cost (CAC), LTV/CAC ratio
+    - [ ] **Healthcare**: R&D/Revenue, Pipeline value indicators, Patent expiry timelines, Clinical trial stage
+      indicators, Regulatory approval rates
+    - [ ] **Consumer**: Brand value proxies, Marketing spend efficiency, Inventory days, Same-store sales growth,
+      Customer retention metrics
+    - [ ] **Industrials**: Order backlog/Revenue, Capacity utilization, CAPEX/Depreciation, Working capital efficiency
+    - [ ] **Utilities**: Regulated Asset Base growth, Rate base/Revenue, Distribution coverage, Dividend sustainability
+      metrics
+  - [ ] **Temporal Features** (if date fields available):
+    - [ ] Quarterly/Annual reporting indicators, Days since last earnings, Earnings announcement proximity
+    - [ ] Seasonal effects, Fiscal quarter indicators
+  - [ ] **Market Microstructure Features**:
+    - [ ] Volatility measures: Historical volatility (30/60/90 day), Price range indicators
+    - [ ] Momentum indicators: Price relative strength, Moving average crossovers
+    - [ ] Trading volume patterns (if available)
+- [ ] Advanced feature engineering techniques
+  - [ ] **Feature Interactions**:
+    - [ ] Region × Sector interactions (e.g., US_Tech, EU_Financials)
+    - [ ] Size × Sector interactions (Large_Cap_Tech, Small_Cap_Consumer)
+    - [ ] Valuation × Growth interactions (High_PE_High_Growth)
+    - [ ] Cross-feature ratios and products (custom combinations)
+  - [ ] **Polynomial and Non-linear Features**:
+    - [ ] Polynomial features (degree 2-3) for key metrics
+    - [ ] Log transforms for skewed distributions (market cap, revenue)
+    - [ ] Square root and inverse transforms for specific ratios
+  - [ ] **Target Encoding and Statistical Features**:
+    - [ ] Sector-level target statistics (mean, median, std of price targets)
+    - [ ] Region-level aggregations
+    - [ ] Peer group statistics (within sector/size bucket)
+  - [ ] **Relative Value Features**:
+    - [ ] Deviation from sector median (z-scores for P/E, P/B, margins)
+    - [ ] Percentile ranks within sector
+    - [ ] Distance from historical averages (if temporal data available)
+- [ ] Automated feature selection framework
+  - [ ] Implement Boruta algorithm for all-relevant feature selection
+  - [ ] Add SHAP-based feature importance selection
+  - [ ] Implement Recursive Feature Elimination (RFE) with cross-validation
+  - [ ] Add mutual information-based feature selection
+  - [ ] Create feature selection pipeline with configurable methods
+  - [ ] Compare feature sets across selection methods
+- [ ] Feature engineering pipeline and versioning
+  - [ ] Create modular feature engineering pipeline with sklearn Pipeline
+  - [ ] Implement feature versioning with metadata tracking
+  - [ ] Document each feature: definition, business rationale, expected behavior
+  - [ ] Add feature validation: range checks, null handling, data type verification
+  - [ ] Create feature catalog with statistics and importance scores
+- [ ] **Testing**: Add comprehensive tests for all feature types, sector-specific logic, edge cases
+- [ ] **Documentation**: Create feature engineering guide with examples and sector-specific rationale
+
+#### 9.4 Multi-Class Classification of Financial Events (Sophisticated Models)
+
+**Reference**: `03_classification.ipynb`, `07_ensemble_learning_and_random_forests.ipynb`,
+`10_neural_nets_with_keras.ipynb`, `11_training_deep_neural_networks.ipynb`  
+**Purpose**: Classify financial events/catalysts to use as meta-features in regression models  
+**Classes**: Neutral (0), Positive Catalyst (1), Negative Catalyst (2) - expandable to more granular classes
+
+**Implementation Strategy**:
+
+- [ ] Enhance event label creation in `finance_ml.models`
+  - [ ] Expand `create_event_labels()` with sophisticated event definitions:
+    - [ ] Price momentum events (breakouts, breakdowns, volatility spikes)
+    - [ ] Analyst rating changes (upgrades, downgrades, initiation)
+    - [ ] Valuation events (undervalued, overvalued based on P/E, P/B percentiles)
+    - [ ] Fundamental events (earnings surprises, margin expansion/contraction)
+    - [ ] Market events (sector rotation, regional trends)
+  - [ ] Implement multi-class labels with confidence scores
+  - [ ] Add temporal validation: ensure labels use only past information (no leakage)
+  - [ ] Create balanced label sets with stratification by sector/region
+- [ ] Implement diverse classification models
+  - [ ] **Gradient Boosting Ensembles**:
+    - [ ] XGBoost with hyperparameter tuning (learning rate, max_depth, subsample, colsample)
+    - [ ] LightGBM with categorical feature support and early stopping
+    - [ ] CatBoost with built-in categorical encoding and ordered boosting
+    - [ ] Compare model performances with cross-validation
+  - [ ] **Random Forest and Bagging**:
+    - [ ] Random Forest with feature importance analysis
+    - [ ] Extra Trees for variance reduction
+    - [ ] Bagging with diverse base estimators
+  - [ ] **Neural Network Classifiers** (TensorFlow/Keras):
+    - [ ] Feedforward DNN with batch normalization and dropout (ref: notebook 10, 11)
+    - [ ] Architecture: Input → Dense(256) + BN + Dropout → Dense(128) + BN + Dropout → Dense(64) → Output(3)
+    - [ ] Activation: ReLU for hidden layers, softmax for output
+    - [ ] Optimizer: Adam with learning rate scheduling
+    - [ ] Regularization: L1/L2, dropout (0.3-0.5), early stopping
+    - [ ] Class weights for imbalanced data
+  - [ ] **Support Vector Machines** (ref: notebook 05):
+    - [ ] SVM with RBF and polynomial kernels
+    - [ ] One-vs-Rest and One-vs-One strategies
+  - [ ] **Advanced Ensemble Methods** (ref: notebook 07):
+    - [ ] Voting classifier (soft/hard voting across diverse models)
+    - [ ] Stacking classifier with meta-learner (logistic regression or XGBoost)
+    - [ ] Blending with holdout validation set
+- [ ] Handle class imbalance
+  - [ ] Implement SMOTE (Synthetic Minority Over-sampling Technique)
+  - [ ] Add ADASYN (Adaptive Synthetic Sampling)
+  - [ ] Use class weights in model training
+  - [ ] Apply under-sampling for majority class (random, Tomek links, NearMiss)
+  - [ ] Combine over/under-sampling strategies
+- [ ] Model evaluation and selection
+  - [ ] Implement stratified k-fold cross-validation (grouped by sector/ticker)
+  - [ ] Evaluate with precision, recall, F1-score, AUC-ROC, AUC-PR per class
+  - [ ] Create comprehensive confusion matrices with visualization
+  - [ ] Add classification reports with per-class metrics
+  - [ ] Implement learning curves to diagnose bias/variance
+- [ ] Feature importance and interpretation
+  - [ ] Extract feature importance from tree-based models
+  - [ ] Compute SHAP values for model explainability
+  - [ ] Analyze per-class feature importance
+  - [ ] Identify key drivers for each event type
+- [ ] Export classification outputs for regression
+  - [ ] Generate class probabilities (3 probabilities per stock)
+  - [ ] Create binary indicators for each class
+  - [ ] Add confidence scores (max probability)
+  - [ ] Export as meta-features for downstream regression models
+- [ ] **Testing**: Add comprehensive tests for event labeling, model training, class imbalance handling, probability
+  export
+- [ ] **Documentation**: Document event definitions, model architectures, hyperparameters, and interpretation guidelines
+
+#### 9.5 Sector-Optimized Regression Models Enhanced with Classification Features
+
+**Reference**: `04_training_linear_models.ipynb`, `07_ensemble_learning_and_random_forests.ipynb`,
+`10_neural_nets_with_keras.ipynb`, `11_training_deep_neural_networks.ipynb`,
+`12_custom_models_and_training_with_tensorflow.ipynb`, `19_training_and_deploying_at_scale.ipynb`  
+**Target Variable**: "Predicted Price Target" for all stocks in `all_stocks` dataframe  
+**Strategy**: Train sector-specific models + global model with classification meta-features
+
+**Implementation Strategy**:
+
+- [ ] Integrate classification features into regression pipeline
+  - [ ] Add classification probabilities (3 features: P(Neutral), P(Positive), P(Negative))
+  - [ ] Include predicted event class as categorical feature
+  - [ ] Add classification confidence score (max probability)
+  - [ ] Create interaction features: classification_probs × valuation_metrics
+- [ ] Implement diverse regression model architectures
+  - [ ] **Linear Models** (ref: notebook 04):
+    - [ ] Ridge regression with alpha tuning (L2 regularization)
+    - [ ] Lasso regression for feature selection (L1 regularization)
+    - [ ] Elastic Net combining L1 and L2 penalties
+    - [ ] Polynomial regression (degree 2-3) with regularization
+    - [ ] Bayesian Ridge for uncertainty estimation
+  - [ ] **Gradient Boosting Models**:
+    - [ ] XGBoost regressor with early stopping and CV-based tuning
+    - [ ] LightGBM regressor with dart/goss boosting
+    - [ ] CatBoost regressor with categorical feature encoding
+    - [ ] Histogram-based gradient boosting (sklearn HistGradientBoostingRegressor)
+  - [ ] **Random Forests and Tree Ensembles** (ref: notebook 07):
+    - [ ] Random Forest regressor with feature importance
+    - [ ] Extra Trees regressor for variance reduction
+    - [ ] Gradient Boosting Regressor (sklearn)
+  - [ ] **Neural Network Regressors** (ref: notebooks 10, 11, 12):
+    - [ ] Feedforward DNN: Input → Dense(512, ReLU) + BN + Dropout → Dense(256, ReLU) + BN + Dropout → Dense(128,
+      ReLU) + Dropout → Dense(1, linear)
+    - [ ] Advanced techniques:
+      - [ ] Batch normalization for stable training
+      - [ ] Dropout (0.2-0.4) for regularization
+      - [ ] L2 regularization on weights
+      - [ ] Learning rate scheduling (ReduceLROnPlateau, ExponentialDecay)
+      - [ ] Early stopping with patience
+      - [ ] Gradient clipping to prevent exploding gradients
+    - [ ] Loss functions: MSE, MAE, Huber (robust to outliers)
+    - [ ] Optimizer: Adam with beta tuning or AdamW with weight decay
+    - [ ] Advanced architectures:
+      - [ ] Residual connections (ResNet-style) for deep networks
+      - [ ] Wide & Deep architecture (linear + deep branches)
+      - [ ] Attention mechanisms for feature weighting
+- [ ] Sector-specific model optimization
+  - [ ] Train separate models for each major sector (Financials, Technology, Healthcare, Consumer, Energy, Industrials,
+    Utilities)
+  - [ ] Implement sector-specific feature selection (relevant features per sector)
+  - [ ] Apply sector-specific hyperparameter tuning
+  - [ ] Create sector-specific preprocessing pipelines (scaling, outlier treatment)
+  - [ ] Ensemble sector models with global fallback for rare sectors
+- [ ] Automated hyperparameter optimization
+  - [ ] Implement Optuna for Bayesian optimization
+  - [ ] Use GridSearchCV/RandomizedSearchCV for baseline tuning
+  - [ ] Apply Hyperband for efficient early stopping
+  - [ ] Create optimization study with cross-validation
+  - [ ] Track hyperparameter experiments with MLflow or Weights & Biases
+  - [ ] Implement automated model selection based on validation metrics
+- [ ] Advanced ensemble methods (ref: notebook 07)
+  - [ ] **Stacking Regressor**:
+    - [ ] Base models: XGBoost, LightGBM, CatBoost, Random Forest, Neural Network
+    - [ ] Meta-learner: Ridge, Lasso, or simple Linear Regression
+    - [ ] Use out-of-fold predictions for meta-features
+    - [ ] Implement sector-specific stacking ensembles
+  - [ ] **Voting Regressor**:
+    - [ ] Combine diverse models with weighted averaging
+    - [ ] Optimize weights with validation set
+  - [ ] **Blending**:
+    - [ ] Train models on different data splits
+    - [ ] Combine predictions with holdout-based weighting
+- [ ] Quantile regression for uncertainty estimation
+  - [ ] Implement quantile regression for prediction intervals (5th, 25th, 50th, 75th, 95th percentiles)
+  - [ ] Use LightGBM/XGBoost with quantile objectives
+  - [ ] Train separate models for each quantile
+  - [ ] Combine with conformal prediction for calibrated intervals
+  - [ ] Provide confidence bands: [lower_bound, prediction, upper_bound]
+- [ ] Model persistence and versioning (ref: notebook 19)
+  - [ ] Save trained models with joblib/pickle (sklearn models) or SavedModel (TensorFlow)
+  - [ ] Implement model versioning with timestamps and metadata
+  - [ ] Track model lineage: features used, hyperparameters, training data version
+  - [ ] Create model registry for production deployment
+  - [ ] Add model signature validation (input/output schemas)
+  - [ ] Implement A/B testing framework for model comparison
+- [ ] **Testing**: Add comprehensive tests for model training, sector-specific logic, ensemble methods, quantile
+  regression, model persistence
+- [ ] **Documentation**: Document model architectures, hyperparameters, training procedures, and sector-specific
+  strategies
+
+#### 9.6 Model Evaluation and Error Analysis
+
+**Reference**: `02_end_to_end_machine_learning_project.ipynb`, ML Project Checklist step 6  
+**Purpose**: Comprehensive model performance assessment and error diagnosis  
+**Metrics**: MAE, RMSE, MAPE, R², residual analysis, SHAP values
+
+**Implementation Strategy**:
+
+- [ ] Enhance `finance_ml.eval` with comprehensive evaluation framework
+  - [ ] **Core Regression Metrics**:
+    - [ ] MAE (Mean Absolute Error) - interpretable dollar error
+    - [ ] RMSE (Root Mean Squared Error) - penalizes large errors
+    - [ ] MAPE (Mean Absolute Percentage Error) - relative error
+    - [ ] R² (Coefficient of Determination) - variance explained
+    - [ ] Median Absolute Error - robust to outliers
+    - [ ] Max Error - worst-case performance
+  - [ ] **Sector and Region-specific Metrics**:
+    - [ ] Compute metrics by sector (7 major sectors)
+    - [ ] Compute metrics by region (US, EU, APAC, ROTW)
+    - [ ] Compute metrics by market cap buckets (Large, Mid, Small)
+    - [ ] Compute metrics by valuation quartiles (High P/E, Low P/E)
+    - [ ] Create performance heatmaps (Sector × Region)
+  - [ ] **Residual Analysis**:
+    - [ ] Plot residuals vs. predicted values (check homoscedasticity)
+    - [ ] Q-Q plots for normality assessment
+    - [ ] Histogram of residuals with normality tests
+    - [ ] Residuals vs. features to detect non-linearities
+    - [ ] Identify systematic bias patterns (over/under-prediction by segment)
+  - [ ] **Error Bucketing and Segmentation**:
+    - [ ] Group errors by market cap: Large (>$10B), Mid ($2-10B), Small (<$2B)
+    - [ ] Group errors by volatility: Low, Medium, High (percentile-based)
+    - [ ] Group errors by sector and analyze sector-specific challenges
+    - [ ] Identify outlier predictions (>3 std dev from mean error)
+    - [ ] Analyze prediction errors for undervalued vs. overvalued stocks
+- [ ] Model interpretation and explainability
+  - [ ] **SHAP (SHapley Additive exPlanations)**:
+    - [ ] Compute SHAP values for tree-based models and neural networks
+    - [ ] Create SHAP summary plots (global feature importance)
+    - [ ] Generate SHAP dependence plots (feature interactions)
+    - [ ] Create SHAP waterfall plots for individual predictions
+    - [ ] Analyze SHAP values by sector (sector-specific drivers)
+  - [ ] **LIME (Local Interpretable Model-agnostic Explanations)**:
+    - [ ] Apply LIME for local explanations of individual predictions
+    - [ ] Compare LIME and SHAP for consistency
+  - [ ] **Feature Importance**:
+    - [ ] Extract feature importance from tree-based models
+    - [ ] Compute permutation importance for all models
+    - [ ] Rank features by importance and stability across folds
+- [ ] Cross-validation framework
+  - [ ] **Time-series aware cross-validation** (if temporal data available):
+    - [ ] Implement expanding window CV (train on past, test on future)
+    - [ ] Implement rolling window CV with fixed train/test sizes
+    - [ ] Ensure strict temporal ordering (no future data in training)
+  - [ ] **Stratified cross-validation**:
+    - [ ] Stratify by sector to maintain sector balance in folds
+    - [ ] Stratify by region for balanced geographic representation
+  - [ ] **Grouped cross-validation**:
+    - [ ] Group by ticker to prevent data leakage (all observations of a ticker in same fold)
+  - [ ] **Custom cross-validation**:
+    - [ ] Implement custom splitters for financial data
+    - [ ] Support multiple CV strategies with comparison
+- [ ] Model comparison and selection
+  - [ ] Create model comparison dashboard (table with metrics per model)
+  - [ ] Implement statistical significance tests (paired t-test, Wilcoxon)
+  - [ ] Generate learning curves (training size vs. performance)
+  - [ ] Create validation curves (hyperparameter vs. performance)
+  - [ ] Implement automated model selection based on validation metrics and business rules
+  - [ ] Compare sector-specific models vs. global model performance
+- [ ] Bias-variance diagnosis
+  - [ ] Analyze training vs. validation performance (detect overfitting/underfitting)
+  - [ ] Create bias-variance decomposition plots
+  - [ ] Identify optimal model complexity
+- [ ] **Testing**: Add comprehensive tests for metric calculations, residual analysis, SHAP computation, CV strategies
+- [ ] **Documentation**: Document evaluation methodology, interpretation guidelines, and model selection criteria
+
+#### 9.7 Identification of Under/Overvalued Stocks with Visualization
+
+**Reference**: `02_end_to_end_machine_learning_project.ipynb`, ML Project Checklist step 7  
+**Purpose**: Identify investment opportunities based on predicted price targets  
+**Output**: Ranked lists, interactive dashboards, valuation reports
+
+**Implementation Strategy**:
+
+- [ ] Enhance stock valuation analysis in `finance_ml.eval`
+  - [ ] **Mispricing Score Calculation**:
+    - [ ] Base formula: `(Predicted_Target - Last_Price) / Last_Price * 100` (% upside/downside)
+    - [ ] Add confidence intervals from quantile regression (lower/upper bounds)
+    - [ ] Compute risk-adjusted mispricing: `(Expected_Return - Risk_Free_Rate) / Volatility`
+    - [ ] Apply sector-relative adjustments (compare to sector median)
+  - [ ] **Valuation Categories**:
+    - [ ] Strong Buy: Mispricing > +20% with high confidence
+    - [ ] Buy: Mispricing +10% to +20%
+    - [ ] Hold: Mispricing -10% to +10%
+    - [ ] Sell: Mispricing -20% to -10%
+    - [ ] Strong Sell: Mispricing < -20% with high confidence
+    - [ ] Apply sector-specific thresholds (volatile sectors get wider bands)
+  - [ ] **Sector-Relative Valuation**:
+    - [ ] Calculate z-scores for P/E, P/B, EV/EBITDA within sector
+    - [ ] Identify stocks trading at discount/premium to sector
+    - [ ] Compute percentile ranks within sector and peer group
+  - [ ] **Multi-Factor Screening**:
+    - [ ] Combine valuation, quality (ROE, margins), growth (revenue CAGR)
+    - [ ] Apply custom scoring formulas (e.g., Value Score = Valuation × Quality)
+    - [ ] Filter by liquidity, market cap, sector preferences
+- [ ] Automated stock screening and ranking
+  - [ ] **Top Undervalued Stocks** (buy opportunities):
+    - [ ] Rank by mispricing score (highest upside first)
+    - [ ] Filter by sector, region, market cap
+    - [ ] Add quality filters (profitability, leverage, growth)
+    - [ ] Export top 20-50 stocks with detailed metrics
+  - [ ] **Top Overvalued Stocks** (sell/short opportunities):
+    - [ ] Rank by negative mispricing (highest downside first)
+    - [ ] Identify potential shorts or portfolio exits
+  - [ ] **Sector Leaders and Laggards**:
+    - [ ] Identify best/worst stocks within each sector
+    - [ ] Compare to sector benchmarks
+- [ ] Interactive valuation dashboards
+  - [ ] **Plotly Dash or Streamlit Dashboard**:
+    - [ ] Scatter plot: Current Price vs. Predicted Target (color by sector)
+    - [ ] Interactive filters: sector, region, market cap, valuation categories
+    - [ ] Click on stock to see detailed profile and SHAP explanation
+    - [ ] Comparison tools: stock vs. peers, sector averages
+  - [ ] **Valuation Heatmaps**:
+    - [ ] Sector × Region heatmap with average mispricing
+    - [ ] Market cap × Sector heatmap with opportunity counts
+    - [ ] Correlation heatmap: valuation metrics vs. predicted returns
+  - [ ] **Time Series Tracking** (if temporal data available):
+    - [ ] Track mispricing scores over time
+    - [ ] Identify persistent opportunities or mean reversion
+- [ ] PDF report generation
+  - [ ] Create professional stock recommendation reports with ReportLab
+  - [ ] Include: executive summary, top opportunities, risk warnings, model explanation
+  - [ ] Add charts: valuation scatter, sector breakdown, confidence intervals
+  - [ ] Customize reports by client preferences
+- [ ] **Testing**: Add tests for mispricing calculations, ranking logic, filtering, dashboard components
+- [ ] **Documentation**: Document valuation methodology, screening criteria, and interpretation guidelines
+
+#### 9.8 Comprehensive Analytics: Predicted vs. Analyst Price Target
+
+**Reference**: `Stock_Prediction_Analysis_Report_20250806_131704.xlsx`, ML Project Checklist step 7  
+**Purpose**: Compare model predictions against analyst consensus targets  
+**Output**: Excel reports, dashboards, accuracy metrics, investment insights
+
+**Implementation Strategy**:
+
+- [ ] Create dedicated analytics module in `finance_ml.eval`
+  - [ ] **Prediction vs. Analyst Target Comparison**:
+    - [ ] Calculate differences: `Model_Target - Analyst_Target`
+    - [ ] Compute agreement rate: % of stocks where model and analysts agree (same direction)
+    - [ ] Identify disagreement opportunities: stocks where model significantly differs
+    - [ ] Analyze directional accuracy: % where model correctly predicts direction vs. current price
+  - [ ] **Accuracy Metrics**:
+    - [ ] Mean Absolute Error: `|Model_Target - Actual_Future_Price|` (if available)
+    - [ ] Directional accuracy: % correct up/down predictions
+    - [ ] Hit rate by confidence level (high confidence predictions more accurate?)
+    - [ ] Calibration: predicted upside vs. realized upside
+  - [ ] **Agreement/Disagreement Analysis**:
+    - [ ] Segment by sector: which sectors show highest model-analyst agreement?
+    - [ ] Segment by region: regional differences in prediction accuracy
+    - [ ] Analyze by stock characteristics: large vs. small cap, value vs. growth
+    - [ ] Identify systematic biases: does model consistently over/under-predict vs. analysts?
+  - [ ] **Temporal Tracking** (if multiple snapshots available):
+    - [ ] Track prediction changes over time
+    - [ ] Analyze model stability vs. analyst target revisions
+    - [ ] Identify early signals: model predicts before analyst consensus shifts
+- [ ] Generate comprehensive Excel reports (match Stock_Prediction_Analysis_Report format)
+  - [ ] **Sheet 1: Executive Summary**:
+    - [ ] Overall statistics: total stocks, avg predicted target, avg analyst target
+    - [ ] Model performance metrics: MAE, RMSE, R², directional accuracy
+    - [ ] Top opportunities summary: count by valuation category
+    - [ ] Sector breakdown: performance by sector
+  - [ ] **Sheet 2: Detailed Stock List**:
+    - [ ] Columns: Ticker, Sector, Region, Current Price, Predicted Target, Analyst Target, Mispricing %, Confidence
+      Interval, Valuation Category, Model-Analyst Difference
+    - [ ] Sortable and filterable
+    - [ ] Conditional formatting for quick insights (green=buy, red=sell)
+  - [ ] **Sheet 3: Top Opportunities (Undervalued)**:
+    - [ ] Top 50 stocks by mispricing score
+    - [ ] Detailed metrics: fundamentals, valuation ratios, growth metrics
+    - [ ] SHAP feature importance for each stock
+  - [ ] **Sheet 4: Risk Analysis (Overvalued)**:
+    - [ ] Top 50 overvalued stocks (potential sells/shorts)
+    - [ ] Risk indicators: high leverage, declining margins, negative growth
+  - [ ] **Sheet 5: Prediction Accuracy**:
+    - [ ] Model vs. Analyst comparison metrics
+    - [ ] Error distribution by sector, region, market cap
+    - [ ] Agreement/disagreement analysis
+  - [ ] **Sheet 6: Sector Analysis**:
+    - [ ] Sector-wise performance: avg mispricing, opportunity count, avg metrics
+    - [ ] Sector rankings by attractiveness
+  - [ ] **Sheet 7: Model Interpretation**:
+    - [ ] Global feature importance (SHAP summary)
+    - [ ] Sector-specific feature importance
+    - [ ] Model methodology summary
+  - [ ] **Formatting**: Use xlsxwriter for professional formatting, charts, conditional formatting
+- [ ] Create interactive prediction comparison dashboards
+  - [ ] **Streamlit or Plotly Dash Dashboard**:
+    - [ ] Main view: scatter plot of Predicted vs. Analyst Targets
+    - [ ] Color by agreement/disagreement magnitude
+    - [ ] Drill-down: click stock for detailed view
+    - [ ] Side-by-side comparison: model features vs. analyst rationale
+    - [ ] Real-time filtering and sorting
+  - [ ] **Prediction Accuracy Dashboard**:
+    - [ ] Error distribution plots
+    - [ ] Performance over time (if temporal data)
+    - [ ] Sector/region performance comparison
+- [ ] Automated report scheduling and distribution
+  - [ ] Schedule weekly/monthly report generation
+  - [ ] Email distribution with summary highlights
+  - [ ] Automated alerts for high-conviction opportunities
+  - [ ] Version control for reports (track changes over time)
+- [ ] **Testing**: Add comprehensive tests for comparison calculations, Excel report generation, dashboard components
+- [ ] **Documentation**: Document analytics methodology, report interpretation guide, and update procedures
+
+#### Technology Stack Enhancements for Phase 9
+
+**Core ML and Deep Learning**:
+
+- **TensorFlow/Keras** (>=2.13.0): Neural networks, custom models, advanced architectures
+- **PyTorch** (optional): Alternative deep learning framework for research models
+- **Scikit-learn** (>=1.3.0): Traditional ML algorithms, preprocessing, pipelines
+- **XGBoost, LightGBM, CatBoost**: Gradient boosting implementations
+- **Imbalanced-learn** (>=0.11.0): Class balancing techniques (SMOTE, ADASYN)
+
+**Hyperparameter Optimization**:
+
+- **Optuna** (>=3.0.0): Bayesian optimization with pruning
+- **Hyperopt**: Tree-structured Parzen estimator optimization
+- **Ray Tune** (optional): Distributed hyperparameter tuning at scale
+
+**Model Interpretation and Explainability**:
+
+- **SHAP** (>=0.42.0): SHapley Additive exPlanations for model interpretation
+- **LIME** (>=0.2.0): Local Interpretable Model-agnostic Explanations
+- **ELI5**: Model explanation library
+- **InterpretML**: Microsoft's interpretability toolkit
+
+**Dashboarding and Visualization**:
+
+- **Streamlit** (>=1.25.0): Rapid dashboard prototyping
+- **Plotly Dash**: Production-grade interactive dashboards
+- **Plotly** (>=5.14.0): Interactive visualizations
+- **Matplotlib, Seaborn**: Static visualizations
+
+**Report Generation**:
+
+- **ReportLab**: Professional PDF report generation
+- **xlsxwriter** (>=3.1.0): Excel file creation with formatting
+- **openpyxl**: Excel file manipulation
+- **python-pptx**: PowerPoint report generation (optional)
+
+**Feature Selection and Engineering**:
+
+- **Boruta** (optional): All-relevant feature selection
+- **mlxtend**: Feature selection utilities
+- **Feature-engine**: Feature engineering library
+
+**Time Series and Temporal Analysis**:
+
+- **statsmodels** (>=0.14.0): Statistical modeling and time series
+- **prophet** (optional): Facebook's time series forecasting
+- **arch**: GARCH models for volatility forecasting
+
+**Experiment Tracking and MLOps**:
+
+- **MLflow** (>=2.5.0): Experiment tracking, model registry, deployment
+- **Weights & Biases** (optional): Experiment tracking and collaboration
+- **DVC** (optional): Data version control
+
+**Data Profiling and Quality**:
+
+- **pandas-profiling** (ydata-profiling): Automated EDA reports
+- **sweetviz**: Comparative data analysis
+- **great_expectations**: Data validation framework
+
+**Advanced Libraries**:
+
+- **NumPy** (>=1.24.0): Numerical computing
+- **Pandas** (>=2.0.0): Data manipulation
+- **SciPy** (>=1.10.0): Scientific computing
+- **Joblib** (>=1.3.0): Parallel processing and model persistence
+
+#### Advanced ML Techniques from Reference Notebooks (Future Enhancements)
+
+**Reference**: Notebooks 14-18 covering advanced deep learning architectures  
+**Status**: Future research and experimentation (Phase 10+)  
+**Purpose**: Explore cutting-edge techniques for potential performance improvements
+
+##### 14. Deep Computer Vision with CNNs (Future Research)
+
+**Reference**: `14_deep_computer_vision_with_cnns.ipynb`  
+**Potential Applications**:
+
+- [ ] **Chart Pattern Recognition**: Train CNNs on candlestick chart images to detect technical patterns
+  - [ ] Convert OHLC data to candlestick chart images
+  - [ ] Use ResNet, EfficientNet, or Vision Transformer (ViT) for pattern classification
+  - [ ] Identify breakouts, reversals, head-and-shoulders, triangles
+- [ ] **Financial Report Image Analysis**: Extract information from earnings report charts/tables
+- [ ] **Correlation Heatmap Analysis**: Use CNNs to identify complex correlation patterns
+- **Feasibility**: Medium - requires image data generation from time series
+- **Priority**: Low - traditional features likely sufficient for tabular financial data
+
+##### 15. Processing Sequences using RNNs and CNNs (Future Research)
+
+**Reference**: `15_processing_sequences_using_rnns_and_cnns.ipynb`  
+**Potential Applications**:
+
+- [ ] **Time-Series Price Prediction**: Use LSTMs/GRUs to model temporal dependencies in prices
+  - [ ] Multi-step ahead forecasting with LSTM encoder-decoder
+  - [ ] Bidirectional RNNs for context-aware predictions
+  - [ ] Stateful RNNs for online learning
+- [ ] **Sequential Financial Metrics**: Model quarterly earnings sequences
+  - [ ] Predict next quarter's metrics from historical sequence
+  - [ ] Detect trend changes (growth → decline)
+- [ ] **1D CNNs for Time Series**: Apply temporal convolutional networks (TCN) to financial sequences
+- **Feasibility**: High - if temporal/sequential data becomes available
+- **Priority**: Medium - valuable for quarterly reporting cycles
+
+##### 16. NLP with RNNs and Attention (Future Research)
+
+**Reference**: `16_nlp_with_rnns_and_attention.ipynb`  
+**Potential Applications**:
+
+- [ ] **Earnings Call Transcript Analysis**: Extract sentiment from CEO/CFO comments
+  - [ ] Use LSTM + Attention for sentiment classification
+  - [ ] Identify forward-looking statements, risk factors
+  - [ ] Extract key topics with attention weights
+- [ ] **News Sentiment Analysis**: Analyze financial news articles for stock sentiment
+  - [ ] Use pre-trained BERT/FinBERT for financial text
+  - [ ] Aggregate sentiment scores as features
+- [ ] **Analyst Report Mining**: Extract price targets, ratings, key insights from analyst PDFs
+- [ ] **Transformer Models**: Apply BERT, GPT, or domain-specific models (FinBERT, BloombergGPT)
+- **Feasibility**: High - if text data (earnings transcripts, news, analyst reports) available
+- **Priority**: Medium-High - NLP features can significantly improve predictions
+
+##### 17. Autoencoders, GANs, and Diffusion Models (Future Research)
+
+**Reference**: `17_autoencoders_gans_and_diffusion_models.ipynb`  
+**Potential Applications**:
+
+- [ ] **Autoencoders for Anomaly Detection**:
+  - [ ] Train autoencoder on "normal" financial metrics
+  - [ ] Detect outliers/anomalies (potential fraud, unusual patterns)
+  - [ ] Use reconstruction error as anomaly score
+  - [ ] Variational Autoencoder (VAE) for probabilistic anomaly detection
+- [ ] **Dimensionality Reduction**:
+  - [ ] Use autoencoders to compress 234 features into dense representations
+  - [ ] Compare with PCA, t-SNE, UMAP
+  - [ ] Use latent representations as meta-features
+- [ ] **GANs for Synthetic Data Generation**:
+  - [ ] Generate synthetic financial data for rare sectors/regions
+  - [ ] Address class imbalance with synthetic examples
+  - [ ] Create stress-test scenarios (e.g., recession conditions)
+  - [ ] Conditional GANs (cGAN) for sector-specific data generation
+- [ ] **Diffusion Models** (Experimental):
+  - [ ] Generate realistic financial metric distributions
+  - [ ] Sample-based uncertainty estimation
+- **Feasibility**: Medium - requires careful validation (synthetic data quality)
+- **Priority**: Low-Medium - useful for data augmentation and anomaly detection
+
+##### 18. Reinforcement Learning (Future Research)
+
+**Reference**: `18_reinforcement_learning.ipynb`  
+**Potential Applications**:
+
+- [ ] **Portfolio Optimization with RL**:
+  - [ ] Agent learns optimal portfolio allocation strategy
+  - [ ] State: current portfolio, market conditions, stock features
+  - [ ] Action: buy/sell/hold decisions, position sizes
+  - [ ] Reward: Sharpe ratio, returns, risk-adjusted performance
+  - [ ] Algorithms: DQN, A3C, PPO, DDPG, SAC
+- [ ] **Trading Strategy Learning**:
+  - [ ] Learn when to enter/exit positions based on predictions
+  - [ ] Incorporate transaction costs, slippage
+  - [ ] Multi-agent RL for market simulation
+- [ ] **Dynamic Feature Selection**:
+  - [ ] RL agent learns which features to use per stock/sector
+  - [ ] Adaptive model selection (which model to use when)
+- [ ] **Hyperparameter Optimization with RL**:
+  - [ ] Use RL for sequential hyperparameter search (alternative to Optuna)
+- **Feasibility**: Medium-High - requires careful reward design and extensive testing
+- **Priority**: Medium - valuable for portfolio optimization and trading strategies
+
+##### Implementation Considerations for Advanced Techniques
+
+- [ ] **Data Requirements**: Assess availability of temporal, text, and alternative data
+- [ ] **Computational Resources**: Deep learning models require GPUs for training
+- [ ] **Interpretability Trade-offs**: Balance model complexity with explainability requirements
+- [ ] **Validation Rigor**: Extensive backtesting and out-of-sample validation for advanced models
+- [ ] **Incremental Adoption**: Start with simpler techniques, gradually add complexity if proven beneficial
+- [ ] **Benchmarking**: Compare advanced models against gradient boosting baselines
+- [ ] **Production Constraints**: Consider inference latency, memory, maintenance costs
+
+#### Testing and Validation Strategy
+
+- [ ] Add integration tests for complete workflow (end-to-end)
+- [ ] Implement model performance regression tests
+- [ ] Add data drift detection tests
+- [ ] Create benchmark datasets for reproducibility
+- [ ] Implement continuous model monitoring framework
+
+#### Documentation for Phase 9
+
+- [ ] Create detailed workflow documentation for each step
+- [ ] Add Jupyter notebook tutorials for each component
+- [ ] Create API reference documentation (Sphinx)
+- [ ] Add model card documentation for deployed models
+- [ ] Create user guide for stock prediction system
+
+#### Success Criteria
+
+- ✅ All 8 workflow steps fully implemented and tested
+- ✅ Test coverage >90% for new modules
+- ✅ Comprehensive Excel reports matching reference format
+- ✅ Interactive dashboards for real-time analysis
+- ✅ Automated model evaluation and selection
+- ✅ Production-ready prediction system
+
+#### ML Project Checklist Alignment
+
+Phase 9 aligns with the standard ML project framework (reference: `reference material/ml-project-checklist.md`):
+
+**1. Frame the problem and look at the big picture** ✓
+
+- Business objective: Predict Stock Price Targets for portfolio optimization and investment decisions
+- Problem type: Supervised learning (regression + multi-class classification)
+- Performance measure: MAE, RMSE, R² for regression; F1-score for classification
+- Success metric: Prediction accuracy vs. analyst targets, actionable stock recommendations
+
+**2. Get the data** ✓
+
+- Data sources: PostgreSQL database with multi-region equity data (US, EU, APAC, ROTW)
+- Data format: CSV files (screening_us.csv, screening_eu.csv, screening_apac.csv, screening_rotw.csv)
+- Data size: 200+ columns, thousands of stocks across regions
+- Implemented in: Phase 1 (Data Ingestion) and Phase 9.1 (Enhanced Preprocessing)
+
+**3. Explore the data** → Phase 9.2
+
+- EDA automation with `finance_ml.eval.simple_eda()`
+- Statistical analysis, correlation matrices, distribution testing
+- Sector-specific metric benchmarking
+- Interactive dashboards for exploratory analysis
+
+**4. Prepare the data** → Phase 9.1, 9.3
+
+- Data cleaning and quality checks (Phase 9.1)
+- Outlier detection and treatment by sector
+- Feature engineering with sector-specific optimizations (Phase 9.3)
+- Feature scaling, encoding, and transformation pipelines
+
+**5. Explore many different models** → Phase 9.4, 9.5
+
+- Event classification: Gradient boosting (XGBoost, LightGBM, CatBoost), Neural Networks
+- Regression: Linear models, ensemble methods, deep learning, quantile regression
+- Sector-optimized models with classification features integration
+- Hyperparameter optimization with Optuna/GridSearchCV
+
+**6. Fine-tune your models** → Phase 9.5, 9.6
+
+- Automated hyperparameter optimization (Optuna, GridSearchCV)
+- Cross-validation framework (time-series aware, grouped by sector)
+- Model ensembling and stacking
+- Prediction interval estimation with quantile regression
+
+**7. Present your solution** → Phase 9.7, 9.8
+
+- Comprehensive Excel reports (Stock_Prediction_Analysis_Report format)
+- Interactive dashboards with Plotly/Streamlit
+- Valuation analysis: undervalued/overvalued stock identification
+- Predicted vs. Analyst Target comparison analytics
+- PDF report generation for stakeholders
+
+**8. Launch, monitor, and maintain** → Phase 9 Infrastructure
+
+- Model persistence and versioning
+- Automated report scheduling and distribution
+- Continuous model monitoring and performance tracking
+- Data drift detection and alerting
+- Retraining pipeline automation
 
 ### Risk and Mitigation
 - **Heavy dependencies** (TensorFlow, LightGBM) can be fragile on Windows.

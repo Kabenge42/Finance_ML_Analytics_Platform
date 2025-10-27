@@ -35,14 +35,40 @@ Finance ML Analytics Platform is a comprehensive toolkit for quantitative equity
 - **CLI tools**: Command-line interface for batch processing and automation
 - **Production-ready**: Modern packaging, comprehensive tests, CI/CD, configuration management
 
+### Business Objective
+
+**Primary Goal**: Predict Stock Price Targets for all stocks in the portfolio to support investment decisions and
+portfolio optimization.
+
+**Target Variable**: "Predicted Price Target" for regression modeling
+
+The platform implements a sophisticated 8-step ML workflow aligned with industry best practices (
+see [IMPROVEMENT_PLAN.md Phase 9](IMPROVEMENT_PLAN.md#phase-9--advanced-stock-prediction-ml-system-in-progress) for
+detailed implementation plan):
+
+1. Loading and preprocessing financial data from multiple regions
+2. Exploratory data analysis of financial metrics
+3. Advanced feature engineering with sector-specific optimizations
+4. Multi-class classification of financial events using sophisticated models
+5. Training sector-optimized regression models enhanced with classification features
+6. Model evaluation and error analysis
+7. Identification of under/overvalued stocks with visualization
+8. Comprehensive analytics: Predicted vs. Analyst Price Target comparison
+
 ### Key Features
 - 📊 **Data Management**: Load from PostgreSQL or CSV, with validation and quality checks
-- 🔧 **Feature Engineering**: Financial ratios, margins, volatility, revenue CAGR, and more
-- 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models, stacking ensembles
-- 📈 **Analytics**: Mispricing scores, stock ranking, interactive visualizations
+- 🔧 **Feature Engineering**: Financial ratios, margins, volatility, revenue CAGR, sector-specific optimizations (
+  Financials, Energy, Tech, Healthcare)
+- 🤖 **ML Models**: Multi-class event classification, sector-optimized regression, quantile models, stacking ensembles,
+  deep learning (TensorFlow/Keras)
+- 📈 **Analytics**: Mispricing scores, stock ranking, interactive visualizations, Predicted vs. Analyst Target comparison
+- 🎯 **Stock Prediction**: Sophisticated 8-step workflow for price target prediction with comprehensive error analysis
+- 📊 **Reporting**: Excel reports (matching Stock_Prediction_Analysis_Report format), PDF generation, interactive
+  dashboards
 - ⚙️ **Configuration**: Flexible config via environment variables, JSON, or YAML
 - 🧪 **Tested**: Comprehensive unit tests with good coverage
 - 🚀 **CLI**: Three command-line tools for different workflows
+- 🔍 **Model Interpretation**: SHAP, LIME for explainability and feature importance analysis
 
 
 ## Tech Stack
@@ -731,11 +757,31 @@ mypy finance_ml --ignore-missing-imports
 - ✅ **Configuration Management**: Centralized config via environment, JSON, or YAML
 - ✅ **CLI Tools**: Three console commands for different workflows
 - ✅ **Modern Packaging**: `pyproject.toml` with optional dependency groups
-- 📝 **CI/CD**: Planned — Add GitHub Actions workflow for automated testing (see TODOs in the CI/CD section)
+- ✅ **CI/CD**: GitHub Actions workflow for automated testing
 - ✅ **Updated Notebook**: Now imports from `finance_ml` package
 - ✅ **CHANGELOG.md**: Track version history
 
-See [CHANGELOG.md](CHANGELOG.md) for complete version history.
+## Development Roadmap
+
+### Phase 9: Advanced Stock Prediction ML System (Planned)
+
+A comprehensive development plan for a sophisticated stock prediction system is detailed
+in [IMPROVEMENT_PLAN.md Phase 9](IMPROVEMENT_PLAN.md#phase-9--advanced-stock-prediction-ml-system-planned).
+
+**Key Enhancements Planned**:
+
+- **Sector-Specific Features**: Tailored feature engineering for Financials, Energy, Technology, Healthcare, and
+  Consumer sectors
+- **Advanced Classification**: Multi-class event classification with neural networks and gradient boosting ensembles
+- **Enhanced Regression**: Classification-enhanced sector-optimized models with hyperparameter optimization
+- **Comprehensive Analytics**: Predicted vs. Analyst Target comparison with detailed error analysis
+- **Interactive Dashboards**: Real-time monitoring with Plotly Dash/Streamlit
+- **Model Interpretation**: SHAP and LIME integration for explainability
+- **Automated Reporting**: Excel and PDF report generation matching institutional formats
+
+**Framework Alignment**: Phase 9 aligns with the standard 8-step ML project checklist for production-ready systems.
+
+See [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) for complete version history and detailed roadmap.
 
 ## SQLite Local Setup and Data Load
 
