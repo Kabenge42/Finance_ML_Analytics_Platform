@@ -1,19 +1,20 @@
 Finance ML Analytics Platform — Development Guidelines
 
 TL;DR (Quick Start)
-- Python: 3.10 or 3.11 recommended.
+
+- Python: 3.10, 3.11, or 3.12 recommended.
 - Create venv: python -m venv .venv && .venv\Scripts\activate
 - Upgrade pip: python -m pip install --upgrade pip setuptools wheel
 - Install deps: pip install -r requirements.txt
 - PostgreSQL: install and start local Postgres; run create_equities_schema.sql to create the equities table.
 - Data: Import the CSVs from data/ into the equities table, tagging each by Region.
-- Notebook: open ml_finance_model_v8_2.ipynb and run cells in order.
+- Notebook: open ml_finance_model_main.ipynb and run cells in order.
 - Tests: python -m unittest -v
 
 1) Build and Configuration Instructions
 A. Prerequisites
 - OS: Windows 10/11 (tested), macOS, or Linux.
-- Python: 3.10–3.11. Use pyenv or the official installer. Avoid mixing Conda with venv in the same project.
+- Python: 3.10, 3.11, or 3.12. Use pyenv or the official installer. Avoid mixing Conda with venv in the same project.
 - Git: optional but recommended for version control.
 - PostgreSQL: 15+ recommended. Local DB will be used for data loading. JDBC URL in this project: jdbc:postgresql://localhost:5432/postgres
 - JDK (optional): Only if you use JVM tools or JDBC from Java-based tooling.
@@ -35,8 +36,9 @@ C. Install Python dependencies
   - pip install -r requirements.txt
 - Notes:
   - TensorFlow is heavy; CPU-only install is fine for this project. If you have an NVIDIA GPU and want acceleration, follow the official TensorFlow GPU install docs and ensure CUDA/cuDNN compatibility. If installation is problematic, you can temporarily comment out tensorflow in requirements.txt and proceed; the core workflow primarily uses scikit-learn and gradient boosting libraries.
-  - If you need database access from Python, add: pip install psycopg2-binary SQLAlchemy
-    - These are NOT listed in requirements.txt to keep the base footprint small. Most data movement can be done via psql or GUI tools.
+  - Database access from Python: psycopg2-binary and SQLAlchemy are now included in requirements.txt for PostgreSQL
+    connectivity. Most data movement can be done via psql or GUI tools, but these libraries enable direct database
+    access from Python scripts and notebooks.
 
 D. Environment variables
 - See environment_variables.txt. You can export them in your shell or create a .env for tools that auto-load it.
@@ -99,7 +101,8 @@ G. Accessing the database from Python (optional)
   - )
 
 2) Data Pipeline aligned to the new all_stocks dataframe
-The notebook (ml_finance_model_v8_2.ipynb) implements the pipeline below. Use all_stocks as the single, unified dataframe sourced from PostgreSQL across regions.
+   The notebook (ml_finance_model_main.ipynb) implements the pipeline below. Use all_stocks as the single, unified
+   dataframe sourced from PostgreSQL across regions.
 
 A. Loading and preprocessing
 - Source: equities table in PostgreSQL populated from the four CSVs.
@@ -158,7 +161,7 @@ H. Comprehensive analytics of prediction results
 2.5) Running as a Python script
 In addition to the notebook-first workflow, you can run a lightweight script version of the pipeline.
 
-A. Script: ml_finance_model_v8_2.py
+A. Script: ml_finance_model_main.py
 - Python script with CLI for batch processing:
   - `--data-source {auto|csv|db}` — Data source selection (default: auto)
   - `--db-url <url>` — Database connection string (or use DB_URL env var)
@@ -168,9 +171,9 @@ A. Script: ml_finance_model_v8_2.py
 
 B. Usage examples
 - Windows (PowerShell):
-  - python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+  - python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
 - macOS/Linux (bash):
-  - python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+  - python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
 
 C. Data source selection
 - --data-source auto (default) tries DB first if DB_URL (or --db-url) is provided and SQLAlchemy is available, otherwise falls back to CSVs in data/.
@@ -195,23 +198,36 @@ B. How to add tests
 - Use small, deterministic samples; avoid loading full CSVs unless necessary.
 
 C. Test suite overview
-The project includes a comprehensive test suite with the following test modules:
-- tests/test_repository_setup.py — Validates repository basics:
-  - Key files exist (requirements.txt, create_equities_schema.sql, environment_variables.txt, CSVs)
-  - SQL file contains CREATE TABLE equities and sets OWNER TO postgres
-  - environment_variables.txt includes TF_CPP_MIN_LOG_LEVEL=2
-  - CSVs are non-empty and have a header line
-- tests/test_data_quality.py — Data validation and quality checks
-- tests/test_loaders.py — CSV and database loading functions
-- tests/test_features.py — Feature engineering functions
+The project includes a comprehensive test suite with the following test modules (27 total):
+
+- tests/test_analytics.py — Analytics and stock ranking tests
 - tests/test_build_features.py — Feature building pipeline
+- tests/test_classification.py — Event classification model tests
+- tests/test_cli.py — Command-line interface tests
+- tests/test_coverage_smoke.py — Smoke test for coverage validation
+- tests/test_data_quality.py — Data validation and quality checks
 - tests/test_eda.py — Exploratory data analysis utilities
+- tests/test_features.py — Feature engineering functions
+- tests/test_finance_ml_config.py — Configuration management tests
+- tests/test_finance_ml_data.py — Data loading module tests
+- tests/test_finance_ml_eval.py — Evaluation and analytics module tests
+- tests/test_finance_ml_features.py — Features module tests
+- tests/test_finance_ml_models.py — Models module tests
+- tests/test_improvement_plan_revision.py — Development plan validation
+- tests/test_loaders.py — CSV and database loading functions
+- tests/test_logging.py — Logging configuration tests
+- tests/test_notebook_config.py — Notebook configuration tests
+- tests/test_notebook_enhancements.py — Notebook enhancements validation
+- tests/test_portfolio_optimization.py — Portfolio optimization tests
 - tests/test_preprocess_and_training.py — Preprocessing and training workflows
 - tests/test_regression.py — Regression model evaluation
-- tests/test_sqlite_import.py — SQLite import functionality tests (header removal, NULL handling, region backfilling,
-  UNIQUE constraint)
-- tests/test_validate_csv_import.py — CSV validation tests (schema validation, missing columns, non-numeric data
-  detection)
+- tests/test_repository_setup.py — Validates repository basics (required files, SQL schema, environment config)
+- tests/test_risk_metrics.py — Risk metrics calculation tests
+- tests/test_setup_environment.py — Setup script validation
+- tests/test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
+- tests/test_sql_scripts.py — SQL script validation tests
+- tests/test_validate_csv_import.py — CSV validation (schema validation, data quality checks)
+- tests/test_visualizations.py — Visualization functions tests
 
 4) Additional Development Information
 A. Code style and quality
@@ -269,8 +285,9 @@ Key Features (aligns with README)
 - 🚀 CLI: Three command-line tools for different workflows (see CLI Tools below)
 
 Finance_ML_Analytics_Platform — Main Scripts
-- ml_finance_model_v8_2.ipynb — Primary notebook for end-to-end workflow and exploration.
-- ml_finance_model_v8_2.py — Lightweight script version with a CLI for batch runs and automation.
+
+- ml_finance_model_main.ipynb — Primary notebook for end-to-end workflow and exploration.
+- ml_finance_model_main.py — Lightweight script version with a CLI for batch runs and automation.
 
 CLI Tools (installed via pyproject’s console scripts)
 - finance-ml — Primary pipeline runner (data load, preprocess, features, models, outputs).
@@ -280,8 +297,8 @@ CLI Tools (installed via pyproject’s console scripts)
 - finance-ml-validate — Validation-only workflows (schema checks, data quality, etc.).
   Example: finance-ml-validate --data-source csv --output-dir outputs
 Notes:
-- The script ml_finance_model_v8_2.py provides equivalent capabilities via Python directly:
-  - python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+- The script ml_finance_model_main.py provides equivalent capabilities via Python directly:
+  - python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
 - Data sources: --data-source auto|csv|db as described earlier. Use DB_URL or --db-url for database access.
 
 Testing and Coverage
@@ -306,8 +323,8 @@ When making significant changes, ensure the following files are updated accordin
 - Pipfile — Reflect dependency changes for Pipenv users.
 - requirements.txt — Keep constraints aligned with pyproject.toml; consider optional extras.
 - README.md — Key Features, setup, CLI usage, examples, and links.
-- ml_finance_model_v8_2.ipynb — Ensure cells align with the current pipeline functions and APIs.
-- ml_finance_model_v8_2.py — Keep CLI options and defaults in sync with package functions.
+- ml_finance_model_main.ipynb — Ensure cells align with the current pipeline functions and APIs.
+- ml_finance_model_main.py — Keep CLI options and defaults in sync with package functions.
 - IMPROVEMENT_PLAN.md — Log changes to features/labels/metrics; note version bumps.
 - pyproject.toml — Update version, console scripts, optional dependencies, and tooling configs.
 - qodana.yaml — Static analysis and quality gates configuration.

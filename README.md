@@ -7,7 +7,7 @@
 
 ## Quick Start (TL;DR)
 
-- Python: 3.10 or 3.11
+- Python: 3.10, 3.11, or 3.12
 - Create and activate a virtual environment:
     - Windows (PowerShell):
         - python -m venv .venv
@@ -74,7 +74,8 @@ detailed implementation plan):
 ## Tech Stack
 
 ### Core Technologies
-- **Language**: Python 3.10 or 3.11 (required)
+
+- **Language**: Python 3.10, 3.11, or 3.12 (required)
 - **Package Manager**: pip + venv (primary), pipenv (alternative)
 - **Notebook**: Jupyter Notebook or JupyterLab
 - **Database**: PostgreSQL 15+ (local instance recommended)
@@ -100,7 +101,7 @@ The package supports optional dependency groups via `pyproject.toml`:
 
 ## Requirements
 - OS: Windows 10/11 (tested), macOS, or Linux
-- Python: 3.10 or 3.11
+- Python: 3.10, 3.11, or 3.12
 - PostgreSQL: 15+ (local instance)
 - Optional: Git for version control
 
@@ -305,19 +306,36 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Run all tests from the project root:
   - python -m unittest -v
 
-Test suite in tests/ directory:
-- test_repository_setup.py — Validates repository basics (required files, SQL schema, environment config, CSV format)
-- test_data_quality.py — Data validation and quality checks
-- test_loaders.py — CSV and database loading functions
-- test_features.py — Feature engineering functions
+Comprehensive test suite in tests/ directory (27 test modules):
+
+- test_analytics.py — Analytics and stock ranking tests
 - test_build_features.py — Feature building pipeline
+- test_classification.py — Event classification model tests
+- test_cli.py — Command-line interface tests
+- test_coverage_smoke.py — Smoke test for coverage validation
+- test_data_quality.py — Data validation and quality checks
 - test_eda.py — Exploratory data analysis utilities
+- test_features.py — Feature engineering functions
+- test_finance_ml_config.py — Configuration management tests
+- test_finance_ml_data.py — Data loading module tests
+- test_finance_ml_eval.py — Evaluation and analytics module tests
+- test_finance_ml_features.py — Features module tests
+- test_finance_ml_models.py — Models module tests
+- test_improvement_plan_revision.py — Development plan validation
+- test_loaders.py — CSV and database loading functions
+- test_logging.py — Logging configuration tests
+- test_notebook_config.py — Notebook configuration tests
+- test_notebook_enhancements.py — Notebook enhancements validation
+- test_portfolio_optimization.py — Portfolio optimization tests
 - test_preprocess_and_training.py — Preprocessing and training workflows
 - test_regression.py — Regression model evaluation
-- test_classification.py — Event classification model tests
-- test_analytics.py — Analytics and stock ranking tests
-- test_sqlite_import.py — SQLite import functionality tests (header removal, NULL handling, region backfilling)
-- test_validate_csv_import.py — CSV validation tests (schema validation, data quality checks)
+- test_repository_setup.py — Validates repository basics (required files, SQL schema, environment config)
+- test_risk_metrics.py — Risk metrics calculation tests
+- test_setup_environment.py — Setup script validation
+- test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
+- test_sql_scripts.py — SQL script validation tests
+- test_validate_csv_import.py — CSV validation (schema validation, data quality checks)
+- test_visualizations.py — Visualization functions tests
 
 
 ## Project Structure
@@ -326,31 +344,48 @@ Test suite in tests/ directory:
 Finance_ML_Analytics_Platform/
 ├── finance_ml/                    # Main Python package (v0.3.0)
 │   ├── __init__.py               # Package exports and version
-│   ├── data.py                   # Data loading, normalization, validation
-│   ├── features.py               # Feature engineering functions
-│   ├── models.py                 # ML models (classification, regression, ensembles)
-│   ├── eval.py                   # Analytics, visualizations, reporting
-│   ├── config.py                 # Configuration management
 │   ├── cli.py                    # Command-line interface
-│   ├── notebook_config.py        # Notebook-specific helpers/config (if used)
+│   ├── config.py                 # Configuration management
+│   ├── data.py                   # Data loading, normalization, validation
+│   ├── eval.py                   # Analytics, visualizations, reporting
+│   ├── features.py               # Feature engineering functions
+│   ├── logging_config.py         # Logging configuration utilities
+│   ├── models.py                 # ML models (classification, regression, ensembles)
+│   ├── notebook_config.py        # Notebook-specific helpers and config
+│   ├── notebook_utils.py         # Notebook utility functions
+│   ├── portfolio_optimization.py # Portfolio optimization utilities
 │   ├── risk_metrics.py           # Risk metrics and portfolio risk analysis
-│   └── portfolio_optimization.py # Portfolio optimization utilities
+│   └── verify_requirements.py    # Requirements verification utility
 │
-├── tests/                        # Unit tests (see tests/ for modules)
-│   ├── test_repository_setup.py
-│   ├── test_finance_ml_data.py
-│   ├── test_features.py
+├── tests/                        # Unit tests (comprehensive test suite)
+│   ├── test_analytics.py
 │   ├── test_build_features.py
+│   ├── test_classification.py
+│   ├── test_cli.py
+│   ├── test_coverage_smoke.py
+│   ├── test_data_quality.py
 │   ├── test_eda.py
+│   ├── test_features.py
+│   ├── test_finance_ml_config.py
+│   ├── test_finance_ml_data.py
+│   ├── test_finance_ml_eval.py
+│   ├── test_finance_ml_features.py
+│   ├── test_finance_ml_models.py
+│   ├── test_improvement_plan_revision.py
+│   ├── test_loaders.py
+│   ├── test_logging.py
+│   ├── test_notebook_config.py
+│   ├── test_notebook_enhancements.py
+│   ├── test_portfolio_optimization.py
 │   ├── test_preprocess_and_training.py
 │   ├── test_regression.py
-│   ├── test_classification.py
-│   ├── test_analytics.py
-│   ├── test_visualizations.py
-│   ├── test_notebook_enhancements.py
+│   ├── test_repository_setup.py
+│   ├── test_risk_metrics.py
+│   ├── test_setup_environment.py
 │   ├── test_sqlite_import.py
+│   ├── test_sql_scripts.py
 │   ├── test_validate_csv_import.py
-│   └── ...
+│   └── test_visualizations.py
 │
 ├── data/                         # Regional equity data (CSV files)
 │   ├── screening_us.csv
@@ -710,7 +745,7 @@ push and pull requests to `main` and `develop` branches.
 
 1. **test** — Matrix testing across multiple platforms and Python versions
     - Platforms: Ubuntu, Windows, macOS
-    - Python versions: 3.10, 3.11
+   - Python versions: 3.10, 3.11, 3.12
     - Runs unittest suite with coverage reporting (pytest-cov and coverage.py)
     - Uploads coverage to Codecov
 
