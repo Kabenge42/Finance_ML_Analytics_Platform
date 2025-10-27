@@ -21,8 +21,9 @@
     - psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
 - Load data from CSVs into PostgreSQL:
     - psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
-- Notebook: open ml_finance_model_main.ipynb and run cells in order
+- Notebook: open **ml_finance_model_main.ipynb** and run cells in order
 - Script (optional): python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
+- CLI tools (after pip install -e .): finance-ml --data-source auto --limit 5000
 - Tests: python -m unittest -v
 
 ## Overview
@@ -145,7 +146,8 @@ The script creates the equities table and assigns ownership to postgres (ALTER T
 3) (Optional but Recommended) Validate CSV data quality before import:
 - Windows (PowerShell):
   - python validate_csv_import.py
-- This script validates schema, checks for missing values, and identifies potential data quality issues using the validation functions from ml_finance_model_v8_2.py.
+- This script validates schema, checks for missing values, and identifies potential data quality issues before database
+  import.
 
 4) Load the regional CSVs from data/ into the equities table using the comprehensive import script:
 - Windows (PowerShell):
@@ -166,6 +168,14 @@ Key import parameters:
 
 Repeat per region (EU/APAC/ROTW) substituting the correct CSV and Region value.
 
+### Security Note
+
+**⚠️ Important**: Never commit database passwords or API keys to version control.
+
+- Use environment variables or `.env` files (add `.env` to `.gitignore`)
+- The `environment_variables.txt` file contains example configurations with placeholders
+- For production deployments, use secure secret management (e.g., GitHub Secrets, AWS Secrets Manager)
+- Review all configuration files before committing to ensure no credentials are exposed
 
 ## Environment Variables
 Environment variable defaults and examples live in environment_variables.txt. Key items:
@@ -182,15 +192,22 @@ Set them in your shell or via a .env file if your tools auto‑load it.
 
 
 ## Running the Project
-This project is notebook‑first.
+
+This project is notebook‑first with two main interactive notebooks.
+
+### Interactive Notebooks
 
 1) Start Jupyter
 - jupyter notebook  (or: jupyter lab)
 
-2) Open and run ml_finance_model_main.ipynb
-- Run cells in order. Use environment variables and Path from pathlib to avoid hard‑coded paths.
+2) Primary notebooks:
 
-Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if implemented in the notebook cells).
+- **ml_finance_model_main.ipynb** — Main end-to-end ML pipeline (data loading, feature engineering, modeling, analytics)
+- **equities_data_explorer.ipynb** — Data exploration and preparation workflow with EDA utilities
+
+Run cells in order. Both notebooks use environment variables and Path from pathlib to avoid hard‑coded paths.
+
+Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Excel exports.
 
 
 ## Scripts and Entry Points
@@ -198,14 +215,15 @@ Outputs: model diagnostics, ranking tables, and optional CSV/Excel exports (if i
 ### Main Entry Points
 
 - **ml_finance_model_main.ipynb** — Main Jupyter notebook for interactive exploration and modeling
+- **equities_data_explorer.ipynb** — Data exploration notebook with EDA utilities and preprocessing
 - **ml_finance_model_main.py** — Lightweight Python script with a minimal CLI:
   - `--data-source {auto|csv|db}` — Data source selection (default: auto)
   - `--db-url <url>` — Database connection string (or use DB_URL env var)
   - `--limit <n>` — Limit rows for testing
   - `--out-dir <path>` — Output directory (default: outputs)
   - `--dry-run` — Skip model training
-  - Note: Advanced options (skip-eda, per-sector, etc.) are available via the console script `finance-ml`.
-  - See "Legacy Script" example in CLI Usage below
+  - `--n-jobs <n>` — Number of parallel jobs
+  - Note: This is a lightweight wrapper. For advanced options, use the console script `finance-ml`.
 
 ### Console Scripts (installed via pyproject)
 
@@ -314,9 +332,10 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
 │
-├── ml_finance_model_v8_2.ipynb   # Interactive Jupyter notebook
-├── ml_finance_model_v8_3.ipynb   # Newer notebook (if present)
-├── ml_finance_model_v8_2.py      # Script version (uses finance_ml package)
+├── ml_finance_model_main.ipynb   # Main interactive Jupyter notebook (end-to-end ML pipeline)
+├── equities_data_explorer.ipynb  # Data exploration and EDA notebook
+├── ml_finance_model_main.py      # Lightweight script version with CLI (uses finance_ml package)
+├── archive/                       # Archived versions (v8_2, etc.)
 │
 ├── tools/
 │   └── import_sqlite.py          # Chunked CSV→SQLite importer
@@ -515,13 +534,17 @@ finance-ml-validate --data-source db --db-url postgresql+psycopg2://postgres:@lo
 finance-ml-validate --data-source csv -v
 ```
 
-### Legacy Script
+### Lightweight Script
 
-The original script is still available but now uses the `finance_ml` package:
+The Python script can be run directly without package installation:
 
 ```bash
-python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
+python ml_finance_model_main.py --data-source csv --dry-run
+python ml_finance_model_main.py --data-source db --db-url postgresql+psycopg2://user:password@localhost:5432/postgres
 ```
+
+Note: This script uses the `finance_ml` package internally. For advanced options, use the `finance-ml` console command.
 
 
 ## Configuration Management
@@ -654,18 +677,40 @@ pip install -e ".[all]"
 
 ## CI/CD
 
-Currently, no CI workflows are included in this repository (no .github/workflows directory).
+The project includes a comprehensive GitHub Actions workflow (`.github/workflows/tests.yml`) that runs automatically on
+push and pull requests to `main` and `develop` branches.
 
-TODO:
+### Workflow Jobs
 
-- Add a GitHub Actions workflow for automated tests across Windows, Ubuntu, and macOS on Python 3.10 and 3.11.
-- Optionally add code quality checks (black, isort, flake8, mypy) and coverage reporting.
+1. **test** — Matrix testing across multiple platforms and Python versions
+    - Platforms: Ubuntu, Windows, macOS
+    - Python versions: 3.10, 3.11
+    - Runs unittest suite with coverage reporting (pytest-cov and coverage.py)
+    - Uploads coverage to Codecov
 
-You can run equivalent checks locally:
+2. **test-optional-deps** — Tests with optional dependencies
+    - Includes psycopg2-binary, SQLAlchemy, PyYAML
+    - Validates database integration functionality
+
+3. **install-test** — Package installation validation
+    - Tests editable installation (`pip install -e .`)
+    - Validates CLI entry points (finance-ml, finance-ml-analyze, finance-ml-validate)
+    - Checks package imports and version info
+
+4. **code-quality** — Code quality checks (continue-on-error)
+    - black: Code formatting
+    - isort: Import sorting
+    - flake8: Linting (syntax errors and code quality)
+    - mypy: Static type checking
+
+### Running Checks Locally
 
 ```bash
 # Run tests
 python -m unittest discover -s tests -v
+
+# Run with coverage
+pytest tests/ -v --cov=finance_ml --cov-report=term
 
 # Check code formatting
 black --check finance_ml tests

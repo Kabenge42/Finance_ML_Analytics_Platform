@@ -53,22 +53,286 @@ def get_env(name: str, default: Optional[str] = None) -> Optional[str]:
     return v
 
 
-def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize DataFrame column names to lowercase with underscores.
+def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.DataFrame:
+    """Normalize DataFrame column names to match database schema or lowercase with underscores.
 
-    Converts column names to lowercase, replaces non-alphanumeric characters
-    with underscores, and strips leading/trailing underscores.
+    When preserve_schema=True, maps database column names to lowercase underscore format
+    while maintaining consistency. When preserve_schema=False, converts to lowercase
+    with underscores (legacy behavior).
 
     Args:
         df: Input DataFrame
+        preserve_schema: If True, apply database schema column name mapping (default: True)
 
     Returns:
         DataFrame with normalized column names
     """
     df = df.copy()
-    df.columns = (
-        df.columns.str.replace(r"[^0-9a-zA-Z]+", "_", regex=True).str.strip("_").str.lower()
-    )
+
+    if preserve_schema:
+        # Create mapping from database schema column names to normalized names
+        schema_mapping = {
+            "Ticker": "ticker",
+            "ISIN": "isin",
+            "Name": "name",
+            "Description": "description",
+            "Exchange": "exchange",
+            "Unit": "unit",
+            "Sector": "sector",
+            "Industry": "industry",
+            "Last Updated": "last_updated",
+            "Income Statement Report Date": "income_statement_report_date",
+            "Next Earnings": "next_earnings",
+            "Style Class": "style_class",
+            "Next Earnings (Status)": "next_earnings_status",
+            "Size Class": "size_class",
+            "Flag": "flag",
+            "Region": "region",
+            "Country": "country",
+            "Trading Country": "trading_country",
+            "Market Cap": "market_cap",
+            "Enterprise Value": "enterprise_value",
+            "Last Price": "last_price",
+            "Price Target (YTD Ago)": "price_target_ytd_ago",
+            "Total Return (YTD)": "total_return_ytd",
+            "Price Target": "price_target",
+            "Price Target - Low": "price_target_low",
+            "Price Target - Median": "price_target_median",
+            "Price Target - High": "price_target_high",
+            "Price Target - #": "price_target_count",
+            "P/E (NTM)": "p_e_ntm",
+            "P/E (LTM)": "p_e_ltm",
+            "Altman Z-Score (FY)": "altman_z_score_fy",
+            "Altman Z-Score (FQ)": "altman_z_score_fq",
+            "Altman Z-Score (LTM)": "altman_z_score_ltm",
+            "Beta (1Y)": "beta_1y",
+            "Beta (2Y)": "beta_2y",
+            "Beta (5Y)": "beta_5y",
+            "Analyst Rating": "analyst_rating",
+            "# Strong Sell Ratings": "strong_sell_ratings",
+            "# Strong Buys Ratings": "strong_buys_ratings",
+            "# Hold Ratings": "hold_ratings",
+            "# Buys Ratings": "buys_ratings",
+            "# Sell Ratings": "sell_ratings",
+            "Total Revenues/CAGR (5Y FY)": "total_revenues_cagr_5y_fy",
+            "Total Revenues (FQ)": "total_revenues_fq",
+            "Total Revenues (-1FY)": "total_revenues_1fy",
+            "Total Revenues (FY)": "total_revenues_fy",
+            "Total Revenues (LTM)": "total_revenues_ltm",
+            "Total Operating Expenses (LTM)": "total_operating_expenses_ltm",
+            "P/TBV (LTM)": "p_tbv_ltm",
+            "TBV (FY)": "tbv_fy",
+            "TBV (LTM)": "tbv_ltm",
+            "Market Cap (Country R)": "market_cap_country_r",
+            "Tot. Return %/CAGR (3Y)": "tot_return_pct_cagr_3y",
+            "Tot. Return %/CAGR (10Y)": "tot_return_pct_cagr_10y",
+            "Total Return (5Y)": "total_return_5y",
+            "Total Return (10Y)": "total_return_10y",
+            "Net Income/Adj. (-1FY)": "net_income_adj_1fy",
+            "CFF (LTM)": "cff_ltm",
+            "CFI (LTM)": "cfi_ltm",
+            "FCF (LTM)": "fcf_ltm",
+            "CFO (LTM)": "cfo_ltm",
+            "EBITDA (FQ)": "ebitda_fq",
+            "EBITDA (LTM)": "ebitda_ltm",
+            "EBITDA (FY)": "ebitda_fy",
+            "EBITDA (-1FY)": "ebitda_1fy",
+            "EBITDA/Adj. (LTM)": "ebitda_adj_ltm",
+            "EBITDA/Adj. (FY)": "ebitda_adj_fy",
+            "EBITDA/Adj. (-1FY)": "ebitda_adj_1fy",
+            "EBIT (FQ)": "ebit_fq",
+            "EBIT (LTM)": "ebit_ltm",
+            "EBIT (FY)": "ebit_fy",
+            "EBIT (-1FY)": "ebit_1fy",
+            "EBIT/Adj. (-1FY)": "ebit_adj_1fy",
+            "EBIT/Adj. (FY)": "ebit_adj_fy",
+            "EBIT/Adj. (LTM)": "ebit_adj_ltm",
+            "EBIT - Est Med (FY1E)": "ebit_est_med_fy1e",
+            "EBIT - Est Med (NTM)": "ebit_est_med_ntm",
+            "Return On Equity % (LTM)": "return_on_equity_pct_ltm",
+            "Return On Equity % (FY)": "return_on_equity_pct_fy",
+            "Net Income - (IS) (FY)": "net_income_is_fy",
+            "Net Income - (IS) (LTM)": "net_income_is_ltm",
+            "Normalized Net Income (FY)": "normalized_net_income_fy",
+            "Normalized Net Income (LTM)": "normalized_net_income_ltm",
+            "Net Income/Adj. (FY)": "net_income_adj_fy",
+            "Net Income/Adj. (LTM)": "net_income_adj_ltm",
+            "Net Income Margin % (FY)": "net_income_margin_pct_fy",
+            "Net Income Margin % (LTM)": "net_income_margin_pct_ltm",
+            "Volatility (1M)": "volatility_1m",
+            "Volatility (3M)": "volatility_3m",
+            "Volatility (6M)": "volatility_6m",
+            "Volatility (1Y)": "volatility_1y",
+            "Volume (Shrs)": "volume_shrs",
+            "Short Int. (%)": "short_int_pct",
+            "Dividend Per Share (LTM)": "dividend_per_share_ltm",
+            "Div Yield (Ind)": "div_yield_ind",
+            "Div Yield (LTM)": "div_yield_ltm",
+            "Total Debt (FY)": "total_debt_fy",
+            "Total Equity (FY)": "total_equity_fy",
+            "Total Equity (LTM)": "total_equity_ltm",
+            "Total Debt (LTM)": "total_debt_ltm",
+            "Total Assets (LTM)": "total_assets_ltm",
+            "Total Assets (FY)": "total_assets_fy",
+            "Current Ratio (FY)": "current_ratio_fy",
+            "Current Ratio (LTM)": "current_ratio_ltm",
+            "Gross Profit Margin % (FY)": "gross_profit_margin_pct_fy",
+            "Gross Profit Margin % (LTM)": "gross_profit_margin_pct_ltm",
+            "Asset Turnover (FY)": "asset_turnover_fy",
+            "Asset Turnover (LTM)": "asset_turnover_ltm",
+            "Gross Profit (LTM)": "gross_profit_ltm",
+            "Gross Profit (FY)": "gross_profit_fy",
+            "EPS Norm - Est Avg (NTM)": "eps_norm_est_avg_ntm",
+            "EPS/Adj. (-1FY)": "eps_adj_1fy",
+            "EPS/Adj. (FY)": "eps_adj_fy",
+            "EPS/Adj. (LTM)": "eps_adj_ltm",
+            "EPS Norm - Est Avg (FY1E)": "eps_norm_est_avg_fy1e",
+            "Gain (Loss) On Sale Of Assets (LTM)": "gain_loss_on_sale_of_assets_ltm",
+            "Cost Of Revenues (LTM)": "cost_of_revenues_ltm",
+            "Cash Acquisitions (LTM)": "cash_acquisitions_ltm",
+            "Cash Acquisitions (FY)": "cash_acquisitions_fy",
+            "Cash Acquisitions (-1FY)": "cash_acquisitions_1fy",
+            "Inventory (LTM)": "inventory_ltm",
+            "Goodwill (FQ)": "goodwill_fq",
+            "Goodwill (LTM)": "goodwill_ltm",
+            "Goodwill (FY)": "goodwill_fy",
+            "Goodwill (-1FY)": "goodwill_1fy",
+            "Impairment of Goodwill (FQ)": "impairment_of_goodwill_fq",
+            "Impairment of Goodwill (LTM)": "impairment_of_goodwill_ltm",
+            "Impairment of Goodwill (-1FY)": "impairment_of_goodwill_1fy",
+            "Impairment of Goodwill (FY)": "impairment_of_goodwill_fy",
+            "Operating Income (LTM)": "operating_income_ltm",
+            "Asset Writedown (LTM)": "asset_writedown_ltm",
+            "Asset Writedown (FY)": "asset_writedown_fy",
+            "Asset Writedown (-1FY)": "asset_writedown_1fy",
+            "Operating Income (FY)": "operating_income_fy",
+            "Capital Expenditure (LTM)": "capital_expenditure_ltm",
+            "Capital Expenditure (-1FY)": "capital_expenditure_1fy",
+            "Capital Expenditure (FY)": "capital_expenditure_fy",
+            "Retained Earnings (LTM)": "retained_earnings_ltm",
+            "Total Current Assets (LTM)": "total_current_assets_ltm",
+            "Total Current Liabilities (LTM)": "total_current_liabilities_ltm",
+            "R&D Expenses (LTM)": "r_d_expenses_ltm",
+            "Restructuring Charges (LTM)": "restructuring_charges_ltm",
+            "Restructuring Charges (FQ)": "restructuring_charges_fq",
+            "Restructuring Charges (-1FY)": "restructuring_charges_1fy",
+            "Restructuring Charges (FY)": "restructuring_charges_fy",
+            "Interest Expense/Total (LTM)": "interest_expense_total_ltm",
+            "Merger & Restructuring Charges (LTM)": "merger_restructuring_charges_ltm",
+            "Working Capital (LTM)": "working_capital_ltm",
+            "Other Unusual Items/Total (LTM)": "other_unusual_items_total_ltm",
+            "Interest Income On Investments (LTM)": "interest_income_on_investments_ltm",
+            "Buyback Yield (LTM)": "buyback_yield_ltm",
+            "Return on Assets (ROA) % (LTM)": "return_on_assets_roa_pct_ltm",
+            "Return on Assets (ROA) % (FY)": "return_on_assets_roa_pct_fy",
+            "Net Income - (IS) (-1FY)": "net_income_is_1fy",
+            "Normalized Net Income (-1FY)": "normalized_net_income_1fy",
+            "P/E (-1FYLTM)": "p_e_1fyltm",
+            "CFF (FY)": "cff_fy",
+            "CFF (-1FY)": "cff_1fy",
+            "CFI (FY)": "cfi_fy",
+            "CFI (-1FY)": "cfi_1fy",
+            "CFO (FY)": "cfo_fy",
+            "CFO (-1FY)": "cfo_1fy",
+            "Div Yield (-1FYInd)": "div_yield_1fyind",
+            "FCF (FY)": "fcf_fy",
+            "Capital Expenditure (FQ)": "capital_expenditure_fq",
+            "Capital Expenditure (5YAVGFQ)": "capital_expenditure_5yavgfq",
+            "CFF (FQ)": "cff_fq",
+            "CFI (FQ)": "cfi_fq",
+            "CFO (FQ)": "cfo_fq",
+            "FCF (FQ)": "fcf_fq",
+            "Total Revenues (5YAVGFQ)": "total_revenues_5yavgfq",
+            "EBITDA (5YAVGFQ)": "ebitda_5yavgfq",
+            "EBIT (5YAVGFQ)": "ebit_5yavgfq",
+            "P/E (5YAVGLTM)": "p_e_5yavgltm",
+            "FCF (5YAVGFQ)": "fcf_5yavgfq",
+            "Cash Acquisitions (FQ)": "cash_acquisitions_fq",
+            "Cash Acquisitions (5YAVGFQ)": "cash_acquisitions_5yavgfq",
+            "Asset Writedown (FQ)": "asset_writedown_fq",
+            "Asset Writedown (5YAVGFQ)": "asset_writedown_5yavgfq",
+            "Impairment of Goodwill (5YAVGFQ)": "impairment_of_goodwill_5yavgfq",
+            "Operating Income (FQ)": "operating_income_fq",
+            "Operating Income (5YAVGFQ)": "operating_income_5yavgfq",
+            "P/B (LTM)": "p_b_ltm",
+            "P/B (-1FY)": "p_b_1fy",
+            "P/B (5YAVG)": "p_b_5yavg",
+            "Cash And Equivalents (LTM)": "cash_and_equivalents_ltm",
+            "Cash And Equivalents (FQ)": "cash_and_equivalents_fq",
+            "Cash And Equivalents (FY)": "cash_and_equivalents_fy",
+            "Cash And Equivalents (5YAVGFQ)": "cash_and_equivalents_5yavgfq",
+            "Inventory (FQ)": "inventory_fq",
+            "Inventory (FY)": "inventory_fy",
+            "Goodwill (5YAVGFQ)": "goodwill_5yavgfq",
+            "Inventory (5YAVGFQ)": "inventory_5yavgfq",
+            "Avg Employees (LTM)": "avg_employees_ltm",
+            "Avg Employees (FY)": "avg_employees_fy",
+            "Avg Employees (5YAVGFY)": "avg_employees_5yavgfy",
+            "Retained Earnings (FQ)": "retained_earnings_fq",
+            "Retained Earnings (FY)": "retained_earnings_fy",
+            "Retained Earnings (5YAVGFQ)": "retained_earnings_5yavgfq",
+            "Working Capital (FQ)": "working_capital_fq",
+            "Working Capital (FY)": "working_capital_fy",
+            "Working Capital (5YAVGFY)": "working_capital_5yavgfy",
+            "Div Yield (TTM)": "div_yield_ttm",
+            "Div Yield (NTM)": "div_yield_ntm",
+            "Div Yield (5YAVGLTM)": "div_yield_5yavgltm",
+            "Gross Intangible Assets (LTM)": "gross_intangible_assets_ltm",
+            "Gross Intangible Assets (FY)": "gross_intangible_assets_fy",
+            "Gross Intangible Assets (5YAVGFQ)": "gross_intangible_assets_5yavgfq",
+            "Restructuring Charges (5YAVGFQ)": "restructuring_charges_5yavgfq",
+            "Merger & Restructuring Charges (FQ)": "merger_restructuring_charges_fq",
+            "Merger & Restructuring Charges (FY)": "merger_restructuring_charges_fy",
+            "Merger & Restructuring Charges (5YAVGFQ)": "merger_restructuring_charges_5yavgfq",
+            "Normalized Net Income (FQ)": "normalized_net_income_fq",
+            "Normalized Net Income (5YAVGFQ)": "normalized_net_income_5yavgfq",
+            "Net Income/Adj. (FQ)": "net_income_adj_fq",
+            "Net Income/Adj. (5YAVGFQ)": "net_income_adj_5yavgfq",
+            "Net Income - (IS) (FQ)": "net_income_is_fq",
+            "Net Income - (IS) (5YAVGFQ)": "net_income_is_5yavgfq",
+            "Net Income - (IS) (5YAVGLTM)": "net_income_is_5yavgltm",
+            "Normalized Net Income (5YAVGLTM)": "normalized_net_income_5yavgltm",
+            "EBITDA (5YAVGLTM)": "ebitda_5yavgltm",
+            "EBIT (5YAVGLTM)": "ebit_5yavgltm",
+            "Total Revenues (5YAVGLTM)": "total_revenues_5yavgltm",
+            "Revenues - Est YoY % (FY1E)": "revenues_est_yoy_pct_fy1e",
+        }
+
+        # Apply mapping to existing columns
+        df.columns = [schema_mapping.get(col, col) for col in df.columns]
+
+        # For any unmapped columns, apply the normalization
+        df.columns = [
+            (
+                col
+                if col in schema_mapping.values()
+                else str(col).replace(r"[^0-9a-zA-Z]+", "_", regex=False).strip("_").lower()
+            )
+            for col in df.columns
+        ]
+
+        # Add column aliases for commonly used generic names
+        # These create additional columns with simplified names pointing to the most relevant variant
+        column_aliases = {
+            "p_e": "p_e_ltm",  # Default P/E to Last Twelve Months
+            "revenue": "total_revenues_ltm",  # Default revenue to LTM
+            "ebitda": "ebitda_ltm",  # Default EBITDA to LTM
+            "net_income": "net_income_is_ltm",  # Default net income to Income Statement LTM
+            "p_b": "p_b_ltm",  # Default P/B to LTM
+            "ev_ebitda": None,  # Not directly available, would need to be calculated
+            "gross_margin": "gross_profit_margin_pct_ltm",  # Gross margin percentage LTM
+        }
+
+        for alias, source_col in column_aliases.items():
+            if source_col and source_col in df.columns and alias not in df.columns:
+                df[alias] = df[source_col]
+
+    else:
+        # Legacy behavior: convert to lowercase with underscores
+        df.columns = (
+            df.columns.str.replace(r"[^0-9a-zA-Z]+", "_", regex=True).str.strip("_").str.lower()
+        )
+
     return df
 
 
