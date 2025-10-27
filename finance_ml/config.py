@@ -33,7 +33,7 @@ class FinanceMLConfig:
     db_table: str = "equities"
 
     # Model configuration
-    model_version: str = "v8_2"
+    model_version: str = "v8_3"
     random_seed: int = 42
     n_jobs: int = -1
 
@@ -66,7 +66,7 @@ class FinanceMLConfig:
             db_url=os.getenv("DB_URL"),
             db_schema=os.getenv("DB_SCHEMA", "public"),
             db_table=os.getenv("DB_TABLE", "equities"),
-            model_version=os.getenv("MODEL_VERSION", "v8_2"),
+            model_version=os.getenv("MODEL_VERSION", "v8_3"),
             random_seed=int(os.getenv("RANDOM_SEED", "42")),
             n_jobs=int(os.getenv("N_JOBS", "-1")),
             memory_limit=os.getenv("MEMORY_LIMIT"),
