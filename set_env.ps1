@@ -32,22 +32,12 @@ $env:N_JOBS = "4"
 $env:LOG_LEVEL = "INFO"
 $env:TF_CPP_MIN_LOG_LEVEL = "2"
 
-# Database configuration (uncomment and configure if needed)
+# Database connection (update with your actual credentials)
 # $env:DB_URL = "postgresql+psycopg2://postgres:password@localhost:5432/postgres"
-# $env:DB_SCHEMA = "public"
-# $env:DB_TABLE = "equities"
-
-# API Keys (uncomment and configure if needed)
-# $env:ALPHA_VANTAGE_API_KEY = "your_api_key_here"
-# $env:FINANCIAL_API_KEY = "your_api_key_here"
 
 Write-Host "Environment variables set successfully!" -ForegroundColor Green
-Write-Host ""
-Write-Host "Active Configuration:" -ForegroundColor Cyan
-Write-Host "  DATA_DIR:              $env:DATA_DIR"
-Write-Host "  MODEL_DIR:             $env:MODEL_DIR"
-Write-Host "  OUTPUT_DIR:            $env:OUTPUT_DIR"
-Write-Host "  MODEL_VERSION:         $env:MODEL_VERSION"
-Write-Host "  RANDOM_SEED:           $env:RANDOM_SEED"
-Write-Host "  N_JOBS:                $env:N_JOBS"
-Write-Host "  TF_CPP_MIN_LOG_LEVEL:  $env:TF_CPP_MIN_LOG_LEVEL"
+Write-Host "NO_COLOR: $env:NO_COLOR"
+Write-Host "DATA_DIR: $env:DATA_DIR"
+Write-Host "OUTPUT_DIR: $env:OUTPUT_DIR"
+Write-Host "MODEL_DIR: $env:MODEL_DIR"
+Write-Host "RANDOM_SEED: $env:RANDOM_SEED"

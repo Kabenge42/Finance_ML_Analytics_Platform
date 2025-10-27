@@ -15,15 +15,18 @@
 -- =============================================================================
 
 -- Check if equities table exists
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'equities') THEN
-        RAISE EXCEPTION 'Table equities does not exist. Please run create_equities_schema.sql first.';
-    END IF;
-END $$;
+DO
+$$
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'equities') THEN
+            RAISE EXCEPTION 'Table equities does not exist. Please run create_equities_schema.sql first.';
+        END IF;
+    END
+$$;
 
 -- Display current row count (before import)
-SELECT 'Current equities table row count:' AS status, COUNT(*) AS row_count FROM equities;
+SELECT 'Current equities table row count:' AS status, COUNT(*) AS row_count
+FROM equities;
 
 -- =============================================================================
 -- SECTION 2: Import US Region Data
@@ -34,7 +37,10 @@ SELECT 'Current equities table row count:' AS status, COUNT(*) AS row_count FROM
 \echo '==================================================================='
 
 -- Create temporary staging table for US data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_us (LIKE equities);
+CREATE TEMP TABLE IF NOT EXISTS equities_staging_us
+(
+    LIKE equities
+);
 
 -- Import CSV with proper NULL handling and encoding
 -- Key parameters:
@@ -44,18 +50,25 @@ CREATE TEMP TABLE IF NOT EXISTS equities_staging_us (LIKE equities);
 \copy equities_staging_us FROM 'data/screening_us.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
-SELECT 'US staging table loaded:' AS status, COUNT(*) AS row_count FROM equities_staging_us;
+SELECT 'US staging table loaded:' AS status, COUNT(*) AS row_count
+FROM equities_staging_us;
 
 -- Set Region for all US records (if not already set in CSV)
-UPDATE equities_staging_us SET "Region" = 'US' WHERE "Region" IS NULL OR "Region" = '';
+UPDATE equities_staging_us
+SET "Region" = 'US'
+WHERE "Region" IS NULL
+   OR "Region" = '';
 
 -- Insert into main table with conflict handling
-INSERT INTO equities 
-SELECT * FROM equities_staging_us
+INSERT INTO equities
+SELECT *
+FROM equities_staging_us
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
-SELECT 'US data inserted:' AS status, COUNT(*) AS row_count FROM equities WHERE "Region" = 'US';
+SELECT 'US data inserted:' AS status, COUNT(*) AS row_count
+FROM equities
+WHERE "Region" = 'US';
 
 -- Clean up staging table
 DROP TABLE equities_staging_us;
@@ -72,24 +85,34 @@ DROP TABLE equities_staging_us;
 \echo '==================================================================='
 
 -- Create temporary staging table for EU data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_eu (LIKE equities);
+CREATE TEMP TABLE IF NOT EXISTS equities_staging_eu
+(
+    LIKE equities
+);
 
 -- Import CSV with proper NULL handling and encoding
 \copy equities_staging_eu FROM 'data/screening_eu.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
-SELECT 'EU staging table loaded:' AS status, COUNT(*) AS row_count FROM equities_staging_eu;
+SELECT 'EU staging table loaded:' AS status, COUNT(*) AS row_count
+FROM equities_staging_eu;
 
 -- Set Region for all EU records (if not already set in CSV)
-UPDATE equities_staging_eu SET "Region" = 'EU' WHERE "Region" IS NULL OR "Region" = '';
+UPDATE equities_staging_eu
+SET "Region" = 'EU'
+WHERE "Region" IS NULL
+   OR "Region" = '';
 
 -- Insert into main table with conflict handling
-INSERT INTO equities 
-SELECT * FROM equities_staging_eu
+INSERT INTO equities
+SELECT *
+FROM equities_staging_eu
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
-SELECT 'EU data inserted:' AS status, COUNT(*) AS row_count FROM equities WHERE "Region" = 'EU';
+SELECT 'EU data inserted:' AS status, COUNT(*) AS row_count
+FROM equities
+WHERE "Region" = 'EU';
 
 -- Clean up staging table
 DROP TABLE equities_staging_eu;
@@ -106,24 +129,34 @@ DROP TABLE equities_staging_eu;
 \echo '==================================================================='
 
 -- Create temporary staging table for APAC data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_apac (LIKE equities);
+CREATE TEMP TABLE IF NOT EXISTS equities_staging_apac
+(
+    LIKE equities
+);
 
 -- Import CSV with proper NULL handling and encoding
 \copy equities_staging_apac FROM 'data/screening_apac.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
-SELECT 'APAC staging table loaded:' AS status, COUNT(*) AS row_count FROM equities_staging_apac;
+SELECT 'APAC staging table loaded:' AS status, COUNT(*) AS row_count
+FROM equities_staging_apac;
 
 -- Set Region for all APAC records (if not already set in CSV)
-UPDATE equities_staging_apac SET "Region" = 'APAC' WHERE "Region" IS NULL OR "Region" = '';
+UPDATE equities_staging_apac
+SET "Region" = 'APAC'
+WHERE "Region" IS NULL
+   OR "Region" = '';
 
 -- Insert into main table with conflict handling
-INSERT INTO equities 
-SELECT * FROM equities_staging_apac
+INSERT INTO equities
+SELECT *
+FROM equities_staging_apac
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
-SELECT 'APAC data inserted:' AS status, COUNT(*) AS row_count FROM equities WHERE "Region" = 'APAC';
+SELECT 'APAC data inserted:' AS status, COUNT(*) AS row_count
+FROM equities
+WHERE "Region" = 'APAC';
 
 -- Clean up staging table
 DROP TABLE equities_staging_apac;
@@ -140,24 +173,34 @@ DROP TABLE equities_staging_apac;
 \echo '==================================================================='
 
 -- Create temporary staging table for ROTW data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_rotw (LIKE equities);
+CREATE TEMP TABLE IF NOT EXISTS equities_staging_rotw
+(
+    LIKE equities
+);
 
 -- Import CSV with proper NULL handling and encoding
 \copy equities_staging_rotw FROM 'data/screening_rotw.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
-SELECT 'ROTW staging table loaded:' AS status, COUNT(*) AS row_count FROM equities_staging_rotw;
+SELECT 'ROTW staging table loaded:' AS status, COUNT(*) AS row_count
+FROM equities_staging_rotw;
 
 -- Set Region for all ROTW records (if not already set in CSV)
-UPDATE equities_staging_rotw SET "Region" = 'ROTW' WHERE "Region" IS NULL OR "Region" = '';
+UPDATE equities_staging_rotw
+SET "Region" = 'ROTW'
+WHERE "Region" IS NULL
+   OR "Region" = '';
 
 -- Insert into main table with conflict handling
-INSERT INTO equities 
-SELECT * FROM equities_staging_rotw
+INSERT INTO equities
+SELECT *
+FROM equities_staging_rotw
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
-SELECT 'ROTW data inserted:' AS status, COUNT(*) AS row_count FROM equities WHERE "Region" = 'ROTW';
+SELECT 'ROTW data inserted:' AS status, COUNT(*) AS row_count
+FROM equities
+WHERE "Region" = 'ROTW';
 
 -- Clean up staging table
 DROP TABLE equities_staging_rotw;
@@ -174,7 +217,8 @@ DROP TABLE equities_staging_rotw;
 \echo '==================================================================='
 
 -- Total row count
-SELECT 'Total rows in equities table:' AS status, COUNT(*) AS row_count FROM equities;
+SELECT 'Total rows in equities table:' AS status, COUNT(*) AS row_count
+FROM equities;
 
 -- Row count by region
 SELECT "Region", COUNT(*) AS row_count
@@ -183,16 +227,18 @@ GROUP BY "Region"
 ORDER BY "Region";
 
 -- Check for records with missing critical fields
-SELECT 'Records with missing Ticker:' AS check_name, COUNT(*) AS count 
-FROM equities 
-WHERE "Ticker" IS NULL OR "Ticker" = '';
+SELECT 'Records with missing Ticker:' AS check_name, COUNT(*) AS count
+FROM equities
+WHERE "Ticker" IS NULL
+   OR "Ticker" = '';
 
-SELECT 'Records with missing Sector:' AS check_name, COUNT(*) AS count 
-FROM equities 
-WHERE "Sector" IS NULL OR "Sector" = '';
+SELECT 'Records with missing Sector:' AS check_name, COUNT(*) AS count
+FROM equities
+WHERE "Sector" IS NULL
+   OR "Sector" = '';
 
-SELECT 'Records with missing Last Price:' AS check_name, COUNT(*) AS count 
-FROM equities 
+SELECT 'Records with missing Last Price:' AS check_name, COUNT(*) AS count
+FROM equities
 WHERE "Last Price" IS NULL;
 
 -- Sample records from each region

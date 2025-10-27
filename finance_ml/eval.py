@@ -540,3 +540,581 @@ def create_region_sector_heatmap(
     except Exception as e:
         logging.error("Error creating region-sector heatmap: %s", e)
         raise
+
+
+# ============================================================================
+# Phase 9.2: Advanced EDA and Statistical Analysis Functions
+# ============================================================================
+
+
+def calculate_correlation_matrix(
+    df: pd.DataFrame, columns: list, method: str = "pearson"
+) -> pd.DataFrame:
+    """Calculate correlation matrix using specified method.
+
+    Phase 9.2 enhancement for comprehensive correlation analysis.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to include in correlation matrix
+        method: Correlation method ('pearson', 'spearman', 'kendall')
+
+    Returns:
+        Correlation matrix as DataFrame
+
+    Raises:
+        ValueError: If method is not supported
+    """
+    if method not in ["pearson", "spearman", "kendall"]:
+        raise ValueError(
+            f"Method '{method}' not supported. Use 'pearson', 'spearman', or 'kendall'."
+        )
+
+    # Select numeric columns
+    data = df[columns].select_dtypes(include=[np.number])
+
+    if data.empty:
+        raise ValueError("No numeric columns found in specified columns")
+
+    # Calculate correlation
+    corr_matrix = data.corr(method=method)
+
+    return corr_matrix
+
+
+def find_top_correlations(
+    df: pd.DataFrame, columns: list, n_top: int = 10, method: str = "pearson"
+) -> list:
+    """Find top correlated variable pairs.
+
+    Phase 9.2 enhancement for identifying strongest correlations.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to analyze
+        n_top: Number of top correlations to return
+        method: Correlation method
+
+    Returns:
+        List of tuples (var1, var2, correlation) sorted by absolute correlation
+    """
+    corr_matrix = calculate_correlation_matrix(df, columns, method)
+
+    # Get upper triangle (avoid duplicates and self-correlations)
+    mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+    upper_tri = corr_matrix.where(mask)
+
+    # Convert to list of tuples
+    correlations = []
+    for i in range(len(upper_tri)):
+        for j in range(i + 1, len(upper_tri)):
+            var1 = upper_tri.index[i]
+            var2 = upper_tri.columns[j]
+            corr_value = upper_tri.iloc[i, j]
+
+            if not pd.isna(corr_value):
+                correlations.append((var1, var2, corr_value))
+
+    # Sort by absolute correlation (descending)
+    correlations.sort(key=lambda x: abs(x[2]), reverse=True)
+
+    return correlations[:n_top]
+
+
+def test_normality(df: pd.DataFrame, columns: list, alpha: float = 0.05) -> dict:
+    """Test normality of distributions using Shapiro-Wilk test.
+
+    Phase 9.2 enhancement for distribution analysis.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to test
+        alpha: Significance level for the test
+
+    Returns:
+        Dictionary with test results for each column
+    """
+    from scipy import stats
+
+    results = {}
+
+    for col in columns:
+        if col not in df.columns:
+            continue
+
+        data = df[col].dropna()
+
+        if len(data) < 3:
+            results[col] = {
+                "statistic": None,
+                "p_value": None,
+                "is_normal": None,
+                "message": "Insufficient data for normality test",
+            }
+            continue
+
+        # Shapiro-Wilk test
+        statistic, p_value = stats.shapiro(data)
+
+        results[col] = {
+            "statistic": float(statistic),
+            "p_value": float(p_value),
+            "is_normal": p_value > alpha,
+            "sample_size": len(data),
+        }
+
+    return results
+
+
+def calculate_skewness_kurtosis(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+    """Calculate skewness and kurtosis for specified columns.
+
+    Phase 9.2 enhancement for distribution shape analysis.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to analyze
+
+    Returns:
+        DataFrame with skewness and kurtosis for each column
+    """
+    from scipy import stats
+
+    results = []
+
+    for col in columns:
+        if col not in df.columns:
+            continue
+
+        data = df[col].dropna()
+
+        if len(data) < 3:
+            continue
+
+        skewness = stats.skew(data)
+        kurtosis = stats.kurtosis(data)
+
+        results.append(
+            {"column": col, "skewness": skewness, "kurtosis": kurtosis, "n_samples": len(data)}
+        )
+
+    return pd.DataFrame(results).set_index("column")
+
+
+def detect_outliers_statistical(
+    df: pd.DataFrame, columns: list, method: str = "grubbs", alpha: float = 0.05
+) -> pd.DataFrame:
+    """Detect outliers using statistical methods.
+
+    Phase 9.2 enhancement for advanced outlier detection.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to analyze
+        method: Detection method ('grubbs', 'modified_z')
+        alpha: Significance level
+
+    Returns:
+        DataFrame with boolean outlier indicators
+    """
+    outliers = pd.DataFrame(False, index=df.index, columns=columns)
+
+    for col in columns:
+        if col not in df.columns:
+            continue
+
+        data = pd.to_numeric(df[col], errors="coerce")
+
+        if method == "modified_z":
+            # Modified Z-score using median absolute deviation
+            median = data.median()
+            mad = np.median(np.abs(data - median))
+
+            if mad == 0:
+                continue
+
+            modified_z_scores = 0.6745 * (data - median) / mad
+            outliers[col] = np.abs(modified_z_scores) > 3.5
+
+        elif method == "grubbs":
+            # Simplified Grubbs test (flag extreme values)
+            mean = data.mean()
+            std = data.std()
+
+            if std == 0:
+                continue
+
+            z_scores = np.abs((data - mean) / std)
+            # Grubbs critical value approximation for large samples
+            outliers[col] = z_scores > 3
+
+    return outliers
+
+
+def calculate_mutual_information(
+    X: pd.DataFrame, y: pd.Series, discrete_features: bool = False
+) -> pd.Series:
+    """Calculate mutual information between features and target.
+
+    Phase 9.2 enhancement for feature importance analysis.
+
+    Args:
+        X: Feature DataFrame
+        y: Target variable
+        discrete_features: Whether features are discrete
+
+    Returns:
+        Series with MI scores for each feature
+    """
+    from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
+
+    # Handle missing values
+    X_clean = X.fillna(X.median())
+    y_clean = y.fillna(y.median()) if pd.api.types.is_numeric_dtype(y) else y.fillna("missing")
+
+    # Determine if regression or classification
+    if pd.api.types.is_numeric_dtype(y_clean):
+        mi_scores = mutual_info_regression(
+            X_clean, y_clean, discrete_features=discrete_features, random_state=42
+        )
+    else:
+        mi_scores = mutual_info_classif(
+            X_clean, y_clean, discrete_features=discrete_features, random_state=42
+        )
+
+    return pd.Series(mi_scores, index=X.columns).sort_values(ascending=False)
+
+
+def calculate_feature_importance_rf(
+    X: pd.DataFrame, y: pd.Series, n_estimators: int = 100
+) -> pd.Series:
+    """Calculate feature importance using Random Forest.
+
+    Phase 9.2 enhancement for feature importance analysis.
+
+    Args:
+        X: Feature DataFrame
+        y: Target variable
+        n_estimators: Number of trees in the forest
+
+    Returns:
+        Series with feature importances
+    """
+    from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+
+    # Handle missing values
+    X_clean = X.fillna(X.median())
+    y_clean = y.fillna(y.median()) if pd.api.types.is_numeric_dtype(y) else y.fillna("missing")
+
+    # Choose appropriate model
+    if pd.api.types.is_numeric_dtype(y_clean):
+        model = RandomForestRegressor(n_estimators=n_estimators, random_state=42, n_jobs=-1)
+    else:
+        model = RandomForestClassifier(n_estimators=n_estimators, random_state=42, n_jobs=-1)
+
+    # Fit model
+    model.fit(X_clean, y_clean)
+
+    # Get importance
+    importances = pd.Series(model.feature_importances_, index=X.columns).sort_values(
+        ascending=False
+    )
+
+    return importances
+
+
+def perform_pca(X: pd.DataFrame, n_components: int = 3) -> dict:
+    """Perform PCA dimensionality reduction.
+
+    Phase 9.2 enhancement for multivariate analysis.
+
+    Args:
+        X: Feature DataFrame
+        n_components: Number of principal components
+
+    Returns:
+        Dictionary with PCA results
+    """
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+
+    # Handle missing values
+    X_clean = X.fillna(X.median())
+
+    # Standardize features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_clean)
+
+    # Perform PCA
+    pca = PCA(n_components=n_components, random_state=42)
+    components = pca.fit_transform(X_scaled)
+
+    # Create result DataFrame
+    component_df = pd.DataFrame(
+        components, columns=[f"PC{i+1}" for i in range(n_components)], index=X.index
+    )
+
+    return {
+        "components": component_df,
+        "explained_variance_ratio": pca.explained_variance_ratio_.tolist(),
+        "cumulative_variance": np.cumsum(pca.explained_variance_ratio_).tolist(),
+        "feature_loadings": pd.DataFrame(
+            pca.components_.T, columns=[f"PC{i+1}" for i in range(n_components)], index=X.columns
+        ),
+    }
+
+
+def calculate_optimal_pca_components(X: pd.DataFrame, variance_threshold: float = 0.95) -> int:
+    """Calculate optimal number of PCA components.
+
+    Phase 9.2 enhancement for determining dimensionality.
+
+    Args:
+        X: Feature DataFrame
+        variance_threshold: Minimum cumulative variance to retain
+
+    Returns:
+        Optimal number of components
+    """
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+
+    # Handle missing values
+    X_clean = X.fillna(X.median())
+
+    # Standardize features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_clean)
+
+    # Perform PCA with all components
+    pca = PCA(random_state=42)
+    pca.fit(X_scaled)
+
+    # Find number of components for threshold
+    cumulative_variance = np.cumsum(pca.explained_variance_ratio_)
+    n_components = np.argmax(cumulative_variance >= variance_threshold) + 1
+
+    return int(n_components)
+
+
+def compare_sector_means(
+    df: pd.DataFrame,
+    column: str,
+    group_column: str = "sector",
+    method: str = "anova",
+    alpha: float = 0.05,
+) -> dict:
+    """Compare means across sectors using statistical tests.
+
+    Phase 9.2 enhancement for hypothesis testing.
+
+    Args:
+        df: DataFrame containing the data
+        column: Column to compare
+        group_column: Grouping column (e.g., 'sector')
+        method: Test method ('anova', 'kruskal')
+        alpha: Significance level
+
+    Returns:
+        Dictionary with test results
+    """
+    from scipy import stats
+
+    # Get groups
+    groups = []
+    for group_name in df[group_column].unique():
+        if pd.isna(group_name):
+            continue
+
+        group_data = df[df[group_column] == group_name][column].dropna()
+
+        if len(group_data) > 0:
+            groups.append(group_data)
+
+    if len(groups) < 2:
+        return {
+            "statistic": None,
+            "p_value": None,
+            "significant": None,
+            "message": "Insufficient groups for comparison",
+        }
+
+    # Perform test
+    if method == "anova":
+        statistic, p_value = stats.f_oneway(*groups)
+    elif method == "kruskal":
+        statistic, p_value = stats.kruskal(*groups)
+    else:
+        raise ValueError(f"Method '{method}' not supported")
+
+    return {
+        "statistic": float(statistic),
+        "p_value": float(p_value),
+        "significant": p_value < alpha,
+        "n_groups": len(groups),
+        "method": method,
+    }
+
+
+def compare_two_groups(
+    group1: pd.Series, group2: pd.Series, method: str = "ttest", alpha: float = 0.05
+) -> dict:
+    """Compare two groups using statistical tests.
+
+    Phase 9.2 enhancement for pairwise comparisons.
+
+    Args:
+        group1: First group data
+        group2: Second group data
+        method: Test method ('ttest', 'mannwhitney')
+        alpha: Significance level
+
+    Returns:
+        Dictionary with test results
+    """
+    from scipy import stats
+
+    # Clean data
+    g1 = group1.dropna()
+    g2 = group2.dropna()
+
+    if len(g1) < 2 or len(g2) < 2:
+        return {
+            "statistic": None,
+            "p_value": None,
+            "significant": None,
+            "message": "Insufficient data for comparison",
+        }
+
+    # Perform test
+    if method == "ttest":
+        statistic, p_value = stats.ttest_ind(g1, g2)
+    elif method == "mannwhitney":
+        statistic, p_value = stats.mannwhitneyu(g1, g2)
+    else:
+        raise ValueError(f"Method '{method}' not supported")
+
+    return {
+        "statistic": float(statistic),
+        "p_value": float(p_value),
+        "significant": p_value < alpha,
+        "n1": len(g1),
+        "n2": len(g2),
+        "method": method,
+    }
+
+
+def generate_eda_report(
+    df: pd.DataFrame,
+    output_path: Path = None,
+    include_correlations: bool = True,
+    include_distributions: bool = True,
+    include_statistical_tests: bool = True,
+) -> dict:
+    """Generate comprehensive EDA report.
+
+    Phase 9.2 enhancement for automated EDA.
+
+    Args:
+        df: DataFrame to analyze
+        output_path: Optional path to save HTML report
+        include_correlations: Include correlation analysis
+        include_distributions: Include distribution analysis
+        include_statistical_tests: Include hypothesis tests
+
+    Returns:
+        Dictionary with report sections
+    """
+    report = {
+        "timestamp": pd.Timestamp.now().isoformat(),
+        "n_rows": len(df),
+        "n_columns": len(df.columns),
+    }
+
+    # Summary statistics
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    report["summary_stats"] = df[numeric_cols].describe().to_dict()
+
+    # Correlations
+    if include_correlations and len(numeric_cols) > 1:
+        corr_matrix = calculate_correlation_matrix(df, numeric_cols[:20])  # Limit to 20 cols
+        report["correlations"] = {
+            "matrix": corr_matrix.to_dict(),
+            "top_pairs": find_top_correlations(df, numeric_cols[:20], n_top=10),
+        }
+
+    # Distributions
+    if include_distributions and len(numeric_cols) > 0:
+        dist_cols = numeric_cols[:10]  # Analyze first 10 numeric columns
+        report["distributions"] = {
+            "normality_tests": test_normality(df, dist_cols),
+            "skew_kurtosis": calculate_skewness_kurtosis(df, dist_cols).to_dict(),
+        }
+
+    # Statistical tests (if sector column exists)
+    if include_statistical_tests and "sector" in df.columns and len(numeric_cols) > 0:
+        test_col = numeric_cols[0]
+        report["statistical_tests"] = {
+            "sector_comparison": compare_sector_means(df, test_col, "sector")
+        }
+
+    # Save HTML report if requested
+    if output_path:
+        # Simple HTML generation (can be enhanced)
+        html_content = f"""
+        <html>
+        <head><title>EDA Report</title></head>
+        <body>
+        <h1>Exploratory Data Analysis Report</h1>
+        <p>Generated: {report['timestamp']}</p>
+        <p>Rows: {report['n_rows']}, Columns: {report['n_columns']}</p>
+        </body>
+        </html>
+        """
+        output_path.write_text(html_content)
+
+    return report
+
+
+def generate_sector_comparison_report(
+    df: pd.DataFrame, sector_column: str = "sector", metrics: list = None
+) -> dict:
+    """Generate sector comparison report.
+
+    Phase 9.2 enhancement for sector analysis.
+
+    Args:
+        df: DataFrame containing the data
+        sector_column: Name of sector column
+        metrics: List of metrics to compare
+
+    Returns:
+        Dictionary with sector comparison results
+    """
+    if metrics is None:
+        # Default metrics
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        metrics = numeric_cols[:5]  # First 5 numeric columns
+
+    report = {"sectors": df[sector_column].unique().tolist(), "n_metrics": len(metrics)}
+
+    # Sector statistics
+    sector_stats = {}
+    for sector in report["sectors"]:
+        if pd.isna(sector):
+            continue
+
+        sector_data = df[df[sector_column] == sector]
+        sector_stats[sector] = sector_data[metrics].describe().to_dict()
+
+    report["sector_stats"] = sector_stats
+
+    # Statistical tests
+    statistical_tests = {}
+    for metric in metrics:
+        test_result = compare_sector_means(df, metric, sector_column, method="anova")
+        statistical_tests[metric] = test_result
+
+    report["statistical_tests"] = statistical_tests
+
+    return report

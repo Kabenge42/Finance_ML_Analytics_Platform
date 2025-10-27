@@ -52,10 +52,11 @@ class EnvironmentSetup:
         self.project_root = Path(__file__).parent.resolve()
         self.venv_path = self.project_root / ".venv"
         self.platform = platform.system()
-        self.python_cmd = self._detect_python_command()
+        self.python_cmd = self._detect_python_command
         self.errors = []
         self.color_enabled = Color.supports_color()
 
+    @property
     def _detect_python_command(self) -> str:
         """Detect the appropriate Python command for this system"""
         # Validate that detected Python matches running version
@@ -167,14 +168,14 @@ class EnvironmentSetup:
                 self._print_error(f"Command not found: {cmd[0]}")
                 raise
             # When check=False, return error tuple
-            return (-1, "", str(e))
+            return -1, "", str(e)
         except Exception as e:
             # Handle other unexpected errors
             if check:
                 self._print_error(f"Command execution error: {e}")
                 raise
             # When check=False, return error tuple
-            return (-1, "", str(e))
+            return -1, "", str(e)
 
     def check_prerequisites(self) -> bool:
         """Check if required prerequisites are installed"""
@@ -598,6 +599,10 @@ class EnvironmentSetup:
 
 
 def main():
+    """
+
+    :return:
+    """
     parser = argparse.ArgumentParser(
         description="Automated environment setup for Finance ML Analytics Platform",
         formatter_class=argparse.RawDescriptionHelpFormatter,

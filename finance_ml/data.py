@@ -924,3 +924,431 @@ def perform_early_pipeline_validation(df: pd.DataFrame) -> dict:
     )
 
     return results
+
+
+# ============================================================================
+# Phase 9.1: Advanced Preprocessing Functions
+# ============================================================================
+
+
+def detect_outliers_iqr_advanced(
+    df: pd.DataFrame, columns: List[str], multiplier: float = 1.5
+) -> pd.DataFrame:
+    """Detect outliers using IQR method across multiple columns.
+
+    Phase 9.1 enhancement for advanced outlier detection.
+
+    Args:
+        df: DataFrame to analyze
+        columns: List of column names to check for outliers
+        multiplier: IQR multiplier for outlier bounds (default: 1.5)
+            - 1.5 is standard (moderate outliers)
+            - 3.0 is more lenient (extreme outliers only)
+
+    Returns:
+        DataFrame with boolean columns indicating outliers for each input column
+
+    Raises:
+        KeyError: If any column doesn't exist in DataFrame
+    """
+    outliers = pd.DataFrame(index=df.index)
+
+    for col in columns:
+        if col not in df.columns:
+            raise KeyError(f"Column '{col}' not found in DataFrame")
+
+        series = pd.to_numeric(df[col], errors="coerce")
+
+        # Handle case where we have too few non-null values
+        non_null_count = series.notna().sum()
+        if non_null_count < 4:
+            # Not enough data for IQR calculation
+            outliers[col] = False
+            continue
+
+        q1 = series.quantile(0.25)
+        q3 = series.quantile(0.75)
+        iqr = q3 - q1
+
+        if iqr == 0:
+            # No variation in data
+            outliers[col] = False
+            continue
+
+        lower_bound = q1 - multiplier * iqr
+        upper_bound = q3 + multiplier * iqr
+
+        outliers[col] = (series < lower_bound) | (series > upper_bound)
+
+    return outliers
+
+
+def detect_outliers_by_sector(
+    df: pd.DataFrame, columns: List[str], sector_column: str = "sector", multiplier: float = 1.5
+) -> pd.DataFrame:
+    """Detect outliers using sector-specific IQR thresholds.
+
+    Phase 9.1 enhancement for sector-aware outlier detection.
+
+    Args:
+        df: DataFrame to analyze
+        columns: List of columns to check for outliers
+        sector_column: Name of the sector column
+        multiplier: IQR multiplier for outlier bounds
+
+    Returns:
+        DataFrame with boolean columns indicating outliers
+
+    Raises:
+        KeyError: If sector_column or any data column doesn't exist
+    """
+    if sector_column not in df.columns:
+        raise KeyError(f"Sector column '{sector_column}' not found in DataFrame")
+
+    outliers = pd.DataFrame(False, index=df.index, columns=columns)
+
+    for sector in df[sector_column].unique():
+        if pd.isna(sector):
+            continue
+
+        sector_mask = df[sector_column] == sector
+        sector_data = df[sector_mask]
+
+        if len(sector_data) < 4:
+            # Too few samples in this sector
+            continue
+
+        sector_outliers = detect_outliers_iqr_advanced(sector_data, columns, multiplier)
+
+        # Update the outliers dataframe
+        for col in columns:
+            outliers.loc[sector_mask, col] = sector_outliers[col].values
+
+    return outliers
+
+
+def detect_outliers_zscore(
+    df: pd.DataFrame, columns: List[str], threshold: float = 3.0
+) -> pd.DataFrame:
+    """Detect outliers using Z-score method.
+
+    Phase 9.1 enhancement for Z-score based outlier detection.
+
+    Args:
+        df: DataFrame to analyze
+        columns: List of columns to check
+        threshold: Z-score threshold (default: 3.0)
+
+    Returns:
+        DataFrame with boolean columns indicating outliers
+
+    Raises:
+        KeyError: If any column doesn't exist
+    """
+    outliers = pd.DataFrame(index=df.index)
+
+    for col in columns:
+        if col not in df.columns:
+            raise KeyError(f"Column '{col}' not found in DataFrame")
+
+        values = pd.to_numeric(df[col], errors="coerce")
+        mean = values.mean()
+        std = values.std()
+
+        if std == 0 or pd.isna(std):
+            outliers[col] = False
+        else:
+            z_scores = np.abs((values - mean) / std)
+            outliers[col] = z_scores > threshold
+
+    return outliers
+
+
+def winsorize_column(series: pd.Series, lower: float = 0.01, upper: float = 0.99) -> pd.Series:
+    """Winsorize (cap) extreme values in a pandas Series.
+
+    Phase 9.1 enhancement for handling extreme values.
+
+    Args:
+        series: Pandas Series to winsorize
+        lower: Lower percentile threshold (default: 0.01 = 1st percentile)
+        upper: Upper percentile threshold (default: 0.99 = 99th percentile)
+
+    Returns:
+        Winsorized Series with extreme values capped
+    """
+    lower_bound = series.quantile(lower)
+    upper_bound = series.quantile(upper)
+    return series.clip(lower=lower_bound, upper=upper_bound)
+
+
+def winsorize_by_sector(
+    df: pd.DataFrame,
+    columns: List[str],
+    sector_column: str = "sector",
+    lower: float = 0.01,
+    upper: float = 0.99,
+) -> pd.DataFrame:
+    """Winsorize columns using sector-specific thresholds.
+
+    Phase 9.1 enhancement for sector-aware winsorization.
+
+    Args:
+        df: DataFrame to process
+        columns: List of columns to winsorize
+        sector_column: Name of the sector column
+        lower: Lower percentile threshold
+        upper: Upper percentile threshold
+
+    Returns:
+        DataFrame with winsorized columns
+    """
+    df_copy = df.copy()
+
+    for sector in df_copy[sector_column].unique():
+        if pd.isna(sector):
+            continue
+
+        sector_mask = df_copy[sector_column] == sector
+
+        for col in columns:
+            if col in df_copy.columns:
+                sector_values = df_copy.loc[sector_mask, col]
+                winsorized = winsorize_column(sector_values, lower, upper)
+                df_copy.loc[sector_mask, col] = winsorized
+
+    return df_copy
+
+
+def calculate_completeness_score(df: pd.DataFrame) -> float:
+    """Calculate data completeness score (percentage of non-null values).
+
+    Phase 9.1 enhancement for data quality assessment.
+
+    Args:
+        df: DataFrame to assess
+
+    Returns:
+        Completeness score as percentage (0-100)
+    """
+    if df.empty or df.shape[1] == 0:
+        return 0.0
+
+    total_cells = df.shape[0] * df.shape[1]
+    non_null_cells = df.notna().sum().sum()
+
+    return (non_null_cells / total_cells) * 100.0
+
+
+def calculate_consistency_score(df: pd.DataFrame) -> dict:
+    """Calculate data consistency metrics.
+
+    Phase 9.1 enhancement for data quality assessment.
+
+    Checks for:
+    - Negative values in price/market cap fields
+    - Extreme ratios (>1000 or <-1000)
+    - Missing required fields
+
+    Args:
+        df: DataFrame to assess
+
+    Returns:
+        Dictionary with consistency metrics and issues
+    """
+    issues = []
+    total_checks = 0
+    passed_checks = 0
+
+    # Check for negative prices
+    price_cols = [c for c in df.columns if "price" in c.lower() and "target" not in c.lower()]
+    for col in price_cols:
+        total_checks += 1
+        negative_count = (df[col] < 0).sum()
+        if negative_count == 0:
+            passed_checks += 1
+        else:
+            issues.append(f"{col}: {negative_count} negative values")
+
+    # Check for negative market cap
+    if "market_cap" in df.columns:
+        total_checks += 1
+        negative_count = (df["market_cap"] < 0).sum()
+        if negative_count == 0:
+            passed_checks += 1
+        else:
+            issues.append(f"market_cap: {negative_count} negative values")
+
+    # Check for extreme P/E ratios
+    if "p_e" in df.columns:
+        total_checks += 1
+        extreme_count = ((df["p_e"] > 1000) | (df["p_e"] < -1000)).sum()
+        if extreme_count == 0:
+            passed_checks += 1
+        else:
+            issues.append(f"p_e: {extreme_count} extreme values (>1000 or <-1000)")
+
+    consistency_score = (passed_checks / total_checks * 100.0) if total_checks > 0 else 100.0
+
+    return {
+        "score": consistency_score,
+        "total_checks": total_checks,
+        "passed_checks": passed_checks,
+        "issues": issues,
+    }
+
+
+def impute_by_sector(
+    df: pd.DataFrame, column: str, sector_column: str = "sector", method: str = "median"
+) -> pd.DataFrame:
+    """Impute missing values using sector-specific statistics.
+
+    Phase 9.1 enhancement for intelligent missing value imputation.
+
+    Args:
+        df: DataFrame to process
+        column: Column name to impute
+        sector_column: Name of the sector column
+        method: Imputation method ('median', 'mean')
+
+    Returns:
+        DataFrame with imputed values
+
+    Raises:
+        ValueError: If method is unknown
+    """
+    if method not in ["median", "mean"]:
+        raise ValueError(f"Unknown imputation method: {method}")
+
+    df_copy = df.copy()
+
+    for sector in df_copy[sector_column].unique():
+        if pd.isna(sector):
+            continue
+
+        sector_mask = df_copy[sector_column] == sector
+        sector_data = df_copy.loc[sector_mask, column]
+
+        if method == "median":
+            fill_value = sector_data.median()
+        else:  # mean
+            fill_value = sector_data.mean()
+
+        # Only fill missing values, don't overwrite existing
+        missing_mask = sector_mask & df_copy[column].isnull()
+        df_copy.loc[missing_mask, column] = fill_value
+
+    return df_copy
+
+
+def safe_divide(
+    numerator: pd.Series, denominator: pd.Series, fill_value: float = np.nan
+) -> pd.Series:
+    """Safely divide two Series, handling division by zero and infinities.
+
+    Phase 9.1 enhancement for robust ratio calculation.
+
+    Args:
+        numerator: Numerator Series
+        denominator: Denominator Series
+        fill_value: Value to use for division by zero (default: np.nan)
+
+    Returns:
+        Result Series with safe division
+    """
+    # Ensure numeric types
+    num = pd.to_numeric(numerator, errors="coerce")
+    denom = pd.to_numeric(denominator, errors="coerce")
+
+    # Perform division
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = num / denom
+
+    # Replace infinities and division by zero
+    result = result.replace([np.inf, -np.inf], fill_value)
+
+    return result
+
+
+def create_temporal_split(
+    df: pd.DataFrame, date_column: str, train_end_date: pd.Timestamp
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Create train/test split based on temporal ordering.
+
+    Phase 9.1 enhancement for time-aware data splitting.
+
+    Args:
+        df: DataFrame with temporal data
+        date_column: Name of the date column
+        train_end_date: Last date to include in training set
+
+    Returns:
+        Tuple of (train_df, test_df)
+
+    Raises:
+        KeyError: If date_column doesn't exist
+    """
+    if date_column not in df.columns:
+        raise KeyError(f"Date column '{date_column}' not found in DataFrame")
+
+    # Ensure date column is datetime
+    df_copy = df.copy()
+    df_copy[date_column] = pd.to_datetime(df_copy[date_column])
+
+    # Split based on date
+    train = df_copy[df_copy[date_column] <= train_end_date].copy()
+    test = df_copy[df_copy[date_column] > train_end_date].copy()
+
+    return train, test
+
+
+def create_expanding_windows(
+    df: pd.DataFrame, date_column: str, n_splits: int = 3
+) -> List[tuple[pd.Series, pd.Series]]:
+    """Create expanding window cross-validation splits.
+
+    Phase 9.1 enhancement for time-series cross-validation.
+
+    Args:
+        df: DataFrame with temporal data
+        date_column: Name of the date column
+        n_splits: Number of CV splits to create
+
+    Returns:
+        List of (train_mask, test_mask) tuples
+
+    Raises:
+        KeyError: If date_column doesn't exist
+        ValueError: If n_splits < 1
+    """
+    if date_column not in df.columns:
+        raise KeyError(f"Date column '{date_column}' not found in DataFrame")
+
+    if n_splits < 1:
+        raise ValueError("n_splits must be at least 1")
+
+    # Ensure date column is datetime and sort
+    df_copy = df.copy()
+    df_copy[date_column] = pd.to_datetime(df_copy[date_column])
+    dates_sorted = sorted(df_copy[date_column].unique())
+
+    window_size = len(dates_sorted) // (n_splits + 1)
+    if window_size < 1:
+        raise ValueError(f"Not enough unique dates for {n_splits} splits")
+
+    splits = []
+    for i in range(1, n_splits + 1):
+        train_end_idx = window_size * i
+        test_end_idx = min(window_size * (i + 1), len(dates_sorted))
+
+        train_end_date = dates_sorted[train_end_idx - 1]
+        test_end_date = dates_sorted[test_end_idx - 1]
+
+        train_mask = df_copy[date_column] <= train_end_date
+        test_mask = (df_copy[date_column] > train_end_date) & (
+            df_copy[date_column] <= test_end_date
+        )
+
+        splits.append((train_mask, test_mask))
+
+    return splits

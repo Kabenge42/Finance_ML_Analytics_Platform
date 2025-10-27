@@ -5,6 +5,7 @@ Modular package for equity screening, feature engineering, and ML models.
 
 Modules:
 - finance_ml.data: Data loading, normalization, and validation
+- finance_ml.advanced_preprocessing: Advanced preprocessing (Phase 9.1)
 - finance_ml.features: Feature engineering functions
 - finance_ml.models: Classification, regression, and ensemble models
 - finance_ml.eval: Analytics, visualizations, and reporting
@@ -16,6 +17,19 @@ Modules:
 """
 
 __version__ = "0.3.0"
+
+# Import from advanced_preprocessing module (Phase 9.1)
+from finance_ml.advanced_preprocessing import (
+    DataQualityReport,
+    detect_outliers_iqr as detect_outliers_iqr_method,
+    detect_outliers_zscore as detect_outliers_zscore_method,
+    detect_outliers_isolation_forest,
+    winsorize_by_sector as winsorize_by_sector_method,
+    calculate_data_quality_score,
+    impute_missing_values,
+    create_scaler_pipeline,
+    scale_features,
+)
 
 # Import config module
 from finance_ml.config import (
@@ -44,6 +58,18 @@ from finance_ml.data import (
     sanitize_dataframe_with_logging,
     perform_early_pipeline_validation,
     _safe_div as _data_safe_div,
+    # Phase 9.1: Advanced preprocessing functions
+    detect_outliers_iqr_advanced,
+    detect_outliers_by_sector,
+    detect_outliers_zscore,
+    winsorize_column,
+    winsorize_by_sector,
+    calculate_completeness_score,
+    calculate_consistency_score,
+    impute_by_sector,
+    safe_divide,
+    create_temporal_split,
+    create_expanding_windows,
 )
 
 # Import from eval module (Phase 7 TDD implementation complete)
@@ -57,6 +83,20 @@ from finance_ml.eval import (
     create_sector_heatmap,
     create_interactive_prediction_plot,
     create_region_sector_heatmap,
+    # Phase 9.2: Advanced EDA functions
+    calculate_correlation_matrix,
+    find_top_correlations,
+    test_normality,
+    calculate_skewness_kurtosis,
+    detect_outliers_statistical,
+    calculate_mutual_information,
+    calculate_feature_importance_rf,
+    perform_pca,
+    calculate_optimal_pca_components,
+    compare_sector_means,
+    compare_two_groups,
+    generate_eda_report,
+    generate_sector_comparison_report,
 )
 from finance_ml.features import (
     _safe_div,
@@ -95,7 +135,6 @@ from finance_ml.models import (
 
 # Import notebook configuration module
 from finance_ml.notebook_config import NotebookConfig
-
 # Notebook utility helpers (display + loading strategy)
 from finance_ml.notebook_utils import (
     display_config_summary,
@@ -159,6 +198,28 @@ __all__ = [
     "validate_financial_data_quality",
     "sanitize_dataframe_with_logging",
     "perform_early_pipeline_validation",
+    # Phase 9.1: Advanced preprocessing
+    "detect_outliers_iqr_advanced",
+    "detect_outliers_by_sector",
+    "detect_outliers_zscore",
+    "winsorize_column",
+    "winsorize_by_sector",
+    "calculate_completeness_score",
+    "calculate_consistency_score",
+    "impute_by_sector",
+    "safe_divide",
+    "create_temporal_split",
+    "create_expanding_windows",
+    # Advanced preprocessing module (Phase 9.1)
+    "DataQualityReport",
+    "detect_outliers_iqr_method",
+    "detect_outliers_zscore_method",
+    "detect_outliers_isolation_forest",
+    "winsorize_by_sector_method",
+    "calculate_data_quality_score",
+    "impute_missing_values",
+    "create_scaler_pipeline",
+    "scale_features",
     # Features module
     "engineer_basic_ratios",
     "engineer_margin_features",
@@ -187,6 +248,20 @@ __all__ = [
     "create_sector_heatmap",
     "create_interactive_prediction_plot",
     "create_region_sector_heatmap",
+    # Phase 9.2: Advanced EDA
+    "calculate_correlation_matrix",
+    "find_top_correlations",
+    "test_normality",
+    "calculate_skewness_kurtosis",
+    "detect_outliers_statistical",
+    "calculate_mutual_information",
+    "calculate_feature_importance_rf",
+    "perform_pca",
+    "calculate_optimal_pca_components",
+    "compare_sector_means",
+    "compare_two_groups",
+    "generate_eda_report",
+    "generate_sector_comparison_report",
     # Notebook utilities (display + loading strategy)
     "display_config_summary",
     "load_stock_data",

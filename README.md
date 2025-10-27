@@ -94,8 +94,9 @@ See `requirements.txt` for complete list with version constraints.
 The package supports optional dependency groups via `pyproject.toml`:
 - **`[dev]`**: pytest, black, flake8, mypy, isort (development tools)
 - **`[tensorflow]`**: tensorflow, scikeras (deep learning)
-- **`[database]`**: psycopg2-binary, SQLAlchemy (database access from Python)
+- **`[database]`**: psycopg2-binary, SQLAlchemy, openpyxl (database access from Python)
 - **`[advanced-features]`**: boruta, numba (advanced feature selection and performance)
+- **`[notebook]`**: jupyter, notebook, ipykernel (Jupyter notebook support)
 - **`[all]`**: All optional dependencies combined
 
 
@@ -121,16 +122,23 @@ The package supports optional dependency groups via `pyproject.toml`:
 
 3) Install Python dependencies
 
-**Basic installation** (core dependencies only):
+**Basic installation** (includes core + optional dependencies):
 - pip install -r requirements.txt
+    - Note: `requirements.txt` includes TensorFlow, database libraries (psycopg2, SQLAlchemy), Jupyter, and other
+      optional dependencies for a complete setup. If you encounter TensorFlow installation issues, you can comment it
+      out—the core workflow uses scikit-learn and gradient boosting libraries.
 
-**Package installation** (for CLI tools and optional dependencies):
-- pip install -e .                    # Core package only
+**Package installation** (for CLI tools with selective dependencies):
+
+- pip install -e . # Core package only (minimal dependencies)
 - pip install -e ".[dev]"             # With development tools
 - pip install -e ".[database]"        # With database client libraries
+- pip install -e ".[notebook]"        # With Jupyter notebook support
+- pip install -e ".[tensorflow]"      # With TensorFlow/Keras deep learning
 - pip install -e ".[all]"             # With all optional dependencies
 
-**Note**: TensorFlow is optional. If you encounter installation issues, you can skip it—the core workflow uses scikit-learn and gradient boosting libraries.
+**Note**: The package installation approach allows selective installation of optional features, while `requirements.txt`
+provides a batteries-included setup.
 
 ### Optional: Conda environment (Anaconda/Miniconda)
 
@@ -205,11 +213,16 @@ Repeat per region (EU/APAC/ROTW) substituting the correct CSV and Region value.
 - Review all configuration files before committing to ensure no credentials are exposed
 
 ## Environment Variables
-Environment variable defaults and examples live in environment_variables.txt. Key items:
-- TF_CPP_MIN_LOG_LEVEL=2  (reduces TensorFlow logging verbosity)
-- Optional paths: DATA_DIR, MODEL_DIR, CACHE_DIR
-- Optional modeling: MODEL_VERSION, RANDOM_SEED
-- Optional performance: N_JOBS, MEMORY_LIMIT
+
+Environment variable defaults and examples live in `environment_variables.txt`. Key items:
+
+- **TF_CPP_MIN_LOG_LEVEL=2** — Reduces TensorFlow logging verbosity (0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR)
+- **LOG_LEVEL** — Python logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- **Optional paths**: DATA_DIR, MODEL_DIR, CACHE_DIR, OUTPUT_DIR
+- **Optional modeling**: MODEL_VERSION, RANDOM_SEED
+- **Optional performance**: N_JOBS, MEMORY_LIMIT
+- **Database**: DB_URL, DB_SCHEMA, DB_TABLE
+- **External APIs**: ALPHA_VANTAGE_API_KEY, FINANCIAL_API_KEY (if using external data sources)
 
 Set them in your shell or via a .env file if your tools auto‑load it.
 - Windows (PowerShell):
@@ -217,6 +230,7 @@ Set them in your shell or via a .env file if your tools auto‑load it.
 - macOS/Linux (bash):
   - export TF_CPP_MIN_LOG_LEVEL=2
 
+See `environment_variables.txt` for complete list with detailed descriptions.
 
 ## Running the Project
 
