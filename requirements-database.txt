@@ -1,0 +1,15 @@
+# ============================================================================
+# Database Dependencies for Finance ML Analytics Platform
+# ============================================================================
+# Install with: pip install -r requirements-database.txt
+# This includes all core dependencies plus database connectivity tools
+
+# Core dependencies
+-r requirements-core.txt
+
+# Database connectivity for PostgreSQL and SQL operations
+psycopg2-binary>=2.9.0,<3.0.0
+SQLAlchemy>=2.0.0,<3.0.0
+
+# Excel file processing (often used with database exports)
+openpyxl>=3.1.0,<4.0.0

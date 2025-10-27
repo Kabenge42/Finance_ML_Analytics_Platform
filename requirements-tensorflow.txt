@@ -1,0 +1,12 @@
+# ============================================================================
+# TensorFlow/Deep Learning Dependencies for Finance ML Analytics Platform
+# ============================================================================
+# Install with: pip install -r requirements-tensorflow.txt
+# This includes all core dependencies plus TensorFlow/Keras support
+
+# Core dependencies
+-r requirements-core.txt
+
+# Deep learning frameworks
+tensorflow>=2.13.0,<3.0.0
+scikeras>=0.12.0,<1.0.0
