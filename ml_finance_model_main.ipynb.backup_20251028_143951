@@ -120,10 +120,13 @@
    "execution_count": 1
   },
   {
-   "metadata": {},
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2025-10-28T14:06:41.354470Z",
+     "start_time": "2025-10-28T14:06:41.349015Z"
+    }
+   },
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Finance ML Analytics Platform — Notebook (v0.3.0)\n",
     "# This notebook now uses the modular finance_ml package\n",
@@ -149,29 +152,10 @@
     "    display_config_summary,\n",
     "    load_stock_data,\n",
     "    display_data_summary,\n",
-    "    # Phase 9.1: Advanced Preprocessing\n",
-    "    # Phase 9.2: Advanced EDA\n",
-    "    generate_eda_report,\n",
-    "    calculate_correlation_matrix,\n",
-    "    find_top_correlations,\n",
-    "    test_normality,\n",
-    "    perform_pca,\n",
-    "    compare_sector_means,\n",
     "    # Feature engineering\n",
+    "    # Modeling\n",
     "    # Evaluation and analytics\n",
-    "    )\n",
-    "\n",
-    "# Import Phase 9.4: Classification module\n",
-    "\n",
-    "# Import Phase 9.5: Advanced Regression Models\n",
-    "from finance_ml.advanced_models import (\n",
-    "    prepare_regression_data,\n",
-    "    create_classification_interactions,\n",
-    "    train_stacking_regressor,\n",
-    "    train_quantile_regressor,\n",
-    "    compare_regressors,\n",
-    "    train_sector_specific_models,\n",
-    "    save_model,\n",
+    "    # Week 1 Enhancements - Data Quality & Monitoring\n",
     "    )\n",
     "\n",
     "# Setup logging\n",
@@ -183,7 +167,18 @@
     "print(f\"Finance ML Analytics Platform v{__version__}\")\n",
     "print(\"All functions imported from finance_ml package\")\n"
    ],
-   "id": "7d094f80f6c7995c"
+   "id": "55308e804e9ad93f",
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Finance ML Analytics Platform v0.3.0\n",
+      "All functions imported from finance_ml package\n"
+     ]
+    }
+   ],
+   "execution_count": 2
   },
   {
    "metadata": {},
@@ -447,137 +442,6 @@
    "metadata": {},
    "cell_type": "markdown",
    "source": [
-    "## Phase 9.2 — Advanced Exploratory Data Analysis\n",
-    "\n",
-    "Comprehensive statistical analysis and advanced EDA using Phase 9.2 functions from `finance_ml.advanced_eda`:\n",
-    "1. Generate comprehensive EDA report\n",
-    "2. Correlation analysis with statistical significance\n",
-    "3. Normality testing and distribution analysis\n",
-    "4. PCA for dimensionality insights\n",
-    "5. Sector-specific statistical comparisons\n"
-   ],
-   "id": "4f51f2ca72ccb19f"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
-   "source": [
-    "# Phase 9.2: Generate Comprehensive EDA Report\n",
-    "print(\"\\n\" + \"=\" * 80)\n",
-    "print(\"PHASE 9.2 — ADVANCED EXPLORATORY DATA ANALYSIS\")\n",
-    "print(\"=\" * 80)\n",
-    "\n",
-    "try:\n",
-    "    from pathlib import Path\n",
-    "\n",
-    "    output_dir = Path(config.output_dir)\n",
-    "    output_dir.mkdir(exist_ok=True, parents=True)\n",
-    "\n",
-    "    # Select numeric features for EDA\n",
-    "    numeric_features = all_stocks.select_dtypes(include=[np.number]).columns.tolist()\n",
-    "\n",
-    "    # Exclude target and ID columns\n",
-    "    exclude_cols = ['price_target', 'ticker', 'index']\n",
-    "    numeric_features = [c for c in numeric_features if c not in exclude_cols and not c.startswith('unnamed')]\n",
-    "\n",
-    "    print(f\"\\n📊 Analyzing {len(numeric_features)} numeric features...\")\n",
-    "\n",
-    "    # Generate comprehensive EDA report\n",
-    "    if len(numeric_features) > 0:\n",
-    "        eda_report = generate_eda_report(\n",
-    "                all_stocks[numeric_features].copy(),\n",
-    "                target_col=None,\n",
-    "                output_dir=str(output_dir)\n",
-    "                )\n",
-    "\n",
-    "        print(\"\\n✓ EDA Report Generated:\")\n",
-    "        print(f\"  Total features: {eda_report.n_features}\")\n",
-    "        print(f\"  Missing values: {eda_report.missing_total}\")\n",
-    "        print(f\"  Report saved to: {output_dir / 'eda_report.json'}\")\n",
-    "\n",
-    "    # Correlation analysis\n",
-    "    if len(numeric_features) >= 2:\n",
-    "        print(\"\\n🔗 Correlation Analysis:\")\n",
-    "        corr_matrix = calculate_correlation_matrix(\n",
-    "                all_stocks[numeric_features].copy(),\n",
-    "                method='pearson'\n",
-    "                )\n",
-    "\n",
-    "        # Find top correlations\n",
-    "        top_corr = find_top_correlations(corr_matrix, n_top=10, threshold=0.3)\n",
-    "        print(f\"  Top {len(top_corr)} feature pairs with |correlation| > 0.3\")\n",
-    "        for feat1, feat2, corr_val in top_corr[:5]:\n",
-    "            print(f\"    {feat1} <-> {feat2}: {corr_val:.3f}\")\n",
-    "\n",
-    "    # Test normality for key features\n",
-    "    key_features = [c for c in ['market_cap', 'revenue', 'net_income', 'p_e', 'ev_ebitda']\n",
-    "                    if c in numeric_features]\n",
-    "\n",
-    "    if key_features:\n",
-    "        print(\"\\n📈 Normality Testing (Shapiro-Wilk):\")\n",
-    "        for feat in key_features[:5]:\n",
-    "            data = all_stocks[feat].dropna()\n",
-    "            if len(data) > 3:\n",
-    "                result = test_normality(data, method='shapiro')\n",
-    "                status = \"Normal\" if result.is_normal else \"Non-normal\"\n",
-    "                print(f\"  {feat}: {status} (p={result.p_value:.4f})\")\n",
-    "\n",
-    "    # PCA for dimensionality insights\n",
-    "    if len(numeric_features) >= 5:\n",
-    "        print(\"\\n🔍 Principal Component Analysis:\")\n",
-    "        # Take subset for PCA (limit features to avoid memory issues)\n",
-    "        pca_features = numeric_features[:20] if len(numeric_features) > 20 else numeric_features\n",
-    "        pca_data = all_stocks[pca_features].dropna()\n",
-    "\n",
-    "        if len(pca_data) > 10:\n",
-    "            n_components_pca = min(5, len(pca_features))\n",
-    "            pca_result, explained_var = perform_pca(pca_data, n_components=n_components_pca)\n",
-    "\n",
-    "            print(f\"  Components: {n_components_pca}\")\n",
-    "            print(f\"  Variance explained by PC1: {explained_var[0]:.2%}\")\n",
-    "            print(f\"  Cumulative variance (all PCs): {sum(explained_var):.2%}\")\n",
-    "\n",
-    "    # Sector comparison (if sector column exists)\n",
-    "    if 'sector' in all_stocks.columns and key_features:\n",
-    "        print(\"\\n🏢 Sector Statistical Comparison:\")\n",
-    "\n",
-    "        # Compare first key feature across sectors\n",
-    "        test_feature = key_features[0]\n",
-    "        comparison = compare_sector_means(\n",
-    "                all_stocks,\n",
-    "                feature_col=test_feature,\n",
-    "                sector_col='sector'\n",
-    "                )\n",
-    "\n",
-    "        print(f\"  Feature: {test_feature}\")\n",
-    "        print(f\"  Test: {comparison.test_name}\")\n",
-    "        print(f\"  Statistic: {comparison.statistic:.3f}\")\n",
-    "        print(f\"  P-value: {comparison.p_value:.4f}\")\n",
-    "\n",
-    "        if comparison.p_value < 0.05:\n",
-    "            print(f\"  ✓ Significant differences between sectors (p < 0.05)\")\n",
-    "        else:\n",
-    "            print(f\"  → No significant differences between sectors (p ≥ 0.05)\")\n",
-    "\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"✓ Phase 9.2 Advanced EDA Complete\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "except Exception as e:\n",
-    "    logger.error(f\"Phase 9.2 Advanced EDA failed: {e}\")\n",
-    "    print(f\"⚠ Phase 9.2 Advanced EDA failed: {e}\")\n",
-    "    import traceback\n",
-    "\n",
-    "    traceback.print_exc()\n"
-   ],
-   "id": "519fc8053bc68935"
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": [
     "## Comprehensive Visualizations and Summary Statistics\n",
     "\n",
     "Detailed analysis of the `all_stocks` dataframe with:\n",
@@ -588,13 +452,13 @@
     "5. Sector and region analysis\n",
     "6. Financial metrics deep dive\n"
    ],
-   "id": "8e1c6f901f55695e"
+   "id": "4f51f2ca72ccb19f"
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:41.845160Z",
-     "start_time": "2025-10-28T14:06:41.800445Z"
+     "end_time": "2025-10-28T14:06:41.786151Z",
+     "start_time": "2025-10-28T14:06:41.781889Z"
     }
    },
    "cell_type": "code",
@@ -616,85 +480,21 @@
     "sns.set_style(\"whitegrid\")\n",
     "plt.rcParams['figure.figsize'] = (12, 6)\n"
    ],
-   "id": "adb567b8f1b6eefc",
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "================================================================================\n",
-      "COMPREHENSIVE SUMMARY STATISTICS\n",
-      "================================================================================\n",
-      "\n",
-      "Dataset Shape: 8,000 rows × 230 columns\n",
-      "Memory Usage: 30.50 MB\n",
-      "\n",
-      "📍 Regional Distribution:\n",
-      "  Asia / Pacific: 2,054 (25.7%)\n",
-      "  Europe: 2,051 (25.6%)\n",
-      "  United States and Canada: 1,814 (22.7%)\n",
-      "  Africa / Middle East: 1,463 (18.3%)\n",
-      "  Latin America and Caribbean: 616 (7.7%)\n",
-      "  648.67: 1 (0.0%)\n",
-      "\n",
-      "🏢 Sector Distribution (Top 10):\n",
-      "  Industrials: 1,416 (17.7%)\n",
-      "  Financials: 1,398 (17.5%)\n",
-      "  Consumer Discretionary: 871 (10.9%)\n",
-      "  Information Technology: 824 (10.3%)\n",
-      "  Materials: 712 (8.9%)\n",
-      "  Health Care: 625 (7.8%)\n",
-      "  Consumer Staples: 566 (7.1%)\n",
-      "  Real Estate: 549 (6.9%)\n",
-      "  Communication Services: 358 (4.5%)\n",
-      "  Utilities: 358 (4.5%)\n",
-      "\n",
-      "💰 Key Financial Metrics Summary:\n",
-      "         market_cap    last_price          p_e        revenue     net_income\n",
-      "count  7.999000e+03  7.998000e+03  6714.000000    7929.000000    7989.000000\n",
-      "mean   3.689435e+04  4.109441e+03    31.104680    7863.054283     742.407298\n",
-      "std    1.775886e+06  4.412543e+04    42.964966   26066.310433    3677.588285\n",
-      "min    1.342500e+01  5.400000e-03     0.000000    -456.110000  -25666.670000\n",
-      "25%    1.087345e+03  1.374000e+01    11.900000     483.280000      25.640000\n",
-      "50%    3.881150e+03  4.285500e+01    19.100000    1695.570000     140.160000\n",
-      "75%    1.014191e+04  1.580100e+02    32.200000    5670.400000     478.950000\n",
-      "max    1.585570e+08  1.903000e+06   498.700000  693153.000000  115573.000000\n",
-      "\n",
-      "📊 Data Coverage:\n",
-      "  market_cap: 100.0%\n",
-      "  last_price: 100.0%\n",
-      "  p_e: 83.9%\n",
-      "  revenue: 99.1%\n",
-      "  net_income: 99.9%\n",
-      "\n",
-      "🎯 Target Variable (price_target):\n",
-      "  Count: 6,937\n",
-      "  Mean: $4843.83\n",
-      "  Median: $53.22\n",
-      "  Std Dev: $49787.04\n",
-      "\n",
-      "🏆 Top 5 Sectors by Total Market Cap:\n",
-      "  Industrials: $0.2B\n",
-      "  Information Technology: $0.0B\n",
-      "  Financials: $0.0B\n",
-      "  Consumer Discretionary: $0.0B\n",
-      "  Communication Services: $0.0B\n"
-     ]
-    }
-   ],
-   "execution_count": 8
+   "id": "89d75564465aeedf",
+   "outputs": [],
+   "execution_count": 7
   },
   {
    "metadata": {},
    "cell_type": "markdown",
    "source": "### 1. Comprehensive Summary Statistics\n",
-   "id": "b3a72c1eb4886ed2"
+   "id": "8e1c6f901f55695e"
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:41.921783Z",
-     "start_time": "2025-10-28T14:06:41.852677Z"
+     "end_time": "2025-10-28T14:06:41.845160Z",
+     "start_time": "2025-10-28T14:06:41.800445Z"
     }
    },
    "cell_type": "code",
@@ -788,26 +588,85 @@
     "    for sector, mcap in sector_mcap.items():\n",
     "        print(f\"  {sector}: ${mcap / 1e9:.1f}B\")\n"
    ],
-   "id": "ab388ffdd4d7107c",
-   "outputs": [],
-   "execution_count": 9
+   "id": "adb567b8f1b6eefc",
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "================================================================================\n",
+      "COMPREHENSIVE SUMMARY STATISTICS\n",
+      "================================================================================\n",
+      "\n",
+      "Dataset Shape: 8,000 rows × 230 columns\n",
+      "Memory Usage: 30.50 MB\n",
+      "\n",
+      "📍 Regional Distribution:\n",
+      "  Asia / Pacific: 2,054 (25.7%)\n",
+      "  Europe: 2,051 (25.6%)\n",
+      "  United States and Canada: 1,814 (22.7%)\n",
+      "  Africa / Middle East: 1,463 (18.3%)\n",
+      "  Latin America and Caribbean: 616 (7.7%)\n",
+      "  648.67: 1 (0.0%)\n",
+      "\n",
+      "🏢 Sector Distribution (Top 10):\n",
+      "  Industrials: 1,416 (17.7%)\n",
+      "  Financials: 1,398 (17.5%)\n",
+      "  Consumer Discretionary: 871 (10.9%)\n",
+      "  Information Technology: 824 (10.3%)\n",
+      "  Materials: 712 (8.9%)\n",
+      "  Health Care: 625 (7.8%)\n",
+      "  Consumer Staples: 566 (7.1%)\n",
+      "  Real Estate: 549 (6.9%)\n",
+      "  Communication Services: 358 (4.5%)\n",
+      "  Utilities: 358 (4.5%)\n",
+      "\n",
+      "💰 Key Financial Metrics Summary:\n",
+      "         market_cap    last_price          p_e        revenue     net_income\n",
+      "count  7.999000e+03  7.998000e+03  6714.000000    7929.000000    7989.000000\n",
+      "mean   3.689435e+04  4.109441e+03    31.104680    7863.054283     742.407298\n",
+      "std    1.775886e+06  4.412543e+04    42.964966   26066.310433    3677.588285\n",
+      "min    1.342500e+01  5.400000e-03     0.000000    -456.110000  -25666.670000\n",
+      "25%    1.087345e+03  1.374000e+01    11.900000     483.280000      25.640000\n",
+      "50%    3.881150e+03  4.285500e+01    19.100000    1695.570000     140.160000\n",
+      "75%    1.014191e+04  1.580100e+02    32.200000    5670.400000     478.950000\n",
+      "max    1.585570e+08  1.903000e+06   498.700000  693153.000000  115573.000000\n",
+      "\n",
+      "📊 Data Coverage:\n",
+      "  market_cap: 100.0%\n",
+      "  last_price: 100.0%\n",
+      "  p_e: 83.9%\n",
+      "  revenue: 99.1%\n",
+      "  net_income: 99.9%\n",
+      "\n",
+      "🎯 Target Variable (price_target):\n",
+      "  Count: 6,937\n",
+      "  Mean: $4843.83\n",
+      "  Median: $53.22\n",
+      "  Std Dev: $49787.04\n",
+      "\n",
+      "🏆 Top 5 Sectors by Total Market Cap:\n",
+      "  Industrials: $0.2B\n",
+      "  Information Technology: $0.0B\n",
+      "  Financials: $0.0B\n",
+      "  Consumer Discretionary: $0.0B\n",
+      "  Communication Services: $0.0B\n"
+     ]
+    }
+   ],
+   "execution_count": 8
   },
   {
-   "metadata": {
-    "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:42.001433Z",
-     "start_time": "2025-10-28T14:06:41.928091Z"
-    }
-   },
+   "metadata": {},
    "cell_type": "markdown",
    "source": "### 2. Distribution Visualizations (Matplotlib/Seaborn)\n",
-   "id": "e43f3586b4b4514b"
+   "id": "b3a72c1eb4886ed2"
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:42.349029Z",
-     "start_time": "2025-10-28T14:06:42.007594Z"
+     "end_time": "2025-10-28T14:06:41.921783Z",
+     "start_time": "2025-10-28T14:06:41.852677Z"
     }
    },
    "cell_type": "code",
@@ -825,15 +684,15 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "49df9b3831a4f757",
+   "id": "ab388ffdd4d7107c",
    "outputs": [],
-   "execution_count": 11
+   "execution_count": 9
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:42.564439Z",
-     "start_time": "2025-10-28T14:06:42.355809Z"
+     "end_time": "2025-10-28T14:06:42.001433Z",
+     "start_time": "2025-10-28T14:06:41.928091Z"
     }
    },
    "cell_type": "code",
@@ -851,15 +710,15 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "34d8b1382d4f3e47",
+   "id": "e43f3586b4b4514b",
    "outputs": [],
-   "execution_count": 12
+   "execution_count": 10
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:42.659811Z",
-     "start_time": "2025-10-28T14:06:42.570902Z"
+     "end_time": "2025-10-28T14:06:42.349029Z",
+     "start_time": "2025-10-28T14:06:42.007594Z"
     }
    },
    "cell_type": "code",
@@ -895,12 +754,17 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "9d8338106abc142c",
+   "id": "49df9b3831a4f757",
    "outputs": [],
-   "execution_count": 13
+   "execution_count": 11
   },
   {
-   "metadata": {},
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2025-10-28T14:06:42.564439Z",
+     "start_time": "2025-10-28T14:06:42.355809Z"
+    }
+   },
    "cell_type": "code",
    "source": [
     "# Box plots for key metrics by region\n",
@@ -929,15 +793,15 @@
     "        plt.tight_layout()\n",
     "        plt.show()\n"
    ],
-   "id": "90842d37fcaac588",
+   "id": "34d8b1382d4f3e47",
    "outputs": [],
-   "execution_count": null
+   "execution_count": 12
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:42.876505Z",
-     "start_time": "2025-10-28T14:06:42.671981Z"
+     "end_time": "2025-10-28T14:06:42.659811Z",
+     "start_time": "2025-10-28T14:06:42.570902Z"
     }
    },
    "cell_type": "code",
@@ -960,57 +824,21 @@
     "        plt.tight_layout()\n",
     "        plt.show()\n"
    ],
-   "id": "fae3f742e14b418",
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "\n",
-      "🔗 Top 10 Positive Correlations:\n",
-      "  price_target ↔ last_price: 0.973\n",
-      "  last_price ↔ price_target: 0.973\n",
-      "  ebitda ↔ net_income: 0.948\n",
-      "  net_income ↔ ebitda: 0.948\n",
-      "  market_cap ↔ net_income: 0.899\n",
-      "  net_income ↔ market_cap: 0.899\n",
-      "  ebitda ↔ market_cap: 0.810\n",
-      "  market_cap ↔ ebitda: 0.810\n",
-      "  ebitda ↔ revenue: 0.753\n",
-      "  revenue ↔ ebitda: 0.753\n",
-      "\n",
-      "🔗 Top 10 Negative Correlations:\n",
-      "  gross_margin ↔ revenue: -0.135\n",
-      "  revenue ↔ gross_margin: -0.135\n",
-      "  p_e ↔ revenue: -0.055\n",
-      "  revenue ↔ p_e: -0.055\n",
-      "  net_income ↔ p_e: -0.051\n",
-      "  p_e ↔ net_income: -0.051\n",
-      "  p_e ↔ ebitda: -0.046\n",
-      "  ebitda ↔ p_e: -0.046\n",
-      "  gross_margin ↔ last_price: -0.024\n",
-      "  last_price ↔ gross_margin: -0.024\n"
-     ]
-    }
-   ],
-   "execution_count": 14
+   "id": "9d8338106abc142c",
+   "outputs": [],
+   "execution_count": 13
   },
   {
-   "metadata": {
-    "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:43.656201Z",
-     "start_time": "2025-10-28T14:06:42.886265Z"
-    }
-   },
+   "metadata": {},
    "cell_type": "markdown",
    "source": "### 3. Correlation Analysis and Heatmaps\n",
-   "id": "3cdf020b14b87dbb"
+   "id": "90842d37fcaac588"
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:43.711370Z",
-     "start_time": "2025-10-28T14:06:43.662507Z"
+     "end_time": "2025-10-28T14:06:42.876505Z",
+     "start_time": "2025-10-28T14:06:42.671981Z"
     }
    },
    "cell_type": "code",
@@ -1056,12 +884,48 @@
     "        for (var1, var2), val in top_neg.items():\n",
     "            print(f\"  {var1} ↔ {var2}: {val:.3f}\")\n"
    ],
-   "id": "8006d43fde360fe7",
-   "outputs": [],
-   "execution_count": 16
+   "id": "fae3f742e14b418",
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "🔗 Top 10 Positive Correlations:\n",
+      "  price_target ↔ last_price: 0.973\n",
+      "  last_price ↔ price_target: 0.973\n",
+      "  ebitda ↔ net_income: 0.948\n",
+      "  net_income ↔ ebitda: 0.948\n",
+      "  market_cap ↔ net_income: 0.899\n",
+      "  net_income ↔ market_cap: 0.899\n",
+      "  ebitda ↔ market_cap: 0.810\n",
+      "  market_cap ↔ ebitda: 0.810\n",
+      "  ebitda ↔ revenue: 0.753\n",
+      "  revenue ↔ ebitda: 0.753\n",
+      "\n",
+      "🔗 Top 10 Negative Correlations:\n",
+      "  gross_margin ↔ revenue: -0.135\n",
+      "  revenue ↔ gross_margin: -0.135\n",
+      "  p_e ↔ revenue: -0.055\n",
+      "  revenue ↔ p_e: -0.055\n",
+      "  net_income ↔ p_e: -0.051\n",
+      "  p_e ↔ net_income: -0.051\n",
+      "  p_e ↔ ebitda: -0.046\n",
+      "  ebitda ↔ p_e: -0.046\n",
+      "  gross_margin ↔ last_price: -0.024\n",
+      "  last_price ↔ gross_margin: -0.024\n"
+     ]
+    }
+   ],
+   "execution_count": 14
   },
   {
-   "metadata": {},
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2025-10-28T14:06:43.656201Z",
+     "start_time": "2025-10-28T14:06:42.886265Z"
+    }
+   },
    "cell_type": "code",
    "source": [
     "# Pair plot for key metrics (sample for performance)\n",
@@ -1085,15 +949,23 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "ce3494a83eacdc74",
-   "outputs": [],
-   "execution_count": null
+   "id": "3cdf020b14b87dbb",
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Generating pair plot with 500 samples...\n"
+     ]
+    }
+   ],
+   "execution_count": 15
   },
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:45.072046Z",
-     "start_time": "2025-10-28T14:06:43.719864Z"
+     "end_time": "2025-10-28T14:06:43.711370Z",
+     "start_time": "2025-10-28T14:06:43.662507Z"
     }
    },
    "cell_type": "code",
@@ -1117,6 +989,50 @@
     "            plt.axvline(x=0, color='black', linestyle='--', linewidth=1)\n",
     "            plt.tight_layout()\n",
     "            plt.show()\n"
+   ],
+   "id": "8006d43fde360fe7",
+   "outputs": [],
+   "execution_count": 16
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### 4. Interactive Visualizations (Plotly)\n",
+   "id": "ce3494a83eacdc74"
+  },
+  {
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2025-10-28T14:06:45.072046Z",
+     "start_time": "2025-10-28T14:06:43.719864Z"
+    }
+   },
+   "cell_type": "code",
+   "source": [
+    "# Interactive scatter: Market Cap vs P/E by sector\n",
+    "if HAVE_PLOTLY and 'market_cap' in all_stocks.columns and 'p_e' in all_stocks.columns:\n",
+    "    scatter_data = all_stocks[['market_cap', 'p_e', 'sector', 'ticker', 'region']].dropna()\n",
+    "    # Filter outliers for better visualization\n",
+    "    scatter_data = scatter_data[\n",
+    "        (scatter_data['p_e'] > 0) &\n",
+    "        (scatter_data['p_e'] < scatter_data['p_e'].quantile(0.95)) &\n",
+    "        (scatter_data['market_cap'] > 0)\n",
+    "        ]\n",
+    "\n",
+    "    if len(scatter_data) > 0:\n",
+    "        fig = px.scatter(\n",
+    "                scatter_data,\n",
+    "                x='market_cap',\n",
+    "                y='p_e',\n",
+    "                color='sector',\n",
+    "                hover_data=['ticker', 'region'],\n",
+    "                log_x=True,\n",
+    "                title='Market Cap vs P/E Ratio by Sector (Interactive)',\n",
+    "                labels={'market_cap': 'Market Cap (log scale)', 'p_e': 'P/E Ratio'},\n",
+    "                height=600\n",
+    "                )\n",
+    "        fig.update_layout(showlegend=True)\n",
+    "        fig.show()\n"
    ],
    "id": "6ede1663d691aefd",
    "outputs": [
@@ -40539,9 +40455,1169 @@
      "start_time": "2025-10-28T14:06:45.259210Z"
     }
    },
-   "cell_type": "markdown",
-   "source": "### 4. Interactive Visualizations (Plotly)\n",
-   "id": "4346289d69f1b9f"
+   "cell_type": "code",
+   "source": [
+    "# Sunburst chart: Region → Sector hierarchy\n",
+    "if HAVE_PLOTLY and 'region' in all_stocks.columns and 'sector' in all_stocks.columns:\n",
+    "    sunburst_data = all_stocks[['region', 'sector']].dropna()\n",
+    "    sunburst_counts = sunburst_data.groupby(['region', 'sector']).size().reset_index(name='count')\n",
+    "\n",
+    "    if len(sunburst_counts) > 0:\n",
+    "        fig = px.sunburst(\n",
+    "                sunburst_counts,\n",
+    "                path=['region', 'sector'],\n",
+    "                values='count',\n",
+    "                title='Stock Distribution: Region → Sector Hierarchy',\n",
+    "                height=700\n",
+    "                )\n",
+    "        fig.update_traces(textinfo='label+percent parent')\n",
+    "        fig.show()\n"
+   ],
+   "id": "4346289d69f1b9f",
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.plotly.v1+json": {
+       "data": [
+        {
+         "branchvalues": "total",
+         "domain": {
+          "x": [
+           0.0,
+           1.0
+          ],
+          "y": [
+           0.0,
+           1.0
+          ]
+         },
+         "hovertemplate": "labels=%{label}<br>count=%{value}<br>parent=%{parent}<br>id=%{id}<extra></extra>",
+         "ids": [
+          "Africa / Middle East/Communication Services",
+          "Asia / Pacific/Communication Services",
+          "Europe/Communication Services",
+          "Latin America and Caribbean/Communication Services",
+          "United States and Canada/Communication Services",
+          "Africa / Middle East/Consumer Discretionary",
+          "Asia / Pacific/Consumer Discretionary",
+          "Europe/Consumer Discretionary",
+          "Latin America and Caribbean/Consumer Discretionary",
+          "United States and Canada/Consumer Discretionary",
+          "Africa / Middle East/Consumer Staples",
+          "Asia / Pacific/Consumer Staples",
+          "Europe/Consumer Staples",
+          "Latin America and Caribbean/Consumer Staples",
+          "United States and Canada/Consumer Staples",
+          "Africa / Middle East/Energy",
+          "Asia / Pacific/Energy",
+          "Europe/Energy",
+          "Latin America and Caribbean/Energy",
+          "United States and Canada/Energy",
+          "Africa / Middle East/Financials",
+          "Asia / Pacific/Financials",
+          "Europe/Financials",
+          "Latin America and Caribbean/Financials",
+          "United States and Canada/Financials",
+          "Africa / Middle East/Health Care",
+          "Asia / Pacific/Health Care",
+          "Europe/Health Care",
+          "Latin America and Caribbean/Health Care",
+          "United States and Canada/Health Care",
+          "Africa / Middle East/Industrials",
+          "Asia / Pacific/Industrials",
+          "Europe/Industrials",
+          "Latin America and Caribbean/Industrials",
+          "United States and Canada/Industrials",
+          "Africa / Middle East/Information Technology",
+          "Asia / Pacific/Information Technology",
+          "Europe/Information Technology",
+          "Latin America and Caribbean/Information Technology",
+          "United States and Canada/Information Technology",
+          "648.67/Jun-30-2025",
+          "Africa / Middle East/Materials",
+          "Asia / Pacific/Materials",
+          "Europe/Materials",
+          "Latin America and Caribbean/Materials",
+          "United States and Canada/Materials",
+          "Africa / Middle East/Real Estate",
+          "Asia / Pacific/Real Estate",
+          "Europe/Real Estate",
+          "Latin America and Caribbean/Real Estate",
+          "United States and Canada/Real Estate",
+          "Africa / Middle East/Utilities",
+          "Asia / Pacific/Utilities",
+          "Europe/Utilities",
+          "Latin America and Caribbean/Utilities",
+          "United States and Canada/Utilities",
+          "648.67",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada"
+         ],
+         "labels": [
+          "Communication Services",
+          "Communication Services",
+          "Communication Services",
+          "Communication Services",
+          "Communication Services",
+          "Consumer Discretionary",
+          "Consumer Discretionary",
+          "Consumer Discretionary",
+          "Consumer Discretionary",
+          "Consumer Discretionary",
+          "Consumer Staples",
+          "Consumer Staples",
+          "Consumer Staples",
+          "Consumer Staples",
+          "Consumer Staples",
+          "Energy",
+          "Energy",
+          "Energy",
+          "Energy",
+          "Energy",
+          "Financials",
+          "Financials",
+          "Financials",
+          "Financials",
+          "Financials",
+          "Health Care",
+          "Health Care",
+          "Health Care",
+          "Health Care",
+          "Health Care",
+          "Industrials",
+          "Industrials",
+          "Industrials",
+          "Industrials",
+          "Industrials",
+          "Information Technology",
+          "Information Technology",
+          "Information Technology",
+          "Information Technology",
+          "Information Technology",
+          "Jun-30-2025",
+          "Materials",
+          "Materials",
+          "Materials",
+          "Materials",
+          "Materials",
+          "Real Estate",
+          "Real Estate",
+          "Real Estate",
+          "Real Estate",
+          "Real Estate",
+          "Utilities",
+          "Utilities",
+          "Utilities",
+          "Utilities",
+          "Utilities",
+          "648.67",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada"
+         ],
+         "name": "",
+         "parents": [
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "648.67",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "Africa / Middle East",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "United States and Canada",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+         ],
+         "values": [
+          59,
+          97,
+          111,
+          25,
+          66,
+          143,
+          223,
+          247,
+          67,
+          191,
+          149,
+          135,
+          127,
+          75,
+          80,
+          55,
+          62,
+          67,
+          20,
+          115,
+          367,
+          279,
+          313,
+          149,
+          290,
+          49,
+          156,
+          188,
+          15,
+          217,
+          198,
+          393,
+          454,
+          74,
+          297,
+          57,
+          336,
+          180,
+          7,
+          244,
+          1,
+          157,
+          215,
+          150,
+          65,
+          125,
+          171,
+          77,
+          143,
+          42,
+          116,
+          58,
+          81,
+          71,
+          75,
+          73,
+          1,
+          1463,
+          2054,
+          2051,
+          614,
+          1814
+         ],
+         "type": "sunburst",
+         "textinfo": "label+percent parent"
+        }
+       ],
+       "layout": {
+        "template": {
+         "data": {
+          "histogram2dcontour": [
+           {
+            "type": "histogram2dcontour",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            },
+            "colorscale": [
+             [
+              0.0,
+              "#0d0887"
+             ],
+             [
+              0.1111111111111111,
+              "#46039f"
+             ],
+             [
+              0.2222222222222222,
+              "#7201a8"
+             ],
+             [
+              0.3333333333333333,
+              "#9c179e"
+             ],
+             [
+              0.4444444444444444,
+              "#bd3786"
+             ],
+             [
+              0.5555555555555556,
+              "#d8576b"
+             ],
+             [
+              0.6666666666666666,
+              "#ed7953"
+             ],
+             [
+              0.7777777777777778,
+              "#fb9f3a"
+             ],
+             [
+              0.8888888888888888,
+              "#fdca26"
+             ],
+             [
+              1.0,
+              "#f0f921"
+             ]
+            ]
+           }
+          ],
+          "choropleth": [
+           {
+            "type": "choropleth",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            }
+           }
+          ],
+          "histogram2d": [
+           {
+            "type": "histogram2d",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            },
+            "colorscale": [
+             [
+              0.0,
+              "#0d0887"
+             ],
+             [
+              0.1111111111111111,
+              "#46039f"
+             ],
+             [
+              0.2222222222222222,
+              "#7201a8"
+             ],
+             [
+              0.3333333333333333,
+              "#9c179e"
+             ],
+             [
+              0.4444444444444444,
+              "#bd3786"
+             ],
+             [
+              0.5555555555555556,
+              "#d8576b"
+             ],
+             [
+              0.6666666666666666,
+              "#ed7953"
+             ],
+             [
+              0.7777777777777778,
+              "#fb9f3a"
+             ],
+             [
+              0.8888888888888888,
+              "#fdca26"
+             ],
+             [
+              1.0,
+              "#f0f921"
+             ]
+            ]
+           }
+          ],
+          "heatmap": [
+           {
+            "type": "heatmap",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            },
+            "colorscale": [
+             [
+              0.0,
+              "#0d0887"
+             ],
+             [
+              0.1111111111111111,
+              "#46039f"
+             ],
+             [
+              0.2222222222222222,
+              "#7201a8"
+             ],
+             [
+              0.3333333333333333,
+              "#9c179e"
+             ],
+             [
+              0.4444444444444444,
+              "#bd3786"
+             ],
+             [
+              0.5555555555555556,
+              "#d8576b"
+             ],
+             [
+              0.6666666666666666,
+              "#ed7953"
+             ],
+             [
+              0.7777777777777778,
+              "#fb9f3a"
+             ],
+             [
+              0.8888888888888888,
+              "#fdca26"
+             ],
+             [
+              1.0,
+              "#f0f921"
+             ]
+            ]
+           }
+          ],
+          "heatmapgl": [
+           {
+            "type": "heatmapgl",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            },
+            "colorscale": [
+             [
+              0.0,
+              "#0d0887"
+             ],
+             [
+              0.1111111111111111,
+              "#46039f"
+             ],
+             [
+              0.2222222222222222,
+              "#7201a8"
+             ],
+             [
+              0.3333333333333333,
+              "#9c179e"
+             ],
+             [
+              0.4444444444444444,
+              "#bd3786"
+             ],
+             [
+              0.5555555555555556,
+              "#d8576b"
+             ],
+             [
+              0.6666666666666666,
+              "#ed7953"
+             ],
+             [
+              0.7777777777777778,
+              "#fb9f3a"
+             ],
+             [
+              0.8888888888888888,
+              "#fdca26"
+             ],
+             [
+              1.0,
+              "#f0f921"
+             ]
+            ]
+           }
+          ],
+          "contourcarpet": [
+           {
+            "type": "contourcarpet",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            }
+           }
+          ],
+          "contour": [
+           {
+            "type": "contour",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            },
+            "colorscale": [
+             [
+              0.0,
+              "#0d0887"
+             ],
+             [
+              0.1111111111111111,
+              "#46039f"
+             ],
+             [
+              0.2222222222222222,
+              "#7201a8"
+             ],
+             [
+              0.3333333333333333,
+              "#9c179e"
+             ],
+             [
+              0.4444444444444444,
+              "#bd3786"
+             ],
+             [
+              0.5555555555555556,
+              "#d8576b"
+             ],
+             [
+              0.6666666666666666,
+              "#ed7953"
+             ],
+             [
+              0.7777777777777778,
+              "#fb9f3a"
+             ],
+             [
+              0.8888888888888888,
+              "#fdca26"
+             ],
+             [
+              1.0,
+              "#f0f921"
+             ]
+            ]
+           }
+          ],
+          "surface": [
+           {
+            "type": "surface",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            },
+            "colorscale": [
+             [
+              0.0,
+              "#0d0887"
+             ],
+             [
+              0.1111111111111111,
+              "#46039f"
+             ],
+             [
+              0.2222222222222222,
+              "#7201a8"
+             ],
+             [
+              0.3333333333333333,
+              "#9c179e"
+             ],
+             [
+              0.4444444444444444,
+              "#bd3786"
+             ],
+             [
+              0.5555555555555556,
+              "#d8576b"
+             ],
+             [
+              0.6666666666666666,
+              "#ed7953"
+             ],
+             [
+              0.7777777777777778,
+              "#fb9f3a"
+             ],
+             [
+              0.8888888888888888,
+              "#fdca26"
+             ],
+             [
+              1.0,
+              "#f0f921"
+             ]
+            ]
+           }
+          ],
+          "mesh3d": [
+           {
+            "type": "mesh3d",
+            "colorbar": {
+             "outlinewidth": 0,
+             "ticks": ""
+            }
+           }
+          ],
+          "scatter": [
+           {
+            "fillpattern": {
+             "fillmode": "overlay",
+             "size": 10,
+             "solidity": 0.2
+            },
+            "type": "scatter"
+           }
+          ],
+          "parcoords": [
+           {
+            "type": "parcoords",
+            "line": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "scatterpolargl": [
+           {
+            "type": "scatterpolargl",
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "bar": [
+           {
+            "error_x": {
+             "color": "#2a3f5f"
+            },
+            "error_y": {
+             "color": "#2a3f5f"
+            },
+            "marker": {
+             "line": {
+              "color": "#E5ECF6",
+              "width": 0.5
+             },
+             "pattern": {
+              "fillmode": "overlay",
+              "size": 10,
+              "solidity": 0.2
+             }
+            },
+            "type": "bar"
+           }
+          ],
+          "scattergeo": [
+           {
+            "type": "scattergeo",
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "scatterpolar": [
+           {
+            "type": "scatterpolar",
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "histogram": [
+           {
+            "marker": {
+             "pattern": {
+              "fillmode": "overlay",
+              "size": 10,
+              "solidity": 0.2
+             }
+            },
+            "type": "histogram"
+           }
+          ],
+          "scattergl": [
+           {
+            "type": "scattergl",
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "scatter3d": [
+           {
+            "type": "scatter3d",
+            "line": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            },
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "scattermapbox": [
+           {
+            "type": "scattermapbox",
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "scatterternary": [
+           {
+            "type": "scatterternary",
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "scattercarpet": [
+           {
+            "type": "scattercarpet",
+            "marker": {
+             "colorbar": {
+              "outlinewidth": 0,
+              "ticks": ""
+             }
+            }
+           }
+          ],
+          "carpet": [
+           {
+            "aaxis": {
+             "endlinecolor": "#2a3f5f",
+             "gridcolor": "white",
+             "linecolor": "white",
+             "minorgridcolor": "white",
+             "startlinecolor": "#2a3f5f"
+            },
+            "baxis": {
+             "endlinecolor": "#2a3f5f",
+             "gridcolor": "white",
+             "linecolor": "white",
+             "minorgridcolor": "white",
+             "startlinecolor": "#2a3f5f"
+            },
+            "type": "carpet"
+           }
+          ],
+          "table": [
+           {
+            "cells": {
+             "fill": {
+              "color": "#EBF0F8"
+             },
+             "line": {
+              "color": "white"
+             }
+            },
+            "header": {
+             "fill": {
+              "color": "#C8D4E3"
+             },
+             "line": {
+              "color": "white"
+             }
+            },
+            "type": "table"
+           }
+          ],
+          "barpolar": [
+           {
+            "marker": {
+             "line": {
+              "color": "#E5ECF6",
+              "width": 0.5
+             },
+             "pattern": {
+              "fillmode": "overlay",
+              "size": 10,
+              "solidity": 0.2
+             }
+            },
+            "type": "barpolar"
+           }
+          ],
+          "pie": [
+           {
+            "automargin": true,
+            "type": "pie"
+           }
+          ]
+         },
+         "layout": {
+          "autotypenumbers": "strict",
+          "colorway": [
+           "#636efa",
+           "#EF553B",
+           "#00cc96",
+           "#ab63fa",
+           "#FFA15A",
+           "#19d3f3",
+           "#FF6692",
+           "#B6E880",
+           "#FF97FF",
+           "#FECB52"
+          ],
+          "font": {
+           "color": "#2a3f5f"
+          },
+          "hovermode": "closest",
+          "hoverlabel": {
+           "align": "left"
+          },
+          "paper_bgcolor": "white",
+          "plot_bgcolor": "#E5ECF6",
+          "polar": {
+           "bgcolor": "#E5ECF6",
+           "angularaxis": {
+            "gridcolor": "white",
+            "linecolor": "white",
+            "ticks": ""
+           },
+           "radialaxis": {
+            "gridcolor": "white",
+            "linecolor": "white",
+            "ticks": ""
+           }
+          },
+          "ternary": {
+           "bgcolor": "#E5ECF6",
+           "aaxis": {
+            "gridcolor": "white",
+            "linecolor": "white",
+            "ticks": ""
+           },
+           "baxis": {
+            "gridcolor": "white",
+            "linecolor": "white",
+            "ticks": ""
+           },
+           "caxis": {
+            "gridcolor": "white",
+            "linecolor": "white",
+            "ticks": ""
+           }
+          },
+          "coloraxis": {
+           "colorbar": {
+            "outlinewidth": 0,
+            "ticks": ""
+           }
+          },
+          "colorscale": {
+           "sequential": [
+            [
+             0.0,
+             "#0d0887"
+            ],
+            [
+             0.1111111111111111,
+             "#46039f"
+            ],
+            [
+             0.2222222222222222,
+             "#7201a8"
+            ],
+            [
+             0.3333333333333333,
+             "#9c179e"
+            ],
+            [
+             0.4444444444444444,
+             "#bd3786"
+            ],
+            [
+             0.5555555555555556,
+             "#d8576b"
+            ],
+            [
+             0.6666666666666666,
+             "#ed7953"
+            ],
+            [
+             0.7777777777777778,
+             "#fb9f3a"
+            ],
+            [
+             0.8888888888888888,
+             "#fdca26"
+            ],
+            [
+             1.0,
+             "#f0f921"
+            ]
+           ],
+           "sequentialminus": [
+            [
+             0.0,
+             "#0d0887"
+            ],
+            [
+             0.1111111111111111,
+             "#46039f"
+            ],
+            [
+             0.2222222222222222,
+             "#7201a8"
+            ],
+            [
+             0.3333333333333333,
+             "#9c179e"
+            ],
+            [
+             0.4444444444444444,
+             "#bd3786"
+            ],
+            [
+             0.5555555555555556,
+             "#d8576b"
+            ],
+            [
+             0.6666666666666666,
+             "#ed7953"
+            ],
+            [
+             0.7777777777777778,
+             "#fb9f3a"
+            ],
+            [
+             0.8888888888888888,
+             "#fdca26"
+            ],
+            [
+             1.0,
+             "#f0f921"
+            ]
+           ],
+           "diverging": [
+            [
+             0,
+             "#8e0152"
+            ],
+            [
+             0.1,
+             "#c51b7d"
+            ],
+            [
+             0.2,
+             "#de77ae"
+            ],
+            [
+             0.3,
+             "#f1b6da"
+            ],
+            [
+             0.4,
+             "#fde0ef"
+            ],
+            [
+             0.5,
+             "#f7f7f7"
+            ],
+            [
+             0.6,
+             "#e6f5d0"
+            ],
+            [
+             0.7,
+             "#b8e186"
+            ],
+            [
+             0.8,
+             "#7fbc41"
+            ],
+            [
+             0.9,
+             "#4d9221"
+            ],
+            [
+             1,
+             "#276419"
+            ]
+           ]
+          },
+          "xaxis": {
+           "gridcolor": "white",
+           "linecolor": "white",
+           "ticks": "",
+           "title": {
+            "standoff": 15
+           },
+           "zerolinecolor": "white",
+           "automargin": true,
+           "zerolinewidth": 2
+          },
+          "yaxis": {
+           "gridcolor": "white",
+           "linecolor": "white",
+           "ticks": "",
+           "title": {
+            "standoff": 15
+           },
+           "zerolinecolor": "white",
+           "automargin": true,
+           "zerolinewidth": 2
+          },
+          "scene": {
+           "xaxis": {
+            "backgroundcolor": "#E5ECF6",
+            "gridcolor": "white",
+            "linecolor": "white",
+            "showbackground": true,
+            "ticks": "",
+            "zerolinecolor": "white",
+            "gridwidth": 2
+           },
+           "yaxis": {
+            "backgroundcolor": "#E5ECF6",
+            "gridcolor": "white",
+            "linecolor": "white",
+            "showbackground": true,
+            "ticks": "",
+            "zerolinecolor": "white",
+            "gridwidth": 2
+           },
+           "zaxis": {
+            "backgroundcolor": "#E5ECF6",
+            "gridcolor": "white",
+            "linecolor": "white",
+            "showbackground": true,
+            "ticks": "",
+            "zerolinecolor": "white",
+            "gridwidth": 2
+           }
+          },
+          "shapedefaults": {
+           "line": {
+            "color": "#2a3f5f"
+           }
+          },
+          "annotationdefaults": {
+           "arrowcolor": "#2a3f5f",
+           "arrowhead": 0,
+           "arrowwidth": 1
+          },
+          "geo": {
+           "bgcolor": "white",
+           "landcolor": "#E5ECF6",
+           "subunitcolor": "white",
+           "showland": true,
+           "showlakes": true,
+           "lakecolor": "white"
+          },
+          "title": {
+           "x": 0.05
+          },
+          "mapbox": {
+           "style": "light"
+          }
+         }
+        },
+        "legend": {
+         "tracegroupgap": 0
+        },
+        "title": {
+         "text": "Stock Distribution: Region → Sector Hierarchy"
+        },
+        "height": 700
+       },
+       "config": {
+        "plotlyServerURL": "https://plot.ly"
+       }
+      },
+      "text/html": [
+       "<div>                            <div id=\"f65ac9fc-ec4a-492b-824b-6fb389b470c5\" class=\"plotly-graph-div\" style=\"height:700px; width:100%;\"></div>            <script type=\"text/javascript\">                require([\"plotly\"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById(\"f65ac9fc-ec4a-492b-824b-6fb389b470c5\")) {                    Plotly.newPlot(                        \"f65ac9fc-ec4a-492b-824b-6fb389b470c5\",                        [{\"branchvalues\":\"total\",\"domain\":{\"x\":[0.0,1.0],\"y\":[0.0,1.0]},\"hovertemplate\":\"labels=%{label}\\u003cbr\\u003ecount=%{value}\\u003cbr\\u003eparent=%{parent}\\u003cbr\\u003eid=%{id}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"ids\":[\"Africa \\u002f Middle East\\u002fCommunication Services\",\"Asia \\u002f Pacific\\u002fCommunication Services\",\"Europe\\u002fCommunication Services\",\"Latin America and Caribbean\\u002fCommunication Services\",\"United States and Canada\\u002fCommunication Services\",\"Africa \\u002f Middle East\\u002fConsumer Discretionary\",\"Asia \\u002f Pacific\\u002fConsumer Discretionary\",\"Europe\\u002fConsumer Discretionary\",\"Latin America and Caribbean\\u002fConsumer Discretionary\",\"United States and Canada\\u002fConsumer Discretionary\",\"Africa \\u002f Middle East\\u002fConsumer Staples\",\"Asia \\u002f Pacific\\u002fConsumer Staples\",\"Europe\\u002fConsumer Staples\",\"Latin America and Caribbean\\u002fConsumer Staples\",\"United States and Canada\\u002fConsumer Staples\",\"Africa \\u002f Middle East\\u002fEnergy\",\"Asia \\u002f Pacific\\u002fEnergy\",\"Europe\\u002fEnergy\",\"Latin America and Caribbean\\u002fEnergy\",\"United States and Canada\\u002fEnergy\",\"Africa \\u002f Middle East\\u002fFinancials\",\"Asia \\u002f Pacific\\u002fFinancials\",\"Europe\\u002fFinancials\",\"Latin America and Caribbean\\u002fFinancials\",\"United States and Canada\\u002fFinancials\",\"Africa \\u002f Middle East\\u002fHealth Care\",\"Asia \\u002f Pacific\\u002fHealth Care\",\"Europe\\u002fHealth Care\",\"Latin America and Caribbean\\u002fHealth Care\",\"United States and Canada\\u002fHealth Care\",\"Africa \\u002f Middle East\\u002fIndustrials\",\"Asia \\u002f Pacific\\u002fIndustrials\",\"Europe\\u002fIndustrials\",\"Latin America and Caribbean\\u002fIndustrials\",\"United States and Canada\\u002fIndustrials\",\"Africa \\u002f Middle East\\u002fInformation Technology\",\"Asia \\u002f Pacific\\u002fInformation Technology\",\"Europe\\u002fInformation Technology\",\"Latin America and Caribbean\\u002fInformation Technology\",\"United States and Canada\\u002fInformation Technology\",\"648.67\\u002fJun-30-2025\",\"Africa \\u002f Middle East\\u002fMaterials\",\"Asia \\u002f Pacific\\u002fMaterials\",\"Europe\\u002fMaterials\",\"Latin America and Caribbean\\u002fMaterials\",\"United States and Canada\\u002fMaterials\",\"Africa \\u002f Middle East\\u002fReal Estate\",\"Asia \\u002f Pacific\\u002fReal Estate\",\"Europe\\u002fReal Estate\",\"Latin America and Caribbean\\u002fReal Estate\",\"United States and Canada\\u002fReal Estate\",\"Africa \\u002f Middle East\\u002fUtilities\",\"Asia \\u002f Pacific\\u002fUtilities\",\"Europe\\u002fUtilities\",\"Latin America and Caribbean\\u002fUtilities\",\"United States and Canada\\u002fUtilities\",\"648.67\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\"],\"labels\":[\"Communication Services\",\"Communication Services\",\"Communication Services\",\"Communication Services\",\"Communication Services\",\"Consumer Discretionary\",\"Consumer Discretionary\",\"Consumer Discretionary\",\"Consumer Discretionary\",\"Consumer Discretionary\",\"Consumer Staples\",\"Consumer Staples\",\"Consumer Staples\",\"Consumer Staples\",\"Consumer Staples\",\"Energy\",\"Energy\",\"Energy\",\"Energy\",\"Energy\",\"Financials\",\"Financials\",\"Financials\",\"Financials\",\"Financials\",\"Health Care\",\"Health Care\",\"Health Care\",\"Health Care\",\"Health Care\",\"Industrials\",\"Industrials\",\"Industrials\",\"Industrials\",\"Industrials\",\"Information Technology\",\"Information Technology\",\"Information Technology\",\"Information Technology\",\"Information Technology\",\"Jun-30-2025\",\"Materials\",\"Materials\",\"Materials\",\"Materials\",\"Materials\",\"Real Estate\",\"Real Estate\",\"Real Estate\",\"Real Estate\",\"Real Estate\",\"Utilities\",\"Utilities\",\"Utilities\",\"Utilities\",\"Utilities\",\"648.67\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\"],\"name\":\"\",\"parents\":[\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"648.67\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"Africa \\u002f Middle East\",\"Asia \\u002f Pacific\",\"Europe\",\"Latin America and Caribbean\",\"United States and Canada\",\"\",\"\",\"\",\"\",\"\",\"\"],\"values\":[59,97,111,25,66,143,223,247,67,191,149,135,127,75,80,55,62,67,20,115,367,279,313,149,290,49,156,188,15,217,198,393,454,74,297,57,336,180,7,244,1,157,215,150,65,125,171,77,143,42,116,58,81,71,75,73,1,1463,2054,2051,614,1814],\"type\":\"sunburst\",\"textinfo\":\"label+percent parent\"}],                        {\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmapgl\":[{\"type\":\"heatmapgl\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"bar\"}],\"scattergeo\":[{\"type\":\"scattergeo\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolar\":[{\"type\":\"scatterpolar\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"histogram\":[{\"marker\":{\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"histogram\"}],\"scattergl\":[{\"type\":\"scattergl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatter3d\":[{\"type\":\"scatter3d\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattermapbox\":[{\"type\":\"scattermapbox\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterternary\":[{\"type\":\"scatterternary\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattercarpet\":[{\"type\":\"scattercarpet\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"carpet\":[{\"aaxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"baxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"type\":\"carpet\"}],\"table\":[{\"cells\":{\"fill\":{\"color\":\"#EBF0F8\"},\"line\":{\"color\":\"white\"}},\"header\":{\"fill\":{\"color\":\"#C8D4E3\"},\"line\":{\"color\":\"white\"}},\"type\":\"table\"}],\"barpolar\":[{\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"barpolar\"}],\"pie\":[{\"automargin\":true,\"type\":\"pie\"}]},\"layout\":{\"autotypenumbers\":\"strict\",\"colorway\":[\"#636efa\",\"#EF553B\",\"#00cc96\",\"#ab63fa\",\"#FFA15A\",\"#19d3f3\",\"#FF6692\",\"#B6E880\",\"#FF97FF\",\"#FECB52\"],\"font\":{\"color\":\"#2a3f5f\"},\"hovermode\":\"closest\",\"hoverlabel\":{\"align\":\"left\"},\"paper_bgcolor\":\"white\",\"plot_bgcolor\":\"#E5ECF6\",\"polar\":{\"bgcolor\":\"#E5ECF6\",\"angularaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"radialaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"ternary\":{\"bgcolor\":\"#E5ECF6\",\"aaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"baxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"caxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"coloraxis\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"colorscale\":{\"sequential\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"sequentialminus\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"diverging\":[[0,\"#8e0152\"],[0.1,\"#c51b7d\"],[0.2,\"#de77ae\"],[0.3,\"#f1b6da\"],[0.4,\"#fde0ef\"],[0.5,\"#f7f7f7\"],[0.6,\"#e6f5d0\"],[0.7,\"#b8e186\"],[0.8,\"#7fbc41\"],[0.9,\"#4d9221\"],[1,\"#276419\"]]},\"xaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"yaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"scene\":{\"xaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"yaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"zaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2}},\"shapedefaults\":{\"line\":{\"color\":\"#2a3f5f\"}},\"annotationdefaults\":{\"arrowcolor\":\"#2a3f5f\",\"arrowhead\":0,\"arrowwidth\":1},\"geo\":{\"bgcolor\":\"white\",\"landcolor\":\"#E5ECF6\",\"subunitcolor\":\"white\",\"showland\":true,\"showlakes\":true,\"lakecolor\":\"white\"},\"title\":{\"x\":0.05},\"mapbox\":{\"style\":\"light\"}}},\"legend\":{\"tracegroupgap\":0},\"title\":{\"text\":\"Stock Distribution: Region \\u2192 Sector Hierarchy\"},\"height\":700},                        {\"responsive\": true}                    ).then(function(){\n",
+       "                            \n",
+       "var gd = document.getElementById('f65ac9fc-ec4a-492b-824b-6fb389b470c5');\n",
+       "var x = new MutationObserver(function (mutations, observer) {{\n",
+       "        var display = window.getComputedStyle(gd).display;\n",
+       "        if (!display || display === 'none') {{\n",
+       "            console.log([gd, 'removed!']);\n",
+       "            Plotly.purge(gd);\n",
+       "            observer.disconnect();\n",
+       "        }}\n",
+       "}});\n",
+       "\n",
+       "// Listen for the removal of the full notebook cells\n",
+       "var notebookContainer = gd.closest('#notebook-container');\n",
+       "if (notebookContainer) {{\n",
+       "    x.observe(notebookContainer, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "// Listen for the clearing of the current output cell\n",
+       "var outputEl = gd.closest('.output');\n",
+       "if (outputEl) {{\n",
+       "    x.observe(outputEl, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "                        })                };                });            </script>        </div>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data",
+     "jetTransient": {
+      "display_id": null
+     }
+    }
+   ],
+   "execution_count": 18
   },
   {
    "metadata": {
@@ -40552,29 +41628,28 @@
    },
    "cell_type": "code",
    "source": [
-    "# Interactive scatter: Market Cap vs P/E by sector\n",
-    "if HAVE_PLOTLY and 'market_cap' in all_stocks.columns and 'p_e' in all_stocks.columns:\n",
-    "    scatter_data = all_stocks[['market_cap', 'p_e', 'sector', 'ticker', 'region']].dropna()\n",
-    "    # Filter outliers for better visualization\n",
-    "    scatter_data = scatter_data[\n",
-    "        (scatter_data['p_e'] > 0) &\n",
-    "        (scatter_data['p_e'] < scatter_data['p_e'].quantile(0.95)) &\n",
-    "        (scatter_data['market_cap'] > 0)\n",
-    "        ]\n",
+    "# Interactive box plot: Valuation metrics by region\n",
+    "if HAVE_PLOTLY and 'region' in all_stocks.columns:\n",
+    "    box_metric = 'p_e' if 'p_e' in all_stocks.columns else 'last_price'\n",
+    "    box_data = all_stocks[[box_metric, 'region']].dropna()\n",
     "\n",
-    "    if len(scatter_data) > 0:\n",
-    "        fig = px.scatter(\n",
-    "                scatter_data,\n",
-    "                x='market_cap',\n",
-    "                y='p_e',\n",
-    "                color='sector',\n",
-    "                hover_data=['ticker', 'region'],\n",
-    "                log_x=True,\n",
-    "                title='Market Cap vs P/E Ratio by Sector (Interactive)',\n",
-    "                labels={'market_cap': 'Market Cap (log scale)', 'p_e': 'P/E Ratio'},\n",
-    "                height=600\n",
+    "    # Filter outliers\n",
+    "    box_data = box_data[box_data[box_metric].between(\n",
+    "            box_data[box_metric].quantile(0.05),\n",
+    "            box_data[box_metric].quantile(0.95)\n",
+    "            )]\n",
+    "\n",
+    "    if len(box_data) > 0:\n",
+    "        fig = px.box(\n",
+    "                box_data,\n",
+    "                x='region',\n",
+    "                y=box_metric,\n",
+    "                color='region',\n",
+    "                title=f'{box_metric.upper()} Distribution by Region (Interactive)',\n",
+    "                labels={box_metric: box_metric.upper(), 'region': 'Region'},\n",
+    "                height=500\n",
     "                )\n",
-    "        fig.update_layout(showlegend=True)\n",
+    "        fig.update_layout(showlegend=False)\n",
     "        fig.show()\n"
    ],
    "id": "91623c234915a0c3",
@@ -53719,20 +54794,21 @@
    },
    "cell_type": "code",
    "source": [
-    "# Sunburst chart: Region → Sector hierarchy\n",
-    "if HAVE_PLOTLY and 'region' in all_stocks.columns and 'sector' in all_stocks.columns:\n",
-    "    sunburst_data = all_stocks[['region', 'sector']].dropna()\n",
-    "    sunburst_counts = sunburst_data.groupby(['region', 'sector']).size().reset_index(name='count')\n",
+    "# Bar chart: Top 20 stocks by market cap\n",
+    "if HAVE_PLOTLY and 'market_cap' in all_stocks.columns and 'ticker' in all_stocks.columns:\n",
+    "    top_stocks = all_stocks.nlargest(20, 'market_cap')[['ticker', 'market_cap', 'sector']].copy()\n",
     "\n",
-    "    if len(sunburst_counts) > 0:\n",
-    "        fig = px.sunburst(\n",
-    "                sunburst_counts,\n",
-    "                path=['region', 'sector'],\n",
-    "                values='count',\n",
-    "                title='Stock Distribution: Region → Sector Hierarchy',\n",
-    "                height=700\n",
+    "    if len(top_stocks) > 0:\n",
+    "        fig = px.bar(\n",
+    "                top_stocks,\n",
+    "                x='ticker',\n",
+    "                y='market_cap',\n",
+    "                color='sector',\n",
+    "                title='Top 20 Stocks by Market Cap',\n",
+    "                labels={'market_cap': 'Market Cap ($)', 'ticker': 'Ticker'},\n",
+    "                height=500\n",
     "                )\n",
-    "        fig.update_traces(textinfo='label+percent parent')\n",
+    "        fig.update_layout(xaxis_tickangle=-45)\n",
     "        fig.show()\n"
    ],
    "id": "c33fc7eb87037a11",
@@ -54866,29 +55942,42 @@
    },
    "cell_type": "code",
    "source": [
-    "# Interactive box plot: Valuation metrics by region\n",
-    "if HAVE_PLOTLY and 'region' in all_stocks.columns:\n",
-    "    box_metric = 'p_e' if 'p_e' in all_stocks.columns else 'last_price'\n",
-    "    box_data = all_stocks[[box_metric, 'region']].dropna()\n",
+    "# 3D scatter: Market Cap, P/E, and Revenue Growth\n",
+    "if HAVE_PLOTLY:\n",
+    "    scatter_3d_cols = ['market_cap', 'p_e', 'revenue']\n",
+    "    scatter_3d_available = all([c in all_stocks.columns for c in scatter_3d_cols])\n",
     "\n",
-    "    # Filter outliers\n",
-    "    box_data = box_data[box_data[box_metric].between(\n",
-    "            box_data[box_metric].quantile(0.05),\n",
-    "            box_data[box_metric].quantile(0.95)\n",
-    "            )]\n",
+    "    if scatter_3d_available and 'sector' in all_stocks.columns:\n",
+    "        scatter_3d_data = all_stocks[scatter_3d_cols + ['sector', 'ticker']].dropna()\n",
     "\n",
-    "    if len(box_data) > 0:\n",
-    "        fig = px.box(\n",
-    "                box_data,\n",
-    "                x='region',\n",
-    "                y=box_metric,\n",
-    "                color='region',\n",
-    "                title=f'{box_metric.upper()} Distribution by Region (Interactive)',\n",
-    "                labels={box_metric: box_metric.upper(), 'region': 'Region'},\n",
-    "                height=500\n",
-    "                )\n",
-    "        fig.update_layout(showlegend=False)\n",
-    "        fig.show()\n"
+    "        # Filter outliers\n",
+    "        for col in scatter_3d_cols:\n",
+    "            scatter_3d_data = scatter_3d_data[\n",
+    "                scatter_3d_data[col].between(\n",
+    "                        scatter_3d_data[col].quantile(0.05),\n",
+    "                        scatter_3d_data[col].quantile(0.95)\n",
+    "                        )\n",
+    "            ]\n",
+    "\n",
+    "        if len(scatter_3d_data) > 10:\n",
+    "            fig = px.scatter_3d(\n",
+    "                    scatter_3d_data,\n",
+    "                    x='market_cap',\n",
+    "                    y='p_e',\n",
+    "                    z='revenue',\n",
+    "                    color='sector',\n",
+    "                    hover_data=['ticker'],\n",
+    "                    log_x=True,\n",
+    "                    log_z=True,\n",
+    "                    title='3D View: Market Cap, P/E, and Revenue by Sector',\n",
+    "                    labels={\n",
+    "                        'market_cap': 'Market Cap (log)',\n",
+    "                        'p_e': 'P/E Ratio',\n",
+    "                        'revenue': 'Revenue (log)'\n",
+    "                        },\n",
+    "                    height=700\n",
+    "                    )\n",
+    "            fig.show()\n"
    ],
    "id": "ccf14671d692ff47",
    "outputs": [
@@ -85321,21 +86410,20 @@
    },
    "cell_type": "code",
    "source": [
-    "# Bar chart: Top 20 stocks by market cap\n",
-    "if HAVE_PLOTLY and 'market_cap' in all_stocks.columns and 'ticker' in all_stocks.columns:\n",
-    "    top_stocks = all_stocks.nlargest(20, 'market_cap')[['ticker', 'market_cap', 'sector']].copy()\n",
+    "# Treemap: Market cap distribution by region and sector\n",
+    "if HAVE_PLOTLY and 'region' in all_stocks.columns and 'sector' in all_stocks.columns and 'market_cap' in all_stocks.columns:\n",
+    "    treemap_data = all_stocks[['region', 'sector', 'market_cap']].dropna()\n",
+    "    treemap_agg = treemap_data.groupby(['region', 'sector'])['market_cap'].sum().reset_index()\n",
     "\n",
-    "    if len(top_stocks) > 0:\n",
-    "        fig = px.bar(\n",
-    "                top_stocks,\n",
-    "                x='ticker',\n",
-    "                y='market_cap',\n",
-    "                color='sector',\n",
-    "                title='Top 20 Stocks by Market Cap',\n",
-    "                labels={'market_cap': 'Market Cap ($)', 'ticker': 'Ticker'},\n",
-    "                height=500\n",
+    "    if len(treemap_agg) > 0:\n",
+    "        fig = px.treemap(\n",
+    "                treemap_agg,\n",
+    "                path=['region', 'sector'],\n",
+    "                values='market_cap',\n",
+    "                title='Market Cap Distribution by Region and Sector',\n",
+    "                height=700\n",
     "                )\n",
-    "        fig.update_layout(xaxis_tickangle=-45)\n",
+    "        fig.update_traces(textinfo='label+value+percent parent')\n",
     "        fig.show()\n"
    ],
    "id": "70259e6c0f946dd4",
@@ -86492,44 +87580,7 @@
     }
    },
    "cell_type": "code",
-   "source": [
-    "# 3D scatter: Market Cap, P/E, and Revenue Growth\n",
-    "if HAVE_PLOTLY:\n",
-    "    scatter_3d_cols = ['market_cap', 'p_e', 'revenue']\n",
-    "    scatter_3d_available = all([c in all_stocks.columns for c in scatter_3d_cols])\n",
-    "\n",
-    "    if scatter_3d_available and 'sector' in all_stocks.columns:\n",
-    "        scatter_3d_data = all_stocks[scatter_3d_cols + ['sector', 'ticker']].dropna()\n",
-    "\n",
-    "        # Filter outliers\n",
-    "        for col in scatter_3d_cols:\n",
-    "            scatter_3d_data = scatter_3d_data[\n",
-    "                scatter_3d_data[col].between(\n",
-    "                        scatter_3d_data[col].quantile(0.05),\n",
-    "                        scatter_3d_data[col].quantile(0.95)\n",
-    "                        )\n",
-    "            ]\n",
-    "\n",
-    "        if len(scatter_3d_data) > 10:\n",
-    "            fig = px.scatter_3d(\n",
-    "                    scatter_3d_data,\n",
-    "                    x='market_cap',\n",
-    "                    y='p_e',\n",
-    "                    z='revenue',\n",
-    "                    color='sector',\n",
-    "                    hover_data=['ticker'],\n",
-    "                    log_x=True,\n",
-    "                    log_z=True,\n",
-    "                    title='3D View: Market Cap, P/E, and Revenue by Sector',\n",
-    "                    labels={\n",
-    "                        'market_cap': 'Market Cap (log)',\n",
-    "                        'p_e': 'P/E Ratio',\n",
-    "                        'revenue': 'Revenue (log)'\n",
-    "                        },\n",
-    "                    height=700\n",
-    "                    )\n",
-    "            fig.show()\n"
-   ],
+   "source": "# Grouped bar chart: Current price vs predicted target (if available)\nif HAVE_PLOTLY and 'last_price' in all_stocks.columns and 'price_target' in all_stocks.columns:\n    comparison_data = all_stocks[['ticker', 'last_price', 'price_target', 'sector']].dropna()\n\n    # Take top 20 stocks by market cap if available, else first 20\n    if 'market_cap' in all_stocks.columns:\n        top_tickers = all_stocks.nlargest(20, 'market_cap')['ticker'].tolist()\n        comparison_data = comparison_data[comparison_data['ticker'].isin(top_tickers)]\n    else:\n        comparison_data = comparison_data.head(20)\n\n    if len(comparison_data) > 0:\n        fig = go.Figure()\n\n        fig.add_trace(go.Bar(\n                x=comparison_data['ticker'],\n                y=comparison_data['last_price'],\n                name='Current Price',\n                marker_color='steelblue'\n                ))\n\n        fig.add_trace(go.Bar(\n                x=comparison_data['ticker'],\n                y=comparison_data['price_target'],\n                name='Price Target',\n                marker_color='orange'\n                ))\n\n        fig.update_layout(\n                title='Current Price vs Price Target (Top Stocks)',\n                xaxis_title='Ticker',\n                yaxis_title='Price ($)',\n                barmode='group',\n                height=500,\n                xaxis_tickangle=-45\n                )\n\n        fig.show()\n\nprint(\"\\n\" + \"=\" * 80)\nprint(\"Phase 9: Advanced visualizations completed\")\nprint(\"=\" * 80)",
    "id": "3232e0082c7959b3",
    "outputs": [
     {
@@ -87529,74 +88580,27 @@
    "execution_count": 23
   },
   {
-   "cell_type": "code",
+   "cell_type": "markdown",
    "id": "gl15t4ngcza",
-   "source": [
-    "# Treemap: Market cap distribution by region and sector\n",
-    "if HAVE_PLOTLY and 'region' in all_stocks.columns and 'sector' in all_stocks.columns and 'market_cap' in all_stocks.columns:\n",
-    "    treemap_data = all_stocks[['region', 'sector', 'market_cap']].dropna()\n",
-    "    treemap_agg = treemap_data.groupby(['region', 'sector'])['market_cap'].sum().reset_index()\n",
-    "\n",
-    "    if len(treemap_agg) > 0:\n",
-    "        fig = px.treemap(\n",
-    "                treemap_agg,\n",
-    "                path=['region', 'sector'],\n",
-    "                values='market_cap',\n",
-    "                title='Market Cap Distribution by Region and Sector',\n",
-    "                height=700\n",
-    "                )\n",
-    "        fig.update_traces(textinfo='label+value+percent parent')\n",
-    "        fig.show()\n"
-   ],
-   "metadata": {},
-   "outputs": [],
-   "execution_count": null
+   "source": "## Phase 9.1 — Advanced Preprocessing and Data Quality\n\nImplement sophisticated data preprocessing techniques:\n1. Robust outlier detection (IQR, z-score, Isolation Forest)\n2. Sector-specific winsorization\n3. Data quality scoring and monitoring\n4. Advanced imputation strategies\n5. Feature scaling pipelines",
+   "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "qv8v8grn7lq",
    "source": [
-    "# Grouped bar chart: Current price vs predicted target (if available)\n",
-    "if HAVE_PLOTLY and 'last_price' in all_stocks.columns and 'price_target' in all_stocks.columns:\n",
-    "    comparison_data = all_stocks[['ticker', 'last_price', 'price_target', 'sector']].dropna()\n",
+    "# Import Phase 9.1 advanced preprocessing functions\n",
+    "from finance_ml.advanced_preprocessing import (\n",
+    "    detect_outliers_iqr,\n",
+    "    detect_outliers_zscore,\n",
+    "    detect_outliers_isolation_forest,\n",
+    "    winsorize_by_sector,\n",
+    "    calculate_data_quality_score,\n",
+    "    impute_missing_values\n",
+    "    )\n",
     "\n",
-    "    # Take top 20 stocks by market cap if available, else first 20\n",
-    "    if 'market_cap' in all_stocks.columns:\n",
-    "        top_tickers = all_stocks.nlargest(20, 'market_cap')['ticker'].tolist()\n",
-    "        comparison_data = comparison_data[comparison_data['ticker'].isin(top_tickers)]\n",
-    "    else:\n",
-    "        comparison_data = comparison_data.head(20)\n",
-    "\n",
-    "    if len(comparison_data) > 0:\n",
-    "        fig = go.Figure()\n",
-    "\n",
-    "        fig.add_trace(go.Bar(\n",
-    "                x=comparison_data['ticker'],\n",
-    "                y=comparison_data['last_price'],\n",
-    "                name='Current Price',\n",
-    "                marker_color='steelblue'\n",
-    "                ))\n",
-    "\n",
-    "        fig.add_trace(go.Bar(\n",
-    "                x=comparison_data['ticker'],\n",
-    "                y=comparison_data['price_target'],\n",
-    "                name='Price Target',\n",
-    "                marker_color='orange'\n",
-    "                ))\n",
-    "\n",
-    "        fig.update_layout(\n",
-    "                title='Current Price vs Price Target (Top Stocks)',\n",
-    "                xaxis_title='Ticker',\n",
-    "                yaxis_title='Price ($)',\n",
-    "                barmode='group',\n",
-    "                height=500,\n",
-    "                xaxis_tickangle=-45\n",
-    "                )\n",
-    "\n",
-    "        fig.show()\n",
-    "\n",
-    "print(\"\\n\" + \"=\" * 80)\n",
-    "print(\"Phase 9: Advanced visualizations completed\")\n",
+    "print(\"=\" * 80)\n",
+    "print(\"PHASE 9.1 — ADVANCED PREPROCESSING AND DATA QUALITY\")\n",
     "print(\"=\" * 80)"
    ],
    "metadata": {
@@ -87621,35 +88625,29 @@
   {
    "cell_type": "markdown",
    "id": "mc0n3nbzri",
-   "source": [
-    "## Phase 9.1 — Advanced Preprocessing and Data Quality\n",
-    "\n",
-    "Implement sophisticated data preprocessing techniques:\n",
-    "1. Robust outlier detection (IQR, z-score, Isolation Forest)\n",
-    "2. Sector-specific winsorization\n",
-    "3. Data quality scoring and monitoring\n",
-    "4. Advanced imputation strategies\n",
-    "5. Feature scaling pipelines"
-   ],
+   "source": "### 9.1.1 Data Quality Assessment",
    "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "12z5oqv5um5l",
    "source": [
-    "# Import Phase 9.1 advanced preprocessing functions\n",
-    "from finance_ml.advanced_preprocessing import (\n",
-    "    detect_outliers_iqr,\n",
-    "    detect_outliers_zscore,\n",
-    "    detect_outliers_isolation_forest,\n",
-    "    winsorize_by_sector,\n",
-    "    calculate_data_quality_score,\n",
-    "    impute_missing_values\n",
-    "    )\n",
+    "# Calculate comprehensive data quality score\n",
+    "print(\"\\n📊 Calculating Data Quality Score...\")\n",
+    "quality_report = calculate_data_quality_score(all_stocks)\n",
     "\n",
-    "print(\"=\" * 80)\n",
-    "print(\"PHASE 9.1 — ADVANCED PREPROCESSING AND DATA QUALITY\")\n",
-    "print(\"=\" * 80)"
+    "print(quality_report)\n",
+    "print(f\"\\n🔍 Issues Detected: {len(quality_report.issues)}\")\n",
+    "if quality_report.issues:\n",
+    "    print(\"\\nTop 10 Issues:\")\n",
+    "    for i, issue in enumerate(quality_report.issues[:10], 1):\n",
+    "        print(f\"  {i}. {issue}\")\n",
+    "\n",
+    "# Display key metrics\n",
+    "print(\"\\n📈 Detailed Metrics:\")\n",
+    "for key, value in list(quality_report.metrics.items())[:10]:\n",
+    "    if isinstance(value, (int, float)):\n",
+    "        print(f\"  {key}: {value:,.0f}\" if isinstance(value, int) else f\"  {key}: {value:.4f}\")"
    ],
    "metadata": {
     "ExecuteTime": {
@@ -87706,30 +88704,13 @@
   {
    "cell_type": "markdown",
    "id": "dfmb202ktzs",
-   "source": "### 9.1.1 Data Quality Assessment",
+   "source": "### 9.1.2 Robust Outlier Detection",
    "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "7p2uejfd4rd",
-   "source": [
-    "# Calculate comprehensive data quality score\n",
-    "print(\"\\n📊 Calculating Data Quality Score...\")\n",
-    "quality_report = calculate_data_quality_score(all_stocks)\n",
-    "\n",
-    "print(quality_report)\n",
-    "print(f\"\\n🔍 Issues Detected: {len(quality_report.issues)}\")\n",
-    "if quality_report.issues:\n",
-    "    print(\"\\nTop 10 Issues:\")\n",
-    "    for i, issue in enumerate(quality_report.issues[:10], 1):\n",
-    "        print(f\"  {i}. {issue}\")\n",
-    "\n",
-    "# Display key metrics\n",
-    "print(\"\\n📈 Detailed Metrics:\")\n",
-    "for key, value in list(quality_report.metrics.items())[:10]:\n",
-    "    if isinstance(value, (int, float)):\n",
-    "        print(f\"  {key}: {value:,.0f}\" if isinstance(value, int) else f\"  {key}: {value:.4f}\")"
-   ],
+   "source": "# Detect outliers using multiple methods on key financial metrics\noutlier_cols = ['market_cap', 'last_price', 'p_e', 'revenue', 'net_income']\noutlier_cols = [c for c in outlier_cols if c in all_stocks.columns]\n\nprint(\"\\n🔍 Detecting Outliers Using Multiple Methods...\")\nprint(f\"Analyzing columns: {', '.join(outlier_cols)}\\n\")\n\n# Method 1: IQR by sector\nprint(\"Method 1: IQR (Interquartile Range) by Sector\")\nstocks_with_iqr_outliers = detect_outliers_iqr(all_stocks, columns=outlier_cols, by_sector=True)\n\n# Count outliers per column\nfor col in outlier_cols:\n    outlier_col = f\"{col}_outlier\"\n    if outlier_col in stocks_with_iqr_outliers.columns:\n        count = stocks_with_iqr_outliers[outlier_col].sum()\n        pct = (count / len(all_stocks)) * 100\n        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n\n# Method 2: Z-score by sector\nprint(\"\\nMethod 2: Z-Score (threshold=3.0) by Sector\")\nstocks_with_zscore_outliers = detect_outliers_zscore(all_stocks, columns=outlier_cols, threshold=3.0, by_sector=True)\n\nfor col in outlier_cols:\n    outlier_col = f\"{col}_zscore_outlier\"\n    if outlier_col in stocks_with_zscore_outliers.columns:\n        count = stocks_with_zscore_outliers[outlier_col].sum()\n        pct = (count / len(all_stocks)) * 100\n        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n\n# Method 3: Isolation Forest (multivariate)\nprint(\"\\nMethod 3: Isolation Forest (Multivariate, contamination=0.1)\")\niso_outliers = detect_outliers_isolation_forest(all_stocks, columns=outlier_cols, contamination=0.1)\nprint(f\"  Total outliers detected: {iso_outliers.sum()} ({iso_outliers.mean():.2%})\")",
    "metadata": {
     "ExecuteTime": {
      "end_time": "2025-10-28T14:06:46.042414Z",
@@ -87802,93 +88783,12 @@
   {
    "cell_type": "markdown",
    "id": "4u5hitqm89g",
-   "source": "### 9.1.2 Robust Outlier Detection",
-   "metadata": {}
-  },
-  {
-   "cell_type": "code",
-   "id": "ucpx0ggpmg",
-   "source": [
-    "# Detect outliers using multiple methods on key financial metrics\n",
-    "outlier_cols = ['market_cap', 'last_price', 'p_e', 'revenue', 'net_income']\n",
-    "outlier_cols = [c for c in outlier_cols if c in all_stocks.columns]\n",
-    "\n",
-    "print(\"\\n🔍 Detecting Outliers Using Multiple Methods...\")\n",
-    "print(f\"Analyzing columns: {', '.join(outlier_cols)}\\n\")\n",
-    "\n",
-    "# Method 1: IQR by sector\n",
-    "print(\"Method 1: IQR (Interquartile Range) by Sector\")\n",
-    "stocks_with_iqr_outliers = detect_outliers_iqr(all_stocks, columns=outlier_cols, by_sector=True)\n",
-    "\n",
-    "# Count outliers per column\n",
-    "for col in outlier_cols:\n",
-    "    outlier_col = f\"{col}_outlier\"\n",
-    "    if outlier_col in stocks_with_iqr_outliers.columns:\n",
-    "        count = stocks_with_iqr_outliers[outlier_col].sum()\n",
-    "        pct = (count / len(all_stocks)) * 100\n",
-    "        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n",
-    "\n",
-    "# Method 2: Z-score by sector\n",
-    "print(\"\\nMethod 2: Z-Score (threshold=3.0) by Sector\")\n",
-    "stocks_with_zscore_outliers = detect_outliers_zscore(all_stocks, columns=outlier_cols, threshold=3.0, by_sector=True)\n",
-    "\n",
-    "for col in outlier_cols:\n",
-    "    outlier_col = f\"{col}_zscore_outlier\"\n",
-    "    if outlier_col in stocks_with_zscore_outliers.columns:\n",
-    "        count = stocks_with_zscore_outliers[outlier_col].sum()\n",
-    "        pct = (count / len(all_stocks)) * 100\n",
-    "        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n",
-    "\n",
-    "# Method 3: Isolation Forest (multivariate)\n",
-    "print(\"\\nMethod 3: Isolation Forest (Multivariate, contamination=0.1)\")\n",
-    "iso_outliers = detect_outliers_isolation_forest(all_stocks, columns=outlier_cols, contamination=0.1)\n",
-    "print(f\"  Total outliers detected: {iso_outliers.sum()} ({iso_outliers.mean():.2%})\")"
-   ],
-   "metadata": {
-    "ExecuteTime": {
-     "end_time": "2025-10-28T14:06:46.162351Z",
-     "start_time": "2025-10-28T14:06:46.048607Z"
-    }
-   },
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2025-10-28 14:06:46,157 INFO Winsorized 5 columns (percentiles: 1.00%-99.00%)\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "\n",
-      "📉 Applying Winsorization (1st-99th percentile) by Sector...\n",
-      "\n",
-      "Winsorization Impact:\n",
-      "Column          Orig Min     New Min      Orig Max        New Max        \n",
-      "---------------------------------------------------------------------------\n",
-      "p_e             0.00         2.70         498.70          329.60         \n",
-      "p_b             0.10         0.30         497.10          122.52         \n",
-      "market_cap      13.43        13.43        158556963.04    408703.40      \n",
-      "revenue         -456.11      -2.28        693153.00       321723.30      \n",
-      "net_income      -25666.67    -3260.15     115573.00       22528.80       \n",
-      "\n",
-      "✓ Winsorization complete - extreme values capped by sector\n"
-     ]
-    }
-   ],
-   "execution_count": 27
-  },
-  {
-   "cell_type": "markdown",
-   "id": "4vb70xcii87",
    "source": "### 9.1.3 Sector-Specific Winsorization",
    "metadata": {}
   },
   {
    "cell_type": "code",
-   "id": "5j6pkq1xhqo",
+   "id": "ucpx0ggpmg",
    "source": [
     "# Apply winsorization to handle extreme values (sector-specific)\n",
     "print(\"\\n📉 Applying Winsorization (1st-99th percentile) by Sector...\")\n",
@@ -87930,6 +88830,94 @@
     "    print(f\"{col:<15} {orig_min:<12.2f} {new_min:<12.2f} {orig_max:<15.2f} {new_max:<15.2f}\")\n",
     "\n",
     "print(f\"\\n✓ Winsorization complete - extreme values capped by sector\")"
+   ],
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2025-10-28T14:06:46.162351Z",
+     "start_time": "2025-10-28T14:06:46.048607Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-10-28 14:06:46,157 INFO Winsorized 5 columns (percentiles: 1.00%-99.00%)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "📉 Applying Winsorization (1st-99th percentile) by Sector...\n",
+      "\n",
+      "Winsorization Impact:\n",
+      "Column          Orig Min     New Min      Orig Max        New Max        \n",
+      "---------------------------------------------------------------------------\n",
+      "p_e             0.00         2.70         498.70          329.60         \n",
+      "p_b             0.10         0.30         497.10          122.52         \n",
+      "market_cap      13.43        13.43        158556963.04    408703.40      \n",
+      "revenue         -456.11      -2.28        693153.00       321723.30      \n",
+      "net_income      -25666.67    -3260.15     115573.00       22528.80       \n",
+      "\n",
+      "✓ Winsorization complete - extreme values capped by sector\n"
+     ]
+    }
+   ],
+   "execution_count": 27
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4vb70xcii87",
+   "source": "### 9.1.4 Advanced Missing Value Imputation",
+   "metadata": {}
+  },
+  {
+   "cell_type": "code",
+   "id": "5j6pkq1xhqo",
+   "source": [
+    "# Advanced imputation strategies for missing values\n",
+    "print(\"\\n🔧 Imputing Missing Values...\")\n",
+    "\n",
+    "# Select columns with missing values for imputation\n",
+    "impute_cols = []\n",
+    "for col in ['p_e', 'p_b', 'gross_margin', 'revenue', 'net_income']:\n",
+    "    if col in stocks_winsorized.columns and stocks_winsorized[col].isna().any():\n",
+    "        impute_cols.append(col)\n",
+    "\n",
+    "if impute_cols:\n",
+    "    print(f\"\\nColumns with missing values: {', '.join(impute_cols)}\")\n",
+    "\n",
+    "    # Show missing value counts before imputation\n",
+    "    print(\"\\nMissing Values (Before Imputation):\")\n",
+    "    for col in impute_cols:\n",
+    "        missing_count = stocks_winsorized[col].isna().sum()\n",
+    "        missing_pct = (missing_count / len(stocks_winsorized)) * 100\n",
+    "        print(f\"  {col}: {missing_count} ({missing_pct:.2f}%)\")\n",
+    "\n",
+    "    # Apply sector-specific median imputation\n",
+    "    stocks_imputed = impute_missing_values(\n",
+    "            stocks_winsorized,\n",
+    "            strategy='sector_median',\n",
+    "            columns=impute_cols\n",
+    "            )\n",
+    "\n",
+    "    # Verify imputation\n",
+    "    print(\"\\nMissing Values (After Imputation):\")\n",
+    "    for col in impute_cols:\n",
+    "        missing_count = stocks_imputed[col].isna().sum()\n",
+    "        print(f\"  {col}: {missing_count}\")\n",
+    "\n",
+    "    print(f\"\\n✓ Imputation complete using sector-specific median strategy\")\n",
+    "\n",
+    "    # Use imputed data for further processing\n",
+    "    all_stocks_processed = stocks_imputed.copy()\n",
+    "else:\n",
+    "    print(\"\\nNo columns with missing values requiring imputation\")\n",
+    "    all_stocks_processed = stocks_winsorized.copy()\n",
+    "\n",
+    "print(f\"\\n✓ Preprocessed dataset ready: {all_stocks_processed.shape}\")"
    ],
    "metadata": {
     "ExecuteTime": {
@@ -87979,54 +88967,33 @@
   {
    "cell_type": "markdown",
    "id": "chm9o55j67p",
-   "source": "### 9.1.4 Advanced Missing Value Imputation",
+   "source": "### 9.1.5 Summary of Phase 9.1 Implementation",
    "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "e21gnz19ab",
    "source": [
-    "# Advanced imputation strategies for missing values\n",
-    "print(\"\\n🔧 Imputing Missing Values...\")\n",
+    "# Summary of Phase 9.1 Advanced Preprocessing\n",
+    "print(\"\\n\" + \"=\" * 80)\n",
+    "print(\"PHASE 9.1 IMPLEMENTATION SUMMARY\")\n",
+    "print(\"=\" * 80)\n",
     "\n",
-    "# Select columns with missing values for imputation\n",
-    "impute_cols = []\n",
-    "for col in ['p_e', 'p_b', 'gross_margin', 'revenue', 'net_income']:\n",
-    "    if col in stocks_winsorized.columns and stocks_winsorized[col].isna().any():\n",
-    "        impute_cols.append(col)\n",
+    "summary = {\n",
+    "    \"✓ Data Quality Assessment\": \"Comprehensive scoring with completeness, consistency, and validity metrics\",\n",
+    "    \"✓ Outlier Detection\": \"Three methods: IQR (sector-specific), Z-score (sector-specific), Isolation Forest\",\n",
+    "    \"✓ Winsorization\": \"Sector-specific capping at 1st-99th percentiles to handle extreme values\",\n",
+    "    \"✓ Missing Value Imputation\": \"Sector-specific median imputation with global fallback\",\n",
+    "    \"✓ Ready for Feature Engineering\": f\"Preprocessed dataset: {all_stocks_processed.shape[0]:,} stocks × {all_stocks_processed.shape[1]} features\"\n",
+    "    }\n",
     "\n",
-    "if impute_cols:\n",
-    "    print(f\"\\nColumns with missing values: {', '.join(impute_cols)}\")\n",
+    "for key, value in summary.items():\n",
+    "    print(f\"\\n{key}\")\n",
+    "    print(f\"  {value}\")\n",
     "\n",
-    "    # Show missing value counts before imputation\n",
-    "    print(\"\\nMissing Values (Before Imputation):\")\n",
-    "    for col in impute_cols:\n",
-    "        missing_count = stocks_winsorized[col].isna().sum()\n",
-    "        missing_pct = (missing_count / len(stocks_winsorized)) * 100\n",
-    "        print(f\"  {col}: {missing_count} ({missing_pct:.2f}%)\")\n",
-    "\n",
-    "    # Apply sector-specific median imputation\n",
-    "    stocks_imputed = impute_missing_values(\n",
-    "            stocks_winsorized,\n",
-    "            strategy='sector_median',\n",
-    "            columns=impute_cols\n",
-    "            )\n",
-    "\n",
-    "    # Verify imputation\n",
-    "    print(\"\\nMissing Values (After Imputation):\")\n",
-    "    for col in impute_cols:\n",
-    "        missing_count = stocks_imputed[col].isna().sum()\n",
-    "        print(f\"  {col}: {missing_count}\")\n",
-    "\n",
-    "    print(f\"\\n✓ Imputation complete using sector-specific median strategy\")\n",
-    "\n",
-    "    # Use imputed data for further processing\n",
-    "    all_stocks_processed = stocks_imputed.copy()\n",
-    "else:\n",
-    "    print(\"\\nNo columns with missing values requiring imputation\")\n",
-    "    all_stocks_processed = stocks_winsorized.copy()\n",
-    "\n",
-    "print(f\"\\n✓ Preprocessed dataset ready: {all_stocks_processed.shape}\")"
+    "print(\"\\n\" + \"=\" * 80)\n",
+    "print(\"Next Steps: Phase 9.2 - Advanced EDA, Phase 9.3 - Enhanced Feature Engineering\")\n",
+    "print(\"=\" * 80)"
    ],
    "metadata": {
     "ExecuteTime": {
@@ -88070,32 +89037,24 @@
   {
    "cell_type": "markdown",
    "id": "n6ar2rziats",
-   "source": "### 9.1.5 Summary of Phase 9.1 Implementation",
+   "source": "## Phase 9.4 — Multi-Class Classification of Financial Events\n\nSophisticated event classification using multiple model architectures:\n1. Enhanced event label creation (price momentum, valuation, fundamental, volatility)\n2. Gradient Boosting models (XGBoost, LightGBM, CatBoost)\n3. Neural Network classifiers with batch normalization and dropout\n4. Ensemble methods (Voting and Stacking)\n5. Model interpretation with SHAP values\n6. Export classification probabilities as meta-features for regression",
    "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "79sfssqxo6h",
    "source": [
-    "# Summary of Phase 9.1 Advanced Preprocessing\n",
-    "print(\"\\n\" + \"=\" * 80)\n",
-    "print(\"PHASE 9.1 IMPLEMENTATION SUMMARY\")\n",
+    "# Import Phase 9.4 classification functions\n",
+    "from finance_ml.classification import (\n",
+    "    create_enhanced_event_labels,\n",
+    "    prepare_classification_data,\n",
+    "    train_stacking_classifier,\n",
+    "    compare_classifiers,\n",
+    "    export_classification_features,\n",
+    "    )\n",
+    "\n",
     "print(\"=\" * 80)\n",
-    "\n",
-    "summary = {\n",
-    "    \"✓ Data Quality Assessment\": \"Comprehensive scoring with completeness, consistency, and validity metrics\",\n",
-    "    \"✓ Outlier Detection\": \"Three methods: IQR (sector-specific), Z-score (sector-specific), Isolation Forest\",\n",
-    "    \"✓ Winsorization\": \"Sector-specific capping at 1st-99th percentiles to handle extreme values\",\n",
-    "    \"✓ Missing Value Imputation\": \"Sector-specific median imputation with global fallback\",\n",
-    "    \"✓ Ready for Feature Engineering\": f\"Preprocessed dataset: {all_stocks_processed.shape[0]:,} stocks × {all_stocks_processed.shape[1]} features\"\n",
-    "    }\n",
-    "\n",
-    "for key, value in summary.items():\n",
-    "    print(f\"\\n{key}\")\n",
-    "    print(f\"  {value}\")\n",
-    "\n",
-    "print(\"\\n\" + \"=\" * 80)\n",
-    "print(\"Next Steps: Phase 9.2 - Advanced EDA, Phase 9.3 - Enhanced Feature Engineering\")\n",
+    "print(\"PHASE 9.4 — MULTI-CLASS CLASSIFICATION OF FINANCIAL EVENTS\")\n",
     "print(\"=\" * 80)"
    ],
    "metadata": {
@@ -88120,35 +89079,48 @@
   {
    "cell_type": "markdown",
    "id": "tqsmkqwizr7",
-   "source": [
-    "## Phase 9.4 — Multi-Class Classification of Financial Events\n",
-    "\n",
-    "Sophisticated event classification using multiple model architectures:\n",
-    "1. Enhanced event label creation (price momentum, valuation, fundamental, volatility)\n",
-    "2. Gradient Boosting models (XGBoost, LightGBM, CatBoost)\n",
-    "3. Neural Network classifiers with batch normalization and dropout\n",
-    "4. Ensemble methods (Voting and Stacking)\n",
-    "5. Model interpretation with SHAP values\n",
-    "6. Export classification probabilities as meta-features for regression"
-   ],
+   "source": "### 9.4.1 Create Enhanced Event Labels\n\nCreate sophisticated event labels using multiple detection methods:\n- **Price Momentum**: Based on price target vs current price\n- **Valuation**: Based on P/E percentiles within sector\n- **Fundamental**: Based on margin trends\n- **Volatility**: Based on price volatility",
    "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "m4h68e0wm2",
    "source": [
-    "# Import Phase 9.4 classification functions\n",
-    "from finance_ml.classification import (\n",
-    "    create_enhanced_event_labels,\n",
-    "    prepare_classification_data,\n",
-    "    train_stacking_classifier,\n",
-    "    compare_classifiers,\n",
-    "    export_classification_features,\n",
-    "    )\n",
+    "# Create event labels using price momentum method\n",
+    "print(\"\\n📊 Creating Event Labels...\")\n",
     "\n",
-    "print(\"=\" * 80)\n",
-    "print(\"PHASE 9.4 — MULTI-CLASS CLASSIFICATION OF FINANCIAL EVENTS\")\n",
-    "print(\"=\" * 80)"
+    "# Use price momentum method (default)\n",
+    "event_labels = create_enhanced_event_labels(\n",
+    "        all_stocks_processed,\n",
+    "        method=\"price_momentum\",\n",
+    "        threshold_positive=10.0,\n",
+    "        threshold_negative=-10.0,\n",
+    "        use_sector_adjustment=True\n",
+    "        )\n",
+    "\n",
+    "# Display label distribution\n",
+    "print(f\"\\n Event Label Distribution:\")\n",
+    "print(f\"  Neutral (0): {np.sum(event_labels == 0):,} ({np.mean(event_labels == 0):.1%})\")\n",
+    "print(f\"  Positive Catalyst (1): {np.sum(event_labels == 1):,} ({np.mean(event_labels == 1):.1%})\")\n",
+    "print(f\"  Negative Catalyst (2): {np.sum(event_labels == 2):,} ({np.mean(event_labels == 2):.1%})\")\n",
+    "\n",
+    "# Analyze by sector\n",
+    "if 'sector' in all_stocks_processed.columns:\n",
+    "    print(f\"\\n📈 Event Distribution by Sector (Top 5 sectors):\")\n",
+    "    top_sectors = all_stocks_processed['sector'].value_counts().head(5).index\n",
+    "\n",
+    "    for sector in top_sectors:\n",
+    "        sector_mask = all_stocks_processed['sector'] == sector\n",
+    "        sector_labels = event_labels[sector_mask]\n",
+    "        n_neutral = np.sum(sector_labels == 0)\n",
+    "        n_positive = np.sum(sector_labels == 1)\n",
+    "        n_negative = np.sum(sector_labels == 2)\n",
+    "        total = len(sector_labels)\n",
+    "\n",
+    "        print(f\"\\n  {sector}:\")\n",
+    "        print(f\"    Neutral: {n_neutral} ({n_neutral / total:.1%})\")\n",
+    "        print(f\"    Positive: {n_positive} ({n_positive / total:.1%})\")\n",
+    "        print(f\"    Negative: {n_negative} ({n_negative / total:.1%})\")"
    ],
    "metadata": {
     "ExecuteTime": {
@@ -88210,56 +89182,53 @@
   {
    "cell_type": "markdown",
    "id": "8oxmptt6gxw",
-   "source": [
-    "### 9.4.1 Create Enhanced Event Labels\n",
-    "\n",
-    "Create sophisticated event labels using multiple detection methods:\n",
-    "- **Price Momentum**: Based on price target vs current price\n",
-    "- **Valuation**: Based on P/E percentiles within sector\n",
-    "- **Fundamental**: Based on margin trends\n",
-    "- **Volatility**: Based on price volatility"
-   ],
+   "source": "### 9.4.2 Prepare Data and Train Multiple Classifiers\n\nCompare performance across multiple classifier architectures:\n- Random Forest (baseline)\n- XGBoost\n- LightGBM\n- CatBoost\n- Neural Network\n- Voting Ensemble\n- Stacking Ensemble",
    "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "a8ezcxp6z87",
    "source": [
-    "# Create event labels using price momentum method\n",
-    "print(\"\\n📊 Creating Event Labels...\")\n",
+    "# Prepare data for classification\n",
+    "print(\"\\n🔧 Preparing Classification Data...\")\n",
     "\n",
-    "# Use price momentum method (default)\n",
-    "event_labels = create_enhanced_event_labels(\n",
+    "X_train, X_test, y_train, y_test, numeric_cols, categorical_cols = prepare_classification_data(\n",
     "        all_stocks_processed,\n",
-    "        method=\"price_momentum\",\n",
-    "        threshold_positive=10.0,\n",
-    "        threshold_negative=-10.0,\n",
-    "        use_sector_adjustment=True\n",
+    "        event_labels,\n",
+    "        test_size=0.2,\n",
+    "        random_state=42\n",
     "        )\n",
     "\n",
-    "# Display label distribution\n",
-    "print(f\"\\n Event Label Distribution:\")\n",
-    "print(f\"  Neutral (0): {np.sum(event_labels == 0):,} ({np.mean(event_labels == 0):.1%})\")\n",
-    "print(f\"  Positive Catalyst (1): {np.sum(event_labels == 1):,} ({np.mean(event_labels == 1):.1%})\")\n",
-    "print(f\"  Negative Catalyst (2): {np.sum(event_labels == 2):,} ({np.mean(event_labels == 2):.1%})\")\n",
+    "print(f\"\\n✓ Data prepared successfully\")\n",
+    "print(f\"  Training set: {len(X_train):,} samples\")\n",
+    "print(f\"  Test set: {len(X_test):,} samples\")\n",
+    "print(f\"  Numeric features: {len(numeric_cols)}\")\n",
+    "print(f\"  Categorical features: {len(categorical_cols)}\")\n",
     "\n",
-    "# Analyze by sector\n",
-    "if 'sector' in all_stocks_processed.columns:\n",
-    "    print(f\"\\n📈 Event Distribution by Sector (Top 5 sectors):\")\n",
-    "    top_sectors = all_stocks_processed['sector'].value_counts().head(5).index\n",
+    "# Compare all classifiers\n",
+    "print(\"\\n\\n\" + \"=\" * 80)\n",
+    "print(\"TRAINING AND COMPARING MULTIPLE CLASSIFIERS\")\n",
+    "print(\"=\" * 80)\n",
     "\n",
-    "    for sector in top_sectors:\n",
-    "        sector_mask = all_stocks_processed['sector'] == sector\n",
-    "        sector_labels = event_labels[sector_mask]\n",
-    "        n_neutral = np.sum(sector_labels == 0)\n",
-    "        n_positive = np.sum(sector_labels == 1)\n",
-    "        n_negative = np.sum(sector_labels == 2)\n",
-    "        total = len(sector_labels)\n",
+    "comparison_results = compare_classifiers(\n",
+    "        X_train, y_train, X_test, y_test,\n",
+    "        numeric_cols, categorical_cols\n",
+    "        )\n",
     "\n",
-    "        print(f\"\\n  {sector}:\")\n",
-    "        print(f\"    Neutral: {n_neutral} ({n_neutral / total:.1%})\")\n",
-    "        print(f\"    Positive: {n_positive} ({n_positive / total:.1%})\")\n",
-    "        print(f\"    Negative: {n_negative} ({n_negative / total:.1%})\")"
+    "print(\"\\n📊 Model Comparison Results:\")\n",
+    "print(comparison_results.to_string(index=False))\n",
+    "\n",
+    "# Visualize comparison\n",
+    "plt.figure(figsize=(10, 6))\n",
+    "sns.barplot(data=comparison_results, x='F1-Score', y='Model', palette='viridis')\n",
+    "plt.title('Model Comparison: F1-Score', fontsize=14, fontweight='bold')\n",
+    "plt.xlabel('F1-Score (Macro)')\n",
+    "plt.ylabel('Model')\n",
+    "plt.xlim(0, 1.0)\n",
+    "for idx, row in comparison_results.iterrows():\n",
+    "    plt.text(row['F1-Score'] + 0.01, idx, f\"{row['F1-Score']:.3f}\", va='center')\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
    ],
    "metadata": {
     "ExecuteTime": {
@@ -88327,82 +89296,12 @@
   {
    "cell_type": "markdown",
    "id": "b7mjybujd49",
-   "source": [
-    "### 9.4.2 Prepare Data and Train Multiple Classifiers\n",
-    "\n",
-    "Compare performance across multiple classifier architectures:\n",
-    "- Random Forest (baseline)\n",
-    "- XGBoost\n",
-    "- LightGBM\n",
-    "- CatBoost\n",
-    "- Neural Network\n",
-    "- Voting Ensemble\n",
-    "- Stacking Ensemble"
-   ],
+   "source": "### 9.4.3 Export Classification Meta-Features\n\nExport classification probabilities as meta-features for downstream regression models",
    "metadata": {}
   },
   {
    "cell_type": "code",
    "id": "n7jhgts026a",
-   "source": [
-    "# Prepare data for classification\n",
-    "print(\"\\n🔧 Preparing Classification Data...\")\n",
-    "\n",
-    "X_train, X_test, y_train, y_test, numeric_cols, categorical_cols = prepare_classification_data(\n",
-    "        all_stocks_processed,\n",
-    "        event_labels,\n",
-    "        test_size=0.2,\n",
-    "        random_state=42\n",
-    "        )\n",
-    "\n",
-    "print(f\"\\n✓ Data prepared successfully\")\n",
-    "print(f\"  Training set: {len(X_train):,} samples\")\n",
-    "print(f\"  Test set: {len(X_test):,} samples\")\n",
-    "print(f\"  Numeric features: {len(numeric_cols)}\")\n",
-    "print(f\"  Categorical features: {len(categorical_cols)}\")\n",
-    "\n",
-    "# Compare all classifiers\n",
-    "print(\"\\n\\n\" + \"=\" * 80)\n",
-    "print(\"TRAINING AND COMPARING MULTIPLE CLASSIFIERS\")\n",
-    "print(\"=\" * 80)\n",
-    "\n",
-    "comparison_results = compare_classifiers(\n",
-    "        X_train, y_train, X_test, y_test,\n",
-    "        numeric_cols, categorical_cols\n",
-    "        )\n",
-    "\n",
-    "print(\"\\n📊 Model Comparison Results:\")\n",
-    "print(comparison_results.to_string(index=False))\n",
-    "\n",
-    "# Visualize comparison\n",
-    "plt.figure(figsize=(10, 6))\n",
-    "sns.barplot(data=comparison_results, x='F1-Score', y='Model', palette='viridis')\n",
-    "plt.title('Model Comparison: F1-Score', fontsize=14, fontweight='bold')\n",
-    "plt.xlabel('F1-Score (Macro)')\n",
-    "plt.ylabel('Model')\n",
-    "plt.xlim(0, 1.0)\n",
-    "for idx, row in comparison_results.iterrows():\n",
-    "    plt.text(row['F1-Score'] + 0.01, idx, f\"{row['F1-Score']:.3f}\", va='center')\n",
-    "plt.tight_layout()\n",
-    "plt.show()"
-   ],
-   "metadata": {},
-   "outputs": [],
-   "execution_count": null
-  },
-  {
-   "cell_type": "markdown",
-   "id": "t8ni6nqxkb",
-   "source": [
-    "### 9.4.3 Export Classification Meta-Features\n",
-    "\n",
-    "Export classification probabilities as meta-features for downstream regression models"
-   ],
-   "metadata": {}
-  },
-  {
-   "cell_type": "code",
-   "id": "0z054lb5snd",
    "source": [
     "# Train best model and export classification features\n",
     "print(\"\\n🎯 Training Best Model for Feature Export...\")\n",
@@ -88457,14 +89356,14 @@
    "execution_count": null
   },
   {
-   "metadata": {},
    "cell_type": "markdown",
+   "id": "t8ni6nqxkb",
    "source": "### 9.4.4 Summary of Phase 9.4 Implementation",
-   "id": "82dd21a6e24a3e1e"
+   "metadata": {}
   },
   {
-   "metadata": {},
    "cell_type": "code",
+   "id": "0z054lb5snd",
    "source": [
     "# Summary of Phase 9.4 Multi-Class Classification\n",
     "print(\"\\n\" + \"=\" * 80)\n",
@@ -88483,391 +89382,27 @@
     "    print(f\"\\n{key}\")\n",
     "    print(f\"  {value}\")\n",
     "\n",
+    "print(\"\\n\" + \"=\" * 80)\n",
+    "print(\"Next Steps: Phase 9.5 - Sector-Optimized Regression with Classification Features\")\n",
+    "print(\"=\" * 80)\n",
+    "\n",
     "# Save enhanced dataset for next phase\n",
     "all_stocks_phase94 = all_stocks_with_classification.copy()\n",
     "print(f\"\\n✓ Dataset ready for Phase 9.5 (stored as 'all_stocks_phase94')\")"
    ],
-   "id": "9cd0fdff321a7bdf",
+   "metadata": {},
    "outputs": [],
    "execution_count": null
   },
   {
    "metadata": {},
    "cell_type": "markdown",
-   "source": [
-    "## Phase 9.5 — Sector-Optimized Regression Models with Classification Features\n",
-    "\n",
-    "Advanced regression modeling using Phase 9.5 functions from `finance_ml.advanced_models`:\n",
-    "1. Prepare regression data with classification meta-features\n",
-    "2. Create interaction features between classification probabilities and valuation metrics\n",
-    "3. Train and compare multiple regression models\n",
-    "4. Sector-specific model optimization\n",
-    "5. Quantile regression for prediction intervals\n",
-    "6. Model persistence and evaluation\n"
-   ],
-   "id": "4f68097ca89065f3"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
-   "source": [
-    "# Phase 9.5: Advanced Regression with Classification Features\n",
-    "print(\"\\n\" + \"=\" * 80)\n",
-    "print(\"PHASE 9.5 — SECTOR-OPTIMIZED REGRESSION MODELS\")\n",
-    "print(\"=\" * 80)\n",
-    "\n",
-    "try:\n",
-    "    # Use the dataset with classification features from Phase 9.4\n",
-    "    regression_df = all_stocks_phase94.copy()\n",
-    "\n",
-    "    print(f\"\\n📊 Starting dataset: {regression_df.shape}\")\n",
-    "    print(f\"   Includes classification meta-features from Phase 9.4\")\n",
-    "\n",
-    "    # Define target variable\n",
-    "    target_col = 'price_target'\n",
-    "\n",
-    "    if target_col not in regression_df.columns:\n",
-    "        print(f\"\\n⚠ Warning: '{target_col}' not found. Using 'last_price' as proxy target.\")\n",
-    "        target_col = 'last_price'\n",
-    "\n",
-    "    # Remove rows with missing target\n",
-    "    regression_df_clean = regression_df.dropna(subset=[target_col])\n",
-    "    print(f\"\\n✓ Clean dataset: {regression_df_clean.shape[0]:,} rows\")\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.1 Create Classification Interaction Features\n",
-    "\n",
-    "    #%%\n",
-    "    # Create interaction features: classification_probs × valuation_metrics\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"9.5.1 — Creating Classification Interaction Features\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    classification_cols = [c for c in regression_df_clean.columns if c.startswith('event_prob_')]\n",
-    "    valuation_cols = [c for c in ['p_e', 'p_b', 'ev_ebitda', 'market_cap']\n",
-    "                      if c in regression_df_clean.columns]\n",
-    "\n",
-    "    if classification_cols and valuation_cols:\n",
-    "        print(f\"\\nClassification features: {len(classification_cols)}\")\n",
-    "        print(f\"Valuation features: {len(valuation_cols)}\")\n",
-    "\n",
-    "        regression_df_enhanced = create_classification_interactions(\n",
-    "                regression_df_clean,\n",
-    "                classification_cols=classification_cols,\n",
-    "                valuation_cols=valuation_cols\n",
-    "                )\n",
-    "\n",
-    "        interaction_cols = [c for c in regression_df_enhanced.columns\n",
-    "                            if '_x_' in c and c not in regression_df_clean.columns]\n",
-    "        print(f\"\\n✓ Created {len(interaction_cols)} interaction features\")\n",
-    "        if interaction_cols[:3]:\n",
-    "            print(f\"  Examples: {', '.join(interaction_cols[:3])}\")\n",
-    "    else:\n",
-    "        print(\"\\n⚠ Skipping interaction features - missing required columns\")\n",
-    "        regression_df_enhanced = regression_df_clean.copy()\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.2 Prepare Regression Data\n",
-    "\n",
-    "    #%%\n",
-    "    # Prepare train/test split with feature info\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"9.5.2 — Preparing Regression Data\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    X_train_reg, X_test_reg, y_train_reg, y_test_reg, feature_info = prepare_regression_data(\n",
-    "            regression_df_enhanced,\n",
-    "            target_col=target_col,\n",
-    "            test_size=0.2,\n",
-    "            random_state=42\n",
-    "            )\n",
-    "\n",
-    "    print(f\"\\n✓ Data prepared:\")\n",
-    "    print(f\"  Train set: {X_train_reg.shape}\")\n",
-    "    print(f\"  Test set: {X_test_reg.shape}\")\n",
-    "    print(f\"  Numeric features: {len(feature_info['numeric'])}\")\n",
-    "    print(f\"  Categorical features: {len(feature_info['categorical'])}\")\n",
-    "    print(f\"  Classification features: {len(feature_info['classification'])}\")\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.3 Compare Multiple Regression Models\n",
-    "\n",
-    "    #%%\n",
-    "    # Compare 6 regression models side-by-side\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"9.5.3 — Comparing Multiple Regression Models\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    comparison_results_reg = compare_regressors(\n",
-    "            X_train_reg, y_train_reg,\n",
-    "            test_size=0.2,\n",
-    "            cv=5,\n",
-    "            random_state=42\n",
-    "            )\n",
-    "\n",
-    "    print(\"\\n📊 Model Comparison Results:\")\n",
-    "    results_df = pd.DataFrame(comparison_results_reg).T\n",
-    "    results_df = results_df.sort_values('r2', ascending=False)\n",
-    "    print(results_df.to_string())\n",
-    "\n",
-    "    # Visualize comparison\n",
-    "    fig, axes = plt.subplots(1, 3, figsize=(18, 5))\n",
-    "\n",
-    "    # R² scores\n",
-    "    results_df['r2'].plot(kind='barh', ax=axes[0], color='skyblue', edgecolor='black')\n",
-    "    axes[0].set_title('R² Score (higher is better)', fontweight='bold')\n",
-    "    axes[0].set_xlabel('R²')\n",
-    "    axes[0].set_xlim(0, 1.0)\n",
-    "\n",
-    "    # MAE scores\n",
-    "    results_df['mae'].plot(kind='barh', ax=axes[1], color='coral', edgecolor='black')\n",
-    "    axes[1].set_title('Mean Absolute Error (lower is better)', fontweight='bold')\n",
-    "    axes[1].set_xlabel('MAE')\n",
-    "\n",
-    "    # Training time\n",
-    "    results_df['train_time'].plot(kind='barh', ax=axes[2], color='lightgreen', edgecolor='black')\n",
-    "    axes[2].set_title('Training Time (seconds)', fontweight='bold')\n",
-    "    axes[2].set_xlabel('Time (s)')\n",
-    "\n",
-    "    plt.tight_layout()\n",
-    "    plt.show()\n",
-    "\n",
-    "    # Identify best model\n",
-    "    best_model_name = results_df.index[0]\n",
-    "    print(f\"\\n🏆 Best Model: {best_model_name}\")\n",
-    "    print(f\"   R²: {results_df.loc[best_model_name, 'r2']:.4f}\")\n",
-    "    print(f\"   MAE: {results_df.loc[best_model_name, 'mae']:.2f}\")\n",
-    "    print(f\"   RMSE: {results_df.loc[best_model_name, 'rmse']:.2f}\")\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.4 Train Stacking Ensemble for Best Performance\n",
-    "\n",
-    "    #%%\n",
-    "    # Train stacking ensemble combining multiple base models\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"9.5.4 — Training Stacking Ensemble\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    stacking_model, stacking_results = train_stacking_regressor(\n",
-    "            X_train_reg, y_train_reg,\n",
-    "            cv=5\n",
-    "            )\n",
-    "\n",
-    "    print(f\"\\n✓ Stacking Ensemble Trained:\")\n",
-    "    print(f\"  Base models: {', '.join(stacking_results['base_models'])}\")\n",
-    "    print(f\"  Meta-learner: {stacking_results['meta_model']}\")\n",
-    "    print(f\"  Train R²: {stacking_results['train_score']:.4f}\")\n",
-    "    print(f\"  CV R² (mean ± std): {stacking_results['cv_score']:.4f} ± {stacking_results['cv_std']:.4f}\")\n",
-    "\n",
-    "    # Make predictions\n",
-    "    y_pred_stacking = stacking_model.predict(X_test_reg)\n",
-    "\n",
-    "    # Calculate test metrics\n",
-    "    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score\n",
-    "\n",
-    "    test_mae = mean_absolute_error(y_test_reg, y_pred_stacking)\n",
-    "    test_rmse = np.sqrt(mean_squared_error(y_test_reg, y_pred_stacking))\n",
-    "    test_r2 = r2_score(y_test_reg, y_pred_stacking)\n",
-    "\n",
-    "    print(f\"\\n📊 Test Set Performance:\")\n",
-    "    print(f\"  MAE: {test_mae:.2f}\")\n",
-    "    print(f\"  RMSE: {test_rmse:.2f}\")\n",
-    "    print(f\"  R²: {test_r2:.4f}\")\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.5 Quantile Regression for Prediction Intervals\n",
-    "\n",
-    "    #%%\n",
-    "    # Train quantile regression for uncertainty estimation\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"9.5.5 — Quantile Regression for Uncertainty Estimation\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    quantiles = [0.1, 0.5, 0.9]\n",
-    "    quantile_models, quantile_results = train_quantile_regressor(\n",
-    "            X_train_reg, y_train_reg,\n",
-    "            quantiles=quantiles\n",
-    "            )\n",
-    "\n",
-    "    print(f\"\\n✓ Quantile Models Trained:\")\n",
-    "    print(f\"  Quantiles: {quantiles}\")\n",
-    "    print(f\"  Models: {len(quantile_models)}\")\n",
-    "\n",
-    "    # Get prediction intervals\n",
-    "    predictions_quantile = {}\n",
-    "    for q, model in zip(quantiles, quantile_models):\n",
-    "        predictions_quantile[q] = model.predict(X_test_reg)\n",
-    "        print(f\"  Q{q}: {quantile_results[q]['train_score']:.4f} (train R²)\")\n",
-    "\n",
-    "    # Create confidence bands dataframe\n",
-    "    predictions_with_intervals = pd.DataFrame({\n",
-    "        'actual': y_test_reg.values,\n",
-    "        'lower_10': predictions_quantile[0.1],\n",
-    "        'median': predictions_quantile[0.5],\n",
-    "        'upper_90': predictions_quantile[0.9],\n",
-    "        'point_prediction': y_pred_stacking\n",
-    "        })\n",
-    "\n",
-    "    print(f\"\\n📊 Prediction Intervals (first 5 samples):\")\n",
-    "    print(predictions_with_intervals.head().to_string())\n",
-    "\n",
-    "    # Visualize prediction intervals\n",
-    "    sample_size = min(50, len(predictions_with_intervals))\n",
-    "    sample_indices = range(sample_size)\n",
-    "\n",
-    "    plt.figure(figsize=(14, 6))\n",
-    "    plt.fill_between(sample_indices,\n",
-    "                     predictions_with_intervals['lower_10'][:sample_size],\n",
-    "                     predictions_with_intervals['upper_90'][:sample_size],\n",
-    "                     alpha=0.3, color='lightblue', label='80% Prediction Interval')\n",
-    "    plt.plot(sample_indices, predictions_with_intervals['actual'][:sample_size],\n",
-    "             'o', color='black', label='Actual', markersize=4)\n",
-    "    plt.plot(sample_indices, predictions_with_intervals['median'][:sample_size],\n",
-    "             '-', color='blue', label='Median Prediction', linewidth=2)\n",
-    "    plt.plot(sample_indices, predictions_with_intervals['point_prediction'][:sample_size],\n",
-    "             '--', color='red', label='Stacking Prediction', linewidth=1.5)\n",
-    "    plt.xlabel('Sample Index')\n",
-    "    plt.ylabel('Price Target')\n",
-    "    plt.title('Prediction Intervals: Quantile Regression with Stacking Ensemble', fontweight='bold')\n",
-    "    plt.legend(loc='best')\n",
-    "    plt.grid(True, alpha=0.3)\n",
-    "    plt.tight_layout()\n",
-    "    plt.show()\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.6 Sector-Specific Models (Optional)\n",
-    "\n",
-    "    #%%\n",
-    "    # Train sector-specific models if sector column exists\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"9.5.6 — Sector-Specific Model Training\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    if 'sector' in regression_df_enhanced.columns:\n",
-    "        # Prepare data for sector-specific training\n",
-    "        feature_cols_sector = [c for c in X_train_reg.columns]\n",
-    "\n",
-    "        sector_models, sector_results = train_sector_specific_models(\n",
-    "                regression_df_enhanced,\n",
-    "                feature_cols=feature_cols_sector,\n",
-    "                target_col=target_col,\n",
-    "                sector_col='sector',\n",
-    "                model_type='random_forest',\n",
-    "                min_samples=20\n",
-    "                )\n",
-    "\n",
-    "        print(f\"\\n✓ Sector-Specific Models Trained:\")\n",
-    "        print(f\"  Total sectors: {len(sector_models)}\")\n",
-    "\n",
-    "        # Display sector results\n",
-    "        sector_summary = pd.DataFrame(sector_results).T\n",
-    "        sector_summary = sector_summary.sort_values('r2', ascending=False)\n",
-    "        print(f\"\\n📊 Sector Model Performance:\")\n",
-    "        print(sector_summary.head(10).to_string())\n",
-    "    else:\n",
-    "        print(\"\\n⚠ Sector column not found - skipping sector-specific models\")\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.7 Model Persistence\n",
-    "\n",
-    "    #%%\n",
-    "    # Save best models for future use\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"9.5.7 — Model Persistence\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    from pathlib import Path\n",
-    "\n",
-    "    models_dir = Path(config.output_dir) / 'models'\n",
-    "    models_dir.mkdir(exist_ok=True, parents=True)\n",
-    "\n",
-    "    # Save stacking ensemble\n",
-    "    stacking_metadata = {\n",
-    "        'model_type': 'stacking_ensemble',\n",
-    "        'features': list(X_train_reg.columns),\n",
-    "        'target': target_col,\n",
-    "        'train_score': stacking_results['train_score'],\n",
-    "        'cv_score': stacking_results['cv_score'],\n",
-    "        'test_score': test_r2,\n",
-    "        'date_trained': '2025-10-28',\n",
-    "        'phase': '9.5'\n",
-    "        }\n",
-    "\n",
-    "    stacking_path = models_dir / 'stacking_ensemble_phase95.joblib'\n",
-    "    save_model(stacking_model, str(stacking_path), metadata=stacking_metadata)\n",
-    "    print(f\"\\n✓ Stacking model saved: {stacking_path}\")\n",
-    "\n",
-    "    # Save quantile models\n",
-    "    for i, (q, model) in enumerate(zip(quantiles, quantile_models)):\n",
-    "        quantile_metadata = {\n",
-    "            'model_type': f'quantile_regressor_q{q}',\n",
-    "            'quantile': q,\n",
-    "            'features': list(X_train_reg.columns),\n",
-    "            'target': target_col,\n",
-    "            'date_trained': '2025-10-28',\n",
-    "            'phase': '9.5'\n",
-    "            }\n",
-    "        quantile_path = models_dir / f'quantile_q{int(q * 100)}_phase95.joblib'\n",
-    "        save_model(model, str(quantile_path), metadata=quantile_metadata)\n",
-    "\n",
-    "    print(f\"✓ Quantile models saved: {len(quantiles)} models\")\n",
-    "\n",
-    "    #%% md\n",
-    "    ### 9.5.8 Summary of Phase 9.5 Implementation\n",
-    "\n",
-    "    #%%\n",
-    "    # Summary of Phase 9.5 Regression Models\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"PHASE 9.5 IMPLEMENTATION SUMMARY\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    summary_95 = {\n",
-    "        \"✓ Classification Features Integrated\": f\"{len(classification_cols)} probability features + interactions\",\n",
-    "        \"✓ Models Compared\": \"6 models: Ridge, Lasso, RF, ET, GB, HistGB\",\n",
-    "        \"✓ Best Single Model\": f\"{best_model_name} (R²={results_df.loc[best_model_name, 'r2']:.4f})\",\n",
-    "        \"✓ Stacking Ensemble\": f\"R²={test_r2:.4f}, MAE={test_mae:.2f}\",\n",
-    "        \"✓ Quantile Regression\": f\"{len(quantiles)} quantiles for prediction intervals\",\n",
-    "        \"✓ Models Saved\": f\"{models_dir} (stacking + quantile models)\"\n",
-    "        }\n",
-    "\n",
-    "    for key, value in summary_95.items():\n",
-    "        print(f\"\\n{key}\")\n",
-    "        print(f\"  {value}\")\n",
-    "\n",
-    "    print(\"\\n\" + \"=\" * 80)\n",
-    "    print(\"✓ Phase 9.5 Complete - Advanced Regression System Operational\")\n",
-    "    print(\"=\" * 80)\n",
-    "\n",
-    "    # Store predictions for evaluation\n",
-    "    all_stocks_phase95 = regression_df_enhanced.copy()\n",
-    "    all_stocks_phase95.loc[X_test_reg.index, 'predicted_price_target'] = y_pred_stacking\n",
-    "    all_stocks_phase95.loc[X_test_reg.index, 'prediction_lower_10'] = predictions_quantile[0.1]\n",
-    "    all_stocks_phase95.loc[X_test_reg.index, 'prediction_upper_90'] = predictions_quantile[0.9]\n",
-    "\n",
-    "    print(f\"\\n✓ Predictions added to dataset (stored as 'all_stocks_phase95')\")\n",
-    "\n",
-    "except Exception as e:\n",
-    "    logger.error(f\"Phase 9.5 Advanced Regression failed: {e}\")\n",
-    "    print(f\"\\n⚠ Phase 9.5 Advanced Regression failed: {e}\")\n",
-    "    import traceback\n",
-    "\n",
-    "    traceback.print_exc()\n"
-   ],
-   "id": "1f1faaa4e50f6ace"
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
    "source": "### 5. Sector and Region Analysis\n",
-   "id": "77f60cff09c535ff"
+   "id": "82dd21a6e24a3e1e"
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Sector-Region market cap heatmap\n",
     "if 'sector' in all_stocks.columns and 'region' in all_stocks.columns and 'market_cap' in all_stocks.columns:\n",
@@ -88887,13 +89422,13 @@
     "        plt.tight_layout()\n",
     "        plt.show()\n"
    ],
-   "id": "f867831a59379143"
+   "id": "9cd0fdff321a7bdf",
+   "outputs": [],
+   "execution_count": null
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Average valuation metrics by sector\n",
     "if 'sector' in all_stocks.columns:\n",
@@ -88913,13 +89448,13 @@
     "            plt.tight_layout()\n",
     "            plt.show()\n"
    ],
-   "id": "923ff557bf6e91f9"
+   "id": "4f68097ca89065f3",
+   "outputs": [],
+   "execution_count": null
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Regional stock count and average market cap\n",
     "if 'region' in all_stocks.columns and 'market_cap' in all_stocks.columns:\n",
@@ -88947,13 +89482,13 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "525e780124c14ae2"
+   "id": "5a4bef93341913c0",
+   "outputs": [],
+   "execution_count": null
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Top 5 sectors distribution across regions (interactive)\n",
     "has_required_columns = (\n",
@@ -88966,7 +89501,9 @@
     "    top_5_sectors = sector_counts.head(5).index\n",
     "    sector_region_data = all_stocks[all_stocks['sector'].isin(top_5_sectors)]"
    ],
-   "id": "a1e27f59b1bdf75d"
+   "id": "77f60cff09c535ff",
+   "outputs": [],
+   "execution_count": null
   }
  ],
  "metadata": {
