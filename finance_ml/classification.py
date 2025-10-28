@@ -325,6 +325,11 @@ def train_xgboost_classifier(
     # One-hot encode categorical features
     X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
+    # Clean infinite and extreme values before scaling
+    logger.info("Cleaning extreme values and infinities...")
+    X_train_proc = clean_extreme_values(X_train_proc)
+    X_test_proc = clean_extreme_values(X_test_proc)
+
     # Get updated numeric columns list (after one-hot encoding)
     encoded_numeric_cols = [
         col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
@@ -409,6 +414,11 @@ def train_lightgbm_classifier(
     # One-hot encode categorical features
     X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
+    # Clean infinite and extreme values before scaling
+    logger.info("Cleaning extreme values and infinities...")
+    X_train_proc = clean_extreme_values(X_train_proc)
+    X_test_proc = clean_extreme_values(X_test_proc)
+
     # Get updated numeric columns list (after one-hot encoding)
     encoded_numeric_cols = [
         col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
@@ -491,6 +501,11 @@ def train_catboost_classifier(
 
     X_train_proc = X_train.copy()
     X_test_proc = X_test.copy()
+
+    # Clean infinite and extreme values before scaling
+    logger.info("Cleaning extreme values and infinities...")
+    X_train_proc = clean_extreme_values(X_train_proc)
+    X_test_proc = clean_extreme_values(X_test_proc)
 
     # Scale numeric features only
     scaler = StandardScaler()
@@ -652,7 +667,7 @@ def train_neural_network_classifier(
     if not HAVE_TENSORFLOW:
         raise ImportError("TensorFlow not available. Install with: pip install tensorflow")
 
-    from sklearn.preprocessing import StandardScaler
+    from sklearn.preprocessing import StandardScaler, RobustScaler
 
     # Default parameters
     default_params = {
@@ -669,14 +684,46 @@ def train_neural_network_classifier(
     # One-hot encode categorical features
     X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
+    # Clean infinite and extreme values before scaling
+    logger.info("Cleaning extreme values and infinities...")
+    X_train_proc = clean_extreme_values(X_train_proc)
+    X_test_proc = clean_extreme_values(X_test_proc)
+
+    # Validate data quality
+    logger.info("Validating data quality...")
+    if not validate_data_quality(X_train_proc):
+        logger.warning(
+            "Data quality issues detected after cleaning. Applying additional cleanup..."
+        )
+        # Additional aggressive cleanup if needed
+        X_train_proc = X_train_proc.replace([np.inf, -np.inf], 0.0)
+        X_test_proc = X_test_proc.replace([np.inf, -np.inf], 0.0)
+        X_train_proc = X_train_proc.fillna(0.0)
+        X_test_proc = X_test_proc.fillna(0.0)
+
     # Scale all features for neural network
     scaler = StandardScaler()
-    X_train_proc = pd.DataFrame(
-        scaler.fit_transform(X_train_proc), columns=X_train_proc.columns, index=X_train_proc.index
-    )
-    X_test_proc = pd.DataFrame(
-        scaler.transform(X_test_proc), columns=X_test_proc.columns, index=X_test_proc.index
-    )
+    try:
+        X_train_proc = pd.DataFrame(
+            scaler.fit_transform(X_train_proc),
+            columns=X_train_proc.columns,
+            index=X_train_proc.index,
+        )
+        X_test_proc = pd.DataFrame(
+            scaler.transform(X_test_proc), columns=X_test_proc.columns, index=X_test_proc.index
+        )
+    except ValueError as e:
+        logger.error(f"StandardScaler failed even after cleaning: {e}")
+        logger.info("Applying fallback: RobustScaler")
+        scaler = RobustScaler()
+        X_train_proc = pd.DataFrame(
+            scaler.fit_transform(X_train_proc),
+            columns=X_train_proc.columns,
+            index=X_train_proc.index,
+        )
+        X_test_proc = pd.DataFrame(
+            scaler.transform(X_test_proc), columns=X_test_proc.columns, index=X_test_proc.index
+        )
 
     # Build neural network
     model = keras.Sequential()
@@ -760,6 +807,11 @@ def train_voting_classifier(
 
     # One-hot encode categorical features
     X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
+
+    # Clean infinite and extreme values before scaling
+    logger.info("Cleaning extreme values and infinities...")
+    X_train_proc = clean_extreme_values(X_train_proc)
+    X_test_proc = clean_extreme_values(X_test_proc)
 
     # Get updated numeric columns list (after one-hot encoding)
     encoded_numeric_cols = [
@@ -862,6 +914,11 @@ def train_stacking_classifier(
 
     # One-hot encode categorical features
     X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
+
+    # Clean infinite and extreme values before scaling
+    logger.info("Cleaning extreme values and infinities...")
+    X_train_proc = clean_extreme_values(X_train_proc)
+    X_test_proc = clean_extreme_values(X_test_proc)
 
     # Get updated numeric columns list (after one-hot encoding)
     encoded_numeric_cols = [
@@ -1020,6 +1077,47 @@ def export_classification_features(
     logger.info(f"Added {len(class_names) + 2} classification meta-features")
 
     return df_with_features
+
+
+def clean_extreme_values(df: pd.DataFrame, clip_threshold: float = 1e8) -> pd.DataFrame:
+    """Remove infinities and clip extreme values for numerical stability.
+
+    This function provides robust preprocessing for financial data that may contain
+    infinities (from division by zero) or extreme outliers.
+
+    Args:
+        df: DataFrame to clean
+        clip_threshold: Maximum absolute value threshold (default: 1e8)
+
+    Returns:
+        Cleaned DataFrame with no infinities and clipped extreme values
+    """
+    df_clean = df.copy()
+
+    # Replace infinities with NaN
+    df_clean = df_clean.replace([np.inf, -np.inf], np.nan)
+
+    # Clip extreme values for numeric columns
+    for col in df_clean.columns:
+        if df_clean[col].dtype in [np.float64, np.float32, np.int64, np.int32]:
+            # Calculate 99th percentile for adaptive clipping
+            col_abs_max = df_clean[col].abs().quantile(0.99)
+            if col_abs_max > clip_threshold:
+                clip_value = clip_threshold
+            else:
+                clip_value = col_abs_max * 10  # Allow 10x the 99th percentile
+
+            df_clean[col] = df_clean[col].clip(-clip_value, clip_value)
+
+    # Impute remaining NaN values with median
+    for col in df_clean.columns:
+        if df_clean[col].isna().any():
+            median_val = df_clean[col].median()
+            if np.isnan(median_val):
+                median_val = 0.0
+            df_clean[col] = df_clean[col].fillna(median_val)
+
+    return df_clean
 
 
 def validate_data_quality(X: pd.DataFrame, feature_names: Optional[List[str]] = None) -> bool:
