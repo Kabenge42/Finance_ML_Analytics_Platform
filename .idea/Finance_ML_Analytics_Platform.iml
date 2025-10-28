@@ -15,10 +15,11 @@
       <excludeFolder url="file://$MODULE_DIR$/inspection results" />
       <excludeFolder url="file://$MODULE_DIR$/.venv1" />
       <excludeFolder url="file://$MODULE_DIR$/archive" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs" />
       <excludeFolder url="file://$MODULE_DIR$/reference material" />
     </content>
     <content url="file://$MODULE_DIR$/data" />
-    <orderEntry type="jdk" jdkName="Finance_ML_Analytics_package" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Finance_ML_Analytics_Platform" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Python 3.13 interpreter library" level="application" />
   </component>

@@ -2,12 +2,12 @@
 
 **Version 0.3.0** — A professional, modular Python package for equity screening, feature engineering, and machine learning models across global regions.
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Quick Start (TL;DR)
 
-- Python: 3.10, 3.11, or 3.12
+- Python: 3.12 or 3.13
 - Create and activate a virtual environment:
     - Windows (PowerShell):
         - python -m venv .venv
@@ -75,7 +75,7 @@ detailed implementation plan):
 
 ### Core Technologies
 
-- **Language**: Python 3.10, 3.11, or 3.12 (required)
+- **Language**: Python 3.12 or 3.13 (required)
 - **Package Manager**: pip + venv (primary), pipenv (alternative)
 - **Notebook**: Jupyter Notebook or JupyterLab
 - **Database**: PostgreSQL 15+ (local instance recommended)

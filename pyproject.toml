@@ -10,7 +10,7 @@ name = "finance-ml"
 version = "0.3.0"
 description = "A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions"
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.12,<3.14"
 license = { text = "MIT" }
 authors = [{ name = "Finance ML Team" }]
 
@@ -28,9 +28,8 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Office/Business :: Financial :: Investment",
 ]
@@ -142,7 +141,7 @@ finance_ml = ["py.typed"]
 # Black - Code Formatter
 [tool.black]
 line-length = 100
-target-version = ["py310", "py311", "py312"]
+target-version = ["py312", "py313"]
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -166,7 +165,7 @@ ensure_newline_before_comments = true
 
 # Mypy - Static Type Checking
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false

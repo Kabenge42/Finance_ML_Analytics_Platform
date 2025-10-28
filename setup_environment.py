@@ -177,21 +177,61 @@ class EnvironmentSetup:
             # When check=False, return error tuple
             return -1, "", str(e)
 
+    def _check_environment_conflicts(self):
+        """Check for duplicate virtual environments and conflicting active environments"""
+        # Check for duplicate virtual environment directories
+        venv_patterns = [".venv", ".venv1", "venv", "env", "anaconda_projects"]
+        found_venvs = []
+
+        for pattern in venv_patterns:
+            venv_path = self.project_root / pattern
+            if venv_path.exists() and venv_path.is_dir():
+                found_venvs.append(pattern)
+
+        if len(found_venvs) > 1:
+            self._print_warning(
+                f"Multiple virtual environment directories found: {', '.join(found_venvs)}"
+            )
+            self._print_warning("Recommend keeping only one (.venv) and removing others")
+            self._print_warning("Run 'python validate_environment.py' for cleanup script")
+
+        # Check for active environment conflicts
+        virtual_env = os.environ.get("VIRTUAL_ENV")
+        conda_env = os.environ.get("CONDA_DEFAULT_ENV")
+
+        if virtual_env and conda_env:
+            self._print_error(
+                "Both venv and conda environments are active - this may cause conflicts"
+            )
+            self._print_warning(f"Active venv: {virtual_env}")
+            self._print_warning(f"Active conda: {conda_env}")
+            self._print_warning("Deactivate one before continuing")
+        elif virtual_env:
+            # Check if active venv is outside project directory
+            if not virtual_env.startswith(str(self.project_root)):
+                self._print_warning(f"Active virtual environment is outside project: {virtual_env}")
+        elif conda_env:
+            self._print_warning(f"Conda environment '{conda_env}' is active")
+            self._print_warning("Consider using venv instead for this project")
+
     def check_prerequisites(self) -> bool:
         """Check if required prerequisites are installed"""
         self._print_section("Checking Prerequisites")
 
         all_ok = True
 
+        # Check for environment conflicts
+        self._check_environment_conflicts()
+
         # Check Python version
         version_info = sys.version_info
-        if version_info.major == 3 and version_info.minor >= 10:
+        if version_info.major == 3 and version_info.minor >= 12:
             self._print_success(
                 f"Python {version_info.major}.{version_info.minor}.{version_info.micro} found"
             )
         else:
             self._print_error(
-                f"Python 3.10+ required, found {version_info.major}.{version_info.minor}.{version_info.micro}"
+                f"Python 3.12+ required, found {version_info.major}.{version_info.minor}.{version_info.micro}"
             )
             all_ok = False
 
