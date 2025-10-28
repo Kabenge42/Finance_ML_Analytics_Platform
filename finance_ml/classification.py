@@ -16,11 +16,11 @@ Classes:
 
 import logging
 import warnings
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Literal
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.metrics import (
     accuracy_score,
     precision_recall_fscore_support,
@@ -78,6 +78,47 @@ except ImportError:
     warnings.warn("SHAP not available. Install with: pip install shap")
 
 logger = logging.getLogger(__name__)
+
+
+def _prepare_categorical_features(
+    X_train: pd.DataFrame, X_test: pd.DataFrame, categorical_cols: List[str]
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Prepare categorical features using one-hot encoding (pd.get_dummies).
+
+    This function replaces LabelEncoder with one-hot encoding for robust handling
+    of categorical variables, including unseen categories in test set.
+
+    Args:
+        X_train: Training feature matrix
+        X_test: Test feature matrix
+        categorical_cols: List of categorical column names
+
+    Returns:
+        Tuple of (X_train_encoded, X_test_encoded) with one-hot encoded categoricals
+    """
+    if not categorical_cols:
+        return X_train.copy(), X_test.copy()
+
+    # Separate numeric and categorical columns
+    numeric_cols = [col for col in X_train.columns if col not in categorical_cols]
+
+    # One-hot encode training set
+    X_train_encoded = pd.get_dummies(X_train, columns=categorical_cols, drop_first=False)
+
+    # One-hot encode test set
+    X_test_encoded = pd.get_dummies(X_test, columns=categorical_cols, drop_first=False)
+
+    # Align test set columns with training set
+    # Add missing columns (fill with 0)
+    for col in X_train_encoded.columns:
+        if col not in X_test_encoded.columns:
+            X_test_encoded[col] = 0
+
+    # Remove extra columns in test set that weren't in training
+    X_test_encoded = X_test_encoded[X_train_encoded.columns]
+
+    return X_train_encoded, X_test_encoded
 
 
 def create_enhanced_event_labels(
@@ -249,8 +290,10 @@ def train_xgboost_classifier(
     """Train XGBoost classifier.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
+        X_train: Training features
+        y_train: Training labels
+        X_test: Test features
+        y_test: Test labels
         numeric_cols: Numeric feature names
         categorical_cols: Categorical feature names
         params: Optional XGBoost parameters
@@ -277,23 +320,20 @@ def train_xgboost_classifier(
         default_params.update(params)
 
     # Prepare data: encode categoricals and scale numerics
-    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.preprocessing import StandardScaler
 
-    # Encode categorical features
-    X_train_proc = X_train.copy()
-    X_test_proc = X_test.copy()
+    # One-hot encode categorical features
+    X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
-    label_encoders = {}
-    for col in categorical_cols:
-        le = LabelEncoder()
-        X_train_proc[col] = le.fit_transform(X_train_proc[col].astype(str))
-        X_test_proc[col] = le.transform(X_test_proc[col].astype(str))
-        label_encoders[col] = le
+    # Get updated numeric columns list (after one-hot encoding)
+    encoded_numeric_cols = [
+        col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
+    ]
 
     # Scale numeric features
     scaler = StandardScaler()
-    X_train_proc[numeric_cols] = scaler.fit_transform(X_train_proc[numeric_cols])
-    X_test_proc[numeric_cols] = scaler.transform(X_test_proc[numeric_cols])
+    X_train_proc[encoded_numeric_cols] = scaler.fit_transform(X_train_proc[encoded_numeric_cols])
+    X_test_proc[encoded_numeric_cols] = scaler.transform(X_test_proc[encoded_numeric_cols])
 
     # Train model
     model = xgb.XGBClassifier(**default_params)
@@ -312,7 +352,6 @@ def train_xgboost_classifier(
     return {
         "model": model,
         "scaler": scaler,
-        "label_encoders": label_encoders,
         "y_pred": y_pred,
         "y_proba": y_proba,
         "accuracy": accuracy,
@@ -335,8 +374,10 @@ def train_lightgbm_classifier(
     """Train LightGBM classifier.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
+        X_train: Training features
+        y_train: Training labels
+        X_test: Test features
+        y_test: Test labels
         numeric_cols: Numeric feature names
         categorical_cols: Categorical feature names
         params: Optional LightGBM parameters
@@ -363,23 +404,20 @@ def train_lightgbm_classifier(
         default_params.update(params)
 
     # Prepare data
-    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.preprocessing import StandardScaler
 
-    X_train_proc = X_train.copy()
-    X_test_proc = X_test.copy()
+    # One-hot encode categorical features
+    X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
-    # Encode categorical features
-    label_encoders = {}
-    for col in categorical_cols:
-        le = LabelEncoder()
-        X_train_proc[col] = le.fit_transform(X_train_proc[col].astype(str))
-        X_test_proc[col] = le.transform(X_test_proc[col].astype(str))
-        label_encoders[col] = le
+    # Get updated numeric columns list (after one-hot encoding)
+    encoded_numeric_cols = [
+        col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
+    ]
 
     # Scale numeric features
     scaler = StandardScaler()
-    X_train_proc[numeric_cols] = scaler.fit_transform(X_train_proc[numeric_cols])
-    X_test_proc[numeric_cols] = scaler.transform(X_test_proc[numeric_cols])
+    X_train_proc[encoded_numeric_cols] = scaler.fit_transform(X_train_proc[encoded_numeric_cols])
+    X_test_proc[encoded_numeric_cols] = scaler.transform(X_test_proc[encoded_numeric_cols])
 
     # Train model
     model = lgb.LGBMClassifier(**default_params)
@@ -398,7 +436,6 @@ def train_lightgbm_classifier(
     return {
         "model": model,
         "scaler": scaler,
-        "label_encoders": label_encoders,
         "y_pred": y_pred,
         "y_proba": y_proba,
         "accuracy": accuracy,
@@ -429,6 +466,10 @@ def train_catboost_classifier(
 
     Returns:
         Dictionary with model, predictions, and metrics
+        :param X_train:
+        :param y_train:
+        :param X_test:
+        :param y_test:
     """
     if not HAVE_CATBOOST:
         raise ImportError("CatBoost not available. Install with: pip install catboost")
@@ -603,11 +644,15 @@ def train_neural_network_classifier(
 
     Returns:
         Dictionary with model, predictions, and metrics
+        :param X_train:
+        :param y_train:
+        :param X_test:
+        :param y_test:
     """
     if not HAVE_TENSORFLOW:
         raise ImportError("TensorFlow not available. Install with: pip install tensorflow")
 
-    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.preprocessing import StandardScaler
 
     # Default parameters
     default_params = {
@@ -621,22 +666,17 @@ def train_neural_network_classifier(
     if params:
         default_params.update(params)
 
-    # Prepare data
-    X_train_proc = X_train.copy()
-    X_test_proc = X_test.copy()
+    # One-hot encode categorical features
+    X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
-    # Encode categoricals
-    label_encoders = {}
-    for col in categorical_cols:
-        le = LabelEncoder()
-        X_train_proc[col] = le.fit_transform(X_train_proc[col].astype(str))
-        X_test_proc[col] = le.transform(X_test_proc[col].astype(str))
-        label_encoders[col] = le
-
-    # Scale numerics
+    # Scale all features for neural network
     scaler = StandardScaler()
-    X_train_proc[numeric_cols] = scaler.fit_transform(X_train_proc[numeric_cols])
-    X_test_proc[numeric_cols] = scaler.transform(X_test_proc[numeric_cols])
+    X_train_proc = pd.DataFrame(
+        scaler.fit_transform(X_train_proc), columns=X_train_proc.columns, index=X_train_proc.index
+    )
+    X_test_proc = pd.DataFrame(
+        scaler.transform(X_test_proc), columns=X_test_proc.columns, index=X_test_proc.index
+    )
 
     # Build neural network
     model = keras.Sequential()
@@ -681,7 +721,6 @@ def train_neural_network_classifier(
     return {
         "model": model,
         "scaler": scaler,
-        "label_encoders": label_encoders,
         "y_pred": y_pred,
         "y_proba": y_proba,
         "accuracy": accuracy,
@@ -699,7 +738,7 @@ def train_voting_classifier(
     y_test: np.ndarray,
     numeric_cols: List[str],
     categorical_cols: List[str],
-    voting: str = "soft",
+    voting: Literal["hard", "soft"] = "soft",
 ) -> Dict[str, Any]:
     """Train Voting classifier ensemble.
 
@@ -712,25 +751,25 @@ def train_voting_classifier(
 
     Returns:
         Dictionary with model, predictions, and metrics
+        :param X_train:
+        :param y_train:
+        :param X_test:
+        :param y_test:
     """
-    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.preprocessing import StandardScaler
 
-    # Prepare data
-    X_train_proc = X_train.copy()
-    X_test_proc = X_test.copy()
+    # One-hot encode categorical features
+    X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
-    # Encode categoricals
-    label_encoders = {}
-    for col in categorical_cols:
-        le = LabelEncoder()
-        X_train_proc[col] = le.fit_transform(X_train_proc[col].astype(str))
-        X_test_proc[col] = le.transform(X_test_proc[col].astype(str))
-        label_encoders[col] = le
+    # Get updated numeric columns list (after one-hot encoding)
+    encoded_numeric_cols = [
+        col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
+    ]
 
-    # Scale numerics
+    # Scale numeric features
     scaler = StandardScaler()
-    X_train_proc[numeric_cols] = scaler.fit_transform(X_train_proc[numeric_cols])
-    X_test_proc[numeric_cols] = scaler.transform(X_test_proc[numeric_cols])
+    X_train_proc[encoded_numeric_cols] = scaler.fit_transform(X_train_proc[encoded_numeric_cols])
+    X_test_proc[encoded_numeric_cols] = scaler.transform(X_test_proc[encoded_numeric_cols])
 
     # Create base estimators
     estimators = []
@@ -785,7 +824,6 @@ def train_voting_classifier(
     return {
         "model": voting_clf,
         "scaler": scaler,
-        "label_encoders": label_encoders,
         "y_pred": y_pred,
         "y_proba": y_proba,
         "accuracy": accuracy,
@@ -813,27 +851,27 @@ def train_stacking_classifier(
 
     Returns:
         Dictionary with model, predictions, and metrics
+        :param X_train:
+        :param y_train:
+        :param X_test:
+        :param y_test:
     """
-    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.preprocessing import StandardScaler
     from sklearn.ensemble import StackingClassifier
     from sklearn.linear_model import LogisticRegression
 
-    # Prepare data
-    X_train_proc = X_train.copy()
-    X_test_proc = X_test.copy()
+    # One-hot encode categorical features
+    X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
-    # Encode categoricals
-    label_encoders = {}
-    for col in categorical_cols:
-        le = LabelEncoder()
-        X_train_proc[col] = le.fit_transform(X_train_proc[col].astype(str))
-        X_test_proc[col] = le.transform(X_test_proc[col].astype(str))
-        label_encoders[col] = le
+    # Get updated numeric columns list (after one-hot encoding)
+    encoded_numeric_cols = [
+        col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
+    ]
 
-    # Scale numerics
+    # Scale numeric features
     scaler = StandardScaler()
-    X_train_proc[numeric_cols] = scaler.fit_transform(X_train_proc[numeric_cols])
-    X_test_proc[numeric_cols] = scaler.transform(X_test_proc[numeric_cols])
+    X_train_proc[encoded_numeric_cols] = scaler.fit_transform(X_train_proc[encoded_numeric_cols])
+    X_test_proc[encoded_numeric_cols] = scaler.transform(X_test_proc[encoded_numeric_cols])
 
     # Create base estimators
     estimators = []
@@ -892,7 +930,6 @@ def train_stacking_classifier(
     return {
         "model": stacking_clf,
         "scaler": scaler,
-        "label_encoders": label_encoders,
         "y_pred": y_pred,
         "y_proba": y_proba,
         "accuracy": accuracy,
@@ -1003,6 +1040,10 @@ def compare_classifiers(
 
     Returns:
         DataFrame with comparison results
+        :param X_train:
+        :param y_train:
+        :param X_test:
+        :param y_test:
     """
     results = []
 
@@ -1011,21 +1052,20 @@ def compare_classifiers(
     rf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, class_weight="balanced")
 
     # Prepare data for sklearn models
-    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.preprocessing import StandardScaler
 
-    X_train_proc = X_train.copy()
-    X_test_proc = X_test.copy()
+    # One-hot encode categorical features
+    X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
 
-    # Encode categoricals
-    for col in categorical_cols:
-        le = LabelEncoder()
-        X_train_proc[col] = le.fit_transform(X_train_proc[col].astype(str))
-        X_test_proc[col] = le.transform(X_test_proc[col].astype(str))
+    # Get updated numeric columns list (after one-hot encoding)
+    encoded_numeric_cols = [
+        col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
+    ]
 
-    # Scale numerics
+    # Scale numeric features
     scaler = StandardScaler()
-    X_train_proc[numeric_cols] = scaler.fit_transform(X_train_proc[numeric_cols])
-    X_test_proc[numeric_cols] = scaler.transform(X_test_proc[numeric_cols])
+    X_train_proc[encoded_numeric_cols] = scaler.fit_transform(X_train_proc[encoded_numeric_cols])
+    X_test_proc[encoded_numeric_cols] = scaler.transform(X_test_proc[encoded_numeric_cols])
 
     rf.fit(X_train_proc, y_train)
     y_pred_rf = rf.predict(X_test_proc)
@@ -1097,13 +1137,18 @@ def compare_classifiers(
     return results_df
 
 
+from sklearn.base import ClassifierMixin
+from sklearn.model_selection import StratifiedKFold
+from typing import Dict, Any, Optional, Union
+
+
 def cross_validate_classifier(
-    model: Any,
+    model: ClassifierMixin,
     X: pd.DataFrame,
     y: np.ndarray,
     cv: int = 5,
     stratify_by: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> Dict[str, Union[float, np.ndarray, Dict[str, np.ndarray]]]:
     """Perform stratified cross-validation for classifier.
 
     Args:

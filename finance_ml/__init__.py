@@ -37,6 +37,37 @@ from finance_ml.advanced_eda import (
     generate_eda_report,
     generate_sector_comparison_report,
     )
+# Import from advanced_models module (Phase 9.5)
+from finance_ml.advanced_models import (
+    # Feature Integration
+    prepare_regression_data,
+    create_classification_interactions,
+    # Linear Models
+    train_ridge_regressor,
+    train_lasso_regressor,
+    train_elastic_net_regressor,
+    train_bayesian_ridge_regressor,
+    train_polynomial_regressor,
+    # Gradient Boosting Models
+    train_xgboost_regressor,
+    train_lightgbm_regressor,
+    train_catboost_regressor,
+    train_histgb_regressor,
+    # Tree and Neural Models
+    train_random_forest_regressor,
+    train_extra_trees_regressor,
+    train_neural_network_regressor,
+    # Ensemble Methods
+    train_voting_regressor,
+    train_stacking_regressor,
+    train_quantile_regressor,
+    optimize_hyperparameters_optuna,
+    # Utilities
+    compare_regressors,
+    train_sector_specific_models,
+    save_model,
+    load_model,
+    )
 # Import from advanced_preprocessing module (Phase 9.1)
 from finance_ml.advanced_preprocessing import (
     DataQualityReport,
@@ -266,6 +297,29 @@ __all__ = [
     "train_stacking_ensemble",
     "train_stacking_ensemble_by_sector",
     "monitor_ensemble_training",
+    # Advanced Models module (Phase 9.5)
+    "prepare_regression_data",
+    "create_classification_interactions",
+    "train_ridge_regressor",
+    "train_lasso_regressor",
+    "train_elastic_net_regressor",
+    "train_bayesian_ridge_regressor",
+    "train_polynomial_regressor",
+    "train_xgboost_regressor",
+    "train_lightgbm_regressor",
+    "train_catboost_regressor",
+    "train_histgb_regressor",
+    "train_random_forest_regressor",
+    "train_extra_trees_regressor",
+    "train_neural_network_regressor",
+    "train_voting_regressor",
+    "train_stacking_regressor",
+    "train_quantile_regressor",
+    "optimize_hyperparameters_optuna",
+    "compare_regressors",
+    "train_sector_specific_models",
+    "save_model",
+    "load_model",
     # Evaluation module
     "calculate_mispricing_score",
     "rank_undervalued_stocks",

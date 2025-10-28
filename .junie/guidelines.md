@@ -2,7 +2,7 @@ Finance ML Analytics Platform — Development Guidelines
 
 TL;DR (Quick Start)
 
-- Python: 3.10, 3.11, or 3.12 recommended.
+- Python: 3.12 or 3.13 (officially supported per pyproject.toml; 3.10-3.11 may work but are not tested).
 - Create venv: python -m venv .venv && .venv\Scripts\activate
 - Upgrade pip: python -m pip install --upgrade pip setuptools wheel
 - Install deps: pip install -r requirements.txt
@@ -14,7 +14,9 @@ TL;DR (Quick Start)
 1) Build and Configuration Instructions
 A. Prerequisites
 - OS: Windows 10/11 (tested), macOS, or Linux.
-- Python: 3.10, 3.11, or 3.12. Use pyenv or the official installer. Avoid mixing Conda with venv in the same project.
+- Python: 3.12 or 3.13 (officially supported per pyproject.toml requires-python = ">=3.12,<3.14"). Use pyenv or the
+  official installer. Note: Python 3.10-3.11 may work but are not officially tested. Avoid mixing Conda with venv in the
+  same project.
 - Git: optional but recommended for version control.
 - PostgreSQL: 15+ recommended. Local DB will be used for data loading. JDBC URL in this project: jdbc:postgresql://localhost:5432/postgres
 - JDK (optional): Only if you use JVM tools or JDBC from Java-based tooling.
