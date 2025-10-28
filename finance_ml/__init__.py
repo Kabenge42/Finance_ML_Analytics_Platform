@@ -18,6 +18,25 @@ Modules:
 
 __version__ = "0.3.0"
 
+# Import from advanced_eda module (Phase 9.2)
+from finance_ml.advanced_eda import (
+    CorrelationReport,
+    StatisticalTestResult,
+    EDAReport,
+    calculate_correlation_matrix as calc_corr_matrix,
+    find_top_correlations as find_top_corr,
+    test_normality as test_norm,
+    calculate_skewness_kurtosis as calc_skew_kurt,
+    detect_outliers_statistical as detect_outliers_stat,
+    calculate_mutual_information as calc_mutual_info,
+    calculate_feature_importance_rf as calc_rf_importance,
+    perform_pca,
+    calculate_optimal_pca_components as calc_optimal_pca,
+    compare_sector_means,
+    compare_two_groups,
+    generate_eda_report,
+    generate_sector_comparison_report,
+    )
 # Import from advanced_preprocessing module (Phase 9.1)
 from finance_ml.advanced_preprocessing import (
     DataQualityReport,
@@ -29,8 +48,7 @@ from finance_ml.advanced_preprocessing import (
     impute_missing_values,
     create_scaler_pipeline,
     scale_features,
-)
-
+    )
 # Import config module
 from finance_ml.config import (
     FinanceMLConfig,
@@ -38,8 +56,7 @@ from finance_ml.config import (
     get_config,
     set_config,
     reset_config,
-)
-
+    )
 # Import from new modular structure (Phase 7 TDD implementation)
 from finance_ml.data import (
     setup_logging,
@@ -70,8 +87,7 @@ from finance_ml.data import (
     safe_divide,
     create_temporal_split,
     create_expanding_windows,
-)
-
+    )
 # Import from eval module (Phase 7 TDD implementation complete)
 from finance_ml.eval import (
     calculate_mispricing_score,
@@ -97,7 +113,7 @@ from finance_ml.eval import (
     compare_two_groups,
     generate_eda_report,
     generate_sector_comparison_report,
-)
+    )
 from finance_ml.features import (
     _safe_div,
     engineer_basic_ratios,
@@ -105,8 +121,7 @@ from finance_ml.features import (
     engineer_volatility_features,
     engineer_revenue_cagr,
     build_features_and_target,
-)
-
+    )
 # Import logging configuration module (TDD implementation)
 from finance_ml.logging_config import (
     setup_file_logging,
@@ -116,8 +131,7 @@ from finance_ml.logging_config import (
     remove_file_handlers,
     get_log_level,
     set_log_level,
-)
-
+    )
 # Import from models module (Phase 7 TDD implementation complete)
 from finance_ml.models import (
     create_event_labels,
@@ -131,8 +145,7 @@ from finance_ml.models import (
     train_stacking_ensemble,
     train_stacking_ensemble_by_sector,
     monitor_ensemble_training,
-)
-
+    )
 # Import notebook configuration module
 from finance_ml.notebook_config import NotebookConfig
 # Notebook utility helpers (display + loading strategy)
@@ -144,8 +157,7 @@ from finance_ml.notebook_utils import (
     display_missing_values_summary,
     validate_and_display_data,
     perform_and_display_eda,
-)
-
+    )
 # Import portfolio optimization module (TDD implementation)
 from finance_ml.portfolio_optimization import (
     calculate_portfolio_return,
@@ -157,8 +169,7 @@ from finance_ml.portfolio_optimization import (
     optimize_portfolio_min_volatility,
     optimize_portfolio_target_return,
     rebalance_portfolio,
-)
-
+    )
 # Import risk metrics module (TDD implementation)
 from finance_ml.risk_metrics import (
     calculate_var_historical,
@@ -168,7 +179,7 @@ from finance_ml.risk_metrics import (
     calculate_sortino_ratio,
     calculate_max_drawdown,
     calculate_portfolio_risk_metrics,
-)
+    )
 
 __all__ = [
     # Version
@@ -220,6 +231,23 @@ __all__ = [
     "impute_missing_values",
     "create_scaler_pipeline",
     "scale_features",
+    # Advanced EDA module (Phase 9.2)
+    "CorrelationReport",
+    "StatisticalTestResult",
+    "EDAReport",
+    "calc_corr_matrix",
+    "find_top_corr",
+    "test_norm",
+    "calc_skew_kurt",
+    "detect_outliers_stat",
+    "calc_mutual_info",
+    "calc_rf_importance",
+    "perform_pca",
+    "calc_optimal_pca",
+    "compare_sector_means",
+    "compare_two_groups",
+    "generate_eda_report",
+    "generate_sector_comparison_report",
     # Features module
     "engineer_basic_ratios",
     "engineer_margin_features",

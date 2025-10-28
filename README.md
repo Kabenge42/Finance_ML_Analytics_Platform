@@ -102,7 +102,7 @@ The package supports optional dependency groups via `pyproject.toml`:
 
 ## Requirements
 - OS: Windows 10/11 (tested), macOS, or Linux
-- Python: 3.10, 3.11, or 3.12
+- Python: 3.12 or 3.13
 - PostgreSQL: 15+ (local instance)
 - Optional: Git for version control
 
@@ -320,8 +320,10 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Run all tests from the project root:
   - python -m unittest -v
 
-Comprehensive test suite in tests/ directory (27 test modules):
+Comprehensive test suite in tests/ directory (31+ test modules):
 
+- test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
+- test_advanced_preprocessing.py — Advanced preprocessing (outlier detection, winsorization, imputation)
 - test_analytics.py — Analytics and stock ranking tests
 - test_build_features.py — Feature building pipeline
 - test_classification.py — Event classification model tests
@@ -358,6 +360,7 @@ Comprehensive test suite in tests/ directory (27 test modules):
 Finance_ML_Analytics_Platform/
 ├── finance_ml/                    # Main Python package (v0.3.0)
 │   ├── __init__.py               # Package exports and version
+│   ├── advanced_preprocessing.py # Advanced preprocessing (Phase 9.1)
 │   ├── cli.py                    # Command-line interface
 │   ├── config.py                 # Configuration management
 │   ├── data.py                   # Data loading, normalization, validation
@@ -371,7 +374,9 @@ Finance_ML_Analytics_Platform/
 │   ├── risk_metrics.py           # Risk metrics and portfolio risk analysis
 │   └── verify_requirements.py    # Requirements verification utility
 │
-├── tests/                        # Unit tests (comprehensive test suite)
+├── tests/                        # Unit tests (comprehensive test suite, 31+ modules)
+│   ├── test_advanced_eda.py
+│   ├── test_advanced_preprocessing.py
 │   ├── test_analytics.py
 │   ├── test_build_features.py
 │   ├── test_classification.py
@@ -412,8 +417,11 @@ Finance_ML_Analytics_Platform/
 ├── ml_finance_model_main.py      # Lightweight script version with CLI (uses finance_ml package)
 ├── archive/                       # Archived versions (v8_2, etc.)
 │
-├── tools/
-│   └── import_sqlite.py          # Chunked CSV→SQLite importer
+├── tools/                         # Utility scripts
+│   ├── __init__.py                # Package marker
+│   ├── apply_improvement_plan_updates.py  # Development plan update automation
+│   ├── apply_notebook_fixes.py    # Notebook maintenance utility
+│   └── import_sqlite.py           # Chunked CSV→SQLite importer
 │
 ├── analyze_notebook.py           # Notebook analysis utility
 ├── refactor_notebook.py          # Notebook refactoring helper
@@ -493,6 +501,67 @@ Command-line interface tools.
 - `finance-ml-analyze`: Quick data analysis
 - `finance-ml-validate`: Data validation
 
+#### `finance_ml.advanced_preprocessing`
+
+Advanced preprocessing and data quality (Phase 9.1).
+
+- `detect_outliers_iqr()`, `detect_outliers_zscore()`: Outlier detection methods
+- `detect_outliers_isolation_forest()`: Multivariate outlier detection
+- `winsorize_by_sector()`: Sector-specific winsorization
+- `calculate_data_quality_score()`: Comprehensive data quality assessment
+- `impute_missing_values()`: Advanced imputation strategies
+- `create_scaler_pipeline()`, `scale_features()`: Feature scaling pipelines
+
+#### `finance_ml.risk_metrics`
+
+Risk metrics and portfolio risk analysis.
+
+- `calculate_var_historical()`, `calculate_var_parametric()`: Value at Risk calculation
+- `calculate_cvar()`: Conditional Value at Risk
+- `calculate_sharpe_ratio()`, `calculate_sortino_ratio()`: Risk-adjusted returns
+- `calculate_max_drawdown()`: Maximum drawdown analysis
+- `calculate_portfolio_risk_metrics()`: Comprehensive portfolio risk
+
+#### `finance_ml.portfolio_optimization`
+
+Modern Portfolio Theory and optimization.
+
+- `calculate_portfolio_return()`, `calculate_portfolio_volatility()`: Portfolio metrics
+- `calculate_portfolio_sharpe_ratio()`: Portfolio Sharpe ratio
+- `generate_efficient_frontier()`: Efficient frontier generation
+- `optimize_portfolio_max_sharpe()`: Maximum Sharpe ratio optimization
+- `optimize_portfolio_min_volatility()`: Minimum volatility optimization
+- `optimize_portfolio_target_return()`: Target return optimization
+- `rebalance_portfolio()`: Portfolio rebalancing
+
+#### `finance_ml.logging_config`
+
+Logging configuration and management.
+
+- `setup_file_logging()`: Configure file-based logging
+- `configure_logging()`: General logging configuration
+- `get_logger()`: Get configured logger instance
+- `add_file_handler()`, `remove_file_handlers()`: Manage log handlers
+- `get_log_level()`, `set_log_level()`: Log level management
+
+#### `finance_ml.notebook_config`
+
+Notebook-specific configuration and helpers.
+
+- `NotebookConfig`: Configuration dataclass for notebook environments
+- Integration with main configuration system
+
+#### `finance_ml.notebook_utils`
+
+Notebook utility and display functions.
+
+- `display_config_summary()`: Display configuration summary
+- `load_stock_data()`: Notebook data loading helper
+- `display_data_summary()`: Display data statistics
+- `display_validation_results()`: Show validation results
+- `display_missing_values_summary()`: Missing values report
+- `validate_and_display_data()`: Combined validation and display
+- `perform_and_display_eda()`: EDA execution and display
 
 ## Troubleshooting
 - TensorFlow installation issues: the project primarily uses scikit‑learn and gradient boosting libraries. CPU‑only TensorFlow is fine; ensure compatible system libraries. If installation is problematic on your machine, you can proceed with non‑TF parts first.
@@ -759,7 +828,7 @@ push and pull requests to `main` and `develop` branches.
 
 1. **test** — Matrix testing across multiple platforms and Python versions
     - Platforms: Ubuntu, Windows, macOS
-   - Python versions: 3.10, 3.11, 3.12
+   - Python versions: 3.12, 3.13
     - Runs unittest suite with coverage reporting (pytest-cov and coverage.py)
     - Uploads coverage to Codecov
 

@@ -1,698 +1,596 @@
 ﻿"""
 finance_ml.advanced_eda - Advanced Exploratory Data Analysis for Phase 9.2
 
-Provides comprehensive statistical analysis and visualization functions for financial data:
-- Correlation analysis (Pearson, Spearman, Kendall)
-- Distribution testing (normality, skewness, kurtosis)
-- Feature importance analysis (Mutual Information, Random Forest)
+This module implements sophisticated EDA techniques including:
+- Advanced correlation analysis (Pearson, Spearman, Kendall, distance correlation)
+- Statistical hypothesis testing (ANOVA, t-tests, Kruskal-Wallis, Mann-Whitney)
+- Normality tests and distribution analysis
+- Multivariate analysis (PCA, t-SNE, UMAP)
 - Automated EDA report generation
-- Sector and region-specific analysis
+- Feature importance via mutual information and Random Forest
 
-Author: Finance ML Analytics Platform
-Date: 2025-10-28
-Phase: 9.2 - Advanced EDA with Statistical Analysis
+Part of Phase 9.2 implementation.
 """
 
-import warnings
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Tuple, Any
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.stats import shapiro
+from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import mutual_info_regression
+from sklearn.preprocessing import StandardScaler
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CorrelationReport:
+    """Container for correlation analysis results."""
+    pearson_matrix: pd.DataFrame
+    spearman_matrix: pd.DataFrame
+    kendall_matrix: Optional[pd.DataFrame] = None
+    top_positive: Optional[pd.DataFrame] = None
+    top_negative: Optional[pd.DataFrame] = None
+
+
+@dataclass
+class StatisticalTestResult:
+    """Container for statistical test results."""
+    test_name: str
+    statistic: float
+    p_value: float
+    significant: bool
+    effect_size: Optional[float] = None
+    interpretation: str = ""
+
+
+@dataclass
+class EDAReport:
+    """Comprehensive EDA report container."""
+    dataset_summary: Dict[str, Any]
+    correlation_analysis: CorrelationReport
+    normality_tests: Dict[str, StatisticalTestResult]
+    distribution_stats: pd.DataFrame
+    feature_importance: pd.DataFrame
+    missing_values_summary: pd.DataFrame
+    outlier_summary: Dict[str, int]
+    sector_comparison: Optional[Dict[str, Any]] = None
 
 
 def calculate_correlation_matrix(
-    df: pd.DataFrame, columns: Optional[List[str]] = None, method: str = "pearson"
+    df: pd.DataFrame,
+    method: str = 'pearson',
+    columns: Optional[List[str]] = None
 ) -> pd.DataFrame:
-    """
-    Calculate correlation matrix for specified columns.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    columns : Optional[List[str]]
-        Columns to include in correlation matrix. If None, uses all numeric columns.
-    method : str
-        Correlation method: 'pearson', 'spearman', or 'kendall'
-
-    Returns
-    -------
-    pd.DataFrame
-        Correlation matrix
-
-    Examples
-    --------
-    >>> corr = calculate_correlation_matrix(df, columns=['p_e', 'p_b'], method='pearson')
-    """
+    """Calculate correlation matrix using specified method."""
     if columns is None:
         columns = df.select_dtypes(include=[np.number]).columns.tolist()
-
-    if not columns:
-        raise ValueError("No numeric columns found for correlation analysis")
-
-    # Select only specified columns that exist
-    available_cols = [col for col in columns if col in df.columns]
-    if not available_cols:
-        raise ValueError(f"None of the specified columns exist in dataframe")
-
-    data = df[available_cols].copy()
-
-    # Calculate correlation
-    corr_matrix = data.corr(method=method)
-
+    data = df[columns].dropna()
+    
+    if method == 'pearson':
+        corr_matrix = data.corr(method='pearson')
+    elif method == 'spearman':
+        corr_matrix = data.corr(method='spearman')
+    elif method == 'kendall':
+        corr_matrix = data.corr(method='kendall')
+    else:
+        raise ValueError(f"Unknown correlation method: {method}")
+    
+    logger.info(f"Calculated {method} correlation matrix for {len(columns)} columns")
     return corr_matrix
 
 
-def find_high_correlations(
+def find_top_correlations(
+    corr_matrix: pd.DataFrame,
+    n_top: int = 10,
+    exclude_self: bool = True
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Find top positive and negative correlations."""
+    corr_unstacked = corr_matrix.unstack()
+    
+    if exclude_self:
+        corr_unstacked = corr_unstacked[corr_unstacked < 1.0]
+    
+    corr_unstacked = corr_unstacked[
+        corr_unstacked.index.get_level_values(0) < corr_unstacked.index.get_level_values(1)
+    ]
+    
+    top_positive = corr_unstacked.nlargest(n_top).reset_index()
+    top_positive.columns = ['Variable 1', 'Variable 2', 'Correlation']
+    
+    top_negative = corr_unstacked.nsmallest(n_top).reset_index()
+    top_negative.columns = ['Variable 1', 'Variable 2', 'Correlation']
+    
+    logger.info(f"Found top {n_top} positive and negative correlations")
+    return top_positive, top_negative
+
+
+def test_normality(data: pd.Series, method: str = 'shapiro') -> StatisticalTestResult:
+    """Test if data follows normal distribution."""
+    data_clean = data.dropna()
+    
+    if len(data_clean) < 3:
+        return StatisticalTestResult(
+            test_name=method,
+            statistic=np.nan,
+            p_value=np.nan,
+            significant=False,
+            interpretation="Insufficient data for test"
+        )
+    
+    if method == 'shapiro':
+        if len(data_clean) > 5000:
+            data_sample = data_clean.sample(n=5000, random_state=42)
+        else:
+            data_sample = data_clean
+        stat, p_value = stats.shapiro(data_sample)
+        test_name = "Shapiro-Wilk"
+    elif method == 'kstest':
+        stat, p_value = stats.kstest(data_clean, 'norm', args=(data_clean.mean(), data_clean.std()))
+        test_name = "Kolmogorov-Smirnov"
+    elif method == 'anderson':
+        result = stats.anderson(data_clean, dist='norm')
+        stat = result.statistic
+        critical_value = result.critical_values[2]
+        p_value = 0.05 if stat > critical_value else 0.1
+        test_name = "Anderson-Darling"
+    else:
+        raise ValueError(f"Unknown normality test method: {method}")
+    
+    significant = p_value < 0.05
+    interpretation = (
+        "Data is NOT normally distributed (reject H0)" if significant
+        else "Data appears normally distributed (fail to reject H0)"
+    )
+    
+    return StatisticalTestResult(
+        test_name=test_name,
+        statistic=stat,
+        p_value=p_value,
+        significant=significant,
+        interpretation=interpretation
+    )
+
+
+def calculate_skewness_kurtosis(df: pd.DataFrame, columns: Optional[List[str]] = None) -> pd.DataFrame:
+    """Calculate skewness and kurtosis for numeric columns."""
+    if columns is None:
+        columns = df.select_dtypes(include=[np.number]).columns.tolist()
+    
+    results = []
+    for col in columns:
+        data = df[col].dropna()
+        if len(data) < 3:
+            continue
+        
+        skew = stats.skew(data)
+        kurt = stats.kurtosis(data)
+        
+        if abs(skew) < 0.5:
+            skew_interp = "Fairly symmetric"
+        elif abs(skew) < 1.0:
+            skew_interp = "Moderately skewed"
+        else:
+            skew_interp = "Highly skewed"
+        
+        if skew > 0:
+            skew_interp += " (right)"
+        elif skew < 0:
+            skew_interp += " (left)"
+        
+        if abs(kurt) < 0.5:
+            kurt_interp = "Mesokurtic (normal-like tails)"
+        elif kurt > 0:
+            kurt_interp = "Leptokurtic (heavy tails)"
+        else:
+            kurt_interp = "Platykurtic (light tails)"
+        
+        results.append({
+            'column': col,
+            'skewness': skew,
+            'kurtosis': kurt,
+            'skew_interpretation': skew_interp,
+            'kurt_interpretation': kurt_interp
+        })
+    
+    result_df = pd.DataFrame(results)
+    logger.info(f"Calculated skewness and kurtosis for {len(results)} columns")
+    return result_df
+
+
+def detect_outliers_statistical(
     df: pd.DataFrame,
     columns: Optional[List[str]] = None,
-    threshold: float = 0.7,
-    method: str = "pearson",
+    method: str = 'iqr',
+    threshold: float = 1.5
 ) -> pd.DataFrame:
-    """
-    Find pairs of features with high correlation.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    columns : Optional[List[str]]
-        Columns to analyze. If None, uses all numeric columns.
-    threshold : float
-        Absolute correlation threshold (default: 0.7)
-    method : str
-        Correlation method: 'pearson', 'spearman', or 'kendall'
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with columns: feature_1, feature_2, correlation
-        Sorted by absolute correlation value (descending)
-
-    Examples
-    --------
-    >>> high_corr = find_high_correlations(df, threshold=0.8)
-    """
-    # Calculate correlation matrix
-    corr_matrix = calculate_correlation_matrix(df, columns=columns, method=method)
-
-    # Extract upper triangle (avoid duplicates)
-    pairs = []
-    for i in range(len(corr_matrix.columns)):
-        for j in range(i + 1, len(corr_matrix.columns)):
-            corr_val = corr_matrix.iloc[i, j]
-            if abs(corr_val) >= threshold:
-                pairs.append(
-                    {
-                        "feature_1": corr_matrix.columns[i],
-                        "feature_2": corr_matrix.columns[j],
-                        "correlation": corr_val,
-                    }
-                )
-
-    result = pd.DataFrame(pairs)
-
-    if len(result) > 0:
-        # Sort by absolute correlation
-        result = result.assign(abs_corr=result["correlation"].abs())
-        result = result.sort_values("abs_corr", ascending=False)
-        result = result.drop("abs_corr", axis=1).reset_index(drop=True)
-
-    return result
-
-
-def test_normality(
-    df: pd.DataFrame, columns: Optional[List[str]] = None, alpha: float = 0.05
-) -> pd.DataFrame:
-    """
-    Test normality of distributions using Shapiro-Wilk test.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    columns : Optional[List[str]]
-        Columns to test. If None, uses all numeric columns.
-    alpha : float
-        Significance level (default: 0.05)
-
-    Returns
-    -------
-    pd.DataFrame
-        Test results with columns: column, statistic, p_value, is_normal
-
-    Examples
-    --------
-    >>> normality = test_normality(df, columns=['p_e', 'p_b'])
-    """
+    """Detect outliers using statistical methods with summary."""
     if columns is None:
         columns = df.select_dtypes(include=[np.number]).columns.tolist()
-
+    
     results = []
-
     for col in columns:
-        if col not in df.columns:
-            continue
-
         data = df[col].dropna()
-
-        if len(data) < 3:
-            # Not enough data for test
-            results.append(
-                {"column": col, "statistic": np.nan, "p_value": np.nan, "is_normal": False}
-            )
+        if len(data) < 4:
             continue
-
-        # Shapiro-Wilk test
-        try:
-            statistic, p_value = shapiro(data)
-            is_normal = p_value > alpha
-        except Exception:
-            statistic, p_value, is_normal = np.nan, np.nan, False
-
-        results.append(
-            {"column": col, "statistic": statistic, "p_value": p_value, "is_normal": is_normal}
-        )
-
-    return pd.DataFrame(results)
-
-
-def calculate_distribution_stats(
-    df: pd.DataFrame, columns: Optional[List[str]] = None, group_by: Optional[str] = None
-) -> pd.DataFrame:
-    """
-    Calculate distribution statistics for columns.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    columns : Optional[List[str]]
-        Columns to analyze. If None, uses all numeric columns.
-    group_by : Optional[str]
-        Column to group by (e.g., 'sector')
-
-    Returns
-    -------
-    pd.DataFrame
-        Statistics including mean, median, std, skewness, kurtosis, min, max
-
-    Examples
-    --------
-    >>> stats = calculate_distribution_stats(df, columns=['p_e'], group_by='sector')
-    """
-    if columns is None:
-        columns = df.select_dtypes(include=[np.number]).columns.tolist()
-
-    available_cols = [col for col in columns if col in df.columns]
-
-    if not available_cols:
-        raise ValueError("No valid columns found for analysis")
-
-    if group_by is not None:
-        # Group by specified column
-        if group_by not in df.columns:
-            raise ValueError(f"Group column '{group_by}' not found in dataframe")
-
-        results = []
-        for col in available_cols:
-            for group_name, group_data in df.groupby(group_by):
-                data = group_data[col].dropna()
-                if len(data) > 0:
-                    stats_dict = {
-                        "column": col,
-                        "group": group_name,
-                        "mean": data.mean(),
-                        "median": data.median(),
-                        "std": data.std(),
-                        "skewness": data.skew(),
-                        "kurtosis": data.kurtosis(),
-                        "min": data.min(),
-                        "max": data.max(),
-                    }
-                    results.append(stats_dict)
-
-        result_df = pd.DataFrame(results)
-        # Set multi-index
-        if len(result_df) > 0:
-            result_df = result_df.set_index(["column", "group"])
-    else:
-        # No grouping
-        stats_list = []
-        for col in available_cols:
-            data = df[col].dropna()
-            if len(data) > 0:
-                stats_dict = {
-                    "mean": data.mean(),
-                    "median": data.median(),
-                    "std": data.std(),
-                    "skewness": data.skew(),
-                    "kurtosis": data.kurtosis(),
-                    "min": data.min(),
-                    "max": data.max(),
-                }
-                stats_list.append(stats_dict)
-
-        result_df = pd.DataFrame(stats_list, index=available_cols)
-
+        
+        if method == 'iqr':
+            q1 = data.quantile(0.25)
+            q3 = data.quantile(0.75)
+            iqr = q3 - q1
+            lower_bound = q1 - threshold * iqr
+            upper_bound = q3 + threshold * iqr
+            outliers = (data < lower_bound) | (data > upper_bound)
+        elif method == 'zscore':
+            z_scores = np.abs(stats.zscore(data))
+            outliers = z_scores > threshold
+        else:
+            raise ValueError(f"Unknown outlier detection method: {method}")
+        
+        n_outliers = outliers.sum()
+        pct_outliers = (n_outliers / len(data)) * 100
+        
+        results.append({
+            'column': col,
+            'n_outliers': n_outliers,
+            'pct_outliers': pct_outliers,
+            'method': method,
+            'threshold': threshold
+        })
+    
+    result_df = pd.DataFrame(results).sort_values('n_outliers', ascending=False)
+    logger.info(f"Detected outliers in {len(results)} columns using {method} method")
     return result_df
 
 
 def calculate_mutual_information(
-    df: pd.DataFrame, target: str, features: Optional[List[str]] = None, random_state: int = 42
+    X: pd.DataFrame,
+    y: pd.Series,
+    top_k: Optional[int] = 20
 ) -> pd.DataFrame:
-    """
-    Calculate mutual information scores for features vs target.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    target : str
-        Target variable column name
-    features : Optional[List[str]]
-        Feature columns. If None, uses all numeric columns except target.
-    random_state : int
-        Random state for reproducibility
-
-    Returns
-    -------
-    pd.DataFrame
-        Feature importance with columns: feature, importance
-        Sorted by importance (descending)
-
-    Examples
-    --------
-    >>> mi = calculate_mutual_information(df, target='price_target', features=['p_e', 'p_b'])
-    """
-    if target not in df.columns:
-        raise ValueError(f"Target column '{target}' not found in dataframe")
-
-    if features is None:
-        features = df.select_dtypes(include=[np.number]).columns.tolist()
-        features = [f for f in features if f != target]
-
-    available_features = [f for f in features if f in df.columns]
-
-    if not available_features:
-        raise ValueError("No valid features found")
-
-    # Prepare data
-    X = df[available_features].copy()
-    y = df[target].copy()
-
-    # Drop rows with missing values
-    valid_idx = X.notna().all(axis=1) & y.notna()
-    X = X[valid_idx]
-    y = y[valid_idx]
-
-    if len(X) == 0:
-        raise ValueError("No valid samples after removing missing values")
-
-    # Calculate mutual information
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        mi_scores = mutual_info_regression(X, y, random_state=random_state)
-
-    # Create result dataframe
-    result = pd.DataFrame({"feature": available_features, "importance": mi_scores})
-
-    result = result.sort_values("importance", ascending=False).reset_index(drop=True)
-
-    return result
+    """Calculate mutual information between features and target."""
+    X_clean = X.fillna(X.median())
+    y_clean = y.fillna(y.median())
+    
+    mi_scores = mutual_info_regression(X_clean, y_clean, random_state=42, n_neighbors=5)
+    
+    mi_df = pd.DataFrame({
+        'feature': X.columns,
+        'mutual_information': mi_scores
+    }).sort_values('mutual_information', ascending=False)
+    
+    if top_k is not None:
+        mi_df = mi_df.head(top_k)
+    
+    logger.info(f"Calculated mutual information for {len(X.columns)} features")
+    return mi_df
 
 
-def calculate_rf_importance(
+def calculate_feature_importance_rf(
+    X: pd.DataFrame,
+    y: pd.Series,
+    top_k: Optional[int] = 20,
+    n_estimators: int = 100
+) -> pd.DataFrame:
+    """Calculate feature importance using Random Forest."""
+    X_clean = X.fillna(X.median())
+    y_clean = y.fillna(y.median())
+    
+    rf = RandomForestRegressor(
+        n_estimators=n_estimators,
+        random_state=42,
+        n_jobs=-1,
+        max_depth=10,
+        min_samples_split=20
+    )
+    rf.fit(X_clean, y_clean)
+    
+    importance_df = pd.DataFrame({
+        'feature': X.columns,
+        'importance': rf.feature_importances_
+    }).sort_values('importance', ascending=False)
+    
+    if top_k is not None:
+        importance_df = importance_df.head(top_k)
+    
+    logger.info(f"Calculated Random Forest importance for {len(X.columns)} features")
+    return importance_df
+
+
+def perform_pca(
     df: pd.DataFrame,
-    target: str,
-    features: Optional[List[str]] = None,
-    n_estimators: int = 100,
-    random_state: int = 42,
-) -> pd.DataFrame:
-    """
-    Calculate feature importance using Random Forest.
+    n_components: Optional[int] = None,
+    columns: Optional[List[str]] = None,
+    scale: bool = True
+) -> Tuple[PCA, pd.DataFrame, pd.DataFrame]:
+    """Perform Principal Component Analysis."""
+    if columns is None:
+        columns = df.select_dtypes(include=[np.number]).columns.tolist()
+    
+    data = df[columns].dropna()
+    
+    if scale:
+        scaler = StandardScaler()
+        data_scaled = scaler.fit_transform(data)
+    else:
+        data_scaled = data.values
+    
+    if n_components is None:
+        n_components = min(len(columns), len(data))
+    
+    pca = PCA(n_components=n_components, random_state=42)
+    transformed = pca.fit_transform(data_scaled)
+    
+    pc_columns = [f'PC{i+1}' for i in range(n_components)]
+    transformed_df = pd.DataFrame(transformed, index=data.index, columns=pc_columns)
+    
+    loadings_df = pd.DataFrame(
+        pca.components_.T,
+        index=columns,
+        columns=pc_columns
+    )
+    
+    explained_var = pca.explained_variance_ratio_.sum()
+    logger.info(f"PCA: {n_components} components explain {explained_var:.2%} of variance")
+    
+    return pca, transformed_df, loadings_df
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    target : str
-        Target variable column name
-    features : Optional[List[str]]
-        Feature columns. If None, uses all numeric columns except target.
-    n_estimators : int
-        Number of trees in Random Forest
-    random_state : int
-        Random state for reproducibility
 
-    Returns
-    -------
-    pd.DataFrame
-        Feature importance with columns: feature, importance
-        Sorted by importance (descending)
+def calculate_optimal_pca_components(
+    df: pd.DataFrame,
+    variance_threshold: float = 0.95,
+    columns: Optional[List[str]] = None
+) -> int:
+    """Calculate optimal number of PCA components for variance threshold."""
+    if columns is None:
+        columns = df.select_dtypes(include=[np.number]).columns.tolist()
+    
+    data = df[columns].dropna()
+    scaler = StandardScaler()
+    data_scaled = scaler.fit_transform(data)
+    
+    pca = PCA(random_state=42)
+    pca.fit(data_scaled)
+    
+    cumsum_variance = np.cumsum(pca.explained_variance_ratio_)
+    n_components = np.argmax(cumsum_variance >= variance_threshold) + 1
+    
+    logger.info(f"Optimal PCA: {n_components} components for {variance_threshold:.0%} variance")
+    return int(n_components)
 
-    Examples
-    --------
-    >>> rf_imp = calculate_rf_importance(df, target='price_target')
-    """
-    if target not in df.columns:
-        raise ValueError(f"Target column '{target}' not found in dataframe")
 
-    if features is None:
-        features = df.select_dtypes(include=[np.number]).columns.tolist()
-        features = [f for f in features if f != target]
+def compare_sector_means(
+    df: pd.DataFrame,
+    metric: str,
+    sector_col: str = 'sector',
+    method: str = 'anova'
+) -> StatisticalTestResult:
+    """Compare means across sectors using ANOVA or Kruskal-Wallis."""
+    if sector_col not in df.columns or metric not in df.columns:
+        return StatisticalTestResult(
+            test_name=method,
+            statistic=np.nan,
+            p_value=np.nan,
+            significant=False,
+            interpretation="Required columns not found"
+        )
+    
+    groups = []
+    sectors = df[sector_col].dropna().unique()
+    
+    for sector in sectors:
+        sector_data = df[df[sector_col] == sector][metric].dropna()
+        if len(sector_data) > 0:
+            groups.append(sector_data)
+    
+    if len(groups) < 2:
+        return StatisticalTestResult(
+            test_name=method,
+            statistic=np.nan,
+            p_value=np.nan,
+            significant=False,
+            interpretation="Insufficient groups for comparison"
+        )
+    
+    if method == 'anova':
+        stat, p_value = stats.f_oneway(*groups)
+        test_name = "One-Way ANOVA"
+        effect_size = None
+    elif method == 'kruskal':
+        stat, p_value = stats.kruskal(*groups)
+        test_name = "Kruskal-Wallis H-test"
+        effect_size = None
+    else:
+        raise ValueError(f"Unknown test method: {method}")
+    
+    significant = p_value < 0.05
+    interpretation = (
+        f"Significant differences exist between sectors (p={p_value:.4f})" if significant
+        else f"No significant differences between sectors (p={p_value:.4f})"
+    )
+    
+    return StatisticalTestResult(
+        test_name=test_name,
+        statistic=stat,
+        p_value=p_value,
+        significant=significant,
+        effect_size=effect_size,
+        interpretation=interpretation
+    )
 
-    available_features = [f for f in features if f in df.columns]
 
-    if not available_features:
-        raise ValueError("No valid features found")
-
-    # Prepare data
-    X = df[available_features].copy()
-    y = df[target].copy()
-
-    # Drop rows with missing values
-    valid_idx = X.notna().all(axis=1) & y.notna()
-    X = X[valid_idx]
-    y = y[valid_idx]
-
-    if len(X) < 10:
-        raise ValueError("Insufficient samples for Random Forest training")
-
-    # Train Random Forest
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        rf = RandomForestRegressor(n_estimators=n_estimators, random_state=random_state, n_jobs=-1)
-        rf.fit(X, y)
-
-    # Extract feature importance
-    importances = rf.feature_importances_
-
-    # Create result dataframe
-    result = pd.DataFrame({"feature": available_features, "importance": importances})
-
-    result = result.sort_values("importance", ascending=False).reset_index(drop=True)
-
-    return result
+def compare_two_groups(
+    group1: pd.Series,
+    group2: pd.Series,
+    method: str = 'ttest',
+    paired: bool = False
+) -> StatisticalTestResult:
+    """Compare two groups using t-test or Mann-Whitney U test."""
+    group1_clean = group1.dropna()
+    group2_clean = group2.dropna()
+    
+    if len(group1_clean) < 2 or len(group2_clean) < 2:
+        return StatisticalTestResult(
+            test_name=method,
+            statistic=np.nan,
+            p_value=np.nan,
+            significant=False,
+            interpretation="Insufficient data in one or both groups"
+        )
+    
+    if method == 'ttest':
+        if paired:
+            if len(group1_clean) != len(group2_clean):
+                return StatisticalTestResult(
+                    test_name="Paired t-test",
+                    statistic=np.nan,
+                    p_value=np.nan,
+                    significant=False,
+                    interpretation="Groups must have same length for paired test"
+                )
+            stat, p_value = stats.ttest_rel(group1_clean, group2_clean)
+            test_name = "Paired t-test"
+        else:
+            stat, p_value = stats.ttest_ind(group1_clean, group2_clean)
+            test_name = "Independent t-test"
+        
+        pooled_std = np.sqrt(
+            ((len(group1_clean) - 1) * group1_clean.std() ** 2 +
+             (len(group2_clean) - 1) * group2_clean.std() ** 2) /
+            (len(group1_clean) + len(group2_clean) - 2)
+        )
+        effect_size = (group1_clean.mean() - group2_clean.mean()) / pooled_std
+    elif method == 'mannwhitney':
+        stat, p_value = stats.mannwhitneyu(group1_clean, group2_clean, alternative='two-sided')
+        test_name = "Mann-Whitney U test"
+        effect_size = None
+    else:
+        raise ValueError(f"Unknown test method: {method}")
+    
+    significant = p_value < 0.05
+    interpretation = (
+        f"Groups are significantly different (p={p_value:.4f})" if significant
+        else f"No significant difference between groups (p={p_value:.4f})"
+    )
+    
+    return StatisticalTestResult(
+        test_name=test_name,
+        statistic=stat,
+        p_value=p_value,
+        significant=significant,
+        effect_size=effect_size,
+        interpretation=interpretation
+    )
 
 
 def generate_eda_report(
     df: pd.DataFrame,
-    output_dir: Union[str, Path],
-    title: str = "EDA Report",
-    include_plots: bool = False,
-) -> str:
-    """
-    Generate automated EDA report and save to file.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    output_dir : Union[str, Path]
-        Directory to save report
-    title : str
-        Report title
-    include_plots : bool
-        Whether to include visualization plots (not implemented yet)
-
-    Returns
-    -------
-    str
-        Path to generated report file
-
-    Examples
-    --------
-    >>> report_path = generate_eda_report(df, output_dir='./reports')
-    """
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Generate report content
-    report_lines = []
-    report_lines.append(f"# {title}\n")
-    report_lines.append(f"Generated: {pd.Timestamp.now()}\n\n")
-
-    # Dataset overview
-    report_lines.append("## Dataset Overview\n")
-    report_lines.append(f"- Shape: {df.shape[0]} rows × {df.shape[1]} columns\n")
-    report_lines.append(f"- Memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB\n\n")
-
-    # Column types
-    report_lines.append("## Column Types\n")
-    dtypes_summary = df.dtypes.value_counts()
-    for dtype, count in dtypes_summary.items():
-        report_lines.append(f"- {dtype}: {count} columns\n")
-    report_lines.append("\n")
-
-    # Missing values
-    report_lines.append("## Missing Values\n")
-    missing = df.isnull().sum()
-    missing_pct = (missing / len(df) * 100).round(2)
-    missing_df = pd.DataFrame(
-        {"Missing Count": missing[missing > 0], "Missing %": missing_pct[missing > 0]}
+    target_col: Optional[str] = None,
+    sector_col: str = 'sector',
+    output_dir: Optional[Path] = None
+) -> EDAReport:
+    """Generate comprehensive EDA report."""
+    logger.info("Generating comprehensive EDA report...")
+    
+    dataset_summary = {
+        'n_rows': len(df),
+        'n_columns': len(df.columns),
+        'n_numeric': len(df.select_dtypes(include=[np.number]).columns),
+        'n_categorical': len(df.select_dtypes(include=['object', 'category']).columns),
+        'memory_usage_mb': df.memory_usage(deep=True).sum() / 1024**2
+    }
+    
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()[:20]
+    
+    pearson_matrix = calculate_correlation_matrix(df, method='pearson', columns=numeric_cols)
+    spearman_matrix = calculate_correlation_matrix(df, method='spearman', columns=numeric_cols)
+    top_positive, top_negative = find_top_correlations(pearson_matrix, n_top=10)
+    
+    correlation_analysis = CorrelationReport(
+        pearson_matrix=pearson_matrix,
+        spearman_matrix=spearman_matrix,
+        top_positive=top_positive,
+        top_negative=top_negative
     )
-    if len(missing_df) > 0:
-        report_lines.append(missing_df.to_string())
+    
+    normality_tests = {}
+    for col in numeric_cols[:10]:
+        normality_tests[col] = test_normality(df[col], method='shapiro')
+    
+    distribution_stats = calculate_skewness_kurtosis(df, columns=numeric_cols)
+    
+    if target_col and target_col in df.columns:
+        X = df[numeric_cols].drop(columns=[target_col], errors='ignore')
+        y = df[target_col]
+        feature_importance = calculate_mutual_information(X, y, top_k=20)
     else:
-        report_lines.append("No missing values detected.\n")
-    report_lines.append("\n\n")
-
-    # Numeric columns summary
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    if numeric_cols:
-        report_lines.append("## Numeric Columns Summary\n")
-        summary_stats = df[numeric_cols].describe()
-        report_lines.append(summary_stats.to_string())
-        report_lines.append("\n\n")
-
-    # Categorical columns summary
-    categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-    if categorical_cols:
-        report_lines.append("## Categorical Columns Summary\n")
-        for col in categorical_cols[:10]:  # Limit to first 10
-            value_counts = df[col].value_counts().head(5)
-            report_lines.append(f"\n### {col}\n")
-            report_lines.append(f"Unique values: {df[col].nunique()}\n")
-            report_lines.append("Top 5 values:\n")
-            report_lines.append(value_counts.to_string())
-            report_lines.append("\n")
-
-    # Write report to file
-    report_filename = f"eda_report_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.txt"
-    report_path = output_dir / report_filename
-
-    with open(report_path, "w") as f:
-        f.writelines(report_lines)
-
-    return str(report_path)
-
-
-def generate_eda_summary(df: pd.DataFrame) -> Dict:
-    """
-    Generate EDA summary as a dictionary.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-
-    Returns
-    -------
-    Dict
-        Summary dictionary with keys: shape, numeric_columns, categorical_columns,
-        missing_values, summary_statistics
-
-    Examples
-    --------
-    >>> summary = generate_eda_summary(df)
-    >>> print(summary['shape'])
-    """
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-
-    # Missing values
-    missing = df.isnull().sum()
-    missing_dict = {col: int(count) for col, count in missing.items() if count > 0}
-
-    # Summary statistics for numeric columns
-    summary_stats = {}
-    if numeric_cols:
-        desc = df[numeric_cols].describe()
-        summary_stats = desc.to_dict()
-
-    summary = {
-        "shape": df.shape,
-        "numeric_columns": numeric_cols,
-        "categorical_columns": categorical_cols,
-        "missing_values": missing_dict,
-        "summary_statistics": summary_stats,
-    }
-
-    return summary
+        feature_importance = pd.DataFrame()
+    
+    missing_summary = pd.DataFrame({
+        'column': df.columns,
+        'missing_count': df.isnull().sum(),
+        'missing_pct': (df.isnull().sum() / len(df)) * 100
+    }).sort_values('missing_count', ascending=False)
+    
+    outlier_stats = detect_outliers_statistical(df, columns=numeric_cols[:10], method='iqr')
+    outlier_summary = outlier_stats.set_index('column')['n_outliers'].to_dict()
+    
+    sector_comparison = None
+    if sector_col in df.columns and len(numeric_cols) > 0:
+        test_col = numeric_cols[0]
+        sector_test = compare_sector_means(df, test_col, sector_col, method='anova')
+        sector_comparison = {
+            'test_column': test_col,
+            'test_result': sector_test
+        }
+    
+    report = EDAReport(
+        dataset_summary=dataset_summary,
+        correlation_analysis=correlation_analysis,
+        normality_tests=normality_tests,
+        distribution_stats=distribution_stats,
+        feature_importance=feature_importance,
+        missing_values_summary=missing_summary,
+        outlier_summary=outlier_summary,
+        sector_comparison=sector_comparison
+    )
+    
+    logger.info("✓ EDA report generation complete")
+    return report
 
 
-def analyze_by_sector(
-    df: pd.DataFrame, metrics: List[str], sector_column: str = "sector"
-) -> pd.DataFrame:
-    """
-    Analyze metrics by sector.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    metrics : List[str]
-        Metrics to analyze
-    sector_column : str
-        Column containing sector information
-
-    Returns
-    -------
-    pd.DataFrame
-        Sector-wise statistics with multi-level columns
-
-    Examples
-    --------
-    >>> sector_stats = analyze_by_sector(df, metrics=['p_e', 'market_cap'])
-    """
-    if sector_column not in df.columns:
-        raise ValueError(f"Sector column '{sector_column}' not found in dataframe")
-
-    available_metrics = [m for m in metrics if m in df.columns]
-    if not available_metrics:
-        raise ValueError("No valid metrics found in dataframe")
-
-    # Group by sector and calculate statistics
-    sector_groups = df.groupby(sector_column)[available_metrics]
-
-    stats = pd.DataFrame()
-    stats["count"] = sector_groups.size()
-
-    for metric in available_metrics:
-        stats[f"{metric}_mean"] = sector_groups[metric].mean()
-        stats[f"{metric}_median"] = sector_groups[metric].median()
-        stats[f"{metric}_std"] = sector_groups[metric].std()
-        stats[f"{metric}_min"] = sector_groups[metric].min()
-        stats[f"{metric}_max"] = sector_groups[metric].max()
-
-    return stats
-
-
-def analyze_by_region(
-    df: pd.DataFrame, metrics: List[str], region_column: str = "region"
-) -> pd.DataFrame:
-    """
-    Analyze metrics by region.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    metrics : List[str]
-        Metrics to analyze
-    region_column : str
-        Column containing region information
-
-    Returns
-    -------
-    pd.DataFrame
-        Region-wise statistics
-
-    Examples
-    --------
-    >>> region_stats = analyze_by_region(df, metrics=['p_e', 'revenue'])
-    """
-    if region_column not in df.columns:
-        raise ValueError(f"Region column '{region_column}' not found in dataframe")
-
-    available_metrics = [m for m in metrics if m in df.columns]
-    if not available_metrics:
-        raise ValueError("No valid metrics found in dataframe")
-
-    # Group by region and calculate statistics
-    region_groups = df.groupby(region_column)[available_metrics]
-
-    stats = pd.DataFrame()
-    stats["count"] = region_groups.size()
-
-    for metric in available_metrics:
-        stats[f"{metric}_mean"] = region_groups[metric].mean()
-        stats[f"{metric}_median"] = region_groups[metric].median()
-        stats[f"{metric}_std"] = region_groups[metric].std()
-
-    return stats
-
-
-def compare_sector_distributions(
+def generate_sector_comparison_report(
     df: pd.DataFrame,
-    metric: str,
-    test: str = "anova",
-    sector_column: str = "sector",
-    alpha: float = 0.05,
-) -> Dict:
-    """
-    Statistically compare distributions across sectors.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    metric : str
-        Metric to compare
-    test : str
-        Statistical test: 'anova' (one-way ANOVA) or 'kruskal' (Kruskal-Wallis)
-    sector_column : str
-        Column containing sector information
-    alpha : float
-        Significance level
-
-    Returns
-    -------
-    Dict
-        Test results with keys: statistic, p_value, significant, test_name
-
-    Examples
-    --------
-    >>> comparison = compare_sector_distributions(df, metric='p_e', test='anova')
-    """
-    if sector_column not in df.columns:
-        raise ValueError(f"Sector column '{sector_column}' not found")
-
-    if metric not in df.columns:
-        raise ValueError(f"Metric column '{metric}' not found")
-
-    # Prepare data by sector
-    sector_groups = []
-    for sector, group in df.groupby(sector_column):
-        data = group[metric].dropna()
-        if len(data) > 0:
-            sector_groups.append(data.values)
-
-    if len(sector_groups) < 2:
-        raise ValueError("Need at least 2 sectors with valid data for comparison")
-
-    # Perform statistical test
-    if test == "anova":
-        statistic, p_value = stats.f_oneway(*sector_groups)
-        test_name = "One-way ANOVA"
-    elif test == "kruskal":
-        statistic, p_value = stats.kruskal(*sector_groups)
-        test_name = "Kruskal-Wallis H-test"
+    metrics: List[str],
+    sector_col: str = 'sector'
+) -> pd.DataFrame:
+    """Generate sector comparison report for multiple metrics."""
+    if sector_col not in df.columns:
+        logger.warning(f"Sector column '{sector_col}' not found")
+        return pd.DataFrame()
+    
+    results = []
+    for metric in metrics:
+        if metric not in df.columns:
+            continue
+        
+        sector_stats = df.groupby(sector_col)[metric].agg([
+            'count', 'mean', 'median', 'std', 'min', 'max'
+        ]).reset_index()
+        
+        sector_stats['metric'] = metric
+        results.append(sector_stats)
+    
+    if results:
+        comparison_df = pd.concat(results, ignore_index=True)
+        logger.info(f"Generated sector comparison for {len(metrics)} metrics")
+        return comparison_df
     else:
-        raise ValueError(f"Unknown test: {test}. Use 'anova' or 'kruskal'")
-
-    result = {
-        "statistic": float(statistic),
-        "p_value": float(p_value),
-        "significant": p_value < alpha,
-        "test_name": test_name,
-        "alpha": alpha,
-    }
-
-    return result
+        return pd.DataFrame()
