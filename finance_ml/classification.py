@@ -1022,6 +1022,44 @@ def export_classification_features(
     return df_with_features
 
 
+def validate_data_quality(X: pd.DataFrame, feature_names: Optional[List[str]] = None) -> bool:
+    """Validate data quality and report issues.
+
+    Args:
+        X: Input dataframe to validate
+        feature_names: Optional list of feature names to validate (defaults to all columns)
+
+    Returns:
+        True if no issues detected, False otherwise
+    """
+    issues = []
+
+    cols_to_check = feature_names if feature_names is not None else X.columns
+
+    for col in cols_to_check:
+        if col not in X.columns:
+            continue
+
+        col_data = X[col]
+
+        # Check for infinities
+        if np.any(np.isinf(col_data)):
+            inf_count = np.sum(np.isinf(col_data))
+            issues.append(f"Column {col}: {inf_count} infinite values")
+
+        # Check for extremely large values
+        max_val = np.nanmax(np.abs(col_data))
+        if max_val > 1e10:
+            issues.append(f"Column {col}: extremely large values (max={max_val:.2e})")
+
+    if issues:
+        logger.warning("⚠️ Data Quality Issues Detected:")
+        for issue in issues:
+            logger.warning(f"  - {issue}")
+
+    return len(issues) == 0
+
+
 def compare_classifiers(
     X_train: pd.DataFrame,
     y_train: np.ndarray,
@@ -1062,7 +1100,36 @@ def compare_classifiers(
         col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
     ]
 
-    # Scale numeric features
+    # Clean infinite and extreme values before scaling
+    logger.info("Cleaning infinite and extreme values before scaling...")
+
+    # Replace infinities with NaN first
+    X_train_proc[encoded_numeric_cols] = X_train_proc[encoded_numeric_cols].replace(
+        [np.inf, -np.inf], np.nan
+    )
+    X_test_proc[encoded_numeric_cols] = X_test_proc[encoded_numeric_cols].replace(
+        [np.inf, -np.inf], np.nan
+    )
+
+    # Fill NaN values with column median (more robust than mean for outliers)
+    for col in encoded_numeric_cols:
+        median_val = X_train_proc[col].median()
+        if np.isnan(median_val):  # If entire column is NaN, use 0
+            median_val = 0
+        X_train_proc[col].fillna(median_val, inplace=True)
+        X_test_proc[col].fillna(median_val, inplace=True)
+
+    # Cap extreme outliers (values beyond 3 standard deviations)
+    for col in encoded_numeric_cols:
+        mean_val = X_train_proc[col].mean()
+        std_val = X_train_proc[col].std()
+        if std_val > 0:  # Avoid division by zero
+            lower_bound = mean_val - 3 * std_val
+            upper_bound = mean_val + 3 * std_val
+            X_train_proc[col] = X_train_proc[col].clip(lower_bound, upper_bound)
+            X_test_proc[col] = X_test_proc[col].clip(lower_bound, upper_bound)
+
+    # Now safely scale the cleaned data
     scaler = StandardScaler()
     X_train_proc[encoded_numeric_cols] = scaler.fit_transform(X_train_proc[encoded_numeric_cols])
     X_test_proc[encoded_numeric_cols] = scaler.transform(X_test_proc[encoded_numeric_cols])

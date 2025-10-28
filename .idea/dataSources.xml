@@ -58,7 +58,7 @@
       </vm-env>
     </data-source>
     <data-source source="LOCAL" name="equities" uuid="5b4b4393-95fb-41a4-833a-c10c48542580">
-      <driver-ref>b3b86024-160d-428e-9350-cb3540b5691c</driver-ref>
+      <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <schema-control>FORBID</schema-control>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
