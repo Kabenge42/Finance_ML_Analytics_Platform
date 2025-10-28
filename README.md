@@ -1,6 +1,7 @@
 # Finance ML Analytics Platform
 
-**Version 0.3.0** — A professional, modular Python package for equity screening, feature engineering, and machine learning models across global regions.
+**Version 0.3.1** — A professional, modular Python package for equity screening, feature engineering, and machine
+learning models across global regions.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -317,13 +318,19 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
     - WARNING: Contains a hard-coded password in the sample; update it or prefer env vars/DB_URL.
     - TODO: Replace inline credentials with environment variables or remove password entirely.
 - **analyze_notebook.py** — Notebook structure analyzer (counts cells, previews content, searches for functions)
+- **refactor_notebook.py** — Notebook refactoring helper
 - **update_notebook.py** — Notebook synchronizer (extracts TDD functions from .py and inserts into .ipynb)
+- **update_notebook_imports.py** — Update notebook imports utility
 - **verify_notebook.py** — Notebook verification utility (checks for presence of TDD functions)
+- **verify_preprocessing_improvements.py** — Verify preprocessing pipeline improvements
+- **validate_phase9_integration.py** — Automated Phase 9 integration validation script
 - **tools/import_sqlite.py** — Chunked CSV-to-SQLite importer for quick local testing
     - Supports per-region imports with automatic Region backfilling
     - Handles header removal and NULL value mapping
     - Configurable chunk size for large CSV files
     - Implements UNIQUE("Ticker","Region") constraint for deduplication
+- **tools/apply_improvement_plan_updates.py** — Development plan update automation
+- **tools/apply_notebook_fixes.py** — Notebook maintenance utility
 
 ### Important files at a glance
 
@@ -343,13 +350,15 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Run all tests from the project root:
   - python -m unittest -v
 
-Comprehensive test suite in tests/ directory (31+ test modules):
+Comprehensive test suite in tests/ directory (32 test modules):
 
 - test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
+- test_advanced_models_phase95.py — Phase 9.5 advanced regression models and ensembles
 - test_advanced_preprocessing.py — Advanced preprocessing (outlier detection, winsorization, imputation)
 - test_analytics.py — Analytics and stock ranking tests
 - test_build_features.py — Feature building pipeline
 - test_classification.py — Event classification model tests
+- test_classification_phase94.py — Phase 9.4 advanced classification models
 - test_cli.py — Command-line interface tests
 - test_coverage_smoke.py — Smoke test for coverage validation
 - test_data_quality.py — Data validation and quality checks
@@ -381,7 +390,7 @@ Comprehensive test suite in tests/ directory (31+ test modules):
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.3.0)
+├── finance_ml/                    # Main Python package (v0.3.1)
 │   ├── __init__.py               # Package exports and version
 │   ├── advanced_eda.py           # Advanced EDA with statistical analysis (Phase 9.2)
 │   ├── advanced_features.py      # Advanced feature engineering (Phase 9.3)
@@ -401,12 +410,14 @@ Finance_ML_Analytics_Platform/
 │   ├── risk_metrics.py           # Risk metrics and portfolio risk analysis
 │   └── verify_requirements.py    # Requirements verification utility
 │
-├── tests/                        # Unit tests (comprehensive test suite, 31+ modules)
+├── tests/                        # Unit tests (comprehensive test suite, 32 modules)
 │   ├── test_advanced_eda.py
+│   ├── test_advanced_models_phase95.py
 │   ├── test_advanced_preprocessing.py
 │   ├── test_analytics.py
 │   ├── test_build_features.py
 │   ├── test_classification.py
+│   ├── test_classification_phase94.py
 │   ├── test_cli.py
 │   ├── test_coverage_smoke.py
 │   ├── test_data_quality.py
@@ -947,15 +958,22 @@ flake8 finance_ml
 mypy finance_ml --ignore-missing-imports
 ```
 
+## What's New in v0.3.1
 
-## What's New in v0.3.0
+- ✅ **Integration Validation**: Automated Phase 9 integration testing with `validate_phase9_integration.py`
+- ✅ **Notebook Integration**: Transitioned to `finance_ml` package with `NotebookConfig` for centralized feature flags
+- ✅ **Enhanced Workflows**: Improved data processing, feature engineering, and analytics in notebook
+- ✅ **Database Updates**: SQLite driver updates and improved configuration
+- ✅ **Classification Improvements**: Enhanced numeric formatting and data handling consistency
+- ✅ **Bug Fixes**: Standardized numeric formatting and synchronized notebook execution metadata
 
-- ✅ **Configuration Management**: Centralized config via environment, JSON, or YAML
-- ✅ **CLI Tools**: Three console commands for different workflows
-- ✅ **Modern Packaging**: `pyproject.toml` with optional dependency groups
-- ✅ **CI/CD**: GitHub Actions workflow for automated testing
-- ✅ **Updated Notebook**: Now imports from `finance_ml` package
-- ✅ **CHANGELOG.md**: Track version history
+### v0.3.0 Highlights
+
+- Configuration Management with centralized config via environment, JSON, or YAML
+- CLI Tools: Three console commands (`finance-ml`, `finance-ml-analyze`, `finance-ml-validate`)
+- Modern Packaging: `pyproject.toml` with optional dependency groups
+- CI/CD: GitHub Actions workflow for automated testing
+- CHANGELOG.md for version tracking
 
 ## Development Roadmap
 

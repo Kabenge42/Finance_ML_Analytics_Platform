@@ -1,98 +1,232 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/CONTRIBUTING.md</file>
-  <line>308</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>45</line>
+    <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
+    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports
+    </problem_class>
+    <description>'xgb' in the try block with 'except ImportError' should also be defined in the except block
+    </description>
+    <highlighted_element>xgb</highlighted_element>
+    <language>Python</language>
+    <offset>22</offset>
+    <length>3</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+        <line>52</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/CONTRIBUTING.md" />
-  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
-  <description>Unused import statement &lt;code&gt;Union&lt;/code&gt;</description>
-  <highlighted_element>Union</highlighted_element>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'lgb' in the try block with 'except ImportError' should also be defined in the except block
+        </description>
+        <highlighted_element>lgb</highlighted_element>
   <language>Python</language>
-  <offset>29</offset>
-  <length>5</length>
+        <offset>23</offset>
+        <length>3</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+        <line>59</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'CatBoostRegressor' in the try block with 'except ImportError' should also be defined in the except
+            block
+        </description>
+        <highlighted_element>CatBoostRegressor</highlighted_element>
+        <language>Python</language>
+        <offset>25</offset>
+        <length>17</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/finance_ml/eval.py</file>
-  <line>19</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>66</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/eval.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
-  <description>'matplotlib' in the try block with 'except ImportError' should also be defined in the except block</description>
-  <highlighted_element>matplotlib</highlighted_element>
+    <description>'optuna' in the try block with 'except ImportError' should also be defined in the except block
+    </description>
+    <highlighted_element>optuna</highlighted_element>
   <language>Python</language>
   <offset>11</offset>
-  <length>10</length>
+    <length>6</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_config.py</file>
-  <line>264</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>73</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_config.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
-  <description>'yaml' in the try block with 'except ImportError' should also be defined in the except block</description>
-  <highlighted_element>yaml</highlighted_element>
+    <description>'tf' in the try block with 'except ImportError' should also be defined in the except block
+    </description>
+    <highlighted_element>tf</highlighted_element>
   <language>Python</language>
-  <offset>19</offset>
-  <length>4</length>
+    <offset>25</offset>
+    <length>2</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_config.py</file>
-  <line>426</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>74</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_config.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
-  <description>'yaml' in the try block with 'except ImportError' should also be defined in the except block</description>
-  <highlighted_element>yaml</highlighted_element>
+    <description>'keras' in the try block with 'except ImportError' should also be defined in the except block
+    </description>
+    <highlighted_element>keras</highlighted_element>
   <language>Python</language>
-  <offset>19</offset>
-  <length>4</length>
+    <offset>27</offset>
+    <length>5</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+        <line>75</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'layers' in the try block with 'except ImportError' should also be defined in the except block
+        </description>
+        <highlighted_element>layers</highlighted_element>
+        <language>Python</language>
+        <offset>33</offset>
+        <length>6</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_eval.py</file>
-  <line>289</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>35</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_eval.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
   <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports</problem_class>
-  <description>'openpyxl' in the try block with 'except ImportError' should also be defined in the except block</description>
-  <highlighted_element>openpyxl</highlighted_element>
+    <description>'xgb' in the try block with 'except ImportError' should also be defined in the except block
+    </description>
+    <highlighted_element>xgb</highlighted_element>
+    <language>Python</language>
+    <offset>22</offset>
+    <length>3</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>42</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'lgb' in the try block with 'except ImportError' should also be defined in the except block
+        </description>
+        <highlighted_element>lgb</highlighted_element>
   <language>Python</language>
   <offset>23</offset>
-  <length>8</length>
+        <length>3</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/validate_csv_import.py</file>
-  <line>16</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>49</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/validate_csv_import.py" />
-  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
-  <description>Unused import statement &lt;code&gt;import argparse&lt;/code&gt;</description>
-  <highlighted_element>import argparse</highlighted_element>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports
+    </problem_class>
+    <description>'CatBoostClassifier' in the try block with 'except ImportError' should also be defined in the except
+        block
+    </description>
+    <highlighted_element>CatBoostClassifier</highlighted_element>
   <language>Python</language>
-  <offset>0</offset>
-  <length>15</length>
+    <offset>25</offset>
+    <length>18</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/validate_csv_import.py</file>
-  <line>26</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>56</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/validate_csv_import.py" />
-  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
-  <description>Unused import statement &lt;code&gt;detect_outliers_iqr&lt;/code&gt;</description>
-  <highlighted_element>detect_outliers_iqr</highlighted_element>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports
+    </problem_class>
+    <description>'SMOTE' in the try block with 'except ImportError' should also be defined in the except block
+    </description>
+    <highlighted_element>SMOTE</highlighted_element>
   <language>Python</language>
-  <offset>4</offset>
-  <length>19</length>
+    <offset>39</offset>
+    <length>5</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/validate_csv_import.py</file>
-  <line>28</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>66</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/validate_csv_import.py" />
-  <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused imports</problem_class>
-  <description>Unused import statement &lt;code&gt;normalize_columns&lt;/code&gt;</description>
-  <highlighted_element>normalize_columns</highlighted_element>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused imports
+    </problem_class>
+    <description>'keras' in the try block with 'except ImportError' should also be defined in the except block
+    </description>
+    <highlighted_element>keras</highlighted_element>
   <language>Python</language>
-  <offset>4</offset>
-  <length>17</length>
+    <offset>27</offset>
+    <length>5</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>67</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'layers' in the try block with 'except ImportError' should also be defined in the except block
+        </description>
+        <highlighted_element>layers</highlighted_element>
+        <language>Python</language>
+        <offset>33</offset>
+        <length>6</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>74</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'shap' in the try block with 'except ImportError' should also be defined in the except block
+        </description>
+        <highlighted_element>shap</highlighted_element>
+        <language>Python</language>
+        <offset>11</offset>
+        <length>4</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>361</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'px' in the try block with 'except ImportError' should also be defined in the except block
+        </description>
+        <highlighted_element>px</highlighted_element>
+        <language>Python</language>
+        <offset>29</offset>
+        <length>2</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>362</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unused
+            imports
+        </problem_class>
+        <description>'go' in the try block with 'except ImportError' should also be defined in the except block
+        </description>
+        <highlighted_element>go</highlighted_element>
+        <language>Python</language>
+        <offset>35</offset>
+        <length>2</length>
 </problem>
 </problems>

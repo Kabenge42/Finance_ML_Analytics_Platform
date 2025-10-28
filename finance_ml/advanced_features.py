@@ -382,15 +382,18 @@ def create_feature_interactions(
         features = ["market_cap", "p_e_ratio", "roe", "debt_to_equity", "revenue_growth_yoy"]
         features = [f for f in features if f in df.columns]
 
-    if len(features) < 2:
-        logger.warning("Not enough features for interactions")
+    if len(features) == 0:
+        logger.warning("No features available for interactions")
         return result
 
-    # Create pairwise interactions
-    for i, feat1 in enumerate(features):
-        for feat2 in features[i + 1 :]:
-            interaction_name = f"{feat1}_x_{feat2}"
-            result[interaction_name] = df[feat1] * df[feat2]
+    # Create pairwise interactions (requires at least 2 features)
+    if len(features) >= 2:
+        for i, feat1 in enumerate(features):
+            for feat2 in features[i + 1 :]:
+                interaction_name = f"{feat1}_x_{feat2}"
+                result[interaction_name] = df[feat1] * df[feat2]
+    else:
+        logger.warning("Not enough features for pairwise interactions (need 2+)")
 
     # Create polynomial features if degree > 1
     if max_degree >= 2:

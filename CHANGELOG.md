@@ -5,6 +5,68 @@ All notable changes to the Finance ML Analytics Platform will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-10-29
+
+### Added
+
+- **Phase 9.6: Model Evaluation and Error Analysis** (TDD Implementation)
+  - `comprehensive_regression_metrics()`: Calculate MAE, RMSE, MAPE, R², Median AE, Max Error
+  - `compute_metrics_by_segment()`: Metrics by sector, region, market cap, volatility buckets
+  - `residual_analysis_suite()`: Residual statistics, normality tests, Q-Q plots, histograms
+  - `error_bucketing_analysis()`: Error analysis by segments with outlier detection (>3σ)
+  - `create_stratified_sector_cv()`: Stratified cross-validation maintaining sector balance
+  - `create_grouped_ticker_cv()`: Grouped cross-validation preventing ticker leakage
+  - `evaluate_with_cross_validation()`: Unified interface for multiple CV strategies
+  - **Test Coverage**: 29 comprehensive tests in `tests/test_evaluation_phase96.py` (100% passing)
+  - **Documentation**: `PHASE_9_6_IMPLEMENTATION_SUMMARY.md` with detailed usage examples
+  - **Lines Added**: 314 lines to `finance_ml/eval.py` (lines 1128-1441)
+
+- **Phase 9.7: Identification of Under/Overvalued Stocks with Visualization** (TDD Implementation)
+  - `assign_valuation_category()`: Assign Strong Buy/Buy/Hold/Sell/Strong Sell categories based on mispricing
+  - `calculate_sector_zscores()`: Calculate z-scores for metrics within each sector (identify premium/discount)
+  - `calculate_percentile_ranks()`: Calculate percentile ranks within sectors (0-100 scale)
+  - `calculate_multi_factor_score()`: Composite scoring combining valuation, quality, and growth factors
+  - `filter_stocks_by_criteria()`: Advanced filtering by sector, region, market cap, mispricing, categories
+  - `create_valuation_scatter_plot()`: Interactive Plotly scatter plot (price vs. target) with categories
+  - **Valuation Categories**: Strong Buy (>20%), Buy (10-20%), Hold (-10% to +10%), Sell (-20% to -10%), Strong Sell (<
+    -20%)
+  - **Sector-Relative Metrics**: Z-scores and percentile ranks calculated independently within each sector
+  - **Multi-Factor Scoring**: Customizable weights (default: valuation 40%, quality 30%, growth 30%)
+  - **Interactive Visualizations**: Color by sector/region/category with hover details and fair value reference line
+  - **Test Coverage**: 26 comprehensive tests in `tests/test_valuation_phase97.py` (100% passing)
+  - **Documentation**: `PHASE_9_7_IMPLEMENTATION_SUMMARY.md` with 8 notebook integration cells
+  - **Lines Added**: 395 lines to `finance_ml/eval.py` (lines 1450-1844)
+
+- **Integration Validation Script** (`validate_phase9_integration.py`)
+  - Automated validation for Phase 9 integration testing
+  - Comprehensive checks for package integration and functionality
+  - [8104731](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/8104731)
+
+### Changed
+
+- **Notebook Integration** (`ml_finance_model_main.ipynb`)
+  - Transitioned to `finance_ml` package for streamlined modularity
+  - Implemented `NotebookConfig` for centralized feature flag management
+  - Enhanced data processing, feature engineering, and analytics workflows
+  - Improved code organization supporting sector and region analysis
+  - [8104731](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/8104731)
+
+- **Database Configuration**
+  - Updated SQLite driver to `sqlite.xerial` in data source configurations
+  - [b0988ce](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b0988ce)
+
+### Improved
+
+- **Classification Module** (`finance_ml/classification.py`)
+  - Enhanced numeric formatting and data handling consistency
+  - [2171726](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2171726), [b0988ce](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b0988ce)
+
+### Fixed
+
+- Standardized numeric formatting across notebook cells
+- Synchronized notebook execution metadata and timestamps
+- [2171726](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2171726)
+
 ## [0.3.0] - 2025-10-24
 
 ### Added

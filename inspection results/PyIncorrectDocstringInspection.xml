@@ -1,0 +1,185 @@
+<problems>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>464</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter numeric_cols in docstring</description>
+        <highlighted_element>numeric_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>23</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>465</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter categorical_cols in docstring</description>
+        <highlighted_element>categorical_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>27</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>466</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter params in docstring</description>
+        <highlighted_element>params: Optional[Dict[str, Any]] = None</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>39</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>647</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter numeric_cols in docstring</description>
+        <highlighted_element>numeric_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>23</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>648</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter categorical_cols in docstring</description>
+        <highlighted_element>categorical_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>27</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>649</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter params in docstring</description>
+        <highlighted_element>params: Optional[Dict[str, Any]] = None</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>39</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>786</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter numeric_cols in docstring</description>
+        <highlighted_element>numeric_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>23</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>787</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter categorical_cols in docstring</description>
+        <highlighted_element>categorical_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>27</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>788</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter voting in docstring</description>
+        <highlighted_element>voting: Literal[&quot;hard&quot;, &quot;soft&quot;] = &quot;soft&quot;
+        </highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>40</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>893</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter numeric_cols in docstring</description>
+        <highlighted_element>numeric_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>23</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>894</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter categorical_cols in docstring</description>
+        <highlighted_element>categorical_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>27</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>1166</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter numeric_cols in docstring</description>
+        <highlighted_element>numeric_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>23</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+        <line>1167</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+        <problem_class id="PyIncorrectDocstringInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">
+            Incorrect docstring
+        </problem_class>
+        <description>Missing parameter categorical_cols in docstring</description>
+        <highlighted_element>categorical_cols: List[str]</highlighted_element>
+        <language>Python</language>
+        <offset>4</offset>
+        <length>27</length>
+    </problem>
+</problems>

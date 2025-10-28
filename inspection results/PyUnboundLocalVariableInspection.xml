@@ -1,194 +1,50 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>249</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>522</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'regression_results' can be undefined</description>
-  <highlighted_element>regression_results</highlighted_element>
+    <description>Name 'data_plot' can be undefined</description>
+    <highlighted_element>data_plot</highlighted_element>
   <language>Python</language>
-  <offset>24</offset>
-  <length>18</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>439</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'parsed_example' can be undefined</description>
-  <highlighted_element>parsed_example</highlighted_element>
-  <language>Python</language>
-  <offset>19</offset>
-  <length>14</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb</file>
-  <line>451</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/13_loading_and_preprocessing_data.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'parsed_examples' can be undefined</description>
-  <highlighted_element>parsed_examples</highlighted_element>
-  <language>Python</language>
-  <offset>0</offset>
-  <length>15</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>885</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'sketches' can be undefined</description>
-  <highlighted_element>sketches</highlighted_element>
-  <language>Python</language>
-  <offset>25</offset>
-  <length>8</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>896</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'labels' can be undefined</description>
-  <highlighted_element>labels</highlighted_element>
-  <language>Python</language>
-  <offset>42</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>624</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Local variable 'generated_images' might be referenced before assignment</description>
-  <highlighted_element>generated_images</highlighted_element>
-  <language>Python</language>
-  <offset>29</offset>
-  <length>16</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>645</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'epsilon' can be undefined</description>
-  <highlighted_element>epsilon</highlighted_element>
-  <language>Python</language>
-  <offset>63</offset>
-  <length>7</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb</file>
-  <line>655</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/18_reinforcement_learning.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'best_weights' can be undefined</description>
-  <highlighted_element>best_weights</highlighted_element>
-  <language>Python</language>
-  <offset>18</offset>
-  <length>12</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>797</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'callbacks' can be undefined</description>
-  <highlighted_element>callbacks</highlighted_element>
-  <language>Python</language>
-  <offset>20</offset>
+    <offset>90</offset>
   <length>9</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>798</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>337</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'model_dir' can be undefined</description>
-  <highlighted_element>model_dir</highlighted_element>
+    <description>Name 'regression_results' can be undefined</description>
+    <highlighted_element>regression_results</highlighted_element>
   <language>Python</language>
-  <offset>11</offset>
-  <length>9</length>
+    <offset>24</offset>
+    <length>18</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>804</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>973</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'server_image' can be undefined</description>
-  <highlighted_element>server_image</highlighted_element>
+    <description>Name 'feature_cols' can be undefined</description>
+    <highlighted_element>feature_cols</highlighted_element>
   <language>Python</language>
-  <offset>42</offset>
+    <offset>28</offset>
   <length>12</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>806</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>973</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'bucket_name' can be undefined</description>
-  <highlighted_element>bucket_name</highlighted_element>
+    <description>Name 'target_col' can be undefined</description>
+    <highlighted_element>target_col</highlighted_element>
   <language>Python</language>
-  <offset>31</offset>
-  <length>11</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>809</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'custom_training_job' can be undefined</description>
-  <highlighted_element>custom_training_job</highlighted_element>
-  <language>Python</language>
-  <offset>15</offset>
-  <length>19</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>820</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'bucket' can be undefined</description>
-  <highlighted_element>bucket</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>820</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'bucket_name' can be undefined</description>
-  <highlighted_element>bucket_name</highlighted_element>
-  <language>Python</language>
-  <offset>41</offset>
-  <length>11</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>833</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
-  <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unbound local variables</problem_class>
-  <description>Name 'parser' can be undefined</description>
-  <highlighted_element>parser</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>6</length>
+    <offset>44</offset>
+    <length>10</length>
 </problem>
 </problems>

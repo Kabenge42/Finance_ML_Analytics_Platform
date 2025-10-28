@@ -1,26 +1,26 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb</file>
-  <line>617</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>606</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/05_support_vector_machines.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyDefaultArgumentInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The default argument is mutable</problem_class>
   <description>Default argument value is mutable</description>
-  <highlighted_element>[-3, 3]</highlighted_element>
+    <highlighted_element>[128, 64]</highlighted_element>
   <language>Python</language>
-  <offset>56</offset>
-  <length>7</length>
+    <offset>31</offset>
+    <length>9</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb</file>
-  <line>226</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>768</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/06_decision_trees.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyDefaultArgumentInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">The default argument is mutable</problem_class>
   <description>Default argument value is mutable</description>
-  <highlighted_element>[-0.5, 0.5, -0.05, 0.25]</highlighted_element>
+    <highlighted_element>[0.1, 0.5, 0.9]</highlighted_element>
   <language>Python</language>
-  <offset>53</offset>
-  <length>24</length>
+    <offset>60</offset>
+    <length>15</length>
 </problem>
 </problems>

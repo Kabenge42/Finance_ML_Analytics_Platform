@@ -1,17 +1,5 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/REFACTORING_COMPLETE.md</file>
-  <line>327</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/REFACTORING_COMPLETE.md" />
-  <problem_class id="PyTupleAssignmentBalanceInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Tuple assignment balance is incorrect</problem_class>
-  <description>Too many values to unpack</description>
-  <highlighted_element>build_features_and_target(df)</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>29</length>
-</problem>
-<problem>
   <file>file://$PROJECT_DIR$/finance_ml/notebook_utils.py</file>
   <line>136</line>
   <module>Finance_ML_Analytics_Platform</module>
@@ -22,5 +10,19 @@
   <language>Python</language>
   <offset>27</offset>
   <length>19</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+        <line>169</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
+        <problem_class id="PyTupleAssignmentBalanceInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
+            Tuple assignment balance is incorrect
+        </problem_class>
+        <description>Need more values to unpack</description>
+        <highlighted_element>validate_schema(all_stocks)</highlighted_element>
+        <language>Python</language>
+        <offset>33</offset>
+        <length>27</length>
 </problem>
 </problems>

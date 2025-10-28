@@ -1,15 +1,76 @@
 <root>
 <duplicate cost="1" hash="0">
-  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="183" start="5992" end="6349" />
-  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="232" start="7585" end="7965" />
+    <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_eda.py" line="225" start="7149" end="7397"/>
+    <fragment file="file://$PROJECT_DIR$/finance_ml/data.py" line="576" start="23580" end="23803"/>
+</duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_eda.py" line="293" start="9270" end="9657"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="500" start="16626" end="17022"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="60" start="1592" end="1934"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="163" start="5066" end="5422"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="246" start="7753" end="8128"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="80" start="2286" end="2801"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="166" start="5111" end="5623"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="170" start="5288" end="5796"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="174" start="5478" end="5969"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="249" start="7798" end="8353"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="253" start="7996" end="8526"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="119" start="3502" end="3800"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="132" start="4135" end="4474"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="136" start="4314" end="4641"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="163" start="5066" end="5623"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="246" start="7753" end="8353"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="163" start="5066" end="5796"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="246" start="7753" end="8526"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="178" start="5650" end="6034"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="220" start="6967" end="7402"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="257" start="8193" end="8593"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="334" start="10806" end="11176"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="343" start="11215" end="11602"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/advanced_features.py" line="352" start="11642" end="12041"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="34" start="1042" end="1604"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="55" start="1606" end="2370"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="319" start="11190" end="12220"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="408" start="14057" end="15048"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="348" start="12330" end="12978"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="437" start="15143" end="15792"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="525" start="17762" end="18411"/>
 </duplicate>
 <duplicate cost="1" hash="0">
-  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="195" start="6388" end="6743" />
-  <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="246" start="8004" end="8359" />
+    <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="809" start="26827" end="28443"/>
+    <fragment file="file://$PROJECT_DIR$/finance_ml/classification.py" line="916" start="30078" end="31694"/>
 </duplicate>
 <duplicate cost="1" hash="0">
-  <fragment file="file://$PROJECT_DIR$/finance_ml/eval.py" line="332" start="12053" end="12353" />
-  <fragment file="file://$PROJECT_DIR$/finance_ml/eval.py" line="440" start="15710" end="16025" />
+    <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="213" start="7280" end="7637"/>
+    <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="262" start="8873" end="9253"/>
+</duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="225" start="7676" end="8031"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/cli.py" line="276" start="9292" end="9647"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/finance_ml/eval.py" line="403" start="15204" end="15504"/>
+        <fragment file="file://$PROJECT_DIR$/finance_ml/eval.py" line="529" start="19852" end="20167"/>
 </duplicate>
 <duplicate cost="1" hash="0">
   <fragment file="file://$PROJECT_DIR$/finance_ml/features.py" line="52" start="1378" end="1928" />
@@ -20,8 +81,8 @@
   <fragment file="file://$PROJECT_DIR$/finance_ml/logging_config.py" line="192" start="5767" end="6331" />
 </duplicate>
 <duplicate cost="1" hash="0">
-  <fragment file="file://$PROJECT_DIR$/finance_ml/models.py" line="333" start="11061" end="11346" />
-  <fragment file="file://$PROJECT_DIR$/finance_ml/models.py" line="460" start="14985" end="15270" />
+    <fragment file="file://$PROJECT_DIR$/finance_ml/models.py" line="345" start="11406" end="11691"/>
+    <fragment file="file://$PROJECT_DIR$/finance_ml/models.py" line="472" start="15330" end="15615"/>
 </duplicate>
 <duplicate cost="1" hash="0">
   <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="260" start="7903" end="8726" />
@@ -31,5 +92,13 @@
   <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="263" start="7986" end="8462" />
   <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="341" start="10335" end="10811" />
   <fragment file="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" line="431" start="13184" end="13660" />
+</duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/ml_finance_model_main.py" line="415" start="14400" end="15138"/>
+        <fragment file="file://$PROJECT_DIR$/verify_preprocessing_improvements.py" line="111" start="3802" end="4519"/>
+    </duplicate>
+    <duplicate cost="1" hash="0">
+        <fragment file="file://$PROJECT_DIR$/ml_finance_model_main.py" line="444" start="15338" end="15954"/>
+        <fragment file="file://$PROJECT_DIR$/verify_preprocessing_improvements.py" line="134" start="4550" end="4971"/>
 </duplicate>
 </root>

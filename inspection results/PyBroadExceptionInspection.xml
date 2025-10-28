@@ -1,9 +1,9 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/finance_ml/logging_config.py</file>
-  <line>257</line>
+    <file>file://$PROJECT_DIR$/finance_ml/cli.py</file>
+    <line>291</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/logging_config.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/cli.py"/>
   <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
   <description>Too broad exception clause</description>
   <highlighted_element>Exception</highlighted_element>
@@ -12,178 +12,10 @@
   <length>9</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.py</file>
-  <line>65</line>
+    <file>file://$PROJECT_DIR$/finance_ml/eval.py</file>
+    <line>158</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>972</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>except</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_analytics.py</file>
-  <line>6</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_analytics.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_analytics.py</file>
-  <line>12</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_analytics.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_build_features.py</file>
-  <line>5</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_build_features.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_build_features.py</file>
-  <line>10</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_build_features.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_classification.py</file>
-  <line>6</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_classification.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_classification.py</file>
-  <line>12</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_classification.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_data_quality.py</file>
-  <line>6</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_data_quality.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_data_quality.py</file>
-  <line>12</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_data_quality.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_eda.py</file>
-  <line>8</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_eda.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_eda.py</file>
-  <line>13</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_eda.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_features.py</file>
-  <line>7</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_features.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_features.py</file>
-  <line>13</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_features.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_eval.py</file>
-  <line>345</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_eval.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/eval.py"/>
   <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
   <description>Too broad exception clause</description>
   <highlighted_element>Exception</highlighted_element>
@@ -192,10 +24,10 @@
   <length>9</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_eval.py</file>
-  <line>409</line>
+    <file>file://$PROJECT_DIR$/finance_ml/eval.py</file>
+    <line>177</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_eval.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/eval.py"/>
   <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
   <description>Too broad exception clause</description>
   <highlighted_element>Exception</highlighted_element>
@@ -204,10 +36,10 @@
   <length>9</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_eval.py</file>
-  <line>458</line>
+    <file>file://$PROJECT_DIR$/finance_ml/logging_config.py</file>
+    <line>257</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_eval.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/logging_config.py"/>
   <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
   <description>Too broad exception clause</description>
   <highlighted_element>Exception</highlighted_element>
@@ -216,10 +48,22 @@
   <length>9</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_loaders.py</file>
-  <line>7</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>568</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_loaders.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
+  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
+  <description>Too broad exception clause</description>
+  <highlighted_element>Exception</highlighted_element>
+  <language>Python</language>
+    <offset>19</offset>
+  <length>9</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>863</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
   <description>Too broad exception clause</description>
   <highlighted_element>Exception</highlighted_element>
@@ -228,99 +72,15 @@
   <length>9</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_loaders.py</file>
-  <line>12</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>1068</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_loaders.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
   <description>Too broad exception clause</description>
   <highlighted_element>Exception</highlighted_element>
   <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_preprocess_and_training.py</file>
-  <line>7</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_preprocess_and_training.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_preprocess_and_training.py</file>
-  <line>12</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_preprocess_and_training.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_regression.py</file>
-  <line>7</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_regression.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_regression.py</file>
-  <line>12</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_regression.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_visualizations.py</file>
-  <line>8</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_visualizations.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_visualizations.py</file>
-  <line>14</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_visualizations.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tools/import_sqlite.py</file>
-  <line>27</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tools/import_sqlite.py" />
-  <problem_class id="PyBroadExceptionInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unclear exception clauses</problem_class>
-  <description>Too broad exception clause</description>
-  <highlighted_element>Exception</highlighted_element>
-  <language>Python</language>
-  <offset>7</offset>
+    <offset>15</offset>
   <length>9</length>
 </problem>
 </problems>

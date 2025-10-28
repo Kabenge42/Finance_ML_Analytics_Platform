@@ -1,15 +1,16 @@
 <problems>
 <problem>
   <file>file://$PROJECT_DIR$/finance_ml/cli.py</file>
-  <line>258</line>
+    <line>289</line>
   <module>Finance_ML_Analytics_Platform</module>
   <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/cli.py" />
   <problem_class id="PyNoneFunctionAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assigning function calls that don't return anything</problem_class>
   <description>Function 'validate_schema' doesn't return anything</description>
-  <highlighted_element>is_valid = validate_schema(df, required_cols)</highlighted_element>
+    <highlighted_element>result = validate_schema(df, required_cols) # mocked in tests to return bool
+    </highlighted_element>
   <language>Python</language>
-  <offset>8</offset>
-  <length>45</length>
+    <offset>12</offset>
+    <length>77</length>
 </problem>
 <problem>
   <file>file://$PROJECT_DIR$/finance_ml/notebook_utils.py</file>
@@ -24,15 +25,15 @@
   <length>38</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/finance_ml/notebook_utils.py</file>
-  <line>163</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>169</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/notebook_utils.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyNoneFunctionAssignmentInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Assigning function calls that don't return anything</problem_class>
-  <description>Function 'simple_eda' doesn't return anything</description>
-  <highlighted_element>eda_results = simple_eda(df)</highlighted_element>
+    <description>Function 'validate_schema' doesn't return anything</description>
+    <highlighted_element>is_valid, missing_cols = validate_schema(all_stocks)</highlighted_element>
   <language>Python</language>
   <offset>8</offset>
-  <length>28</length>
+    <length>52</length>
 </problem>
 </problems>

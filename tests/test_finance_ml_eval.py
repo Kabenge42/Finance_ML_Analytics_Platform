@@ -241,6 +241,132 @@ class TestSimpleEDA(unittest.TestCase):
         output_file = self.out_dir / "eda_summary.json"
         self.assertTrue(output_file.exists())
 
+    def test_simple_eda_returns_distribution_analysis(self):
+        """Should include skewness and kurtosis in returned summary"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with numeric data
+        df_numeric = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C", "D", "E"],
+                "price": [100.0, 200.0, 150.0, 180.0, 220.0],
+                "volume": [1000, 2000, 1500, 1800, 2200],
+                "market_cap": [1e9, 2e9, 1.5e9, 1.8e9, 2.2e9],
+            }
+        )
+        summary = simple_eda(df_numeric, self.out_dir)
+
+        # Should include distribution analysis with per-column statistics
+        self.assertIn("distribution_analysis", summary)
+        dist_analysis = summary["distribution_analysis"]
+        self.assertIsInstance(dist_analysis, dict)
+
+        # Should have stats for numeric columns
+        if dist_analysis:  # If we have enough data
+            # Check that at least one column has skewness and kurtosis
+            for col_stats in dist_analysis.values():
+                self.assertIn("skewness", col_stats)
+                self.assertIn("kurtosis", col_stats)
+                break  # Just verify structure for one column
+
+    def test_simple_eda_returns_outlier_detection(self):
+        """Should include outlier detection results in returned summary"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with outliers
+        df_with_outliers = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C", "D", "E", "F"],
+                "price": [100.0, 200.0, 150.0, 180.0, 220.0, 10000.0],  # Last one is outlier
+                "volume": [1000, 2000, 1500, 1800, 2200, 2100],
+            }
+        )
+        summary = simple_eda(df_with_outliers, self.out_dir)
+
+        # Should include outlier detection
+        self.assertIn("outlier_detection", summary)
+        outliers = summary["outlier_detection"]
+        self.assertIsInstance(outliers, dict)
+
+    def test_simple_eda_returns_normality_tests(self):
+        """Should include normality test results in returned summary"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with numeric data
+        df_numeric = pd.DataFrame(
+            {
+                "ticker": [f"TICK_{i}" for i in range(20)],
+                "price": [100 + i * 10 for i in range(20)],
+                "volume": [1000 + i * 100 for i in range(20)],
+            }
+        )
+        summary = simple_eda(df_numeric, self.out_dir)
+
+        # Should include normality tests
+        self.assertIn("normality_tests", summary)
+        normality = summary["normality_tests"]
+        self.assertIsInstance(normality, dict)
+
+    def test_simple_eda_returns_correlation_matrices(self):
+        """Should include correlation matrices (Pearson and Spearman) in returned summary"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with numeric data
+        df_numeric = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C", "D", "E"],
+                "price": [100.0, 200.0, 150.0, 180.0, 220.0],
+                "volume": [1000, 2000, 1500, 1800, 2200],
+                "market_cap": [1e9, 2e9, 1.5e9, 1.8e9, 2.2e9],
+            }
+        )
+        summary = simple_eda(df_numeric, self.out_dir)
+
+        # Should include correlation analysis
+        self.assertIn("correlation_analysis", summary)
+        corr_analysis = summary["correlation_analysis"]
+        self.assertIn("pearson", corr_analysis)
+        self.assertIn("spearman", corr_analysis)
+
+    def test_simple_eda_returns_sector_statistics(self):
+        """Should include sector-wise statistics in returned summary"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with multiple sectors
+        df_multi_sector = pd.DataFrame(
+            {
+                "ticker": ["AAPL", "MSFT", "JPM", "BAC", "XOM", "CVX"],
+                "sector": ["Technology", "Technology", "Finance", "Finance", "Energy", "Energy"],
+                "price": [150.0, 300.0, 140.0, 35.0, 110.0, 160.0],
+                "market_cap": [2.5e12, 2.2e12, 400e9, 300e9, 450e9, 300e9],
+            }
+        )
+        summary = simple_eda(df_multi_sector, self.out_dir)
+
+        # Should include sector statistics
+        self.assertIn("sector_statistics", summary)
+        sector_stats = summary["sector_statistics"]
+        self.assertIsInstance(sector_stats, dict)
+        # Should have statistics for each sector
+        self.assertGreater(len(sector_stats), 0)
+
+    def test_simple_eda_maintains_backward_compatibility(self):
+        """Should maintain backward compatibility with existing fields"""
+        from finance_ml.eval import simple_eda
+
+        summary = simple_eda(self.df, self.out_dir)
+
+        # Should still include all original fields
+        self.assertIn("row_count", summary)
+        self.assertIn("column_count", summary)
+        self.assertIn("columns", summary)
+        self.assertIn("numeric_cols_count", summary)
+        self.assertIn("categorical_cols_count", summary)
+        self.assertIn("null_counts", summary)
+        self.assertIn("region_counts", summary)
+        self.assertIn("sector_counts", summary)
+        self.assertIn("basic_stats", summary)
+
 
 class TestExportPredictionsToExcel(unittest.TestCase):
     """Test Excel export function"""

@@ -1,62 +1,158 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/finance_ml/notebook_utils.py</file>
-  <line>163</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py</file>
+    <line>255</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/notebook_utils.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py"/>
   <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect call arguments</problem_class>
-  <description>Parameter 'out_dir' unfilled</description>
+    <description>Parameter(s) unfilled. Possible callees: _ArrayOrScalarCommon.clip(self: _ArrayOrScalarCommon, /, min:
+        Buffer | _SupportsArray[Any] | _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | Any, max: Buffer |
+        _SupportsArray[Any] | _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | None | Any = None, out: None
+        = None, **kwargs) _ArrayOrScalarCommon.clip(self: _ArrayOrScalarCommon, /, min: None, max: Buffer |
+        _SupportsArray[Any] | _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | Any, out: None = None,
+        **kwargs) _ArrayOrScalarCommon.clip(self: _ArrayOrScalarCommon, /, min: None = None, *, max: Buffer |
+        _SupportsArray[Any] | _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | Any, out: None = None,
+        **kwargs) _ArrayOrScalarCommon.clip(self: _ArrayOrScalarCommon, /, min: Buffer | _SupportsArray[Any] |
+        _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | Any, max: Buffer | _SupportsArray[Any] |
+        _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | None | Any, out: _ArrayT, **kwargs)
+        _ArrayOrScalarCommon.clip(self: _ArrayOrScalarCommon, /, min: Buffer | _SupportsArray[Any] |
+        _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | Any, max: Buffer | _SupportsArray[Any] |
+        _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | None | Any = None, *, out: _ArrayT, **kwargs)
+        _ArrayOrScalarCommon.clip(self: _ArrayOrScalarCommon, /, min: None, max: Buffer | _SupportsArray[Any] |
+        _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | Any, out: _ArrayT, **kwargs)
+        _ArrayOrScalarCommon.clip(self: _ArrayOrScalarCommon, /, min: None = None, *, max: Buffer | _SupportsArray[Any]
+        | _NestedSequence[_SupportsArray[Any]] | _NestedSequence[Any] | Any, out: _ArrayT, **kwargs)
+    </description>
   <highlighted_element>)</highlighted_element>
   <language>Python</language>
-  <offset>35</offset>
+    <offset>93</offset>
   <length>1</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/validate_csv_import.py</file>
-  <line>129</line>
+    <file>file://$PROJECT_DIR$/finance_ml/data.py</file>
+    <line>309</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/validate_csv_import.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/data.py"/>
+    <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect call
+        arguments
+    </problem_class>
+    <description>Unexpected argument(s). Possible callees: str.replace(self: LiteralString, __old: LiteralString, __new:
+        LiteralString, __count: SupportsIndex = -1) str.replace(self: str, __old: str, __new: str, __count:
+        SupportsIndex = -1)
+    </description>
+    <highlighted_element>(r&quot;[^0-9a-zA-Z]+&quot;, &quot;_&quot;, regex=False)</highlighted_element>
+    <language>Python</language>
+    <offset>37</offset>
+    <length>36</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>275</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            call arguments
+        </problem_class>
+        <description>Parameter 'columns' unfilled</description>
+        <highlighted_element>)</highlighted_element>
+        <language>Python</language>
+        <offset>16</offset>
+        <length>1</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>278</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect call arguments</problem_class>
   <description>Unexpected argument</description>
-  <highlighted_element>df</highlighted_element>
+        <highlighted_element>threshold=0.3</highlighted_element>
   <language>Python</language>
-  <offset>28</offset>
-  <length>2</length>
+        <offset>64</offset>
+        <length>13</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/validate_csv_import.py</file>
-  <line>129</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>278</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/validate_csv_import.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect call arguments</problem_class>
-  <description>Unexpected argument</description>
-  <highlighted_element>require_target=False</highlighted_element>
+    <description>Parameter 'columns' unfilled</description>
+    <highlighted_element>)</highlighted_element>
   <language>Python</language>
-  <offset>32</offset>
-  <length>20</length>
+    <offset>77</offset>
+    <length>1</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/validate_csv_import.py</file>
-  <line>139</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>292</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/validate_csv_import.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect call arguments</problem_class>
   <description>Unexpected argument</description>
-  <highlighted_element>df</highlighted_element>
+    <highlighted_element>method='shapiro'</highlighted_element>
   <language>Python</language>
   <offset>46</offset>
-  <length>2</length>
+    <length>16</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>292</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            call arguments
+        </problem_class>
+        <description>Parameter 'columns' unfilled</description>
+        <highlighted_element>)</highlighted_element>
+        <language>Python</language>
+        <offset>62</offset>
+        <length>1</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/validate_csv_import.py</file>
-  <line>180</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>317</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/validate_csv_import.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+    <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect call
+        arguments
+    </problem_class>
+    <description>Unexpected argument(s). Possible callees: compare_sector_means(df: DataFrame, column: str,
+        group_column: str = &amp;quot;sector&amp;quot;, method: str = &amp;quot;anova&amp;quot;, alpha: float = 0.05)
+        compare_sector_means(df: DataFrame, metric: str, sector_col: str = 'sector', method: str = 'anova')
+    </description>
+    <highlighted_element>( all_stocks, feature_col=test_feature, sector_col='...</highlighted_element>
+    <language>Python</language>
+    <offset>41</offset>
+    <length>125</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>321</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            call arguments
+        </problem_class>
+        <description>Parameter(s) unfilled. Possible callees: compare_sector_means(df: DataFrame, column: str,
+            group_column: str = &amp;quot;sector&amp;quot;, method: str = &amp;quot;anova&amp;quot;, alpha: float =
+            0.05) compare_sector_means(df: DataFrame, metric: str, sector_col: str = 'sector', method: str = 'anova')
+        </description>
+        <highlighted_element>)</highlighted_element>
+        <language>Python</language>
+        <offset>16</offset>
+        <length>1</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>1548</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyArgumentListInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect call arguments</problem_class>
   <description>Unexpected argument</description>
-  <highlighted_element>df</highlighted_element>
+        <highlighted_element>min_samples=20</highlighted_element>
   <language>Python</language>
-  <offset>55</offset>
-  <length>2</length>
+        <offset>16</offset>
+        <length>14</length>
 </problem>
 </problems>

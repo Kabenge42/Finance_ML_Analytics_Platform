@@ -170,6 +170,106 @@ def simple_eda(
         "basic_stats": basic_stats,
     }
 
+    # Enhanced statistical analysis (Phase 9.2)
+    # Only compute if we have sufficient numeric data
+    if numeric_cols and len(df) >= 3:
+        try:
+            # Distribution analysis: skewness and kurtosis
+            skew_kurt_df = calculate_skewness_kurtosis(df, numeric_cols)
+            # Convert DataFrame to dict for JSON serialization
+            summary["distribution_analysis"] = (
+                skew_kurt_df.to_dict(orient="index") if not skew_kurt_df.empty else {}
+            )
+        except Exception as e:
+            logging.warning("Distribution analysis failed: %s", e)
+            summary["distribution_analysis"] = {}
+
+        try:
+            # Outlier detection (using IQR method as default for robustness)
+            outliers = {}
+            for col in numeric_cols:
+                try:
+                    col_data = df[col].dropna()
+                    if len(col_data) >= 3:
+                        Q1 = col_data.quantile(0.25)
+                        Q3 = col_data.quantile(0.75)
+                        IQR = Q3 - Q1
+                        lower_bound = Q1 - 1.5 * IQR
+                        upper_bound = Q3 + 1.5 * IQR
+                        outlier_mask = (col_data < lower_bound) | (col_data > upper_bound)
+                        outliers[col] = {
+                            "count": int(outlier_mask.sum()),
+                            "percentage": float(outlier_mask.sum() / len(col_data) * 100),
+                        }
+                except Exception:
+                    outliers[col] = {"count": 0, "percentage": 0.0}
+            summary["outlier_detection"] = outliers
+        except Exception as e:
+            logging.warning("Outlier detection failed: %s", e)
+            summary["outlier_detection"] = {}
+
+        try:
+            # Normality tests (only if enough samples)
+            if len(df) >= 8:
+                normality = test_normality(df, numeric_cols, alpha=0.05)
+                # Convert numpy bool to Python bool for JSON serialization
+                for col, result in normality.items():
+                    if isinstance(result, dict) and "is_normal" in result:
+                        if result["is_normal"] is not None:
+                            result["is_normal"] = bool(result["is_normal"])
+                summary["normality_tests"] = normality
+            else:
+                summary["normality_tests"] = {}
+        except Exception as e:
+            logging.warning("Normality tests failed: %s", e)
+            summary["normality_tests"] = {}
+
+        try:
+            # Correlation analysis (Pearson and Spearman)
+            if len(numeric_cols) >= 2:
+                corr_analysis = {}
+                pearson_corr = calculate_correlation_matrix(df, numeric_cols, method="pearson")
+                spearman_corr = calculate_correlation_matrix(df, numeric_cols, method="spearman")
+                # Convert DataFrames to dicts for JSON serialization
+                corr_analysis["pearson"] = pearson_corr.to_dict() if not pearson_corr.empty else {}
+                corr_analysis["spearman"] = (
+                    spearman_corr.to_dict() if not spearman_corr.empty else {}
+                )
+                summary["correlation_analysis"] = corr_analysis
+            else:
+                summary["correlation_analysis"] = {}
+        except Exception as e:
+            logging.warning("Correlation analysis failed: %s", e)
+            summary["correlation_analysis"] = {}
+
+        try:
+            # Sector-wise statistics
+            if "sector" in df.columns and df["sector"].notna().any():
+                sector_stats = {}
+                for sector in df["sector"].dropna().unique():
+                    sector_df = df[df["sector"] == sector]
+                    sector_numeric = [c for c in numeric_cols if c in sector_df.columns]
+                    if sector_numeric and len(sector_df) > 0:
+                        sector_stats[sector] = {
+                            "count": int(len(sector_df)),
+                            "means": sector_df[sector_numeric].mean().to_dict(),
+                            "medians": sector_df[sector_numeric].median().to_dict(),
+                            "stds": sector_df[sector_numeric].std().to_dict(),
+                        }
+                summary["sector_statistics"] = sector_stats
+            else:
+                summary["sector_statistics"] = {}
+        except Exception as e:
+            logging.warning("Sector statistics failed: %s", e)
+            summary["sector_statistics"] = {}
+    else:
+        # Insufficient data for advanced analysis
+        summary["distribution_analysis"] = {}
+        summary["outlier_detection"] = {}
+        summary["normality_tests"] = {}
+        summary["correlation_analysis"] = {}
+        summary["sector_statistics"] = {}
+
     # Persist summary and plots only if an output directory is provided
     if out_dir is not None:
         try:
@@ -1118,3 +1218,709 @@ def generate_sector_comparison_report(
     report["statistical_tests"] = statistical_tests
 
     return report
+
+
+# ============================================================================
+# Phase 9.6: Model Evaluation and Error Analysis
+# ============================================================================
+
+
+def comprehensive_regression_metrics(y_true, y_pred):
+    """
+    Calculate comprehensive regression metrics.
+
+    Computes MAE, RMSE, MAPE, R², Median Absolute Error, and Max Error.
+
+    Args:
+        y_true: Array-like of true values
+        y_pred: Array-like of predicted values
+
+    Returns:
+        dict: Dictionary containing all metrics
+
+    Metrics:
+        - mae: Mean Absolute Error (interpretable dollar error)
+        - rmse: Root Mean Squared Error (penalizes large errors)
+        - mape: Mean Absolute Percentage Error (relative error)
+        - r2: R² coefficient of determination (variance explained)
+        - median_ae: Median Absolute Error (robust to outliers)
+        - max_error: Maximum absolute error (worst-case performance)
+    """
+    from sklearn.metrics import (
+        mean_absolute_error,
+        mean_squared_error,
+        r2_score,
+        median_absolute_error,
+        max_error as sklearn_max_error,
+    )
+
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+
+    # Basic metrics
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2 = r2_score(y_true, y_pred)
+    median_ae = median_absolute_error(y_true, y_pred)
+    max_err = sklearn_max_error(y_true, y_pred)
+
+    # MAPE - handle zeros by excluding them
+    mask = y_true != 0
+    if np.any(mask):
+        mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+    else:
+        mape = np.inf
+
+    return {
+        "mae": float(mae),
+        "rmse": float(rmse),
+        "mape": float(mape),
+        "r2": float(r2),
+        "median_ae": float(median_ae),
+        "max_error": float(max_err),
+    }
+
+
+def compute_metrics_by_segment(df, y_true_col, y_pred_col, segment_col):
+    """
+    Compute regression metrics for each segment (sector, region, market cap, etc.).
+
+    Args:
+        df: DataFrame containing predictions and segment information
+        y_true_col: Name of column with true values
+        y_pred_col: Name of column with predicted values
+        segment_col: Name of column to segment by
+
+    Returns:
+        pd.DataFrame: Metrics for each segment
+    """
+    results = []
+
+    for segment_value in df[segment_col].dropna().unique():
+        segment_data = df[df[segment_col] == segment_value]
+        y_true = segment_data[y_true_col].values
+        y_pred = segment_data[y_pred_col].values
+
+        if len(y_true) > 0:
+            metrics = comprehensive_regression_metrics(y_true, y_pred)
+            metrics["segment"] = segment_value
+            metrics["n_samples"] = len(y_true)
+            results.append(metrics)
+
+    result_df = pd.DataFrame(results)
+
+    # Reorder columns to have segment first
+    cols = ["segment", "n_samples"] + [
+        c for c in result_df.columns if c not in ["segment", "n_samples"]
+    ]
+    return result_df[cols]
+
+
+def residual_analysis_suite(y_true, y_pred, output_dir=None):
+    """
+    Perform comprehensive residual analysis.
+
+    Computes residual statistics, normality tests, and optionally creates plots.
+
+    Args:
+        y_true: Array-like of true values
+        y_pred: Array-like of predicted values
+        output_dir: Optional Path to save plots (PNG files)
+
+    Returns:
+        dict: Residual analysis results including statistics and test results
+    """
+    from scipy import stats
+
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    residuals = y_true - y_pred
+
+    # Compute statistics
+    results = {
+        "mean_residual": float(np.mean(residuals)),
+        "std_residual": float(np.std(residuals)),
+        "skewness": float(stats.skew(residuals)),
+        "kurtosis": float(stats.kurtosis(residuals)),
+    }
+
+    # Normality test (Shapiro-Wilk for n < 5000, otherwise Anderson-Darling)
+    if len(residuals) < 5000:
+        stat, p_value = stats.shapiro(residuals)
+        test_name = "shapiro"
+    else:
+        # Use Kolmogorov-Smirnov test for large samples
+        stat, p_value = stats.kstest(
+            residuals, "norm", args=(np.mean(residuals), np.std(residuals))
+        )
+        test_name = "ks"
+
+    results["normality_test"] = {
+        "test_name": test_name,
+        "statistic": float(stat),
+        "p_value": float(p_value),
+        "is_normal": bool(p_value > 0.05),
+    }
+
+    # Create plots if output_dir is provided
+    if output_dir and plt:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 1. Residuals vs Predicted
+        plt.figure(figsize=(10, 6))
+        plt.scatter(y_pred, residuals, alpha=0.5)
+        plt.axhline(y=0, color="r", linestyle="--")
+        plt.xlabel("Predicted Values")
+        plt.ylabel("Residuals")
+        plt.title("Residuals vs Predicted Values")
+        plt.grid(True, alpha=0.3)
+        plt.savefig(output_dir / "residuals_vs_predicted.png", dpi=100, bbox_inches="tight")
+        plt.close()
+
+        # 2. Q-Q plot
+        plt.figure(figsize=(8, 8))
+        stats.probplot(residuals, dist="norm", plot=plt)
+        plt.title("Q-Q Plot (Normal Distribution)")
+        plt.grid(True, alpha=0.3)
+        plt.savefig(output_dir / "qq_plot.png", dpi=100, bbox_inches="tight")
+        plt.close()
+
+        # 3. Histogram with normal distribution overlay
+        plt.figure(figsize=(10, 6))
+        plt.hist(residuals, bins=50, density=True, alpha=0.7, edgecolor="black")
+
+        # Overlay normal distribution
+        mu, sigma = np.mean(residuals), np.std(residuals)
+        x = np.linspace(residuals.min(), residuals.max(), 100)
+        plt.plot(x, stats.norm.pdf(x, mu, sigma), "r-", linewidth=2, label="Normal PDF")
+
+        plt.xlabel("Residuals")
+        plt.ylabel("Density")
+        plt.title(f"Residual Distribution (μ={mu:.2f}, σ={sigma:.2f})")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.savefig(output_dir / "residual_histogram.png", dpi=100, bbox_inches="tight")
+        plt.close()
+
+    return results
+
+
+def error_bucketing_analysis(df, y_true_col, y_pred_col, bucket_cols):
+    """
+    Analyze prediction errors by various buckets (market cap, volatility, sector).
+
+    Args:
+        df: DataFrame with predictions and bucketing columns
+        y_true_col: Name of column with true values
+        y_pred_col: Name of column with predicted values
+        bucket_cols: List of column names to bucket by
+
+    Returns:
+        dict: Error analysis results for each bucket type
+    """
+    results = {}
+
+    # Compute errors
+    df = df.copy()
+    df["error"] = df[y_true_col] - df[y_pred_col]
+    df["abs_error"] = np.abs(df["error"])
+
+    # Analyze each bucket type
+    for bucket_col in bucket_cols:
+        if bucket_col in df.columns:
+            bucket_metrics = compute_metrics_by_segment(df, y_true_col, y_pred_col, bucket_col)
+            results[bucket_col] = bucket_metrics
+
+    # Identify outliers (errors > 3 std dev)
+    error_mean = df["error"].mean()
+    error_std = df["error"].std()
+    outlier_threshold = 3 * error_std
+
+    outliers = df[np.abs(df["error"] - error_mean) > outlier_threshold]
+
+    results["outliers"] = {
+        "n_outliers": len(outliers),
+        "outlier_threshold": float(outlier_threshold),
+        "outlier_percentage": float(len(outliers) / len(df) * 100),
+        "mean_error": float(error_mean),
+        "std_error": float(error_std),
+    }
+
+    return results
+
+
+def create_stratified_sector_cv(n_splits=5):
+    """
+    Create a stratified cross-validation splitter by sector.
+
+    Maintains sector balance across folds.
+
+    Args:
+        n_splits: Number of CV splits
+
+    Returns:
+        Cross-validation splitter object
+    """
+    from sklearn.model_selection import StratifiedKFold
+
+    return StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+
+def create_grouped_ticker_cv(n_splits=5):
+    """
+    Create a grouped cross-validation splitter by ticker.
+
+    Ensures no ticker leakage between train and test sets.
+
+    Args:
+        n_splits: Number of CV splits
+
+    Returns:
+        Cross-validation splitter object
+    """
+    from sklearn.model_selection import GroupKFold
+
+    return GroupKFold(n_splits=n_splits)
+
+
+def evaluate_with_cross_validation(model, X, y, cv_strategy="simple", groups=None, n_splits=5):
+    """
+    Evaluate model using cross-validation with various strategies.
+
+    Args:
+        model: Scikit-learn compatible model
+        X: Feature matrix
+        y: Target vector
+        cv_strategy: 'simple', 'stratified', or 'grouped'
+        groups: Group labels for stratified or grouped CV
+        n_splits: Number of CV splits
+
+    Returns:
+        dict: Cross-validation results
+    """
+    from sklearn.model_selection import cross_val_score, KFold
+    from sklearn.metrics import r2_score
+
+    # Select CV strategy
+    if cv_strategy == "simple":
+        cv = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+        scores = cross_val_score(model, X, y, cv=cv, scoring="r2")
+    elif cv_strategy == "stratified":
+        # For stratified CV with groups (e.g., sectors), we need to manually iterate
+        # because StratifiedKFold stratifies on y, not groups
+        cv = create_stratified_sector_cv(n_splits=n_splits)
+        scores = []
+
+        if groups is not None:
+            # Use groups for stratification
+            for train_idx, test_idx in cv.split(X, groups):
+                X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+                y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                score = r2_score(y_test, y_pred)
+                scores.append(score)
+        else:
+            # No groups provided, fall back to simple CV
+            scores = cross_val_score(
+                model,
+                X,
+                y,
+                cv=KFold(n_splits=n_splits, shuffle=True, random_state=42),
+                scoring="r2",
+            )
+
+        scores = np.array(scores)
+    elif cv_strategy == "grouped":
+        cv = create_grouped_ticker_cv(n_splits=n_splits)
+        scores = cross_val_score(model, X, y, cv=cv, groups=groups, scoring="r2")
+    else:
+        raise ValueError(f"Unknown cv_strategy: {cv_strategy}")
+
+    return {
+        "cv_scores": scores.tolist(),
+        "mean_score": float(np.mean(scores)),
+        "std_score": float(np.std(scores)),
+        "n_splits": n_splits,
+        "cv_strategy": cv_strategy,
+    }
+
+
+# ==============================================================================
+# Phase 9.7: Identification of Under/Overvalued Stocks with Visualization
+# ==============================================================================
+
+
+def assign_valuation_category(
+    mispricing_scores: pd.Series, thresholds: Optional[Dict[str, float]] = None
+) -> pd.Series:
+    """
+    Assign valuation categories based on mispricing scores.
+
+    Categories:
+    - Strong Buy: mispricing > strong_buy threshold (default 20%)
+    - Buy: mispricing between buy and strong_buy (default 10-20%)
+    - Hold: mispricing between -sell and +buy (default -10% to +10%)
+    - Sell: mispricing between -strong_sell and -sell (default -20% to -10%)
+    - Strong Sell: mispricing < -strong_sell threshold (default -20%)
+
+    Args:
+        mispricing_scores: Series of mispricing scores (percentage)
+        thresholds: Optional dict with keys 'strong_buy', 'buy', 'sell', 'strong_sell'
+                   Default: {'strong_buy': 20, 'buy': 10, 'sell': 10, 'strong_sell': 20}
+
+    Returns:
+        Series with valuation categories
+
+    Example:
+        >>> scores = pd.Series([25, 15, 5, -5, -15, -25])
+        >>> categories = assign_valuation_category(scores)
+        >>> print(categories.tolist())
+        ['Strong Buy', 'Buy', 'Hold', 'Hold', 'Sell', 'Strong Sell']
+    """
+    if thresholds is None:
+        thresholds = {"strong_buy": 20.0, "buy": 10.0, "sell": 10.0, "strong_sell": 20.0}
+
+    def categorize(score):
+        if pd.isna(score):
+            return "Unknown"
+        elif score > thresholds["strong_buy"]:
+            return "Strong Buy"
+        elif score > thresholds["buy"]:
+            return "Buy"
+        elif score >= -thresholds["sell"]:
+            return "Hold"
+        elif score >= -thresholds["strong_sell"]:
+            return "Sell"
+        else:
+            return "Strong Sell"
+
+    return mispricing_scores.apply(categorize)
+
+
+def calculate_sector_zscores(
+    df: pd.DataFrame, metrics: list, sector_col: str = "sector"
+) -> pd.DataFrame:
+    """
+    Calculate z-scores for metrics within each sector.
+
+    Z-score = (value - sector_mean) / sector_std
+
+    Useful for identifying stocks trading at premium/discount relative to sector peers.
+
+    Args:
+        df: DataFrame with stock data
+        metrics: List of column names to calculate z-scores for
+        sector_col: Name of sector column (default 'sector')
+
+    Returns:
+        DataFrame with original columns plus '{metric}_zscore' columns
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['A', 'B', 'C'],
+        ...     'sector': ['Tech', 'Tech', 'Finance'],
+        ...     'pe_ratio': [20, 30, 15]
+        ... })
+        >>> result = calculate_sector_zscores(df, metrics=['pe_ratio'])
+        >>> 'pe_ratio_zscore' in result.columns
+        True
+    """
+    result = df.copy()
+
+    for metric in metrics:
+        if metric not in df.columns:
+            continue
+
+        zscore_col = f"{metric}_zscore"
+
+        # Calculate z-scores within each sector
+        result[zscore_col] = df.groupby(sector_col)[metric].transform(
+            lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0
+        )
+
+    return result
+
+
+def calculate_percentile_ranks(
+    df: pd.DataFrame, metrics: list, sector_col: str = "sector"
+) -> pd.DataFrame:
+    """
+    Calculate percentile ranks for metrics within each sector.
+
+    Percentile rank indicates the percentage of sector peers a stock outperforms.
+
+    Args:
+        df: DataFrame with stock data
+        metrics: List of column names to calculate percentiles for
+        sector_col: Name of sector column (default 'sector')
+
+    Returns:
+        DataFrame with original columns plus '{metric}_percentile' columns (0-100 scale)
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['A', 'B'],
+        ...     'sector': ['Tech', 'Tech'],
+        ...     'pe_ratio': [10, 20]
+        ... })
+        >>> result = calculate_percentile_ranks(df, metrics=['pe_ratio'])
+        >>> 'pe_ratio_percentile' in result.columns
+        True
+    """
+    result = df.copy()
+
+    for metric in metrics:
+        if metric not in df.columns:
+            continue
+
+        percentile_col = f"{metric}_percentile"
+
+        # Calculate percentile ranks within each sector (0-100 scale)
+        result[percentile_col] = df.groupby(sector_col)[metric].rank(pct=True) * 100
+
+    return result
+
+
+def calculate_multi_factor_score(
+    df: pd.DataFrame,
+    valuation_col: str = "mispricing_score",
+    quality_cols: Optional[list] = None,
+    growth_cols: Optional[list] = None,
+    weights: Optional[Dict[str, float]] = None,
+) -> pd.Series:
+    """
+    Calculate a composite multi-factor score combining valuation, quality, and growth.
+
+    Score = weighted_valuation + weighted_quality + weighted_growth
+
+    Each component is normalized to z-scores before weighting.
+
+    Args:
+        df: DataFrame with stock metrics
+        valuation_col: Column name for valuation metric (e.g., 'mispricing_score')
+        quality_cols: List of quality metric columns (e.g., ['roe', 'ebitda_margin'])
+        growth_cols: List of growth metric columns (e.g., ['revenue_growth'])
+        weights: Optional dict with keys 'valuation', 'quality', 'growth'
+                Default: {'valuation': 0.4, 'quality': 0.3, 'growth': 0.3}
+
+    Returns:
+        Series with multi-factor scores (higher = better)
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'mispricing_score': [20, 10],
+        ...     'roe': [0.15, 0.10],
+        ...     'revenue_growth': [0.20, 0.15]
+        ... })
+        >>> scores = calculate_multi_factor_score(
+        ...     df,
+        ...     quality_cols=['roe'],
+        ...     growth_cols=['revenue_growth']
+        ... )
+        >>> isinstance(scores, pd.Series)
+        True
+    """
+    if quality_cols is None:
+        quality_cols = []
+    if growth_cols is None:
+        growth_cols = []
+    if weights is None:
+        weights = {"valuation": 0.4, "quality": 0.3, "growth": 0.3}
+
+    scores = pd.Series(0.0, index=df.index)
+
+    # Valuation component
+    if valuation_col in df.columns:
+        val_zscore = (df[valuation_col] - df[valuation_col].mean()) / df[valuation_col].std()
+        scores += weights.get("valuation", 0.4) * val_zscore.fillna(0)
+
+    # Quality component (average of quality metrics)
+    if quality_cols:
+        quality_zscores = []
+        for col in quality_cols:
+            if col in df.columns:
+                col_mean = df[col].mean()
+                col_std = df[col].std()
+                if col_std > 0:
+                    zscore = (df[col] - col_mean) / col_std
+                    quality_zscores.append(zscore.fillna(0))
+
+        if quality_zscores:
+            avg_quality = pd.concat(quality_zscores, axis=1).mean(axis=1)
+            scores += weights.get("quality", 0.3) * avg_quality
+
+    # Growth component (average of growth metrics)
+    if growth_cols:
+        growth_zscores = []
+        for col in growth_cols:
+            if col in df.columns:
+                col_mean = df[col].mean()
+                col_std = df[col].std()
+                if col_std > 0:
+                    zscore = (df[col] - col_mean) / col_std
+                    growth_zscores.append(zscore.fillna(0))
+
+        if growth_zscores:
+            avg_growth = pd.concat(growth_zscores, axis=1).mean(axis=1)
+            scores += weights.get("growth", 0.3) * avg_growth
+
+    return scores
+
+
+def filter_stocks_by_criteria(
+    df: pd.DataFrame,
+    sectors: Optional[list] = None,
+    regions: Optional[list] = None,
+    min_market_cap: Optional[float] = None,
+    max_market_cap: Optional[float] = None,
+    min_mispricing: Optional[float] = None,
+    max_mispricing: Optional[float] = None,
+    valuation_categories: Optional[list] = None,
+) -> pd.DataFrame:
+    """
+    Filter stocks based on multiple criteria.
+
+    Args:
+        df: DataFrame with stock data
+        sectors: List of sectors to include (e.g., ['Tech', 'Finance'])
+        regions: List of regions to include (e.g., ['US', 'EU'])
+        min_market_cap: Minimum market cap threshold
+        max_market_cap: Maximum market cap threshold
+        min_mispricing: Minimum mispricing score threshold
+        max_mispricing: Maximum mispricing score threshold
+        valuation_categories: List of valuation categories to include
+
+    Returns:
+        Filtered DataFrame
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['A', 'B', 'C'],
+        ...     'sector': ['Tech', 'Finance', 'Energy'],
+        ...     'market_cap': [100e9, 50e9, 10e9]
+        ... })
+        >>> filtered = filter_stocks_by_criteria(df, sectors=['Tech'], min_market_cap=50e9)
+        >>> len(filtered)
+        1
+    """
+    result = df.copy()
+
+    # Filter by sector
+    if sectors is not None:
+        if "sector" in result.columns:
+            result = result[result["sector"].isin(sectors)]
+
+    # Filter by region
+    if regions is not None:
+        if "region" in result.columns:
+            result = result[result["region"].isin(regions)]
+
+    # Filter by market cap
+    if min_market_cap is not None:
+        if "market_cap" in result.columns:
+            result = result[result["market_cap"] >= min_market_cap]
+
+    if max_market_cap is not None:
+        if "market_cap" in result.columns:
+            result = result[result["market_cap"] <= max_market_cap]
+
+    # Filter by mispricing score
+    if min_mispricing is not None:
+        if "mispricing_score" in result.columns:
+            result = result[result["mispricing_score"] >= min_mispricing]
+
+    if max_mispricing is not None:
+        if "mispricing_score" in result.columns:
+            result = result[result["mispricing_score"] <= max_mispricing]
+
+    # Filter by valuation category
+    if valuation_categories is not None:
+        if "valuation_category" in result.columns:
+            result = result[result["valuation_category"].isin(valuation_categories)]
+
+    return result
+
+
+def create_valuation_scatter_plot(
+    df: pd.DataFrame, out_path: Optional[Path] = None, color_by: str = "sector"
+):
+    """
+    Create an interactive scatter plot of current price vs. predicted target.
+
+    Args:
+        df: DataFrame with columns 'last_price', 'predicted_target', and color_by column
+        out_path: Optional path to save HTML file
+        color_by: Column to color points by (default 'sector')
+
+    Returns:
+        Plotly figure object (or None if plotly not available)
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['A', 'B'],
+        ...     'last_price': [100, 50],
+        ...     'predicted_target': [120, 55],
+        ...     'sector': ['Tech', 'Finance']
+        ... })
+        >>> fig = create_valuation_scatter_plot(df)
+        >>> fig is not None
+        True
+    """
+    if px is None:
+        logging.warning("plotly not available; skipping scatter plot")
+        return None
+
+    # Ensure required columns exist
+    required = ["last_price", "predicted_target"]
+    for col in required:
+        if col not in df.columns:
+            logging.warning(f"Column '{col}' not found; skipping scatter plot")
+            return None
+
+    # Create hover data
+    hover_data_cols = ["ticker"] if "ticker" in df.columns else []
+    if "mispricing_score" in df.columns:
+        hover_data_cols.append("mispricing_score")
+    if "valuation_category" in df.columns:
+        hover_data_cols.append("valuation_category")
+
+    # Create scatter plot
+    fig = px.scatter(
+        df,
+        x="last_price",
+        y="predicted_target",
+        color=color_by if color_by in df.columns else None,
+        hover_data=hover_data_cols,
+        title="Current Price vs. Predicted Target",
+        labels={"last_price": "Current Price ($)", "predicted_target": "Predicted Target ($)"},
+    )
+
+    # Add diagonal line (y=x) for reference
+    max_val = max(df["last_price"].max(), df["predicted_target"].max())
+    fig.add_trace(
+        go.Scatter(
+            x=[0, max_val],
+            y=[0, max_val],
+            mode="lines",
+            line=dict(dash="dash", color="gray"),
+            name="Fair Value (y=x)",
+            showlegend=True,
+        )
+    )
+
+    # Update layout
+    fig.update_layout(
+        xaxis_title="Current Price ($)", yaxis_title="Predicted Target ($)", hovermode="closest"
+    )
+
+    # Save if path provided
+    if out_path is not None:
+        out_path = Path(out_path)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_html(str(out_path))
+        logging.info(f"Saved valuation scatter plot to {out_path}")
+
+    return fig

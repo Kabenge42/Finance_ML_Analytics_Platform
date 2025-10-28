@@ -1,626 +1,230 @@
 <problems>
 <problem>
-  <file>file://$PROJECT_DIR$/CONTRIBUTING.md</file>
-  <line>313</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_eda.py</file>
+    <line>497</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/CONTRIBUTING.md" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_eda.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'path' value is not used</description>
-  <highlighted_element>path: str</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/CONTRIBUTING.md</file>
-  <line>314</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/CONTRIBUTING.md" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'limit' value is not used</description>
-  <highlighted_element>limit: Optional[int] = None</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>27</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/CONTRIBUTING.md</file>
-  <line>315</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/CONTRIBUTING.md" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'region' value is not used</description>
-  <highlighted_element>region: Optional[str] = None</highlighted_element>
-  <language>Python</language>
-  <offset>8</offset>
-  <length>28</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
-  <line>27</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'df' value is not used</description>
-  <highlighted_element>df: pd.DataFrame</highlighted_element>
-  <language>Python</language>
-  <offset>30</offset>
-  <length>16</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
-  <line>218</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'X' value is not used</description>
-  <highlighted_element>X</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md</file>
-  <line>218</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/PREPROCESSING_PIPELINE_IMPROVEMENTS.md" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>24</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py</file>
-  <line>169</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'n_assets' value is not used</description>
-  <highlighted_element>n_assets</highlighted_element>
+    <description>Parameter 'output_dir' value is not used</description>
+    <highlighted_element>output_dir: Optional[Path] = None</highlighted_element>
   <language>Python</language>
   <offset>4</offset>
-  <length>8</length>
+    <length>33</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>498</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>186</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'original_inf_count' value is not used</description>
-  <highlighted_element>original_inf_count</highlighted_element>
+    <description>Parameter 'alpha' value is not used</description>
+    <highlighted_element>alpha: float = 1.0</highlighted_element>
   <language>Python</language>
-  <offset>8</offset>
+    <offset>35</offset>
   <length>18</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb</file>
-  <line>499</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>229</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_v8_2.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'original_nan_count' value is not used</description>
-  <highlighted_element>original_nan_count</highlighted_element>
+    <description>Parameter 'alpha' value is not used</description>
+    <highlighted_element>alpha: float = 0.1</highlighted_element>
   <language>Python</language>
-  <offset>8</offset>
+    <offset>35</offset>
   <length>18</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>572</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>275</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>596</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>605</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'names' value is not used</description>
-  <highlighted_element>names=None</highlighted_element>
-  <language>Python</language>
-  <offset>36</offset>
-  <length>10</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>753</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'function_transformer' value is not used</description>
-  <highlighted_element>function_transformer</highlighted_element>
-  <language>Python</language>
-  <offset>15</offset>
-  <length>20</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>753</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'feature_names_in' value is not used</description>
-  <highlighted_element>feature_names_in</highlighted_element>
-  <language>Python</language>
-  <offset>37</offset>
-  <length>16</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>1259</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'names' value is not used</description>
-  <highlighted_element>names=None</highlighted_element>
-  <language>Python</language>
-  <offset>36</offset>
-  <length>10</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb</file>
-  <line>1348</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/02_end_to_end_machine_learning_project.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>1028</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'X' value is not used</description>
-  <highlighted_element>X</highlighted_element>
-  <language>Python</language>
-  <offset>18</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>1028</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>1031</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>1073</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>21</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/03_classification.ipynb</file>
-  <line>1083</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/03_classification.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'y' value is not used</description>
-  <highlighted_element>y=None</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb</file>
-  <line>945</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/10_neural_nets_with_keras.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'batch' value is not used</description>
-  <highlighted_element>batch</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>685</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'epoch' value is not used</description>
-  <highlighted_element>epoch</highlighted_element>
-  <language>Python</language>
-  <offset>25</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>698</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'batch' value is not used</description>
-  <highlighted_element>batch</highlighted_element>
-  <language>Python</language>
-  <offset>29</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>698</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'logs' value is not used</description>
-  <highlighted_element>logs=None</highlighted_element>
-  <language>Python</language>
-  <offset>36</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>704</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'epoch' value is not used</description>
-  <highlighted_element>epoch</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>843</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'epoch' value is not used</description>
-  <highlighted_element>epoch</highlighted_element>
-  <language>Python</language>
-  <offset>29</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>843</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'logs' value is not used</description>
-  <highlighted_element>logs=None</highlighted_element>
-  <language>Python</language>
-  <offset>36</offset>
-  <length>9</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>866</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'history' value is not used</description>
-  <highlighted_element>history</highlighted_element>
+    <description>Parameter 'alpha' value is not used</description>
+    <highlighted_element>alpha: float = 0.1</highlighted_element>
   <language>Python</language>
   <offset>4</offset>
-  <length>7</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>916</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'batch' value is not used</description>
-  <highlighted_element>batch</highlighted_element>
-  <language>Python</language>
-  <offset>29</offset>
-  <length>5</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>916</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'logs' value is not used</description>
-  <highlighted_element>logs</highlighted_element>
-  <language>Python</language>
-  <offset>36</offset>
-  <length>4</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>1026</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'training' value is not used</description>
-  <highlighted_element>training=None</highlighted_element>
-  <language>Python</language>
-  <offset>27</offset>
-  <length>13</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb</file>
-  <line>1296</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/11_training_deep_neural_networks.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'sample' value is not used</description>
-  <highlighted_element>sample</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>504</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'sample_weight' value is not used</description>
-  <highlighted_element>sample_weight=None</highlighted_element>
-  <language>Python</language>
-  <offset>43</offset>
   <length>18</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>799</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>276</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'training' value is not used</description>
-  <highlighted_element>training=None</highlighted_element>
+    <description>Parameter 'l1_ratio' value is not used</description>
+    <highlighted_element>l1_ratio: float = 0.5</highlighted_element>
   <language>Python</language>
-  <offset>27</offset>
-  <length>13</length>
+    <offset>4</offset>
+    <length>21</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1167</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>322</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'i' value is not used</description>
-  <highlighted_element>i</highlighted_element>
+    <description>Parameter 'random_state' value is not used</description>
+    <highlighted_element>random_state: int = 42</highlighted_element>
   <language>Python</language>
-  <offset>8</offset>
-  <length>1</length>
+    <offset>54</offset>
+    <length>22</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb</file>
-  <line>1216</line>
+    <file>file://$PROJECT_DIR$/finance_ml/advanced_models.py</file>
+    <line>853</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/12_custom_models_and_training_with_tensorflow.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_models.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'i' value is not used</description>
-  <highlighted_element>i</highlighted_element>
+    <description>Parameter 'cv' value is not used</description>
+    <highlighted_element>cv: int = 5</highlighted_element>
   <language>Python</language>
-  <offset>8</offset>
-  <length>1</length>
+    <offset>59</offset>
+    <length>11</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb</file>
-  <line>288</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>104</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/15_processing_sequences_using_rnns_and_cnns.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'history' value is not used</description>
-  <highlighted_element>history</highlighted_element>
+    <description>Local variable 'numeric_cols' value is not used</description>
+    <highlighted_element>numeric_cols</highlighted_element>
   <language>Python</language>
   <offset>4</offset>
-  <length>7</length>
+    <length>12</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>235</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>286</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'epoch' value is not used</description>
-  <highlighted_element>epoch</highlighted_element>
+    <description>Parameter 'numeric_cols' value is not used</description>
+    <highlighted_element>numeric_cols: List[str]</highlighted_element>
   <language>Python</language>
-  <offset>29</offset>
-  <length>5</length>
+    <offset>4</offset>
+    <length>23</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb</file>
-  <line>235</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>375</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/16_nlp_with_rnns_and_attention.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'logs' value is not used</description>
-  <highlighted_element>logs</highlighted_element>
+    <description>Parameter 'numeric_cols' value is not used</description>
+    <highlighted_element>numeric_cols: List[str]</highlighted_element>
   <language>Python</language>
-  <offset>36</offset>
-  <length>4</length>
+    <offset>4</offset>
+    <length>23</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb</file>
-  <line>162</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>647</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/17_autoencoders_gans_and_diffusion_models.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'fig' value is not used</description>
-  <highlighted_element>fig</highlighted_element>
+    <description>Parameter 'numeric_cols' value is not used</description>
+    <highlighted_element>numeric_cols: List[str]</highlighted_element>
   <language>Python</language>
   <offset>4</offset>
-  <length>3</length>
+    <length>23</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb</file>
-  <line>326</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>786</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/reference material/19_training_and_deploying_at_scale.ipynb" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'result' value is not used</description>
-  <highlighted_element>result</highlighted_element>
+    <description>Parameter 'numeric_cols' value is not used</description>
+    <highlighted_element>numeric_cols: List[str]</highlighted_element>
   <language>Python</language>
-  <offset>16</offset>
+    <offset>4</offset>
+    <length>23</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>893</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
+    <description>Parameter 'numeric_cols' value is not used</description>
+    <highlighted_element>numeric_cols: List[str]</highlighted_element>
+  <language>Python</language>
+    <offset>4</offset>
+    <length>23</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>1334</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
+  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
+    <description>Local variable 'groups' value is not used</description>
+    <highlighted_element>groups</highlighted_element>
+  <language>Python</language>
+    <offset>8</offset>
   <length>6</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_analytics.py</file>
-  <line>152</line>
+    <file>file://$PROJECT_DIR$/finance_ml/classification.py</file>
+    <line>1381</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_analytics.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/classification.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'engine' value is not used</description>
-  <highlighted_element>engine</highlighted_element>
+    <description>Parameter 'feature_names' value is not used</description>
+    <highlighted_element>feature_names: List[str]</highlighted_element>
   <language>Python</language>
-  <offset>12</offset>
-  <length>6</length>
+    <offset>4</offset>
+    <length>24</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_cli.py</file>
-  <line>278</line>
+    <file>file://$PROJECT_DIR$/finance_ml/eval.py</file>
+    <line>705</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_cli.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/eval.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'result' value is not used</description>
-  <highlighted_element>result</highlighted_element>
+    <description>Parameter 'alpha' value is not used</description>
+    <highlighted_element>alpha: float = 0.05</highlighted_element>
   <language>Python</language>
-  <offset>24</offset>
-  <length>6</length>
+    <offset>61</offset>
+    <length>19</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_cli.py</file>
-  <line>317</line>
+    <file>file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py</file>
+    <line>169</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_cli.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/portfolio_optimization.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'mock_eda' value is not used</description>
-  <highlighted_element>mock_eda</highlighted_element>
+    <description>Local variable 'n_assets' value is not used</description>
+    <highlighted_element>n_assets</highlighted_element>
   <language>Python</language>
-  <offset>63</offset>
+    <offset>4</offset>
   <length>8</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_cli.py</file>
-  <line>342</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>665</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_cli.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'mock_eda' value is not used</description>
-  <highlighted_element>mock_eda</highlighted_element>
+    <description>Local variable 'original_inf_count' value is not used</description>
+    <highlighted_element>original_inf_count</highlighted_element>
   <language>Python</language>
-  <offset>63</offset>
-  <length>8</length>
+    <offset>8</offset>
+    <length>18</length>
 </problem>
 <problem>
-  <file>file://$PROJECT_DIR$/tests/test_cli.py</file>
-  <line>369</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
+    <line>666</line>
   <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_cli.py" />
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
   <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'mock_eda' value is not used</description>
-  <highlighted_element>mock_eda</highlighted_element>
-  <language>Python</language>
-  <offset>67</offset>
-  <length>8</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_cli.py</file>
-  <line>373</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_cli.py" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'result' value is not used</description>
-  <highlighted_element>result</highlighted_element>
-  <language>Python</language>
-  <offset>28</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_data.py</file>
-  <line>434</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_data.py" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'result' value is not used</description>
-  <highlighted_element>result</highlighted_element>
-  <language>Python</language>
-  <offset>16</offset>
-  <length>6</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_finance_ml_eval.py</file>
-  <line>345</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_finance_ml_eval.py" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'e' value is not used</description>
-  <highlighted_element>e</highlighted_element>
-  <language>Python</language>
-  <offset>28</offset>
-  <length>1</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tests/test_portfolio_optimization.py</file>
-  <line>355</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_portfolio_optimization.py" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Local variable 'returns' value is not used</description>
-  <highlighted_element>returns</highlighted_element>
+    <description>Local variable 'original_nan_count' value is not used</description>
+    <highlighted_element>original_nan_count</highlighted_element>
   <language>Python</language>
   <offset>8</offset>
-  <length>7</length>
-</problem>
-<problem>
-  <file>file://$PROJECT_DIR$/tools/import_sqlite.py</file>
-  <line>28</line>
-  <module>Finance_ML_Analytics_Platform</module>
-  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tools/import_sqlite.py" />
-  <problem_class id="PyUnusedLocalInspection" severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local symbols</problem_class>
-  <description>Parameter 'kwargs' value is not used</description>
-  <highlighted_element>**kwargs</highlighted_element>
-  <language>Python</language>
-  <offset>23</offset>
-  <length>8</length>
+    <length>18</length>
 </problem>
 </problems>
