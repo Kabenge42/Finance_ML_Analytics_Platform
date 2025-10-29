@@ -225,22 +225,47 @@ def simple_eda(
             summary["normality_tests"] = {}
 
         try:
-            # Correlation analysis (Pearson and Spearman)
+            # Correlation analysis (Pearson, Spearman, and Kendall - Phase 9.2)
             if len(numeric_cols) >= 2:
                 corr_analysis = {}
                 pearson_corr = calculate_correlation_matrix(df, numeric_cols, method="pearson")
                 spearman_corr = calculate_correlation_matrix(df, numeric_cols, method="spearman")
+                kendall_corr = calculate_correlation_matrix(df, numeric_cols, method="kendall")
                 # Convert DataFrames to dicts for JSON serialization
                 corr_analysis["pearson"] = pearson_corr.to_dict() if not pearson_corr.empty else {}
                 corr_analysis["spearman"] = (
                     spearman_corr.to_dict() if not spearman_corr.empty else {}
                 )
+                corr_analysis["kendall"] = kendall_corr.to_dict() if not kendall_corr.empty else {}
                 summary["correlation_analysis"] = corr_analysis
             else:
                 summary["correlation_analysis"] = {}
         except Exception as e:
             logging.warning("Correlation analysis failed: %s", e)
             summary["correlation_analysis"] = {}
+
+        try:
+            # Top correlations extraction (Phase 9.2)
+            if len(numeric_cols) >= 2:
+                top_corr = {}
+                for method in ["pearson", "spearman", "kendall"]:
+                    try:
+                        top_corr_df = find_top_correlations(
+                            df, numeric_cols, n_top=10, method=method
+                        )
+                        # Convert to list of dicts for JSON serialization
+                        if not top_corr_df.empty:
+                            top_corr[method] = top_corr_df.to_dict(orient="records")
+                        else:
+                            top_corr[method] = []
+                    except Exception:
+                        top_corr[method] = []
+                summary["top_correlations"] = top_corr
+            else:
+                summary["top_correlations"] = {}
+        except Exception as e:
+            logging.warning("Top correlations extraction failed: %s", e)
+            summary["top_correlations"] = {}
 
         try:
             # Sector-wise statistics
@@ -262,13 +287,67 @@ def simple_eda(
         except Exception as e:
             logging.warning("Sector statistics failed: %s", e)
             summary["sector_statistics"] = {}
+
+        try:
+            # Sector comparison tests (Phase 9.2)
+            if (
+                "sector" in df.columns
+                and df["sector"].notna().any()
+                and len(df["sector"].dropna().unique()) >= 2
+            ):
+                sector_tests = {}
+                for col in numeric_cols:
+                    try:
+                        test_result = compare_sector_means(
+                            df, col, group_column="sector", method="anova", alpha=0.05
+                        )
+                        if test_result:
+                            # Convert numpy bool to Python bool for JSON serialization
+                            if (
+                                "significant" in test_result
+                                and test_result["significant"] is not None
+                            ):
+                                test_result["significant"] = bool(test_result["significant"])
+                            sector_tests[col] = test_result
+                    except Exception:
+                        pass
+                summary["sector_comparison_tests"] = sector_tests
+            else:
+                summary["sector_comparison_tests"] = {}
+        except Exception as e:
+            logging.warning("Sector comparison tests failed: %s", e)
+            summary["sector_comparison_tests"] = {}
+
+        try:
+            # Region-wise statistics (Phase 9.2)
+            if "region" in df.columns and df["region"].notna().any():
+                region_stats = {}
+                for region in df["region"].dropna().unique():
+                    region_df = df[df["region"] == region]
+                    region_numeric = [c for c in numeric_cols if c in region_df.columns]
+                    if region_numeric and len(region_df) > 0:
+                        region_stats[region] = {
+                            "count": int(len(region_df)),
+                            "means": region_df[region_numeric].mean().to_dict(),
+                            "medians": region_df[region_numeric].median().to_dict(),
+                            "stds": region_df[region_numeric].std().to_dict(),
+                        }
+                summary["region_statistics"] = region_stats
+            else:
+                summary["region_statistics"] = {}
+        except Exception as e:
+            logging.warning("Region statistics failed: %s", e)
+            summary["region_statistics"] = {}
     else:
         # Insufficient data for advanced analysis
         summary["distribution_analysis"] = {}
         summary["outlier_detection"] = {}
         summary["normality_tests"] = {}
         summary["correlation_analysis"] = {}
+        summary["top_correlations"] = {}
         summary["sector_statistics"] = {}
+        summary["sector_comparison_tests"] = {}
+        summary["region_statistics"] = {}
 
     # Persist summary and plots only if an output directory is provided
     if out_dir is not None:

@@ -367,6 +367,119 @@ class TestSimpleEDA(unittest.TestCase):
         self.assertIn("sector_counts", summary)
         self.assertIn("basic_stats", summary)
 
+    def test_simple_eda_includes_kendall_correlation(self):
+        """Should include Kendall tau correlation in correlation_analysis (Phase 9.2)"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with numeric data for correlation
+        df_numeric = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C", "D", "E"],
+                "price": [100.0, 200.0, 150.0, 180.0, 220.0],
+                "volume": [1000, 2000, 1500, 1800, 2200],
+                "market_cap": [1e9, 2e9, 1.5e9, 1.8e9, 2.2e9],
+            }
+        )
+        summary = simple_eda(df_numeric, self.out_dir)
+
+        # Should include Kendall tau in addition to Pearson and Spearman
+        self.assertIn("correlation_analysis", summary)
+        corr_analysis = summary["correlation_analysis"]
+        self.assertIn("pearson", corr_analysis)
+        self.assertIn("spearman", corr_analysis)
+        self.assertIn("kendall", corr_analysis)  # New feature
+        # Verify it's a dict with correlation values
+        self.assertIsInstance(corr_analysis["kendall"], dict)
+
+    def test_simple_eda_includes_top_correlations(self):
+        """Should include top correlations summary (Phase 9.2)"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with numeric data
+        df_numeric = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C", "D", "E"],
+                "price": [100.0, 200.0, 150.0, 180.0, 220.0],
+                "volume": [1000, 2000, 1500, 1800, 2200],
+                "market_cap": [1e9, 2e9, 1.5e9, 1.8e9, 2.2e9],
+                "pe_ratio": [15.0, 20.0, 18.0, 16.0, 22.0],
+            }
+        )
+        summary = simple_eda(df_numeric, self.out_dir)
+
+        # Should include top correlations
+        self.assertIn("top_correlations", summary)
+        top_corr = summary["top_correlations"]
+        self.assertIsInstance(top_corr, dict)
+        # Should have correlations for each method
+        if top_corr:  # If we have enough data
+            self.assertIn("pearson", top_corr)
+            self.assertIsInstance(top_corr["pearson"], list)
+
+    def test_simple_eda_includes_sector_comparison_tests(self):
+        """Should include statistical tests for sector comparisons (Phase 9.2)"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with multiple sectors
+        df_multi_sector = pd.DataFrame(
+            {
+                "ticker": ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"],
+                "sector": [
+                    "Tech",
+                    "Tech",
+                    "Tech",
+                    "Finance",
+                    "Finance",
+                    "Finance",
+                    "Energy",
+                    "Energy",
+                    "Energy",
+                ],
+                "price": [150.0, 160.0, 140.0, 100.0, 110.0, 95.0, 80.0, 85.0, 75.0],
+                "market_cap": [2e12, 2.2e12, 1.8e12, 500e9, 550e9, 450e9, 300e9, 320e9, 280e9],
+            }
+        )
+        summary = simple_eda(df_multi_sector, self.out_dir)
+
+        # Should include sector comparison tests
+        self.assertIn("sector_comparison_tests", summary)
+        sector_tests = summary["sector_comparison_tests"]
+        self.assertIsInstance(sector_tests, dict)
+        # Should have test results for numeric columns
+        if sector_tests:  # If we have enough data
+            # Each column should have test results
+            for col_result in sector_tests.values():
+                self.assertIn("statistic", col_result)
+                self.assertIn("p_value", col_result)
+                self.assertIn("method", col_result)
+
+    def test_simple_eda_includes_region_statistics(self):
+        """Should include region-wise statistics (Phase 9.2)"""
+        from finance_ml.eval import simple_eda
+
+        # Create dataframe with multiple regions
+        df_multi_region = pd.DataFrame(
+            {
+                "ticker": ["US1", "US2", "EU1", "EU2", "APAC1", "APAC2"],
+                "region": ["US", "US", "EU", "EU", "APAC", "APAC"],
+                "sector": ["Tech", "Tech", "Finance", "Finance", "Energy", "Energy"],
+                "price": [150.0, 160.0, 100.0, 110.0, 80.0, 85.0],
+                "market_cap": [2e12, 2.2e12, 500e9, 550e9, 300e9, 320e9],
+            }
+        )
+        summary = simple_eda(df_multi_region, self.out_dir)
+
+        # Should include region statistics (parallel to sector_statistics)
+        self.assertIn("region_statistics", summary)
+        region_stats = summary["region_statistics"]
+        self.assertIsInstance(region_stats, dict)
+        # Should have statistics for each region
+        if region_stats:
+            for region_name, stats in region_stats.items():
+                self.assertIn("count", stats)
+                self.assertIn("means", stats)
+                self.assertIn("medians", stats)
+
 
 class TestExportPredictionsToExcel(unittest.TestCase):
     """Test Excel export function"""

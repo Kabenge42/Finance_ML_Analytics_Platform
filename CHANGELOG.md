@@ -5,6 +5,38 @@ All notable changes to the Finance ML Analytics Platform will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2025-10-29
+
+### Added
+
+- **Phase 9.2: Enhanced EDA with Advanced Statistical Analysis** (TDD Implementation)
+  - Distribution analysis with skewness and kurtosis metrics
+  - Outlier detection using IQR (Interquartile Range) method
+  - Normality tests (Shapiro-Wilk, Anderson-Darling) for distribution assessment
+  - Correlation matrices with both Pearson and Spearman methods
+  - Sector-wise statistical summaries for comparative analysis
+  - **Test Coverage**: Comprehensive tests in `tests/test_finance_ml_eval.py` ensuring reliability
+  - **Documentation**: `PHASE_9_2_TDD_IMPLEMENTATION_SUMMARY.md` with usage examples
+  - **Lines Updated**: Enhanced `finance_ml/eval.py` with new `simple_eda` features
+  - [1689445](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/1689445), [c9bcfae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c9bcfae)
+
+### Changed
+
+- **Notebook Integration** (`ml_finance_model_main.ipynb`)
+  - Integrated Phase 9.2 enhanced EDA capabilities with demonstration cells
+  - Synchronized execution metadata and timestamps across notebook cells
+  - Standardized numeric formatting for consistency
+  - [1689445](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/1689445), [2171726](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2171726)
+
+- **Database Configuration**
+  - Updated SQLite driver reference to `sqlite.xerial` in data source configurations
+  - [b0988ce](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b0988ce)
+
+### Fixed
+
+- Corrected numeric formatting inconsistencies across notebook cells
+  - [2171726](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2171726)
+
 ## [0.3.1] - 2025-10-29
 
 ### Added

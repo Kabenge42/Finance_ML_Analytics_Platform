@@ -2,6 +2,12 @@
  "cells": [
   {
    "metadata": {},
+   "cell_type": "raw",
+   "source": "```",
+   "id": "31aea6fcc31cf206"
+  },
+  {
+   "metadata": {},
    "cell_type": "markdown",
    "source": [
     "# Finance ML Analytics Platform — v8_3\n",
@@ -34,16 +40,20 @@
     "4. Model training (classification and regression)\n",
     "5. Evaluation and analytics"
    ],
-   "id": "31aea6fcc31cf206"
+   "id": "a0f32f1cf012fcef"
   },
   {
    "metadata": {},
    "cell_type": "markdown",
    "source": "## Configuration and Feature Flags",
-   "id": "a0f32f1cf012fcef"
+   "id": "c0faabcf1eebc96d"
   },
   {
-   "metadata": {},
+   "metadata": {
+    "jupyter": {
+     "is_executing": true
+    }
+   },
    "cell_type": "code",
    "source": [
     "# Feature Availability via NotebookConfig\n",
@@ -65,10 +75,7 @@
     "# Display a concise summary using the tested display API\n",
     "cfg.display_summary()\n",
     "\n",
-    "# Backward-compatible feature flag variables\n",
-    "# These variables are extracted from cfg for use in conditional logic throughout the notebook\n",
-    "# They provide a convenient way to enable/disable optional functionality\n",
-    "# (e.g., HAVE_PLOTLY checks for interactive plots, ENABLE_SECTOR_ANALYSIS for sector-specific analysis)\n",
+    "# Backward-compatible variables (used later in the notebook)\n",
     "HAVE_FINANCE_PREDICTION = cfg.have_finance_prediction\n",
     "HAVE_DATABASE_CONNECTION = cfg.have_database_connection\n",
     "HAVE_ADVANCED_ANALYTICS = cfg.have_advanced_analytics\n",
@@ -79,15 +86,13 @@
     "ENABLE_INTERACTIVE_PLOTS = cfg.enable_interactive_plots\n",
     "ENABLE_EXCEL_EXPORT = cfg.enable_excel_export"
    ],
-   "id": "c0faabcf1eebc96d",
+   "id": "d6f20daf80a17a2f",
    "outputs": [],
    "execution_count": null
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Finance ML Analytics Platform — Notebook (v0.3.0)\n",
     "# This notebook now uses the modular finance_ml package\n",
@@ -116,6 +121,16 @@
     "    )\n",
     "\n",
     "# Phase 9.1: Advanced Preprocessing\n",
+    "from finance_ml.advanced_preprocessing import (\n",
+    "    DataQualityReport,\n",
+    "    detect_outliers_iqr,\n",
+    "    detect_outliers_zscore,\n",
+    "    detect_outliers_isolation_forest,\n",
+    "    winsorize_by_sector,\n",
+    "    calculate_data_quality_score,\n",
+    "    impute_missing_values,\n",
+    "    scale_features,\n",
+    "    )\n",
     "\n",
     "# Phase 9.2: Enhanced EDA\n",
     "from finance_ml.eval import (\n",
@@ -123,26 +138,51 @@
     "    calculate_correlation_matrix,\n",
     "    find_top_correlations,\n",
     "    test_normality,\n",
+    "    calculate_skewness_kurtosis,\n",
+    "    detect_outliers_statistical,\n",
     "    perform_pca,\n",
     "    compare_sector_means,\n",
+    "    generate_eda_report,\n",
     "    )\n",
     "\n",
     "# Phase 9.3: Advanced Feature Engineering\n",
     "from finance_ml.advanced_features import (\n",
+    "    engineer_valuation_ratios,\n",
+    "    engineer_profitability_ratios,\n",
+    "    engineer_leverage_ratios,\n",
+    "    engineer_liquidity_ratios,\n",
+    "    engineer_efficiency_ratios,\n",
+    "    engineer_growth_metrics,\n",
+    "    engineer_sector_specific_features,\n",
+    "    create_feature_interactions,\n",
+    "    create_relative_value_features,\n",
     "    build_comprehensive_features,\n",
+    "    calculate_feature_importance_rf,\n",
     "    )\n",
     "\n",
     "# Phase 9.4: Classification\n",
+    "from finance_ml.models import (\n",
+    "    create_event_labels,\n",
+    "    train_event_classifier,\n",
+    "    )\n",
     "\n",
     "# Phase 9.5: Advanced Regression Models\n",
     "from finance_ml.advanced_models import (\n",
     "    prepare_regression_data,\n",
     "    create_classification_interactions,\n",
+    "    train_ridge_regressor,\n",
+    "    train_lasso_regressor,\n",
+    "    train_xgboost_regressor,\n",
+    "    train_lightgbm_regressor,\n",
+    "    train_catboost_regressor,\n",
+    "    train_random_forest_regressor,\n",
+    "    train_neural_network_regressor,\n",
     "    train_stacking_regressor,\n",
     "    train_quantile_regressor,\n",
     "    compare_regressors,\n",
     "    train_sector_specific_models,\n",
     "    save_model,\n",
+    "    load_model,\n",
     "    )\n",
     "\n",
     "# Phase 9.6: Model Evaluation and Error Analysis\n",
@@ -150,15 +190,26 @@
     "    comprehensive_regression_metrics,\n",
     "    compute_metrics_by_segment,\n",
     "    residual_analysis_suite,\n",
+    "    error_bucketing_analysis,\n",
+    "    create_stratified_sector_cv,\n",
+    "    evaluate_with_cross_validation,\n",
     "    )\n",
     "\n",
     "# Phase 9.7: Valuation and Stock Identification\n",
     "from finance_ml.eval import (\n",
     "    assign_valuation_category,\n",
+    "    calculate_sector_zscores,\n",
+    "    calculate_percentile_ranks,\n",
+    "    calculate_multi_factor_score,\n",
+    "    filter_stocks_by_criteria,\n",
     "    create_valuation_scatter_plot,\n",
     "    calculate_mispricing_score,\n",
     "    rank_undervalued_stocks,\n",
+    "    rank_overvalued_stocks,\n",
+    "    rank_stocks_by_sector,\n",
     "    export_predictions_to_excel,\n",
+    "    create_sector_heatmap,\n",
+    "    create_interactive_prediction_plot,\n",
     "    )\n",
     "\n",
     "# Setup logging\n",
@@ -170,7 +221,9 @@
     "print(f\"Finance ML Analytics Platform v{__version__}\")\n",
     "print(\"All functions imported from finance_ml package\")\n"
    ],
-   "id": "6b23df806f42457c"
+   "id": "7d55eadc60d6feed",
+   "outputs": [],
+   "execution_count": null
   },
   {
    "metadata": {},
@@ -180,7 +233,7 @@
     "\n",
     "Load configuration from environment variables or config files.\n"
    ],
-   "id": "7d55eadc60d6feed"
+   "id": "cd5d612f66cc6513"
   },
   {
    "metadata": {},
@@ -190,16 +243,14 @@
     "config = load_config()\n",
     "display_config_summary(config)\n",
     "\n",
-    "# Ensure output_dir uses relative path (cross-platform compatible)\n",
+    "# FIX #1: Ensure output_dir is absolute path pointing to correct location\n",
     "from pathlib import Path\n",
     "\n",
-    "# Use project root relative path instead of hardcoded absolute path\n",
-    "project_root = Path.cwd()\n",
-    "config.output_dir = project_root / \"outputs\"\n",
+    "config.output_dir = Path(r\"C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\")\n",
     "config.output_dir.mkdir(parents=True, exist_ok=True)\n",
     "print(f\"\\n✓ Output directory set to: {config.output_dir.absolute()}\")"
    ],
-   "id": "cd5d612f66cc6513",
+   "id": "3550d1a13240a510",
    "outputs": [],
    "execution_count": null
   },
@@ -214,7 +265,7 @@
     "Note: The generator is now provided by the package as\n",
     "`finance_ml.create_sample_financial_dataset` — no inline definition needed here.\n"
    ],
-   "id": "3550d1a13240a510"
+   "id": "14e4cdefe3036b9e"
   },
   {
    "metadata": {},
@@ -224,7 +275,7 @@
     "\n",
     "Load stock data from configured data source (database or CSV files) with automatic fallback to sample data.\n"
    ],
-   "id": "14e4cdefe3036b9e"
+   "id": "42e6bd3155ff7709"
   },
   {
    "metadata": {},
@@ -237,7 +288,7 @@
     "\n",
     "display_data_summary(all_stocks)\n"
    ],
-   "id": "42e6bd3155ff7709",
+   "id": "faa8ba7d0c00500c",
    "outputs": [],
    "execution_count": null
   },
@@ -249,13 +300,11 @@
     "\n",
     "Validate schema and check data quality using finance_ml package functions.\n"
    ],
-   "id": "faa8ba7d0c00500c"
+   "id": "48539506e6126730"
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Unified validation reporting with error handling\n",
     "try:\n",
@@ -286,12 +335,12 @@
     "        print(f\"⚠ Missing value check failed: {e}\")\n",
     "\n",
     "except Exception as e:\n",
-    "    import traceback\n",
-    "\n",
-    "    logger.error(f\"Validation failed: {e}\\n{traceback.format_exc()}\")\n",
-    "    print(f\"⚠ Validation checks incomplete: {e}\")"
+    "    logger.error(f\"Validation failed: {e}\")\n",
+    "    print(f\"⚠ Validation checks incomplete\")"
    ],
-   "id": "9c6308c2987d250c"
+   "id": "3de78d17d4af2d77",
+   "outputs": [],
+   "execution_count": null
   },
   {
    "metadata": {},
@@ -301,19 +350,20 @@
     "\n",
     "Perform EDA using the simple_eda function.\n"
    ],
-   "id": "3de78d17d4af2d77"
+   "id": "53764b9cdd81a7"
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Unified EDA display with proper output directory\n",
     "try:\n",
-    "    # Path and simple_eda already imported at top of notebook\n",
+    "    from pathlib import Path\n",
+    "\n",
     "    output_dir = Path(config.output_dir)\n",
     "    output_dir.mkdir(exist_ok=True, parents=True)\n",
+    "\n",
+    "    from finance_ml.eval import simple_eda\n",
     "\n",
     "    print(\"\\n\" + \"=\" * 80)\n",
     "    print(\"EXPLORATORY DATA ANALYSIS\")\n",
@@ -328,278 +378,13 @@
     "        print(f\"⚠ EDA skipped - known issue with simple_eda function\")\n",
     "        print(f\"  Basic info: {all_stocks.shape[0]} rows, {all_stocks.shape[1]} columns\")\n",
     "    else:\n",
-    "        import traceback\n",
-    "\n",
-    "        logger.error(f\"EDA failed: {e}\\n{traceback.format_exc()}\")\n",
+    "        logger.error(f\"EDA failed: {e}\")\n",
     "        print(f\"⚠ EDA failed: {e}\")\n",
     "except Exception as e:\n",
-    "    import traceback\n",
-    "\n",
-    "    logger.error(f\"EDA failed: {e}\\n{traceback.format_exc()}\")\n",
+    "    logger.error(f\"EDA failed: {e}\")\n",
     "    print(f\"⚠ EDA failed: {e}\")"
    ],
-   "id": "8d1ad6fb619cd210"
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": [
-    "## Phase 9.1 — Advanced Preprocessing and Data Quality\n",
-    "\n",
-    "Implement sophisticated data preprocessing techniques:\n",
-    "1. Robust outlier detection (IQR, z-score, Isolation Forest)\n",
-    "2. Sector-specific winsorization\n",
-    "3. Data quality scoring and monitoring\n",
-    "4. Advanced imputation strategies\n",
-    "5. Feature scaling pipelines"
-   ],
-   "id": "b1c00f3de7f18a33"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "source": [
-    "# Import Phase 9.1 advanced preprocessing functions\n",
-    "from finance_ml.advanced_preprocessing import (\n",
-    "    detect_outliers_iqr,\n",
-    "    detect_outliers_zscore,\n",
-    "    detect_outliers_isolation_forest,\n",
-    "    winsorize_by_sector,\n",
-    "    calculate_data_quality_score,\n",
-    "    impute_missing_values\n",
-    "    )\n",
-    "\n",
-    "print(\"=\" * 80)\n",
-    "print(\"PHASE 9.1 — ADVANCED PREPROCESSING AND DATA QUALITY\")\n",
-    "print(\"=\" * 80)"
-   ],
-   "id": "3a2f01a8eba25f2b",
-   "outputs": [],
-   "execution_count": null
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": "### 9.1.1 Data Quality Assessment",
-   "id": "29370e563ca88373"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "source": [
-    "# Calculate comprehensive data quality score\n",
-    "print(\"\\n📊 Calculating Data Quality Score...\")\n",
-    "quality_report = calculate_data_quality_score(all_stocks)\n",
-    "\n",
-    "print(quality_report)\n",
-    "print(f\"\\n🔍 Issues Detected: {len(quality_report.issues)}\")\n",
-    "if quality_report.issues:\n",
-    "    print(\"\\nTop 10 Issues:\")\n",
-    "    for i, issue in enumerate(quality_report.issues[:10], 1):\n",
-    "        print(f\"  {i}. {issue}\")\n",
-    "\n",
-    "# Display key metrics\n",
-    "print(\"\\n📈 Detailed Metrics:\")\n",
-    "for key, value in list(quality_report.metrics.items())[:10]:\n",
-    "    if isinstance(value, (int, float)):\n",
-    "        print(f\"  {key}: {value:,.0f}\" if isinstance(value, int) else f\"  {key}: {value:.4f}\")"
-   ],
-   "id": "4fa50158dd49b186",
-   "outputs": [],
-   "execution_count": null
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": "### 9.1.2 Robust Outlier Detection",
-   "id": "6552e1da2d6f9a0e"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "source": [
-    "# Detect outliers using multiple methods on key financial metrics\n",
-    "outlier_cols = ['market_cap', 'last_price', 'p_e', 'revenue', 'net_income']\n",
-    "outlier_cols = [c for c in outlier_cols if c in all_stocks.columns]\n",
-    "\n",
-    "print(\"\\n🔍 Detecting Outliers Using Multiple Methods...\")\n",
-    "print(f\"Analyzing columns: {', '.join(outlier_cols)}\\n\")\n",
-    "\n",
-    "# Method 1: IQR by sector\n",
-    "print(\"Method 1: IQR (Interquartile Range) by Sector\")\n",
-    "stocks_with_iqr_outliers = detect_outliers_iqr(all_stocks, columns=outlier_cols, by_sector=True)\n",
-    "\n",
-    "# Count outliers per column\n",
-    "for col in outlier_cols:\n",
-    "    outlier_col = f\"{col}_outlier\"\n",
-    "    if outlier_col in stocks_with_iqr_outliers.columns:\n",
-    "        count = stocks_with_iqr_outliers[outlier_col].sum()\n",
-    "        pct = (count / len(all_stocks)) * 100\n",
-    "        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n",
-    "\n",
-    "# Method 2: Z-score by sector\n",
-    "print(\"\\nMethod 2: Z-Score (threshold=3.0) by Sector\")\n",
-    "stocks_with_zscore_outliers = detect_outliers_zscore(all_stocks, columns=outlier_cols, threshold=3.0, by_sector=True)\n",
-    "\n",
-    "for col in outlier_cols:\n",
-    "    outlier_col = f\"{col}_zscore_outlier\"\n",
-    "    if outlier_col in stocks_with_zscore_outliers.columns:\n",
-    "        count = stocks_with_zscore_outliers[outlier_col].sum()\n",
-    "        pct = (count / len(all_stocks)) * 100\n",
-    "        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n",
-    "\n",
-    "# Method 3: Isolation Forest (multivariate)\n",
-    "print(\"\\nMethod 3: Isolation Forest (Multivariate, contamination=0.1)\")\n",
-    "iso_outliers = detect_outliers_isolation_forest(all_stocks, columns=outlier_cols, contamination=0.1)\n",
-    "print(f\"  Total outliers detected: {iso_outliers.sum()} ({iso_outliers.mean():.2%})\")"
-   ],
-   "id": "827a608b9d48839c",
-   "outputs": [],
-   "execution_count": null
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": "### 9.1.3 Sector-Specific Winsorization",
-   "id": "e57f8cba9f1ba20d"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "source": [
-    "# Apply winsorization to handle extreme values (sector-specific)\n",
-    "print(\"\\n📉 Applying Winsorization (1st-99th percentile) by Sector...\")\n",
-    "\n",
-    "# Select columns to winsorize\n",
-    "winsorize_cols = ['p_e', 'p_b', 'market_cap', 'revenue', 'net_income']\n",
-    "winsorize_cols = [c for c in winsorize_cols if c in all_stocks.columns]\n",
-    "\n",
-    "# Store original values for comparison\n",
-    "original_stats = {}\n",
-    "for col in winsorize_cols:\n",
-    "    original_stats[col] = {\n",
-    "        'mean': all_stocks[col].mean(),\n",
-    "        'std': all_stocks[col].std(),\n",
-    "        'min': all_stocks[col].min(),\n",
-    "        'max': all_stocks[col].max()\n",
-    "        }\n",
-    "\n",
-    "# Apply winsorization\n",
-    "stocks_winsorized = winsorize_by_sector(\n",
-    "        all_stocks,\n",
-    "        columns=winsorize_cols,\n",
-    "        lower_percentile=0.01,\n",
-    "        upper_percentile=0.99,\n",
-    "        by_sector=True\n",
-    "        )\n",
-    "\n",
-    "# Compare before and after\n",
-    "print(\"\\nWinsorization Impact:\")\n",
-    "print(f\"{'Column':<15} {'Orig Min':<12} {'New Min':<12} {'Orig Max':<15} {'New Max':<15}\")\n",
-    "print(\"-\" * 75)\n",
-    "\n",
-    "for col in winsorize_cols:\n",
-    "    orig_min = original_stats[col]['min']\n",
-    "    new_min = stocks_winsorized[col].min()\n",
-    "    orig_max = original_stats[col]['max']\n",
-    "    new_max = stocks_winsorized[col].max()\n",
-    "\n",
-    "    print(f\"{col:<15} {orig_min:<12.2f} {new_min:<12.2f} {orig_max:<15.2f} {new_max:<15.2f}\")\n",
-    "\n",
-    "print(f\"\\n✓ Winsorization complete - extreme values capped by sector\")"
-   ],
-   "id": "ed4638eeef8d7a07",
-   "outputs": [],
-   "execution_count": null
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": "### 9.1.4 Advanced Missing Value Imputation",
-   "id": "f552ac6b9b3e76dc"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "source": [
-    "# Advanced imputation strategies for missing values\n",
-    "print(\"\\n🔧 Imputing Missing Values...\")\n",
-    "\n",
-    "# Select columns with missing values for imputation\n",
-    "impute_cols = []\n",
-    "for col in ['p_e', 'p_b', 'gross_margin', 'revenue', 'net_income']:\n",
-    "    if col in stocks_winsorized.columns and stocks_winsorized[col].isna().any():\n",
-    "        impute_cols.append(col)\n",
-    "\n",
-    "if impute_cols:\n",
-    "    print(f\"\\nColumns with missing values: {', '.join(impute_cols)}\")\n",
-    "\n",
-    "    # Show missing value counts before imputation\n",
-    "    print(\"\\nMissing Values (Before Imputation):\")\n",
-    "    for col in impute_cols:\n",
-    "        missing_count = stocks_winsorized[col].isna().sum()\n",
-    "        missing_pct = (missing_count / len(stocks_winsorized)) * 100\n",
-    "        print(f\"  {col}: {missing_count} ({missing_pct:.2f}%)\")\n",
-    "\n",
-    "    # Apply sector-specific median imputation\n",
-    "    stocks_imputed = impute_missing_values(\n",
-    "            stocks_winsorized,\n",
-    "            strategy='sector_median',\n",
-    "            columns=impute_cols\n",
-    "            )\n",
-    "\n",
-    "    # Verify imputation\n",
-    "    print(\"\\nMissing Values (After Imputation):\")\n",
-    "    for col in impute_cols:\n",
-    "        missing_count = stocks_imputed[col].isna().sum()\n",
-    "        print(f\"  {col}: {missing_count}\")\n",
-    "\n",
-    "    print(f\"\\n✓ Imputation complete using sector-specific median strategy\")\n",
-    "\n",
-    "    # Use imputed data for further processing\n",
-    "    all_stocks_processed = stocks_imputed.copy()\n",
-    "else:\n",
-    "    print(\"\\nNo columns with missing values requiring imputation\")\n",
-    "    all_stocks_processed = stocks_winsorized.copy()\n",
-    "\n",
-    "print(f\"\\n✓ Preprocessed dataset ready: {all_stocks_processed.shape}\")"
-   ],
-   "id": "a78d2c12a7ceaf95",
-   "outputs": [],
-   "execution_count": null
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": "### 9.1.5 Summary of Phase 9.1 Implementation",
-   "id": "7585bf424540160a"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "source": [
-    "# Summary of Phase 9.1 Advanced Preprocessing\n",
-    "print(\"\\n\" + \"=\" * 80)\n",
-    "print(\"PHASE 9.1 IMPLEMENTATION SUMMARY\")\n",
-    "print(\"=\" * 80)\n",
-    "\n",
-    "summary = {\n",
-    "    \"✓ Data Quality Assessment\": \"Comprehensive scoring with completeness, consistency, and validity metrics\",\n",
-    "    \"✓ Outlier Detection\": \"Three methods: IQR (sector-specific), Z-score (sector-specific), Isolation Forest\",\n",
-    "    \"✓ Winsorization\": \"Sector-specific capping at 1st-99th percentiles to handle extreme values\",\n",
-    "    \"✓ Missing Value Imputation\": \"Sector-specific median imputation with global fallback\",\n",
-    "    \"✓ Ready for Feature Engineering\": f\"Preprocessed dataset: {all_stocks_processed.shape[0]:,} stocks × {all_stocks_processed.shape[1]} features\"\n",
-    "    }\n",
-    "\n",
-    "for key, value in summary.items():\n",
-    "    print(f\"\\n{key}\")\n",
-    "    print(f\"  {value}\")\n",
-    "\n",
-    "print(\"\\n\" + \"=\" * 80)\n",
-    "print(\"Next Steps: Phase 9.2 - Advanced EDA, Phase 9.3 - Enhanced Feature Engineering\")\n",
-    "print(\"=\" * 80)"
-   ],
-   "id": "aba30507a17f19f5",
+   "id": "b1c00f3de7f18a33",
    "outputs": [],
    "execution_count": null
   },
@@ -616,7 +401,7 @@
     "4. PCA for dimensionality insights\n",
     "5. Sector-specific statistical comparisons\n"
    ],
-   "id": "2c7f24875de10c8d"
+   "id": "eb119b91c76eb0"
   },
   {
    "metadata": {},
@@ -688,7 +473,7 @@
     "            print(f\"\\n🔝 Top Correlations (Pearson):\")\n",
     "            for pair in top_corr['pearson'][:5]:  # Show top 5\n",
     "                print(\n",
-    "                        f\"  {pair.get('feature_1', 'N/A')} <-> {pair.get('feature_2', 'N/A')}: {pair.get('correlation', 0):.3f}\")\n",
+    "                    f\"  {pair.get('feature_1', 'N/A')} <-> {pair.get('feature_2', 'N/A')}: {pair.get('correlation', 0):.3f}\")\n",
     "\n",
     "    # Display sector comparison tests (Phase 9.2)\n",
     "    if eda_summary.get('sector_comparison_tests'):\n",
@@ -722,15 +507,13 @@
     "    logger.error(f\"Enhanced EDA failed: {e}\")\n",
     "    print(f\"⚠ Enhanced EDA failed: {e}\")\n"
    ],
-   "id": "eb119b91c76eb0",
+   "id": "dc59c0bdf581e982",
    "outputs": [],
    "execution_count": null
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
     "# Phase 9.2: Generate Comprehensive EDA Report\n",
     "print(\"\\n\" + \"=\" * 80)\n",
@@ -842,7 +625,9 @@
     "\n",
     "    traceback.print_exc()\n"
    ],
-   "id": "38371a62e65e79"
+   "id": "d75598d34851315e",
+   "outputs": [],
+   "execution_count": null
   },
   {
    "metadata": {},
@@ -858,7 +643,7 @@
     "5. Sector and region analysis\n",
     "6. Financial metrics deep dive\n"
    ],
-   "id": "d5856227ae569c9d"
+   "id": "fb16074d9b30fd82"
   },
   {
    "metadata": {},
@@ -881,7 +666,7 @@
     "sns.set_style(\"whitegrid\")\n",
     "plt.rcParams['figure.figsize'] = (12, 6)\n"
    ],
-   "id": "fb16074d9b30fd82",
+   "id": "54a50a75e1354c77",
    "outputs": [],
    "execution_count": null
   },
@@ -889,7 +674,7 @@
    "metadata": {},
    "cell_type": "markdown",
    "source": "### 1. Comprehensive Summary Statistics\n",
-   "id": "54a50a75e1354c77"
+   "id": "3e4dd6f95d4a592e"
   },
   {
    "metadata": {},
@@ -984,7 +769,7 @@
     "    for sector, mcap in sector_mcap.items():\n",
     "        print(f\"  {sector}: ${mcap / 1e9:.1f}B\")\n"
    ],
-   "id": "3e4dd6f95d4a592e",
+   "id": "c1aac1f746165021",
    "outputs": [],
    "execution_count": null
   },
@@ -992,7 +777,7 @@
    "metadata": {},
    "cell_type": "markdown",
    "source": "### 2. Distribution Visualizations (Matplotlib/Seaborn)\n",
-   "id": "c1aac1f746165021"
+   "id": "f1ce8aaf3254bafe"
   },
   {
    "metadata": {},
@@ -1011,7 +796,7 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "f1ce8aaf3254bafe",
+   "id": "13670228f14a26d8",
    "outputs": [],
    "execution_count": null
   },
@@ -1032,7 +817,7 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "13670228f14a26d8",
+   "id": "46f82232e63ec332",
    "outputs": [],
    "execution_count": null
   },
@@ -1071,7 +856,7 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "46f82232e63ec332",
+   "id": "ea0e5dad2d75fee2",
    "outputs": [],
    "execution_count": null
   },
@@ -1105,7 +890,7 @@
     "        plt.tight_layout()\n",
     "        plt.show()\n"
    ],
-   "id": "ea0e5dad2d75fee2",
+   "id": "377f4832990938a5",
    "outputs": [],
    "execution_count": null
   },
@@ -1131,7 +916,7 @@
     "        plt.tight_layout()\n",
     "        plt.show()\n"
    ],
-   "id": "377f4832990938a5",
+   "id": "e1701979620b9d23",
    "outputs": [],
    "execution_count": null
   },
@@ -1139,7 +924,7 @@
    "metadata": {},
    "cell_type": "markdown",
    "source": "### 3. Correlation Analysis and Heatmaps\n",
-   "id": "e1701979620b9d23"
+   "id": "a303c3dc0667ee3"
   },
   {
    "metadata": {},
@@ -1186,7 +971,7 @@
     "        for (var1, var2), val in top_neg.items():\n",
     "            print(f\"  {var1} ↔ {var2}: {val:.3f}\")\n"
    ],
-   "id": "a303c3dc0667ee3",
+   "id": "5dda52378ac2d937",
    "outputs": [],
    "execution_count": null
   },
@@ -1215,7 +1000,7 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "5dda52378ac2d937",
+   "id": "d75e4ac5e02758ae",
    "outputs": [],
    "execution_count": null
   },
@@ -1243,7 +1028,7 @@
     "            plt.tight_layout()\n",
     "            plt.show()\n"
    ],
-   "id": "d75e4ac5e02758ae",
+   "id": "976e05bbd1908e08",
    "outputs": [],
    "execution_count": null
   },
@@ -1251,7 +1036,7 @@
    "metadata": {},
    "cell_type": "markdown",
    "source": "### 4. Interactive Visualizations (Plotly)\n",
-   "id": "976e05bbd1908e08"
+   "id": "d9665f18806839a4"
   },
   {
    "metadata": {},
@@ -1282,7 +1067,7 @@
     "        fig.update_layout(showlegend=True)\n",
     "        fig.show()\n"
    ],
-   "id": "d9665f18806839a4",
+   "id": "985ca8c517477ca",
    "outputs": [],
    "execution_count": null
   },
@@ -1306,7 +1091,7 @@
     "        fig.update_traces(textinfo='label+percent parent')\n",
     "        fig.show()\n"
    ],
-   "id": "985ca8c517477ca",
+   "id": "5bcaa5ae7b95502d",
    "outputs": [],
    "execution_count": null
   },
@@ -1338,7 +1123,7 @@
     "        fig.update_layout(showlegend=False)\n",
     "        fig.show()\n"
    ],
-   "id": "5bcaa5ae7b95502d",
+   "id": "7e9e360af0235deb",
    "outputs": [],
    "execution_count": null
   },
@@ -1363,7 +1148,7 @@
     "        fig.update_layout(xaxis_tickangle=-45)\n",
     "        fig.show()\n"
    ],
-   "id": "7e9e360af0235deb",
+   "id": "bb3a9fee4826f3b4",
    "outputs": [],
    "execution_count": null
   },
@@ -1408,7 +1193,7 @@
     "                    )\n",
     "            fig.show()\n"
    ],
-   "id": "bb3a9fee4826f3b4",
+   "id": "e89545322e5c9e5f",
    "outputs": [],
    "execution_count": null
   },
@@ -1432,7 +1217,7 @@
     "        fig.update_traces(textinfo='label+value+percent parent')\n",
     "        fig.show()\n"
    ],
-   "id": "e89545322e5c9e5f",
+   "id": "86cb191025c925de",
    "outputs": [],
    "execution_count": null
   },
@@ -1483,35 +1268,272 @@
     "print(\"Phase 9: Advanced visualizations completed\")\n",
     "print(\"=\" * 80)"
    ],
-   "id": "86cb191025c925de",
+   "id": "f34863b814b7bd3a",
    "outputs": [],
    "execution_count": null
   },
   {
    "metadata": {},
    "cell_type": "markdown",
-   "source": "## Phase 9.3 — Advanced Feature EngineeringComprehensive feature engineering using Phase 9.3 functions:1. Valuation ratios (P/E, P/B, P/S, EV/EBITDA, etc.)2. Profitability ratios (ROE, ROA, ROIC, margins)3. Leverage ratios (Debt/Equity, Net Debt/EBITDA)4. Liquidity and efficiency ratios5. Growth metrics (revenue CAGR, earnings growth)6. Sector-specific features7. Feature interactions and relative value features",
-   "id": "f34863b814b7bd3a"
+   "source": [
+    "## Phase 9.1 — Advanced Preprocessing and Data Quality\n",
+    "\n",
+    "Implement sophisticated data preprocessing techniques:\n",
+    "1. Robust outlier detection (IQR, z-score, Isolation Forest)\n",
+    "2. Sector-specific winsorization\n",
+    "3. Data quality scoring and monitoring\n",
+    "4. Advanced imputation strategies\n",
+    "5. Feature scaling pipelines"
+   ],
+   "id": "3a2f01a8eba25f2b"
   },
   {
    "metadata": {},
    "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
    "source": [
+    "# Import Phase 9.1 advanced preprocessing functions\n",
+    "from finance_ml.advanced_preprocessing import (\n",
+    "    detect_outliers_iqr,\n",
+    "    detect_outliers_zscore,\n",
+    "    detect_outliers_isolation_forest,\n",
+    "    winsorize_by_sector,\n",
+    "    calculate_data_quality_score,\n",
+    "    impute_missing_values\n",
+    "    )\n",
+    "\n",
     "print(\"=\" * 80)\n",
-    "print(\"PHASE 9.3 — ADVANCED FEATURE ENGINEERING\")\n",
-    "print(\"=\" * 80)\n",
-    "print(\"\\n🔧 Building Comprehensive Features...\")\n",
-    "all_stocks_featured = build_comprehensive_features(all_stocks_processed, include_interactions=True,\n",
-    "                                                   include_relative_values=True, sector_col='sector')\n",
-    "print(f\"\\n✓ Feature engineering complete\")\n",
-    "print(f\"  Original features: {all_stocks_processed.shape[1]}\")\n",
-    "print(f\"  Engineered features: {all_stocks_featured.shape[1]}\")\n",
-    "print(\n",
-    "        f\"  New features added: {all_stocks_featured.shape[1] - all_stocks_processed.shape[1]}\")  # Display sample of new featuresnew_cols = [c for c in all_stocks_featured.columns if c not in all_stocks_processed.columns]if new_cols:    print(f\"\\n📊 Sample of {min(10, len(new_cols))} new features:\")    for col in new_cols[:10]:        print(f\"  - {col}\")# Calculate feature importanceif 'price_target' in all_stocks_featured.columns:    print(\"\\n📈 Calculating Feature Importance...\")    feature_cols = [c for c in all_stocks_featured.columns                    if c not in ['price_target', 'ticker', 'index']                    and all_stocks_featured[c].dtype in ['float64', 'int64']]        X_importance = all_stocks_featured[feature_cols].fillna(0)    y_importance = all_stocks_featured['price_target'].fillna(all_stocks_featured['last_price'])        importance_scores = calculate_feature_importance_rf(X_importance, y_importance, top_k=20)        print(f\"\\n🔝 Top 20 Most Important Features:\")    for i, (feature, score) in enumerate(importance_scores.items(), 1):        print(f\"  {i:2d}. {feature:<40s}: {score:.4f}\")"
+    "print(\"PHASE 9.1 — ADVANCED PREPROCESSING AND DATA QUALITY\")\n",
+    "print(\"=\" * 80)"
    ],
-   "id": "deea85462c395e82"
+   "id": "29370e563ca88373",
+   "outputs": [],
+   "execution_count": null
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### 9.1.1 Data Quality Assessment",
+   "id": "4fa50158dd49b186"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "source": [
+    "# Calculate comprehensive data quality score\n",
+    "print(\"\\n📊 Calculating Data Quality Score...\")\n",
+    "quality_report = calculate_data_quality_score(all_stocks)\n",
+    "\n",
+    "print(quality_report)\n",
+    "print(f\"\\n🔍 Issues Detected: {len(quality_report.issues)}\")\n",
+    "if quality_report.issues:\n",
+    "    print(\"\\nTop 10 Issues:\")\n",
+    "    for i, issue in enumerate(quality_report.issues[:10], 1):\n",
+    "        print(f\"  {i}. {issue}\")\n",
+    "\n",
+    "# Display key metrics\n",
+    "print(\"\\n📈 Detailed Metrics:\")\n",
+    "for key, value in list(quality_report.metrics.items())[:10]:\n",
+    "    if isinstance(value, (int, float)):\n",
+    "        print(f\"  {key}: {value:,.0f}\" if isinstance(value, int) else f\"  {key}: {value:.4f}\")"
+   ],
+   "id": "6552e1da2d6f9a0e",
+   "outputs": [],
+   "execution_count": null
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### 9.1.2 Robust Outlier Detection",
+   "id": "827a608b9d48839c"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "source": [
+    "# Detect outliers using multiple methods on key financial metrics\n",
+    "outlier_cols = ['market_cap', 'last_price', 'p_e', 'revenue', 'net_income']\n",
+    "outlier_cols = [c for c in outlier_cols if c in all_stocks.columns]\n",
+    "\n",
+    "print(\"\\n🔍 Detecting Outliers Using Multiple Methods...\")\n",
+    "print(f\"Analyzing columns: {', '.join(outlier_cols)}\\n\")\n",
+    "\n",
+    "# Method 1: IQR by sector\n",
+    "print(\"Method 1: IQR (Interquartile Range) by Sector\")\n",
+    "stocks_with_iqr_outliers = detect_outliers_iqr(all_stocks, columns=outlier_cols, by_sector=True)\n",
+    "\n",
+    "# Count outliers per column\n",
+    "for col in outlier_cols:\n",
+    "    outlier_col = f\"{col}_outlier\"\n",
+    "    if outlier_col in stocks_with_iqr_outliers.columns:\n",
+    "        count = stocks_with_iqr_outliers[outlier_col].sum()\n",
+    "        pct = (count / len(all_stocks)) * 100\n",
+    "        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n",
+    "\n",
+    "# Method 2: Z-score by sector\n",
+    "print(\"\\nMethod 2: Z-Score (threshold=3.0) by Sector\")\n",
+    "stocks_with_zscore_outliers = detect_outliers_zscore(all_stocks, columns=outlier_cols, threshold=3.0, by_sector=True)\n",
+    "\n",
+    "for col in outlier_cols:\n",
+    "    outlier_col = f\"{col}_zscore_outlier\"\n",
+    "    if outlier_col in stocks_with_zscore_outliers.columns:\n",
+    "        count = stocks_with_zscore_outliers[outlier_col].sum()\n",
+    "        pct = (count / len(all_stocks)) * 100\n",
+    "        print(f\"  {col}: {count} outliers ({pct:.2f}%)\")\n",
+    "\n",
+    "# Method 3: Isolation Forest (multivariate)\n",
+    "print(\"\\nMethod 3: Isolation Forest (Multivariate, contamination=0.1)\")\n",
+    "iso_outliers = detect_outliers_isolation_forest(all_stocks, columns=outlier_cols, contamination=0.1)\n",
+    "print(f\"  Total outliers detected: {iso_outliers.sum()} ({iso_outliers.mean():.2%})\")"
+   ],
+   "id": "e57f8cba9f1ba20d",
+   "outputs": [],
+   "execution_count": null
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### 9.1.3 Sector-Specific Winsorization",
+   "id": "ed4638eeef8d7a07"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "source": [
+    "# Apply winsorization to handle extreme values (sector-specific)\n",
+    "print(\"\\n📉 Applying Winsorization (1st-99th percentile) by Sector...\")\n",
+    "\n",
+    "# Select columns to winsorize\n",
+    "winsorize_cols = ['p_e', 'p_b', 'market_cap', 'revenue', 'net_income']\n",
+    "winsorize_cols = [c for c in winsorize_cols if c in all_stocks.columns]\n",
+    "\n",
+    "# Store original values for comparison\n",
+    "original_stats = {}\n",
+    "for col in winsorize_cols:\n",
+    "    original_stats[col] = {\n",
+    "        'mean': all_stocks[col].mean(),\n",
+    "        'std': all_stocks[col].std(),\n",
+    "        'min': all_stocks[col].min(),\n",
+    "        'max': all_stocks[col].max()\n",
+    "        }\n",
+    "\n",
+    "# Apply winsorization\n",
+    "stocks_winsorized = winsorize_by_sector(\n",
+    "        all_stocks,\n",
+    "        columns=winsorize_cols,\n",
+    "        lower_percentile=0.01,\n",
+    "        upper_percentile=0.99,\n",
+    "        by_sector=True\n",
+    "        )\n",
+    "\n",
+    "# Compare before and after\n",
+    "print(\"\\nWinsorization Impact:\")\n",
+    "print(f\"{'Column':<15} {'Orig Min':<12} {'New Min':<12} {'Orig Max':<15} {'New Max':<15}\")\n",
+    "print(\"-\" * 75)\n",
+    "\n",
+    "for col in winsorize_cols:\n",
+    "    orig_min = original_stats[col]['min']\n",
+    "    new_min = stocks_winsorized[col].min()\n",
+    "    orig_max = original_stats[col]['max']\n",
+    "    new_max = stocks_winsorized[col].max()\n",
+    "\n",
+    "    print(f\"{col:<15} {orig_min:<12.2f} {new_min:<12.2f} {orig_max:<15.2f} {new_max:<15.2f}\")\n",
+    "\n",
+    "print(f\"\\n✓ Winsorization complete - extreme values capped by sector\")"
+   ],
+   "id": "f552ac6b9b3e76dc",
+   "outputs": [],
+   "execution_count": null
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### 9.1.4 Advanced Missing Value Imputation",
+   "id": "a78d2c12a7ceaf95"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "source": [
+    "# Advanced imputation strategies for missing values\n",
+    "print(\"\\n🔧 Imputing Missing Values...\")\n",
+    "\n",
+    "# Select columns with missing values for imputation\n",
+    "impute_cols = []\n",
+    "for col in ['p_e', 'p_b', 'gross_margin', 'revenue', 'net_income']:\n",
+    "    if col in stocks_winsorized.columns and stocks_winsorized[col].isna().any():\n",
+    "        impute_cols.append(col)\n",
+    "\n",
+    "if impute_cols:\n",
+    "    print(f\"\\nColumns with missing values: {', '.join(impute_cols)}\")\n",
+    "\n",
+    "    # Show missing value counts before imputation\n",
+    "    print(\"\\nMissing Values (Before Imputation):\")\n",
+    "    for col in impute_cols:\n",
+    "        missing_count = stocks_winsorized[col].isna().sum()\n",
+    "        missing_pct = (missing_count / len(stocks_winsorized)) * 100\n",
+    "        print(f\"  {col}: {missing_count} ({missing_pct:.2f}%)\")\n",
+    "\n",
+    "    # Apply sector-specific median imputation\n",
+    "    stocks_imputed = impute_missing_values(\n",
+    "            stocks_winsorized,\n",
+    "            strategy='sector_median',\n",
+    "            columns=impute_cols\n",
+    "            )\n",
+    "\n",
+    "    # Verify imputation\n",
+    "    print(\"\\nMissing Values (After Imputation):\")\n",
+    "    for col in impute_cols:\n",
+    "        missing_count = stocks_imputed[col].isna().sum()\n",
+    "        print(f\"  {col}: {missing_count}\")\n",
+    "\n",
+    "    print(f\"\\n✓ Imputation complete using sector-specific median strategy\")\n",
+    "\n",
+    "    # Use imputed data for further processing\n",
+    "    all_stocks_processed = stocks_imputed.copy()\n",
+    "else:\n",
+    "    print(\"\\nNo columns with missing values requiring imputation\")\n",
+    "    all_stocks_processed = stocks_winsorized.copy()\n",
+    "\n",
+    "print(f\"\\n✓ Preprocessed dataset ready: {all_stocks_processed.shape}\")"
+   ],
+   "id": "7585bf424540160a",
+   "outputs": [],
+   "execution_count": null
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### 9.1.5 Summary of Phase 9.1 Implementation",
+   "id": "aba30507a17f19f5"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "source": [
+    "# Summary of Phase 9.1 Advanced Preprocessing\n",
+    "print(\"\\n\" + \"=\" * 80)\n",
+    "print(\"PHASE 9.1 IMPLEMENTATION SUMMARY\")\n",
+    "print(\"=\" * 80)\n",
+    "\n",
+    "summary = {\n",
+    "    \"✓ Data Quality Assessment\": \"Comprehensive scoring with completeness, consistency, and validity metrics\",\n",
+    "    \"✓ Outlier Detection\": \"Three methods: IQR (sector-specific), Z-score (sector-specific), Isolation Forest\",\n",
+    "    \"✓ Winsorization\": \"Sector-specific capping at 1st-99th percentiles to handle extreme values\",\n",
+    "    \"✓ Missing Value Imputation\": \"Sector-specific median imputation with global fallback\",\n",
+    "    \"✓ Ready for Feature Engineering\": f\"Preprocessed dataset: {all_stocks_processed.shape[0]:,} stocks × {all_stocks_processed.shape[1]} features\"\n",
+    "    }\n",
+    "\n",
+    "for key, value in summary.items():\n",
+    "    print(f\"\\n{key}\")\n",
+    "    print(f\"  {value}\")\n",
+    "\n",
+    "print(\"\\n\" + \"=\" * 80)\n",
+    "print(\"Next Steps: Phase 9.2 - Advanced EDA, Phase 9.3 - Enhanced Feature Engineering\")\n",
+    "print(\"=\" * 80)"
+   ],
+   "id": "2c7f24875de10c8d",
+   "outputs": [],
+   "execution_count": null
   },
   {
    "metadata": {},
@@ -1527,7 +1549,7 @@
     "5. Model interpretation with SHAP values\n",
     "6. Export classification probabilities as meta-features for regression"
    ],
-   "id": "e5fbf6fbca88c7ca"
+   "id": "31b6435e38c07537"
   },
   {
    "metadata": {},
@@ -1548,7 +1570,7 @@
     "print(\"PHASE 9.4 — MULTI-CLASS CLASSIFICATION OF FINANCIAL EVENTS\")\n",
     "print(\"=\" * 80)"
    ],
-   "id": "31b6435e38c07537",
+   "id": "195a2b43fa28c76c",
    "outputs": [],
    "execution_count": null
   },
@@ -1564,7 +1586,7 @@
     "- **Fundamental**: Based on margin trends\n",
     "- **Volatility**: Based on price volatility"
    ],
-   "id": "195a2b43fa28c76c"
+   "id": "cc3f124c139aaa11"
   },
   {
    "metadata": {},
@@ -1606,7 +1628,7 @@
     "        print(f\"    Positive: {n_positive} ({n_positive / total:.1%})\")\n",
     "        print(f\"    Negative: {n_negative} ({n_negative / total:.1%})\")"
    ],
-   "id": "cc3f124c139aaa11",
+   "id": "b587421fed51735c",
    "outputs": [],
    "execution_count": null
   },
@@ -1625,7 +1647,7 @@
     "- Voting Ensemble\n",
     "- Stacking Ensemble"
    ],
-   "id": "b587421fed51735c"
+   "id": "7e00faf4442344b5"
   },
   {
    "metadata": {},
@@ -1672,7 +1694,7 @@
     "plt.tight_layout()\n",
     "plt.show()"
    ],
-   "id": "7e00faf4442344b5",
+   "id": "228f29242e69c883",
    "outputs": [],
    "execution_count": null
   },
@@ -1684,7 +1706,7 @@
     "\n",
     "Export classification probabilities as meta-features for downstream regression models"
    ],
-   "id": "228f29242e69c883"
+   "id": "3c334c5fdcb9c331"
   },
   {
    "metadata": {},
@@ -1695,7 +1717,7 @@
     "The cell is already trying to handle these issues with `clean_extreme_values()` and `validate_data_quality()`, but the implementation seems insufficient. Let me provide a more robust version:\n",
     "\n"
    ],
-   "id": "3c334c5fdcb9c331"
+   "id": "c241e98e0b322e41"
   },
   {
    "metadata": {},
@@ -1801,7 +1823,7 @@
     "print(f\"   Original features: {all_stocks_processed.shape[1]}\")\n",
     "print(f\"   New meta-features: 5\")\n"
    ],
-   "id": "c241e98e0b322e41",
+   "id": "445e4957cf530bfc",
    "outputs": [],
    "execution_count": null
   },
@@ -1809,7 +1831,7 @@
    "metadata": {},
    "cell_type": "markdown",
    "source": "### 9.4.4 Summary of Phase 9.4 Implementation",
-   "id": "445e4957cf530bfc"
+   "id": "be93453eac2fb50c"
   },
   {
    "metadata": {},
@@ -1836,7 +1858,7 @@
     "all_stocks_phase94 = all_stocks_with_classification.copy()\n",
     "print(f\"\\n✓ Dataset ready for Phase 9.5 (stored as 'all_stocks_phase94')\")"
    ],
-   "id": "be93453eac2fb50c",
+   "id": "1d923ce579f54e85",
    "outputs": [],
    "execution_count": null
   },
@@ -1854,7 +1876,7 @@
     "5. Quantile regression for prediction intervals\n",
     "6. Model persistence and evaluation\n"
    ],
-   "id": "1d923ce579f54e85"
+   "id": "4ace99c0d9f2f853"
   },
   {
    "metadata": {},
@@ -2240,7 +2262,7 @@
     "\n",
     "    traceback.print_exc()\n"
    ],
-   "id": "4ace99c0d9f2f853",
+   "id": "3084c7c915edbac7",
    "outputs": [],
    "execution_count": null
   },
@@ -2248,7 +2270,7 @@
    "metadata": {},
    "cell_type": "markdown",
    "source": "### 5. Sector and Region Analysis\n",
-   "id": "3084c7c915edbac7"
+   "id": "2d9804c56f7d1d89"
   },
   {
    "metadata": {},
@@ -2272,7 +2294,7 @@
     "        plt.tight_layout()\n",
     "        plt.show()\n"
    ],
-   "id": "2d9804c56f7d1d89",
+   "id": "9bff82c6464ae567",
    "outputs": [],
    "execution_count": null
   },
@@ -2298,7 +2320,7 @@
     "            plt.tight_layout()\n",
     "            plt.show()\n"
    ],
-   "id": "9bff82c6464ae567",
+   "id": "5c45c70aca3d2397",
    "outputs": [],
    "execution_count": null
   },
@@ -2332,7 +2354,7 @@
     "    plt.tight_layout()\n",
     "    plt.show()\n"
    ],
-   "id": "5c45c70aca3d2397",
+   "id": "86645055b8c34805",
    "outputs": [],
    "execution_count": null
   },
@@ -2351,136 +2373,9 @@
     "    top_5_sectors = sector_counts.head(5).index\n",
     "    sector_region_data = all_stocks[all_stocks['sector'].isin(top_5_sectors)]"
    ],
-   "id": "86645055b8c34805",
+   "id": "86f411c7a1b4ffcb",
    "outputs": [],
    "execution_count": null
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": [
-    "## Phase 9.6 — Model Evaluation and Error Analysis\n",
-    "\n",
-    "Comprehensive evaluation of regression models:\n",
-    "1. Comprehensive regression metrics (MAE, RMSE, MAPE, R², Median AE, Max Error)\n",
-    "2. Metrics by segment (sector, region, market cap, volatility)\n",
-    "3. Residual analysis (normality tests, Q-Q plots, histograms)\n",
-    "4. Error bucketing analysis\n",
-    "5. Cross-validation strategies\n"
-   ],
-   "id": "86f411c7a1b4ffcb"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
-   "source": [
-    "print(\"=\" * 80)\n",
-    "print(\"PHASE 9.6 — MODEL EVALUATION AND ERROR ANALYSIS\")\n",
-    "print(\"=\" * 80)\n",
-    "\n",
-    "if 'predicted_price_target' in all_stocks_featured.columns:\n",
-    "    y_true = all_stocks_featured['price_target'].fillna(all_stocks_featured['last_price'])\n",
-    "    y_pred = all_stocks_featured['predicted_price_target']\n",
-    "\n",
-    "    # 1. Comprehensive regression metrics\n",
-    "    print(\"\\n📊 Comprehensive Regression Metrics:\")\n",
-    "    metrics = comprehensive_regression_metrics(y_true, y_pred)\n",
-    "    for metric, value in metrics.items():\n",
-    "        print(f\"  {metric}: {value:.4f}\")\n",
-    "\n",
-    "    # 2. Metrics by segment\n",
-    "    if 'sector' in all_stocks_featured.columns:\n",
-    "        print(\"\\n📈 Metrics by Sector:\")\n",
-    "        sector_metrics = compute_metrics_by_segment(\n",
-    "                all_stocks_featured.assign(y_true=y_true, y_pred=y_pred),\n",
-    "                'y_true', 'y_pred', 'sector'\n",
-    "                )\n",
-    "        for sector, metrics in list(sector_metrics.items())[:5]:\n",
-    "            print(f\"\\n  {sector}:\")\n",
-    "            print(f\"    MAE: {metrics['MAE']:.2f}\")\n",
-    "            print(f\"    RMSE: {metrics['RMSE']:.2f}\")\n",
-    "            print(f\"    R²: {metrics['R2']:.4f}\")\n",
-    "\n",
-    "    # 3. Residual analysis\n",
-    "    print(\"\\n🔍 Residual Analysis:\")\n",
-    "    residuals = residual_analysis_suite(y_true, y_pred, output_dir=config.output_dir)\n",
-    "    print(f\"  Mean residual: {residuals['mean_residual']:.4f}\")\n",
-    "    print(f\"  Std residual: {residuals['std_residual']:.4f}\")\n",
-    "else:\n",
-    "    print(\"\\n⚠ No predictions available. Run Phase 9.5 first.\")\n"
-   ],
-   "id": "72d55fc713476939"
-  },
-  {
-   "metadata": {},
-   "cell_type": "markdown",
-   "source": [
-    "## Phase 9.7 — Identification of Under/Overvalued Stocks with Visualization\n",
-    "\n",
-    "Comprehensive stock valuation and ranking:\n",
-    "1. Valuation categories (Strong Buy/Buy/Hold/Sell/Strong Sell)\n",
-    "2. Sector z-scores for relative valuation\n",
-    "3. Multi-factor scoring (valuation, quality, growth)\n",
-    "4. Interactive visualizations\n",
-    "5. Stock rankings and exports\n"
-   ],
-   "id": "7d308ef2175626ed"
-  },
-  {
-   "metadata": {},
-   "cell_type": "code",
-   "outputs": [],
-   "execution_count": null,
-   "source": [
-    "print(\"=\" * 80)\n",
-    "print(\"PHASE 9.7 — VALUATION AND STOCK IDENTIFICATION\")\n",
-    "print(\"=\" * 80)\n",
-    "\n",
-    "if 'predicted_price_target' in all_stocks_featured.columns:\n",
-    "    # Calculate mispricing scores\n",
-    "    print(\"\\n💰 Calculating Mispricing Scores...\")\n",
-    "    all_stocks_valued = calculate_mispricing_score(all_stocks_featured)\n",
-    "\n",
-    "    # Assign valuation categories\n",
-    "    print(\"\\n📊 Assigning Valuation Categories...\")\n",
-    "    categories = assign_valuation_category(all_stocks_valued['mispricing_score'])\n",
-    "    all_stocks_valued['valuation_category'] = categories\n",
-    "\n",
-    "    # Display distribution\n",
-    "    print(\"\\n📈 Valuation Category Distribution:\")\n",
-    "    category_counts = all_stocks_valued['valuation_category'].value_counts()\n",
-    "    for category, count in category_counts.items():\n",
-    "        pct = (count / len(all_stocks_valued)) * 100\n",
-    "        print(f\"  {category}: {count:,} stocks ({pct:.1f}%)\")\n",
-    "\n",
-    "    # Rankings\n",
-    "    print(\"\\n🏆 Top 10 Undervalued Stocks:\")\n",
-    "    top_undervalued = rank_undervalued_stocks(all_stocks_valued, top_n=10)\n",
-    "    for i, row in top_undervalued.iterrows():\n",
-    "        ticker = row.get('ticker', 'N/A')\n",
-    "        sector = row.get('sector', 'N/A')\n",
-    "        mispricing = row.get('mispricing_score', 0)\n",
-    "        print(f\"  {ticker:<10s} | {sector:<25s} | {mispricing:>6.1f}%\")\n",
-    "\n",
-    "    # Visualizations\n",
-    "    print(\"\\n📊 Creating Interactive Visualizations...\")\n",
-    "    scatter_path = config.output_dir / 'valuation_scatter_plot.html'\n",
-    "    create_valuation_scatter_plot(all_stocks_valued, out_path=scatter_path, color_by='sector')\n",
-    "    print(f\"  ✓ Scatter plot: {scatter_path}\")\n",
-    "\n",
-    "    # Export to Excel\n",
-    "    excel_path = config.output_dir / 'stock_valuation_analysis.xlsx'\n",
-    "    export_predictions_to_excel(all_stocks_valued, excel_path, include_summary=True)\n",
-    "    print(f\"  ✓ Excel report: {excel_path}\")\n",
-    "\n",
-    "    print(\"\\n✓ PHASE 9 COMPLETE — END-TO-END ML ANALYTICS PLATFORM\")\n",
-    "    print(\"📊 Business Objective Achieved: Stock Price Target Predictions with Valuation Analysis\")\n",
-    "else:\n",
-    "    print(\"\\n⚠ No predictions available. Run Phase 9.5 first.\")"
-   ],
-   "id": "e90fd71f878e13f3"
   }
  ],
  "metadata": {
