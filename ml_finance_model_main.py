@@ -166,11 +166,13 @@ try:
 
     # Schema validation
     try:
-        is_valid, missing_cols = validate_schema(all_stocks)
+        is_valid, errors = validate_schema(all_stocks, require_target=False)
         if is_valid:
             print("✓ Schema validation passed")
         else:
-            print(f"⚠ Schema validation: missing columns {missing_cols}")
+            print(f"⚠ Schema validation failed:")
+            for error in errors:
+                print(f"  - {error}")
     except Exception as e:
         print(f"⚠ Schema validation skipped: {e}")
 

@@ -1,12 +1,13 @@
 # Finance ML Analytics Platform
 
-**Version 0.3.3** — A professional, modular Python package for equity screening, feature engineering, and machine
+**Version 0.4.0** — A professional, modular Python package for equity screening, feature engineering, and machine
 learning models across global regions.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **TODO**: Sync version strings across files (pyproject.toml and finance_ml/__init__.py currently show 0.3.0)
+> **TODO**: Sync version strings across files (pyproject.toml and finance_ml/__init__.py show 0.3.0; CHANGELOG.md shows
+> 0.4.0 as current)
 
 ## Quick Start (TL;DR)
 
@@ -46,8 +47,7 @@ portfolio optimization.
 **Target Variable**: "Predicted Price Target" for regression modeling
 
 The platform implements a sophisticated 8-step ML workflow aligned with industry best practices (
-see [IMPROVEMENT_PLAN.md Phase 9](IMPROVEMENT_PLAN.md#phase-9--advanced-stock-prediction-ml-system-in-progress) for
-detailed implementation plan):
+see [IMPROVEMENT_PLAN.md Phase 9](improvement_plan/IMPROVEMENT_PLAN.md) for detailed implementation plan):
 
 1. Loading and preprocessing financial data from multiple regions
 2. Exploratory data analysis of financial metrics
@@ -75,29 +75,67 @@ detailed implementation plan):
 
 ### Phase 9 Implementation Status
 
-**Advanced Stock Prediction ML System** — 7 of 8 phases complete (87.5%)
+**Advanced Stock Prediction ML System** — 8 of 8 phases complete (100%)
 
 ✅ **Completed Phases:**
 
-- **Phase 9.1**: Advanced preprocessing and data quality (619 lines) — Outlier detection, winsorization, imputation,
-  scaling
-- **Phase 9.2**: Advanced EDA with statistical analysis (685 lines) — Correlation, normality tests, PCA, automated
-  reporting
+- **Phase 9.1**: Data versioning and catalog management — Dataset version tracking, metadata management, centralized
+  data
+  asset registry
+- **Phase 9.2**: Enhanced EDA with statistical analysis — Distribution analysis, outlier detection (IQR), normality
+  tests, correlation matrices (Pearson/Spearman), sector-wise summaries
 - **Phase 9.3**: Advanced feature engineering (685 lines) — 40+ financial ratios, sector-specific features, feature
   selection
 - **Phase 9.4**: Multi-class event classification (1,336 lines) — Neural networks, ensemble methods, SHAP interpretation
 - **Phase 9.5**: Sector-optimized regression (1,091 lines) — 12+ regression models, hyperparameter optimization,
-  stacking
+  stacking, comprehensive error handling, prediction flow validation
 - **Phase 9.6**: Model evaluation and error analysis (314 lines) — Comprehensive metrics (MAE, RMSE, MAPE, R²), residual
   analysis, cross-validation strategies
-- **Phase 9.7**: Stock valuation analysis (395 lines) — Mispricing scores, valuation categories, multi-factor screening,
-  interactive visualizations
+- **Phase 9.7**: Identification of under/overvalued stocks with visualization (395 lines) — Mispricing scores with
+  confidence intervals, valuation categories (Strong Buy/Buy/Hold/Sell/Strong Sell), sector-relative analysis,
+  multi-factor screening, interactive visualizations, PDF report generation, Excel export
+- **Phase 9.8**: Comprehensive analytics and reporting — Predicted vs. Analyst Price Target comparison, error analysis,
+  tracking, automated reporting
 
-🔄 **In Progress:**
-
-- **Phase 9.8**: Prediction analytics — Model vs analyst comparison, Excel reports, tracking
+**Latest Release (v0.4.0)**: Complete TDD implementation of Phase 9.7 with 15 new functions, 93 comprehensive tests,
+full notebook integration, and professional reporting capabilities.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed implementation notes and version history.
+
+### Phase 9.5 Robustness Improvements (2025-10-30)
+
+Recent enhancements to Phase 9.5 (Advanced Regression Models) improve reliability and testing:
+
+**Error Handling Enhancements:**
+
+- ✅ Model comparison with graceful degradation when individual models fail
+- ✅ Safe quantile results access with comprehensive fallback handling
+- ✅ Zero/infinite value detection before creating interaction features
+- ✅ Validation of results dataframes before visualization
+- ✅ Dynamic date generation for model metadata (no hardcoded dates)
+- ✅ Index-aligned prediction storage to prevent pandas warnings
+
+**Prediction Flow Validation:**
+
+- ✅ Predictions properly stored in `all_stocks_featured` dataframe for Phases 9.6 and 9.7
+- ✅ Validation script (`validate_phase95_predictions.py`) tests end-to-end prediction flow
+- ✅ Comprehensive checks for required columns, data coverage, and prediction intervals
+
+**Testing Enhancements:**
+
+- ✅ 16 new unit tests for Phase 9.5 error handling (`tests/test_phase95_error_handling.py`)
+- ✅ Tests cover edge cases: empty data, NaN handling, zeros, infinite values, small datasets
+- ✅ Integration tests verify full workflow and prediction storage patterns
+- ✅ All tests passing with 100% success rate
+
+**Documentation:**
+
+- ✅ Detailed fixes summary in `PHASE_9_5_FIXES_SUMMARY.md`
+- ✅ Clear error messages and user feedback throughout Phase 9.5
+- ✅ Comprehensive docstrings and inline comments
+
+These improvements ensure Phase 9.5 handles real-world data issues gracefully and provides reliable predictions for
+downstream analysis in Phases 9.6 and 9.7.
 
 ## Tech Stack
 
@@ -400,17 +438,19 @@ Comprehensive test suite in tests/ directory (37 test modules):
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.3.3)
+├── finance_ml/                    # Main Python package (v0.4.0)
 │   ├── __init__.py               # Package exports and version
 │   ├── advanced_eda.py           # Advanced EDA with statistical analysis (Phase 9.2)
 │   ├── advanced_features.py      # Advanced feature engineering (Phase 9.3)
 │   ├── advanced_models.py        # Sector-optimized regression models (Phase 9.5)
-│   ├── advanced_preprocessing.py # Advanced preprocessing and data quality (Phase 9.1)
+│   ├── advanced_preprocessing.py # Advanced preprocessing and data quality
 │   ├── classification.py         # Multi-class event classification (Phase 9.4)
 │   ├── cli.py                    # Command-line interface
 │   ├── config.py                 # Configuration management
 │   ├── data.py                   # Data loading, normalization, validation
-│   ├── eval.py                   # Analytics, visualizations, reporting
+│   ├── data_catalog.py           # Centralized data asset registry (Phase 9.1)
+│   ├── data_versioning.py        # Dataset version tracking and metadata (Phase 9.1)
+│   ├── eval.py                   # Analytics, visualizations, reporting (Phase 9.6, 9.7)
 │   ├── features.py               # Feature engineering functions
 │   ├── logging_config.py         # Logging configuration utilities
 │   ├── models.py                 # ML models (classification, regression, ensembles)
@@ -661,6 +701,26 @@ Notebook utility and display functions.
 - `display_missing_values_summary()`: Missing values report
 - `validate_and_display_data()`: Combined validation and display
 - `perform_and_display_eda()`: EDA execution and display
+
+#### `finance_ml.data_versioning`
+
+Dataset version tracking and metadata management (Phase 9.1).
+
+- `create_version()`: Create new dataset version with metadata
+- `get_version()`: Retrieve version information
+- `list_versions()`: List all available versions
+- `compare_versions()`: Compare two dataset versions
+- `track_lineage()`: Track data lineage and transformations
+
+#### `finance_ml.data_catalog`
+
+Centralized data asset registry (Phase 9.1).
+
+- `register_dataset()`: Register new dataset in catalog
+- `get_dataset()`: Retrieve dataset metadata
+- `list_datasets()`: List all registered datasets
+- `search_datasets()`: Search datasets by criteria
+- `update_metadata()`: Update dataset metadata
 
 ## Troubleshooting
 - TensorFlow installation issues: the project primarily uses scikit‑learn and gradient boosting libraries. CPU‑only TensorFlow is fine; ensure compatible system libraries. If installation is problematic on your machine, you can proceed with non‑TF parts first.
@@ -968,62 +1028,79 @@ flake8 finance_ml
 mypy finance_ml --ignore-missing-imports
 ```
 
-## What's New in v0.3.3
+## What's New in v0.4.0
 
-- ✅ **Phase 9 Workflow Integration**: Complete notebook implementation with Phase 9.3 (Advanced Feature Engineering),
-  9.6 (Model Evaluation), and 9.7 (Stock Valuation) integration
-- ✅ **Notebook Quality Improvements**: 12 comprehensive tests covering config API, type validation, and error handling
-  with ≥80% coverage
-- ✅ **Notebook Reorganization**: Improved workflow order with Phase 9.2 (Enhanced EDA) correctly positioned,
-  consolidated imports, and flattened error handling
-- ✅ **Configuration API Enhancement**: Added `output_dir` parameter to `load_config()` for immutable configuration (
-  eliminates config mutation anti-pattern)
-- ✅ **Type Safety**: Explicit `isinstance()` checks, improved error messages with actionable guidance, separated
-  validation concerns
-- ✅ **Enhanced Logging**: Added `exc_info=True` to logger calls for full stack traces
-- ✅ **Automated Tools**: Notebook reorganization script (`implement_notebook_integration.py`)
+**Released: 2025-10-30**
 
-### v0.3.2 Highlights
+### Phase 9.7: Identification of Under/Overvalued Stocks — Complete TDD Implementation
 
-- Enhanced EDA with distribution analysis, outlier detection (IQR), normality tests (Shapiro-Wilk, Anderson-Darling)
-- Correlation matrices with Pearson and Spearman methods
-- Sector-wise statistical summaries
+- ✅ **Valuation Analysis**: Mispricing score calculation with confidence intervals and risk-adjusted metrics
+- ✅ **Stock Categories**: Automated assignment (Strong Buy, Buy, Hold, Sell, Strong Sell) with sector-specific
+  thresholds
+- ✅ **Sector-Relative Analysis**: Z-scores and percentile ranks for comparative valuation
+- ✅ **Multi-Factor Screening**: Combined valuation, quality (ROE, margins), and growth (revenue CAGR) scoring
+- ✅ **Stock Ranking**: Automated identification of top undervalued/overvalued stocks and sector leaders/laggards
+- ✅ **Interactive Visualizations**: Valuation scatter plots, sector heatmaps, region-sector heatmaps
+- ✅ **Professional Reporting**: PDF generation with ReportLab, Excel export with comprehensive analytics
+- ✅ **15 new functions** in `finance_ml.eval` module
+- ✅ **93 comprehensive tests** (100% passing) in `tests/test_finance_ml_eval.py`
+- ✅ **Full notebook integration** in `ml_finance_model_main.ipynb` Phase 9.7 section
 
-### v0.3.1 Highlights
+### Phase 9.1: Data Versioning and Catalog Management — TDD Implementation
 
-- Phase 9.6 (Model Evaluation) and Phase 9.7 (Stock Valuation) complete implementations
-- Integration validation script
-- Notebook integration with `NotebookConfig`
+- ✅ **Data Versioning**: Dataset version tracking and metadata management (`finance_ml.data_versioning`)
+- ✅ **Data Catalog**: Centralized data asset registry (`finance_ml.data_catalog`)
+- ✅ **728 lines of comprehensive tests** ensuring reliability
+- ✅ **Documentation**: `PHASE_9_1_TDD_IMPLEMENTATION.md`
 
-### v0.3.0 Highlights
+### Enhanced Test Coverage and Development Tools
 
-- Configuration Management with centralized config via environment, JSON, or YAML
-- CLI Tools: Three console commands (`finance-ml`, `finance-ml-analyze`, `finance-ml-validate`)
-- Modern Packaging: `pyproject.toml` with optional dependency groups
-- CI/CD: GitHub Actions workflow for automated testing
-- CHANGELOG.md for version tracking
+- ✅ **236+ new test cases** across multiple modules
+- ✅ **Development Tools**: `fix_notebook.py`, `verify_fixes.py` for automated notebook maintenance
+- ✅ **Notebook Validation**: Comprehensive validation and integrity tests
+
+### Previous Releases
+
+**v0.3.3**: Notebook quality improvements, Phase 9 workflow integration, configuration API enhancements  
+**v0.3.2**: Enhanced EDA with statistical analysis, distribution analysis, outlier detection  
+**v0.3.1**: Phase 9.6 (Model Evaluation) and Phase 9.7 initial implementation  
+**v0.3.0**: Configuration management, CLI tools, modern packaging, CI/CD
 
 ## Development Roadmap
 
-### Phase 9: Advanced Stock Prediction ML System (Planned)
+### Phase 9: Advanced Stock Prediction ML System ✅ **COMPLETE**
 
-A comprehensive development plan for a sophisticated stock prediction system is detailed
-in [IMPROVEMENT_PLAN.md Phase 9](IMPROVEMENT_PLAN.md#phase-9--advanced-stock-prediction-ml-system-planned).
+Phase 9 implementation is complete across all 8 phases. The platform now features:
 
-**Key Enhancements Planned**:
+**Completed Enhancements**:
 
-- **Sector-Specific Features**: Tailored feature engineering for Financials, Energy, Technology, Healthcare, and
-  Consumer sectors
-- **Advanced Classification**: Multi-class event classification with neural networks and gradient boosting ensembles
-- **Enhanced Regression**: Classification-enhanced sector-optimized models with hyperparameter optimization
-- **Comprehensive Analytics**: Predicted vs. Analyst Target comparison with detailed error analysis
-- **Interactive Dashboards**: Real-time monitoring with Plotly Dash/Streamlit
-- **Model Interpretation**: SHAP and LIME integration for explainability
-- **Automated Reporting**: Excel and PDF report generation matching institutional formats
+- ✅ **Sector-Specific Features**: Tailored feature engineering for Financials, Energy, Technology, Healthcare, and
+  Consumer sectors (Phase 9.3)
+- ✅ **Advanced Classification**: Multi-class event classification with neural networks and gradient boosting ensembles (
+  Phase 9.4)
+- ✅ **Enhanced Regression**: Classification-enhanced sector-optimized models with hyperparameter optimization (Phase
+  9.5)
+- ✅ **Comprehensive Analytics**: Model evaluation, error analysis, and stock valuation with multi-factor screening (
+  Phases 9.6, 9.7)
+- ✅ **Data Management**: Version tracking and centralized catalog for datasets (Phase 9.1)
+- ✅ **Enhanced EDA**: Statistical analysis with normality tests, correlation analysis, and sector summaries (Phase 9.2)
+- ✅ **Model Interpretation**: SHAP integration for explainability and feature importance analysis
+- ✅ **Automated Reporting**: Excel and PDF report generation with professional formatting
 
 **Framework Alignment**: Phase 9 aligns with the standard 8-step ML project checklist for production-ready systems.
 
-See [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) for complete version history and detailed roadmap.
+### Future Development
+
+> **TODO**: Define next major development phase. Potential areas include:
+> - Real-time data feeds and live prediction updates
+> - Web API interface (Flask/FastAPI) for model serving
+> - Interactive dashboards with Plotly Dash/Streamlit
+> - Advanced ensemble techniques and AutoML integration
+> - Experiment tracking with MLflow/Weights & Biases
+> - Docker containerization and cloud deployment options
+
+See [IMPROVEMENT_PLAN.md](improvement_plan/IMPROVEMENT_PLAN.md) for complete version history and detailed implementation
+notes.
 
 ## SQLite Local Setup and Data Load
 

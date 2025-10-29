@@ -128,12 +128,12 @@ def validate_csv_file(csv_path: Path, region_name: str) -> ValidationResult:
 
         # Validate schema
         print(f"\nValidating schema...")
-        try:
-            validate_schema(df_norm, require_target=False)
+        is_valid, errors = validate_schema(df_norm, require_target=False)
+        if is_valid:
             results.schema_valid = True
             print(f"✓ Schema validation passed")
-        except ValueError as e:
-            error_msg = f"Schema validation failed: {str(e)}"
+        else:
+            error_msg = f"Schema validation failed: {'; '.join(errors)}"
             print(f"❌ {error_msg}")
             results.add_error(error_msg)
 

@@ -869,27 +869,59 @@ advanced techniques from industry-standard ML references:
 
 **Implementation Strategy**:
 
-- [ ] Enhance `finance_ml.data` module with TensorFlow Dataset API patterns
-  - [ ] Implement data pipeline with prefetching and caching for large datasets
-  - [ ] Add robust outlier detection: IQR by sector, z-score thresholding, isolation forest
-  - [ ] Implement winsorization (1-99th percentile) for extreme values by sector
-  - [ ] Add data quality scoring: completeness, consistency, validity checks
-  - [ ] Create data quality dashboard with pandas-profiling or sweetviz integration
-- [ ] Implement temporal validation and time-aware splits
-  - [ ] Add support for temporal features (snapshot dates, quarterly reporting cycles)
-  - [ ] Implement time-series cross-validation (expanding window, rolling window)
-  - [ ] Ensure no data leakage: strict past→future splits, group by ticker in CV
-- [ ] Add data versioning and lineage tracking
-  - [ ] Implement data versioning with timestamp and hash-based tracking
-  - [ ] Add provenance tracking: source, transformations, quality metrics
-  - [ ] Create data catalog with metadata (schema, statistics, data quality)
-- [ ] Advanced preprocessing techniques
-  - [ ] Handle missing values: sector-specific imputation (median/mean/KNN/iterative)
-  - [ ] Implement custom transformers for financial ratios (handle division by zero, infinities)
-  - [ ] Add categorical encoding: one-hot, target encoding, frequency encoding
-  - [ ] Implement feature scaling pipelines: StandardScaler, RobustScaler, MinMaxScaler by sector
-- [ ] **Testing**: Add integration tests for multi-region data loading with edge cases
-- [ ] **Documentation**: Document preprocessing decisions and their business rationale
+- [x] **Core Implementation** (Complete - Phase 9.1 TDD Implementation)
+  - [x] Add robust outlier detection: IQR by sector, z-score thresholding, isolation forest
+  - [x] Implement winsorization (1-99th percentile) for extreme values by sector
+  - [x] Add data quality scoring: completeness, consistency, validity checks
+  - [x] Implement temporal validation and time-aware splits
+  - [x] Add support for temporal features (snapshot dates, quarterly reporting cycles)
+  - [x] Implement time-series cross-validation (expanding window, rolling window)
+  - [x] Ensure no data leakage: strict past→future splits, group by ticker in CV
+  - [x] Add data versioning and lineage tracking
+  - [x] Implement data versioning with timestamp and hash-based tracking
+  - [x] Add provenance tracking: source, transformations, quality metrics
+  - [x] Create data catalog with metadata (schema, statistics, data quality)
+  - [x] Handle missing values: sector-specific imputation (median/mean)
+  - [x] Implement feature scaling pipelines: StandardScaler, RobustScaler, MinMaxScaler by sector
+  - [x] **Testing**: Integration tests for multi-region data loading with edge cases (56 tests passing)
+  - [x] **Documentation**: Preprocessing decisions documented in PHASE_9_1_TDD_IMPLEMENTATION_SUMMARY.md
+
+- [x] **Phase 9.1 Enhancements** (Complete - v0.3.0, 2025-10-30)
+  - [x] **KNN Imputation with Sector-Aware Logic** (`impute_missing_values_knn_sector`)
+    - [x] Sector-specific neighbor-based imputation preserving sector characteristics
+    - [x] Configurable k neighbors with automatic adjustment for small sectors
+    - [x] Fallback to global KNN when sector column missing
+    - [x] Test coverage: 6/6 tests passing
+    - [x] Notebook integration: Section 9.1.6.1 with usage examples
+  - [x] **Regularized Target Encoding** (`RegularizedTargetEncoder`)
+    - [x] Cross-validated target encoding with smoothing regularization
+    - [x] Prevents overfitting and handles rare categories gracefully
+    - [x] sklearn-compatible transformer (BaseEstimator, TransformerMixin)
+    - [x] Test coverage: 5/5 tests passing
+    - [x] Notebook integration: Section 9.1.6.2 with usage examples
+  - [x] **Custom Financial Transformers** (`FinancialRatioTransformer`, `SafeDivisionTransformer`,
+    `ValuationRatioTransformer`)
+    - [x] Safe division handling for financial ratios (division by zero, infinities, negatives)
+    - [x] sklearn-compatible pipeline integration
+    - [x] Automatic NaN/Inf handling with configurable strategies
+    - [x] Test coverage: 6/6 tests passing
+    - [x] Notebook integration: Section 9.1.6.3 with usage examples
+  - [x] **Data Quality Dashboard** (`generate_data_quality_dashboard`, `export_profiling_report`)
+    - [x] Interactive HTML reports with comprehensive profiling
+    - [x] Multi-method support: ydata-profiling, sweetviz, minimal fallback
+    - [x] Missing value analysis, distributions, correlations, data quality warnings
+    - [x] Test coverage: 3/4 tests passing (1 requires optional dependency)
+    - [x] Notebook integration: Section 9.1.6.4 with usage examples
+  - [x] **Summary Documentation**: PHASE_9_1_ENHANCEMENTS_SUMMARY.md with API docs and integration guide
+  - [x] **Notebook Integration**: Section 9.1.6 with 218 lines of comprehensive examples
+
+- [ ] **Future Enhancements** (Deferred to future phases)
+  - [ ] TensorFlow Dataset API patterns (optional TensorFlow dependency)
+    - [ ] Implement data pipeline with prefetching and caching for large datasets
+    - [ ] Note: Skipped in current phase to avoid optional dependency; can be implemented when TensorFlow is required
+  - [ ] Advanced categorical encoding extensions
+    - [ ] Frequency encoding, hash encoding, CatBoost encoding
+  - [ ] Iterative imputation (MICE) as alternative to KNN
 
 #### 9.2 Exploratory Data Analysis of Financial Metrics
 

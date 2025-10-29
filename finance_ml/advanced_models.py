@@ -777,9 +777,12 @@ def train_quantile_regressor(
         random_state: Random seed
 
     Returns:
-        List of trained models (one per quantile) and results dictionary
+        List of trained models (one per quantile) and results dictionary.
+        The results dictionary includes 'quantile_results' key with a list of
+        per-quantile metrics (quantile, train_score, model_type).
     """
     models = []
+    quantile_results = []  # Store results per quantile
 
     for q in quantiles:
         # Use HistGradientBoosting with quantile loss
@@ -789,7 +792,17 @@ def train_quantile_regressor(
         model.fit(X, y)
         models.append(model)
 
-    results = {"quantiles": quantiles, "n_models": len(models), "model_type": "quantile_regression"}
+        # Store per-quantile results
+        quantile_results.append(
+            {"quantile": q, "train_score": model.score(X, y), "model_type": "quantile_regression"}
+        )
+
+    results = {
+        "quantiles": quantiles,
+        "n_models": len(models),
+        "model_type": "quantile_regression",
+        "quantile_results": quantile_results,  # Add per-quantile results
+    }
 
     return models, results
 
@@ -915,6 +928,7 @@ def train_sector_specific_models(
     sector_col: str = "sector",
     model_type: str = "random_forest",
     random_state: int = 42,
+    min_samples: int = 20,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Train separate models for each sector.
@@ -926,6 +940,7 @@ def train_sector_specific_models(
         sector_col: Sector column name
         model_type: Model type to train
         random_state: Random seed
+        min_samples: Minimum samples required per sector (default: 20)
 
     Returns:
         Dictionary of sector models and results
@@ -939,7 +954,7 @@ def train_sector_specific_models(
         # Filter data for sector
         sector_df = df[df[sector_col] == sector]
 
-        if len(sector_df) < 20:  # Skip sectors with too few samples
+        if len(sector_df) < min_samples:  # Skip sectors with too few samples
             continue
 
         X_sector = sector_df[feature_cols]

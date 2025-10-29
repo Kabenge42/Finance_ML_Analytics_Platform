@@ -270,7 +270,9 @@ def train_and_evaluate_regression_by_sector(df: pd.DataFrame, out_dir: Path) -> 
         DataFrame with per-sector metrics
     """
     df = normalize_columns(df)
-    validate_schema(df, require_target=True)
+    is_valid, errors = validate_schema(df, require_target=True)
+    if not is_valid:
+        raise ValueError(f"Schema validation failed: {'; '.join(errors)}")
 
     # Identify target name
     target_candidates = ["price_target", "price_target_median"]

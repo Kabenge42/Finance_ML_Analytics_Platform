@@ -133,7 +133,7 @@ def display_missing_values_summary(missing_info: dict) -> None:
 def validate_and_display_data(df: pd.DataFrame) -> None:
     """Run schema and missing-value checks and display concise reports."""
     try:
-        is_valid, errors = validate_schema(df)
+        is_valid, errors = validate_schema(df, require_target=False)
         display_validation_results(is_valid, errors)
     except Exception as e:  # noqa: BLE001
         logger.error("Schema validation failed: %s", e)

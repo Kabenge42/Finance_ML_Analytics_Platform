@@ -5,6 +5,97 @@ All notable changes to the Finance ML Analytics Platform will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-10-30
+
+### Added
+
+- **Phase 9.7: Identification of Under/Overvalued Stocks with Visualization** (Complete TDD Implementation)
+  - Mispricing score calculation with confidence intervals and risk-adjusted metrics
+  - Valuation category assignment (Strong Buy, Buy, Hold, Sell, Strong Sell) with sector-specific thresholds
+  - Sector-relative valuation analysis with z-scores and percentile ranks
+  - Multi-factor screening combining valuation, quality (ROE, margins), and growth (revenue CAGR)
+  - Automated stock ranking functions for undervalued/overvalued identification
+  - Top sector leaders and laggards identification
+  - Interactive visualizations: valuation scatter plots, sector heatmaps, region-sector heatmaps
+  - PDF report generation with ReportLab for professional stock recommendations
+  - Excel export with comprehensive predictions and analytics
+  - 15 new functions in `finance_ml.eval` module
+  - 93 comprehensive unit tests (100% passing) in `tests/test_finance_ml_eval.py`
+  - Full integration into `ml_finance_model_main.ipynb` (Phase 9.7 section)
+  - [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+- **Phase 9.1: Data Versioning and Catalog Management** (TDD Implementation)
+  - `finance_ml.data_versioning` module for dataset version tracking and metadata management
+  - `finance_ml.data_catalog` module for centralized data asset registry
+  - Comprehensive test coverage with 728 lines of tests
+  - Documentation: `PHASE_9_1_TDD_IMPLEMENTATION.md`
+  - [d7952c0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d7952c0)
+
+- **Enhanced Test Coverage**
+  - Feature importance display validation tests (`tests/test_feature_importance_display.py`)
+  - Notebook validation tests (`tests/test_notebook_validation.py`)
+  - Notebook fixes verification tests (`test_notebook_fixes.py`)
+  - 236+ new test cases ensuring reliability
+  - [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+- **Development Tools**
+  - `fix_notebook.py`: Automated notebook fixing and validation tool
+  - `verify_fixes.py`: Verification script for notebook integrity
+  - [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+- **Documentation**
+  - `PHASE_9_7_TDD_IMPLEMENTATION.md`: Complete Phase 9.7 implementation guide with acceptance criteria
+  - `FEATURE_IMPORTANCE_FIX_SUMMARY.md`: Feature importance display fix documentation
+  - `NOTEBOOK_FIXES_SUMMARY.md`: Comprehensive notebook validation and fixes summary
+  - [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+### Changed
+
+- **Advanced Feature Engineering Refactoring** (`finance_ml/advanced_features.py`)
+  - Enhanced feature calculation functions with improved error handling
+  - Better code organization and modularity
+  - 65 lines of improvements
+  - [8993b99](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/8993b99)
+
+- **Advanced EDA Module Refactoring** (`finance_ml/advanced_eda.py`)
+  - Improved statistical analysis functions
+  - Better separation of concerns
+  - Enhanced documentation and type hints
+  - [8993b99](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/8993b99), [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+- **Notebook Workflow Updates** (`ml_finance_model_main.ipynb`)
+  - Integrated Phase 9.1 data versioning and catalog functions
+  - Enhanced Phase 9.7 section with valuation analysis workflow
+  - Improved cell organization and execution flow
+  - Updated imports for new modules
+  - [d7952c0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d7952c0), [a7dd4e6](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/a7dd4e6), [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+- **Package Initialization** (`finance_ml/__init__.py`)
+  - Added exports for data_versioning and data_catalog modules
+  - Improved module discoverability
+  - [d7952c0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d7952c0)
+
+### Fixed
+
+- **Feature Importance Display Function**
+  - Corrected feature importance visualization logic
+  - Fixed edge cases in feature ranking display
+  - Added comprehensive validation tests
+  - [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+- **Notebook Validation and Integrity**
+  - Fixed notebook cell execution order issues
+  - Corrected import statement organization
+  - Improved error handling in notebook cells
+  - Added automated validation checks
+  - [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
+- **Evaluation Module Enhancements** (`finance_ml/eval.py`)
+  - 404 lines of improvements including bug fixes and new functionality
+  - Better handling of edge cases in metric calculations
+  - Improved error messages and logging
+  - [79ca4ae](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/79ca4ae)
+
 ## [0.3.3] - 2025-10-29
 
 ### Added

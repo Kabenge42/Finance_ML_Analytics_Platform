@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Optional, List
 
@@ -306,7 +307,7 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             (
                 col
                 if col in schema_mapping.values()
-                else str(col).replace(r"[^0-9a-zA-Z]+", "_", regex=False).strip("_").lower()
+                else re.sub(r"[^0-9a-zA-Z]+", "_", str(col)).strip("_").lower()
             )
             for col in df.columns
         ]
@@ -503,17 +504,20 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def validate_schema(df: pd.DataFrame, require_target: bool = False) -> None:
+def validate_schema(df: pd.DataFrame, require_target: bool = False) -> tuple[bool, List[str]]:
     """Validate presence of critical columns.
 
     Args:
         df: DataFrame to validate
         require_target: If True, requires price_target or price_target_median column
 
-    Raises:
-        ValueError: If required columns are missing
+    Returns:
+        Tuple of (is_valid, error_messages):
+            - is_valid: True if validation passes, False otherwise
+            - error_messages: List of error strings (empty if valid)
     """
     cols = set(df.columns)
+    errors = []
 
     # Always validate core columns
     missing = [c for c in ["ticker", "sector", "last_price"] if c not in cols]
@@ -523,19 +527,19 @@ def validate_schema(df: pd.DataFrame, require_target: bool = False) -> None:
         target_candidates = ["price_target", "price_target_median"]
         has_target = any(t in cols for t in target_candidates)
 
-        if missing or not has_target:
-            msg_parts = []
-            if missing:
-                msg_parts.append(f"Missing required columns: {', '.join(missing)}")
-            if not has_target:
-                msg_parts.append(
-                    "and at least one target column among: price_target, price_target_median"
-                )
-            raise ValueError(" ".join(msg_parts))
+        if missing:
+            errors.append(f"Missing required columns: {', '.join(missing)}")
+        if not has_target:
+            errors.append(
+                "Missing at least one target column among: price_target, price_target_median"
+            )
     else:
         # Only validate core columns
         if missing:
-            raise ValueError(f"Missing required columns: {', '.join(missing)}")
+            errors.append(f"Missing required columns: {', '.join(missing)}")
+
+    is_valid = len(errors) == 0
+    return is_valid, errors
 
 
 def check_missing_values(df: pd.DataFrame) -> dict:

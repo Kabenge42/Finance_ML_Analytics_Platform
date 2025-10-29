@@ -412,6 +412,116 @@ def impute_missing_values(
     return result
 
 
+def impute_missing_values_knn_sector(
+    df: pd.DataFrame,
+    columns: Optional[List[str]] = None,
+    sector_column: str = "sector",
+    n_neighbors: int = 5,
+) -> pd.DataFrame:
+    """Impute missing values using sector-aware KNN imputation.
+
+    This enhanced KNN imputation performs imputation separately within each sector,
+    ensuring that missing values are filled using only neighbors from the same sector.
+    This preserves sector-specific characteristics and improves imputation quality.
+
+    Args:
+        df: Input DataFrame
+        columns: Columns to impute (default: all numeric columns)
+        sector_column: Name of the sector column for grouping (default: 'sector')
+        n_neighbors: Number of neighbors to use for KNN (default: 5)
+
+    Returns:
+        DataFrame with imputed values
+
+    Examples:
+        >>> df_imputed = impute_missing_values_knn_sector(
+        ...     df,
+        ...     columns=['revenue', 'ebitda'],
+        ...     sector_column='sector',
+        ...     n_neighbors=5
+        ... )
+    """
+    result = df.copy()
+
+    if columns is None:
+        columns = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    # Remove sector column from imputation if present
+    columns = [col for col in columns if col != sector_column]
+
+    if not columns:
+        logger.warning("No numeric columns to impute")
+        return result
+
+    # Check if sector column exists
+    if sector_column not in df.columns:
+        logger.warning(
+            f"Sector column '{sector_column}' not found, falling back to global KNN imputation"
+        )
+        # Fall back to global KNN imputation
+        imputer = KNNImputer(n_neighbors=n_neighbors)
+        result[columns] = imputer.fit_transform(df[columns])
+        logger.info(f"Applied global KNN imputation (k={n_neighbors}) to {len(columns)} columns")
+        return result
+
+    # Perform sector-aware KNN imputation
+    sectors = df[sector_column].dropna().unique()
+    imputed_count = 0
+
+    for sector in sectors:
+        sector_mask = df[sector_column] == sector
+        sector_data = df.loc[sector_mask, columns].copy()
+
+        # Check if sector has enough samples for KNN
+        n_samples = sector_data.shape[0]
+        if n_samples < 2:
+            logger.warning(
+                f"Sector '{sector}' has only {n_samples} sample(s), skipping KNN imputation"
+            )
+            continue
+
+        # Adjust n_neighbors if sector has fewer samples
+        k = min(n_neighbors, n_samples - 1)
+
+        # Check if sector has any missing values
+        if not sector_data.isna().any().any():
+            continue
+
+        # Apply KNN imputation to this sector
+        imputer = KNNImputer(n_neighbors=k)
+        try:
+            sector_imputed = imputer.fit_transform(sector_data)
+            result.loc[sector_mask, columns] = sector_imputed
+            imputed_count += 1
+        except Exception as e:
+            logger.warning(f"KNN imputation failed for sector '{sector}': {e}. Skipping.")
+            continue
+
+    # Handle rows with missing sector values using global imputation
+    missing_sector_mask = df[sector_column].isna()
+    if missing_sector_mask.any():
+        missing_sector_data = df.loc[missing_sector_mask, columns].copy()
+        if missing_sector_data.isna().any().any():
+            k = min(n_neighbors, missing_sector_data.shape[0] - 1)
+            if k > 0:
+                imputer = KNNImputer(n_neighbors=k)
+                try:
+                    result.loc[missing_sector_mask, columns] = imputer.fit_transform(
+                        missing_sector_data
+                    )
+                    logger.info(
+                        f"Applied global KNN to {missing_sector_mask.sum()} rows with missing sector"
+                    )
+                except Exception as e:
+                    logger.warning(f"KNN imputation failed for missing sectors: {e}")
+
+    logger.info(
+        f"Applied sector-aware KNN imputation (k={n_neighbors}) to {imputed_count} sectors "
+        f"across {len(columns)} columns"
+    )
+    return result
+
+
 def create_scaler_pipeline(
     scaler_type: str = "robust",
     by_sector: bool = True,

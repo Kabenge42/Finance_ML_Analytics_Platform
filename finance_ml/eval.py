@@ -54,6 +54,69 @@ def calculate_mispricing_score(df: pd.DataFrame) -> pd.Series:
     return score
 
 
+def calculate_risk_adjusted_mispricing(
+    df: pd.DataFrame,
+    risk_free_rate: float = 0.0,
+    use_confidence_interval: bool = False,
+    default_volatility: float = 0.20,
+) -> pd.Series:
+    """Calculate risk-adjusted mispricing score.
+
+    Formula: (Expected_Return - Risk_Free_Rate) / Volatility
+
+    This adjusts the mispricing score by the stock's volatility to account for risk.
+    Higher risk-adjusted scores indicate better risk-reward opportunities.
+
+    Args:
+        df: DataFrame with 'predicted_target', 'last_price', and 'volatility' columns
+        risk_free_rate: Risk-free rate to subtract from expected return (default 0.0)
+        use_confidence_interval: If True and confidence intervals available, adjust for uncertainty
+        default_volatility: Default volatility to use if column missing (default 0.20)
+
+    Returns:
+        Series with risk-adjusted mispricing scores
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'predicted_target': [120, 90],
+        ...     'last_price': [100, 100],
+        ...     'volatility': [0.20, 0.30]
+        ... })
+        >>> scores = calculate_risk_adjusted_mispricing(df, risk_free_rate=0.05)
+        >>> scores.iloc[0] > 0  # Undervalued with positive risk-adjusted return
+        True
+    """
+    # Calculate expected return
+    expected_return = (df["predicted_target"] - df["last_price"]) / df["last_price"]
+
+    # Use volatility column if available, otherwise use default
+    if "volatility" in df.columns:
+        volatility = df["volatility"].copy()
+    else:
+        logging.warning(f"Volatility column not found; using default {default_volatility}")
+        volatility = pd.Series(default_volatility, index=df.index)
+
+    # Replace zero or negative volatility with a small value to avoid division by zero
+    volatility = volatility.clip(lower=0.01)
+
+    # Adjust for confidence interval width if requested
+    if (
+        use_confidence_interval
+        and "confidence_lower" in df.columns
+        and "confidence_upper" in df.columns
+    ):
+        # Wider confidence intervals indicate more uncertainty
+        ci_width = (df["confidence_upper"] - df["confidence_lower"]) / df["last_price"]
+        # Penalize by confidence interval width (wider = more uncertain = lower score)
+        uncertainty_penalty = 1.0 / (1.0 + ci_width)
+        risk_adjusted = ((expected_return - risk_free_rate) / volatility) * uncertainty_penalty
+    else:
+        # Standard risk-adjusted calculation
+        risk_adjusted = (expected_return - risk_free_rate) / volatility
+
+    return risk_adjusted
+
+
 def rank_undervalued_stocks(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
     """Rank and return top N most undervalued stocks.
 
@@ -762,28 +825,25 @@ def calculate_correlation_matrix(
 
 
 def find_top_correlations(
-    df: pd.DataFrame, columns: list, n_top: int = 10, method: str = "pearson"
+    corr_matrix: pd.DataFrame, n_top: int = 10, threshold: float = 0.0
 ) -> list:
     """Find top correlated variable pairs.
 
     Phase 9.2 enhancement for identifying strongest correlations.
 
     Args:
-        df: DataFrame containing the data
-        columns: List of columns to analyze
+        corr_matrix: Correlation matrix (can be computed via calculate_correlation_matrix)
         n_top: Number of top correlations to return
-        method: Correlation method
+        threshold: Minimum absolute correlation value to consider (default: 0.0)
 
     Returns:
         List of tuples (var1, var2, correlation) sorted by absolute correlation
     """
-    corr_matrix = calculate_correlation_matrix(df, columns, method)
-
     # Get upper triangle (avoid duplicates and self-correlations)
     mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
     upper_tri = corr_matrix.where(mask)
 
-    # Convert to list of tuples
+    # Convert to list of tuples, filtering by threshold
     correlations = []
     for i in range(len(upper_tri)):
         for j in range(i + 1, len(upper_tri)):
@@ -791,7 +851,7 @@ def find_top_correlations(
             var2 = upper_tri.columns[j]
             corr_value = upper_tri.iloc[i, j]
 
-            if not pd.isna(corr_value):
+            if pd.notna(corr_value) and abs(corr_value) >= threshold:
                 correlations.append((var1, var2, corr_value))
 
     # Sort by absolute correlation (descending)
@@ -1306,9 +1366,10 @@ def generate_sector_comparison_report(
 
 def comprehensive_regression_metrics(y_true, y_pred):
     """
-    Calculate comprehensive regression metrics.
+    Calculate comprehensive regression metrics with NaN handling.
 
     Computes MAE, RMSE, MAPE, R², Median Absolute Error, and Max Error.
+    Handles NaN and infinite values gracefully by removing them before computation.
 
     Args:
         y_true: Array-like of true values
@@ -1324,6 +1385,7 @@ def comprehensive_regression_metrics(y_true, y_pred):
         - r2: R² coefficient of determination (variance explained)
         - median_ae: Median Absolute Error (robust to outliers)
         - max_error: Maximum absolute error (worst-case performance)
+        - n_samples: Number of valid samples used for computation
     """
     from sklearn.metrics import (
         mean_absolute_error,
@@ -1333,8 +1395,61 @@ def comprehensive_regression_metrics(y_true, y_pred):
         max_error as sklearn_max_error,
     )
 
+    # Convert to numpy arrays
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
+
+    # Check for NaN values
+    nan_mask_true = np.isnan(y_true)
+    nan_mask_pred = np.isnan(y_pred)
+    nan_mask = nan_mask_true | nan_mask_pred
+
+    if nan_mask.any():
+        n_nans = nan_mask.sum()
+        logging.warning(f"Found {n_nans} NaN values ({n_nans/len(y_true)*100:.2f}% of data)")
+        logging.warning(f"  - NaN in y_true: {nan_mask_true.sum()}")
+        logging.warning(f"  - NaN in y_pred: {nan_mask_pred.sum()}")
+
+        # Remove NaN values
+        valid_mask = ~nan_mask
+        y_true = y_true[valid_mask]
+        y_pred = y_pred[valid_mask]
+
+        logging.warning(f"  - Remaining valid samples: {len(y_true)}")
+
+    # Check if we have enough valid samples
+    if len(y_true) < 2:
+        logging.error("Not enough valid samples to compute metrics")
+        return {
+            "mae": np.nan,
+            "rmse": np.nan,
+            "r2": np.nan,
+            "mape": np.nan,
+            "median_ae": np.nan,
+            "max_error": np.nan,
+            "n_samples": len(y_true),
+        }
+
+    # Check for infinite values
+    inf_mask = np.isinf(y_true) | np.isinf(y_pred)
+    if inf_mask.any():
+        logging.warning(f"Found {inf_mask.sum()} infinite values, removing them")
+        valid_mask = ~inf_mask
+        y_true = y_true[valid_mask]
+        y_pred = y_pred[valid_mask]
+
+    # Recheck sample count after removing infinities
+    if len(y_true) < 2:
+        logging.error("Not enough valid samples after removing infinities")
+        return {
+            "mae": np.nan,
+            "rmse": np.nan,
+            "r2": np.nan,
+            "mape": np.nan,
+            "median_ae": np.nan,
+            "max_error": np.nan,
+            "n_samples": len(y_true),
+        }
 
     # Basic metrics
     mae = mean_absolute_error(y_true, y_pred)
@@ -1343,20 +1458,20 @@ def comprehensive_regression_metrics(y_true, y_pred):
     median_ae = median_absolute_error(y_true, y_pred)
     max_err = sklearn_max_error(y_true, y_pred)
 
-    # MAPE - handle zeros by excluding them
-    mask = y_true != 0
-    if np.any(mask):
-        mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
-    else:
-        mape = np.inf
+    # MAPE (Mean Absolute Percentage Error) - handle division by zero
+    with np.errstate(divide="ignore", invalid="ignore"):
+        mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+        if np.isnan(mape) or np.isinf(mape):
+            mape = np.nan
 
     return {
         "mae": float(mae),
         "rmse": float(rmse),
-        "mape": float(mape),
+        "mape": float(mape) if not np.isnan(mape) else np.inf,
         "r2": float(r2),
         "median_ae": float(median_ae),
         "max_error": float(max_err),
+        "n_samples": len(y_true),
     }
 
 
@@ -1679,6 +1794,85 @@ def assign_valuation_category(
     return mispricing_scores.apply(categorize)
 
 
+def get_sector_specific_thresholds(
+    sector: str, sector_volatility_df: Optional[pd.DataFrame] = None
+) -> Dict[str, float]:
+    """
+    Get sector-specific valuation thresholds adjusted for sector volatility.
+
+    Volatile sectors (Technology, Biotech) get wider threshold bands.
+    Stable sectors (Utilities, Consumer Staples) get narrower bands.
+
+    Args:
+        sector: Sector name
+        sector_volatility_df: Optional DataFrame with 'sector' and 'volatility' columns
+                             If provided, calculate dynamic thresholds based on actual volatility
+
+    Returns:
+        Dict with keys 'strong_buy', 'buy', 'sell', 'strong_sell'
+
+    Example:
+        >>> thresholds = get_sector_specific_thresholds("Technology")
+        >>> thresholds['strong_buy'] > 20.0  # Wider band for volatile sector
+        True
+        >>> thresholds = get_sector_specific_thresholds("Utilities")
+        >>> thresholds['strong_buy'] < 20.0  # Narrower band for stable sector
+        True
+    """
+    # Default thresholds (baseline)
+    default_thresholds = {"strong_buy": 20.0, "buy": 10.0, "sell": 10.0, "strong_sell": 20.0}
+
+    # Sector volatility profiles (higher multiplier = more volatile = wider bands)
+    sector_volatility_profiles = {
+        # High volatility sectors (1.3x wider bands)
+        "Technology": 1.3,
+        "Tech": 1.3,
+        "Information Technology": 1.3,
+        "Biotechnology": 1.3,
+        "Biotech": 1.3,
+        "Healthcare": 1.2,
+        "Communication Services": 1.2,
+        "Consumer Discretionary": 1.15,
+        # Medium volatility sectors (1.0x default bands)
+        "Industrials": 1.0,
+        "Materials": 1.0,
+        "Energy": 1.0,
+        "Financials": 0.9,
+        "Finance": 0.9,
+        "Financial Services": 0.9,
+        # Low volatility sectors (0.8x narrower bands)
+        "Utilities": 0.8,
+        "Consumer Staples": 0.85,
+        "Real Estate": 0.85,
+    }
+
+    # If actual sector volatility data provided, calculate dynamic multiplier
+    if sector_volatility_df is not None and "sector" in sector_volatility_df.columns:
+        sector_data = sector_volatility_df[sector_volatility_df["sector"] == sector]
+        if len(sector_data) > 0 and "volatility" in sector_volatility_df.columns:
+            avg_volatility = sector_data["volatility"].mean()
+            # Overall market volatility baseline (20%)
+            market_baseline = 0.20
+            # Adjust multiplier based on sector volatility vs market
+            multiplier = avg_volatility / market_baseline if market_baseline > 0 else 1.0
+        else:
+            # Use predefined profile
+            multiplier = sector_volatility_profiles.get(sector, 1.0)
+    else:
+        # Use predefined profile
+        multiplier = sector_volatility_profiles.get(sector, 1.0)
+
+    # Apply multiplier to thresholds
+    adjusted_thresholds = {
+        "strong_buy": default_thresholds["strong_buy"] * multiplier,
+        "buy": default_thresholds["buy"] * multiplier,
+        "sell": default_thresholds["sell"] * multiplier,
+        "strong_sell": default_thresholds["strong_sell"] * multiplier,
+    }
+
+    return adjusted_thresholds
+
+
 def calculate_sector_zscores(
     df: pd.DataFrame, metrics: list, sector_col: str = "sector"
 ) -> pd.DataFrame:
@@ -1823,7 +2017,8 @@ def calculate_multi_factor_score(
             if col in df.columns:
                 col_mean = df[col].mean()
                 col_std = df[col].std()
-                if col_std > 0:
+                # Check if std is a scalar and greater than 0
+                if pd.notna(col_std) and float(col_std) > 0:
                     zscore = (df[col] - col_mean) / col_std
                     quality_zscores.append(zscore.fillna(0))
 
@@ -1838,7 +2033,8 @@ def calculate_multi_factor_score(
             if col in df.columns:
                 col_mean = df[col].mean()
                 col_std = df[col].std()
-                if col_std > 0:
+                # Check if std is a scalar and greater than 0
+                if pd.notna(col_std) and float(col_std) > 0:
                     zscore = (df[col] - col_mean) / col_std
                     growth_zscores.append(zscore.fillna(0))
 
@@ -1847,6 +2043,65 @@ def calculate_multi_factor_score(
             scores += weights.get("growth", 0.3) * avg_growth
 
     return scores
+
+
+def identify_sector_leaders_laggards(
+    df: pd.DataFrame, top_n: int = 5, score_col: str = "mispricing_score"
+) -> Dict[str, Dict[str, pd.DataFrame]]:
+    """
+    Identify top leaders (most undervalued) and laggards (most overvalued) within each sector.
+
+    Leaders = stocks with highest positive mispricing scores (best opportunities)
+    Laggards = stocks with lowest/most negative mispricing scores (avoid/short)
+
+    Args:
+        df: DataFrame with stock data
+        top_n: Number of leaders/laggards to return per sector (default 5)
+        score_col: Column to use for ranking (default 'mispricing_score')
+
+    Returns:
+        Dict with structure:
+        {
+            'leaders': {'SectorA': DataFrame, 'SectorB': DataFrame, ...},
+            'laggards': {'SectorA': DataFrame, 'SectorB': DataFrame, ...}
+        }
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['A', 'B', 'C', 'D'],
+        ...     'sector': ['Tech', 'Tech', 'Finance', 'Finance'],
+        ...     'mispricing_score': [25, -10, 20, -15]
+        ... })
+        >>> result = identify_sector_leaders_laggards(df, top_n=1)
+        >>> result['leaders']['Tech'].iloc[0]['ticker']
+        'A'
+        >>> result['laggards']['Tech'].iloc[0]['ticker']
+        'B'
+    """
+    if "sector" not in df.columns:
+        logging.warning("'sector' column not found; cannot identify sector leaders/laggards")
+        return {"leaders": {}, "laggards": {}}
+
+    if score_col not in df.columns:
+        logging.warning(f"'{score_col}' column not found; cannot rank stocks")
+        return {"leaders": {}, "laggards": {}}
+
+    leaders = {}
+    laggards = {}
+
+    # Process each sector
+    for sector in df["sector"].unique():
+        sector_df = df[df["sector"] == sector].copy()
+
+        # Sort by score descending for leaders (highest = best)
+        leaders_df = sector_df.nlargest(top_n, score_col)
+        leaders[sector] = leaders_df
+
+        # Sort by score ascending for laggards (lowest = worst)
+        laggards_df = sector_df.nsmallest(top_n, score_col)
+        laggards[sector] = laggards_df
+
+    return {"leaders": leaders, "laggards": laggards}
 
 
 def filter_stocks_by_criteria(
@@ -2003,3 +2258,541 @@ def create_valuation_scatter_plot(
         logging.info(f"Saved valuation scatter plot to {out_path}")
 
     return fig
+
+
+def generate_pdf_report(
+    df: pd.DataFrame,
+    pdf_path: Path,
+    title: str = "Stock Valuation Report",
+    include_summary: bool = True,
+    top_n_opportunities: int = 10,
+    include_charts: bool = False,
+) -> None:
+    """
+    Generate a professional PDF report with stock recommendations.
+
+    Requires reportlab package (optional dependency).
+
+    Report sections:
+    - Executive Summary: Overall statistics and top opportunities count
+    - Top Opportunities: Highest mispricing scores with detailed metrics
+    - Risk Warnings: Model limitations and investment disclaimers
+    - Optional: Charts and visualizations
+
+    Args:
+        df: DataFrame with stock data including mispricing scores
+        pdf_path: Path where PDF will be saved
+        title: Report title (default "Stock Valuation Report")
+        include_summary: Include executive summary section (default True)
+        top_n_opportunities: Number of top opportunities to include (default 10)
+        include_charts: Include charts in report (default False, requires plotly)
+
+    Raises:
+        ImportError: If reportlab not available
+        ValueError: If DataFrame is empty
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['AAPL', 'MSFT'],
+        ...     'mispricing_score': [20.0, 15.0],
+        ...     'valuation_category': ['Strong Buy', 'Buy']
+        ... })
+        >>> generate_pdf_report(df, Path('report.pdf'))
+    """
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import (
+            SimpleDocTemplate,
+            Table,
+            TableStyle,
+            Paragraph,
+            Spacer,
+            PageBreak,
+        )
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    except ImportError as e:
+        raise ImportError(
+            "reportlab is required for PDF generation. " "Install with: pip install reportlab"
+        ) from e
+
+    if df.empty:
+        raise ValueError("DataFrame is empty; cannot generate report")
+
+    # Create PDF document
+    pdf_path = Path(pdf_path)
+    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+
+    doc = SimpleDocTemplate(str(pdf_path), pagesize=letter)
+    story = []
+    styles = getSampleStyleSheet()
+
+    # Custom styles
+    title_style = ParagraphStyle(
+        "CustomTitle",
+        parent=styles["Heading1"],
+        fontSize=24,
+        textColor=colors.HexColor("#1f77b4"),
+        spaceAfter=30,
+        alignment=TA_CENTER,
+    )
+
+    heading_style = ParagraphStyle(
+        "CustomHeading", parent=styles["Heading2"], fontSize=16, spaceAfter=12
+    )
+
+    # Title
+    story.append(Paragraph(title, title_style))
+    story.append(Spacer(1, 0.2 * inch))
+
+    # Date
+    from datetime import datetime
+
+    date_str = datetime.now().strftime("%B %d, %Y")
+    story.append(Paragraph(f"<i>Generated: {date_str}</i>", styles["Normal"]))
+    story.append(Spacer(1, 0.3 * inch))
+
+    # Executive Summary
+    if include_summary:
+        story.append(Paragraph("Executive Summary", heading_style))
+
+        total_stocks = len(df)
+        if "valuation_category" in df.columns:
+            strong_buy_count = (df["valuation_category"] == "Strong Buy").sum()
+            buy_count = (df["valuation_category"] == "Buy").sum()
+        else:
+            strong_buy_count = 0
+            buy_count = 0
+
+        if "mispricing_score" in df.columns:
+            avg_mispricing = df["mispricing_score"].mean()
+        else:
+            avg_mispricing = 0.0
+
+        summary_text = f"""
+        <b>Total Stocks Analyzed:</b> {total_stocks}<br/>
+        <b>Strong Buy Opportunities:</b> {strong_buy_count}<br/>
+        <b>Buy Opportunities:</b> {buy_count}<br/>
+        <b>Average Mispricing:</b> {avg_mispricing:.2f}%<br/>
+        """
+        story.append(Paragraph(summary_text, styles["Normal"]))
+        story.append(Spacer(1, 0.3 * inch))
+
+    # Top Opportunities
+    story.append(Paragraph(f"Top {top_n_opportunities} Investment Opportunities", heading_style))
+    story.append(Spacer(1, 0.1 * inch))
+
+    # Sort by mispricing score and get top N
+    if "mispricing_score" in df.columns:
+        top_opportunities = df.nlargest(top_n_opportunities, "mispricing_score")
+    else:
+        top_opportunities = df.head(top_n_opportunities)
+
+    # Create table data
+    table_data = [["Ticker", "Sector", "Current Price", "Target Price", "Upside %", "Category"]]
+
+    for _, row in top_opportunities.iterrows():
+        ticker = row.get("ticker", "N/A")
+        sector = row.get("sector", "N/A")
+        current = row.get("last_price", 0)
+        target = row.get("predicted_target", 0)
+        mispricing = row.get("mispricing_score", 0)
+        category = row.get("valuation_category", "N/A")
+
+        table_data.append(
+            [
+                str(ticker),
+                str(sector),
+                f"${current:.2f}" if current else "N/A",
+                f"${target:.2f}" if target else "N/A",
+                f"{mispricing:.1f}%" if mispricing else "N/A",
+                str(category),
+            ]
+        )
+
+    # Create table
+    table = Table(
+        table_data, colWidths=[1 * inch, 1.5 * inch, 1 * inch, 1 * inch, 0.8 * inch, 1 * inch]
+    )
+
+    # Table style
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1f77b4")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 1), (-1, -1), 10),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ]
+        )
+    )
+
+    story.append(table)
+    story.append(Spacer(1, 0.4 * inch))
+
+    # Risk Warnings
+    story.append(Paragraph("Risk Warnings & Disclaimers", heading_style))
+    risk_text = """
+    <b>Important:</b> This report is generated by a machine learning model and should not be 
+    considered as financial advice. Past performance does not guarantee future results.
+    <br/><br/>
+    <b>Model Limitations:</b>
+    <ul>
+        <li>Predictions are based on historical data and may not reflect future market conditions</li>
+        <li>Market sentiment, news events, and macroeconomic factors are not fully captured</li>
+        <li>Individual stock risk varies; diversification is recommended</li>
+    </ul>
+    <br/>
+    <b>Recommendation:</b> Consult with a qualified financial advisor before making investment decisions.
+    """
+    story.append(Paragraph(risk_text, styles["Normal"]))
+
+    # Build PDF
+    doc.build(story)
+    logging.info(f"Generated PDF report: {pdf_path}")
+
+    return None
+
+
+# ============================================================================
+# Phase 9.1 Enhancement #3: Data Quality Dashboard
+# ============================================================================
+
+
+def generate_data_quality_dashboard(
+    df: pd.DataFrame,
+    output_dir: Path,
+    title: str = "Financial Data Quality Report",
+    method: str = "auto",
+    minimal: bool = False,
+) -> Path:
+    """Generate comprehensive data quality dashboard HTML report.
+
+    Creates an interactive HTML report with data quality metrics, distributions,
+    correlations, and missing value analysis. Supports multiple profiling libraries.
+
+    Methods:
+        - 'auto': Try ydata-profiling, fall back to sweetviz, then minimal
+        - 'ydata-profiling': Use ydata-profiling (formerly pandas-profiling)
+        - 'pandas-profiling': Alias for ydata-profiling
+        - 'sweetviz': Use sweetviz library
+        - 'minimal': Simple HTML report without external libraries
+
+    Args:
+        df: Input DataFrame to profile
+        output_dir: Directory to save the HTML report
+        title: Report title
+        method: Profiling method to use (default: 'auto')
+        minimal: Use minimal mode even if libraries available (default: False)
+
+    Returns:
+        Path to generated HTML report
+
+    Raises:
+        ImportError: If required profiling library not available
+        ValueError: If DataFrame is empty
+
+    Examples:
+        >>> report_path = generate_data_quality_dashboard(
+        ...     df,
+        ...     output_dir=Path('outputs'),
+        ...     title="Stock Data Quality Report"
+        ... )
+        >>> print(f"Report saved to: {report_path}")
+    """
+    if df.empty:
+        raise ValueError("DataFrame is empty; cannot generate quality report")
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Sanitize title for filename
+    safe_title = "".join(c if c.isalnum() or c in (" ", "_", "-") else "_" for c in title)
+    safe_title = safe_title.replace(" ", "_")
+    timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+    report_filename = f"{safe_title}_{timestamp}.html"
+    report_path = output_dir / report_filename
+
+    # Try different profiling methods
+    if minimal or method == "minimal":
+        _generate_minimal_quality_report(df, report_path, title)
+        logging.info(f"Generated minimal quality report: {report_path}")
+        return report_path
+
+    # Try ydata-profiling (formerly pandas-profiling)
+    if method in ["auto", "ydata-profiling", "pandas-profiling"]:
+        try:
+            from ydata_profiling import ProfileReport
+
+            profile = ProfileReport(
+                df,
+                title=title,
+                explorative=True,
+                minimal=minimal,
+            )
+            profile.to_file(report_path)
+            logging.info(f"Generated ydata-profiling report: {report_path}")
+            return report_path
+        except ImportError:
+            if method in ["ydata-profiling", "pandas-profiling"]:
+                raise ImportError(
+                    f"ydata-profiling not installed. Install with: pip install ydata-profiling"
+                )
+            logging.warning("ydata-profiling not available, trying sweetviz...")
+
+    # Try sweetviz
+    if method in ["auto", "sweetviz"]:
+        try:
+            import sweetviz as sv
+
+            report = sv.analyze(df)
+            report.show_html(str(report_path), open_browser=False)
+            logging.info(f"Generated sweetviz report: {report_path}")
+            return report_path
+        except ImportError:
+            if method == "sweetviz":
+                raise ImportError(f"sweetviz not installed. Install with: pip install sweetviz")
+            logging.warning("sweetviz not available, using minimal report...")
+
+    # Fall back to minimal report
+    _generate_minimal_quality_report(df, report_path, title)
+    logging.info(f"Generated minimal quality report: {report_path}")
+    return report_path
+
+
+def _generate_minimal_quality_report(
+    df: pd.DataFrame,
+    output_path: Path,
+    title: str,
+) -> None:
+    """Generate minimal HTML quality report without external dependencies.
+
+    Creates a simple but informative HTML report with:
+    - Dataset overview (shape, memory usage)
+    - Column types and missing values
+    - Basic statistics for numeric columns
+    - Unique value counts for categorical columns
+
+    Args:
+        df: Input DataFrame
+        output_path: Path to save HTML file
+        title: Report title
+    """
+    html_parts = []
+
+    # HTML header
+    html_parts.append(
+        f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>{title}</title>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 40px;
+                background-color: #f5f5f5;
+            }}
+            h1 {{
+                color: #1f77b4;
+                border-bottom: 3px solid #1f77b4;
+                padding-bottom: 10px;
+            }}
+            h2 {{
+                color: #333;
+                margin-top: 30px;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 5px;
+            }}
+            table {{
+                border-collapse: collapse;
+                width: 100%;
+                margin: 20px 0;
+                background-color: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            th {{
+                background-color: #1f77b4;
+                color: white;
+                padding: 12px;
+                text-align: left;
+            }}
+            td {{
+                padding: 10px;
+                border-bottom: 1px solid #ddd;
+            }}
+            tr:hover {{
+                background-color: #f0f0f0;
+            }}
+            .metric {{
+                background-color: white;
+                padding: 15px;
+                margin: 10px 0;
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            .metric-label {{
+                font-weight: bold;
+                color: #666;
+            }}
+            .metric-value {{
+                font-size: 1.5em;
+                color: #1f77b4;
+            }}
+            .warning {{
+                color: #d9534f;
+                font-weight: bold;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>{title}</h1>
+        <p><i>Generated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}</i></p>
+    """
+    )
+
+    # Dataset Overview
+    html_parts.append("<h2>Dataset Overview</h2>")
+    html_parts.append(
+        f"""
+    <div class="metric">
+        <span class="metric-label">Number of Rows:</span>
+        <span class="metric-value">{len(df):,}</span>
+    </div>
+    <div class="metric">
+        <span class="metric-label">Number of Columns:</span>
+        <span class="metric-value">{len(df.columns)}</span>
+    </div>
+    <div class="metric">
+        <span class="metric-label">Memory Usage:</span>
+        <span class="metric-value">{df.memory_usage(deep=True).sum() / 1024**2:.2f} MB</span>
+    </div>
+    """
+    )
+
+    # Missing Values Summary
+    html_parts.append("<h2>Missing Values</h2>")
+    missing = df.isnull().sum()
+    missing_pct = (missing / len(df) * 100).round(2)
+    missing_df = pd.DataFrame(
+        {"Column": missing.index, "Missing Count": missing.values, "Missing %": missing_pct.values}
+    )
+    missing_df = missing_df[missing_df["Missing Count"] > 0].sort_values(
+        "Missing %", ascending=False
+    )
+
+    if len(missing_df) > 0:
+        html_parts.append(missing_df.to_html(index=False, classes="data-table"))
+    else:
+        html_parts.append("<p>✓ No missing values found</p>")
+
+    # Data Types
+    html_parts.append("<h2>Column Data Types</h2>")
+    dtype_counts = df.dtypes.value_counts()
+    dtype_df = pd.DataFrame(
+        {"Data Type": dtype_counts.index.astype(str), "Count": dtype_counts.values}
+    )
+    html_parts.append(dtype_df.to_html(index=False, classes="data-table"))
+
+    # Numeric Columns Statistics
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    if len(numeric_cols) > 0:
+        html_parts.append("<h2>Numeric Columns Statistics</h2>")
+        stats_df = df[numeric_cols].describe().T
+        stats_df = stats_df.round(2)
+        html_parts.append(stats_df.to_html(classes="data-table"))
+
+    # Categorical Columns
+    cat_cols = df.select_dtypes(include=["object", "category"]).columns
+    if len(cat_cols) > 0:
+        html_parts.append("<h2>Categorical Columns</h2>")
+        cat_summary = []
+        for col in cat_cols:
+            n_unique = df[col].nunique()
+            most_common = df[col].value_counts().head(1)
+            if len(most_common) > 0:
+                most_common_val = most_common.index[0]
+                most_common_count = most_common.values[0]
+            else:
+                most_common_val = "N/A"
+                most_common_count = 0
+
+            cat_summary.append(
+                {
+                    "Column": col,
+                    "Unique Values": n_unique,
+                    "Most Common": most_common_val,
+                    "Most Common Count": most_common_count,
+                }
+            )
+
+        cat_df = pd.DataFrame(cat_summary)
+        html_parts.append(cat_df.to_html(index=False, classes="data-table"))
+
+    # HTML footer
+    html_parts.append(
+        """
+    </body>
+    </html>
+    """
+    )
+
+    # Write to file
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(html_parts))
+
+
+def export_profiling_report(
+    df: pd.DataFrame,
+    output_path: Path,
+    minimal: bool = False,
+) -> bool:
+    """Export data profiling report to file.
+
+    Convenience function to export a data quality report. Automatically
+    detects available profiling libraries and uses the best one.
+
+    Args:
+        df: Input DataFrame to profile
+        output_path: Path where report will be saved
+        minimal: Use minimal mode (default: False)
+
+    Returns:
+        True if successful, False otherwise
+
+    Examples:
+        >>> success = export_profiling_report(
+        ...     df,
+        ...     output_path=Path('outputs/quality_report.html')
+        ... )
+    """
+    try:
+        output_path = Path(output_path)
+        output_dir = output_path.parent
+
+        report_path = generate_data_quality_dashboard(
+            df,
+            output_dir=output_dir,
+            title=output_path.stem,
+            method="auto",
+            minimal=minimal,
+        )
+
+        # Rename to desired filename if different
+        if report_path != output_path:
+            report_path.rename(output_path)
+
+        return True
+    except Exception as e:
+        logging.error(f"Failed to export profiling report: {e}")
+        return False

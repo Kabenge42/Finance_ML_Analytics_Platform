@@ -283,18 +283,15 @@ def validate_main() -> int:
 
         logger.info(f"Loaded {len(df)} rows")
 
-        # Validate schema (support mocked boolean return or exception-based API)
-        required_cols = ["ticker", "sector", "last_price"]
-        try:
-            result = validate_schema(df, required_cols)  # mocked in tests to return bool
-            is_valid = bool(result) if isinstance(result, bool) else True
-        except Exception:
-            is_valid = False
+        # Validate schema - now returns (bool, List[str])
+        is_valid, errors = validate_schema(df, require_target=False)
 
         if is_valid:
             logger.info("✓ Schema validation passed")
         else:
             logger.error("✗ Schema validation failed")
+            for error in errors:
+                logger.error(f"  {error}")
             return 1
 
         # Check missing values
@@ -302,7 +299,7 @@ def validate_main() -> int:
         if missing_report:
             logger.warning(f"Missing values detected in {len(missing_report)} columns")
             for col, info in missing_report.items():
-                logger.warning(f"  {col}: {info['count']} missing ({info['percent']:.1f}%)")
+                logger.warning(f"  {col}: {info['count']} missing ({info['percentage']:.1f}%)")
         else:
             logger.info("✓ No missing values detected")
 

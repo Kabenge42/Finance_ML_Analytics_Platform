@@ -77,9 +77,11 @@ from finance_ml.advanced_preprocessing import (
     winsorize_by_sector as winsorize_by_sector_method,
     calculate_data_quality_score,
     impute_missing_values,
+    impute_missing_values_knn_sector,
     create_scaler_pipeline,
     scale_features,
-    )
+)
+
 # Import config module
 from finance_ml.config import (
     FinanceMLConfig,
@@ -161,7 +163,10 @@ from finance_ml.eval import (
     compare_two_groups,
     generate_eda_report,
     generate_sector_comparison_report,
-    )
+    # Phase 9.1 Enhancement #3: Data Quality Dashboard
+    generate_data_quality_dashboard,
+    export_profiling_report,
+)
 from finance_ml.features import (
     _safe_div,
     engineer_basic_ratios,
@@ -180,6 +185,15 @@ from finance_ml.logging_config import (
     get_log_level,
     set_log_level,
     )
+# Import from transformers module (Phase 9.1 Enhancements #2 and #5)
+from finance_ml.transformers import (
+    RegularizedTargetEncoder,
+    TargetEncoder,
+    FinancialRatioTransformer,
+    SafeDivisionTransformer,
+    ValuationRatioTransformer,
+)
+
 # Import from models module (Phase 7 TDD implementation complete)
 from finance_ml.models import (
     create_event_labels,
@@ -277,6 +291,7 @@ __all__ = [
     "winsorize_by_sector_method",
     "calculate_data_quality_score",
     "impute_missing_values",
+    "impute_missing_values_knn_sector",
     "create_scaler_pipeline",
     "scale_features",
     # Data Catalog module (Phase 9.1)
@@ -315,6 +330,12 @@ __all__ = [
     "engineer_volatility_features",
     "engineer_revenue_cagr",
     "build_features_and_target",
+    # Transformers module (Phase 9.1 Enhancements #2 and #5)
+    "RegularizedTargetEncoder",
+    "TargetEncoder",
+    "FinancialRatioTransformer",
+    "SafeDivisionTransformer",
+    "ValuationRatioTransformer",
     # Models module
     "create_event_labels",
     "train_event_classifier",
@@ -374,6 +395,9 @@ __all__ = [
     "compare_two_groups",
     "generate_eda_report",
     "generate_sector_comparison_report",
+    # Phase 9.1 Enhancement #3: Data Quality Dashboard
+    "generate_data_quality_dashboard",
+    "export_profiling_report",
     # Notebook utilities (display + loading strategy)
     "display_config_summary",
     "load_stock_data",
