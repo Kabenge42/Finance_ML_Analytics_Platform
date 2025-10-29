@@ -461,9 +461,35 @@ def calculate_feature_importance_mutual_info(
     Returns:
         DataFrame with features and importance scores, sorted by importance
     """
-    # Handle missing values
-    X_clean = X.fillna(X.median())
-    y_clean = y.fillna(y.median())
+    # Handle missing and invalid values
+    X_clean = X.copy()
+    
+    # Replace infinite values with NaN first
+    X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
+    
+    # Fill NaN with median
+    X_clean = X_clean.fillna(X_clean.median())
+    
+    # For any remaining NaN, fill with 0
+    X_clean = X_clean.fillna(0)
+    
+    # Clip extreme values
+    for col in X_clean.columns:
+        col_data = X_clean[col]
+        if col_data.std() > 0:
+            mean_val = col_data.mean()
+            std_val = col_data.std()
+            lower_bound = mean_val - 3 * std_val
+            upper_bound = mean_val + 3 * std_val
+            X_clean[col] = np.clip(col_data, lower_bound, upper_bound)
+    
+    # Handle target variable
+    y_clean = y.replace([np.inf, -np.inf], np.nan)
+    y_clean = y_clean.fillna(y_clean.median())
+    if y_clean.isna().any():
+        y_clean = y_clean.fillna(y_clean.mean())
+    if y_clean.isna().any():
+        y_clean = y_clean.fillna(0)
 
     # Calculate mutual information
     mi_scores = mutual_info_regression(X_clean, y_clean, random_state=42)
@@ -494,9 +520,36 @@ def calculate_feature_importance_rf(
     Returns:
         DataFrame with features and importance scores, sorted by importance
     """
-    # Handle missing values
-    X_clean = X.fillna(X.median())
-    y_clean = y.fillna(y.median())
+    # Handle missing and invalid values
+    X_clean = X.copy()
+    
+    # Replace infinite values with NaN first
+    X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
+    
+    # Fill NaN with median
+    X_clean = X_clean.fillna(X_clean.median())
+    
+    # For any remaining NaN (e.g., all-NaN columns), fill with 0
+    X_clean = X_clean.fillna(0)
+    
+    # Clip extremely large values to prevent overflow
+    # Use 3 standard deviations as threshold for each column
+    for col in X_clean.columns:
+        col_data = X_clean[col]
+        if col_data.std() > 0:
+            mean_val = col_data.mean()
+            std_val = col_data.std()
+            lower_bound = mean_val - 3 * std_val
+            upper_bound = mean_val + 3 * std_val
+            X_clean[col] = np.clip(col_data, lower_bound, upper_bound)
+    
+    # Handle target variable
+    y_clean = y.replace([np.inf, -np.inf], np.nan)
+    y_clean = y_clean.fillna(y_clean.median())
+    if y_clean.isna().any():
+        y_clean = y_clean.fillna(y_clean.mean())
+    if y_clean.isna().any():
+        y_clean = y_clean.fillna(0)
 
     # Train Random Forest
     rf = RandomForestRegressor(n_estimators=n_estimators, random_state=42, n_jobs=-1, max_depth=10)

@@ -87,28 +87,38 @@ def calculate_correlation_matrix(
     return corr_matrix
 
 
-def find_top_correlations(
-    corr_matrix: pd.DataFrame,
-    n_top: int = 10,
-    exclude_self: bool = True
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Find top positive and negative correlations."""
-    corr_unstacked = corr_matrix.unstack()
+def find_top_correlations(corr_matrix: pd.DataFrame, n_top: int = 10) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, float]]]:
+    """Find top positive and negative correlations from a correlation matrix.
     
-    if exclude_self:
-        corr_unstacked = corr_unstacked[corr_unstacked < 1.0]
+    Args:
+        corr_matrix: Correlation matrix
+        n_top: Number of top correlations to return for each category
+        
+    Returns:
+        Tuple of (top_positive, top_negative) correlation lists
+    """
+    # Get upper triangle (avoid duplicates and self-correlations)
+    mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+    upper_tri = corr_matrix.where(mask)
     
-    corr_unstacked = corr_unstacked[
-        corr_unstacked.index.get_level_values(0) < corr_unstacked.index.get_level_values(1)
-    ]
+    # Convert to list of tuples
+    correlations = []
+    for i in range(len(upper_tri)):
+        for j in range(i + 1, len(upper_tri)):
+            var1 = upper_tri.index[i]
+            var2 = upper_tri.columns[j]
+            corr_value = upper_tri.iloc[i, j]
+            
+            if not pd.isna(corr_value):
+                correlations.append((var1, var2, corr_value))
     
-    top_positive = corr_unstacked.nlargest(n_top).reset_index()
-    top_positive.columns = ['Variable 1', 'Variable 2', 'Correlation']
+    # Sort by correlation value
+    correlations.sort(key=lambda x: x[2], reverse=True)
     
-    top_negative = corr_unstacked.nsmallest(n_top).reset_index()
-    top_negative.columns = ['Variable 1', 'Variable 2', 'Correlation']
+    # Split into positive and negative
+    top_positive = [c for c in correlations if c[2] > 0][:n_top]
+    top_negative = [c for c in correlations if c[2] < 0][:n_top]
     
-    logger.info(f"Found top {n_top} positive and negative correlations")
     return top_positive, top_negative
 
 
