@@ -678,6 +678,132 @@ maintainability, and adherence to Python best practices.
 
 **Example**:
 
+#### 1.7 Notebook Code Quality and Consistency
+
+**Status**: 🟡 Medium-High Priority  
+**Effort**: Small (1 day)  
+**Impact**: Improves notebook reliability, maintainability, and user experience
+
+**Context**: Code review of `ml_finance_model_main.ipynb` identified 10 issues affecting code quality, execution
+reliability, and best practices adherence.
+
+**Tasks**:
+
+- [ ] **Import Organization** (Critical)
+  - [ ] Add missing `NotebookConfig` to finance_ml imports (line 79-91)
+  - [ ] Move `Path` import from line 159 to main imports section
+  - [ ] Consolidate all imports into single cell at notebook top
+  - [ ] Test cell execution order independence
+
+- [ ] **Configuration Management** (Critical)
+  - [ ] Fix config mutation anti-pattern (lines 155-164)
+  - [ ] Use proper config initialization with output_dir parameter
+  - [ ] Document configuration best practices in notebook
+  - [ ] Add validation that config is immutable after load
+
+- [ ] **Package Bug Fixes** (Critical)
+  - [ ] Fix `simple_eda()` AttributeError: use `.dtypes` not `.dtype`
+  - [ ] Add unit test to catch this regression
+  - [ ] Remove AttributeError workaround from notebook after fix
+  - [ ] Update finance_ml.eval module with proper DataFrame dtype handling
+
+- [ ] **Type Safety and Validation** (High)
+  - [ ] Add isinstance checks for load_stock_data() return value
+  - [ ] Improve error messages with type information
+  - [ ] Add validation checkpoints throughout pipeline
+  - [ ] Document expected types in docstrings
+
+- [ ] **Error Handling** (High)
+  - [ ] Flatten nested try-except blocks (lines 193-225)
+  - [ ] Use consistent error handling pattern across cells
+  - [ ] Log errors with full stack traces (exc_info=True)
+  - [ ] Provide user-friendly error messages
+
+- [ ] **Code Cleanup** (Medium)
+  - [ ] Replace redundant feature flag variables with direct cfg access
+  - [ ] Add deprecation comments for backward-compatible variables
+  - [ ] Update logger name from `__name__` to 'finance_ml_notebook'
+  - [ ] Remove duplicate imports and unused variables
+
+- [ ] **Documentation** (Medium)
+  - [ ] Complete any truncated markdown cells
+  - [ ] Add execution order notes to notebook header
+  - [ ] Document configuration options in notebook
+  - [ ] Add troubleshooting section for common issues
+
+**Testing Checklist**:
+
+- [ ] Restart kernel and run all cells in order - no errors
+- [ ] Run cells out of order - appropriate error messages
+- [ ] Test with missing dependencies - graceful degradation
+- [ ] Verify all feature flags work correctly
+- [ ] Check output directory creation and artifact saving
+
+**Success Criteria**:
+
+- No NameError or AttributeError when running notebook top-to-bottom
+- All imports consolidated in single cell
+- Config is properly initialized without mutation
+- simple_eda() works without catching AttributeError
+- Type validation provides clear error messages
+- Error handling is consistent and informative
+
+**Related Issues**:
+
+- Links to Phase 9.1-9.7 implementation tasks
+- Dependencies on finance_ml package bug fixes
+- Integration with notebook utilities module
+
+**References**:
+
+- `ml_finance_model_main.ipynb` - main notebook
+- `finance_ml/eval.py` - simple_eda() function
+- `finance_ml/notebook_utils.py` - utility functions
+- `finance_ml/notebook_config.py` - NotebookConfig class
+
+---
+
+## Immediate Next Steps (Current Sprint)
+
+### Notebook Quality Improvements
+
+**Priority**: High - These improvements will significantly enhance notebook reliability and maintainability
+
+**Estimated Total**: 1 day of focused work
+
+#### 1. Fix Critical Import Issues (30 minutes)
+
+- Add NotebookConfig to imports
+- Move Path to main imports
+- Test import cell independence
+
+#### 2. Fix Configuration Anti-Pattern (1 hour)
+
+- Refactor config initialization
+- Remove config mutation
+- Add validation tests
+
+#### 3. Fix simple_eda Bug (2 hours)
+
+- Locate and fix .dtype/.dtypes issue in finance_ml/eval.py
+- Add unit test
+- Remove workaround from notebook
+- Test EDA pipeline end-to-end
+
+#### 4. Add Type Safety (1 hour)
+
+- Add isinstance checks
+- Improve error messages
+- Add validation docstrings
+
+#### 5. Refactor Error Handling (2 hours)
+
+- Flatten nested try-except
+- Standardize error pattern
+- Add proper logging
+
+---
+
 ### Phase 0 — Foundations and Housekeeping (Week 0) ✓
 - Align environment and packaging ✓
 - Repository hygiene ✓
@@ -800,6 +926,11 @@ advanced techniques from industry-standard ML references:
   - [ ] Test for market efficiency hypotheses using price/target relationships
 - [ ] **Testing**: Add tests for EDA report generation, statistical calculations, visualization outputs
 - [ ] **Documentation**: Document EDA insights and their implications for modeling
+- [ ] **Bug Fixes**: Fix simple_eda() AttributeError
+  - [ ] Replace incorrect `.dtype` access with `.dtypes` on DataFrames
+  - [ ] Add unit test to prevent regression
+  - [ ] Update notebook to remove AttributeError workaround
+  - [ ] Document DataFrame dtype handling best practices
 
 #### 9.3 Advanced Feature Engineering with Sector-Specific Optimizations
 

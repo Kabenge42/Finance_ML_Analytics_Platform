@@ -164,13 +164,18 @@ class FinanceMLConfig:
             os.environ["MEMORY_LIMIT"] = self.memory_limit
 
 
-def load_config(config_path: Optional[Path | str] = None, use_env: bool = True) -> FinanceMLConfig:
+def load_config(
+    config_path: Optional[Path | str] = None,
+    use_env: bool = True,
+    output_dir: Optional[Path | str] = None,
+) -> FinanceMLConfig:
     """
     Load configuration from file or environment variables.
 
     Args:
         config_path: Path to JSON or YAML config file (optional)
         use_env: If True, load from environment variables when config_path is None
+        output_dir: Optional output directory to override default/env value (avoids config mutation)
 
     Returns:
         FinanceMLConfig instance
@@ -184,21 +189,31 @@ def load_config(config_path: Optional[Path | str] = None, use_env: bool = True) 
 
         >>> # Load from YAML file
         >>> config = load_config("config.yaml")
+
+        >>> # Load with custom output directory
+        >>> config = load_config(output_dir="custom_outputs")
     """
     if config_path is not None:
         config_path = Path(config_path)
 
         if config_path.suffix == ".json":
-            return FinanceMLConfig.from_json(config_path)
+            config = FinanceMLConfig.from_json(config_path)
         elif config_path.suffix in [".yaml", ".yml"]:
-            return FinanceMLConfig.from_yaml(config_path)
+            config = FinanceMLConfig.from_yaml(config_path)
         else:
             raise ValueError(f"Unsupported config format: {config_path.suffix}")
+    elif use_env:
+        config = FinanceMLConfig.from_env()
+    else:
+        config = FinanceMLConfig()
 
-    if use_env:
-        return FinanceMLConfig.from_env()
+    # Override output_dir if provided (avoids config mutation anti-pattern)
+    if output_dir is not None:
+        if isinstance(output_dir, str):
+            output_dir = Path(output_dir)
+        config.output_dir = output_dir
 
-    return FinanceMLConfig()
+    return config
 
 
 # Global configuration instance (lazy-loaded)
