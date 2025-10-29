@@ -5,6 +5,64 @@ All notable changes to the Finance ML Analytics Platform will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2025-10-29
+
+### Added
+
+- **Phase 9 Workflow Integration — Complete Notebook Implementation**
+  - Phase 9.3: Advanced Feature Engineering integration in notebook workflow
+  - Phase 9.6: Model Evaluation and Error Analysis integration in notebook workflow
+  - Phase 9.7: Stock Valuation and Identification integration in notebook workflow
+  - Automated notebook reorganization script (`implement_notebook_integration.py`)
+  - [0b8f1a4](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0b8f1a4)
+
+- **Test Coverage for Notebook Quality Improvements**
+  - 12 comprehensive tests in `tests/test_notebook_quality_improvements.py`
+  - Tests cover config API, type validation, error handling, and import patterns
+  - All tests passing with ≥80% coverage of changed files
+  - [5534554](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/5534554)
+
+### Changed
+
+- **Notebook Reorganization** (`ml_finance_model_main.ipynb`)
+  - Moved Phase 9.2 (Enhanced EDA) after Phase 9.1 for correct workflow order
+  - Consolidated imports into single cell with `Path` and `NotebookConfig`
+  - Standardized error handling with flattened try-except blocks (removed nesting)
+  - [0b8f1a4](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0b8f1a4), [5534554](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/5534554)
+
+- **Configuration API Enhancement** (`finance_ml/config.py`)
+  - Added `output_dir` parameter to `load_config()` function for immutable configuration
+  - Eliminates config mutation anti-pattern (no post-creation modification needed)
+  - [5534554](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/5534554)
+
+### Fixed
+
+- **Config Mutation Anti-Pattern**
+  - Replaced `config = load_config(); config.output_dir = ...` with `config = load_config(output_dir=...)`
+  - Follows immutable configuration best practices
+  - [5534554](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/5534554)
+
+- **Type Safety and Validation**
+  - Added explicit `isinstance()` check for `load_stock_data()` return value
+  - Improved error messages with actual type information and actionable guidance
+  - Separated type validation from empty data check for clarity
+  - [5534554](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/5534554)
+
+- **Error Handling Improvements**
+  - Removed nested try-except blocks in validation section (flattened for clarity)
+  - Removed unnecessary `AttributeError` workaround for `simple_eda()`
+  - Added `exc_info=True` to logger calls for full stack traces
+  - [5534554](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/5534554)
+
+### Improved
+
+- **Code Quality and Maintainability**
+  - Cleaner, more testable notebook code structure
+  - Better separation of concerns in configuration management
+  - Enhanced logging with detailed exception information
+  - **Documentation**: `NOTEBOOK_QUALITY_IMPROVEMENTS_SUMMARY.md` with TDD implementation details
+  - [5534554](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/5534554)
+
 ## [0.3.2] - 2025-10-29
 
 ### Added

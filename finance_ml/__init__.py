@@ -119,6 +119,23 @@ from finance_ml.data import (
     create_temporal_split,
     create_expanding_windows,
     )
+# Import from data_catalog module (Phase 9.1 - Data Catalog)
+from finance_ml.data_catalog import (
+    SchemaInfo,
+    StatisticalProfile,
+    DatasetMetadata,
+    DataCatalog,
+    extract_schema_info,
+    create_statistical_profile,
+    )
+# Import from data_versioning module (Phase 9.1 - Data Versioning)
+from finance_ml.data_versioning import (
+    DataVersion,
+    DataVersionManager,
+    calculate_dataframe_hash,
+    compare_versions,
+    create_version_snapshot,
+    )
 # Import from eval module (Phase 7 TDD implementation complete)
 from finance_ml.eval import (
     calculate_mispricing_score,
@@ -262,6 +279,19 @@ __all__ = [
     "impute_missing_values",
     "create_scaler_pipeline",
     "scale_features",
+    # Data Catalog module (Phase 9.1)
+    "SchemaInfo",
+    "StatisticalProfile",
+    "DatasetMetadata",
+    "DataCatalog",
+    "extract_schema_info",
+    "create_statistical_profile",
+    # Data Versioning module (Phase 9.1)
+    "DataVersion",
+    "DataVersionManager",
+    "calculate_dataframe_hash",
+    "compare_versions",
+    "create_version_snapshot",
     # Advanced EDA module (Phase 9.2)
     "CorrelationReport",
     "StatisticalTestResult",

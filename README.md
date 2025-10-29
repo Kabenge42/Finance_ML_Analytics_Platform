@@ -1,10 +1,12 @@
 # Finance ML Analytics Platform
 
-**Version 0.3.1** — A professional, modular Python package for equity screening, feature engineering, and machine
+**Version 0.3.3** — A professional, modular Python package for equity screening, feature engineering, and machine
 learning models across global regions.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> **TODO**: Sync version strings across files (pyproject.toml and finance_ml/__init__.py currently show 0.3.0)
 
 ## Quick Start (TL;DR)
 
@@ -73,7 +75,7 @@ detailed implementation plan):
 
 ### Phase 9 Implementation Status
 
-**Advanced Stock Prediction ML System** — 5 of 8 phases complete (62.5%)
+**Advanced Stock Prediction ML System** — 7 of 8 phases complete (87.5%)
 
 ✅ **Completed Phases:**
 
@@ -86,14 +88,16 @@ detailed implementation plan):
 - **Phase 9.4**: Multi-class event classification (1,336 lines) — Neural networks, ensemble methods, SHAP interpretation
 - **Phase 9.5**: Sector-optimized regression (1,091 lines) — 12+ regression models, hyperparameter optimization,
   stacking
+- **Phase 9.6**: Model evaluation and error analysis (314 lines) — Comprehensive metrics (MAE, RMSE, MAPE, R²), residual
+  analysis, cross-validation strategies
+- **Phase 9.7**: Stock valuation analysis (395 lines) — Mispricing scores, valuation categories, multi-factor screening,
+  interactive visualizations
 
 🔄 **In Progress:**
 
-- **Phase 9.6**: Model evaluation and error analysis — Comprehensive metrics, residual analysis, cross-validation
-- **Phase 9.7**: Stock valuation analysis — Mispricing scores, multi-factor screening, interactive dashboards
 - **Phase 9.8**: Prediction analytics — Model vs analyst comparison, Excel reports, tracking
 
-See [PHASE_9_IMPLEMENTATION_SUMMARY.md](PHASE_9_IMPLEMENTATION_SUMMARY.md) for detailed implementation notes.
+See [CHANGELOG.md](CHANGELOG.md) for detailed implementation notes and version history.
 
 ## Tech Stack
 
@@ -350,9 +354,10 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Run all tests from the project root:
   - python -m unittest -v
 
-Comprehensive test suite in tests/ directory (32 test modules):
+Comprehensive test suite in tests/ directory (37 test modules):
 
 - test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
+- test_advanced_features.py — Phase 9.3 advanced feature engineering tests
 - test_advanced_models_phase95.py — Phase 9.5 advanced regression models and ensembles
 - test_advanced_preprocessing.py — Advanced preprocessing (outlier detection, winsorization, imputation)
 - test_analytics.py — Analytics and stock ranking tests
@@ -363,6 +368,7 @@ Comprehensive test suite in tests/ directory (32 test modules):
 - test_coverage_smoke.py — Smoke test for coverage validation
 - test_data_quality.py — Data validation and quality checks
 - test_eda.py — Exploratory data analysis utilities
+- test_evaluation_phase96.py — Phase 9.6 model evaluation and error analysis tests
 - test_features.py — Feature engineering functions
 - test_finance_ml_config.py — Configuration management tests
 - test_finance_ml_data.py — Data loading module tests
@@ -374,15 +380,19 @@ Comprehensive test suite in tests/ directory (32 test modules):
 - test_logging.py — Logging configuration tests
 - test_notebook_config.py — Notebook configuration tests
 - test_notebook_enhancements.py — Notebook enhancements validation
+- test_notebook_integration.py — Notebook integration tests
+- test_notebook_quality_improvements.py — Notebook quality improvements tests (config API, type validation, error
+  handling)
 - test_portfolio_optimization.py — Portfolio optimization tests
 - test_preprocess_and_training.py — Preprocessing and training workflows
 - test_regression.py — Regression model evaluation
 - test_repository_setup.py — Validates repository basics (required files, SQL schema, environment config)
 - test_risk_metrics.py — Risk metrics calculation tests
 - test_setup_environment.py — Setup script validation
-- test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
 - test_sql_scripts.py — SQL script validation tests
+- test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
 - test_validate_csv_import.py — CSV validation (schema validation, data quality checks)
+- test_valuation_phase97.py — Phase 9.7 stock valuation and identification tests
 - test_visualizations.py — Visualization functions tests
 
 
@@ -390,7 +400,7 @@ Comprehensive test suite in tests/ directory (32 test modules):
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.3.1)
+├── finance_ml/                    # Main Python package (v0.3.3)
 │   ├── __init__.py               # Package exports and version
 │   ├── advanced_eda.py           # Advanced EDA with statistical analysis (Phase 9.2)
 │   ├── advanced_features.py      # Advanced feature engineering (Phase 9.3)
@@ -958,14 +968,32 @@ flake8 finance_ml
 mypy finance_ml --ignore-missing-imports
 ```
 
-## What's New in v0.3.1
+## What's New in v0.3.3
 
-- ✅ **Integration Validation**: Automated Phase 9 integration testing with `validate_phase9_integration.py`
-- ✅ **Notebook Integration**: Transitioned to `finance_ml` package with `NotebookConfig` for centralized feature flags
-- ✅ **Enhanced Workflows**: Improved data processing, feature engineering, and analytics in notebook
-- ✅ **Database Updates**: SQLite driver updates and improved configuration
-- ✅ **Classification Improvements**: Enhanced numeric formatting and data handling consistency
-- ✅ **Bug Fixes**: Standardized numeric formatting and synchronized notebook execution metadata
+- ✅ **Phase 9 Workflow Integration**: Complete notebook implementation with Phase 9.3 (Advanced Feature Engineering),
+  9.6 (Model Evaluation), and 9.7 (Stock Valuation) integration
+- ✅ **Notebook Quality Improvements**: 12 comprehensive tests covering config API, type validation, and error handling
+  with ≥80% coverage
+- ✅ **Notebook Reorganization**: Improved workflow order with Phase 9.2 (Enhanced EDA) correctly positioned,
+  consolidated imports, and flattened error handling
+- ✅ **Configuration API Enhancement**: Added `output_dir` parameter to `load_config()` for immutable configuration (
+  eliminates config mutation anti-pattern)
+- ✅ **Type Safety**: Explicit `isinstance()` checks, improved error messages with actionable guidance, separated
+  validation concerns
+- ✅ **Enhanced Logging**: Added `exc_info=True` to logger calls for full stack traces
+- ✅ **Automated Tools**: Notebook reorganization script (`implement_notebook_integration.py`)
+
+### v0.3.2 Highlights
+
+- Enhanced EDA with distribution analysis, outlier detection (IQR), normality tests (Shapiro-Wilk, Anderson-Darling)
+- Correlation matrices with Pearson and Spearman methods
+- Sector-wise statistical summaries
+
+### v0.3.1 Highlights
+
+- Phase 9.6 (Model Evaluation) and Phase 9.7 (Stock Valuation) complete implementations
+- Integration validation script
+- Notebook integration with `NotebookConfig`
 
 ### v0.3.0 Highlights
 
