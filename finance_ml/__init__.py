@@ -81,6 +81,15 @@ from finance_ml.advanced_preprocessing import (
     create_scaler_pipeline,
     scale_features,
 )
+# Import from benchmarking module (Phase 9.2)
+from finance_ml.benchmarking import (
+    compare_sector_distributions,
+    compare_regional_valuations,
+    find_peer_group,
+    compare_to_peers,
+    analyze_metric_trend,
+    generate_benchmarking_report,
+)
 
 # Import config module
 from finance_ml.config import (
@@ -157,7 +166,10 @@ from finance_ml.eval import (
     detect_outliers_statistical,
     calculate_mutual_information,
     calculate_feature_importance_rf,
+    calculate_shap_importance,
     perform_pca,
+    perform_tsne,
+    perform_umap,
     calculate_optimal_pca_components,
     compare_sector_means,
     compare_two_groups,
@@ -389,12 +401,22 @@ __all__ = [
     "detect_outliers_statistical",
     "calculate_mutual_information",
     "calculate_feature_importance_rf",
+    "calculate_shap_importance",
     "perform_pca",
+    "perform_tsne",
+    "perform_umap",
     "calculate_optimal_pca_components",
     "compare_sector_means",
     "compare_two_groups",
     "generate_eda_report",
     "generate_sector_comparison_report",
+    # Phase 9.2: Benchmarking
+    "compare_sector_distributions",
+    "compare_regional_valuations",
+    "find_peer_group",
+    "compare_to_peers",
+    "analyze_metric_trend",
+    "generate_benchmarking_report",
     # Phase 9.1 Enhancement #3: Data Quality Dashboard
     "generate_data_quality_dashboard",
     "export_profiling_report",

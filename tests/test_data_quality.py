@@ -39,7 +39,9 @@ class TestDataQualityAndSchemaRoot(unittest.TestCase):
                 "price_target": [11.0, 19.0],
             }
         )
-        mod.validate_schema(df_ok, require_target=True)
+        is_valid, errors = mod.validate_schema(df_ok, require_target=True)
+        self.assertTrue(is_valid)
+        self.assertEqual(len(errors), 0)
 
         df_bad = pd.DataFrame(
             {
@@ -48,14 +50,20 @@ class TestDataQualityAndSchemaRoot(unittest.TestCase):
             }
         )
         # Should fail with require_target=True (missing sector and target)
-        with self.assertRaisesRegex(
-            ValueError, r"Missing required columns:.*sector.*and at least one target"
-        ):
-            mod.validate_schema(df_bad, require_target=True)
+        is_valid, errors = mod.validate_schema(df_bad, require_target=True)
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
+        # Check that error messages mention missing sector and target
+        errors_str = " ".join(errors)
+        self.assertIn("sector", errors_str.lower())
+        self.assertIn("target", errors_str.lower())
 
         # Should also fail with require_target=False (missing sector, which is always required)
-        with self.assertRaisesRegex(ValueError, r"Missing required columns:.*sector"):
-            mod.validate_schema(df_bad, require_target=False)
+        is_valid, errors = mod.validate_schema(df_bad, require_target=False)
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
+        errors_str = " ".join(errors)
+        self.assertIn("sector", errors_str.lower())
 
 
 @unittest.skipIf(pd is None or mod is None or np is None, "pandas/numpy not installed")

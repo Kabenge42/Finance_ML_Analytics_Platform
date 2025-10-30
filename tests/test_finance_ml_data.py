@@ -223,23 +223,25 @@ class TestValidateSchema(unittest.TestCase):
     """Test schema validation function"""
 
     def test_validate_schema_requires_core_columns(self):
-        """Should raise ValueError if core columns are missing"""
+        """Should return False when core columns are missing"""
         from finance_ml.data import validate_schema
 
         df = pd.DataFrame({"ticker": ["AAPL"]})
-        with self.assertRaises(ValueError):
-            validate_schema(df, require_target=False)
+        is_valid, errors = validate_schema(df, require_target=False)
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
 
     def test_validate_schema_with_target(self):
-        """Should check for target columns when require_target=True"""
+        """Should return False when target columns missing with require_target=True"""
         from finance_ml.data import validate_schema
 
         df = pd.DataFrame({"ticker": ["AAPL"], "sector": ["Tech"], "last_price": [150]})
-        with self.assertRaises(ValueError):
-            validate_schema(df, require_target=True)
+        is_valid, errors = validate_schema(df, require_target=True)
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
 
     def test_validate_schema_passes_with_valid_data(self):
-        """Should pass validation with all required columns"""
+        """Should return (True, []) when validation passes with all required columns"""
         from finance_ml.data import validate_schema
 
         df = pd.DataFrame(
@@ -252,8 +254,45 @@ class TestValidateSchema(unittest.TestCase):
                 "ebitda_ltm": [1e8],
             }
         )
-        # Should not raise
-        validate_schema(df, require_target=False)
+        is_valid, errors = validate_schema(df, require_target=False)
+        self.assertTrue(is_valid)
+        self.assertEqual(len(errors), 0)
+
+    def test_validate_schema_returns_tuple_on_success(self):
+        """Should return (True, []) when validation passes"""
+        from finance_ml.data import validate_schema
+
+        df = pd.DataFrame(
+            {
+                "ticker": ["AAPL"],
+                "sector": ["Tech"],
+                "last_price": [150],
+            }
+        )
+        is_valid, errors = validate_schema(df, require_target=False)
+        self.assertTrue(is_valid)
+        self.assertIsInstance(errors, list)
+        self.assertEqual(len(errors), 0)
+
+    def test_validate_schema_returns_tuple_on_failure(self):
+        """Should return (False, [error_messages]) when validation fails"""
+        from finance_ml.data import validate_schema
+
+        df = pd.DataFrame({"ticker": ["AAPL"]})
+        is_valid, errors = validate_schema(df, require_target=False)
+        self.assertFalse(is_valid)
+        self.assertIsInstance(errors, list)
+        self.assertGreater(len(errors), 0)
+
+    def test_validate_schema_returns_tuple_on_missing_target(self):
+        """Should return (False, [error_messages]) when target required but missing"""
+        from finance_ml.data import validate_schema
+
+        df = pd.DataFrame({"ticker": ["AAPL"], "sector": ["Tech"], "last_price": [150]})
+        is_valid, errors = validate_schema(df, require_target=True)
+        self.assertFalse(is_valid)
+        self.assertIsInstance(errors, list)
+        self.assertGreater(len(errors), 0)
 
 
 class TestCheckMissingValues(unittest.TestCase):

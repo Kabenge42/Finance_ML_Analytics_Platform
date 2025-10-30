@@ -172,16 +172,22 @@ def simple_eda(
     df: pd.DataFrame,
     out_dir: Optional[Path] = None,
     save_plots: bool = False,
+    target_column: Optional[str] = None,
+    include_multivariate: bool = False,
 ) -> dict:
     """Perform exploratory data analysis.
 
     When out_dir is provided, write eda_summary.json (and optional plots) to disk.
     Always return the computed summary as a dictionary for programmatic use.
 
+    Phase 9.2 enhancements: Added feature importance and multivariate analysis integration.
+
     Args:
         df: DataFrame to analyze
         out_dir: Optional directory to save output files. If None, files are not written.
         save_plots: If True and out_dir is provided, generate and save matplotlib visualizations
+        target_column: Optional target column name for feature importance analysis
+        include_multivariate: If True, include PCA and other multivariate analysis
 
     Returns:
         A dictionary with EDA summary statistics.
@@ -288,7 +294,7 @@ def simple_eda(
             summary["normality_tests"] = {}
 
         try:
-            # Correlation analysis (Pearson, Spearman, and Kendall - Phase 9.2)
+            # Correlation analysis (Pearson, Spearman, Kendall, and Distance - Phase 9.2)
             if len(numeric_cols) >= 2:
                 corr_analysis = {}
                 pearson_corr = calculate_correlation_matrix(df, numeric_cols, method="pearson")
@@ -300,6 +306,21 @@ def simple_eda(
                     spearman_corr.to_dict() if not spearman_corr.empty else {}
                 )
                 corr_analysis["kendall"] = kendall_corr.to_dict() if not kendall_corr.empty else {}
+
+                # Distance correlation (Phase 9.2 continuation - optional, requires dcor)
+                try:
+                    distance_corr = calculate_distance_correlation(df, numeric_cols)
+                    corr_analysis["distance"] = (
+                        distance_corr.to_dict() if not distance_corr.empty else {}
+                    )
+                except ImportError:
+                    # dcor library not installed - skip distance correlation
+                    logging.info("Distance correlation skipped (dcor library not installed)")
+                    corr_analysis["distance"] = {}
+                except Exception as e:
+                    logging.warning("Distance correlation calculation failed: %s", e)
+                    corr_analysis["distance"] = {}
+
                 summary["correlation_analysis"] = corr_analysis
             else:
                 summary["correlation_analysis"] = {}
@@ -313,14 +334,15 @@ def simple_eda(
                 top_corr = {}
                 for method in ["pearson", "spearman", "kendall"]:
                     try:
-                        top_corr_df = find_top_correlations(
-                            df, numeric_cols, n_top=10, method=method
-                        )
-                        # Convert to list of dicts for JSON serialization
-                        if not top_corr_df.empty:
-                            top_corr[method] = top_corr_df.to_dict(orient="records")
-                        else:
-                            top_corr[method] = []
+                        # Calculate correlation matrix for this method
+                        corr_matrix = calculate_correlation_matrix(df, numeric_cols, method=method)
+                        # Pass correlation matrix (not df) to find_top_correlations
+                        top_corr_list = find_top_correlations(corr_matrix, n_top=10, threshold=0.0)
+                        # Convert list of tuples to list of dicts for JSON serialization
+                        top_corr[method] = [
+                            {"var1": var1, "var2": var2, "correlation": float(corr)}
+                            for var1, var2, corr in top_corr_list
+                        ]
                     except Exception:
                         top_corr[method] = []
                 summary["top_correlations"] = top_corr
@@ -412,6 +434,145 @@ def simple_eda(
         summary["sector_comparison_tests"] = {}
         summary["region_statistics"] = {}
 
+    # Phase 9.2: Feature Importance Analysis (when target provided)
+    if target_column is not None and target_column in df.columns:
+        try:
+            # Prepare features and target
+            feature_cols = [c for c in numeric_cols if c != target_column]
+            if feature_cols and len(df) >= 10:
+                X = df[feature_cols].dropna()
+                y = df.loc[X.index, target_column]
+
+                # Remove any remaining NaN in target
+                valid_mask = y.notna()
+                X = X[valid_mask]
+                y = y[valid_mask]
+
+                if len(X) >= 10 and len(feature_cols) >= 2:
+                    feature_importance = {}
+
+                    # Mutual Information
+                    try:
+                        mi_scores = calculate_mutual_information(X, y)
+                        # Convert Series to dict for JSON serialization
+                        if hasattr(mi_scores, "to_dict"):
+                            feature_importance["mutual_information"] = mi_scores.to_dict()
+                        elif isinstance(mi_scores, dict):
+                            feature_importance["mutual_information"] = mi_scores
+                        else:
+                            feature_importance["mutual_information"] = {}
+                    except Exception as e:
+                        logging.warning("Mutual information calculation failed: %s", e)
+                        feature_importance["mutual_information"] = {}
+
+                    # Random Forest Feature Importance
+                    try:
+                        rf_importance = calculate_feature_importance_rf(X, y)
+                        # Convert Series to dict for JSON serialization
+                        if hasattr(rf_importance, "to_dict"):
+                            feature_importance["random_forest"] = rf_importance.to_dict()
+                        elif isinstance(rf_importance, dict):
+                            feature_importance["random_forest"] = rf_importance
+                        else:
+                            feature_importance["random_forest"] = {}
+                    except Exception as e:
+                        logging.warning("Random forest importance calculation failed: %s", e)
+                        feature_importance["random_forest"] = {}
+
+                    # SHAP values (optional, may be slow)
+                    try:
+                        shap_importance = calculate_shap_importance(
+                            X, y, model_type="tree", n_samples=100
+                        )
+                        # Convert Series to dict for JSON serialization if needed
+                        if hasattr(shap_importance, "to_dict"):
+                            feature_importance["shap"] = shap_importance.to_dict()
+                        elif isinstance(shap_importance, dict):
+                            feature_importance["shap"] = shap_importance
+                        else:
+                            feature_importance["shap"] = {}
+                    except Exception as e:
+                        logging.warning("SHAP importance calculation failed (optional): %s", e)
+                        feature_importance["shap"] = {}
+
+                    summary["feature_importance"] = feature_importance
+                else:
+                    summary["feature_importance"] = {}
+            else:
+                summary["feature_importance"] = {}
+        except Exception as e:
+            logging.warning("Feature importance analysis failed: %s", e)
+            summary["feature_importance"] = {}
+    else:
+        summary["feature_importance"] = {}
+
+    # Phase 9.2: Multivariate Analysis (when requested)
+    if include_multivariate and numeric_cols and len(df) >= 10:
+        try:
+            # Prepare data for multivariate analysis
+            X_multi = df[numeric_cols].dropna()
+
+            if len(X_multi) >= 10 and len(numeric_cols) >= 3:
+                multivariate_analysis = {}
+
+                # PCA Analysis
+                try:
+                    pca_result = perform_pca(X_multi, n_components=min(3, len(numeric_cols)))
+                    # Convert numpy arrays to lists for JSON serialization
+                    multivariate_analysis["pca"] = {
+                        "explained_variance_ratio": pca_result["explained_variance_ratio"].tolist(),
+                        "cumulative_variance": pca_result["cumulative_variance"].tolist(),
+                        "n_components": pca_result["n_components"],
+                        "feature_names": pca_result["feature_names"],
+                        "components_shape": pca_result["components"].shape,
+                    }
+                except Exception as e:
+                    logging.warning("PCA analysis failed: %s", e)
+                    multivariate_analysis["pca"] = {}
+
+                # t-SNE (optional, can be slow)
+                try:
+                    if len(X_multi) >= 30 and len(numeric_cols) >= 4:
+                        tsne_result = perform_tsne(X_multi, n_components=2)
+                        multivariate_analysis["tsne"] = {
+                            "n_components": tsne_result["n_components"],
+                            "feature_names": tsne_result["feature_names"],
+                            "components_shape": tsne_result["components"].shape,
+                        }
+                    else:
+                        multivariate_analysis["tsne"] = {}
+                except Exception as e:
+                    logging.warning("t-SNE analysis failed (optional): %s", e)
+                    multivariate_analysis["tsne"] = {}
+
+                # UMAP (Phase 9.2 continuation - optional, requires umap-learn)
+                try:
+                    if len(X_multi) >= 30 and len(numeric_cols) >= 4:
+                        umap_result = perform_umap(X_multi, n_components=2)
+                        multivariate_analysis["umap"] = {
+                            "n_components": umap_result["n_components"],
+                            "feature_names": umap_result["feature_names"],
+                            "components_shape": umap_result["components"].shape,
+                        }
+                    else:
+                        multivariate_analysis["umap"] = {}
+                except ImportError:
+                    # umap-learn library not installed - skip UMAP
+                    logging.info("UMAP skipped (umap-learn library not installed)")
+                    multivariate_analysis["umap"] = {}
+                except Exception as e:
+                    logging.warning("UMAP analysis failed (optional): %s", e)
+                    multivariate_analysis["umap"] = {}
+
+                summary["multivariate_analysis"] = multivariate_analysis
+            else:
+                summary["multivariate_analysis"] = {}
+        except Exception as e:
+            logging.warning("Multivariate analysis failed: %s", e)
+            summary["multivariate_analysis"] = {}
+    else:
+        summary["multivariate_analysis"] = {}
+
     # Persist summary and plots only if an output directory is provided
     if out_dir is not None:
         try:
@@ -481,6 +642,33 @@ def simple_eda(
                             plt.savefig(corr_plot_path, dpi=100, bbox_inches="tight")
                             plt.close()
                             logging.info("Saved correlation heatmap to %s", corr_plot_path)
+
+                        # Outlier visualization plots (Phase 9.2 continuation)
+                        outlier_cols = numeric_cols[:6]  # Limit to first 6 columns for clarity
+                        if outlier_cols:
+                            try:
+                                # Box plots
+                                boxplot_path = out_dir / "eda_outlier_boxplots.png"
+                                plot_outlier_boxplots(df, outlier_cols, out_path=boxplot_path)
+                            except Exception as e:
+                                logging.warning("Error creating outlier box plots: %s", e)
+
+                            try:
+                                # Violin plots
+                                violin_path = out_dir / "eda_outlier_violins.png"
+                                plot_outlier_violins(df, outlier_cols, out_path=violin_path)
+                            except Exception as e:
+                                logging.warning("Error creating outlier violin plots: %s", e)
+
+                            # Scatter plot (needs at least 2 columns)
+                            if len(numeric_cols) >= 2:
+                                try:
+                                    scatter_path = out_dir / "eda_outlier_scatter.png"
+                                    plot_outlier_scatter(
+                                        df, numeric_cols[:2], out_path=scatter_path
+                                    )
+                                except Exception as e:
+                                    logging.warning("Error creating outlier scatter plot: %s", e)
 
                     except Exception as e:
                         logging.warning("Error generating visualizations: %s", e)
@@ -784,6 +972,256 @@ def create_region_sector_heatmap(
         raise
 
 
+def plot_outlier_boxplots(df: pd.DataFrame, columns: list, out_path: Optional[Path] = None):
+    """Create box plots for outlier visualization.
+
+    Phase 9.2 continuation: Visualize outliers using box plots showing quartiles and outliers.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to visualize
+        out_path: Optional path to save the figure (PNG format)
+
+    Returns:
+        Matplotlib figure object, or None if matplotlib not available
+
+    Example:
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({'x': [1, 2, 3, 4, 100], 'y': [10, 20, 30, 40, 50]})
+        >>> fig = plot_outlier_boxplots(df, ['x', 'y'])
+    """
+    if plt is None or sns is None:
+        logging.warning("Matplotlib/seaborn not available for box plots")
+        return None
+
+    try:
+        # Select numeric columns
+        data = df[columns].select_dtypes(include=[np.number])
+
+        if data.empty:
+            logging.warning("No numeric columns found for box plots")
+            return None
+
+        # Create figure
+        n_cols = len(data.columns)
+        n_rows = (n_cols + 2) // 3  # 3 plots per row
+        fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
+
+        # Flatten axes for easier iteration
+        if n_cols == 1:
+            axes = [axes]
+        elif n_rows == 1:
+            axes = axes if isinstance(axes, np.ndarray) else [axes]
+        else:
+            axes = axes.flatten()
+
+        # Create box plot for each column
+        for idx, col in enumerate(data.columns):
+            ax = axes[idx] if n_cols > 1 else axes[0]
+            data[col].dropna().plot(kind="box", ax=ax)
+            ax.set_title(f"Box Plot: {col}")
+            ax.set_ylabel("Value")
+            ax.grid(True, alpha=0.3)
+
+        # Hide unused subplots
+        for idx in range(n_cols, len(axes)):
+            axes[idx].set_visible(False)
+
+        plt.tight_layout()
+
+        if out_path:
+            plt.savefig(out_path, dpi=100, bbox_inches="tight")
+            logging.info("Saved outlier box plots to %s", out_path)
+            plt.close()
+
+        return fig
+
+    except Exception as e:
+        logging.error("Error creating outlier box plots: %s", e)
+        return None
+
+
+def plot_outlier_violins(df: pd.DataFrame, columns: list, out_path: Optional[Path] = None):
+    """Create violin plots for outlier visualization.
+
+    Phase 9.2 continuation: Visualize outliers using violin plots showing distribution density.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to visualize
+        out_path: Optional path to save the figure (PNG format)
+
+    Returns:
+        Matplotlib figure object, or None if matplotlib not available
+
+    Example:
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({'x': [1, 2, 3, 4, 100], 'y': [10, 20, 30, 40, 50]})
+        >>> fig = plot_outlier_violins(df, ['x', 'y'])
+    """
+    if plt is None or sns is None:
+        logging.warning("Matplotlib/seaborn not available for violin plots")
+        return None
+
+    try:
+        # Select numeric columns
+        data = df[columns].select_dtypes(include=[np.number])
+
+        if data.empty:
+            logging.warning("No numeric columns found for violin plots")
+            return None
+
+        # Create figure
+        n_cols = len(data.columns)
+        n_rows = (n_cols + 2) // 3  # 3 plots per row
+        fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
+
+        # Flatten axes for easier iteration
+        if n_cols == 1:
+            axes = [axes]
+        elif n_rows == 1:
+            axes = axes if isinstance(axes, np.ndarray) else [axes]
+        else:
+            axes = axes.flatten()
+
+        # Create violin plot for each column
+        for idx, col in enumerate(data.columns):
+            ax = axes[idx] if n_cols > 1 else axes[0]
+            col_data = data[col].dropna()
+            if len(col_data) >= 2:
+                sns.violinplot(y=col_data, ax=ax)
+                ax.set_title(f"Violin Plot: {col}")
+                ax.set_ylabel("Value")
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, "Insufficient data", ha="center", va="center")
+                ax.set_title(f"Violin Plot: {col}")
+
+        # Hide unused subplots
+        for idx in range(n_cols, len(axes)):
+            axes[idx].set_visible(False)
+
+        plt.tight_layout()
+
+        if out_path:
+            plt.savefig(out_path, dpi=100, bbox_inches="tight")
+            logging.info("Saved outlier violin plots to %s", out_path)
+            plt.close()
+
+        return fig
+
+    except Exception as e:
+        logging.error("Error creating outlier violin plots: %s", e)
+        return None
+
+
+def plot_outlier_scatter(
+    df: pd.DataFrame, columns: list, out_path: Optional[Path] = None, z_threshold: float = 3.0
+):
+    """Create scatter plot with z-score coloring for outlier visualization.
+
+    Phase 9.2 continuation: Visualize outliers using scatter plots colored by z-score magnitude.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to visualize (uses first two for x and y)
+        out_path: Optional path to save the figure (PNG format)
+        z_threshold: Z-score threshold for highlighting outliers (default: 3.0)
+
+    Returns:
+        Matplotlib figure object, or None if matplotlib not available
+
+    Example:
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({'x': [1, 2, 3, 4, 100], 'y': [10, 20, 30, 40, 50]})
+        >>> fig = plot_outlier_scatter(df, ['x', 'y'])
+    """
+    if plt is None or sns is None:
+        logging.warning("Matplotlib/seaborn not available for scatter plots")
+        return None
+
+    try:
+        # Select numeric columns
+        data = df[columns].select_dtypes(include=[np.number])
+
+        if data.empty or len(data.columns) < 2:
+            logging.warning("Need at least 2 numeric columns for scatter plot")
+            return None
+
+        # Use first two columns
+        col_x = data.columns[0]
+        col_y = data.columns[1]
+
+        # Calculate z-scores for coloring
+        x_vals = data[col_x].dropna()
+        y_vals = data[col_y].dropna()
+
+        # Align data (keep only rows with both values)
+        valid_mask = data[col_x].notna() & data[col_y].notna()
+        x_aligned = data.loc[valid_mask, col_x]
+        y_aligned = data.loc[valid_mask, col_y]
+
+        if len(x_aligned) < 2:
+            logging.warning("Insufficient data for scatter plot")
+            return None
+
+        # Calculate z-scores
+        z_x = np.abs((x_aligned - x_aligned.mean()) / x_aligned.std())
+        z_y = np.abs((y_aligned - y_aligned.mean()) / y_aligned.std())
+        z_combined = np.maximum(z_x, z_y)  # Max z-score for coloring
+
+        # Create figure
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        # Scatter plot with z-score coloring
+        scatter = ax.scatter(
+            x_aligned,
+            y_aligned,
+            c=z_combined,
+            cmap="RdYlGn_r",
+            s=50,
+            alpha=0.6,
+            edgecolors="black",
+            linewidths=0.5,
+        )
+
+        # Add colorbar
+        cbar = plt.colorbar(scatter, ax=ax)
+        cbar.set_label("Max Z-Score", rotation=270, labelpad=20)
+
+        # Highlight outliers
+        outliers = z_combined > z_threshold
+        if outliers.any():
+            ax.scatter(
+                x_aligned[outliers],
+                y_aligned[outliers],
+                s=100,
+                facecolors="none",
+                edgecolors="red",
+                linewidths=2,
+                label=f"Outliers (|z| > {z_threshold})",
+            )
+            ax.legend()
+
+        ax.set_xlabel(col_x)
+        ax.set_ylabel(col_y)
+        ax.set_title(f"Outlier Scatter Plot: {col_x} vs {col_y}")
+        ax.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+
+        if out_path:
+            plt.savefig(out_path, dpi=100, bbox_inches="tight")
+            logging.info("Saved outlier scatter plot to %s", out_path)
+            plt.close()
+
+        return fig
+
+    except Exception as e:
+        logging.error("Error creating outlier scatter plot: %s", e)
+        return None
+
+
 # ============================================================================
 # Phase 9.2: Advanced EDA and Statistical Analysis Functions
 # ============================================================================
@@ -822,6 +1260,72 @@ def calculate_correlation_matrix(
     corr_matrix = data.corr(method=method)
 
     return corr_matrix
+
+
+def calculate_distance_correlation(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+    """Calculate distance correlation matrix.
+
+    Phase 9.2 continuation: Add distance correlation support for capturing non-linear dependencies.
+
+    Distance correlation measures both linear and non-linear statistical dependencies between variables,
+    ranging from 0 (independent) to 1 (completely dependent). Unlike Pearson correlation, it can detect
+    non-linear relationships.
+
+    Args:
+        df: DataFrame containing the data
+        columns: List of columns to include in correlation matrix
+
+    Returns:
+        Distance correlation matrix as DataFrame
+
+    Raises:
+        ImportError: If dcor library is not installed
+        ValueError: If no numeric columns found
+
+    Example:
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({'x': [1, 2, 3, 4], 'y': [1, 4, 9, 16]})
+        >>> dcor_matrix = calculate_distance_correlation(df, ['x', 'y'])
+    """
+    try:
+        import dcor
+    except ImportError:
+        raise ImportError(
+            "Distance correlation requires the 'dcor' library. " "Install it with: pip install dcor"
+        )
+
+    # Select numeric columns
+    data = df[columns].select_dtypes(include=[np.number])
+
+    if data.empty:
+        raise ValueError("No numeric columns found in specified columns")
+
+    # Calculate distance correlation matrix
+    n_cols = len(data.columns)
+    dcor_matrix = np.zeros((n_cols, n_cols))
+
+    for i, col1 in enumerate(data.columns):
+        for j, col2 in enumerate(data.columns):
+            if i == j:
+                dcor_matrix[i, j] = 1.0
+            elif i < j:
+                # Calculate distance correlation for upper triangle
+                x = data[col1].values
+                y = data[col2].values
+                # Remove NaN pairs
+                mask = ~(np.isnan(x) | np.isnan(y))
+                if mask.sum() >= 2:
+                    dcor_value = dcor.distance_correlation(x[mask], y[mask])
+                    dcor_matrix[i, j] = dcor_value
+                    dcor_matrix[j, i] = dcor_value  # Symmetric
+                else:
+                    dcor_matrix[i, j] = np.nan
+                    dcor_matrix[j, i] = np.nan
+
+    # Convert to DataFrame
+    result = pd.DataFrame(dcor_matrix, index=data.columns, columns=data.columns)
+
+    return result
 
 
 def find_top_correlations(
@@ -1060,6 +1564,226 @@ def calculate_feature_importance_rf(
     )
 
     return importances
+
+
+def calculate_shap_importance(
+    X: pd.DataFrame, y: pd.Series, model_type: str = "tree", n_samples: int = 100
+) -> pd.DataFrame:
+    """Calculate feature importance using SHAP values.
+
+    Phase 9.2 enhancement for interpretable feature importance analysis using
+    SHapley Additive exPlanations (SHAP).
+
+    Args:
+        X: Feature DataFrame
+        y: Target variable
+        model_type: Type of model to use ('tree' for tree-based, 'linear' for linear)
+        n_samples: Number of samples to use for SHAP calculation (for performance)
+
+    Returns:
+        DataFrame with columns ['feature', 'importance'] sorted by importance descending
+
+    Raises:
+        ImportError: If SHAP library is not installed
+
+    Examples:
+        >>> importance = calculate_shap_importance(X_train, y_train)
+        >>> print(importance.head())
+    """
+    try:
+        import shap
+    except ImportError:
+        raise ImportError(
+            "SHAP library is required for SHAP feature importance. "
+            "Install it with: pip install shap"
+        )
+
+    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+    from sklearn.linear_model import LinearRegression
+
+    # Handle missing values
+    X_clean = X.fillna(X.median())
+    y_clean = y.fillna(y.median()) if pd.api.types.is_numeric_dtype(y) else y.fillna("missing")
+
+    # Limit samples for performance if dataset is large
+    if len(X_clean) > n_samples:
+        sample_indices = np.random.choice(len(X_clean), n_samples, replace=False)
+        X_sample = X_clean.iloc[sample_indices]
+        y_sample = y_clean.iloc[sample_indices]
+    else:
+        X_sample = X_clean
+        y_sample = y_clean
+
+    # Choose and train model
+    if model_type == "tree":
+        model = RandomForestRegressor(n_estimators=50, random_state=42, max_depth=5, n_jobs=-1)
+    elif model_type == "linear":
+        model = LinearRegression()
+    else:
+        raise ValueError(f"model_type '{model_type}' not supported. Use 'tree' or 'linear'.")
+
+    model.fit(X_sample, y_sample)
+
+    # Calculate SHAP values
+    if model_type == "tree":
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_sample)
+    else:
+        explainer = shap.LinearExplainer(model, X_sample)
+        shap_values = explainer.shap_values(X_sample)
+
+    # Calculate mean absolute SHAP value for each feature
+    mean_abs_shap = np.abs(shap_values).mean(axis=0)
+
+    # Create DataFrame
+    importance_df = pd.DataFrame({"feature": X.columns, "importance": mean_abs_shap})
+
+    # Sort by importance descending
+    importance_df = importance_df.sort_values("importance", ascending=False).reset_index(drop=True)
+
+    return importance_df
+
+
+def perform_tsne(
+    X: pd.DataFrame, n_components: int = 2, perplexity: float = 30.0, random_state: int = 42
+) -> dict:
+    """Perform t-SNE dimensionality reduction for visualization.
+
+    Phase 9.2 enhancement for non-linear dimensionality reduction and visualization
+    of high-dimensional data.
+
+    Args:
+        X: Feature DataFrame
+        n_components: Number of dimensions to reduce to (typically 2 or 3)
+        perplexity: t-SNE perplexity parameter (balance between local and global structure)
+        random_state: Random seed for reproducibility
+
+    Returns:
+        Dictionary with t-SNE results:
+            - components: DataFrame with t-SNE components
+            - feature_names: Original feature names
+            - n_components: Number of components
+            - perplexity: Perplexity used
+
+    Raises:
+        ImportError: If scikit-learn is not installed
+
+    Examples:
+        >>> tsne_result = perform_tsne(X_train, n_components=2)
+        >>> plt.scatter(tsne_result['components']['TSNE1'], tsne_result['components']['TSNE2'])
+    """
+    try:
+        from sklearn.manifold import TSNE
+        from sklearn.preprocessing import StandardScaler
+    except ImportError:
+        raise ImportError(
+            "scikit-learn is required for t-SNE. " "Install it with: pip install scikit-learn"
+        )
+
+    # Handle missing values
+    X_clean = X.fillna(X.median())
+
+    # Standardize features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_clean)
+
+    # Adjust perplexity if needed (must be less than n_samples)
+    n_samples = len(X_clean)
+    actual_perplexity = min(perplexity, (n_samples - 1) / 3.0)
+
+    # Perform t-SNE
+    tsne = TSNE(n_components=n_components, perplexity=actual_perplexity, random_state=random_state)
+    components = tsne.fit_transform(X_scaled)
+
+    # Create result DataFrame
+    component_df = pd.DataFrame(
+        components, columns=[f"TSNE{i+1}" for i in range(n_components)], index=X.index
+    )
+
+    return {
+        "components": component_df,
+        "feature_names": X.columns.tolist(),
+        "n_components": n_components,
+        "perplexity": actual_perplexity,
+    }
+
+
+def perform_umap(
+    X: pd.DataFrame,
+    n_components: int = 2,
+    n_neighbors: int = 15,
+    min_dist: float = 0.1,
+    random_state: int = 42,
+) -> dict:
+    """Perform UMAP dimensionality reduction for visualization.
+
+    Phase 9.2 enhancement for efficient non-linear dimensionality reduction
+    using Uniform Manifold Approximation and Projection (UMAP).
+
+    Args:
+        X: Feature DataFrame
+        n_components: Number of dimensions to reduce to (typically 2 or 3)
+        n_neighbors: Number of neighbors for UMAP (controls local vs global structure)
+        min_dist: Minimum distance between points in low-dimensional space
+        random_state: Random seed for reproducibility
+
+    Returns:
+        Dictionary with UMAP results:
+            - components: DataFrame with UMAP components
+            - feature_names: Original feature names
+            - n_components: Number of components
+            - n_neighbors: Number of neighbors used
+            - min_dist: Minimum distance used
+
+    Raises:
+        ImportError: If umap-learn is not installed
+
+    Examples:
+        >>> umap_result = perform_umap(X_train, n_components=2)
+        >>> plt.scatter(umap_result['components']['UMAP1'], umap_result['components']['UMAP2'])
+    """
+    try:
+        import umap
+    except ImportError:
+        raise ImportError(
+            "umap-learn is required for UMAP dimensionality reduction. "
+            "Install it with: pip install umap-learn"
+        )
+
+    from sklearn.preprocessing import StandardScaler
+
+    # Handle missing values
+    X_clean = X.fillna(X.median())
+
+    # Standardize features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_clean)
+
+    # Adjust n_neighbors if needed (must be less than n_samples)
+    n_samples = len(X_clean)
+    actual_n_neighbors = min(n_neighbors, n_samples - 1)
+
+    # Perform UMAP
+    reducer = umap.UMAP(
+        n_components=n_components,
+        n_neighbors=actual_n_neighbors,
+        min_dist=min_dist,
+        random_state=random_state,
+    )
+    components = reducer.fit_transform(X_scaled)
+
+    # Create result DataFrame
+    component_df = pd.DataFrame(
+        components, columns=[f"UMAP{i+1}" for i in range(n_components)], index=X.index
+    )
+
+    return {
+        "components": component_df,
+        "feature_names": X.columns.tolist(),
+        "n_components": n_components,
+        "n_neighbors": actual_n_neighbors,
+        "min_dist": min_dist,
+    }
 
 
 def perform_pca(X: pd.DataFrame, n_components: int = 3) -> dict:

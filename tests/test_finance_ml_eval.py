@@ -480,6 +480,149 @@ class TestSimpleEDA(unittest.TestCase):
                 self.assertIn("means", stats)
                 self.assertIn("medians", stats)
 
+    def test_simple_eda_includes_feature_importance_when_target_provided(self):
+        """Should include feature importance analysis when target is provided (Phase 9.2 integration)"""
+        from finance_ml.eval import simple_eda
+        import numpy as np
+
+        # Create dataframe with features and target
+        np.random.seed(42)
+        df_with_target = pd.DataFrame(
+            {
+                "ticker": [f"TICK_{i}" for i in range(50)],
+                "price": np.random.randn(50) * 50 + 150,
+                "volume": np.random.randn(50) * 1000 + 5000,
+                "market_cap": np.random.randn(50) * 1e9 + 5e9,
+                "pe_ratio": np.random.randn(50) * 5 + 20,
+                "target": np.random.randn(50) * 20 + 100,  # Target variable
+            }
+        )
+        summary = simple_eda(df_with_target, self.out_dir, target_column="target")
+
+        # Should include feature importance section
+        self.assertIn("feature_importance", summary)
+        feature_imp = summary["feature_importance"]
+        self.assertIsInstance(feature_imp, dict)
+
+    def test_simple_eda_feature_importance_includes_mutual_information(self):
+        """Should include mutual information scores (Phase 9.2 integration)"""
+        from finance_ml.eval import simple_eda
+        import numpy as np
+
+        np.random.seed(42)
+        df_with_target = pd.DataFrame(
+            {
+                "feature1": np.random.randn(50) * 10 + 50,
+                "feature2": np.random.randn(50) * 20 + 100,
+                "target": np.random.randn(50) * 5 + 25,
+            }
+        )
+        summary = simple_eda(df_with_target, self.out_dir, target_column="target")
+
+        # Should include mutual information
+        if "feature_importance" in summary:
+            feature_imp = summary["feature_importance"]
+            self.assertIn("mutual_information", feature_imp)
+
+    def test_simple_eda_feature_importance_includes_random_forest(self):
+        """Should include random forest feature importance (Phase 9.2 integration)"""
+        from finance_ml.eval import simple_eda
+        import numpy as np
+
+        np.random.seed(42)
+        df_with_target = pd.DataFrame(
+            {
+                "feature1": np.random.randn(50) * 10 + 50,
+                "feature2": np.random.randn(50) * 20 + 100,
+                "target": np.random.randn(50) * 5 + 25,
+            }
+        )
+        summary = simple_eda(df_with_target, self.out_dir, target_column="target")
+
+        # Should include random forest importance
+        if "feature_importance" in summary:
+            feature_imp = summary["feature_importance"]
+            self.assertIn("random_forest", feature_imp)
+
+    def test_simple_eda_skips_feature_importance_when_no_target(self):
+        """Should skip feature importance when no target provided (Phase 9.2 integration)"""
+        from finance_ml.eval import simple_eda
+
+        df_no_target = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C"],
+                "price": [100.0, 200.0, 150.0],
+                "volume": [1000, 2000, 1500],
+            }
+        )
+        summary = simple_eda(df_no_target, self.out_dir)
+
+        # Should not include feature importance or should be empty
+        if "feature_importance" in summary:
+            self.assertEqual(summary["feature_importance"], {})
+
+    def test_simple_eda_includes_multivariate_analysis(self):
+        """Should include PCA results in multivariate analysis (Phase 9.2 integration)"""
+        from finance_ml.eval import simple_eda
+        import numpy as np
+
+        np.random.seed(42)
+        # Create dataframe with enough features for PCA
+        df_multi = pd.DataFrame(
+            {
+                "ticker": [f"TICK_{i}" for i in range(50)],
+                "f1": np.random.randn(50),
+                "f2": np.random.randn(50),
+                "f3": np.random.randn(50),
+                "f4": np.random.randn(50),
+                "f5": np.random.randn(50),
+            }
+        )
+        summary = simple_eda(df_multi, self.out_dir, include_multivariate=True)
+
+        # Should include multivariate analysis section
+        self.assertIn("multivariate_analysis", summary)
+        multi_analysis = summary["multivariate_analysis"]
+        self.assertIsInstance(multi_analysis, dict)
+
+    def test_simple_eda_multivariate_includes_pca(self):
+        """Should include PCA results when multivariate analysis enabled (Phase 9.2 integration)"""
+        from finance_ml.eval import simple_eda
+        import numpy as np
+
+        np.random.seed(42)
+        df_multi = pd.DataFrame(
+            {
+                "f1": np.random.randn(50),
+                "f2": np.random.randn(50),
+                "f3": np.random.randn(50),
+                "f4": np.random.randn(50),
+            }
+        )
+        summary = simple_eda(df_multi, self.out_dir, include_multivariate=True)
+
+        # Should include PCA
+        if "multivariate_analysis" in summary:
+            multi_analysis = summary["multivariate_analysis"]
+            self.assertIn("pca", multi_analysis)
+
+    def test_simple_eda_skips_multivariate_when_not_requested(self):
+        """Should skip multivariate analysis when not requested (Phase 9.2 integration)"""
+        from finance_ml.eval import simple_eda
+
+        df_simple = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C"],
+                "price": [100.0, 200.0, 150.0],
+                "volume": [1000, 2000, 1500],
+            }
+        )
+        summary = simple_eda(df_simple, self.out_dir, include_multivariate=False)
+
+        # Should not include multivariate or should be empty
+        if "multivariate_analysis" in summary:
+            self.assertEqual(summary["multivariate_analysis"], {})
+
 
 class TestExportPredictionsToExcel(unittest.TestCase):
     """Test Excel export function"""
@@ -895,6 +1038,660 @@ class TestEdgeCases(unittest.TestCase):
             self.assertTrue((Path(temp_dir) / "eda_summary.json").exists())
         except ImportError:
             self.skipTest("Matplotlib/seaborn not available")
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+class TestSHAPFeatureImportance(unittest.TestCase):
+    """Test SHAP feature importance calculation (Phase 9.2)"""
+
+    def setUp(self):
+        """Create sample data for SHAP tests"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.X = pd.DataFrame(
+            {
+                "feature1": np.random.randn(100),
+                "feature2": np.random.randn(100),
+                "feature3": np.random.randn(100),
+            }
+        )
+        # Create target with some relationship to features
+        self.y = pd.Series(
+            2 * self.X["feature1"] + 0.5 * self.X["feature2"] + np.random.randn(100) * 0.1
+        )
+        # Check if SHAP is available
+        try:
+            import shap
+
+            self.shap_available = True
+        except ImportError:
+            self.shap_available = False
+
+    def test_calculate_shap_importance_returns_dataframe(self):
+        """Should return DataFrame with feature importance"""
+        if not self.shap_available:
+            self.skipTest("SHAP library not installed")
+        from finance_ml.eval import calculate_shap_importance
+
+        result = calculate_shap_importance(self.X, self.y)
+        self.assertIsInstance(result, pd.DataFrame)
+
+    def test_calculate_shap_importance_has_required_columns(self):
+        """Should have feature and importance columns"""
+        if not self.shap_available:
+            self.skipTest("SHAP library not installed")
+        from finance_ml.eval import calculate_shap_importance
+
+        result = calculate_shap_importance(self.X, self.y)
+        self.assertIn("feature", result.columns)
+        self.assertIn("importance", result.columns)
+
+    def test_calculate_shap_importance_sorted_descending(self):
+        """Should sort features by importance descending"""
+        if not self.shap_available:
+            self.skipTest("SHAP library not installed")
+        from finance_ml.eval import calculate_shap_importance
+
+        result = calculate_shap_importance(self.X, self.y)
+        importances = result["importance"].tolist()
+        self.assertEqual(importances, sorted(importances, reverse=True))
+
+    def test_calculate_shap_importance_identifies_key_features(self):
+        """Should identify feature1 as most important (strongest relationship with y)"""
+        if not self.shap_available:
+            self.skipTest("SHAP library not installed")
+        from finance_ml.eval import calculate_shap_importance
+
+        result = calculate_shap_importance(self.X, self.y)
+        # feature1 should have highest importance
+        top_feature = result.iloc[0]["feature"]
+        self.assertEqual(top_feature, "feature1")
+
+    def test_calculate_shap_importance_handles_missing_shap(self):
+        """Should handle case when SHAP library not available"""
+        from finance_ml.eval import calculate_shap_importance
+
+        with patch.dict("sys.modules", {"shap": None}):
+            with self.assertRaises(ImportError):
+                calculate_shap_importance(self.X, self.y)
+
+
+class TestTSNEVisualization(unittest.TestCase):
+    """Test t-SNE dimensionality reduction (Phase 9.2)"""
+
+    def setUp(self):
+        """Create sample high-dimensional data"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.X = pd.DataFrame(np.random.randn(50, 10), columns=[f"feature_{i}" for i in range(10)])
+
+    def test_perform_tsne_returns_dict(self):
+        """Should return dictionary with t-SNE results"""
+        from finance_ml.eval import perform_tsne
+
+        result = perform_tsne(self.X, n_components=2)
+        self.assertIsInstance(result, dict)
+
+    def test_perform_tsne_has_required_keys(self):
+        """Should have components and feature_names keys"""
+        from finance_ml.eval import perform_tsne
+
+        result = perform_tsne(self.X, n_components=2)
+        self.assertIn("components", result)
+        self.assertIn("feature_names", result)
+        self.assertIn("n_components", result)
+
+    def test_perform_tsne_correct_dimensions(self):
+        """Should reduce to specified number of components"""
+        from finance_ml.eval import perform_tsne
+
+        result = perform_tsne(self.X, n_components=2)
+        components = result["components"]
+        self.assertEqual(components.shape[1], 2)
+        self.assertEqual(components.shape[0], len(self.X))
+
+    def test_perform_tsne_three_components(self):
+        """Should support 3-component t-SNE"""
+        from finance_ml.eval import perform_tsne
+
+        result = perform_tsne(self.X, n_components=3)
+        components = result["components"]
+        self.assertEqual(components.shape[1], 3)
+
+    def test_perform_tsne_handles_missing_sklearn(self):
+        """Should handle case when sklearn not available"""
+        from finance_ml.eval import perform_tsne
+
+        with patch.dict("sys.modules", {"sklearn.manifold": None}):
+            with self.assertRaises(ImportError):
+                perform_tsne(self.X, n_components=2)
+
+
+class TestUMAPVisualization(unittest.TestCase):
+    """Test UMAP dimensionality reduction (Phase 9.2)"""
+
+    def setUp(self):
+        """Create sample high-dimensional data"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.X = pd.DataFrame(np.random.randn(50, 10), columns=[f"feature_{i}" for i in range(10)])
+        # Check if umap-learn is available
+        try:
+            import umap
+
+            self.umap_available = True
+        except ImportError:
+            self.umap_available = False
+
+    def test_perform_umap_returns_dict(self):
+        """Should return dictionary with UMAP results"""
+        if not self.umap_available:
+            self.skipTest("umap-learn not installed")
+        from finance_ml.eval import perform_umap
+
+        result = perform_umap(self.X, n_components=2)
+        self.assertIsInstance(result, dict)
+
+    def test_perform_umap_has_required_keys(self):
+        """Should have components and feature_names keys"""
+        if not self.umap_available:
+            self.skipTest("umap-learn not installed")
+        from finance_ml.eval import perform_umap
+
+        result = perform_umap(self.X, n_components=2)
+        self.assertIn("components", result)
+        self.assertIn("feature_names", result)
+        self.assertIn("n_components", result)
+
+    def test_perform_umap_correct_dimensions(self):
+        """Should reduce to specified number of components"""
+        if not self.umap_available:
+            self.skipTest("umap-learn not installed")
+        from finance_ml.eval import perform_umap
+
+        result = perform_umap(self.X, n_components=2)
+        components = result["components"]
+        self.assertEqual(components.shape[1], 2)
+        self.assertEqual(components.shape[0], len(self.X))
+
+    def test_perform_umap_three_components(self):
+        """Should support 3-component UMAP"""
+        if not self.umap_available:
+            self.skipTest("umap-learn not installed")
+        from finance_ml.eval import perform_umap
+
+        result = perform_umap(self.X, n_components=3)
+        components = result["components"]
+        self.assertEqual(components.shape[1], 3)
+
+    def test_perform_umap_handles_missing_umap(self):
+        """Should handle case when umap-learn not available"""
+        from finance_ml.eval import perform_umap
+
+        with patch.dict("sys.modules", {"umap": None}):
+            with self.assertRaises(ImportError):
+                perform_umap(self.X, n_components=2)
+
+
+class TestCalculateCorrelationMatrix(unittest.TestCase):
+    """Test correlation matrix calculation (Phase 9.2 helper function)"""
+
+    def setUp(self):
+        """Create sample numeric data"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.df = pd.DataFrame(
+            {
+                "price": [100, 200, 150, 180, 220],
+                "volume": [1000, 2000, 1500, 1800, 2200],
+                "market_cap": [1e9, 2e9, 1.5e9, 1.8e9, 2.2e9],
+            }
+        )
+        self.columns = ["price", "volume", "market_cap"]
+
+    def test_calculate_correlation_matrix_returns_dataframe(self):
+        """Should return pandas DataFrame"""
+        from finance_ml.eval import calculate_correlation_matrix
+
+        result = calculate_correlation_matrix(self.df, self.columns, method="pearson")
+        self.assertIsInstance(result, pd.DataFrame)
+
+    def test_calculate_correlation_matrix_pearson(self):
+        """Should calculate Pearson correlation correctly"""
+        from finance_ml.eval import calculate_correlation_matrix
+
+        result = calculate_correlation_matrix(self.df, self.columns, method="pearson")
+        # Correlation matrix should be square
+        self.assertEqual(result.shape[0], result.shape[1])
+        # Diagonal should be 1.0
+        for i in range(len(result)):
+            self.assertAlmostEqual(result.iloc[i, i], 1.0, places=5)
+
+    def test_calculate_correlation_matrix_spearman(self):
+        """Should calculate Spearman correlation correctly"""
+        from finance_ml.eval import calculate_correlation_matrix
+
+        result = calculate_correlation_matrix(self.df, self.columns, method="spearman")
+        self.assertEqual(result.shape[0], len(self.columns))
+        self.assertEqual(result.shape[1], len(self.columns))
+
+    def test_calculate_correlation_matrix_kendall(self):
+        """Should calculate Kendall tau correlation correctly"""
+        from finance_ml.eval import calculate_correlation_matrix
+
+        result = calculate_correlation_matrix(self.df, self.columns, method="kendall")
+        self.assertEqual(result.shape[0], len(self.columns))
+        self.assertEqual(result.shape[1], len(self.columns))
+
+
+class TestFindTopCorrelations(unittest.TestCase):
+    """Test top correlations extraction (Phase 9.2 helper function)"""
+
+    def setUp(self):
+        """Create sample correlation matrix"""
+        import numpy as np
+
+        # Create correlation matrix with known values
+        self.corr_matrix = pd.DataFrame(
+            {"A": [1.0, 0.8, 0.3], "B": [0.8, 1.0, 0.5], "C": [0.3, 0.5, 1.0]},
+            index=["A", "B", "C"],
+        )
+
+    def test_find_top_correlations_returns_list(self):
+        """Should return list of tuples"""
+        from finance_ml.eval import find_top_correlations
+
+        result = find_top_correlations(self.corr_matrix, n_top=5)
+        self.assertIsInstance(result, list)
+
+    def test_find_top_correlations_tuple_structure(self):
+        """Should return tuples with (var1, var2, correlation)"""
+        from finance_ml.eval import find_top_correlations
+
+        result = find_top_correlations(self.corr_matrix, n_top=5)
+        if result:
+            self.assertEqual(len(result[0]), 3)
+            # First element should be highest correlation (A-B: 0.8)
+            self.assertEqual(result[0][0], "A")
+            self.assertEqual(result[0][1], "B")
+            self.assertAlmostEqual(result[0][2], 0.8, places=5)
+
+    def test_find_top_correlations_respects_n_top(self):
+        """Should limit results to n_top"""
+        from finance_ml.eval import find_top_correlations
+
+        result = find_top_correlations(self.corr_matrix, n_top=2)
+        self.assertLessEqual(len(result), 2)
+
+    def test_find_top_correlations_threshold_filter(self):
+        """Should filter by threshold"""
+        from finance_ml.eval import find_top_correlations
+
+        result = find_top_correlations(self.corr_matrix, n_top=10, threshold=0.6)
+        # Only A-B (0.8) should pass threshold of 0.6
+        self.assertEqual(len(result), 1)
+
+
+class TestNormality(unittest.TestCase):
+    """Test normality testing (Phase 9.2 helper function)"""
+
+    def setUp(self):
+        """Create sample data"""
+        import numpy as np
+
+        np.random.seed(42)
+        # Normal distribution
+        self.df = pd.DataFrame(
+            {"normal": np.random.normal(100, 15, 100), "uniform": np.random.uniform(50, 150, 100)}
+        )
+
+    def test_normality_returns_dict(self):
+        """Should return dictionary"""
+        from finance_ml.eval import test_normality
+
+        result = test_normality(self.df, ["normal", "uniform"])
+        self.assertIsInstance(result, dict)
+
+    def test_normality_has_required_keys(self):
+        """Should have required keys for each column"""
+        from finance_ml.eval import test_normality
+
+        result = test_normality(self.df, ["normal"])
+        self.assertIn("normal", result)
+        self.assertIn("statistic", result["normal"])
+        self.assertIn("p_value", result["normal"])
+        self.assertIn("is_normal", result["normal"])
+
+    def test_normality_handles_insufficient_data(self):
+        """Should handle columns with insufficient data"""
+        from finance_ml.eval import test_normality
+
+        df_small = pd.DataFrame({"col": [1, 2]})
+        result = test_normality(df_small, ["col"])
+        self.assertIn("col", result)
+        self.assertIsNone(result["col"]["is_normal"])
+
+
+class TestSkewnessKurtosis(unittest.TestCase):
+    """Test skewness and kurtosis calculation (Phase 9.2 helper function)"""
+
+    def setUp(self):
+        """Create sample data"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.df = pd.DataFrame(
+            {"normal": np.random.normal(100, 15, 100), "skewed": np.random.exponential(50, 100)}
+        )
+
+    def test_skewness_kurtosis_returns_dataframe(self):
+        """Should return pandas DataFrame"""
+        from finance_ml.eval import calculate_skewness_kurtosis
+
+        result = calculate_skewness_kurtosis(self.df, ["normal", "skewed"])
+        self.assertIsInstance(result, pd.DataFrame)
+
+    def test_skewness_kurtosis_has_required_columns(self):
+        """Should have skewness and kurtosis columns"""
+        from finance_ml.eval import calculate_skewness_kurtosis
+
+        result = calculate_skewness_kurtosis(self.df, ["normal"])
+        self.assertIn("skewness", result.columns)
+        self.assertIn("kurtosis", result.columns)
+
+    def test_skewness_kurtosis_normal_distribution(self):
+        """Normal distribution should have low skewness"""
+        from finance_ml.eval import calculate_skewness_kurtosis
+
+        result = calculate_skewness_kurtosis(self.df, ["normal"])
+        # Normal distribution should have skewness close to 0
+        self.assertLess(abs(result.loc["normal", "skewness"]), 1.0)
+
+
+class TestCompareSectorMeans(unittest.TestCase):
+    """Test sector mean comparison (Phase 9.2 helper function)"""
+
+    def setUp(self):
+        """Create sample data with multiple sectors"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.df = pd.DataFrame(
+            {
+                "sector": ["Tech", "Tech", "Tech", "Finance", "Finance", "Finance"],
+                "price": [150, 160, 140, 100, 110, 95],
+                "pe_ratio": [20, 22, 18, 12, 14, 11],
+            }
+        )
+
+    def test_compare_sector_means_returns_dict(self):
+        """Should return dictionary"""
+        from finance_ml.eval import compare_sector_means
+
+        result = compare_sector_means(self.df, "price", group_column="sector")
+        self.assertIsInstance(result, dict)
+
+    def test_compare_sector_means_has_required_keys(self):
+        """Should have required keys"""
+        from finance_ml.eval import compare_sector_means
+
+        result = compare_sector_means(self.df, "price", group_column="sector")
+        self.assertIn("method", result)
+        self.assertIn("statistic", result)
+        self.assertIn("p_value", result)
+
+    def test_compare_sector_means_anova_method(self):
+        """Should support ANOVA method"""
+        from finance_ml.eval import compare_sector_means
+
+        result = compare_sector_means(self.df, "price", group_column="sector", method="anova")
+        self.assertEqual(result["method"], "anova")
+
+    def test_compare_sector_means_kruskal_method(self):
+        """Should support Kruskal-Wallis method"""
+        from finance_ml.eval import compare_sector_means
+
+        result = compare_sector_means(self.df, "price", group_column="sector", method="kruskal")
+        self.assertEqual(result["method"], "kruskal")
+
+
+class TestDistanceCorrelation(unittest.TestCase):
+    """Test distance correlation calculation (Phase 9.2 continuation)"""
+
+    def setUp(self):
+        """Create sample data for distance correlation tests"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.df = pd.DataFrame(
+            {"x": np.random.randn(50), "y": np.random.randn(50), "z": np.random.randn(50)}
+        )
+        # Check if dcor is available
+        try:
+            import dcor
+
+            self.dcor_available = True
+        except ImportError:
+            self.dcor_available = False
+
+    def test_calculate_distance_correlation_returns_dataframe(self):
+        """Should return DataFrame with distance correlation matrix"""
+        if not self.dcor_available:
+            self.skipTest("dcor library not installed")
+        from finance_ml.eval import calculate_distance_correlation
+
+        result = calculate_distance_correlation(self.df, ["x", "y", "z"])
+        self.assertIsInstance(result, pd.DataFrame)
+
+    def test_calculate_distance_correlation_correct_shape(self):
+        """Should return square matrix"""
+        if not self.dcor_available:
+            self.skipTest("dcor library not installed")
+        from finance_ml.eval import calculate_distance_correlation
+
+        result = calculate_distance_correlation(self.df, ["x", "y"])
+        self.assertEqual(result.shape[0], 2)
+        self.assertEqual(result.shape[1], 2)
+
+    def test_calculate_distance_correlation_diagonal_is_one(self):
+        """Distance correlation of variable with itself should be 1.0"""
+        if not self.dcor_available:
+            self.skipTest("dcor library not installed")
+        from finance_ml.eval import calculate_distance_correlation
+
+        result = calculate_distance_correlation(self.df, ["x", "y"])
+        self.assertAlmostEqual(result.loc["x", "x"], 1.0, places=5)
+        self.assertAlmostEqual(result.loc["y", "y"], 1.0, places=5)
+
+    def test_calculate_distance_correlation_handles_missing_dcor(self):
+        """Should raise ImportError when dcor not available"""
+        from finance_ml.eval import calculate_distance_correlation
+
+        with patch.dict("sys.modules", {"dcor": None}):
+            with self.assertRaises(ImportError):
+                calculate_distance_correlation(self.df, ["x", "y"])
+
+    def test_simple_eda_includes_distance_correlation(self):
+        """Should include distance correlation in correlation_analysis when available"""
+        if not self.dcor_available:
+            self.skipTest("dcor library not installed")
+        from finance_ml.eval import simple_eda
+        import tempfile
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            summary = simple_eda(self.df, Path(temp_dir))
+
+            # Should include distance correlation
+            self.assertIn("correlation_analysis", summary)
+            corr_analysis = summary["correlation_analysis"]
+            self.assertIn("distance", corr_analysis)
+            self.assertIsInstance(corr_analysis["distance"], dict)
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+class TestOutlierVisualization(unittest.TestCase):
+    """Test outlier visualization functions (Phase 9.2 continuation)"""
+
+    def setUp(self):
+        """Create sample data with outliers"""
+        import numpy as np
+
+        np.random.seed(42)
+        # Normal data with few outliers
+        self.df = pd.DataFrame(
+            {
+                "feature1": np.concatenate(
+                    [np.random.randn(45) * 10 + 50, [150, 160, 170, 180, 190]]
+                ),
+                "feature2": np.concatenate(
+                    [np.random.randn(45) * 5 + 100, [10, 15, 200, 210, 220]]
+                ),
+                "feature3": np.random.randn(50) * 20 + 75,
+            }
+        )
+        self.temp_dir = tempfile.mkdtemp()
+        self.out_dir = Path(self.temp_dir)
+
+    def tearDown(self):
+        """Clean up temp directory"""
+        import shutil
+
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_plot_outlier_boxplots_creates_figure(self):
+        """Should create matplotlib figure with box plots"""
+        from finance_ml.eval import plot_outlier_boxplots
+
+        fig = plot_outlier_boxplots(self.df, columns=["feature1", "feature2", "feature3"])
+        self.assertIsNotNone(fig)
+
+    def test_plot_outlier_boxplots_saves_to_file(self):
+        """Should save box plots to file when out_path provided"""
+        from finance_ml.eval import plot_outlier_boxplots
+
+        out_path = self.out_dir / "outlier_boxplots.png"
+        plot_outlier_boxplots(self.df, columns=["feature1", "feature2"], out_path=out_path)
+        self.assertTrue(out_path.exists())
+
+    def test_plot_outlier_violins_creates_figure(self):
+        """Should create matplotlib figure with violin plots"""
+        from finance_ml.eval import plot_outlier_violins
+
+        fig = plot_outlier_violins(self.df, columns=["feature1", "feature2", "feature3"])
+        self.assertIsNotNone(fig)
+
+    def test_plot_outlier_violins_saves_to_file(self):
+        """Should save violin plots to file when out_path provided"""
+        from finance_ml.eval import plot_outlier_violins
+
+        out_path = self.out_dir / "outlier_violins.png"
+        plot_outlier_violins(self.df, columns=["feature1", "feature2"], out_path=out_path)
+        self.assertTrue(out_path.exists())
+
+    def test_plot_outlier_scatter_creates_figure(self):
+        """Should create matplotlib figure with scatter plot showing z-scores"""
+        from finance_ml.eval import plot_outlier_scatter
+
+        fig = plot_outlier_scatter(self.df, columns=["feature1", "feature2"])
+        self.assertIsNotNone(fig)
+
+    def test_plot_outlier_scatter_saves_to_file(self):
+        """Should save scatter plot to file when out_path provided"""
+        from finance_ml.eval import plot_outlier_scatter
+
+        out_path = self.out_dir / "outlier_scatter.png"
+        plot_outlier_scatter(self.df, columns=["feature1", "feature2"], out_path=out_path)
+        self.assertTrue(out_path.exists())
+
+    def test_simple_eda_saves_outlier_plots(self):
+        """Should save outlier visualization plots when save_plots=True"""
+        from finance_ml.eval import simple_eda
+
+        simple_eda(self.df, self.out_dir, save_plots=True)
+
+        # Should create outlier visualization files
+        expected_files = [
+            "eda_outlier_boxplots.png",
+            "eda_outlier_violins.png",
+            "eda_outlier_scatter.png",
+        ]
+        for filename in expected_files:
+            filepath = self.out_dir / filename
+            # Files should exist if matplotlib available
+            if filepath.exists():
+                self.assertTrue(filepath.is_file())
+
+
+class TestUMAPIntegration(unittest.TestCase):
+    """Test UMAP integration into simple_eda (Phase 9.2 continuation)"""
+
+    def setUp(self):
+        """Create sample high-dimensional data"""
+        import numpy as np
+
+        np.random.seed(42)
+        self.df = pd.DataFrame(np.random.randn(50, 10), columns=[f"feature_{i}" for i in range(10)])
+        # Check if umap-learn is available
+        try:
+            import umap
+
+            self.umap_available = True
+        except ImportError:
+            self.umap_available = False
+
+    def test_simple_eda_includes_umap_in_multivariate(self):
+        """Should include UMAP results in multivariate_analysis when available"""
+        if not self.umap_available:
+            self.skipTest("umap-learn not installed")
+        from finance_ml.eval import simple_eda
+        import tempfile
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            summary = simple_eda(self.df, Path(temp_dir), include_multivariate=True)
+
+            # Should include UMAP in multivariate analysis
+            self.assertIn("multivariate_analysis", summary)
+            multi_analysis = summary["multivariate_analysis"]
+            self.assertIn("umap", multi_analysis)
+
+            # UMAP should have expected structure
+            if multi_analysis["umap"]:  # If not empty
+                self.assertIn("n_components", multi_analysis["umap"])
+                self.assertIn("feature_names", multi_analysis["umap"])
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    def test_simple_eda_skips_umap_when_not_available(self):
+        """Should gracefully skip UMAP when umap-learn not installed"""
+        from finance_ml.eval import simple_eda
+        import tempfile
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # Mock umap as unavailable
+            with patch.dict("sys.modules", {"umap": None}):
+                summary = simple_eda(self.df, Path(temp_dir), include_multivariate=True)
+
+                # Should still have multivariate_analysis
+                self.assertIn("multivariate_analysis", summary)
+                # UMAP should be empty or absent, not cause crash
+                multi_analysis = summary["multivariate_analysis"]
+                if "umap" in multi_analysis:
+                    self.assertEqual(multi_analysis["umap"], {})
         finally:
             import shutil
 

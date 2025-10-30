@@ -98,64 +98,147 @@ def create_sample_regression_data(n_samples=300, random_state=42):
 
 class TestComprehensiveRegressionMetrics(unittest.TestCase):
     """Test comprehensive regression metrics calculation."""
-    
+
     def setUp(self):
         """Set up test data."""
         self.df = create_sample_regression_data(n_samples=200)
         self.y_true = self.df['actual'].values
         self.y_pred = self.df['predicted'].values
-    
+
     def test_comprehensive_regression_metrics_returns_dict(self):
         """Test that comprehensive_regression_metrics returns a dictionary."""
         result = comprehensive_regression_metrics(self.y_true, self.y_pred)
         self.assertIsInstance(result, dict)
-    
+
     def test_comprehensive_regression_metrics_has_required_metrics(self):
         """Test that all required metrics are present."""
         result = comprehensive_regression_metrics(self.y_true, self.y_pred)
-        
+
         required_metrics = ['mae', 'rmse', 'mape', 'r2', 'median_ae', 'max_error']
         for metric in required_metrics:
             self.assertIn(metric, result, f"Missing required metric: {metric}")
-    
+
     def test_comprehensive_regression_metrics_mae_positive(self):
         """Test that MAE is positive."""
         result = comprehensive_regression_metrics(self.y_true, self.y_pred)
         self.assertGreater(result['mae'], 0)
-    
+
     def test_comprehensive_regression_metrics_rmse_gte_mae(self):
         """Test that RMSE >= MAE (mathematical property)."""
         result = comprehensive_regression_metrics(self.y_true, self.y_pred)
         self.assertGreaterEqual(result['rmse'], result['mae'])
-    
+
     def test_comprehensive_regression_metrics_r2_range(self):
         """Test that R² is in reasonable range (can be negative for bad models)."""
         result = comprehensive_regression_metrics(self.y_true, self.y_pred)
         self.assertIsInstance(result['r2'], (int, float))
         self.assertLessEqual(result['r2'], 1.0)
-    
+
     def test_comprehensive_regression_metrics_perfect_prediction(self):
         """Test metrics with perfect predictions."""
         y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         y_pred = y_true.copy()
-        
+
         result = comprehensive_regression_metrics(y_true, y_pred)
-        
+
         self.assertAlmostEqual(result['mae'], 0.0, places=10)
         self.assertAlmostEqual(result['rmse'], 0.0, places=10)
         self.assertAlmostEqual(result['mape'], 0.0, places=10)
         self.assertAlmostEqual(result['r2'], 1.0, places=10)
-    
+
     def test_comprehensive_regression_metrics_with_zeros(self):
         """Test MAPE handling when actuals contain zeros."""
         y_true = np.array([0.0, 1.0, 2.0, 3.0])
         y_pred = np.array([0.5, 1.5, 2.5, 3.5])
-        
+
         result = comprehensive_regression_metrics(y_true, y_pred)
-        
+
         # Should handle zeros gracefully (skip or use alternative)
         self.assertIn('mape', result)
         self.assertIsInstance(result['mape'], (int, float))
+
+    def test_comprehensive_regression_metrics_with_nan_in_y_true(self):
+        """Test handling of NaN values in y_true."""
+        y_true = np.array([1.0, 2.0, np.nan, 4.0, 5.0])
+        y_pred = np.array([1.1, 2.1, 3.1, 4.1, 5.1])
+
+        result = comprehensive_regression_metrics(y_true, y_pred)
+
+        # Should remove NaN values and compute metrics on valid data
+        self.assertIsInstance(result, dict)
+        self.assertIn("mae", result)
+        self.assertIn("n_samples", result)
+        self.assertEqual(result["n_samples"], 4)  # 4 valid samples after removing NaN
+        self.assertFalse(np.isnan(result["mae"]))
+        self.assertFalse(np.isnan(result["rmse"]))
+
+    def test_comprehensive_regression_metrics_with_nan_in_y_pred(self):
+        """Test handling of NaN values in y_pred."""
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        y_pred = np.array([1.1, np.nan, 3.1, 4.1, 5.1])
+
+        result = comprehensive_regression_metrics(y_true, y_pred)
+
+        # Should remove NaN values and compute metrics on valid data
+        self.assertIsInstance(result, dict)
+        self.assertIn("n_samples", result)
+        self.assertEqual(result["n_samples"], 4)  # 4 valid samples
+        self.assertFalse(np.isnan(result["mae"]))
+        self.assertFalse(np.isnan(result["rmse"]))
+
+    def test_comprehensive_regression_metrics_with_mixed_nan(self):
+        """Test handling of NaN values in both y_true and y_pred."""
+        y_true = np.array([1.0, np.nan, 3.0, 4.0, np.nan])
+        y_pred = np.array([1.1, 2.1, np.nan, 4.1, 5.1])
+
+        result = comprehensive_regression_metrics(y_true, y_pred)
+
+        # Should remove all rows with any NaN
+        self.assertIsInstance(result, dict)
+        self.assertIn("n_samples", result)
+        self.assertEqual(result["n_samples"], 2)  # Only 2 fully valid samples
+        self.assertFalse(np.isnan(result["mae"]))
+
+    def test_comprehensive_regression_metrics_with_inf_values(self):
+        """Test handling of infinite values."""
+        y_true = np.array([1.0, 2.0, np.inf, 4.0, 5.0])
+        y_pred = np.array([1.1, 2.1, 3.1, -np.inf, 5.1])
+
+        result = comprehensive_regression_metrics(y_true, y_pred)
+
+        # Should remove infinite values
+        self.assertIsInstance(result, dict)
+        self.assertIn("n_samples", result)
+        self.assertEqual(result["n_samples"], 3)  # 3 valid samples
+        self.assertFalse(np.isinf(result["mae"]))
+        self.assertFalse(np.isinf(result["rmse"]))
+
+    def test_comprehensive_regression_metrics_all_nan(self):
+        """Test handling when all values are NaN."""
+        y_true = np.array([np.nan, np.nan, np.nan])
+        y_pred = np.array([1.0, 2.0, 3.0])
+
+        result = comprehensive_regression_metrics(y_true, y_pred)
+
+        # Should return NaN metrics with warning
+        self.assertIsInstance(result, dict)
+        self.assertIn("n_samples", result)
+        self.assertEqual(result["n_samples"], 0)
+        self.assertTrue(np.isnan(result["mae"]))
+        self.assertTrue(np.isnan(result["rmse"]))
+
+    def test_comprehensive_regression_metrics_insufficient_samples(self):
+        """Test handling when only 1 valid sample remains after NaN removal."""
+        y_true = np.array([1.0, np.nan, np.nan, np.nan])
+        y_pred = np.array([1.1, 2.1, 3.1, 4.1])
+
+        result = comprehensive_regression_metrics(y_true, y_pred)
+
+        # Should return NaN metrics when insufficient samples
+        self.assertIsInstance(result, dict)
+        self.assertIn("n_samples", result)
+        self.assertLess(result["n_samples"], 2)
+        self.assertTrue(np.isnan(result["mae"]))
 
 
 class TestComputeMetricsBySegment(unittest.TestCase):

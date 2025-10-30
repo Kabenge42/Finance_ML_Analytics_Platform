@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Financial Data Quality Report - Phase 9.1</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #1f77b4;
+            border-bottom: 3px solid #1f77b4;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background-color: #1f77b4;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .metric {
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            color: #1f77b4;
+        }
+
+        .warning {
+            color: #d9534f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<h1>Financial Data Quality Report - Phase 9.1</h1>
+<p><i>Generated: 2025-10-31 09:42:38</i></p>
+
+<h2>Dataset Overview</h2>
+
+<div class="metric">
+    <span class="metric-label">Number of Rows:</span>
+    <span class="metric-value">8,000</span>
+</div>
+<div class="metric">
+    <span class="metric-label">Number of Columns:</span>
+    <span class="metric-value">9</span>
+</div>
+<div class="metric">
+    <span class="metric-label">Memory Usage:</span>
+    <span class="metric-value">1.21 MB</span>
+</div>
+
+<h2>Missing Values</h2>
+<table border="1" class="dataframe data-table">
+    <thead>
+    <tr style="text-align: right;">
+        <th>Column</th>
+        <th>Missing Count</th>
+        <th>Missing %</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>sector</td>
+        <td>2003</td>
+        <td>25.04</td>
+    </tr>
+    <tr>
+        <td>last_price</td>
+        <td>2003</td>
+        <td>25.04</td>
+    </tr>
+    <tr>
+        <td>market_cap</td>
+        <td>2002</td>
+        <td>25.02</td>
+    </tr>
+    <tr>
+        <td>ticker</td>
+        <td>2001</td>
+        <td>25.01</td>
+    </tr>
+    </tbody>
+</table>
+<h2>Column Data Types</h2>
+<table border="1" class="dataframe data-table">
+    <thead>
+    <tr style="text-align: right;">
+        <th>Data Type</th>
+        <th>Count</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>float64</td>
+        <td>7</td>
+    </tr>
+    <tr>
+        <td>object</td>
+        <td>2</td>
+    </tr>
+    </tbody>
+</table>
+<h2>Numeric Columns Statistics</h2>
+<table border="1" class="dataframe data-table">
+    <thead>
+    <tr style="text-align: right;">
+        <th></th>
+        <th>count</th>
+        <th>mean</th>
+        <th>std</th>
+        <th>min</th>
+        <th>25%</th>
+        <th>50%</th>
+        <th>75%</th>
+        <th>max</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th>market_cap</th>
+        <td>5998.0</td>
+        <td>12176.46</td>
+        <td>33818.35</td>
+        <td>174.92</td>
+        <td>615.24</td>
+        <td>2260.93</td>
+        <td>7691.78</td>
+        <td>448590.78</td>
+    </tr>
+    <tr>
+        <th>last_price</th>
+        <td>5997.0</td>
+        <td>560.64</td>
+        <td>10348.46</td>
+        <td>0.01</td>
+        <td>12.13</td>
+        <td>36.97</td>
+        <td>108.45</td>
+        <td>722494.75</td>
+    </tr>
+    <tr>
+        <th>p_e</th>
+        <td>8000.0</td>
+        <td>24.60</td>
+        <td>28.10</td>
+        <td>1.12</td>
+        <td>14.40</td>
+        <td>18.00</td>
+        <td>24.10</td>
+        <td>309.52</td>
+    </tr>
+    <tr>
+        <th>p_b</th>
+        <td>8000.0</td>
+        <td>3.58</td>
+        <td>5.72</td>
+        <td>0.26</td>
+        <td>1.40</td>
+        <td>2.10</td>
+        <td>3.20</td>
+        <td>87.16</td>
+    </tr>
+    <tr>
+        <th>revenue</th>
+        <td>8000.0</td>
+        <td>4829.44</td>
+        <td>15107.51</td>
+        <td>-15.90</td>
+        <td>530.01</td>
+        <td>1136.53</td>
+        <td>2687.89</td>
+        <td>243089.40</td>
+    </tr>
+    <tr>
+        <th>net_income</th>
+        <td>8000.0</td>
+        <td>431.20</td>
+        <td>1485.45</td>
+        <td>-3583.77</td>
+        <td>30.42</td>
+        <td>85.74</td>
+        <td>221.74</td>
+        <td>22436.40</td>
+    </tr>
+    <tr>
+        <th>gross_margin</th>
+        <td>8000.0</td>
+        <td>0.44</td>
+        <td>0.56</td>
+        <td>-2.14</td>
+        <td>0.32</td>
+        <td>0.40</td>
+        <td>0.56</td>
+        <td>45.86</td>
+    </tr>
+    </tbody>
+</table>
+<h2>Categorical Columns</h2>
+<table border="1" class="dataframe data-table">
+    <thead>
+    <tr style="text-align: right;">
+        <th>Column</th>
+        <th>Unique Values</th>
+        <th>Most Common</th>
+        <th>Most Common Count</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>ticker</td>
+        <td>5668</td>
+        <td>SPG</td>
+        <td>4</td>
+    </tr>
+    <tr>
+        <td>sector</td>
+        <td>12</td>
+        <td>Financials</td>
+        <td>1114</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
+    

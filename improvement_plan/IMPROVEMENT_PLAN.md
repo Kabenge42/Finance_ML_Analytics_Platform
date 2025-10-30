@@ -931,17 +931,23 @@ advanced techniques from industry-standard ML references:
 
 **Implementation Strategy**:
 
-- [ ] Enhance `finance_ml.eval.simple_eda()` with comprehensive statistical analysis
-  - [ ] Add automated correlation analysis: Pearson, Spearman, Kendall tau, distance correlation
-  - [ ] Implement feature importance via random forest, mutual information, SHAP values
-  - [ ] Add distribution analysis: normality tests (Shapiro-Wilk, Kolmogorov-Smirnov), skewness, kurtosis
-  - [ ] Implement outlier detection visualization: box plots, violin plots, scatter with z-scores
-  - [ ] Add multivariate analysis: PCA visualization, t-SNE, UMAP for high-dimensional exploration
-- [ ] Sector and region-specific benchmarking
-  - [ ] Create sector-wise distribution comparisons (P/E, P/B, EV/EBITDA, margins)
-  - [ ] Add regional valuation metric comparisons with statistical significance tests
-  - [ ] Implement peer group analysis within sectors
-  - [ ] Add time-series trend analysis for key metrics (if temporal data available)
+- [x] Enhance `finance_ml.eval.simple_eda()` with comprehensive statistical analysis (Phase 9.2 Integration -
+  2025-10-30)
+    - [x] Add automated correlation analysis: Pearson, Spearman, Kendall tau, distance correlation (Phase 9.2
+      Continuation - 2025-10-30)
+    - [x] Implement feature importance via random forest, mutual information, SHAP values (integrated with target_column
+      parameter)
+    - [x] Add distribution analysis: normality tests (Shapiro-Wilk, Kolmogorov-Smirnov), skewness, kurtosis
+    - [x] Implement outlier detection visualization: box plots, violin plots, scatter with z-scores (Phase 9.2
+      Continuation - 2025-10-30)
+    - [x] Add multivariate analysis: PCA visualization, t-SNE, UMAP for high-dimensional exploration (Phase 9.2
+      Continuation - 2025-10-30)
+- [x] Sector and region-specific benchmarking (Phase 9.2 Benchmarking - 2025-10-30)
+    - [x] Create sector-wise distribution comparisons (P/E, P/B, EV/EBITDA, margins)
+    - [x] Add regional valuation metric comparisons with statistical significance tests
+    - [x] Implement peer group analysis within sectors
+    - [x] Add time-series trend analysis for key metrics (if temporal data available)
+    - [x] Notebook integration: Added 6 demonstration cells showcasing all benchmarking functions (2025-10-30)
 - [ ] Automated EDA report generation
   - [ ] Integrate pandas-profiling for comprehensive data profiling
   - [ ] Generate HTML/PDF reports with executive summary, data quality, correlations, distributions
@@ -958,11 +964,11 @@ advanced techniques from industry-standard ML references:
   - [ ] Test for market efficiency hypotheses using price/target relationships
 - [ ] **Testing**: Add tests for EDA report generation, statistical calculations, visualization outputs
 - [ ] **Documentation**: Document EDA insights and their implications for modeling
-- [ ] **Bug Fixes**: Fix simple_eda() AttributeError
-  - [ ] Replace incorrect `.dtype` access with `.dtypes` on DataFrames
-  - [ ] Add unit test to prevent regression
-  - [ ] Update notebook to remove AttributeError workaround
-  - [ ] Document DataFrame dtype handling best practices
+- [x] **Bug Fixes**: Fix simple_eda() AttributeError
+    - [x] Replace incorrect `.dtype` access with `.dtypes` on DataFrames
+    - [x] Add unit test to prevent regression
+    - [x] Update notebook to remove AttributeError workaround
+    - [x] Document DataFrame dtype handling best practices (see finance_ml/eval.py lines 189-201)
 
 #### 9.3 Advanced Feature Engineering with Sector-Specific Optimizations
 
