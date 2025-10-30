@@ -109,8 +109,8 @@ class TestNotebookIntegration(unittest.TestCase):
             "build_comprehensive_features",
             "calculate_feature_importance_rf",
             # Phase 9.4 - Classification
-            "create_enhanced_event_labels",
-            "train_xgboost_classifier",
+            "create_event_labels",
+            "train_event_classifier",
             # Phase 9.5 - Advanced Regression
             "train_ridge_regressor",
             "train_xgboost_regressor",

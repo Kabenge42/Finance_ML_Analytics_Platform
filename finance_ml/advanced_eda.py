@@ -73,7 +73,7 @@ def calculate_correlation_matrix(
     if columns is None:
         columns = df.select_dtypes(include=[np.number]).columns.tolist()
     data = df[columns].dropna()
-
+    
     if method == 'pearson':
         corr_matrix = data.corr(method='pearson')
     elif method == 'spearman':
@@ -82,45 +82,44 @@ def calculate_correlation_matrix(
         corr_matrix = data.corr(method='kendall')
     else:
         raise ValueError(f"Unknown correlation method: {method}")
-
+    
     logger.info(f"Calculated {method} correlation matrix for {len(columns)} columns")
     return corr_matrix
 
 
-def find_top_correlations(
-    corr_matrix: pd.DataFrame, n_top: int = 10, threshold: float = 0.0
-) -> pd.DataFrame:
-    """Find top correlations in a correlation matrix.
-
+def find_top_correlations(corr_matrix: pd.DataFrame, n_top: int = 10) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, float]]]:
+    """Find top positive and negative correlations from a correlation matrix.
+    
     Args:
         corr_matrix: Correlation matrix
-        n_top: Number of top correlations to return
-        threshold: Minimum correlation threshold (absolute value)
-
+        n_top: Number of top correlations to return for each category
+        
     Returns:
-        pd.DataFrame: Top correlations with columns ['Feature 1', 'Feature 2', 'Correlation']
+        Tuple of (top_positive, top_negative) correlation lists
     """
-    # Get upper triangle of correlation matrix (avoid duplicates)
+    # Get upper triangle (avoid duplicates and self-correlations)
     mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
     upper_tri = corr_matrix.where(mask)
-
-    # Find correlations above threshold
+    
+    # Convert to list of tuples
     correlations = []
-    for col in upper_tri.columns:
-        for idx in upper_tri.index:
-            value = upper_tri.loc[idx, col]
-            if pd.notna(value) and abs(value) >= threshold:
-                correlations.append({"Feature 1": idx, "Feature 2": col, "Correlation": value})
-
-    # Sort by absolute correlation and return top n
-    df_corr = pd.DataFrame(correlations)
-    if len(df_corr) > 0:
-        df_corr["Abs_Correlation"] = df_corr["Correlation"].abs()
-        df_corr = df_corr.sort_values("Abs_Correlation", ascending=False)
-        df_corr = df_corr.drop("Abs_Correlation", axis=1)
-        return df_corr.head(n_top)
-    else:
-        return pd.DataFrame(columns=["Feature 1", "Feature 2", "Correlation"])
+    for i in range(len(upper_tri)):
+        for j in range(i + 1, len(upper_tri)):
+            var1 = upper_tri.index[i]
+            var2 = upper_tri.columns[j]
+            corr_value = upper_tri.iloc[i, j]
+            
+            if not pd.isna(corr_value):
+                correlations.append((var1, var2, corr_value))
+    
+    # Sort by correlation value
+    correlations.sort(key=lambda x: x[2], reverse=True)
+    
+    # Split into positive and negative
+    top_positive = [c for c in correlations if c[2] > 0][:n_top]
+    top_negative = [c for c in correlations if c[2] < 0][:n_top]
+    
+    return top_positive, top_negative
 
 
 def test_normality(data: pd.Series, method: str = 'shapiro') -> StatisticalTestResult:
@@ -509,7 +508,7 @@ def generate_eda_report(
 ) -> EDAReport:
     """Generate comprehensive EDA report."""
     logger.info("Generating comprehensive EDA report...")
-
+    
     dataset_summary = {
         'n_rows': len(df),
         'n_columns': len(df.columns),
@@ -517,42 +516,42 @@ def generate_eda_report(
         'n_categorical': len(df.select_dtypes(include=['object', 'category']).columns),
         'memory_usage_mb': df.memory_usage(deep=True).sum() / 1024**2
     }
-
+    
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()[:20]
-
+    
     pearson_matrix = calculate_correlation_matrix(df, method='pearson', columns=numeric_cols)
     spearman_matrix = calculate_correlation_matrix(df, method='spearman', columns=numeric_cols)
-    top_corr = find_top_correlations(pearson_matrix, n_top=10, threshold=0.3)
-
+    top_positive, top_negative = find_top_correlations(pearson_matrix, n_top=10)
+    
     correlation_analysis = CorrelationReport(
         pearson_matrix=pearson_matrix,
         spearman_matrix=spearman_matrix,
-        top_positive=top_corr[top_corr["Correlation"] > 0] if len(top_corr) > 0 else None,
-        top_negative=top_corr[top_corr["Correlation"] < 0] if len(top_corr) > 0 else None,
+        top_positive=top_positive,
+        top_negative=top_negative
     )
-
+    
     normality_tests = {}
     for col in numeric_cols[:10]:
         normality_tests[col] = test_normality(df[col], method='shapiro')
-
+    
     distribution_stats = calculate_skewness_kurtosis(df, columns=numeric_cols)
-
+    
     if target_col and target_col in df.columns:
         X = df[numeric_cols].drop(columns=[target_col], errors='ignore')
         y = df[target_col]
         feature_importance = calculate_mutual_information(X, y, top_k=20)
     else:
         feature_importance = pd.DataFrame()
-
+    
     missing_summary = pd.DataFrame({
         'column': df.columns,
         'missing_count': df.isnull().sum(),
         'missing_pct': (df.isnull().sum() / len(df)) * 100
     }).sort_values('missing_count', ascending=False)
-
+    
     outlier_stats = detect_outliers_statistical(df, columns=numeric_cols[:10], method='iqr')
     outlier_summary = outlier_stats.set_index('column')['n_outliers'].to_dict()
-
+    
     sector_comparison = None
     if sector_col in df.columns and len(numeric_cols) > 0:
         test_col = numeric_cols[0]
@@ -561,7 +560,7 @@ def generate_eda_report(
             'test_column': test_col,
             'test_result': sector_test
         }
-
+    
     report = EDAReport(
         dataset_summary=dataset_summary,
         correlation_analysis=correlation_analysis,
@@ -572,7 +571,7 @@ def generate_eda_report(
         outlier_summary=outlier_summary,
         sector_comparison=sector_comparison
     )
-
+    
     logger.info("✓ EDA report generation complete")
     return report
 
