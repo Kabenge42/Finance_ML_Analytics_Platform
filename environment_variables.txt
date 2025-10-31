@@ -1,6 +1,8 @@
 # =============================================================================
 # Finance ML Analytics Platform - Environment Configuration
 # =============================================================================
+# Version: 0.5.0
+# Python version: >=3.12,<3.14
 
 # -----------------------------------------------------------------------------
 # Logging Configuration
@@ -23,6 +25,8 @@ TF_CPP_MIN_LOG_LEVEL=2
 # -----------------------------------------------------------------------------
 # SQLAlchemy connection URL (required only if --data-source=db)
 # Format: postgresql+psycopg2://user:password@host:port/database
+# Example (PostgreSQL): postgresql+psycopg2://postgres:your_password@localhost:5432/postgres
+# Example (SQLite): sqlite:///equities.sqlite
 # DB_URL=postgresql+psycopg2://postgres:your_password@localhost:5432/postgres
 # Optional: Database schema and table to read from
 # DB_SCHEMA=public
@@ -37,7 +41,7 @@ TF_CPP_MIN_LOG_LEVEL=2
 # -----------------------------------------------------------------------------
 # Model Configuration
 # -----------------------------------------------------------------------------
-# MODEL_VERSION=v8_2
+# MODEL_VERSION=v0_5_0
 # RANDOM_SEED=42
 
 # -----------------------------------------------------------------------------
@@ -47,3 +51,13 @@ TF_CPP_MIN_LOG_LEVEL=2
 # N_JOBS=-1
 # Maximum memory allocation for operations
 # MEMORY_LIMIT=8GB
+
+# -----------------------------------------------------------------------------
+# Analytics and Reporting Configuration
+# -----------------------------------------------------------------------------
+# Enable/disable interactive visualizations
+# ENABLE_INTERACTIVE_PLOTS=true
+# Report output format: html, pdf, excel
+# REPORT_FORMAT=html
+# Enable benchmarking analysis (Phase 9.2)
+# ENABLE_BENCHMARKING=true

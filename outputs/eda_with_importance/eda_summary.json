@@ -4504,7 +4504,7 @@
   "normality_tests": {
     "market_cap": {
       "statistic": 0.4361028299197395,
-      "p_value": 7.971936218303434e-18,
+      "p_value": 7.97193621830355e-18,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4516,7 +4516,7 @@
     },
     "last_price": {
       "statistic": 0.07757417942724087,
-      "p_value": 3.5638179693888925e-22,
+      "p_value": 3.563817969388969e-22,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4528,25 +4528,25 @@
     },
     "total_return_ytd": {
       "statistic": 0.7753009519750735,
-      "p_value": 4.618565493452168e-11,
+      "p_value": 4.6185654934522015e-11,
       "is_normal": false,
       "sample_size": 100
     },
     "price_target": {
       "statistic": 0.07783136337396379,
-      "p_value": 3.5852962896163026e-22,
+      "p_value": 3.5852962896163797e-22,
       "is_normal": false,
       "sample_size": 100
     },
     "price_target_low": {
       "statistic": 0.07739222785727218,
-      "p_value": 3.5487031057261275e-22,
+      "p_value": 3.5487031057261783e-22,
       "is_normal": false,
       "sample_size": 100
     },
     "price_target_median": {
       "statistic": 0.07799708319687493,
-      "p_value": 3.5992071267637264e-22,
+      "p_value": 3.599207126763804e-22,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4564,7 +4564,7 @@
     },
     "p_e_ntm": {
       "statistic": 0.5477035919140328,
-      "p_value": 4.839735051506829e-16,
+      "p_value": 4.83973505150683e-16,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4582,55 +4582,55 @@
     },
     "altman_z_score_fq": {
       "statistic": 0.4318762095821982,
-      "p_value": 5.393520976712642e-15,
+      "p_value": 5.393520976712643e-15,
       "is_normal": false,
       "sample_size": 70
     },
     "altman_z_score_ltm": {
       "statistic": 0.5242794189835587,
-      "p_value": 1.0395948341369667e-13,
+      "p_value": 1.0395948341369669e-13,
       "is_normal": false,
       "sample_size": 70
     },
     "beta_1y": {
       "statistic": 0.9254671754915428,
-      "p_value": 5.686623084384045e-05,
+      "p_value": 5.6866230843840565e-05,
       "is_normal": false,
       "sample_size": 92
     },
     "beta_2y": {
       "statistic": 0.9413535526868805,
-      "p_value": 0.0004343567201812736,
+      "p_value": 0.00043435672018127405,
       "is_normal": false,
       "sample_size": 92
     },
     "beta_5y": {
       "statistic": 0.8932685765676287,
-      "p_value": 1.8339477007749313e-06,
+      "p_value": 1.8339477007749315e-06,
       "is_normal": false,
       "sample_size": 91
     },
     "analyst_rating": {
       "statistic": 0.9652841149889952,
-      "p_value": 0.009746070309249255,
+      "p_value": 0.009746070309249264,
       "is_normal": false,
       "sample_size": 100
     },
     "strong_sell_ratings": {
       "statistic": 0.6803446528671324,
-      "p_value": 1.9230181758061666e-13,
+      "p_value": 1.9230181758061805e-13,
       "is_normal": false,
       "sample_size": 100
     },
     "strong_buys_ratings": {
       "statistic": 0.9448441555718771,
-      "p_value": 0.0003854845947700203,
+      "p_value": 0.00038548459477002073,
       "is_normal": false,
       "sample_size": 100
     },
     "hold_ratings": {
       "statistic": 0.9488819754698155,
-      "p_value": 0.0007007077673379117,
+      "p_value": 0.000700707767337913,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4642,7 +4642,7 @@
     },
     "sell_ratings": {
       "statistic": 0.6609104331202125,
-      "p_value": 7.242603346881066e-14,
+      "p_value": 7.242603346881119e-14,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4654,7 +4654,7 @@
     },
     "total_revenues_fq": {
       "statistic": 0.596745130382577,
-      "p_value": 3.73512287475952e-15,
+      "p_value": 3.7351228747595474e-15,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4666,43 +4666,43 @@
     },
     "total_revenues_fy": {
       "statistic": 0.5947173815926039,
-      "p_value": 3.4205659471733964e-15,
+      "p_value": 3.4205659471734213e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "total_revenues_ltm": {
       "statistic": 0.5914946150670066,
-      "p_value": 2.9761733255789444e-15,
+      "p_value": 2.9761733255789555e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "total_operating_expenses_ltm": {
       "statistic": 0.5427167819124382,
-      "p_value": 3.9680590411226157e-16,
+      "p_value": 3.968059041122615e-16,
       "is_normal": false,
       "sample_size": 100
     },
     "p_tbv_ltm": {
       "statistic": 0.415721240760067,
-      "p_value": 1.5510776006267592e-14,
+      "p_value": 1.551077600626765e-14,
       "is_normal": false,
       "sample_size": 64
     },
     "tbv_fy": {
       "statistic": 0.7121707354373524,
-      "p_value": 1.0459403406475017e-12,
+      "p_value": 1.0459403406475057e-12,
       "is_normal": false,
       "sample_size": 100
     },
     "tbv_ltm": {
       "statistic": 0.7092585247410832,
-      "p_value": 8.910583110270347e-13,
+      "p_value": 8.910583110270411e-13,
       "is_normal": false,
       "sample_size": 100
     },
     "market_cap_country_r": {
       "statistic": 0.7928190459234093,
-      "p_value": 1.4990902079612487e-10,
+      "p_value": 1.4990902079612541e-10,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4744,19 +4744,19 @@
     },
     "cfi_ltm": {
       "statistic": 0.5774323819582129,
-      "p_value": 2.362959618180524e-14,
+      "p_value": 2.3629596181805412e-14,
       "is_normal": false,
       "sample_size": 86
     },
     "fcf_ltm": {
       "statistic": 0.6735815362622202,
-      "p_value": 1.570020675886656e-12,
+      "p_value": 1.5700206758866673e-12,
       "is_normal": false,
       "sample_size": 86
     },
     "cfo_ltm": {
       "statistic": 0.5915252560771149,
-      "p_value": 4.175966269336499e-14,
+      "p_value": 4.175966269336515e-14,
       "is_normal": false,
       "sample_size": 86
     },
@@ -4780,19 +4780,19 @@
     },
     "ebitda_1fy": {
       "statistic": 0.6235865928903421,
-      "p_value": 1.3305152089575908e-13,
+      "p_value": 1.3305152089575906e-13,
       "is_normal": false,
       "sample_size": 87
     },
     "ebitda_adj_ltm": {
       "statistic": 0.561489556863082,
-      "p_value": 8.445065048056368e-15,
+      "p_value": 8.445065048056308e-15,
       "is_normal": false,
       "sample_size": 88
     },
     "ebitda_adj_fy": {
       "statistic": 0.592347269503547,
-      "p_value": 2.9205419360481244e-14,
+      "p_value": 2.9205419360481035e-14,
       "is_normal": false,
       "sample_size": 88
     },
@@ -4822,19 +4822,19 @@
     },
     "ebit_1fy": {
       "statistic": 0.5799441740281797,
-      "p_value": 2.6127361844578164e-14,
+      "p_value": 2.612736184457854e-14,
       "is_normal": false,
       "sample_size": 86
     },
     "ebit_adj_1fy": {
       "statistic": 0.6302123406640003,
-      "p_value": 2.8421521297819186e-14,
+      "p_value": 2.8421521297819387e-14,
       "is_normal": false,
       "sample_size": 97
     },
     "ebit_adj_fy": {
       "statistic": 0.6253605657819608,
-      "p_value": 1.5971736796161715e-14,
+      "p_value": 1.5971736796161712e-14,
       "is_normal": false,
       "sample_size": 99
     },
@@ -4858,55 +4858,55 @@
     },
     "return_on_equity_pct_ltm": {
       "statistic": 0.6428750818300102,
-      "p_value": 2.1585138228927832e-13,
+      "p_value": 2.1585138228927676e-13,
       "is_normal": false,
       "sample_size": 89
     },
     "return_on_equity_pct_fy": {
       "statistic": 0.54076071934409,
-      "p_value": 9.520431612423427e-16,
+      "p_value": 9.520431612423356e-16,
       "is_normal": false,
       "sample_size": 95
     },
     "net_income_is_fy": {
       "statistic": 0.5908616511961622,
-      "p_value": 2.8961978360564484e-15,
+      "p_value": 2.896197836056469e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "net_income_is_ltm": {
       "statistic": 0.5869320178548951,
-      "p_value": 2.4472551560338574e-15,
+      "p_value": 2.447255156033875e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "normalized_net_income_fy": {
       "statistic": 0.5948205023112367,
-      "p_value": 3.4358771703571046e-15,
+      "p_value": 3.4358771703571294e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "normalized_net_income_ltm": {
       "statistic": 0.585005088745519,
-      "p_value": 2.254209599493031e-15,
+      "p_value": 2.2542095994930477e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "net_income_adj_fy": {
       "statistic": 0.610051116343584,
-      "p_value": 6.706947952791385e-15,
+      "p_value": 6.706947952791434e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "net_income_adj_ltm": {
       "statistic": 0.5703028173325364,
-      "p_value": 1.2150908591301353e-15,
+      "p_value": 1.2150908591301529e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "net_income_margin_pct_fy": {
       "statistic": 0.9471333198700671,
-      "p_value": 0.0005396858098751735,
+      "p_value": 0.0005396858098751746,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4918,31 +4918,31 @@
     },
     "volatility_1m": {
       "statistic": 0.8763776199666083,
-      "p_value": 1.2790840330438337e-07,
+      "p_value": 1.2790840330438385e-07,
       "is_normal": false,
       "sample_size": 100
     },
     "volatility_3m": {
       "statistic": 0.8420109473369515,
-      "p_value": 6.077227321043786e-09,
+      "p_value": 6.077227321043808e-09,
       "is_normal": false,
       "sample_size": 100
     },
     "volatility_6m": {
       "statistic": 0.8773755848002653,
-      "p_value": 1.4076417728789687e-07,
+      "p_value": 1.407641772878974e-07,
       "is_normal": false,
       "sample_size": 100
     },
     "volatility_1y": {
       "statistic": 0.8679738617863889,
-      "p_value": 5.812681557193399e-08,
+      "p_value": 5.812681557193431e-08,
       "is_normal": false,
       "sample_size": 100
     },
     "volume_shrs": {
       "statistic": 0.46177436144661543,
-      "p_value": 1.935853161621541e-17,
+      "p_value": 1.9358531616215688e-17,
       "is_normal": false,
       "sample_size": 100
     },
@@ -4954,7 +4954,7 @@
     },
     "dividend_per_share_ltm": {
       "statistic": 0.5712112040671127,
-      "p_value": 7.758716401004024e-14,
+      "p_value": 7.758716401004079e-14,
       "is_normal": false,
       "sample_size": 79
     },
@@ -4966,43 +4966,43 @@
     },
     "div_yield_ltm": {
       "statistic": 0.8703182581318487,
-      "p_value": 5.444227649793292e-06,
+      "p_value": 5.444227649793323e-06,
       "is_normal": false,
       "sample_size": 66
     },
     "total_debt_fy": {
       "statistic": 0.48386354043281254,
-      "p_value": 4.2609598329553884e-17,
+      "p_value": 4.26095983295545e-17,
       "is_normal": false,
       "sample_size": 100
     },
     "total_equity_fy": {
       "statistic": 0.6345885183633777,
-      "p_value": 2.0521288363875808e-14,
+      "p_value": 2.0521288363876105e-14,
       "is_normal": false,
       "sample_size": 100
     },
     "total_equity_ltm": {
       "statistic": 0.6378880904390785,
-      "p_value": 2.3948783224301447e-14,
+      "p_value": 2.3948783224301617e-14,
       "is_normal": false,
       "sample_size": 100
     },
     "total_debt_ltm": {
       "statistic": 0.4584763034285094,
-      "p_value": 1.724310270558651e-17,
+      "p_value": 1.7243102705586757e-17,
       "is_normal": false,
       "sample_size": 100
     },
     "total_assets_ltm": {
       "statistic": 0.44946496119604307,
-      "p_value": 4.2440466531328015e-17,
+      "p_value": 4.244046653132863e-17,
       "is_normal": false,
       "sample_size": 94
     },
     "total_assets_fy": {
       "statistic": 0.46934209111662817,
-      "p_value": 2.5296670874395846e-17,
+      "p_value": 2.529667087439621e-17,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5044,13 +5044,13 @@
     },
     "gross_profit_ltm": {
       "statistic": 0.6571217930560153,
-      "p_value": 6.015043780008034e-14,
+      "p_value": 6.015043780008077e-14,
       "is_normal": false,
       "sample_size": 100
     },
     "gross_profit_fy": {
       "statistic": 0.6771702093081371,
-      "p_value": 1.6348900289757546e-13,
+      "p_value": 1.6348900289757662e-13,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5062,19 +5062,19 @@
     },
     "eps_adj_1fy": {
       "statistic": 0.07835432460179637,
-      "p_value": 5.776799884781258e-22,
+      "p_value": 5.77679988478126e-22,
       "is_normal": false,
       "sample_size": 98
     },
     "eps_adj_fy": {
       "statistic": 0.07705150214068524,
-      "p_value": 3.52057709570738e-22,
+      "p_value": 3.5205770957074303e-22,
       "is_normal": false,
       "sample_size": 100
     },
     "eps_adj_ltm": {
       "statistic": 0.07731051171002778,
-      "p_value": 3.5419365035302185e-22,
+      "p_value": 3.541936503530269e-22,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5086,7 +5086,7 @@
     },
     "gain_loss_on_sale_of_assets_ltm": {
       "statistic": 0.6059997841688476,
-      "p_value": 3.469743778296058e-07,
+      "p_value": 3.4697437782960454e-07,
       "is_normal": false,
       "sample_size": 26
     },
@@ -5098,7 +5098,7 @@
     },
     "cash_acquisitions_ltm": {
       "statistic": 0.6858565299522074,
-      "p_value": 3.107041608156358e-10,
+      "p_value": 3.1070416081563575e-10,
       "is_normal": false,
       "sample_size": 62
     },
@@ -5152,7 +5152,7 @@
     },
     "impairment_of_goodwill_ltm": {
       "statistic": 0.6404915571499653,
-      "p_value": 0.000285575499774054,
+      "p_value": 0.00028557549977405487,
       "is_normal": false,
       "sample_size": 9
     },
@@ -5170,7 +5170,7 @@
     },
     "operating_income_ltm": {
       "statistic": 0.611540265501463,
-      "p_value": 7.167434721764523e-15,
+      "p_value": 7.167434721764575e-15,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5194,7 +5194,7 @@
     },
     "operating_income_fy": {
       "statistic": 0.6078854520531909,
-      "p_value": 6.091526377266756e-15,
+      "p_value": 6.0915263772668e-15,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5206,13 +5206,13 @@
     },
     "capital_expenditure_1fy": {
       "statistic": 0.5559539981701347,
-      "p_value": 1.7309823135036221e-15,
+      "p_value": 1.7309823135035969e-15,
       "is_normal": false,
       "sample_size": 95
     },
     "capital_expenditure_fy": {
       "statistic": 0.506524890748968,
-      "p_value": 2.1385766137153762e-16,
+      "p_value": 2.1385766137153765e-16,
       "is_normal": false,
       "sample_size": 96
     },
@@ -5224,7 +5224,7 @@
     },
     "total_current_assets_ltm": {
       "statistic": 0.3762039736337721,
-      "p_value": 3.970774582613483e-18,
+      "p_value": 3.9707745826135406e-18,
       "is_normal": false,
       "sample_size": 94
     },
@@ -5248,7 +5248,7 @@
     },
     "restructuring_charges_fq": {
       "statistic": 0.7750832119504372,
-      "p_value": 5.219597905251999e-05,
+      "p_value": 5.219597905252008e-05,
       "is_normal": false,
       "sample_size": 27
     },
@@ -5260,7 +5260,7 @@
     },
     "restructuring_charges_fy": {
       "statistic": 0.7091795937238179,
-      "p_value": 8.315422050634913e-08,
+      "p_value": 8.315422050634868e-08,
       "is_normal": false,
       "sample_size": 42
     },
@@ -5296,31 +5296,31 @@
     },
     "buyback_yield_ltm": {
       "statistic": 0.7679297245850603,
-      "p_value": 7.781113658179069e-10,
+      "p_value": 7.781113658179098e-10,
       "is_normal": false,
       "sample_size": 79
     },
     "return_on_assets_roa_pct_ltm": {
       "statistic": 0.8157645746993706,
-      "p_value": 1.7732008588782723e-09,
+      "p_value": 1.773200858878279e-09,
       "is_normal": false,
       "sample_size": 94
     },
     "return_on_assets_roa_pct_fy": {
       "statistic": 0.7844782647027915,
-      "p_value": 8.490151803439654e-11,
+      "p_value": 8.490151803439716e-11,
       "is_normal": false,
       "sample_size": 100
     },
     "net_income_is_1fy": {
       "statistic": 0.5704357041795842,
-      "p_value": 1.2218121188877523e-15,
+      "p_value": 1.2218121188877612e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "normalized_net_income_1fy": {
       "statistic": 0.591465462540973,
-      "p_value": 2.9724398305189887e-15,
+      "p_value": 2.9724398305190108e-15,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5332,31 +5332,31 @@
     },
     "cff_fy": {
       "statistic": 0.7551127862473395,
-      "p_value": 1.2807956525305682e-11,
+      "p_value": 1.2807956525305775e-11,
       "is_normal": false,
       "sample_size": 100
     },
     "cff_1fy": {
       "statistic": 0.7364273688938288,
-      "p_value": 4.1602930966768e-12,
+      "p_value": 4.1602930966768306e-12,
       "is_normal": false,
       "sample_size": 100
     },
     "cfi_fy": {
       "statistic": 0.6348157822362042,
-      "p_value": 2.074010083648096e-14,
+      "p_value": 2.0740100836481033e-14,
       "is_normal": false,
       "sample_size": 100
     },
     "cfi_1fy": {
       "statistic": 0.716553016386988,
-      "p_value": 1.3340476505701413e-12,
+      "p_value": 1.334047650570151e-12,
       "is_normal": false,
       "sample_size": 100
     },
     "cfo_fy": {
       "statistic": 0.6727449403032639,
-      "p_value": 1.3062572472477062e-13,
+      "p_value": 1.3062572472477153e-13,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5368,13 +5368,13 @@
     },
     "div_yield_1fyind": {
       "statistic": 0.9346226208566447,
-      "p_value": 0.0006546240486800513,
+      "p_value": 0.0006546240486800501,
       "is_normal": false,
       "sample_size": 77
     },
     "fcf_fy": {
       "statistic": 0.7424349325352135,
-      "p_value": 5.935717579072306e-12,
+      "p_value": 5.93571757907235e-12,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5386,7 +5386,7 @@
     },
     "capital_expenditure_5yavgfq": {
       "statistic": 0.5430875127196821,
-      "p_value": 1.0423385467610481e-15,
+      "p_value": 1.0423385467610406e-15,
       "is_normal": false,
       "sample_size": 95
     },
@@ -5434,7 +5434,7 @@
     },
     "p_e_5yavgltm": {
       "statistic": 0.710079907458828,
-      "p_value": 5.7760388181476e-12,
+      "p_value": 5.776038818147579e-12,
       "is_normal": false,
       "sample_size": 89
     },
@@ -5452,7 +5452,7 @@
     },
     "cash_acquisitions_5yavgfq": {
       "statistic": 0.6961958424352537,
-      "p_value": 2.3645314204115114e-12,
+      "p_value": 2.364531420411529e-12,
       "is_normal": false,
       "sample_size": 90
     },
@@ -5476,25 +5476,25 @@
     },
     "operating_income_fq": {
       "statistic": 0.6366046354255298,
-      "p_value": 2.2549640064203456e-14,
+      "p_value": 2.254964006420378e-14,
       "is_normal": false,
       "sample_size": 100
     },
     "operating_income_5yavgfq": {
       "statistic": 0.6415351051853364,
-      "p_value": 4.027655238426345e-14,
+      "p_value": 4.027655238426346e-14,
       "is_normal": false,
       "sample_size": 98
     },
     "p_b_ltm": {
       "statistic": 0.4920147091812308,
-      "p_value": 1.8747341630009557e-16,
+      "p_value": 1.8747341630009826e-16,
       "is_normal": false,
       "sample_size": 94
     },
     "p_b_1fy": {
       "statistic": 0.4193835440966077,
-      "p_value": 5.566406657025587e-18,
+      "p_value": 5.566406657025588e-18,
       "is_normal": false,
       "sample_size": 99
     },
@@ -5518,7 +5518,7 @@
     },
     "cash_and_equivalents_fy": {
       "statistic": 0.37375821411732724,
-      "p_value": 1.041428674402652e-18,
+      "p_value": 1.041428674402667e-18,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5560,13 +5560,13 @@
     },
     "avg_employees_fy": {
       "statistic": 0.8487607171260888,
-      "p_value": 0.22217200275639892,
+      "p_value": 0.22217200275639898,
       "is_normal": true,
       "sample_size": 4
     },
     "avg_employees_5yavgfy": {
       "statistic": 0.7190730703183448,
-      "p_value": 0.005965236679969312,
+      "p_value": 0.005965236679969311,
       "is_normal": false,
       "sample_size": 7
     },
@@ -5578,7 +5578,7 @@
     },
     "retained_earnings_fy": {
       "statistic": 0.6438576581969313,
-      "p_value": 4.4930714456859183e-14,
+      "p_value": 4.493071445685918e-14,
       "is_normal": false,
       "sample_size": 98
     },
@@ -5596,7 +5596,7 @@
     },
     "working_capital_fy": {
       "statistic": 0.4164791368298364,
-      "p_value": 4.128220379187313e-18,
+      "p_value": 4.128220379187372e-18,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5614,13 +5614,13 @@
     },
     "div_yield_ntm": {
       "statistic": 0.8752497504095144,
-      "p_value": 1.1485039685269758e-07,
+      "p_value": 1.1485039685269819e-07,
       "is_normal": false,
       "sample_size": 100
     },
     "div_yield_5yavgltm": {
       "statistic": 0.9362628252275605,
-      "p_value": 0.0007932095834853306,
+      "p_value": 0.0007932095834853297,
       "is_normal": false,
       "sample_size": 77
     },
@@ -5662,13 +5662,13 @@
     },
     "merger_restructuring_charges_5yavgfq": {
       "statistic": 0.6732061608216253,
-      "p_value": 1.851419703107354e-12,
+      "p_value": 1.8514197031073537e-12,
       "is_normal": false,
       "sample_size": 85
     },
     "normalized_net_income_fq": {
       "statistic": 0.6279711500914784,
-      "p_value": 1.5099861918932097e-14,
+      "p_value": 1.5099861918932204e-14,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5686,13 +5686,13 @@
     },
     "net_income_adj_5yavgfq": {
       "statistic": 0.6451964461054704,
-      "p_value": 8.113540113763195e-14,
+      "p_value": 8.113540113763165e-14,
       "is_normal": false,
       "sample_size": 95
     },
     "net_income_is_fq": {
       "statistic": 0.5790669026066578,
-      "p_value": 1.752973999621353e-15,
+      "p_value": 1.7529739996213594e-15,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5734,7 +5734,7 @@
     },
     "revenues_est_yoy_pct_fy1e": {
       "statistic": 0.8868307597487438,
-      "p_value": 3.572052626113509e-07,
+      "p_value": 3.572052626113529e-07,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5746,7 +5746,7 @@
     },
     "revenue": {
       "statistic": 0.5914946150670066,
-      "p_value": 2.9761733255789444e-15,
+      "p_value": 2.9761733255789555e-15,
       "is_normal": false,
       "sample_size": 100
     },
@@ -5758,13 +5758,13 @@
     },
     "net_income": {
       "statistic": 0.5869320178548951,
-      "p_value": 2.4472551560338574e-15,
+      "p_value": 2.447255156033875e-15,
       "is_normal": false,
       "sample_size": 100
     },
     "p_b": {
       "statistic": 0.4920147091812308,
-      "p_value": 1.8747341630009557e-16,
+      "p_value": 1.8747341630009826e-16,
       "is_normal": false,
       "sample_size": 94
     },
@@ -194515,27 +194515,27 @@
   "sector_comparison_tests": {
     "market_cap": {
       "statistic": 0.7371974611525862,
-      "p_value": 0.6876712853118665,
+      "p_value": 0.6876712853118668,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "enterprise_value": {
       "statistic": 0.5649280572929064,
-      "p_value": 0.8373606289808451,
+      "p_value": 0.8373606289808433,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "last_price": {
-      "statistic": 0.39932111215225513,
+      "statistic": 0.3993211121522551,
       "p_value": 0.9437010327085277,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target_ytd_ago": {
-      "statistic": 0.39925859233771105,
+      "statistic": 0.39925859233771094,
       "p_value": 0.9437303288348176,
       "significant": false,
       "n_groups": 11,
@@ -194543,27 +194543,27 @@
     },
     "total_return_ytd": {
       "statistic": 1.3462759754661835,
-      "p_value": 0.21881579383304753,
+      "p_value": 0.21881579383304733,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target": {
-      "statistic": 0.3992463327338696,
-      "p_value": 0.9437360725475717,
+      "statistic": 0.3992463327338699,
+      "p_value": 0.9437360725475719,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target_low": {
-      "statistic": 0.40019409696828284,
-      "p_value": 0.943291063045049,
+      "statistic": 0.4001940969682828,
+      "p_value": 0.9432910630450491,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target_median": {
-      "statistic": 0.3991048808272676,
+      "statistic": 0.3991048808272677,
       "p_value": 0.9438023198678294,
       "significant": false,
       "n_groups": 11,
@@ -194571,28 +194571,28 @@
     },
     "price_target_high": {
       "statistic": 0.3987654649818146,
-      "p_value": 0.943961101693716,
+      "p_value": 0.9439611016937162,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target_count": {
       "statistic": 4.149498496874149,
-      "p_value": 0.00010152091572517385,
+      "p_value": 0.00010152091572517368,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "p_e_ntm": {
       "statistic": 1.4436027221137726,
-      "p_value": 0.1745720579917603,
+      "p_value": 0.1745720579917601,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_e_ltm": {
       "statistic": 1.3314560039423955,
-      "p_value": 0.22717273687771292,
+      "p_value": 0.22717273687771278,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194606,7 +194606,7 @@
     },
     "altman_z_score_fq": {
       "statistic": 0.8003841822102068,
-      "p_value": 0.6045371901638494,
+      "p_value": 0.6045371901638497,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
@@ -194619,106 +194619,106 @@
       "method": "anova"
     },
     "beta_1y": {
-      "statistic": 6.401966318697952,
-      "p_value": 3.490552855665677e-07,
+      "statistic": 6.401966318697958,
+      "p_value": 3.490552855665627e-07,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "beta_2y": {
-      "statistic": 8.232537150280113,
-      "p_value": 4.6777669062340516e-09,
+      "statistic": 8.232537150280116,
+      "p_value": 4.677766906234e-09,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "beta_5y": {
-      "statistic": 4.0698683145379135,
-      "p_value": 0.0001536611628297568,
+      "statistic": 4.069868314537915,
+      "p_value": 0.00015366116282975446,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "analyst_rating": {
       "statistic": 0.4596545881499724,
-      "p_value": 0.9114923703965986,
+      "p_value": 0.9114923703965987,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "strong_sell_ratings": {
-      "statistic": 1.0129745726802282,
-      "p_value": 0.43906834554759416,
+      "statistic": 1.012974572680228,
+      "p_value": 0.4390683455475938,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "strong_buys_ratings": {
       "statistic": 0.9720922367164005,
-      "p_value": 0.4733150370117446,
+      "p_value": 0.47331503701174504,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "hold_ratings": {
       "statistic": 0.9758148015531395,
-      "p_value": 0.47014116178841414,
+      "p_value": 0.4701411617884145,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "buys_ratings": {
       "statistic": 2.5543096781117933,
-      "p_value": 0.009255668488596396,
+      "p_value": 0.00925566848859638,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "sell_ratings": {
-      "statistic": 0.9996730698487769,
-      "p_value": 0.45006037914194685,
+      "statistic": 0.9996730698487766,
+      "p_value": 0.4500603791419473,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_cagr_5y_fy": {
       "statistic": 1.6955639402858682,
-      "p_value": 0.09446541671664417,
+      "p_value": 0.0944654167166442,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_fq": {
-      "statistic": 1.6627433443050403,
-      "p_value": 0.10217770092511838,
+      "statistic": 1.66274334430504,
+      "p_value": 0.10217770092511881,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_1fy": {
       "statistic": 1.917881786179477,
-      "p_value": 0.05301593076294192,
+      "p_value": 0.053015930762941844,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_fy": {
-      "statistic": 1.8067135227137607,
-      "p_value": 0.07070925652155552,
+      "statistic": 1.8067135227137603,
+      "p_value": 0.07070925652155581,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_ltm": {
       "statistic": 1.628181311627976,
-      "p_value": 0.11142457133036116,
+      "p_value": 0.11142457133036099,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_operating_expenses_ltm": {
       "statistic": 1.9494391038885086,
-      "p_value": 0.0486069910118293,
+      "p_value": 0.04860699101182929,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -194732,77 +194732,77 @@
     },
     "tbv_fy": {
       "statistic": 2.736179578554985,
-      "p_value": 0.005548425504701384,
+      "p_value": 0.00554842550470138,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "tbv_ltm": {
-      "statistic": 2.273993721168849,
-      "p_value": 0.02017845718955019,
+      "statistic": 2.2739937211688486,
+      "p_value": 0.02017845718955023,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "market_cap_country_r": {
-      "statistic": 0.8795064299181138,
-      "p_value": 0.5553010401303846,
+      "statistic": 0.8795064299181135,
+      "p_value": 0.5553010401303848,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "tot_return_pct_cagr_3y": {
-      "statistic": 2.150009310821879,
-      "p_value": 0.028590614402037272,
+      "statistic": 2.1500093108218787,
+      "p_value": 0.028590614402037293,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "tot_return_pct_cagr_10y": {
-      "statistic": 2.8571287960051985,
-      "p_value": 0.004307302918734811,
+      "statistic": 2.8571287960051994,
+      "p_value": 0.004307302918734759,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_return_5y": {
-      "statistic": 1.6501163043500169,
-      "p_value": 0.10635315315081409,
+      "statistic": 1.6501163043500164,
+      "p_value": 0.10635315315081457,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_return_10y": {
-      "statistic": 0.9884067302019409,
-      "p_value": 0.4604119454613972,
+      "statistic": 0.9884067302019411,
+      "p_value": 0.4604119454614025,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_1fy": {
       "statistic": 0.7653415156474495,
-      "p_value": 0.6613776132817247,
+      "p_value": 0.6613776132817245,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cff_ltm": {
       "statistic": 1.593875310420947,
-      "p_value": 0.12490322753129986,
+      "p_value": 0.12490322753129984,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfi_ltm": {
-      "statistic": 1.0263130395296653,
-      "p_value": 0.4300216710304278,
+      "statistic": 1.0263130395296656,
+      "p_value": 0.4300216710304281,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_ltm": {
-      "statistic": 1.1255614001308942,
-      "p_value": 0.35497336468406965,
+      "statistic": 1.125561400130894,
+      "p_value": 0.3549733646840698,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194816,77 +194816,77 @@
     },
     "ebitda_fq": {
       "statistic": 0.9703424837712754,
-      "p_value": 0.4760829732803268,
+      "p_value": 0.4760829732803218,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_ltm": {
-      "statistic": 1.0045326305157694,
-      "p_value": 0.447546745311676,
+      "statistic": 1.0045326305157696,
+      "p_value": 0.44754674531168126,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_fy": {
-      "statistic": 1.0315597265642957,
-      "p_value": 0.4256737492287164,
+      "statistic": 1.031559726564296,
+      "p_value": 0.42567374922872075,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_1fy": {
       "statistic": 1.1162935076870997,
-      "p_value": 0.36138349685491505,
+      "p_value": 0.36138349685491844,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_adj_ltm": {
-      "statistic": 1.3887560033115431,
-      "p_value": 0.20144283302135416,
+      "statistic": 1.3887560033115436,
+      "p_value": 0.20144283302135413,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_adj_fy": {
-      "statistic": 1.3474975373191886,
-      "p_value": 0.22110782047872782,
+      "statistic": 1.3474975373191882,
+      "p_value": 0.22110782047872773,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_adj_1fy": {
       "statistic": 1.5330139325935492,
-      "p_value": 0.144804856784383,
+      "p_value": 0.14480485678438237,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_fq": {
       "statistic": 0.7733843260483962,
-      "p_value": 0.6537473599916046,
+      "p_value": 0.6537473599916008,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_ltm": {
       "statistic": 0.816800606561414,
-      "p_value": 0.6134126242326741,
+      "p_value": 0.6134126242326701,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_fy": {
       "statistic": 0.8399511364899922,
-      "p_value": 0.5920290709320484,
+      "p_value": 0.5920290709320439,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_1fy": {
-      "statistic": 0.9205830206060778,
-      "p_value": 0.519249687352741,
+      "statistic": 0.920583020606078,
+      "p_value": 0.5192496873527408,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194899,119 +194899,119 @@
       "method": "anova"
     },
     "ebit_adj_fy": {
-      "statistic": 0.8672420451752307,
-      "p_value": 0.5665587766783384,
+      "statistic": 0.8672420451752306,
+      "p_value": 0.5665587766783408,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_adj_ltm": {
       "statistic": 0.9104608542849493,
-      "p_value": 0.5274148658146957,
+      "p_value": 0.5274148658146952,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_est_med_fy1e": {
       "statistic": 0.793578990146412,
-      "p_value": 0.6349661212797493,
+      "p_value": 0.634966121279749,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_est_med_ntm": {
-      "statistic": 0.7325057363562335,
-      "p_value": 0.6920089030489066,
+      "statistic": 0.7325057363562334,
+      "p_value": 0.6920089030489075,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "return_on_equity_pct_ltm": {
       "statistic": 0.5093047625505152,
-      "p_value": 0.8786749098171915,
+      "p_value": 0.8786749098171909,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "return_on_equity_pct_fy": {
-      "statistic": 1.031418783655573,
-      "p_value": 0.4246764182160908,
+      "statistic": 1.0314187836555733,
+      "p_value": 0.4246764182160857,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_is_fy": {
       "statistic": 0.8053442291924201,
-      "p_value": 0.6239593369134324,
+      "p_value": 0.6239593369134326,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_is_ltm": {
       "statistic": 0.8694404177579382,
-      "p_value": 0.5645080297333889,
+      "p_value": 0.5645080297333893,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "normalized_net_income_fy": {
       "statistic": 0.8168867964630002,
-      "p_value": 0.6131772646447821,
+      "p_value": 0.6131772646447824,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "normalized_net_income_ltm": {
-      "statistic": 0.9281445082849448,
-      "p_value": 0.5115521825876421,
+      "statistic": 0.9281445082849447,
+      "p_value": 0.5115521825876427,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_fy": {
-      "statistic": 0.7604924840180478,
-      "p_value": 0.6659371972064103,
+      "statistic": 0.7604924840180475,
+      "p_value": 0.6659371972064108,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_ltm": {
-      "statistic": 0.8511312270339589,
-      "p_value": 0.5813626858538077,
+      "statistic": 0.8511312270339593,
+      "p_value": 0.5813626858538079,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_margin_pct_fy": {
       "statistic": 1.8708080560034979,
-      "p_value": 0.059820492838991414,
+      "p_value": 0.05982049283899136,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_margin_pct_ltm": {
       "statistic": 2.377682649345471,
-      "p_value": 0.015149668574494558,
+      "p_value": 0.01514966857449454,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "volatility_1m": {
       "statistic": 3.2891226137937286,
-      "p_value": 0.0011558507907176207,
+      "p_value": 0.0011558507907176194,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "volatility_3m": {
-      "statistic": 4.2637786378855465,
-      "p_value": 7.374329528088509e-05,
+      "statistic": 4.263778637885546,
+      "p_value": 7.374329528088548e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "volatility_6m": {
-      "statistic": 3.844771421160942,
+      "statistic": 3.844771421160943,
       "p_value": 0.00023921590479252582,
       "significant": true,
       "n_groups": 11,
@@ -195019,35 +195019,35 @@
     },
     "volatility_1y": {
       "statistic": 4.0599986541893305,
-      "p_value": 0.00013049401958009204,
+      "p_value": 0.00013049401958009196,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "volume_shrs": {
       "statistic": 1.0139221835526024,
-      "p_value": 0.4382909980754179,
+      "p_value": 0.43829099807541766,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "short_int_pct": {
       "statistic": 0.9634537140863728,
-      "p_value": 0.48088650576040726,
+      "p_value": 0.4808865057604069,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "dividend_per_share_ltm": {
-      "statistic": 1.3359738195560695,
-      "p_value": 0.22965043270459615,
+      "statistic": 1.33597381955607,
+      "p_value": 0.22965043270459556,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "div_yield_ind": {
       "statistic": 1.9355639835510365,
-      "p_value": 0.05496822983571063,
+      "p_value": 0.05496822983571047,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195060,119 +195060,119 @@
       "method": "anova"
     },
     "total_debt_fy": {
-      "statistic": 3.9873575455188375,
-      "p_value": 0.00016005630826014923,
+      "statistic": 3.9873575455188366,
+      "p_value": 0.00016005630826014926,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_equity_fy": {
       "statistic": 2.253161748218843,
-      "p_value": 0.02136860340588753,
+      "p_value": 0.02136860340588751,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_equity_ltm": {
-      "statistic": 2.1576179259703636,
-      "p_value": 0.02775429988529534,
+      "statistic": 2.1576179259703645,
+      "p_value": 0.027754299885295316,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_debt_ltm": {
       "statistic": 3.778114974087221,
-      "p_value": 0.00028877358929520886,
+      "p_value": 0.00028877358929520826,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_assets_ltm": {
-      "statistic": 4.792391471844873,
-      "p_value": 2.0229877482563884e-05,
+      "statistic": 4.792391471844875,
+      "p_value": 2.022987748256375e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_assets_fy": {
       "statistic": 4.848802821977079,
-      "p_value": 1.4616858505302669e-05,
+      "p_value": 1.4616858505302652e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "current_ratio_fy": {
-      "statistic": 1.8909727806373224,
-      "p_value": 0.05804848253109597,
+      "statistic": 1.8909727806373218,
+      "p_value": 0.05804848253109629,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "current_ratio_ltm": {
-      "statistic": 4.962955360509299,
-      "p_value": 1.6276415144673732e-05,
+      "statistic": 4.9629553605093015,
+      "p_value": 1.627641514467369e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_profit_margin_pct_fy": {
       "statistic": 4.5184610277162545,
-      "p_value": 4.344045491814269e-05,
+      "p_value": 4.34404549181427e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_profit_margin_pct_ltm": {
-      "statistic": 4.344497847619751,
-      "p_value": 6.951574226998643e-05,
+      "statistic": 4.344497847619753,
+      "p_value": 6.951574226998639e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "asset_turnover_fy": {
       "statistic": 4.110983496372005,
-      "p_value": 0.00013125604402843593,
+      "p_value": 0.00013125604402843599,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "asset_turnover_ltm": {
       "statistic": 3.0942533544553603,
-      "p_value": 0.0023610914458950206,
+      "p_value": 0.002361091445895043,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_profit_ltm": {
-      "statistic": 1.341106211600597,
-      "p_value": 0.22140387329550085,
+      "statistic": 1.3411062116005972,
+      "p_value": 0.22140387329550007,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_profit_fy": {
-      "statistic": 1.3851730037853387,
-      "p_value": 0.2001288026645807,
+      "statistic": 1.3851730037853385,
+      "p_value": 0.2001288026645804,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "eps_norm_est_avg_ntm": {
-      "statistic": 0.4453737761116705,
+      "statistic": 0.44537377611167056,
       "p_value": 0.9065550695861294,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "eps_adj_1fy": {
-      "statistic": 0.39002337082939936,
-      "p_value": 0.9478783855398987,
+      "statistic": 0.39002337082939925,
+      "p_value": 0.9478783855398986,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "eps_adj_fy": {
-      "statistic": 0.40153679405152104,
+      "statistic": 0.4015367940515212,
       "p_value": 0.9426572373908031,
       "significant": false,
       "n_groups": 11,
@@ -195180,7 +195180,7 @@
     },
     "eps_adj_ltm": {
       "statistic": 0.4019988992470159,
-      "p_value": 0.9424381823501049,
+      "p_value": 0.942438182350105,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195193,29 +195193,29 @@
       "method": "anova"
     },
     "gain_loss_on_sale_of_assets_ltm": {
-      "statistic": 12.31223468507615,
-      "p_value": 1.2369514823306664e-05,
+      "statistic": 12.312234685076168,
+      "p_value": 1.2369514823306539e-05,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "cost_of_revenues_ltm": {
-      "statistic": 1.6121005098537078,
-      "p_value": 0.11811672392408287,
+      "statistic": 1.6121005098537073,
+      "p_value": 0.11811672392408205,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cash_acquisitions_ltm": {
-      "statistic": 2.4002598391396,
-      "p_value": 0.023328285077483912,
+      "statistic": 2.4002598391396006,
+      "p_value": 0.023328285077483833,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "cash_acquisitions_fy": {
       "statistic": 0.9863673510628318,
-      "p_value": 0.46320351945460214,
+      "p_value": 0.46320351945460236,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
@@ -195228,36 +195228,36 @@
       "method": "anova"
     },
     "inventory_ltm": {
-      "statistic": 1.2809515805076839,
-      "p_value": 0.2695653773590429,
+      "statistic": 1.2809515805076837,
+      "p_value": 0.2695653773590432,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "goodwill_fq": {
       "statistic": 0.7465600721645063,
-      "p_value": 0.6651896702597024,
+      "p_value": 0.6651896702597013,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "goodwill_ltm": {
       "statistic": 0.7465600721645063,
-      "p_value": 0.6651896702597024,
+      "p_value": 0.6651896702597013,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "goodwill_fy": {
-      "statistic": 0.6885388252199808,
+      "statistic": 0.6885388252199807,
       "p_value": 0.7322117498621135,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "goodwill_1fy": {
-      "statistic": 0.7620726992656985,
-      "p_value": 0.6643604722534725,
+      "statistic": 0.7620726992656989,
+      "p_value": 0.6643604722534724,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195283,35 +195283,35 @@
       "method": "anova"
     },
     "impairment_of_goodwill_fy": {
-      "statistic": 0.4002364482521712,
-      "p_value": 0.8230926939197328,
+      "statistic": 0.40023644825217103,
+      "p_value": 0.8230926939197329,
       "significant": false,
       "n_groups": 6,
       "method": "anova"
     },
     "operating_income_ltm": {
       "statistic": 0.8810239421239893,
-      "p_value": 0.5539170478622042,
+      "p_value": 0.5539170478622046,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "asset_writedown_ltm": {
-      "statistic": 0.6867099392572319,
+      "statistic": 0.6867099392572321,
       "p_value": 0.6993525451722598,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
     },
     "asset_writedown_fy": {
-      "statistic": 0.9392424604372875,
-      "p_value": 0.5095182207048106,
+      "statistic": 0.9392424604372878,
+      "p_value": 0.5095182207048103,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
     },
     "asset_writedown_1fy": {
-      "statistic": 1.3760248696141073,
+      "statistic": 1.3760248696141075,
       "p_value": 0.26643180714952475,
       "significant": false,
       "n_groups": 8,
@@ -195319,69 +195319,69 @@
     },
     "operating_income_fy": {
       "statistic": 0.826783773611618,
-      "p_value": 0.603951610236573,
+      "p_value": 0.6039516102365734,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "capital_expenditure_ltm": {
-      "statistic": 1.6057879034258926,
-      "p_value": 0.12899941320796035,
+      "statistic": 1.6057879034258924,
+      "p_value": 0.12899941320796043,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "capital_expenditure_1fy": {
       "statistic": 3.052027982087383,
-      "p_value": 0.003262060713008468,
+      "p_value": 0.0032620607130084333,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "capital_expenditure_fy": {
-      "statistic": 2.0032757848733422,
-      "p_value": 0.04845222486457956,
+      "statistic": 2.003275784873342,
+      "p_value": 0.04845222486457962,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "retained_earnings_ltm": {
       "statistic": 3.365562031727571,
-      "p_value": 0.0016394362272220862,
+      "p_value": 0.001639436227222086,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "total_current_assets_ltm": {
       "statistic": 4.1871613904638805,
-      "p_value": 0.0001041681083150196,
+      "p_value": 0.00010416810831501963,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_current_liabilities_ltm": {
-      "statistic": 4.137903690532133,
-      "p_value": 0.00011921264024594977,
+      "statistic": 4.137903690532134,
+      "p_value": 0.00011921264024594907,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "r_d_expenses_ltm": {
       "statistic": 2.807700322074989,
-      "p_value": 0.01923934404019603,
+      "p_value": 0.019239344040196026,
       "significant": true,
       "n_groups": 7,
       "method": "anova"
     },
     "restructuring_charges_ltm": {
       "statistic": 0.9869060415013836,
-      "p_value": 0.4657349044468385,
+      "p_value": 0.4657349044468384,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "restructuring_charges_fq": {
-      "statistic": 0.09446680135736152,
+      "statistic": 0.09446680135736155,
       "p_value": 0.992140248305993,
       "significant": false,
       "n_groups": 6,
@@ -195395,36 +195395,36 @@
       "method": "anova"
     },
     "restructuring_charges_fy": {
-      "statistic": 0.6939028406075474,
+      "statistic": 0.6939028406075476,
       "p_value": 0.6941139689392235,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
     },
     "interest_expense_total_ltm": {
-      "statistic": 1.414808662751845,
-      "p_value": 0.19233377803004334,
+      "statistic": 1.4148086627518455,
+      "p_value": 0.19233377803004323,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "merger_restructuring_charges_ltm": {
-      "statistic": 1.0989792347607483,
-      "p_value": 0.3799650873460859,
+      "statistic": 1.098979234760748,
+      "p_value": 0.3799650873460872,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "working_capital_ltm": {
-      "statistic": 1.971067394641316,
-      "p_value": 0.046907830764150074,
+      "statistic": 1.9710673946413166,
+      "p_value": 0.04690783076414994,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "other_unusual_items_total_ltm": {
-      "statistic": 0.5700146599106707,
-      "p_value": 0.8152816968238166,
+      "statistic": 0.5700146599106708,
+      "p_value": 0.8152816968238163,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
@@ -195437,259 +195437,259 @@
     },
     "buyback_yield_ltm": {
       "statistic": 2.352010741603632,
-      "p_value": 0.018832466447081628,
+      "p_value": 0.018832466447081593,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "return_on_assets_roa_pct_ltm": {
-      "statistic": 1.524898047928134,
+      "statistic": 1.5248980479281342,
       "p_value": 0.1450940215521961,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "return_on_assets_roa_pct_fy": {
-      "statistic": 1.5046707647132298,
-      "p_value": 0.1508889381735773,
+      "statistic": 1.5046707647132305,
+      "p_value": 0.1508889381735765,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_is_1fy": {
       "statistic": 0.6531604857248914,
-      "p_value": 0.764264404072214,
+      "p_value": 0.7642644040722142,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "normalized_net_income_1fy": {
-      "statistic": 0.893741736267765,
-      "p_value": 0.5423625345255664,
+      "statistic": 0.8937417362677653,
+      "p_value": 0.5423625345255667,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_e_1fyltm": {
-      "statistic": 1.8419057061531874,
-      "p_value": 0.06508576549947405,
+      "statistic": 1.841905706153188,
+      "p_value": 0.06508576549947419,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cff_fy": {
-      "statistic": 1.7875845272121287,
-      "p_value": 0.074300103230564,
+      "statistic": 1.7875845272121285,
+      "p_value": 0.07430010323056395,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cff_1fy": {
       "statistic": 1.134352608432119,
-      "p_value": 0.3462098393961788,
+      "p_value": 0.3462098393961785,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfi_fy": {
-      "statistic": 0.59229157530687,
-      "p_value": 0.8162938848570276,
+      "statistic": 0.5922915753068703,
+      "p_value": 0.8162938848570277,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfi_1fy": {
       "statistic": 0.6621188698524773,
-      "p_value": 0.7563080031153158,
+      "p_value": 0.756308003115316,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfo_fy": {
       "statistic": 2.0847238574443026,
-      "p_value": 0.03382490269116663,
+      "p_value": 0.0338249026911666,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "cfo_1fy": {
-      "statistic": 1.4256099755356735,
-      "p_value": 0.1823507189090113,
+      "statistic": 1.4256099755356737,
+      "p_value": 0.18235071890901075,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "div_yield_1fyind": {
-      "statistic": 1.742843637487489,
-      "p_value": 0.08947451580568017,
+      "statistic": 1.7428436374874894,
+      "p_value": 0.08947451580567956,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_fy": {
-      "statistic": 1.77918541000372,
-      "p_value": 0.07592952901449482,
+      "statistic": 1.7791854100037205,
+      "p_value": 0.07592952901449473,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "capital_expenditure_fq": {
-      "statistic": 1.4832616199678446,
-      "p_value": 0.1709535274374948,
+      "statistic": 1.4832616199678441,
+      "p_value": 0.1709535274374956,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "capital_expenditure_5yavgfq": {
-      "statistic": 2.754924771467624,
-      "p_value": 0.007098655085337816,
+      "statistic": 2.7549247714676253,
+      "p_value": 0.007098655085337701,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "cff_fq": {
-      "statistic": 0.8954210327658607,
-      "p_value": 0.5417609193100161,
+      "statistic": 0.8954210327658608,
+      "p_value": 0.541760919310016,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfi_fq": {
-      "statistic": 0.9124194214266951,
-      "p_value": 0.5266277901716946,
+      "statistic": 0.9124194214266953,
+      "p_value": 0.5266277901716945,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfo_fq": {
-      "statistic": 1.1589304085467957,
-      "p_value": 0.33232332723943747,
+      "statistic": 1.1589304085467955,
+      "p_value": 0.33232332723943764,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_fq": {
-      "statistic": 0.8790767730514761,
+      "statistic": 0.879076773051476,
       "p_value": 0.556457302997645,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_5yavgfq": {
-      "statistic": 1.8305054160637153,
-      "p_value": 0.0668444179893002,
+      "statistic": 1.8305054160637149,
+      "p_value": 0.06684441798930028,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_5yavgfq": {
       "statistic": 1.122046364783916,
-      "p_value": 0.35768324594760464,
+      "p_value": 0.357683245947604,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_5yavgfq": {
-      "statistic": 0.8337333679295866,
-      "p_value": 0.5978089439438561,
+      "statistic": 0.8337333679295869,
+      "p_value": 0.5978089439438576,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_e_5yavgltm": {
       "statistic": 2.373418608275539,
-      "p_value": 0.01644552862659625,
+      "p_value": 0.016445528626596356,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_5yavgfq": {
-      "statistic": 1.4981805762936262,
-      "p_value": 0.15371632190449522,
+      "statistic": 1.4981805762936267,
+      "p_value": 0.15371632190449538,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cash_acquisitions_fq": {
       "statistic": 1.2434398907220412,
-      "p_value": 0.2996674172766679,
+      "p_value": 0.29966741727666774,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "cash_acquisitions_5yavgfq": {
-      "statistic": 2.0203683518844975,
-      "p_value": 0.047454804187311996,
+      "statistic": 2.020368351884497,
+      "p_value": 0.047454804187312155,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "asset_writedown_fq": {
-      "statistic": 52.26352099256091,
-      "p_value": 0.0009046497538002319,
+      "statistic": 52.263520992559506,
+      "p_value": 0.0009046497538002795,
       "significant": true,
       "n_groups": 8,
       "method": "anova"
     },
     "asset_writedown_5yavgfq": {
-      "statistic": 0.8732437779301543,
-      "p_value": 0.5637436443677638,
+      "statistic": 0.8732437779301542,
+      "p_value": 0.5637436443677635,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "impairment_of_goodwill_5yavgfq": {
       "statistic": 1.30261495869027,
-      "p_value": 0.30738852973755404,
+      "p_value": 0.3073885297375541,
       "significant": false,
       "n_groups": 8,
       "method": "anova"
     },
     "operating_income_fq": {
       "statistic": 0.8683364539840018,
-      "p_value": 0.5655204938414593,
+      "p_value": 0.5655204938414596,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "operating_income_5yavgfq": {
-      "statistic": 0.8976591192962139,
-      "p_value": 0.5389193884015203,
+      "statistic": 0.8976591192962136,
+      "p_value": 0.5389193884015198,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_b_ltm": {
-      "statistic": 1.2280910324340164,
-      "p_value": 0.2855696056969899,
+      "statistic": 1.2280910324340168,
+      "p_value": 0.2855696056969897,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_b_1fy": {
       "statistic": 3.5587152637473087,
-      "p_value": 0.0005456008642316596,
+      "p_value": 0.0005456008642316565,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "p_b_5yavg": {
-      "statistic": 1.2891790780136805,
-      "p_value": 0.2500858027765817,
+      "statistic": 1.28917907801368,
+      "p_value": 0.25008580277658177,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cash_and_equivalents_ltm": {
       "statistic": 2.987040253676729,
-      "p_value": 0.002939576216065227,
+      "p_value": 0.0029395762160652305,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "cash_and_equivalents_fq": {
       "statistic": 2.987040253676729,
-      "p_value": 0.002939576216065227,
+      "p_value": 0.0029395762160652305,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195702,36 +195702,36 @@
       "method": "anova"
     },
     "cash_and_equivalents_5yavgfq": {
-      "statistic": 3.2899256826612153,
-      "p_value": 0.00121457308977921,
+      "statistic": 3.2899256826612144,
+      "p_value": 0.0012145730897792097,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "inventory_fq": {
-      "statistic": 1.2809515805076839,
-      "p_value": 0.2695653773590429,
+      "statistic": 1.2809515805076837,
+      "p_value": 0.2695653773590432,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "inventory_fy": {
       "statistic": 1.441543799798941,
-      "p_value": 0.19119483370118606,
+      "p_value": 0.19119483370118592,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "goodwill_5yavgfq": {
       "statistic": 0.9466670163253074,
-      "p_value": 0.4959944822275911,
+      "p_value": 0.49599448222759723,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "inventory_5yavgfq": {
       "statistic": 1.7074023904703806,
-      "p_value": 0.10711230100664902,
+      "p_value": 0.10711230100664892,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
@@ -195759,161 +195759,161 @@
     },
     "retained_earnings_fq": {
       "statistic": 3.365562031727571,
-      "p_value": 0.0016394362272220862,
+      "p_value": 0.001639436227222086,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "retained_earnings_fy": {
-      "statistic": 3.5156248286244955,
-      "p_value": 0.0009297717849991717,
+      "statistic": 3.515624828624495,
+      "p_value": 0.0009297717849991716,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "retained_earnings_5yavgfq": {
-      "statistic": 3.9500578895521903,
-      "p_value": 0.00019188973610993263,
+      "statistic": 3.9500578895521907,
+      "p_value": 0.00019188973610993268,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "working_capital_fq": {
-      "statistic": 1.971067394641316,
-      "p_value": 0.046907830764150074,
+      "statistic": 1.9710673946413166,
+      "p_value": 0.04690783076414994,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "working_capital_fy": {
       "statistic": 1.77535581645058,
-      "p_value": 0.07668338710808498,
+      "p_value": 0.07668338710808494,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "working_capital_5yavgfy": {
       "statistic": 1.7986166176480827,
-      "p_value": 0.07259656269840868,
+      "p_value": 0.07259656269840875,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "div_yield_ttm": {
-      "statistic": 1.227705106684158,
-      "p_value": 0.28995423056358066,
+      "statistic": 1.2277051066841576,
+      "p_value": 0.28995423056358083,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "div_yield_ntm": {
       "statistic": 2.9229963642630685,
-      "p_value": 0.0032702416566763766,
+      "p_value": 0.003270241656676373,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "div_yield_5yavgltm": {
       "statistic": 1.9949283859755844,
-      "p_value": 0.04784797613776535,
+      "p_value": 0.047847976137765,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_intangible_assets_ltm": {
-      "statistic": 3.927159459815503,
-      "p_value": 0.0033782967577846946,
+      "statistic": 3.9271594598155017,
+      "p_value": 0.003378296757784704,
       "significant": true,
       "n_groups": 8,
       "method": "anova"
     },
     "gross_intangible_assets_fy": {
       "statistic": 4.363638336213362,
-      "p_value": 0.00015326263280876078,
+      "p_value": 0.00015326263280876173,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "gross_intangible_assets_5yavgfq": {
-      "statistic": 3.5223071055280797,
-      "p_value": 0.0010673141508629306,
+      "statistic": 3.522307105528081,
+      "p_value": 0.0010673141508629291,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "restructuring_charges_5yavgfq": {
       "statistic": 8.368333102734212,
-      "p_value": 3.9790246057312155e-08,
+      "p_value": 3.979024605731219e-08,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "merger_restructuring_charges_fq": {
-      "statistic": 0.8397506712186232,
-      "p_value": 0.5492736670541059,
+      "statistic": 0.8397506712186235,
+      "p_value": 0.5492736670541056,
       "significant": false,
       "n_groups": 7,
       "method": "anova"
     },
     "merger_restructuring_charges_fy": {
-      "statistic": 0.8792974178271162,
-      "p_value": 0.5409198009882781,
+      "statistic": 0.8792974178271161,
+      "p_value": 0.540919800988278,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
     },
     "merger_restructuring_charges_5yavgfq": {
       "statistic": 5.684919304603594,
-      "p_value": 2.8817967117053105e-06,
+      "p_value": 2.8817967117052974e-06,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "normalized_net_income_fq": {
-      "statistic": 0.9238612878100656,
-      "p_value": 0.5153494083469345,
+      "statistic": 0.9238612878100658,
+      "p_value": 0.515349408346935,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "normalized_net_income_5yavgfq": {
-      "statistic": 0.9000310835551536,
-      "p_value": 0.5367808850813152,
+      "statistic": 0.9000310835551535,
+      "p_value": 0.5367808850813147,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_fq": {
       "statistic": 0.8768833032745492,
-      "p_value": 0.5577346979918508,
+      "p_value": 0.5577346979918529,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_5yavgfq": {
       "statistic": 0.8315334573368024,
-      "p_value": 0.5996209983212322,
+      "p_value": 0.5996209983212368,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_is_fq": {
-      "statistic": 0.7911485712211674,
-      "p_value": 0.6372416017593945,
+      "statistic": 0.7911485712211678,
+      "p_value": 0.6372416017593947,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_is_5yavgfq": {
-      "statistic": 0.7402476235823754,
-      "p_value": 0.6847882316451056,
+      "statistic": 0.7402476235823753,
+      "p_value": 0.6847882316451054,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_is_5yavgltm": {
       "statistic": 0.720102705794902,
-      "p_value": 0.7034734676572569,
+      "p_value": 0.7034734676572567,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195927,70 +195927,70 @@
     },
     "ebitda_5yavgltm": {
       "statistic": 1.1597213288104076,
-      "p_value": 0.33155300096222773,
+      "p_value": 0.33155300096222684,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_5yavgltm": {
       "statistic": 0.8527482919560644,
-      "p_value": 0.5803503280432376,
+      "p_value": 0.5803503280432394,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_5yavgltm": {
-      "statistic": 1.848651282599864,
-      "p_value": 0.06376379870717548,
+      "statistic": 1.8486512825998642,
+      "p_value": 0.06376379870717552,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "revenues_est_yoy_pct_fy1e": {
       "statistic": 2.7330256089708618,
-      "p_value": 0.005598043317963948,
+      "p_value": 0.00559804331796394,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "p_e": {
       "statistic": 1.3314560039423955,
-      "p_value": 0.22717273687771292,
+      "p_value": 0.22717273687771278,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "revenue": {
       "statistic": 1.628181311627976,
-      "p_value": 0.11142457133036116,
+      "p_value": 0.11142457133036099,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda": {
-      "statistic": 1.0045326305157694,
-      "p_value": 0.447546745311676,
+      "statistic": 1.0045326305157696,
+      "p_value": 0.44754674531168126,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income": {
       "statistic": 0.8694404177579382,
-      "p_value": 0.5645080297333889,
+      "p_value": 0.5645080297333893,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_b": {
-      "statistic": 1.2280910324340164,
-      "p_value": 0.2855696056969899,
+      "statistic": 1.2280910324340168,
+      "p_value": 0.2855696056969897,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_margin": {
-      "statistic": 4.344497847619751,
-      "p_value": 6.951574226998643e-05,
+      "statistic": 4.344497847619753,
+      "p_value": 6.951574226998639e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"

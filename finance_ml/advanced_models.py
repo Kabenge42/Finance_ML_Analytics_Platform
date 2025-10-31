@@ -603,7 +603,7 @@ def train_extra_trees_regressor(
 def train_neural_network_regressor(
     X: pd.DataFrame,
     y: pd.Series,
-    hidden_layers: List[int] = [128, 64],
+    hidden_layers: Optional[List[int]] = None,
     dropout_rate: float = 0.3,
     learning_rate: float = 0.001,
     epochs: int = 50,
@@ -617,7 +617,7 @@ def train_neural_network_regressor(
     Args:
         X: Feature matrix
         y: Target vector
-        hidden_layers: List of hidden layer sizes
+        hidden_layers: List of hidden layer sizes (default: [128, 64])
         dropout_rate: Dropout rate for regularization
         learning_rate: Learning rate
         epochs: Training epochs
@@ -628,6 +628,9 @@ def train_neural_network_regressor(
     Returns:
         Trained model and results dictionary
     """
+    if hidden_layers is None:
+        hidden_layers = [128, 64]
+
     if not HAS_TENSORFLOW:
         raise ImportError("TensorFlow not installed. Install with: pip install tensorflow")
 
@@ -765,7 +768,7 @@ def train_stacking_regressor(
 
 
 def train_quantile_regressor(
-    X: pd.DataFrame, y: pd.Series, quantiles: List[float] = [0.1, 0.5, 0.9], random_state: int = 42
+    X: pd.DataFrame, y: pd.Series, quantiles: Optional[List[float]] = None, random_state: int = 42
 ) -> Tuple[List[Any], Dict[str, Any]]:
     """
     Train quantile regression for uncertainty estimation.
@@ -773,7 +776,7 @@ def train_quantile_regressor(
     Args:
         X: Feature matrix
         y: Target vector
-        quantiles: Quantiles to predict
+        quantiles: Quantiles to predict (default: [0.1, 0.5, 0.9])
         random_state: Random seed
 
     Returns:
@@ -781,6 +784,9 @@ def train_quantile_regressor(
         The results dictionary includes 'quantile_results' key with a list of
         per-quantile metrics (quantile, train_score, model_type).
     """
+    if quantiles is None:
+        quantiles = [0.1, 0.5, 0.9]
+
     models = []
     quantile_results = []  # Store results per quantile
 
@@ -833,6 +839,14 @@ def optimize_hyperparameters_optuna(
         raise ImportError("Optuna not installed. Install with: pip install optuna")
 
     def objective(trial):
+        """Optuna objective function for hyperparameter optimization.
+
+        Args:
+            trial: Optuna trial object
+
+        Returns:
+            Mean cross-validation R² score
+        """
         if model_type == "random_forest":
             params = {
                 "n_estimators": trial.suggest_int("n_estimators", 50, 200),

@@ -232,7 +232,7 @@ def find_peer_group(
     # Sort by similarity to target based on criteria
     if criteria in peers_df.columns and target_value is not None:
         peers_df["_similarity"] = abs(peers_df[criteria] - target_value)
-        peers_df = peers_df.sort_values("_similarity")
+        peers_df = peers_df.sort_values(by="_similarity")
         peers_df = peers_df.drop("_similarity", axis=1)
 
     # Return top n_peers

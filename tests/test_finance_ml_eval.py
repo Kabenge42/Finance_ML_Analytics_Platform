@@ -19,7 +19,7 @@ class TestCalculateMispricingScore(unittest.TestCase):
 
     def test_calculate_mispricing_score_returns_series(self):
         """Should return pandas Series"""
-        df = pd.DataFrame({"predicted_target": [110, 90, 105], "last_price": [100, 100, 100]})
+        df = pd.DataFrame({"predicted_price_target": [110, 90, 105], "last_price": [100, 100, 100]})
         from finance_ml.eval import calculate_mispricing_score
 
         result = calculate_mispricing_score(df)
@@ -27,7 +27,7 @@ class TestCalculateMispricingScore(unittest.TestCase):
 
     def test_calculate_mispricing_score_undervalued(self):
         """Should return positive score for undervalued stocks"""
-        df = pd.DataFrame({"predicted_target": [120], "last_price": [100]})
+        df = pd.DataFrame({"predicted_price_target": [120], "last_price": [100]})
         from finance_ml.eval import calculate_mispricing_score
 
         result = calculate_mispricing_score(df)
@@ -35,7 +35,7 @@ class TestCalculateMispricingScore(unittest.TestCase):
 
     def test_calculate_mispricing_score_overvalued(self):
         """Should return negative score for overvalued stocks"""
-        df = pd.DataFrame({"predicted_target": [80], "last_price": [100]})
+        df = pd.DataFrame({"predicted_price_target": [80], "last_price": [100]})
         from finance_ml.eval import calculate_mispricing_score
 
         result = calculate_mispricing_score(df)
@@ -43,7 +43,7 @@ class TestCalculateMispricingScore(unittest.TestCase):
 
     def test_calculate_mispricing_score_correct_formula(self):
         """Should calculate (predicted - current) / current"""
-        df = pd.DataFrame({"predicted_target": [110], "last_price": [100]})
+        df = pd.DataFrame({"predicted_price_target": [110], "last_price": [100]})
         from finance_ml.eval import calculate_mispricing_score
 
         result = calculate_mispricing_score(df)

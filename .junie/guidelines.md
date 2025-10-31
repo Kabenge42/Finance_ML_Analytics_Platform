@@ -200,7 +200,7 @@ B. How to add tests
 - Use small, deterministic samples; avoid loading full CSVs unless necessary.
 
 C. Test suite overview
-The project includes a comprehensive test suite with the following test modules (27 total):
+The project includes a comprehensive test suite with the following test modules (37 total):
 
 - tests/test_analytics.py — Analytics and stock ranking tests
 - tests/test_build_features.py — Feature building pipeline

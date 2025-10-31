@@ -132,7 +132,7 @@ class RegularizedTargetEncoder(BaseEstimator, TransformerMixin):
 
         return X
 
-    def fit_transform(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+    def fit_transform(self, X: pd.DataFrame, y=None, **fit_params) -> pd.DataFrame:
         """Fit and transform with cross-validation to prevent leakage.
 
         Uses out-of-fold encoding to ensure the encoding for each sample
@@ -140,11 +140,18 @@ class RegularizedTargetEncoder(BaseEstimator, TransformerMixin):
 
         Args:
             X: DataFrame with categorical columns to encode
-            y: Target variable
+            y: Target variable (required for target encoding)
+            **fit_params: Additional fit parameters (ignored)
 
         Returns:
             DataFrame with encoded columns
+
+        Raises:
+            ValueError: If y is None (target encoding requires target variable)
         """
+        if y is None:
+            raise ValueError("Target encoding requires y parameter")
+
         X = X.copy()
         y = pd.Series(y).reset_index(drop=True)
 

@@ -740,6 +740,970 @@ class TestIntegrationWorkflow(unittest.TestCase):
         self.assertGreaterEqual(result["accuracy"], 0.0)
 
 
+@unittest.skipIf(
+    not HAVE_XGBOOST or not HAVE_SKLEARN or not HAVE_FINANCE_ML, "XGBoost not available"
+)
+class TestXGBoostClassifier(unittest.TestCase):
+    """Test XGBoost gradient boosting classifier."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.df, self.labels = create_sample_classification_data(n_samples=200)
+        (
+            self.X_train,
+            self.X_test,
+            self.y_train,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        ) = prepare_classification_data(self.df, self.labels, test_size=0.2, random_state=42)
+
+    def test_train_xgboost_basic(self):
+        """Test basic XGBoost training."""
+        from finance_ml.classification import train_xgboost_classifier
+
+        result = train_xgboost_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        )
+
+        # Check result structure
+        self.assertIn("model", result)
+        self.assertIn("y_pred", result)
+        self.assertIn("y_proba", result)
+        self.assertIn("accuracy", result)
+        self.assertIn("f1_score", result)
+
+        # Check predictions shape
+        self.assertEqual(len(result["y_pred"]), len(self.y_test))
+        self.assertEqual(result["y_proba"].shape, (len(self.y_test), 3))
+
+        # Check metrics are reasonable
+        self.assertGreaterEqual(result["accuracy"], 0.0)
+        self.assertLessEqual(result["accuracy"], 1.0)
+
+    def test_xgboost_with_custom_params(self):
+        """Test XGBoost with custom hyperparameters."""
+        from finance_ml.classification import train_xgboost_classifier
+
+        custom_params = {
+            "max_depth": 4,
+            "learning_rate": 0.05,
+            "n_estimators": 100,
+        }
+
+        result = train_xgboost_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+            params=custom_params,
+        )
+
+        self.assertIsNotNone(result["model"])
+        self.assertIn("feature_importance", result)
+
+    def test_xgboost_probabilities_sum_to_one(self):
+        """Test that XGBoost probabilities sum to 1."""
+        from finance_ml.classification import train_xgboost_classifier
+
+        result = train_xgboost_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        )
+
+        # Check probabilities sum to 1 (within tolerance)
+        prob_sums = result["y_proba"].sum(axis=1)
+        np.testing.assert_array_almost_equal(prob_sums, np.ones(len(self.y_test)), decimal=5)
+
+
+@unittest.skipIf(
+    not HAVE_LIGHTGBM or not HAVE_SKLEARN or not HAVE_FINANCE_ML, "LightGBM not available"
+)
+class TestLightGBMClassifier(unittest.TestCase):
+    """Test LightGBM gradient boosting classifier."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.df, self.labels = create_sample_classification_data(n_samples=200)
+        (
+            self.X_train,
+            self.X_test,
+            self.y_train,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        ) = prepare_classification_data(self.df, self.labels, test_size=0.2, random_state=42)
+
+    def test_train_lightgbm_basic(self):
+        """Test basic LightGBM training."""
+        from finance_ml.classification import train_lightgbm_classifier
+
+        result = train_lightgbm_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        )
+
+        # Check result structure
+        self.assertIn("model", result)
+        self.assertIn("y_pred", result)
+        self.assertIn("y_proba", result)
+        self.assertIn("accuracy", result)
+        self.assertIn("f1_score", result)
+
+        # Check predictions shape
+        self.assertEqual(len(result["y_pred"]), len(self.y_test))
+        self.assertEqual(result["y_proba"].shape, (len(self.y_test), 3))
+
+    def test_lightgbm_with_custom_params(self):
+        """Test LightGBM with custom hyperparameters."""
+        from finance_ml.classification import train_lightgbm_classifier
+
+        custom_params = {
+            "max_depth": 5,
+            "learning_rate": 0.08,
+            "n_estimators": 150,
+        }
+
+        result = train_lightgbm_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+            params=custom_params,
+        )
+
+        self.assertIsNotNone(result["model"])
+        self.assertIn("feature_importance", result)
+
+
+@unittest.skipIf(
+    not HAVE_CATBOOST or not HAVE_SKLEARN or not HAVE_FINANCE_ML, "CatBoost not available"
+)
+class TestCatBoostClassifier(unittest.TestCase):
+    """Test CatBoost gradient boosting classifier."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.df, self.labels = create_sample_classification_data(n_samples=200)
+        (
+            self.X_train,
+            self.X_test,
+            self.y_train,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        ) = prepare_classification_data(self.df, self.labels, test_size=0.2, random_state=42)
+
+    def test_train_catboost_basic(self):
+        """Test basic CatBoost training."""
+        from finance_ml.classification import train_catboost_classifier
+
+        result = train_catboost_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        )
+
+        # Check result structure
+        self.assertIn("model", result)
+        self.assertIn("y_pred", result)
+        self.assertIn("y_proba", result)
+        self.assertIn("accuracy", result)
+        self.assertIn("f1_score", result)
+
+        # Check predictions shape
+        self.assertEqual(len(result["y_pred"]), len(self.y_test))
+        self.assertEqual(result["y_proba"].shape, (len(self.y_test), 3))
+
+    def test_catboost_with_custom_params(self):
+        """Test CatBoost with custom hyperparameters."""
+        from finance_ml.classification import train_catboost_classifier
+
+        custom_params = {
+            "depth": 5,
+            "learning_rate": 0.07,
+            "iterations": 100,
+        }
+
+        result = train_catboost_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+            params=custom_params,
+        )
+
+        self.assertIsNotNone(result["model"])
+        self.assertIn("feature_importance", result)
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestEnhancedEventLabelsExtended(unittest.TestCase):
+    """Test enhanced event labeling with all methods."""
+
+    def test_valuation_method(self):
+        """Test valuation-based event labeling."""
+        df, _ = create_sample_classification_data(n_samples=200)
+
+        labels = create_enhanced_event_labels(df, method="valuation")
+
+        # Check labels are valid
+        self.assertEqual(len(labels), len(df))
+        unique_labels = np.unique(labels)
+        self.assertTrue(all(label in [0, 1, 2] for label in unique_labels))
+
+        # Should have all three classes
+        self.assertGreater(np.sum(labels == 1), 0)  # Positive
+        self.assertGreater(np.sum(labels == 2), 0)  # Negative
+
+    def test_fundamental_method(self):
+        """Test fundamental-based event labeling."""
+        df, _ = create_sample_classification_data(n_samples=200)
+
+        # Add margin columns
+        df["gross_margin"] = np.random.uniform(0.2, 0.6, len(df))
+        df["operating_margin"] = np.random.uniform(0.1, 0.4, len(df))
+        df["net_margin"] = np.random.uniform(0.05, 0.25, len(df))
+
+        labels = create_enhanced_event_labels(df, method="fundamental")
+
+        # Check labels are valid
+        self.assertEqual(len(labels), len(df))
+        unique_labels = np.unique(labels)
+        self.assertTrue(all(label in [0, 1, 2] for label in unique_labels))
+
+    def test_volatility_method(self):
+        """Test volatility-based event labeling."""
+        df, _ = create_sample_classification_data(n_samples=200)
+
+        # Add volatility column
+        df["volatility_30d"] = np.random.uniform(0.1, 0.8, len(df))
+
+        labels = create_enhanced_event_labels(df, method="volatility")
+
+        # Check labels are valid
+        self.assertEqual(len(labels), len(df))
+        unique_labels = np.unique(labels)
+        self.assertTrue(all(label in [0, 1, 2] for label in unique_labels))
+
+    def test_analyst_rating_method(self):
+        """Test analyst rating changes event labeling."""
+        df, _ = create_sample_classification_data(n_samples=200)
+
+        # Add analyst rating columns
+        df["analyst_rating"] = np.random.choice(["Buy", "Hold", "Sell"], len(df))
+        df["analyst_rating_change"] = np.random.uniform(-2, 2, len(df))
+
+        labels = create_enhanced_event_labels(df, method="analyst_rating")
+
+        # Check labels are valid
+        self.assertEqual(len(labels), len(df))
+        unique_labels = np.unique(labels)
+        self.assertTrue(all(label in [0, 1, 2] for label in unique_labels))
+
+        # Should have positive for upgrades, negative for downgrades
+        self.assertGreater(np.sum(labels == 1), 0)  # Positive (upgrades)
+        self.assertGreater(np.sum(labels == 2), 0)  # Negative (downgrades)
+
+    def test_market_events_method(self):
+        """Test market events (sector rotation, regional trends) labeling."""
+        df, _ = create_sample_classification_data(n_samples=200)
+
+        # Add market event indicators
+        df["sector_momentum"] = np.random.uniform(-20, 20, len(df))
+        df["region"] = np.random.choice(["US", "EU", "APAC"], len(df))
+
+        labels = create_enhanced_event_labels(df, method="market_events")
+
+        # Check labels are valid
+        self.assertEqual(len(labels), len(df))
+        unique_labels = np.unique(labels)
+        self.assertTrue(all(label in [0, 1, 2] for label in unique_labels))
+
+
+try:
+    from imblearn.over_sampling import SMOTE
+
+    HAVE_IMBLEARN = True
+except ImportError:
+    HAVE_IMBLEARN = False
+
+
+@unittest.skipIf(
+    not HAVE_IMBLEARN or not HAVE_SKLEARN or not HAVE_FINANCE_ML, "imbalanced-learn not available"
+)
+class TestSMOTE(unittest.TestCase):
+    """Test SMOTE class imbalance handling."""
+
+    def test_apply_smote(self):
+        """Test SMOTE oversampling."""
+        from finance_ml.classification import apply_smote
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        # Apply SMOTE
+        X_resampled, y_resampled = apply_smote(X_train, y_train, num_cols)
+
+        # Check that resampling increased minority class samples
+        self.assertGreaterEqual(len(X_resampled), len(X_train))
+        self.assertEqual(len(X_resampled), len(y_resampled))
+
+        # Check that all classes are balanced (or more balanced)
+        unique, counts = np.unique(y_resampled, return_counts=True)
+        self.assertEqual(len(unique), 3)  # Should have all 3 classes
+
+    def test_smote_preserves_features(self):
+        """Test that SMOTE preserves feature names (numeric only)."""
+        from finance_ml.classification import apply_smote
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        X_resampled, y_resampled = apply_smote(X_train, y_train, num_cols)
+
+        # Check that numeric columns are preserved (SMOTE drops categorical features)
+        # SMOTE only works on numeric features
+        self.assertTrue(all(col in X_train.columns for col in X_resampled.columns))
+
+
+@unittest.skipIf(
+    not HAVE_IMBLEARN or not HAVE_SKLEARN or not HAVE_FINANCE_ML, "imbalanced-learn not available"
+)
+class TestADASYN(unittest.TestCase):
+    """Test ADASYN adaptive synthetic sampling."""
+
+    def test_apply_adasyn(self):
+        """Test ADASYN oversampling."""
+        from finance_ml.classification import apply_adasyn
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        # Apply ADASYN
+        X_resampled, y_resampled = apply_adasyn(X_train, y_train, num_cols)
+
+        # Check that resampling occurred
+        self.assertGreaterEqual(len(X_resampled), len(X_train))
+        self.assertEqual(len(X_resampled), len(y_resampled))
+
+        # Check that all classes are present
+        unique, counts = np.unique(y_resampled, return_counts=True)
+        self.assertEqual(len(unique), 3)
+
+    def test_adasyn_with_sampling_strategy(self):
+        """Test ADASYN with custom sampling strategy."""
+        from finance_ml.classification import apply_adasyn
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        X_resampled, y_resampled = apply_adasyn(
+            X_train, y_train, num_cols, sampling_strategy="auto"
+        )
+
+        self.assertGreaterEqual(len(X_resampled), len(X_train))
+
+
+@unittest.skipIf(
+    not HAVE_IMBLEARN or not HAVE_SKLEARN or not HAVE_FINANCE_ML, "imbalanced-learn not available"
+)
+class TestUnderSampling(unittest.TestCase):
+    """Test under-sampling strategies for class imbalance."""
+
+    def test_apply_undersampling_random(self):
+        """Test random under-sampling."""
+        from finance_ml.classification import apply_undersampling
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        # Apply random under-sampling
+        X_resampled, y_resampled = apply_undersampling(
+            X_train, y_train, num_cols, strategy="random"
+        )
+
+        # Should reduce samples
+        self.assertLessEqual(len(X_resampled), len(X_train))
+        self.assertEqual(len(X_resampled), len(y_resampled))
+
+    def test_apply_undersampling_tomek(self):
+        """Test Tomek links under-sampling."""
+        from finance_ml.classification import apply_undersampling
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        X_resampled, y_resampled = apply_undersampling(X_train, y_train, num_cols, strategy="tomek")
+
+        # Should remove some samples
+        self.assertLessEqual(len(X_resampled), len(X_train))
+
+    def test_apply_undersampling_nearmiss(self):
+        """Test NearMiss under-sampling."""
+        from finance_ml.classification import apply_undersampling
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        X_resampled, y_resampled = apply_undersampling(
+            X_train, y_train, num_cols, strategy="nearmiss"
+        )
+
+        self.assertLessEqual(len(X_resampled), len(X_train))
+
+
+@unittest.skipIf(
+    not HAVE_IMBLEARN or not HAVE_SKLEARN or not HAVE_FINANCE_ML, "imbalanced-learn not available"
+)
+class TestCombinedSampling(unittest.TestCase):
+    """Test combined over/under-sampling strategies."""
+
+    def test_apply_combined_sampling(self):
+        """Test combined SMOTE + under-sampling."""
+        from finance_ml.classification import apply_combined_sampling
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        # Apply combined sampling
+        X_resampled, y_resampled = apply_combined_sampling(
+            X_train, y_train, num_cols, over_strategy="smote", under_strategy="random"
+        )
+
+        # Should balance classes
+        self.assertEqual(len(X_resampled), len(y_resampled))
+        unique, counts = np.unique(y_resampled, return_counts=True)
+        self.assertEqual(len(unique), 3)
+
+    def test_combined_sampling_smote_tomek(self):
+        """Test SMOTE + Tomek links combination."""
+        from finance_ml.classification import apply_combined_sampling
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        X_resampled, y_resampled = apply_combined_sampling(
+            X_train, y_train, num_cols, over_strategy="smote", under_strategy="tomek"
+        )
+
+        self.assertEqual(len(X_resampled), len(y_resampled))
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestSVMClassifier(unittest.TestCase):
+    """Test Support Vector Machine classifier."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.df, self.labels = create_sample_classification_data(n_samples=200)
+        (
+            self.X_train,
+            self.X_test,
+            self.y_train,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+        ) = prepare_classification_data(self.df, self.labels, test_size=0.2, random_state=42)
+
+    def test_train_svm_rbf_kernel(self):
+        """Test SVM with RBF kernel."""
+        from finance_ml.classification import train_svm_classifier
+
+        result = train_svm_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+            kernel="rbf",
+        )
+
+        # Check result structure
+        self.assertIn("model", result)
+        self.assertIn("y_pred", result)
+        self.assertIn("y_proba", result)
+        self.assertIn("accuracy", result)
+        self.assertIn("f1_score", result)
+
+        # Check predictions
+        self.assertEqual(len(result["y_pred"]), len(self.y_test))
+        self.assertGreaterEqual(result["accuracy"], 0.0)
+        self.assertLessEqual(result["accuracy"], 1.0)
+
+    def test_train_svm_poly_kernel(self):
+        """Test SVM with polynomial kernel."""
+        from finance_ml.classification import train_svm_classifier
+
+        result = train_svm_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+            kernel="poly",
+            degree=3,
+        )
+
+        self.assertIn("model", result)
+        self.assertIn("accuracy", result)
+        self.assertEqual(len(result["y_pred"]), len(self.y_test))
+
+    def test_svm_one_vs_rest(self):
+        """Test SVM with One-vs-Rest strategy."""
+        from finance_ml.classification import train_svm_classifier
+
+        result = train_svm_classifier(
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+            self.numeric_cols,
+            self.categorical_cols,
+            kernel="rbf",
+            decision_function_shape="ovr",
+        )
+
+        self.assertIsNotNone(result["model"])
+        self.assertEqual(len(result["y_pred"]), len(self.y_test))
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestLearningCurves(unittest.TestCase):
+    """Test learning curve generation for bias/variance diagnosis."""
+
+    def test_plot_learning_curves(self):
+        """Test learning curve plotting."""
+        from finance_ml.classification import plot_learning_curves
+        from sklearn.ensemble import RandomForestClassifier
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        # Prepare data for sklearn
+        from sklearn.preprocessing import LabelEncoder
+
+        X_proc = X_train.copy()
+        for col in cat_cols:
+            le = LabelEncoder()
+            X_proc[col] = le.fit_transform(X_proc[col].astype(str))
+
+        model = RandomForestClassifier(n_estimators=10, random_state=42)
+
+        # Should not raise exception
+        try:
+            result = plot_learning_curves(model, X_proc, y_train, cv=3)
+            self.assertIsNotNone(result)
+            self.assertIn("train_sizes", result)
+            self.assertIn("train_scores", result)
+            self.assertIn("test_scores", result)
+        except Exception as e:
+            self.fail(f"plot_learning_curves raised exception: {e}")
+
+    def test_learning_curves_returns_dict(self):
+        """Test that learning curves return a dictionary with results."""
+        from finance_ml.classification import plot_learning_curves
+        from sklearn.ensemble import RandomForestClassifier
+
+        df, labels = create_sample_classification_data(n_samples=150)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        from sklearn.preprocessing import LabelEncoder
+
+        X_proc = X_train.copy()
+        for col in cat_cols:
+            le = LabelEncoder()
+            X_proc[col] = le.fit_transform(X_proc[col].astype(str))
+
+        model = RandomForestClassifier(n_estimators=5, random_state=42)
+        result = plot_learning_curves(model, X_proc, y_train, cv=2)
+
+        self.assertIsInstance(result, dict)
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestPerClassFeatureImportance(unittest.TestCase):
+    """Test per-class feature importance analysis."""
+
+    def test_analyze_per_class_feature_importance(self):
+        """Test per-class feature importance extraction."""
+        from finance_ml.classification import analyze_per_class_feature_importance
+        from sklearn.ensemble import RandomForestClassifier
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        # Train model
+        X_proc = X_train[num_cols]
+        model = RandomForestClassifier(n_estimators=10, random_state=42)
+        model.fit(X_proc, y_train)
+
+        # Analyze per-class importance
+        importance_df = analyze_per_class_feature_importance(
+            model, X_proc, y_train, feature_names=num_cols, top_n=5
+        )
+
+        # Check output
+        self.assertIsInstance(importance_df, pd.DataFrame)
+        if not importance_df.empty:
+            self.assertIn("Class", importance_df.columns)
+            self.assertIn("Feature", importance_df.columns)
+            self.assertIn("Importance", importance_df.columns)
+
+    def test_per_class_importance_all_classes(self):
+        """Test that per-class importance covers all classes."""
+        from finance_ml.classification import analyze_per_class_feature_importance
+        from sklearn.ensemble import RandomForestClassifier
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        X_proc = X_train[num_cols]
+        model = RandomForestClassifier(n_estimators=10, random_state=42)
+        model.fit(X_proc, y_train)
+
+        importance_df = analyze_per_class_feature_importance(
+            model, X_proc, y_train, feature_names=num_cols
+        )
+
+        if not importance_df.empty:
+            unique_classes = importance_df["Class"].unique()
+            # Should have results for multiple classes
+            self.assertGreater(len(unique_classes), 0)
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestRandomForestAndSVM(unittest.TestCase):
+    """Test Random Forest and SVM classifiers."""
+
+    def test_compare_classifiers_includes_random_forest(self):
+        """Test that compare_classifiers includes Random Forest."""
+        from finance_ml.classification import compare_classifiers
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        results = compare_classifiers(X_train, y_train, X_test, y_test, num_cols, cat_cols)
+
+        # Check that results is a DataFrame with multiple models
+        self.assertIsInstance(results, pd.DataFrame)
+        self.assertGreater(len(results), 0)
+
+        # Should include Random Forest
+        self.assertTrue(any(results["Model"].str.contains("Random Forest")))
+
+        # Check required columns
+        self.assertIn("Model", results.columns)
+        self.assertIn("Accuracy", results.columns)
+        self.assertIn("F1-Score", results.columns)
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestEvaluateClassification(unittest.TestCase):
+    """Test comprehensive classification evaluation."""
+
+    def test_evaluate_classification_basic(self):
+        """Test basic evaluation metrics."""
+        from finance_ml.classification import evaluate_classification
+
+        # Create simple test data
+        y_true = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
+        y_pred = np.array([0, 1, 2, 0, 2, 1, 0, 1, 2])
+
+        result = evaluate_classification(y_true, y_pred)
+
+        # Check required metrics
+        self.assertIn("accuracy", result)
+        self.assertIn("precision_macro", result)
+        self.assertIn("recall_macro", result)
+        self.assertIn("f1_macro", result)
+        self.assertIn("confusion_matrix", result)
+        self.assertIn("classification_report", result)
+
+        # Metrics should be in valid ranges
+        self.assertGreaterEqual(result["accuracy"], 0.0)
+        self.assertLessEqual(result["accuracy"], 1.0)
+
+    def test_evaluate_classification_with_probabilities(self):
+        """Test evaluation with probability scores for ROC-AUC."""
+        from finance_ml.classification import evaluate_classification
+
+        y_true = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2] * 5)
+        y_pred = np.array([0, 1, 2, 0, 2, 1, 0, 1, 2] * 5)
+
+        # Create probability matrix
+        n_samples = len(y_true)
+        y_proba = np.random.dirichlet(np.ones(3), size=n_samples)
+
+        result = evaluate_classification(y_true, y_pred, y_proba=y_proba)
+
+        # Should have ROC-AUC when probabilities provided
+        self.assertIn("roc_auc", result)
+        if result["roc_auc"] is not None:
+            self.assertGreaterEqual(result["roc_auc"], 0.0)
+            self.assertLessEqual(result["roc_auc"], 1.0)
+
+    def test_evaluate_classification_custom_class_names(self):
+        """Test evaluation with custom class names."""
+        from finance_ml.classification import evaluate_classification
+
+        y_true = np.array([0, 1, 2, 0, 1, 2])
+        y_pred = np.array([0, 1, 2, 0, 1, 2])
+
+        custom_names = ["Class_A", "Class_B", "Class_C"]
+        result = evaluate_classification(y_true, y_pred, class_names=custom_names)
+
+        # Check that custom names are in classification report
+        self.assertIn("classification_report", result)
+        report = result["classification_report"]
+        self.assertIn("Class_A", report)
+        self.assertIn("Class_B", report)
+        self.assertIn("Class_C", report)
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestCleanExtremeValues(unittest.TestCase):
+    """Test extreme value cleaning utility."""
+
+    def test_clean_extreme_values_basic(self):
+        """Test cleaning infinite and extreme values."""
+        from finance_ml.classification import clean_extreme_values
+
+        df = pd.DataFrame(
+            {
+                "col1": [1, 2, np.inf, 4, 5],
+                "col2": [10, 20, -np.inf, 40, 50],
+                "col3": [1e10, 2e10, 3e10, 4e10, 5e10],
+            }
+        )
+
+        df_clean = clean_extreme_values(df, clip_threshold=1e8)
+
+        # Check no infinities remain
+        self.assertFalse(np.isinf(df_clean).any().any())
+
+        # Check extreme values are clipped
+        self.assertTrue(all(df_clean["col3"] <= 1e8))
+
+    def test_clean_extreme_values_preserves_normal_values(self):
+        """Test that normal values are preserved."""
+        from finance_ml.classification import clean_extreme_values
+
+        df = pd.DataFrame(
+            {
+                "col1": [1, 2, 3, 4, 5],
+                "col2": [10, 20, 30, 40, 50],
+            }
+        )
+
+        df_clean = clean_extreme_values(df)
+
+        # Should be unchanged
+        pd.testing.assert_frame_equal(df, df_clean)
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestValidateDataQuality(unittest.TestCase):
+    """Test data quality validation."""
+
+    def test_validate_data_quality_good_data(self):
+        """Test validation with clean data."""
+        from finance_ml.classification import validate_data_quality
+
+        df = pd.DataFrame(
+            {
+                "col1": [1, 2, 3, 4, 5],
+                "col2": [10, 20, 30, 40, 50],
+            }
+        )
+
+        result = validate_data_quality(df)
+
+        # Should pass validation
+        self.assertTrue(result)
+
+    def test_validate_data_quality_with_issues(self):
+        """Test validation with data quality issues."""
+        from finance_ml.classification import validate_data_quality
+
+        df = pd.DataFrame(
+            {
+                "col1": [1, np.nan, np.inf, 4, 5],
+                "col2": [10, 20, 30, 40, 1e15],
+            }
+        )
+
+        result = validate_data_quality(df)
+
+        # Should detect issues (returns False)
+        self.assertFalse(result)
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestEnhancedEventLabelsEdgeCases(unittest.TestCase):
+    """Test edge cases in enhanced event labeling."""
+
+    def test_price_momentum_missing_columns(self):
+        """Test price_momentum method with missing columns."""
+        from finance_ml.classification import create_enhanced_event_labels
+
+        # DataFrame without required columns
+        df = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C"],
+                "sector": ["Tech", "Finance", "Health"],
+            }
+        )
+
+        labels = create_enhanced_event_labels(df, method="price_momentum")
+
+        # Should return all neutral labels
+        self.assertTrue(all(labels == 0))
+
+    def test_valuation_missing_columns(self):
+        """Test valuation method with missing columns."""
+        from finance_ml.classification import create_enhanced_event_labels
+
+        df = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C"],
+                "sector": ["Tech", "Finance", "Health"],
+            }
+        )
+
+        labels = create_enhanced_event_labels(df, method="valuation")
+
+        # Should return all neutral labels
+        self.assertTrue(all(labels == 0))
+
+    def test_unknown_method(self):
+        """Test with unknown labeling method."""
+        from finance_ml.classification import create_enhanced_event_labels
+
+        df, _ = create_sample_classification_data(n_samples=50)
+
+        labels = create_enhanced_event_labels(df, method="unknown_method")
+
+        # Should return all neutral labels
+        self.assertTrue(all(labels == 0))
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestPrepareClassificationDataEdgeCases(unittest.TestCase):
+    """Test edge cases in data preparation."""
+
+    def test_prepare_data_with_duplicate_columns(self):
+        """Test handling of duplicate columns."""
+        from finance_ml.classification import prepare_classification_data
+
+        df = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C", "D"] * 50,
+                "feature1": np.random.randn(200),
+                "feature2": np.random.randn(200),
+                "last_price": np.random.uniform(10, 200, 200),
+                "price_target": np.random.uniform(10, 250, 200),
+            }
+        )
+
+        # Add duplicate column
+        df["feature1_dup"] = df["feature1"]
+        df = df.rename(columns={"feature1_dup": "feature1"})
+
+        labels = np.random.choice([0, 1, 2], 200)
+
+        # Should handle duplicates without error
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        self.assertEqual(len(X_train) + len(X_test), len(df))
+
+
+@unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
+class TestCompareClassifiers(unittest.TestCase):
+    """Test comprehensive model comparison functionality."""
+
+    def test_compare_classifiers_basic(self):
+        """Test basic model comparison."""
+        from finance_ml.classification import compare_classifiers
+
+        df, labels = create_sample_classification_data(n_samples=200)
+        X_train, X_test, y_train, y_test, num_cols, cat_cols = prepare_classification_data(
+            df, labels, test_size=0.2, random_state=42
+        )
+
+        results = compare_classifiers(X_train, y_train, X_test, y_test, num_cols, cat_cols)
+
+        # Check results structure - should be a DataFrame
+        self.assertIsInstance(results, pd.DataFrame)
+        self.assertGreater(len(results), 0)
+
+        # Check required columns
+        self.assertIn("Model", results.columns)
+        self.assertIn("Accuracy", results.columns)
+        self.assertIn("F1-Score", results.columns)
+
+        # Check at least one model is present
+        self.assertGreater(len(results), 0)
+
+        # Metrics should be in valid ranges
+        self.assertTrue(all(results["Accuracy"].between(0.0, 1.0)))
+        self.assertTrue(all(results["F1-Score"].between(0.0, 1.0)))
+
+
 if __name__ == "__main__":
     # Run tests with verbose output
     unittest.main(verbosity=2)

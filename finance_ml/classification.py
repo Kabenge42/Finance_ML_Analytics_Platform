@@ -223,9 +223,16 @@ def create_enhanced_event_labels(
             labels[rating_change <= -0.5] = 2
         elif "analyst_rating" in df.columns:
             # If only rating available, use current rating
-            rating_map = {"Buy": 1, "Strong Buy": 1, "Outperform": 1,
-                         "Sell": 2, "Strong Sell": 2, "Underperform": 2,
-                         "Hold": 0, "Neutral": 0}
+            rating_map = {
+                "Buy": 1,
+                "Strong Buy": 1,
+                "Outperform": 1,
+                "Sell": 2,
+                "Strong Sell": 2,
+                "Underperform": 2,
+                "Hold": 0,
+                "Neutral": 0,
+            }
             for idx, rating in enumerate(df["analyst_rating"]):
                 if rating in rating_map:
                     labels[idx] = rating_map[rating]
@@ -647,7 +654,7 @@ def train_svm_classifier(
 
     # Calibrate for probability estimates
     logger.info("Calibrating SVM for probability estimates...")
-    calibrated_svm = CalibratedClassifierCV(svm, method='sigmoid', cv=3)
+    calibrated_svm = CalibratedClassifierCV(svm, method="sigmoid", cv=3)
     calibrated_svm.fit(X_train_proc, y_train)
 
     # Predictions
@@ -656,7 +663,9 @@ def train_svm_classifier(
 
     # Metrics
     accuracy = accuracy_score(y_test, y_pred)
-    precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average="macro", zero_division=0)
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        y_test, y_pred, average="macro", zero_division=0
+    )
 
     logger.info(f"SVM ({kernel}) - Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
 
@@ -842,17 +851,25 @@ def apply_undersampling(
     try:
         if strategy == "random":
             from imblearn.under_sampling import RandomUnderSampler
-            sampler = RandomUnderSampler(sampling_strategy=sampling_strategy, random_state=random_state)
+
+            sampler = RandomUnderSampler(
+                sampling_strategy=sampling_strategy, random_state=random_state
+            )
         elif strategy == "tomek":
             from imblearn.under_sampling import TomekLinks
+
             sampler = TomekLinks(sampling_strategy=sampling_strategy)
         elif strategy == "nearmiss":
             from imblearn.under_sampling import NearMiss
+
             sampler = NearMiss(sampling_strategy=sampling_strategy)
         else:
             logger.warning(f"Unknown under-sampling strategy: {strategy}. Using random.")
             from imblearn.under_sampling import RandomUnderSampler
-            sampler = RandomUnderSampler(sampling_strategy=sampling_strategy, random_state=random_state)
+
+            sampler = RandomUnderSampler(
+                sampling_strategy=sampling_strategy, random_state=random_state
+            )
 
         X_resampled, y_resampled = sampler.fit_resample(X_numeric, y_train)
 
@@ -907,20 +924,24 @@ def apply_combined_sampling(
         # Select under-sampler
         if under_strategy == "random":
             from imblearn.under_sampling import RandomUnderSampler
+
             under_sampler = RandomUnderSampler(random_state=random_state)
         elif under_strategy == "tomek":
             from imblearn.under_sampling import TomekLinks
+
             under_sampler = TomekLinks()
         elif under_strategy == "nearmiss":
             from imblearn.under_sampling import NearMiss
+
             under_sampler = NearMiss()
         else:
             logger.warning(f"Unknown under-sampling strategy: {under_strategy}. Using random.")
             from imblearn.under_sampling import RandomUnderSampler
+
             under_sampler = RandomUnderSampler(random_state=random_state)
 
         # Create pipeline
-        pipeline = ImbPipeline([('over', over_sampler), ('under', under_sampler)])
+        pipeline = ImbPipeline([("over", over_sampler), ("under", under_sampler)])
         X_resampled, y_resampled = pipeline.fit_resample(X_numeric, y_train)
 
         logger.info(
@@ -1880,7 +1901,9 @@ def plot_learning_curves(
                 color="g",
             )
             plt.plot(train_sizes_abs, train_scores_mean, "o-", color="r", label="Training score")
-            plt.plot(train_sizes_abs, test_scores_mean, "o-", color="g", label="Cross-validation score")
+            plt.plot(
+                train_sizes_abs, test_scores_mean, "o-", color="g", label="Cross-validation score"
+            )
             plt.legend(loc="best")
             plt.tight_layout()
         except ImportError:
@@ -1927,11 +1950,14 @@ def analyze_per_class_feature_importance(
     Returns:
         DataFrame with per-class feature importance
     """
-    from sklearn.ensemble import RandomForestClassifier
     from sklearn.multiclass import OneVsRestClassifier
 
     if feature_names is None:
-        feature_names = list(X.columns) if hasattr(X, "columns") else [f"feature_{i}" for i in range(X.shape[1])]
+        feature_names = (
+            list(X.columns)
+            if hasattr(X, "columns")
+            else [f"feature_{i}" for i in range(X.shape[1])]
+        )
 
     try:
         logger.info("Analyzing per-class feature importance...")
@@ -1957,22 +1983,30 @@ def analyze_per_class_feature_importance(
                     # Get top N features for this class
                     top_indices = np.argsort(importances)[-top_n:][::-1]
                     for idx in top_indices:
-                        importance_data.append({
-                            "Class": unique_classes[class_idx] if class_idx < len(unique_classes) else class_idx,
-                            "Feature": feature_names[idx],
-                            "Importance": importances[idx],
-                        })
+                        importance_data.append(
+                            {
+                                "Class": (
+                                    unique_classes[class_idx]
+                                    if class_idx < len(unique_classes)
+                                    else class_idx
+                                ),
+                                "Feature": feature_names[idx],
+                                "Importance": importances[idx],
+                            }
+                        )
         elif hasattr(model, "feature_importances_"):
             # If model has global feature importance, use that for all classes
             importances = model.feature_importances_
             for class_label in unique_classes:
                 top_indices = np.argsort(importances)[-top_n:][::-1]
                 for idx in top_indices:
-                    importance_data.append({
-                        "Class": class_label,
-                        "Feature": feature_names[idx],
-                        "Importance": importances[idx],
-                    })
+                    importance_data.append(
+                        {
+                            "Class": class_label,
+                            "Feature": feature_names[idx],
+                            "Importance": importances[idx],
+                        }
+                    )
         else:
             logger.warning("Model does not have feature_importances_ attribute")
             return pd.DataFrame(columns=["Class", "Feature", "Importance"])

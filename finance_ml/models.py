@@ -371,6 +371,10 @@ def train_quantile_regression(
 
     # Return object with predict method that delegates to models dict
     class QuantileRegressionModel:
+        """Wrapper class for multiple quantile regression models.
+
+        Provides a unified interface to predict multiple quantiles simultaneously.
+        """
         def __init__(self, models_dict):
             self.models = models_dict
 
@@ -503,6 +507,11 @@ def train_stacking_ensemble(
 
     # Wrap in custom class to expose base_models and meta_model attributes
     class StackingEnsembleModel:
+        """Wrapper class for stacking ensemble regressor.
+
+        Exposes base models and meta-learner for inspection and provides
+        a unified prediction interface.
+        """
         def __init__(self, stacking_reg):
             self.stacking_regressor = stacking_reg
             # estimators_ is a list of fitted base estimators
