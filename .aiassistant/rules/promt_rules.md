@@ -1,11 +1,11 @@
 ---
-apply: off
+apply: always
 ---
 
 # Finance ML Analytics Platform — Project Rules
 
-**Version**: 0.3.0  
-**Last Updated**: 2025-10-24
+**Version**: 0.5.0  
+**Last Updated**: 2025-11-01
 
 ## Project Overview
 
@@ -23,7 +23,8 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 ## Technology Stack
 
 ### Language and Runtime
-- **Language**: Python 3.10–3.11 (3.11 recommended)
+
+- **Language**: Python 3.12–3.13 (3.13 recommended)
 - **Notebook Environment**: Jupyter Notebook or JupyterLab
 - **Database**: PostgreSQL 15+ (local instance)
 
@@ -33,19 +34,22 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 
 ### Core Dependencies
 **Data Science**:
-- numpy>=1.24.0,<2.0.0
+
+- numpy>=1.26.0,<2.0.0
 - pandas>=2.0.0,<3.0.0
-- scipy>=1.10.0,<2.0.0
+- scipy>=1.11.0,<2.0.0
 - statsmodels>=0.14.0,<1.0.0
 
 **Machine Learning**:
-- scikit-learn>=1.3.0,<2.0.0
+
+- scikit-learn>=1.4.0,<2.0.0
 - imbalanced-learn>=0.11.0,<1.0.0
 - tensorflow>=2.13.0,<3.0.0
 - scikeras>=0.12.0,<1.0.0
 
 **Gradient Boosting**:
-- xgboost>=2.0.0,<3.0.0
+
+- xgboost>=2.0.3,<3.0.0
 - lightgbm>=4.0.0,<5.0.0
 - catboost>=1.2.0,<2.0.0
 
@@ -84,7 +88,8 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Linux
 
 **Software**:
-- Python 3.10 or 3.11 (use pyenv or official installer; avoid mixing Conda with venv)
+
+- Python 3.12 or 3.13 (use pyenv or official installer; avoid mixing Conda with venv)
 - PostgreSQL 15+ (local instance)
 - Git (optional but recommended)
 - psql command-line tool (included with PostgreSQL; must be on PATH)
@@ -162,20 +167,22 @@ finance-ml --data-source auto --limit 5000 --out-dir outputs
 ## Entry Points
 
 ### 1. Interactive Notebook (Primary)
-**File**: `ml_finance_model_v8_2.ipynb`
+
+**File**: `ml_finance_model_main.ipynb`
 - Main Jupyter notebook for exploration, EDA, feature engineering, and modeling
 - Imports from `finance_ml` package (modular design)
 - Run cells in order
 - Outputs: model diagnostics, ranking tables, optional CSV/Excel exports
 
 ### 2. Python Script (Legacy)
-**File**: `ml_finance_model_v8_2.py`
+
+**File**: `ml_finance_model_main.py`
 - Command-line interface for batch processing
 - Now uses `finance_ml` package internally (refactored in Phase 7)
 
 **Usage**:
 ```bash
-python ml_finance_model_v8_2.py --data-source auto --limit 5000 --out-dir outputs
+python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
 ```
 
 **Options**:
@@ -272,7 +279,7 @@ OUTPUT_DIR=outputs               # Output directory
 DB_URL=postgresql+psycopg2://postgres:@localhost:5432/postgres
 
 # Model Configuration
-MODEL_VERSION=v8_2               # Model version identifier
+MODEL_VERSION=v0_5_0             # Model version identifier
 RANDOM_SEED=42                   # Random seed for reproducibility
 
 # Performance Settings
@@ -333,7 +340,7 @@ Create a `.env` file in the project root with the variables above. Tools that su
 ### Test Framework
 - **Framework**: Python's built-in `unittest`
 - **Location**: `tests/` directory
-- **Count**: Comprehensive unit tests
+- **Count**: 37 test modules
 - **Coverage**: Tracked in `.coverage` file
 
 ### Running Tests
@@ -351,26 +358,45 @@ pytest tests/ -v --cov=finance_ml
 python -m unittest discover -s tests -v
 ```
 
-### Test Suite Modules
-- **`test_repository_setup.py`** — Validates repository basics
-  - Key files exist (requirements.txt, SQL scripts, environment config, CSVs)
-  - SQL file contains CREATE TABLE equities and sets OWNER TO postgres
-  - environment_variables.txt includes TF_CPP_MIN_LOG_LEVEL=2
-  - CSVs are non-empty and have a header line
+### Test Suite Modules (37 total)
 
-- **`test_data_quality.py`** — Data validation and quality checks
-- **`test_loaders.py`** — CSV and database loading functions
-- **`test_features.py`** — Feature engineering functions
+- **`test_advanced_eda.py`** — Advanced EDA functions (correlation, PCA, statistical tests)
+- **`test_advanced_features.py`** — Phase 9.3 advanced feature engineering tests
+- **`test_advanced_models_phase95.py`** — Phase 9.5 advanced regression models and ensembles
+- **`test_advanced_preprocessing.py`** — Advanced preprocessing (outlier detection, winsorization, imputation)
+- **`test_analytics.py`** — Analytics and stock ranking tests
 - **`test_build_features.py`** — Feature building pipeline
+- **`test_classification.py`** — Event classification model tests
+- **`test_classification_phase94.py`** — Phase 9.4 advanced classification models
+- **`test_cli.py`** — Command-line interface tests
+- **`test_coverage_smoke.py`** — Smoke test for coverage validation
+- **`test_data_quality.py`** — Data validation and quality checks
 - **`test_eda.py`** — Exploratory data analysis utilities
+- **`test_evaluation_phase96.py`** — Phase 9.6 model evaluation and error analysis tests
+- **`test_features.py`** — Feature engineering functions
+- **`test_finance_ml_config.py`** — Configuration management tests
+- **`test_finance_ml_data.py`** — Data loading module tests
+- **`test_finance_ml_eval.py`** — Evaluation and analytics module tests
+- **`test_finance_ml_features.py`** — Features module tests
+- **`test_finance_ml_models.py`** — Models module tests
+- **`test_improvement_plan_revision.py`** — Development plan validation
+- **`test_loaders.py`** — CSV and database loading functions
+- **`test_logging.py`** — Logging configuration tests
+- **`test_notebook_config.py`** — Notebook configuration tests
+- **`test_notebook_enhancements.py`** — Notebook enhancements validation
+- **`test_notebook_integration.py`** — Notebook integration tests
+- **`test_notebook_quality_improvements.py`** — Notebook quality improvements tests
+- **`test_portfolio_optimization.py`** — Portfolio optimization tests
 - **`test_preprocess_and_training.py`** — Preprocessing and training workflows
 - **`test_regression.py`** — Regression model evaluation
-- **`test_classification.py`** — Event classification model tests
-- **`test_analytics.py`** — Analytics and stock ranking tests
-- **`test_finance_ml_data.py`** — finance_ml.data module tests
-- **`test_finance_ml_features.py`** — finance_ml.features module tests
-- **`test_finance_ml_models.py`** — finance_ml.models module tests
-- **`test_finance_ml_eval.py`** — finance_ml.eval module tests
+- **`test_repository_setup.py`** — Validates repository basics (files, SQL schema, environment config)
+- **`test_risk_metrics.py`** — Risk metrics calculation tests
+- **`test_setup_environment.py`** — Setup script validation
+- **`test_sql_scripts.py`** — SQL script validation tests
+- **`test_sqlite_import.py`** — SQLite import functionality
+- **`test_validate_csv_import.py`** — CSV validation (schema, data quality checks)
+- **`test_valuation_phase97.py`** — Phase 9.7 stock valuation and identification tests
+- **`test_visualizations.py`** — Visualization functions tests
 
 ### Writing New Tests
 - Create files under `tests/` named `test_*.py` with `unittest.TestCase` classes
@@ -384,22 +410,36 @@ python -m unittest discover -s tests -v
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                     # Main Python package (v0.3.0)
+├── finance_ml/                     # Main Python package (v0.5.0)
 │   ├── __init__.py                # Package exports and version
-│   ├── data.py                    # Data loading, normalization, validation
-│   ├── features.py                # Feature engineering functions
-│   ├── models.py                  # ML models (classification, regression, ensembles)
-│   ├── eval.py                    # Analytics, visualizations, reporting
+│   ├── advanced_eda.py            # Advanced EDA with statistical analysis
+│   ├── advanced_features.py       # Advanced feature engineering (Phase 9.3)
+│   ├── advanced_models.py         # Sector-optimized regression models (Phase 9.5)
+│   ├── advanced_preprocessing.py  # Advanced preprocessing and data quality
+│   ├── benchmarking.py            # Comparative analysis and peer benchmarking
+│   ├── classification.py          # Multi-class event classification (Phase 9.4)
+│   ├── cli.py                     # Command-line interface
 │   ├── config.py                  # Configuration management
-│   └── cli.py                     # Command-line interface
+│   ├── data.py                    # Data loading, normalization, validation
+│   ├── data_catalog.py            # Centralized data asset registry (Phase 9.1)
+│   ├── data_versioning.py         # Dataset version tracking and metadata (Phase 9.1)
+│   ├── eval.py                    # Analytics, visualizations, reporting
+│   ├── features.py                # Feature engineering functions
+│   ├── logging_config.py          # Logging configuration utilities
+│   ├── models.py                  # ML models (classification, regression, ensembles)
+│   ├── notebook_config.py         # Notebook-specific helpers and config
+│   ├── notebook_utils.py          # Notebook utility functions
+│   ├── portfolio_optimization.py  # Portfolio optimization utilities
+│   ├── risk_metrics.py            # Risk metrics and portfolio risk analysis
+│   └── transformers.py            # Scikit-learn compatible feature transformers
 │
-├── tests/                         # Unit tests (see tests/ for modules)
+├── tests/                         # Unit tests (37 test modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
 │   ├── test_finance_ml_eval.py
 │   ├── test_repository_setup.py
-│   └── ... (10+ test modules)
+│   └── ... (see Test Suite Modules section for complete list)
 │
 ├── data/                          # Regional equity data (CSV files)
 │   ├── screening_us.csv
@@ -421,8 +461,8 @@ Finance_ML_Analytics_Platform/
 │   ├── regression_predictions.csv
 │   └── ... (generated files)
 │
-├── ml_finance_model_v8_2.ipynb   # Interactive Jupyter notebook
-├── ml_finance_model_v8_2.py      # Legacy script (uses finance_ml package)
+├── ml_finance_model_main.ipynb   # Interactive Jupyter notebook
+├── ml_finance_model_main.py      # Script version (uses finance_ml package)
 │
 ├── pyproject.toml                # Modern Python packaging configuration
 ├── setup.py                      # Backward-compatible setup
@@ -520,7 +560,7 @@ Command-line interface tools.
   "data_dir": "data",
   "output_dir": "outputs",
   "db_url": "postgresql+psycopg2://postgres:@localhost:5432/postgres",
-  "model_version": "v8_2",
+  "model_version": "v0_5_0",
   "random_seed": 42,
   "n_jobs": -1
 }
@@ -531,7 +571,7 @@ Command-line interface tools.
 data_dir: data
 output_dir: outputs
 db_url: postgresql+psycopg2://postgres:@localhost:5432/postgres
-model_version: v8_2
+model_version: v0_5_0
 random_seed: 42
 n_jobs: -1
 ```
@@ -616,7 +656,9 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 
 ## Version History
 
-- **v0.3.0** (Current) — Modular package, CLI tools, configuration management, CI/CD
+- **v0.5.0** (Current) — Complete Phase 9 implementation, 20 package modules, 37 test modules, comprehensive ML pipeline
+- **v0.4.0** — Phase 9.7 valuation analysis, Phase 9.1 data versioning and catalog
+- **v0.3.0** — Modular package, CLI tools, configuration management, CI/CD
 - Earlier versions documented in `CHANGELOG.md`
 
 ---

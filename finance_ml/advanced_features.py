@@ -24,6 +24,26 @@ from sklearn.linear_model import Ridge
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "engineer_valuation_ratios",
+    "engineer_profitability_ratios",
+    "engineer_leverage_ratios",
+    "engineer_liquidity_ratios",
+    "engineer_efficiency_ratios",
+    "engineer_growth_metrics",
+    "engineer_sector_specific_features",
+    "engineer_temporal_features",
+    "engineer_market_microstructure_features",
+    "engineer_nonlinear_transforms",
+    "create_feature_interactions",
+    "create_relative_value_features",
+    "calculate_feature_importance_mutual_info",
+    "calculate_feature_importance_rf",
+    "calculate_feature_importance_shap",
+    "calculate_feature_importance_rfe",
+    "build_comprehensive_features",
+]
+
 
 def _safe_div(numer: pd.Series, denom: pd.Series) -> pd.Series:
     """Safely divide two Series, replacing inf/NaN with 0 or appropriate value.

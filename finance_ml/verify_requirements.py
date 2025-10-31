@@ -1,4 +1,10 @@
-﻿import sys
+﻿"""Verify that all required package dependencies are installed and compatible.
+
+This module checks for missing or incompatible package versions against
+the requirements specified in the project.
+"""
+
+import sys
 
 import pkg_resources
 

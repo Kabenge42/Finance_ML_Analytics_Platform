@@ -2609,1068 +2609,7 @@
       "max": 1.3416
     }
   },
-  "distribution_analysis": {
-    "market_cap": {
-      "skewness": 5.839853134817315,
-      "kurtosis": 42.483981597038664,
-      "n_samples": 500
-    },
-    "enterprise_value": {
-      "skewness": 5.320262977259127,
-      "kurtosis": 35.12358085159261,
-      "n_samples": 449
-    },
-    "last_price": {
-      "skewness": 10.840834739734222,
-      "kurtosis": 126.28039976851403,
-      "n_samples": 500
-    },
-    "price_target_ytd_ago": {
-      "skewness": 11.213556281449737,
-      "kurtosis": 140.75489758851992,
-      "n_samples": 409
-    },
-    "total_return_ytd": {
-      "skewness": 8.64571418356712,
-      "kurtosis": 118.09670537799181,
-      "n_samples": 486
-    },
-    "price_target": {
-      "skewness": 11.646159889124197,
-      "kurtosis": 148.1057273606939,
-      "n_samples": 424
-    },
-    "price_target_low": {
-      "skewness": 12.282207643431793,
-      "kurtosis": 163.24997790858495,
-      "n_samples": 424
-    },
-    "price_target_median": {
-      "skewness": 11.625996129813936,
-      "kurtosis": 148.66895299134532,
-      "n_samples": 424
-    },
-    "price_target_high": {
-      "skewness": 12.311371673950733,
-      "kurtosis": 164.31945125937543,
-      "n_samples": 424
-    },
-    "price_target_count": {
-      "skewness": 1.1520847810336285,
-      "kurtosis": 1.8395011483540733,
-      "n_samples": 424
-    },
-    "p_e_ntm": {
-      "skewness": 4.866761530797793,
-      "kurtosis": 28.453429273989077,
-      "n_samples": 395
-    },
-    "p_e_ltm": {
-      "skewness": 4.654939453220243,
-      "kurtosis": 26.73480286261764,
-      "n_samples": 400
-    },
-    "altman_z_score_fy": {
-      "skewness": 10.034965085446935,
-      "kurtosis": 127.5828209929839,
-      "n_samples": 368
-    },
-    "altman_z_score_fq": {
-      "skewness": 8.555762676746754,
-      "kurtosis": 89.8089112551874,
-      "n_samples": 313
-    },
-    "altman_z_score_ltm": {
-      "skewness": 7.944639697915704,
-      "kurtosis": 76.08373048642072,
-      "n_samples": 313
-    },
-    "beta_1y": {
-      "skewness": 1.9770683837918368,
-      "kurtosis": 10.288129452880298,
-      "n_samples": 430
-    },
-    "beta_2y": {
-      "skewness": 0.9947092390247727,
-      "kurtosis": 2.7289957995515612,
-      "n_samples": 430
-    },
-    "beta_5y": {
-      "skewness": 6.610582446056835,
-      "kurtosis": 87.93617793994417,
-      "n_samples": 417
-    },
-    "analyst_rating": {
-      "skewness": -0.6571480292592432,
-      "kurtosis": 0.31052271068083837,
-      "n_samples": 420
-    },
-    "strong_sell_ratings": {
-      "skewness": 2.805346662777515,
-      "kurtosis": 9.398596850992693,
-      "n_samples": 425
-    },
-    "strong_buys_ratings": {
-      "skewness": 1.6067772369198694,
-      "kurtosis": 3.013659312910928,
-      "n_samples": 425
-    },
-    "hold_ratings": {
-      "skewness": 1.5736146560714703,
-      "kurtosis": 3.0461291524950598,
-      "n_samples": 425
-    },
-    "buys_ratings": {
-      "skewness": 1.8802715066271996,
-      "kurtosis": 4.7855621815805485,
-      "n_samples": 425
-    },
-    "sell_ratings": {
-      "skewness": 3.714320138016609,
-      "kurtosis": 19.53069429353837,
-      "n_samples": 425
-    },
-    "total_revenues_cagr_5y_fy": {
-      "skewness": 6.491436350979324,
-      "kurtosis": 59.57160532721558,
-      "n_samples": 455
-    },
-    "total_revenues_fq": {
-      "skewness": 6.134176489370284,
-      "kurtosis": 49.55885140791989,
-      "n_samples": 487
-    },
-    "total_revenues_1fy": {
-      "skewness": 6.1856216205563435,
-      "kurtosis": 49.6816774601413,
-      "n_samples": 494
-    },
-    "total_revenues_fy": {
-      "skewness": 6.266694770215998,
-      "kurtosis": 51.53236606614299,
-      "n_samples": 494
-    },
-    "total_revenues_ltm": {
-      "skewness": 6.1597893028223325,
-      "kurtosis": 50.09763874782124,
-      "n_samples": 492
-    },
-    "total_operating_expenses_ltm": {
-      "skewness": 6.842763176034638,
-      "kurtosis": 64.61495544923196,
-      "n_samples": 495
-    },
-    "p_tbv_ltm": {
-      "skewness": 10.171852915941368,
-      "kurtosis": 118.51142878657231,
-      "n_samples": 406
-    },
-    "tbv_fy": {
-      "skewness": 2.5135356152361803,
-      "kurtosis": 46.96542237794444,
-      "n_samples": 498
-    },
-    "tbv_ltm": {
-      "skewness": 3.6187332319654457,
-      "kurtosis": 48.343730490472495,
-      "n_samples": 492
-    },
-    "market_cap_country_r": {
-      "skewness": -0.9576976143560363,
-      "kurtosis": 0.32700157385306605,
-      "n_samples": 500
-    },
-    "tot_return_pct_cagr_3y": {
-      "skewness": 4.470874440419306,
-      "kurtosis": 39.22316038835169,
-      "n_samples": 456
-    },
-    "tot_return_pct_cagr_10y": {
-      "skewness": NaN,
-      "kurtosis": NaN,
-      "n_samples": 344
-    },
-    "total_return_5y": {
-      "skewness": 20.108235570797707,
-      "kurtosis": 406.5084522239701,
-      "n_samples": 421
-    },
-    "total_return_10y": {
-      "skewness": 16.871781183686178,
-      "kurtosis": 297.38040765177095,
-      "n_samples": 343
-    },
-    "net_income_adj_1fy": {
-      "skewness": 5.724891975233931,
-      "kurtosis": 39.328398888068726,
-      "n_samples": 240
-    },
-    "cff_ltm": {
-      "skewness": -0.8752767922395845,
-      "kurtosis": 82.64275689984089,
-      "n_samples": 460
-    },
-    "cfi_ltm": {
-      "skewness": -5.6331120067933735,
-      "kurtosis": 42.766641337650306,
-      "n_samples": 460
-    },
-    "fcf_ltm": {
-      "skewness": 0.9493792812973094,
-      "kurtosis": 32.41763636567078,
-      "n_samples": 461
-    },
-    "cfo_ltm": {
-      "skewness": 4.336516851339534,
-      "kurtosis": 46.339904833842304,
-      "n_samples": 461
-    },
-    "ebitda_fq": {
-      "skewness": 13.614098957134294,
-      "kurtosis": 223.54484434804593,
-      "n_samples": 433
-    },
-    "ebitda_ltm": {
-      "skewness": 7.669386186649716,
-      "kurtosis": 79.67466685833836,
-      "n_samples": 437
-    },
-    "ebitda_fy": {
-      "skewness": 7.859027238221661,
-      "kurtosis": 82.6145224759116,
-      "n_samples": 441
-    },
-    "ebitda_1fy": {
-      "skewness": 8.00239575372253,
-      "kurtosis": 85.31173373134366,
-      "n_samples": 441
-    },
-    "ebitda_adj_ltm": {
-      "skewness": 5.9110683176434895,
-      "kurtosis": 44.212048823604476,
-      "n_samples": 222
-    },
-    "ebitda_adj_fy": {
-      "skewness": 6.873253221333966,
-      "kurtosis": 61.90014884106411,
-      "n_samples": 358
-    },
-    "ebitda_adj_1fy": {
-      "skewness": 5.689282474075932,
-      "kurtosis": 39.777663860556174,
-      "n_samples": 193
-    },
-    "ebit_fq": {
-      "skewness": 16.458001729740843,
-      "kurtosis": 308.55655686147975,
-      "n_samples": 442
-    },
-    "ebit_ltm": {
-      "skewness": 6.316648455825288,
-      "kurtosis": 48.75558149659725,
-      "n_samples": 445
-    },
-    "ebit_fy": {
-      "skewness": 6.653575187750618,
-      "kurtosis": 57.68521888609352,
-      "n_samples": 449
-    },
-    "ebit_1fy": {
-      "skewness": 6.92199110144081,
-      "kurtosis": 64.34601564645538,
-      "n_samples": 449
-    },
-    "ebit_adj_1fy": {
-      "skewness": 4.63510724624239,
-      "kurtosis": 25.770710390796495,
-      "n_samples": 252
-    },
-    "ebit_adj_fy": {
-      "skewness": 5.027685600343301,
-      "kurtosis": 31.55340473837819,
-      "n_samples": 404
-    },
-    "ebit_adj_ltm": {
-      "skewness": 5.092353129921569,
-      "kurtosis": 30.568743646014838,
-      "n_samples": 281
-    },
-    "ebit_est_med_fy1e": {
-      "skewness": 5.418683131529962,
-      "kurtosis": 37.26935559530932,
-      "n_samples": 409
-    },
-    "ebit_est_med_ntm": {
-      "skewness": 5.708216198065643,
-      "kurtosis": 41.719817941074915,
-      "n_samples": 412
-    },
-    "return_on_equity_pct_ltm": {
-      "skewness": -5.87277201791225,
-      "kurtosis": 70.06355430610019,
-      "n_samples": 455
-    },
-    "return_on_equity_pct_fy": {
-      "skewness": -16.939163735096976,
-      "kurtosis": 318.9280310450828,
-      "n_samples": 489
-    },
-    "net_income_is_fy": {
-      "skewness": 6.0093426214247065,
-      "kurtosis": 47.65319268563984,
-      "n_samples": 499
-    },
-    "net_income_is_ltm": {
-      "skewness": 6.785620163463128,
-      "kurtosis": 57.84777035643534,
-      "n_samples": 495
-    },
-    "normalized_net_income_fy": {
-      "skewness": 6.532245977629761,
-      "kurtosis": 53.96435246809046,
-      "n_samples": 499
-    },
-    "normalized_net_income_ltm": {
-      "skewness": 6.903779869826394,
-      "kurtosis": 59.48678641471912,
-      "n_samples": 495
-    },
-    "net_income_adj_fy": {
-      "skewness": 6.055199971563328,
-      "kurtosis": 46.814262061208446,
-      "n_samples": 391
-    },
-    "net_income_adj_ltm": {
-      "skewness": 5.445130655474599,
-      "kurtosis": 36.65081318349472,
-      "n_samples": 269
-    },
-    "net_income_margin_pct_fy": {
-      "skewness": 19.073871809671243,
-      "kurtosis": 383.6516768300344,
-      "n_samples": 486
-    },
-    "net_income_margin_pct_ltm": {
-      "skewness": 11.63295213466782,
-      "kurtosis": 210.262569093303,
-      "n_samples": 478
-    },
-    "volatility_1m": {
-      "skewness": 9.183742436858047,
-      "kurtosis": 135.11027397961522,
-      "n_samples": 494
-    },
-    "volatility_3m": {
-      "skewness": 5.111395948364933,
-      "kurtosis": 53.71923942821043,
-      "n_samples": 496
-    },
-    "volatility_6m": {
-      "skewness": 11.954173641666728,
-      "kurtosis": 199.03158006786626,
-      "n_samples": 496
-    },
-    "volatility_1y": {
-      "skewness": 8.742683458097071,
-      "kurtosis": 122.99954659115362,
-      "n_samples": 497
-    },
-    "volume_shrs": {
-      "skewness": 12.7515282755566,
-      "kurtosis": 210.63819615614344,
-      "n_samples": 498
-    },
-    "short_int_pct": {
-      "skewness": 2.0062645139834467,
-      "kurtosis": 4.717934508439235,
-      "n_samples": 134
-    },
-    "dividend_per_share_ltm": {
-      "skewness": 13.393751429343997,
-      "kurtosis": 190.26353652601662,
-      "n_samples": 336
-    },
-    "div_yield_ind": {
-      "skewness": 10.343127105288287,
-      "kurtosis": 125.47373412957288,
-      "n_samples": 386
-    },
-    "div_yield_ltm": {
-      "skewness": 9.852541188027708,
-      "kurtosis": 132.18292829800842,
-      "n_samples": 336
-    },
-    "total_debt_fy": {
-      "skewness": 11.211608716331163,
-      "kurtosis": 155.75548926119592,
-      "n_samples": 498
-    },
-    "total_equity_fy": {
-      "skewness": 6.94837210164058,
-      "kurtosis": 60.60897656854749,
-      "n_samples": 498
-    },
-    "total_equity_ltm": {
-      "skewness": 7.029156413441166,
-      "kurtosis": 62.29178408348332,
-      "n_samples": 492
-    },
-    "total_debt_ltm": {
-      "skewness": 10.57003943053422,
-      "kurtosis": 132.0112260239008,
-      "n_samples": 492
-    },
-    "total_assets_ltm": {
-      "skewness": 10.628849485845521,
-      "kurtosis": 132.63176304205945,
-      "n_samples": 480
-    },
-    "total_assets_fy": {
-      "skewness": 10.95979638802,
-      "kurtosis": 140.07236466057714,
-      "n_samples": 498
-    },
-    "current_ratio_fy": {
-      "skewness": 20.18392194321494,
-      "kurtosis": 420.34052418786337,
-      "n_samples": 462
-    },
-    "current_ratio_ltm": {
-      "skewness": 19.63133855868858,
-      "kurtosis": 396.88857376911517,
-      "n_samples": 444
-    },
-    "gross_profit_margin_pct_fy": {
-      "skewness": -0.17761583218444865,
-      "kurtosis": 2.6397313845977566,
-      "n_samples": 453
-    },
-    "gross_profit_margin_pct_ltm": {
-      "skewness": 0.20915219996749365,
-      "kurtosis": 1.1803134249081015,
-      "n_samples": 447
-    },
-    "asset_turnover_fy": {
-      "skewness": 2.4273940000183685,
-      "kurtosis": 10.838544086188396,
-      "n_samples": 455
-    },
-    "asset_turnover_ltm": {
-      "skewness": 2.3575292436341053,
-      "kurtosis": 9.528271817249722,
-      "n_samples": 421
-    },
-    "gross_profit_ltm": {
-      "skewness": 7.061050497571227,
-      "kurtosis": 60.19565245625289,
-      "n_samples": 493
-    },
-    "gross_profit_fy": {
-      "skewness": 7.358767401018579,
-      "kurtosis": 64.90129048777091,
-      "n_samples": 495
-    },
-    "eps_norm_est_avg_ntm": {
-      "skewness": 10.062170285628909,
-      "kurtosis": 130.9605822791409,
-      "n_samples": 388
-    },
-    "eps_adj_1fy": {
-      "skewness": 8.871558633961238,
-      "kurtosis": 85.67254201222401,
-      "n_samples": 216
-    },
-    "eps_adj_fy": {
-      "skewness": 13.954960412400297,
-      "kurtosis": 216.22293855118573,
-      "n_samples": 388
-    },
-    "eps_adj_ltm": {
-      "skewness": 12.838987842837604,
-      "kurtosis": 177.04486422423295,
-      "n_samples": 252
-    },
-    "eps_norm_est_avg_fy1e": {
-      "skewness": 9.438153854956433,
-      "kurtosis": 103.74358034723966,
-      "n_samples": 382
-    },
-    "gain_loss_on_sale_of_assets_ltm": {
-      "skewness": 9.076584056730674,
-      "kurtosis": 122.01135319296651,
-      "n_samples": 250
-    },
-    "cost_of_revenues_ltm": {
-      "skewness": 8.13034025219117,
-      "kurtosis": 94.30393087541648,
-      "n_samples": 453
-    },
-    "cash_acquisitions_ltm": {
-      "skewness": 9.789978259595536,
-      "kurtosis": 130.69392218346235,
-      "n_samples": 206
-    },
-    "cash_acquisitions_fy": {
-      "skewness": -7.972613391188441,
-      "kurtosis": 68.86565595766218,
-      "n_samples": 185
-    },
-    "cash_acquisitions_1fy": {
-      "skewness": 13.306460369756408,
-      "kurtosis": 175.733030563456,
-      "n_samples": 182
-    },
-    "inventory_ltm": {
-      "skewness": 5.116670759658202,
-      "kurtosis": 32.96114319764251,
-      "n_samples": 339
-    },
-    "goodwill_fq": {
-      "skewness": 5.66429168551948,
-      "kurtosis": 40.2397856907196,
-      "n_samples": 270
-    },
-    "goodwill_ltm": {
-      "skewness": 5.685545992787415,
-      "kurtosis": 40.54710853360246,
-      "n_samples": 272
-    },
-    "goodwill_fy": {
-      "skewness": 8.548240510981325,
-      "kurtosis": 93.09012542027729,
-      "n_samples": 340
-    },
-    "goodwill_1fy": {
-      "skewness": 8.965994266635342,
-      "kurtosis": 101.0743651337148,
-      "n_samples": 342
-    },
-    "impairment_of_goodwill_fq": {
-      "skewness": -2.4635572289258514,
-      "kurtosis": 4.092720140563289,
-      "n_samples": 9
-    },
-    "impairment_of_goodwill_ltm": {
-      "skewness": -4.2022208411130055,
-      "kurtosis": 19.121751308894403,
-      "n_samples": 38
-    },
-    "impairment_of_goodwill_1fy": {
-      "skewness": -2.6148448477516557,
-      "kurtosis": 6.67969433725108,
-      "n_samples": 42
-    },
-    "impairment_of_goodwill_fy": {
-      "skewness": -4.039096335300167,
-      "kurtosis": 17.125336715864925,
-      "n_samples": 33
-    },
-    "operating_income_ltm": {
-      "skewness": 5.848204520045497,
-      "kurtosis": 40.90014366305227,
-      "n_samples": 495
-    },
-    "asset_writedown_ltm": {
-      "skewness": 7.540104606170191,
-      "kurtosis": 106.80550011575241,
-      "n_samples": 221
-    },
-    "asset_writedown_fy": {
-      "skewness": -6.921980760338089,
-      "kurtosis": 71.79220662982041,
-      "n_samples": 197
-    },
-    "asset_writedown_1fy": {
-      "skewness": -7.137106403395998,
-      "kurtosis": 55.73117650676565,
-      "n_samples": 206
-    },
-    "operating_income_fy": {
-      "skewness": 6.142215808552082,
-      "kurtosis": 47.28753524928471,
-      "n_samples": 499
-    },
-    "capital_expenditure_ltm": {
-      "skewness": -7.715830771914851,
-      "kurtosis": 73.820617035952,
-      "n_samples": 440
-    },
-    "capital_expenditure_1fy": {
-      "skewness": -7.630925333798118,
-      "kurtosis": 78.15139907038068,
-      "n_samples": 466
-    },
-    "capital_expenditure_fy": {
-      "skewness": -7.716055813341654,
-      "kurtosis": 77.77132526852948,
-      "n_samples": 466
-    },
-    "retained_earnings_ltm": {
-      "skewness": 9.2866599791969,
-      "kurtosis": 119.07599684614453,
-      "n_samples": 438
-    },
-    "total_current_assets_ltm": {
-      "skewness": 9.165417474534774,
-      "kurtosis": 93.43423068589321,
-      "n_samples": 480
-    },
-    "total_current_liabilities_ltm": {
-      "skewness": 12.507754459154775,
-      "kurtosis": 175.59911886487205,
-      "n_samples": 480
-    },
-    "r_d_expenses_ltm": {
-      "skewness": 7.612920339126018,
-      "kurtosis": 68.8706712561808,
-      "n_samples": 132
-    },
-    "restructuring_charges_ltm": {
-      "skewness": -8.181833883270276,
-      "kurtosis": 71.23924461476567,
-      "n_samples": 101
-    },
-    "restructuring_charges_fq": {
-      "skewness": -4.487306267981773,
-      "kurtosis": 22.53044771854483,
-      "n_samples": 59
-    },
-    "restructuring_charges_1fy": {
-      "skewness": -3.1958738386067327,
-      "kurtosis": 14.105148260646725,
-      "n_samples": 84
-    },
-    "restructuring_charges_fy": {
-      "skewness": -5.065809514040728,
-      "kurtosis": 33.94123984228116,
-      "n_samples": 95
-    },
-    "interest_expense_total_ltm": {
-      "skewness": -8.242022217340375,
-      "kurtosis": 86.92246815602417,
-      "n_samples": 426
-    },
-    "merger_restructuring_charges_ltm": {
-      "skewness": -8.087888412476241,
-      "kurtosis": 69.72522042803003,
-      "n_samples": 145
-    },
-    "working_capital_ltm": {
-      "skewness": -16.93795571527441,
-      "kurtosis": 322.64893083096683,
-      "n_samples": 480
-    },
-    "other_unusual_items_total_ltm": {
-      "skewness": 8.176393114188594,
-      "kurtosis": 112.55616181006921,
-      "n_samples": 343
-    },
-    "interest_income_on_investments_ltm": {
-      "skewness": 4.156592027969379,
-      "kurtosis": 16.31583278338195,
-      "n_samples": 24
-    },
-    "buyback_yield_ltm": {
-      "skewness": -2.596187126692692,
-      "kurtosis": 12.125801583690441,
-      "n_samples": 312
-    },
-    "return_on_assets_roa_pct_ltm": {
-      "skewness": 13.073647641018862,
-      "kurtosis": 233.53436571213516,
-      "n_samples": 460
-    },
-    "return_on_assets_roa_pct_fy": {
-      "skewness": -0.42883622056058013,
-      "kurtosis": 15.667600881942956,
-      "n_samples": 497
-    },
-    "net_income_is_1fy": {
-      "skewness": 7.357000239835084,
-      "kurtosis": 74.18814907632165,
-      "n_samples": 499
-    },
-    "normalized_net_income_1fy": {
-      "skewness": 6.681076494976392,
-      "kurtosis": 59.33064673329871,
-      "n_samples": 499
-    },
-    "p_e_1fyltm": {
-      "skewness": 4.609638778539611,
-      "kurtosis": 26.751337057313343,
-      "n_samples": 446
-    },
-    "cff_fy": {
-      "skewness": -14.358214427938313,
-      "kurtosis": 274.93590995086845,
-      "n_samples": 496
-    },
-    "cff_1fy": {
-      "skewness": 2.0151114273400186,
-      "kurtosis": 37.21326065665759,
-      "n_samples": 496
-    },
-    "cfi_fy": {
-      "skewness": -4.676424696763392,
-      "kurtosis": 44.84280646548281,
-      "n_samples": 496
-    },
-    "cfi_1fy": {
-      "skewness": 13.188461026301391,
-      "kurtosis": 270.11244785490953,
-      "n_samples": 496
-    },
-    "cfo_fy": {
-      "skewness": 2.3738769079523716,
-      "kurtosis": 45.40126601336253,
-      "n_samples": 497
-    },
-    "cfo_1fy": {
-      "skewness": 6.317614984229481,
-      "kurtosis": 58.04185391931411,
-      "n_samples": 498
-    },
-    "div_yield_1fyind": {
-      "skewness": 2.884637663308715,
-      "kurtosis": 14.945006772071633,
-      "n_samples": 384
-    },
-    "fcf_fy": {
-      "skewness": -2.2758409071017134,
-      "kurtosis": 46.721579284502575,
-      "n_samples": 497
-    },
-    "capital_expenditure_fq": {
-      "skewness": -7.993828662116325,
-      "kurtosis": 77.55739906525717,
-      "n_samples": 406
-    },
-    "capital_expenditure_5yavgfq": {
-      "skewness": -8.744531424521803,
-      "kurtosis": 93.58867784146099,
-      "n_samples": 423
-    },
-    "cff_fq": {
-      "skewness": -9.619430319854816,
-      "kurtosis": 124.70769340643434,
-      "n_samples": 436
-    },
-    "cfi_fq": {
-      "skewness": -9.223053270742227,
-      "kurtosis": 100.80671800134367,
-      "n_samples": 436
-    },
-    "cfo_fq": {
-      "skewness": 6.173455596203295,
-      "kurtosis": 59.57276171042162,
-      "n_samples": 437
-    },
-    "fcf_fq": {
-      "skewness": 6.632607832304765,
-      "kurtosis": 77.82387288192454,
-      "n_samples": 437
-    },
-    "total_revenues_5yavgfq": {
-      "skewness": -10.66750029856064,
-      "kurtosis": 205.88629553308326,
-      "n_samples": 448
-    },
-    "ebitda_5yavgfq": {
-      "skewness": 7.417740969125399,
-      "kurtosis": 66.8984434927218,
-      "n_samples": 397
-    },
-    "ebit_5yavgfq": {
-      "skewness": 6.354858810028417,
-      "kurtosis": 51.77260323270095,
-      "n_samples": 402
-    },
-    "p_e_5yavgltm": {
-      "skewness": 4.6759754285036905,
-      "kurtosis": 33.99961307644524,
-      "n_samples": 394
-    },
-    "fcf_5yavgfq": {
-      "skewness": 20.09021701399317,
-      "kurtosis": 411.3925272308774,
-      "n_samples": 438
-    },
-    "cash_acquisitions_fq": {
-      "skewness": 11.412436803057208,
-      "kurtosis": 129.89867159804214,
-      "n_samples": 138
-    },
-    "cash_acquisitions_5yavgfq": {
-      "skewness": -2.2924719130511333,
-      "kurtosis": 100.37527768216154,
-      "n_samples": 307
-    },
-    "asset_writedown_fq": {
-      "skewness": -0.6787847800930018,
-      "kurtosis": 12.087792396709093,
-      "n_samples": 121
-    },
-    "asset_writedown_5yavgfq": {
-      "skewness": -6.195381844126584,
-      "kurtosis": 46.462952615481214,
-      "n_samples": 286
-    },
-    "impairment_of_goodwill_5yavgfq": {
-      "skewness": -10.530240269685113,
-      "kurtosis": 113.96182527241507,
-      "n_samples": 131
-    },
-    "operating_income_fq": {
-      "skewness": 15.814838056062355,
-      "kurtosis": 298.35174627366297,
-      "n_samples": 492
-    },
-    "operating_income_5yavgfq": {
-      "skewness": -19.32200990120676,
-      "kurtosis": 397.49235793972605,
-      "n_samples": 452
-    },
-    "p_b_ltm": {
-      "skewness": 7.734085475168072,
-      "kurtosis": 85.72660264119399,
-      "n_samples": 485
-    },
-    "p_b_1fy": {
-      "skewness": 13.325550937821678,
-      "kurtosis": 188.92564620786843,
-      "n_samples": 470
-    },
-    "p_b_5yavg": {
-      "skewness": 7.412093737518637,
-      "kurtosis": 74.08575120616206,
-      "n_samples": 407
-    },
-    "cash_and_equivalents_ltm": {
-      "skewness": 13.764741013496476,
-      "kurtosis": 204.00336467605084,
-      "n_samples": 479
-    },
-    "cash_and_equivalents_fq": {
-      "skewness": 13.75051799395088,
-      "kurtosis": 203.57593993546251,
-      "n_samples": 478
-    },
-    "cash_and_equivalents_fy": {
-      "skewness": 15.39953116117091,
-      "kurtosis": 244.5670079669757,
-      "n_samples": 497
-    },
-    "cash_and_equivalents_5yavgfq": {
-      "skewness": 12.064273220468191,
-      "kurtosis": 149.71254396815763,
-      "n_samples": 435
-    },
-    "inventory_fq": {
-      "skewness": 5.115621143311585,
-      "kurtosis": 32.950900406211076,
-      "n_samples": 339
-    },
-    "inventory_fy": {
-      "skewness": 5.320026027224,
-      "kurtosis": 36.707280395107375,
-      "n_samples": 368
-    },
-    "goodwill_5yavgfq": {
-      "skewness": 8.967246074006512,
-      "kurtosis": 96.07717239663451,
-      "n_samples": 332
-    },
-    "inventory_5yavgfq": {
-      "skewness": 4.680874981593792,
-      "kurtosis": 29.347996813637486,
-      "n_samples": 343
-    },
-    "avg_employees_ltm": {
-      "skewness": 6.035832673412657,
-      "kurtosis": 38.68666900229833,
-      "n_samples": 61
-    },
-    "avg_employees_fy": {
-      "skewness": 5.1188606091267355,
-      "kurtosis": 32.38953907981591,
-      "n_samples": 123
-    },
-    "avg_employees_5yavgfy": {
-      "skewness": 4.201486642993957,
-      "kurtosis": 19.271716400675224,
-      "n_samples": 117
-    },
-    "retained_earnings_fq": {
-      "skewness": 9.286734699024427,
-      "kurtosis": 119.07760795970361,
-      "n_samples": 438
-    },
-    "retained_earnings_fy": {
-      "skewness": 9.309097711732614,
-      "kurtosis": 121.33403294127123,
-      "n_samples": 483
-    },
-    "retained_earnings_5yavgfq": {
-      "skewness": 9.159035027670544,
-      "kurtosis": 116.04680980049172,
-      "n_samples": 430
-    },
-    "working_capital_fq": {
-      "skewness": -16.920116155986616,
-      "kurtosis": 321.9669283113489,
-      "n_samples": 479
-    },
-    "working_capital_fy": {
-      "skewness": -13.476321678693314,
-      "kurtosis": 205.5344657023885,
-      "n_samples": 498
-    },
-    "working_capital_5yavgfy": {
-      "skewness": -14.02120627108855,
-      "kurtosis": 219.11291024322887,
-      "n_samples": 456
-    },
-    "div_yield_ttm": {
-      "skewness": 8.011103571190958,
-      "kurtosis": 70.27144495710978,
-      "n_samples": 362
-    },
-    "div_yield_ntm": {
-      "skewness": 19.68249317764963,
-      "kurtosis": 386.2544807340678,
-      "n_samples": 393
-    },
-    "div_yield_5yavgltm": {
-      "skewness": 2.6674320674779035,
-      "kurtosis": 12.570924685753694,
-      "n_samples": 347
-    },
-    "gross_intangible_assets_ltm": {
-      "skewness": 9.152439920458903,
-      "kurtosis": 93.69760904957108,
-      "n_samples": 148
-    },
-    "gross_intangible_assets_fy": {
-      "skewness": 10.492534950421048,
-      "kurtosis": 129.06347260970412,
-      "n_samples": 344
-    },
-    "gross_intangible_assets_5yavgfq": {
-      "skewness": 10.96950025043249,
-      "kurtosis": 138.2480065041306,
-      "n_samples": 323
-    },
-    "restructuring_charges_5yavgfq": {
-      "skewness": -7.980074419597284,
-      "kurtosis": 66.55429356410573,
-      "n_samples": 170
-    },
-    "merger_restructuring_charges_fq": {
-      "skewness": -4.193655374467804,
-      "kurtosis": 19.084389013522895,
-      "n_samples": 84
-    },
-    "merger_restructuring_charges_fy": {
-      "skewness": -10.021537124503737,
-      "kurtosis": 105.09217703985718,
-      "n_samples": 132
-    },
-    "merger_restructuring_charges_5yavgfq": {
-      "skewness": -8.45132208206966,
-      "kurtosis": 75.98591508759594,
-      "n_samples": 210
-    },
-    "normalized_net_income_fq": {
-      "skewness": 7.917639120954258,
-      "kurtosis": 84.82836750388653,
-      "n_samples": 492
-    },
-    "normalized_net_income_5yavgfq": {
-      "skewness": -19.617001155014147,
-      "kurtosis": 405.20305638492874,
-      "n_samples": 452
-    },
-    "net_income_adj_fq": {
-      "skewness": 5.271335314264314,
-      "kurtosis": 33.08345703564042,
-      "n_samples": 244
-    },
-    "net_income_adj_5yavgfq": {
-      "skewness": 5.411093575695462,
-      "kurtosis": 34.17999894765168,
-      "n_samples": 249
-    },
-    "net_income_is_fq": {
-      "skewness": 8.33411628915362,
-      "kurtosis": 98.26176677195744,
-      "n_samples": 492
-    },
-    "net_income_is_5yavgfq": {
-      "skewness": -20.10629717389099,
-      "kurtosis": 417.7062508651703,
-      "n_samples": 452
-    },
-    "net_income_is_5yavgltm": {
-      "skewness": 10.543320544126074,
-      "kurtosis": 148.60410118586074,
-      "n_samples": 455
-    },
-    "normalized_net_income_5yavgltm": {
-      "skewness": 8.727713875589352,
-      "kurtosis": 98.5387594944526,
-      "n_samples": 455
-    },
-    "ebitda_5yavgltm": {
-      "skewness": 7.809622487905763,
-      "kurtosis": 81.23127647292314,
-      "n_samples": 397
-    },
-    "ebit_5yavgltm": {
-      "skewness": 6.902753906733344,
-      "kurtosis": 61.42834055344025,
-      "n_samples": 405
-    },
-    "total_revenues_5yavgltm": {
-      "skewness": 5.840548961226129,
-      "kurtosis": 41.647011610362,
-      "n_samples": 452
-    },
-    "revenues_est_yoy_pct_fy1e": {
-      "skewness": 19.52554858207599,
-      "kurtosis": 382.96503955392376,
-      "n_samples": 396
-    },
-    "p_e": {
-      "skewness": 4.654939453220243,
-      "kurtosis": 26.73480286261764,
-      "n_samples": 400
-    },
-    "revenue": {
-      "skewness": 6.1597893028223325,
-      "kurtosis": 50.09763874782124,
-      "n_samples": 492
-    },
-    "ebitda": {
-      "skewness": 7.669386186649716,
-      "kurtosis": 79.67466685833836,
-      "n_samples": 437
-    },
-    "net_income": {
-      "skewness": 6.785620163463128,
-      "kurtosis": 57.84777035643534,
-      "n_samples": 495
-    },
-    "p_b": {
-      "skewness": 7.734085475168072,
-      "kurtosis": 85.72660264119399,
-      "n_samples": 485
-    },
-    "gross_margin": {
-      "skewness": 0.20915219996749365,
-      "kurtosis": 1.1803134249081015,
-      "n_samples": 447
-    }
-  },
+  "distribution_analysis": {},
   "outlier_detection": {
     "market_cap": {
       "count": 53,
@@ -4530,13 +3469,13 @@
     },
     "enterprise_value": {
       "statistic": 0.4088920908121012,
-      "p_value": 9.100791561278477e-36,
+      "p_value": 9.100791561278346e-36,
       "is_normal": false,
       "sample_size": 449
     },
     "last_price": {
       "statistic": 0.10599862478257382,
-      "p_value": 4.022903218490594e-43,
+      "p_value": 4.0229032184905954e-43,
       "is_normal": false,
       "sample_size": 500
     },
@@ -4608,13 +3547,13 @@
     },
     "altman_z_score_ltm": {
       "statistic": 0.31387931380438694,
-      "p_value": 1.663532729288575e-32,
+      "p_value": 1.6635327292885744e-32,
       "is_normal": false,
       "sample_size": 313
     },
     "beta_1y": {
       "statistic": 0.8814110019901169,
-      "p_value": 1.1583746594824804e-17,
+      "p_value": 1.1583746594824801e-17,
       "is_normal": false,
       "sample_size": 430
     },
@@ -4674,7 +3613,7 @@
     },
     "total_revenues_fq": {
       "statistic": 0.39007046870781414,
-      "p_value": 2.1316083297546142e-37,
+      "p_value": 2.1316083297546752e-37,
       "is_normal": false,
       "sample_size": 487
     },
@@ -4698,13 +3637,13 @@
     },
     "total_operating_expenses_ltm": {
       "statistic": 0.375480218682687,
-      "p_value": 5.788856385781088e-38,
+      "p_value": 5.788856385781004e-38,
       "is_normal": false,
       "sample_size": 495
     },
     "p_tbv_ltm": {
       "statistic": 0.22303328861702643,
-      "p_value": 7.440452156781489e-38,
+      "p_value": 7.440452156781382e-38,
       "is_normal": false,
       "sample_size": 406
     },
@@ -4740,13 +3679,13 @@
     },
     "total_return_5y": {
       "statistic": 0.04096888325514636,
-      "p_value": 2.6899092974016227e-41,
+      "p_value": 2.6899092974015457e-41,
       "is_normal": false,
       "sample_size": 421
     },
     "total_return_10y": {
       "statistic": 0.06892125053592324,
-      "p_value": 1.0811162809154474e-37,
+      "p_value": 1.081116280915432e-37,
       "is_normal": false,
       "sample_size": 343
     },
@@ -4794,7 +3733,7 @@
     },
     "ebitda_fy": {
       "statistic": 0.3477144406180138,
-      "p_value": 8.668641612332407e-37,
+      "p_value": 8.668641612332158e-37,
       "is_normal": false,
       "sample_size": 441
     },
@@ -4812,13 +3751,13 @@
     },
     "ebitda_adj_fy": {
       "statistic": 0.37118345719543233,
-      "p_value": 2.6930741084888322e-33,
+      "p_value": 2.6930741084888712e-33,
       "is_normal": false,
       "sample_size": 358
     },
     "ebitda_adj_1fy": {
       "statistic": 0.39958662384180865,
-      "p_value": 5.758327509518823e-25,
+      "p_value": 5.758327509518699e-25,
       "is_normal": false,
       "sample_size": 193
     },
@@ -4842,7 +3781,7 @@
     },
     "ebit_1fy": {
       "statistic": 0.39788249234117967,
-      "p_value": 5.2341962117473904e-36,
+      "p_value": 5.234196211747241e-36,
       "is_normal": false,
       "sample_size": 449
     },
@@ -4854,13 +3793,13 @@
     },
     "ebit_adj_fy": {
       "statistic": 0.4369321115940853,
-      "p_value": 1.2732718447673498e-33,
+      "p_value": 1.273271844767386e-33,
       "is_normal": false,
       "sample_size": 404
     },
     "ebit_adj_ltm": {
       "statistic": 0.42783712346922154,
-      "p_value": 6.023521113235548e-29,
+      "p_value": 6.02352111323542e-29,
       "is_normal": false,
       "sample_size": 281
     },
@@ -4872,7 +3811,7 @@
     },
     "ebit_est_med_ntm": {
       "statistic": 0.4167245031588386,
-      "p_value": 2.407359998950492e-34,
+      "p_value": 2.4073599989504917e-34,
       "is_normal": false,
       "sample_size": 412
     },
@@ -4884,7 +3823,7 @@
     },
     "return_on_equity_pct_fy": {
       "statistic": 0.13697844412100735,
-      "p_value": 3.002938237319368e-42,
+      "p_value": 3.002938237319453e-42,
       "is_normal": false,
       "sample_size": 489
     },
@@ -4896,7 +3835,7 @@
     },
     "net_income_is_ltm": {
       "statistic": 0.3715236277991909,
-      "p_value": 4.758864403133613e-38,
+      "p_value": 4.758864403133544e-38,
       "is_normal": false,
       "sample_size": 495
     },
@@ -4908,13 +3847,13 @@
     },
     "normalized_net_income_ltm": {
       "statistic": 0.36084320063288333,
-      "p_value": 2.818212685242893e-38,
+      "p_value": 2.818212685242852e-38,
       "is_normal": false,
       "sample_size": 495
     },
     "net_income_adj_fy": {
       "statistic": 0.40411321835220837,
-      "p_value": 7.214402644884698e-34,
+      "p_value": 7.214402644884492e-34,
       "is_normal": false,
       "sample_size": 391
     },
@@ -4980,13 +3919,13 @@
     },
     "div_yield_ind": {
       "statistic": 0.32042155788832205,
-      "p_value": 2.3765231301296963e-35,
+      "p_value": 2.3765231301296624e-35,
       "is_normal": false,
       "sample_size": 386
     },
     "div_yield_ltm": {
       "statistic": 0.411121550981961,
-      "p_value": 1.2679671829614253e-31,
+      "p_value": 1.2679671829614256e-31,
       "is_normal": false,
       "sample_size": 336
     },
@@ -5004,7 +3943,7 @@
     },
     "total_equity_ltm": {
       "statistic": 0.35371420437021606,
-      "p_value": 2.4767554355400444e-38,
+      "p_value": 2.476755435540044e-38,
       "is_normal": false,
       "sample_size": 492
     },
@@ -5034,7 +3973,7 @@
     },
     "current_ratio_ltm": {
       "statistic": 0.03982408536888471,
-      "p_value": 3.532151207667148e-42,
+      "p_value": 3.532151207667198e-42,
       "is_normal": false,
       "sample_size": 444
     },
@@ -5046,7 +3985,7 @@
     },
     "gross_profit_margin_pct_ltm": {
       "statistic": 0.9518581068827593,
-      "p_value": 6.862560989105609e-11,
+      "p_value": 6.862560989105659e-11,
       "is_normal": false,
       "sample_size": 447
     },
@@ -5058,13 +3997,13 @@
     },
     "asset_turnover_ltm": {
       "statistic": 0.814788874459628,
-      "p_value": 1.1939764743162084e-21,
+      "p_value": 1.1939764743161828e-21,
       "is_normal": false,
       "sample_size": 421
     },
     "gross_profit_ltm": {
       "statistic": 0.333828634667398,
-      "p_value": 8.935222178092277e-39,
+      "p_value": 8.935222178092533e-39,
       "is_normal": false,
       "sample_size": 493
     },
@@ -5076,7 +4015,7 @@
     },
     "eps_norm_est_avg_ntm": {
       "statistic": 0.3068840222650392,
-      "p_value": 1.1136591671331369e-35,
+      "p_value": 1.1136591671331051e-35,
       "is_normal": false,
       "sample_size": 388
     },
@@ -5088,13 +4027,13 @@
     },
     "eps_adj_fy": {
       "statistic": 0.14991685469936533,
-      "p_value": 2.31427210732949e-38,
+      "p_value": 2.314272107329457e-38,
       "is_normal": false,
       "sample_size": 388
     },
     "eps_adj_ltm": {
       "statistic": 0.14641157073762912,
-      "p_value": 3.442804526504743e-32,
+      "p_value": 3.4428045265047926e-32,
       "is_normal": false,
       "sample_size": 252
     },
@@ -5118,7 +4057,7 @@
     },
     "cash_acquisitions_ltm": {
       "statistic": 0.2277327376017948,
-      "p_value": 1.969695565828475e-28,
+      "p_value": 1.9696955658284466e-28,
       "is_normal": false,
       "sample_size": 206
     },
@@ -5136,7 +4075,7 @@
     },
     "inventory_ltm": {
       "statistic": 0.4509725087530053,
-      "p_value": 6.624796667741909e-31,
+      "p_value": 6.62479666774191e-31,
       "is_normal": false,
       "sample_size": 339
     },
@@ -5166,37 +4105,37 @@
     },
     "impairment_of_goodwill_fq": {
       "statistic": 0.43450555565770166,
-      "p_value": 1.0826558759563416e-06,
+      "p_value": 1.0826558759563457e-06,
       "is_normal": false,
       "sample_size": 9
     },
     "impairment_of_goodwill_ltm": {
       "statistic": 0.4560633765852149,
-      "p_value": 1.0491842953629095e-10,
+      "p_value": 1.0491842953629171e-10,
       "is_normal": false,
       "sample_size": 38
     },
     "impairment_of_goodwill_1fy": {
       "statistic": 0.5669093366634819,
-      "p_value": 6.235768713764569e-10,
+      "p_value": 6.235768713764523e-10,
       "is_normal": false,
       "sample_size": 42
     },
     "impairment_of_goodwill_fy": {
       "statistic": 0.4586478139544543,
-      "p_value": 6.531282334734665e-10,
+      "p_value": 6.531282334734689e-10,
       "is_normal": false,
       "sample_size": 33
     },
     "operating_income_ltm": {
       "statistic": 0.38294321328316183,
-      "p_value": 8.400263708617652e-38,
+      "p_value": 8.400263708617412e-38,
       "is_normal": false,
       "sample_size": 495
     },
     "asset_writedown_ltm": {
       "statistic": 0.28394232655575313,
-      "p_value": 1.8419082103727544e-28,
+      "p_value": 1.8419082103727548e-28,
       "is_normal": false,
       "sample_size": 221
     },
@@ -5208,7 +4147,7 @@
     },
     "asset_writedown_1fy": {
       "statistic": 0.24989419161711657,
-      "p_value": 4.134987015291492e-28,
+      "p_value": 4.1349870152914035e-28,
       "is_normal": false,
       "sample_size": 206
     },
@@ -5286,31 +4225,31 @@
     },
     "interest_expense_total_ltm": {
       "statistic": 0.3235377757439627,
-      "p_value": 9.507232743063677e-37,
+      "p_value": 9.507232743063408e-37,
       "is_normal": false,
       "sample_size": 426
     },
     "merger_restructuring_charges_ltm": {
       "statistic": 0.19388313455594963,
-      "p_value": 8.850177771307823e-25,
+      "p_value": 8.850177771307633e-25,
       "is_normal": false,
       "sample_size": 145
     },
     "working_capital_ltm": {
       "statistic": 0.10095496098867385,
-      "p_value": 1.5882673735062498e-42,
+      "p_value": 1.58826737350625e-42,
       "is_normal": false,
       "sample_size": 480
     },
     "other_unusual_items_total_ltm": {
       "statistic": 0.34173252330182724,
-      "p_value": 2.899877200131942e-33,
+      "p_value": 2.8998772001318587e-33,
       "is_normal": false,
       "sample_size": 343
     },
     "interest_income_on_investments_ltm": {
       "statistic": 0.35144804730170687,
-      "p_value": 2.6854653071060865e-09,
+      "p_value": 2.6854653071061056e-09,
       "is_normal": false,
       "sample_size": 24
     },
@@ -5334,7 +4273,7 @@
     },
     "net_income_is_1fy": {
       "statistic": 0.3797498928704922,
-      "p_value": 5.386078171158667e-38,
+      "p_value": 5.386078171158669e-38,
       "is_normal": false,
       "sample_size": 499
     },
@@ -5346,7 +4285,7 @@
     },
     "p_e_1fyltm": {
       "statistic": 0.4926802542426393,
-      "p_value": 1.0279399160122198e-33,
+      "p_value": 1.02793991601222e-33,
       "is_normal": false,
       "sample_size": 446
     },
@@ -5388,7 +4327,7 @@
     },
     "div_yield_1fyind": {
       "statistic": 0.7634480823436789,
-      "p_value": 4.1126716346769615e-23,
+      "p_value": 4.112671634676961e-23,
       "is_normal": false,
       "sample_size": 384
     },
@@ -5400,7 +4339,7 @@
     },
     "capital_expenditure_fq": {
       "statistic": 0.2790824864709385,
-      "p_value": 7.28359726385126e-37,
+      "p_value": 7.2835972638511566e-37,
       "is_normal": false,
       "sample_size": 406
     },
@@ -5412,13 +4351,13 @@
     },
     "cff_fq": {
       "statistic": 0.2425880550877073,
-      "p_value": 1.3129629306964955e-38,
+      "p_value": 1.312962930696533e-38,
       "is_normal": false,
       "sample_size": 436
     },
     "cfi_fq": {
       "statistic": 0.24916531503408645,
-      "p_value": 1.721690959147128e-38,
+      "p_value": 1.721690959147153e-38,
       "is_normal": false,
       "sample_size": 436
     },
@@ -5448,7 +4387,7 @@
     },
     "ebit_5yavgfq": {
       "statistic": 0.3750652783262758,
-      "p_value": 7.217138125954301e-35,
+      "p_value": 7.217138125954197e-35,
       "is_normal": false,
       "sample_size": 402
     },
@@ -5472,13 +4411,13 @@
     },
     "cash_acquisitions_5yavgfq": {
       "statistic": 0.21375337621193935,
-      "p_value": 6.556986146394807e-34,
+      "p_value": 6.5569861463947135e-34,
       "is_normal": false,
       "sample_size": 307
     },
     "asset_writedown_fq": {
       "statistic": 0.6460716216467903,
-      "p_value": 1.1543408948149801e-15,
+      "p_value": 1.154340894814972e-15,
       "is_normal": false,
       "sample_size": 121
     },
@@ -5490,7 +4429,7 @@
     },
     "impairment_of_goodwill_5yavgfq": {
       "statistic": 0.14898295791643001,
-      "p_value": 3.266697942231657e-24,
+      "p_value": 3.2666979422316578e-24,
       "is_normal": false,
       "sample_size": 131
     },
@@ -5502,13 +4441,13 @@
     },
     "operating_income_5yavgfq": {
       "statistic": 0.08628469675913886,
-      "p_value": 9.054309728210188e-42,
+      "p_value": 9.054309728210318e-42,
       "is_normal": false,
       "sample_size": 452
     },
     "p_b_ltm": {
       "statistic": 0.41523584784123113,
-      "p_value": 8.933010146695084e-37,
+      "p_value": 8.933010146695083e-37,
       "is_normal": false,
       "sample_size": 485
     },
@@ -5520,13 +4459,13 @@
     },
     "p_b_5yavg": {
       "statistic": 0.3808515735865825,
-      "p_value": 6.282495911820438e-35,
+      "p_value": 6.282495911820259e-35,
       "is_normal": false,
       "sample_size": 407
     },
     "cash_and_equivalents_ltm": {
       "statistic": 0.11409786326446458,
-      "p_value": 2.7863238600534293e-42,
+      "p_value": 2.7863238600533496e-42,
       "is_normal": false,
       "sample_size": 479
     },
@@ -5544,7 +4483,7 @@
     },
     "cash_and_equivalents_5yavgfq": {
       "statistic": 0.09360688151897256,
-      "p_value": 4.900701914260538e-41,
+      "p_value": 4.900701914260467e-41,
       "is_normal": false,
       "sample_size": 435
     },
@@ -5556,25 +4495,25 @@
     },
     "inventory_fy": {
       "statistic": 0.44592274536640897,
-      "p_value": 4.0041157190997303e-32,
+      "p_value": 4.004115719099731e-32,
       "is_normal": false,
       "sample_size": 368
     },
     "goodwill_5yavgfq": {
       "statistic": 0.23420662723946095,
-      "p_value": 1.0834105926862706e-34,
+      "p_value": 1.083410592686286e-34,
       "is_normal": false,
       "sample_size": 332
     },
     "inventory_5yavgfq": {
       "statistic": 0.4729756715406843,
-      "p_value": 1.4128698689361197e-30,
+      "p_value": 1.4128698689360792e-30,
       "is_normal": false,
       "sample_size": 343
     },
     "avg_employees_ltm": {
       "statistic": 0.3043165525343976,
-      "p_value": 1.8268394328070562e-15,
+      "p_value": 1.826839432807043e-15,
       "is_normal": false,
       "sample_size": 61
     },
@@ -5598,19 +4537,19 @@
     },
     "retained_earnings_fy": {
       "statistic": 0.31911372830527385,
-      "p_value": 9.39456450716904e-39,
+      "p_value": 9.394564507168904e-39,
       "is_normal": false,
       "sample_size": 483
     },
     "retained_earnings_5yavgfq": {
       "statistic": 0.3218756175741344,
-      "p_value": 6.3889578351876714e-37,
+      "p_value": 6.388957835187672e-37,
       "is_normal": false,
       "sample_size": 430
     },
     "working_capital_fq": {
       "statistic": 0.10110747822100485,
-      "p_value": 1.7288149545765813e-42,
+      "p_value": 1.7288149545765325e-42,
       "is_normal": false,
       "sample_size": 479
     },
@@ -5640,7 +4579,7 @@
     },
     "div_yield_5yavgltm": {
       "statistic": 0.7889600495494562,
-      "p_value": 6.923625454877235e-21,
+      "p_value": 6.923625454877234e-21,
       "is_normal": false,
       "sample_size": 347
     },
@@ -5682,7 +4621,7 @@
     },
     "merger_restructuring_charges_5yavgfq": {
       "statistic": 0.21245542686982433,
-      "p_value": 6.876221770422472e-29,
+      "p_value": 6.876221770422569e-29,
       "is_normal": false,
       "sample_size": 210
     },
@@ -5694,13 +4633,13 @@
     },
     "normalized_net_income_5yavgfq": {
       "statistic": 0.07719698648903561,
-      "p_value": 6.565171369431102e-42,
+      "p_value": 6.565171369431197e-42,
       "is_normal": false,
       "sample_size": 452
     },
     "net_income_adj_fq": {
       "statistic": 0.4327502504994172,
-      "p_value": 4.1937396587043224e-27,
+      "p_value": 4.193739658704413e-27,
       "is_normal": false,
       "sample_size": 244
     },
@@ -5718,7 +4657,7 @@
     },
     "net_income_is_5yavgfq": {
       "statistic": 0.06933205435503909,
-      "p_value": 4.981200730266308e-42,
+      "p_value": 4.981200730266451e-42,
       "is_normal": false,
       "sample_size": 452
     },
@@ -5742,13 +4681,13 @@
     },
     "ebit_5yavgltm": {
       "statistic": 0.353290277946986,
-      "p_value": 2.0483910960833485e-35,
+      "p_value": 2.048391096083319e-35,
       "is_normal": false,
       "sample_size": 405
     },
     "total_revenues_5yavgltm": {
       "statistic": 0.3820461387576697,
-      "p_value": 1.905882826416492e-36,
+      "p_value": 1.905882826416519e-36,
       "is_normal": false,
       "sample_size": 452
     },
@@ -5778,19 +4717,19 @@
     },
     "net_income": {
       "statistic": 0.3715236277991909,
-      "p_value": 4.758864403133613e-38,
+      "p_value": 4.758864403133544e-38,
       "is_normal": false,
       "sample_size": 495
     },
     "p_b": {
       "statistic": 0.41523584784123113,
-      "p_value": 8.933010146695084e-37,
+      "p_value": 8.933010146695083e-37,
       "is_normal": false,
       "sample_size": 485
     },
     "gross_margin": {
       "statistic": 0.9518581068827593,
-      "p_value": 6.862560989105609e-11,
+      "p_value": 6.862560989105659e-11,
       "is_normal": false,
       "sample_size": 447
     }
@@ -194626,14 +193565,14 @@
     },
     "altman_z_score_fq": {
       "statistic": 1.6559070209216775,
-      "p_value": 0.09049085215967909,
+      "p_value": 0.09049085215967564,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "altman_z_score_ltm": {
       "statistic": 2.1071782704725557,
-      "p_value": 0.02377548132009539,
+      "p_value": 0.023775481320094383,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -194647,7 +193586,7 @@
     },
     "beta_2y": {
       "statistic": 5.652364952830092,
-      "p_value": 5.954635502765956e-08,
+      "p_value": 5.954635502765957e-08,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -194696,7 +193635,7 @@
     },
     "sell_ratings": {
       "statistic": 1.0828110083242521,
-      "p_value": 0.37397254387979323,
+      "p_value": 0.3739725438797933,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194724,14 +193663,14 @@
     },
     "total_revenues_fy": {
       "statistic": 2.2275882026963267,
-      "p_value": 0.015326337051554976,
+      "p_value": 0.015326337051554974,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_ltm": {
       "statistic": 2.2259771380782807,
-      "p_value": 0.015413395100623478,
+      "p_value": 0.01541339510062348,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -194773,35 +193712,28 @@
     },
     "tot_return_pct_cagr_3y": {
       "statistic": 1.4728862531617284,
-      "p_value": 0.14654367957930733,
-      "significant": false,
-      "n_groups": 11,
-      "method": "anova"
-    },
-    "tot_return_pct_cagr_10y": {
-      "statistic": NaN,
-      "p_value": NaN,
+      "p_value": 0.14654367957930736,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_return_5y": {
       "statistic": 0.4135425121499895,
-      "p_value": 0.9400973779213008,
+      "p_value": 0.9400973779213009,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_return_10y": {
       "statistic": 0.4745725017317779,
-      "p_value": 0.906086104305655,
+      "p_value": 0.9060861043056603,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_1fy": {
       "statistic": 1.283891401733524,
-      "p_value": 0.2404480399251942,
+      "p_value": 0.2404480399251944,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194815,14 +193747,14 @@
     },
     "cfi_ltm": {
       "statistic": 1.385874214365827,
-      "p_value": 0.18373471573102315,
+      "p_value": 0.18373471573102312,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_ltm": {
       "statistic": 0.8853524580462061,
-      "p_value": 0.5468558976883295,
+      "p_value": 0.5468558976883294,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194843,7 +193775,7 @@
     },
     "ebitda_ltm": {
       "statistic": 2.39477040883402,
-      "p_value": 0.008993919586227531,
+      "p_value": 0.008993919586227533,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -194864,7 +193796,7 @@
     },
     "ebitda_adj_ltm": {
       "statistic": 1.795139397732342,
-      "p_value": 0.06302002063181632,
+      "p_value": 0.06302002063181619,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194878,14 +193810,14 @@
     },
     "ebitda_adj_1fy": {
       "statistic": 2.1536933679305217,
-      "p_value": 0.02256323443642113,
+      "p_value": 0.022563234436420557,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "ebit_fq": {
       "statistic": 1.449986549576724,
-      "p_value": 0.15580916434351522,
+      "p_value": 0.1558091643435152,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194913,7 +193845,7 @@
     },
     "ebit_adj_1fy": {
       "statistic": 2.1876507236752487,
-      "p_value": 0.01920126331588332,
+      "p_value": 0.019201263315883357,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -194927,7 +193859,7 @@
     },
     "ebit_adj_ltm": {
       "statistic": 1.856385908587487,
-      "p_value": 0.051411079508005095,
+      "p_value": 0.05141107950800697,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194969,7 +193901,7 @@
     },
     "net_income_is_ltm": {
       "statistic": 1.6486055073611323,
-      "p_value": 0.09017764091354517,
+      "p_value": 0.09017764091354516,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194997,7 +193929,7 @@
     },
     "net_income_adj_ltm": {
       "statistic": 1.1455413126370817,
-      "p_value": 0.328624828829335,
+      "p_value": 0.3286248288293294,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195053,14 +193985,14 @@
     },
     "short_int_pct": {
       "statistic": 2.3402773307283624,
-      "p_value": 0.01457899568794891,
+      "p_value": 0.014578995687948907,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "dividend_per_share_ltm": {
       "statistic": 0.6708664688194458,
-      "p_value": 0.7514307142508293,
+      "p_value": 0.7514307142508272,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195074,7 +194006,7 @@
     },
     "div_yield_ltm": {
       "statistic": 2.789096793598606,
-      "p_value": 0.002525255877716686,
+      "p_value": 0.0025252558777167076,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195116,14 +194048,14 @@
     },
     "total_assets_fy": {
       "statistic": 4.051044674328878,
-      "p_value": 2.3135280719168324e-05,
+      "p_value": 2.313528071916832e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "current_ratio_fy": {
       "statistic": 1.3570703889853775,
-      "p_value": 0.197622929983253,
+      "p_value": 0.19762292998325298,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195137,7 +194069,7 @@
     },
     "gross_profit_margin_pct_fy": {
       "statistic": 9.980529399108882,
-      "p_value": 3.73601798994675e-15,
+      "p_value": 3.736017989946723e-15,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195165,7 +194097,7 @@
     },
     "gross_profit_ltm": {
       "statistic": 2.5573800825797193,
-      "p_value": 0.0051155108970282765,
+      "p_value": 0.005115510897028276,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195200,7 +194132,7 @@
     },
     "eps_adj_ltm": {
       "statistic": 0.5184108579465067,
-      "p_value": 0.8764479470046427,
+      "p_value": 0.8764479470046425,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195214,7 +194146,7 @@
     },
     "gain_loss_on_sale_of_assets_ltm": {
       "statistic": 0.8731725122724324,
-      "p_value": 0.5590097538035625,
+      "p_value": 0.559009753803563,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195228,7 +194160,7 @@
     },
     "cash_acquisitions_ltm": {
       "statistic": 0.6097358455741825,
-      "p_value": 0.8045516627534358,
+      "p_value": 0.8045516627534359,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195242,42 +194174,42 @@
     },
     "cash_acquisitions_1fy": {
       "statistic": 0.9411713448647596,
-      "p_value": 0.49701839673413684,
+      "p_value": 0.4970183967341366,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "inventory_ltm": {
       "statistic": 1.3832047490959425,
-      "p_value": 0.1865139126672404,
+      "p_value": 0.18651391266723932,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "goodwill_fq": {
       "statistic": 1.2128815700004674,
-      "p_value": 0.2827170044599977,
+      "p_value": 0.2827170044599979,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "goodwill_ltm": {
       "statistic": 1.207962067576739,
-      "p_value": 0.2858584922104409,
+      "p_value": 0.28585849221044085,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "goodwill_fy": {
       "statistic": 1.327681734868499,
-      "p_value": 0.21415018062963048,
+      "p_value": 0.2141501806296295,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "goodwill_1fy": {
       "statistic": 1.433256782601275,
-      "p_value": 0.16408948686779753,
+      "p_value": 0.1640894868677987,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195291,14 +194223,14 @@
     },
     "impairment_of_goodwill_ltm": {
       "statistic": 1.1136291595166865,
-      "p_value": 0.3855645299145733,
+      "p_value": 0.38556452991457335,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "impairment_of_goodwill_1fy": {
       "statistic": 1.18902166341827,
-      "p_value": 0.33524242546175687,
+      "p_value": 0.3352424254617573,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
@@ -195319,21 +194251,21 @@
     },
     "asset_writedown_ltm": {
       "statistic": 1.217985169073875,
-      "p_value": 0.28085333397318774,
+      "p_value": 0.2808533339731889,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "asset_writedown_fy": {
       "statistic": 2.5254557234917745,
-      "p_value": 0.007131241526270403,
+      "p_value": 0.007131241526270145,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "asset_writedown_1fy": {
       "statistic": 1.3935803741168329,
-      "p_value": 0.18549848449826287,
+      "p_value": 0.18549848449826298,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195375,35 +194307,35 @@
     },
     "total_current_assets_ltm": {
       "statistic": 3.7796009671724424,
-      "p_value": 6.485353570630695e-05,
+      "p_value": 6.485353570630696e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_current_liabilities_ltm": {
       "statistic": 3.297988456501118,
-      "p_value": 0.0003792373607989683,
+      "p_value": 0.0003792373607989684,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "r_d_expenses_ltm": {
       "statistic": 1.4991293007943811,
-      "p_value": 0.15557971421852623,
+      "p_value": 0.15557971421852665,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "restructuring_charges_ltm": {
       "statistic": 1.1914966531753257,
-      "p_value": 0.3072908406914516,
+      "p_value": 0.3072908406914575,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "restructuring_charges_fq": {
       "statistic": 0.4541415361186469,
-      "p_value": 0.9108323285525816,
+      "p_value": 0.9108323285525814,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195417,7 +194349,7 @@
     },
     "restructuring_charges_fy": {
       "statistic": 2.3745239104137643,
-      "p_value": 0.019017767940194927,
+      "p_value": 0.01901776794019474,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
@@ -195431,7 +194363,7 @@
     },
     "merger_restructuring_charges_ltm": {
       "statistic": 1.1046936221596664,
-      "p_value": 0.36318336202630247,
+      "p_value": 0.363183362026302,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195445,7 +194377,7 @@
     },
     "other_unusual_items_total_ltm": {
       "statistic": 0.9532345614675528,
-      "p_value": 0.4844171328140655,
+      "p_value": 0.48441713281409726,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195458,7 +194390,7 @@
     },
     "buyback_yield_ltm": {
       "statistic": 0.8524546306275701,
-      "p_value": 0.5784560302453644,
+      "p_value": 0.5784560302453874,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195528,14 +194460,14 @@
     },
     "cfo_fy": {
       "statistic": 1.7030388116563762,
-      "p_value": 0.07715588811310971,
+      "p_value": 0.0771558881131097,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfo_1fy": {
       "statistic": 1.3198141518304294,
-      "p_value": 0.2165499947311984,
+      "p_value": 0.21654999473119843,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195549,14 +194481,14 @@
     },
     "fcf_fy": {
       "statistic": 0.8339810003623382,
-      "p_value": 0.5959669310692576,
+      "p_value": 0.5959669310692577,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "capital_expenditure_fq": {
       "statistic": 2.7117166023805854,
-      "p_value": 0.0031337856476809783,
+      "p_value": 0.0031337856476809788,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195570,7 +194502,7 @@
     },
     "cff_fq": {
       "statistic": 1.0186233679236036,
-      "p_value": 0.4265344209286026,
+      "p_value": 0.42653442092860255,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195640,35 +194572,35 @@
     },
     "cash_acquisitions_5yavgfq": {
       "statistic": 0.8156524808185547,
-      "p_value": 0.6137689771039547,
+      "p_value": 0.6137689771039154,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "asset_writedown_fq": {
       "statistic": 0.9558570139173401,
-      "p_value": 0.48595498054496655,
+      "p_value": 0.48595498054496966,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "asset_writedown_5yavgfq": {
       "statistic": 1.5573118022248689,
-      "p_value": 0.11925439171546859,
+      "p_value": 0.11925439171546849,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "impairment_of_goodwill_5yavgfq": {
       "statistic": 1.1783198178568812,
-      "p_value": 0.31209878106307076,
+      "p_value": 0.31209878106307937,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "operating_income_fq": {
       "statistic": 1.4759423850861977,
-      "p_value": 0.14504296443642842,
+      "p_value": 0.1450429644364284,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195703,14 +194635,14 @@
     },
     "cash_and_equivalents_ltm": {
       "statistic": 1.7905549742830198,
-      "p_value": 0.059858013799474946,
+      "p_value": 0.05985801379947495,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cash_and_equivalents_fq": {
       "statistic": 1.7850112376956548,
-      "p_value": 0.06085347452251858,
+      "p_value": 0.060853474522518575,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195731,7 +194663,7 @@
     },
     "inventory_fq": {
       "statistic": 1.3812324865741517,
-      "p_value": 0.18744414359741193,
+      "p_value": 0.18744414359741157,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195745,49 +194677,49 @@
     },
     "goodwill_5yavgfq": {
       "statistic": 1.7916449267735381,
-      "p_value": 0.0611642675925352,
+      "p_value": 0.061164267592534946,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "inventory_5yavgfq": {
       "statistic": 2.466861276574449,
-      "p_value": 0.00739274406813405,
+      "p_value": 0.0073927440681335966,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "avg_employees_ltm": {
       "statistic": 0.6499725886383584,
-      "p_value": 0.7639157307383337,
+      "p_value": 0.763915730738334,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "avg_employees_fy": {
       "statistic": 0.9289643453611525,
-      "p_value": 0.5096462256348807,
+      "p_value": 0.5096462256348733,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "avg_employees_5yavgfy": {
       "statistic": 1.4540288227367106,
-      "p_value": 0.16715466623251662,
+      "p_value": 0.16715466623251823,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "retained_earnings_fq": {
       "statistic": 1.4460344896242716,
-      "p_value": 0.15747253763997432,
+      "p_value": 0.1574725376399743,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "retained_earnings_fy": {
       "statistic": 1.603147280087918,
-      "p_value": 0.10258440722266911,
+      "p_value": 0.10258440722266912,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195829,7 +194761,7 @@
     },
     "div_yield_ntm": {
       "statistic": 1.9699034688078931,
-      "p_value": 0.035379695567959286,
+      "p_value": 0.03537969556795929,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195850,35 +194782,35 @@
     },
     "gross_intangible_assets_fy": {
       "statistic": 4.022616725170844,
-      "p_value": 3.198115950996696e-05,
+      "p_value": 3.1981159509967156e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_intangible_assets_5yavgfq": {
       "statistic": 4.186385608691467,
-      "p_value": 1.852182239096429e-05,
+      "p_value": 1.8521822390965756e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "restructuring_charges_5yavgfq": {
       "statistic": 0.7708423358654655,
-      "p_value": 0.6566667800997978,
+      "p_value": 0.6566667800997974,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "merger_restructuring_charges_fq": {
       "statistic": 1.1772065477691815,
-      "p_value": 0.3201442113887057,
+      "p_value": 0.3201442113887059,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "merger_restructuring_charges_fy": {
       "statistic": 0.8067080293410366,
-      "p_value": 0.6225599420014577,
+      "p_value": 0.6225599420014578,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195906,14 +194838,14 @@
     },
     "net_income_adj_fq": {
       "statistic": 1.4764501715602507,
-      "p_value": 0.14898431312064905,
+      "p_value": 0.14898431312064916,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_5yavgfq": {
       "statistic": 1.0322870482400037,
-      "p_value": 0.4168088506010015,
+      "p_value": 0.41680885060102996,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195934,7 +194866,7 @@
     },
     "net_income_is_5yavgltm": {
       "statistic": 1.3306506621433967,
-      "p_value": 0.2111715131976582,
+      "p_value": 0.21117151319765823,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195948,7 +194880,7 @@
     },
     "ebitda_5yavgltm": {
       "statistic": 2.1990177975179246,
-      "p_value": 0.017238831606561457,
+      "p_value": 0.017238831606561453,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195983,21 +194915,21 @@
     },
     "revenue": {
       "statistic": 2.2259771380782807,
-      "p_value": 0.015413395100623478,
+      "p_value": 0.01541339510062348,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda": {
       "statistic": 2.39477040883402,
-      "p_value": 0.008993919586227531,
+      "p_value": 0.008993919586227533,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income": {
       "statistic": 1.6486055073611323,
-      "p_value": 0.09017764091354517,
+      "p_value": 0.09017764091354516,
       "significant": false,
       "n_groups": 11,
       "method": "anova"

@@ -247,6 +247,14 @@ def optimize_portfolio_max_sharpe(
 
     # Objective: minimize negative Sharpe ratio
     def objective(weights):
+        """Objective function: minimize negative Sharpe ratio.
+
+        Args:
+            weights: Portfolio weights
+
+        Returns:
+            Negative Sharpe ratio (for minimization)
+        """
         port_return = calculate_portfolio_return(weights, returns)
         port_volatility = calculate_portfolio_volatility(weights, cov_matrix)
 
@@ -332,6 +340,14 @@ def optimize_portfolio_min_volatility(
 
     # Objective: minimize volatility
     def objective(weights):
+        """Objective function: minimize portfolio volatility.
+
+        Args:
+            weights: Portfolio weights
+
+        Returns:
+            Portfolio volatility
+        """
         return calculate_portfolio_volatility(weights, cov_matrix)
 
     # Constraints
@@ -419,6 +435,14 @@ def optimize_portfolio_target_return(
 
     # Objective: minimize volatility
     def objective(weights):
+        """Objective function: minimize portfolio volatility subject to target return.
+
+        Args:
+            weights: Portfolio weights
+
+        Returns:
+            Portfolio volatility
+        """
         return calculate_portfolio_volatility(weights, cov_matrix)
 
     # Constraints

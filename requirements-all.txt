@@ -2,6 +2,7 @@
 # Complete Installation - All Dependencies for Finance ML Analytics Platform
 # ============================================================================
 # Install with: pip install -r requirements-all.txt
+# Python version: >=3.12,<3.14
 # This includes ALL optional dependencies: dev, tensorflow, database, advanced-features, notebook
 
 # Core dependencies

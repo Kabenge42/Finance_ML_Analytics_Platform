@@ -1,6 +1,6 @@
 # Finance ML Analytics Platform
 
-**Version 0.4.1** — A professional, modular Python package for equity screening, feature engineering, and machine
+**Version 0.5.0** — A professional, modular Python package for equity screening, feature engineering, and machine
 learning models across global regions.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
@@ -436,12 +436,13 @@ Comprehensive test suite in tests/ directory (37 test modules):
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.3.0)
+├── finance_ml/                    # Main Python package (v0.5.0)
 │   ├── __init__.py               # Package exports and version
 │   ├── advanced_eda.py           # Advanced EDA with statistical analysis (Phase 9.2)
 │   ├── advanced_features.py      # Advanced feature engineering (Phase 9.3)
 │   ├── advanced_models.py        # Sector-optimized regression models (Phase 9.5)
 │   ├── advanced_preprocessing.py # Advanced preprocessing and data quality
+│   ├── benchmarking.py           # Comparative analysis and peer benchmarking (Phase 9.2)
 │   ├── classification.py         # Multi-class event classification (Phase 9.4)
 │   ├── cli.py                    # Command-line interface
 │   ├── config.py                 # Configuration management
@@ -456,6 +457,7 @@ Finance_ML_Analytics_Platform/
 │   ├── notebook_utils.py         # Notebook utility functions
 │   ├── portfolio_optimization.py # Portfolio optimization utilities
 │   ├── risk_metrics.py           # Risk metrics and portfolio risk analysis
+│   ├── transformers.py           # Scikit-learn compatible feature transformers
 │   └── verify_requirements.py    # Requirements verification utility
 │
 ├── tests/                        # Unit tests (comprehensive test suite, 32 modules)
@@ -745,6 +747,26 @@ Centralized data asset registry (Phase 9.1).
 - `list_datasets()`: List all registered datasets
 - `search_datasets()`: Search datasets by criteria
 - `update_metadata()`: Update dataset metadata
+
+#### `finance_ml.benchmarking`
+
+Comparative analysis and peer benchmarking (Phase 9.2).
+
+- `compare_sector_distributions()`: Compare metric distributions across sectors with statistical tests
+- `compare_regional_valuations()`: Compare valuation metrics across regions (ANOVA/Kruskal-Wallis)
+- `find_peer_group()`: Identify peer companies based on sector and criteria (market cap, revenue, etc.)
+- `compare_to_peers()`: Compare a stock's metrics against its peer group
+- `analyze_metric_trend()`: Analyze time-series trends for specific metrics
+- `generate_benchmarking_report()`: Generate comprehensive benchmarking report with sector and regional comparisons
+
+#### `finance_ml.transformers`
+
+Scikit-learn compatible transformers for feature engineering pipelines.
+
+- `RegularizedTargetEncoder`: Target encoding with cross-validation and smoothing to prevent overfitting
+- `SafeDivisionTransformer`: Safe division with configurable fill values and capping for ratios
+- `FinancialRatioTransformer`: Automated calculation of common financial ratios (P/E, P/B, ROE, etc.)
+- `ValuationRatioTransformer`: Valuation ratio calculation with percentile-based capping for outliers
 
 ## Troubleshooting
 - TensorFlow installation issues: the project primarily uses scikit‑learn and gradient boosting libraries. CPU‑only TensorFlow is fine; ensure compatible system libraries. If installation is problematic on your machine, you can proceed with non‑TF parts first.

@@ -311,31 +311,5 @@ def validate_main() -> int:
         return 1
 
 
-def _load_data(source: str, config: FinanceMLConfig, limit: Optional[int] = None):
-    """Load data from specified source."""
-    # Auto-detect source
-    if source == "auto":
-        try:
-            from sqlalchemy import create_engine
-
-            has_sqlalchemy = True
-        except ImportError:
-            has_sqlalchemy = False
-
-        if config.db_url and has_sqlalchemy:
-            source = "db"
-        else:
-            source = "csv"
-        logger.info(f"Auto-detected data source: {source}")
-
-    # Load from selected source
-    if source == "db":
-        if not config.db_url:
-            raise ValueError("DB_URL not set. Provide --db-url or set DB_URL environment variable")
-        return load_from_db(config.db_url, limit=limit)
-    else:
-        return load_from_csv(config.data_dir, limit=limit)
-
-
 if __name__ == "__main__":
     sys.exit(main())

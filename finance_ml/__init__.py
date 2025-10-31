@@ -14,6 +14,7 @@ Modules:
 - finance_ml.risk_metrics: Risk metrics and portfolio risk analysis
 - finance_ml.logging_config: Logging configuration and file handlers
 - finance_ml.portfolio_optimization: Modern Portfolio Theory and optimization
+- finance_ml.analyst_comparison: Prediction vs. Analyst analytics (Phase 9.8)
 """
 
 __version__ = "0.4.1"
@@ -81,6 +82,19 @@ from finance_ml.advanced_preprocessing import (
     create_scaler_pipeline,
     scale_features,
 )
+
+# Import from analyst_comparison module (Phase 9.8)
+from finance_ml.analyst_comparison import (
+    compare_prediction_vs_analyst_targets,
+    calculate_agreement_rate,
+    calculate_directional_accuracy,
+    analyze_systematic_bias,
+    identify_disagreement_opportunities,
+    segment_comparison_by_attribute,
+    generate_prediction_analyst_excel_report,
+    PredictionAnalystAnalytics,
+)
+
 # Import from benchmarking module (Phase 9.2)
 from finance_ml.benchmarking import (
     compare_sector_distributions,
@@ -186,6 +200,8 @@ from finance_ml.eval import (
     calculate_prediction_accuracy_metrics,
     segment_comparison_by_attribute,
     analyze_systematic_bias,
+    calculate_hit_rate_by_confidence_level,
+    calculate_calibration_metrics,
     generate_prediction_analyst_excel_report,
 )
 from finance_ml.features import (
@@ -206,15 +222,6 @@ from finance_ml.logging_config import (
     get_log_level,
     set_log_level,
     )
-# Import from transformers module (Phase 9.1 Enhancements #2 and #5)
-from finance_ml.transformers import (
-    RegularizedTargetEncoder,
-    TargetEncoder,
-    FinancialRatioTransformer,
-    SafeDivisionTransformer,
-    ValuationRatioTransformer,
-)
-
 # Import from models module (Phase 7 TDD implementation complete)
 from finance_ml.models import (
     create_event_labels,
@@ -263,6 +270,14 @@ from finance_ml.risk_metrics import (
     calculate_max_drawdown,
     calculate_portfolio_risk_metrics,
     )
+# Import from transformers module (Phase 9.1 Enhancements #2 and #5)
+from finance_ml.transformers import (
+    RegularizedTargetEncoder,
+    TargetEncoder,
+    FinancialRatioTransformer,
+    SafeDivisionTransformer,
+    ValuationRatioTransformer,
+)
 
 __all__ = [
     # Version
