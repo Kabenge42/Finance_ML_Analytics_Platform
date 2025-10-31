@@ -1543,19 +1543,22 @@ def calculate_mutual_information(
 
 
 def calculate_feature_importance_rf(
-    X: pd.DataFrame, y: pd.Series, n_estimators: int = 100
-) -> pd.Series:
+    X: pd.DataFrame, y: pd.Series, n_estimators: int = 100, top_k: int = 20, random_state: int = 42
+) -> pd.DataFrame:
     """Calculate feature importance using Random Forest.
 
     Phase 9.2 enhancement for feature importance analysis.
+    Updated to return DataFrame format for notebook compatibility.
 
     Args:
         X: Feature DataFrame
         y: Target variable
         n_estimators: Number of trees in the forest
+        top_k: Number of top features to return
+        random_state: Random state for reproducibility
 
     Returns:
-        Series with feature importances
+        DataFrame with columns ['feature', 'importance'] sorted by importance descending
     """
     from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
@@ -1563,21 +1566,40 @@ def calculate_feature_importance_rf(
     X_clean = X.fillna(X.median())
     y_clean = y.fillna(y.median()) if pd.api.types.is_numeric_dtype(y) else y.fillna("missing")
 
-    # Choose appropriate model
+    # Choose appropriate model with optimized parameters
     if pd.api.types.is_numeric_dtype(y_clean):
-        model = RandomForestRegressor(n_estimators=n_estimators, random_state=42, n_jobs=-1)
+        model = RandomForestRegressor(
+            n_estimators=n_estimators,
+            max_depth=10,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            random_state=random_state,
+            n_jobs=-1,
+        )
     else:
-        model = RandomForestClassifier(n_estimators=n_estimators, random_state=42, n_jobs=-1)
+        model = RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=10,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            random_state=random_state,
+            n_jobs=-1,
+        )
 
     # Fit model
     model.fit(X_clean, y_clean)
 
-    # Get importance
-    importances = pd.Series(model.feature_importances_, index=X.columns).sort_values(
-        ascending=False
-    )
+    # Extract feature importances
+    importances = model.feature_importances_
 
-    return importances
+    # Create DataFrame with feature names and importances
+    importance_df = pd.DataFrame({"feature": X.columns, "importance": importances})
+
+    # Sort by importance and return top_k
+    importance_df = importance_df.sort_values("importance", ascending=False).head(top_k)
+    importance_df = importance_df.reset_index(drop=True)
+
+    return importance_df
 
 
 def calculate_shap_importance(
@@ -2530,6 +2552,1325 @@ def evaluate_with_cross_validation(model, X, y, cv_strategy="simple", groups=Non
         "n_splits": n_splits,
         "cv_strategy": cv_strategy,
     }
+
+
+# ============================================================================
+# SHAP Detailed Analysis
+# ============================================================================
+
+
+def compute_shap_values(model, X, model_type="tree", n_samples=100):
+    """
+    Compute SHAP values for model predictions.
+
+    Args:
+        model: Trained model
+        X: Feature matrix (DataFrame or array)
+        model_type: Type of model ('tree', 'linear', 'kernel')
+        n_samples: Number of background samples for kernel explainer
+
+    Returns:
+        dict: Dictionary with shap_values, expected_value, and feature_names
+    """
+    try:
+        import shap
+    except ImportError:
+        raise ImportError("SHAP library is required. Install with: pip install shap")
+
+    # Convert to DataFrame if needed
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    # Select appropriate explainer
+    if model_type == "tree":
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X)
+    elif model_type == "linear":
+        explainer = shap.LinearExplainer(model, X)
+        shap_values = explainer.shap_values(X)
+    elif model_type == "kernel":
+        # Use a subset for background
+        background = shap.sample(X, min(n_samples, len(X)))
+        explainer = shap.KernelExplainer(model.predict, background)
+        shap_values = explainer.shap_values(X)
+    else:
+        raise ValueError(f"Unknown model_type: {model_type}")
+
+    return {
+        "shap_values": shap_values,
+        "expected_value": explainer.expected_value if hasattr(explainer, "expected_value") else 0.0,
+        "feature_names": list(X.columns),
+    }
+
+
+def create_shap_summary_plot(model, X, output_path=None, model_type="tree", n_samples=100):
+    """
+    Create SHAP summary plot showing global feature importance.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        output_path: Path to save plot (PNG)
+        model_type: Type of model
+        n_samples: Number of background samples
+
+    Returns:
+        None (saves plot to file)
+    """
+    try:
+        import shap
+    except ImportError:
+        raise ImportError("SHAP library is required. Install with: pip install shap")
+
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    # Compute SHAP values
+    result = compute_shap_values(model, X, model_type=model_type, n_samples=n_samples)
+    shap_values = result["shap_values"]
+
+    # Create summary plot
+    shap.summary_plot(shap_values, X, show=False)
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, dpi=100, bbox_inches="tight")
+        plt.close()
+
+
+def create_shap_waterfall_plot(
+    model, X, sample_idx=0, output_path=None, model_type="tree", n_samples=100
+):
+    """
+    Create SHAP waterfall plot for individual prediction explanation.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        sample_idx: Index of sample to explain
+        output_path: Path to save plot
+        model_type: Type of model
+        n_samples: Number of background samples
+
+    Returns:
+        None (saves plot to file)
+    """
+    try:
+        import shap
+    except ImportError:
+        raise ImportError("SHAP library is required. Install with: pip install shap")
+
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    # Compute SHAP values
+    result = compute_shap_values(model, X, model_type=model_type, n_samples=n_samples)
+    shap_values = result["shap_values"]
+    expected_value = result["expected_value"]
+
+    # Create waterfall plot for specific sample
+    if isinstance(shap_values, list):
+        # Multi-output model, use first output
+        shap_values_sample = shap_values[0][sample_idx]
+    else:
+        shap_values_sample = shap_values[sample_idx]
+
+    # Create explanation object
+    explanation = shap.Explanation(
+        values=shap_values_sample,
+        base_values=expected_value,
+        data=X.iloc[sample_idx].values,
+        feature_names=list(X.columns),
+    )
+
+    shap.plots.waterfall(explanation, show=False)
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, dpi=100, bbox_inches="tight")
+        plt.close()
+
+
+def create_shap_dependence_plot(
+    model, X, feature, output_path=None, model_type="tree", n_samples=100
+):
+    """
+    Create SHAP dependence plot showing feature interactions.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        feature: Feature name or index for dependence plot
+        output_path: Path to save plot
+        model_type: Type of model
+        n_samples: Number of background samples
+
+    Returns:
+        None (saves plot to file)
+    """
+    try:
+        import shap
+    except ImportError:
+        raise ImportError("SHAP library is required. Install with: pip install shap")
+
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    # Compute SHAP values
+    result = compute_shap_values(model, X, model_type=model_type, n_samples=n_samples)
+    shap_values = result["shap_values"]
+
+    # Create dependence plot
+    shap.dependence_plot(feature, shap_values, X, show=False)
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, dpi=100, bbox_inches="tight")
+        plt.close()
+
+
+def analyze_shap_by_sector(model, X, sectors, model_type="tree", n_samples=100):
+    """
+    Analyze SHAP values separately by sector.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        sectors: Series with sector labels
+        model_type: Type of model
+        n_samples: Number of background samples
+
+    Returns:
+        dict: SHAP analysis for each sector
+    """
+    try:
+        import shap
+    except ImportError:
+        raise ImportError("SHAP library is required. Install with: pip install shap")
+
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    results = {}
+
+    for sector in sectors.unique():
+        sector_mask = sectors == sector
+        X_sector = X[sector_mask]
+
+        if len(X_sector) > 0:
+            result = compute_shap_values(
+                model, X_sector, model_type=model_type, n_samples=n_samples
+            )
+
+            # Compute mean absolute SHAP values for feature importance
+            shap_values = result["shap_values"]
+            mean_abs_shap = np.abs(shap_values).mean(axis=0)
+
+            results[sector] = {
+                "shap_values": shap_values,
+                "expected_value": result["expected_value"],
+                "feature_importance": dict(zip(result["feature_names"], mean_abs_shap)),
+                "n_samples": len(X_sector),
+            }
+
+    return results
+
+
+# ============================================================================
+# LIME Integration
+# ============================================================================
+
+
+def explain_with_lime(model, X, sample_idx=0, output_path=None, n_features=10):
+    """
+    Generate LIME explanation for a single prediction.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        sample_idx: Index of sample to explain
+        output_path: Optional path to save HTML explanation
+        n_features: Number of features to show in explanation
+
+    Returns:
+        dict: LIME explanation with feature weights
+    """
+    try:
+        from lime.lime_tabular import LimeTabularExplainer
+    except ImportError:
+        raise ImportError("LIME library is required. Install with: pip install lime")
+
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    # Create LIME explainer
+    explainer = LimeTabularExplainer(
+        X.values, feature_names=list(X.columns), mode="regression", random_state=42
+    )
+
+    # Generate explanation for sample
+    explanation = explainer.explain_instance(
+        X.iloc[sample_idx].values, model.predict, num_features=n_features
+    )
+
+    # Extract feature weights
+    feature_weights = dict(explanation.as_list())
+
+    # Save HTML if requested
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        explanation.save_to_file(str(output_path))
+
+    return {
+        "feature_weights": feature_weights,
+        "prediction": float(model.predict(X.iloc[[sample_idx]])[0]),
+        "intercept": explanation.intercept[0] if hasattr(explanation, "intercept") else 0.0,
+        "score": explanation.score if hasattr(explanation, "score") else None,
+    }
+
+
+def compare_lime_shap_consistency(model, X, sample_idx=0, model_type="tree", n_features=10):
+    """
+    Compare LIME and SHAP explanations for consistency.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        sample_idx: Index of sample to explain
+        model_type: Type of model for SHAP
+        n_features: Number of features to compare
+
+    Returns:
+        dict: Comparison results with correlation metric
+    """
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    # Get LIME explanation
+    lime_result = explain_with_lime(model, X, sample_idx=sample_idx, n_features=n_features)
+    lime_weights = lime_result["feature_weights"]
+
+    # Get SHAP explanation
+    shap_result = compute_shap_values(model, X.iloc[[sample_idx]], model_type=model_type)
+    shap_values = shap_result["shap_values"]
+
+    if isinstance(shap_values, list):
+        shap_values = shap_values[0]
+
+    shap_dict = dict(zip(X.columns, shap_values[0] if len(shap_values.shape) > 1 else shap_values))
+
+    # Compare feature importances
+    common_features = set(lime_weights.keys()) & set(shap_dict.keys())
+
+    if len(common_features) > 0:
+        lime_vals = [lime_weights[f] for f in common_features]
+        shap_vals = [shap_dict[f] for f in common_features]
+
+        # Calculate correlation
+        correlation = np.corrcoef(lime_vals, shap_vals)[0, 1]
+    else:
+        correlation = np.nan
+
+    return {
+        "lime_weights": lime_weights,
+        "shap_values": shap_dict,
+        "correlation": float(correlation) if not np.isnan(correlation) else None,
+        "common_features": list(common_features),
+    }
+
+
+# ============================================================================
+# Model Comparison Framework
+# ============================================================================
+
+
+def create_model_comparison_table(models, X, y):
+    """
+    Create comparison table for multiple models.
+
+    Args:
+        models: Dictionary of model_name -> model
+        X: Feature matrix
+        y: Target vector
+
+    Returns:
+        pd.DataFrame: Comparison table with metrics for each model
+    """
+    results = []
+
+    for model_name, model in models.items():
+        y_pred = model.predict(X)
+        metrics = comprehensive_regression_metrics(y, y_pred)
+        metrics["model_name"] = model_name
+        results.append(metrics)
+
+    df = pd.DataFrame(results)
+
+    # Reorder columns
+    cols = ["model_name"] + [c for c in df.columns if c != "model_name"]
+    return df[cols].sort_values("rmse")
+
+
+def statistical_model_comparison(y_true, y_pred1, y_pred2, test_type="paired_ttest"):
+    """
+    Statistical significance test between two models' predictions.
+
+    Args:
+        y_true: True target values
+        y_pred1: Predictions from model 1
+        y_pred2: Predictions from model 2
+        test_type: 'paired_ttest' or 'wilcoxon'
+
+    Returns:
+        dict: Test results with statistic, p_value, and significance
+    """
+    from scipy import stats
+
+    # Calculate errors
+    errors1 = np.abs(y_true - y_pred1)
+    errors2 = np.abs(y_true - y_pred2)
+
+    # Perform test
+    if test_type == "paired_ttest":
+        statistic, p_value = stats.ttest_rel(errors1, errors2)
+        test_name = "Paired t-test"
+    elif test_type == "wilcoxon":
+        statistic, p_value = stats.wilcoxon(errors1, errors2)
+        test_name = "Wilcoxon signed-rank test"
+    else:
+        raise ValueError(f"Unknown test_type: {test_type}")
+
+    return {
+        "test_name": test_name,
+        "statistic": float(statistic),
+        "p_value": float(p_value),
+        "significant": bool(p_value < 0.05),
+    }
+
+
+def automated_model_selection(models, X, y, metric="rmse", cross_validate=True, n_splits=5):
+    """
+    Automated model selection based on validation metrics.
+
+    Args:
+        models: Dictionary of model_name -> model
+        X: Feature matrix
+        y: Target vector
+        metric: Metric to optimize ('rmse', 'mae', 'r2')
+        cross_validate: Whether to use cross-validation
+        n_splits: Number of CV splits
+
+    Returns:
+        dict: Best model name, score, and all scores
+    """
+    scores = {}
+
+    for model_name, model in models.items():
+        if cross_validate:
+            from sklearn.model_selection import cross_val_score
+
+            if metric == "r2":
+                cv_scores = cross_val_score(model, X, y, cv=n_splits, scoring="r2")
+                score = np.mean(cv_scores)
+            elif metric == "mae":
+                cv_scores = cross_val_score(
+                    model, X, y, cv=n_splits, scoring="neg_mean_absolute_error"
+                )
+                score = -np.mean(cv_scores)
+            elif metric == "rmse":
+                cv_scores = cross_val_score(
+                    model, X, y, cv=n_splits, scoring="neg_root_mean_squared_error"
+                )
+                score = -np.mean(cv_scores)
+            else:
+                raise ValueError(f"Unknown metric: {metric}")
+        else:
+            y_pred = model.predict(X)
+            metrics = comprehensive_regression_metrics(y, y_pred)
+            score = metrics[metric]
+
+        scores[model_name] = score
+
+    # Select best model
+    if metric == "r2":
+        best_model_name = max(scores.items(), key=lambda x: x[1])[0]
+    else:
+        best_model_name = min(scores.items(), key=lambda x: x[1])[0]
+
+    return {
+        "best_model_name": best_model_name,
+        "best_score": scores[best_model_name],
+        "all_scores": scores,
+        "metric": metric,
+    }
+
+
+# ============================================================================
+# Learning Curves and Validation Curves
+# ============================================================================
+
+
+def generate_learning_curve(model, X, y, train_sizes=None, cv=5, scoring="r2"):
+    """
+    Generate learning curve data showing performance vs training size.
+
+    Args:
+        model: Scikit-learn model
+        X: Feature matrix
+        y: Target vector
+        train_sizes: List of training sizes (fractions or absolute numbers)
+        cv: Number of cross-validation folds
+        scoring: Scoring metric
+
+    Returns:
+        dict: Learning curve data with train/val scores
+    """
+    from sklearn.model_selection import learning_curve
+
+    if train_sizes is None:
+        train_sizes = [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+
+    train_sizes_abs, train_scores, val_scores = learning_curve(
+        model, X, y, train_sizes=train_sizes, cv=cv, scoring=scoring, n_jobs=-1, random_state=42
+    )
+
+    return {
+        "train_sizes": train_sizes_abs.tolist(),
+        "train_scores": train_scores.tolist(),
+        "train_scores_mean": train_scores.mean(axis=1).tolist(),
+        "train_scores_std": train_scores.std(axis=1).tolist(),
+        "val_scores": val_scores.tolist(),
+        "val_scores_mean": val_scores.mean(axis=1).tolist(),
+        "val_scores_std": val_scores.std(axis=1).tolist(),
+    }
+
+
+def plot_learning_curve(model, X, y, output_path=None, train_sizes=None, cv=5):
+    """
+    Plot learning curve showing training and validation performance.
+
+    Args:
+        model: Scikit-learn model
+        X: Feature matrix
+        y: Target vector
+        output_path: Path to save plot
+        train_sizes: Training sizes to evaluate
+        cv: Number of CV folds
+
+    Returns:
+        None (saves plot to file)
+    """
+    if not plt:
+        raise ImportError("Matplotlib is required for plotting")
+
+    result = generate_learning_curve(model, X, y, train_sizes=train_sizes, cv=cv)
+
+    train_sizes_abs = result["train_sizes"]
+    train_mean = result["train_scores_mean"]
+    train_std = result["train_scores_std"]
+    val_mean = result["val_scores_mean"]
+    val_std = result["val_scores_std"]
+
+    plt.figure(figsize=(10, 6))
+
+    # Plot training scores
+    plt.plot(train_sizes_abs, train_mean, "o-", color="r", label="Training score")
+    plt.fill_between(
+        train_sizes_abs,
+        np.array(train_mean) - np.array(train_std),
+        np.array(train_mean) + np.array(train_std),
+        alpha=0.1,
+        color="r",
+    )
+
+    # Plot validation scores
+    plt.plot(train_sizes_abs, val_mean, "o-", color="g", label="Validation score")
+    plt.fill_between(
+        train_sizes_abs,
+        np.array(val_mean) - np.array(val_std),
+        np.array(val_mean) + np.array(val_std),
+        alpha=0.1,
+        color="g",
+    )
+
+    plt.xlabel("Training Set Size")
+    plt.ylabel("Score (R²)")
+    plt.title("Learning Curve")
+    plt.legend(loc="best")
+    plt.grid(True, alpha=0.3)
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, dpi=100, bbox_inches="tight")
+        plt.close()
+
+
+def generate_validation_curve(model, X, y, param_name, param_range, cv=5, scoring="r2"):
+    """
+    Generate validation curve for hyperparameter tuning.
+
+    Args:
+        model: Scikit-learn model
+        X: Feature matrix
+        y: Target vector
+        param_name: Name of parameter to vary
+        param_range: Range of parameter values
+        cv: Number of CV folds
+        scoring: Scoring metric
+
+    Returns:
+        dict: Validation curve data
+    """
+    from sklearn.model_selection import validation_curve
+
+    train_scores, val_scores = validation_curve(
+        model,
+        X,
+        y,
+        param_name=param_name,
+        param_range=param_range,
+        cv=cv,
+        scoring=scoring,
+        n_jobs=-1,
+    )
+
+    return {
+        "param_name": param_name,
+        "param_range": [float(p) if isinstance(p, (int, float)) else str(p) for p in param_range],
+        "train_scores": train_scores.tolist(),
+        "train_scores_mean": train_scores.mean(axis=1).tolist(),
+        "train_scores_std": train_scores.std(axis=1).tolist(),
+        "val_scores": val_scores.tolist(),
+        "val_scores_mean": val_scores.mean(axis=1).tolist(),
+        "val_scores_std": val_scores.std(axis=1).tolist(),
+    }
+
+
+def plot_validation_curve(model, X, y, param_name, param_range, output_path=None, cv=5):
+    """
+    Plot validation curve for hyperparameter analysis.
+
+    Args:
+        model: Scikit-learn model
+        X: Feature matrix
+        y: Target vector
+        param_name: Name of parameter to vary
+        param_range: Range of parameter values
+        output_path: Path to save plot
+        cv: Number of CV folds
+
+    Returns:
+        None (saves plot to file)
+    """
+    if not plt:
+        raise ImportError("Matplotlib is required for plotting")
+
+    result = generate_validation_curve(model, X, y, param_name, param_range, cv=cv)
+
+    param_vals = result["param_range"]
+    train_mean = result["train_scores_mean"]
+    train_std = result["train_scores_std"]
+    val_mean = result["val_scores_mean"]
+    val_std = result["val_scores_std"]
+
+    plt.figure(figsize=(10, 6))
+
+    # Plot training scores
+    plt.plot(param_vals, train_mean, "o-", color="r", label="Training score")
+    plt.fill_between(
+        param_vals,
+        np.array(train_mean) - np.array(train_std),
+        np.array(train_mean) + np.array(train_std),
+        alpha=0.1,
+        color="r",
+    )
+
+    # Plot validation scores
+    plt.plot(param_vals, val_mean, "o-", color="g", label="Validation score")
+    plt.fill_between(
+        param_vals,
+        np.array(val_mean) - np.array(val_std),
+        np.array(val_mean) + np.array(val_std),
+        alpha=0.1,
+        color="g",
+    )
+
+    plt.xlabel(param_name)
+    plt.ylabel("Score (R²)")
+    plt.title(f"Validation Curve ({param_name})")
+    plt.legend(loc="best")
+    plt.grid(True, alpha=0.3)
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, dpi=100, bbox_inches="tight")
+        plt.close()
+
+
+# ============================================================================
+# Bias-Variance Diagnosis
+# ============================================================================
+
+
+def diagnose_bias_variance(model, X_train, y_train, X_val, y_val):
+    """
+    Diagnose bias-variance issues by comparing train vs validation performance.
+
+    Args:
+        model: Trained model
+        X_train: Training features
+        y_train: Training targets
+        X_val: Validation features
+        y_val: Validation targets
+
+    Returns:
+        dict: Diagnosis with train/val scores and interpretation
+    """
+    from sklearn.metrics import r2_score
+
+    # Compute scores
+    y_train_pred = model.predict(X_train)
+    y_val_pred = model.predict(X_val)
+
+    train_score = r2_score(y_train, y_train_pred)
+    val_score = r2_score(y_val, y_val_pred)
+
+    # Diagnose
+    if train_score > 0.9 and val_score < 0.7:
+        diagnosis = "High variance (overfitting)"
+    elif train_score < 0.7 and val_score < 0.7:
+        diagnosis = "High bias (underfitting)"
+    elif train_score > 0.8 and val_score > 0.75:
+        diagnosis = "Good fit"
+    else:
+        diagnosis = "Moderate fit"
+
+    return {
+        "train_score": float(train_score),
+        "val_score": float(val_score),
+        "score_gap": float(train_score - val_score),
+        "diagnosis": diagnosis,
+    }
+
+
+def bias_variance_decomposition(model, X_train, y_train, X_val, y_val, n_bootstraps=50):
+    """
+    Decompose prediction error into bias and variance components.
+
+    Args:
+        model: Model class (not fitted)
+        X_train: Training features
+        y_train: Training targets
+        X_val: Validation features
+        y_val: Validation targets
+        n_bootstraps: Number of bootstrap iterations
+
+    Returns:
+        dict: Bias squared, variance, and total MSE
+    """
+    from sklearn.utils import resample
+    from sklearn.metrics import mean_squared_error
+
+    predictions = []
+
+    # Bootstrap and collect predictions
+    for _ in range(n_bootstraps):
+        # Resample training data
+        X_boot, y_boot = resample(X_train, y_train, random_state=_)
+
+        # Clone and fit model
+        from sklearn.base import clone
+
+        model_clone = clone(model)
+        model_clone.fit(X_boot, y_boot)
+
+        # Predict on validation set
+        y_pred = model_clone.predict(X_val)
+        predictions.append(y_pred)
+
+    predictions = np.array(predictions)
+
+    # Calculate bias and variance
+    mean_predictions = predictions.mean(axis=0)
+    bias_squared = np.mean((mean_predictions - y_val) ** 2)
+    variance = np.mean(predictions.var(axis=0))
+    mse = mean_squared_error(y_val, mean_predictions)
+
+    return {
+        "bias_squared": float(bias_squared),
+        "variance": float(variance),
+        "mse": float(mse),
+        "n_bootstraps": n_bootstraps,
+    }
+
+
+def plot_bias_variance(model, X_train, y_train, X_val, y_val, output_path=None):
+    """
+    Plot bias-variance diagnosis visualization.
+
+    Args:
+        model: Trained model
+        X_train: Training features
+        y_train: Training targets
+        X_val: Validation features
+        y_val: Validation targets
+        output_path: Path to save plot
+
+    Returns:
+        None (saves plot to file)
+    """
+    if not plt:
+        raise ImportError("Matplotlib is required for plotting")
+
+    diagnosis = diagnose_bias_variance(model, X_train, y_train, X_val, y_val)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    scores = [diagnosis["train_score"], diagnosis["val_score"]]
+    labels = ["Training", "Validation"]
+    colors = ["#2ecc71", "#e74c3c"]
+
+    bars = ax.bar(labels, scores, color=colors, alpha=0.7)
+    ax.set_ylabel("R² Score")
+    ax.set_title(f'Bias-Variance Diagnosis: {diagnosis["diagnosis"]}')
+    ax.set_ylim([0, 1])
+    ax.grid(True, alpha=0.3, axis="y")
+
+    # Add value labels on bars
+    for bar, score in zip(bars, scores):
+        height = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width() / 2.0, height, f"{score:.3f}", ha="center", va="bottom"
+        )
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, dpi=100, bbox_inches="tight")
+        plt.close()
+
+
+def identify_optimal_complexity(
+    X_train,
+    y_train,
+    X_val,
+    y_val,
+    model_type="RandomForest",
+    complexity_param="max_depth",
+    complexity_range=None,
+):
+    """
+    Identify optimal model complexity to balance bias and variance.
+
+    Args:
+        X_train: Training features
+        y_train: Training targets
+        X_val: Validation features
+        y_val: Validation targets
+        model_type: Type of model ('RandomForest', 'GradientBoosting')
+        complexity_param: Parameter controlling complexity
+        complexity_range: Range of values to test
+
+    Returns:
+        dict: Optimal parameter value and performance curves
+    """
+    from sklearn.metrics import r2_score
+
+    if complexity_range is None:
+        if complexity_param == "max_depth":
+            complexity_range = [3, 5, 10, 15, 20, None]
+        elif complexity_param == "n_estimators":
+            complexity_range = [10, 50, 100, 200, 500]
+        else:
+            raise ValueError(f"Please specify complexity_range for {complexity_param}")
+
+    train_scores = []
+    val_scores = []
+
+    for value in complexity_range:
+        # Create model with specified complexity
+        if model_type == "RandomForest":
+            from sklearn.ensemble import RandomForestRegressor
+
+            model = RandomForestRegressor(**{complexity_param: value}, random_state=42)
+        elif model_type == "GradientBoosting":
+            from sklearn.ensemble import GradientBoostingRegressor
+
+            model = GradientBoostingRegressor(**{complexity_param: value}, random_state=42)
+        else:
+            raise ValueError(f"Unknown model_type: {model_type}")
+
+        # Fit and evaluate
+        model.fit(X_train, y_train)
+        train_score = r2_score(y_train, model.predict(X_train))
+        val_score = r2_score(y_val, model.predict(X_val))
+
+        train_scores.append(train_score)
+        val_scores.append(val_score)
+
+    # Find optimal value (max validation score)
+    optimal_idx = np.argmax(val_scores)
+    optimal_value = complexity_range[optimal_idx]
+
+    return {
+        "optimal_value": optimal_value,
+        "optimal_val_score": val_scores[optimal_idx],
+        "complexity_param": complexity_param,
+        "complexity_range": [str(v) for v in complexity_range],
+        "train_scores": train_scores,
+        "val_scores": val_scores,
+    }
+
+
+# ============================================================================
+# Time-Series Cross-Validation
+# ============================================================================
+
+
+def create_expanding_window_cv(n_splits=5, min_train_size=None):
+    """
+    Create expanding window cross-validation splitter for time-series.
+
+    In expanding window CV, training set grows while test set is fixed size.
+    Maintains temporal ordering: train on past, test on future.
+
+    Args:
+        n_splits: Number of splits
+        min_train_size: Minimum training set size (optional)
+
+    Returns:
+        TimeSeriesSplit object
+    """
+    from sklearn.model_selection import TimeSeriesSplit
+
+    return TimeSeriesSplit(n_splits=n_splits, max_train_size=None)  # Expanding window (no max)
+
+
+def create_rolling_window_cv(n_splits=5, max_train_size=None):
+    """
+    Create rolling window cross-validation splitter for time-series.
+
+    In rolling window CV, both training and test sets are fixed size.
+    Maintains temporal ordering.
+
+    Args:
+        n_splits: Number of splits
+        max_train_size: Maximum training set size (fixed window)
+
+    Returns:
+        TimeSeriesSplit object
+    """
+    from sklearn.model_selection import TimeSeriesSplit
+
+    return TimeSeriesSplit(n_splits=n_splits, max_train_size=max_train_size)
+
+
+def evaluate_with_time_series_cv(model, X, y, cv_type="expanding", n_splits=5, max_train_size=None):
+    """
+    Evaluate model using time-series aware cross-validation.
+
+    Args:
+        model: Scikit-learn model
+        X: Feature matrix
+        y: Target vector
+        cv_type: 'expanding' or 'rolling'
+        n_splits: Number of splits
+        max_train_size: Maximum training size for rolling window
+
+    Returns:
+        dict: Cross-validation results
+    """
+    from sklearn.model_selection import cross_val_score
+
+    if cv_type == "expanding":
+        cv = create_expanding_window_cv(n_splits=n_splits)
+    elif cv_type == "rolling":
+        cv = create_rolling_window_cv(n_splits=n_splits, max_train_size=max_train_size)
+    else:
+        raise ValueError(f"Unknown cv_type: {cv_type}")
+
+    scores = cross_val_score(model, X, y, cv=cv, scoring="r2")
+
+    return {
+        "cv_type": cv_type,
+        "cv_scores": scores.tolist(),
+        "mean_score": float(np.mean(scores)),
+        "std_score": float(np.std(scores)),
+        "n_splits": n_splits,
+    }
+
+
+# ============================================================================
+# Performance Heatmaps (Sector × Region)
+# ============================================================================
+
+
+def compute_sector_region_metrics(
+    df, y_true_col, y_pred_col, sector_col="sector", region_col="region"
+):
+    """
+    Compute metrics for each sector-region combination.
+
+    Args:
+        df: DataFrame with predictions and grouping columns
+        y_true_col: Column name for true values
+        y_pred_col: Column name for predictions
+        sector_col: Column name for sector
+        region_col: Column name for region
+
+    Returns:
+        pd.DataFrame: Metrics for each sector-region combination
+    """
+    results = []
+
+    for sector in df[sector_col].dropna().unique():
+        for region in df[region_col].dropna().unique():
+            mask = (df[sector_col] == sector) & (df[region_col] == region)
+            subset = df[mask]
+
+            if len(subset) > 0:
+                y_true = subset[y_true_col].values
+                y_pred = subset[y_pred_col].values
+
+                metrics = comprehensive_regression_metrics(y_true, y_pred)
+                metrics["sector"] = sector
+                metrics["region"] = region
+                results.append(metrics)
+
+    return pd.DataFrame(results)
+
+
+def create_sector_region_performance_heatmap(
+    df,
+    y_true_col,
+    y_pred_col,
+    sector_col="sector",
+    region_col="region",
+    metric="mae",
+    output_path=None,
+):
+    """
+    Create heatmap showing performance across sector-region combinations.
+
+    Args:
+        df: DataFrame with predictions
+        y_true_col: Column name for true values
+        y_pred_col: Column name for predictions
+        sector_col: Column name for sector
+        region_col: Column name for region
+        metric: Metric to display ('mae', 'rmse', 'r2', 'mape')
+        output_path: Path to save heatmap
+
+    Returns:
+        None (saves plot to file)
+    """
+    if not plt or not sns:
+        raise ImportError("Matplotlib and seaborn are required for heatmaps")
+
+    # Compute metrics
+    metrics_df = compute_sector_region_metrics(df, y_true_col, y_pred_col, sector_col, region_col)
+
+    # Pivot for heatmap
+    heatmap_data = metrics_df.pivot(index=sector_col, columns=region_col, values=metric)
+
+    # Create heatmap
+    plt.figure(figsize=(10, 8))
+
+    # Choose colormap based on metric (lower is better for mae/rmse/mape, higher is better for r2)
+    if metric == "r2":
+        cmap = "RdYlGn"
+        fmt = ".3f"
+    else:
+        cmap = "RdYlGn_r"
+        fmt = ".2f"
+
+    sns.heatmap(
+        heatmap_data,
+        annot=True,
+        fmt=fmt,
+        cmap=cmap,
+        cbar_kws={"label": metric.upper()},
+        linewidths=0.5,
+    )
+
+    plt.title(f"Performance Heatmap: {metric.upper()} by Sector × Region")
+    plt.xlabel("Region")
+    plt.ylabel("Sector")
+    plt.tight_layout()
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, dpi=100, bbox_inches="tight")
+        plt.close()
+
+
+# ============================================================================
+# Enhanced Residual Analysis
+# ============================================================================
+
+
+def plot_residuals_vs_features(df, y_true_col, y_pred_col, feature_cols, output_dir=None):
+    """
+    Plot residuals vs individual features to detect non-linearities.
+
+    Args:
+        df: DataFrame with predictions and features
+        y_true_col: Column name for true values
+        y_pred_col: Column name for predictions
+        feature_cols: List of feature columns to plot
+        output_dir: Directory to save plots
+
+    Returns:
+        None (saves plots to directory)
+    """
+    if not plt:
+        raise ImportError("Matplotlib is required for plotting")
+
+    # Calculate residuals
+    residuals = df[y_true_col] - df[y_pred_col]
+
+    if output_dir:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    for feature in feature_cols:
+        if feature in df.columns:
+            plt.figure(figsize=(10, 6))
+            plt.scatter(df[feature], residuals, alpha=0.5)
+            plt.axhline(y=0, color="r", linestyle="--")
+            plt.xlabel(feature)
+            plt.ylabel("Residuals")
+            plt.title(f"Residuals vs {feature}")
+            plt.grid(True, alpha=0.3)
+
+            if output_dir:
+                plt.savefig(
+                    output_dir / f"residuals_vs_{feature}.png", dpi=100, bbox_inches="tight"
+                )
+                plt.close()
+
+
+def identify_systematic_bias_patterns(df, y_true_col, y_pred_col, segment_cols):
+    """
+    Identify systematic bias patterns in predictions by segment.
+
+    Args:
+        df: DataFrame with predictions and segment columns
+        y_true_col: Column name for true values
+        y_pred_col: Column name for predictions
+        segment_cols: List of columns to segment by
+
+    Returns:
+        dict: Bias analysis for each segment
+    """
+    results = {}
+
+    for segment_col in segment_cols:
+        if segment_col in df.columns:
+            segment_biases = []
+
+            for segment_value in df[segment_col].dropna().unique():
+                mask = df[segment_col] == segment_value
+                subset = df[mask]
+
+                if len(subset) > 0:
+                    residuals = subset[y_true_col] - subset[y_pred_col]
+                    mean_bias = float(residuals.mean())
+                    std_bias = float(residuals.std())
+
+                    segment_biases.append(
+                        {
+                            "segment_value": segment_value,
+                            "mean_bias": mean_bias,
+                            "std_bias": std_bias,
+                            "n_samples": len(subset),
+                        }
+                    )
+
+            results[segment_col] = segment_biases
+
+    return results
+
+
+def analyze_residual_homoscedasticity(y_true, y_pred):
+    """
+    Test residuals for homoscedasticity (constant variance).
+
+    Uses Breusch-Pagan test to detect heteroscedasticity.
+
+    Args:
+        y_true: True values
+        y_pred: Predicted values
+
+    Returns:
+        dict: Test results with statistic and p-value
+    """
+    from scipy import stats
+
+    residuals = np.array(y_true) - np.array(y_pred)
+    y_pred = np.array(y_pred)
+
+    # Breusch-Pagan test approximation
+    # Regress squared residuals on predictions
+    residuals_squared = residuals**2
+
+    # Calculate correlation between squared residuals and predictions
+    if len(residuals) > 3:
+        correlation, p_value = stats.spearmanr(y_pred, residuals_squared)
+        test_statistic = correlation
+        is_homoscedastic = p_value > 0.05
+    else:
+        test_statistic = np.nan
+        p_value = np.nan
+        is_homoscedastic = None
+
+    return {
+        "test_name": "Spearman correlation (residuals² vs predictions)",
+        "test_statistic": float(test_statistic) if not np.isnan(test_statistic) else None,
+        "p_value": float(p_value) if not np.isnan(p_value) else None,
+        "is_homoscedastic": is_homoscedastic,
+    }
+
+
+# ============================================================================
+# Feature Importance Ranking
+# ============================================================================
+
+
+def compute_permutation_importance(model, X, y, n_repeats=10):
+    """
+    Compute permutation importance for features.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        y: Target vector
+        n_repeats: Number of permutation repeats
+
+    Returns:
+        pd.DataFrame: Feature importance with mean and std
+    """
+    from sklearn.inspection import permutation_importance
+
+    result = permutation_importance(model, X, y, n_repeats=n_repeats, random_state=42, n_jobs=-1)
+
+    if isinstance(X, pd.DataFrame):
+        feature_names = X.columns
+    else:
+        feature_names = [f"feature_{i}" for i in range(X.shape[1])]
+
+    importance_df = pd.DataFrame(
+        {
+            "feature": feature_names,
+            "importance_mean": result.importances_mean,
+            "importance_std": result.importances_std,
+        }
+    )
+
+    return importance_df.sort_values("importance_mean", ascending=False)
+
+
+def rank_features_by_importance(model, X, y, method="all"):
+    """
+    Rank features by importance using multiple methods.
+
+    Args:
+        model: Trained model
+        X: Feature matrix
+        y: Target vector
+        method: 'tree', 'permutation', 'all'
+
+    Returns:
+        pd.DataFrame: Feature rankings
+    """
+    if isinstance(X, pd.DataFrame):
+        feature_names = X.columns
+    else:
+        feature_names = [f"feature_{i}" for i in range(X.shape[1])]
+
+    results = pd.DataFrame({"feature": feature_names})
+
+    # Tree-based importance
+    if method in ["tree", "all"]:
+        if hasattr(model, "feature_importances_"):
+            results["tree_importance"] = model.feature_importances_
+
+    # Permutation importance
+    if method in ["permutation", "all"]:
+        perm_importance = compute_permutation_importance(model, X, y, n_repeats=5)
+        results = results.merge(
+            perm_importance[["feature", "importance_mean"]].rename(
+                columns={"importance_mean": "permutation_importance"}
+            ),
+            on="feature",
+            how="left",
+        )
+
+    return results.sort_values(
+        by=[c for c in results.columns if "importance" in c][0], ascending=False
+    )
+
+
+def feature_importance_stability_across_folds(model, X, y, n_splits=5):
+    """
+    Assess feature importance stability across CV folds.
+
+    Args:
+        model: Model class (will be cloned and fitted)
+        X: Feature matrix
+        y: Target vector
+        n_splits: Number of CV splits
+
+    Returns:
+        pd.DataFrame: Feature importance stability metrics
+    """
+    from sklearn.model_selection import KFold
+    from sklearn.base import clone
+
+    if isinstance(X, pd.DataFrame):
+        feature_names = X.columns
+    else:
+        feature_names = [f"feature_{i}" for i in range(X.shape[1])]
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    importance_matrix = []
+
+    for train_idx, _ in kf.split(X):
+        X_train = X.iloc[train_idx] if isinstance(X, pd.DataFrame) else X[train_idx]
+        y_train = y.iloc[train_idx] if isinstance(y, pd.Series) else y[train_idx]
+
+        model_clone = clone(model)
+        model_clone.fit(X_train, y_train)
+
+        if hasattr(model_clone, "feature_importances_"):
+            importance_matrix.append(model_clone.feature_importances_)
+
+    if len(importance_matrix) > 0:
+        importance_matrix = np.array(importance_matrix)
+
+        results = pd.DataFrame(
+            {
+                "feature": feature_names,
+                "importance_mean": importance_matrix.mean(axis=0),
+                "importance_std": importance_matrix.std(axis=0),
+            }
+        )
+
+        # Calculate stability score (inverse of coefficient of variation)
+        results["stability_score"] = 1.0 / (
+            1.0 + results["importance_std"] / (results["importance_mean"] + 1e-10)
+        )
+
+        return results.sort_values("importance_mean", ascending=False)
+    else:
+        return pd.DataFrame({"feature": feature_names})
 
 
 # ==============================================================================

@@ -337,11 +337,16 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - `finance-ml-validate` — Validation-only (finance_ml.cli:validate_main)
 
 ### Database Setup Scripts
-- **create_equities_schema.sql** — SQL script to initialize the equities table in PostgreSQL
-- **import_equities_data.sql** — Comprehensive import script for all regional CSVs with staging tables and validation
 
-### Utility Scripts
-- **setup_environment.py** — Automated environment setup utility:
+- **sql/create_equities_schema.sql** — SQL script to initialize the equities table in PostgreSQL
+- **sql/create_equities_schema_sqlite.sql** — SQLite schema creation script
+- **sql/import_equities_data.sql** — Comprehensive import script for all regional CSVs with staging tables and
+  validation (PostgreSQL)
+- **sql/import_equities_data_sqlite.sql** — SQLite data import script with validation
+
+### Utility Scripts (in tools/ directory)
+
+- **tools/setup_environment.py** — Automated environment setup utility:
   - Checks prerequisites (Python, PostgreSQL, Git)
   - Creates virtual environment
   - Installs dependencies
@@ -349,26 +354,27 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
   - Configures environment variables
   - Runs tests
   - Provides activation instructions
-- **validate_csv_import.py** — CSV data quality validator (runs validation functions before import)
+- **tools/validate_csv_import.py** — CSV data quality validator (runs validation functions before import)
     - Validates schema compliance and critical column presence
     - Checks for non-numeric values in numeric columns
     - Identifies data quality issues before database import
     - Produces validation reports for each region (US, EU, APAC, ROTW)
-- **load_equities_data.py** — Legacy PostgreSQL CSV importer used to insert CSV data into the equities table.
-    - WARNING: Contains a hard-coded password in the sample; update it or prefer env vars/DB_URL.
-    - TODO: Replace inline credentials with environment variables or remove password entirely.
-- **analyze_notebook.py** — Notebook structure analyzer (counts cells, previews content, searches for functions)
-- **refactor_notebook.py** — Notebook refactoring helper
-- **update_notebook.py** — Notebook synchronizer (extracts TDD functions from .py and inserts into .ipynb)
-- **update_notebook_imports.py** — Update notebook imports utility
-- **verify_notebook.py** — Notebook verification utility (checks for presence of TDD functions)
-- **verify_preprocessing_improvements.py** — Verify preprocessing pipeline improvements
-- **validate_phase9_integration.py** — Automated Phase 9 integration validation script
+- **tools/load_equities_data.py** — Legacy PostgreSQL CSV importer used to insert CSV data into the equities table
+    - WARNING: Contains a hard-coded password in the sample; update it or prefer env vars/DB_URL
+    - TODO: Replace inline credentials with environment variables or remove password entirely
 - **tools/import_sqlite.py** — Chunked CSV-to-SQLite importer for quick local testing
     - Supports per-region imports with automatic Region backfilling
     - Handles header removal and NULL value mapping
     - Configurable chunk size for large CSV files
     - Implements UNIQUE("Ticker","Region") constraint for deduplication
+- **tools/analyze_notebook.py** — Notebook structure analyzer (counts cells, previews content, searches for functions)
+- **tools/refactor_notebook.py** — Notebook refactoring helper
+- **tools/update_notebook.py** — Notebook synchronizer (extracts TDD functions from .py and inserts into .ipynb)
+- **tools/update_notebook_imports.py** — Update notebook imports utility
+- **tools/verify_notebook.py** — Notebook verification utility (checks for presence of TDD functions)
+- **tools/verify_preprocessing_improvements.py** — Verify preprocessing pipeline improvements
+- **tools/validate_phase95_predictions.py** — Phase 9.5 prediction flow validation script
+- **tools/validate_phase9_integration.py** — Automated Phase 9 integration validation script
 - **tools/apply_improvement_plan_updates.py** — Development plan update automation
 - **tools/apply_notebook_fixes.py** — Notebook maintenance utility
 
@@ -377,11 +383,15 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Finance_ML_Analytics_Platform.yaml — Conda environment definition (optional)
 - environment_variables.txt — Default/env examples (includes TF_CPP_MIN_LOG_LEVEL=2)
 - requirements.txt — Python dependencies for pip installs
+- pyproject.toml — Modern packaging configuration with console scripts
 - ml_finance_model_main.ipynb — Primary notebook for end-to-end workflow
-- create_equities_schema_sqlite.sql — SQLite schema for equities table
-- import_equities_data_sqlite.sql — SQLite CSV import script with validation
-- equities.sqlite — Example/working SQLite database file for local runs
-- identifier.sqlite — Auxiliary SQLite DB present in repo
+- ml_finance_model_main.py — Lightweight script version with CLI
+- sql/create_equities_schema.sql — PostgreSQL schema for equities table
+- sql/create_equities_schema_sqlite.sql — SQLite schema for equities table
+- sql/import_equities_data.sql — PostgreSQL CSV import script with validation
+- sql/import_equities_data_sqlite.sql — SQLite CSV import script with validation
+- sql/equities.sqlite — Example/working SQLite database file for local runs
+- sql/identifier.sqlite — Auxiliary SQLite DB present in repo
     - TODO: Clarify its role and whether it’s required by any scripts/tests
 
 
@@ -390,20 +400,25 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Run all tests from the project root:
   - python -m unittest -v
 
-Comprehensive test suite in tests/ directory (37 test modules):
+Comprehensive test suite in tests/ directory (47 test modules):
 
 - test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
 - test_advanced_features.py — Phase 9.3 advanced feature engineering tests
 - test_advanced_models_phase95.py — Phase 9.5 advanced regression models and ensembles
 - test_advanced_preprocessing.py — Advanced preprocessing (outlier detection, winsorization, imputation)
+- test_analyst_comparison.py — Analyst comparison and target analysis tests
 - test_analytics.py — Analytics and stock ranking tests
+- test_benchmarking.py — Benchmarking and peer comparison tests
 - test_build_features.py — Feature building pipeline
 - test_classification.py — Event classification model tests
 - test_classification_phase94.py — Phase 9.4 advanced classification models
 - test_cli.py — Command-line interface tests
 - test_coverage_smoke.py — Smoke test for coverage validation
+- test_data_catalog.py — Data catalog management tests
 - test_data_quality.py — Data validation and quality checks
+- test_data_versioning.py — Data versioning and metadata tests
 - test_eda.py — Exploratory data analysis utilities
+- test_enhanced_eda_phase92.py — Phase 9.2 enhanced EDA tests
 - test_evaluation_phase96.py — Phase 9.6 model evaluation and error analysis tests
 - test_features.py — Feature engineering functions
 - test_finance_ml_config.py — Configuration management tests
@@ -414,13 +429,19 @@ Comprehensive test suite in tests/ directory (37 test modules):
 - test_improvement_plan_revision.py — Development plan validation
 - test_loaders.py — CSV and database loading functions
 - test_logging.py — Logging configuration tests
+- test_model_evaluation_advanced.py — Advanced model evaluation tests
 - test_notebook_config.py — Notebook configuration tests
 - test_notebook_enhancements.py — Notebook enhancements validation
 - test_notebook_integration.py — Notebook integration tests
 - test_notebook_quality_improvements.py — Notebook quality improvements tests (config API, type validation, error
   handling)
+- test_onehot_encoding.py — One-hot encoding functionality tests
+- test_phase91_enhancements.py — Phase 9.1 enhancements tests
+- test_phase93_enhancements.py — Phase 9.3 enhancements tests
+- test_phase95_error_handling.py — Phase 9.5 error handling tests
 - test_portfolio_optimization.py — Portfolio optimization tests
 - test_preprocess_and_training.py — Preprocessing and training workflows
+- test_quantile_fix.py — Quantile regression fixes tests
 - test_regression.py — Regression model evaluation
 - test_repository_setup.py — Validates repository basics (required files, SQL schema, environment config)
 - test_risk_metrics.py — Risk metrics calculation tests
@@ -442,6 +463,8 @@ Finance_ML_Analytics_Platform/
 │   ├── advanced_features.py      # Advanced feature engineering (Phase 9.3)
 │   ├── advanced_models.py        # Sector-optimized regression models (Phase 9.5)
 │   ├── advanced_preprocessing.py # Advanced preprocessing and data quality
+│   ├── analyst_comparison.py     # Analyst price target comparison and tracking (Phase 9.8)
+│   ├── benchmarking.py           # Comparative analysis and peer benchmarking (Phase 9.2)
 │   ├── benchmarking.py           # Comparative analysis and peer benchmarking (Phase 9.2)
 │   ├── classification.py         # Multi-class event classification (Phase 9.4)
 │   ├── cli.py                    # Command-line interface
@@ -460,7 +483,7 @@ Finance_ML_Analytics_Platform/
 │   ├── transformers.py           # Scikit-learn compatible feature transformers
 │   └── verify_requirements.py    # Requirements verification utility
 │
-├── tests/                        # Unit tests (comprehensive test suite, 32 modules)
+├── tests/                        # Unit tests (comprehensive test suite, 47 modules)
 │   ├── test_advanced_eda.py
 │   ├── test_advanced_models_phase95.py
 │   ├── test_advanced_preprocessing.py
@@ -500,29 +523,36 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
 │
+├── sql/                          # SQL scripts and database files
+│   ├── create_equities_schema.sql        # PostgreSQL schema setup
+│   ├── create_equities_schema_sqlite.sql # SQLite schema setup
+│   ├── import_equities_data.sql          # Data import script (PostgreSQL)
+│   ├── import_equities_data_sqlite.sql   # SQLite data import script
+│   ├── equities.sqlite                   # Example SQLite database
+│   └── identifier.sqlite                 # Auxiliary SQLite database
+│
 ├── ml_finance_model_main.ipynb   # Main interactive Jupyter notebook (end-to-end ML pipeline)
 ├── equities_data_explorer.ipynb  # Data exploration and EDA notebook
 ├── ml_finance_model_main.py      # Lightweight script version with CLI (uses finance_ml package)
 ├── archive/                       # Archived versions (v8_2, etc.)
 │
-├── tools/                         # Utility scripts
-│   ├── __init__.py                # Package marker
-│   ├── apply_improvement_plan_updates.py  # Development plan update automation
-│   ├── apply_notebook_fixes.py    # Notebook maintenance utility
-│   └── import_sqlite.py           # Chunked CSV→SQLite importer
-│
-├── analyze_notebook.py           # Notebook analysis utility
-├── refactor_notebook.py          # Notebook refactoring helper
-├── update_notebook.py            # Sync functions between .py and .ipynb
-├── update_notebook_imports.py    # Update notebook imports
-├── verify_notebook.py            # Verify notebook functions
-├── verify_preprocessing_improvements.py # Verify preprocessing pipeline improvements
-├── validate_csv_import.py        # CSV data validation helper
-│
-├── create_equities_schema.sql           # PostgreSQL schema setup
-├── import_equities_data.sql             # Data import script (PostgreSQL)
-├── create_equities_schema_sqlite.sql    # SQLite schema setup
-├── import_equities_data_sqlite.sql      # SQLite data import script
+├── tools/                         # Utility scripts (30+ tools)
+│   ├── __init__.py                         # Package marker
+│   ├── setup_environment.py                # Automated environment setup
+│   ├── validate_csv_import.py              # CSV data validation helper
+│   ├── import_sqlite.py                    # Chunked CSV→SQLite importer
+│   ├── load_equities_data.py               # Legacy PostgreSQL CSV importer
+│   ├── analyze_notebook.py                 # Notebook structure analyzer
+│   ├── refactor_notebook.py                # Notebook refactoring helper
+│   ├── update_notebook.py                  # Sync functions between .py and .ipynb
+│   ├── update_notebook_imports.py          # Update notebook imports
+│   ├── verify_notebook.py                  # Verify notebook functions
+│   ├── verify_preprocessing_improvements.py # Verify preprocessing improvements
+│   ├── validate_phase95_predictions.py     # Phase 9.5 prediction validation
+│   ├── validate_phase9_integration.py      # Phase 9 integration validator
+│   ├── apply_improvement_plan_updates.py   # Development plan automation
+│   ├── apply_notebook_fixes.py             # Notebook maintenance utility
+│   └── ... (additional notebook and validation tools)
 │
 ├── environment_variables.txt     # Environment configuration examples
 ├── requirements.txt              # Core dependencies
@@ -747,6 +777,37 @@ Centralized data asset registry (Phase 9.1).
 - `list_datasets()`: List all registered datasets
 - `search_datasets()`: Search datasets by criteria
 - `update_metadata()`: Update dataset metadata
+
+#### `finance_ml.benchmarking`
+
+Comparative analysis and peer benchmarking (Phase 9.2).
+
+- `compare_sector_distributions()`: Compare metric distributions across sectors with statistical tests
+- `compare_regional_valuations()`: Compare valuation metrics across regions (ANOVA/Kruskal-Wallis)
+- `find_peer_group()`: Identify peer companies based on sector and criteria (market cap, revenue, etc.)
+- `compare_to_peers()`: Compare a stock's metrics against its peer group
+- `analyze_metric_trend()`: Analyze time-series trends for specific metrics
+- `generate_benchmarking_report()`: Generate comprehensive benchmarking report with sector and regional comparisons
+
+#### `finance_ml.transformers`
+
+Scikit-learn compatible transformers for feature engineering pipelines.
+
+- `RegularizedTargetEncoder`: Target encoding with cross-validation and smoothing to prevent overfitting
+- `SafeDivisionTransformer`: Safe division with configurable fill values and capping for ratios
+- `FinancialRatioTransformer`: Automated calculation of common financial ratios (P/E, P/B, ROE, etc.)
+- `ValuationRatioTransformer`: Valuation ratio calculation with percentile-based capping for outliers
+
+#### `finance_ml.analyst_comparison`
+
+Analyst price target comparison and tracking (Phase 9.8).
+
+- `compare_predicted_vs_analyst_targets()`: Compare model predictions against analyst price targets
+- `calculate_prediction_accuracy_metrics()`: Calculate accuracy metrics for prediction vs. actual price performance
+- `identify_prediction_opportunities()`: Identify stocks where model predictions differ significantly from analyst
+  consensus
+- `track_target_revisions()`: Track changes in analyst price targets over time
+- `generate_analyst_comparison_report()`: Generate comprehensive analyst comparison report with visualizations
 
 #### `finance_ml.benchmarking`
 
