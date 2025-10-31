@@ -16,7 +16,7 @@ Modules:
 - finance_ml.portfolio_optimization: Modern Portfolio Theory and optimization
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.1"
 
 # Import from advanced_eda module (Phase 9.2)
 from finance_ml.advanced_eda import (
@@ -178,6 +178,15 @@ from finance_ml.eval import (
     # Phase 9.1 Enhancement #3: Data Quality Dashboard
     generate_data_quality_dashboard,
     export_profiling_report,
+    # Phase 9.8: Prediction vs. Analyst Price Target Comparison Analytics
+    compare_prediction_vs_analyst_targets,
+    calculate_directional_accuracy,
+    calculate_agreement_rate,
+    identify_disagreement_opportunities,
+    calculate_prediction_accuracy_metrics,
+    segment_comparison_by_attribute,
+    analyze_systematic_bias,
+    generate_prediction_analyst_excel_report,
 )
 from finance_ml.features import (
     _safe_div,

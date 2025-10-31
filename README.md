@@ -1,13 +1,10 @@
 # Finance ML Analytics Platform
 
-**Version 0.4.0** — A professional, modular Python package for equity screening, feature engineering, and machine
+**Version 0.4.1** — A professional, modular Python package for equity screening, feature engineering, and machine
 learning models across global regions.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-> **TODO**: Sync version strings across files (pyproject.toml and finance_ml/__init__.py show 0.3.0; CHANGELOG.md shows
-> 0.4.0 as current)
 
 ## Quick Start (TL;DR)
 
@@ -84,8 +81,9 @@ see [IMPROVEMENT_PLAN.md Phase 9](improvement_plan/IMPROVEMENT_PLAN.md) for deta
   asset registry
 - **Phase 9.2**: Enhanced EDA with statistical analysis — Distribution analysis, outlier detection (IQR), normality
   tests, correlation matrices (Pearson/Spearman), sector-wise summaries
-- **Phase 9.3**: Advanced feature engineering (685 lines) — 40+ financial ratios, sector-specific features, feature
-  selection
+- **Phase 9.3**: Advanced feature engineering (978 lines, 13 functions) — Comprehensive financial ratios,
+  sector-specific features for all major sectors, temporal/market microstructure features, non-linear transforms,
+  feature interactions, automated feature selection (88 tests, 93% coverage)
 - **Phase 9.4**: Multi-class event classification (1,336 lines) — Neural networks, ensemble methods, SHAP interpretation
 - **Phase 9.5**: Sector-optimized regression (1,091 lines) — 12+ regression models, hyperparameter optimization,
   stacking, comprehensive error handling, prediction flow validation
@@ -438,7 +436,7 @@ Comprehensive test suite in tests/ directory (37 test modules):
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.4.0)
+├── finance_ml/                    # Main Python package (v0.3.0)
 │   ├── __init__.py               # Package exports and version
 │   ├── advanced_eda.py           # Advanced EDA with statistical analysis (Phase 9.2)
 │   ├── advanced_features.py      # Advanced feature engineering (Phase 9.3)
@@ -613,16 +611,42 @@ Advanced exploratory data analysis with statistical testing (Phase 9.2).
 
 #### `finance_ml.advanced_features`
 
-Advanced feature engineering with sector-specific optimizations (Phase 9.3).
+Advanced feature engineering with sector-specific optimizations (Phase 9.3). 13 functions, 88 tests, 93% coverage.
 
-- `calculate_financial_ratios()`: 40+ comprehensive financial ratios (valuation, profitability, leverage, liquidity,
-  efficiency, growth)
-- `calculate_sector_specific_features()`: Sector-tailored features (Financials: TBV; Tech/Healthcare: R&D intensity;
-  Industrials: CAPEX)
-- `create_feature_interactions()`: Pairwise interactions and polynomial features
-- `calculate_relative_value_features()`: Sector-relative metrics (deviation, z-scores, percentile ranks)
-- `select_features_mutual_info()`, `select_features_random_forest()`: Automated feature selection
-- `build_comprehensive_features()`: One-stop orchestration for complete feature pipeline
+**Financial Ratio Engineering:**
+
+- `engineer_valuation_ratios()`: P/E, P/B, P/S, EV/EBITDA, EV/Sales, PEG ratio, Dividend Yield
+- `engineer_profitability_ratios()`: ROE, ROA, ROIC, Gross/Operating/Net Margins
+- `engineer_leverage_ratios()`: Debt/Equity, Net Debt/EBITDA, Interest Coverage, Debt/Assets, Equity Ratio
+- `engineer_liquidity_ratios()`: Current, Quick, Cash ratios, Working Capital/Sales
+- `engineer_efficiency_ratios()`: Asset/Inventory/Receivables Turnover, Revenue/Employee
+- `engineer_growth_metrics()`: Revenue/EPS/EBITDA Growth YoY
+
+**Sector-Specific & Advanced Features:**
+
+- `engineer_sector_specific_features()`: Sector-tailored features (Financials: TBV, P/TBV, NIM, Efficiency Ratio;
+  Energy/Materials: CAPEX intensity, Asset turnover; Technology: R&D intensity, SG&A efficiency, Rule of 40, Cash burn;
+  Healthcare: R&D/Revenue; Consumer: Inventory days, Marketing efficiency; Industrials: CAPEX/Depreciation, Working
+  capital efficiency; Utilities: Dividend payout ratio)
+- `engineer_temporal_features()`: Fiscal quarter, month, year, days since reference date
+- `engineer_market_microstructure_features()`: Volatility (30/60/90d), momentum, moving averages, price range
+- `engineer_nonlinear_transforms()`: Log, square root, inverse transforms for skewed distributions
+
+**Feature Interactions & Relative Value:**
+
+- `create_feature_interactions()`: Pairwise interactions and polynomial features (degree 2-3)
+- `create_relative_value_features()`: Sector median deviation, z-scores, percentile ranks
+
+**Automated Feature Selection:**
+
+- `calculate_feature_importance_mutual_info()`: Mutual information-based feature importance
+- `calculate_feature_importance_rf()`: Random Forest-based feature importance
+- `calculate_feature_importance_shap()`: SHAP value-based importance (with fallback to RF)
+- `calculate_feature_importance_rfe()`: Recursive Feature Elimination with cross-validation
+
+**Pipeline Orchestration:**
+
+- `build_comprehensive_features()`: End-to-end feature engineering pipeline with configurable options
 
 #### `finance_ml.classification`
 
@@ -1028,7 +1052,7 @@ flake8 finance_ml
 mypy finance_ml --ignore-missing-imports
 ```
 
-## What's New in v0.4.0
+## What's New in v0.3.0
 
 **Released: 2025-10-30**
 

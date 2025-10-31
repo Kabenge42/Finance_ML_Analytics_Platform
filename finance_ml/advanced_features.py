@@ -19,7 +19,8 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_selection import mutual_info_regression
+from sklearn.feature_selection import mutual_info_regression, RFE, RFECV
+from sklearn.linear_model import Ridge
 
 logger = logging.getLogger(__name__)
 
@@ -330,6 +331,53 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
                 financials_mask, "total_equity"
             ] - df.loc[financials_mask, "intangible_assets"].fillna(0)
 
+            # Price to Tangible Book Value ratio
+            if "last_price" in df.columns and "shares_outstanding" in df.columns:
+                tbv_per_share = (
+                    result.loc[financials_mask, "tangible_book_value"]
+                    / df.loc[financials_mask, "shares_outstanding"]
+                )
+                result.loc[financials_mask, "p_tbv_ratio"] = _safe_div(
+                    df.loc[financials_mask, "last_price"], tbv_per_share
+                )
+
+        # Net Interest Margin
+        if all(
+            col in df.columns for col in ["interest_income", "interest_expense", "earning_assets"]
+        ):
+            net_interest_income = (
+                df.loc[financials_mask, "interest_income"]
+                - df.loc[financials_mask, "interest_expense"]
+            )
+            result.loc[financials_mask, "net_interest_margin"] = (
+                _safe_div(net_interest_income, df.loc[financials_mask, "earning_assets"]) * 100
+            )
+
+        # Efficiency Ratio
+        if "operating_expenses" in df.columns and "revenue" in df.columns:
+            result.loc[financials_mask, "efficiency_ratio"] = (
+                _safe_div(
+                    df.loc[financials_mask, "operating_expenses"],
+                    df.loc[financials_mask, "revenue"],
+                )
+                * 100
+            )
+
+    # Energy/Materials sector features
+    energy_mask = df[sector_col].str.contains("Energy|Materials", case=False, na=False)
+    if energy_mask.any():
+        # CAPEX Intensity
+        if "capex" in df.columns and "revenue" in df.columns:
+            result.loc[energy_mask, "capex_intensity"] = (
+                _safe_div(df.loc[energy_mask, "capex"], df.loc[energy_mask, "revenue"]) * 100
+            )
+
+        # Asset Turnover
+        if "revenue" in df.columns and "total_assets" in df.columns:
+            result.loc[energy_mask, "asset_turnover"] = _safe_div(
+                df.loc[energy_mask, "revenue"], df.loc[energy_mask, "total_assets"]
+            )
+
     # Technology sector features
     tech_mask = df[sector_col].str.contains("Technology|Information", case=False, na=False)
     if tech_mask.any():
@@ -339,13 +387,52 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
                 _safe_div(df.loc[tech_mask, "r_d_expenses"], df.loc[tech_mask, "revenue"]) * 100
             )
 
+        # SG&A Efficiency
+        if "sga_expenses" in df.columns and "revenue" in df.columns:
+            result.loc[tech_mask, "sga_efficiency"] = (
+                _safe_div(df.loc[tech_mask, "sga_expenses"], df.loc[tech_mask, "revenue"]) * 100
+            )
+
+        # Rule of 40 (Growth + Margin)
+        if "revenue_growth_yoy" in df.columns and "operating_margin_pct" in df.columns:
+            result.loc[tech_mask, "rule_of_40"] = (
+                df.loc[tech_mask, "revenue_growth_yoy"] + df.loc[tech_mask, "operating_margin_pct"]
+            )
+
+        # Cash Burn Rate
+        if "operating_cash_flow" in df.columns and "capex" in df.columns:
+            result.loc[tech_mask, "cash_burn_rate"] = (
+                df.loc[tech_mask, "operating_cash_flow"] - df.loc[tech_mask, "capex"]
+            )
+
     # Healthcare sector features
     health_mask = df[sector_col].str.contains("Health", case=False, na=False)
     if health_mask.any():
-        # Similar R&D intensity for healthcare
+        # R&D intensity for healthcare
         if "r_d_expenses" in df.columns and "revenue" in df.columns:
             result.loc[health_mask, "r_d_intensity"] = (
                 _safe_div(df.loc[health_mask, "r_d_expenses"], df.loc[health_mask, "revenue"]) * 100
+            )
+
+    # Consumer sector features (Consumer Discretionary, Consumer Staples)
+    consumer_mask = df[sector_col].str.contains("Consumer", case=False, na=False)
+    if consumer_mask.any():
+        # Inventory Days
+        if "inventory" in df.columns and "cost_of_goods_sold" in df.columns:
+            result.loc[consumer_mask, "inventory_days"] = (
+                _safe_div(
+                    df.loc[consumer_mask, "inventory"], df.loc[consumer_mask, "cost_of_goods_sold"]
+                )
+                * 365
+            )
+
+        # Marketing Efficiency
+        if "marketing_expenses" in df.columns and "revenue" in df.columns:
+            result.loc[consumer_mask, "marketing_efficiency"] = (
+                _safe_div(
+                    df.loc[consumer_mask, "marketing_expenses"], df.loc[consumer_mask, "revenue"]
+                )
+                * 100
             )
 
     # Industrials sector features
@@ -358,7 +445,206 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
                 * 100
             )
 
+        # CAPEX to Depreciation ratio
+        if "capex" in df.columns and "depreciation_amortization" in df.columns:
+            result.loc[industrials_mask, "capex_to_depreciation"] = _safe_div(
+                df.loc[industrials_mask, "capex"],
+                df.loc[industrials_mask, "depreciation_amortization"],
+            )
+
+        # Working Capital Efficiency
+        if all(col in df.columns for col in ["current_assets", "current_liabilities", "revenue"]):
+            working_capital = (
+                df.loc[industrials_mask, "current_assets"]
+                - df.loc[industrials_mask, "current_liabilities"]
+            )
+            result.loc[industrials_mask, "working_capital_efficiency"] = (
+                _safe_div(working_capital, df.loc[industrials_mask, "revenue"]) * 100
+            )
+
+    # Utilities sector features
+    utilities_mask = df[sector_col].str.contains("Utilities", case=False, na=False)
+    if utilities_mask.any():
+        # Dividend Payout Ratio
+        if "dividends_paid" in df.columns and "net_income" in df.columns:
+            result.loc[utilities_mask, "dividend_payout_ratio"] = (
+                _safe_div(
+                    df.loc[utilities_mask, "dividends_paid"], df.loc[utilities_mask, "net_income"]
+                )
+                * 100
+            )
+
     logger.info(f"Engineered sector-specific features")
+    return result
+
+
+def engineer_temporal_features(
+    df: pd.DataFrame, date_col: str = "report_date", reference_date: Optional[pd.Timestamp] = None
+) -> pd.DataFrame:
+    """Engineer temporal features from date columns.
+
+    Args:
+        df: Input DataFrame
+        date_col: Name of date column to extract features from
+        reference_date: Optional reference date for calculating days since
+
+    Returns:
+        DataFrame with temporal features added
+    """
+    result = df.copy()
+
+    if date_col not in df.columns:
+        logger.warning(f"Date column '{date_col}' not found, skipping temporal features")
+        return result
+
+    # Ensure date column is datetime
+    if not pd.api.types.is_datetime64_any_dtype(result[date_col]):
+        try:
+            result[date_col] = pd.to_datetime(result[date_col])
+        except Exception as e:
+            logger.warning(f"Could not convert {date_col} to datetime: {e}")
+            return result
+
+    # Extract fiscal quarter (1-4)
+    result["fiscal_quarter"] = result[date_col].dt.quarter
+
+    # Extract month (1-12)
+    result["month"] = result[date_col].dt.month
+
+    # Extract year
+    result["year"] = result[date_col].dt.year
+
+    # Days since reference date
+    if reference_date is not None:
+        result["days_since_reference"] = (result[date_col] - reference_date).dt.days
+
+    logger.info(f"Engineered temporal features from {date_col}")
+    return result
+
+
+def engineer_market_microstructure_features(
+    df: pd.DataFrame,
+    price_col: str = "last_price",
+    high_col: str = "high_price",
+    low_col: str = "low_price",
+    group_col: Optional[str] = None,
+) -> pd.DataFrame:
+    """Engineer market microstructure features (volatility, momentum, moving averages).
+
+    Args:
+        df: Input DataFrame
+        price_col: Name of price column
+        high_col: Name of high price column (for range calculation)
+        low_col: Name of low price column (for range calculation)
+        group_col: Optional grouping column (e.g., ticker) for time-series features
+
+    Returns:
+        DataFrame with market microstructure features added
+    """
+    result = df.copy()
+
+    if price_col not in df.columns:
+        logger.warning(
+            f"Price column '{price_col}' not found, skipping market microstructure features"
+        )
+        return result
+
+    # Price range indicator (requires high and low prices)
+    if high_col in df.columns and low_col in df.columns:
+        price_range = df[high_col] - df[low_col]
+        result["price_range_pct"] = _safe_div(price_range, df[price_col]) * 100
+
+    # Time-series features (volatility, momentum, moving averages)
+    if group_col and group_col in df.columns:
+        # Historical volatility (30, 60, 90 day rolling windows)
+        for window in [30, 60, 90]:
+            result[f"volatility_{window}d"] = df.groupby(group_col)[price_col].transform(
+                lambda x: x.pct_change()
+                .rolling(window=window, min_periods=max(1, window // 2))
+                .std()
+                * 100
+            )
+
+        # Momentum (rate of change over 20 days)
+        result["momentum_20d"] = df.groupby(group_col)[price_col].transform(
+            lambda x: x.pct_change(periods=20) * 100
+        )
+
+        # Moving averages (20, 50 day)
+        for window in [20, 50]:
+            result[f"ma_{window}d"] = df.groupby(group_col)[price_col].transform(
+                lambda x: x.rolling(window=window, min_periods=max(1, window // 2)).mean()
+            )
+    else:
+        # Without grouping, calculate simple rolling features if enough data
+        if len(df) >= 30:
+            for window in [30, 60, 90]:
+                if len(df) >= window:
+                    result[f"volatility_{window}d"] = (
+                        df[price_col]
+                        .pct_change()
+                        .rolling(window=window, min_periods=window // 2)
+                        .std()
+                        * 100
+                    )
+
+            if len(df) >= 20:
+                result["momentum_20d"] = df[price_col].pct_change(periods=20) * 100
+
+            for window in [20, 50]:
+                if len(df) >= window:
+                    result[f"ma_{window}d"] = (
+                        df[price_col].rolling(window=window, min_periods=window // 2).mean()
+                    )
+
+    logger.info("Engineered market microstructure features")
+    return result
+
+
+def engineer_nonlinear_transforms(
+    df: pd.DataFrame,
+    log_features: Optional[List[str]] = None,
+    sqrt_features: Optional[List[str]] = None,
+    inverse_features: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """Apply non-linear transformations to features.
+
+    Args:
+        df: Input DataFrame
+        log_features: Features to apply natural log transformation (for skewed distributions)
+        sqrt_features: Features to apply square root transformation
+        inverse_features: Features to apply inverse transformation (1/x)
+
+    Returns:
+        DataFrame with non-linear transformed features added
+    """
+    result = df.copy()
+
+    # Log transformation (natural log)
+    if log_features:
+        for feature in log_features:
+            if feature in df.columns:
+                # Only apply log to positive values
+                result[f"log_{feature}"] = df[feature].apply(
+                    lambda x: np.log(x) if x > 0 else np.nan
+                )
+
+    # Square root transformation
+    if sqrt_features:
+        for feature in sqrt_features:
+            if feature in df.columns:
+                # Only apply sqrt to non-negative values
+                result[f"sqrt_{feature}"] = df[feature].apply(
+                    lambda x: np.sqrt(x) if x >= 0 else np.nan
+                )
+
+    # Inverse transformation (1/x)
+    if inverse_features:
+        for feature in inverse_features:
+            if feature in df.columns:
+                result[f"inv_{feature}"] = _safe_div(pd.Series([1.0] * len(df)), df[feature])
+
+    logger.info(f"Applied non-linear transforms")
     return result
 
 
@@ -522,16 +808,16 @@ def calculate_feature_importance_rf(
     """
     # Handle missing and invalid values
     X_clean = X.copy()
-    
+
     # Replace infinite values with NaN first
     X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
-    
+
     # Fill NaN with median
     X_clean = X_clean.fillna(X_clean.median())
-    
+
     # For any remaining NaN (e.g., all-NaN columns), fill with 0
     X_clean = X_clean.fillna(0)
-    
+
     # Clip extremely large values to prevent overflow
     # Use 3 standard deviations as threshold for each column
     for col in X_clean.columns:
@@ -542,7 +828,7 @@ def calculate_feature_importance_rf(
             lower_bound = mean_val - 3 * std_val
             upper_bound = mean_val + 3 * std_val
             X_clean[col] = np.clip(col_data, lower_bound, upper_bound)
-    
+
     # Handle target variable
     y_clean = y.replace([np.inf, -np.inf], np.nan)
     y_clean = y_clean.fillna(y_clean.median())
@@ -565,6 +851,103 @@ def calculate_feature_importance_rf(
 
     logger.info(f"Calculated Random Forest importance for {len(X.columns)} features")
     return importance_df
+
+
+def calculate_feature_importance_shap(
+    X: pd.DataFrame, y: pd.Series, top_k: Optional[int] = None, n_estimators: int = 50
+) -> pd.DataFrame:
+    """Calculate feature importance using SHAP values.
+
+    Args:
+        X: Feature DataFrame
+        y: Target variable
+        top_k: Return only top k features (default: all)
+        n_estimators: Number of trees for tree-based model
+
+    Returns:
+        DataFrame with features and importance scores, sorted by importance
+    """
+    # Clean data
+    X_clean = X.copy().replace([np.inf, -np.inf], np.nan).fillna(0)
+    y_clean = y.replace([np.inf, -np.inf], np.nan).fillna(y.median())
+
+    # Train a simple model for SHAP
+    model = RandomForestRegressor(
+        n_estimators=n_estimators, random_state=42, max_depth=5, n_jobs=-1
+    )
+    model.fit(X_clean, y_clean)
+
+    try:
+        # Try to use SHAP if available
+        import shap
+
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_clean)
+
+        # Calculate mean absolute SHAP values per feature
+        mean_abs_shap = np.abs(shap_values).mean(axis=0)
+        importance_df = pd.DataFrame(
+            {"feature": X.columns, "importance": mean_abs_shap}
+        ).sort_values("importance", ascending=False)
+    except ImportError:
+        # Fallback to Random Forest feature importance if SHAP not available
+        logger.warning("SHAP not available, falling back to Random Forest feature importance")
+        importance_df = pd.DataFrame(
+            {"feature": X.columns, "importance": model.feature_importances_}
+        ).sort_values("importance", ascending=False)
+
+    if top_k is not None:
+        importance_df = importance_df.head(top_k)
+
+    logger.info(f"Calculated SHAP importance for {len(X.columns)} features")
+    return importance_df
+
+
+def calculate_feature_importance_rfe(
+    X: pd.DataFrame, y: pd.Series, n_features_to_select: int = 10, cv: Optional[int] = None
+) -> List[str]:
+    """Select features using Recursive Feature Elimination.
+
+    Args:
+        X: Feature DataFrame
+        y: Target variable
+        n_features_to_select: Number of features to select
+        cv: Number of cross-validation folds (uses RFECV if provided)
+
+    Returns:
+        List of selected feature names
+    """
+    # Clean data
+    X_clean = X.copy().replace([np.inf, -np.inf], np.nan).fillna(0)
+    y_clean = y.replace([np.inf, -np.inf], np.nan).fillna(y.median())
+
+    # Use Ridge regression as the base estimator (fast and stable)
+    estimator = Ridge(alpha=1.0, random_state=42)
+
+    if cv is not None and cv > 1:
+        # Use RFECV for cross-validated selection
+        selector = RFECV(
+            estimator=estimator,
+            step=1,
+            cv=cv,
+            scoring="neg_mean_squared_error",
+            n_jobs=-1,
+            min_features_to_select=max(1, n_features_to_select // 2),
+        )
+    else:
+        # Use RFE for simple selection
+        selector = RFE(
+            estimator=estimator,
+            n_features_to_select=min(n_features_to_select, len(X.columns)),
+            step=1,
+        )
+
+    # Fit and get selected features
+    selector.fit(X_clean, y_clean)
+    selected_features = X.columns[selector.support_].tolist()
+
+    logger.info(f"RFE selected {len(selected_features)} features from {len(X.columns)}")
+    return selected_features
 
 
 def build_comprehensive_features(

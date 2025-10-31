@@ -214,6 +214,41 @@ def create_enhanced_event_labels(
         labels[volatility <= volatility.quantile(0.3)] = 1
         labels[volatility >= volatility.quantile(0.7)] = 2
 
+    elif method == "analyst_rating":
+        # Analyst rating changes (upgrades/downgrades)
+        if "analyst_rating_change" in df.columns:
+            rating_change = df["analyst_rating_change"]
+            # Positive changes = upgrades (positive catalyst)
+            labels[rating_change >= 0.5] = 1
+            labels[rating_change <= -0.5] = 2
+        elif "analyst_rating" in df.columns:
+            # If only rating available, use current rating
+            rating_map = {"Buy": 1, "Strong Buy": 1, "Outperform": 1,
+                         "Sell": 2, "Strong Sell": 2, "Underperform": 2,
+                         "Hold": 0, "Neutral": 0}
+            for idx, rating in enumerate(df["analyst_rating"]):
+                if rating in rating_map:
+                    labels[idx] = rating_map[rating]
+        else:
+            logger.warning("No analyst rating columns available, returning all neutral")
+            return labels
+
+    elif method == "market_events":
+        # Market events (sector rotation, regional trends)
+        if "sector_momentum" in df.columns:
+            sector_mom = df["sector_momentum"]
+            # High sector momentum = positive, low = negative
+            labels[sector_mom >= sector_mom.quantile(0.7)] = 1
+            labels[sector_mom <= sector_mom.quantile(0.3)] = 2
+        elif "sector" in df.columns and "last_price" in df.columns:
+            # Calculate sector-relative performance
+            sector_perf = df.groupby("sector")["last_price"].transform(lambda x: x / x.mean())
+            labels[sector_perf >= 1.1] = 1  # Outperforming sector
+            labels[sector_perf <= 0.9] = 2  # Underperforming sector
+        else:
+            logger.warning("No market event indicators available, returning all neutral")
+            return labels
+
     else:
         logger.error(f"Unknown method: {method}")
 
@@ -544,6 +579,101 @@ def train_catboost_classifier(
     }
 
 
+def train_svm_classifier(
+    X_train: pd.DataFrame,
+    y_train: np.ndarray,
+    X_test: pd.DataFrame,
+    y_test: np.ndarray,
+    numeric_cols: List[str],
+    categorical_cols: List[str],
+    kernel: str = "rbf",
+    degree: int = 3,
+    C: float = 1.0,
+    gamma: str = "scale",
+    decision_function_shape: str = "ovr",
+    random_state: int = 42,
+) -> Dict[str, Any]:
+    """Train Support Vector Machine classifier.
+
+    Args:
+        X_train, y_train: Training data
+        X_test, y_test: Test data
+        numeric_cols: Numeric feature names
+        categorical_cols: Categorical feature names
+        kernel: Kernel type ('rbf', 'poly', 'linear', 'sigmoid')
+        degree: Degree for polynomial kernel
+        C: Regularization parameter
+        gamma: Kernel coefficient
+        decision_function_shape: OvR (one-vs-rest) or OvO (one-vs-one)
+        random_state: Random seed
+
+    Returns:
+        Dictionary with model, predictions, and metrics
+    """
+    from sklearn.svm import SVC
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.calibration import CalibratedClassifierCV
+
+    # Prepare data - one-hot encode categorical features
+    X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
+
+    # Get updated numeric columns list (after one-hot encoding)
+    encoded_numeric_cols = [
+        col for col in X_train_proc.columns if col not in categorical_cols or "_" in col
+    ]
+
+    # Clean infinite and extreme values
+    logger.info("Cleaning extreme values and infinities for SVM...")
+    X_train_proc = clean_extreme_values(X_train_proc)
+    X_test_proc = clean_extreme_values(X_test_proc)
+
+    # Scale features (critical for SVM)
+    scaler = StandardScaler()
+    X_train_proc[encoded_numeric_cols] = scaler.fit_transform(X_train_proc[encoded_numeric_cols])
+    X_test_proc[encoded_numeric_cols] = scaler.transform(X_test_proc[encoded_numeric_cols])
+
+    # Train SVM
+    logger.info(f"Training SVM with kernel={kernel}, C={C}, gamma={gamma}...")
+    svm = SVC(
+        kernel=kernel,
+        degree=degree,
+        C=C,
+        gamma=gamma,
+        decision_function_shape=decision_function_shape,
+        random_state=random_state,
+        probability=False,  # We'll use calibration for probabilities
+    )
+    svm.fit(X_train_proc, y_train)
+
+    # Calibrate for probability estimates
+    logger.info("Calibrating SVM for probability estimates...")
+    calibrated_svm = CalibratedClassifierCV(svm, method='sigmoid', cv=3)
+    calibrated_svm.fit(X_train_proc, y_train)
+
+    # Predictions
+    y_pred = calibrated_svm.predict(X_test_proc)
+    y_proba = calibrated_svm.predict_proba(X_test_proc)
+
+    # Metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average="macro", zero_division=0)
+
+    logger.info(f"SVM ({kernel}) - Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
+
+    return {
+        "model": calibrated_svm,
+        "base_model": svm,
+        "scaler": scaler,
+        "y_pred": y_pred,
+        "y_proba": y_proba,
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1,
+        "kernel": kernel,
+    }
+
+
 def evaluate_classification(
     y_true: np.ndarray,
     y_pred: np.ndarray,
@@ -637,6 +767,172 @@ def apply_smote(
     )
 
     return pd.DataFrame(X_resampled, columns=numeric_cols), y_resampled
+
+
+def apply_adasyn(
+    X_train: pd.DataFrame,
+    y_train: np.ndarray,
+    numeric_cols: List[str],
+    sampling_strategy: str = "auto",
+    random_state: int = 42,
+) -> Tuple[pd.DataFrame, np.ndarray]:
+    """Apply ADASYN (Adaptive Synthetic Sampling) for class imbalance.
+
+    ADASYN adaptively generates synthetic samples based on density distribution.
+
+    Args:
+        X_train: Training features
+        y_train: Training labels
+        numeric_cols: Numeric columns (ADASYN requires numeric data)
+        sampling_strategy: Sampling strategy ('auto', 'minority', or dict)
+        random_state: Random seed
+
+    Returns:
+        Tuple of (X_resampled, y_resampled)
+    """
+    if not HAVE_IMBLEARN:
+        logger.warning("imbalanced-learn not available, returning original data")
+        return X_train, y_train
+
+    # ADASYN requires numeric data
+    X_numeric = X_train[numeric_cols].copy()
+
+    try:
+        adasyn = ADASYN(sampling_strategy=sampling_strategy, random_state=random_state)
+        X_resampled, y_resampled = adasyn.fit_resample(X_numeric, y_train)
+
+        logger.info(
+            f"ADASYN applied: {len(y_train)} -> {len(y_resampled)} samples. "
+            f"Class distribution: {np.bincount(y_resampled)}"
+        )
+
+        return pd.DataFrame(X_resampled, columns=numeric_cols), y_resampled
+    except ValueError as e:
+        logger.warning(f"ADASYN failed: {e}. Returning original data.")
+        return X_train[numeric_cols], y_train
+
+
+def apply_undersampling(
+    X_train: pd.DataFrame,
+    y_train: np.ndarray,
+    numeric_cols: List[str],
+    strategy: str = "random",
+    sampling_strategy: str = "auto",
+    random_state: int = 42,
+) -> Tuple[pd.DataFrame, np.ndarray]:
+    """Apply under-sampling for majority class reduction.
+
+    Args:
+        X_train: Training features
+        y_train: Training labels
+        numeric_cols: Numeric columns
+        strategy: Under-sampling strategy ('random', 'tomek', 'nearmiss')
+        sampling_strategy: Sampling strategy ('auto', 'majority', or dict)
+        random_state: Random seed
+
+    Returns:
+        Tuple of (X_resampled, y_resampled)
+    """
+    if not HAVE_IMBLEARN:
+        logger.warning("imbalanced-learn not available, returning original data")
+        return X_train, y_train
+
+    X_numeric = X_train[numeric_cols].copy()
+
+    try:
+        if strategy == "random":
+            from imblearn.under_sampling import RandomUnderSampler
+            sampler = RandomUnderSampler(sampling_strategy=sampling_strategy, random_state=random_state)
+        elif strategy == "tomek":
+            from imblearn.under_sampling import TomekLinks
+            sampler = TomekLinks(sampling_strategy=sampling_strategy)
+        elif strategy == "nearmiss":
+            from imblearn.under_sampling import NearMiss
+            sampler = NearMiss(sampling_strategy=sampling_strategy)
+        else:
+            logger.warning(f"Unknown under-sampling strategy: {strategy}. Using random.")
+            from imblearn.under_sampling import RandomUnderSampler
+            sampler = RandomUnderSampler(sampling_strategy=sampling_strategy, random_state=random_state)
+
+        X_resampled, y_resampled = sampler.fit_resample(X_numeric, y_train)
+
+        logger.info(
+            f"Under-sampling ({strategy}) applied: {len(y_train)} -> {len(y_resampled)} samples. "
+            f"Class distribution: {np.bincount(y_resampled)}"
+        )
+
+        return pd.DataFrame(X_resampled, columns=numeric_cols), y_resampled
+    except Exception as e:
+        logger.warning(f"Under-sampling failed: {e}. Returning original data.")
+        return X_train[numeric_cols], y_train
+
+
+def apply_combined_sampling(
+    X_train: pd.DataFrame,
+    y_train: np.ndarray,
+    numeric_cols: List[str],
+    over_strategy: str = "smote",
+    under_strategy: str = "random",
+    random_state: int = 42,
+) -> Tuple[pd.DataFrame, np.ndarray]:
+    """Apply combined over-sampling and under-sampling.
+
+    Args:
+        X_train: Training features
+        y_train: Training labels
+        numeric_cols: Numeric columns
+        over_strategy: Over-sampling strategy ('smote', 'adasyn')
+        under_strategy: Under-sampling strategy ('random', 'tomek', 'nearmiss')
+        random_state: Random seed
+
+    Returns:
+        Tuple of (X_resampled, y_resampled)
+    """
+    if not HAVE_IMBLEARN:
+        logger.warning("imbalanced-learn not available, returning original data")
+        return X_train, y_train
+
+    X_numeric = X_train[numeric_cols].copy()
+
+    try:
+        # Select over-sampler
+        if over_strategy == "smote":
+            over_sampler = SMOTE(random_state=random_state)
+        elif over_strategy == "adasyn":
+            over_sampler = ADASYN(random_state=random_state)
+        else:
+            logger.warning(f"Unknown over-sampling strategy: {over_strategy}. Using SMOTE.")
+            over_sampler = SMOTE(random_state=random_state)
+
+        # Select under-sampler
+        if under_strategy == "random":
+            from imblearn.under_sampling import RandomUnderSampler
+            under_sampler = RandomUnderSampler(random_state=random_state)
+        elif under_strategy == "tomek":
+            from imblearn.under_sampling import TomekLinks
+            under_sampler = TomekLinks()
+        elif under_strategy == "nearmiss":
+            from imblearn.under_sampling import NearMiss
+            under_sampler = NearMiss()
+        else:
+            logger.warning(f"Unknown under-sampling strategy: {under_strategy}. Using random.")
+            from imblearn.under_sampling import RandomUnderSampler
+            under_sampler = RandomUnderSampler(random_state=random_state)
+
+        # Create pipeline
+        pipeline = ImbPipeline([('over', over_sampler), ('under', under_sampler)])
+        X_resampled, y_resampled = pipeline.fit_resample(X_numeric, y_train)
+
+        logger.info(
+            f"Combined sampling ({over_strategy}+{under_strategy}) applied: "
+            f"{len(y_train)} -> {len(y_resampled)} samples. "
+            f"Class distribution: {np.bincount(y_resampled)}"
+        )
+
+        return pd.DataFrame(X_resampled, columns=numeric_cols), y_resampled
+    except Exception as e:
+        logger.warning(f"Combined sampling failed: {e}. Returning original data.")
+        return X_train[numeric_cols], y_train
 
 
 def train_neural_network_classifier(
@@ -1214,8 +1510,8 @@ def compare_classifiers(
         median_val = X_train_proc[col].median()
         if np.isnan(median_val):  # If entire column is NaN, use 0
             median_val = 0
-        X_train_proc[col].fillna(median_val, inplace=True)
-        X_test_proc[col].fillna(median_val, inplace=True)
+        X_train_proc[col] = X_train_proc[col].fillna(median_val)
+        X_test_proc[col] = X_test_proc[col].fillna(median_val)
 
     # Cap extreme outliers (values beyond 3 standard deviations)
     for col in encoded_numeric_cols:
@@ -1506,3 +1802,186 @@ def evaluate_classification_by_sector(
     logger.info(f"Evaluated classification performance across {len(results_df)} sectors")
 
     return results_df
+
+
+def plot_learning_curves(
+    model: ClassifierMixin,
+    X: pd.DataFrame,
+    y: np.ndarray,
+    cv: int = 5,
+    train_sizes: Optional[np.ndarray] = None,
+    scoring: str = "accuracy",
+) -> Dict[str, Any]:
+    """Generate learning curves to diagnose bias/variance.
+
+    Args:
+        model: Classifier to evaluate
+        X: Feature data
+        y: Labels
+        cv: Number of cross-validation folds
+        train_sizes: Array of training set sizes (default: np.linspace(0.1, 1.0, 10))
+        scoring: Scoring metric ('accuracy', 'f1_macro', etc.)
+
+    Returns:
+        Dictionary with train_sizes, train_scores, and test_scores
+    """
+    from sklearn.model_selection import learning_curve
+
+    if train_sizes is None:
+        train_sizes = np.linspace(0.1, 1.0, 10)
+
+    try:
+        logger.info(f"Computing learning curves with {cv}-fold CV...")
+        train_sizes_abs, train_scores, test_scores = learning_curve(
+            model,
+            X,
+            y,
+            cv=cv,
+            train_sizes=train_sizes,
+            scoring=scoring,
+            n_jobs=-1,
+            shuffle=True,
+            random_state=42,
+        )
+
+        # Calculate mean and std
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+
+        logger.info(
+            f"Learning curves computed. Final train score: {train_scores_mean[-1]:.4f}, "
+            f"Final test score: {test_scores_mean[-1]:.4f}"
+        )
+
+        # Optionally plot if matplotlib available
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.figure(figsize=(10, 6))
+            plt.title("Learning Curves")
+            plt.xlabel("Training Examples")
+            plt.ylabel("Score")
+            plt.grid()
+
+            plt.fill_between(
+                train_sizes_abs,
+                train_scores_mean - train_scores_std,
+                train_scores_mean + train_scores_std,
+                alpha=0.1,
+                color="r",
+            )
+            plt.fill_between(
+                train_sizes_abs,
+                test_scores_mean - test_scores_std,
+                test_scores_mean + test_scores_std,
+                alpha=0.1,
+                color="g",
+            )
+            plt.plot(train_sizes_abs, train_scores_mean, "o-", color="r", label="Training score")
+            plt.plot(train_sizes_abs, test_scores_mean, "o-", color="g", label="Cross-validation score")
+            plt.legend(loc="best")
+            plt.tight_layout()
+        except ImportError:
+            logger.info("matplotlib not available, skipping plot")
+
+        return {
+            "train_sizes": train_sizes_abs,
+            "train_scores": train_scores,
+            "test_scores": test_scores,
+            "train_scores_mean": train_scores_mean,
+            "train_scores_std": train_scores_std,
+            "test_scores_mean": test_scores_mean,
+            "test_scores_std": test_scores_std,
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to compute learning curves: {e}")
+        return {
+            "train_sizes": np.array([]),
+            "train_scores": np.array([]),
+            "test_scores": np.array([]),
+        }
+
+
+def analyze_per_class_feature_importance(
+    model: ClassifierMixin,
+    X: pd.DataFrame,
+    y: np.ndarray,
+    feature_names: Optional[List[str]] = None,
+    top_n: int = 10,
+) -> pd.DataFrame:
+    """Analyze feature importance for each class separately.
+
+    This uses a one-vs-rest approach to train class-specific models
+    and extract feature importance for each class.
+
+    Args:
+        model: Base classifier (should have feature_importances_ attribute)
+        X: Feature data
+        y: Labels
+        feature_names: List of feature names
+        top_n: Number of top features to return per class
+
+    Returns:
+        DataFrame with per-class feature importance
+    """
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.multiclass import OneVsRestClassifier
+
+    if feature_names is None:
+        feature_names = list(X.columns) if hasattr(X, "columns") else [f"feature_{i}" for i in range(X.shape[1])]
+
+    try:
+        logger.info("Analyzing per-class feature importance...")
+
+        # Use OneVsRestClassifier to get class-specific models
+        if not hasattr(model, "estimators_"):
+            # If model is not already a multi-class ensemble, wrap it
+            ovr_model = OneVsRestClassifier(model)
+            ovr_model.fit(X, y)
+        else:
+            ovr_model = model
+            if not hasattr(ovr_model, "estimators_"):
+                ovr_model.fit(X, y)
+
+        unique_classes = np.unique(y)
+        importance_data = []
+
+        # Extract importance from each class-specific estimator
+        if hasattr(ovr_model, "estimators_"):
+            for class_idx, estimator in enumerate(ovr_model.estimators_):
+                if hasattr(estimator, "feature_importances_"):
+                    importances = estimator.feature_importances_
+                    # Get top N features for this class
+                    top_indices = np.argsort(importances)[-top_n:][::-1]
+                    for idx in top_indices:
+                        importance_data.append({
+                            "Class": unique_classes[class_idx] if class_idx < len(unique_classes) else class_idx,
+                            "Feature": feature_names[idx],
+                            "Importance": importances[idx],
+                        })
+        elif hasattr(model, "feature_importances_"):
+            # If model has global feature importance, use that for all classes
+            importances = model.feature_importances_
+            for class_label in unique_classes:
+                top_indices = np.argsort(importances)[-top_n:][::-1]
+                for idx in top_indices:
+                    importance_data.append({
+                        "Class": class_label,
+                        "Feature": feature_names[idx],
+                        "Importance": importances[idx],
+                    })
+        else:
+            logger.warning("Model does not have feature_importances_ attribute")
+            return pd.DataFrame(columns=["Class", "Feature", "Importance"])
+
+        importance_df = pd.DataFrame(importance_data)
+        logger.info(f"Per-class feature importance computed for {len(unique_classes)} classes")
+
+        return importance_df
+
+    except Exception as e:
+        logger.error(f"Failed to analyze per-class feature importance: {e}")
+        return pd.DataFrame(columns=["Class", "Feature", "Importance"])

@@ -5,6 +5,57 @@ All notable changes to the Finance ML Analytics Platform will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-10-31
+
+### Added
+
+- **Phase 9.3: Advanced Feature Engineering with Sector-Specific Optimizations** (Complete TDD Implementation)
+  - **Module**: `finance_ml.advanced_features` (978 lines, 13 functions)
+  - **Financial Ratio Engineering** (6 functions covering valuation, profitability, leverage, liquidity, efficiency,
+    growth)
+    - `engineer_valuation_ratios()` - P/E, P/B, P/S, EV/EBITDA, EV/Sales, PEG ratio, Dividend Yield
+    - `engineer_profitability_ratios()` - ROE, ROA, ROIC, Gross/Operating/Net Margins
+    - `engineer_leverage_ratios()` - Debt/Equity, Net Debt/EBITDA, Interest Coverage, Debt/Assets, Equity Ratio
+    - `engineer_liquidity_ratios()` - Current, Quick, Cash ratios, Working Capital/Sales
+    - `engineer_efficiency_ratios()` - Asset/Inventory/Receivables Turnover, Revenue/Employee
+    - `engineer_growth_metrics()` - Revenue/EPS/EBITDA Growth YoY
+  - **Sector-Specific Features** for all major sectors:
+    - Financials: Tangible Book Value (TBV), P/TBV, Net Interest Margin, Efficiency Ratio
+    - Energy/Materials: CAPEX intensity, Asset turnover
+    - Technology: R&D intensity, SG&A efficiency, Rule of 40, Cash burn rate
+    - Healthcare: R&D/Revenue ratio
+    - Consumer: Inventory days, Marketing efficiency
+    - Industrials: CAPEX/Depreciation, Working capital efficiency
+    - Utilities: Dividend payout ratio
+  - **Advanced Feature Engineering**:
+    - `engineer_temporal_features()` - Fiscal quarter, month, year, days since reference date
+    - `engineer_market_microstructure_features()` - Volatility (30/60/90d), momentum, moving averages, price range
+    - `engineer_nonlinear_transforms()` - Log, square root, inverse transforms for skewed distributions
+    - `create_feature_interactions()` - Pairwise interactions and polynomial features (degree 2-3)
+  - **Relative Value & Feature Selection**:
+    - `create_relative_value_features()` - Sector median deviation, z-scores, percentile ranks
+    - `calculate_feature_importance_mutual_info()` - Mutual information-based importance
+    - `calculate_feature_importance_rf()` - Random Forest-based importance
+    - `calculate_feature_importance_shap()` - SHAP value-based importance (with fallback)
+    - `calculate_feature_importance_rfe()` - Recursive Feature Elimination with cross-validation
+  - **Pipeline Orchestration**:
+    - `build_comprehensive_features()` - End-to-end feature engineering pipeline
+  - **Test Suite**: 88 comprehensive unit tests (100% passing)
+    - Test coverage: 93% (350 statements, 327 covered, 23 missed)
+    - Execution time: ~41 seconds
+    - Test categories: Normal operation (64%), Edge cases (27%), Error handling (9%)
+  - **Documentation**: `PHASE_9_3_TDD_IMPLEMENTATION_SUMMARY.md` (282 lines)
+  - Strict TDD methodology: RED-GREEN-REFACTOR cycle followed throughout
+  - Exceeds coverage requirement by 13 percentage points (93% vs. 80% target)
+
+### Changed
+
+- **IMPROVEMENT_PLAN.md** - Phase 9.3 section updated
+  - Marked all Phase 9.3 tasks as complete with ✓
+  - Added comprehensive implementation summary with metrics
+  - Documented 13 functions across 5 categories
+  - Added test coverage summary and files modified section
+
 ## [0.4.0] - 2025-10-30
 
 ### Added
