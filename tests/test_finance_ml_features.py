@@ -344,5 +344,27 @@ class TestBuildFeaturesAndTarget(unittest.TestCase):
         self.assertIn("market_cap", numeric_features)
 
 
+class TestPhase93AdvancedFeaturesIntegration(unittest.TestCase):
+    """Test Phase 9.3 Advanced Features integration into features module"""
+
+    def test_can_import_advanced_valuation_ratios(self):
+        """Should be able to import engineer_valuation_ratios from features module"""
+        from finance_ml.features import engineer_valuation_ratios
+
+        self.assertIsNotNone(engineer_valuation_ratios)
+
+    def test_can_import_advanced_profitability_ratios(self):
+        """Should be able to import engineer_profitability_ratios from features module"""
+        from finance_ml.features import engineer_profitability_ratios
+
+        self.assertIsNotNone(engineer_profitability_ratios)
+
+    def test_can_import_build_comprehensive_features(self):
+        """Should be able to import build_comprehensive_features from features module"""
+        from finance_ml.features import build_comprehensive_features
+
+        self.assertIsNotNone(build_comprehensive_features)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,14 @@ This module provides functions for engineering financial features from raw data,
 including ratios, margins, volatility aggregations, and CAGR calculations.
 
 Functions extracted and refactored from ml_finance_model_v8_2.py as part of Phase 7.
+
+Phase 9.3 Advanced Feature Engineering Integration:
+This module now exposes advanced feature engineering functions from the
+finance_ml.advanced_features module, including:
+- Comprehensive financial ratios (valuation, profitability, leverage, liquidity, efficiency)
+- Growth metrics and sector-specific features
+- Feature interactions and relative value features
+- Feature importance calculation methods
 """
 
 from __future__ import annotations
@@ -14,6 +22,22 @@ from typing import Optional, Tuple, List
 
 import numpy as np
 import pandas as pd
+
+# Phase 9.3: Import advanced feature engineering functions
+from finance_ml.advanced_features import (
+    engineer_valuation_ratios,
+    engineer_profitability_ratios,
+    engineer_leverage_ratios,
+    engineer_liquidity_ratios,
+    engineer_efficiency_ratios,
+    engineer_growth_metrics,
+    engineer_sector_specific_features,
+    create_feature_interactions,
+    create_relative_value_features,
+    calculate_feature_importance_mutual_info,
+    calculate_feature_importance_rf,
+    build_comprehensive_features,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -243,3 +267,28 @@ def build_features_and_target(
         numeric_features = [c for c in numeric_features if c not in drop_cols]
 
     return X, y, numeric_features, categorical_features
+
+
+# Module exports
+__all__ = [
+    # Phase 7: Basic feature engineering functions
+    "_safe_div",
+    "engineer_basic_ratios",
+    "engineer_margin_features",
+    "engineer_volatility_features",
+    "engineer_revenue_cagr",
+    "build_features_and_target",
+    # Phase 9.3: Advanced feature engineering functions (imported from advanced_features)
+    "engineer_valuation_ratios",
+    "engineer_profitability_ratios",
+    "engineer_leverage_ratios",
+    "engineer_liquidity_ratios",
+    "engineer_efficiency_ratios",
+    "engineer_growth_metrics",
+    "engineer_sector_specific_features",
+    "create_feature_interactions",
+    "create_relative_value_features",
+    "calculate_feature_importance_mutual_info",
+    "calculate_feature_importance_rf",
+    "build_comprehensive_features",
+]
