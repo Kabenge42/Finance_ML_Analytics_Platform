@@ -194528,14 +194528,14 @@
       "method": "anova"
     },
     "last_price": {
-      "statistic": 0.3993211121522551,
+      "statistic": 0.39932111215225513,
       "p_value": 0.9437010327085277,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target_ytd_ago": {
-      "statistic": 0.39925859233771094,
+      "statistic": 0.39925859233771105,
       "p_value": 0.9437303288348176,
       "significant": false,
       "n_groups": 11,
@@ -194549,21 +194549,21 @@
       "method": "anova"
     },
     "price_target": {
-      "statistic": 0.3992463327338699,
+      "statistic": 0.3992463327338696,
       "p_value": 0.9437360725475719,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target_low": {
-      "statistic": 0.4001940969682828,
+      "statistic": 0.40019409696828284,
       "p_value": 0.9432910630450491,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "price_target_median": {
-      "statistic": 0.3991048808272677,
+      "statistic": 0.3991048808272676,
       "p_value": 0.9438023198678294,
       "significant": false,
       "n_groups": 11,
@@ -194619,22 +194619,22 @@
       "method": "anova"
     },
     "beta_1y": {
-      "statistic": 6.401966318697958,
-      "p_value": 3.490552855665627e-07,
+      "statistic": 6.401966318697952,
+      "p_value": 3.4905528556656734e-07,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "beta_2y": {
-      "statistic": 8.232537150280116,
-      "p_value": 4.677766906234e-09,
+      "statistic": 8.232537150280113,
+      "p_value": 4.677766906234045e-09,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "beta_5y": {
-      "statistic": 4.069868314537915,
-      "p_value": 0.00015366116282975446,
+      "statistic": 4.0698683145379135,
+      "p_value": 0.0001536611628297554,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -194647,7 +194647,7 @@
       "method": "anova"
     },
     "strong_sell_ratings": {
-      "statistic": 1.012974572680228,
+      "statistic": 1.0129745726802282,
       "p_value": 0.4390683455475938,
       "significant": false,
       "n_groups": 11,
@@ -194675,7 +194675,7 @@
       "method": "anova"
     },
     "sell_ratings": {
-      "statistic": 0.9996730698487766,
+      "statistic": 0.9996730698487769,
       "p_value": 0.4500603791419473,
       "significant": false,
       "n_groups": 11,
@@ -194689,8 +194689,8 @@
       "method": "anova"
     },
     "total_revenues_fq": {
-      "statistic": 1.66274334430504,
-      "p_value": 0.10217770092511881,
+      "statistic": 1.6627433443050403,
+      "p_value": 0.10217770092511827,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194703,8 +194703,8 @@
       "method": "anova"
     },
     "total_revenues_fy": {
-      "statistic": 1.8067135227137603,
-      "p_value": 0.07070925652155581,
+      "statistic": 1.8067135227137607,
+      "p_value": 0.07070925652155549,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194738,43 +194738,43 @@
       "method": "anova"
     },
     "tbv_ltm": {
-      "statistic": 2.2739937211688486,
-      "p_value": 0.02017845718955023,
+      "statistic": 2.273993721168849,
+      "p_value": 0.020178457189550175,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "market_cap_country_r": {
-      "statistic": 0.8795064299181135,
+      "statistic": 0.8795064299181138,
       "p_value": 0.5553010401303848,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "tot_return_pct_cagr_3y": {
-      "statistic": 2.1500093108218787,
+      "statistic": 2.150009310821879,
       "p_value": 0.028590614402037293,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "tot_return_pct_cagr_10y": {
-      "statistic": 2.8571287960051994,
+      "statistic": 2.8571287960051985,
       "p_value": 0.004307302918734759,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "total_return_5y": {
-      "statistic": 1.6501163043500164,
-      "p_value": 0.10635315315081457,
+      "statistic": 1.6501163043500169,
+      "p_value": 0.10635315315081398,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_return_10y": {
-      "statistic": 0.9884067302019411,
-      "p_value": 0.4604119454614025,
+      "statistic": 0.9884067302019409,
+      "p_value": 0.46041194546140307,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -194794,14 +194794,14 @@
       "method": "anova"
     },
     "cfi_ltm": {
-      "statistic": 1.0263130395296656,
+      "statistic": 1.0263130395296653,
       "p_value": 0.4300216710304281,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_ltm": {
-      "statistic": 1.125561400130894,
+      "statistic": 1.1255614001308942,
       "p_value": 0.3549733646840698,
       "significant": false,
       "n_groups": 11,
@@ -194822,14 +194822,14 @@
       "method": "anova"
     },
     "ebitda_ltm": {
-      "statistic": 1.0045326305157696,
-      "p_value": 0.44754674531168126,
+      "statistic": 1.0045326305157694,
+      "p_value": 0.4475467453116815,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_fy": {
-      "statistic": 1.031559726564296,
+      "statistic": 1.0315597265642957,
       "p_value": 0.42567374922872075,
       "significant": false,
       "n_groups": 11,
@@ -194843,14 +194843,14 @@
       "method": "anova"
     },
     "ebitda_adj_ltm": {
-      "statistic": 1.3887560033115436,
+      "statistic": 1.3887560033115431,
       "p_value": 0.20144283302135413,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "ebitda_adj_fy": {
-      "statistic": 1.3474975373191882,
+      "statistic": 1.3474975373191886,
       "p_value": 0.22110782047872773,
       "significant": false,
       "n_groups": 11,
@@ -194885,7 +194885,7 @@
       "method": "anova"
     },
     "ebit_1fy": {
-      "statistic": 0.920583020606078,
+      "statistic": 0.9205830206060778,
       "p_value": 0.5192496873527408,
       "significant": false,
       "n_groups": 11,
@@ -194899,7 +194899,7 @@
       "method": "anova"
     },
     "ebit_adj_fy": {
-      "statistic": 0.8672420451752306,
+      "statistic": 0.8672420451752307,
       "p_value": 0.5665587766783408,
       "significant": false,
       "n_groups": 11,
@@ -194920,7 +194920,7 @@
       "method": "anova"
     },
     "ebit_est_med_ntm": {
-      "statistic": 0.7325057363562334,
+      "statistic": 0.7325057363562335,
       "p_value": 0.6920089030489075,
       "significant": false,
       "n_groups": 11,
@@ -194934,7 +194934,7 @@
       "method": "anova"
     },
     "return_on_equity_pct_fy": {
-      "statistic": 1.0314187836555733,
+      "statistic": 1.031418783655573,
       "p_value": 0.4246764182160857,
       "significant": false,
       "n_groups": 11,
@@ -194962,21 +194962,21 @@
       "method": "anova"
     },
     "normalized_net_income_ltm": {
-      "statistic": 0.9281445082849447,
+      "statistic": 0.9281445082849448,
       "p_value": 0.5115521825876427,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_fy": {
-      "statistic": 0.7604924840180475,
+      "statistic": 0.7604924840180478,
       "p_value": 0.6659371972064108,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_adj_ltm": {
-      "statistic": 0.8511312270339593,
+      "statistic": 0.8511312270339589,
       "p_value": 0.5813626858538079,
       "significant": false,
       "n_groups": 11,
@@ -195004,14 +195004,14 @@
       "method": "anova"
     },
     "volatility_3m": {
-      "statistic": 4.263778637885546,
-      "p_value": 7.374329528088548e-05,
+      "statistic": 4.2637786378855465,
+      "p_value": 7.374329528088503e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "volatility_6m": {
-      "statistic": 3.844771421160943,
+      "statistic": 3.844771421160942,
       "p_value": 0.00023921590479252582,
       "significant": true,
       "n_groups": 11,
@@ -195039,7 +195039,7 @@
       "method": "anova"
     },
     "dividend_per_share_ltm": {
-      "statistic": 1.33597381955607,
+      "statistic": 1.3359738195560695,
       "p_value": 0.22965043270459556,
       "significant": false,
       "n_groups": 11,
@@ -195060,7 +195060,7 @@
       "method": "anova"
     },
     "total_debt_fy": {
-      "statistic": 3.9873575455188366,
+      "statistic": 3.9873575455188375,
       "p_value": 0.00016005630826014926,
       "significant": true,
       "n_groups": 11,
@@ -195074,7 +195074,7 @@
       "method": "anova"
     },
     "total_equity_ltm": {
-      "statistic": 2.1576179259703645,
+      "statistic": 2.1576179259703636,
       "p_value": 0.027754299885295316,
       "significant": true,
       "n_groups": 11,
@@ -195088,8 +195088,8 @@
       "method": "anova"
     },
     "total_assets_ltm": {
-      "statistic": 4.792391471844875,
-      "p_value": 2.022987748256375e-05,
+      "statistic": 4.792391471844873,
+      "p_value": 2.022987748256389e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195102,15 +195102,15 @@
       "method": "anova"
     },
     "current_ratio_fy": {
-      "statistic": 1.8909727806373218,
-      "p_value": 0.05804848253109629,
+      "statistic": 1.8909727806373224,
+      "p_value": 0.058048482531095943,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "current_ratio_ltm": {
-      "statistic": 4.9629553605093015,
-      "p_value": 1.627641514467369e-05,
+      "statistic": 4.962955360509299,
+      "p_value": 1.6276415144673888e-05,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195123,7 +195123,7 @@
       "method": "anova"
     },
     "gross_profit_margin_pct_ltm": {
-      "statistic": 4.344497847619753,
+      "statistic": 4.344497847619751,
       "p_value": 6.951574226998639e-05,
       "significant": true,
       "n_groups": 11,
@@ -195144,35 +195144,35 @@
       "method": "anova"
     },
     "gross_profit_ltm": {
-      "statistic": 1.3411062116005972,
-      "p_value": 0.22140387329550007,
+      "statistic": 1.341106211600597,
+      "p_value": 0.22140387329550057,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_profit_fy": {
-      "statistic": 1.3851730037853385,
+      "statistic": 1.3851730037853387,
       "p_value": 0.2001288026645804,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "eps_norm_est_avg_ntm": {
-      "statistic": 0.44537377611167056,
+      "statistic": 0.4453737761116705,
       "p_value": 0.9065550695861294,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "eps_adj_1fy": {
-      "statistic": 0.39002337082939925,
+      "statistic": 0.39002337082939936,
       "p_value": 0.9478783855398986,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "eps_adj_fy": {
-      "statistic": 0.4015367940515212,
+      "statistic": 0.40153679405152104,
       "p_value": 0.9426572373908031,
       "significant": false,
       "n_groups": 11,
@@ -195193,22 +195193,22 @@
       "method": "anova"
     },
     "gain_loss_on_sale_of_assets_ltm": {
-      "statistic": 12.312234685076168,
-      "p_value": 1.2369514823306539e-05,
+      "statistic": 12.31223468507615,
+      "p_value": 1.2369514823306659e-05,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "cost_of_revenues_ltm": {
-      "statistic": 1.6121005098537073,
-      "p_value": 0.11811672392408205,
+      "statistic": 1.6121005098537078,
+      "p_value": 0.11811672392408147,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cash_acquisitions_ltm": {
-      "statistic": 2.4002598391396006,
-      "p_value": 0.023328285077483833,
+      "statistic": 2.4002598391396,
+      "p_value": 0.023328285077483916,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
@@ -195228,7 +195228,7 @@
       "method": "anova"
     },
     "inventory_ltm": {
-      "statistic": 1.2809515805076837,
+      "statistic": 1.2809515805076839,
       "p_value": 0.2695653773590432,
       "significant": false,
       "n_groups": 10,
@@ -195249,14 +195249,14 @@
       "method": "anova"
     },
     "goodwill_fy": {
-      "statistic": 0.6885388252199807,
+      "statistic": 0.6885388252199808,
       "p_value": 0.7322117498621135,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "goodwill_1fy": {
-      "statistic": 0.7620726992656989,
+      "statistic": 0.7620726992656985,
       "p_value": 0.6643604722534724,
       "significant": false,
       "n_groups": 11,
@@ -195283,7 +195283,7 @@
       "method": "anova"
     },
     "impairment_of_goodwill_fy": {
-      "statistic": 0.40023644825217103,
+      "statistic": 0.4002364482521712,
       "p_value": 0.8230926939197329,
       "significant": false,
       "n_groups": 6,
@@ -195297,21 +195297,21 @@
       "method": "anova"
     },
     "asset_writedown_ltm": {
-      "statistic": 0.6867099392572321,
+      "statistic": 0.6867099392572319,
       "p_value": 0.6993525451722598,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
     },
     "asset_writedown_fy": {
-      "statistic": 0.9392424604372878,
+      "statistic": 0.9392424604372875,
       "p_value": 0.5095182207048103,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
     },
     "asset_writedown_1fy": {
-      "statistic": 1.3760248696141075,
+      "statistic": 1.3760248696141073,
       "p_value": 0.26643180714952475,
       "significant": false,
       "n_groups": 8,
@@ -195325,7 +195325,7 @@
       "method": "anova"
     },
     "capital_expenditure_ltm": {
-      "statistic": 1.6057879034258924,
+      "statistic": 1.6057879034258926,
       "p_value": 0.12899941320796043,
       "significant": false,
       "n_groups": 10,
@@ -195339,8 +195339,8 @@
       "method": "anova"
     },
     "capital_expenditure_fy": {
-      "statistic": 2.003275784873342,
-      "p_value": 0.04845222486457962,
+      "statistic": 2.0032757848733422,
+      "p_value": 0.048452224864579355,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
@@ -195360,8 +195360,8 @@
       "method": "anova"
     },
     "total_current_liabilities_ltm": {
-      "statistic": 4.137903690532134,
-      "p_value": 0.00011921264024594907,
+      "statistic": 4.137903690532133,
+      "p_value": 0.00011921264024594975,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195381,7 +195381,7 @@
       "method": "anova"
     },
     "restructuring_charges_fq": {
-      "statistic": 0.09446680135736155,
+      "statistic": 0.09446680135736152,
       "p_value": 0.992140248305993,
       "significant": false,
       "n_groups": 6,
@@ -195395,35 +195395,35 @@
       "method": "anova"
     },
     "restructuring_charges_fy": {
-      "statistic": 0.6939028406075476,
+      "statistic": 0.6939028406075474,
       "p_value": 0.6941139689392235,
       "significant": false,
       "n_groups": 9,
       "method": "anova"
     },
     "interest_expense_total_ltm": {
-      "statistic": 1.4148086627518455,
+      "statistic": 1.414808662751845,
       "p_value": 0.19233377803004323,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "merger_restructuring_charges_ltm": {
-      "statistic": 1.098979234760748,
-      "p_value": 0.3799650873460872,
+      "statistic": 1.0989792347607483,
+      "p_value": 0.3799650873460854,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "working_capital_ltm": {
-      "statistic": 1.9710673946413166,
-      "p_value": 0.04690783076414994,
+      "statistic": 1.971067394641316,
+      "p_value": 0.046907830764150074,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "other_unusual_items_total_ltm": {
-      "statistic": 0.5700146599106708,
+      "statistic": 0.5700146599106707,
       "p_value": 0.8152816968238163,
       "significant": false,
       "n_groups": 10,
@@ -195443,15 +195443,15 @@
       "method": "anova"
     },
     "return_on_assets_roa_pct_ltm": {
-      "statistic": 1.5248980479281342,
+      "statistic": 1.524898047928134,
       "p_value": 0.1450940215521961,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "return_on_assets_roa_pct_fy": {
-      "statistic": 1.5046707647132305,
-      "p_value": 0.1508889381735765,
+      "statistic": 1.5046707647132298,
+      "p_value": 0.1508889381735771,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195464,21 +195464,21 @@
       "method": "anova"
     },
     "normalized_net_income_1fy": {
-      "statistic": 0.8937417362677653,
+      "statistic": 0.893741736267765,
       "p_value": 0.5423625345255667,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_e_1fyltm": {
-      "statistic": 1.841905706153188,
+      "statistic": 1.8419057061531874,
       "p_value": 0.06508576549947419,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cff_fy": {
-      "statistic": 1.7875845272121285,
+      "statistic": 1.7875845272121287,
       "p_value": 0.07430010323056395,
       "significant": false,
       "n_groups": 11,
@@ -195492,7 +195492,7 @@
       "method": "anova"
     },
     "cfi_fy": {
-      "statistic": 0.5922915753068703,
+      "statistic": 0.59229157530687,
       "p_value": 0.8162938848570277,
       "significant": false,
       "n_groups": 11,
@@ -195513,70 +195513,70 @@
       "method": "anova"
     },
     "cfo_1fy": {
-      "statistic": 1.4256099755356737,
+      "statistic": 1.4256099755356735,
       "p_value": 0.18235071890901075,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "div_yield_1fyind": {
-      "statistic": 1.7428436374874894,
+      "statistic": 1.742843637487489,
       "p_value": 0.08947451580567956,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_fy": {
-      "statistic": 1.7791854100037205,
+      "statistic": 1.77918541000372,
       "p_value": 0.07592952901449473,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "capital_expenditure_fq": {
-      "statistic": 1.4832616199678441,
-      "p_value": 0.1709535274374956,
+      "statistic": 1.4832616199678446,
+      "p_value": 0.17095352743749492,
       "significant": false,
       "n_groups": 10,
       "method": "anova"
     },
     "capital_expenditure_5yavgfq": {
-      "statistic": 2.7549247714676253,
-      "p_value": 0.007098655085337701,
+      "statistic": 2.754924771467624,
+      "p_value": 0.007098655085337742,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "cff_fq": {
-      "statistic": 0.8954210327658608,
+      "statistic": 0.8954210327658607,
       "p_value": 0.541760919310016,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfi_fq": {
-      "statistic": 0.9124194214266953,
+      "statistic": 0.9124194214266951,
       "p_value": 0.5266277901716945,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "cfo_fq": {
-      "statistic": 1.1589304085467955,
+      "statistic": 1.1589304085467957,
       "p_value": 0.33232332723943764,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "fcf_fq": {
-      "statistic": 0.879076773051476,
+      "statistic": 0.8790767730514761,
       "p_value": 0.556457302997645,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "total_revenues_5yavgfq": {
-      "statistic": 1.8305054160637149,
+      "statistic": 1.8305054160637153,
       "p_value": 0.06684441798930028,
       "significant": false,
       "n_groups": 11,
@@ -195590,7 +195590,7 @@
       "method": "anova"
     },
     "ebit_5yavgfq": {
-      "statistic": 0.8337333679295869,
+      "statistic": 0.8337333679295866,
       "p_value": 0.5978089439438576,
       "significant": false,
       "n_groups": 11,
@@ -195604,7 +195604,7 @@
       "method": "anova"
     },
     "fcf_5yavgfq": {
-      "statistic": 1.4981805762936267,
+      "statistic": 1.4981805762936262,
       "p_value": 0.15371632190449538,
       "significant": false,
       "n_groups": 11,
@@ -195618,21 +195618,21 @@
       "method": "anova"
     },
     "cash_acquisitions_5yavgfq": {
-      "statistic": 2.020368351884497,
-      "p_value": 0.047454804187312155,
+      "statistic": 2.0203683518844975,
+      "p_value": 0.04745480418731202,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "asset_writedown_fq": {
-      "statistic": 52.263520992559506,
-      "p_value": 0.0009046497538002795,
+      "statistic": 52.26352099256091,
+      "p_value": 0.0009046497538002319,
       "significant": true,
       "n_groups": 8,
       "method": "anova"
     },
     "asset_writedown_5yavgfq": {
-      "statistic": 0.8732437779301542,
+      "statistic": 0.8732437779301543,
       "p_value": 0.5637436443677635,
       "significant": false,
       "n_groups": 11,
@@ -195653,14 +195653,14 @@
       "method": "anova"
     },
     "operating_income_5yavgfq": {
-      "statistic": 0.8976591192962136,
+      "statistic": 0.8976591192962139,
       "p_value": 0.5389193884015198,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "p_b_ltm": {
-      "statistic": 1.2280910324340168,
+      "statistic": 1.2280910324340164,
       "p_value": 0.2855696056969897,
       "significant": false,
       "n_groups": 11,
@@ -195674,7 +195674,7 @@
       "method": "anova"
     },
     "p_b_5yavg": {
-      "statistic": 1.28917907801368,
+      "statistic": 1.2891790780136805,
       "p_value": 0.25008580277658177,
       "significant": false,
       "n_groups": 11,
@@ -195702,14 +195702,14 @@
       "method": "anova"
     },
     "cash_and_equivalents_5yavgfq": {
-      "statistic": 3.2899256826612144,
+      "statistic": 3.2899256826612153,
       "p_value": 0.0012145730897792097,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "inventory_fq": {
-      "statistic": 1.2809515805076837,
+      "statistic": 1.2809515805076839,
       "p_value": 0.2695653773590432,
       "significant": false,
       "n_groups": 10,
@@ -195765,22 +195765,22 @@
       "method": "anova"
     },
     "retained_earnings_fy": {
-      "statistic": 3.515624828624495,
-      "p_value": 0.0009297717849991716,
+      "statistic": 3.5156248286244955,
+      "p_value": 0.0009297717849991686,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
     },
     "retained_earnings_5yavgfq": {
-      "statistic": 3.9500578895521907,
+      "statistic": 3.9500578895521903,
       "p_value": 0.00019188973610993268,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
     },
     "working_capital_fq": {
-      "statistic": 1.9710673946413166,
-      "p_value": 0.04690783076414994,
+      "statistic": 1.971067394641316,
+      "p_value": 0.046907830764150074,
       "significant": true,
       "n_groups": 11,
       "method": "anova"
@@ -195800,7 +195800,7 @@
       "method": "anova"
     },
     "div_yield_ttm": {
-      "statistic": 1.2277051066841576,
+      "statistic": 1.227705106684158,
       "p_value": 0.28995423056358083,
       "significant": false,
       "n_groups": 11,
@@ -195821,8 +195821,8 @@
       "method": "anova"
     },
     "gross_intangible_assets_ltm": {
-      "statistic": 3.9271594598155017,
-      "p_value": 0.003378296757784704,
+      "statistic": 3.927159459815503,
+      "p_value": 0.0033782967577846946,
       "significant": true,
       "n_groups": 8,
       "method": "anova"
@@ -195835,8 +195835,8 @@
       "method": "anova"
     },
     "gross_intangible_assets_5yavgfq": {
-      "statistic": 3.522307105528081,
-      "p_value": 0.0010673141508629291,
+      "statistic": 3.5223071055280797,
+      "p_value": 0.0010673141508629348,
       "significant": true,
       "n_groups": 10,
       "method": "anova"
@@ -195849,14 +195849,14 @@
       "method": "anova"
     },
     "merger_restructuring_charges_fq": {
-      "statistic": 0.8397506712186235,
+      "statistic": 0.8397506712186232,
       "p_value": 0.5492736670541056,
       "significant": false,
       "n_groups": 7,
       "method": "anova"
     },
     "merger_restructuring_charges_fy": {
-      "statistic": 0.8792974178271161,
+      "statistic": 0.8792974178271162,
       "p_value": 0.540919800988278,
       "significant": false,
       "n_groups": 9,
@@ -195870,14 +195870,14 @@
       "method": "anova"
     },
     "normalized_net_income_fq": {
-      "statistic": 0.9238612878100658,
+      "statistic": 0.9238612878100656,
       "p_value": 0.515349408346935,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "normalized_net_income_5yavgfq": {
-      "statistic": 0.9000310835551535,
+      "statistic": 0.9000310835551536,
       "p_value": 0.5367808850813147,
       "significant": false,
       "n_groups": 11,
@@ -195898,14 +195898,14 @@
       "method": "anova"
     },
     "net_income_is_fq": {
-      "statistic": 0.7911485712211678,
+      "statistic": 0.7911485712211674,
       "p_value": 0.6372416017593947,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "net_income_is_5yavgfq": {
-      "statistic": 0.7402476235823753,
+      "statistic": 0.7402476235823754,
       "p_value": 0.6847882316451054,
       "significant": false,
       "n_groups": 11,
@@ -195940,7 +195940,7 @@
       "method": "anova"
     },
     "total_revenues_5yavgltm": {
-      "statistic": 1.8486512825998642,
+      "statistic": 1.848651282599864,
       "p_value": 0.06376379870717552,
       "significant": false,
       "n_groups": 11,
@@ -195968,8 +195968,8 @@
       "method": "anova"
     },
     "ebitda": {
-      "statistic": 1.0045326305157696,
-      "p_value": 0.44754674531168126,
+      "statistic": 1.0045326305157694,
+      "p_value": 0.4475467453116815,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
@@ -195982,14 +195982,14 @@
       "method": "anova"
     },
     "p_b": {
-      "statistic": 1.2280910324340168,
+      "statistic": 1.2280910324340164,
       "p_value": 0.2855696056969897,
       "significant": false,
       "n_groups": 11,
       "method": "anova"
     },
     "gross_margin": {
-      "statistic": 4.344497847619753,
+      "statistic": 4.344497847619751,
       "p_value": 6.951574226998639e-05,
       "significant": true,
       "n_groups": 11,
