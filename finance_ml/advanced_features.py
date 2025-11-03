@@ -817,22 +817,41 @@ def calculate_feature_importance_rf(
 ) -> pd.DataFrame:
     """Calculate feature importance using Random Forest.
 
-    Args:
-        X: Feature DataFrame
-        y: Target variable
-        top_k: Return only top k features (default: all)
-        n_estimators: Number of trees in Random Forest
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Feature matrix
+    y : pd.Series or np.ndarray
+        Target variable
+    top_k : int, optional
+        Number of top features to return. If None, returns all features.
+    n_estimators : int, default=100
+        Number of trees in the random forest
 
-    Returns:
-        DataFrame with features and importance scores, sorted by importance
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns ['feature', 'importance'] sorted by importance.
+        Note: Only features present after data cleaning are included.
+
+    Notes
+    -----
+    - Only numeric columns are used; non-numeric columns are automatically removed
+    - Rows with NaN values in X or y are automatically cleaned (filled with median/0)
+    - Feature importance is calculated only for features in the cleaned dataset
+    - Returns empty DataFrame if no valid samples or features remain after cleaning
     """
     # Handle missing and invalid values
     X_clean = X.copy()
 
+    # Select only numeric columns to avoid TypeError with median calculation
+    numeric_cols = X_clean.select_dtypes(include=[np.number]).columns
+    X_clean = X_clean[numeric_cols]
+
     # Replace infinite values with NaN first
     X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
 
-    # Fill NaN with median
+    # Fill NaN with median (now safe because we only have numeric columns)
     X_clean = X_clean.fillna(X_clean.median())
 
     # For any remaining NaN (e.g., all-NaN columns), fill with 0
@@ -857,19 +876,23 @@ def calculate_feature_importance_rf(
     if y_clean.isna().any():
         y_clean = y_clean.fillna(0)
 
+    # If no valid samples or features remain, return empty DataFrame
+    if len(X_clean) == 0 or len(X_clean.columns) == 0:
+        return pd.DataFrame({"feature": [], "importance": []})
+
     # Train Random Forest
     rf = RandomForestRegressor(n_estimators=n_estimators, random_state=42, n_jobs=-1, max_depth=10)
     rf.fit(X_clean, y_clean)
 
     # Get feature importance
     importance_df = pd.DataFrame(
-        {"feature": X.columns, "importance": rf.feature_importances_}
+        {"feature": X_clean.columns, "importance": rf.feature_importances_}
     ).sort_values("importance", ascending=False)
 
     if top_k is not None:
         importance_df = importance_df.head(top_k)
 
-    logger.info(f"Calculated Random Forest importance for {len(X.columns)} features")
+    logger.info(f"Calculated Random Forest importance for {len(X_clean.columns)} features")
     return importance_df
 
 
@@ -910,6 +933,7 @@ def calculate_feature_importance_shap(
             {"feature": X.columns, "importance": mean_abs_shap}
         ).sort_values("importance", ascending=False)
     except ImportError:
+        shap = None  # Define in except block for type checker
         # Fallback to Random Forest feature importance if SHAP not available
         logger.warning("SHAP not available, falling back to Random Forest feature importance")
         importance_df = pd.DataFrame(

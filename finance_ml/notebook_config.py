@@ -24,13 +24,13 @@ class NotebookConfig:
     have_finance_prediction: bool = True
 
     # Database connectivity
-    have_database_connection: bool = False
+    have_database_connection: bool = True
 
     # Advanced analytics and visualizations
     have_advanced_analytics: bool = True
 
     # Dimensionality reduction visualizations
-    have_dim_reduction: bool = False
+    have_dim_reduction: bool = True
 
     # Debug and development features
     debug_mode: bool = False

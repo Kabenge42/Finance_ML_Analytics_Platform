@@ -656,110 +656,473 @@ Finance_ML_Analytics_Platform/
 
 ## Code Quality Improvement Tasks
 
-Based on recent PyCharm inspection analysis, the following improvements have been identified to enhance code quality,
+Based on PyCharm inspection results (2025-11-02), the following improvements have been identified to enhance code
+quality,
 maintainability, and adherence to Python best practices.
+
+**Inspection Summary**: 225 total issues identified across 14 inspection categories (190 excluding weak warnings).
+
+---
 
 ### Priority 1: Critical Issues (High Impact)
 
-#### 1.1 Type Hints and Type Checking
+#### 1.1 Fix Deprecated API Calls (2 issues)
 
-**Status**: 🔴 High Priority  
-**Effort**: Medium (2-3 days)  
-**Impact**: Improves IDE support, reduces runtime errors, enhances documentation
+**Status**: 🔴 Critical  
+**Effort**: Small (< 1 hour)  
+**Impact**: Prevents future breakage with pandas updates
+
+**Issues** (PyArgumentListInspection):
+
+- `finance_ml/benchmarking.py:235` - `Series.sort_values(by="_similarity")` uses deprecated `by` parameter
+- `finance_ml/eval.py:6480` - `Series.sort_values(by="market_cap_diff")` uses deprecated `by` parameter
 
 **Tasks**:
 
-- [ ] Add comprehensive type hints to all public functions in `finance_ml/` modules
-- [ ] Add type hints to function parameters and return types
-- [ ] Use `typing` module for complex types (List, Dict, Optional, Union, Tuple)
-- [ ] Enable and configure `mypy` for strict type checking
-- [ ] Fix all type checker warnings identified in inspection results
-- [ ] Add type hints to CLI interface functions in `finance_ml/cli.py`
+- [ ] Replace `sort_values(by="column")` with `sort_values()` (Series already knows the column)
+- [ ] Test affected functions: `find_similar_peers()`, market cap analysis
+- [ ] Add regression test to prevent reintroduction
+
+**Fix**:
+
+```python
+# Before
+similarity_scores.sort_values(by="_similarity", ascending=False)
+
+# After
+similarity_scores.sort_values(ascending=False)
+```
+
+---
+
+#### 1.2 Fix Type Checking Issues (33 issues)
+
+**Status**: 🔴 High Priority  
+**Effort**: Medium (1-2 days)  
+**Impact**: Improves type safety, IDE support, and reduces runtime errors
+
+**Issues** (PyTypeCheckerInspection):
+
+**By Module**:
+
+- `advanced_eda.py` (3): bool vs int, DataFrame vs list type mismatches
+- `advanced_models.py` (3): Series vs DataFrame/list mismatches
+- `advanced_preprocessing.py` (1): aggregate function type signature
+- `benchmarking.py` (1): Series vs DataFrame
+- `classification.py` (1): tuple vs str in dictionary key
+- `data.py` (5): float/Series type mismatches in dictionaries
+- `data_catalog.py` (1): BufferedWriter type annotation
+- `data_versioning.py` (1): BufferedWriter type annotation
+- `eval.py` (13): engine literal, float vs int, type literal mismatches
+- `models.py` (2): float/dict in string-typed dict values
+- `portfolio_optimization.py` (3): scipy.optimize type signatures
+
+**Tasks**:
+
+- [ ] Fix bool vs int: use `True`/`False` instead of `1`/`0` for boolean parameters
+- [ ] Fix DataFrame vs Series: add proper type guards and conversions
+- [ ] Fix dictionary type mismatches: use `Union` types or separate dictionaries
+- [ ] Fix literal types: use proper `Literal` type hints from `typing` module
+- [ ] Add type annotations for file handles: `BinaryIO` instead of `BufferedWriter`
+- [ ] Review scipy.optimize calls: ensure constraints match expected signatures
 
 **Example**:
 
-#### 1.7 Notebook Code Quality and Consistency
+```python
+# Before
+df.plot(figsize=(10, 6), grid=1)  # 1 instead of True
 
-**Status**: 🟡 Medium-High Priority  
-**Effort**: Small (1 day)  
-**Impact**: Improves notebook reliability, maintainability, and user experience
+# After  
+df.plot(figsize=(10, 6), grid=True)
+```
 
-**Context**: Code review of `ml_finance_model_main.ipynb` identified 10 issues affecting code quality, execution
-reliability, and best practices adherence.
+---
+
+#### 1.3 Fix Callable Issues (1 issue)
+
+**Status**: 🔴 High Priority  
+**Effort**: Small (< 30 minutes)  
+**Impact**: Prevents runtime AttributeError
+
+**Issue** (PyCallingNonCallableInspection):
+
+- `finance_ml/data.py:458` - `create_engine(db_url)` potentially None (SQLAlchemy not installed)
 
 **Tasks**:
 
-- [ ] **Import Organization** (Critical)
-  - [ ] Add missing `NotebookConfig` to finance_ml imports (line 79-91)
-  - [ ] Move `Path` import from line 159 to main imports section
-  - [ ] Consolidate all imports into single cell at notebook top
-  - [ ] Test cell execution order independence
+- [ ] Add proper None check after optional import
+- [ ] Raise informative error if SQLAlchemy not available
+- [ ] Document SQLAlchemy as optional dependency
 
-- [ ] **Configuration Management** (Critical)
-  - [ ] Fix config mutation anti-pattern (lines 155-164)
-  - [ ] Use proper config initialization with output_dir parameter
-  - [ ] Document configuration best practices in notebook
-  - [ ] Add validation that config is immutable after load
+**Fix**:
 
-- [ ] **Package Bug Fixes** (Critical)
-  - [ ] Fix `simple_eda()` AttributeError: use `.dtypes` not `.dtype`
-  - [ ] Add unit test to catch this regression
-  - [ ] Remove AttributeError workaround from notebook after fix
-  - [ ] Update finance_ml.eval module with proper DataFrame dtype handling
+```python
+try:
+    from sqlalchemy import create_engine
+except ImportError:
+    create_engine = None
 
-- [ ] **Type Safety and Validation** (High)
-  - [ ] Add isinstance checks for load_stock_data() return value
-  - [ ] Improve error messages with type information
-  - [ ] Add validation checkpoints throughout pipeline
-  - [ ] Document expected types in docstrings
+# Later in code
+if create_engine is None:
+    raise ImportError("SQLAlchemy is required for database access. Install: pip install sqlalchemy")
+engine = create_engine(db_url)
+```
 
-- [ ] **Error Handling** (High)
-  - [ ] Flatten nested try-except blocks (lines 193-225)
-  - [ ] Use consistent error handling pattern across cells
-  - [ ] Log errors with full stack traces (exc_info=True)
-  - [ ] Provide user-friendly error messages
+---
 
-- [ ] **Code Cleanup** (Medium)
-  - [ ] Replace redundant feature flag variables with direct cfg access
-  - [ ] Add deprecation comments for backward-compatible variables
-  - [ ] Update logger name from `__name__` to 'finance_ml_notebook'
-  - [ ] Remove duplicate imports and unused variables
+#### 1.4 Fix Unresolved References (35 issues)
 
-- [ ] **Documentation** (Medium)
-  - [ ] Complete any truncated markdown cells
-  - [ ] Add execution order notes to notebook header
-  - [ ] Document configuration options in notebook
-  - [ ] Add troubleshooting section for common issues
+**Status**: 🟡 Medium-High Priority  
+**Effort**: Medium (1 day)  
+**Impact**: Reduces false warnings, improves IDE accuracy
 
-**Testing Checklist**:
+**Issues** (PyUnresolvedReferencesInspection):
 
-- [ ] Restart kernel and run all cells in order - no errors
-- [ ] Run cells out of order - appropriate error messages
-- [ ] Test with missing dependencies - graceful degradation
-- [ ] Verify all feature flags work correctly
-- [ ] Check output directory creation and artifact saving
+**By Category**:
 
-**Success Criteria**:
+- Type inference issues (6): pandas Series methods not recognized (`dropna`, `isna`, `quantile`, `median`)
+- Docstring examples (7): Unresolved `X_train`, `y_train`, `X_test`, `X` in docstrings
+- Deprecated API (1): `scipy.stats.binom_test` (deprecated, use `binomtest`)
+- Type narrowing (11): `None`/`object`/`float` type issues with conditional checks
+- Attribute access (10): `to_dict()`, `isoformat()`, `strftime()`, `fit()`, `predict()` on wrong types
 
-- No NameError or AttributeError when running notebook top-to-bottom
-- All imports consolidated in single cell
-- Config is properly initialized without mutation
-- simple_eda() works without catching AttributeError
-- Type validation provides clear error messages
-- Error handling is consistent and informative
+**Tasks**:
 
-**Related Issues**:
+- [ ] Add type hints to clarify Series vs scalar values
+- [ ] Fix docstring examples: use proper RST/Google format with type annotations
+- [ ] Replace deprecated `binom_test` with `binomtest` from scipy.stats
+- [ ] Add type guards (isinstance checks) before attribute access
+- [ ] Use type narrowing with `assert` or explicit checks for None values
 
-- Links to Phase 9.1-9.7 implementation tasks
-- Dependencies on finance_ml package bug fixes
-- Integration with notebook utilities module
+**Example**:
 
-**References**:
+```python
+# Fix deprecated scipy API
+from scipy.stats import binomtest  # instead of binom_test
 
-- `ml_finance_model_main.ipynb` - main notebook
-- `finance_ml/eval.py` - simple_eda() function
-- `finance_ml/notebook_utils.py` - utility functions
-- `finance_ml/notebook_config.py` - NotebookConfig class
+result = binomtest(k, n, p, alternative='two-sided')
+```
+
+---
+
+### Priority 2: Important Issues (Medium Impact)
+
+#### 2.1 Fix Incorrect Docstrings (16 issues)
+
+**Status**: 🟡 Medium Priority  
+**Effort**: Small (2-3 hours)  
+**Impact**: Improves documentation accuracy and IDE tooltips
+
+**Issues** (PyIncorrectDocstringInspection):
+
+- `finance_ml/classification.py`: 16 missing parameters in docstrings
+  - Functions: `train_xgboost_classifier`, `evaluate_classifier`, `train_lightgbm_classifier`,
+    `train_ensemble_classifier`, `train_stacked_classifier`, `train_catboost_classifier`
+  - Missing: `numeric_cols`, `categorical_cols`, `params`, `X_train`, `y_train`, `X_test`, `y_test`, `voting`
+
+**Tasks**:
+
+- [ ] Add missing parameters to docstrings using Google or NumPy style
+- [ ] Document parameter types, descriptions, and defaults
+- [ ] Ensure all public functions have complete docstrings
+- [ ] Run docstring validation in CI
+
+**Example**:
+
+```python
+def train_xgboost_classifier(
+    X_train: pd.DataFrame,
+    y_train: np.ndarray,
+    numeric_cols: List[str],
+    categorical_cols: List[str],
+    params: Optional[Dict[str, Any]] = None
+) -> xgb.XGBClassifier:
+    """
+    Train an XGBoost classifier with preprocessing pipeline.
+    
+    Args:
+        X_train: Training features DataFrame
+        y_train: Training labels array
+        numeric_cols: List of numeric feature column names
+        categorical_cols: List of categorical feature column names
+        params: Optional XGBoost hyperparameters dictionary
+        
+    Returns:
+        Trained XGBoost classifier with preprocessing pipeline
+    """
+```
+
+---
+
+#### 2.2 Add Missing Docstrings (1 issue)
+
+**Status**: 🟡 Medium Priority  
+**Effort**: Small (< 30 minutes)  
+**Impact**: Improves module documentation
+
+**Issue** (PyMissingOrEmptyDocstringInspection):
+
+- `finance_ml/eval.py:1` - Missing module-level docstring
+
+**Tasks**:
+
+- [ ] Add comprehensive module docstring to `finance_ml/eval.py`
+- [ ] Document module purpose, key functions, and usage examples
+- [ ] Follow PEP 257 docstring conventions
+
+**Example**:
+
+```python
+"""
+Evaluation and analytics module for Finance ML Analytics Platform.
+
+This module provides comprehensive evaluation, visualization, and reporting
+functions for machine learning models in financial applications.
+
+Key Functions:
+    - simple_eda: Exploratory data analysis with visualizations
+    - evaluate_regression_model: Model performance metrics
+    - identify_mispriced_stocks: Stock ranking and analysis
+    - generate_excel_report: Comprehensive Excel reporting
+
+Example:
+    >>> from finance_ml.eval import simple_eda
+    >>> simple_eda(df, out_dir="outputs/")
+"""
+```
+
+---
+
+#### 2.3 Fix Broad Exception Handling (6 issues)
+
+**Status**: 🟡 Medium Priority  
+**Effort**: Small (1-2 hours)  
+**Impact**: Improves error diagnosis and debugging
+
+**Issues** (PyBroadExceptionInspection):
+
+- `finance_ml/eval.py`: 5 occurrences of `except Exception:` (lines 238, 284, 357, 408, 591)
+- `finance_ml/logging_config.py`: 1 occurrence (line 257)
+
+**Tasks**:
+
+- [ ] Replace broad `except Exception:` with specific exception types
+- [ ] Catch `ValueError`, `TypeError`, `KeyError`, `AttributeError` as appropriate
+- [ ] Keep generic catch only for logging/reporting, then re-raise
+- [ ] Document expected exceptions in docstrings
+
+**Example**:
+
+```python
+# Before
+try:
+    result = risky_operation()
+except Exception as e:
+    logger.error(f"Operation failed: {e}")
+    
+# After
+try:
+    result = risky_operation()
+except (ValueError, TypeError) as e:
+    logger.error(f"Invalid input: {e}")
+    raise
+except KeyError as e:
+    logger.error(f"Missing key: {e}")
+    return default_value
+```
+
+---
+
+#### 2.4 Fix Unused Imports (27 issues)
+
+**Status**: 🟡 Medium Priority  
+**Effort**: Small (1-2 hours)  
+**Impact**: Cleaner code, faster imports
+
+**Issues** (PyUnusedImportsInspection):
+
+**Try-Except ImportError (19 issues)** - imports should be defined in except block:
+
+- `advanced_features.py`: `shap`
+- `advanced_models.py`: `xgb`, `lgb`, `CatBoostRegressor`, `optuna`, `tf`, `keras`, `layers`
+- `classification.py`: `xgb`, `lgb`, `CatBoostClassifier`, `SMOTE`, `ADASYN`, `ImbPipeline`, `keras`, `layers`, `shap`,
+  `plt`
+- `eval.py`: `ProfileReport`, `sv`, `stats`
+
+**Truly Unused Imports (8 issues)**:
+
+- `features.py`: `engineer_temporal_features`, `engineer_market_microstructure_features`,
+  `engineer_nonlinear_transforms`, `calculate_feature_importance_shap`, `calculate_feature_importance_rfe`
+- `transformers.py`: `Dict`, `Any`
+
+**Tasks**:
+
+- [ ] Add `= None` in except blocks for optional imports
+- [ ] Remove truly unused imports
+- [ ] Update `__all__` exports if needed
+- [ ] Run import checker in CI
+
+**Example**:
+
+```python
+# Before
+try:
+    import shap
+except ImportError:
+    pass  # Missing definition
+
+# After
+try:
+    import shap
+except ImportError:
+    shap = None  # Now defined for type checking
+```
+
+---
+
+#### 2.5 Fix Protected Member Access (1 issue)
+
+**Status**: 🟡 Low-Medium Priority  
+**Effort**: Trivial (< 15 minutes)  
+**Impact**: Follows API conventions
+
+**Issue** (PyProtectedMemberInspection):
+
+- `finance_ml/eval.py:6700` - `pairwise_tukeyhsd` not declared in `__all__`
+
+**Tasks**:
+
+- [ ] Import from public API: `from statsmodels.stats.multicomp import pairwise_tukeyhsd`
+- [ ] Verify function is in statsmodels public API
+- [ ] Add to imports documentation
+
+---
+
+### Priority 3: Code Style & Optimization (Low Impact)
+
+#### 3.1 Optimize List Creation (4 issues)
+
+**Status**: 🟢 Low Priority - Code Style  
+**Effort**: Trivial (< 30 minutes)  
+**Impact**: Minor performance and readability improvement
+
+**Issues** (PyListCreationInspection) - `finance_ml/eval.py`:
+
+- Line 4732: `html_parts = []` followed by appends
+- Line 5472: `summary_data = []` followed by appends
+- Line 5528: `accuracy_data = []` followed by appends
+- Line 5584: `interpretation_data = []` followed by appends
+
+**Tasks**:
+
+- [ ] Replace multi-step initialization with list literals where applicable
+- [ ] Example: `parts = []; parts.append(a); parts.append(b)` → `parts = [a, b]`
+
+---
+
+#### 3.2 Optimize Dict Creation (1 issue)
+
+**Status**: 🟢 Low Priority - Code Style  
+**Effort**: Trivial (< 5 minutes)  
+**Impact**: Minor readability improvement
+
+**Issue** (PyDictCreationInspection):
+
+- `finance_ml/risk_metrics.py:310` - `metrics = {}` followed by assignments
+
+**Tasks**:
+
+- [ ] Replace `metrics = {}; metrics['a'] = 1; metrics['b'] = 2` with `metrics = {'a': 1, 'b': 2}`
+
+---
+
+#### 3.3 Fix Type Hints in Notebook (3 issues)
+
+**Status**: 🟢 Low Priority  
+**Effort**: Small (< 1 hour)  
+**Impact**: Cleaner notebook code
+
+**Issues** (PyTypeHintsInspection) - `ml_finance_model_main.ipynb`:
+
+- Lines 1793, 2027, 2261: "Type alias is not generic or already specialized"
+- Issue with `:2` notation in type hints
+
+**Tasks**:
+
+- [ ] Review and fix type alias usage in notebook
+- [ ] Use proper generic syntax: `List[str]` not `list:2`
+- [ ] Ensure compatibility with Python 3.12+ type system
+
+---
+
+#### 3.4 Remove Redundant Default Arguments (95 issues)
+
+**Status**: ⚪ Optional - Weak Warning  
+**Effort**: Medium (2-4 hours if addressing all)  
+**Impact**: Code readability (subjective improvement)
+
+**Note**: These are weak warnings (INFO_ATTRIBUTES) about passing arguments that equal default values.
+
+**Issues** (PyArgumentEqualDefaultInspection) - 95 occurrences across many modules:
+
+- Common patterns: `method='pearson'`, `ascending=True`, `alpha=0.05`, `n_estimators=100`, etc.
+
+**Tasks** (Optional):
+
+- [ ] Review each case and remove obvious redundant defaults
+- [ ] Keep explicit defaults where they improve code clarity
+- [ ] Prioritize high-traffic code paths
+
+**Recommendation**: Address only when touching related code. Not worth dedicated effort.
+
+---
+
+### Summary Statistics
+
+| Priority       | Category                 | Count   | Effort         | Status |
+|----------------|--------------------------|---------|----------------|--------|
+| P1 Critical    | Deprecated API           | 2       | < 1 hour       | 🔴     |
+| P1 High        | Type Checking            | 33      | 1-2 days       | 🔴     |
+| P1 High        | Callable Issues          | 1       | < 30 min       | 🔴     |
+| P1 Medium-High | Unresolved Refs          | 35      | 1 day          | 🟡     |
+| P2 Medium      | Incorrect Docstrings     | 16      | 2-3 hours      | 🟡     |
+| P2 Medium      | Missing Docstrings       | 1       | < 30 min       | 🟡     |
+| P2 Medium      | Broad Exceptions         | 6       | 1-2 hours      | 🟡     |
+| P2 Medium      | Unused Imports           | 27      | 1-2 hours      | 🟡     |
+| P2 Low-Medium  | Protected Members        | 1       | < 15 min       | 🟡     |
+| P3 Low         | List Creation            | 4       | < 30 min       | 🟢     |
+| P3 Low         | Dict Creation            | 1       | < 5 min        | 🟢     |
+| P3 Low         | Notebook Type Hints      | 3       | < 1 hour       | 🟢     |
+| P3 Optional    | Redundant Defaults       | 95      | 2-4 hours      | ⚪      |
+| **TOTAL**      | **All Issues**           | **225** | **~7-10 days** | -      |
+| **TOTAL**      | **(Excluding Optional)** | **130** | **~5-7 days**  | -      |
+
+---
+
+### Recommended Action Plan
+
+**Sprint 1** (2-3 days):
+
+1. Fix deprecated API calls (1.1) - 🔴 Critical
+2. Fix callable issues (1.3) - 🔴 Critical
+3. Fix broad exceptions (2.3) - 🟡 Quick wins
+4. Fix protected member access (2.5) - 🟡 Quick wins
+5. Remove unused imports (2.4) - 🟡 Quick wins
+
+**Sprint 2** (3-4 days):
+
+1. Fix type checking issues (1.2) - 🔴 High impact
+2. Fix unresolved references (1.4) - 🟡 IDE improvement
+3. Fix incorrect docstrings (2.1) - 🟡 Documentation
+4. Add missing docstrings (2.2) - 🟡 Documentation
+
+**Sprint 3** (Optional):
+
+1. Optimize list/dict creation (3.1, 3.2) - 🟢 Code style
+2. Fix notebook type hints (3.3) - 🟢 Code style
+3. Review redundant defaults case-by-case (3.4) - ⚪ Optional
+
+**Note**: All inspection result XML files are available in `inspection results/` directory for detailed review.
 
 ---
 

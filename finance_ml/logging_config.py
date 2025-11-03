@@ -254,7 +254,7 @@ def _remove_handlers_from_logger(logger: logging.Logger) -> None:
         try:
             handler.flush()
             handler.close()
-        except Exception:
+        except (OSError, ValueError, AttributeError):
             pass  # Ignore errors during cleanup
         finally:
             logger.removeHandler(handler)

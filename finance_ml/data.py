@@ -13,16 +13,24 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 
 # Optional import for database access
+if TYPE_CHECKING:
+    from sqlalchemy import Engine
+    from typing import Callable
+
+    CreateEngineType = Callable[[str], Engine]
+else:
+    CreateEngineType = Any
+
 try:
-    from sqlalchemy import create_engine  # type: ignore
+    from sqlalchemy import create_engine
 except ImportError:  # pragma: no cover
-    create_engine = None  # type: ignore
+    create_engine: Optional[CreateEngineType] = None  # type: ignore
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -447,6 +455,9 @@ def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
         raise ImportError(
             "SQLAlchemy not available. Install psycopg2-binary and SQLAlchemy or use CSV data source."
         )
+
+    # Type narrowing: assert create_engine is callable after None check
+    assert callable(create_engine), "create_engine must be callable"
 
     # Resolve schema and table from environment, default to public.equities
     schema = os.environ.get("DB_SCHEMA", "public")

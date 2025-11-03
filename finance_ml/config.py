@@ -28,7 +28,7 @@ class FinanceMLConfig:
     output_dir: Path = field(default_factory=lambda: Path("outputs"))
 
     # Database configuration
-    db_url: Optional[str] = None
+    db_url: Optional[str] = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
     db_schema: str = "public"
     db_table: str = "equities"
 

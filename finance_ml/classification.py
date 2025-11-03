@@ -35,6 +35,7 @@ try:
     import xgboost as xgb
     HAVE_XGBOOST = True
 except ImportError:
+    xgb = None  # type: ignore
     HAVE_XGBOOST = False
     warnings.warn("XGBoost not available. Install with: pip install xgboost")
 
@@ -42,6 +43,7 @@ try:
     import lightgbm as lgb
     HAVE_LIGHTGBM = True
 except ImportError:
+    lgb = None  # type: ignore
     HAVE_LIGHTGBM = False
     warnings.warn("LightGBM not available. Install with: pip install lightgbm")
 
@@ -49,6 +51,7 @@ try:
     from catboost import CatBoostClassifier
     HAVE_CATBOOST = True
 except ImportError:
+    CatBoostClassifier = None  # type: ignore
     HAVE_CATBOOST = False
     warnings.warn("CatBoost not available. Install with: pip install catboost")
 
@@ -58,6 +61,10 @@ try:
     from imblearn.pipeline import Pipeline as ImbPipeline
     HAVE_IMBLEARN = True
 except ImportError:
+    SMOTE = None  # type: ignore
+    ADASYN = None  # type: ignore
+    RandomUnderSampler = None  # type: ignore
+    ImbPipeline = None  # type: ignore
     HAVE_IMBLEARN = False
     warnings.warn("imbalanced-learn not available. Install with: pip install imbalanced-learn")
 
@@ -67,6 +74,9 @@ try:
     from tensorflow.keras import layers
     HAVE_TENSORFLOW = True
 except ImportError:
+    tf = None  # type: ignore
+    keras = None  # type: ignore
+    layers = None  # type: ignore
     HAVE_TENSORFLOW = False
     warnings.warn("TensorFlow not available. Install with: pip install tensorflow")
 
@@ -74,6 +84,7 @@ try:
     import shap
     HAVE_SHAP = True
 except ImportError:
+    shap = None  # type: ignore
     HAVE_SHAP = False
     warnings.warn("SHAP not available. Install with: pip install shap")
 

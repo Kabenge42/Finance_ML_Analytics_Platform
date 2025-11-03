@@ -289,10 +289,28 @@ def calculate_feature_importance_rf(
     top_k: Optional[int] = 20,
     n_estimators: int = 100
 ) -> pd.DataFrame:
-    """Calculate feature importance using Random Forest."""
-    X_clean = X.fillna(X.median())
-    y_clean = y.fillna(y.median())
-    
+    """Calculate feature importance using Random Forest.
+
+    Args:
+        X: Features dataframe
+        y: Target variable
+        top_k: Number of top features to return (None for all)
+        n_estimators: Number of trees in the forest
+
+    Returns:
+        DataFrame with feature names and importance scores
+    """
+    # Remove rows with missing target values
+    valid_rows = ~y.isna()
+    X_valid = X.loc[valid_rows]
+    y_valid = y.loc[valid_rows]
+
+    # Remove columns with any missing values
+    valid_cols = ~X_valid.isna().any()
+    X_clean = X_valid.loc[:, valid_cols]
+    y_clean = y_valid
+
+    # Train Random Forest
     rf = RandomForestRegressor(
         n_estimators=n_estimators,
         random_state=42,
@@ -301,16 +319,16 @@ def calculate_feature_importance_rf(
         min_samples_split=20
     )
     rf.fit(X_clean, y_clean)
-    
-    importance_df = pd.DataFrame({
-        'feature': X.columns,
-        'importance': rf.feature_importances_
-    }).sort_values('importance', ascending=False)
-    
+
+    # Get feature importance - use X_clean.columns instead of X.columns
+    importance_df = pd.DataFrame(
+        {"feature": X_clean.columns, "importance": rf.feature_importances_}
+    ).sort_values("importance", ascending=False)
+
     if top_k is not None:
         importance_df = importance_df.head(top_k)
-    
-    logger.info(f"Calculated Random Forest importance for {len(X.columns)} features")
+
+    logger.info(f"Calculated Random Forest importance for {len(X_clean.columns)} features")
     return importance_df
 
 

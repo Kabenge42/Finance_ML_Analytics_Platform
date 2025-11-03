@@ -213,7 +213,7 @@ def simple_eda(
             "simple_eda: dtype inspection failed due to AttributeError; skipping numeric stats"
         )
         numeric_cols = []
-    except Exception as e:
+    except (KeyError, ValueError, TypeError) as e:
         logging.warning("simple_eda: dtype inspection failed: %s", e)
         numeric_cols = []
 
@@ -225,7 +225,7 @@ def simple_eda(
         basic_stats = {}
         numeric_count = 0
         categorical_count = 0
-    except Exception as e:
+    except (KeyError, ValueError, TypeError) as e:
         logging.warning("simple_eda: basic stats computation failed: %s", e)
         basic_stats = {}
         numeric_count = 0
@@ -235,7 +235,7 @@ def simple_eda(
     def _safe_counts(series_name: str):
         try:
             return df[series_name].value_counts().to_dict()
-        except Exception:
+        except (KeyError, AttributeError, ValueError, TypeError):
             return {}
 
     summary = {
@@ -260,7 +260,7 @@ def simple_eda(
             summary["distribution_analysis"] = (
                 skew_kurt_df.to_dict(orient="index") if not skew_kurt_df.empty else {}
             )
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Distribution analysis failed: %s", e)
             summary["distribution_analysis"] = {}
 
@@ -281,10 +281,10 @@ def simple_eda(
                             "count": int(outlier_mask.sum()),
                             "percentage": float(outlier_mask.sum() / len(col_data) * 100),
                         }
-                except Exception:
+                except (KeyError, ValueError, TypeError, AttributeError):
                     outliers[col] = {"count": 0, "percentage": 0.0}
             summary["outlier_detection"] = outliers
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Outlier detection failed: %s", e)
             summary["outlier_detection"] = {}
 
@@ -300,7 +300,7 @@ def simple_eda(
                 summary["normality_tests"] = normality
             else:
                 summary["normality_tests"] = {}
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Normality tests failed: %s", e)
             summary["normality_tests"] = {}
 
@@ -328,14 +328,14 @@ def simple_eda(
                     # dcor library not installed - skip distance correlation
                     logging.info("Distance correlation skipped (dcor library not installed)")
                     corr_analysis["distance"] = {}
-                except Exception as e:
+                except (KeyError, ValueError, TypeError, AttributeError) as e:
                     logging.warning("Distance correlation calculation failed: %s", e)
                     corr_analysis["distance"] = {}
 
                 summary["correlation_analysis"] = corr_analysis
             else:
                 summary["correlation_analysis"] = {}
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Correlation analysis failed: %s", e)
             summary["correlation_analysis"] = {}
 
@@ -354,12 +354,12 @@ def simple_eda(
                             {"var1": var1, "var2": var2, "correlation": float(corr)}
                             for var1, var2, corr in top_corr_list
                         ]
-                    except Exception:
+                    except (KeyError, ValueError, TypeError, AttributeError):
                         top_corr[method] = []
                 summary["top_correlations"] = top_corr
             else:
                 summary["top_correlations"] = {}
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Top correlations extraction failed: %s", e)
             summary["top_correlations"] = {}
 
@@ -380,7 +380,7 @@ def simple_eda(
                 summary["sector_statistics"] = sector_stats
             else:
                 summary["sector_statistics"] = {}
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Sector statistics failed: %s", e)
             summary["sector_statistics"] = {}
 
@@ -405,12 +405,12 @@ def simple_eda(
                             ):
                                 test_result["significant"] = bool(test_result["significant"])
                             sector_tests[col] = test_result
-                    except Exception:
+                    except (KeyError, ValueError, TypeError, AttributeError):
                         pass
                 summary["sector_comparison_tests"] = sector_tests
             else:
                 summary["sector_comparison_tests"] = {}
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Sector comparison tests failed: %s", e)
             summary["sector_comparison_tests"] = {}
 
@@ -431,7 +431,7 @@ def simple_eda(
                 summary["region_statistics"] = region_stats
             else:
                 summary["region_statistics"] = {}
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
             logging.warning("Region statistics failed: %s", e)
             summary["region_statistics"] = {}
     else:
@@ -578,7 +578,7 @@ def simple_eda(
                 summary["multivariate_analysis"] = multivariate_analysis
             else:
                 summary["multivariate_analysis"] = {}
-        except Exception as e:
+        except (KeyError, ValueError, TypeError, AttributeError, ImportError) as e:
             logging.warning("Multivariate analysis failed: %s", e)
             summary["multivariate_analysis"] = {}
     else:
@@ -588,7 +588,7 @@ def simple_eda(
     if out_dir is not None:
         try:
             out_dir.mkdir(parents=True, exist_ok=True)
-        except Exception:
+        except (OSError, PermissionError):
             # If out_dir cannot be created, continue without writing files
             logging.warning("Could not create out_dir=%s; skipping file outputs", out_dir)
         else:

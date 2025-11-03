@@ -338,11 +338,11 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 
 ### Database Setup Scripts
 
-- **sql/create_equities_schema.sql** — SQL script to initialize the equities table in PostgreSQL
-- **sql/create_equities_schema_sqlite.sql** — SQLite schema creation script
-- **sql/import_equities_data.sql** — Comprehensive import script for all regional CSVs with staging tables and
+- **create_equities_schema.sql** — SQL script to initialize the equities table in PostgreSQL
+- **create_equities_schema_sqlite.sql** — SQLite schema creation script
+- **import_equities_data.sql** — Comprehensive import script for all regional CSVs with staging tables and
   validation (PostgreSQL)
-- **sql/import_equities_data_sqlite.sql** — SQLite data import script with validation
+- **import_equities_data_sqlite.sql** — SQLite data import script with validation
 
 ### Utility Scripts (in tools/ directory)
 
@@ -386,12 +386,12 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - pyproject.toml — Modern packaging configuration with console scripts
 - ml_finance_model_main.ipynb — Primary notebook for end-to-end workflow
 - ml_finance_model_main.py — Lightweight script version with CLI
-- sql/create_equities_schema.sql — PostgreSQL schema for equities table
-- sql/create_equities_schema_sqlite.sql — SQLite schema for equities table
-- sql/import_equities_data.sql — PostgreSQL CSV import script with validation
-- sql/import_equities_data_sqlite.sql — SQLite CSV import script with validation
-- sql/equities.sqlite — Example/working SQLite database file for local runs
-- sql/identifier.sqlite — Auxiliary SQLite DB present in repo
+- create_equities_schema.sql — PostgreSQL schema for equities table
+- create_equities_schema_sqlite.sql — SQLite schema for equities table
+- import_equities_data.sql — PostgreSQL CSV import script with validation
+- import_equities_data_sqlite.sql — SQLite CSV import script with validation
+- equities.sqlite — Example/working SQLite database file for local runs
+- identifier.sqlite — Auxiliary SQLite DB present in repo
     - TODO: Clarify its role and whether it’s required by any scripts/tests
 
 
@@ -400,7 +400,7 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Run all tests from the project root:
   - python -m unittest -v
 
-Comprehensive test suite in tests/ directory (47 test modules):
+Comprehensive test suite in tests/ directory (51 test modules):
 
 - test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
 - test_advanced_features.py — Phase 9.3 advanced feature engineering tests
@@ -464,7 +464,6 @@ Finance_ML_Analytics_Platform/
 │   ├── advanced_models.py        # Sector-optimized regression models (Phase 9.5)
 │   ├── advanced_preprocessing.py # Advanced preprocessing and data quality
 │   ├── analyst_comparison.py     # Analyst price target comparison and tracking (Phase 9.8)
-│   ├── benchmarking.py           # Comparative analysis and peer benchmarking (Phase 9.2)
 │   ├── benchmarking.py           # Comparative analysis and peer benchmarking (Phase 9.2)
 │   ├── classification.py         # Multi-class event classification (Phase 9.4)
 │   ├── cli.py                    # Command-line interface
@@ -809,25 +808,12 @@ Analyst price target comparison and tracking (Phase 9.8).
 - `track_target_revisions()`: Track changes in analyst price targets over time
 - `generate_analyst_comparison_report()`: Generate comprehensive analyst comparison report with visualizations
 
-#### `finance_ml.benchmarking`
+#### `finance_ml.verify_requirements`
 
-Comparative analysis and peer benchmarking (Phase 9.2).
+Requirements verification utility.
 
-- `compare_sector_distributions()`: Compare metric distributions across sectors with statistical tests
-- `compare_regional_valuations()`: Compare valuation metrics across regions (ANOVA/Kruskal-Wallis)
-- `find_peer_group()`: Identify peer companies based on sector and criteria (market cap, revenue, etc.)
-- `compare_to_peers()`: Compare a stock's metrics against its peer group
-- `analyze_metric_trend()`: Analyze time-series trends for specific metrics
-- `generate_benchmarking_report()`: Generate comprehensive benchmarking report with sector and regional comparisons
-
-#### `finance_ml.transformers`
-
-Scikit-learn compatible transformers for feature engineering pipelines.
-
-- `RegularizedTargetEncoder`: Target encoding with cross-validation and smoothing to prevent overfitting
-- `SafeDivisionTransformer`: Safe division with configurable fill values and capping for ratios
-- `FinancialRatioTransformer`: Automated calculation of common financial ratios (P/E, P/B, ROE, etc.)
-- `ValuationRatioTransformer`: Valuation ratio calculation with percentile-based capping for outliers
+- Validates installed packages against project requirements
+- Checks Python version compatibility
 
 ## Troubleshooting
 - TensorFlow installation issues: the project primarily uses scikit‑learn and gradient boosting libraries. CPU‑only TensorFlow is fine; ensure compatible system libraries. If installation is problematic on your machine, you can proceed with non‑TF parts first.
@@ -1239,3 +1225,33 @@ Notes:
 - The Python importer uses pandas to read CSVs with dtype=str to preserve raw values, converts empty strings to NULL,
   and backfills Region per file.
 - sqlite3 is included with Python; no additional dependency is required for SQLite.
+
+## License
+
+This project is licensed under the MIT License.
+
+```
+MIT License
+
+Copyright (c) 2025 Finance ML Analytics Platform Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+See [LICENSE](LICENSE) file for full text.

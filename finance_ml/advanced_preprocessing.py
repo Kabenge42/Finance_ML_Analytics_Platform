@@ -586,3 +586,448 @@ def scale_features(
 
     logger.info(f"Scaled {len(columns)} features using {scaler_type} scaler")
     return result
+
+
+# Phase 9.1: Enhanced Two-Step Imputation Strategy
+
+
+def get_zero_imputation_columns() -> List[str]:
+    """Return list of columns that should be zero-imputed.
+    
+    These columns represent rare/exceptional events (impairments, restructuring,
+    acquisitions, etc.) where missing values typically mean the event did not occur.
+    
+    Returns:
+        List of column names for zero imputation
+    """
+    return [
+        # Impairment columns
+        "impairment_of_goodwill_fq",
+        "impairment_of_goodwill_ltm",
+        "impairment_of_goodwill_1fy",
+        "impairment_of_goodwill_fy",
+        "impairment_of_goodwill_5yavgfq",
+        
+        # Asset writedown columns
+        "asset_writedown_fq",
+        "asset_writedown_ltm",
+        "asset_writedown_fy",
+        "asset_writedown_1fy",
+        "asset_writedown_5yavgfq",
+        
+        # Merger & restructuring columns
+        "merger_restructuring_charges_fq",
+        "merger_restructuring_charges_fy",
+        "merger_restructuring_charges_ltm",
+        "merger_restructuring_charges_5yavgfq",
+        
+        # Restructuring charges
+        "restructuring_charges_ltm",
+        "restructuring_charges_fq",
+        "restructuring_charges_1fy",
+        "restructuring_charges_fy",
+        "restructuring_charges_5yavgfq",
+        
+        # Cash acquisitions
+        "cash_acquisitions_fq",
+        "cash_acquisitions_ltm",
+        "cash_acquisitions_fy",
+        "cash_acquisitions_1fy",
+        "cash_acquisitions_5yavgfq",
+        
+        # Capital expenditure
+        "capital_expenditure_ltm",
+        "capital_expenditure_1fy",
+        "capital_expenditure_fy",
+        "capital_expenditure_fq",
+        "capital_expenditure_5yavgfq",
+        
+        # R&D expenses
+        "r_d_expenses_ltm",
+        
+        # Analyst ratings
+        "analyst_rating",
+        "strong_sell_ratings",
+        "strong_buys_ratings",
+        "hold_ratings",
+        "buys_ratings",
+        "sell_ratings",
+        
+        # Other unusual items
+        "other_unusual_items_total_ltm",
+        "interest_income_on_investments_ltm",
+        "interest_expense_total_ltm",
+        
+        # Volume and short interest
+        "volume_shrs",
+        "short_int",
+        
+        # Gain/Loss on sale
+        "gain_loss_on_sale_of_assets_ltm",
+    ]
+
+
+def get_knn_imputation_columns() -> List[str]:
+    """Return list of columns that should use KNN imputation.
+    
+    These are core financial metrics where KNN can leverage sector relationships
+    and correlations to provide better estimates than simple statistics.
+    
+    Returns:
+        List of column names for KNN imputation
+    """
+    return [
+        # Market metrics
+        "market_cap",
+        "enterprise_value",
+        "last_price",
+        "market_cap_country_r",
+        
+        # Price targets
+        "price_target_ytd_ago",
+        "price_target",
+        "price_target_low",
+        "price_target_median",
+        "price_target_high",
+        
+        # Returns
+        "total_return_ytd",
+        "total_return_5y",
+        "total_return_10y",
+        "tot_return_cagr_3y",
+        "tot_return_cagr_10y",
+        
+        # Valuation ratios
+        "p_e_ntm",
+        "p_e_ltm",
+        "p_e_1fyltm",
+        "p_e_5yavgltm",
+        "p_b_ltm",
+        "p_b_1fy",
+        "p_b_5yavg",
+        "p_tbv_ltm",
+        
+        # Altman Z-Score
+        "altman_z_score_fy",
+        "altman_z_score_fq",
+        "altman_z_score_ltm",
+        
+        # Beta
+        "beta_1y",
+        "beta_2y",
+        "beta_5y",
+        
+        # Revenue metrics
+        "total_revenues_cagr_5y_fy",
+        "total_revenues_fq",
+        "total_revenues_1fy",
+        "total_revenues_fy",
+        "total_revenues_ltm",
+        "total_revenues_5yavgfq",
+        "total_revenues_5yavgltm",
+        "revenues_est_yoy_fy1e",
+        
+        # Operating expenses
+        "total_operating_expenses_ltm",
+        
+        # Tangible book value
+        "tbv_fy",
+        "tbv_ltm",
+        
+        # Cash flow metrics
+        "cff_ltm",
+        "cff_fy",
+        "cff_1fy",
+        "cff_fq",
+        "cfi_ltm",
+        "cfi_fy",
+        "cfi_1fy",
+        "cfi_fq",
+        "fcf_ltm",
+        "fcf_fy",
+        "fcf_fq",
+        "fcf_5yavgfq",
+        "cfo_ltm",
+        "cfo_fy",
+        "cfo_1fy",
+        "cfo_fq",
+        
+        # EBITDA metrics
+        "ebitda_fq",
+        "ebitda_ltm",
+        "ebitda_fy",
+        "ebitda_1fy",
+        "ebitda_5yavgfq",
+        "ebitda_5yavgltm",
+        "ebitda_adj_ltm",
+        "ebitda_adj_fy",
+        "ebitda_adj_1fy",
+        
+        # EBIT metrics
+        "ebit_fq",
+        "ebit_ltm",
+        "ebit_fy",
+        "ebit_1fy",
+        "ebit_5yavgfq",
+        "ebit_5yavgltm",
+        "ebit_adj_1fy",
+        "ebit_adj_fy",
+        "ebit_adj_ltm",
+        "ebit_est_med_fy1e",
+        "ebit_est_med_ntm",
+        
+        # Profitability metrics
+        "return_on_equity_ltm",
+        "return_on_equity_fy",
+        "return_on_assets_roa_ltm",
+        "return_on_assets_roa_fy",
+        
+        # Net income metrics
+        "net_income_is_fy",
+        "net_income_is_ltm",
+        "net_income_is_1fy",
+        "net_income_is_fq",
+        "net_income_is_5yavgfq",
+        "net_income_is_5yavgltm",
+        "normalized_net_income_fy",
+        "normalized_net_income_ltm",
+        "normalized_net_income_1fy",
+        "normalized_net_income_fq",
+        "normalized_net_income_5yavgfq",
+        "normalized_net_income_5yavgltm",
+        "net_income_adj_fy",
+        "net_income_adj_ltm",
+        "net_income_adj_1fy",
+        "net_income_adj_fq",
+        "net_income_adj_5yavgfq",
+        "net_income_margin_fy",
+        "net_income_margin_ltm",
+        
+        # Volatility
+        "volatility_1m",
+        "volatility_3m",
+        "volatility_6m",
+        "volatility_1y",
+        
+        # Dividends
+        "dividend_per_share_ltm",
+        "div_yield_ind",
+        "div_yield_ltm",
+        "div_yield_1fyind",
+        "div_yield_ttm",
+        "div_yield_ntm",
+        "div_yield_5yavgltm",
+        
+        # Balance sheet items
+        "total_debt_fy",
+        "total_equity_fy",
+        "total_equity_ltm",
+        "total_debt_ltm",
+        "total_assets_ltm",
+        "total_assets_fy",
+        "cash_and_equivalents_ltm",
+        "cash_and_equivalents_fq",
+        "cash_and_equivalents_fy",
+        "cash_and_equivalents_5yavgfq",
+        
+        # Liquidity ratios
+        "current_ratio_fy",
+        "current_ratio_ltm",
+        
+        # Margins
+        "gross_profit_margin_fy",
+        "gross_profit_margin_ltm",
+        
+        # Turnover
+        "asset_turnover_fy",
+        "asset_turnover_ltm",
+        
+        # Gross profit
+        "gross_profit_ltm",
+        "gross_profit_fy",
+        
+        # EPS metrics
+        "eps_norm_est_avg_ntm",
+        "eps_adj_1fy",
+        "eps_adj_fy",
+        "eps_adj_ltm",
+        "eps_norm_est_avg_fy1e",
+        
+        # Cost and inventory
+        "cost_of_revenues_ltm",
+        "inventory_ltm",
+        "inventory_fq",
+        "inventory_fy",
+        "inventory_5yavgfq",
+        
+        # Goodwill
+        "goodwill_fq",
+        "goodwill_ltm",
+        "goodwill_fy",
+        "goodwill_1fy",
+        "goodwill_5yavgfq",
+        
+        # Operating income
+        "operating_income_ltm",
+        "operating_income_fy",
+        "operating_income_fq",
+        "operating_income_5yavgfq",
+        
+        # Retained earnings
+        "retained_earnings_ltm",
+        "retained_earnings_fq",
+        "retained_earnings_fy",
+        "retained_earnings_5yavgfq",
+        
+        # Current assets/liabilities
+        "total_current_assets_ltm",
+        "total_current_liabilities_ltm",
+        
+        # Working capital
+        "working_capital_ltm",
+        "working_capital_fq",
+        "working_capital_fy",
+        "working_capital_5yavgfy",
+        
+        # Other metrics
+        "buyback_yield_ltm",
+        "avg_employees_ltm",
+        "avg_employees_fy",
+        "avg_employees_5yavgfy",
+        "gross_intangible_assets_ltm",
+        "gross_intangible_assets_fy",
+        "gross_intangible_assets_5yavgfq",
+    ]
+
+
+def apply_zero_imputation(
+    df: pd.DataFrame,
+    columns: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """Apply zero imputation to specified columns.
+    
+    This imputation strategy is appropriate for columns representing rare/exceptional
+    events where missing values typically indicate the event did not occur.
+    
+    Args:
+        df: Input DataFrame
+        columns: Columns to zero-impute (default: auto-detect from schema)
+    
+    Returns:
+        DataFrame with zero-imputed values
+    """
+    result = df.copy()
+    
+    if columns is None:
+        columns = get_zero_imputation_columns()
+    
+    # Normalize column names to match dataframe
+    available_cols = [col for col in columns if col in result.columns]
+    
+    if not available_cols:
+        logger.warning("No zero-imputation columns found in dataframe")
+        return result
+    
+    # Apply zero imputation
+    for col in available_cols:
+        if result[col].isna().any():
+            n_missing = result[col].isna().sum()
+            result[col] = result[col].fillna(0)
+            logger.debug(f"Zero-imputed {n_missing} values in column '{col}'")
+    
+    logger.info(f"Applied zero imputation to {len(available_cols)} columns")
+    return result
+
+
+def apply_knn_imputation_enhanced(
+    df: pd.DataFrame,
+    columns: Optional[List[str]] = None,
+    sector_column: str = "sector",
+    n_neighbors: int = 5,
+) -> pd.DataFrame:
+    """Apply enhanced KNN imputation with sector awareness.
+    
+    This is a wrapper around impute_missing_values_knn_sector that works with
+    the predefined KNN imputation column list.
+    
+    Args:
+        df: Input DataFrame
+        columns: Columns for KNN imputation (default: auto-detect from schema)
+        sector_column: Name of sector column for grouping
+        n_neighbors: Number of neighbors for KNN
+    
+    Returns:
+        DataFrame with KNN-imputed values
+    """
+    if columns is None:
+        columns = get_knn_imputation_columns()
+    
+    # Normalize column names and filter to available columns
+    available_cols = [col for col in columns if col in df.columns]
+    
+    if not available_cols:
+        logger.warning("No KNN-imputation columns found in dataframe")
+        return df.copy()
+    
+    logger.info(f"Applying KNN imputation to {len(available_cols)} columns")
+    
+    # Use existing sector-aware KNN imputation
+    return impute_missing_values_knn_sector(
+        df=df,
+        columns=available_cols,
+        sector_column=sector_column,
+        n_neighbors=n_neighbors,
+    )
+
+
+def apply_enhanced_imputation_strategy(
+    df: pd.DataFrame,
+    sector_column: str = "sector",
+    n_neighbors: int = 5,
+) -> pd.DataFrame:
+    """Apply complete two-step imputation strategy from Phase 9.1.
+    
+    Step 1: Zero imputation for exceptional event columns
+    Step 2: Sector-aware KNN imputation for core financial metrics
+    
+    Args:
+        df: Input DataFrame with financial data
+        sector_column: Name of sector column for KNN grouping
+        n_neighbors: Number of neighbors for KNN imputation
+    
+    Returns:
+        DataFrame with all imputation strategies applied
+        
+    Examples:
+        >>> # Apply full imputation pipeline
+        >>> df_imputed = apply_enhanced_imputation_strategy(
+        ...     all_stocks,
+        ...     sector_column='sector',
+        ...     n_neighbors=5
+        ... )
+    """
+    logger.info("Starting Phase 9.1 enhanced imputation strategy")
+    
+    # Step 1: Zero imputation for exceptional events
+    logger.info("Step 1: Applying zero imputation for exceptional event columns")
+    result = apply_zero_imputation(df)
+    
+    # Step 2: KNN imputation for core financial metrics
+    logger.info("Step 2: Applying sector-aware KNN imputation for financial metrics")
+    result = apply_knn_imputation_enhanced(
+        result,
+        sector_column=sector_column,
+        n_neighbors=n_neighbors,
+    )
+    
+    # Log summary statistics
+    total_missing_before = df.select_dtypes(include=[np.number]).isna().sum().sum()
+    total_missing_after = result.select_dtypes(include=[np.number]).isna().sum().sum()
+    reduction = total_missing_before - total_missing_after
+    
+    logger.info(
+        f"Imputation complete: Reduced missing values from {total_missing_before} "
+        f"to {total_missing_after} (reduction: {reduction})"
+    )
+    
+    return result
