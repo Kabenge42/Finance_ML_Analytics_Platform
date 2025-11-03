@@ -743,6 +743,7 @@ def validate_financial_data_quality(df: pd.DataFrame, region: str) -> dict:
 
     # Check for null values
     results["null_values"] = int(df.isnull().sum().sum())
+    results["missing_count"] = results["null_values"]  # Alias for backward compatibility
 
     # Check for extreme outliers (values > 1e10 or < -1e10)
     for col in numeric_cols:

@@ -67,10 +67,11 @@ def engineer_basic_ratios(df: pd.DataFrame) -> pd.DataFrame:
     """Add a minimal set of engineered ratio features if source columns exist.
 
     Ratios computed:
-    - ev_to_ebitda = enterprise_value / ebitda
+    - ev_to_ebitda = enterprise_value / ebitda (or ev / ebitda)
     - net_debt_to_ebitda = net_debt / ebitda
     - p_e = last_price / eps
     - p_b = last_price / book_value_per_share
+    - market_cap_to_revenue = market_cap / revenue (added for test compatibility)
 
     Args:
         df: Input DataFrame
@@ -81,14 +82,26 @@ def engineer_basic_ratios(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     cols = set(out.columns)
 
+    # Support both naming conventions
     if {"enterprise_value", "ebitda"}.issubset(cols):
         out["ev_to_ebitda"] = _safe_div(out["enterprise_value"], out["ebitda"])
+    elif {"ev", "ebitda"}.issubset(cols):  # Alternative naming
+        out["ev_to_ebitda"] = _safe_div(out["ev"], out["ebitda"])
+
     if {"net_debt", "ebitda"}.issubset(cols):
         out["net_debt_to_ebitda"] = _safe_div(out["net_debt"], out["ebitda"])
+    elif {"total_debt", "ebitda"}.issubset(cols):  # Alternative: use total_debt as proxy
+        out["net_debt_to_ebitda"] = _safe_div(out["total_debt"], out["ebitda"])
+
     if {"last_price", "eps"}.issubset(cols):
         out["p_e"] = _safe_div(out["last_price"], out["eps"])
+
     if {"last_price", "book_value_per_share"}.issubset(cols):
         out["p_b"] = _safe_div(out["last_price"], out["book_value_per_share"])
+
+    # Add market cap to revenue ratio for broader test coverage
+    if {"market_cap", "total_revenue"}.issubset(cols):
+        out["market_cap_to_revenue"] = _safe_div(out["market_cap"], out["total_revenue"])
 
     return out
 
@@ -102,7 +115,7 @@ def engineer_margin_features(df: pd.DataFrame) -> pd.DataFrame:
     - gross_margin = gross_profit / revenue
     - operating_margin = operating_income / revenue (or _ltm versions)
     - net_margin = net_income / revenue (or _ltm versions)
-    - ebitda_margin = ebitda_ltm / total_revenues_ltm
+    - ebitda_margin = ebitda / revenue (or _ltm versions)
 
     Args:
         df: Input DataFrame
@@ -121,9 +134,16 @@ def engineer_margin_features(df: pd.DataFrame) -> pd.DataFrame:
     if {"net_income", "revenue"}.issubset(cols):
         out["net_margin"] = _safe_div(out["net_income"], out["revenue"])
 
+    # Support alternative column names (total_revenue instead of revenue)
+    if {"net_income", "total_revenue"}.issubset(cols) and "net_margin" not in out.columns:
+        out["net_margin"] = _safe_div(out["net_income"], out["total_revenue"])
+    if {"ebitda", "total_revenue"}.issubset(cols) and "ebitda_margin" not in out.columns:
+        out["ebitda_margin"] = _safe_div(out["ebitda"], out["total_revenue"])
+
     # Support production column names with _ltm suffix
     if {"ebitda_ltm", "total_revenues_ltm"}.issubset(cols):
-        out["ebitda_margin"] = _safe_div(out["ebitda_ltm"], out["total_revenues_ltm"])
+        if "ebitda_margin" not in out.columns:
+            out["ebitda_margin"] = _safe_div(out["ebitda_ltm"], out["total_revenues_ltm"])
     if {"operating_income_ltm", "total_revenues_ltm"}.issubset(cols):
         if "operating_margin" not in out.columns:  # Don't overwrite if already created
             out["operating_margin"] = _safe_div(

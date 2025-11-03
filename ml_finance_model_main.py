@@ -133,6 +133,12 @@ print("All functions imported from finance_ml package")
 config = load_config()
 display_config_summary(config)
 
+# Create output directory structure
+config.create_output_structure()
+print(f"\n✓ Output directory structure created")
+print(f"  Main subdirectories: analytics, models, eda")
+print(f"  EDA subdirectories: eda_with_importance, eda_with_multivariate, enhanced_eda, financial_data_quality_reports")
+
 # %% md
 # ## Sample Data Generator
 #
@@ -207,18 +213,15 @@ except Exception as e:
 # Unified EDA display with proper output directory
 try:
     from pathlib import Path
-
-    output_dir = Path(config.output_dir)
-    output_dir.mkdir(exist_ok=True, parents=True)
-
     from finance_ml.data import simple_eda
 
     print("\n" + "=" * 80)
     print("EXPLORATORY DATA ANALYSIS")
     print("=" * 80)
 
-    simple_eda(all_stocks, out_dir=output_dir)
-    print(f"✓ EDA completed - outputs saved to {output_dir}")
+    # Use enhanced EDA directory from config
+    simple_eda(all_stocks, out_dir=config.enhanced_eda_dir)
+    print(f"✓ EDA completed - outputs saved to {config.enhanced_eda_dir}")
 
 except Exception as e:
     logger.error(f"EDA failed: {e}")
@@ -303,12 +306,10 @@ try:
     # Use the proper training function with required parameters
     from pathlib import Path
 
-    output_dir = Path(config.output_dir)
-    output_dir.mkdir(exist_ok=True, parents=True)
-
+    # Use models directory from config
     regression_results = train_and_evaluate_regression(
         all_stocks_processed,
-        out_dir=output_dir,
+        out_dir=config.models_output_dir,
         n_jobs=config.n_jobs if hasattr(config, "n_jobs") else -1,
     )
 
@@ -858,14 +859,6 @@ except Exception as e:
     print(f"⚠ Enhanced modeling imports unavailable: {e}")
     HAVE_ENHANCED_MODELS = False
 
-# Ensure output directory
-try:
-    output_dir = Path(config.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-except Exception:
-    output_dir = Path("outputs")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
 # Remove duplicate columns first
 df_enhanced = all_stocks_processed.loc[:, ~all_stocks_processed.columns.duplicated()].copy()
 
@@ -875,7 +868,8 @@ if HAVE_ENHANCED_MODELS:
         print("\n" + "=" * 80)
         print("PER-SECTOR REGRESSION METRICS")
         print("=" * 80)
-        sector_metrics = train_and_evaluate_regression_by_sector(df_enhanced, output_dir)
+        # Use models directory from config for sector models
+        sector_metrics = train_and_evaluate_regression_by_sector(df_enhanced, config.models_output_dir)
         display_cols = [
             c
             for c in ["sector", "n_train", "n_test", "mae", "rmse", "r2"]
@@ -1001,7 +995,8 @@ if HAVE_ENHANCED_MODELS:
             and df_enhanced["mispricing_score"].notna().sum() > 0
         ):
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            excel_path = output_dir / f"Stock_Prediction_Analysis_Report_{ts}.xlsx"
+            # Use analytics directory from config for Excel reports
+            excel_path = config.analytics_dir / f"Stock_Prediction_Analysis_Report_{ts}.xlsx"
             export_predictions_to_excel(df_enhanced, excel_path, include_summary=True)
             print(f"\n✓ Exported predictions and summaries to Excel: {excel_path}")
         else:

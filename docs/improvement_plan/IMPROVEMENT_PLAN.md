@@ -1,6 +1,6 @@
 # Finance ML Analytics Platform — Improvement Plan
 
-**Version 0.5.0** — Last Updated: 2025-01-11
+**Version 0.5.0** — Last Updated: 2025-11-03
 
 This document provides a comprehensive overview of the Finance ML Analytics Platform project, including its technology stack, setup instructions, project structure, and phased development roadmap.
 
@@ -28,7 +28,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 ### Key Features
 - **Unified data pipeline**: PostgreSQL integration + CSV fallback for multi-region equity data
 - **Modular Python package** (`finance_ml`): Clean, tested, reusable code for data loading, feature engineering, modeling, and analytics
-- **Interactive notebook**: Jupyter-based workflow (`ml_finance_model_v8_2.ipynb`) for exploration and prototyping
+- **Interactive notebook**: Jupyter-based workflow (`ml_finance_model_main.ipynb`) for exploration and prototyping
 - **CLI tools**: Three command-line interfaces for batch processing and automation
 - **Production-ready**: Modern packaging, comprehensive tests, configuration management
 
@@ -46,7 +46,8 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 <!-- SQLite parity section will be appended by tools/apply_improvement_plan_updates.py if missing -->
 
 ### Language
-- **Python**: 3.10 or 3.11 (required)
+
+- **Python**: 3.12 or 3.13 (required)
 
 ### Package Managers
 - **pip + venv** (primary): Dependencies in `requirements.txt`
@@ -102,7 +103,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 
 ### System Requirements
 - **OS**: Windows 10/11 (tested), macOS, or Linux
-- **Python**: 3.10 or 3.11 (3.12 not yet tested)
+- **Python**: 3.12 or 3.13
 - **PostgreSQL**: 15+ (local instance with psql on PATH)
 - **Git**: Optional but recommended for version control
 
@@ -539,7 +540,7 @@ mypy finance_ml --ignore-missing-imports
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.3.0)
+├── finance_ml/                    # Main Python package (v0.5.0)
 │   ├── __init__.py               # Package exports and version
 │   ├── data.py                   # Data loading, normalization, validation (355 lines, 12 functions)
 │   ├── features.py               # Feature engineering functions (182 lines, 6 functions)
@@ -573,8 +574,8 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
 │
-├── ml_finance_model_v8_2.ipynb  # Interactive Jupyter notebook (main entry point)
-├── ml_finance_model_v8_2.py     # Python script with CLI (uses finance_ml package)
+├── ml_finance_model_main.ipynb  # Interactive Jupyter notebook (main entry point)
+├── ml_finance_model_main.py     # Python script with CLI (uses finance_ml package)
 │
 ├── pyproject.toml               # Modern Python packaging configuration (PEP 621)
 ├── setup.py                     # Backward-compatible setup script
@@ -1212,11 +1213,11 @@ except ImportError:
 - Documentation ✓
 - Versioning ✓
 
-### Phase 9 — Advanced Stock Prediction ML System (In Progress)
+### Phase 9 — Advanced Stock Prediction ML System ✓ Complete (8/8 phases, 100%)
 
 **Business Objective**: Predict Stock Price Targets for all stocks in the `all_stocks` dataframe  
 **Target Variable**: "Predicted Price Target" for regression modeling  
-**Primary Notebook**: `ml_finance_model_main.ipynb` (v8_3/v0.3.0)  
+**Primary Notebook**: `ml_finance_model_main.ipynb` (v0.5.0)
 **Reference Report**: `Stock_Prediction_Analysis_Report_20250806_131704.xlsx`  
 **Alignment**: ML Project Checklist (`reference material/ml-project-checklist.md`)  
 **Reference Materials**: 19 Jupyter notebooks (01-19) covering ML landscape through deployment at scale

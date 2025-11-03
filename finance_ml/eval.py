@@ -36,7 +36,11 @@ except ImportError:
     go = None
 
 
-def calculate_mispricing_score(df: pd.DataFrame) -> pd.Series:
+def calculate_mispricing_score(
+    df: pd.DataFrame,
+    predicted_col: str = "predicted_price_target",
+    current_col: str = "last_price"
+) -> pd.DataFrame:
     """Calculate mispricing score for each stock.
 
     Formula: (predicted_price_target - last_price) / last_price
@@ -45,24 +49,27 @@ def calculate_mispricing_score(df: pd.DataFrame) -> pd.Series:
     Negative score = overvalued (predicted < current)
 
     Args:
-        df: DataFrame with columns:
-            - predicted_price_target: Predicted target price
-            - last_price: Current market price
+        df: DataFrame with stock data
+        predicted_col: Name of predicted price column (default: "predicted_price_target")
+        current_col: Name of current price column (default: "last_price")
 
     Returns:
-        Series with mispricing scores
+        DataFrame with added 'mispricing_pct' column
 
     Raises:
         ValueError: If required columns are missing
     """
-    required_columns = ["predicted_price_target", "last_price"]
+    required_columns = [predicted_col, current_col]
     missing_columns = [col for col in required_columns if col not in df.columns]
 
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
 
-    score = (df["predicted_price_target"] - df["last_price"]) / df["last_price"]
-    return score
+    result_df = df.copy()
+    mispricing = (df[predicted_col] - df[current_col]) / df[current_col]
+    result_df["mispricing_pct"] = mispricing * 100
+    result_df["mispricing_score"] = mispricing  # Alias for backward compatibility with rank functions
+    return result_df
 
 
 def calculate_risk_adjusted_mispricing(
@@ -244,6 +251,8 @@ def simple_eda(
         "columns": list(df.columns),
         "numeric_cols_count": numeric_count,
         "categorical_cols_count": categorical_count,
+        "numeric_columns": numeric_cols,  # Add for test compatibility
+        "categorical_columns": [c for c in df.columns if c not in numeric_cols],  # Add for test compatibility
         "null_counts": df.isnull().sum().to_dict(),
         "region_counts": _safe_counts("region") if "region" in df.columns else {},
         "sector_counts": _safe_counts("sector") if "sector" in df.columns else {},
@@ -4945,91 +4954,92 @@ def export_profiling_report(
 # ========================================================================
 
 
-def compare_prediction_vs_analyst_targets(df: pd.DataFrame) -> pd.DataFrame:
+def compare_prediction_vs_analyst_targets(
+    df: pd.DataFrame,
+    predicted_col: str = "predicted_price_target",
+    analyst_col: str = "price_target",
+    current_price_col: str = "last_price"
+) -> dict:
     """Compare model predictions against analyst consensus targets.
 
     Phase 9.8 TDD implementation: Calculate differences and agreement metrics
     between model-predicted price targets and analyst consensus targets.
 
     Args:
-        df: DataFrame with columns:
-            - ticker: Stock ticker symbol
-            - last_price: Current stock price
-            - predicted_price_target: Model prediction
-            - price_target: Analyst consensus target
+        df: DataFrame with stock data
+        predicted_col: Name of model prediction column (default: "predicted_price_target")
+        analyst_col: Name of analyst target column (default: "price_target")
+        current_price_col: Name of current price column (default: "last_price")
 
     Returns:
-        DataFrame with comparison metrics including:
-            - model_analyst_diff: Absolute difference
-            - model_analyst_diff_pct: Percentage difference
-            - agreement_direction: Boolean indicating same direction
+        Dictionary with comparison metrics
 
     Examples:
         >>> result = compare_prediction_vs_analyst_targets(df)
-        >>> print(result[['ticker', 'model_analyst_diff_pct']])
+        >>> print(result)
     """
     result = df.copy()
 
     # Calculate absolute and percentage differences
-    result["model_analyst_diff"] = result["predicted_price_target"] - result["price_target"]
-    result["model_analyst_diff_pct"] = result["model_analyst_diff"] / result["price_target"] * 100
+    result["model_analyst_diff"] = result[predicted_col] - result[analyst_col]
+    result["model_analyst_diff_pct"] = result["model_analyst_diff"] / result[analyst_col] * 100
 
     # Determine if model and analyst agree on direction vs current price
-    model_direction = result["predicted_price_target"] > result["last_price"]
-    analyst_direction = result["price_target"] > result["last_price"]
+    model_direction = result[predicted_col] > result[current_price_col]
+    analyst_direction = result[analyst_col] > result[current_price_col]
     result["agreement_direction"] = model_direction == analyst_direction
 
-    return result
-
-
-def calculate_directional_accuracy(df: pd.DataFrame) -> dict:
-    """Calculate directional accuracy of model predictions vs current price.
-
-    Phase 9.8 TDD implementation: Measures how often the model correctly
-    predicts the direction (up/down) relative to current price.
-
-    Args:
-        df: DataFrame with columns:
-            - last_price: Current stock price
-            - predicted_price_target: Model prediction
-
-    Returns:
-        Dictionary with:
-            - accuracy: Proportion of correct directional predictions (0-1)
-            - total_predictions: Total number of predictions
-            - correct_predictions: Number of correct directional calls
-
-    Examples:
-        >>> metrics = calculate_directional_accuracy(df)
-        >>> print(f"Accuracy: {metrics['accuracy']:.2%}")
-    """
-    # For directional accuracy without actual future prices,
-    # we assume any prediction != current price is a directional call
-    # This is a simplified metric; actual accuracy needs future prices
-
-    total = len(df)
-
-    # Count predictions that differ from current price (have a direction)
-    has_direction = df["predicted_price_target"] != df["last_price"]
-    predictions_with_direction = has_direction.sum()
-
-    # For now, return structure - actual accuracy requires future data
-    # If actual_future_price column exists, calculate true accuracy
-    if "actual_future_price" in df.columns:
-        predicted_direction = df["predicted_price_target"] > df["last_price"]
-        actual_direction = df["actual_future_price"] > df["last_price"]
-        correct = (predicted_direction == actual_direction).sum()
-        accuracy = correct / total if total > 0 else 0.0
-    else:
-        # Without actual prices, return placeholder
-        correct = predictions_with_direction
-        accuracy = 1.0 if total > 0 else 0.0
+    # Calculate summary metrics
+    agreement_count = result["agreement_direction"].sum()
+    total_count = len(result)
+    agreement_rate = agreement_count / total_count if total_count > 0 else 0.0
 
     return {
-        "accuracy": accuracy,
-        "total_predictions": total,
-        "correct_predictions": correct,
+        "comparison_df": result,
+        "agreement_rate": agreement_rate,
+        "agreement_count": int(agreement_count),
+        "total_count": total_count,
     }
+
+
+def calculate_directional_accuracy(
+    df: pd.DataFrame,
+    predicted_col: str = "predicted_price_target",
+    analyst_col: str = "price_target",
+    current_price_col: str = "last_price"
+) -> float:
+    """Calculate directional accuracy of model predictions vs analyst targets.
+
+    Phase 9.8 TDD implementation: Measures how often the model and analysts
+    agree on the direction (up/down) relative to current price.
+
+    Args:
+        df: DataFrame with stock data
+        predicted_col: Name of model prediction column (default: "predicted_price_target")
+        analyst_col: Name of analyst target column (default: "price_target")
+        current_price_col: Name of current price column (default: "last_price")
+
+    Returns:
+        Float: Proportion of directional agreement (0.0 to 1.0)
+
+    Examples:
+        >>> accuracy = calculate_directional_accuracy(df)
+        >>> print(f"Accuracy: {accuracy:.2%}")
+    """
+    total = len(df)
+    
+    if total == 0:
+        return 0.0
+
+    # Calculate directions
+    model_direction = df[predicted_col] > df[current_price_col]
+    analyst_direction = df[analyst_col] > df[current_price_col]
+    
+    # Count agreements
+    agreements = (model_direction == analyst_direction).sum()
+    accuracy = agreements / total
+    
+    return float(accuracy)
 
 
 def calculate_agreement_rate(df: pd.DataFrame) -> dict:
@@ -6477,7 +6487,7 @@ def calculate_peer_comparisons(df: pd.DataFrame, ticker: str, n_peers: int = 5) 
                 peers_df["market_cap_diff"] = (
                     peers_df["market_cap"] - stock_row["market_cap"]
                 ).abs()
-                peers_df = peers_df.sort_values(by="market_cap_diff").head(n_peers)
+                peers_df = peers_df.sort_values("market_cap_diff").head(n_peers)
 
                 # Build peer list
                 for _, peer_row in peers_df.iterrows():

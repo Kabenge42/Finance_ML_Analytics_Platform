@@ -400,7 +400,7 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - Run all tests from the project root:
   - python -m unittest -v
 
-Comprehensive test suite in tests/ directory (51 test modules):
+Comprehensive test suite in tests/ directory (54 test modules):
 
 - test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
 - test_advanced_features.py — Phase 9.3 advanced feature engineering tests
@@ -427,6 +427,9 @@ Comprehensive test suite in tests/ directory (51 test modules):
 - test_finance_ml_features.py — Features module tests
 - test_finance_ml_models.py — Models module tests
 - test_improvement_plan_revision.py — Development plan validation
+- test_integration_cli_pipeline.py — CLI pipeline integration tests
+- test_integration_notebook_pipeline.py — Notebook pipeline integration tests
+- test_integration_production_scenarios.py — Production scenario integration tests
 - test_loaders.py — CSV and database loading functions
 - test_logging.py — Logging configuration tests
 - test_model_evaluation_advanced.py — Advanced model evaluation tests
@@ -439,6 +442,8 @@ Comprehensive test suite in tests/ directory (51 test modules):
 - test_phase91_enhancements.py — Phase 9.1 enhancements tests
 - test_phase93_enhancements.py — Phase 9.3 enhancements tests
 - test_phase95_error_handling.py — Phase 9.5 error handling tests
+- test_phase95_nonnegative_predictions.py — Phase 9.5 non-negative prediction constraint tests
+- test_phase95_quick.py — Phase 9.5 quick validation tests
 - test_portfolio_optimization.py — Portfolio optimization tests
 - test_preprocess_and_training.py — Preprocessing and training workflows
 - test_quantile_fix.py — Quantile regression fixes tests
@@ -449,6 +454,7 @@ Comprehensive test suite in tests/ directory (51 test modules):
 - test_sql_scripts.py — SQL script validation tests
 - test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
 - test_validate_csv_import.py — CSV validation (schema validation, data quality checks)
+- test_validation_regex.py — Regex validation and pattern matching tests
 - test_valuation_phase97.py — Phase 9.7 stock valuation and identification tests
 - test_visualizations.py — Visualization functions tests
 
@@ -482,7 +488,7 @@ Finance_ML_Analytics_Platform/
 │   ├── transformers.py           # Scikit-learn compatible feature transformers
 │   └── verify_requirements.py    # Requirements verification utility
 │
-├── tests/                        # Unit tests (comprehensive test suite, 47 modules)
+├── tests/                        # Unit tests (comprehensive test suite, 54 modules)
 │   ├── test_advanced_eda.py
 │   ├── test_advanced_models_phase95.py
 │   ├── test_advanced_preprocessing.py
@@ -522,18 +528,18 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
 │
-├── sql/                          # SQL scripts and database files
-│   ├── create_equities_schema.sql        # PostgreSQL schema setup
-│   ├── create_equities_schema_sqlite.sql # SQLite schema setup
-│   ├── import_equities_data.sql          # Data import script (PostgreSQL)
-│   ├── import_equities_data_sqlite.sql   # SQLite data import script
-│   ├── equities.sqlite                   # Example SQLite database
-│   └── identifier.sqlite                 # Auxiliary SQLite database
-│
 ├── ml_finance_model_main.ipynb   # Main interactive Jupyter notebook (end-to-end ML pipeline)
 ├── equities_data_explorer.ipynb  # Data exploration and EDA notebook
 ├── ml_finance_model_main.py      # Lightweight script version with CLI (uses finance_ml package)
-├── archive/                       # Archived versions (v8_2, etc.)
+│
+├── create_equities_schema.sql    # PostgreSQL schema setup
+├── create_equities_schema_sqlite.sql # SQLite schema setup
+├── import_equities_data.sql      # Data import script (PostgreSQL)
+├── import_equities_data_sqlite.sql   # SQLite data import script
+├── equities.sqlite               # Example SQLite database
+├── identifier.sqlite             # Auxiliary SQLite database
+│
+├── archive/                      # Archived versions (v8_2, etc.)
 │
 ├── tools/                         # Utility scripts (30+ tools)
 │   ├── __init__.py                         # Package marker
@@ -860,13 +866,6 @@ Contributions are welcome! This project follows standard open-source contributio
 For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-Copyright (c) 2025 Finance ML Analytics Platform Contributors
-
-
 ## CLI Usage
 
 The package provides three command-line tools after installation:
@@ -1121,11 +1120,13 @@ flake8 finance_ml
 mypy finance_ml --ignore-missing-imports
 ```
 
-## What's New in v0.3.0
+## Release History
+
+### v0.3.0 — Phase 9.7 Complete TDD Implementation
 
 **Released: 2025-10-30**
 
-### Phase 9.7: Identification of Under/Overvalued Stocks — Complete TDD Implementation
+#### Phase 9.7: Identification of Under/Overvalued Stocks
 
 - ✅ **Valuation Analysis**: Mispricing score calculation with confidence intervals and risk-adjusted metrics
 - ✅ **Stock Categories**: Automated assignment (Strong Buy, Buy, Hold, Sell, Strong Sell) with sector-specific
@@ -1255,3 +1256,50 @@ SOFTWARE.
 ```
 
 See [LICENSE](LICENSE) file for full text.
+
+
+
+---
+
+## API and Testing Additions (Phase 9.8+)
+
+This release adds integration, visualization, performance, and edge‑case tests, plus minor API clarifications.
+
+New environment toggles:
+
+- RUN_NOTEBOOK_EXECUTION_TEST=1 — Enable fast notebook execution test (synthetic CSV) under
+  tests/test_ml_stock_prediction_notebook.py
+- RUN_NOTEBOOK_FULL=1 — Enable full notebook execution with real CSVs from data/ under
+  tests/test_integration_full_notebook_real_data.py
+- FAST_BENCH=1 — Enable performance benchmarks under tests/test_performance_benchmarks.py
+- BENCH_RATIO_SECONDS, BENCH_XGB_SECONDS — Optional soft time thresholds (seconds) for benchmarks
+
+Visualization tests:
+
+- Headless plotting via matplotlib Agg backend is configured in finance_ml/eval.py. The test
+  tests/test_visualizations_notebook.py runs fm_eval.simple_eda(save_plots=True) and validates that optional plot files,
+  if produced, are saved and non‑empty.
+
+Edge‑case coverage:
+
+- finance_ml.eval.calculate_mispricing_score now raises ValueError when required columns are missing (documented
+  behavior, unchanged function signature).
+- finance_ml.classification.export_classification_features validates y_proba shape and raises ValueError on length/shape
+  mismatches; columns remain backward compatible (event_prob_* and prob_class_* aliases).
+
+Notebook real‑data integration:
+
+- tests/test_integration_full_notebook_real_data.py executes ml_stock_prediction_model.ipynb end‑to‑end using CSVs from
+  data/ (skipped if none found). Set DATA_SOURCE=csv, DATA_DIR=data, and optionally DATA_LIMIT to control size.
+
+How to run focused suites:
+
+- python -m unittest tests.test_visualizations_notebook -v
+- RUN_NOTEBOOK_FULL=1 python -m unittest tests.test_integration_full_notebook_real_data -v
+- FAST_BENCH=1 python -m unittest tests.test_performance_benchmarks -v
+
+Coverage tips:
+
+- Use coverage run -m unittest -v and coverage html to generate detailed reports. New tests are designed to exercise
+  previously untested branches and error handling paths.
+

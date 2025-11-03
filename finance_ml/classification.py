@@ -413,6 +413,7 @@ def train_xgboost_classifier(
         "y_pred": y_pred,
         "y_proba": y_proba,
         "accuracy": accuracy,
+        "test_accuracy": accuracy,  # Alias for backward compatibility
         "precision": precision,
         "recall": recall,
         "f1_score": f1,
@@ -521,18 +522,16 @@ def train_catboost_classifier(
     """Train CatBoost classifier.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
-        numeric_cols: Numeric feature names
-        categorical_cols: Categorical feature names
-        params: Optional CatBoost parameters
+        X_train: Training feature matrix
+        y_train: Training target labels
+        X_test: Test feature matrix
+        y_test: Test target labels
+        numeric_cols: List of numeric feature column names
+        categorical_cols: List of categorical feature column names
+        params: Optional dictionary of CatBoost parameters
 
     Returns:
         Dictionary with model, predictions, and metrics
-        :param X_train:
-        :param y_train:
-        :param X_test:
-        :param y_test:
     """
     if not HAVE_CATBOOST:
         raise ImportError("CatBoost not available. Install with: pip install catboost")
@@ -614,10 +613,12 @@ def train_svm_classifier(
     """Train Support Vector Machine classifier.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
-        numeric_cols: Numeric feature names
-        categorical_cols: Categorical feature names
+        X_train: Training feature matrix
+        y_train: Training target labels
+        X_test: Test feature matrix
+        y_test: Test target labels
+        numeric_cols: List of numeric feature column names
+        categorical_cols: List of categorical feature column names
         kernel: Kernel type ('rbf', 'poly', 'linear', 'sigmoid')
         degree: Degree for polynomial kernel
         C: Regularization parameter
@@ -979,18 +980,16 @@ def train_neural_network_classifier(
     """Train Neural Network classifier with TensorFlow/Keras.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
-        numeric_cols: Numeric feature names
-        categorical_cols: Categorical feature names
-        params: Optional NN parameters
+        X_train: Training feature matrix
+        y_train: Training target labels
+        X_test: Test feature matrix
+        y_test: Test target labels
+        numeric_cols: List of numeric feature column names
+        categorical_cols: List of categorical feature column names
+        params: Optional dictionary of neural network parameters
 
     Returns:
         Dictionary with model, predictions, and metrics
-        :param X_train:
-        :param y_train:
-        :param X_test:
-        :param y_test:
     """
     if not HAVE_TENSORFLOW:
         raise ImportError("TensorFlow not available. Install with: pip install tensorflow")
@@ -1118,18 +1117,16 @@ def train_voting_classifier(
     """Train Voting classifier ensemble.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
-        numeric_cols: Numeric feature names
-        categorical_cols: Categorical feature names
-        voting: 'soft' or 'hard' voting
+        X_train: Training feature matrix
+        y_train: Training target labels
+        X_test: Test feature matrix
+        y_test: Test target labels
+        numeric_cols: List of numeric feature column names
+        categorical_cols: List of categorical feature column names
+        voting: Voting strategy - 'soft' (probability-based) or 'hard' (majority vote)
 
     Returns:
         Dictionary with model, predictions, and metrics
-        :param X_train:
-        :param y_train:
-        :param X_test:
-        :param y_test:
     """
     from sklearn.preprocessing import StandardScaler
 
@@ -1224,17 +1221,15 @@ def train_stacking_classifier(
     """Train Stacking classifier ensemble.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
-        numeric_cols: Numeric feature names
-        categorical_cols: Categorical feature names
+        X_train: Training feature matrix
+        y_train: Training target labels
+        X_test: Test feature matrix
+        y_test: Test target labels
+        numeric_cols: List of numeric feature column names
+        categorical_cols: List of categorical feature column names
 
     Returns:
         Dictionary with model, predictions, and metrics
-        :param X_train:
-        :param y_train:
-        :param X_test:
-        :param y_test:
     """
     from sklearn.preprocessing import StandardScaler
     from sklearn.ensemble import StackingClassifier
@@ -1390,11 +1385,26 @@ def export_classification_features(
     if class_names is None:
         class_names = ["Neutral", "Positive", "Negative"]
 
+    # Validate input shapes for safer usage in edge cases
+    if y_proba is None:
+        raise ValueError("y_proba must not be None")
+    if y_proba.ndim != 2:
+        raise ValueError(
+            f"y_proba must be 2D array of shape (n_samples, n_classes); got ndim={y_proba.ndim}"
+        )
+    if len(df) != y_proba.shape[0]:
+        raise ValueError(
+            f"Length mismatch: df has {len(df)} rows but y_proba has {y_proba.shape[0]} samples"
+        )
+
     df_with_features = df.copy()
 
-    # Add probability columns
+    # Add probability columns (both naming conventions for backward compatibility)
     for i, class_name in enumerate(class_names):
-        df_with_features[f"event_prob_{class_name.lower()}"] = y_proba[:, i]
+        if i < y_proba.shape[1]:
+            df_with_features[f"event_prob_{class_name.lower()}"] = y_proba[:, i]
+            # Alternative naming for test compatibility
+            df_with_features[f"prob_class_{i}"] = y_proba[:, i]
 
     # Add predicted class
     df_with_features["event_class_predicted"] = np.argmax(y_proba, axis=1)
@@ -1402,7 +1412,9 @@ def export_classification_features(
     # Add confidence (max probability)
     df_with_features["event_confidence"] = np.max(y_proba, axis=1)
 
-    logger.info(f"Added {len(class_names) + 2} classification meta-features")
+    logger.info(
+        f"Added {min(len(class_names), y_proba.shape[1]) * 2 + 2} classification meta-features"
+    )
 
     return df_with_features
 
@@ -1497,17 +1509,15 @@ def compare_classifiers(
     """Compare multiple classifiers and return results table.
 
     Args:
-        X_train, y_train: Training data
-        X_test, y_test: Test data
-        numeric_cols: Numeric feature names
-        categorical_cols: Categorical feature names
+        X_train: Training feature matrix
+        y_train: Training target labels
+        X_test: Test feature matrix
+        y_test: Test target labels
+        numeric_cols: List of numeric feature column names
+        categorical_cols: List of categorical feature column names
 
     Returns:
         DataFrame with comparison results
-        :param X_train:
-        :param y_train:
-        :param X_test:
-        :param y_test:
     """
     results = []
 
