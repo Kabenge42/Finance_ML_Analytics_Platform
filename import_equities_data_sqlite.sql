@@ -17,6 +17,11 @@
 --
 -- Usage (from project root):
 --   sqlite3 equities.db ".read import_equities_data_sqlite.sql"
+--
+-- November 2025 Update: Compatible with new price-related columns
+-- This script clones the schema from 'equities' into temp staging tables (SELECT * WHERE 0)
+-- and imports CSVs with .import followed by INSERT OR IGNORE SELECT *. No changes are needed
+-- when new columns are appended to the equities schema.
 -- =============================================================================
 
 -- Stop on first error

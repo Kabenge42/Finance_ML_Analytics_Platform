@@ -7,9 +7,10 @@ Phase 9.2: Exploratory Data Analysis - Benchmarking Implementation
 """
 
 import logging
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Any
 import pandas as pd
 import numpy as np
+from pandas import DataFrame, Series
 from scipy import stats
 
 
@@ -185,7 +186,7 @@ def find_peer_group(
     sector_column: str = "sector",
     criteria: str = "market_cap",
     ticker_column: str = "ticker",
-) -> pd.DataFrame:
+) -> pd.DataFrame | pd.Series:
     """Find peer companies within the same sector.
 
     Identifies similar companies based on sector and a similarity criterion

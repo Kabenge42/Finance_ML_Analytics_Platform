@@ -8,6 +8,11 @@
 --   psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
 --
 -- Or run individual sections as needed using psql -c commands
+--
+-- November 2025 Update: Compatible with new price-related columns
+-- This script is schema-agnostic regarding column additions. It uses staging tables
+-- created as LIKE equities and imports with \copy followed by SELECT * insertion.
+-- As a result, adding new columns to the equities schema requires no changes here.
 -- =============================================================================
 
 -- =============================================================================

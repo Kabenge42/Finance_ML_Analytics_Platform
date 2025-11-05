@@ -1,5 +1,6 @@
 # Configure matplotlib backend before importing pyplot
 import matplotlib
+from pandas import Series
 
 matplotlib.use("Agg")  # Use non-interactive backend for headless environments
 
@@ -15,7 +16,7 @@ comprehensive test coverage.
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 import pandas as pd
 import numpy as np
@@ -37,9 +38,7 @@ except ImportError:
 
 
 def calculate_mispricing_score(
-    df: pd.DataFrame,
-    predicted_col: str = "predicted_price_target",
-    current_col: str = "last_price"
+    df: pd.DataFrame, predicted_col: str = "predicted_price_target", current_col: str = "last_price"
 ) -> pd.DataFrame:
     """Calculate mispricing score for each stock.
 
@@ -68,7 +67,9 @@ def calculate_mispricing_score(
     result_df = df.copy()
     mispricing = (df[predicted_col] - df[current_col]) / df[current_col]
     result_df["mispricing_pct"] = mispricing * 100
-    result_df["mispricing_score"] = mispricing  # Alias for backward compatibility with rank functions
+    result_df["mispricing_score"] = (
+        mispricing  # Alias for backward compatibility with rank functions
+    )
     return result_df
 
 
@@ -252,7 +253,9 @@ def simple_eda(
         "numeric_cols_count": numeric_count,
         "categorical_cols_count": categorical_count,
         "numeric_columns": numeric_cols,  # Add for test compatibility
-        "categorical_columns": [c for c in df.columns if c not in numeric_cols],  # Add for test compatibility
+        "categorical_columns": [
+            c for c in df.columns if c not in numeric_cols
+        ],  # Add for test compatibility
         "null_counts": df.isnull().sum().to_dict(),
         "region_counts": _safe_counts("region") if "region" in df.columns else {},
         "sector_counts": _safe_counts("sector") if "sector" in df.columns else {},
@@ -4958,7 +4961,7 @@ def compare_prediction_vs_analyst_targets(
     df: pd.DataFrame,
     predicted_col: str = "predicted_price_target",
     analyst_col: str = "price_target",
-    current_price_col: str = "last_price"
+    current_price_col: str = "last_price",
 ) -> dict:
     """Compare model predictions against analyst consensus targets.
 
@@ -5006,7 +5009,7 @@ def calculate_directional_accuracy(
     df: pd.DataFrame,
     predicted_col: str = "predicted_price_target",
     analyst_col: str = "price_target",
-    current_price_col: str = "last_price"
+    current_price_col: str = "last_price",
 ) -> float:
     """Calculate directional accuracy of model predictions vs analyst targets.
 
@@ -5027,18 +5030,18 @@ def calculate_directional_accuracy(
         >>> print(f"Accuracy: {accuracy:.2%}")
     """
     total = len(df)
-    
+
     if total == 0:
         return 0.0
 
     # Calculate directions
     model_direction = df[predicted_col] > df[current_price_col]
     analyst_direction = df[analyst_col] > df[current_price_col]
-    
+
     # Count agreements
     agreements = (model_direction == analyst_direction).sum()
     accuracy = agreements / total
-    
+
     return float(accuracy)
 
 
@@ -5084,7 +5087,7 @@ def calculate_agreement_rate(df: pd.DataFrame) -> dict:
 
 def identify_disagreement_opportunities(
     df: pd.DataFrame, threshold_pct: float = 5.0
-) -> pd.DataFrame:
+) -> pd.DataFrame | None:
     """Identify stocks where model significantly differs from analyst consensus.
 
     Phase 9.8 TDD implementation: Find investment opportunities where the model

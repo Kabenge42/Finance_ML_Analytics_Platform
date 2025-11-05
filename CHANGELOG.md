@@ -7,8 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-11-02
+
 ### Added
 
+- Phase 9.2 enhanced EDA summary with 7 new analysis functions in `finance_ml/eval.py`:
+  - `calculate_financial_metrics_dashboard` for automated KPI reporting
+  - `generate_data_quality_alerts` for data validation and quality monitoring
+  - `perform_comprehensive_hypothesis_tests` for statistical testing across sectors/regions
+  - Additional interactive dashboard utilities and visualization helpers
+    ([b7eb9a7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b7eb9a7), [8745b19](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/8745b19), [c811243](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c811243))
+- Comprehensive testing suite with 36 unit tests for enhanced EDA functionality (`tests/test_enhanced_eda_phase92.py`)
+  ([b7eb9a7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b7eb9a7))
+- PHASE_9_2_ENHANCED_EDA_SUMMARY.md documentation outlining improvements and capabilities
+  ([b7eb9a7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b7eb9a7))
 - Phase 9.2 benchmarking module (`finance_ml/benchmarking.py`) with comprehensive analysis functions:
   - Sector-wise and regional valuation comparisons with optional statistical tests
   - Peer group analysis for comparative stock evaluation
@@ -23,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Enhanced `generate_eda_report` with backward-compatible integration of new statistical and quality features
+  ([b7eb9a7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b7eb9a7))
 - Updated README to reflect v0.4.0 release and Phase 9 completion status
   ([f5538b9](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/f5538b9cbb1c745f471ff9d448ea272e7e6ba136))
 - Enhanced notebook (`ml_finance_model_main.ipynb`) with:
@@ -35,6 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     ([f5538b9](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/f5538b9cbb1c745f471ff9d448ea272e7e6ba136))
 - Updated `finance_ml/__init__.py` to export benchmarking module
   ([6d45c6e](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/6d45c6e4abf8468d35095243cabaffbf5f254c1e))
+
+### Removed
+
+- Obsolete data quality and regression output files to streamline workflow
+  ([6bf91a1](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/6bf91a1))
 
 ### Fixed
 

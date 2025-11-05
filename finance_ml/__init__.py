@@ -68,7 +68,11 @@ from finance_ml.advanced_models import (
     train_sector_specific_models,
     save_model,
     load_model,
-    )
+    # Data Validation (ML Workflow Improvement Plan)
+    validate_training_data,
+    prepare_features_for_training,
+)
+
 # Import from advanced_preprocessing module (Phase 9.1)
 from finance_ml.advanced_preprocessing import (
     DataQualityReport,
@@ -81,6 +85,14 @@ from finance_ml.advanced_preprocessing import (
     impute_missing_values_knn_sector,
     create_scaler_pipeline,
     scale_features,
+    # Phase 9.1: Enhanced 4-Step Imputation Strategy
+    get_zero_imputation_columns,
+    get_knn_imputation_columns,
+    apply_zero_imputation,
+    apply_knn_imputation_enhanced,
+    apply_price_imputation,
+    apply_median_imputation,
+    apply_enhanced_imputation_strategy_4step,
 )
 
 # Import from analyst_comparison module (Phase 9.8)
@@ -330,6 +342,14 @@ __all__ = [
     "impute_missing_values_knn_sector",
     "create_scaler_pipeline",
     "scale_features",
+    # Phase 9.1: Enhanced 4-Step Imputation Strategy
+    "get_zero_imputation_columns",
+    "get_knn_imputation_columns",
+    "apply_zero_imputation",
+    "apply_knn_imputation_enhanced",
+    "apply_price_imputation",
+    "apply_median_imputation",
+    "apply_enhanced_imputation_strategy_4step",
     # Data Catalog module (Phase 9.1)
     "SchemaInfo",
     "StatisticalProfile",
@@ -407,6 +427,8 @@ __all__ = [
     "train_sector_specific_models",
     "save_model",
     "load_model",
+    "validate_training_data",
+    "prepare_features_for_training",
     # Evaluation module
     "calculate_mispricing_score",
     "rank_undervalued_stocks",

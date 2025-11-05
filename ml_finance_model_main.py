@@ -137,7 +137,9 @@ display_config_summary(config)
 config.create_output_structure()
 print(f"\n✓ Output directory structure created")
 print(f"  Main subdirectories: analytics, models, eda")
-print(f"  EDA subdirectories: eda_with_importance, eda_with_multivariate, enhanced_eda, financial_data_quality_reports")
+print(
+    f"  EDA subdirectories: eda_with_importance, eda_with_multivariate, enhanced_eda, financial_data_quality_reports"
+)
 
 # %% md
 # ## Sample Data Generator
@@ -238,6 +240,29 @@ try:
     logger.info(f"Data preprocessed: {all_stocks_processed.shape}")
     print(f"\n✓ Data preprocessed successfully")
     print(f"  Shape after preprocessing: {all_stocks_processed.shape}")
+
+    # Log presence of new price-related columns (Nov 2025 schema update)
+    new_price_cols = [
+        "price_chg_pct_1m",
+        "price_chg_pct_3m",
+        "one_day_pct",
+        "price_5d_ago",
+        "price_1w_ago",
+        "price_1m_ago",
+        "price_3m_ago",
+        "price_6m_ago",
+        "price_1y_ago",
+        "price_3y_ago",
+        "price_5y_ago",
+        "price_qtd_ago",
+    ]
+    detected = [c for c in new_price_cols if c in all_stocks_processed.columns]
+    missing = [c for c in new_price_cols if c not in all_stocks_processed.columns]
+    print(f"  New price columns detected: {len(detected)}/{len(new_price_cols)}")
+    if detected:
+        print(f"    Present: {detected[:8]}{' ...' if len(detected) > 8 else ''}")
+    if missing:
+        print(f"    Missing: {missing[:4]}{' ...' if len(missing) > 4 else ''}")
 except Exception as e:
     logger.error(f"Preprocessing failed: {e}")
     print(f"✗ Preprocessing failed: {e}")
@@ -869,7 +894,9 @@ if HAVE_ENHANCED_MODELS:
         print("PER-SECTOR REGRESSION METRICS")
         print("=" * 80)
         # Use models directory from config for sector models
-        sector_metrics = train_and_evaluate_regression_by_sector(df_enhanced, config.models_output_dir)
+        sector_metrics = train_and_evaluate_regression_by_sector(
+            df_enhanced, config.models_output_dir
+        )
         display_cols = [
             c
             for c in ["sector", "n_train", "n_test", "mae", "rmse", "r2"]

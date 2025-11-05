@@ -17,6 +17,7 @@ Reference notebooks:
 - 11_training_deep_neural_networks.ipynb
 """
 
+import logging
 import time
 import warnings
 from pathlib import Path
@@ -25,6 +26,9 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 import joblib
 import numpy as np
 import pandas as pd
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 from sklearn.ensemble import (
     RandomForestRegressor,
     ExtraTreesRegressor,
@@ -1108,6 +1112,7 @@ def train_stacking_regressor(
     cv: int = 5,
     random_state: int = 42,
     ensure_nonnegative: bool = False,
+    loss: str = "squared_error",
 ) -> Tuple[Any, Dict[str, Any]]:
     """
     Train stacking ensemble with meta-learner.
@@ -1119,15 +1124,25 @@ def train_stacking_regressor(
         random_state: Random seed
         ensure_nonnegative: If True, wrap model with NonNegativeRegressionWrapper
                            to ensure predictions >= 0
+        loss: Loss function for GradientBoosting base estimator ('squared_error', 'huber', 'absolute_error')
+              If 'huber', uses robust loss for outlier handling (Model Optimization Priority 2.1)
 
     Returns:
         Trained ensemble (wrapped if ensure_nonnegative=True) and results dictionary
     """
-    # Define base models
+    # Define base models with robust loss support
     estimators = [
         ("rf", RandomForestRegressor(n_estimators=50, random_state=random_state, n_jobs=-1)),
         ("et", ExtraTreesRegressor(n_estimators=50, random_state=random_state, n_jobs=-1)),
-        ("gb", GradientBoostingRegressor(n_estimators=50, random_state=random_state)),
+        (
+            "gb",
+            GradientBoostingRegressor(
+                loss=loss,
+                alpha=0.9 if loss == "huber" else 0.9,  # Quantile for Huber transition
+                n_estimators=50,
+                random_state=random_state,
+            ),
+        ),
     ]
 
     # Meta-learner
@@ -1270,6 +1285,185 @@ def optimize_hyperparameters_optuna(
 # ==============================================================================
 
 
+def validate_training_data(X: pd.DataFrame, y: pd.Series, strict: bool = True) -> Dict[str, Any]:
+    """
+    Validate training data before model fitting.
+
+    This function implements Priority 1 from ML Workflow Improvement Plan:
+    comprehensive validation gates to prevent NaN/Inf values from reaching model training.
+
+    Args:
+        X: Feature matrix
+        y: Target vector
+        strict: If True, raise exceptions on validation failures
+
+    Returns:
+        Dictionary with validation results:
+        - valid: bool indicating if data passed all checks
+        - nan_features: count of NaN values in features
+        - nan_target: count of NaN values in target
+        - inf_features: count of infinite values in features
+        - inf_target: count of infinite values in target
+        - zero_var_columns: list of zero-variance column names
+        - issues: list of issue descriptions
+
+    Raises:
+        ValueError: If validation fails and strict=True
+
+    Example:
+        >>> X_train = pd.DataFrame({'feature1': [1, 2, 3], 'feature2': [4, 5, 6]})
+        >>> y_train = pd.Series([10, 20, 30])
+        >>> result = validate_training_data(X_train, y_train, strict=True)
+        >>> assert result['valid'] == True
+    """
+    issues = []
+
+    # Check for empty data
+    if len(X) == 0 or len(y) == 0:
+        msg = "Feature matrix X or target vector y is empty"
+        if strict:
+            raise ValueError(f"{msg}. Cannot train on empty data.")
+        issues.append(msg)
+
+    # Check for NaN in features
+    nan_count_X = X.isnull().sum().sum()
+    if nan_count_X > 0:
+        msg = f"Feature matrix X contains {nan_count_X} NaN values"
+        if strict:
+            raise ValueError(
+                f"{msg}. Apply imputation before training. "
+                f"Use finance_ml.advanced_preprocessing.apply_enhanced_imputation_strategy_4step()"
+            )
+        issues.append(msg)
+
+    # Check for NaN in target
+    nan_count_y = y.isnull().sum()
+    if nan_count_y > 0:
+        msg = f"Target vector y contains {nan_count_y} NaN values"
+        if strict:
+            raise ValueError(f"{msg}. Remove or impute target NaN before training.")
+        issues.append(msg)
+
+    # Check for infinite values in features
+    inf_count_X = np.isinf(X.select_dtypes(include=[np.number])).sum().sum()
+    if inf_count_X > 0:
+        msg = f"Feature matrix X contains {inf_count_X} infinite values"
+        if strict:
+            raise ValueError(f"{msg}. Replace infinite values before training.")
+        issues.append(msg)
+
+    # Check for infinite values in target
+    inf_count_y = np.isinf(y).sum()
+    if inf_count_y > 0:
+        msg = f"Target vector y contains {inf_count_y} infinite values"
+        if strict:
+            raise ValueError(f"{msg}. Replace infinite values in target.")
+        issues.append(msg)
+
+    # Check for zero-variance columns (warning, not blocker)
+    zero_var_cols = X.columns[X.var() == 0].tolist()
+    if len(zero_var_cols) > 0:
+        msg = f"Feature matrix X contains {len(zero_var_cols)} zero-variance columns: {zero_var_cols[:5]}"
+        issues.append(msg)
+
+    return {
+        "valid": len(issues) == 0 or (len(issues) == 1 and len(zero_var_cols) > 0),
+        "nan_features": nan_count_X,
+        "nan_target": nan_count_y,
+        "inf_features": inf_count_X,
+        "inf_target": inf_count_y,
+        "zero_var_columns": zero_var_cols,
+        "issues": issues,
+    }
+
+
+def prepare_features_for_training(
+    df: pd.DataFrame,
+    feature_cols: List[str],
+    target_col: str,
+    apply_imputation: bool = True,
+    sector_column: str = "sector",
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Prepare features and target for model training with final imputation checkpoint.
+
+    This function implements Priority 3 from ML Workflow Improvement Plan:
+    pre-model training imputation checkpoint to ensure zero NaN values.
+
+    Args:
+        df: Input DataFrame
+        feature_cols: Feature column names
+        target_col: Target column name
+        apply_imputation: If True, apply 4-step imputation before extraction
+        sector_column: Sector column for KNN imputation
+
+    Returns:
+        Tuple of (X, y) ready for model training with zero NaN
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'sector': ['Tech', 'Finance'],
+        ...     'market_cap': [1e9, np.nan],
+        ...     'last_price': [100, 150],
+        ...     'price_target': [110, 160]
+        ... })
+        >>> X, y = prepare_features_for_training(
+        ...     df, ['market_cap'], 'price_target',
+        ...     apply_imputation=True, sector_column='sector'
+        ... )
+        >>> assert X.isnull().sum().sum() == 0
+    """
+    from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
+
+    # Extract target BEFORE imputation to preserve NaN for removal
+    y = df[target_col].copy()
+
+    # Drop rows with NaN in target
+    valid_mask = ~y.isnull()
+    if not valid_mask.all():
+        n_dropped = (~valid_mask).sum()
+        logger.warning(f"Dropping {n_dropped} rows with NaN target values")
+        df = df[valid_mask].copy()
+        y = y[valid_mask]
+
+    # Apply final imputation if requested (only on features, target already extracted)
+    if apply_imputation:
+        logger.info("Applying final imputation before feature extraction...")
+        df = apply_enhanced_imputation_strategy_4step(
+            df,
+            sector_column=sector_column,
+            n_neighbors=5,
+            price_column="last_price" if "last_price" in df.columns else None,
+        )
+
+    # Extract features after imputation
+    X = df[feature_cols].copy()
+
+    # Final validation - handle any residual NaN/Inf
+    nan_X = X.isnull().sum().sum()
+    nan_y = y.isnull().sum()
+    inf_X = np.isinf(X.select_dtypes(include=[np.number])).sum().sum()
+    inf_y = np.isinf(y).sum()
+
+    if nan_X > 0 or nan_y > 0 or inf_X > 0 or inf_y > 0:
+        logger.error(
+            f"Features have {nan_X} NaN, {inf_X} Inf; target has {nan_y} NaN, {inf_y} Inf after preparation"
+        )
+        # Emergency fallback: fill with 0
+        X = X.replace([np.inf, -np.inf], np.nan)
+        X = X.fillna(0)
+        y = y.replace([np.inf, -np.inf], np.nan)
+        y = y.fillna(y.median() if pd.notna(y.median()) else 0)
+        logger.warning("Applied emergency fillna(0) to ensure training can proceed")
+
+    logger.info(f"✓ Features prepared: {X.shape}, target: {y.shape}, zero NaN confirmed")
+
+    return X, y
+
+
+# Note: validate_training_data is defined above at line 1288
+
+
 def compare_regressors(
     X: pd.DataFrame,
     y: pd.Series,
@@ -1277,6 +1471,7 @@ def compare_regressors(
     cv: int = 5,
     random_state: int = 42,
     ensure_nonnegative: bool = False,
+    loss: str = "squared_error",
 ) -> Dict[str, Dict[str, float]]:
     """
     Compare multiple regression models.
@@ -1289,6 +1484,8 @@ def compare_regressors(
         random_state: Random seed
         ensure_nonnegative: If True, wrap models with NonNegativeRegressionWrapper
                            to ensure predictions >= 0
+        loss: Loss function for GradientBoosting ('squared_error', 'huber', 'absolute_error')
+              If 'huber', uses robust loss for outlier handling (Model Optimization Priority 2.1)
 
     Returns:
         Dictionary of model results
@@ -1297,6 +1494,36 @@ def compare_regressors(
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
+
+    # Validate training data (ML Workflow Improvement Plan Priority 1)
+    try:
+        validation_result = validate_training_data(X_train, y_train, strict=False)
+        if not validation_result["valid"]:
+            logger.warning(
+                f"Training data validation issues detected: {validation_result['issues']}"
+            )
+            # Log specific counts
+            if validation_result["nan_features"] > 0:
+                logger.warning(f"  NaN in features: {validation_result['nan_features']}")
+            if validation_result["inf_features"] > 0:
+                logger.warning(f"  Inf in features: {validation_result['inf_features']}")
+
+            # Apply emergency imputation
+            from sklearn.impute import SimpleImputer
+
+            logger.info("Applying emergency median imputation to X_train and X_test...")
+            imputer = SimpleImputer(strategy="median")
+            X_train = pd.DataFrame(
+                imputer.fit_transform(X_train), columns=X_train.columns, index=X_train.index
+            )
+            X_test = pd.DataFrame(
+                imputer.transform(X_test), columns=X_test.columns, index=X_test.index
+            )
+            logger.info("Emergency imputation completed")
+    except Exception as e:
+        logger.error(f"Validation check failed: {e}")
+        # Continue anyway but log the issue
+        pass
 
     results = {}
 
@@ -1308,7 +1535,12 @@ def compare_regressors(
             n_estimators=50, random_state=random_state, n_jobs=-1
         ),
         "ExtraTrees": ExtraTreesRegressor(n_estimators=50, random_state=random_state, n_jobs=-1),
-        "GradientBoosting": GradientBoostingRegressor(n_estimators=50, random_state=random_state),
+        "GradientBoosting": GradientBoostingRegressor(
+            loss=loss,
+            alpha=0.9 if loss == "huber" else 0.9,  # Quantile for Huber transition
+            n_estimators=50,
+            random_state=random_state,
+        ),
         "HistGradientBoosting": HistGradientBoostingRegressor(
             max_iter=50, random_state=random_state
         ),
@@ -1318,31 +1550,86 @@ def compare_regressors(
     if ensure_nonnegative:
         models = {name: NonNegativeRegressionWrapper(model) for name, model in models.items()}
 
-    # Train and evaluate each model
+    # Train and evaluate each model with graceful error handling
+    # (ML Workflow Improvement Plan Priority 2: Graceful Model Fallback)
     for name, model in models.items():
-        start_time = time.time()
-        model.fit(X_train, y_train)
-        train_time = time.time() - start_time
+        try:
+            start_time = time.time()
+            model.fit(X_train, y_train)
+            train_time = time.time() - start_time
 
-        # Predictions
-        y_pred_train = model.predict(X_train)
-        y_pred_test = model.predict(X_test)
+            # Predictions
+            y_pred_train = model.predict(X_train)
+            y_pred_test = model.predict(X_test)
 
-        # Metrics
-        results[name] = {
-            "mae": mean_absolute_error(y_test, y_pred_test),
-            "rmse": np.sqrt(mean_squared_error(y_test, y_pred_test)),
-            "r2": r2_score(y_test, y_pred_test),
-            "train_r2": r2_score(y_train, y_pred_train),
-            "train_time": train_time,
-        }
+            # Metrics
+            results[name] = {
+                "mae": mean_absolute_error(y_test, y_pred_test),
+                "rmse": np.sqrt(mean_squared_error(y_test, y_pred_test)),
+                "r2": r2_score(y_test, y_pred_test),
+                "train_r2": r2_score(y_train, y_pred_train),
+                "train_time": train_time,
+                "status": "success",
+            }
+            logger.info(f"✓ {name} trained successfully (MAE: {results[name]['mae']:.2f})")
+
+        except ValueError as e:
+            # Handle NaN-related errors gracefully
+            error_msg = str(e)
+            if "NaN" in error_msg or "missing values" in error_msg or "Input contains" in error_msg:
+                logger.warning(f"Model {name} failed due to data quality issue: {error_msg}")
+                results[name] = {
+                    "mae": np.nan,
+                    "rmse": np.nan,
+                    "r2": np.nan,
+                    "train_r2": np.nan,
+                    "train_time": 0,
+                    "status": "failed_data_quality",
+                    "error": error_msg[:200],  # Truncate long error messages
+                }
+            else:
+                # Re-raise unexpected ValueError
+                logger.error(f"Model {name} failed with unexpected ValueError: {e}")
+                raise
+
+        except Exception as e:
+            # Log and continue with other models
+            logger.error(f"Model {name} failed with unexpected error: {e}")
+            results[name] = {
+                "mae": np.nan,
+                "rmse": np.nan,
+                "r2": np.nan,
+                "train_r2": np.nan,
+                "train_time": 0,
+                "status": "failed_other",
+                "error": str(e)[:200],
+            }
+
+    # Check if at least one model succeeded
+    successful_models = {k: v for k, v in results.items() if v.get("status") == "success"}
+
+    if len(successful_models) == 0:
+        logger.error("All models failed to train. Check data quality and preprocessing.")
+        raise RuntimeError(
+            "All regression models failed. Data validation and imputation required. "
+            f"Failed models: {list(results.keys())}"
+        )
+
+    if len(successful_models) < len(models):
+        failed_models = [k for k, v in results.items() if v.get("status") != "success"]
+        logger.warning(
+            f"{len(successful_models)}/{len(models)} models trained successfully. "
+            f"Failed: {failed_models}"
+        )
+    else:
+        logger.info(f"✓ All {len(models)} models trained successfully")
 
     return results
 
 
 def train_sector_specific_models(
     df: pd.DataFrame,
-    feature_cols: List[str],
+    feature_cols: Union[List[str], Dict[str, List[str]]],
     target_col: str,
     sector_col: str = "sector",
     model_type: str = "random_forest",
@@ -1355,7 +1642,10 @@ def train_sector_specific_models(
 
     Args:
         df: Input DataFrame
-        feature_cols: Feature column names
+        feature_cols: Feature column names. Accepts a list of column names or a dict
+            with keys like 'all_features', 'numeric_features', 'categorical_features',
+            and 'classification_features'. If a dict is provided, the function will
+            try 'all_features' first, otherwise combine available groups.
         target_col: Target column name
         sector_col: Sector column name
         model_type: Model type to train
@@ -1366,9 +1656,75 @@ def train_sector_specific_models(
 
     Returns:
         Dictionary of sector models and results
+
+    Raises:
+        ValueError: If no valid features remain after validation against df
     """
-    sector_models = {}
-    sector_metrics = {}
+    # Smart handling of feature_cols
+    actual_feature_cols: List[str]
+    if isinstance(feature_cols, dict):
+        logger.info("feature_cols is a dict, extracting feature list...")
+        all_key = feature_cols.get("all_features")
+        if all_key:
+            actual_feature_cols = list(all_key)
+            logger.info(f"  Using 'all_features' key: {len(actual_feature_cols)} features")
+        else:
+            combined: List[str] = []
+            for key in ["numeric_features", "categorical_features", "classification_features"]:
+                vals = feature_cols.get(key, [])
+                if vals:
+                    combined.extend(list(vals))
+            actual_feature_cols = combined
+            logger.info(f"  Combined feature types: {len(actual_feature_cols)} features")
+        # Deduplicate while preserving order
+        before = len(actual_feature_cols)
+        actual_feature_cols = list(dict.fromkeys(actual_feature_cols))
+        if len(actual_feature_cols) != before:
+            logger.info(f"  After deduplication: {len(actual_feature_cols)} features")
+        else:
+            logger.info(f"  After deduplication: {len(actual_feature_cols)} features")
+    elif isinstance(feature_cols, list):
+        actual_feature_cols = feature_cols
+        logger.info(f"feature_cols is already a list: {len(actual_feature_cols)} features")
+    else:
+        # Attempt a graceful conversion (e.g., pandas Index or numpy array)
+        try:
+            actual_feature_cols = list(feature_cols)  # type: ignore[arg-type]
+            logger.info(
+                f"feature_cols provided as {type(feature_cols).__name__}; converted to list with "
+                f"{len(actual_feature_cols)} features"
+            )
+        except Exception as e:
+            raise TypeError(
+                f"feature_cols must be a list or dict of lists; got {type(feature_cols).__name__}"
+            ) from e
+
+    # Basic empty check
+    if len(actual_feature_cols) == 0:
+        raise ValueError("feature_cols cannot be empty")
+
+    # Validate that feature columns exist in the DataFrame; skip missing with warning
+    available_features = [c for c in actual_feature_cols if c in df.columns]
+    missing_features = [c for c in actual_feature_cols if c not in df.columns]
+
+    if missing_features:
+        msg = (
+            f"⚠ Warning: {len(missing_features)} features not in DataFrame (will be skipped). "
+            f"Missing: {missing_features[:5]}..."
+            if len(missing_features) > 5
+            else f"⚠ Warning: {len(missing_features)} features not in DataFrame (will be skipped): {missing_features}"
+        )
+        logger.warning(msg)
+
+    actual_feature_cols = available_features
+
+    if len(actual_feature_cols) == 0:
+        raise ValueError("No valid feature columns remain after validation against DataFrame")
+
+    logger.info(f"✓ Final feature count for sector models: {len(actual_feature_cols)}")
+
+    sector_models: Dict[str, Any] = {}
+    sector_metrics: Dict[str, Any] = {}
 
     sectors = df[sector_col].unique()
 
@@ -1379,7 +1735,7 @@ def train_sector_specific_models(
         if len(sector_df) < min_samples:  # Skip sectors with too few samples
             continue
 
-        X_sector = sector_df[feature_cols]
+        X_sector = sector_df[actual_feature_cols]
         y_sector = sector_df[target_col]
 
         # Train model
@@ -1448,3 +1804,84 @@ def load_model(filepath: Union[str, Path]) -> Tuple[Any, Dict[str, Any]]:
     save_dict = joblib.load(filepath)
 
     return save_dict["model"], save_dict.get("metadata", {})
+
+
+def standardize_comparison_results(results: "pd.DataFrame | dict | None") -> pd.DataFrame:
+    """
+    Convert comparison results (dict-of-dicts or DataFrame) into a standardized
+    DataFrame with a 'Model' column and normalized metric names.
+
+    - Accepts dict like {"Ridge": {"mae": 1.2, "rmse": 2.3, "r2": 0.8, ...}, ...}
+    - Accepts a DataFrame with columns in any case (e.g., 'model', 'mae', ...)
+    - Returns a DataFrame with at least ['Model', 'MAE', 'RMSE', 'R2'] columns
+    - Sorts by 'MAE' ascending if available (lower is better)
+
+    This utility is designed to eliminate KeyError: 'Model' by providing a consistent
+    tabular structure regardless of the original output shape from model comparison.
+    """
+    import pandas as pd  # local import to avoid issues if pandas unavailable at import time
+
+    if results is None:
+        return pd.DataFrame(columns=["Model", "MAE", "RMSE", "R2"])
+
+    # Case 1: dict-of-dicts
+    if isinstance(results, dict):
+        rows = []
+        for model_name, metrics in results.items():
+            row = {"Model": model_name}
+            if isinstance(metrics, dict):
+                for k, v in metrics.items():
+                    key = str(k).strip().lower()
+                    normalized = {
+                        "mae": "MAE",
+                        "rmse": "RMSE",
+                        "r2": "R2",
+                        "train_r2": "Train_R2",
+                        "train_time": "Train_Time",
+                        "status": "Status",
+                        "error": "Error",
+                        "model": "Model",
+                    }.get(key, k)
+                    row[normalized] = v
+            rows.append(row)
+        df = pd.DataFrame(rows)
+
+    # Case 2: already a DataFrame
+    elif isinstance(results, pd.DataFrame):
+        df = results.copy()
+        # Normalize model column name (case-insensitive)
+        model_col = next((c for c in df.columns if str(c).lower() == "model"), None)
+        if model_col and model_col != "Model":
+            df = df.rename(columns={model_col: "Model"})
+        # Normalize metric column names
+        rename_map = {}
+        for c in list(df.columns):
+            lc = str(c).lower()
+            if lc in ("mae", "rmse", "r2", "train_r2", "train_time"):
+                rename_map[c] = {
+                    "mae": "MAE",
+                    "rmse": "RMSE",
+                    "r2": "R2",
+                    "train_r2": "Train_R2",
+                    "train_time": "Train_Time",
+                }[lc]
+        if rename_map:
+            df = df.rename(columns=rename_map)
+    else:
+        # Fallback: try constructing DataFrame and then normalize
+        df = pd.DataFrame(results)
+
+    # Ensure expected columns exist
+    for col in ["Model", "MAE", "RMSE", "R2"]:
+        if col not in df.columns:
+            df[col] = np.nan
+
+    # Sort by MAE if available
+    try:
+        if "MAE" in df.columns:
+            df = df.sort_values("MAE", ascending=True, kind="mergesort").reset_index(drop=True)
+    except Exception:
+        # Do not fail sorting
+        pass
+
+    return df

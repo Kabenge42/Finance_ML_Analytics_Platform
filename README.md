@@ -3,6 +3,8 @@
 **Version 0.5.0** — A professional, modular Python package for equity screening, feature engineering, and machine
 learning models across global regions.
 
+> **Documentation Last Updated:** 2025-11-04 | Verified against current repository state
+
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -95,7 +97,7 @@ see [IMPROVEMENT_PLAN.md Phase 9](improvement_plan/IMPROVEMENT_PLAN.md) for deta
 - **Phase 9.8**: Comprehensive analytics and reporting — Predicted vs. Analyst Price Target comparison, error analysis,
   tracking, automated reporting
 
-**Latest Release (v0.4.0)**: Complete TDD implementation of Phase 9.7 with 15 new functions, 93 comprehensive tests,
+**Latest Release (v0.5.0)**: Complete TDD implementation of Phase 9.7 with 15 new functions, 93 comprehensive tests,
 full notebook integration, and professional reporting capabilities.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed implementation notes and version history.
@@ -269,12 +271,14 @@ Repeat per region (EU/APAC/ROTW) substituting the correct CSV and Region value.
 
 ### Security Note
 
-**⚠️ Important**: Never commit database passwords or API keys to version control.
+**⚠️ CRITICAL SECURITY WARNING**: Never commit database passwords or API keys to version control.
 
+**Best Practices**:
 - Use environment variables or `.env` files (add `.env` to `.gitignore`)
-- The `environment_variables.txt` file contains example configurations with placeholders
-- For production deployments, use secure secret management (e.g., GitHub Secrets, AWS Secrets Manager)
+- The `environment_variables.txt` file contains example configurations with placeholders only
+- For production deployments, use secure secret management (e.g., GitHub Secrets, AWS Secrets Manager, HashiCorp Vault)
 - Review all configuration files before committing to ensure no credentials are exposed
+- Rotate any passwords that may have been accidentally committed
 
 ## Environment Variables
 
@@ -286,7 +290,14 @@ Environment variable defaults and examples live in `environment_variables.txt`. 
 - **Optional modeling**: MODEL_VERSION, RANDOM_SEED
 - **Optional performance**: N_JOBS, MEMORY_LIMIT
 - **Database**: DB_URL, DB_SCHEMA, DB_TABLE
+  - DB_URL: SQLAlchemy connection string (e.g., `postgresql+psycopg2://postgres:password@localhost:5432/postgres`)
+  - DB_SCHEMA: Database schema (default: public)
+  - DB_TABLE: Table name (default: equities)
 - **External APIs**: ALPHA_VANTAGE_API_KEY, FINANCIAL_API_KEY (if using external data sources)
+- **Analytics & Reporting**: ENABLE_INTERACTIVE_PLOTS, REPORT_FORMAT, ENABLE_BENCHMARKING
+  - ENABLE_INTERACTIVE_PLOTS: Enable/disable interactive visualizations (true/false)
+  - REPORT_FORMAT: Output format (html, pdf, excel)
+  - ENABLE_BENCHMARKING: Enable benchmarking analysis Phase 9.2 (true/false)
 
 Set them in your shell or via a .env file if your tools auto‑load it.
 - Windows (PowerShell):
@@ -346,6 +357,8 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 
 ### Utility Scripts (in tools/ directory)
 
+The `tools/` directory contains **80+ utility scripts** for development, testing, and maintenance. Key scripts include:
+
 - **tools/setup_environment.py** — Automated environment setup utility:
   - Checks prerequisites (Python, PostgreSQL, Git)
   - Creates virtual environment
@@ -394,13 +407,18 @@ Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Exc
 - identifier.sqlite — Auxiliary SQLite DB present in repo
     - TODO: Clarify its role and whether it’s required by any scripts/tests
 
+**Additional files** (development artifacts, backups, alternative implementations):
+
+- ml_stock_prediction_model.ipynb — Alternative notebook implementation
+- ml_stock_prediction_final.py, ml_stock_prediction_v2.py — Alternative script implementations
+- ml_finance_model_main_backup.ipynb — Notebook backup
 
 ## Tests
 - We use Python’s built‑in unittest.
 - Run all tests from the project root:
   - python -m unittest -v
 
-Comprehensive test suite in tests/ directory (54 test modules):
+Comprehensive test suite in tests/ directory (67 test modules):
 
 - test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
 - test_advanced_features.py — Phase 9.3 advanced feature engineering tests
@@ -418,7 +436,10 @@ Comprehensive test suite in tests/ directory (54 test modules):
 - test_data_quality.py — Data validation and quality checks
 - test_data_versioning.py — Data versioning and metadata tests
 - test_eda.py — Exploratory data analysis utilities
+- test_edge_cases_classification_and_features.py — Edge cases for classification and feature engineering
+- test_edge_cases_eval_and_data.py — Edge cases for evaluation and data loading
 - test_enhanced_eda_phase92.py — Phase 9.2 enhanced EDA tests
+- test_enhanced_imputation.py — Phase 9.1 4-step imputation strategy tests (21 tests)
 - test_evaluation_phase96.py — Phase 9.6 model evaluation and error analysis tests
 - test_features.py — Feature engineering functions
 - test_finance_ml_config.py — Configuration management tests
@@ -428,17 +449,22 @@ Comprehensive test suite in tests/ directory (54 test modules):
 - test_finance_ml_models.py — Models module tests
 - test_improvement_plan_revision.py — Development plan validation
 - test_integration_cli_pipeline.py — CLI pipeline integration tests
+- test_integration_full_notebook_real_data.py — Full notebook execution with real CSV data
 - test_integration_notebook_pipeline.py — Notebook pipeline integration tests
 - test_integration_production_scenarios.py — Production scenario integration tests
 - test_loaders.py — CSV and database loading functions
 - test_logging.py — Logging configuration tests
+- test_ml_stock_prediction_notebook.py — Notebook execution tests (synthetic data)
 - test_model_evaluation_advanced.py — Advanced model evaluation tests
 - test_notebook_config.py — Notebook configuration tests
 - test_notebook_enhancements.py — Notebook enhancements validation
 - test_notebook_integration.py — Notebook integration tests
 - test_notebook_quality_improvements.py — Notebook quality improvements tests (config API, type validation, error
   handling)
+- test_notebook_restructuring.py — Notebook restructuring validation
+- test_notebook_section2_integration.py — Notebook section 2 integration tests
 - test_onehot_encoding.py — One-hot encoding functionality tests
+- test_performance_benchmarks.py — Performance benchmarks for critical operations
 - test_phase91_enhancements.py — Phase 9.1 enhancements tests
 - test_phase93_enhancements.py — Phase 9.3 enhancements tests
 - test_phase95_error_handling.py — Phase 9.5 error handling tests
@@ -457,6 +483,7 @@ Comprehensive test suite in tests/ directory (54 test modules):
 - test_validation_regex.py — Regex validation and pattern matching tests
 - test_valuation_phase97.py — Phase 9.7 stock valuation and identification tests
 - test_visualizations.py — Visualization functions tests
+- test_visualizations_notebook.py — Notebook visualization tests
 
 
 ## Project Structure
@@ -488,7 +515,7 @@ Finance_ML_Analytics_Platform/
 │   ├── transformers.py           # Scikit-learn compatible feature transformers
 │   └── verify_requirements.py    # Requirements verification utility
 │
-├── tests/                        # Unit tests (comprehensive test suite, 54 modules)
+├── tests/                        # Unit tests (comprehensive test suite, 67 modules)
 │   ├── test_advanced_eda.py
 │   ├── test_advanced_models_phase95.py
 │   ├── test_advanced_preprocessing.py
@@ -633,7 +660,18 @@ Advanced preprocessing and data quality (Phase 9.1).
 - `winsorize_by_sector()`: Sector-specific winsorization
 - `calculate_data_quality_score()`: Comprehensive data quality assessment
 - `impute_missing_values()`: Advanced imputation strategies
+- `impute_missing_values_knn_sector()`: Sector-aware KNN imputation
 - `create_scaler_pipeline()`, `scale_features()`: Feature scaling pipelines
+
+**Enhanced 4-Step Imputation Strategy:**
+
+- `get_zero_imputation_columns()`: Get 48 columns for zero imputation (exceptional events)
+- `get_knn_imputation_columns()`: Get 148 columns for KNN imputation (core financials)
+- `apply_zero_imputation()`: Step 1 - Zero imputation for rare events (impairments, restructuring)
+- `apply_knn_imputation_enhanced()`: Step 2 - Sector-aware KNN for financial metrics
+- `apply_price_imputation()`: Step 3 - Impute price targets from last_price (5 columns)
+- `apply_median_imputation()`: Step 4 - Median fallback for remaining columns
+- `apply_enhanced_imputation_strategy_4step()`: Complete 4-step pipeline (ensures zero missing values)
 
 #### `finance_ml.advanced_eda`
 
