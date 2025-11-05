@@ -94,6 +94,8 @@ from finance_ml.advanced_preprocessing import (
     apply_price_imputation,
     apply_median_imputation,
     apply_enhanced_imputation_strategy_4step,
+    # Phase 9.5: Data Preparation Pipeline
+    prepare_phase95_data,
 )
 
 # Import from analyst_comparison module (Phase 9.8)
@@ -216,6 +218,9 @@ from finance_ml.eval import (
     calculate_hit_rate_by_confidence_level,
     calculate_calibration_metrics,
     generate_prediction_analyst_excel_report,
+    # Phase 1: Interactive Dashboards - Reporting & Visualization Improvements
+    create_structured_output_directory,
+    generate_imputation_report,
 )
 from finance_ml.features import (
     _safe_div,
@@ -351,6 +356,8 @@ __all__ = [
     "apply_price_imputation",
     "apply_median_imputation",
     "apply_enhanced_imputation_strategy_4step",
+    # Phase 9.5: Data Preparation Pipeline
+    "prepare_phase95_data",
     # Data Catalog module (Phase 9.1)
     "SchemaInfo",
     "StatisticalProfile",
@@ -467,6 +474,20 @@ __all__ = [
     # Phase 9.1 Enhancement #3: Data Quality Dashboard
     "generate_data_quality_dashboard",
     "export_profiling_report",
+    # Phase 9.8: Prediction vs. Analyst Analytics
+    "PredictionAnalystAnalytics",
+    "compare_prediction_vs_analyst_targets",
+    "calculate_agreement_rate",
+    "calculate_directional_accuracy",
+    "analyze_systematic_bias",
+    "identify_disagreement_opportunities",
+    "segment_comparison_by_attribute",
+    "calculate_prediction_accuracy_metrics",
+    "calculate_hit_rate_by_confidence_level",
+    "calculate_calibration_metrics",
+    "generate_prediction_analyst_excel_report",
+    "create_structured_output_directory",
+    "generate_imputation_report",
     # Notebook utilities (display + loading strategy)
     "display_config_summary",
     "load_stock_data",

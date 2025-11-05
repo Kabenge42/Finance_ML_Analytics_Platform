@@ -930,7 +930,42 @@ def train_random_forest_regressor(
 
     Returns:
         Trained model and results dictionary
+
+    Raises:
+        ValueError: If X or y contain NaN/Inf values
     """
+    # ============================================================================
+    # VALIDATE INPUT DATA - NO NaN/Inf ALLOWED
+    # ============================================================================
+    if X.isnull().any().any():
+        nan_cols = X.columns[X.isnull().any()].tolist()
+        raise ValueError(
+            f"Feature matrix X contains NaN values in columns: {nan_cols[:5]}... "
+            f"({len(nan_cols)} total). Please impute missing values before training."
+        )
+
+    if y.isnull().any():
+        nan_count = y.isnull().sum()
+        raise ValueError(
+            f"Target variable y contains {nan_count} NaN values. "
+            f"Please remove or impute these before training."
+        )
+
+    if np.isinf(X.values).any():
+        raise ValueError(
+            "Feature matrix X contains infinite values. "
+            "Please handle with replace([np.inf, -np.inf], np.nan) then impute."
+        )
+
+    if np.isinf(y.values).any():
+        raise ValueError(
+            "Target variable y contains infinite values. "
+            "Please clip or replace with appropriate bounds."
+        )
+
+    # ============================================================================
+    # TRAIN MODEL
+    # ============================================================================
     model = RandomForestRegressor(
         n_estimators=n_estimators, max_depth=max_depth, random_state=random_state, n_jobs=-1
     )
@@ -1907,6 +1942,22 @@ def train_sector_specific_models(
             raise ValueError(error_msg)
 
     logger.info(f"✓ Final feature count for sector models: {len(actual_feature_cols)}")
+
+    # ============================================================================
+    # VALIDATE AND CLEAN TARGET COLUMN
+    # ============================================================================
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' not found in DataFrame")
+
+    # Drop rows with NaN in target before training
+    nan_target_count = df[target_col].isna().sum()
+    if nan_target_count > 0:
+        logger.warning(
+            f"⚠ Target column '{target_col}' contains {nan_target_count} NaN values. "
+            f"Dropping these rows before training."
+        )
+        df = df[df[target_col].notna()].copy()
+        logger.info(f"✓ After dropping NaN targets: {len(df)} rows remaining")
 
     sector_models: Dict[str, Any] = {}
     sector_metrics: Dict[str, Any] = {}

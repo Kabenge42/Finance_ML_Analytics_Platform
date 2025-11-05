@@ -7520,3 +7520,231 @@ def generate_enhanced_pdf_report(
         return result
     except Exception as e:
         return {"status": "error", "error": f"PDF generation failed: {str(e)}"}
+
+
+def create_structured_output_directory(base_dir: Path, run_id: str = None) -> dict:
+    """
+    Create organized output directory structure for ML workflow artifacts.
+
+    Structure:
+    outputs/
+    ├── {run_id}/
+    │   ├── data/
+    │   │   ├── processed_data.csv
+    │   │   └── imputation_report.json
+    │   ├── models/
+    │   │   ├── checkpoints/
+    │   │   └── feature_importance.csv
+    │   ├── reports/
+    │   │   ├── ml_workflow_report.html
+    │   │   ├── eda_report.html
+    │   │   └── data_quality_dashboard.html
+    │   ├── visualizations/
+    │   │   ├── eda/
+    │   │   ├── predictions/
+    │   │   ├── residuals/
+    │   │   └── feature_importance/
+    │   ├── analytics/
+    │   │   ├── predictions.csv
+    │   │   ├── stock_rankings.csv
+    │   │   └── prediction_analyst_comparison.xlsx
+    │   └── logs/
+    │       └── pipeline.log
+
+    Args:
+        base_dir: Base directory for outputs (default: 'outputs')
+        run_id: Unique identifier for this run (default: timestamp)
+
+    Returns:
+        Dict with paths to each subdirectory
+    """
+    if run_id is None:
+        run_id = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+
+    run_dir = Path(base_dir) / run_id
+
+    structure = {
+        "run_dir": run_dir,
+        "data": run_dir / "data",
+        "models": run_dir / "models",
+        "model_checkpoints": run_dir / "models" / "checkpoints",
+        "reports": run_dir / "reports",
+        "visualizations": run_dir / "visualizations",
+        "eda_viz": run_dir / "visualizations" / "eda",
+        "prediction_viz": run_dir / "visualizations" / "predictions",
+        "residual_viz": run_dir / "visualizations" / "residuals",
+        "feature_viz": run_dir / "visualizations" / "feature_importance",
+        "analytics": run_dir / "analytics",
+        "logs": run_dir / "logs",
+    }
+
+    # Create all directories
+    for path in structure.values():
+        path.mkdir(parents=True, exist_ok=True)
+
+    # Create README
+    readme_path = run_dir / "README.md"
+    readme_content = f"""# ML Workflow Run: {run_id}
+
+Generated: {pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+## Directory Structure
+
+- **data/**: Processed datasets and imputation reports
+- **models/**: Trained model artifacts and checkpoints
+- **reports/**: HTML/PDF reports (workflow, EDA, data quality)
+- **visualizations/**: All plots and charts organized by category
+- **analytics/**: Prediction results, rankings, and comparison tables
+- **logs/**: Pipeline execution logs
+
+## Key Files
+
+- `reports/ml_workflow_report.html` - Comprehensive ML workflow report
+- `analytics/predictions.csv` - Stock predictions with confidence intervals
+- `analytics/stock_rankings.csv` - Undervalued/overvalued stock rankings
+- `visualizations/predictions/mispricing_scatter.png` - Mispricing analysis
+"""
+    readme_path.write_text(readme_content)
+
+    logging.info(f"Created structured output directory: {run_dir}")
+    return structure
+
+
+def generate_imputation_report(
+    imputation_stats: dict, df_before: pd.DataFrame, df_after: pd.DataFrame, output_dir: Path
+) -> dict:
+    """
+    Generate comprehensive imputation analysis report with visualizations.
+
+    Tracks:
+    - Which columns were imputed and by which method
+    - Before/after NaN heatmaps
+    - Imputation time per column
+    - Distribution changes (before/after histograms)
+    - Emergency fallback usage
+
+    Args:
+        imputation_stats: Dict with imputation metadata
+        df_before: DataFrame before imputation
+        df_after: DataFrame after imputation
+        output_dir: Directory to save visualizations
+
+    Returns:
+        Dict with report metrics and saved file paths
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    report = {
+        "timestamp": pd.Timestamp.now().isoformat(),
+        "columns_imputed": [],
+        "methods_used": {},
+        "total_nans_filled": 0,
+        "emergency_fallbacks": [],
+        "visualizations": [],
+    }
+
+    # Track imputation by column
+    for col in df_before.columns:
+        nans_before = df_before[col].isna().sum()
+        nans_after = df_after[col].isna().sum()
+
+        if nans_before > nans_after:
+            method = imputation_stats.get(col, {}).get("method", "unknown")
+            report["columns_imputed"].append(
+                {
+                    "column": col,
+                    "nans_filled": int(nans_before - nans_after),
+                    "method": method,
+                    "fill_rate": (
+                        float((nans_before - nans_after) / nans_before) if nans_before > 0 else 0.0
+                    ),
+                }
+            )
+
+            report["methods_used"][method] = report["methods_used"].get(method, 0) + 1
+            report["total_nans_filled"] += int(nans_before - nans_after)
+
+            # Track emergency fallbacks
+            if method == "emergency_zero":
+                report["emergency_fallbacks"].append(col)
+
+    # Generate before/after NaN heatmaps
+    if plt is not None:
+        try:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+
+            # Before heatmap
+            if sns is not None:
+                sns.heatmap(df_before.isnull(), cbar=False, yticklabels=False, ax=ax1)
+            else:
+                ax1.imshow(df_before.isnull(), aspect="auto", cmap="YlOrRd")
+            ax1.set_title("Missing Values BEFORE Imputation")
+
+            # After heatmap
+            if sns is not None:
+                sns.heatmap(df_after.isnull(), cbar=False, yticklabels=False, ax=ax2)
+            else:
+                ax2.imshow(df_after.isnull(), aspect="auto", cmap="YlOrRd")
+            ax2.set_title("Missing Values AFTER Imputation")
+
+            heatmap_path = output_dir / "imputation_heatmap.png"
+            plt.tight_layout()
+            plt.savefig(heatmap_path, dpi=150, bbox_inches="tight")
+            plt.close()
+
+            report["visualizations"].append(str(heatmap_path))
+            logging.info(f"Saved imputation heatmap: {heatmap_path}")
+        except Exception as e:
+            logging.warning(f"Failed to generate heatmap: {e}")
+
+    # Generate distribution comparison for imputed columns
+    numeric_cols = df_before.select_dtypes(include=[np.number]).columns
+    imputed_numeric = [
+        c["column"] for c in report["columns_imputed"] if c["column"] in numeric_cols
+    ]
+
+    if plt is not None and imputed_numeric:
+        try:
+            n_cols = min(len(imputed_numeric), 6)  # Show top 6
+            fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+            axes = axes.flatten()
+
+            for idx, col in enumerate(imputed_numeric[:n_cols]):
+                # Before distribution (excluding NaNs)
+                before_clean = df_before[col].dropna()
+                axes[idx].hist(before_clean, bins=30, alpha=0.5, label="Before", color="red")
+
+                # After distribution
+                axes[idx].hist(
+                    df_after[col].dropna(), bins=30, alpha=0.5, label="After", color="green"
+                )
+
+                # Find the column info for this column
+                col_info = next((c for c in report["columns_imputed"] if c["column"] == col), None)
+                nans_filled = col_info["nans_filled"] if col_info else 0
+
+                axes[idx].set_title(f"{col}\n({nans_filled} filled)")
+                axes[idx].legend()
+
+            # Hide unused subplots
+            for idx in range(n_cols, len(axes)):
+                axes[idx].axis("off")
+
+            dist_path = output_dir / "imputation_distributions.png"
+            plt.tight_layout()
+            plt.savefig(dist_path, dpi=150, bbox_inches="tight")
+            plt.close()
+
+            report["visualizations"].append(str(dist_path))
+            logging.info(f"Saved imputation distributions: {dist_path}")
+        except Exception as e:
+            logging.warning(f"Failed to generate distribution plots: {e}")
+
+    # Save JSON report
+    json_path = output_dir / "imputation_report.json"
+    with open(json_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+
+    logging.info(f"Generated imputation report: {json_path}")
+    return report

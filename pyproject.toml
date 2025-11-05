@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 # ============================================================================
 [project]
 name = "finance-ml"
-version = "0.5.0"
+version = "0.5.1"
 description = "A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"

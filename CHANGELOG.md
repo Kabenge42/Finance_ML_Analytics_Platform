@@ -7,6 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Comprehensive notebook restructuring documentation (`docs/summaries/NOTEBOOK_COMPREHENSIVE_RESTRUCTURING_2025.md`)
+  detailing the complete reorganization of the main notebook
+- New reporting and visualization improvement plan (`docs/improvement_plan/Reporting_Visualization_Improvement_Plan.md`)
+- Documentation for validation and enhancement summaries moved to dedicated `docs/summaries/` directory
+
+### Changed
+
+- **Notebook restructuring**: Reduced cell count from 160 to 142 (11.3% reduction) by removing 18 duplicate/misplaced
+  cells
+  - Fixed phase ordering: 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.5.1 → 9.6 → 9.6.1 → 9.7 → 9.8
+  - Standardized section headers across all phases
+  - Added validation gates before model training to guarantee zero NaN values
+- **Documentation reorganization**: Moved improvement plans and implementation guides to `docs/improvement_plan/` for
+  better organization
+- **Summary consolidation**: Relocated phase summaries, validation reports, and implementation summaries to
+  `docs/summaries/`
+- Updated README.md to version 0.5.1 with recent updates section highlighting notebook restructuring achievements
+- Enhanced `create_equities_schema.sql` with improved structure and comments
+- Organized notebook backups into dedicated `backups/` directory
+
+---
+
+**Version Bump Recommendation**: PATCH (0.5.1 → 0.5.2)
+
+- Documentation and organizational improvements
+- No breaking changes or new features
+- Enhanced maintainability and project structure
+
+**Date Generated**: 2025-11-05
+
+## [0.5.1] - 2025-11-05
+
+### Added
+
+- Phase 9.1 comprehensive 4-step imputation pipeline with modular functions:
+  - `apply_zero_imputation` for handling zeros in specific columns
+  - `apply_knn_imputation_enhanced` with intelligent feature selection
+  - `apply_price_imputation` for price-related fields
+  - `apply_median_imputation` for remaining missing values
+  - `apply_enhanced_imputation_strategy_4step` orchestrating the complete pipeline
+    ([7a7de98](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7a7de98a354c3458fc28b836a4a8228d1a38e926))
+- Comprehensive TDD test suite (`tests/test_enhanced_imputation.py`) with 21 tests achieving ≥80% coverage for
+  imputation functions
+  ([7a7de98](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7a7de98a354c3458fc28b836a4a8228d1a38e926))
+- Phase 9.1 notebook integration (Section 9.1.8) with rich visualizations and seamless workflow integration
+  ([7a7de98](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7a7de98a354c3458fc28b836a4a8228d1a38e926))
+- Implementation guide documentation (`docs/improvement_plan/Implement__9.1_Loading_and_Preprocessing_Enhanced.md`) and
+  column mapping reference
+  ([7a7de98](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7a7de98a354c3458fc28b836a4a8228d1a38e926))
+- Final validation script (`final_validation.py`) ensuring no duplicate functions and correct module structure
+  ([c589271](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c5892714c47883cb52991ffd830af472d4abe36a))
+
+### Changed
+
+- Enhanced notebook organization (`ml_finance_model_main_backup.ipynb`) with:
+  - Modular configuration and feature flag management
+  - Utility functions for section headers and checkpoints
+  - Improved logging setup and output structure creation
+  - Enhanced validation workflows for regression models and sector analysis
+    ([c589271](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c5892714c47883cb52991ffd830af472d4abe36a))
+- Updated core modules (`advanced_models.py`, `data.py`, `eval.py`, `models.py`, `risk_metrics.py`) with improved
+  structure and validation
+  ([c589271](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c5892714c47883cb52991ffd830af472d4abe36a))
+- Refined SQL schemas and import scripts for better data handling
+  ([c589271](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c5892714c47883cb52991ffd830af472d4abe36a))
+
+### Fixed
+
+- Ensured no missing values remain in dataset through comprehensive 4-step imputation strategy
+  ([7a7de98](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7a7de98a354c3458fc28b836a4a8228d1a38e926))
+- Eliminated duplicate function definitions and improved module structure consistency
+  ([c589271](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c5892714c47883cb52991ffd830af472d4abe36a))
+
 ## [0.5.0] - 2025-11-02
 
 ### Added
