@@ -1627,6 +1627,118 @@ def compare_regressors(
     return results
 
 
+def extract_numeric_feature_columns(
+    df: pd.DataFrame,
+    exclude_cols: Optional[List[str]] = None,
+    exclude_patterns: Optional[List[str]] = None,
+) -> List[str]:
+    """
+    Extract numeric feature columns from DataFrame, excluding targets and metadata.
+
+    This utility function identifies all numeric columns in a DataFrame and filters
+    out common non-feature columns like identifiers, targets, and event labels.
+
+    Args:
+        df: Input DataFrame
+        exclude_cols: Explicit list of column names to exclude (default: None)
+        exclude_patterns: List of substring patterns to match for exclusion
+            (default: ['event_proba_', 'event_label'])
+
+    Returns:
+        List of numeric column names suitable for model training
+
+    Default Exclusions:
+        - Identifier columns: 'ticker', 'isin', 'name', 'description'
+        - Categorical columns: 'sector', 'region', 'industry', 'country'
+        - Target columns: 'price_target', 'analyst_target_price'
+        - Event-related columns: 'event_label', 'event_proba_*'
+        - Any custom columns in exclude_cols parameter
+
+    Examples:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['AAPL', 'MSFT'],
+        ...     'sector': ['Tech', 'Tech'],
+        ...     'last_price': [150.0, 300.0],
+        ...     'market_cap': [2.5e12, 2.3e12],
+        ...     'price_target': [180.0, 350.0]
+        ... })
+        >>> features = extract_numeric_feature_columns(df)
+        >>> # Returns: ['last_price', 'market_cap']
+        >>> # (excludes ticker, sector, price_target)
+
+        >>> # Custom exclusions
+        >>> features = extract_numeric_feature_columns(
+        ...     df, exclude_cols=['last_price', 'price_target']
+        ... )
+        >>> # Returns: ['market_cap']
+    """
+    if df.empty:
+        logger.info("DataFrame is empty, returning empty feature list")
+        return []
+
+    # Default exclusion set
+    default_exclude = {
+        # Identifiers
+        "ticker",
+        "isin",
+        "name",
+        "description",
+        # Categorical grouping columns (even if accidentally numeric)
+        "sector",
+        "region",
+        "industry",
+        "country",
+        "trading_country",
+        # Common target columns
+        "price_target",
+        "analyst_target_price",
+        "price_target_median",
+        # Event classification outputs
+        "event_label",
+    }
+
+    # Combine with user-provided exclusions
+    if exclude_cols:
+        default_exclude.update(exclude_cols)
+
+    # Default patterns to exclude
+    if exclude_patterns is None:
+        exclude_patterns = ["event_proba_"]
+
+    # Get all numeric columns
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    logger.info(f"DataFrame analysis: {len(df.columns)} total columns, {len(numeric_cols)} numeric")
+
+    # Filter out excluded columns and patterns
+    feature_cols = []
+    for col in numeric_cols:
+        # Check explicit exclusions
+        if col in default_exclude:
+            continue
+
+        # Check pattern exclusions
+        if any(pattern in col for pattern in exclude_patterns):
+            continue
+
+        feature_cols.append(col)
+
+    logger.info(
+        f"Extracted {len(feature_cols)} numeric feature columns "
+        f"(excluded {len(numeric_cols) - len(feature_cols)} columns)"
+    )
+
+    if len(feature_cols) == 0:
+        logger.warning("No numeric feature columns found after exclusions")
+    else:
+        logger.debug(
+            f"Feature columns: {feature_cols[:10]}"
+            + (f" ... and {len(feature_cols) - 10} more" if len(feature_cols) > 10 else "")
+        )
+
+    return feature_cols
+
+
 def train_sector_specific_models(
     df: pd.DataFrame,
     feature_cols: Union[List[str], Dict[str, List[str]]],
@@ -1636,6 +1748,7 @@ def train_sector_specific_models(
     random_state: int = 42,
     min_samples: int = 20,
     ensure_nonnegative: bool = False,
+    auto_extract_fallback: bool = False,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Train separate models for each sector.
@@ -1653,13 +1766,47 @@ def train_sector_specific_models(
         min_samples: Minimum samples required per sector (default: 20)
         ensure_nonnegative: If True, wrap models with NonNegativeRegressionWrapper
                            to ensure predictions >= 0
+        auto_extract_fallback: If True, automatically extract numeric features from
+                              DataFrame when provided feature_cols are invalid or missing.
+                              Uses extract_numeric_feature_columns() to identify suitable
+                              features (default: False)
 
     Returns:
-        Dictionary of sector models and results
+        Tuple of (sector_models, results):
+        - sector_models: Dictionary mapping sector names to trained models
+        - results: Dictionary with metrics and metadata
 
     Raises:
-        ValueError: If no valid features remain after validation against df
+        ValueError: If no valid features remain after validation against df and
+                   auto_extract_fallback is False
     """
+    # DataFrame structure diagnostics
+    logger.info("=" * 60)
+    logger.info("TRAIN SECTOR-SPECIFIC MODELS - DataFrame Diagnostics")
+    logger.info("=" * 60)
+    logger.info(f"DataFrame shape: {df.shape}")
+    logger.info(f"Total columns: {len(df.columns)}")
+
+    # Analyze column types
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    object_cols = df.select_dtypes(include=["object"]).columns.tolist()
+    logger.info(f"  Numeric columns: {len(numeric_cols)}")
+    logger.info(f"  Object columns: {len(object_cols)}")
+
+    # Check for target and sector columns
+    if target_col in df.columns:
+        logger.info(f"  ✓ Target column '{target_col}' present")
+    else:
+        logger.warning(f"  ⚠ Target column '{target_col}' NOT FOUND")
+
+    if sector_col in df.columns:
+        n_sectors = df[sector_col].nunique()
+        logger.info(f"  ✓ Sector column '{sector_col}' present ({n_sectors} unique sectors)")
+    else:
+        logger.warning(f"  ⚠ Sector column '{sector_col}' NOT FOUND")
+
+    logger.info("=" * 60)
+
     # Smart handling of feature_cols
     actual_feature_cols: List[str]
     if isinstance(feature_cols, dict):
@@ -1719,7 +1866,45 @@ def train_sector_specific_models(
     actual_feature_cols = available_features
 
     if len(actual_feature_cols) == 0:
-        raise ValueError("No valid feature columns remain after validation against DataFrame")
+        # Try auto-extraction fallback if enabled
+        if auto_extract_fallback:
+            logger.warning("No valid features from input, attempting auto-extraction...")
+            actual_feature_cols = extract_numeric_feature_columns(
+                df, exclude_cols=[target_col, sector_col]
+            )
+
+            if len(actual_feature_cols) > 0:
+                logger.info(
+                    f"✓ Auto-extracted {len(actual_feature_cols)} numeric features from DataFrame"
+                )
+                logger.info(f"  First 10 features: {actual_feature_cols[:10]}")
+            else:
+                # Still no features after auto-extraction
+                error_msg = (
+                    "❌ No valid feature columns found even after auto-extraction.\n"
+                    f"  DataFrame has {len(df.columns)} columns total:\n"
+                    f"    - {len(numeric_cols)} numeric columns\n"
+                    f"    - {len(object_cols)} object/categorical columns\n"
+                    f"  Tried to exclude: {target_col}, {sector_col}\n"
+                    f"  Available columns: {list(df.columns)[:20]}"
+                    + ("..." if len(df.columns) > 20 else "")
+                )
+                raise ValueError(error_msg)
+        else:
+            # Auto-extraction not enabled, provide detailed error
+            sample_cols = list(df.columns)[:20]
+            error_msg = (
+                "❌ No valid feature columns remain after validation against DataFrame.\n"
+                f"  Requested features: {len(actual_feature_cols + missing_features)} "
+                f"(0 valid, {len(missing_features)} missing)\n"
+                f"  DataFrame columns ({len(df.columns)} total): {sample_cols}"
+                + ("..." if len(df.columns) > 20 else "")
+                + f"\n  Missing features: {missing_features[:10]}"
+                + ("..." if len(missing_features) > 10 else "")
+                + "\n\n💡 Tip: Set auto_extract_fallback=True to automatically extract "
+                "numeric features from the DataFrame."
+            )
+            raise ValueError(error_msg)
 
     logger.info(f"✓ Final feature count for sector models: {len(actual_feature_cols)}")
 

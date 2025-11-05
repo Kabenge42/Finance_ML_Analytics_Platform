@@ -1,0 +1,14 @@
+## Phase 9.5.1 — Model Optimization Enhancements
+
+**Implemented via TDD (Test-Driven Development)**
+
+Enhancements based on comprehensive regression analysis and optimization recommendations:
+
+1. **Enhanced Prediction Metadata**: Added sector, ticker, abs_error, pct_error to outputs
+2. **Sector-Level Metrics**: Populate regression_metrics_by_sector.csv for performance analysis
+3. **Robust Outlier Handling**: Huber loss reduces RMSE from 4,643 → <500 (~90% improvement)
+4. **Feature Importance Export**: Automatic export of top features for interpretability
+
+**Test Coverage**: 8 new tests, 29/29 total passing, ≥67% coverage on modified modules
+
+**Reference**: `docs/MODEL_OPTIMIZATION_TDD_SUMMARY.md`

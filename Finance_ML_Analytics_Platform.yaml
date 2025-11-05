@@ -1,4 +1,7 @@
 name: Finance_ML_Analytics_Platform
+# NOTE: This is a legacy Conda environment export with Python 3.11 references
+# Current project requirement: Python 3.12 or 3.13 (>=3.12,<3.14)
+# Primary setup method: venv with pip (see README.md)
 # Python version: 3.12 or 3.13 (>=3.12,<3.14)
 channels:
   - defaults

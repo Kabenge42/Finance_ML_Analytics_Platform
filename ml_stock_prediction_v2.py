@@ -2,17 +2,17 @@
 # coding: utf-8
 
 # # Stock Price Target Prediction — ML Analytics Platform
-# 
+#
 # **Version 1.0.0** — Production-Ready Stock Prediction Notebook
-# 
+#
 # ## Business Objective
-# 
+#
 # **Primary Goal**: Predict Stock Price Targets for all stocks in the portfolio to support investment decisions and portfolio optimization.
-# 
+#
 # **Target Variable**: "Predicted Price Target" for regression modeling
-# 
+#
 # ## Workflow Overview (8 Steps)
-# 
+#
 # 1. **Loading and Preprocessing** — Multi-region data loading with quality checks
 # 2. **Exploratory Data Analysis** — Comprehensive financial metrics analysis
 # 3. **Feature Engineering** — Sector-specific optimizations and advanced features
@@ -21,19 +21,19 @@
 # 6. **Model Evaluation** — Comprehensive error analysis and metrics
 # 7. **Stock Valuation** — Under/overvalued stock identification
 # 8. **Analytics** — Predicted vs. Analyst target comparison
-# 
+#
 # ## Key Features
-# 
+#
 # - 📊 **Data Management**: PostgreSQL or CSV with validation
 # - 🔧 **Feature Engineering**: Financial ratios, sector-specific features
 # - 🤖 **ML Models**: Event classification + sector-optimized regression
 # - 📈 **Analytics**: Mispricing scores, stock rankings, comprehensive reports
 # - 🧪 **Tested**: Comprehensive test coverage (≥80%)
 # - ⚙️ **Modular**: Uses finance_ml package for maintainability
-# 
+#
 
 # ## Configuration and Setup
-# 
+#
 
 # In[ ]:
 
@@ -72,18 +72,25 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Finance ML package imports
-from finance_ml import data, features, advanced_features, classification, advanced_models, eval as fm_eval
+from finance_ml import (
+    data,
+    features,
+    advanced_features,
+    classification,
+    advanced_models,
+    eval as fm_eval,
+)
 
 # Suppress warnings for cleaner output
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 # Set random seed for reproducibility
-RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
+RANDOM_SEED = int(os.getenv("RANDOM_SEED", "42"))
 np.random.seed(RANDOM_SEED)
 
 # Configure plotting
-plt.style.use('seaborn-v0_8-darkgrid')
-sns.set_palette('husl')
+plt.style.use("seaborn-v0_8-darkgrid")
+sns.set_palette("husl")
 
 print("✓ Imports loaded successfully")
 print(f"✓ Random seed set to {RANDOM_SEED}")
@@ -93,6 +100,7 @@ print(f"✓ Random seed set to {RANDOM_SEED}")
 
 
 # Utility functions for notebook execution
+
 
 def print_section_header(title: str, width: int = 80) -> None:
     """Print formatted section header."""
@@ -134,9 +142,9 @@ print("✓ Utility functions defined")
 
 
 # ## Step 1: Loading and Preprocessing Financial Data
-# 
+#
 # Load multi-region stock data with comprehensive quality checks and preprocessing.
-# 
+#
 
 # In[ ]:
 
@@ -144,13 +152,13 @@ print("✓ Utility functions defined")
 print_section_header("Step 1: Data Loading and Preprocessing")
 
 # Determine data source
-data_source = os.getenv('DATA_SOURCE', 'auto')
-db_url = os.getenv('DB_URL', None)
-data_dir = Path(os.getenv('DATA_DIR', 'data'))
-limit = int(os.getenv('DATA_LIMIT', '0')) or None
+data_source = os.getenv("DATA_SOURCE", "auto")
+db_url = os.getenv("DB_URL", None)
+data_dir = Path(os.getenv("DATA_DIR", "data"))
+limit = int(os.getenv("DATA_LIMIT", "0")) or None
 
 # Load data from appropriate source
-if data_source == 'auto' or data_source == 'db':
+if data_source == "auto" or data_source == "db":
     if db_url and config.have_database_connection:
         print(f"Loading data from database: {db_url}")
         all_stocks = data.load_from_db(db_url, limit=limit)
@@ -165,11 +173,11 @@ print(f"\n✓ Loaded {len(all_stocks):,} stocks")
 print(f"✓ Columns: {len(all_stocks.columns)}")
 print(f"\nData shape: {all_stocks.shape}")
 print(f"\nRegion distribution:")
-if 'region' in all_stocks.columns:
-    print(all_stocks['region'].value_counts())
+if "region" in all_stocks.columns:
+    print(all_stocks["region"].value_counts())
 print(f"\nSector distribution:")
-if 'sector' in all_stocks.columns:
-    print(all_stocks['sector'].value_counts())
+if "sector" in all_stocks.columns:
+    print(all_stocks["sector"].value_counts())
 
 checkpoint("data_loaded", requires=["config_loaded"])
 
@@ -184,7 +192,11 @@ print_section_header("Data Quality and Preprocessing")
 all_stocks = data.normalize_columns(all_stocks)
 
 # Validate data quality (requires region parameter)
-region = all_stocks.get('region', pd.Series(['US'] * len(all_stocks))).iloc[0] if 'region' in all_stocks.columns else 'US'
+region = (
+    all_stocks.get("region", pd.Series(["US"] * len(all_stocks))).iloc[0]
+    if "region" in all_stocks.columns
+    else "US"
+)
 quality_report = data.validate_financial_data_quality(all_stocks, region=region)
 print("\nData Quality Report:")
 print(f"  Completeness: {quality_report.get('completeness', 0):.1%}")
@@ -194,7 +206,7 @@ print(f"  Duplicate rows: {quality_report.get('duplicates', 0):,}")
 # Handle missing values - use preprocess function
 # Note: preprocess() may convert string columns to numeric, so preserve identifiers
 print("\nHandling missing values...")
-identifier_cols = ['ticker', 'sector', 'region', 'name', 'isin', 'exchange']
+identifier_cols = ["ticker", "sector", "region", "name", "isin", "exchange"]
 preserved_cols = {}
 for col in identifier_cols:
     if col in all_stocks.columns:
@@ -207,11 +219,11 @@ for col, values in preserved_cols.items():
     all_stocks[col] = values
 
 # Remove duplicates - only if ticker+region combination is duplicated
-if 'ticker' in all_stocks.columns and 'region' in all_stocks.columns:
+if "ticker" in all_stocks.columns and "region" in all_stocks.columns:
     before_dedup = len(all_stocks)
-    all_stocks = all_stocks.drop_duplicates(subset=['ticker', 'region'], keep='first')
+    all_stocks = all_stocks.drop_duplicates(subset=["ticker", "region"], keep="first")
     print(f"Removed {before_dedup - len(all_stocks):,} duplicate ticker-region pairs")
-elif 'ticker' in all_stocks.columns:
+elif "ticker" in all_stocks.columns:
     before_dedup = len(all_stocks)
     # Note: Single ticker may have multiple entries, keep all for now
     print(f"Dataset has {len(all_stocks):,} rows (deduplication skipped - no region column)")
@@ -223,9 +235,9 @@ checkpoint("preprocessing_complete", requires=["data_loaded"])
 
 
 # ## Step 2: Exploratory Data Analysis
-# 
+#
 # Comprehensive analysis of financial metrics with sector and region comparisons.
-# 
+#
 
 # In[ ]:
 
@@ -235,8 +247,8 @@ print_section_header("Step 2: Exploratory Data Analysis")
 # Run comprehensive EDA
 eda_results = fm_eval.simple_eda(
     all_stocks,
-    target_column='price_target' if 'price_target' in all_stocks.columns else None,
-    save_plots=False
+    target_column="price_target" if "price_target" in all_stocks.columns else None,
+    save_plots=False,
 )
 
 print("\n✓ EDA complete")
@@ -247,9 +259,9 @@ checkpoint("eda_complete", requires=["preprocessing_complete"])
 
 
 # ## Step 3: Advanced Feature Engineering
-# 
+#
 # Sector-specific features and advanced financial ratios.
-# 
+#
 
 # In[ ]:
 
@@ -261,7 +273,7 @@ all_stocks_featured = advanced_features.build_comprehensive_features(
     all_stocks,
     include_interactions=False,  # Can enable if needed, but may be slow
     include_relative_values=True,
-    sector_col='sector' if 'sector' in all_stocks.columns else None
+    sector_col="sector" if "sector" in all_stocks.columns else None,
 )
 
 print(f"\n✓ Feature engineering complete")
@@ -273,9 +285,9 @@ checkpoint("features_engineered", requires=["eda_complete"])
 
 
 # ## Step 4: Multi-Class Event Classification
-# 
+#
 # Financial event detection to enhance regression models.
-# 
+#
 
 # In[ ]:
 
@@ -284,30 +296,40 @@ print_section_header("Step 4: Event Classification")
 
 # Create event labels - returns np.ndarray, not DataFrame
 event_labels = classification.create_enhanced_event_labels(
-    all_stocks_featured,
-    method='price_momentum'
+    all_stocks_featured, method="price_momentum"
 )
 
 # Add labels as a column to the dataframe
-all_stocks_featured['event_label'] = event_labels
+all_stocks_featured["event_label"] = event_labels
 
-if 'event_label' in all_stocks_featured.columns:
+if "event_label" in all_stocks_featured.columns:
     print("\nEvent label distribution:")
-    print(all_stocks_featured['event_label'].value_counts())
+    print(all_stocks_featured["event_label"].value_counts())
 
     # Train classification model
     print("\nTraining event classifier...")
     # Exclude identifiers and target columns, use only numeric columns
-    exclude_cols = ['ticker', 'sector', 'region', 'event_label', 'price_target', 
-                   'name', 'isin', 'exchange', 'description', 'industry']
+    exclude_cols = [
+        "ticker",
+        "sector",
+        "region",
+        "event_label",
+        "price_target",
+        "name",
+        "isin",
+        "exchange",
+        "description",
+        "industry",
+    ]
     feature_cols = [c for c in all_stocks_featured.columns if c not in exclude_cols]
 
     # Select only numeric columns
     X = all_stocks_featured[feature_cols].select_dtypes(include=[np.number]).fillna(0)
-    y = all_stocks_featured['event_label']
+    y = all_stocks_featured["event_label"]
 
     # Split data for classification
     from sklearn.model_selection import train_test_split
+
     X_train_clf, X_test_clf, y_train_clf, y_test_clf = train_test_split(
         X, y, test_size=0.2, random_state=RANDOM_SEED, stratify=y
     )
@@ -317,17 +339,15 @@ if 'event_label' in all_stocks_featured.columns:
     categorical_cols = []  # For now, assume all features are numeric after fillna
 
     clf_result = classification.train_xgboost_classifier(
-        X_train_clf, y_train_clf, X_test_clf, y_test_clf,
-        numeric_cols, categorical_cols
+        X_train_clf, y_train_clf, X_test_clf, y_test_clf, numeric_cols, categorical_cols
     )
 
     # Add classification probabilities as meta-features
-    model = clf_result['model']
+    model = clf_result["model"]
     y_proba = model.predict_proba(X)
 
     all_stocks_featured = classification.export_classification_features(
-        all_stocks_featured,
-        y_proba
+        all_stocks_featured, y_proba
     )
 
     print(f"\n✓ Classification complete")
@@ -339,9 +359,9 @@ checkpoint("classification_complete", requires=["features_engineered"])
 
 
 # ## Step 5: Sector-Optimized Regression Models
-# 
+#
 # Price target prediction with stacking ensemble and quantile regression.
-# 
+#
 
 # In[ ]:
 
@@ -349,9 +369,19 @@ checkpoint("classification_complete", requires=["features_engineered"])
 print_section_header("Step 5: Regression Modeling")
 
 # Prepare features and target
-target_col = 'price_target' if 'price_target' in all_stocks_featured.columns else 'last_price'
-exclude_cols = ['ticker', 'sector', 'region', target_col, 'event_label',
-               'name', 'isin', 'exchange', 'description', 'industry']
+target_col = "price_target" if "price_target" in all_stocks_featured.columns else "last_price"
+exclude_cols = [
+    "ticker",
+    "sector",
+    "region",
+    target_col,
+    "event_label",
+    "name",
+    "isin",
+    "exchange",
+    "description",
+    "industry",
+]
 feature_cols = [c for c in all_stocks_featured.columns if c not in exclude_cols]
 
 # Select only numeric columns
@@ -364,19 +394,17 @@ print(f"  Samples: {len(X)}")
 
 # Train stacking ensemble
 from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=RANDOM_SEED
-)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=RANDOM_SEED)
 
 # train_stacking_regressor returns (model, metrics_dict)
 stacking_model, stacking_metrics = advanced_models.train_stacking_regressor(
-    X_train, y_train,
-    random_state=RANDOM_SEED
+    X_train, y_train, random_state=RANDOM_SEED
 )
 
 # Generate predictions
 predictions = stacking_model.predict(X_test)
-all_stocks_featured.loc[X_test.index, 'predicted_price_target'] = predictions
+all_stocks_featured.loc[X_test.index, "predicted_price_target"] = predictions
 
 print(f"\n✓ Regression complete")
 print(f"✓ Train score: {stacking_metrics.get('train_score', 0):.3f}")
@@ -386,9 +414,9 @@ checkpoint("regression_complete", requires=["classification_complete"])
 
 
 # ## Step 6: Model Evaluation and Error Analysis
-# 
+#
 # Comprehensive performance assessment with residual analysis.
-# 
+#
 
 # In[ ]:
 
@@ -396,14 +424,14 @@ checkpoint("regression_complete", requires=["classification_complete"])
 print_section_header("Step 6: Model Evaluation")
 
 # Evaluate model performance
-if 'predicted_price_target' in all_stocks_featured.columns:
-    eval_df = all_stocks_featured.dropna(subset=['predicted_price_target', target_col])
+if "predicted_price_target" in all_stocks_featured.columns:
+    eval_df = all_stocks_featured.dropna(subset=["predicted_price_target", target_col])
 
     from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
-    r2 = r2_score(eval_df[target_col], eval_df['predicted_price_target'])
-    mae = mean_absolute_error(eval_df[target_col], eval_df['predicted_price_target'])
-    rmse = np.sqrt(mean_squared_error(eval_df[target_col], eval_df['predicted_price_target']))
+    r2 = r2_score(eval_df[target_col], eval_df["predicted_price_target"])
+    mae = mean_absolute_error(eval_df[target_col], eval_df["predicted_price_target"])
+    rmse = np.sqrt(mean_squared_error(eval_df[target_col], eval_df["predicted_price_target"]))
 
     print("\nOverall Performance:")
     print(f"  R² Score: {r2:.3f}")
@@ -411,14 +439,18 @@ if 'predicted_price_target' in all_stocks_featured.columns:
     print(f"  RMSE: ${rmse:.2f}")
 
     # Sector-specific evaluation
-    if config.enable_sector_analysis and 'sector' in eval_df.columns:
+    if config.enable_sector_analysis and "sector" in eval_df.columns:
         print("\nSector-Specific Performance:")
-        for sector in eval_df['sector'].unique():
-            sector_df = eval_df[eval_df['sector'] == sector]
+        for sector in eval_df["sector"].unique():
+            sector_df = eval_df[eval_df["sector"] == sector]
             if len(sector_df) >= 10:
-                sector_r2 = r2_score(sector_df[target_col], sector_df['predicted_price_target'])
-                sector_mae = mean_absolute_error(sector_df[target_col], sector_df['predicted_price_target'])
-                print(f"  {sector:15s}: R²={sector_r2:.3f}, MAE=${sector_mae:.2f} (n={len(sector_df)})")
+                sector_r2 = r2_score(sector_df[target_col], sector_df["predicted_price_target"])
+                sector_mae = mean_absolute_error(
+                    sector_df[target_col], sector_df["predicted_price_target"]
+                )
+                print(
+                    f"  {sector:15s}: R²={sector_r2:.3f}, MAE=${sector_mae:.2f} (n={len(sector_df)})"
+                )
 
     print(f"\n✓ Evaluation complete")
 else:
@@ -428,9 +460,9 @@ checkpoint("evaluation_complete", requires=["regression_complete"])
 
 
 # ## Step 7: Under/Overvalued Stock Identification
-# 
+#
 # Identify investment opportunities based on mispricing scores.
-# 
+#
 
 # In[ ]:
 
@@ -438,42 +470,50 @@ checkpoint("evaluation_complete", requires=["regression_complete"])
 print_section_header("Step 7: Stock Valuation")
 
 # Calculate mispricing scores
-if 'predicted_price_target' in all_stocks_featured.columns and 'last_price' in all_stocks_featured.columns:
+if (
+    "predicted_price_target" in all_stocks_featured.columns
+    and "last_price" in all_stocks_featured.columns
+):
     all_stocks_valued = all_stocks_featured.copy()
-    all_stocks_valued['mispricing_pct'] = (
-        (all_stocks_valued['predicted_price_target'] - all_stocks_valued['last_price']) 
-        / all_stocks_valued['last_price'] * 100
+    all_stocks_valued["mispricing_pct"] = (
+        (all_stocks_valued["predicted_price_target"] - all_stocks_valued["last_price"])
+        / all_stocks_valued["last_price"]
+        * 100
     )
 
     # Categorize valuations
     def categorize_valuation(pct):
         if pd.isna(pct):
-            return 'Unknown'
+            return "Unknown"
         elif pct > 20:
-            return 'Strong Buy'
+            return "Strong Buy"
         elif pct > 10:
-            return 'Buy'
+            return "Buy"
         elif pct > -10:
-            return 'Hold'
+            return "Hold"
         elif pct > -20:
-            return 'Sell'
+            return "Sell"
         else:
-            return 'Strong Sell'
+            return "Strong Sell"
 
-    all_stocks_valued['valuation_category'] = all_stocks_valued['mispricing_pct'].apply(categorize_valuation)
+    all_stocks_valued["valuation_category"] = all_stocks_valued["mispricing_pct"].apply(
+        categorize_valuation
+    )
 
     print("\nValuation Distribution:")
-    print(all_stocks_valued['valuation_category'].value_counts())
+    print(all_stocks_valued["valuation_category"].value_counts())
 
     # Top undervalued stocks
     print("\nTop 10 Undervalued Stocks:")
-    top_undervalued = all_stocks_valued.nlargest(10, 'mispricing_pct')[[
-        'ticker', 'sector', 'last_price', 'predicted_price_target', 'mispricing_pct'
-    ]]
+    top_undervalued = all_stocks_valued.nlargest(10, "mispricing_pct")[
+        ["ticker", "sector", "last_price", "predicted_price_target", "mispricing_pct"]
+    ]
     print(top_undervalued.to_string(index=False))
 
     print(f"\n✓ Valuation analysis complete")
-    print(f"✓ Identified {len(all_stocks_valued[all_stocks_valued['valuation_category'] == 'Strong Buy'])} strong buy opportunities")
+    print(
+        f"✓ Identified {len(all_stocks_valued[all_stocks_valued['valuation_category'] == 'Strong Buy'])} strong buy opportunities"
+    )
 else:
     print("\n⚠ Required columns not available, skipping valuation")
     all_stocks_valued = all_stocks_featured.copy()
@@ -482,9 +522,9 @@ checkpoint("valuation_complete", requires=["evaluation_complete"])
 
 
 # ## Step 8: Comprehensive Analytics
-# 
+#
 # Predicted vs. Analyst Price Target comparison and reporting.
-# 
+#
 
 # In[ ]:
 
@@ -492,39 +532,52 @@ checkpoint("valuation_complete", requires=["evaluation_complete"])
 print_section_header("Step 8: Comprehensive Analytics")
 
 # Compare predictions with analyst targets (if available)
-if 'predicted_price_target' in all_stocks_valued.columns:
+if "predicted_price_target" in all_stocks_valued.columns:
     analyst_col = None
-    for col in ['analyst_target', 'price_target_median', 'consensus_target']:
+    for col in ["analyst_target", "price_target_median", "consensus_target"]:
         if col in all_stocks_valued.columns:
             analyst_col = col
             break
 
     if analyst_col:
-        comparison_df = all_stocks_valued.dropna(subset=['predicted_price_target', analyst_col])
+        comparison_df = all_stocks_valued.dropna(subset=["predicted_price_target", analyst_col])
 
         print(f"\nComparing predictions with {analyst_col}...")
         print(f"  Stocks with both values: {len(comparison_df):,}")
 
         # Calculate agreement rate
-        comparison_df['model_direction'] = np.sign(comparison_df['predicted_price_target'] - comparison_df['last_price'])
-        comparison_df['analyst_direction'] = np.sign(comparison_df[analyst_col] - comparison_df['last_price'])
-        agreement_rate = (comparison_df['model_direction'] == comparison_df['analyst_direction']).mean()
+        comparison_df["model_direction"] = np.sign(
+            comparison_df["predicted_price_target"] - comparison_df["last_price"]
+        )
+        comparison_df["analyst_direction"] = np.sign(
+            comparison_df[analyst_col] - comparison_df["last_price"]
+        )
+        agreement_rate = (
+            comparison_df["model_direction"] == comparison_df["analyst_direction"]
+        ).mean()
 
         print(f"  Directional agreement: {agreement_rate:.1%}")
 
         # Identify high-conviction disagreements
         disagreements = comparison_df[
-            (comparison_df['model_direction'] != comparison_df['analyst_direction']) &
-            (np.abs(comparison_df['mispricing_pct']) > 15)
+            (comparison_df["model_direction"] != comparison_df["analyst_direction"])
+            & (np.abs(comparison_df["mispricing_pct"]) > 15)
         ]
 
         if len(disagreements) > 0:
             print(f"\nHigh-conviction disagreements (>15%):")
             print(f"  Count: {len(disagreements)}")
             print("\nTop 5 Disagreements:")
-            top_disagreements = disagreements.nlargest(5, 'mispricing_pct')[[
-                'ticker', 'sector', 'last_price', 'predicted_price_target', analyst_col, 'mispricing_pct'
-            ]]
+            top_disagreements = disagreements.nlargest(5, "mispricing_pct")[
+                [
+                    "ticker",
+                    "sector",
+                    "last_price",
+                    "predicted_price_target",
+                    analyst_col,
+                    "mispricing_pct",
+                ]
+            ]
             print(top_disagreements.to_string(index=False))
     else:
         print("\n⚠ Analyst targets not available")
@@ -533,9 +586,9 @@ if 'predicted_price_target' in all_stocks_valued.columns:
 
     # Export results
     if config.enable_excel_export:
-        output_dir = Path('outputs')
+        output_dir = Path("outputs")
         output_dir.mkdir(exist_ok=True)
-        output_file = output_dir / 'stock_prediction_results.csv'
+        output_file = output_dir / "stock_prediction_results.csv"
         all_stocks_valued.to_csv(output_file, index=False)
         print(f"✓ Results exported to {output_file}")
 else:
@@ -545,9 +598,9 @@ checkpoint("analytics_complete", requires=["valuation_complete"])
 
 
 # ## Summary and Next Steps
-# 
+#
 # All 8 workflow steps completed successfully!
-# 
+#
 
 # In[ ]:
 
@@ -562,4 +615,3 @@ for name, status in _CHECKPOINTS.items():
 print("\n" + "=" * 80)
 print("Stock Prediction Workflow Complete!")
 print("=" * 80)
-

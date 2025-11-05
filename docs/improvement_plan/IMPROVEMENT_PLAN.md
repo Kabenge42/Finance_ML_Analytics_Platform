@@ -1279,6 +1279,39 @@ advanced techniques from industry-standard ML references:
   - [x] **Summary Documentation**: PHASE_9_1_ENHANCEMENTS_SUMMARY.md with API docs and integration guide
   - [x] **Notebook Integration**: Section 9.1.6 with 218 lines of comprehensive examples
 
+- [x] **Phase 9.1 Enhanced 4-Step Imputation Strategy** (Complete - v0.4.1, 2025-11-03)
+  - [x] **Implementation Guide**: Implement__9.1_Loading_and_Preprocessing_Enhanced.md with complete TDD strategy
+  - [x] **Step 1: Zero Imputation** (48 columns)
+    - [x] `get_zero_imputation_columns()` - Returns 48 exceptional event columns
+    - [x] `apply_zero_imputation()` - Fills NaN with 0 for impairments, restructuring, acquisitions
+    - [x] Test coverage: 3/3 tests passing (column count, fill behavior, value preservation)
+  - [x] **Step 2: KNN Imputation** (148 columns)
+    - [x] `get_knn_imputation_columns()` - Returns 148 core financial metrics
+    - [x] `apply_knn_imputation_enhanced()` - Sector-aware KNN for financial ratios, valuations
+    - [x] Test coverage: 3/3 tests passing (column count, missing reduction, multi-column)
+  - [x] **Step 3: Price Imputation** (5 columns)
+    - [x] `apply_price_imputation()` - Imputes price targets from last_price
+    - [x] Handles: price_target, price_target_low/median/high, price_target_ytd_ago
+    - [x] Test coverage: 4/4 tests passing (imputation logic, preservation, all targets, no columns)
+  - [x] **Step 4: Median Imputation** (remaining columns)
+    - [x] `apply_median_imputation()` - Fallback for all remaining numerical columns
+    - [x] Ensures zero missing values in output
+    - [x] Test coverage: 2/2 tests passing (complete fill, correct median values)
+  - [x] **Master Pipeline Function**
+    - [x] `apply_enhanced_imputation_strategy_4step()` - Orchestrates all 4 steps
+    - [x] Complete imputation: zero missing values guaranteed
+    - [x] Test coverage: 6/6 tests passing (full pipeline, dtypes, value preservation, edge cases)
+  - [x] **Module Integration**
+    - [x] All 7 functions exported in `finance_ml/__init__.py`
+    - [x] Comprehensive test suite: `tests/test_enhanced_imputation.py` (21 tests, 100% coverage for target functions)
+    - [x] Coverage verified: 42% overall file (expected, only imputation functions tested), 100% for 7 target functions
+  - [x] **Documentation**
+    - [x] Implementation guide: Implement__9.1_Loading_and_Preprocessing_Enhanced.md (873 lines)
+    - [x] Column mapping reference: Schema → Python normalized names
+    - [x] TDD approach: Red-green-refactor cycle with ≥80% coverage requirement met
+  - [x] **Summary**: Complete 4-step imputation pipeline ensures zero missing values using economically sensible
+    strategies (zero for rare events, KNN for financials, last_price for targets, median fallback)
+
 - [ ] **Future Enhancements** (Deferred to future phases)
   - [ ] TensorFlow Dataset API patterns (optional TensorFlow dependency)
     - [ ] Implement data pipeline with prefetching and caching for large datasets

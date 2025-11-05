@@ -340,7 +340,7 @@ Create a `.env` file in the project root with the variables above. Tools that su
 ### Test Framework
 - **Framework**: Python's built-in `unittest`
 - **Location**: `tests/` directory
-- **Count**: 37 test modules
+- **Count**: 54 test modules
 - **Coverage**: Tracked in `.coverage` file
 
 ### Running Tests
@@ -358,20 +358,25 @@ pytest tests/ -v --cov=finance_ml
 python -m unittest discover -s tests -v
 ```
 
-### Test Suite Modules (37 total)
+### Test Suite Modules (54 total)
 
 - **`test_advanced_eda.py`** — Advanced EDA functions (correlation, PCA, statistical tests)
 - **`test_advanced_features.py`** — Phase 9.3 advanced feature engineering tests
 - **`test_advanced_models_phase95.py`** — Phase 9.5 advanced regression models and ensembles
 - **`test_advanced_preprocessing.py`** — Advanced preprocessing (outlier detection, winsorization, imputation)
+- **`test_analyst_comparison.py`** — Analyst comparison and target analysis tests
 - **`test_analytics.py`** — Analytics and stock ranking tests
+- **`test_benchmarking.py`** — Benchmarking and peer comparison tests
 - **`test_build_features.py`** — Feature building pipeline
 - **`test_classification.py`** — Event classification model tests
 - **`test_classification_phase94.py`** — Phase 9.4 advanced classification models
 - **`test_cli.py`** — Command-line interface tests
 - **`test_coverage_smoke.py`** — Smoke test for coverage validation
+- **`test_data_catalog.py`** — Data catalog management tests
 - **`test_data_quality.py`** — Data validation and quality checks
+- **`test_data_versioning.py`** — Data versioning and metadata tests
 - **`test_eda.py`** — Exploratory data analysis utilities
+- **`test_enhanced_eda_phase92.py`** — Phase 9.2 enhanced EDA tests
 - **`test_evaluation_phase96.py`** — Phase 9.6 model evaluation and error analysis tests
 - **`test_features.py`** — Feature engineering functions
 - **`test_finance_ml_config.py`** — Configuration management tests
@@ -380,21 +385,33 @@ python -m unittest discover -s tests -v
 - **`test_finance_ml_features.py`** — Features module tests
 - **`test_finance_ml_models.py`** — Models module tests
 - **`test_improvement_plan_revision.py`** — Development plan validation
+- **`test_integration_cli_pipeline.py`** — CLI pipeline integration tests
+- **`test_integration_notebook_pipeline.py`** — Notebook pipeline integration tests
+- **`test_integration_production_scenarios.py`** — Production scenario integration tests
 - **`test_loaders.py`** — CSV and database loading functions
 - **`test_logging.py`** — Logging configuration tests
+- **`test_model_evaluation_advanced.py`** — Advanced model evaluation tests
 - **`test_notebook_config.py`** — Notebook configuration tests
 - **`test_notebook_enhancements.py`** — Notebook enhancements validation
 - **`test_notebook_integration.py`** — Notebook integration tests
 - **`test_notebook_quality_improvements.py`** — Notebook quality improvements tests
+- **`test_onehot_encoding.py`** — One-hot encoding functionality tests
+- **`test_phase91_enhancements.py`** — Phase 9.1 enhancements tests
+- **`test_phase93_enhancements.py`** — Phase 9.3 enhancements tests
+- **`test_phase95_error_handling.py`** — Phase 9.5 error handling tests
+- **`test_phase95_nonnegative_predictions.py`** — Phase 9.5 non-negative prediction constraint tests
+- **`test_phase95_quick.py`** — Phase 9.5 quick validation tests
 - **`test_portfolio_optimization.py`** — Portfolio optimization tests
 - **`test_preprocess_and_training.py`** — Preprocessing and training workflows
+- **`test_quantile_fix.py`** — Quantile regression fixes tests
 - **`test_regression.py`** — Regression model evaluation
 - **`test_repository_setup.py`** — Validates repository basics (files, SQL schema, environment config)
 - **`test_risk_metrics.py`** — Risk metrics calculation tests
 - **`test_setup_environment.py`** — Setup script validation
 - **`test_sql_scripts.py`** — SQL script validation tests
-- **`test_sqlite_import.py`** — SQLite import functionality
-- **`test_validate_csv_import.py`** — CSV validation (schema, data quality checks)
+- **`test_sqlite_import.py`** — SQLite import functionality (header removal, NULL handling, region backfilling)
+- **`test_validate_csv_import.py`** — CSV validation (schema validation, data quality checks)
+- **`test_validation_regex.py`** — Regex validation and pattern matching tests
 - **`test_valuation_phase97.py`** — Phase 9.7 stock valuation and identification tests
 - **`test_visualizations.py`** — Visualization functions tests
 
@@ -433,7 +450,7 @@ Finance_ML_Analytics_Platform/
 │   ├── risk_metrics.py            # Risk metrics and portfolio risk analysis
 │   └── transformers.py            # Scikit-learn compatible feature transformers
 │
-├── tests/                         # Unit tests (37 test modules)
+├── tests/                         # Unit tests (54 test modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
@@ -461,31 +478,46 @@ Finance_ML_Analytics_Platform/
 │   ├── regression_predictions.csv
 │   └── ... (generated files)
 │
+├── tools/                         # Utility scripts (34 tools)
+│   ├── __init__.py
+│   ├── setup_environment.py       # Automated environment setup
+│   ├── validate_csv_import.py     # CSV data quality validator
+│   ├── import_sqlite.py           # Chunked CSV→SQLite importer
+│   ├── load_equities_data.py      # Legacy PostgreSQL CSV importer
+│   ├── analyze_notebook.py        # Notebook structure analyzer
+│   ├── refactor_notebook.py       # Notebook refactoring helper
+│   ├── update_notebook.py         # Notebook synchronizer
+│   ├── update_notebook_imports.py # Import updater
+│   ├── verify_notebook.py         # Notebook verification utility
+│   ├── verify_preprocessing_improvements.py # Verify preprocessing improvements
+│   ├── validate_phase95_predictions.py     # Phase 9.5 prediction validation
+│   ├── validate_phase9_integration.py      # Phase 9 integration validator
+│   ├── apply_improvement_plan_updates.py   # Development plan automation
+│   ├── apply_notebook_fixes.py    # Notebook maintenance utility
+│   └── ... (20+ additional notebook and validation tools)
+│
 ├── ml_finance_model_main.ipynb   # Interactive Jupyter notebook
+├── equities_data_explorer.ipynb  # Data exploration and EDA notebook
 ├── ml_finance_model_main.py      # Script version (uses finance_ml package)
+│
+├── create_equities_schema.sql    # PostgreSQL schema setup
+├── create_equities_schema_sqlite.sql # SQLite schema setup
+├── import_equities_data.sql      # Data import script (PostgreSQL)
+├── import_equities_data_sqlite.sql   # SQLite data import script
+├── equities.sqlite               # Example SQLite database
+├── identifier.sqlite             # Auxiliary SQLite database
 │
 ├── pyproject.toml                # Modern Python packaging configuration
 ├── setup.py                      # Backward-compatible setup
 ├── requirements.txt              # Core dependencies
 ├── Pipfile                       # Pipenv dependencies (Python 3.11)
+├── environment_variables.txt     # Environment configuration examples
 │
 ├── CHANGELOG.md                  # Version history
 ├── README.md                     # Project documentation
 ├── IMPROVEMENT_PLAN.md           # Development roadmap (8 phases)
 ├── REFACTORING_COMPLETE.md       # Refactoring documentation
-├── TDD_IMPLEMENTATION_COMPLETE.md # TDD implementation summary
-│
-├── create_equities_schema.sql    # PostgreSQL schema setup
-├── import_equities_data.sql      # Data import script
-├── environment_variables.txt     # Environment configuration examples
-│
-├── setup_environment.py          # Automated environment setup
-├── validate_csv_import.py        # CSV data quality validator
-├── analyze_notebook.py           # Notebook structure analyzer
-├── update_notebook.py            # Notebook synchronizer
-├── verify_notebook.py            # Notebook verification utility
-├── refactor_notebook.py          # Notebook refactoring tool
-└── update_notebook_imports.py    # Import updater
+└── TDD_IMPLEMENTATION_COMPLETE.md # TDD implementation summary
 ```
 
 ### Package Modules (`finance_ml`)
@@ -656,7 +688,7 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 
 ## Version History
 
-- **v0.5.0** (Current) — Complete Phase 9 implementation, 20 package modules, 37 test modules, comprehensive ML pipeline
+- **v0.5.0** (Current) — Complete Phase 9 implementation, 20 package modules, 51 test modules, comprehensive ML pipeline
 - **v0.4.0** — Phase 9.7 valuation analysis, Phase 9.1 data versioning and catalog
 - **v0.3.0** — Modular package, CLI tools, configuration management, CI/CD
 - Earlier versions documented in `CHANGELOG.md`

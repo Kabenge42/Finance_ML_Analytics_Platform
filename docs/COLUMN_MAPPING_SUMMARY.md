@@ -127,3 +127,32 @@ Potential future additions:
 - Additional aliases based on usage patterns
 - Column validation to ensure required financial metrics are present
 - Automatic detection of best available time period (fallback logic)
+
+## November 2025 Update: New Price-Related Columns
+
+The database schemas (PostgreSQL and SQLite) and CSVs now include 12 additional price-related columns. The normalization
+mapping in `finance_ml/data.py::normalize_columns()` has been updated so these columns are consistently available in
+snake_case.
+
+New columns and their normalized names:
+
+- "Price Chg. % (1M)" -> `price_chg_pct_1m`
+- "Price Chg. % (3M)" -> `price_chg_pct_3m`
+- "1-Day %" -> `one_day_pct`
+- "Price (5D Ago)" -> `price_5d_ago`
+- "Price (1W Ago)" -> `price_1w_ago`
+- "Price (1M Ago)" -> `price_1m_ago`
+- "Price (3M Ago)" -> `price_3m_ago`
+- "Price (6M Ago)" -> `price_6m_ago`
+- "Price (1Y Ago)" -> `price_1y_ago`
+- "Price (3Y Ago)" -> `price_3y_ago`
+- "Price (5Y Ago)" -> `price_5y_ago`
+- "Price (QTD Ago)" -> `price_qtd_ago`
+
+Notes:
+
+- All are treated as numeric features when present; they will be coerced to numeric during preprocessing.
+- Validation utilities will include these in generic price checks (e.g., positive value validation for columns
+  containing "price").
+- No changes are required in notebooks or pipeline scripts; they dynamically select numeric features and will
+  automatically include these columns when available.

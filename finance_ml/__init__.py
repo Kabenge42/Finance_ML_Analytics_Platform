@@ -64,6 +64,7 @@ from finance_ml.advanced_models import (
     train_quantile_regressor,
     optimize_hyperparameters_optuna,
     # Utilities
+    extract_numeric_feature_columns,
     compare_regressors,
     train_sector_specific_models,
     save_model,
