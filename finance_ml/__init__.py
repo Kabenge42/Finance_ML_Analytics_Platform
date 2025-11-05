@@ -110,6 +110,18 @@ from finance_ml.analyst_comparison import (
     PredictionAnalystAnalytics,
 )
 
+# Import from classification_enhanced module (Phase 2.1)
+try:
+    from finance_ml.classification_enhanced import (
+        optimize_classifier_hyperparameters,
+        cross_validate_with_sector_stratification,
+        analyze_calibration,
+    )
+
+    HAVE_CLASSIFICATION_ENHANCED = True
+except ImportError:
+    HAVE_CLASSIFICATION_ENHANCED = False
+
 # Import from benchmarking module (Phase 9.2)
 from finance_ml.benchmarking import (
     compare_sector_distributions,
@@ -523,3 +535,13 @@ __all__ = [
     "optimize_portfolio_target_return",
     "rebalance_portfolio",
 ]
+
+# Conditionally add enhanced classification functions
+if HAVE_CLASSIFICATION_ENHANCED:
+    __all__.extend(
+        [
+            "optimize_classifier_hyperparameters",
+            "cross_validate_with_sector_stratification",
+            "analyze_calibration",
+        ]
+    )

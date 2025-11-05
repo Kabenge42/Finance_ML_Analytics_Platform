@@ -22,17 +22,17 @@ __all__ = [
 ]
 
 
-def compare_prediction_vs_analyst_targets(stocks_df: pd.DataFrame) -> pd.DataFrame:
+def compare_prediction_vs_analyst_targets(all_stocks_featured: pd.DataFrame) -> pd.DataFrame:
     """
     Compare model predictions vs analyst consensus price targets.
 
     Args:
-        stocks_df: DataFrame with columns: predicted_price_target, price_target, last_price
+        all_stocks_featured: DataFrame with columns: predicted_price_target, price_target, last_price
 
     Returns:
         DataFrame with comparison metrics added
     """
-    df = stocks_df.copy()
+    df = all_stocks_featured.copy()
 
     # Validate required columns
     required = ["predicted_price_target", "price_target", "last_price"]
@@ -236,15 +236,15 @@ class PredictionAnalystAnalytics:
     differences between ML model predictions and analyst consensus price targets.
     """
 
-    def __init__(self, stocks_df: pd.DataFrame, config=None):
+    def __init__(self, all_stocks_featured: pd.DataFrame, config=None):
         """
         Initialize analytics with stock data.
 
         Args:
-            stocks_df: DataFrame with stock data including predictions
+            all_stocks_featured: DataFrame with stock data including predictions
             config: Configuration object (optional)
         """
-        self.stocks_df = stocks_df
+        self.all_stocks_featured = all_stocks_featured
         self.config = config
         self.comparison_df = None
         self.agreement_metrics = None
@@ -264,20 +264,20 @@ class PredictionAnalystAnalytics:
 
         # Check required columns
         required_cols = ["predicted_price_target", "price_target", "last_price"]
-        missing = [col for col in required_cols if col not in self.stocks_df.columns]
+        missing = [col for col in required_cols if col not in self.all_stocks_featured.columns]
 
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
         # Filter to rows with valid data
-        self.stocks_df = self.stocks_df.dropna(subset=required_cols)
-        print(f"  ✓ {len(self.stocks_df)} stocks with valid prediction and analyst data")
+        self.all_stocks_featured = self.all_stocks_featured.dropna(subset=required_cols)
+        print(f"  ✓ {len(self.all_stocks_featured)} stocks with valid prediction and analyst data")
 
     def perform_comparison(self):
         """Perform prediction vs analyst comparison."""
         print("\n🔍 Comparing Model Predictions vs Analyst Targets...")
 
-        self.comparison_df = compare_prediction_vs_analyst_targets(self.stocks_df)
+        self.comparison_df = compare_prediction_vs_analyst_targets(self.all_stocks_featured)
 
         # Display summary statistics
         print(

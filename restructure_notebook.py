@@ -38,26 +38,61 @@ def save_notebook(notebook, path):
 
 
 def remove_duplicate_phase93(notebook):
-    """Remove duplicate Phase 9.3 section (cells 111-127)."""
+    """Remove duplicate Phase 9.3 sections by detecting actual duplicates."""
     print("\n=== Step 1: Removing Duplicate Phase 9.3 Section ===")
 
-    # Identify cells to remove (111-127 are duplicates of 82-110)
-    cells_to_remove = list(range(111, 128))  # Cells 111-127 inclusive
+    # Find all Phase 9.3 section markers (only major sections with ##, not subsections ###)
+    phase93_sections = []
+    for i, cell in enumerate(notebook["cells"]):
+        if cell["cell_type"] == "markdown" and cell["source"]:
+            source = "".join(cell["source"])
+            # Only match major Phase 9.3 sections (##), not subsections (###)
+            if source.strip().startswith("## Phase 9.3"):
+                # Find the end of this section (next phase marker or end of notebook)
+                end_idx = i + 1
+                for j in range(i + 1, len(notebook["cells"])):
+                    next_cell = notebook["cells"][j]
+                    if next_cell["cell_type"] == "markdown" and next_cell["source"]:
+                        next_source = "".join(next_cell["source"])
+                        # Stop at next major phase or next Phase 9.3
+                        if "## Phase 9." in next_source:
+                            end_idx = j
+                            break
 
-    print(
-        f"Removing {len(cells_to_remove)} duplicate cells: {cells_to_remove[0]}-{cells_to_remove[-1]}"
-    )
+                phase93_sections.append(
+                    {
+                        "start": i,
+                        "end": end_idx,
+                        "title": source.split("\n")[0],
+                        "cell_count": end_idx - i,
+                    }
+                )
 
-    # Remove cells in reverse order to maintain indices
-    for cell_idx in reversed(cells_to_remove):
-        if cell_idx < len(notebook["cells"]):
-            cell = notebook["cells"][cell_idx]
-            if cell["cell_type"] == "markdown" and cell["source"]:
-                source = "".join(cell["source"])
-                print(f"  Removing Cell {cell_idx}: {source.split(chr(10))[0][:60]}")
-            del notebook["cells"][cell_idx]
+    print(f"Found {len(phase93_sections)} Phase 9.3 section(s)")
 
-    print(f"✓ Removed {len(cells_to_remove)} duplicate cells")
+    # If we have duplicates, remove the later ones
+    if len(phase93_sections) > 1:
+        cells_to_remove = []
+        # Keep the first section, remove subsequent ones
+        for section in phase93_sections[1:]:
+            print(f"  Marking cells {section['start']}-{section['end']-1} for removal (duplicate)")
+            cells_to_remove.extend(range(section["start"], section["end"]))
+
+        # Remove in reverse order to maintain indices
+        removed_count = 0
+        for cell_idx in sorted(cells_to_remove, reverse=True):
+            if cell_idx < len(notebook["cells"]):
+                cell = notebook["cells"][cell_idx]
+                if cell["cell_type"] == "markdown" and cell["source"]:
+                    source = "".join(cell["source"])
+                    print(f"  Removing Cell {cell_idx}: {source.split(chr(10))[0][:60]}")
+                del notebook["cells"][cell_idx]
+                removed_count += 1
+
+        print(f"✓ Removed {removed_count} duplicate cells")
+    else:
+        print("  No duplicate Phase 9.3 sections found")
+
     return notebook
 
 
@@ -206,7 +241,12 @@ def update_phase95_imputation(notebook):
         cell = notebook["cells"][i]
         if cell["cell_type"] == "code" and cell["source"]:
             source = "".join(cell["source"])
-            if "Handling missing values" in source or "fillna" in source:
+            # Search for various markers that indicate where to inject imputation
+            if (
+                "prepare_regression_data" in source
+                or "Handling missing values" in source
+                or "fillna" in source
+            ):
                 imputation_cell_idx = i
                 break
 
@@ -337,8 +377,13 @@ def standardize_headers(notebook):
     updates = 0
     for i, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] == "markdown" and cell["source"]:
-            source = "".join(cell["source"])
-            lines = source.split("\n")
+            # Handle source as either list or string
+            if isinstance(cell["source"], list):
+                source_str = "".join(cell["source"])
+            else:
+                source_str = cell["source"]
+
+            lines = source_str.split("\n")
 
             # Standardize Phase headers
             if lines and lines[0].startswith("##"):
@@ -360,7 +405,17 @@ def standardize_headers(notebook):
 
                         if updated != original:
                             lines[0] = updated
-                            notebook["cells"][i]["source"] = lines
+                            # Reconstruct source maintaining format
+                            new_source = "\n".join(lines)
+                            # If original was a single-element list, keep it that way
+                            if isinstance(cell["source"], list) and len(cell["source"]) == 1:
+                                notebook["cells"][i]["source"] = [new_source]
+                            else:
+                                # Keep as list with newlines embedded
+                                notebook["cells"][i]["source"] = [
+                                    line + "\n" if idx < len(lines) - 1 else line
+                                    for idx, line in enumerate(lines)
+                                ]
                             updates += 1
                             if updates <= 5:  # Show first 5 updates
                                 print(f"  Cell {i}: '{original}' → '{updated}'")
