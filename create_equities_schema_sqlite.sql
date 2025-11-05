@@ -239,7 +239,19 @@ CREATE TABLE equities
     "EBITDA (5YAVGLTM)"                        NUMERIC,
     "EBIT (5YAVGLTM)"                          NUMERIC,
     "Total Revenues (5YAVGLTM)"                NUMERIC,
-    "Revenues - Est YoY % (FY1E)"              NUMERIC
+    "Revenues - Est YoY % (FY1E)" NUMERIC,
+    "Price Chg. % (1M)"           NUMERIC,
+    "Price Chg. % (3M)"           NUMERIC,
+    "1-Day %"                     NUMERIC,
+    "Price (5D Ago)"              NUMERIC,
+    "Price (1W Ago)"              NUMERIC,
+    "Price (1M Ago)"              NUMERIC,
+    "Price (3M Ago)"              NUMERIC,
+    "Price (6M Ago)"              NUMERIC,
+    "Price (1Y Ago)"              NUMERIC,
+    "Price (3Y Ago)"              NUMERIC,
+    "Price (5Y Ago)"              NUMERIC,
+    "Price (QTD Ago)"             NUMERIC
 );
 
 -- Create a unique index to support INSERT OR IGNORE de-duplication by Ticker+Region

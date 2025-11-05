@@ -27,6 +27,71 @@ class FinanceMLConfig:
     cache_dir: Path = field(default_factory=lambda: Path(".cache"))
     output_dir: Path = field(default_factory=lambda: Path("outputs"))
 
+    @property
+    def analytics_dir(self) -> Path:
+        """Get analytics output directory."""
+        path = self.output_dir / "analytics"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def models_output_dir(self) -> Path:
+        """Get models output directory."""
+        path = self.output_dir / "models"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def eda_dir(self) -> Path:
+        """Get base EDA output directory."""
+        path = self.output_dir / "eda"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def eda_with_importance_dir(self) -> Path:
+        """Get EDA with importance output directory."""
+        path = self.output_dir / "eda" / "eda_with_importance"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def eda_with_multivariate_dir(self) -> Path:
+        """Get EDA with multivariate analysis output directory."""
+        path = self.output_dir / "eda" / "eda_with_multivariate"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def enhanced_eda_dir(self) -> Path:
+        """Get enhanced EDA output directory."""
+        path = self.output_dir / "eda" / "enhanced_eda"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def financial_data_quality_reports_dir(self) -> Path:
+        """Get financial data quality reports output directory."""
+        path = self.output_dir / "eda" / "financial_data_quality_reports"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def create_output_structure(self) -> None:
+        """Create all output subdirectories."""
+        # Create base output directory
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create main subdirectories
+        self.analytics_dir.mkdir(parents=True, exist_ok=True)
+        self.models_output_dir.mkdir(parents=True, exist_ok=True)
+        self.eda_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create EDA subdirectories
+        self.eda_with_importance_dir.mkdir(parents=True, exist_ok=True)
+        self.eda_with_multivariate_dir.mkdir(parents=True, exist_ok=True)
+        self.enhanced_eda_dir.mkdir(parents=True, exist_ok=True)
+        self.financial_data_quality_reports_dir.mkdir(parents=True, exist_ok=True)
+
     # Database configuration
     db_url: Optional[str] = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
     db_schema: str = "public"

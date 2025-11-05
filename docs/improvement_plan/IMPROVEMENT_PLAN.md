@@ -1,6 +1,6 @@
 # Finance ML Analytics Platform — Improvement Plan
 
-**Version 0.5.0** — Last Updated: 2025-01-11
+**Version 0.5.0** — Last Updated: 2025-11-03
 
 This document provides a comprehensive overview of the Finance ML Analytics Platform project, including its technology stack, setup instructions, project structure, and phased development roadmap.
 
@@ -28,7 +28,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 ### Key Features
 - **Unified data pipeline**: PostgreSQL integration + CSV fallback for multi-region equity data
 - **Modular Python package** (`finance_ml`): Clean, tested, reusable code for data loading, feature engineering, modeling, and analytics
-- **Interactive notebook**: Jupyter-based workflow (`ml_finance_model_v8_2.ipynb`) for exploration and prototyping
+- **Interactive notebook**: Jupyter-based workflow (`ml_finance_model_main.ipynb`) for exploration and prototyping
 - **CLI tools**: Three command-line interfaces for batch processing and automation
 - **Production-ready**: Modern packaging, comprehensive tests, configuration management
 
@@ -46,7 +46,8 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 <!-- SQLite parity section will be appended by tools/apply_improvement_plan_updates.py if missing -->
 
 ### Language
-- **Python**: 3.10 or 3.11 (required)
+
+- **Python**: 3.12 or 3.13 (required)
 
 ### Package Managers
 - **pip + venv** (primary): Dependencies in `requirements.txt`
@@ -102,7 +103,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 
 ### System Requirements
 - **OS**: Windows 10/11 (tested), macOS, or Linux
-- **Python**: 3.10 or 3.11 (3.12 not yet tested)
+- **Python**: 3.12 or 3.13
 - **PostgreSQL**: 15+ (local instance with psql on PATH)
 - **Git**: Optional but recommended for version control
 
@@ -539,7 +540,7 @@ mypy finance_ml --ignore-missing-imports
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.3.0)
+├── finance_ml/                    # Main Python package (v0.5.0)
 │   ├── __init__.py               # Package exports and version
 │   ├── data.py                   # Data loading, normalization, validation (355 lines, 12 functions)
 │   ├── features.py               # Feature engineering functions (182 lines, 6 functions)
@@ -573,8 +574,8 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_apac.csv
 │   └── screening_rotw.csv
 │
-├── ml_finance_model_v8_2.ipynb  # Interactive Jupyter notebook (main entry point)
-├── ml_finance_model_v8_2.py     # Python script with CLI (uses finance_ml package)
+├── ml_finance_model_main.ipynb  # Interactive Jupyter notebook (main entry point)
+├── ml_finance_model_main.py     # Python script with CLI (uses finance_ml package)
 │
 ├── pyproject.toml               # Modern Python packaging configuration (PEP 621)
 ├── setup.py                     # Backward-compatible setup script
@@ -1212,11 +1213,11 @@ except ImportError:
 - Documentation ✓
 - Versioning ✓
 
-### Phase 9 — Advanced Stock Prediction ML System (In Progress)
+### Phase 9 — Advanced Stock Prediction ML System ✓ Complete (8/8 phases, 100%)
 
 **Business Objective**: Predict Stock Price Targets for all stocks in the `all_stocks` dataframe  
 **Target Variable**: "Predicted Price Target" for regression modeling  
-**Primary Notebook**: `ml_finance_model_main.ipynb` (v8_3/v0.3.0)  
+**Primary Notebook**: `ml_finance_model_main.ipynb` (v0.5.0)
 **Reference Report**: `Stock_Prediction_Analysis_Report_20250806_131704.xlsx`  
 **Alignment**: ML Project Checklist (`reference material/ml-project-checklist.md`)  
 **Reference Materials**: 19 Jupyter notebooks (01-19) covering ML landscape through deployment at scale
@@ -1277,6 +1278,39 @@ advanced techniques from industry-standard ML references:
     - [x] Notebook integration: Section 9.1.6.4 with usage examples
   - [x] **Summary Documentation**: PHASE_9_1_ENHANCEMENTS_SUMMARY.md with API docs and integration guide
   - [x] **Notebook Integration**: Section 9.1.6 with 218 lines of comprehensive examples
+
+- [x] **Phase 9.1 Enhanced 4-Step Imputation Strategy** (Complete - v0.4.1, 2025-11-03)
+  - [x] **Implementation Guide**: Implement__9.1_Loading_and_Preprocessing_Enhanced.md with complete TDD strategy
+  - [x] **Step 1: Zero Imputation** (48 columns)
+    - [x] `get_zero_imputation_columns()` - Returns 48 exceptional event columns
+    - [x] `apply_zero_imputation()` - Fills NaN with 0 for impairments, restructuring, acquisitions
+    - [x] Test coverage: 3/3 tests passing (column count, fill behavior, value preservation)
+  - [x] **Step 2: KNN Imputation** (148 columns)
+    - [x] `get_knn_imputation_columns()` - Returns 148 core financial metrics
+    - [x] `apply_knn_imputation_enhanced()` - Sector-aware KNN for financial ratios, valuations
+    - [x] Test coverage: 3/3 tests passing (column count, missing reduction, multi-column)
+  - [x] **Step 3: Price Imputation** (5 columns)
+    - [x] `apply_price_imputation()` - Imputes price targets from last_price
+    - [x] Handles: price_target, price_target_low/median/high, price_target_ytd_ago
+    - [x] Test coverage: 4/4 tests passing (imputation logic, preservation, all targets, no columns)
+  - [x] **Step 4: Median Imputation** (remaining columns)
+    - [x] `apply_median_imputation()` - Fallback for all remaining numerical columns
+    - [x] Ensures zero missing values in output
+    - [x] Test coverage: 2/2 tests passing (complete fill, correct median values)
+  - [x] **Master Pipeline Function**
+    - [x] `apply_enhanced_imputation_strategy_4step()` - Orchestrates all 4 steps
+    - [x] Complete imputation: zero missing values guaranteed
+    - [x] Test coverage: 6/6 tests passing (full pipeline, dtypes, value preservation, edge cases)
+  - [x] **Module Integration**
+    - [x] All 7 functions exported in `finance_ml/__init__.py`
+    - [x] Comprehensive test suite: `tests/test_enhanced_imputation.py` (21 tests, 100% coverage for target functions)
+    - [x] Coverage verified: 42% overall file (expected, only imputation functions tested), 100% for 7 target functions
+  - [x] **Documentation**
+    - [x] Implementation guide: Implement__9.1_Loading_and_Preprocessing_Enhanced.md (873 lines)
+    - [x] Column mapping reference: Schema → Python normalized names
+    - [x] TDD approach: Red-green-refactor cycle with ≥80% coverage requirement met
+  - [x] **Summary**: Complete 4-step imputation pipeline ensures zero missing values using economically sensible
+    strategies (zero for rare events, KNN for financials, last_price for targets, median fallback)
 
 - [ ] **Future Enhancements** (Deferred to future phases)
   - [ ] TensorFlow Dataset API patterns (optional TensorFlow dependency)

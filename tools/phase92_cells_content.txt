@@ -1,0 +1,642 @@
+================================================================================
+CELL 59
+================================================================================
+# Phase 9.2 Enhanced EDA Implementation
+print("\n" + "=" * 80)
+print("PHASE 9.2 ENHANCED — FINANCIAL DASHBOARD & STATISTICAL TESTING")
+print("=" * 80)
+
+try:
+    # Use the processed dataset from Phase 9.1
+    analysis_df = all_stocks_processed.copy()
+
+    # 1. Financial Metrics Dashboard
+    print("\n📊 1. Financial Metrics Dashboard")
+    print("-" * 80)
+
+    dashboard = calculate_financial_metrics_dashboard(analysis_df, group_by='sector')
+
+    print(f"\n  Overall Metrics:")
+    if 'valuation' in dashboard:
+        print(f"    Valuation metrics: {len(dashboard['valuation'])} categories")
+        if 'p_e' in dashboard['valuation']:
+            pe_stats = dashboard['valuation']['p_e']
+            print(f"      P/E Ratio: mean={pe_stats.get('mean', 0):.2f}, median={pe_stats.get('median', 0):.2f}")
+
+    if 'profitability' in dashboard:
+        print(f"    Profitability metrics: {len(dashboard['profitability'])} categories")
+        if 'roe' in dashboard['profitability']:
+            roe_stats = dashboard['profitability']['roe']
+            print(f"      ROE: mean={roe_stats.get('mean', 0):.2%}, median={roe_stats.get('median', 0):.2%}")
+
+    if 'by_group' in dashboard:
+        print(f"\n  Sector Breakdown: {len(dashboard['by_group'])} sectors analyzed")
+        for sector, metrics in list(dashboard['by_group'].items())[:3]:
+            print(f"    {sector}:")
+            if 'valuation' in metrics and 'p_e' in metrics['valuation']:
+                print(f"      P/E: {metrics['valuation']['p_e'].get('mean', 0):.2f}")
+
+    print("  ✓ Financial dashboard calculated successfully")
+
+    # 2. Data Quality Alerts
+    print("\n🔍 2. Data Quality Alerts")
+    print("-" * 80)
+
+    alerts = generate_data_quality_alerts(analysis_df)
+
+    # Summarize by severity
+    severity_counts = {}
+    for alert in alerts:
+        severity = alert.get('severity', 'unknown')
+        severity_counts[severity] = severity_counts.get(severity, 0) + 1
+
+    print(f"\n  Total alerts: {len(alerts)}")
+    for severity in ['critical', 'high', 'medium', 'low']:
+        count = severity_counts.get(severity, 0)
+        if count > 0:
+            print(f"    {severity.capitalize()}: {count}")
+            # Show examples of this severity
+            examples = [a for a in alerts if a.get('severity') == severity][:2]
+            for ex in examples:
+                print(f"      • {ex.get('message', 'N/A')}")
+
+    print("  ✓ Data quality alerts generated successfully")
+
+    # 3. Statistical Hypothesis Testing - Sector Comparisons
+    print("\n📊 3. Statistical Hypothesis Testing — Sector Comparisons")
+    print("-" * 80)
+
+    # Select metrics for testing
+    test_metrics = []
+    if 'p_e' in analysis_df.columns:
+        test_metrics.append('p_e')
+    if 'roe' in analysis_df.columns:
+        test_metrics.append('roe')
+    if 'revenue_growth' in analysis_df.columns:
+        test_metrics.append('revenue_growth')
+
+    if test_metrics and 'sector' in analysis_df.columns:
+        hyp_results = perform_comprehensive_hypothesis_tests(
+                analysis_df,
+                group_column='sector',
+                metrics=test_metrics
+                )
+
+        if 'sector_tests' in hyp_results:
+            sector_tests = hyp_results['sector_tests']
+            summary = sector_tests.get('summary', {})
+
+            print(f"\n  Metrics tested: {summary.get('total_metrics_tested', 0)}")
+            print(f"  Groups compared: {len(summary.get('groups_compared', []))}")
+            print(f"  Significant differences found: {summary.get('significant_count', 0)}")
+
+            # Show individual test results
+            for metric in test_metrics[:2]:  # Show first 2 metrics
+                if metric in sector_tests:
+                    metric_result = sector_tests[metric]
+                    if 'anova' in metric_result:
+                        anova = metric_result['anova']
+                        sig_marker = "✓ SIGNIFICANT" if anova.get('significant', False) else "○ Not significant"
+                        print(f"\n    {metric.upper()} (ANOVA): {sig_marker}")
+                        print(f"      F-statistic: {anova.get('statistic', 0):.4f}")
+                        print(f"      p-value: {anova.get('p_value', 1):.4f}")
+
+        print("  ✓ Hypothesis testing completed successfully")
+    else:
+        print("  ⚠ Insufficient data for hypothesis testing")
+
+    # 4. Statistical Hypothesis Testing - Region Comparisons
+    if 'region' in analysis_df.columns:
+        print("\n📊 4. Statistical Hypothesis Testing — Region Comparisons")
+        print("-" * 80)
+
+        region_results = perform_comprehensive_hypothesis_tests(
+                analysis_df,
+                group_column='region',
+                metrics=test_metrics
+                )
+
+        if 'region_tests' in region_results:
+            region_tests = region_results['region_tests']
+            summary = region_tests.get('summary', {})
+            print(f"  Regions compared: {len(summary.get('groups_compared', []))}")
+            print(f"  Significant differences: {summary.get('significant_count', 0)}")
+            print("  ✓ Region hypothesis testing completed")
+
+    # 5. Market Efficiency Testing
+    print("\n💹 5. Market Efficiency Testing")
+    print("-" * 80)
+
+    if 'last_price' in analysis_df.columns and 'price_target' in analysis_df.columns:
+        efficiency_results = test_market_efficiency_hypothesis(analysis_df)
+
+        if 'market_efficiency' in efficiency_results:
+            efficiency = efficiency_results['market_efficiency']
+            print(f"\n  Market Assessment: {efficiency.get('assessment', 'UNKNOWN')}")
+            print(f"  Explanation: {efficiency.get('explanation', 'N/A')}")
+
+        if 'price_target_test' in efficiency_results:
+            price_test = efficiency_results['price_target_test']
+            if price_test.get('significant', False):
+                diff_pct = price_test.get('mean_difference_pct', 0)
+                print(f"\n  Price vs Target Difference: {diff_pct:+.2f}%")
+                print(f"  p-value: {price_test.get('p_value', 1):.4f}")
+
+        if 'directional_bias_test' in efficiency_results:
+            bias = efficiency_results['directional_bias_test']
+            print(f"\n  Directional Bias:")
+            print(f"    Upside targets: {bias.get('upside_pct', 0):.1f}%")
+            print(f"    Downside targets: {100 - bias.get('upside_pct', 0):.1f}%")
+
+        print("  ✓ Market efficiency testing completed")
+    else:
+        print("  ⚠ Price/target columns not available for efficiency testing")
+
+    # 6. Prepare Interactive Dashboard Data
+    print("\n📊 6. Interactive Dashboard Data Preparation")
+    print("-" * 80)
+
+    dashboard_data = prepare_interactive_dashboard_data(analysis_df)
+
+    print(f"\n  Dashboard sections prepared:")
+    print(f"    Summary statistics: {len(dashboard_data.get('summary_stats', {}))} metrics")
+    print(f"    Sector breakdowns: {len(dashboard_data.get('by_sector', {}))} sectors")
+    print(f"    Region breakdowns: {len(dashboard_data.get('by_region', {}))} regions")
+
+    if 'top_performers' in dashboard_data:
+        top_perf = dashboard_data['top_performers']
+        print(f"    Top undervalued: {len(top_perf.get('most_undervalued', []))} stocks")
+        print(f"    Top overvalued: {len(top_perf.get('most_overvalued', []))} stocks")
+
+    print("  ✓ Dashboard data prepared successfully")
+
+    # 7. Generate Comprehensive EDA Report with Phase 9.2 Features
+    print("\n📄 7. Comprehensive EDA Report Generation")
+    print("-" * 80)
+
+    report_path = Path(config.output_dir) / 'eda_report_phase92_enhanced.json'
+    report_path.parent.mkdir(exist_ok=True, parents=True)
+
+    eda_report = generate_eda_report(
+            analysis_df,
+            output_path=report_path,
+            include_correlations=True,
+            include_distributions=True,
+            include_statistical_tests=True,
+            include_financial_dashboard=True,
+            include_quality_alerts=True
+            )
+
+    print(f"\n  Report sections:")
+    for section in eda_report.keys():
+        print(f"    • {section}")
+
+    print(f"\n  ✓ Report saved: {report_path}")
+    print(f"  ✓ File size: {report_path.stat().st_size / 1024:.1f} KB")
+
+    print("\n" + "=" * 80)
+    print("✅ PHASE 9.2 ENHANCED EDA COMPLETE")
+    print("=" * 80)
+    print("\nKey Outputs:")
+    print(f"  • Financial metrics dashboard with {len(dashboard.get('by_group', {}))} sector breakdowns")
+    print(f"  • {len(alerts)} data quality alerts identified")
+    print(f"  • Statistical tests on {len(test_metrics)} metrics")
+    print(f"  • Market efficiency analysis completed")
+    print(f"  • Interactive dashboard data prepared")
+    print(f"  • Comprehensive EDA report: {report_path.name}")
+
+except Exception as e:
+    logger.error(f"Phase 9.2 Enhanced EDA failed: {e}")
+    print(f"\n⚠ Phase 9.2 Enhanced EDA failed: {e}")
+    import traceback
+
+    traceback.print_exc()
+
+================================================================================
+CELL 62
+================================================================================
+# Phase 9.2 Enhanced EDA Implementation
+print("\n" + "=" * 80)
+print("PHASE 9.2 ENHANCED — FINANCIAL DASHBOARD & STATISTICAL TESTING")
+print("=" * 80)
+
+try:
+    # Use the processed dataset from Phase 9.1
+    analysis_df = all_stocks_processed.copy()
+
+    # 1. Financial Metrics Dashboard
+    print("\n📊 1. Financial Metrics Dashboard")
+    print("-" * 80)
+
+    dashboard = calculate_financial_metrics_dashboard(analysis_df, group_by='sector')
+
+    print(f"\n  Overall Metrics:")
+    if 'valuation' in dashboard:
+        print(f"    Valuation metrics: {len(dashboard['valuation'])} categories")
+        if 'p_e' in dashboard['valuation']:
+            pe_stats = dashboard['valuation']['p_e']
+            print(f"      P/E Ratio: mean={pe_stats.get('mean', 0):.2f}, median={pe_stats.get('median', 0):.2f}")
+
+    if 'profitability' in dashboard:
+        print(f"    Profitability metrics: {len(dashboard['profitability'])} categories")
+        if 'roe' in dashboard['profitability']:
+            roe_stats = dashboard['profitability']['roe']
+            print(f"      ROE: mean={roe_stats.get('mean', 0):.2%}, median={roe_stats.get('median', 0):.2%}")
+
+    if 'by_group' in dashboard:
+        print(f"\n  Sector Breakdown: {len(dashboard['by_group'])} sectors analyzed")
+        for sector, metrics in list(dashboard['by_group'].items())[:3]:
+            print(f"    {sector}:")
+            if 'valuation' in metrics and 'p_e' in metrics['valuation']:
+                print(f"      P/E: {metrics['valuation']['p_e'].get('mean', 0):.2f}")
+
+    print("  ✓ Financial dashboard calculated successfully")
+
+    # 2. Data Quality Alerts
+    print("\n🔍 2. Data Quality Alerts")
+    print("-" * 80)
+
+    alerts = generate_data_quality_alerts(analysis_df)
+
+    # Summarize by severity
+    severity_counts = {}
+    for alert in alerts:
+        severity = alert.get('severity', 'unknown')
+        severity_counts[severity] = severity_counts.get(severity, 0) + 1
+
+    print(f"\n  Total alerts: {len(alerts)}")
+    for severity in ['critical', 'high', 'medium', 'low']:
+        count = severity_counts.get(severity, 0)
+        if count > 0:
+            print(f"    {severity.capitalize()}: {count}")
+            # Show examples of this severity
+            examples = [a for a in alerts if a.get('severity') == severity][:2]
+            for ex in examples:
+                print(f"      • {ex.get('message', 'N/A')}")
+
+    print("  ✓ Data quality alerts generated successfully")
+
+    # 3. Statistical Hypothesis Testing - Sector Comparisons
+    print("\n📊 3. Statistical Hypothesis Testing — Sector Comparisons")
+    print("-" * 80)
+
+    # Select metrics for testing
+    test_metrics = []
+    if 'p_e' in analysis_df.columns:
+        test_metrics.append('p_e')
+    if 'roe' in analysis_df.columns:
+        test_metrics.append('roe')
+    if 'revenue_growth' in analysis_df.columns:
+        test_metrics.append('revenue_growth')
+
+    if test_metrics and 'sector' in analysis_df.columns:
+        hyp_results = perform_comprehensive_hypothesis_tests(
+                analysis_df,
+                group_column='sector',
+                metrics=test_metrics
+                )
+
+        if 'sector_tests' in hyp_results:
+            sector_tests = hyp_results['sector_tests']
+            summary = sector_tests.get('summary', {})
+
+            print(f"\n  Metrics tested: {summary.get('total_metrics_tested', 0)}")
+            print(f"  Groups compared: {len(summary.get('groups_compared', []))}")
+            print(f"  Significant differences found: {summary.get('significant_count', 0)}")
+
+            # Show individual test results
+            for metric in test_metrics[:2]:  # Show first 2 metrics
+                if metric in sector_tests:
+                    metric_result = sector_tests[metric]
+                    if 'anova' in metric_result:
+                        anova = metric_result['anova']
+                        sig_marker = "✓ SIGNIFICANT" if anova.get('significant', False) else "○ Not significant"
+                        print(f"\n    {metric.upper()} (ANOVA): {sig_marker}")
+                        print(f"      F-statistic: {anova.get('statistic', 0):.4f}")
+                        print(f"      p-value: {anova.get('p_value', 1):.4f}")
+
+        print("  ✓ Hypothesis testing completed successfully")
+    else:
+        print("  ⚠ Insufficient data for hypothesis testing")
+
+    # 4. Statistical Hypothesis Testing - Region Comparisons
+    if 'region' in analysis_df.columns:
+        print("\n📊 4. Statistical Hypothesis Testing — Region Comparisons")
+        print("-" * 80)
+
+        region_results = perform_comprehensive_hypothesis_tests(
+                analysis_df,
+                group_column='region',
+                metrics=test_metrics
+                )
+
+        if 'region_tests' in region_results:
+            region_tests = region_results['region_tests']
+            summary = region_tests.get('summary', {})
+            print(f"  Regions compared: {len(summary.get('groups_compared', []))}")
+            print(f"  Significant differences: {summary.get('significant_count', 0)}")
+            print("  ✓ Region hypothesis testing completed")
+
+    # 5. Market Efficiency Testing
+    print("\n💹 5. Market Efficiency Testing")
+    print("-" * 80)
+
+    if 'last_price' in analysis_df.columns and 'price_target' in analysis_df.columns:
+        efficiency_results = test_market_efficiency_hypothesis(analysis_df)
+
+        if 'market_efficiency' in efficiency_results:
+            efficiency = efficiency_results['market_efficiency']
+            print(f"\n  Market Assessment: {efficiency.get('assessment', 'UNKNOWN')}")
+            print(f"  Explanation: {efficiency.get('explanation', 'N/A')}")
+
+        if 'price_target_test' in efficiency_results:
+            price_test = efficiency_results['price_target_test']
+            if price_test.get('significant', False):
+                diff_pct = price_test.get('mean_difference_pct', 0)
+                print(f"\n  Price vs Target Difference: {diff_pct:+.2f}%")
+                print(f"  p-value: {price_test.get('p_value', 1):.4f}")
+
+        if 'directional_bias_test' in efficiency_results:
+            bias = efficiency_results['directional_bias_test']
+            print(f"\n  Directional Bias:")
+            print(f"    Upside targets: {bias.get('upside_pct', 0):.1f}%")
+            print(f"    Downside targets: {100 - bias.get('upside_pct', 0):.1f}%")
+
+        print("  ✓ Market efficiency testing completed")
+    else:
+        print("  ⚠ Price/target columns not available for efficiency testing")
+
+    # 6. Prepare Interactive Dashboard Data
+    print("\n📊 6. Interactive Dashboard Data Preparation")
+    print("-" * 80)
+
+    dashboard_data = prepare_interactive_dashboard_data(analysis_df)
+
+    print(f"\n  Dashboard sections prepared:")
+    print(f"    Summary statistics: {len(dashboard_data.get('summary_stats', {}))} metrics")
+    print(f"    Sector breakdowns: {len(dashboard_data.get('by_sector', {}))} sectors")
+    print(f"    Region breakdowns: {len(dashboard_data.get('by_region', {}))} regions")
+
+    if 'top_performers' in dashboard_data:
+        top_perf = dashboard_data['top_performers']
+        print(f"    Top undervalued: {len(top_perf.get('most_undervalued', []))} stocks")
+        print(f"    Top overvalued: {len(top_perf.get('most_overvalued', []))} stocks")
+
+    print("  ✓ Dashboard data prepared successfully")
+
+    # 7. Generate Comprehensive EDA Report with Phase 9.2 Features
+    print("\n📄 7. Comprehensive EDA Report Generation")
+    print("-" * 80)
+
+    report_path = Path(config.output_dir) / 'eda_report_phase92_enhanced.json'
+    report_path.parent.mkdir(exist_ok=True, parents=True)
+
+    eda_report = generate_eda_report(
+            analysis_df,
+            output_path=report_path,
+            include_correlations=True,
+            include_distributions=True,
+            include_statistical_tests=True,
+            include_financial_dashboard=True,
+            include_quality_alerts=True
+            )
+
+    print(f"\n  Report sections:")
+    for section in eda_report.keys():
+        print(f"    • {section}")
+
+    print(f"\n  ✓ Report saved: {report_path}")
+    print(f"  ✓ File size: {report_path.stat().st_size / 1024:.1f} KB")
+
+    print("\n" + "=" * 80)
+    print("✅ PHASE 9.2 ENHANCED EDA COMPLETE")
+    print("=" * 80)
+    print("\nKey Outputs:")
+    print(f"  • Financial metrics dashboard with {len(dashboard.get('by_group', {}))} sector breakdowns")
+    print(f"  • {len(alerts)} data quality alerts identified")
+    print(f"  • Statistical tests on {len(test_metrics)} metrics")
+    print(f"  • Market efficiency analysis completed")
+    print(f"  • Interactive dashboard data prepared")
+    print(f"  • Comprehensive EDA report: {report_path.name}")
+
+except Exception as e:
+    logger.error(f"Phase 9.2 Enhanced EDA failed: {e}")
+    print(f"\n⚠ Phase 9.2 Enhanced EDA failed: {e}")
+    import traceback
+
+    traceback.print_exc()
+
+================================================================================
+CELL 65
+================================================================================
+# Phase 9.2 Enhanced EDA Implementation
+print("\n" + "=" * 80)
+print("PHASE 9.2 ENHANCED — FINANCIAL DASHBOARD & STATISTICAL TESTING")
+print("=" * 80)
+
+try:
+    # Use the processed dataset from Phase 9.1
+    analysis_df = all_stocks_processed.copy()
+
+    # 1. Financial Metrics Dashboard
+    print("\n📊 1. Financial Metrics Dashboard")
+    print("-" * 80)
+
+    dashboard = calculate_financial_metrics_dashboard(analysis_df, group_by='sector')
+
+    print(f"\n  Overall Metrics:")
+    if 'valuation' in dashboard:
+        print(f"    Valuation metrics: {len(dashboard['valuation'])} categories")
+        if 'p_e' in dashboard['valuation']:
+            pe_stats = dashboard['valuation']['p_e']
+            print(f"      P/E Ratio: mean={pe_stats.get('mean', 0):.2f}, median={pe_stats.get('median', 0):.2f}")
+
+    if 'profitability' in dashboard:
+        print(f"    Profitability metrics: {len(dashboard['profitability'])} categories")
+        if 'roe' in dashboard['profitability']:
+            roe_stats = dashboard['profitability']['roe']
+            print(f"      ROE: mean={roe_stats.get('mean', 0):.2%}, median={roe_stats.get('median', 0):.2%}")
+
+    if 'by_group' in dashboard:
+        print(f"\n  Sector Breakdown: {len(dashboard['by_group'])} sectors analyzed")
+        for sector, metrics in list(dashboard['by_group'].items())[:3]:
+            print(f"    {sector}:")
+            if 'valuation' in metrics and 'p_e' in metrics['valuation']:
+                print(f"      P/E: {metrics['valuation']['p_e'].get('mean', 0):.2f}")
+
+    print("  ✓ Financial dashboard calculated successfully")
+
+    # 2. Data Quality Alerts
+    print("\n🔍 2. Data Quality Alerts")
+    print("-" * 80)
+
+    alerts = generate_data_quality_alerts(analysis_df)
+
+    # Summarize by severity
+    severity_counts = {}
+    for alert in alerts:
+        severity = alert.get('severity', 'unknown')
+        severity_counts[severity] = severity_counts.get(severity, 0) + 1
+
+    print(f"\n  Total alerts: {len(alerts)}")
+    for severity in ['critical', 'high', 'medium', 'low']:
+        count = severity_counts.get(severity, 0)
+        if count > 0:
+            print(f"    {severity.capitalize()}: {count}")
+            # Show examples of this severity
+            examples = [a for a in alerts if a.get('severity') == severity][:2]
+            for ex in examples:
+                print(f"      • {ex.get('message', 'N/A')}")
+
+    print("  ✓ Data quality alerts generated successfully")
+
+    # 3. Statistical Hypothesis Testing - Sector Comparisons
+    print("\n📊 3. Statistical Hypothesis Testing — Sector Comparisons")
+    print("-" * 80)
+
+    # Select metrics for testing
+    test_metrics = []
+    if 'p_e' in analysis_df.columns:
+        test_metrics.append('p_e')
+    if 'roe' in analysis_df.columns:
+        test_metrics.append('roe')
+    if 'revenue_growth' in analysis_df.columns:
+        test_metrics.append('revenue_growth')
+
+    if test_metrics and 'sector' in analysis_df.columns:
+        hyp_results = perform_comprehensive_hypothesis_tests(
+                analysis_df,
+                group_column='sector',
+                metrics=test_metrics
+                )
+
+        if 'sector_tests' in hyp_results:
+            sector_tests = hyp_results['sector_tests']
+            summary = sector_tests.get('summary', {})
+
+            print(f"\n  Metrics tested: {summary.get('total_metrics_tested', 0)}")
+            print(f"  Groups compared: {len(summary.get('groups_compared', []))}")
+            print(f"  Significant differences found: {summary.get('significant_count', 0)}")
+
+            # Show individual test results
+            for metric in test_metrics[:2]:  # Show first 2 metrics
+                if metric in sector_tests:
+                    metric_result = sector_tests[metric]
+                    if 'anova' in metric_result:
+                        anova = metric_result['anova']
+                        sig_marker = "✓ SIGNIFICANT" if anova.get('significant', False) else "○ Not significant"
+                        print(f"\n    {metric.upper()} (ANOVA): {sig_marker}")
+                        print(f"      F-statistic: {anova.get('statistic', 0):.4f}")
+                        print(f"      p-value: {anova.get('p_value', 1):.4f}")
+
+        print("  ✓ Hypothesis testing completed successfully")
+    else:
+        print("  ⚠ Insufficient data for hypothesis testing")
+
+    # 4. Statistical Hypothesis Testing - Region Comparisons
+    if 'region' in analysis_df.columns:
+        print("\n📊 4. Statistical Hypothesis Testing — Region Comparisons")
+        print("-" * 80)
+
+        region_results = perform_comprehensive_hypothesis_tests(
+                analysis_df,
+                group_column='region',
+                metrics=test_metrics
+                )
+
+        if 'region_tests' in region_results:
+            region_tests = region_results['region_tests']
+            summary = region_tests.get('summary', {})
+            print(f"  Regions compared: {len(summary.get('groups_compared', []))}")
+            print(f"  Significant differences: {summary.get('significant_count', 0)}")
+            print("  ✓ Region hypothesis testing completed")
+
+    # 5. Market Efficiency Testing
+    print("\n💹 5. Market Efficiency Testing")
+    print("-" * 80)
+
+    if 'last_price' in analysis_df.columns and 'price_target' in analysis_df.columns:
+        efficiency_results = test_market_efficiency_hypothesis(analysis_df)
+
+        if 'market_efficiency' in efficiency_results:
+            efficiency = efficiency_results['market_efficiency']
+            print(f"\n  Market Assessment: {efficiency.get('assessment', 'UNKNOWN')}")
+            print(f"  Explanation: {efficiency.get('explanation', 'N/A')}")
+
+        if 'price_target_test' in efficiency_results:
+            price_test = efficiency_results['price_target_test']
+            if price_test.get('significant', False):
+                diff_pct = price_test.get('mean_difference_pct', 0)
+                print(f"\n  Price vs Target Difference: {diff_pct:+.2f}%")
+                print(f"  p-value: {price_test.get('p_value', 1):.4f}")
+
+        if 'directional_bias_test' in efficiency_results:
+            bias = efficiency_results['directional_bias_test']
+            print(f"\n  Directional Bias:")
+            print(f"    Upside targets: {bias.get('upside_pct', 0):.1f}%")
+            print(f"    Downside targets: {100 - bias.get('upside_pct', 0):.1f}%")
+
+        print("  ✓ Market efficiency testing completed")
+    else:
+        print("  ⚠ Price/target columns not available for efficiency testing")
+
+    # 6. Prepare Interactive Dashboard Data
+    print("\n📊 6. Interactive Dashboard Data Preparation")
+    print("-" * 80)
+
+    dashboard_data = prepare_interactive_dashboard_data(analysis_df)
+
+    print(f"\n  Dashboard sections prepared:")
+    print(f"    Summary statistics: {len(dashboard_data.get('summary_stats', {}))} metrics")
+    print(f"    Sector breakdowns: {len(dashboard_data.get('by_sector', {}))} sectors")
+    print(f"    Region breakdowns: {len(dashboard_data.get('by_region', {}))} regions")
+
+    if 'top_performers' in dashboard_data:
+        top_perf = dashboard_data['top_performers']
+        print(f"    Top undervalued: {len(top_perf.get('most_undervalued', []))} stocks")
+        print(f"    Top overvalued: {len(top_perf.get('most_overvalued', []))} stocks")
+
+    print("  ✓ Dashboard data prepared successfully")
+
+    # 7. Generate Comprehensive EDA Report with Phase 9.2 Features
+    print("\n📄 7. Comprehensive EDA Report Generation")
+    print("-" * 80)
+
+    report_path = Path(config.output_dir) / 'eda_report_phase92_enhanced.json'
+    report_path.parent.mkdir(exist_ok=True, parents=True)
+
+    eda_report = generate_eda_report(
+            analysis_df,
+            output_path=report_path,
+            include_correlations=True,
+            include_distributions=True,
+            include_statistical_tests=True,
+            include_financial_dashboard=True,
+            include_quality_alerts=True
+            )
+
+    print(f"\n  Report sections:")
+    for section in eda_report.keys():
+        print(f"    • {section}")
+
+    print(f"\n  ✓ Report saved: {report_path}")
+    print(f"  ✓ File size: {report_path.stat().st_size / 1024:.1f} KB")
+
+    print("\n" + "=" * 80)
+    print("✅ PHASE 9.2 ENHANCED EDA COMPLETE")
+    print("=" * 80)
+    print("\nKey Outputs:")
+    print(f"  • Financial metrics dashboard with {len(dashboard.get('by_group', {}))} sector breakdowns")
+    print(f"  • {len(alerts)} data quality alerts identified")
+    print(f"  • Statistical tests on {len(test_metrics)} metrics")
+    print(f"  • Market efficiency analysis completed")
+    print(f"  • Interactive dashboard data prepared")
+    print(f"  • Comprehensive EDA report: {report_path.name}")
+
+except Exception as e:
+    logger.error(f"Phase 9.2 Enhanced EDA failed: {e}")
+    print(f"\n⚠ Phase 9.2 Enhanced EDA failed: {e}")
+    import traceback
+
+    traceback.print_exc()
+

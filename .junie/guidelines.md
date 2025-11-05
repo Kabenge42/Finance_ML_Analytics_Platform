@@ -200,7 +200,7 @@ B. How to add tests
 - Use small, deterministic samples; avoid loading full CSVs unless necessary.
 
 C. Test suite overview
-The project includes a comprehensive test suite with the following test modules (37 total):
+The project includes a comprehensive test suite with the following test modules (67 total):
 
 - tests/test_analytics.py — Analytics and stock ranking tests
 - tests/test_build_features.py — Feature building pipeline
@@ -216,10 +216,15 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_finance_ml_features.py — Features module tests
 - tests/test_finance_ml_models.py — Models module tests
 - tests/test_improvement_plan_revision.py — Development plan validation
+- tests/test_integration_cli_pipeline.py — CLI pipeline integration tests
+- tests/test_integration_notebook_pipeline.py — Notebook pipeline integration tests
+- tests/test_integration_production_scenarios.py — Production scenario integration tests
 - tests/test_loaders.py — CSV and database loading functions
 - tests/test_logging.py — Logging configuration tests
 - tests/test_notebook_config.py — Notebook configuration tests
 - tests/test_notebook_enhancements.py — Notebook enhancements validation
+- tests/test_phase95_nonnegative_predictions.py — Phase 9.5 non-negative prediction constraint tests
+- tests/test_phase95_quick.py — Phase 9.5 quick validation tests
 - tests/test_portfolio_optimization.py — Portfolio optimization tests
 - tests/test_preprocess_and_training.py — Preprocessing and training workflows
 - tests/test_regression.py — Regression model evaluation
@@ -229,7 +234,76 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
 - tests/test_sql_scripts.py — SQL script validation tests
 - tests/test_validate_csv_import.py — CSV validation (schema validation, data quality checks)
+- tests/test_validation_regex.py — Regex validation and pattern matching tests
 - tests/test_visualizations.py — Visualization functions tests
+- tests/test_enhanced_imputation.py — Phase 9.1 4-step imputation strategy tests (21 tests)
+
+Note: The test suite has grown to 67 modules. See section 3D below for selective execution strategies.
+
+D. Test Execution Strategies (Avoiding Timeouts)
+
+The full test suite (67 modules) can take significant time to execute. To avoid timeouts and speed up development, use
+selective test execution:
+
+**Fast Unit Tests** (< 100 lines, pure functions, no ML training):
+
+- test_coverage_smoke.py — Minimal smoke test
+- test_loaders.py — Data loading utilities
+- test_edge_cases_*.py — Edge case validation
+- test_validation_regex.py — Regex validation
+- test_repository_setup.py — File existence checks
+- test_improvement_plan_revision.py — Documentation validation
+
+Run fast tests only:
+python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_validation_regex tests.test_repository_setup
+-v
+
+**Medium Tests** (100-500 lines, integration, limited ML):
+
+- test_enhanced_imputation.py — 4-step imputation (21 tests, ~2-5s)
+- test_data_catalog.py — Data catalog functionality
+- test_data_versioning.py — Version tracking
+- test_logging.py — Logging configuration
+- test_risk_metrics.py — Risk calculations
+- test_portfolio_optimization.py — Portfolio optimization
+- test_benchmarking.py — Sector/region benchmarking
+- test_analyst_comparison.py — Prediction vs analyst analytics
+- test_cli.py — Command-line interface
+
+Run medium tests:
+python -m unittest tests.test_enhanced_imputation tests.test_data_catalog tests.test_logging tests.test_risk_metrics -v
+
+**Slow Tests** (> 500 lines, heavy ML model training, large datasets):
+
+- test_finance_ml_eval.py — Comprehensive evaluation (1365 lines)
+- test_classification_phase94.py — Classification models (1324 lines)
+- test_advanced_features.py — Feature engineering (907 lines)
+- test_sqlite_import.py — Database import (656 lines)
+- test_analytics.py — Analytics pipeline (604 lines)
+- test_advanced_models_phase95.py — Regression models (598 lines)
+- test_ml_stock_prediction_notebook.py — Notebook execution (571 lines)
+
+Run slow tests (use sparingly):
+python -m unittest tests.test_classification_phase94 -v
+python -m unittest tests.test_advanced_models_phase95 -v
+
+**Recommended Workflow**:
+
+1. During development: Run only affected module tests
+  - python -m unittest tests.test_<your_module> -v
+2. Before commit: Run fast + medium tests (~1-3 minutes)
+  - python -m unittest discover -s tests -p "test_coverage_*.py" -v
+  - python -m unittest discover -s tests -p "test_enhanced_*.py" -v
+3. CI/CD: Run full suite with timeout protection (split into parallel jobs if needed)
+
+**Test by Feature Area**:
+
+- Data/Loading: test_finance_ml_data, test_loaders, test_sqlite_import, test_validate_csv_import
+- Preprocessing: test_advanced_preprocessing, test_enhanced_imputation, test_data_quality
+- Features: test_features, test_advanced_features, test_finance_ml_features
+- Models: test_classification*, test_advanced_models*, test_finance_ml_models, test_regression
+- Evaluation: test_finance_ml_eval, test_analytics, test_evaluation_phase96, test_valuation_phase97
+- Integration: test_integration_*, test_notebook_*
 
 4) Additional Development Information
 A. Code style and quality
@@ -379,7 +453,7 @@ The Python importer (tools/import_sqlite.py) features:
 
 4) Data validation before import (recommended):
 
-- python validate_csv_import.py
+- python tools/validate_csv_import.py
 
 This validation script:
 

@@ -1,5 +1,6 @@
 # Configure matplotlib backend before importing pyplot
 import matplotlib
+from pandas import Series
 
 matplotlib.use("Agg")  # Use non-interactive backend for headless environments
 
@@ -15,7 +16,7 @@ comprehensive test coverage.
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 import pandas as pd
 import numpy as np
@@ -36,7 +37,9 @@ except ImportError:
     go = None
 
 
-def calculate_mispricing_score(df: pd.DataFrame) -> pd.Series:
+def calculate_mispricing_score(
+    df: pd.DataFrame, predicted_col: str = "predicted_price_target", current_col: str = "last_price"
+) -> pd.DataFrame:
     """Calculate mispricing score for each stock.
 
     Formula: (predicted_price_target - last_price) / last_price
@@ -45,24 +48,29 @@ def calculate_mispricing_score(df: pd.DataFrame) -> pd.Series:
     Negative score = overvalued (predicted < current)
 
     Args:
-        df: DataFrame with columns:
-            - predicted_price_target: Predicted target price
-            - last_price: Current market price
+        df: DataFrame with stock data
+        predicted_col: Name of predicted price column (default: "predicted_price_target")
+        current_col: Name of current price column (default: "last_price")
 
     Returns:
-        Series with mispricing scores
+        DataFrame with added 'mispricing_pct' column
 
     Raises:
         ValueError: If required columns are missing
     """
-    required_columns = ["predicted_price_target", "last_price"]
+    required_columns = [predicted_col, current_col]
     missing_columns = [col for col in required_columns if col not in df.columns]
 
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
 
-    score = (df["predicted_price_target"] - df["last_price"]) / df["last_price"]
-    return score
+    result_df = df.copy()
+    mispricing = (df[predicted_col] - df[current_col]) / df[current_col]
+    result_df["mispricing_pct"] = mispricing * 100
+    result_df["mispricing_score"] = (
+        mispricing  # Alias for backward compatibility with rank functions
+    )
+    return result_df
 
 
 def calculate_risk_adjusted_mispricing(
@@ -244,6 +252,10 @@ def simple_eda(
         "columns": list(df.columns),
         "numeric_cols_count": numeric_count,
         "categorical_cols_count": categorical_count,
+        "numeric_columns": numeric_cols,  # Add for test compatibility
+        "categorical_columns": [
+            c for c in df.columns if c not in numeric_cols
+        ],  # Add for test compatibility
         "null_counts": df.isnull().sum().to_dict(),
         "region_counts": _safe_counts("region") if "region" in df.columns else {},
         "sector_counts": _safe_counts("sector") if "sector" in df.columns else {},
@@ -4945,91 +4957,92 @@ def export_profiling_report(
 # ========================================================================
 
 
-def compare_prediction_vs_analyst_targets(df: pd.DataFrame) -> pd.DataFrame:
+def compare_prediction_vs_analyst_targets(
+    df: pd.DataFrame,
+    predicted_col: str = "predicted_price_target",
+    analyst_col: str = "price_target",
+    current_price_col: str = "last_price",
+) -> dict:
     """Compare model predictions against analyst consensus targets.
 
     Phase 9.8 TDD implementation: Calculate differences and agreement metrics
     between model-predicted price targets and analyst consensus targets.
 
     Args:
-        df: DataFrame with columns:
-            - ticker: Stock ticker symbol
-            - last_price: Current stock price
-            - predicted_price_target: Model prediction
-            - price_target: Analyst consensus target
+        df: DataFrame with stock data
+        predicted_col: Name of model prediction column (default: "predicted_price_target")
+        analyst_col: Name of analyst target column (default: "price_target")
+        current_price_col: Name of current price column (default: "last_price")
 
     Returns:
-        DataFrame with comparison metrics including:
-            - model_analyst_diff: Absolute difference
-            - model_analyst_diff_pct: Percentage difference
-            - agreement_direction: Boolean indicating same direction
+        Dictionary with comparison metrics
 
     Examples:
         >>> result = compare_prediction_vs_analyst_targets(df)
-        >>> print(result[['ticker', 'model_analyst_diff_pct']])
+        >>> print(result)
     """
     result = df.copy()
 
     # Calculate absolute and percentage differences
-    result["model_analyst_diff"] = result["predicted_price_target"] - result["price_target"]
-    result["model_analyst_diff_pct"] = result["model_analyst_diff"] / result["price_target"] * 100
+    result["model_analyst_diff"] = result[predicted_col] - result[analyst_col]
+    result["model_analyst_diff_pct"] = result["model_analyst_diff"] / result[analyst_col] * 100
 
     # Determine if model and analyst agree on direction vs current price
-    model_direction = result["predicted_price_target"] > result["last_price"]
-    analyst_direction = result["price_target"] > result["last_price"]
+    model_direction = result[predicted_col] > result[current_price_col]
+    analyst_direction = result[analyst_col] > result[current_price_col]
     result["agreement_direction"] = model_direction == analyst_direction
 
-    return result
-
-
-def calculate_directional_accuracy(df: pd.DataFrame) -> dict:
-    """Calculate directional accuracy of model predictions vs current price.
-
-    Phase 9.8 TDD implementation: Measures how often the model correctly
-    predicts the direction (up/down) relative to current price.
-
-    Args:
-        df: DataFrame with columns:
-            - last_price: Current stock price
-            - predicted_price_target: Model prediction
-
-    Returns:
-        Dictionary with:
-            - accuracy: Proportion of correct directional predictions (0-1)
-            - total_predictions: Total number of predictions
-            - correct_predictions: Number of correct directional calls
-
-    Examples:
-        >>> metrics = calculate_directional_accuracy(df)
-        >>> print(f"Accuracy: {metrics['accuracy']:.2%}")
-    """
-    # For directional accuracy without actual future prices,
-    # we assume any prediction != current price is a directional call
-    # This is a simplified metric; actual accuracy needs future prices
-
-    total = len(df)
-
-    # Count predictions that differ from current price (have a direction)
-    has_direction = df["predicted_price_target"] != df["last_price"]
-    predictions_with_direction = has_direction.sum()
-
-    # For now, return structure - actual accuracy requires future data
-    # If actual_future_price column exists, calculate true accuracy
-    if "actual_future_price" in df.columns:
-        predicted_direction = df["predicted_price_target"] > df["last_price"]
-        actual_direction = df["actual_future_price"] > df["last_price"]
-        correct = (predicted_direction == actual_direction).sum()
-        accuracy = correct / total if total > 0 else 0.0
-    else:
-        # Without actual prices, return placeholder
-        correct = predictions_with_direction
-        accuracy = 1.0 if total > 0 else 0.0
+    # Calculate summary metrics
+    agreement_count = result["agreement_direction"].sum()
+    total_count = len(result)
+    agreement_rate = agreement_count / total_count if total_count > 0 else 0.0
 
     return {
-        "accuracy": accuracy,
-        "total_predictions": total,
-        "correct_predictions": correct,
+        "comparison_df": result,
+        "agreement_rate": agreement_rate,
+        "agreement_count": int(agreement_count),
+        "total_count": total_count,
     }
+
+
+def calculate_directional_accuracy(
+    df: pd.DataFrame,
+    predicted_col: str = "predicted_price_target",
+    analyst_col: str = "price_target",
+    current_price_col: str = "last_price",
+) -> float:
+    """Calculate directional accuracy of model predictions vs analyst targets.
+
+    Phase 9.8 TDD implementation: Measures how often the model and analysts
+    agree on the direction (up/down) relative to current price.
+
+    Args:
+        df: DataFrame with stock data
+        predicted_col: Name of model prediction column (default: "predicted_price_target")
+        analyst_col: Name of analyst target column (default: "price_target")
+        current_price_col: Name of current price column (default: "last_price")
+
+    Returns:
+        Float: Proportion of directional agreement (0.0 to 1.0)
+
+    Examples:
+        >>> accuracy = calculate_directional_accuracy(df)
+        >>> print(f"Accuracy: {accuracy:.2%}")
+    """
+    total = len(df)
+
+    if total == 0:
+        return 0.0
+
+    # Calculate directions
+    model_direction = df[predicted_col] > df[current_price_col]
+    analyst_direction = df[analyst_col] > df[current_price_col]
+
+    # Count agreements
+    agreements = (model_direction == analyst_direction).sum()
+    accuracy = agreements / total
+
+    return float(accuracy)
 
 
 def calculate_agreement_rate(df: pd.DataFrame) -> dict:
@@ -5074,7 +5087,7 @@ def calculate_agreement_rate(df: pd.DataFrame) -> dict:
 
 def identify_disagreement_opportunities(
     df: pd.DataFrame, threshold_pct: float = 5.0
-) -> pd.DataFrame:
+) -> pd.DataFrame | None:
     """Identify stocks where model significantly differs from analyst consensus.
 
     Phase 9.8 TDD implementation: Find investment opportunities where the model
@@ -6477,7 +6490,7 @@ def calculate_peer_comparisons(df: pd.DataFrame, ticker: str, n_peers: int = 5) 
                 peers_df["market_cap_diff"] = (
                     peers_df["market_cap"] - stock_row["market_cap"]
                 ).abs()
-                peers_df = peers_df.sort_values(by="market_cap_diff").head(n_peers)
+                peers_df = peers_df.sort_values("market_cap_diff").head(n_peers)
 
                 # Build peer list
                 for _, peer_row in peers_df.iterrows():
@@ -7507,3 +7520,231 @@ def generate_enhanced_pdf_report(
         return result
     except Exception as e:
         return {"status": "error", "error": f"PDF generation failed: {str(e)}"}
+
+
+def create_structured_output_directory(base_dir: Path, run_id: str = None) -> dict:
+    """
+    Create organized output directory structure for ML workflow artifacts.
+
+    Structure:
+    outputs/
+    ├── {run_id}/
+    │   ├── data/
+    │   │   ├── processed_data.csv
+    │   │   └── imputation_report.json
+    │   ├── models/
+    │   │   ├── checkpoints/
+    │   │   └── feature_importance.csv
+    │   ├── reports/
+    │   │   ├── ml_workflow_report.html
+    │   │   ├── eda_report.html
+    │   │   └── data_quality_dashboard.html
+    │   ├── visualizations/
+    │   │   ├── eda/
+    │   │   ├── predictions/
+    │   │   ├── residuals/
+    │   │   └── feature_importance/
+    │   ├── analytics/
+    │   │   ├── predictions.csv
+    │   │   ├── stock_rankings.csv
+    │   │   └── prediction_analyst_comparison.xlsx
+    │   └── logs/
+    │       └── pipeline.log
+
+    Args:
+        base_dir: Base directory for outputs (default: 'outputs')
+        run_id: Unique identifier for this run (default: timestamp)
+
+    Returns:
+        Dict with paths to each subdirectory
+    """
+    if run_id is None:
+        run_id = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+
+    run_dir = Path(base_dir) / run_id
+
+    structure = {
+        "run_dir": run_dir,
+        "data": run_dir / "data",
+        "models": run_dir / "models",
+        "model_checkpoints": run_dir / "models" / "checkpoints",
+        "reports": run_dir / "reports",
+        "visualizations": run_dir / "visualizations",
+        "eda_viz": run_dir / "visualizations" / "eda",
+        "prediction_viz": run_dir / "visualizations" / "predictions",
+        "residual_viz": run_dir / "visualizations" / "residuals",
+        "feature_viz": run_dir / "visualizations" / "feature_importance",
+        "analytics": run_dir / "analytics",
+        "logs": run_dir / "logs",
+    }
+
+    # Create all directories
+    for path in structure.values():
+        path.mkdir(parents=True, exist_ok=True)
+
+    # Create README
+    readme_path = run_dir / "README.md"
+    readme_content = f"""# ML Workflow Run: {run_id}
+
+Generated: {pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+## Directory Structure
+
+- **data/**: Processed datasets and imputation reports
+- **models/**: Trained model artifacts and checkpoints
+- **reports/**: HTML/PDF reports (workflow, EDA, data quality)
+- **visualizations/**: All plots and charts organized by category
+- **analytics/**: Prediction results, rankings, and comparison tables
+- **logs/**: Pipeline execution logs
+
+## Key Files
+
+- `reports/ml_workflow_report.html` - Comprehensive ML workflow report
+- `analytics/predictions.csv` - Stock predictions with confidence intervals
+- `analytics/stock_rankings.csv` - Undervalued/overvalued stock rankings
+- `visualizations/predictions/mispricing_scatter.png` - Mispricing analysis
+"""
+    readme_path.write_text(readme_content)
+
+    logging.info(f"Created structured output directory: {run_dir}")
+    return structure
+
+
+def generate_imputation_report(
+    imputation_stats: dict, df_before: pd.DataFrame, df_after: pd.DataFrame, output_dir: Path
+) -> dict:
+    """
+    Generate comprehensive imputation analysis report with visualizations.
+
+    Tracks:
+    - Which columns were imputed and by which method
+    - Before/after NaN heatmaps
+    - Imputation time per column
+    - Distribution changes (before/after histograms)
+    - Emergency fallback usage
+
+    Args:
+        imputation_stats: Dict with imputation metadata
+        df_before: DataFrame before imputation
+        df_after: DataFrame after imputation
+        output_dir: Directory to save visualizations
+
+    Returns:
+        Dict with report metrics and saved file paths
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    report = {
+        "timestamp": pd.Timestamp.now().isoformat(),
+        "columns_imputed": [],
+        "methods_used": {},
+        "total_nans_filled": 0,
+        "emergency_fallbacks": [],
+        "visualizations": [],
+    }
+
+    # Track imputation by column
+    for col in df_before.columns:
+        nans_before = df_before[col].isna().sum()
+        nans_after = df_after[col].isna().sum()
+
+        if nans_before > nans_after:
+            method = imputation_stats.get(col, {}).get("method", "unknown")
+            report["columns_imputed"].append(
+                {
+                    "column": col,
+                    "nans_filled": int(nans_before - nans_after),
+                    "method": method,
+                    "fill_rate": (
+                        float((nans_before - nans_after) / nans_before) if nans_before > 0 else 0.0
+                    ),
+                }
+            )
+
+            report["methods_used"][method] = report["methods_used"].get(method, 0) + 1
+            report["total_nans_filled"] += int(nans_before - nans_after)
+
+            # Track emergency fallbacks
+            if method == "emergency_zero":
+                report["emergency_fallbacks"].append(col)
+
+    # Generate before/after NaN heatmaps
+    if plt is not None:
+        try:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+
+            # Before heatmap
+            if sns is not None:
+                sns.heatmap(df_before.isnull(), cbar=False, yticklabels=False, ax=ax1)
+            else:
+                ax1.imshow(df_before.isnull(), aspect="auto", cmap="YlOrRd")
+            ax1.set_title("Missing Values BEFORE Imputation")
+
+            # After heatmap
+            if sns is not None:
+                sns.heatmap(df_after.isnull(), cbar=False, yticklabels=False, ax=ax2)
+            else:
+                ax2.imshow(df_after.isnull(), aspect="auto", cmap="YlOrRd")
+            ax2.set_title("Missing Values AFTER Imputation")
+
+            heatmap_path = output_dir / "imputation_heatmap.png"
+            plt.tight_layout()
+            plt.savefig(heatmap_path, dpi=150, bbox_inches="tight")
+            plt.close()
+
+            report["visualizations"].append(str(heatmap_path))
+            logging.info(f"Saved imputation heatmap: {heatmap_path}")
+        except Exception as e:
+            logging.warning(f"Failed to generate heatmap: {e}")
+
+    # Generate distribution comparison for imputed columns
+    numeric_cols = df_before.select_dtypes(include=[np.number]).columns
+    imputed_numeric = [
+        c["column"] for c in report["columns_imputed"] if c["column"] in numeric_cols
+    ]
+
+    if plt is not None and imputed_numeric:
+        try:
+            n_cols = min(len(imputed_numeric), 6)  # Show top 6
+            fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+            axes = axes.flatten()
+
+            for idx, col in enumerate(imputed_numeric[:n_cols]):
+                # Before distribution (excluding NaNs)
+                before_clean = df_before[col].dropna()
+                axes[idx].hist(before_clean, bins=30, alpha=0.5, label="Before", color="red")
+
+                # After distribution
+                axes[idx].hist(
+                    df_after[col].dropna(), bins=30, alpha=0.5, label="After", color="green"
+                )
+
+                # Find the column info for this column
+                col_info = next((c for c in report["columns_imputed"] if c["column"] == col), None)
+                nans_filled = col_info["nans_filled"] if col_info else 0
+
+                axes[idx].set_title(f"{col}\n({nans_filled} filled)")
+                axes[idx].legend()
+
+            # Hide unused subplots
+            for idx in range(n_cols, len(axes)):
+                axes[idx].axis("off")
+
+            dist_path = output_dir / "imputation_distributions.png"
+            plt.tight_layout()
+            plt.savefig(dist_path, dpi=150, bbox_inches="tight")
+            plt.close()
+
+            report["visualizations"].append(str(dist_path))
+            logging.info(f"Saved imputation distributions: {dist_path}")
+        except Exception as e:
+            logging.warning(f"Failed to generate distribution plots: {e}")
+
+    # Save JSON report
+    json_path = output_dir / "imputation_report.json"
+    with open(json_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+
+    logging.info(f"Generated imputation report: {json_path}")
+    return report

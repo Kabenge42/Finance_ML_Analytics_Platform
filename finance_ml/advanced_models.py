@@ -17,6 +17,7 @@ Reference notebooks:
 - 11_training_deep_neural_networks.ipynb
 """
 
+import logging
 import time
 import warnings
 from pathlib import Path
@@ -25,6 +26,9 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 import joblib
 import numpy as np
 import pandas as pd
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 from sklearn.ensemble import (
     RandomForestRegressor,
     ExtraTreesRegressor,
@@ -97,111 +101,112 @@ warnings.filterwarnings("ignore")
 class NonNegativeRegressionWrapper:
     """
     Wrapper for regression models that ensures predictions are non-negative.
-    
+
     This wrapper clips predictions to be >= 0, which is essential for price
     target predictions since stock prices cannot be negative. Linear models
     (Ridge, Lasso, ElasticNet) can produce negative predictions without
     constraints, especially when features have extreme values or the model
     is poorly regularized.
-    
+
     The wrapper applies post-prediction clipping using np.maximum(pred, 0.0),
     which is computationally efficient and maintains differentiability at
     the boundary.
-    
+
     Args:
         base_model: Any sklearn-compatible regression model
-        
+
     Attributes:
         base_model: The wrapped regression model
-        
+
     Example:
         >>> from sklearn.linear_model import Ridge
         >>> import pandas as pd
         >>> import numpy as np
-        >>> 
+        >>>
         >>> # Create training data
         >>> X = pd.DataFrame({'feature1': np.random.randn(100)})
         >>> y = pd.Series(np.abs(np.random.randn(100)) * 10 + 5)
-        >>> 
+        >>>
         >>> # Train with non-negative constraint
         >>> base = Ridge(alpha=1.0)
         >>> model = NonNegativeRegressionWrapper(base)
         >>> model.fit(X, y)
         >>> predictions = model.predict(X)
         >>> assert (predictions >= 0).all()  # All predictions >= 0
-        
+
     Phase 9.5 TDD Implementation:
         This class was implemented following strict TDD to solve the critical
         issue of negative price target predictions observed in production models.
     """
-    
+
     def __init__(self, base_model):
         """
         Initialize wrapper with base regression model.
-        
+
         Args:
             base_model: sklearn-compatible regression model (must have fit and predict methods)
         """
         self.base_model = base_model
-        
+
     def fit(self, X, y):
         """
         Fit the base model.
-        
+
         Args:
             X: Feature matrix (pandas DataFrame or numpy array)
             y: Target vector (pandas Series or numpy array)
-            
+
         Returns:
             self (for method chaining)
         """
         self.base_model.fit(X, y)
         return self
-        
+
     def predict(self, X):
         """
         Predict and ensure all predictions are non-negative.
-        
+
         This method:
         1. Gets predictions from base model
         2. Clips predictions to be >= 0 using np.maximum
         3. Returns clipped predictions
-        
+
         Args:
             X: Feature matrix (pandas DataFrame or numpy array)
-            
+
         Returns:
             Non-negative predictions (numpy array with all values >= 0)
-            
+
         Note:
             The clipping operation is applied element-wise and has minimal
             performance overhead. For most financial models, less than 5% of
             predictions require clipping.
         """
         predictions = self.base_model.predict(X)
-        
+
         # Count how many predictions would be negative (for monitoring)
         n_negative = np.sum(predictions < 0)
         if n_negative > 0:
             import logging
+
             pct_negative = 100.0 * n_negative / len(predictions)
             logging.debug(
                 f"NonNegativeRegressionWrapper: Clipped {n_negative}/{len(predictions)} "
                 f"({pct_negative:.1f}%) negative predictions to 0"
             )
-        
+
         # Clip predictions to ensure they're >= 0
         return np.maximum(predictions, 0.0)
-    
+
     def __getattr__(self, name):
         """
         Delegate attribute access to base model.
-        
+
         This allows accessing base model attributes like coef_, intercept_, etc.
-        
+
         Args:
             name: Attribute name
-            
+
         Returns:
             Attribute value from base model
         """
@@ -216,74 +221,74 @@ class NonNegativeRegressionWrapper:
 def extract_classification_features(probabilities: np.ndarray) -> pd.DataFrame:
     """
     Extract classification features from predicted probabilities.
-    
+
     This function converts raw classifier probabilities into structured features
     that can be used as inputs for regression models. The classification features
     provide meta-information about market sentiment and event likelihood.
-    
+
     Creates DataFrame with 5 columns:
     - event_prob_neutral: Probability of neutral class (class 0, -10% to +10% price change)
     - event_prob_positive: Probability of positive class (class 1, >= +10% upside)
     - event_prob_negative: Probability of negative class (class 2, >= -10% downside)
     - event_class_predicted: Predicted class (0, 1, or 2 based on argmax)
     - event_confidence: Confidence score (max probability across classes)
-    
+
     Args:
         probabilities: Array of shape (n_samples, 3) with class probabilities
                       from a trained 3-class event classifier
-        
+
     Returns:
         DataFrame with classification features (n_samples rows, 5 columns)
-        
+
     Raises:
         ValueError: If probabilities array doesn't have exactly 3 classes
-        
+
     Example:
         >>> from sklearn.ensemble import RandomForestClassifier
         >>> import numpy as np
-        >>> 
+        >>>
         >>> # Train event classifier
         >>> classifier = RandomForestClassifier()
         >>> classifier.fit(X_train, y_train)
-        >>> 
+        >>>
         >>> # Extract classification features for regression
         >>> probs = classifier.predict_proba(X_test)
         >>> features = extract_classification_features(probs)
-        >>> 
+        >>>
         >>> # Use in regression
         >>> X_regression = pd.concat([X_test, features], axis=1)
-        
+
     Phase 9.5 Implementation:
         This function enables integration of classification meta-features into
         regression models, as specified in the Phase 9.5 requirements for
         sector-optimized regression with classification feature enhancement.
     """
     import logging
-    
+
     if probabilities.shape[1] != 3:
         raise ValueError(f"Expected 3 classes, got {probabilities.shape[1]}")
-    
+
     n_samples = probabilities.shape[0]
-    logging.debug(
-        f"Extracting classification features for {n_samples} samples"
+    logging.debug(f"Extracting classification features for {n_samples} samples")
+
+    features = pd.DataFrame(
+        {
+            "event_prob_neutral": probabilities[:, 0],
+            "event_prob_positive": probabilities[:, 1],
+            "event_prob_negative": probabilities[:, 2],
+            "event_class_predicted": probabilities.argmax(axis=1),
+            "event_confidence": probabilities.max(axis=1),
+        }
     )
-    
-    features = pd.DataFrame({
-        'event_prob_neutral': probabilities[:, 0],
-        'event_prob_positive': probabilities[:, 1],
-        'event_prob_negative': probabilities[:, 2],
-        'event_class_predicted': probabilities.argmax(axis=1),
-        'event_confidence': probabilities.max(axis=1),
-    })
-    
+
     # Log summary statistics
-    avg_confidence = features['event_confidence'].mean()
-    class_distribution = features['event_class_predicted'].value_counts()
+    avg_confidence = features["event_confidence"].mean()
+    class_distribution = features["event_class_predicted"].value_counts()
     logging.debug(
         f"Average classification confidence: {avg_confidence:.3f}, "
         f"Class distribution: {dict(class_distribution)}"
     )
-    
+
     return features
 
 
@@ -292,32 +297,32 @@ def integrate_classification_features_into_dataframe(
 ) -> pd.DataFrame:
     """
     Integrate classification features into main DataFrame.
-    
+
     This function combines the original stock data DataFrame with the
     classification meta-features, creating a unified dataset suitable for
     training regression models with classification feature enhancement.
-    
+
     The function:
     1. Resets indices on both DataFrames to ensure proper row alignment
     2. Concatenates horizontally (axis=1)
     3. Returns combined DataFrame with all columns
-    
+
     Args:
         df: Original DataFrame with stock data (ticker, sector, price_target, etc.)
         classification_features: DataFrame with classification features from
                                 extract_classification_features()
-        
+
     Returns:
         Combined DataFrame with both original and classification features.
         Row count equals len(df), column count equals len(df.columns) + 5
-        
+
     Raises:
         ValueError: If DataFrames have different row counts (implicit via concat)
-        
+
     Example:
         >>> import pandas as pd
         >>> import numpy as np
-        >>> 
+        >>>
         >>> # Original stock data
         >>> df = pd.DataFrame({
         ...     'ticker': ['AAPL', 'MSFT', 'GOOGL'],
@@ -325,52 +330,50 @@ def integrate_classification_features_into_dataframe(
         ...     'last_price': [150.0, 300.0, 2500.0],
         ...     'price_target': [180.0, 350.0, 2800.0]
         ... })
-        >>> 
+        >>>
         >>> # Classification features from trained classifier
         >>> probs = np.array([[0.2, 0.7, 0.1], [0.3, 0.5, 0.2], [0.1, 0.8, 0.1]])
         >>> class_features = extract_classification_features(probs)
-        >>> 
+        >>>
         >>> # Combine for regression
         >>> df_enhanced = integrate_classification_features_into_dataframe(df, class_features)
         >>> print(df_enhanced.columns)
-        # ['ticker', 'sector', 'last_price', 'price_target', 
+        # ['ticker', 'sector', 'last_price', 'price_target',
         #  'event_prob_neutral', 'event_prob_positive', 'event_prob_negative',
         #  'event_class_predicted', 'event_confidence']
-        
+
     Phase 9.5 Integration:
         This function is part of the classification feature enhancement pipeline,
         enabling sector-optimized regression models to leverage event classifier
         outputs as meta-features for improved price target prediction.
-        
+
     Note:
         Both DataFrames must have the same number of rows. The function resets
         indices to avoid alignment issues, so original index values are not preserved.
     """
     import logging
-    
+
     # Validate input
     if len(df) != len(classification_features):
         raise ValueError(
             f"DataFrame length mismatch: df has {len(df)} rows, "
             f"classification_features has {len(classification_features)} rows"
         )
-    
+
     logging.debug(
         f"Integrating {len(classification_features.columns)} classification features "
         f"into DataFrame with {len(df.columns)} original columns"
     )
-    
+
     # Reset indices to ensure proper alignment
     df_reset = df.reset_index(drop=True)
     features_reset = classification_features.reset_index(drop=True)
-    
+
     # Concatenate horizontally
     result = pd.concat([df_reset, features_reset], axis=1)
-    
-    logging.debug(
-        f"Integration complete: {len(result)} rows, {len(result.columns)} total columns"
-    )
-    
+
+    logging.debug(f"Integration complete: {len(result)} rows, {len(result.columns)} total columns")
+
     return result
 
 
@@ -492,7 +495,7 @@ def train_ridge_regressor(
 
     Returns:
         Dictionary with 'model' and metrics
-        
+
     Note:
         - positive=True constrains coefficients during training (sklearn native)
         - ensure_nonnegative=True clips predictions after training (wrapper approach)
@@ -536,10 +539,11 @@ def train_ridge_regressor(
         "nonnegative_constraint": ensure_nonnegative,
         "positive_coefficients": positive,
     }
-    
+
     # Fix train_score calculation
     if ensure_nonnegative:
         from sklearn.metrics import r2_score
+
         y_pred = best_model.predict(X)
         results["train_score"] = r2_score(y, y_pred)
 
@@ -569,7 +573,7 @@ def train_lasso_regressor(
 
     Returns:
         Dictionary with 'model' and metrics
-        
+
     Note:
         - positive=True constrains coefficients during training (sklearn native)
         - ensure_nonnegative=True clips predictions after training (wrapper approach)
@@ -603,6 +607,7 @@ def train_lasso_regressor(
         best_model = NonNegativeRegressionWrapper(best_model)
         # Recalculate train score with wrapped model
         from sklearn.metrics import r2_score
+
         y_pred = best_model.predict(X)
         train_score = r2_score(y, y_pred)
 
@@ -611,7 +616,8 @@ def train_lasso_regressor(
         "train_score": train_score,
         "best_alpha": grid_search.best_params_["alpha"],
         "n_nonzero_coefs": n_nonzero,
-        "n_zero_coefs": len(best_model.base_model.coef_ if ensure_nonnegative else best_model.coef_) - n_nonzero,
+        "n_zero_coefs": len(best_model.base_model.coef_ if ensure_nonnegative else best_model.coef_)
+        - n_nonzero,
         "model_type": "lasso",
         "nonnegative_constraint": ensure_nonnegative,
         "positive_coefficients": positive,
@@ -645,7 +651,7 @@ def train_elastic_net_regressor(
 
     Returns:
         Dictionary with 'model' and metrics
-        
+
     Note:
         - positive=True constrains coefficients during training (sklearn native)
         - ensure_nonnegative=True clips predictions after training (wrapper approach)
@@ -677,6 +683,7 @@ def train_elastic_net_regressor(
         best_model = NonNegativeRegressionWrapper(best_model)
         # Recalculate train score with wrapped model
         from sklearn.metrics import r2_score
+
         y_pred = best_model.predict(X)
         train_score = r2_score(y, y_pred)
 
@@ -923,7 +930,42 @@ def train_random_forest_regressor(
 
     Returns:
         Trained model and results dictionary
+
+    Raises:
+        ValueError: If X or y contain NaN/Inf values
     """
+    # ============================================================================
+    # VALIDATE INPUT DATA - NO NaN/Inf ALLOWED
+    # ============================================================================
+    if X.isnull().any().any():
+        nan_cols = X.columns[X.isnull().any()].tolist()
+        raise ValueError(
+            f"Feature matrix X contains NaN values in columns: {nan_cols[:5]}... "
+            f"({len(nan_cols)} total). Please impute missing values before training."
+        )
+
+    if y.isnull().any():
+        nan_count = y.isnull().sum()
+        raise ValueError(
+            f"Target variable y contains {nan_count} NaN values. "
+            f"Please remove or impute these before training."
+        )
+
+    if np.isinf(X.values).any():
+        raise ValueError(
+            "Feature matrix X contains infinite values. "
+            "Please handle with replace([np.inf, -np.inf], np.nan) then impute."
+        )
+
+    if np.isinf(y.values).any():
+        raise ValueError(
+            "Target variable y contains infinite values. "
+            "Please clip or replace with appropriate bounds."
+        )
+
+    # ============================================================================
+    # TRAIN MODEL
+    # ============================================================================
     model = RandomForestRegressor(
         n_estimators=n_estimators, max_depth=max_depth, random_state=random_state, n_jobs=-1
     )
@@ -1105,6 +1147,7 @@ def train_stacking_regressor(
     cv: int = 5,
     random_state: int = 42,
     ensure_nonnegative: bool = False,
+    loss: str = "squared_error",
 ) -> Tuple[Any, Dict[str, Any]]:
     """
     Train stacking ensemble with meta-learner.
@@ -1116,15 +1159,25 @@ def train_stacking_regressor(
         random_state: Random seed
         ensure_nonnegative: If True, wrap model with NonNegativeRegressionWrapper
                            to ensure predictions >= 0
+        loss: Loss function for GradientBoosting base estimator ('squared_error', 'huber', 'absolute_error')
+              If 'huber', uses robust loss for outlier handling (Model Optimization Priority 2.1)
 
     Returns:
         Trained ensemble (wrapped if ensure_nonnegative=True) and results dictionary
     """
-    # Define base models
+    # Define base models with robust loss support
     estimators = [
         ("rf", RandomForestRegressor(n_estimators=50, random_state=random_state, n_jobs=-1)),
         ("et", ExtraTreesRegressor(n_estimators=50, random_state=random_state, n_jobs=-1)),
-        ("gb", GradientBoostingRegressor(n_estimators=50, random_state=random_state)),
+        (
+            "gb",
+            GradientBoostingRegressor(
+                loss=loss,
+                alpha=0.9 if loss == "huber" else 0.9,  # Quantile for Huber transition
+                n_estimators=50,
+                random_state=random_state,
+            ),
+        ),
     ]
 
     # Meta-learner
@@ -1267,6 +1320,185 @@ def optimize_hyperparameters_optuna(
 # ==============================================================================
 
 
+def validate_training_data(X: pd.DataFrame, y: pd.Series, strict: bool = True) -> Dict[str, Any]:
+    """
+    Validate training data before model fitting.
+
+    This function implements Priority 1 from ML Workflow Improvement Plan:
+    comprehensive validation gates to prevent NaN/Inf values from reaching model training.
+
+    Args:
+        X: Feature matrix
+        y: Target vector
+        strict: If True, raise exceptions on validation failures
+
+    Returns:
+        Dictionary with validation results:
+        - valid: bool indicating if data passed all checks
+        - nan_features: count of NaN values in features
+        - nan_target: count of NaN values in target
+        - inf_features: count of infinite values in features
+        - inf_target: count of infinite values in target
+        - zero_var_columns: list of zero-variance column names
+        - issues: list of issue descriptions
+
+    Raises:
+        ValueError: If validation fails and strict=True
+
+    Example:
+        >>> X_train = pd.DataFrame({'feature1': [1, 2, 3], 'feature2': [4, 5, 6]})
+        >>> y_train = pd.Series([10, 20, 30])
+        >>> result = validate_training_data(X_train, y_train, strict=True)
+        >>> assert result['valid'] == True
+    """
+    issues = []
+
+    # Check for empty data
+    if len(X) == 0 or len(y) == 0:
+        msg = "Feature matrix X or target vector y is empty"
+        if strict:
+            raise ValueError(f"{msg}. Cannot train on empty data.")
+        issues.append(msg)
+
+    # Check for NaN in features
+    nan_count_X = X.isnull().sum().sum()
+    if nan_count_X > 0:
+        msg = f"Feature matrix X contains {nan_count_X} NaN values"
+        if strict:
+            raise ValueError(
+                f"{msg}. Apply imputation before training. "
+                f"Use finance_ml.advanced_preprocessing.apply_enhanced_imputation_strategy_4step()"
+            )
+        issues.append(msg)
+
+    # Check for NaN in target
+    nan_count_y = y.isnull().sum()
+    if nan_count_y > 0:
+        msg = f"Target vector y contains {nan_count_y} NaN values"
+        if strict:
+            raise ValueError(f"{msg}. Remove or impute target NaN before training.")
+        issues.append(msg)
+
+    # Check for infinite values in features
+    inf_count_X = np.isinf(X.select_dtypes(include=[np.number])).sum().sum()
+    if inf_count_X > 0:
+        msg = f"Feature matrix X contains {inf_count_X} infinite values"
+        if strict:
+            raise ValueError(f"{msg}. Replace infinite values before training.")
+        issues.append(msg)
+
+    # Check for infinite values in target
+    inf_count_y = np.isinf(y).sum()
+    if inf_count_y > 0:
+        msg = f"Target vector y contains {inf_count_y} infinite values"
+        if strict:
+            raise ValueError(f"{msg}. Replace infinite values in target.")
+        issues.append(msg)
+
+    # Check for zero-variance columns (warning, not blocker)
+    zero_var_cols = X.columns[X.var() == 0].tolist()
+    if len(zero_var_cols) > 0:
+        msg = f"Feature matrix X contains {len(zero_var_cols)} zero-variance columns: {zero_var_cols[:5]}"
+        issues.append(msg)
+
+    return {
+        "valid": len(issues) == 0 or (len(issues) == 1 and len(zero_var_cols) > 0),
+        "nan_features": nan_count_X,
+        "nan_target": nan_count_y,
+        "inf_features": inf_count_X,
+        "inf_target": inf_count_y,
+        "zero_var_columns": zero_var_cols,
+        "issues": issues,
+    }
+
+
+def prepare_features_for_training(
+    df: pd.DataFrame,
+    feature_cols: List[str],
+    target_col: str,
+    apply_imputation: bool = True,
+    sector_column: str = "sector",
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Prepare features and target for model training with final imputation checkpoint.
+
+    This function implements Priority 3 from ML Workflow Improvement Plan:
+    pre-model training imputation checkpoint to ensure zero NaN values.
+
+    Args:
+        df: Input DataFrame
+        feature_cols: Feature column names
+        target_col: Target column name
+        apply_imputation: If True, apply 4-step imputation before extraction
+        sector_column: Sector column for KNN imputation
+
+    Returns:
+        Tuple of (X, y) ready for model training with zero NaN
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'sector': ['Tech', 'Finance'],
+        ...     'market_cap': [1e9, np.nan],
+        ...     'last_price': [100, 150],
+        ...     'price_target': [110, 160]
+        ... })
+        >>> X, y = prepare_features_for_training(
+        ...     df, ['market_cap'], 'price_target',
+        ...     apply_imputation=True, sector_column='sector'
+        ... )
+        >>> assert X.isnull().sum().sum() == 0
+    """
+    from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
+
+    # Extract target BEFORE imputation to preserve NaN for removal
+    y = df[target_col].copy()
+
+    # Drop rows with NaN in target
+    valid_mask = ~y.isnull()
+    if not valid_mask.all():
+        n_dropped = (~valid_mask).sum()
+        logger.warning(f"Dropping {n_dropped} rows with NaN target values")
+        df = df[valid_mask].copy()
+        y = y[valid_mask]
+
+    # Apply final imputation if requested (only on features, target already extracted)
+    if apply_imputation:
+        logger.info("Applying final imputation before feature extraction...")
+        df = apply_enhanced_imputation_strategy_4step(
+            df,
+            sector_column=sector_column,
+            n_neighbors=5,
+            price_column="last_price" if "last_price" in df.columns else None,
+        )
+
+    # Extract features after imputation
+    X = df[feature_cols].copy()
+
+    # Final validation - handle any residual NaN/Inf
+    nan_X = X.isnull().sum().sum()
+    nan_y = y.isnull().sum()
+    inf_X = np.isinf(X.select_dtypes(include=[np.number])).sum().sum()
+    inf_y = np.isinf(y).sum()
+
+    if nan_X > 0 or nan_y > 0 or inf_X > 0 or inf_y > 0:
+        logger.error(
+            f"Features have {nan_X} NaN, {inf_X} Inf; target has {nan_y} NaN, {inf_y} Inf after preparation"
+        )
+        # Emergency fallback: fill with 0
+        X = X.replace([np.inf, -np.inf], np.nan)
+        X = X.fillna(0)
+        y = y.replace([np.inf, -np.inf], np.nan)
+        y = y.fillna(y.median() if pd.notna(y.median()) else 0)
+        logger.warning("Applied emergency fillna(0) to ensure training can proceed")
+
+    logger.info(f"✓ Features prepared: {X.shape}, target: {y.shape}, zero NaN confirmed")
+
+    return X, y
+
+
+# Note: validate_training_data is defined above at line 1288
+
+
 def compare_regressors(
     X: pd.DataFrame,
     y: pd.Series,
@@ -1274,6 +1506,7 @@ def compare_regressors(
     cv: int = 5,
     random_state: int = 42,
     ensure_nonnegative: bool = False,
+    loss: str = "squared_error",
 ) -> Dict[str, Dict[str, float]]:
     """
     Compare multiple regression models.
@@ -1286,6 +1519,8 @@ def compare_regressors(
         random_state: Random seed
         ensure_nonnegative: If True, wrap models with NonNegativeRegressionWrapper
                            to ensure predictions >= 0
+        loss: Loss function for GradientBoosting ('squared_error', 'huber', 'absolute_error')
+              If 'huber', uses robust loss for outlier handling (Model Optimization Priority 2.1)
 
     Returns:
         Dictionary of model results
@@ -1294,6 +1529,36 @@ def compare_regressors(
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
+
+    # Validate training data (ML Workflow Improvement Plan Priority 1)
+    try:
+        validation_result = validate_training_data(X_train, y_train, strict=False)
+        if not validation_result["valid"]:
+            logger.warning(
+                f"Training data validation issues detected: {validation_result['issues']}"
+            )
+            # Log specific counts
+            if validation_result["nan_features"] > 0:
+                logger.warning(f"  NaN in features: {validation_result['nan_features']}")
+            if validation_result["inf_features"] > 0:
+                logger.warning(f"  Inf in features: {validation_result['inf_features']}")
+
+            # Apply emergency imputation
+            from sklearn.impute import SimpleImputer
+
+            logger.info("Applying emergency median imputation to X_train and X_test...")
+            imputer = SimpleImputer(strategy="median")
+            X_train = pd.DataFrame(
+                imputer.fit_transform(X_train), columns=X_train.columns, index=X_train.index
+            )
+            X_test = pd.DataFrame(
+                imputer.transform(X_test), columns=X_test.columns, index=X_test.index
+            )
+            logger.info("Emergency imputation completed")
+    except Exception as e:
+        logger.error(f"Validation check failed: {e}")
+        # Continue anyway but log the issue
+        pass
 
     results = {}
 
@@ -1305,7 +1570,12 @@ def compare_regressors(
             n_estimators=50, random_state=random_state, n_jobs=-1
         ),
         "ExtraTrees": ExtraTreesRegressor(n_estimators=50, random_state=random_state, n_jobs=-1),
-        "GradientBoosting": GradientBoostingRegressor(n_estimators=50, random_state=random_state),
+        "GradientBoosting": GradientBoostingRegressor(
+            loss=loss,
+            alpha=0.9 if loss == "huber" else 0.9,  # Quantile for Huber transition
+            n_estimators=50,
+            random_state=random_state,
+        ),
         "HistGradientBoosting": HistGradientBoostingRegressor(
             max_iter=50, random_state=random_state
         ),
@@ -1315,44 +1585,215 @@ def compare_regressors(
     if ensure_nonnegative:
         models = {name: NonNegativeRegressionWrapper(model) for name, model in models.items()}
 
-    # Train and evaluate each model
+    # Train and evaluate each model with graceful error handling
+    # (ML Workflow Improvement Plan Priority 2: Graceful Model Fallback)
     for name, model in models.items():
-        start_time = time.time()
-        model.fit(X_train, y_train)
-        train_time = time.time() - start_time
+        try:
+            start_time = time.time()
+            model.fit(X_train, y_train)
+            train_time = time.time() - start_time
 
-        # Predictions
-        y_pred_train = model.predict(X_train)
-        y_pred_test = model.predict(X_test)
+            # Predictions
+            y_pred_train = model.predict(X_train)
+            y_pred_test = model.predict(X_test)
 
-        # Metrics
-        results[name] = {
-            "mae": mean_absolute_error(y_test, y_pred_test),
-            "rmse": np.sqrt(mean_squared_error(y_test, y_pred_test)),
-            "r2": r2_score(y_test, y_pred_test),
-            "train_r2": r2_score(y_train, y_pred_train),
-            "train_time": train_time,
-        }
+            # Metrics
+            results[name] = {
+                "mae": mean_absolute_error(y_test, y_pred_test),
+                "rmse": np.sqrt(mean_squared_error(y_test, y_pred_test)),
+                "r2": r2_score(y_test, y_pred_test),
+                "train_r2": r2_score(y_train, y_pred_train),
+                "train_time": train_time,
+                "status": "success",
+            }
+            logger.info(f"✓ {name} trained successfully (MAE: {results[name]['mae']:.2f})")
+
+        except ValueError as e:
+            # Handle NaN-related errors gracefully
+            error_msg = str(e)
+            if "NaN" in error_msg or "missing values" in error_msg or "Input contains" in error_msg:
+                logger.warning(f"Model {name} failed due to data quality issue: {error_msg}")
+                results[name] = {
+                    "mae": np.nan,
+                    "rmse": np.nan,
+                    "r2": np.nan,
+                    "train_r2": np.nan,
+                    "train_time": 0,
+                    "status": "failed_data_quality",
+                    "error": error_msg[:200],  # Truncate long error messages
+                }
+            else:
+                # Re-raise unexpected ValueError
+                logger.error(f"Model {name} failed with unexpected ValueError: {e}")
+                raise
+
+        except Exception as e:
+            # Log and continue with other models
+            logger.error(f"Model {name} failed with unexpected error: {e}")
+            results[name] = {
+                "mae": np.nan,
+                "rmse": np.nan,
+                "r2": np.nan,
+                "train_r2": np.nan,
+                "train_time": 0,
+                "status": "failed_other",
+                "error": str(e)[:200],
+            }
+
+    # Check if at least one model succeeded
+    successful_models = {k: v for k, v in results.items() if v.get("status") == "success"}
+
+    if len(successful_models) == 0:
+        logger.error("All models failed to train. Check data quality and preprocessing.")
+        raise RuntimeError(
+            "All regression models failed. Data validation and imputation required. "
+            f"Failed models: {list(results.keys())}"
+        )
+
+    if len(successful_models) < len(models):
+        failed_models = [k for k, v in results.items() if v.get("status") != "success"]
+        logger.warning(
+            f"{len(successful_models)}/{len(models)} models trained successfully. "
+            f"Failed: {failed_models}"
+        )
+    else:
+        logger.info(f"✓ All {len(models)} models trained successfully")
 
     return results
 
 
+def extract_numeric_feature_columns(
+    df: pd.DataFrame,
+    exclude_cols: Optional[List[str]] = None,
+    exclude_patterns: Optional[List[str]] = None,
+) -> List[str]:
+    """
+    Extract numeric feature columns from DataFrame, excluding targets and metadata.
+
+    This utility function identifies all numeric columns in a DataFrame and filters
+    out common non-feature columns like identifiers, targets, and event labels.
+
+    Args:
+        df: Input DataFrame
+        exclude_cols: Explicit list of column names to exclude (default: None)
+        exclude_patterns: List of substring patterns to match for exclusion
+            (default: ['event_proba_', 'event_label'])
+
+    Returns:
+        List of numeric column names suitable for model training
+
+    Default Exclusions:
+        - Identifier columns: 'ticker', 'isin', 'name', 'description'
+        - Categorical columns: 'sector', 'region', 'industry', 'country'
+        - Target columns: 'price_target', 'analyst_target_price'
+        - Event-related columns: 'event_label', 'event_proba_*'
+        - Any custom columns in exclude_cols parameter
+
+    Examples:
+        >>> df = pd.DataFrame({
+        ...     'ticker': ['AAPL', 'MSFT'],
+        ...     'sector': ['Tech', 'Tech'],
+        ...     'last_price': [150.0, 300.0],
+        ...     'market_cap': [2.5e12, 2.3e12],
+        ...     'price_target': [180.0, 350.0]
+        ... })
+        >>> features = extract_numeric_feature_columns(df)
+        >>> # Returns: ['last_price', 'market_cap']
+        >>> # (excludes ticker, sector, price_target)
+
+        >>> # Custom exclusions
+        >>> features = extract_numeric_feature_columns(
+        ...     df, exclude_cols=['last_price', 'price_target']
+        ... )
+        >>> # Returns: ['market_cap']
+    """
+    if df.empty:
+        logger.info("DataFrame is empty, returning empty feature list")
+        return []
+
+    # Default exclusion set
+    default_exclude = {
+        # Identifiers
+        "ticker",
+        "isin",
+        "name",
+        "description",
+        # Categorical grouping columns (even if accidentally numeric)
+        "sector",
+        "region",
+        "industry",
+        "country",
+        "trading_country",
+        # Common target columns
+        "price_target",
+        "analyst_target_price",
+        "price_target_median",
+        # Event classification outputs
+        "event_label",
+    }
+
+    # Combine with user-provided exclusions
+    if exclude_cols:
+        default_exclude.update(exclude_cols)
+
+    # Default patterns to exclude
+    if exclude_patterns is None:
+        exclude_patterns = ["event_proba_"]
+
+    # Get all numeric columns
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    logger.info(f"DataFrame analysis: {len(df.columns)} total columns, {len(numeric_cols)} numeric")
+
+    # Filter out excluded columns and patterns
+    feature_cols = []
+    for col in numeric_cols:
+        # Check explicit exclusions
+        if col in default_exclude:
+            continue
+
+        # Check pattern exclusions
+        if any(pattern in col for pattern in exclude_patterns):
+            continue
+
+        feature_cols.append(col)
+
+    logger.info(
+        f"Extracted {len(feature_cols)} numeric feature columns "
+        f"(excluded {len(numeric_cols) - len(feature_cols)} columns)"
+    )
+
+    if len(feature_cols) == 0:
+        logger.warning("No numeric feature columns found after exclusions")
+    else:
+        logger.debug(
+            f"Feature columns: {feature_cols[:10]}"
+            + (f" ... and {len(feature_cols) - 10} more" if len(feature_cols) > 10 else "")
+        )
+
+    return feature_cols
+
+
 def train_sector_specific_models(
     df: pd.DataFrame,
-    feature_cols: List[str],
+    feature_cols: Union[List[str], Dict[str, List[str]]],
     target_col: str,
     sector_col: str = "sector",
     model_type: str = "random_forest",
     random_state: int = 42,
     min_samples: int = 20,
     ensure_nonnegative: bool = False,
+    auto_extract_fallback: bool = False,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Train separate models for each sector.
 
     Args:
         df: Input DataFrame
-        feature_cols: Feature column names
+        feature_cols: Feature column names. Accepts a list of column names or a dict
+            with keys like 'all_features', 'numeric_features', 'categorical_features',
+            and 'classification_features'. If a dict is provided, the function will
+            try 'all_features' first, otherwise combine available groups.
         target_col: Target column name
         sector_col: Sector column name
         model_type: Model type to train
@@ -1360,12 +1801,166 @@ def train_sector_specific_models(
         min_samples: Minimum samples required per sector (default: 20)
         ensure_nonnegative: If True, wrap models with NonNegativeRegressionWrapper
                            to ensure predictions >= 0
+        auto_extract_fallback: If True, automatically extract numeric features from
+                              DataFrame when provided feature_cols are invalid or missing.
+                              Uses extract_numeric_feature_columns() to identify suitable
+                              features (default: False)
 
     Returns:
-        Dictionary of sector models and results
+        Tuple of (sector_models, results):
+        - sector_models: Dictionary mapping sector names to trained models
+        - results: Dictionary with metrics and metadata
+
+    Raises:
+        ValueError: If no valid features remain after validation against df and
+                   auto_extract_fallback is False
     """
-    sector_models = {}
-    sector_metrics = {}
+    # DataFrame structure diagnostics
+    logger.info("=" * 60)
+    logger.info("TRAIN SECTOR-SPECIFIC MODELS - DataFrame Diagnostics")
+    logger.info("=" * 60)
+    logger.info(f"DataFrame shape: {df.shape}")
+    logger.info(f"Total columns: {len(df.columns)}")
+
+    # Analyze column types
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    object_cols = df.select_dtypes(include=["object"]).columns.tolist()
+    logger.info(f"  Numeric columns: {len(numeric_cols)}")
+    logger.info(f"  Object columns: {len(object_cols)}")
+
+    # Check for target and sector columns
+    if target_col in df.columns:
+        logger.info(f"  ✓ Target column '{target_col}' present")
+    else:
+        logger.warning(f"  ⚠ Target column '{target_col}' NOT FOUND")
+
+    if sector_col in df.columns:
+        n_sectors = df[sector_col].nunique()
+        logger.info(f"  ✓ Sector column '{sector_col}' present ({n_sectors} unique sectors)")
+    else:
+        logger.warning(f"  ⚠ Sector column '{sector_col}' NOT FOUND")
+
+    logger.info("=" * 60)
+
+    # Smart handling of feature_cols
+    actual_feature_cols: List[str]
+    if isinstance(feature_cols, dict):
+        logger.info("feature_cols is a dict, extracting feature list...")
+        all_key = feature_cols.get("all_features")
+        if all_key:
+            actual_feature_cols = list(all_key)
+            logger.info(f"  Using 'all_features' key: {len(actual_feature_cols)} features")
+        else:
+            combined: List[str] = []
+            for key in ["numeric_features", "categorical_features", "classification_features"]:
+                vals = feature_cols.get(key, [])
+                if vals:
+                    combined.extend(list(vals))
+            actual_feature_cols = combined
+            logger.info(f"  Combined feature types: {len(actual_feature_cols)} features")
+        # Deduplicate while preserving order
+        before = len(actual_feature_cols)
+        actual_feature_cols = list(dict.fromkeys(actual_feature_cols))
+        if len(actual_feature_cols) != before:
+            logger.info(f"  After deduplication: {len(actual_feature_cols)} features")
+        else:
+            logger.info(f"  After deduplication: {len(actual_feature_cols)} features")
+    elif isinstance(feature_cols, list):
+        actual_feature_cols = feature_cols
+        logger.info(f"feature_cols is already a list: {len(actual_feature_cols)} features")
+    else:
+        # Attempt a graceful conversion (e.g., pandas Index or numpy array)
+        try:
+            actual_feature_cols = list(feature_cols)  # type: ignore[arg-type]
+            logger.info(
+                f"feature_cols provided as {type(feature_cols).__name__}; converted to list with "
+                f"{len(actual_feature_cols)} features"
+            )
+        except Exception as e:
+            raise TypeError(
+                f"feature_cols must be a list or dict of lists; got {type(feature_cols).__name__}"
+            ) from e
+
+    # Basic empty check
+    if len(actual_feature_cols) == 0:
+        raise ValueError("feature_cols cannot be empty")
+
+    # Validate that feature columns exist in the DataFrame; skip missing with warning
+    available_features = [c for c in actual_feature_cols if c in df.columns]
+    missing_features = [c for c in actual_feature_cols if c not in df.columns]
+
+    if missing_features:
+        msg = (
+            f"⚠ Warning: {len(missing_features)} features not in DataFrame (will be skipped). "
+            f"Missing: {missing_features[:5]}..."
+            if len(missing_features) > 5
+            else f"⚠ Warning: {len(missing_features)} features not in DataFrame (will be skipped): {missing_features}"
+        )
+        logger.warning(msg)
+
+    actual_feature_cols = available_features
+
+    if len(actual_feature_cols) == 0:
+        # Try auto-extraction fallback if enabled
+        if auto_extract_fallback:
+            logger.warning("No valid features from input, attempting auto-extraction...")
+            actual_feature_cols = extract_numeric_feature_columns(
+                df, exclude_cols=[target_col, sector_col]
+            )
+
+            if len(actual_feature_cols) > 0:
+                logger.info(
+                    f"✓ Auto-extracted {len(actual_feature_cols)} numeric features from DataFrame"
+                )
+                logger.info(f"  First 10 features: {actual_feature_cols[:10]}")
+            else:
+                # Still no features after auto-extraction
+                error_msg = (
+                    "❌ No valid feature columns found even after auto-extraction.\n"
+                    f"  DataFrame has {len(df.columns)} columns total:\n"
+                    f"    - {len(numeric_cols)} numeric columns\n"
+                    f"    - {len(object_cols)} object/categorical columns\n"
+                    f"  Tried to exclude: {target_col}, {sector_col}\n"
+                    f"  Available columns: {list(df.columns)[:20]}"
+                    + ("..." if len(df.columns) > 20 else "")
+                )
+                raise ValueError(error_msg)
+        else:
+            # Auto-extraction not enabled, provide detailed error
+            sample_cols = list(df.columns)[:20]
+            error_msg = (
+                "❌ No valid feature columns remain after validation against DataFrame.\n"
+                f"  Requested features: {len(actual_feature_cols + missing_features)} "
+                f"(0 valid, {len(missing_features)} missing)\n"
+                f"  DataFrame columns ({len(df.columns)} total): {sample_cols}"
+                + ("..." if len(df.columns) > 20 else "")
+                + f"\n  Missing features: {missing_features[:10]}"
+                + ("..." if len(missing_features) > 10 else "")
+                + "\n\n💡 Tip: Set auto_extract_fallback=True to automatically extract "
+                "numeric features from the DataFrame."
+            )
+            raise ValueError(error_msg)
+
+    logger.info(f"✓ Final feature count for sector models: {len(actual_feature_cols)}")
+
+    # ============================================================================
+    # VALIDATE AND CLEAN TARGET COLUMN
+    # ============================================================================
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' not found in DataFrame")
+
+    # Drop rows with NaN in target before training
+    nan_target_count = df[target_col].isna().sum()
+    if nan_target_count > 0:
+        logger.warning(
+            f"⚠ Target column '{target_col}' contains {nan_target_count} NaN values. "
+            f"Dropping these rows before training."
+        )
+        df = df[df[target_col].notna()].copy()
+        logger.info(f"✓ After dropping NaN targets: {len(df)} rows remaining")
+
+    sector_models: Dict[str, Any] = {}
+    sector_metrics: Dict[str, Any] = {}
 
     sectors = df[sector_col].unique()
 
@@ -1376,7 +1971,7 @@ def train_sector_specific_models(
         if len(sector_df) < min_samples:  # Skip sectors with too few samples
             continue
 
-        X_sector = sector_df[feature_cols]
+        X_sector = sector_df[actual_feature_cols]
         y_sector = sector_df[target_col]
 
         # Train model
@@ -1389,7 +1984,7 @@ def train_sector_specific_models(
             results_dict = train_ridge_regressor(
                 X_sector, y_sector, random_state=random_state, ensure_nonnegative=ensure_nonnegative
             )
-            model = results_dict['model']
+            model = results_dict["model"]
             metrics = results_dict
 
         # Wrap with NonNegativeRegressionWrapper if requested and not already wrapped
@@ -1445,3 +2040,84 @@ def load_model(filepath: Union[str, Path]) -> Tuple[Any, Dict[str, Any]]:
     save_dict = joblib.load(filepath)
 
     return save_dict["model"], save_dict.get("metadata", {})
+
+
+def standardize_comparison_results(results: "pd.DataFrame | dict | None") -> pd.DataFrame:
+    """
+    Convert comparison results (dict-of-dicts or DataFrame) into a standardized
+    DataFrame with a 'Model' column and normalized metric names.
+
+    - Accepts dict like {"Ridge": {"mae": 1.2, "rmse": 2.3, "r2": 0.8, ...}, ...}
+    - Accepts a DataFrame with columns in any case (e.g., 'model', 'mae', ...)
+    - Returns a DataFrame with at least ['Model', 'MAE', 'RMSE', 'R2'] columns
+    - Sorts by 'MAE' ascending if available (lower is better)
+
+    This utility is designed to eliminate KeyError: 'Model' by providing a consistent
+    tabular structure regardless of the original output shape from model comparison.
+    """
+    import pandas as pd  # local import to avoid issues if pandas unavailable at import time
+
+    if results is None:
+        return pd.DataFrame(columns=["Model", "MAE", "RMSE", "R2"])
+
+    # Case 1: dict-of-dicts
+    if isinstance(results, dict):
+        rows = []
+        for model_name, metrics in results.items():
+            row = {"Model": model_name}
+            if isinstance(metrics, dict):
+                for k, v in metrics.items():
+                    key = str(k).strip().lower()
+                    normalized = {
+                        "mae": "MAE",
+                        "rmse": "RMSE",
+                        "r2": "R2",
+                        "train_r2": "Train_R2",
+                        "train_time": "Train_Time",
+                        "status": "Status",
+                        "error": "Error",
+                        "model": "Model",
+                    }.get(key, k)
+                    row[normalized] = v
+            rows.append(row)
+        df = pd.DataFrame(rows)
+
+    # Case 2: already a DataFrame
+    elif isinstance(results, pd.DataFrame):
+        df = results.copy()
+        # Normalize model column name (case-insensitive)
+        model_col = next((c for c in df.columns if str(c).lower() == "model"), None)
+        if model_col and model_col != "Model":
+            df = df.rename(columns={model_col: "Model"})
+        # Normalize metric column names
+        rename_map = {}
+        for c in list(df.columns):
+            lc = str(c).lower()
+            if lc in ("mae", "rmse", "r2", "train_r2", "train_time"):
+                rename_map[c] = {
+                    "mae": "MAE",
+                    "rmse": "RMSE",
+                    "r2": "R2",
+                    "train_r2": "Train_R2",
+                    "train_time": "Train_Time",
+                }[lc]
+        if rename_map:
+            df = df.rename(columns=rename_map)
+    else:
+        # Fallback: try constructing DataFrame and then normalize
+        df = pd.DataFrame(results)
+
+    # Ensure expected columns exist
+    for col in ["Model", "MAE", "RMSE", "R2"]:
+        if col not in df.columns:
+            df[col] = np.nan
+
+    # Sort by MAE if available
+    try:
+        if "MAE" in df.columns:
+            df = df.sort_values("MAE", ascending=True, kind="mergesort").reset_index(drop=True)
+    except Exception:
+        # Do not fail sorting
+        pass
+
+    return df

@@ -21,6 +21,7 @@ from sklearn.ensemble import (
     GradientBoostingRegressor,
     StackingRegressor,
     )
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from sklearn.metrics import (
     mean_absolute_error,
@@ -154,39 +155,70 @@ def train_event_classifier(
 
 
 def build_regression_pipeline(
-    numeric_features: List[str], categorical_features: List[str], n_jobs: int = 1
+    numeric_features: List[str],
+    categorical_features: List[str],
+    n_jobs: int = 1,
+    loss: str = "squared_error",
 ) -> Pipeline:
     """Build sklearn pipeline for regression with preprocessing.
 
     Args:
         numeric_features: List of numeric feature names
         categorical_features: List of categorical feature names
-        n_jobs: Number of parallel jobs for RandomForestRegressor
+        n_jobs: Number of parallel jobs for regressor
+        loss: Loss function for GradientBoostingRegressor ('squared_error', 'huber', 'absolute_error')
+              If 'huber', uses GradientBoostingRegressor for robust outlier handling (Priority 2.1)
+              Otherwise uses RandomForestRegressor for default behavior
 
     Returns:
         sklearn Pipeline with preprocessor and regressor steps
     """
+    # Numeric preprocessing: impute missing values, then scale
+    # SimpleImputer with median strategy handles NaN values before GradientBoostingRegressor
+    numeric_transformer = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler(with_mean=False)),
+        ]
+    )
+
     preprocessor = ColumnTransformer(
         transformers=[
-            ("num", StandardScaler(with_mean=False), numeric_features),
+            ("num", numeric_transformer, numeric_features),
             ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
         ],
         remainder="drop",
         sparse_threshold=0.3,
     )
 
-    regressor = RandomForestRegressor(
-        n_estimators=200,
-        random_state=42,
-        n_jobs=n_jobs,
-    )
+    # Use GradientBoostingRegressor for robust loss functions (Priority 2.1)
+    if loss == "huber":
+        regressor = GradientBoostingRegressor(
+            loss="huber",
+            alpha=0.9,  # Quantile for Huber transition
+            n_estimators=200,
+            max_depth=5,
+            learning_rate=0.05,
+            random_state=42,
+        )
+    else:
+        # Default: RandomForestRegressor for standard training
+        regressor = RandomForestRegressor(
+            n_estimators=200,
+            random_state=42,
+            n_jobs=n_jobs,
+        )
 
     pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("regressor", regressor)])
     return pipeline
 
 
 def train_and_evaluate_regression(
-    df: pd.DataFrame, out_dir: Path, n_jobs: int = 1, dry_run: bool = False
+    df: pd.DataFrame,
+    out_dir: Path,
+    n_jobs: int = 1,
+    dry_run: bool = False,
+    loss: str = "squared_error",
 ) -> Optional[Dict[str, Any]]:
     """Train and evaluate regression model.
 
@@ -195,6 +227,7 @@ def train_and_evaluate_regression(
         out_dir: Directory to save outputs
         n_jobs: Number of parallel jobs
         dry_run: If True, skip training
+        loss: Loss function ('squared_error', 'huber', 'absolute_error') for robust training (Priority 2.1)
 
     Returns:
         Dictionary with metrics (mae, rmse, r2) or None if dry_run or insufficient data
@@ -221,10 +254,11 @@ def train_and_evaluate_regression(
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    pipe = build_regression_pipeline(num_cols, cat_cols, n_jobs=n_jobs)
+    pipe = build_regression_pipeline(num_cols, cat_cols, n_jobs=n_jobs, loss=loss)
 
     logging.info(
-        "Fitting regression model on %d samples, %d features (num=%d, cat=%d)",
+        "Fitting regression model with loss='%s' on %d samples, %d features (num=%d, cat=%d)",
+        loss,
         len(X_train),
         X_train.shape[1],
         len(num_cols),
@@ -240,15 +274,43 @@ def train_and_evaluate_regression(
 
     logging.info("Regression metrics — MAE: %.4f, RMSE: %.4f, R2: %.4f", mae, rmse, r2)
 
-    # Save predictions
+    # Export feature importance (Priority 5)
+    if hasattr(pipe.named_steps["regressor"], "feature_importances_"):
+        try:
+            # Get feature names from preprocessor
+            feature_names = pipe.named_steps["preprocessor"].get_feature_names_out()
+            importances = pipe.named_steps["regressor"].feature_importances_
+
+            feature_importance_df = pd.DataFrame(
+                {"feature": feature_names, "importance": importances}
+            ).sort_values("importance", ascending=False)
+
+            importance_path = out_dir / "feature_importance.csv"
+            feature_importance_df.to_csv(importance_path, index=False)
+            logging.info("Saved feature importance to %s", importance_path)
+        except Exception as e:
+            logging.warning("Could not extract feature importance: %s", e)
+
+    # Save predictions with enhanced metadata (Priority 1.1)
     results_df = pd.DataFrame(
         {
             "y_true": y_test.values,
             "y_pred": preds,
             "residual": y_test.values - preds,
+            "abs_error": np.abs(y_test.values - preds),
+            "pct_error": ((y_test.values - preds) / y_test.values) * 100,
         },
         index=y_test.index,
     )
+
+    # Add sector, ticker, and key features for diagnostic analysis
+    if "sector" in df.columns:
+        results_df["sector"] = df.loc[y_test.index, "sector"].values
+    if "ticker" in df.columns:
+        results_df["ticker"] = df.loc[y_test.index, "ticker"].values
+    if "market_cap" in df.columns:
+        results_df["market_cap"] = df.loc[y_test.index, "market_cap"].values
+
     results_path = out_dir / "regression_predictions.csv"
     results_df.to_csv(results_path, index=False)
     logging.info("Saved regression predictions to %s", results_path)

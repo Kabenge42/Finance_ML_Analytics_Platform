@@ -53,4 +53,6 @@ psutil = ">=5.9.0,<6.0.0"
 [dev-packages]
 
 [requires]
+# Project supports Python 3.12 or 3.13 (>=3.12,<3.14)
+# Pipfile requires exact version - set to 3.12 or 3.13 based on your environment
 python_version = "3.12"

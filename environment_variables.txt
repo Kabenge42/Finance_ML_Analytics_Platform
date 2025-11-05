@@ -1,7 +1,7 @@
 # =============================================================================
 # Finance ML Analytics Platform - Environment Configuration
 # =============================================================================
-# Version: 0.5.0
+# Version: 0.5.1
 # Python version: >=3.12,<3.14
 
 # -----------------------------------------------------------------------------
@@ -15,10 +15,10 @@ TF_CPP_MIN_LOG_LEVEL=2
 # -----------------------------------------------------------------------------
 # Directory Paths
 # -----------------------------------------------------------------------------
-# DATA_DIR=/path/to/data
-# MODEL_DIR=/path/to/saved_models
-# CACHE_DIR=/path/to/cache
-# OUTPUT_DIR=/path/to/outputs
+# DATA_DIR=data
+# MODEL_DIR=models
+# CACHE_DIR=.cache
+OUTPUT_DIR=outputs
 
 # -----------------------------------------------------------------------------
 # Database Configuration
@@ -27,10 +27,10 @@ TF_CPP_MIN_LOG_LEVEL=2
 # Format: postgresql+psycopg2://user:password@host:port/database
 # Example (PostgreSQL): postgresql+psycopg2://postgres:your_password@localhost:5432/postgres
 # Example (SQLite): sqlite:///equities.sqlite
-# DB_URL=postgresql+psycopg2://postgres:your_password@localhost:5432/postgres
+# DB_URL=postgresql+psycopg2://postgres:your_password_here@localhost:5432/postgres
 # Optional: Database schema and table to read from
-# DB_SCHEMA=public
-# DB_TABLE=equities
+DB_SCHEMA=public
+DB_TABLE=equities
 
 # -----------------------------------------------------------------------------
 # External API Keys

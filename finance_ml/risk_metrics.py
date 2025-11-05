@@ -307,11 +307,9 @@ def calculate_portfolio_risk_metrics(
     if confidence_levels is None:
         confidence_levels = [0.95, 0.99]
 
-    metrics = {}
+    metrics = {"mean_return": float(returns.mean()), "volatility": float(returns.std())}
 
     # Basic statistics
-    metrics["mean_return"] = float(returns.mean())
-    metrics["volatility"] = float(returns.std())
 
     # VaR metrics
     for conf in confidence_levels:

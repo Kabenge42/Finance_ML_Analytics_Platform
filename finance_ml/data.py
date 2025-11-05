@@ -305,6 +305,18 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "EBIT (5YAVGLTM)": "ebit_5yavgltm",
             "Total Revenues (5YAVGLTM)": "total_revenues_5yavgltm",
             "Revenues - Est YoY % (FY1E)": "revenues_est_yoy_pct_fy1e",
+            "Price Chg. % (1M)": "price_chg_pct_1m",
+            "Price Chg. % (3M)": "price_chg_pct_3m",
+            "1-Day %": "one_day_pct",
+            "Price (5D Ago)": "price_5d_ago",
+            "Price (1W Ago)": "price_1w_ago",
+            "Price (1M Ago)": "price_1m_ago",
+            "Price (3M Ago)": "price_3m_ago",
+            "Price (6M Ago)": "price_6m_ago",
+            "Price (1Y Ago)": "price_1y_ago",
+            "Price (3Y Ago)": "price_3y_ago",
+            "Price (5Y Ago)": "price_5y_ago",
+            "Price (QTD Ago)": "price_qtd_ago",
         }
 
         # Apply mapping to existing columns
@@ -466,7 +478,7 @@ def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
     table_ref = f"{schema}.{table}"
 
     logging.info("Loading from PostgreSQL: %s (table: %s)", db_url, table_ref)
-    engine = create_engine(db_url)
+    engine = create_engine
 
     base_query = f"SELECT * FROM {table_ref} WHERE \"Region\" IN ('US','EU','APAC','ROTW')"
     query = base_query if limit is None else f"SELECT * FROM ( {base_query} ) q LIMIT {int(limit)}"
@@ -613,9 +625,13 @@ def validate_numeric_ranges(df: pd.DataFrame) -> dict:
     """
     issues = {}
 
-    # Check price columns (should be positive)
+    # Check absolute price columns (should be positive). Exclude percent-change fields.
     price_cols = [c for c in df.columns if "price" in c.lower()]
     for col in price_cols:
+        col_lower = col.lower()
+        # Skip percent/change columns (e.g., price_chg_pct_1m) which can be negative
+        if any(k in col_lower for k in ("chg", "change", "pct", "percent")):
+            continue
         if col in df.columns:
             series = pd.to_numeric(df[col], errors="coerce")
             invalid_mask = series < 0
@@ -743,6 +759,7 @@ def validate_financial_data_quality(df: pd.DataFrame, region: str) -> dict:
 
     # Check for null values
     results["null_values"] = int(df.isnull().sum().sum())
+    results["missing_count"] = results["null_values"]  # Alias for backward compatibility
 
     # Check for extreme outliers (values > 1e10 or < -1e10)
     for col in numeric_cols:

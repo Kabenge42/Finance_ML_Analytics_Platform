@@ -7,9 +7,10 @@ Phase 9.2: Exploratory Data Analysis - Benchmarking Implementation
 """
 
 import logging
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Any
 import pandas as pd
 import numpy as np
+from pandas import DataFrame, Series
 from scipy import stats
 
 
@@ -185,7 +186,7 @@ def find_peer_group(
     sector_column: str = "sector",
     criteria: str = "market_cap",
     ticker_column: str = "ticker",
-) -> pd.DataFrame:
+) -> pd.DataFrame | pd.Series:
     """Find peer companies within the same sector.
 
     Identifies similar companies based on sector and a similarity criterion
@@ -232,7 +233,7 @@ def find_peer_group(
     # Sort by similarity to target based on criteria
     if criteria in peers_df.columns and target_value is not None:
         peers_df["_similarity"] = abs(peers_df[criteria] - target_value)
-        peers_df = peers_df.sort_values(by="_similarity")
+        peers_df = peers_df.sort_values("_similarity")
         peers_df = peers_df.drop("_similarity", axis=1)
 
     # Return top n_peers
