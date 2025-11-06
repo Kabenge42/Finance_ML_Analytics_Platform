@@ -36,9 +36,10 @@ from sklearn.ensemble import (
     VotingRegressor,
     StackingRegressor,
     HistGradientBoostingRegressor,
-    )
+)
 from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
 # Scikit-learn imports
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -431,12 +432,13 @@ def prepare_regression_data(
         X, y, test_size=test_size, random_state=random_state
     )
 
-    # Feature info
+    # Feature info - CRITICAL FIX: 'all_features' should only contain numeric features
+    # to prevent passing non-numeric columns to model training
     feature_info = {
         "numeric_features": numeric_features,
         "categorical_features": categorical_features,
         "classification_features": classification_features,
-        "all_features": feature_cols,
+        "all_features": numeric_features,  # ✓ Only numeric features for training
     }
 
     return X_train, X_test, y_train, y_test, feature_info

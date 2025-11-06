@@ -37,7 +37,8 @@ from finance_ml.advanced_eda import (
     compare_two_groups,
     generate_eda_report,
     generate_sector_comparison_report,
-    )
+)
+
 # Import from advanced_models module (Phase 9.5)
 from finance_ml.advanced_models import (
     # Feature Integration
@@ -139,7 +140,8 @@ from finance_ml.config import (
     get_config,
     set_config,
     reset_config,
-    )
+)
+
 # Import from new modular structure (Phase 7 TDD implementation)
 from finance_ml.data import (
     setup_logging,
@@ -170,7 +172,8 @@ from finance_ml.data import (
     safe_divide,
     create_temporal_split,
     create_expanding_windows,
-    )
+)
+
 # Import from data_catalog module (Phase 9.1 - Data Catalog)
 from finance_ml.data_catalog import (
     SchemaInfo,
@@ -179,7 +182,8 @@ from finance_ml.data_catalog import (
     DataCatalog,
     extract_schema_info,
     create_statistical_profile,
-    )
+)
+
 # Import from data_versioning module (Phase 9.1 - Data Versioning)
 from finance_ml.data_versioning import (
     DataVersion,
@@ -187,7 +191,8 @@ from finance_ml.data_versioning import (
     calculate_dataframe_hash,
     compare_versions,
     create_version_snapshot,
-    )
+)
+
 # Import from eval module (Phase 7 TDD implementation complete)
 from finance_ml.eval import (
     calculate_mispricing_score,
@@ -241,7 +246,8 @@ from finance_ml.features import (
     engineer_volatility_features,
     engineer_revenue_cagr,
     build_features_and_target,
-    )
+)
+
 # Import logging configuration module (TDD implementation)
 from finance_ml.logging_config import (
     setup_file_logging,
@@ -251,7 +257,8 @@ from finance_ml.logging_config import (
     remove_file_handlers,
     get_log_level,
     set_log_level,
-    )
+)
+
 # Import from models module (Phase 7 TDD implementation complete)
 from finance_ml.models import (
     create_event_labels,
@@ -265,9 +272,11 @@ from finance_ml.models import (
     train_stacking_ensemble,
     train_stacking_ensemble_by_sector,
     monitor_ensemble_training,
-    )
+)
+
 # Import notebook configuration module
 from finance_ml.notebook_config import NotebookConfig
+
 # Notebook utility helpers (display + loading strategy)
 from finance_ml.notebook_utils import (
     display_config_summary,
@@ -277,7 +286,8 @@ from finance_ml.notebook_utils import (
     display_missing_values_summary,
     validate_and_display_data,
     perform_and_display_eda,
-    )
+)
+
 # Import portfolio optimization module (TDD implementation)
 from finance_ml.portfolio_optimization import (
     calculate_portfolio_return,
@@ -289,7 +299,8 @@ from finance_ml.portfolio_optimization import (
     optimize_portfolio_min_volatility,
     optimize_portfolio_target_return,
     rebalance_portfolio,
-    )
+)
+
 # Import risk metrics module (TDD implementation)
 from finance_ml.risk_metrics import (
     calculate_var_historical,
@@ -299,7 +310,8 @@ from finance_ml.risk_metrics import (
     calculate_sortino_ratio,
     calculate_max_drawdown,
     calculate_portfolio_risk_metrics,
-    )
+)
+
 # Import from transformers module (Phase 9.1 Enhancements #2 and #5)
 from finance_ml.transformers import (
     RegularizedTargetEncoder,

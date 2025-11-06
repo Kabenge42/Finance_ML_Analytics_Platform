@@ -27,12 +27,13 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
     roc_auc_score,
-    )
+)
 from sklearn.model_selection import train_test_split
 
 # Optional imports with fallback handling
 try:
     import xgboost as xgb
+
     HAVE_XGBOOST = True
 except ImportError:
     xgb = None  # type: ignore
@@ -41,6 +42,7 @@ except ImportError:
 
 try:
     import lightgbm as lgb
+
     HAVE_LIGHTGBM = True
 except ImportError:
     lgb = None  # type: ignore
@@ -49,6 +51,7 @@ except ImportError:
 
 try:
     from catboost import CatBoostClassifier
+
     HAVE_CATBOOST = True
 except ImportError:
     CatBoostClassifier = None  # type: ignore
@@ -59,6 +62,7 @@ try:
     from imblearn.over_sampling import SMOTE, ADASYN
     from imblearn.under_sampling import RandomUnderSampler
     from imblearn.pipeline import Pipeline as ImbPipeline
+
     HAVE_IMBLEARN = True
 except ImportError:
     SMOTE = None  # type: ignore
@@ -72,6 +76,7 @@ try:
     import tensorflow as tf
     from tensorflow import keras
     from tensorflow.keras import layers
+
     HAVE_TENSORFLOW = True
 except ImportError:
     tf = None  # type: ignore
@@ -82,6 +87,7 @@ except ImportError:
 
 try:
     import shap
+
     HAVE_SHAP = True
 except ImportError:
     shap = None  # type: ignore
@@ -200,7 +206,9 @@ def create_enhanced_event_labels(
 
     elif method == "fundamental":
         # Fundamental events based on margin trends
-        margin_cols = [c for c in ["gross_margin", "operating_margin", "net_margin"] if c in df.columns]
+        margin_cols = [
+            c for c in ["gross_margin", "operating_margin", "net_margin"] if c in df.columns
+        ]
         if not margin_cols:
             logger.warning("No margin columns available, returning all neutral")
             return labels
@@ -297,8 +305,15 @@ def prepare_classification_data(
     """
     # Drop non-feature columns
     drop_cols = [
-        "ticker", "isin", "name", "description", "price_target", "price_target_median",
-        "last_updated", "income_statement_report_date", "p_e_percentile"
+        "ticker",
+        "isin",
+        "name",
+        "description",
+        "price_target",
+        "price_target_median",
+        "last_updated",
+        "income_statement_report_date",
+        "p_e_percentile",
     ]
     drop_cols = [c for c in drop_cols if c in df.columns]
     X = df.drop(columns=drop_cols)
@@ -403,7 +418,9 @@ def train_xgboost_classifier(
 
     # Metrics
     accuracy = accuracy_score(y_test, y_pred)
-    precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average="macro", zero_division=0)
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        y_test, y_pred, average="macro", zero_division=0
+    )
 
     logger.info(f"XGBoost - Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
 
@@ -493,7 +510,9 @@ def train_lightgbm_classifier(
 
     # Metrics
     accuracy = accuracy_score(y_test, y_pred)
-    precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average="macro", zero_division=0)
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        y_test, y_pred, average="macro", zero_division=0
+    )
 
     logger.info(f"LightGBM - Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
 
@@ -579,7 +598,9 @@ def train_catboost_classifier(
 
     # Metrics
     accuracy = accuracy_score(y_test, y_pred)
-    precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average="macro", zero_division=0)
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        y_test, y_pred, average="macro", zero_division=0
+    )
 
     logger.info(f"CatBoost - Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
 
@@ -728,7 +749,9 @@ def evaluate_classification(
     cm = confusion_matrix(y_true, y_pred)
 
     # Classification report
-    report = classification_report(y_true, y_pred, target_names=class_names, output_dict=True, zero_division=0)
+    report = classification_report(
+        y_true, y_pred, target_names=class_names, output_dict=True, zero_division=0
+    )
 
     # ROC-AUC (if probabilities available)
     roc_auc = None
@@ -1523,7 +1546,9 @@ def compare_classifiers(
 
     # Random Forest (baseline)
     logger.info("Training Random Forest...")
-    rf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, class_weight="balanced")
+    rf = RandomForestClassifier(
+        n_estimators=100, max_depth=10, random_state=42, class_weight="balanced"
+    )
 
     # Prepare data for sklearn models
     from sklearn.preprocessing import StandardScaler
@@ -1579,20 +1604,44 @@ def compare_classifiers(
     # XGBoost
     if HAVE_XGBOOST:
         logger.info("Training XGBoost...")
-        xgb_result = train_xgboost_classifier(X_train, y_train, X_test, y_test, numeric_cols, categorical_cols)
-        results.append({"Model": "XGBoost", "Accuracy": xgb_result["accuracy"], "F1-Score": xgb_result["f1_score"]})
+        xgb_result = train_xgboost_classifier(
+            X_train, y_train, X_test, y_test, numeric_cols, categorical_cols
+        )
+        results.append(
+            {
+                "Model": "XGBoost",
+                "Accuracy": xgb_result["accuracy"],
+                "F1-Score": xgb_result["f1_score"],
+            }
+        )
 
     # LightGBM
     if HAVE_LIGHTGBM:
         logger.info("Training LightGBM...")
-        lgb_result = train_lightgbm_classifier(X_train, y_train, X_test, y_test, numeric_cols, categorical_cols)
-        results.append({"Model": "LightGBM", "Accuracy": lgb_result["accuracy"], "F1-Score": lgb_result["f1_score"]})
+        lgb_result = train_lightgbm_classifier(
+            X_train, y_train, X_test, y_test, numeric_cols, categorical_cols
+        )
+        results.append(
+            {
+                "Model": "LightGBM",
+                "Accuracy": lgb_result["accuracy"],
+                "F1-Score": lgb_result["f1_score"],
+            }
+        )
 
     # CatBoost
     if HAVE_CATBOOST:
         logger.info("Training CatBoost...")
-        cb_result = train_catboost_classifier(X_train, y_train, X_test, y_test, numeric_cols, categorical_cols)
-        results.append({"Model": "CatBoost", "Accuracy": cb_result["accuracy"], "F1-Score": cb_result["f1_score"]})
+        cb_result = train_catboost_classifier(
+            X_train, y_train, X_test, y_test, numeric_cols, categorical_cols
+        )
+        results.append(
+            {
+                "Model": "CatBoost",
+                "Accuracy": cb_result["accuracy"],
+                "F1-Score": cb_result["f1_score"],
+            }
+        )
 
     # Neural Network
     if HAVE_TENSORFLOW:
