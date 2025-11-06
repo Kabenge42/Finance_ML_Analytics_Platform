@@ -20,7 +20,7 @@ from sklearn.ensemble import (
     RandomForestClassifier,
     GradientBoostingRegressor,
     StackingRegressor,
-    )
+)
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from sklearn.metrics import (
@@ -30,7 +30,7 @@ from sklearn.metrics import (
     accuracy_score,
     f1_score,
     classification_report,
-    )
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -437,6 +437,7 @@ def train_quantile_regression(
 
         Provides a unified interface to predict multiple quantiles simultaneously.
         """
+
         def __init__(self, models_dict):
             self.models = models_dict
 
@@ -574,6 +575,7 @@ def train_stacking_ensemble(
         Exposes base models and meta-learner for inspection and provides
         a unified prediction interface.
         """
+
         def __init__(self, stacking_reg):
             self.stacking_regressor = stacking_reg
             # estimators_ is a list of fitted base estimators

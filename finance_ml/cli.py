@@ -23,7 +23,7 @@ from finance_ml.data import (
     setup_logging,
     validate_schema,
     check_missing_values,
-    )
+)
 from finance_ml.eval import simple_eda
 from finance_ml.models import train_and_evaluate_regression, train_and_evaluate_regression_by_sector
 

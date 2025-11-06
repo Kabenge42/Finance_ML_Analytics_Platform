@@ -363,5 +363,171 @@ class TestFinancialRatioHandling(unittest.TestCase):
         self.assertTrue(np.isfinite(ratios_clean.dropna()).all())
 
 
+class TestEnhancedImputationStrategy(unittest.TestCase):
+    """Test suite for Phase 9.1 enhanced imputation strategy."""
+    
+    def setUp(self):
+        """Create sample financial dataset with missing values."""
+        np.random.seed(42)
+        self.df = pd.DataFrame({
+            'ticker': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'] * 20,
+            'sector': ['Technology', 'Technology', 'Technology', 
+                      'Consumer Discretionary', 'Consumer Discretionary'] * 20,
+            # Zero imputation columns
+            'impairment_of_goodwill_fq': [np.nan] * 50 + [1000.0] * 50,
+            'restructuring_charges_ltm': [np.nan] * 60 + [500.0] * 40,
+            'cash_acquisitions_fy': [np.nan] * 70 + [2000.0] * 30,
+            'asset_writedown_ltm': [np.nan] * 80 + [300.0] * 20,
+            'r_d_expenses_ltm': [np.nan] * 30 + [1500.0] * 70,
+            # KNN imputation columns
+            'market_cap': [100 + np.random.randn() * 10 if i % 3 != 0 else np.nan 
+                          for i in range(100)],
+            'enterprise_value': [120 + np.random.randn() * 15 if i % 4 != 0 else np.nan 
+                                for i in range(100)],
+            'last_price': [50 + np.random.randn() * 5 if i % 5 != 0 else np.nan 
+                          for i in range(100)],
+            'p_e_ltm': [15 + np.random.randn() * 3 if i % 6 != 0 else np.nan 
+                       for i in range(100)],
+            'ebitda_ltm': [10 + np.random.randn() * 2 if i % 7 != 0 else np.nan 
+                          for i in range(100)],
+        })
+    
+    def test_get_zero_imputation_columns(self):
+        """Test retrieval of zero imputation column list."""
+        from finance_ml.advanced_preprocessing import get_zero_imputation_columns
+        
+        zero_cols = get_zero_imputation_columns()
+        
+        # Verify it returns a list
+        self.assertIsInstance(zero_cols, list)
+        # Verify key columns are present
+        self.assertIn('impairment_of_goodwill_fq', zero_cols)
+        self.assertIn('restructuring_charges_ltm', zero_cols)
+        self.assertIn('cash_acquisitions_fy', zero_cols)
+        # Verify minimum expected count (adjust based on your schema)
+        self.assertGreaterEqual(len(zero_cols), 30)
+    
+    def test_get_knn_imputation_columns(self):
+        """Test retrieval of KNN imputation column list."""
+        from finance_ml.advanced_preprocessing import get_knn_imputation_columns
+        
+        knn_cols = get_knn_imputation_columns()
+        
+        # Verify it returns a list
+        self.assertIsInstance(knn_cols, list)
+        # Verify key columns are present
+        self.assertIn('market_cap', knn_cols)
+        self.assertIn('enterprise_value', knn_cols)
+        self.assertIn('last_price', knn_cols)
+        self.assertIn('p_e_ltm', knn_cols)
+        # Verify minimum expected count
+        self.assertGreaterEqual(len(knn_cols), 100)
+    
+    def test_apply_zero_imputation_basic(self):
+        """Test basic zero imputation for exceptional event columns."""
+        from finance_ml.advanced_preprocessing import apply_zero_imputation
+        
+        result = apply_zero_imputation(
+            self.df, 
+            columns=['impairment_of_goodwill_fq', 'restructuring_charges_ltm']
+        )
+        
+        # Verify NaN values are replaced with 0
+        self.assertEqual(result['impairment_of_goodwill_fq'].isna().sum(), 0)
+        self.assertEqual(result['restructuring_charges_ltm'].isna().sum(), 0)
+        # Verify non-NaN values are preserved
+        self.assertGreater(result['impairment_of_goodwill_fq'].sum(), 0)
+        # Verify original dataframe is not modified
+        self.assertGreater(self.df['impairment_of_goodwill_fq'].isna().sum(), 0)
+    
+    def test_apply_zero_imputation_auto_detect(self):
+        """Test automatic detection and imputation of zero-fill columns."""
+        from finance_ml.advanced_preprocessing import apply_zero_imputation
+        
+        # Call without specifying columns (auto-detect)
+        result = apply_zero_imputation(self.df)
+        
+        # Verify known zero-imputation columns have no NaN
+        zero_cols_present = ['impairment_of_goodwill_fq', 'restructuring_charges_ltm', 
+                            'cash_acquisitions_fy', 'asset_writedown_ltm']
+        for col in zero_cols_present:
+            if col in result.columns:
+                self.assertEqual(result[col].isna().sum(), 0, 
+                               f"Column {col} should have no NaN after zero imputation")
+    
+    def test_apply_knn_imputation_with_sector(self):
+        """Test KNN imputation with sector awareness."""
+        from finance_ml.advanced_preprocessing import apply_knn_imputation_enhanced
+        
+        result = apply_knn_imputation_enhanced(
+            self.df,
+            columns=['market_cap', 'enterprise_value', 'last_price'],
+            sector_column='sector',
+            n_neighbors=3
+        )
+        
+        # Verify NaN values are reduced (should be 0 if enough neighbors)
+        for col in ['market_cap', 'enterprise_value', 'last_price']:
+            self.assertLessEqual(result[col].isna().sum(), 
+                               self.df[col].isna().sum())
+    
+    def test_apply_enhanced_imputation_strategy_full_pipeline(self):
+        """Test complete two-step imputation pipeline."""
+        from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy
+        
+        result = apply_enhanced_imputation_strategy(
+            self.df,
+            sector_column='sector',
+            n_neighbors=5
+        )
+        
+        # Verify zero-imputation columns have no NaN
+        zero_cols_present = [col for col in ['impairment_of_goodwill_fq', 
+                                              'restructuring_charges_ltm'] 
+                            if col in result.columns]
+        for col in zero_cols_present:
+            self.assertEqual(result[col].isna().sum(), 0)
+        
+        # Verify KNN-imputation columns have reduced NaN
+        knn_cols_present = [col for col in ['market_cap', 'enterprise_value'] 
+                           if col in result.columns]
+        for col in knn_cols_present:
+            self.assertLessEqual(result[col].isna().sum(), self.df[col].isna().sum())
+    
+    def test_imputation_preserves_dtypes(self):
+        """Test that imputation preserves numeric dtypes."""
+        from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy
+        
+        original_dtypes = self.df.dtypes
+        result = apply_enhanced_imputation_strategy(self.df)
+        
+        for col in result.select_dtypes(include=[np.number]).columns:
+            if col in original_dtypes:
+                self.assertEqual(result[col].dtype, original_dtypes[col])
+    
+    def test_imputation_edge_cases(self):
+        """Test imputation with edge cases."""
+        from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy
+        
+        # Test with all NaN column
+        df_edge = self.df.copy()
+        df_edge['all_nan_col'] = np.nan
+        result = apply_enhanced_imputation_strategy(df_edge)
+        
+        # Should handle gracefully
+        self.assertIn('all_nan_col', result.columns)
+    
+    def test_imputation_logging(self):
+        """Test that imputation logs appropriate information."""
+        from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy
+        import logging
+        
+        with self.assertLogs(level='INFO') as log:
+            apply_enhanced_imputation_strategy(self.df)
+            
+        # Verify logging occurred
+        self.assertTrue(any('imputation' in msg.lower() for msg in log.output))
+
+
 if __name__ == "__main__":
     unittest.main()

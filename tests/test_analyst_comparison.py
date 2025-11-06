@@ -292,7 +292,7 @@ class TestPredictionAnalystAnalyticsClass(unittest.TestCase):
         """Test class initialization."""
         analytics = PredictionAnalystAnalytics(self.sample_df, self.config)
 
-        self.assertIsNotNone(analytics.stocks_df)
+        self.assertIsNotNone(analytics.all_stocks_featured)
         self.assertEqual(analytics.config, self.config)
         self.assertIsNone(analytics.comparison_df)
         self.assertIsNone(analytics.agreement_metrics)
@@ -306,7 +306,7 @@ class TestPredictionAnalystAnalyticsClass(unittest.TestCase):
         analytics.prepare_analyst_data()
 
         # Should have all 6 stocks (no missing values)
-        self.assertEqual(len(analytics.stocks_df), 6)
+        self.assertEqual(len(analytics.all_stocks_featured), 6)
 
     def test_prepare_analyst_data_with_missing(self):
         """Test data preparation with missing values."""
@@ -317,7 +317,7 @@ class TestPredictionAnalystAnalyticsClass(unittest.TestCase):
         analytics.prepare_analyst_data()
 
         # Should drop row with missing value
-        self.assertEqual(len(analytics.stocks_df), 5)
+        self.assertEqual(len(analytics.all_stocks_featured), 5)
 
     def test_prepare_analyst_data_missing_column(self):
         """Test error when required column is missing."""

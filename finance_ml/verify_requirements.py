@@ -9,11 +9,11 @@ import sys
 import pkg_resources
 
 required = {
-    'numpy': '>=1.24.0,<2.1.0',
-    'pandas': '>=2.0.0,<3.0.0',
-    'imbalanced-learn': '>=0.11.0,<1.0.0',
-    'lightgbm': '>=4.0.0,<5.0.0',
-    'catboost': '>=1.2.0,<2.0.0',
+    "numpy": ">=1.24.0,<2.1.0",
+    "pandas": ">=2.0.0,<3.0.0",
+    "imbalanced-learn": ">=0.11.0,<1.0.0",
+    "lightgbm": ">=4.0.0,<5.0.0",
+    "catboost": ">=1.2.0,<2.0.0",
     # Add all required packages
 }
 

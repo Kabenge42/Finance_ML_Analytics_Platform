@@ -963,6 +963,38 @@ class TestCalculateFeatureImportanceRf(unittest.TestCase):
         result = calculate_feature_importance_rf(X, y, top_k=2, n_estimators=10)
         self.assertEqual(len(result), 2)
 
+    def test_calculate_feature_importance_rf_with_nan_columns(self):
+        """Test that feature importance handles columns dropped during cleaning."""
+        # Create data with non-numeric columns that will be dropped during cleaning
+        X = pd.DataFrame({
+            'feature1': [1, 2, 3, 4, 5],
+            'feature2': ['a', 'b', 'c', 'd', 'e'],  # Non-numeric, will be dropped
+            'feature3': [10, 20, 30, 40, 50]
+        })
+        y = pd.Series([100, 200, 300, 400, 500])
+        
+        # Call function
+        result = calculate_feature_importance_rf(X, y, top_k=5, n_estimators=10)
+        
+        # Verify: result should only include numeric features present in X_clean
+        self.assertEqual(len(result), 2)  # Only feature1 and feature3
+        self.assertIn('feature1', result['feature'].values)
+        self.assertIn('feature3', result['feature'].values)
+        self.assertNotIn('feature2', result['feature'].values)
+
+    def test_calculate_feature_importance_rf_empty_after_cleaning(self):
+        """Test that function returns empty DataFrame when all columns are non-numeric."""
+        X = pd.DataFrame({
+            'feature1': ['a', 'b'],
+            'feature2': ['x', 'y']
+        })
+        y = pd.Series([100, 200])
+        
+        result = calculate_feature_importance_rf(X, y, n_estimators=10)
+        
+        self.assertEqual(len(result), 0)
+        self.assertListEqual(list(result.columns), ['feature', 'importance'])
+
 
 class TestBuildComprehensiveFeatures(unittest.TestCase):
     """Test build_comprehensive_features orchestrator function."""

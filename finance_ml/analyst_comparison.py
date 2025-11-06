@@ -185,7 +185,11 @@ def generate_prediction_analyst_excel_report(
     # Sheet 2: Detailed Stock List
     detail_cols = [
         "ticker",
+        "name",
+        "country"
+        "exchange",
         "sector",
+        "industry"
         "region",
         "last_price",
         "predicted_price_target",

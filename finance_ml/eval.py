@@ -4312,14 +4312,14 @@ def filter_stocks_by_criteria(
         if "market_cap" in result.columns:
             result = result[result["market_cap"] <= max_market_cap]
 
-    # Filter by mispricing score
+    # Filter by mispricing score (use percentage column for threshold comparison)
     if min_mispricing is not None:
-        if "mispricing_score" in result.columns:
-            result = result[result["mispricing_score"] >= min_mispricing]
+        if "mispricing_pct" in result.columns:
+            result = result[result["mispricing_pct"] >= min_mispricing]
 
     if max_mispricing is not None:
-        if "mispricing_score" in result.columns:
-            result = result[result["mispricing_score"] <= max_mispricing]
+        if "mispricing_pct" in result.columns:
+            result = result[result["mispricing_pct"] <= max_mispricing]
 
     # Filter by valuation category
     if valuation_categories is not None:
@@ -4367,8 +4367,8 @@ def create_valuation_scatter_plot(
 
     # Create hover data
     hover_data_cols = ["ticker"] if "ticker" in df.columns else []
-    if "mispricing_score" in df.columns:
-        hover_data_cols.append("mispricing_score")
+    if "mispricing_pct" in df.columns:
+        hover_data_cols.append("mispricing_pct")
     if "valuation_category" in df.columns:
         hover_data_cols.append("valuation_category")
 
@@ -4419,7 +4419,7 @@ def generate_pdf_report(
     pdf_path: Path,
     title: str = "Stock Valuation Report",
     include_summary: bool = True,
-    top_n_opportunities: int = 10,
+    top_n_opportunities: int = 100,
     include_charts: bool = False,
 ) -> None:
     """
@@ -4520,8 +4520,8 @@ def generate_pdf_report(
             strong_buy_count = 0
             buy_count = 0
 
-        if "mispricing_score" in df.columns:
-            avg_mispricing = df["mispricing_score"].mean()
+        if "mispricing_pct" in df.columns:
+            avg_mispricing = df["mispricing_pct"].mean()
         else:
             avg_mispricing = 0.0
 
@@ -4539,16 +4539,18 @@ def generate_pdf_report(
     story.append(Spacer(1, 0.1 * inch))
 
     # Sort by mispricing score and get top N
-    if "mispricing_score" in df.columns:
-        top_opportunities = df.nlargest(top_n_opportunities, "mispricing_score")
+    if "mispricing_pct" in df.columns:
+        top_opportunities = df.nlargest(top_n_opportunities, "mispricing_pct")
     else:
         top_opportunities = df.head(top_n_opportunities)
 
     # Create table data
-    table_data = [["Ticker", "Sector", "Current Price", "Target Price", "Upside %", "Category"]]
+    table_data = [["Ticker","Name", "Exchange", "Sector", "Current Price", "Target Price", "Upside %", "Category"]]
 
     for _, row in top_opportunities.iterrows():
         ticker = row.get("ticker", "N/A")
+        name = row.get("name", "N/A")
+        exchange = row.get("exchange", "N/A")
         sector = row.get("sector", "N/A")
         current = row.get("last_price", 0)
         target = row.get("predicted_price_target", 0)
@@ -4559,6 +4561,8 @@ def generate_pdf_report(
             [
                 str(ticker),
                 str(sector),
+                str(exchange),
+                str(sector),
                 f"${current:.2f}" if current else "N/A",
                 f"${target:.2f}" if target else "N/A",
                 f"{mispricing:.1f}%" if mispricing else "N/A",
@@ -4568,7 +4572,7 @@ def generate_pdf_report(
 
     # Create table
     table = Table(
-        table_data, colWidths=[1 * inch, 1.5 * inch, 1 * inch, 1 * inch, 0.8 * inch, 1 * inch]
+        table_data, colWidths=[1 * inch,3 *inch,1.5*inch, 1.5 * inch, 1 * inch, 1 * inch, 0.8 * inch, 1 * inch]
     )
 
     # Table style

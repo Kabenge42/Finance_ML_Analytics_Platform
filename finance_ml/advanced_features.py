@@ -769,16 +769,16 @@ def calculate_feature_importance_mutual_info(
     """
     # Handle missing and invalid values
     X_clean = X.copy()
-    
+
     # Replace infinite values with NaN first
     X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
-    
+
     # Fill NaN with median
     X_clean = X_clean.fillna(X_clean.median())
-    
+
     # For any remaining NaN, fill with 0
     X_clean = X_clean.fillna(0)
-    
+
     # Clip extreme values
     for col in X_clean.columns:
         col_data = X_clean[col]
@@ -788,7 +788,7 @@ def calculate_feature_importance_mutual_info(
             lower_bound = mean_val - 3 * std_val
             upper_bound = mean_val + 3 * std_val
             X_clean[col] = np.clip(col_data, lower_bound, upper_bound)
-    
+
     # Handle target variable
     y_clean = y.replace([np.inf, -np.inf], np.nan)
     y_clean = y_clean.fillna(y_clean.median())

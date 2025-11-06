@@ -7,37 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-11-06
+
 ### Added
 
-- Comprehensive notebook restructuring documentation (`docs/summaries/NOTEBOOK_COMPREHENSIVE_RESTRUCTURING_2025.md`)
-  detailing the complete reorganization of the main notebook
-- New reporting and visualization improvement plan (`docs/improvement_plan/Reporting_Visualization_Improvement_Plan.md`)
-- Documentation for validation and enhancement summaries moved to dedicated `docs/summaries/` directory
+- Phase 9.5 enhanced classification module (`finance_ml/classification_enhanced.py`) with improved event classification
+  capabilities
+  ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49))
+- Comprehensive Phase 9.5 data flow fix documentation:
+    - `docs/summaries/PHASE95_DATA_FLOW_FIX_SUMMARY.md` detailing data pipeline improvements
+    - `docs/summaries/PHASE95_TUPLE_UNPACKING_FIX_SUMMARY.md` documenting tuple unpacking resolutions
+    - `DASHBOARD_IMPLEMENTATION_SUMMARY.md` summarizing dashboard enhancements
+      ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49))
+- New test suites for enhanced functionality:
+    - `tests/test_classification_enhanced.py` for classification module validation
+    - `tests/test_dashboard_helpers.py` and `tests/test_dashboard_helpers_enhanced.py` for dashboard testing
+    - `tests/test_restructure_notebook_functions.py` and `tests/test_restructure_notebook_script.py` for notebook
+      restructuring validation
+    - `test_dashboard_coverage_check.py` for coverage validation
+      ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49))
+- Phase 9.7 analyst comparison enhancements with improved prediction vs. analyst analytics
+  ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
+- Notebook restructuring utilities moved to root for easier access (`restructure_notebook.py`, `fix_phase_ordering.py`)
+  ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
 
 ### Changed
 
-- **Notebook restructuring**: Reduced cell count from 160 to 142 (11.3% reduction) by removing 18 duplicate/misplaced
-  cells
-  - Fixed phase ordering: 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.5.1 → 9.6 → 9.6.1 → 9.7 → 9.8
-  - Standardized section headers across all phases
-  - Added validation gates before model training to guarantee zero NaN values
-- **Documentation reorganization**: Moved improvement plans and implementation guides to `docs/improvement_plan/` for
-  better organization
-- **Summary consolidation**: Relocated phase summaries, validation reports, and implementation summaries to
-  `docs/summaries/`
-- Updated README.md to version 0.5.1 with recent updates section highlighting notebook restructuring achievements
-- Enhanced `create_equities_schema.sql` with improved structure and comments
-- Organized notebook backups into dedicated `backups/` directory
+- **Major notebook reorganization**: `ml_finance_model_main_v9.ipynb` with comprehensive Phase 9.5 and 9.7 integration
+  ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49),
+  [17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
+- Enhanced core modules with improved data flow and error handling:
+    - `finance_ml/advanced_eda.py` with expanded exploratory analysis capabilities
+    - `finance_ml/classification.py` with refined event classification logic
+    - `finance_ml/data_catalog.py` and `finance_ml/data_versioning.py` with better data management
+    - `finance_ml/advanced_models.py` with improved regression modeling
+      ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49))
+- Updated `finance_ml/__init__.py` to export new classification_enhanced module and analyst comparison utilities
+  ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49),
+  [17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
+- Improved README.md with updated Phase 9.7 documentation and workflow guidance
+  ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
+- Enhanced `tools/apply_phase97_refactoring.py` with refined refactoring automation
+  ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
+
+### Fixed
+
+- Resolved Phase 9.5 data flow issues with comprehensive tuple unpacking and data pipeline fixes
+  ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49))
+- Fixed classification module data handling with improved error detection and recovery
+  ([3010b48](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/3010b48a8b295e4294c2ef9aab545e72bb5f6c49))
+- Improved notebook phase ordering and cell organization consistency
+  ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
 
 ---
 
-**Version Bump Recommendation**: PATCH (0.5.1 → 0.5.2)
+**Version Bump Recommendation**: MINOR (0.5.1 → 0.6.0)
 
-- Documentation and organizational improvements
-- No breaking changes or new features
-- Enhanced maintainability and project structure
+- New classification_enhanced module adds significant functionality
+- Multiple feature additions including enhanced dashboards and testing infrastructure
+- Bug fixes for Phase 9.5 data flow issues
+- No breaking changes; primarily additive with improvements
 
-**Date Generated**: 2025-11-05
+**Date Generated**: 2025-11-06
 
 ## [0.5.1] - 2025-11-05
 

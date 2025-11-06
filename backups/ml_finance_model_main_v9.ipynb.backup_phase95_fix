@@ -47,8 +47,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:26:26.639639Z",
-     "start_time": "2025-11-05T21:26:25.617466Z"
+     "end_time": "2025-11-06T00:59:01.013687Z",
+     "start_time": "2025-11-06T00:58:59.656875Z"
     }
    },
    "cell_type": "code",
@@ -111,8 +111,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:26:26.658172Z",
-     "start_time": "2025-11-05T21:26:26.652959Z"
+     "end_time": "2025-11-06T00:59:01.031711Z",
+     "start_time": "2025-11-06T00:59:01.025922Z"
     }
    },
    "cell_type": "code",
@@ -171,8 +171,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:26:26.701250Z",
-     "start_time": "2025-11-05T21:26:26.694515Z"
+     "end_time": "2025-11-06T00:59:01.082466Z",
+     "start_time": "2025-11-06T00:59:01.077403Z"
     }
    },
    "cell_type": "code",
@@ -315,8 +315,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:26:26.735637Z",
-     "start_time": "2025-11-05T21:26:26.729966Z"
+     "end_time": "2025-11-06T00:59:01.134029Z",
+     "start_time": "2025-11-06T00:59:01.128643Z"
     }
    },
    "cell_type": "code",
@@ -392,8 +392,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:26:26.973587Z",
-     "start_time": "2025-11-05T21:26:26.761894Z"
+     "end_time": "2025-11-06T00:59:01.376174Z",
+     "start_time": "2025-11-06T00:59:01.184750Z"
     }
    },
    "cell_type": "code",
@@ -423,9 +423,9 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:26:26,763 INFO Loading from CSV files...\n",
-      "2025-11-05 22:26:26,764 INFO Loading CSVs from data\n",
-      "2025-11-05 22:26:26,970 INFO ✓ Loaded 8000 stocks from CSV\n"
+      "2025-11-06 01:59:01,186 INFO Loading from CSV files...\n",
+      "2025-11-06 01:59:01,187 INFO Loading CSVs from data\n",
+      "2025-11-06 01:59:01,373 INFO ✓ Loaded 8000 stocks from CSV\n"
      ]
     },
     {
@@ -458,8 +458,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:26:27.008065Z",
-     "start_time": "2025-11-05T21:26:26.988558Z"
+     "end_time": "2025-11-06T00:59:01.401510Z",
+     "start_time": "2025-11-06T00:59:01.387058Z"
     }
    },
    "cell_type": "code",
@@ -777,8 +777,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:26:31.041997Z",
-     "start_time": "2025-11-05T21:26:27.022033Z"
+     "end_time": "2025-11-06T00:59:05.390327Z",
+     "start_time": "2025-11-06T00:59:01.438295Z"
     }
    },
    "cell_type": "code",
@@ -909,13 +909,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:26:27,044 INFO Starting Phase 9.1 enhanced 4-step imputation strategy\n",
-      "2025-11-05 22:26:27,055 INFO Initial missing values: 397757\n",
-      "2025-11-05 22:26:27,055 INFO Step 1: Applying zero imputation for exceptional event columns (48 cols)\n",
-      "2025-11-05 22:26:27,071 INFO Applied zero imputation to 43 columns\n",
-      "2025-11-05 22:26:27,083 INFO After Step 1: 207421 missing values remain\n",
-      "2025-11-05 22:26:27,084 INFO Step 2: Applying sector-aware KNN imputation for financial metrics (148 cols)\n",
-      "2025-11-05 22:26:27,085 INFO Applying KNN imputation to 138 columns\n"
+      "2025-11-06 01:59:01,454 INFO Starting Phase 9.1 enhanced 4-step imputation strategy\n",
+      "2025-11-06 01:59:01,464 INFO Initial missing values: 397757\n",
+      "2025-11-06 01:59:01,465 INFO Step 1: Applying zero imputation for exceptional event columns (48 cols)\n",
+      "2025-11-06 01:59:01,479 INFO Applied zero imputation to 43 columns\n",
+      "2025-11-06 01:59:01,489 INFO After Step 1: 207421 missing values remain\n",
+      "2025-11-06 01:59:01,490 INFO Step 2: Applying sector-aware KNN imputation for financial metrics (148 cols)\n",
+      "2025-11-06 01:59:01,491 INFO Applying KNN imputation to 138 columns\n"
      ]
     },
     {
@@ -944,15 +944,15 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:26:30,123 INFO Applied sector-aware KNN imputation (k=5) to 11 sectors across 138 columns\n",
-      "2025-11-05 22:26:30,130 INFO After Step 2: 37972 missing values remain\n",
-      "2025-11-05 22:26:30,131 INFO Step 3: Applying price imputation for price target columns (5 cols)\n",
-      "2025-11-05 22:26:30,136 INFO Applied price imputation to 14 columns using 'last_price'\n",
-      "2025-11-05 22:26:30,148 INFO After Step 3: 27547 missing values remain\n",
-      "2025-11-05 22:26:30,149 INFO Step 4: Applying median imputation for remaining columns\n",
-      "2025-11-05 22:26:30,171 INFO Applied median imputation to 27547 total missing values\n",
-      "2025-11-05 22:26:30,182 INFO After Step 4: 0 missing values remain\n",
-      "2025-11-05 22:26:30,182 INFO 4-step imputation complete: Reduced missing values from 397757 to 0 (reduction: 397757)\n"
+      "2025-11-06 01:59:04,415 INFO Applied sector-aware KNN imputation (k=5) to 11 sectors across 138 columns\n",
+      "2025-11-06 01:59:04,421 INFO After Step 2: 37972 missing values remain\n",
+      "2025-11-06 01:59:04,421 INFO Step 3: Applying price imputation for price target columns (5 cols)\n",
+      "2025-11-06 01:59:04,427 INFO Applied price imputation to 14 columns using 'last_price'\n",
+      "2025-11-06 01:59:04,438 INFO After Step 3: 27547 missing values remain\n",
+      "2025-11-06 01:59:04,439 INFO Step 4: Applying median imputation for remaining columns\n",
+      "2025-11-06 01:59:04,459 INFO Applied median imputation to 27547 total missing values\n",
+      "2025-11-06 01:59:04,471 INFO After Step 4: 0 missing values remain\n",
+      "2025-11-06 01:59:04,471 INFO 4-step imputation complete: Reduced missing values from 397757 to 0 (reduction: 397757)\n"
      ]
     },
     {
@@ -986,8 +986,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.090118Z",
-     "start_time": "2025-11-05T21:26:32.621988Z"
+     "end_time": "2025-11-06T01:01:34.523256Z",
+     "start_time": "2025-11-06T00:59:06.787445Z"
     }
    },
    "cell_type": "code",
@@ -1018,7 +1018,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:26:32,625 INFO Rows: 8000, Columns: 242\n"
+      "2025-11-06 01:59:06,789 INFO Rows: 8000, Columns: 242\n"
      ]
     },
     {
@@ -1035,7 +1035,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,084 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\eda_summary.json\n"
+      "2025-11-06 02:01:34,517 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\eda_summary.json\n"
      ]
     },
     {
@@ -1066,8 +1066,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.115679Z",
-     "start_time": "2025-11-05T21:29:35.111796Z"
+     "end_time": "2025-11-06T01:01:34.543895Z",
+     "start_time": "2025-11-06T01:01:34.541330Z"
     }
    },
    "cell_type": "code",
@@ -1108,8 +1108,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.195693Z",
-     "start_time": "2025-11-05T21:29:35.160228Z"
+     "end_time": "2025-11-06T01:01:34.645718Z",
+     "start_time": "2025-11-06T01:01:34.615793Z"
     }
    },
    "cell_type": "code",
@@ -1137,7 +1137,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,192 INFO Data quality assessment complete: 91.63% overall score\n"
+      "2025-11-06 02:01:34,642 INFO Data quality assessment complete: 91.63% overall score\n"
      ]
     },
     {
@@ -1187,8 +1187,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.573236Z",
-     "start_time": "2025-11-05T21:29:35.206311Z"
+     "end_time": "2025-11-06T01:01:34.962020Z",
+     "start_time": "2025-11-06T01:01:34.666191Z"
     }
    },
    "cell_type": "code",
@@ -1245,7 +1245,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,300 INFO Detected outliers for 5 columns using IQR method\n"
+      "2025-11-06 02:01:34,738 INFO Detected outliers for 5 columns using IQR method\n"
      ]
     },
     {
@@ -1265,7 +1265,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,362 INFO Detected outliers for 5 columns using z-score method\n"
+      "2025-11-06 02:01:34,790 INFO Detected outliers for 5 columns using z-score method\n"
      ]
     },
     {
@@ -1285,7 +1285,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,570 INFO Detected 800 outliers using Isolation Forest\n"
+      "2025-11-06 02:01:34,959 INFO Detected 800 outliers using Isolation Forest\n"
      ]
     },
     {
@@ -1307,8 +1307,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.668516Z",
-     "start_time": "2025-11-05T21:29:35.579241Z"
+     "end_time": "2025-11-06T01:01:35.051559Z",
+     "start_time": "2025-11-06T01:01:34.969031Z"
     }
    },
    "cell_type": "code",
@@ -1357,18 +1357,24 @@
    "id": "de57d140095989c8",
    "outputs": [
     {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "📉 Applying Winsorization (1st-99th percentile) by Sector...\n"
+     ]
+    },
+    {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,664 INFO Winsorized 5 columns (percentiles: 1.00%-99.00%)\n"
+      "2025-11-06 02:01:35,048 INFO Winsorized 5 columns (percentiles: 1.00%-99.00%)\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "📉 Applying Winsorization (1st-99th percentile) by Sector...\n",
       "\n",
       "Winsorization Impact:\n",
       "Column          Orig Min     New Min      Orig Max        New Max        \n",
@@ -1394,8 +1400,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.708055Z",
-     "start_time": "2025-11-05T21:29:35.680026Z"
+     "end_time": "2025-11-06T01:01:35.085623Z",
+     "start_time": "2025-11-06T01:01:35.062163Z"
     }
    },
    "cell_type": "code",
@@ -1448,7 +1454,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,692 INFO Imputed missing values using 'sector_median' strategy for 5 columns\n"
+      "2025-11-06 02:01:35,076 INFO Imputed missing values using 'sector_median' strategy for 5 columns\n"
      ]
     },
     {
@@ -1491,8 +1497,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.752023Z",
-     "start_time": "2025-11-05T21:29:35.746994Z"
+     "end_time": "2025-11-06T01:01:35.153726Z",
+     "start_time": "2025-11-06T01:01:35.148963Z"
     }
    },
    "cell_type": "code",
@@ -1571,8 +1577,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.782309Z",
-     "start_time": "2025-11-05T21:29:35.778411Z"
+     "end_time": "2025-11-06T01:01:35.194711Z",
+     "start_time": "2025-11-06T01:01:35.191576Z"
     }
    },
    "cell_type": "code",
@@ -1615,8 +1621,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.832818Z",
-     "start_time": "2025-11-05T21:29:35.808681Z"
+     "end_time": "2025-11-06T01:01:35.263308Z",
+     "start_time": "2025-11-06T01:01:35.243705Z"
     }
    },
    "cell_type": "code",
@@ -1666,7 +1672,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,830 INFO Applied sector-aware KNN imputation (k=5) to 0 sectors across 3 columns\n"
+      "2025-11-06 02:01:35,259 INFO Applied sector-aware KNN imputation (k=5) to 0 sectors across 3 columns\n"
      ]
     },
     {
@@ -1705,8 +1711,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.874963Z",
-     "start_time": "2025-11-05T21:29:35.844852Z"
+     "end_time": "2025-11-06T01:01:35.310315Z",
+     "start_time": "2025-11-06T01:01:35.285879Z"
     }
    },
    "cell_type": "code",
@@ -1758,8 +1764,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:35,870 INFO Fitted target encoder for 1 columns\n",
-      "2025-11-05 22:29:35,871 INFO Fit-transformed 1 columns with CV to prevent leakage\n"
+      "2025-11-06 02:01:35,306 INFO Fitted target encoder for 1 columns\n",
+      "2025-11-06 02:01:35,307 INFO Fit-transformed 1 columns with CV to prevent leakage\n"
      ]
     },
     {
@@ -1795,8 +1801,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:35.893150Z",
-     "start_time": "2025-11-05T21:29:35.887339Z"
+     "end_time": "2025-11-06T01:01:35.356925Z",
+     "start_time": "2025-11-06T01:01:35.351944Z"
     }
    },
    "cell_type": "code",
@@ -1866,8 +1872,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:42.120202Z",
-     "start_time": "2025-11-05T21:29:35.936792Z"
+     "end_time": "2025-11-06T01:01:41.499110Z",
+     "start_time": "2025-11-06T01:01:35.391574Z"
     }
    },
    "cell_type": "code",
@@ -1962,10 +1968,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:36,633 INFO Pandas backend loaded 2.3.3\n",
-      "2025-11-05 22:29:36,640 INFO Numpy backend loaded 1.26.4\n",
-      "2025-11-05 22:29:36,643 INFO Pyspark backend loaded 4.0.0\n",
-      "2025-11-05 22:29:36,644 INFO Python backend loaded\n"
+      "2025-11-06 02:01:36,322 INFO Pandas backend loaded 2.3.3\n",
+      "2025-11-06 02:01:36,330 INFO Numpy backend loaded 1.26.4\n",
+      "2025-11-06 02:01:36,336 INFO Pyspark backend loaded 4.0.1\n",
+      "2025-11-06 02:01:36,337 INFO Python backend loaded\n"
      ]
     },
     {
@@ -1998,7 +2004,7 @@
       "application/vnd.jupyter.widget-view+json": {
        "version_major": 2,
        "version_minor": 0,
-       "model_id": "0ee154aba6984eee8dbbb09541d61432"
+       "model_id": "5d2737ef22664c0c9e97f5c5befc2349"
       }
      },
      "metadata": {},
@@ -2012,7 +2018,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "100%|██████████| 9/9 [00:00<00:00, 115.06it/s]\n"
+      "100%|██████████| 9/9 [00:00<00:00, 120.27it/s]\n"
      ]
     },
     {
@@ -2023,7 +2029,7 @@
       "application/vnd.jupyter.widget-view+json": {
        "version_major": 2,
        "version_minor": 0,
-       "model_id": "e0d4424348a2477b973b9acc0fab4521"
+       "model_id": "a16d670583a0412d9dd2ca36fca543c7"
       }
      },
      "metadata": {},
@@ -2040,7 +2046,7 @@
       "application/vnd.jupyter.widget-view+json": {
        "version_major": 2,
        "version_minor": 0,
-       "model_id": "1167437d8020403e91aec69a432034f5"
+       "model_id": "487654cef9dc4666ba8e0e51289cbbbf"
       }
      },
      "metadata": {},
@@ -2057,7 +2063,7 @@
       "application/vnd.jupyter.widget-view+json": {
        "version_major": 2,
        "version_minor": 0,
-       "model_id": "f6fceae0a9db416fa546af61d1f280b8"
+       "model_id": "886ca4d4db874ddf9ce99898bcce30ac"
       }
      },
      "metadata": {},
@@ -2070,7 +2076,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:42,110 INFO Generated ydata-profiling report: C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\financial_data_quality_reports\\Financial_Data_Quality_Report_-_Phase_9_1_20251105_222935.html\n"
+      "2025-11-06 02:01:41,492 INFO Generated ydata-profiling report: C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\financial_data_quality_reports\\Financial_Data_Quality_Report_-_Phase_9_1_20251106_020135.html\n"
      ]
     },
     {
@@ -2078,8 +2084,8 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "✓ Data quality dashboard generated: C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\financial_data_quality_reports\\Financial_Data_Quality_Report_-_Phase_9_1_20251105_222935.html\n",
-      "  Open in browser: file:///C:/Users/markm/PycharmProjects/Finance_ML_Analytics_Platform/outputs/eda/financial_data_quality_reports/Financial_Data_Quality_Report_-_Phase_9_1_20251105_222935.html\n",
+      "✓ Data quality dashboard generated: C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\financial_data_quality_reports\\Financial_Data_Quality_Report_-_Phase_9_1_20251106_020135.html\n",
+      "  Open in browser: file:///C:/Users/markm/PycharmProjects/Finance_ML_Analytics_Platform/outputs/eda/financial_data_quality_reports/Financial_Data_Quality_Report_-_Phase_9_1_20251106_020135.html\n",
       "\n",
       "  Dashboard includes:\n",
       "    • Dataset overview and statistics\n",
@@ -2101,8 +2107,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:29:42.533030Z",
-     "start_time": "2025-11-05T21:29:42.527591Z"
+     "end_time": "2025-11-06T01:01:41.845976Z",
+     "start_time": "2025-11-06T01:01:41.841649Z"
     }
    },
    "cell_type": "code",
@@ -2179,8 +2185,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:33:12.602516Z",
-     "start_time": "2025-11-05T21:29:42.543794Z"
+     "end_time": "2025-11-06T01:04:39.305364Z",
+     "start_time": "2025-11-06T01:01:41.890021Z"
     }
    },
    "cell_type": "code",
@@ -2331,7 +2337,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:29:42,556 INFO Rows: 8000, Columns: 242\n"
+      "2025-11-06 02:01:41,900 INFO Rows: 8000, Columns: 242\n"
      ]
     },
     {
@@ -2353,12 +2359,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:32:29,480 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_summary.json\n",
-      "2025-11-05 22:32:33,473 INFO Saved distribution plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_distributions.png\n",
-      "2025-11-05 22:33:11,581 INFO Saved correlation heatmap to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_correlation.png\n",
-      "2025-11-05 22:33:11,902 INFO Saved outlier box plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_boxplots.png\n",
-      "2025-11-05 22:33:12,309 INFO Saved outlier violin plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_violins.png\n",
-      "2025-11-05 22:33:12,597 INFO Saved outlier scatter plot to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_scatter.png\n"
+      "2025-11-06 02:04:05,531 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_summary.json\n",
+      "2025-11-06 02:04:06,294 INFO Saved distribution plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_distributions.png\n",
+      "2025-11-06 02:04:38,395 INFO Saved correlation heatmap to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_correlation.png\n",
+      "2025-11-06 02:04:38,690 INFO Saved outlier box plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_boxplots.png\n",
+      "2025-11-06 02:04:39,044 INFO Saved outlier violin plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_violins.png\n",
+      "2025-11-06 02:04:39,300 INFO Saved outlier scatter plot to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_scatter.png\n"
      ]
     },
     {
@@ -2463,8 +2469,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:33:31.854020Z",
-     "start_time": "2025-11-05T21:33:13.028118Z"
+     "end_time": "2025-11-06T01:04:50.137787Z",
+     "start_time": "2025-11-06T01:04:39.660748Z"
     }
    },
    "cell_type": "code",
@@ -2551,7 +2557,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:13,036 INFO Rows: 100, Columns: 242\n"
+      "2025-11-06 02:04:39,665 INFO Rows: 100, Columns: 242\n"
      ]
     },
     {
@@ -2565,7 +2571,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:31,850 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\eda_with_importance\\eda_summary.json\n"
+      "2025-11-06 02:04:50,133 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\eda_with_importance\\eda_summary.json\n"
      ]
     },
     {
@@ -2598,8 +2604,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:33:49.886622Z",
-     "start_time": "2025-11-05T21:33:32.292291Z"
+     "end_time": "2025-11-06T01:05:06.110051Z",
+     "start_time": "2025-11-06T01:04:50.495808Z"
     }
    },
    "cell_type": "code",
@@ -2679,7 +2685,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:32,301 INFO Rows: 500, Columns: 242\n"
+      "2025-11-06 02:04:50,501 INFO Rows: 500, Columns: 242\n"
      ]
     },
     {
@@ -2693,7 +2699,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:49,882 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\eda_with_multivariate\\eda_summary.json\n"
+      "2025-11-06 02:05:06,106 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\eda_with_multivariate\\eda_summary.json\n"
      ]
     },
     {
@@ -2709,8 +2715,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:33:50.681088Z",
-     "start_time": "2025-11-05T21:33:50.306939Z"
+     "end_time": "2025-11-06T01:05:06.816534Z",
+     "start_time": "2025-11-06T01:05:06.490504Z"
     }
    },
    "cell_type": "code",
@@ -2891,13 +2897,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:50,347 INFO Generating comprehensive EDA report...\n",
-      "2025-11-05 22:33:50,362 INFO Calculated pearson correlation matrix for 20 columns\n",
-      "2025-11-05 22:33:50,368 INFO Calculated spearman correlation matrix for 20 columns\n",
-      "2025-11-05 22:33:50,401 INFO Calculated skewness and kurtosis for 20 columns\n",
-      "2025-11-05 22:33:50,418 INFO Detected outliers in 10 columns using iqr method\n",
-      "2025-11-05 22:33:50,419 INFO ✓ EDA report generation complete\n",
-      "2025-11-05 22:33:50,428 INFO Calculated pearson correlation matrix for 223 columns\n"
+      "2025-11-06 02:05:06,515 INFO Generating comprehensive EDA report...\n",
+      "2025-11-06 02:05:06,527 INFO Calculated pearson correlation matrix for 20 columns\n",
+      "2025-11-06 02:05:06,534 INFO Calculated spearman correlation matrix for 20 columns\n",
+      "2025-11-06 02:05:06,560 INFO Calculated skewness and kurtosis for 20 columns\n",
+      "2025-11-06 02:05:06,572 INFO Detected outliers in 10 columns using iqr method\n",
+      "2025-11-06 02:05:06,573 INFO ✓ EDA report generation complete\n",
+      "2025-11-06 02:05:06,578 INFO Calculated pearson correlation matrix for 223 columns\n"
      ]
     },
     {
@@ -2928,7 +2934,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:50,678 ERROR Phase 9.2 Advanced EDA failed: not enough values to unpack (expected 3, got 0)\n"
+      "2025-11-06 02:05:06,813 ERROR Phase 9.2 Advanced EDA failed: not enough values to unpack (expected 3, got 0)\n"
      ]
     },
     {
@@ -2944,7 +2950,7 @@
      "output_type": "stream",
      "text": [
       "Traceback (most recent call last):\n",
-      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_13608\\1180762097.py\", line 85, in <module>\n",
+      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_28552\\4123722278.py\", line 85, in <module>\n",
       "    for feat1, feat2, corr_val in top_corr[:5]:\n",
       "        ^^^^^^^^^^^^^^^^^^^^^^\n",
       "ValueError: not enough values to unpack (expected 3, got 0)\n"
@@ -2969,8 +2975,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:33:50.689333Z",
-     "start_time": "2025-11-05T21:33:50.686354Z"
+     "end_time": "2025-11-06T01:05:06.823991Z",
+     "start_time": "2025-11-06T01:05:06.821159Z"
     }
    },
    "cell_type": "code",
@@ -2985,8 +2991,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:33:50.716439Z",
-     "start_time": "2025-11-05T21:33:50.699316Z"
+     "end_time": "2025-11-06T01:05:06.856946Z",
+     "start_time": "2025-11-06T01:05:06.840558Z"
     }
    },
    "cell_type": "code",
@@ -3049,8 +3055,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:33:51.358294Z",
-     "start_time": "2025-11-05T21:33:50.727057Z"
+     "end_time": "2025-11-06T01:05:07.415640Z",
+     "start_time": "2025-11-06T01:05:06.880700Z"
     }
    },
    "cell_type": "code",
@@ -3119,7 +3125,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:50,873 INFO Saved outlier box plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\outlier_boxplots.png\n"
+      "2025-11-06 02:05:06,998 INFO Saved outlier box plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\outlier_boxplots.png\n"
      ]
     },
     {
@@ -3135,7 +3141,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:51,035 INFO Saved outlier violin plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\outlier_violins.png\n"
+      "2025-11-06 02:05:07,139 INFO Saved outlier violin plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\outlier_violins.png\n"
      ]
     },
     {
@@ -3149,7 +3155,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:51,354 INFO Saved outlier scatter plot to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\outlier_scatter.png\n"
+      "2025-11-06 02:05:07,413 INFO Saved outlier scatter plot to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\outlier_scatter.png\n"
      ]
     },
     {
@@ -3168,8 +3174,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:34:59.862621Z",
-     "start_time": "2025-11-05T21:33:51.389447Z"
+     "end_time": "2025-11-06T01:06:00.370306Z",
+     "start_time": "2025-11-06T01:05:07.422677Z"
     }
    },
    "cell_type": "code",
@@ -3292,7 +3298,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:33:51,409 INFO Rows: 500, Columns: 242\n"
+      "2025-11-06 02:05:07,434 INFO Rows: 500, Columns: 242\n"
      ]
     },
     {
@@ -3310,12 +3316,12 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:34:11,632 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_summary.json\n",
-      "2025-11-05 22:34:12,111 INFO Saved distribution plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_distributions.png\n",
-      "2025-11-05 22:34:58,500 INFO Saved correlation heatmap to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_correlation.png\n",
-      "2025-11-05 22:34:59,022 INFO Saved outlier box plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_boxplots.png\n",
-      "2025-11-05 22:34:59,625 INFO Saved outlier violin plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_violins.png\n",
-      "2025-11-05 22:34:59,856 INFO Saved outlier scatter plot to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_scatter.png\n"
+      "2025-11-06 02:05:25,690 INFO Wrote EDA summary to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_summary.json\n",
+      "2025-11-06 02:05:26,127 INFO Saved distribution plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_distributions.png\n",
+      "2025-11-06 02:05:59,614 INFO Saved correlation heatmap to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_correlation.png\n",
+      "2025-11-06 02:05:59,913 INFO Saved outlier box plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_boxplots.png\n",
+      "2025-11-06 02:06:00,236 INFO Saved outlier violin plots to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_violins.png\n",
+      "2025-11-06 02:06:00,365 INFO Saved outlier scatter plot to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\enhanced_eda\\eda_outlier_scatter.png\n"
      ]
     },
     {
@@ -3352,8 +3358,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:02.647404Z",
-     "start_time": "2025-11-05T21:35:02.621784Z"
+     "end_time": "2025-11-06T01:06:00.866990Z",
+     "start_time": "2025-11-06T01:06:00.851435Z"
     }
    },
    "cell_type": "code",
@@ -3491,7 +3497,7 @@
       "\n",
       "Please run feature engineering cells (Phase 9.3) before this cell.\n",
       "Alternatively, use build_comprehensive_features() to create all features at once.\n",
-      "⚠️  Warning: The following columns are missing: {'roe', 'p_e_ratio', 'revenue_growth_yoy'}\n",
+      "⚠️  Warning: The following columns are missing: {'roe', 'revenue_growth_yoy', 'p_e_ratio'}\n",
       "❌ Error: None of the specified columns exist in the DataFrame or are numeric\n",
       "⚠️  Skipping normality tests - no valid columns available\n"
      ]
@@ -3611,8 +3617,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:02.749003Z",
-     "start_time": "2025-11-05T21:35:02.717628Z"
+     "end_time": "2025-11-06T01:06:00.935353Z",
+     "start_time": "2025-11-06T01:06:00.913778Z"
     }
    },
    "cell_type": "code",
@@ -3785,8 +3791,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:02.852527Z",
-     "start_time": "2025-11-05T21:35:02.839557Z"
+     "end_time": "2025-11-06T01:06:00.968987Z",
+     "start_time": "2025-11-06T01:06:00.960749Z"
     }
    },
    "cell_type": "code",
@@ -3845,7 +3851,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:35:02,850 WARNING Insufficient data for trend analysis of 'NVDA'\n"
+      "2025-11-06 02:06:00,966 WARNING Insufficient data for trend analysis of 'NVDA'\n"
      ]
     },
     {
@@ -3865,8 +3871,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:03.085719Z",
-     "start_time": "2025-11-05T21:35:02.958532Z"
+     "end_time": "2025-11-06T01:06:01.096005Z",
+     "start_time": "2025-11-06T01:06:01.023554Z"
     }
    },
    "cell_type": "code",
@@ -3972,8 +3978,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:03.205353Z",
-     "start_time": "2025-11-05T21:35:03.200753Z"
+     "end_time": "2025-11-06T01:06:01.107709Z",
+     "start_time": "2025-11-06T01:06:01.104483Z"
     }
    },
    "cell_type": "code",
@@ -4005,8 +4011,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:06.963095Z",
-     "start_time": "2025-11-05T21:35:03.349220Z"
+     "end_time": "2025-11-06T01:06:01.623615Z",
+     "start_time": "2025-11-06T01:06:01.160923Z"
     }
    },
    "cell_type": "code",
@@ -4319,7 +4325,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:35:06,957 INFO EDA report saved to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda_report_phase92_enhanced.json\n"
+      "2025-11-06 02:06:01,620 INFO EDA report saved to C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda_report_phase92_enhanced.json\n"
      ]
     },
     {
@@ -4377,8 +4383,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:13.896408Z",
-     "start_time": "2025-11-05T21:35:13.891213Z"
+     "end_time": "2025-11-06T01:06:01.636068Z",
+     "start_time": "2025-11-06T01:06:01.632884Z"
     }
    },
    "cell_type": "code",
@@ -4434,8 +4440,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:14.103545Z",
-     "start_time": "2025-11-05T21:35:14.097875Z"
+     "end_time": "2025-11-06T01:06:01.691893Z",
+     "start_time": "2025-11-06T01:06:01.688147Z"
     }
    },
    "cell_type": "code",
@@ -4473,8 +4479,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:14.279617Z",
-     "start_time": "2025-11-05T21:35:14.179503Z"
+     "end_time": "2025-11-06T01:06:01.745382Z",
+     "start_time": "2025-11-06T01:06:01.700551Z"
     }
    },
    "cell_type": "code",
@@ -4638,8 +4644,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:14.525421Z",
-     "start_time": "2025-11-05T21:35:14.323637Z"
+     "end_time": "2025-11-06T01:06:01.860312Z",
+     "start_time": "2025-11-06T01:06:01.755421Z"
     }
    },
    "cell_type": "code",
@@ -4705,8 +4711,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:18.666005Z",
-     "start_time": "2025-11-05T21:35:14.532573Z"
+     "end_time": "2025-11-06T01:06:02.195957Z",
+     "start_time": "2025-11-06T01:06:01.865937Z"
     }
    },
    "cell_type": "code",
@@ -4793,8 +4799,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:24.540389Z",
-     "start_time": "2025-11-05T21:35:24.425742Z"
+     "end_time": "2025-11-06T01:06:02.272706Z",
+     "start_time": "2025-11-06T01:06:02.202605Z"
     }
    },
    "cell_type": "code",
@@ -4859,8 +4865,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:24.822119Z",
-     "start_time": "2025-11-05T21:35:24.550428Z"
+     "end_time": "2025-11-06T01:06:02.427256Z",
+     "start_time": "2025-11-06T01:06:02.279199Z"
     }
    },
    "cell_type": "code",
@@ -4944,8 +4950,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:25.996147Z",
-     "start_time": "2025-11-05T21:35:24.835267Z"
+     "end_time": "2025-11-06T01:06:03.124325Z",
+     "start_time": "2025-11-06T01:06:02.444363Z"
     }
    },
    "cell_type": "code",
@@ -4986,8 +4992,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:29.071392Z",
-     "start_time": "2025-11-05T21:35:28.977769Z"
+     "end_time": "2025-11-06T01:06:03.177721Z",
+     "start_time": "2025-11-06T01:06:03.130061Z"
     }
    },
    "cell_type": "code",
@@ -5025,8 +5031,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:33.036907Z",
-     "start_time": "2025-11-05T21:35:29.079532Z"
+     "end_time": "2025-11-06T01:06:04.233557Z",
+     "start_time": "2025-11-06T01:06:03.185500Z"
     }
    },
    "cell_type": "code",
@@ -30878,8 +30884,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:37.859252Z",
-     "start_time": "2025-11-05T21:35:37.730905Z"
+     "end_time": "2025-11-06T01:06:05.092304Z",
+     "start_time": "2025-11-06T01:06:05.029724Z"
     }
    },
    "cell_type": "code",
@@ -31916,8 +31922,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:37.972223Z",
-     "start_time": "2025-11-05T21:35:37.891276Z"
+     "end_time": "2025-11-06T01:06:05.909537Z",
+     "start_time": "2025-11-06T01:06:05.854841Z"
     }
    },
    "cell_type": "code",
@@ -38765,8 +38771,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:38.110409Z",
-     "start_time": "2025-11-05T21:35:38.000814Z"
+     "end_time": "2025-11-06T01:06:06.749139Z",
+     "start_time": "2025-11-06T01:06:06.696150Z"
     }
    },
    "cell_type": "code",
@@ -39803,8 +39809,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:38.289670Z",
-     "start_time": "2025-11-05T21:35:38.146382Z"
+     "end_time": "2025-11-06T01:06:07.629304Z",
+     "start_time": "2025-11-06T01:06:07.550264Z"
     }
    },
    "cell_type": "code",
@@ -55180,8 +55186,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:38.473818Z",
-     "start_time": "2025-11-05T21:35:38.345114Z"
+     "end_time": "2025-11-06T01:06:09.368402Z",
+     "start_time": "2025-11-06T01:06:09.302481Z"
     }
    },
    "cell_type": "code",
@@ -56218,8 +56224,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:38.555859Z",
-     "start_time": "2025-11-05T21:35:38.498526Z"
+     "end_time": "2025-11-06T01:06:09.416662Z",
+     "start_time": "2025-11-06T01:06:09.381767Z"
     }
    },
    "cell_type": "code",
@@ -57167,8 +57173,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:35:57.605373Z",
-     "start_time": "2025-11-05T21:35:38.609324Z"
+     "end_time": "2025-11-06T01:06:17.607752Z",
+     "start_time": "2025-11-06T01:06:09.433429Z"
     }
    },
    "cell_type": "code",
@@ -57442,13 +57448,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:35:38,639 INFO Building comprehensive feature set...\n",
-      "2025-11-05 22:35:38,654 INFO Engineered valuation ratios\n",
-      "2025-11-05 22:35:38,676 INFO Engineered profitability ratios\n",
-      "2025-11-05 22:35:38,700 INFO Engineered leverage ratios\n",
-      "2025-11-05 22:35:38,714 INFO Engineered liquidity ratios\n",
-      "2025-11-05 22:35:38,729 INFO Engineered efficiency ratios\n",
-      "2025-11-05 22:35:38,739 INFO Engineered growth metrics\n"
+      "2025-11-06 02:06:09,448 INFO Building comprehensive feature set...\n",
+      "2025-11-06 02:06:09,456 INFO Engineered valuation ratios\n",
+      "2025-11-06 02:06:09,466 INFO Engineered profitability ratios\n",
+      "2025-11-06 02:06:09,475 INFO Engineered leverage ratios\n",
+      "2025-11-06 02:06:09,478 INFO Engineered liquidity ratios\n",
+      "2025-11-06 02:06:09,482 INFO Engineered efficiency ratios\n",
+      "2025-11-06 02:06:09,486 INFO Engineered growth metrics\n"
      ]
     },
     {
@@ -57466,11 +57472,11 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:35:38,788 INFO Engineered sector-specific features\n",
-      "2025-11-05 22:35:38,796 WARNING Not enough features for pairwise interactions (need 2+)\n",
-      "2025-11-05 22:35:38,798 INFO Created 1 interaction features\n",
-      "2025-11-05 22:35:38,835 INFO Created relative value features for 1 metrics\n",
-      "2025-11-05 22:35:38,839 INFO ✓ Feature engineering complete: Added 7 new features\n"
+      "2025-11-06 02:06:09,506 INFO Engineered sector-specific features\n",
+      "2025-11-06 02:06:09,511 WARNING Not enough features for pairwise interactions (need 2+)\n",
+      "2025-11-06 02:06:09,512 INFO Created 1 interaction features\n",
+      "2025-11-06 02:06:09,524 INFO Created relative value features for 1 metrics\n",
+      "2025-11-06 02:06:09,526 INFO ✓ Feature engineering complete: Added 7 new features\n"
      ]
     },
     {
@@ -57497,7 +57503,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:35:57,495 INFO Calculated Random Forest importance for 229 features\n"
+      "2025-11-06 02:06:17,509 INFO Calculated Random Forest importance for 229 features\n"
      ]
     },
     {
@@ -57573,8 +57579,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:08.235756Z",
-     "start_time": "2025-11-05T21:36:08.231417Z"
+     "end_time": "2025-11-06T01:06:22.026295Z",
+     "start_time": "2025-11-06T01:06:22.020484Z"
     }
    },
    "cell_type": "code",
@@ -57632,8 +57638,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:08.293667Z",
-     "start_time": "2025-11-05T21:36:08.272913Z"
+     "end_time": "2025-11-06T01:06:22.178370Z",
+     "start_time": "2025-11-06T01:06:22.150543Z"
     }
    },
    "cell_type": "code",
@@ -57830,8 +57836,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:08.380291Z",
-     "start_time": "2025-11-05T21:36:08.362968Z"
+     "end_time": "2025-11-06T01:06:22.342166Z",
+     "start_time": "2025-11-06T01:06:22.318693Z"
     }
    },
    "cell_type": "code",
@@ -57854,7 +57860,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:08,369 INFO Engineered valuation ratios\n"
+      "2025-11-06 02:06:22,327 INFO Engineered valuation ratios\n"
      ]
     },
     {
@@ -57979,8 +57985,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:08.632410Z",
-     "start_time": "2025-11-05T21:36:08.615902Z"
+     "end_time": "2025-11-06T01:06:22.915058Z",
+     "start_time": "2025-11-06T01:06:22.896620Z"
     }
    },
    "cell_type": "code",
@@ -58003,7 +58009,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:08,622 INFO Engineered profitability ratios\n"
+      "2025-11-06 02:06:22,903 INFO Engineered profitability ratios\n"
      ]
     },
     {
@@ -58121,8 +58127,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:09.143607Z",
-     "start_time": "2025-11-05T21:36:09.122544Z"
+     "end_time": "2025-11-06T01:06:23.572870Z",
+     "start_time": "2025-11-06T01:06:23.543600Z"
     }
    },
    "cell_type": "code",
@@ -58153,9 +58159,9 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:09,130 INFO Engineered leverage ratios\n",
-      "2025-11-05 22:36:09,133 INFO Engineered liquidity ratios\n",
-      "2025-11-05 22:36:09,135 INFO Engineered efficiency ratios\n"
+      "2025-11-06 02:06:23,552 INFO Engineered leverage ratios\n",
+      "2025-11-06 02:06:23,556 INFO Engineered liquidity ratios\n",
+      "2025-11-06 02:06:23,559 INFO Engineered efficiency ratios\n"
      ]
     },
     {
@@ -58272,8 +58278,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:09.696766Z",
-     "start_time": "2025-11-05T21:36:09.683878Z"
+     "end_time": "2025-11-06T01:06:24.200769Z",
+     "start_time": "2025-11-06T01:06:24.186664Z"
     }
    },
    "cell_type": "code",
@@ -58309,7 +58315,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:09,691 INFO Engineered sector-specific features\n"
+      "2025-11-06 02:06:24,195 INFO Engineered sector-specific features\n"
      ]
     },
     {
@@ -58344,8 +58350,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:10.074330Z",
-     "start_time": "2025-11-05T21:36:10.049726Z"
+     "end_time": "2025-11-06T01:06:24.509873Z",
+     "start_time": "2025-11-06T01:06:24.489616Z"
     }
    },
    "cell_type": "code",
@@ -58390,8 +58396,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:10,058 INFO Created 3 interaction features\n",
-      "2025-11-05 22:36:10,069 INFO Created relative value features for 1 metrics\n"
+      "2025-11-06 02:06:24,498 INFO Created 3 interaction features\n",
+      "2025-11-06 02:06:24,505 INFO Created relative value features for 1 metrics\n"
      ]
     },
     {
@@ -58424,8 +58430,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:10.495395Z",
-     "start_time": "2025-11-05T21:36:10.212408Z"
+     "end_time": "2025-11-06T01:06:25.345961Z",
+     "start_time": "2025-11-06T01:06:25.048471Z"
     }
    },
    "cell_type": "code",
@@ -58461,7 +58467,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:10,405 INFO Calculated Random Forest importance for 34 features\n"
+      "2025-11-06 02:06:25,252 INFO Calculated Random Forest importance for 34 features\n"
      ]
     },
     {
@@ -58504,8 +58510,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:10.590248Z",
-     "start_time": "2025-11-05T21:36:10.570612Z"
+     "end_time": "2025-11-06T01:06:25.500236Z",
+     "start_time": "2025-11-06T01:06:25.481579Z"
     }
    },
    "cell_type": "code",
@@ -58534,7 +58540,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:10,578 INFO Engineered growth metrics\n"
+      "2025-11-06 02:06:25,489 INFO Engineered growth metrics\n"
      ]
     },
     {
@@ -58645,8 +58651,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:10.739959Z",
-     "start_time": "2025-11-05T21:36:10.706263Z"
+     "end_time": "2025-11-06T01:06:25.852405Z",
+     "start_time": "2025-11-06T01:06:25.828437Z"
     }
    },
    "cell_type": "code",
@@ -58679,7 +58685,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:10,726 INFO Engineered temporal features from report_date\n"
+      "2025-11-06 02:06:25,839 INFO Engineered temporal features from report_date\n"
      ]
     },
     {
@@ -58804,8 +58810,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:11.075612Z",
-     "start_time": "2025-11-05T21:36:11.063107Z"
+     "end_time": "2025-11-06T01:06:26.389174Z",
+     "start_time": "2025-11-06T01:06:26.375758Z"
     }
    },
    "cell_type": "code",
@@ -58839,7 +58845,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:11,071 INFO Engineered market microstructure features\n"
+      "2025-11-06 02:06:26,385 INFO Engineered market microstructure features\n"
      ]
     },
     {
@@ -58867,8 +58873,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:11.462936Z",
-     "start_time": "2025-11-05T21:36:11.449895Z"
+     "end_time": "2025-11-06T01:06:26.949015Z",
+     "start_time": "2025-11-06T01:06:26.927764Z"
     }
    },
    "cell_type": "code",
@@ -58899,7 +58905,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:11,454 INFO Applied non-linear transforms\n"
+      "2025-11-06 02:06:26,935 INFO Applied non-linear transforms\n"
      ]
     },
     {
@@ -59025,8 +59031,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:25.903669Z",
-     "start_time": "2025-11-05T21:36:11.837168Z"
+     "end_time": "2025-11-06T01:06:35.179723Z",
+     "start_time": "2025-11-06T01:06:27.521389Z"
     }
    },
    "cell_type": "code",
@@ -59079,8 +59085,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:25,499 INFO Calculated mutual information for 47 features\n",
-      "2025-11-05 22:36:25,635 INFO Calculated Random Forest importance for 47 features\n"
+      "2025-11-06 02:06:34,628 INFO Calculated mutual information for 47 features\n",
+      "2025-11-06 02:06:34,778 INFO Calculated Random Forest importance for 47 features\n"
      ]
     },
     {
@@ -59109,8 +59115,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:25,875 INFO Calculated SHAP importance for 47 features\n",
-      "2025-11-05 22:36:25,901 INFO RFE selected 10 features from 47\n"
+      "2025-11-06 02:06:35,133 INFO Calculated SHAP importance for 47 features\n",
+      "2025-11-06 02:06:35,176 INFO RFE selected 10 features from 47\n"
      ]
     },
     {
@@ -59146,8 +59152,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:28.534375Z",
-     "start_time": "2025-11-05T21:36:28.504554Z"
+     "end_time": "2025-11-06T01:06:37.888281Z",
+     "start_time": "2025-11-06T01:06:37.861928Z"
     }
    },
    "cell_type": "code",
@@ -59189,17 +59195,17 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:28,507 INFO Building comprehensive feature set...\n",
-      "2025-11-05 22:36:28,510 INFO Engineered valuation ratios\n",
-      "2025-11-05 22:36:28,513 INFO Engineered profitability ratios\n",
-      "2025-11-05 22:36:28,514 INFO Engineered leverage ratios\n",
-      "2025-11-05 22:36:28,516 INFO Engineered liquidity ratios\n",
-      "2025-11-05 22:36:28,517 INFO Engineered efficiency ratios\n",
-      "2025-11-05 22:36:28,517 INFO Engineered growth metrics\n",
-      "2025-11-05 22:36:28,519 INFO Engineered sector-specific features\n",
-      "2025-11-05 22:36:28,521 INFO Created 10 interaction features\n",
-      "2025-11-05 22:36:28,529 INFO Created relative value features for 4 metrics\n",
-      "2025-11-05 22:36:28,530 INFO ✓ Feature engineering complete: Added 33 new features\n"
+      "2025-11-06 02:06:37,865 INFO Building comprehensive feature set...\n",
+      "2025-11-06 02:06:37,867 INFO Engineered valuation ratios\n",
+      "2025-11-06 02:06:37,869 INFO Engineered profitability ratios\n",
+      "2025-11-06 02:06:37,871 INFO Engineered leverage ratios\n",
+      "2025-11-06 02:06:37,872 INFO Engineered liquidity ratios\n",
+      "2025-11-06 02:06:37,872 INFO Engineered efficiency ratios\n",
+      "2025-11-06 02:06:37,873 INFO Engineered growth metrics\n",
+      "2025-11-06 02:06:37,874 INFO Engineered sector-specific features\n",
+      "2025-11-06 02:06:37,875 INFO Created 10 interaction features\n",
+      "2025-11-06 02:06:37,885 INFO Created relative value features for 4 metrics\n",
+      "2025-11-06 02:06:37,885 INFO ✓ Feature engineering complete: Added 33 new features\n"
      ]
     },
     {
@@ -59281,8 +59287,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:28.617356Z",
-     "start_time": "2025-11-05T21:36:28.613018Z"
+     "end_time": "2025-11-06T01:06:37.984218Z",
+     "start_time": "2025-11-06T01:06:37.981544Z"
     }
    },
    "cell_type": "code",
@@ -59327,8 +59333,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:28.668159Z",
-     "start_time": "2025-11-05T21:36:28.650816Z"
+     "end_time": "2025-11-06T01:06:38.091289Z",
+     "start_time": "2025-11-06T01:06:38.078248Z"
     }
    },
    "cell_type": "code",
@@ -59525,8 +59531,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:28.741968Z",
-     "start_time": "2025-11-05T21:36:28.732063Z"
+     "end_time": "2025-11-06T01:06:38.220425Z",
+     "start_time": "2025-11-06T01:06:38.208678Z"
     }
    },
    "cell_type": "code",
@@ -59549,7 +59555,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:28,736 INFO Engineered valuation ratios\n"
+      "2025-11-06 02:06:38,213 INFO Engineered valuation ratios\n"
      ]
     },
     {
@@ -59674,8 +59680,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:28.924244Z",
-     "start_time": "2025-11-05T21:36:28.913574Z"
+     "end_time": "2025-11-06T01:06:38.536543Z",
+     "start_time": "2025-11-06T01:06:38.523234Z"
     }
    },
    "cell_type": "code",
@@ -59698,7 +59704,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:28,918 INFO Engineered profitability ratios\n"
+      "2025-11-06 02:06:38,528 INFO Engineered profitability ratios\n"
      ]
     },
     {
@@ -59816,8 +59822,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:29.135286Z",
-     "start_time": "2025-11-05T21:36:29.119988Z"
+     "end_time": "2025-11-06T01:06:38.704447Z",
+     "start_time": "2025-11-06T01:06:38.688640Z"
     }
    },
    "cell_type": "code",
@@ -59848,9 +59854,9 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:29,124 INFO Engineered leverage ratios\n",
-      "2025-11-05 22:36:29,126 INFO Engineered liquidity ratios\n",
-      "2025-11-05 22:36:29,128 INFO Engineered efficiency ratios\n"
+      "2025-11-06 02:06:38,692 INFO Engineered leverage ratios\n",
+      "2025-11-06 02:06:38,695 INFO Engineered liquidity ratios\n",
+      "2025-11-06 02:06:38,696 INFO Engineered efficiency ratios\n"
      ]
     },
     {
@@ -59967,8 +59973,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:29.452885Z",
-     "start_time": "2025-11-05T21:36:29.441677Z"
+     "end_time": "2025-11-06T01:06:39.075515Z",
+     "start_time": "2025-11-06T01:06:39.066268Z"
     }
    },
    "cell_type": "code",
@@ -60004,7 +60010,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:29,448 INFO Engineered sector-specific features\n"
+      "2025-11-06 02:06:39,071 INFO Engineered sector-specific features\n"
      ]
     },
     {
@@ -60039,8 +60045,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:29.659991Z",
-     "start_time": "2025-11-05T21:36:29.644207Z"
+     "end_time": "2025-11-06T01:06:39.427362Z",
+     "start_time": "2025-11-06T01:06:39.415400Z"
     }
    },
    "cell_type": "code",
@@ -60085,7 +60091,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:29,649 INFO Created 3 interaction features\n"
+      "2025-11-06 02:06:39,419 INFO Created 3 interaction features\n",
+      "2025-11-06 02:06:39,423 INFO Created relative value features for 1 metrics\n"
      ]
     },
     {
@@ -60093,21 +60100,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "🔗 Feature Interactions Created (3 features)"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2025-11-05 22:36:29,657 INFO Created relative value features for 1 metrics\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "\n",
+      "🔗 Feature Interactions Created (3 features)\n",
       "   Sample: roe_x_roa, roe_squared, roa_squared...\n",
       "\n",
       "📊 Relative Value Features Created (3 features)\n",
@@ -60132,8 +60125,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:30.023871Z",
-     "start_time": "2025-11-05T21:36:29.817224Z"
+     "end_time": "2025-11-06T01:06:39.750566Z",
+     "start_time": "2025-11-06T01:06:39.582040Z"
     }
    },
    "cell_type": "code",
@@ -60171,7 +60164,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:29,963 INFO Calculated Random Forest importance for 34 features\n"
+      "2025-11-06 02:06:39,703 INFO Calculated Random Forest importance for 34 features\n"
      ]
     },
     {
@@ -60241,8 +60234,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:30.332039Z",
-     "start_time": "2025-11-05T21:36:30.074678Z"
+     "end_time": "2025-11-06T01:06:40.027863Z",
+     "start_time": "2025-11-06T01:06:39.809274Z"
     }
    },
    "cell_type": "code",
@@ -60292,8 +60285,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:36:30.399659Z",
-     "start_time": "2025-11-05T21:36:30.369358Z"
+     "end_time": "2025-11-06T01:06:40.083296Z",
+     "start_time": "2025-11-06T01:06:40.060745Z"
     }
    },
    "cell_type": "code",
@@ -60340,7 +60333,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:30,392 INFO Created labels with method=price_momentum: Neutral=4873, Positive=2895, Negative=232\n"
+      "2025-11-06 02:06:40,077 INFO Created labels with method=price_momentum: Neutral=4873, Positive=2895, Negative=232\n"
      ]
     },
     {
@@ -60406,8 +60399,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:38:10.667854Z",
-     "start_time": "2025-11-05T21:36:30.437697Z"
+     "end_time": "2025-11-06T01:08:06.008187Z",
+     "start_time": "2025-11-06T01:06:40.151968Z"
     }
    },
    "cell_type": "code",
@@ -60456,25 +60449,19 @@
    "id": "66c680e2030eda73",
    "outputs": [
     {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-11-06 02:06:40,222 INFO Train set: 6400 samples, Test set: 1600 samples, Features: 222 numeric + 12 categorical\n",
+      "2025-11-06 02:06:40,224 INFO Training Random Forest...\n"
+     ]
+    },
+    {
      "name": "stdout",
      "output_type": "stream",
      "text": [
       "\n",
-      "🔧 Preparing Classification Data...\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2025-11-05 22:36:30,548 INFO Train set: 6400 samples, Test set: 1600 samples, Features: 222 numeric + 12 categorical\n",
-      "2025-11-05 22:36:30,550 INFO Training Random Forest...\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "🔧 Preparing Classification Data...\n",
       "\n",
       "✓ Data prepared successfully\n",
       "  Training set: 6,400 samples\n",
@@ -60492,23 +60479,23 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:36:30,617 INFO Cleaning infinite and extreme values before scaling...\n",
-      "2025-11-05 22:36:34,677 INFO Training XGBoost...\n",
-      "2025-11-05 22:36:34,715 INFO Cleaning extreme values and infinities...\n",
-      "2025-11-05 22:36:43,592 INFO XGBoost - Accuracy: 0.8550, F1: 0.6809\n",
-      "2025-11-05 22:36:43,611 INFO Training LightGBM...\n",
-      "2025-11-05 22:36:43,709 INFO Cleaning extreme values and infinities...\n",
-      "2025-11-05 22:36:47,490 INFO LightGBM - Accuracy: 0.8494, F1: 0.6611\n",
-      "2025-11-05 22:36:47,505 INFO Training CatBoost...\n",
-      "2025-11-05 22:36:47,526 INFO Cleaning extreme values and infinities...\n",
-      "2025-11-05 22:37:08,727 INFO CatBoost - Accuracy: 0.8506, F1: 0.6500\n",
-      "2025-11-05 22:37:08,729 INFO Training Voting Classifier...\n",
-      "2025-11-05 22:37:08,779 INFO Cleaning extreme values and infinities...\n",
-      "2025-11-05 22:37:17,897 INFO Voting Classifier (soft) - Accuracy: 0.8538, F1: 0.6815\n",
-      "2025-11-05 22:37:17,908 INFO Training Stacking Classifier...\n",
-      "2025-11-05 22:37:17,971 INFO Cleaning extreme values and infinities...\n",
-      "2025-11-05 22:38:10,532 INFO Stacking Classifier - Accuracy: 0.8556, F1: 0.6898\n",
-      "2025-11-05 22:38:10,561 INFO Model comparison complete. Best model: Stacking Ensemble\n"
+      "2025-11-06 02:06:40,277 INFO Cleaning infinite and extreme values before scaling...\n",
+      "2025-11-06 02:06:43,748 INFO Training XGBoost...\n",
+      "2025-11-06 02:06:43,785 INFO Cleaning extreme values and infinities...\n",
+      "2025-11-06 02:06:50,926 INFO XGBoost - Accuracy: 0.8550, F1: 0.6809\n",
+      "2025-11-06 02:06:50,944 INFO Training LightGBM...\n",
+      "2025-11-06 02:06:51,023 INFO Cleaning extreme values and infinities...\n",
+      "2025-11-06 02:06:54,076 INFO LightGBM - Accuracy: 0.8494, F1: 0.6611\n",
+      "2025-11-06 02:06:54,091 INFO Training CatBoost...\n",
+      "2025-11-06 02:06:54,110 INFO Cleaning extreme values and infinities...\n",
+      "2025-11-06 02:07:14,057 INFO CatBoost - Accuracy: 0.8506, F1: 0.6500\n",
+      "2025-11-06 02:07:14,059 INFO Training Voting Classifier...\n",
+      "2025-11-06 02:07:14,101 INFO Cleaning extreme values and infinities...\n",
+      "2025-11-06 02:07:22,058 INFO Voting Classifier (soft) - Accuracy: 0.8538, F1: 0.6815\n",
+      "2025-11-06 02:07:22,068 INFO Training Stacking Classifier...\n",
+      "2025-11-06 02:07:22,127 INFO Cleaning extreme values and infinities...\n",
+      "2025-11-06 02:08:05,891 INFO Stacking Classifier - Accuracy: 0.8556, F1: 0.6898\n",
+      "2025-11-06 02:08:05,909 INFO Model comparison complete. Best model: Stacking Ensemble\n"
      ]
     },
     {
@@ -60553,8 +60540,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:39:00.901425Z",
-     "start_time": "2025-11-05T21:38:13.590460Z"
+     "end_time": "2025-11-06T01:08:50.668143Z",
+     "start_time": "2025-11-06T01:08:08.364155Z"
     }
    },
    "cell_type": "code",
@@ -60665,7 +60652,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:38:13,653 INFO Cleaning extreme values and infinities...\n"
+      "2025-11-06 02:08:08,420 INFO Cleaning extreme values and infinities...\n"
      ]
     },
     {
@@ -60680,7 +60667,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:39:00,228 INFO Stacking Classifier - Accuracy: 0.8556, F1: 0.6898\n"
+      "2025-11-06 02:08:50,104 INFO Stacking Classifier - Accuracy: 0.8556, F1: 0.6898\n"
      ]
     },
     {
@@ -60695,7 +60682,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:39:00,897 INFO Added 8 classification meta-features\n"
+      "2025-11-06 02:08:50,665 INFO Added 8 classification meta-features\n"
      ]
     },
     {
@@ -60747,8 +60734,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:39:00.927591Z",
-     "start_time": "2025-11-05T21:39:00.912556Z"
+     "end_time": "2025-11-06T01:08:50.692072Z",
+     "start_time": "2025-11-06T01:08:50.677718Z"
     }
    },
    "cell_type": "code",
@@ -60804,7 +60791,8 @@
       "✓ Dataset Enhanced\n",
       "  8,000 stocks × 250 features (including classification outputs)\n",
       "\n",
-      "✓ Dataset ready for Phase 9.5 (stored as 'all_stocks_phase94')\n"
+      "✓ Dataset ready for Phase 9.5 (stored as 'all_stocks_phase94')\n",
+      "✓ Checkpoint: classification_complete\n"
      ]
     }
    ],
@@ -60830,8 +60818,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:39:35.200457Z",
-     "start_time": "2025-11-05T21:39:00.964829Z"
+     "end_time": "2025-11-06T01:17:03.333340Z",
+     "start_time": "2025-11-06T01:08:50.752546Z"
     }
    },
    "cell_type": "code",
@@ -60975,10 +60963,13 @@
     "    if ensure_nonnegative:\n",
     "        # Import the wrapper if available\n",
     "        try:\n",
-    "            from finance_ml.models import NonNegativeRegressionWrapper\n",
-    "            models = {name: NonNegativeRegressionWrapper(model) for name, model in models.items()}\n",
+    "            from finance_ml.advanced_models import NonNegativeRegressionWrapper\n",
     "        except ImportError:\n",
+    "            NonNegativeRegressionWrapper = None\n",
     "            print(\"⚠ Warning: NonNegativeRegressionWrapper not available, predictions may be negative\")\n",
+    "        \n",
+    "        if NonNegativeRegressionWrapper is not None:\n",
+    "            models = {name: NonNegativeRegressionWrapper(model) for name, model in models.items()}\n",
     "\n",
     "    # Train and evaluate each model\n",
     "    for name, model in models.items():\n",
@@ -61262,9 +61253,21 @@
     "        print(\"⚠ Model comparison failed or returned no results\")\n",
     "        return None\n",
     "\n",
-    "    # Convert dict to DataFrame if needed (compare_regressors returns dict)\n",
+    "    # Convert dict to DataFrame (compare_regressors returns dict)\n",
     "    if isinstance(comparison_results, dict):\n",
-    "        comparison_results = pd.DataFrame([comparison_results])\n",
+    "        # Convert from dict format to DataFrame with Model as a column\n",
+    "        comparison_results = pd.DataFrame.from_dict(comparison_results, orient='index')\n",
+    "        comparison_results = comparison_results.reset_index().rename(columns={'index': 'Model'})\n",
+    "        # Sort by R2 score descending\n",
+    "        comparison_results = comparison_results.sort_values('r2', ascending=False)\n",
+    "        # Rename columns to be more readable\n",
+    "        comparison_results = comparison_results.rename(columns={\n",
+    "            'mae': 'MAE',\n",
+    "            'rmse': 'RMSE', \n",
+    "            'r2': 'R2',\n",
+    "            'train_r2': 'Train_R2',\n",
+    "            'train_time': 'Train_Time'\n",
+    "        })\n",
     "\n",
     "    print(\"\\n📈 Model Comparison Results:\")\n",
     "    print(comparison_results.to_string(index=False))\n",
@@ -61290,20 +61293,11 @@
     "    \"\"\"Step 5: Build stacking ensemble.\"\"\"\n",
     "    print(\"\\n🏗 Step 5: Building stacking ensemble...\")\n",
     "\n",
-    "    stacking_result = train_stacking_regressor(\n",
-    "            X=X_train,\n",
-    "            y=y_train,\n",
-    "            cv=cv_folds,\n",
-    "            random_state=random_state,\n",
-    "            ensure_nonnegative=True,\n",
-    "            loss=\"huber\"\n",
-    "            )\n",
-    "\n",
-    "    if stacking_result is None:\n",
+    "    stacking_model, stacking_results = train_stacking_regressor(            X=X_train,            y=y_train,            cv=cv_folds,            random_state=random_state,            ensure_nonnegative=True,            loss=\"huber\"            )\n",
+    "    if stacking_model is None:\n",
     "        print(\"⚠ Stacking ensemble training failed\")\n",
     "        return None, None\n",
     "\n",
-    "    stacking_model = stacking_result['model']\n",
     "    y_pred_stacking = np.maximum(stacking_model.predict(X_test), 0)\n",
     "\n",
     "    # Evaluate\n",
@@ -61312,8 +61306,8 @@
     "    r2 = r2_score(y_test, y_pred_stacking)\n",
     "\n",
     "    print(f\"✓ Stacking Ensemble Performance:\")\n",
-    "    print(f\"  Train Score: {stacking_result.get('train_score', 0):.4f}\")\n",
-    "    print(f\"  CV Score: {stacking_result.get('cv_score', 0):.4f}\")\n",
+    "    print(f\"  Train Score: {stacking_results.get('train_score', 0):.4f}\")\n",
+    "    print(f\"  CV Score: {stacking_results.get('cv_score', 0):.4f}\")\n",
     "    print(f\"  Test MAE: {mae:.2f}\")\n",
     "    print(f\"  Test RMSE: {rmse:.2f}\")\n",
     "    print(f\"  Test R²: {r2:.4f}\")\n",
@@ -61325,8 +61319,8 @@
     "        'target': target_col,\n",
     "        'date_trained': datetime.now().strftime('%Y-%m-%d'),\n",
     "        'phase': '9.5',\n",
-    "        'train_score': stacking_result.get('train_score', 0),\n",
-    "        'cv_score': stacking_result.get('cv_score', 0),\n",
+    "        'train_score': stacking_results.get('train_score', 0),\n",
+    "        'cv_score': stacking_results.get('cv_score', 0),\n",
     "        'test_score': r2,\n",
     "        'test_mae': mae,\n",
     "        'test_rmse': rmse\n",
@@ -61346,18 +61340,11 @@
     "    \"\"\"Step 6: Train quantile regression for prediction intervals.\"\"\"\n",
     "    print(\"\\n📊 Step 6: Training quantile regression for prediction intervals...\")\n",
     "\n",
-    "    quantile_result = train_quantile_regressor(\n",
-    "            X=X_train,\n",
-    "            y=y_train,\n",
-    "            quantiles=quantiles,\n",
-    "            random_state=random_state\n",
-    "            )\n",
-    "\n",
-    "    if quantile_result is None:\n",
+    "    quantile_models, quantile_results = train_quantile_regressor(            X=X_train,            y=y_train,            quantiles=quantiles,            random_state=random_state            )\n",
+    "    if quantile_models is None:\n",
     "        print(\"⚠ Quantile regression training failed\")\n",
     "        return {q: np.zeros(len(X_test)) for q in quantiles}\n",
     "\n",
-    "    quantile_models = quantile_result['models']\n",
     "    predictions = {}\n",
     "\n",
     "    for q, model in zip(quantiles, quantile_models):\n",
@@ -61407,23 +61394,12 @@
     "        print(f\"⚠ No sectors with >={min_samples} samples, skipping sector models\")\n",
     "        return None\n",
     "\n",
-    "    sector_models_result = train_sector_specific_models(\n",
-    "            df=df,\n",
-    "            feature_cols=feature_cols,\n",
-    "            target_col=target_col,\n",
-    "            sector_col='sector',\n",
-    "            model_type='random_forest',\n",
-    "            random_state=random_state,\n",
-    "            min_samples=min_samples,\n",
-    "            ensure_nonnegative=True\n",
-    "            )\n",
-    "\n",
-    "    if sector_models_result is None:\n",
+    "    sector_models, sector_results = train_sector_specific_models(            df=df,            feature_cols=feature_cols,            target_col=target_col,            sector_col='sector',            model_type='random_forest',            random_state=random_state,            min_samples=min_samples,            ensure_nonnegative=True            )\n",
+    "    if sector_models is None:\n",
     "        print(\"⚠ Sector-specific model training failed\")\n",
     "        return None\n",
     "\n",
-    "    sector_models = sector_models_result['models']\n",
-    "    sector_metrics = sector_models_result['metrics']\n",
+    "    sector_metrics = sector_results['sector_metrics']\n",
     "\n",
     "    print(f\"✓ Trained {len(sector_models)} sector-specific models\")\n",
     "    print(\"\\n📊 Top 3 Sector Model Performance:\")\n",
@@ -61448,7 +61424,7 @@
     "\n",
     "    print(f\"✓ Sector models saved: {len(sector_models)} models\")\n",
     "\n",
-    "    return sector_models_result\n",
+    "    return sector_models\n",
     "\n",
     "\n",
     "def save_predictions(df: pd.DataFrame, y_test: pd.Series, y_pred: np.ndarray,\n",
@@ -61622,9 +61598,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:39:01,227 INFO Starting Phase 9.1 enhanced 4-step imputation strategy\n",
-      "2025-11-05 22:39:01,233 INFO Initial missing values: 394975\n",
-      "2025-11-05 22:39:01,234 INFO Step 1: Applying zero imputation for exceptional event columns (48 cols)\n"
+      "2025-11-06 02:08:50,973 INFO Starting Phase 9.1 enhanced 4-step imputation strategy\n",
+      "2025-11-06 02:08:50,979 INFO Initial missing values: 394975\n",
+      "2025-11-06 02:08:50,980 INFO Step 1: Applying zero imputation for exceptional event columns (48 cols)\n",
+      "2025-11-06 02:08:50,995 INFO Applied zero imputation to 43 columns\n"
      ]
     },
     {
@@ -61667,19 +61644,18 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:39:01,256 INFO Applied zero imputation to 43 columns\n",
-      "2025-11-05 22:39:01,270 INFO After Step 1: 204639 missing values remain\n",
-      "2025-11-05 22:39:01,271 INFO Step 2: Applying sector-aware KNN imputation for financial metrics (148 cols)\n",
-      "2025-11-05 22:39:01,273 INFO Applying KNN imputation to 138 columns\n",
-      "2025-11-05 22:39:05,109 INFO Applied sector-aware KNN imputation (k=5) to 11 sectors across 138 columns\n",
-      "2025-11-05 22:39:05,117 INFO After Step 2: 35190 missing values remain\n",
-      "2025-11-05 22:39:05,117 INFO Step 3: Applying price imputation for price target columns (5 cols)\n",
-      "2025-11-05 22:39:05,123 INFO Applied price imputation to 14 columns using 'last_price'\n",
-      "2025-11-05 22:39:05,137 INFO After Step 3: 24765 missing values remain\n",
-      "2025-11-05 22:39:05,138 INFO Step 4: Applying median imputation for remaining columns\n",
-      "2025-11-05 22:39:05,163 INFO Applied median imputation to 24765 total missing values\n",
-      "2025-11-05 22:39:05,174 INFO After Step 4: 0 missing values remain\n",
-      "2025-11-05 22:39:05,176 INFO 4-step imputation complete: Reduced missing values from 394975 to 0 (reduction: 394975)\n"
+      "2025-11-06 02:08:51,008 INFO After Step 1: 204639 missing values remain\n",
+      "2025-11-06 02:08:51,009 INFO Step 2: Applying sector-aware KNN imputation for financial metrics (148 cols)\n",
+      "2025-11-06 02:08:51,009 INFO Applying KNN imputation to 138 columns\n",
+      "2025-11-06 02:08:54,120 INFO Applied sector-aware KNN imputation (k=5) to 11 sectors across 138 columns\n",
+      "2025-11-06 02:08:54,127 INFO After Step 2: 35190 missing values remain\n",
+      "2025-11-06 02:08:54,127 INFO Step 3: Applying price imputation for price target columns (5 cols)\n",
+      "2025-11-06 02:08:54,133 INFO Applied price imputation to 14 columns using 'last_price'\n",
+      "2025-11-06 02:08:54,145 INFO After Step 3: 24765 missing values remain\n",
+      "2025-11-06 02:08:54,146 INFO Step 4: Applying median imputation for remaining columns\n",
+      "2025-11-06 02:08:54,167 INFO Applied median imputation to 24765 total missing values\n",
+      "2025-11-06 02:08:54,180 INFO After Step 4: 0 missing values remain\n",
+      "2025-11-06 02:08:54,180 INFO 4-step imputation complete: Reduced missing values from 394975 to 0 (reduction: 394975)\n"
      ]
     },
     {
@@ -61707,54 +61683,88 @@
       "\n",
       "🤖 Step 4: Training and comparing regression models...\n",
       "  Models: Ridge, Lasso, RF, ExtraTrees, GradientBoosting, HistGradientBoosting\n",
-      "⚠ Warning: NonNegativeRegressionWrapper not available, predictions may be negative\n"
+      "\n",
+      "📈 Model Comparison Results:\n",
+      "               Model          MAE          RMSE       R2  Train_R2  Train_Time\n",
+      "               Ridge 1.148670e-07      0.000001 1.000000  1.000000    0.257574\n",
+      "               Lasso 3.955928e+02   4144.062380 0.999825  0.999987    4.822331\n",
+      "          ExtraTrees 6.820841e+02  14259.811092 0.997923  1.000000    1.286850\n",
+      "        RandomForest 4.989235e+03 128666.179734 0.830923  0.921812    5.685204\n",
+      "    GradientBoosting 7.362242e+03 251485.351414 0.354075  0.242757   14.186108\n",
+      "HistGradientBoosting 1.216328e+04 267535.361752 0.268997  0.336945    0.763026\n",
+      "\n",
+      "✓ Best model: Ridge (MAE=0.00, R²=1.0000)\n",
+      "✓ Comparison results saved to: outputs\\models\\model_comparison_results.csv\n",
+      "\n",
+      "🏗 Step 5: Building stacking ensemble...\n",
+      "✓ Stacking Ensemble Performance:\n",
+      "  Train Score: 0.5864\n",
+      "  CV Score: -1.4429\n",
+      "  Test MAE: 10671.20\n",
+      "  Test RMSE: 115391.92\n",
+      "  Test R²: 0.4456\n",
+      "✓ Stacking model saved: outputs\\models\\stacking_ensemble_phase95.joblib\n",
+      "\n",
+      "📊 Step 6: Training quantile regression for prediction intervals...\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-05 22:39:35,180 ERROR Phase 9.5 failed: 'Model'\n",
+      "2025-11-06 02:17:03,277 INFO ============================================================\n",
+      "2025-11-06 02:17:03,278 INFO TRAIN SECTOR-SPECIFIC MODELS - DataFrame Diagnostics\n",
+      "2025-11-06 02:17:03,279 INFO ============================================================\n",
+      "2025-11-06 02:17:03,279 INFO DataFrame shape: (8000, 259)\n",
+      "2025-11-06 02:17:03,279 INFO Total columns: 259\n",
+      "2025-11-06 02:17:03,292 INFO   Numeric columns: 241\n",
+      "2025-11-06 02:17:03,293 INFO   Object columns: 18\n",
+      "2025-11-06 02:17:03,293 INFO   ✓ Target column 'price_target' present\n",
+      "2025-11-06 02:17:03,295 INFO   ✓ Sector column 'sector' present (11 unique sectors)\n",
+      "2025-11-06 02:17:03,296 INFO ============================================================\n",
+      "2025-11-06 02:17:03,296 INFO feature_cols is a dict, extracting feature list...\n",
+      "2025-11-06 02:17:03,297 INFO   Using 'all_features' key: 253 features\n",
+      "2025-11-06 02:17:03,298 INFO   After deduplication: 253 features\n",
+      "2025-11-06 02:17:03,298 INFO ✓ Final feature count for sector models: 253\n",
+      "2025-11-06 02:17:03,300 WARNING ⚠ Target column 'price_target' contains 1432 NaN values. Dropping these rows before training.\n",
+      "2025-11-06 02:17:03,312 INFO ✓ After dropping NaN targets: 6568 rows remaining\n",
+      "2025-11-06 02:17:03,318 ERROR Phase 9.5 failed: Feature matrix X contains NaN values in columns: ['isin', 'next_earnings', 'enterprise_value', 'price_target_ytd_ago', 'total_return_ytd']... (173 total). Please impute missing values before training.\n",
       "Traceback (most recent call last):\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\indexes\\base.py\", line 3812, in get_loc\n",
-      "    return self._engine.get_loc(casted_key)\n",
-      "           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n",
-      "  File \"pandas/_libs/index.pyx\", line 167, in pandas._libs.index.IndexEngine.get_loc\n",
-      "  File \"pandas/_libs/index.pyx\", line 196, in pandas._libs.index.IndexEngine.get_loc\n",
-      "  File \"pandas/_libs/hashtable_class_helper.pxi\", line 7088, in pandas._libs.hashtable.PyObjectHashTable.get_item\n",
-      "  File \"pandas/_libs/hashtable_class_helper.pxi\", line 7096, in pandas._libs.hashtable.PyObjectHashTable.get_item\n",
-      "KeyError: 'Model'\n",
-      "\n",
-      "The above exception was the direct cause of the following exception:\n",
-      "\n",
-      "Traceback (most recent call last):\n",
-      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_13608\\3496175923.py\", line 693, in <module>\n",
-      "    comparison_results = train_and_compare_models(\n",
-      "            X_train, X_test, y_train, y_test, TEST_SIZE, CV_FOLDS, RANDOM_STATE, out_models_dir\n",
+      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_28552\\2718895664.py\", line 695, in <module>\n",
+      "    sector_models = train_sector_models(\n",
+      "            all_stocks_phase95, feature_cols, target_col, MIN_SECTOR_SAMPLES,\n",
+      "            RANDOM_STATE, out_models_dir\n",
       "            )\n",
-      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_13608\\3496175923.py\", line 433, in train_and_compare_models\n",
-      "    best_model = comparison_results.iloc[0]['Model']\n",
-      "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\series.py\", line 1133, in __getitem__\n",
-      "    return self._get_value(key)\n",
-      "           ~~~~~~~~~~~~~~~^^^^^\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\series.py\", line 1249, in _get_value\n",
-      "    loc = self.index.get_loc(label)\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\indexes\\base.py\", line 3819, in get_loc\n",
-      "    raise KeyError(key) from err\n",
-      "KeyError: 'Model'\n"
+      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_28552\\2718895664.py\", line 570, in train_sector_models\n",
+      "    sector_models, sector_results = train_sector_specific_models(            df=df,            feature_cols=feature_cols,            target_col=target_col,            sector_col='sector',            model_type='random_forest',            random_state=random_state,            min_samples=min_samples,            ensure_nonnegative=True            )\n",
+      "                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\finance_ml\\advanced_models.py\", line 1979, in train_sector_specific_models\n",
+      "    model, metrics = train_random_forest_regressor(\n",
+      "                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^\n",
+      "        X_sector, y_sector, n_estimators=50, random_state=random_state\n",
+      "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "    )\n",
+      "    ^\n",
+      "  File \"C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\finance_ml\\advanced_models.py\", line 942, in train_random_forest_regressor\n",
+      "    raise ValueError(\n",
+      "    ...<2 lines>...\n",
+      "    )\n",
+      "ValueError: Feature matrix X contains NaN values in columns: ['isin', 'next_earnings', 'enterprise_value', 'price_target_ytd_ago', 'total_return_ytd']... (173 total). Please impute missing values before training.\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "✓ Quantile regression trained for quantiles: [0.1, 0.5, 0.9]\n",
+      "  Mean prediction interval width: 29598.99\n",
+      "  Median prediction interval width: 16.73\n",
+      "✓ Quantile models saved: 3 models\n",
       "\n",
-      "📈 Model Comparison Results:\n",
-      "                                                                                                                         Ridge                                                                                                                                              Lasso                                                                                                                                   RandomForest                                                                                                                          ExtraTrees                                                                                                                                    GradientBoosting                                                                                                                                HistGradientBoosting\n",
-      "{'mae': 1.1486695321732054e-07, 'rmse': 1.3744057908786363e-06, 'r2': 1.0, 'train_r2': 1.0, 'train_time': 0.29145193099975586} {'mae': 451.77721426619655, 'rmse': 4183.595549472612, 'r2': 0.9998212458290506, 'train_r2': 0.9999867315080987, 'train_time': 5.3694751262664795} {'mae': 4989.23534713625, 'rmse': 128666.179734287, 'r2': 0.8309225799556066, 'train_r2': 0.9218123005844508, 'train_time': 6.494608402252197} {'mae': 682.0841032674997, 'rmse': 14259.811092210784, 'r2': 0.9979232494031578, 'train_r2': 1.0, 'train_time': 1.5016837120056152} {'mae': 7362.242468884125, 'rmse': 251485.35141415117, 'r2': 0.3540748630115347, 'train_r2': 0.24275676971149307, 'train_time': 15.195537328720093} {'mae': 13215.77203573013, 'rmse': 267851.52322953386, 'r2': 0.2672681991628153, 'train_r2': 0.33639803113228706, 'train_time': 0.8305540084838867}\n",
+      "🏢 Step 7: Training sector-specific models...\n",
+      "  Eligible sectors (>=20 samples): 11\n",
       "\n",
-      "❌ Phase 9.5 FAILED: 'Model'\n",
+      "❌ Phase 9.5 FAILED: Feature matrix X contains NaN values in columns: ['isin', 'next_earnings', 'enterprise_value', 'price_target_ytd_ago', 'total_return_ytd']... (173 total). Please impute missing values before training.\n",
       "\n",
       "⚠ Using Phase 9.4 data as fallback for all_stocks_featured\n"
      ]
@@ -61764,33 +61774,26 @@
      "output_type": "stream",
      "text": [
       "Traceback (most recent call last):\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\indexes\\base.py\", line 3812, in get_loc\n",
-      "    return self._engine.get_loc(casted_key)\n",
-      "           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n",
-      "  File \"pandas/_libs/index.pyx\", line 167, in pandas._libs.index.IndexEngine.get_loc\n",
-      "  File \"pandas/_libs/index.pyx\", line 196, in pandas._libs.index.IndexEngine.get_loc\n",
-      "  File \"pandas/_libs/hashtable_class_helper.pxi\", line 7088, in pandas._libs.hashtable.PyObjectHashTable.get_item\n",
-      "  File \"pandas/_libs/hashtable_class_helper.pxi\", line 7096, in pandas._libs.hashtable.PyObjectHashTable.get_item\n",
-      "KeyError: 'Model'\n",
-      "\n",
-      "The above exception was the direct cause of the following exception:\n",
-      "\n",
-      "Traceback (most recent call last):\n",
-      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_13608\\3496175923.py\", line 693, in <module>\n",
-      "    comparison_results = train_and_compare_models(\n",
-      "            X_train, X_test, y_train, y_test, TEST_SIZE, CV_FOLDS, RANDOM_STATE, out_models_dir\n",
+      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_28552\\2718895664.py\", line 695, in <module>\n",
+      "    sector_models = train_sector_models(\n",
+      "            all_stocks_phase95, feature_cols, target_col, MIN_SECTOR_SAMPLES,\n",
+      "            RANDOM_STATE, out_models_dir\n",
       "            )\n",
-      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_13608\\3496175923.py\", line 433, in train_and_compare_models\n",
-      "    best_model = comparison_results.iloc[0]['Model']\n",
-      "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\series.py\", line 1133, in __getitem__\n",
-      "    return self._get_value(key)\n",
-      "           ~~~~~~~~~~~~~~~^^^^^\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\series.py\", line 1249, in _get_value\n",
-      "    loc = self.index.get_loc(label)\n",
-      "  File \"C:\\Users\\markm\\anaconda3\\Lib\\site-packages\\pandas\\core\\indexes\\base.py\", line 3819, in get_loc\n",
-      "    raise KeyError(key) from err\n",
-      "KeyError: 'Model'\n"
+      "  File \"C:\\Users\\markm\\AppData\\Local\\Temp\\ipykernel_28552\\2718895664.py\", line 570, in train_sector_models\n",
+      "    sector_models, sector_results = train_sector_specific_models(            df=df,            feature_cols=feature_cols,            target_col=target_col,            sector_col='sector',            model_type='random_forest',            random_state=random_state,            min_samples=min_samples,            ensure_nonnegative=True            )\n",
+      "                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\finance_ml\\advanced_models.py\", line 1979, in train_sector_specific_models\n",
+      "    model, metrics = train_random_forest_regressor(\n",
+      "                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^\n",
+      "        X_sector, y_sector, n_estimators=50, random_state=random_state\n",
+      "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "    )\n",
+      "    ^\n",
+      "  File \"C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\finance_ml\\advanced_models.py\", line 942, in train_random_forest_regressor\n",
+      "    raise ValueError(\n",
+      "    ...<2 lines>...\n",
+      "    )\n",
+      "ValueError: Feature matrix X contains NaN values in columns: ['isin', 'next_earnings', 'enterprise_value', 'price_target_ytd_ago', 'total_return_ytd']... (173 total). Please impute missing values before training.\n"
      ]
     }
    ],
@@ -61820,8 +61823,8 @@
   {
    "metadata": {
     "ExecuteTime": {
-     "end_time": "2025-11-05T21:41:04.984433Z",
-     "start_time": "2025-11-05T21:39:38.149524Z"
+     "end_time": "2025-11-06T01:18:31.716998Z",
+     "start_time": "2025-11-06T01:17:05.996062Z"
     }
    },
    "cell_type": "code",
@@ -61935,8 +61938,112 @@
     "print(\"\\n✓ Phase 9.5.1 complete\")"
    ],
    "id": "9dd1cd51c4750ff4",
-   "outputs": [],
-   "execution_count": null
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-11-06 02:17:06,037 INFO Fitting regression model with loss='huber' on 5254 samples, 254 features (num=240, cat=14)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "================================================================================\n",
+      "PHASE 9.5.1 — MODEL OPTIMIZATION ENHANCEMENTS\n",
+      "================================================================================\n",
+      "\n",
+      "📊 Dataset: 8000 stocks\n",
+      "   Columns: ['ticker', 'isin', 'name', 'description', 'exchange', 'unit', 'sector', 'industry', 'last_updated', 'income_statement_report_date']... (259 total)\n",
+      "\n",
+      "--------------------------------------------------------------------------------\n",
+      "🔧 Training regression model with Huber loss for outlier robustness...\n",
+      "--------------------------------------------------------------------------------\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-11-06 02:18:31,355 INFO Regression metrics — MAE: 547.9862, RMSE: 8520.9565, R2: 0.9618\n",
+      "2025-11-06 02:18:31,361 INFO Saved feature importance to outputs\\models\\feature_importance.csv\n",
+      "2025-11-06 02:18:31,369 INFO Saved regression predictions to outputs\\models\\regression_predictions.csv\n",
+      "2025-11-06 02:18:31,409 INFO Saved per-sector metrics to outputs\\models\\regression_metrics_by_sector.csv\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "✓ Robust Regression Metrics (Huber Loss):\n",
+      "  MAE:  547.9861749608025\n",
+      "  RMSE: 8520.956453028586\n",
+      "  R²:   0.9617778424388519\n",
+      "\n",
+      "✓ Predictions DataFrame: 1314 rows, 8 columns\n",
+      "  Columns: ['y_true', 'y_pred', 'residual', 'abs_error', 'pct_error', 'sector', 'ticker', 'market_cap']\n",
+      "\n",
+      "📊 Top 10 Most Important Features:\n",
+      "                          feature  importance\n",
+      "         num__price_target_median    0.982972\n",
+      "           num__price_target_high    0.003253\n",
+      "            num__price_target_low    0.002675\n",
+      "  num__interest_expense_total_ltm    0.001609\n",
+      "                num__price_3m_ago    0.001179\n",
+      "                num__price_1m_ago    0.000872\n",
+      "                num__price_6m_ago    0.000799\n",
+      "num__total_operating_expenses_ltm    0.000632\n",
+      "               num__price_qtd_ago    0.000537\n",
+      "          cat__style_class_Growth    0.000482\n",
+      "\n",
+      "--------------------------------------------------------------------------------\n",
+      "📈 Computing sector-level metrics...\n",
+      "--------------------------------------------------------------------------------\n",
+      "\n",
+      "✓ Sector-Level Performance (sorted by MAE):\n",
+      "                sector  n_train  n_test          mae          rmse        r2\n",
+      "             Utilities      208      53   999.759133   1171.876491 -0.350895\n",
+      "Consumer Discretionary      599     150  3121.628740   4483.575323 -0.459573\n",
+      "                Energy      235      59  4087.316619  10005.044335 -0.025967\n",
+      "           Real Estate      153      39  4769.566578  20287.474041 -0.011665\n",
+      "            Financials      853     214  4980.309004   7899.290416 -0.122537\n",
+      "Communication Services      252      64  6260.955948   9218.137050 -0.295471\n",
+      "Information Technology      650     163  7904.382271  23923.258596 -0.004843\n",
+      "             Materials      462     116  9345.463888  68603.974587 -0.003954\n",
+      "           Health Care      497     125 16834.640662  62076.034002 -0.001414\n",
+      "           Industrials     1001     251 20848.162109 134883.710300 -0.000692\n",
+      "      Consumer Staples      339      85 25818.826280 194246.073329 -0.010091\n",
+      "\n",
+      "⚠ Sectors with above-median error (MAE > 6260.96):\n",
+      "  - Consumer Staples: MAE=25818.83, RMSE=194246.07, R²=-0.0101 (n=85 test samples)\n",
+      "  - Health Care: MAE=16834.64, RMSE=62076.03, R²=-0.0014 (n=125 test samples)\n",
+      "  - Industrials: MAE=20848.16, RMSE=134883.71, R²=-0.0007 (n=251 test samples)\n",
+      "  - Information Technology: MAE=7904.38, RMSE=23923.26, R²=-0.0048 (n=163 test samples)\n",
+      "  - Materials: MAE=9345.46, RMSE=68603.97, R²=-0.0040 (n=116 test samples)\n",
+      "\n",
+      "✓ Best Performing Sectors (lowest MAE):\n",
+      "  - Utilities: MAE=999.76\n",
+      "  - Consumer Discretionary: MAE=3121.63\n",
+      "  - Energy: MAE=4087.32\n"
+     ]
+    },
+    {
+     "ename": "RuntimeError",
+     "evalue": "Cannot execute model_optimization_complete: missing prerequisites ['regression_complete']. Run earlier cells first.",
+     "output_type": "error",
+     "traceback": [
+      "\u001B[31m---------------------------------------------------------------------------\u001B[39m",
+      "\u001B[31mRuntimeError\u001B[39m                              Traceback (most recent call last)",
+      "\u001B[36mCell\u001B[39m\u001B[36m \u001B[39m\u001B[32mIn[80]\u001B[39m\u001B[32m, line 106\u001B[39m\n\u001B[32m    103\u001B[39m \u001B[38;5;28;01melse\u001B[39;00m:\n\u001B[32m    104\u001B[39m     \u001B[38;5;28mprint\u001B[39m(\u001B[33m\"\u001B[39m\u001B[38;5;130;01m\\n\u001B[39;00m\u001B[33m⚠ Sector column not available in dataset\u001B[39m\u001B[33m\"\u001B[39m)\n\u001B[32m--> \u001B[39m\u001B[32m106\u001B[39m \u001B[43mcheckpoint\u001B[49m\u001B[43m(\u001B[49m\u001B[33;43m\"\u001B[39;49m\u001B[33;43mmodel_optimization_complete\u001B[39;49m\u001B[33;43m\"\u001B[39;49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mrequires\u001B[49m\u001B[43m=\u001B[49m\u001B[43m[\u001B[49m\u001B[33;43m\"\u001B[39;49m\u001B[33;43mregression_complete\u001B[39;49m\u001B[33;43m\"\u001B[39;49m\u001B[43m]\u001B[49m\u001B[43m)\u001B[49m\n\u001B[32m    107\u001B[39m \u001B[38;5;28mprint\u001B[39m(\u001B[33m\"\u001B[39m\u001B[38;5;130;01m\\n\u001B[39;00m\u001B[33m✓ Phase 9.5.1 complete\u001B[39m\u001B[33m\"\u001B[39m)\n",
+      "\u001B[36mCell\u001B[39m\u001B[36m \u001B[39m\u001B[32mIn[2]\u001B[39m\u001B[32m, line 29\u001B[39m, in \u001B[36mcheckpoint\u001B[39m\u001B[34m(name, requires)\u001B[39m\n\u001B[32m     27\u001B[39m     missing = [r \u001B[38;5;28;01mfor\u001B[39;00m r \u001B[38;5;129;01min\u001B[39;00m requires \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;129;01mnot\u001B[39;00m _CHECKPOINTS.get(r, \u001B[38;5;28;01mFalse\u001B[39;00m)]\n\u001B[32m     28\u001B[39m     \u001B[38;5;28;01mif\u001B[39;00m missing:\n\u001B[32m---> \u001B[39m\u001B[32m29\u001B[39m         \u001B[38;5;28;01mraise\u001B[39;00m \u001B[38;5;167;01mRuntimeError\u001B[39;00m(\n\u001B[32m     30\u001B[39m                 \u001B[33mf\u001B[39m\u001B[33m\"\u001B[39m\u001B[33mCannot execute \u001B[39m\u001B[38;5;132;01m{\u001B[39;00mname\u001B[38;5;132;01m}\u001B[39;00m\u001B[33m: missing prerequisites \u001B[39m\u001B[38;5;132;01m{\u001B[39;00mmissing\u001B[38;5;132;01m}\u001B[39;00m\u001B[33m. \u001B[39m\u001B[33m\"\u001B[39m\n\u001B[32m     31\u001B[39m                 \u001B[33m\"\u001B[39m\u001B[33mRun earlier cells first.\u001B[39m\u001B[33m\"\u001B[39m\n\u001B[32m     32\u001B[39m                 )\n\u001B[32m     33\u001B[39m _CHECKPOINTS[name] = \u001B[38;5;28;01mTrue\u001B[39;00m\n\u001B[32m     34\u001B[39m \u001B[38;5;28mprint\u001B[39m(\u001B[33mf\u001B[39m\u001B[33m\"\u001B[39m\u001B[33m✓ Checkpoint: \u001B[39m\u001B[38;5;132;01m{\u001B[39;00mname\u001B[38;5;132;01m}\u001B[39;00m\u001B[33m\"\u001B[39m)\n",
+      "\u001B[31mRuntimeError\u001B[39m: Cannot execute model_optimization_complete: missing prerequisites ['regression_complete']. Run earlier cells first."
+     ]
+    }
+   ],
+   "execution_count": 80
   },
   {
    "metadata": {},

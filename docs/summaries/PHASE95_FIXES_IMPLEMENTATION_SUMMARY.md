@@ -243,7 +243,7 @@ from finance_ml.advanced_models import validate_training_data, compare_regressor
 ```bash
 python add_checkpoint_cell.py
 # Output:
-# [OK] Backup created: ml_finance_model_main_v9.ipynb
+# [OK] Backup created: ml_finance_model_main_v10.ipynb
 # [OK] Checkpoint cell inserted at position 141
 # [OK] Notebook updated: ml_finance_model_main_backup.ipynb
 ```
