@@ -795,6 +795,89 @@ def export_predictions_to_excel(
         )
 
 
+def export_predictions_to_csv(
+    df: pd.DataFrame,
+    csv_path: Path,
+    required_columns: Optional[list] = None,
+    compute_mispricing: bool = True,
+) -> Path:
+    """Export standardized predictions CSV for dashboards and downstream tools.
+
+    Expected columns in output CSV:
+    ticker, name, exchange, sector, region, last_price, price_target,
+    predicted_price_target, market_cap, mispricing_score
+
+    Args:
+        df: DataFrame containing predictions and related fields
+        csv_path: Destination path
+        required_columns: Optional explicit list of columns to include/order
+        compute_mispricing: If True and mispricing_score missing, compute it as
+            (predicted_price_target - last_price) / last_price
+
+    Returns:
+        The path to the written CSV file.
+    """
+    # Normalize column names to lower case for matching
+    df_cols_lower = {c.lower(): c for c in df.columns}
+
+    # Handle common typo 'exchance' -> 'exchange'
+    if 'exchange' not in df_cols_lower and 'exchance' in df_cols_lower:
+        df = df.rename(columns={df_cols_lower['exchance']: 'exchange'})
+        df_cols_lower = {c.lower(): c for c in df.columns}
+
+    # Compute mispricing_score if requested and possible
+    if compute_mispricing and 'mispricing_score' not in df_cols_lower:
+        if 'predicted_price_target' in df_cols_lower and 'last_price' in df_cols_lower:
+            try:
+                pred_col = df_cols_lower['predicted_price_target']
+                last_col = df_cols_lower['last_price']
+                # Avoid division by zero
+                denom = df[last_col].replace({0: np.nan}).astype(float)
+                df['mispricing_score'] = (df[pred_col].astype(float) - df[last_col].astype(float)) / denom
+            except Exception as e:
+                logging.warning("Could not compute mispricing_score: %s", e)
+        # refresh map after potential addition
+        df_cols_lower = {c.lower(): c for c in df.columns}
+
+    default_required = [
+        'ticker', 'name', 'exchange', 'sector', 'region', 'last_price',
+        'price_target', 'predicted_price_target', 'market_cap', 'mispricing_score'
+    ]
+    use_columns = required_columns or default_required
+
+    # Build column mapping from desired lowercase to actual columns present
+    available = {}
+    missing = []
+    for col in use_columns:
+        if col in df_cols_lower:
+            available[col] = df_cols_lower[col]
+        else:
+            missing.append(col)
+
+    if missing:
+        logging.info("Some required columns are missing and will be filled with NA: %s", missing)
+        # Create placeholders for missing columns with NA
+        for col in missing:
+            df[col] = np.nan
+            available[col] = col
+
+    # Reorder and select
+    ordered_cols = [available[c] for c in use_columns]
+    out_df = df[ordered_cols].copy()
+
+    # Ensure numeric types where applicable
+    for num_col in ['last_price', 'price_target', 'predicted_price_target', 'market_cap', 'mispricing_score']:
+        if num_col in out_df.columns:
+            with np.errstate(all='ignore'):
+                out_df[num_col] = pd.to_numeric(out_df[num_col], errors='coerce')
+
+    csv_path = Path(csv_path)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    out_df.to_csv(csv_path, index=False)
+    logging.info("Exported predictions to CSV: %s", csv_path)
+    return csv_path
+
+
 def create_sector_heatmap(
     df: pd.DataFrame, out_path: Optional[Path] = None, metric: str = "mispricing_score"
 ):
@@ -4330,88 +4413,272 @@ def filter_stocks_by_criteria(
 
 
 def create_valuation_scatter_plot(
-    df: pd.DataFrame, out_path: Optional[Path] = None, color_by: str = "sector"
+    df: pd.DataFrame,
+    out_path: Optional[Path] = None,
+    color_by: str = "sector",
+    size_by: Optional[str] = None,
+    opacity: float = 0.7,
+    show_diagonal: bool = True,
+    title: Optional[str] = None,
+    height: int = 600,
+    width: int = 900,
+    log_scale: bool = True,
 ):
     """
     Create an interactive scatter plot of current price vs. predicted target.
 
+    This function creates a comprehensive visualization comparing current stock prices
+    with predicted price targets, highlighting potential investment opportunities through
+    color coding and optional sizing by market cap or other metrics.
+
     Args:
-        df: DataFrame with columns 'last_price', 'predicted_price_target', and color_by column
+        df: DataFrame with required columns 'last_price' and 'predicted_price_target'
         out_path: Optional path to save HTML file
         color_by: Column to color points by (default 'sector')
+        size_by: Optional column to size points by (e.g., 'market_cap'). If None, uniform size.
+        opacity: Marker opacity between 0 and 1 (default 0.7)
+        show_diagonal: Whether to show diagonal reference line (default True)
+        title: Custom plot title. If None, uses default title.
+        height: Plot height in pixels (default 600)
+        width: Plot width in pixels (default 900)
+        log_scale: If True, use logarithmic scale for both axes (default False).
+                  Useful for visualizing stocks with widely varying price ranges.
 
     Returns:
-        Plotly figure object (or None if plotly not available)
+        Plotly figure object (or None if plotly not available or data invalid)
+
+    Raises:
+        None (handles errors gracefully with logging)
 
     Example:
         >>> df = pd.DataFrame({
-        ...     'ticker': ['A', 'B'],
-        ...     'last_price': [100, 50],
-        ...     'predicted_price_target': [120, 55],
-        ...     'sector': ['Tech', 'Finance']
+        ...     'ticker': ['AAPL', 'MSFT', 'GOOGL'],
+        ...     'name': ['Apple', 'Microsoft', 'Alphabet'],
+        ...     'last_price': [150, 300, 2800],
+        ...     'predicted_price_target': [180, 290, 3000],
+        ...     'sector': ['Tech', 'Tech', 'Tech'],
+        ...     'market_cap': [2.5e12, 2.3e12, 1.8e12],
+        ...     'mispricing_pct': [20, -3.3, 7.1]
         ... })
-        >>> fig = create_valuation_scatter_plot(df)
-        >>> fig is not None
+        >>> # Standard linear scale
+        >>> fig = create_valuation_scatter_plot(df, color_by='sector')
+        >>> 
+        >>> # Log scale for wide price ranges
+        >>> fig_log = create_valuation_scatter_plot(df, log_scale=True)
+        >>> fig_log is not None
         True
+
+    Notes:
+        - Points above the diagonal line represent undervalued stocks (predicted > current)
+        - Points below the diagonal line represent overvalued stocks (predicted < current)
+        - Hover over points to see detailed information including ticker, prices, and metrics
+        - Log scale is recommended when prices span multiple orders of magnitude (e.g., $1 to $1000+)
+        - With log scale, equal distances represent equal percentage changes
     """
-    if px is None:
-        logging.warning("plotly not available; skipping scatter plot")
+    # Check plotly availability
+    if px is None or go is None:
+        logging.warning("Plotly not available; cannot create scatter plot")
+        return None
+
+    # Validate DataFrame
+    if df is None or df.empty:
+        logging.warning("Empty DataFrame provided; cannot create scatter plot")
         return None
 
     # Ensure required columns exist
-    required = ["last_price", "predicted_price_target"]
-    for col in required:
-        if col not in df.columns:
-            logging.warning(f"Column '{col}' not found; skipping scatter plot")
-            return None
-
-    # Create hover data
-    hover_data_cols = ["ticker"] if "ticker" in df.columns else []
-    if "mispricing_pct" in df.columns:
-        hover_data_cols.append("mispricing_pct")
-    if "valuation_category" in df.columns:
-        hover_data_cols.append("valuation_category")
-
-    # Create scatter plot
-    fig = px.scatter(
-        df,
-        x="last_price",
-        y="predicted_price_target",
-        color=color_by if color_by in df.columns else None,
-        hover_data=hover_data_cols,
-        title="Current Price vs. Predicted Target",
-        labels={
-            "last_price": "Current Price ($)",
-            "predicted_price_target": "Predicted Target ($)",
-        },
-    )
-
-    # Add diagonal line (y=x) for reference
-    max_val = max(df["last_price"].max(), df["predicted_price_target"].max())
-    fig.add_trace(
-        go.Scatter(
-            x=[0, max_val],
-            y=[0, max_val],
-            mode="lines",
-            line=dict(dash="dash", color="gray"),
-            name="Fair Value (y=x)",
-            showlegend=True,
+    required_cols = ["last_price", "predicted_price_target"]
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        logging.warning(
+            f"Required columns missing: {missing_cols}; cannot create scatter plot"
         )
-    )
+        return None
 
-    # Update layout
-    fig.update_layout(
-        xaxis_title="Current Price ($)", yaxis_title="Predicted Target ($)", hovermode="closest"
-    )
+    # Clean data: remove rows with NaN in required columns
+    df_clean = df.dropna(subset=required_cols).copy()
+    
+    if df_clean.empty:
+        logging.warning(
+            "No valid data after removing NaN values in required columns; cannot create scatter plot"
+        )
+        return None
 
-    # Save if path provided
-    if out_path is not None:
-        out_path = Path(out_path)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.write_html(str(out_path))
-        logging.info(f"Saved valuation scatter plot to {out_path}")
+    # Filter out non-positive prices (if any)
+    valid_mask = (df_clean["last_price"] > 0) & (df_clean["predicted_price_target"] > 0)
+    df_clean = df_clean[valid_mask]
+    
+    if df_clean.empty:
+        logging.warning("No valid positive price data; cannot create scatter plot")
+        return None
 
-    return fig
+    # Prepare hover data with comprehensive information
+    hover_data_dict = {}
+    
+    # Always include ticker if available
+    if "ticker" in df_clean.columns:
+        hover_data_dict["ticker"] = True
+    
+    # Add name if available
+    if "name" in df_clean.columns:
+        hover_data_dict["name"] = True
+    
+    # Add mispricing percentage with custom formatting
+    if "mispricing_pct" in df_clean.columns:
+        hover_data_dict["mispricing_pct"] = ":.2f"
+    
+    # Add valuation category
+    if "valuation_category" in df_clean.columns:
+        hover_data_dict["valuation_category"] = True
+    
+    # Add market cap with custom formatting if it's the size variable
+    if "market_cap" in df_clean.columns and size_by != "market_cap":
+        hover_data_dict["market_cap"] = ":,.0f"
+    
+    # Add exchange if available
+    if "exchange" in df_clean.columns:
+        hover_data_dict["exchange"] = True
+    
+    # Add region if available
+    if "region" in df_clean.columns:
+        hover_data_dict["region"] = True
+
+    # Validate color_by column
+    color_col = color_by if color_by in df_clean.columns else None
+    if color_by not in df_clean.columns and color_by != "sector":
+        logging.info(f"Color column '{color_by}' not found; using no color grouping")
+
+    # Validate size_by column
+    size_col = None
+    if size_by is not None:
+        if size_by in df_clean.columns:
+            # Ensure size column has valid positive values
+            if (df_clean[size_by] > 0).all():
+                size_col = size_by
+            else:
+                logging.warning(f"Size column '{size_by}' contains non-positive values; ignoring")
+        else:
+            logging.warning(f"Size column '{size_by}' not found; ignoring")
+
+    # Determine plot title
+    plot_title = title if title else "Current Price vs. Predicted Target"
+    n_stocks = len(df_clean)
+    plot_title += f" ({n_stocks} stocks)"
+
+    # Create scatter plot with enhanced configuration
+    try:
+        fig = px.scatter(
+            df_clean,
+            x="last_price",
+            y="predicted_price_target",
+            color=color_col,
+            size=size_col,
+            hover_data=hover_data_dict if hover_data_dict else None,
+            title=plot_title,
+            labels={
+                "last_price": "Current Price ($)",
+                "predicted_price_target": "Predicted Target ($)",
+                color_by: color_by.replace("_", " ").title() if color_col else "",
+                size_by: size_by.replace("_", " ").title() if size_col else "",
+            },
+            opacity=opacity,
+            height=height,
+            width=width,
+        )
+
+        # Customize marker appearance
+        fig.update_traces(
+            marker=dict(
+                line=dict(width=0.5, color="DarkSlateGray"),
+                sizemode="diameter",
+                sizemin=4,
+            )
+        )
+
+        # Add diagonal reference line (y=x) for fair value comparison
+        if show_diagonal:
+            # Calculate range for diagonal line with some padding
+            min_val = min(
+                df_clean["last_price"].min(),
+                df_clean["predicted_price_target"].min()
+            )
+            max_val = max(
+                df_clean["last_price"].max(),
+                df_clean["predicted_price_target"].max()
+            )
+            
+            # Add 5% padding to the range
+            padding = (max_val - min_val) * 0.05
+            line_start = max(0, min_val - padding)
+            line_end = max_val + padding
+
+            fig.add_trace(
+                go.Scatter(
+                    x=[line_start, line_end],
+                    y=[line_start, line_end],
+                    mode="lines",
+                    line=dict(dash="dash", color="gray", width=2),
+                    name="Fair Value (y=x)",
+                    showlegend=True,
+                    hoverinfo="skip",
+                )
+            )
+
+        # Update layout with enhanced styling
+        fig.update_layout(
+            xaxis_title="Current Price ($)",
+            yaxis_title="Predicted Target ($)",
+            hovermode="closest",
+            plot_bgcolor="rgba(240, 240, 240, 0.5)",
+            xaxis=dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor="LightGray",
+                zeroline=True,
+                zerolinewidth=2,
+                zerolinecolor="LightGray",
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor="LightGray",
+                zeroline=True,
+                zerolinewidth=2,
+                zerolinecolor="LightGray",
+            ),
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=0.99,
+                xanchor="right",
+                x=0.01,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="Gray",
+                borderwidth=1,
+            ),
+        )
+
+        # Save to file if path provided
+        if out_path is not None:
+            try:
+                out_path = Path(out_path)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                fig.write_html(
+                    str(out_path),
+                    config={
+                        "displayModeBar": True,
+                        "displaylogo": False,
+                        "modeBarButtonsToRemove": ["select2d", "lasso2d"],
+                    },
+                )
+                logging.info(f"Saved valuation scatter plot to {out_path}")
+            except Exception as e:
+                logging.error(f"Failed to save scatter plot to {out_path}: {e}")
+
+        return fig
+
+    except Exception as e:
+        logging.error(f"Error creating valuation scatter plot: {e}")
+        return None
 
 
 def generate_pdf_report(

@@ -5334,6 +5334,16 @@ def generate_reports_and_visualizations(all_stocks_featured):
     create_scatter_plot(all_stocks_featured, output_dir)
     create_heatmaps(all_stocks_featured, output_dir)
     export_excel_report(all_stocks_featured, output_dir)
+
+    # Also export a standardized predictions CSV for dashboards (Streamlit)
+    try:
+        from finance_ml import export_predictions_to_csv
+        csv_path = output_dir / 'predictions.csv'
+        export_predictions_to_csv(all_stocks_featured, csv_path)
+        print(f"  ✓ Predictions CSV: {csv_path}")
+    except Exception as e:
+        handle_visualization_error("predictions CSV", e)
+
     generate_pdf_summary(all_stocks_featured, output_dir)
 
 

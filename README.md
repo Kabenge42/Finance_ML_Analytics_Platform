@@ -158,7 +158,7 @@ sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
 # Edit environment_variables.txt and export or create .env
 
 # 6. Run main notebook
-jupyter notebook ml_finance_model_main_v9.ipynb
+jupyter notebook ml_finance_model_main_v10.ipynb
 
 # Or run as Python script
 python ml_finance_model_main.py --data-source auto --limit 5000
@@ -290,7 +290,7 @@ python tools/import_sqlite.py --db equities.sqlite --data-dir data
 
 The primary workflow is notebook-based for exploration and experimentation.
 
-**Main Notebook**: `ml_finance_model_main_v9.ipynb`
+**Main Notebook**: `ml_finance_model_main_v10.ipynb`
 
 ```powershell
 # Launch Jupyter
@@ -300,7 +300,7 @@ jupyter notebook
 jupyter lab
 ```
 
-Open `ml_finance_model_main_v9.ipynb` and run cells sequentially. The notebook includes:
+Open `ml_finance_model_main_v10.ipynb` and run cells sequentially. The notebook includes:
 
 - Configuration and setup
 - Data loading from database or CSV
@@ -397,7 +397,8 @@ performance analytics.
 streamlit run finance_ml/dashboards/streamlit_app.py
 ```
 
-Upload a predictions CSV file with columns: `ticker`, `sector`, `region`, `last_price`, `predicted_price_target`,
+Upload a predictions CSV file with columns: `ticker`,`name`,`exchange`, `sector`, `region`, `last_price`,`price_target`,
+`predicted_price_target`,
 `market_cap`, `mispricing_score`.
 
 #### Dash Dashboard
@@ -599,7 +600,7 @@ Finance_ML_Analytics_Platform/
 ├── docs/                          # Documentation
 │   ├── improvement_plan/         # Development roadmap and phase documentation
 │   └── summaries/                # Implementation summaries
-├── ml_finance_model_main_v9.ipynb # Main notebook (Phase 9.1-9.8)
+├── ml_finance_model_main_v10.ipynb # Main notebook (Phase 9.1-9.8)
 ├── ml_finance_model_main.ipynb   # Previous stable notebook
 ├── ml_finance_model_main.py      # Python script version
 ├── create_equities_schema.sql    # PostgreSQL schema
@@ -620,15 +621,15 @@ Finance_ML_Analytics_Platform/
 
 ### Main Entry Points
 
-| Script/Tool                      | Description                   | Usage                                                  |
-|----------------------------------|-------------------------------|--------------------------------------------------------|
-| `ml_finance_model_main_v9.ipynb` | Main notebook (Phase 9.1-9.8) | `jupyter notebook ml_finance_model_main_v9.ipynb`      |
-| `ml_finance_model_main.py`       | Python script version         | `python ml_finance_model_main.py --data-source auto`   |
-| `finance-ml`                     | CLI: Full pipeline            | `finance-ml --data-source auto --output-dir outputs`   |
-| `finance-ml-analyze`             | CLI: EDA/analytics only       | `finance-ml-analyze --data-source csv`                 |
-| `finance-ml-validate`            | CLI: Validation only          | `finance-ml-validate --data-source db`                 |
-| `streamlit_app.py`               | Streamlit dashboard           | `streamlit run finance_ml/dashboards/streamlit_app.py` |
-| `dash_app.py`                    | Dash dashboard                | `python finance_ml/dashboards/dash_app.py`             |
+| Script/Tool                       | Description                   | Usage                                                  |
+|-----------------------------------|-------------------------------|--------------------------------------------------------|
+| `ml_finance_model_main_v10.ipynb` | Main notebook (Phase 9.1-9.8) | `jupyter notebook ml_finance_model_main_v10.ipynb`     |
+| `ml_finance_model_main.py`        | Python script version         | `python ml_finance_model_main.py --data-source auto`   |
+| `finance-ml`                      | CLI: Full pipeline            | `finance-ml --data-source auto --output-dir outputs`   |
+| `finance-ml-analyze`              | CLI: EDA/analytics only       | `finance-ml-analyze --data-source csv`                 |
+| `finance-ml-validate`             | CLI: Validation only          | `finance-ml-validate --data-source db`                 |
+| `streamlit_app.py`                | Streamlit dashboard           | `streamlit run finance_ml/dashboards/streamlit_app.py` |
+| `dash_app.py`                     | Dash dashboard                | `python finance_ml/dashboards/dash_app.py`             |
 
 ### Utility Scripts (tools/)
 
@@ -663,7 +664,7 @@ Finance_ML_Analytics_Platform/
 
 **Changed**:
 
-- Major notebook reorganization (`ml_finance_model_main_v9.ipynb`) with Phase 9.5 and 9.7 integration
+- Major notebook reorganization (`ml_finance_model_main_v10.ipynb`) with Phase 9.5 and 9.7 integration
 - Enhanced core modules with improved data flow and error handling
 - Updated `finance_ml/__init__.py` exports
 

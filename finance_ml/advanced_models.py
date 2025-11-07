@@ -1973,8 +1973,21 @@ def train_sector_specific_models(
         if len(sector_df) < min_samples:  # Skip sectors with too few samples
             continue
 
-        X_sector = sector_df[actual_feature_cols]
-        y_sector = sector_df[target_col]
+        # Apply preprocessing with imputation to handle NaN values
+        # This ensures clean data before training sector-specific models
+        try:
+            X_sector, y_sector = prepare_features_for_training(
+                df=sector_df,
+                feature_cols=actual_feature_cols,
+                target_col=target_col,
+                apply_imputation=True,
+                sector_column=sector_col
+            )
+        except Exception as e:
+            logger.warning(
+                f"⚠ Failed to prepare features for sector '{sector}': {e}. Skipping this sector."
+            )
+            continue
 
         # Train model
         if model_type == "random_forest":

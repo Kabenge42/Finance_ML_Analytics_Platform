@@ -33,7 +33,7 @@ class NotebookConfig:
     have_dim_reduction: bool = True
 
     # Debug and development features
-    debug_mode: bool = False
+    debug_mode: bool = True
 
     # Optional feature toggles
     enable_sector_analysis: bool = True

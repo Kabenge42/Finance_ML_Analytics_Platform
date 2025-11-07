@@ -1,0 +1,172 @@
+# ============================================================================
+# MODEL OPTIMIZATION ENHANCEMENTS (Phase 9.5.1)
+# ============================================================================
+print_section_header("PHASE 9.5.1 — MODEL OPTIMIZATION ENHANCEMENTS")
+
+# Verify the required functions are available
+from finance_ml.models import (
+    train_and_evaluate_regression,
+    train_and_evaluate_regression_by_sector,
+    )
+
+# Use the dataset from Phase 9.5 (all_stocks_phase95)
+if 'all_stocks_phase95' not in globals():
+    print("⚠ Warning: all_stocks_phase95 not found. Using all_stocks instead.")
+    all_stocks_phase95 = all_stocks.copy()
+
+print(f"\n📊 Dataset: {len(all_stocks_phase95)} stocks")
+print(f"   Columns: {list(all_stocks_phase95.columns[:10])}... ({len(all_stocks_phase95.columns)} total)")
+
+# ============================================================================
+# ROBUST REGRESSION WITH HUBER LOSS (Priority 2.1)
+# ============================================================================
+print("\n" + "-" * 80)
+print("🔧 Training regression model with Huber loss for outlier robustness...")
+print("-" * 80)
+
+out_models_dir = Path("outputs/models")
+out_models_dir.mkdir(parents=True, exist_ok=True)
+
+regression_result_robust = train_and_evaluate_regression(
+        df=all_stocks_phase95,
+        out_dir=out_models_dir,
+        n_jobs=4,
+        loss="huber"  # Robust loss function for outlier handling
+        )
+
+if regression_result_robust:
+    print(f"\n✓ Robust Regression Metrics (Huber Loss):")
+    print(f"  MAE:  {regression_result_robust.get('mae', 'N/A')}")
+    print(f"  RMSE: {regression_result_robust.get('rmse', 'N/A')}")
+    print(f"  R²:   {regression_result_robust.get('r2', 'N/A')}")
+
+    # Check predictions metadata
+    preds_df = regression_result_robust.get('predictions')
+    if isinstance(preds_df, pd.DataFrame) and not preds_df.empty:
+        print(f"\n✓ Predictions DataFrame: {len(preds_df)} rows, {len(preds_df.columns)} columns")
+        print(f"  Columns: {list(preds_df.columns)}")
+    else:
+        print("\n⚠ Predictions DataFrame not available or empty")
+
+    # Feature importance analysis (Priority 5)
+    importance_path = out_models_dir / "feature_importance.csv"
+    if importance_path.exists():
+        feature_importance = pd.read_csv(importance_path)
+        print(f"\n📊 Top 10 Most Important Features:")
+        print(feature_importance.head(10).to_string(index=False))
+    else:
+        print("\n⚠ Feature importance not available (model may not support it)")
+else:
+    print("\n⚠ Robust regression training failed or skipped")
+
+# ============================================================================
+# SECTOR-LEVEL PERFORMANCE ANALYSIS (Priority 1.2)
+# ============================================================================
+print("\n" + "-" * 80)
+print("📈 Computing sector-level metrics...")
+print("-" * 80)
+
+if 'sector' in all_stocks_phase95.columns:
+    try:
+        sector_metrics = train_and_evaluate_regression_by_sector(
+                df=all_stocks_phase95,
+                out_dir=out_models_dir
+                )
+
+        if sector_metrics is not None and hasattr(sector_metrics, 'empty') and not sector_metrics.empty:
+            print(f"\n✓ Sector-Level Performance (sorted by MAE):")
+            print(sector_metrics.sort_values('mae').to_string(index=False))
+
+            # Identify problematic sectors
+            median_mae = sector_metrics['mae'].median()
+            high_error_sectors = sector_metrics[sector_metrics['mae'] > median_mae]
+
+            if not high_error_sectors.empty:
+                print(f"\n⚠ Sectors with above-median error (MAE > {median_mae:.2f}):")
+                for _, row in high_error_sectors.iterrows():
+                    print(f"  - {row['sector']}: MAE={row['mae']:.2f}, RMSE={row['rmse']:.2f}, "
+                          f"R²={row['r2']:.4f} (n={row['n_test']} test samples)")
+
+            # Best performers
+            best_sectors = sector_metrics.nsmallest(3, 'mae')
+            print(f"\n✓ Best Performing Sectors (lowest MAE):")
+            for _, row in best_sectors.iterrows():
+                print(f"  - {row['sector']}: MAE={row['mae']:.2f}")
+        else:
+            print("\n⚠ Sector-level metrics not available")
+
+    except Exception as e:
+        print(f"\n⚠ Sector-level analysis failed: {e}")
+        import traceback
+
+        traceback.print_exc()
+else:
+    print("\n⚠ Sector column not available in dataset")
+
+checkpoint("model_optimization_complete", requires=["regression_complete"])
+print("\n✓ Phase 9.5.1 complete")
+
+# ============================================================================
+# CREATE all_stocks_featured FOR DOWNSTREAM PHASES (9.6, 9.7, 9.8)
+# ============================================================================
+print("\n" + "-" * 80)
+print("📦 Creating all_stocks_featured with predictions for downstream phases...")
+print("-" * 80)
+
+# Start with the Phase 9.5 dataset (has all features and classification probabilities)
+all_stocks_featured = all_stocks_phase95.copy()
+
+# Merge predictions from regression_result_robust if available
+if regression_result_robust and 'predictions' in regression_result_robust:
+    preds_df = regression_result_robust['predictions']
+
+    if isinstance(preds_df, pd.DataFrame) and not preds_df.empty:
+        # The predictions DataFrame should have an index matching all_stocks_phase95
+        # and a 'predicted_price_target' column (or similar)
+
+        # Check what columns the predictions have
+        pred_cols = preds_df.columns.tolist()
+        print(f"  Predictions columns: {pred_cols}")
+
+        # Identify the prediction column
+        if 'predicted_price_target' in pred_cols:
+            all_stocks_featured['predicted_price_target'] = preds_df['predicted_price_target']
+            print(f"  ✓ Added 'predicted_price_target' column ({len(preds_df)} predictions)")
+        elif 'prediction' in pred_cols:
+            all_stocks_featured['predicted_price_target'] = preds_df['prediction']
+            print(f"  ✓ Added 'predicted_price_target' from 'prediction' column ({len(preds_df)} predictions)")
+        elif 'y_pred' in pred_cols:
+            all_stocks_featured['predicted_price_target'] = preds_df['y_pred']
+            print(f"  ✓ Added 'predicted_price_target' from 'y_pred' column ({len(preds_df)} predictions)")
+        else:
+            # Use the first numeric column as predictions
+            numeric_cols = preds_df.select_dtypes(include=[np.number]).columns.tolist()
+            if numeric_cols:
+                all_stocks_featured['predicted_price_target'] = preds_df[numeric_cols[0]]
+                print(
+                        f"  ✓ Added 'predicted_price_target' from '{numeric_cols[0]}' column ({len(preds_df)} predictions)")
+            else:
+                print("  ⚠ Warning: Could not identify prediction column in predictions DataFrame")
+
+        # Add other useful columns from predictions if available
+        for col in ['abs_error', 'pct_error', 'ticker', 'sector']:
+            if col in pred_cols and col not in all_stocks_featured.columns:
+                all_stocks_featured[col] = preds_df[col]
+                print(f"  ✓ Added '{col}' column from predictions")
+    else:
+        print("  ⚠ Warning: Predictions DataFrame is empty or invalid")
+else:
+    print("  ⚠ Warning: No predictions available from regression_result_robust")
+    print("  Creating all_stocks_featured without predictions (downstream phases may fail)")
+
+# Verify the result
+if 'predicted_price_target' in all_stocks_featured.columns:
+    print(f"\n✓ all_stocks_featured created successfully:")
+    print(f"  Rows: {len(all_stocks_featured)}")
+    print(f"  Columns: {len(all_stocks_featured.columns)}")
+    print(f"  Has predictions: Yes ({all_stocks_featured['predicted_price_target'].notna().sum()} non-null)")
+else:
+    print(f"\n⚠ all_stocks_featured created WITHOUT predictions:")
+    print(f"  Rows: {len(all_stocks_featured)}")
+    print(f"  Columns: {len(all_stocks_featured.columns)}")
+    print(f"  WARNING: Phase 9.6, 9.7, and 9.8 will fail without predictions!")

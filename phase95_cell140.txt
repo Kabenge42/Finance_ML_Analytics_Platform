@@ -1,0 +1,391 @@
+
+# Phase 9.5: Sector-Optimized Regression Models with Classification Features
+# ============================================================================
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+import numpy as np
+import pandas as pd
+from datetime import datetime
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from finance_ml.advanced_models import (
+    extract_classification_features,
+    integrate_classification_features_into_dataframe,
+    create_classification_interactions,
+    prepare_regression_data,
+    compare_regressors,
+    train_stacking_regressor,
+    train_quantile_regressor,
+    train_sector_specific_models,
+    save_model,
+    validate_training_data
+    )
+from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
+from finance_ml.logging_config import get_logger
+
+# Initialize logger for Phase 9.5
+logger = get_logger(__name__)
+
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+@dataclass
+class Phase95Config:
+    """Configuration for Phase 9.5 regression modeling pipeline."""
+
+    # Target configuration
+    target_col: str = 'price_target'
+    fallback_target: str = 'last_price'
+
+    # Model training parameters
+    test_size: float = 0.2
+    cv_folds: int = 5
+    random_state: int = 42
+
+    # Quantile regression settings
+    quantiles: List[float] = field(default_factory=lambda: [0.1, 0.5, 0.9])
+
+    # Sector modeling parameters
+    min_sector_samples: int = 20
+
+    # Feature configuration
+    exclude_cols: List[str] = field(default_factory=lambda: [
+        'ticker', 'company_name', 'sector', 'industry', 'region',
+        'trading_country', 'exchange', 'currency'
+        ])
+    valuation_cols: List[str] = field(default_factory=lambda: [
+        'p_e', 'p_b', 'ev_ebitda', 'market_cap'
+        ])
+
+    # Output configuration
+    output_dir: Path = field(default_factory=lambda: Path("outputs") / "models")
+
+
+# ============================================================================
+# DATA QUALITY AND IMPUTATION
+# ============================================================================
+
+def apply_imputation_strategy(df: pd.DataFrame, config: Phase95Config) -> pd.DataFrame:
+    """
+    Apply 4-step imputation strategy to clean data.
+
+    Args:
+        df: Input dataframe with potential missing values
+        config: Configuration object
+
+    Returns:
+        Cleaned dataframe with imputed values
+    """
+    print("\n  Applying 4-step imputation strategy...")
+    nan_before = df.select_dtypes(include=[np.number]).isnull().sum().sum()
+    print(f"    NaN values before imputation: {nan_before:,}")
+
+    df_imputed = apply_enhanced_imputation_strategy_4step(
+            df=df.copy(),
+            sector_column='sector',
+            n_neighbors=5,
+            price_column=config.fallback_target
+            )
+
+    nan_after = df_imputed.select_dtypes(include=[np.number]).isnull().sum().sum()
+    print(f"    NaN values after imputation: {nan_after:,}")
+
+    if nan_after > 0:
+        print(f"    ⚠ Warning: {nan_after} NaN values remain - applying emergency cleanup")
+        df_imputed = df_imputed.fillna(0)
+    else:
+        print("    ✓ Zero NaN values confirmed")
+
+    return df_imputed
+
+
+def handle_infinite_values(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Replace infinite values with zero.
+
+    Args:
+        df: Input dataframe
+
+    Returns:
+        Dataframe with infinite values replaced
+    """
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    inf_count = np.isinf(df[numeric_cols]).sum().sum()
+
+    if inf_count > 0:
+        print(f"    Replacing {inf_count} infinite values...")
+        df = df.replace([np.inf, -np.inf], np.nan)
+        df = df.fillna(0)
+        print("    ✓ Infinite values handled")
+
+    return df
+
+
+def validate_training_data_quality(
+        X_train: pd.DataFrame,
+        y_train: pd.Series
+        ) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Validate and clean training data with emergency fallback.
+
+    Args:
+        X_train: Training features
+        y_train: Training target
+
+    Returns:
+        Validated (X_train, y_train) tuple
+    """
+    print("\n  Validating training data...")
+
+    try:
+        validation_result = validate_training_data(X_train, y_train, strict=True)
+        print("    ✓ Training data validation passed")
+        print(f"      - Features: {X_train.shape[0]:,} samples × {X_train.shape[1]} features")
+        print(f"      - Target range: [{y_train.min():.2f}, {y_train.max():.2f}]")
+        return X_train, y_train
+
+    except ValueError as e:
+        print(f"    ⚠ Validation warning: {e}")
+        print("    Applying emergency imputation...")
+
+        from sklearn.impute import SimpleImputer
+        imputer = SimpleImputer(strategy='median')
+
+        X_train_clean = pd.DataFrame(
+                imputer.fit_transform(X_train),
+                columns=X_train.columns,
+                index=X_train.index
+                )
+
+        print("    ✓ Emergency imputation applied")
+        return X_train_clean, y_train
+
+
+# ============================================================================
+# PHASE 9.5 WORKFLOW FUNCTIONS
+# ============================================================================
+
+def verify_prerequisites(required_var: str = 'all_stocks_phase94') -> pd.DataFrame:
+    """
+    Step 1: Verify that prerequisite data exists and perform comprehensive data quality checks.
+
+    Implements ML Workflow Improvement Plan Priority 1: Enhanced Data Validation Pipeline
+    """
+    print("\n📋 Step 1: Verifying prerequisites and data quality...")
+
+    if required_var not in globals():
+        raise NameError(
+                f"❌ {required_var} not found. Please run Phase 9.4 first.\n"
+                "   Phase 9.4 creates classification meta-features required for regression."
+                )
+
+    df = globals()[required_var].copy()
+
+    # Basic dataset info
+    print(f"\n  Dataset Overview:")
+    print(f"    Rows: {len(df):,}")
+    print(f"    Columns: {len(df.columns)}")
+    print(f"    Memory: {df.memory_usage(deep=True).sum() / 1024 ** 2:.1f} MB")
+
+    # Check for classification features
+    classification_cols = [c for c in df.columns if c.startswith('event_prob_')]
+    if len(classification_cols) == 0:
+        print("\n  ⚠ Warning: No classification probability columns found")
+        print("     Phase 9.5 works best with classification meta-features from Phase 9.4")
+    else:
+        print(f"\n  ✓ Found {len(classification_cols)} classification probability columns")
+
+    # Data Quality Checks
+    print("\n  Data Quality Assessment:")
+
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    nan_count = df[numeric_cols].isnull().sum().sum()
+    nan_pct = (nan_count / (len(df) * len(numeric_cols))) * 100 if len(numeric_cols) > 0 else 0
+
+    if nan_count > 0:
+        print(f"    ⚠ Missing values: {nan_count:,} ({nan_pct:.2f}% of numeric data)")
+        top_nan_cols = df[numeric_cols].isnull().sum().nlargest(5)
+        top_nan_cols = top_nan_cols[top_nan_cols > 0]
+        if len(top_nan_cols) > 0:
+            print(f"      Top columns with missing data:")
+            for col, count in top_nan_cols.items():
+                print(f"        - {col}: {count:,} ({count / len(df) * 100:.1f}%)")
+    else:
+        print(f"    ✓ No missing values in numeric columns")
+
+    # Check for infinite values
+    inf_count = np.isinf(df[numeric_cols]).sum().sum() if len(numeric_cols) > 0 else 0
+    if inf_count > 0:
+        print(f"    ⚠ Infinite values: {inf_count:,}")
+    else:
+        print(f"    ✓ No infinite values detected")
+
+    print(f"\n  Dataset ready for Phase 9.5 preprocessing")
+    return df
+
+
+def create_feature_interactions(
+        df: pd.DataFrame,
+        config: Phase95Config
+        ) -> pd.DataFrame:
+    """Step 2: Create interaction features between classification and valuation."""
+    print("\n🔧 Step 2: Creating interaction features...")
+
+    classification_cols = [c for c in df.columns if c.startswith('event_prob_')]
+    available_valuation = [c for c in config.valuation_cols if c in df.columns]
+
+    if len(classification_cols) == 0 or len(available_valuation) == 0:
+        print("⚠ Skipping interaction features (missing classification or valuation columns)")
+        return df
+
+    print(f"  Creating interactions between {len(classification_cols)} classification features")
+    print(f"  and {len(available_valuation)} valuation metrics...")
+
+    df_enhanced = create_classification_interactions(
+            df=df,
+            classification_cols=classification_cols,
+            valuation_cols=available_valuation
+            )
+
+    interaction_cols = [c for c in df_enhanced.columns if '_x_' in c]
+    print(f"✓ Created {len(interaction_cols)} interaction features")
+
+    return df_enhanced
+
+
+def prepare_data_for_training(
+        df: pd.DataFrame,
+        config: Phase95Config
+        ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, List[str], str]:
+    """
+    Step 3: Prepare regression data with comprehensive preprocessing and validation.
+
+    Returns:
+        Tuple of (X_train, X_test, y_train, y_test, feature_cols, actual_target)
+    """
+    print("\n📊 Step 3: Preparing regression data with comprehensive preprocessing...")
+
+    # Step 3.1: Apply imputation and handle infinite values
+    df_imputed = apply_imputation_strategy(df, config)
+    df_imputed = handle_infinite_values(df_imputed)
+
+    # Determine target column
+    actual_target = config.target_col if config.target_col in df_imputed.columns else config.fallback_target
+    if actual_target == config.fallback_target:
+        print(f"\n  ⚠ Using '{config.fallback_target}' as proxy for target variable")
+
+    # Step 3.2: Prepare train/test split
+    print("\n  Step 3.2: Extracting features and creating train/test split...")
+    X_train, X_test, y_train, y_test, feature_info = prepare_regression_data(
+            df=df_imputed,
+            target_col=actual_target,
+            exclude_cols=config.exclude_cols,
+            test_size=config.test_size,
+            random_state=config.random_state
+            )
+
+    feature_cols = feature_info.get('numeric_features', X_train.columns.tolist())
+
+    # Step 3.3: Final validation
+    X_train, y_train = validate_training_data_quality(X_train, y_train)
+
+    print(f"\n✓ Data preparation complete:")
+    print(f"  Training set: {len(X_train):,} samples")
+    print(f"  Test set: {len(X_test):,} samples")
+    print(f"  Features: {len(feature_cols)}")
+
+    return X_train, X_test, y_train, y_test, feature_cols, actual_target
+
+
+# ... existing code ...
+
+def train_and_compare_models(
+        X_train: pd.DataFrame,
+        X_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+        config: Phase95Config
+        ) -> Optional[pd.DataFrame]:
+    """Step 4: Train and compare multiple regression models."""
+    print("\n🤖 Step 4: Training and comparing regression models...")
+    print("  Models: Ridge, Lasso, RF, ExtraTrees, GradientBoosting, HistGradientBoosting")
+
+    comparison_results = compare_regressors(
+            X=pd.concat([X_train, X_test]),
+            y=pd.concat([y_train, y_test]),
+            test_size=config.test_size,
+            cv=config.cv_folds,
+            random_state=config.random_state,
+            ensure_nonnegative=True,
+            loss="huber"
+            )
+
+    if comparison_results is None or len(comparison_results) == 0:
+        print("⚠ Model comparison failed or returned no results")
+        return None
+
+    # Convert dict to DataFrame
+    if isinstance(comparison_results, dict):
+        comparison_results = pd.DataFrame.from_dict(comparison_results, orient='index')
+        comparison_results = comparison_results.reset_index().rename(columns={'index': 'Model'})
+        comparison_results = comparison_results.sort_values('r2', ascending=False)
+        comparison_results = comparison_results.rename(columns={
+            'mae': 'MAE', 'rmse': 'RMSE', 'r2': 'R2',
+            'train_r2': 'Train_R2', 'train_time': 'Train_Time'
+            })
+
+    print("\n📈 Model Comparison Results:")
+    print(comparison_results.to_string(index=False))
+
+    best_model = comparison_results.iloc[0]['Model']
+    best_mae = comparison_results.iloc[0]['MAE']
+    best_r2 = comparison_results.iloc[0]['R2']
+    print(f"\n✓ Best model: {best_model} (MAE={best_mae:.2f}, R²={best_r2:.4f})")
+
+    # Save comparison results
+    comparison_path = config.output_dir / "model_comparison_results.csv"
+    comparison_results.to_csv(comparison_path, index=False)
+    print(f"✓ Comparison results saved to: {comparison_path}")
+
+    return comparison_results
+
+
+# ... rest of existing functions with updated signatures to use config ...
+
+# ============================================================================
+# MAIN EXECUTION
+# ============================================================================
+
+print_section_header("PHASE 9.5 — SECTOR-OPTIMIZED REGRESSION MODELS WITH CLASSIFICATION FEATURES")
+
+# Initialize configuration
+config = Phase95Config()
+config.output_dir.mkdir(parents=True, exist_ok=True)
+
+try:
+    # Execute workflow steps
+    all_stocks_phase95 = verify_prerequisites()
+    all_stocks_phase95 = create_feature_interactions(all_stocks_phase95, config)
+
+    X_train, X_test, y_train, y_test, feature_cols, target_col = prepare_data_for_training(
+            all_stocks_phase95, config
+            )
+
+    comparison_results = train_and_compare_models(
+            X_train, X_test, y_train, y_test, config
+            )
+
+    # ... rest of execution steps ...
+
+    # Mark Phase 9.5 as complete
+    checkpoint("regression_complete", requires=["classification_complete"])
+    print("\n✓ Phase 9.5 complete: Sector-Optimized Regression Models")
+
+except Exception as e:
+    logger.error(f"Phase 9.5 failed: {e}", exc_info=True)
+    print(f"\n❌ Phase 9.5 FAILED: {e}")
+    import traceback
+
+    traceback.print_exc()

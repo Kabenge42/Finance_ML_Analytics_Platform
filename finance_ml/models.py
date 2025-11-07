@@ -230,9 +230,15 @@ def train_and_evaluate_regression(
         loss: Loss function ('squared_error', 'huber', 'absolute_error') for robust training (Priority 2.1)
 
     Returns:
-        Dictionary with metrics (mae, rmse, r2) or None if dry_run or insufficient data
+        Dictionary with metrics (mae, rmse, r2), test set predictions, and full dataset predictions
+        or None if dry_run or insufficient data
     """
     from finance_ml.features import build_features_and_target
+    from finance_ml.advanced_models import prepare_features_for_training
+
+    # Store original dataframe for full predictions later
+    df_original = df.copy()
+    original_index = df_original.index
 
     X, y, num_cols, cat_cols = build_features_and_target(df)
     if y is None:
@@ -241,7 +247,7 @@ def train_and_evaluate_regression(
         )
         return None
 
-    # Drop rows with NaN target
+    # Drop rows with NaN target (for training only)
     mask = ~y.isna()
     X, y = X.loc[mask], y.loc[mask]
     if len(X) < 50:
@@ -315,7 +321,102 @@ def train_and_evaluate_regression(
     results_df.to_csv(results_path, index=False)
     logging.info("Saved regression predictions to %s", results_path)
 
-    return {"model": pipe, "mae": mae, "rmse": rmse, "r2": r2, "predictions": results_df}
+    # ============================================================================
+    # GENERATE FULL DATASET PREDICTIONS (Phase 9.5 Enhancement)
+    # ============================================================================
+    # After training on valid targets, predict for ALL stocks including those
+    # without targets. This enables downstream analysis on the full dataset.
+    logging.info("Generating predictions for full dataset (%d stocks)...", len(df_original))
+
+    # Get all numeric and categorical features from original dataframe
+    all_features = list(num_cols) + list(cat_cols)
+    
+    # Prepare full dataset with imputation to handle NaN values
+    # Note: We apply imputation directly without using prepare_features_for_training
+    # because that function would drop rows with missing targets, which we want to keep
+    try:
+        from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
+        
+        # Apply 4-step imputation to the full dataset (includes all rows)
+        df_full_clean = apply_enhanced_imputation_strategy_4step(
+            df=df_original.copy(),
+            sector_column='sector' if 'sector' in df_original.columns else None,
+            n_neighbors=5,
+            price_column='last_price' if 'last_price' in df_original.columns else None
+        )
+        
+        # Extract features (keeping all rows, including those without targets)
+        X_full = df_full_clean[all_features].copy()
+        
+        # Final safety check: handle any residual NaN/Inf in features
+        nan_count = X_full.isnull().sum().sum()
+        if nan_count > 0:
+            logging.warning(f"Found {nan_count} NaN values after imputation, applying fillna(0)")
+            X_full = X_full.fillna(0)
+        
+        inf_count = np.isinf(X_full.select_dtypes(include=[np.number])).sum().sum()
+        if inf_count > 0:
+            logging.warning(f"Found {inf_count} Inf values, replacing with NaN then 0")
+            X_full = X_full.replace([np.inf, -np.inf], np.nan).fillna(0)
+        
+        # Generate predictions for all stocks
+        full_preds = pipe.predict(X_full)
+        
+        logging.info(f"✓ Generated {len(full_preds)} predictions for full dataset")
+        
+        # Create full predictions DataFrame
+        full_results_df = pd.DataFrame({
+            'y_pred': full_preds,
+        }, index=original_index)
+        
+        # Add metadata columns
+        if "sector" in df_original.columns:
+            full_results_df["sector"] = df_original["sector"].values
+        if "ticker" in df_original.columns:
+            full_results_df["ticker"] = df_original["ticker"].values
+        if "market_cap" in df_original.columns:
+            full_results_df["market_cap"] = df_original["market_cap"].values
+        if "last_price" in df_original.columns:
+            full_results_df["last_price"] = df_original["last_price"].values
+        
+        # Add actual target values where available (for comparison)
+        target_col_name = y.name if hasattr(y, 'name') and y.name else 'price_target'
+        if target_col_name in df_original.columns:
+            full_results_df["y_true"] = df_original[target_col_name].values
+            # Calculate error metrics only for stocks with known targets
+            mask_with_target = ~full_results_df["y_true"].isna()
+            full_results_df["residual"] = np.nan
+            full_results_df["abs_error"] = np.nan
+            full_results_df.loc[mask_with_target, "residual"] = (
+                full_results_df.loc[mask_with_target, "y_true"] - 
+                full_results_df.loc[mask_with_target, "y_pred"]
+            )
+            full_results_df.loc[mask_with_target, "abs_error"] = np.abs(
+                full_results_df.loc[mask_with_target, "residual"]
+            )
+        
+        # Save full predictions
+        full_results_path = out_dir / "regression_predictions_full.csv"
+        full_results_df.to_csv(full_results_path, index=False)
+        logging.info(
+            "Saved full dataset predictions to %s (%d predictions, %d non-null)",
+            full_results_path,
+            len(full_results_df),
+            full_results_df['y_pred'].notna().sum()
+        )
+        
+    except Exception as e:
+        logging.warning("Could not generate full dataset predictions: %s", e)
+        full_results_df = None
+
+    return {
+        "model": pipe,
+        "mae": mae,
+        "rmse": rmse,
+        "r2": r2,
+        "predictions": results_df,
+        "full_predictions": full_results_df
+    }
 
 
 def train_and_evaluate_regression_by_sector(df: pd.DataFrame, out_dir: Path) -> pd.DataFrame:

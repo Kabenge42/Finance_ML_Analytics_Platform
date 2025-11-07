@@ -39,6 +39,17 @@ uploaded_file = st.sidebar.file_uploader("Upload predictions CSV", type=["csv"])
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
 
+    # Normalize columns for robustness
+    df.columns = df.columns.str.strip().str.lower()
+    # Handle common typo 'exchance' -> 'exchange'
+    if 'exchange' not in df.columns and 'exchance' in df.columns:
+        df = df.rename(columns={'exchance': 'exchange'})
+    # Compute mispricing_score if missing
+    if 'mispricing_score' not in df.columns and {'predicted_price_target','last_price'}.issubset(df.columns):
+        with pd.option_context('mode.chained_assignment', None):
+            denom = pd.to_numeric(df['last_price'], errors='coerce').replace({0: pd.NA})
+            df['mispricing_score'] = (pd.to_numeric(df['predicted_price_target'], errors='coerce') - pd.to_numeric(df['last_price'], errors='coerce')) / denom
+
     # Multi-select filters
     sectors = st.sidebar.multiselect(
         "Sector", df["sector"].unique() if "sector" in df.columns else []
