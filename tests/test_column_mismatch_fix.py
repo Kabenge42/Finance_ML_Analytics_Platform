@@ -221,7 +221,7 @@ class TestTrainSectorSpecificModelsWithAutoExtract(unittest.TestCase):
             auto_extract_fallback=True,
         )
 
-        # Should have successfully trained models
+        # Should have successfully trained regression
         self.assertGreater(len(sector_models), 0)
         self.assertIn("n_sectors", results)
 

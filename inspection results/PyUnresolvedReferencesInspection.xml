@@ -1,176 +1,76 @@
 <problems>
 <problem>
-    <file>file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py</file>
-    <line>86</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>529</line>
   <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
-        Unresolved references
-    </problem_class>
-    <description>Cannot find reference 'dropna' in 'str | bytes | date | datetime | timedelta | datetime64 | timedelta64
-        | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating'
-    </description>
-    <highlighted_element>dropna</highlighted_element>
-  <language>Python</language>
-  <offset>48</offset>
-  <length>6</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py</file>
-    <line>149</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Cannot find reference 'dropna' in 'str | bytes | date | datetime | timedelta | datetime64 | timedelta64
-        | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating'
-    </description>
-    <highlighted_element>dropna</highlighted_element>
-  <language>Python</language>
-    <offset>48</offset>
-  <length>6</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py</file>
-    <line>211</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py"/>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
   <description>Unresolved attribute reference 'sum' for class 'bool'</description>
   <highlighted_element>sum</highlighted_element>
   <language>Python</language>
-    <offset>37</offset>
+    <offset>40</offset>
   <length>3</length>
 </problem>
 <problem>
-    <file>file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py</file>
-    <line>249</line>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>529</line>
   <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py"/>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Cannot find reference 'isna' in 'str | bytes | date | datetime | timedelta | datetime64 | timedelta64 |
-        bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating'
-    </description>
-    <highlighted_element>isna</highlighted_element>
+    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
+    <highlighted_element>sum</highlighted_element>
   <language>Python</language>
-    <offset>31</offset>
-  <length>4</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py</file>
-    <line>252</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Cannot find reference 'quantile' in 'str | bytes | date | datetime | timedelta | datetime64 |
-        timedelta64 | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating'
-    </description>
-    <highlighted_element>quantile</highlighted_element>
-  <language>Python</language>
-    <offset>42</offset>
-    <length>8</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py</file>
-    <line>253</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/advanced_preprocessing.py"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Cannot find reference 'quantile' in 'str | bytes | date | datetime | timedelta | datetime64 |
-        timedelta64 | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating'
-    </description>
-    <highlighted_element>quantile</highlighted_element>
-  <language>Python</language>
-    <offset>42</offset>
-  <length>8</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/finance_ml/data.py</file>
-    <line>1233</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/data.py"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Cannot find reference 'median' in 'str | bytes | date | datetime | timedelta | datetime64 | timedelta64
-        | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating'
-    </description>
-    <highlighted_element>median</highlighted_element>
-  <language>Python</language>
-  <offset>37</offset>
-  <length>6</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/finance_ml/eval.py</file>
-    <line>1029</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/finance_ml/eval.py"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
-        Unresolved references
-    </problem_class>
-    <description>Unresolved attribute reference 'isoformat' for class 'None'</description>
-    <highlighted_element>isoformat</highlighted_element>
-  <language>Python</language>
-  <offset>40</offset>
-  <length>9</length>
+    <offset>63</offset>
+    <length>3</length>
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>265</line>
+    <line>530</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
     <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
         Unresolved references
     </problem_class>
-    <description>Cannot find reference 'n_features' in 'dict | EDAReport'</description>
-    <highlighted_element>n_features</highlighted_element>
+    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
+    <highlighted_element>sum</highlighted_element>
   <language>Python</language>
-    <offset>46</offset>
-  <length>10</length>
+    <offset>41</offset>
+    <length>3</length>
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>266</line>
+    <line>530</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Cannot find reference 'missing_total' in 'dict | EDAReport'</description>
-    <highlighted_element>missing_total</highlighted_element>
+    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
+    <highlighted_element>sum</highlighted_element>
   <language>Python</language>
-    <offset>46</offset>
-  <length>13</length>
+    <offset>64</offset>
+    <length>3</length>
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>293</line>
+    <line>531</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Unresolved attribute reference 'is_normal' for class 'dict'</description>
-    <highlighted_element>is_normal</highlighted_element>
+    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
+    <highlighted_element>sum</highlighted_element>
   <language>Python</language>
-    <offset>44</offset>
-  <length>9</length>
+    <offset>41</offset>
+    <length>3</length>
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>294</line>
+    <line>531</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Unresolved attribute reference 'p_value' for class 'dict'</description>
-    <highlighted_element>p_value</highlighted_element>
+    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
+    <highlighted_element>sum</highlighted_element>
   <language>Python</language>
-    <offset>54</offset>
-    <length>7</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.py</file>
-    <line>212</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.py"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Module 'simple_eda' not found</description>
-    <highlighted_element>simple_eda</highlighted_element>
-  <language>Python</language>
-    <offset>32</offset>
-  <length>10</length>
+    <offset>64</offset>
+    <length>3</length>
 </problem>
 </problems>

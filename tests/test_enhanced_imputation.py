@@ -13,7 +13,7 @@ Test coverage target: ≥80%
 import unittest
 import pandas as pd
 import numpy as np
-from finance_ml.advanced_preprocessing import (
+from finance_ml.ml_workflow.advanced_preprocessing import (
     get_zero_imputation_columns,
     get_knn_imputation_columns,
     apply_zero_imputation,

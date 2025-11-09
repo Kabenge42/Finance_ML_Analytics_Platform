@@ -49,7 +49,7 @@ def add_checkpoint_cell(notebook_path: str, backup: bool = True):
             "\n",
             'checkpoint("regression_complete", requires=["classification_complete"])\n',
             'print("[OK] Checkpoint: regression_complete")\n',
-            'print("  Phase 9.5 regression models ready for optimization and evaluation")\n',
+            'print("  Phase 9.5 regression regression ready for optimization and evaluation")\n',
         ],
     }
 

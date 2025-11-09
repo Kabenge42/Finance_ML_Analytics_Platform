@@ -37,7 +37,7 @@ class TestStructuredOutput(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn("run_dir", result)
         self.assertIn("data", result)
-        self.assertIn("models", result)
+        self.assertIn("regression", result)
         self.assertIn("reports", result)
         self.assertIn("visualizations", result)
         self.assertIn("analytics", result)
@@ -80,7 +80,7 @@ class TestStructuredOutput(unittest.TestCase):
         self.assertIn("test_run_003", content)
         self.assertIn("Directory Structure", content)
         self.assertIn("data/", content)
-        self.assertIn("models/", content)
+        self.assertIn("regression/", content)
 
     def test_create_structured_output_auto_run_id(self):
         """Test automatic run_id generation when not provided"""

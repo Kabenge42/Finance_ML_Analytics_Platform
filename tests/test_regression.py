@@ -206,7 +206,7 @@ class TestMetaLearnerStacking(unittest.TestCase):
         self.assertTrue(all(~pd.isna(predictions)))
 
     def test_stacking_ensemble_has_base_models(self):
-        """Test that stacking ensemble contains base models and meta-learner"""
+        """Test that stacking ensemble contains base regression and meta-learner"""
         df = self.small_df()
         feature_cols = ["feature_a", "feature_b"]
         target_col = "price_target"
@@ -219,14 +219,14 @@ class TestMetaLearnerStacking(unittest.TestCase):
         self.assertGreater(len(stacking_model.base_models), 0)
 
     def test_stacking_with_sector_optimization(self):
-        """Test that stacking uses sector-specific base models"""
+        """Test that stacking uses sector-specific base regression"""
         df = self.small_df()
         feature_cols = ["feature_a", "feature_b"]
         target_col = "price_target"
 
         stacking_model = mod.train_stacking_ensemble_by_sector(df, feature_cols, target_col)
 
-        # Should have models for each sector
+        # Should have regression for each sector
         self.assertIsInstance(stacking_model, dict)
         self.assertIn("Tech", stacking_model)
         self.assertIn("Energy", stacking_model)

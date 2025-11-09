@@ -97,7 +97,7 @@ MODEL_VERSION = os.getenv("MODEL_VERSION", "v8_3")
 N_JOBS = int(os.getenv("N_JOBS", 4))
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "outputs"))
-MODEL_DIR = Path(os.getenv("MODEL_DIR", "models"))
+MODEL_DIR = Path(os.getenv("MODEL_DIR", "../../outputs/regression"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 

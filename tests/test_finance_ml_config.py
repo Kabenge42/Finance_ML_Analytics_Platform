@@ -30,7 +30,7 @@ class TestFinanceMLConfig(unittest.TestCase):
         self.assertIsInstance(config.data_dir, Path)
         self.assertEqual(config.data_dir, Path("data"))
         self.assertIsInstance(config.model_dir, Path)
-        self.assertEqual(config.model_dir, Path("models"))
+        self.assertEqual(config.model_dir, Path("../outputs/regression"))
         self.assertIsInstance(config.cache_dir, Path)
         self.assertEqual(config.cache_dir, Path(".cache"))
         self.assertIsInstance(config.output_dir, Path)
@@ -102,7 +102,7 @@ class TestConfigFromEnv(unittest.TestCase):
         config = FinanceMLConfig.from_env()
 
         self.assertEqual(config.data_dir, Path("data"))
-        self.assertEqual(config.model_dir, Path("models"))
+        self.assertEqual(config.model_dir, Path("../outputs/regression"))
         self.assertEqual(config.cache_dir, Path(".cache"))
         self.assertEqual(config.output_dir, Path("outputs"))
         self.assertIsNone(config.db_url)

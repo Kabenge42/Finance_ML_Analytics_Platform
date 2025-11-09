@@ -400,12 +400,12 @@ def generate_ml_workflow_report(
     html_parts.append("</table>")
     
     # Model Comparison
-    if include_model_comparison and 'models' in training_metrics:
+    if include_model_comparison and 'regression' in training_metrics:
         html_parts.append("<h2>📊 Model Performance Comparison</h2>")
         html_parts.append("<table>")
         html_parts.append("<tr><th>Model</th><th>Train RMSE</th><th>Val RMSE</th><th>R²</th><th>MAE</th></tr>")
         
-        for model_name, metrics in training_metrics['models'].items():
+        for model_name, metrics in training_metrics['regression'].items():
             html_parts.append(f"""
             <tr>
                 <td>{model_name}</td>
@@ -601,7 +601,7 @@ def create_structured_output_directory(base_dir: Path, run_id: str = None) -> di
     │   ├── data/
     │   │   ├── processed_data.csv
     │   │   └── imputation_report.json
-    │   ├── models/
+    │   ├── regression/
     │   │   ├── model_checkpoints/
     │   │   └── feature_importance.csv
     │   ├── reports/
@@ -635,8 +635,8 @@ def create_structured_output_directory(base_dir: Path, run_id: str = None) -> di
     structure = {
         'run_dir': run_dir,
         'data': run_dir / 'data',
-        'models': run_dir / 'models',
-        'model_checkpoints': run_dir / 'models' / 'checkpoints',
+        'regression': run_dir / 'regression',
+        'model_checkpoints': run_dir / 'regression' / 'checkpoints',
         'reports': run_dir / 'reports',
         'visualizations': run_dir / 'visualizations',
         'eda_viz': run_dir / 'visualizations' / 'eda',
@@ -660,7 +660,7 @@ Generated: {pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")}
 ## Directory Structure
 
 - **data/**: Processed datasets and imputation reports
-- **models/**: Trained model artifacts and checkpoints
+- **regression/**: Trained model artifacts and checkpoints
 - **reports/**: HTML/PDF reports (workflow, EDA, data quality)
 - **visualizations/**: All plots and charts organized by category
 - **analytics/**: Prediction results, rankings, and comparison tables

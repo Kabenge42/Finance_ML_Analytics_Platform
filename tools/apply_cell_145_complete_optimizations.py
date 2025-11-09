@@ -59,7 +59,7 @@ for i, line in enumerate(lines):
     # Export sector-level metrics (Priority 1.2)
     if 'sector' in regression_df_enhanced.columns:
         print("\\n📊 Computing sector-level regression metrics...")
-        from finance_ml.models import train_and_evaluate_regression_by_sector
+        from finance_ml.regression import train_and_evaluate_regression_by_sector
         
         # Prepare dataframe with required columns for sector analysis
         sector_analysis_df = regression_df_enhanced.copy()
@@ -70,7 +70,7 @@ for i, line in enumerate(lines):
                     out_dir=out_models_dir
                 )
                 print(f"✓ Sector metrics exported: {len(sector_metrics)} sectors")
-                print(f"   File: outputs/models/regression_metrics_by_sector.csv")
+                print(f"   File: outputs/regression/regression_metrics_by_sector.csv")
                 
                 # Display top/bottom performers
                 if 'mae' in sector_metrics.columns:
@@ -89,7 +89,7 @@ for i, line in enumerate(lines):
     # Export feature importance (Priority 5)
     print("\\n📈 Exporting feature importance from stacking model...")
     try:
-        # Extract feature importance from base models in stacking ensemble
+        # Extract feature importance from base regression in stacking ensemble
         if hasattr(stacking_model, 'estimators_'):
             # Get Random Forest base model (usually first estimator)
             rf_model = None

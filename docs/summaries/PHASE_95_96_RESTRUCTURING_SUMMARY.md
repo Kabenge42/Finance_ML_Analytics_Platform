@@ -415,7 +415,7 @@ all_stocks_featured (Phase 9.5 output → Phase 9.6, 9.7, 9.8 input)
 
 7. **Verify Outputs**
    ```bash
-   ls -lh outputs/models/
+   ls -lh outputs/regression/
    # Should show all output files listed above
    ```
 

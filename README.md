@@ -1,9 +1,9 @@
 # Finance ML Analytics Platform
 
-**Version 0.6.0** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.5.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-06  
-> **Latest Release**: v0.6.0 - Phase 9.5 & 9.7 Enhanced (Classification + Analyst Comparison)
+> **Documentation Last Updated:** 2025-11-08  
+> **Latest Release**: v0.5.1 (aligned with pyproject.toml)
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -73,6 +73,134 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 - 🧪 **Tested**: 67+ test modules with comprehensive coverage (≥80% target for new code)
 - 🚀 **CLI**: Three command-line tools for different workflows
 - 🔍 **Model Interpretation**: SHAP analysis for explainability
+
+---
+
+## Module Structure (v9_8 - Phase 9.1-9.8 Refactor)
+
+The codebase follows a **phase-aligned architecture** with dedicated subpackages for each development phase:
+
+```
+finance_ml/ml_workflow/
+├── preprocessing/      # Phase 9.1: 4-step imputation, outliers, scaling, quality
+├── eda/               # Phase 9.2: EDA, benchmarking, reports
+├── features/          # Phase 9.3: Core, advanced, selection, API
+├── classification/    # Phase 9.4: Labels, tuning, models, evaluation
+├── regression/        # Phase 9.5: Models, constraints, quantile, tuning, dataset, io
+├── evaluation/        # Phase 9.6: Metrics, analysis
+├── analytics/         # Phase 9.7: Mispricing, analyst comparison, portfolio, risk
+└── reporting/         # Phase 9.8: Dashboard data, export
+```
+
+### Phase-to-Module Mapping
+
+| Phase   | Subpackage        | Purpose                                      | Import Prefix              | Key Functions                                                                                                                                 |
+|---------|-------------------|----------------------------------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| **9.1** | `preprocessing/`  | Data quality, imputation, outliers, scaling  | `preprocessing_*`          | `apply_enhanced_imputation_strategy_4step`, `preprocessing_calculate_quality`, `detect_outliers_iqr`, `winsorize_by_sector`, `scale_features` |
+| **9.2** | `eda/`            | EDA reports, benchmarking, statistical tests | `generate_*`, `compare_*`  | `generate_eda_report`, `generate_benchmarking_report`, `compare_sector_distributions`                                                         |
+| **9.3** | `features/`       | Feature engineering, importance, selection   | `features_*`, `engineer_*` | `features_build_comprehensive`, `features_importance_rf`, `engineer_valuation_ratios`, `engineer_analyst_quality_features`                    |
+| **9.4** | `classification/` | Event labels, hyperparameter tuning, models  | `classification_*`         | `classification_create_enhanced_event_labels`, `classification_optimize_hyperparameters`                                                      |
+| **9.5** | `regression/`     | Model training, quantile, constraints, I/O   | `regression_*`             | `regression_train_xgboost`, `regression_train_lightgbm`, `regression_compare_regressors`, `regression_save_model`                             |
+| **9.6** | `evaluation/`     | Metrics, error analysis, segmentation        | `evaluation_*`             | `evaluation_comprehensive_metrics`, `evaluation_metrics_by_segment`                                                                           |
+| **9.7** | `analytics/`      | Mispricing, rankings, portfolio, risk        | `analytics_*`              | `analytics_calculate_mispricing`, `analytics_rank_undervalued`, `analytics_rank_by_sector`                                                    |
+| **9.8** | `reporting/`      | Dashboard data, quality alerts, exports      | `reporting_*`              | `reporting_financial_metrics`, `reporting_quality_alerts`, `reporting_plotly_data`                                                            |
+
+### Import Examples
+
+**Recommended Pattern (Package-Level Imports):**
+
+```python
+# All Phase 9.1-9.8 functions are available at package level with descriptive prefixes
+from finance_ml import (
+    # Phase 9.1: Preprocessing
+    apply_enhanced_imputation_strategy_4step,
+    preprocessing_calculate_quality,
+    detect_outliers_iqr,
+    winsorize_by_sector,
+    scale_features,
+
+    # Phase 9.2: EDA
+    generate_eda_report,
+    generate_benchmarking_report,
+
+    # Phase 9.3: Features
+    features_build_comprehensive,
+    features_importance_rf,
+    engineer_analyst_quality_features,
+
+    # Phase 9.4: Classification
+    classification_create_enhanced_event_labels,
+    classification_optimize_hyperparameters,
+
+    # Phase 9.5: Regression
+    regression_train_xgboost,
+    regression_compare_regressors,
+    regression_save_model,
+
+    # Phase 9.6: Evaluation
+    evaluation_comprehensive_metrics,
+    evaluation_metrics_by_segment,
+
+    # Phase 9.7: Analytics
+    analytics_calculate_mispricing,
+    analytics_rank_undervalued,
+
+    # Phase 9.8: Reporting
+    reporting_financial_metrics,
+    reporting_quality_alerts,
+    )
+```
+
+**Alternative Pattern (Direct Subpackage Imports):**
+
+```python
+# Import directly from subpackages for more explicit organization
+from finance_ml.ml_workflow.preprocessing import imputation, outliers, scaling
+from finance_ml.ml_workflow.eda import eda, benchmarking
+from finance_ml.ml_workflow.features import core, advanced, selection
+from finance_ml.ml_workflow.classification import labels, tuning, models
+from finance_ml.ml_workflow.regression import models, quantile, constraints
+from finance_ml.ml_workflow.evaluation import metrics
+from finance_ml.ml_workflow.analytics import mispricing
+from finance_ml.ml_workflow.reporting import dashboard_data
+```
+
+### Migration Guide
+
+**Old Pattern (Deprecated):**
+
+```python
+# These still work but trigger deprecation warnings
+from finance_ml.ml_workflow.advanced_preprocessing import detect_outliers_iqr
+from finance_ml.ml_workflow.advanced_features import build_comprehensive_features
+from finance_ml.ml_workflow.advanced_models import train_xgboost_regressor
+from finance_ml.ml_workflow.eval import calculate_mispricing_score
+```
+
+**New Pattern (Recommended):**
+
+```python
+# Use package-level imports with descriptive prefixes
+from finance_ml import (
+    detect_outliers_iqr,  # Phase 9.1
+    features_build_comprehensive,  # Phase 9.3
+    regression_train_xgboost,  # Phase 9.5
+    analytics_calculate_mispricing,  # Phase 9.7
+    )
+```
+
+### Key Design Principles
+
+✅ **Phase alignment**: Each subpackage maps directly to a business phase (9.1–9.8)  
+✅ **Backward compatibility**: Old imports still work with deprecation warnings for 1-2 releases  
+✅ **Clean imports**: All functions imported once at package level  
+✅ **Descriptive prefixes**: Function names indicate their module (preprocessing_*, features_*, etc.)  
+✅ **Consolidation**: Eliminated duplication across `features.py`/`advanced_features.py`, `models.py`/
+`advanced_models.py`, etc.  
+✅ **Testability**: Isolated modules are easier to unit test  
+✅ **Maintainability**: Clear module boundaries and responsibilities
+
+See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed migration guide and complete API reference.
 
 ---
 
@@ -415,7 +543,8 @@ Access at [http://localhost:8050](http://localhost:8050)
 **Programmatic Usage**:
 
 ```python
-from finance_ml.eval import (
+# Evaluation and analytics helpers
+from finance_ml.ml_workflow.eval import (
     calculate_mispricing_score,
     rank_stocks_by_sector,
     calculate_financial_metrics_dashboard,
@@ -423,20 +552,33 @@ from finance_ml.eval import (
     prepare_plotly_dashboard_data,
     )
 
+import pandas as pd
+
+# Example DataFrame (replace with your predictions dataframe)
+df = pd.DataFrame({
+    'ticker': ['AAA', 'BBB', 'CCC'],
+    'sector': ['Tech', 'Health', 'Energy'],
+    'region': ['US', 'EU', 'APAC'],
+    'last_price': [100.0, 50.0, 75.0],
+    'predicted_price_target': [120.0, 45.0, 90.0],
+    'market_cap': [1e11, 5e10, 3e10],
+    })
+
 # Calculate mispricing
-df_with_scores = calculate_mispricing_score(df)
+mispricing = calculate_mispricing_score(df)
+df_with_scores = df.assign(mispricing_score=mispricing)
 
 # Get top undervalued stocks by sector
 rankings = rank_stocks_by_sector(df_with_scores, top_n=10)
 
 # Generate financial metrics
-metrics = calculate_financial_metrics_dashboard(df, group_by='sector')
+metrics = calculate_financial_metrics_dashboard(df_with_scores, group_by='sector')
 
 # Check data quality
-alerts = generate_data_quality_alerts(df)
+alerts = generate_data_quality_alerts(df_with_scores)
 
 # Prepare Plotly chart data
-plotly_data = prepare_plotly_dashboard_data(df)
+plotly_data = prepare_plotly_dashboard_data(df_with_scores)
 ```
 
 ---
@@ -455,7 +597,7 @@ LOG_LEVEL=INFO                   # Python logging level
 
 # Directories
 DATA_DIR=data                    # Data directory
-MODEL_DIR=models                 # Model output directory
+MODEL_DIR=regression                 # Model output directory
 OUTPUT_DIR=outputs               # General output directory
 CACHE_DIR=.cache                 # Cache directory
 
@@ -465,7 +607,8 @@ DB_SCHEMA=public                 # Database schema
 DB_TABLE=equities                # Table name
 
 # Model Configuration
-MODEL_VERSION=v0_6_0             # Model version identifier
+MODEL_VERSION=v0_5_0             # Model version identifier
+# TODO: Keep MODEL_VERSION synchronized with releases (see CHANGELOG.md)
 RANDOM_SEED=42                   # Random seed for reproducibility
 
 # Performance
@@ -517,8 +660,8 @@ python -m unittest tests.test_enhanced_imputation tests.test_data_catalog tests.
 # Specific feature areas
 python -m unittest tests.test_finance_ml_data -v        # Data loading
 python -m unittest tests.test_features -v               # Feature engineering
-python -m unittest tests.test_classification -v         # Classification models
-python -m unittest tests.test_regression -v             # Regression models
+python -m unittest tests.test_classification -v         # Classification regression
+python -m unittest tests.test_regression -v             # Regression regression
 python -m unittest tests.test_dashboard_helpers -v      # Dashboard helpers
 ```
 
@@ -653,42 +796,35 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.6.0 (2025-11-06)
+### Version 0.5.1 (Current Release)
 
-**Added**:
+**Phase 9.1-9.8 Module Structure (v9_8)**:
 
-- Phase 9.5 enhanced classification module (`finance_ml/classification_enhanced.py`)
-- Comprehensive Phase 9.5 data flow fix documentation
-- Phase 9.7 analyst comparison enhancements
-- New test suites for enhanced functionality (classification, dashboards, restructuring)
+- Complete subpackage refactoring into phase-aligned architecture
+- Dedicated subpackages: preprocessing/, eda/, features/, classification/, regression/, evaluation/, analytics/,
+  reporting/
+- Backward-compatible imports with deprecation warnings
+- Package-level exports with descriptive function prefixes
 
-**Changed**:
+**Key Features**:
 
-- Major notebook reorganization (`ml_finance_model_main_v10.ipynb`) with Phase 9.5 and 9.7 integration
-- Enhanced core modules with improved data flow and error handling
-- Updated `finance_ml/__init__.py` exports
+- Phase 9.1: 4-step imputation pipeline (zero, KNN, price-based, median)
+- Phase 9.2: Enhanced EDA with benchmarking and statistical testing
+- Phase 9.3: Advanced feature engineering with sector-specific optimizations
+- Phase 9.4: Multi-class event classification with neural networks
+- Phase 9.5: Sector-optimized regression with quantile models and ensembles
+- Phase 9.6: Comprehensive evaluation and error analysis
+- Phase 9.7: Stock valuation, mispricing analysis, and analyst comparison
+- Phase 9.8: Interactive dashboards and reporting
 
-**Fixed**:
+**Testing & Documentation**:
 
-- Resolved Phase 9.5 data flow issues with tuple unpacking and data pipeline fixes
-- Fixed classification module data handling
-- Improved notebook phase ordering and cell organization
+- 67+ test modules with comprehensive coverage (≥80% target)
+- Updated notebook (`ml_finance_model_main_v10.ipynb`) with Phase 9.1-9.8 integration
+- Enhanced CLI tools: finance-ml, finance-ml-analyze, finance-ml-validate
+- Complete migration guide and API documentation
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
-
-### Version 0.5.1 (2025-11-05)
-
-- Phase 9.1 comprehensive 4-step imputation pipeline
-- Comprehensive TDD test suite (21 tests, ≥80% coverage)
-- Phase 9.1 notebook integration with visualizations
-- Implementation guide documentation
-
-### Version 0.5.0 (2025-11-02)
-
-- Phase 9.2 enhanced EDA with 7 new analysis functions
-- Benchmarking module with sector/regional comparisons
-- 59 new tests (36 EDA + 23 benchmarking)
-- Enhanced notebook with schema validation and error handling
 
 ---
 
@@ -764,38 +900,40 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## Known Issues and TODOs
 
-<!-- Version conflicts detected during README update (2025-11-06):
-- pyproject.toml: version 0.5.1
-- CHANGELOG.md: version 0.6.0
-- README (old): version 2.1.0
-TODO: Align version numbering across all files (recommend following CHANGELOG.md) -->
-
-### Version Alignment
-
-**TODO**: Resolve version conflicts across project files:
-
-- `pyproject.toml` currently shows version `0.5.1`
-- `CHANGELOG.md` shows latest version `0.6.0`
-- Previous README showed version `2.1.0`
-- **Recommendation**: Use CHANGELOG.md version (0.6.0) as source of truth and update pyproject.toml
-
 ### Optional Dependencies
 
-Some optional dependencies (streamlit, dash) are not in `requirements.txt`. To use dashboards:
+**Dashboards**: Streamlit and Dash are not included in `requirements.txt` by default. To use interactive dashboards:
 
 ```powershell
-pip install streamlit dash
+pip install streamlit dash plotly
 ```
 
-Or add to `requirements.txt` for easier installation.
+These can be added to `requirements.txt` or installed separately as needed.
 
 ### TensorFlow Installation
 
-TensorFlow is heavy and CPU-only install is sufficient for this project. If GPU acceleration is needed, follow official
-TensorFlow GPU installation docs and ensure CUDA/cuDNN compatibility. If installation issues occur, TensorFlow can be
-temporarily commented out in `requirements.txt`.
+TensorFlow is optional and CPU-only installation is sufficient for this project. For GPU acceleration:
+
+- Follow official [TensorFlow GPU installation guide](https://www.tensorflow.org/install/gpu)
+- Ensure CUDA/cuDNN compatibility with your GPU and TensorFlow version
+- If installation issues occur, TensorFlow can be temporarily removed from `requirements.txt`
+
+The core workflow uses scikit-learn and gradient boosting libraries (XGBoost, LightGBM, CatBoost) and will function
+without TensorFlow.
+
+### Future Enhancements
+
+**TODO**: Consider adding the following enhancements:
+
+- Expand dashboard functionality with more interactive features
+- Add time-series forecasting capabilities
+- Implement automated hyperparameter tuning for all model types
+- Add support for real-time data streaming
+- Create Docker containerization for easier deployment
+
+See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed development roadmap.
 
 ---
 
-**Last Updated**: 2025-11-06  
-**README Version**: 1.0 (aligned with CHANGELOG v0.6.0)
+**Last Updated**: 2025-11-08  
+**README Version**: 2.0 (aligned with pyproject.toml v0.5.1)

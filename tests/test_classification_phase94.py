@@ -1,7 +1,7 @@
 ﻿"""
 Phase 9.4 Classification Tests - Advanced Stock Prediction ML System
 
-Tests for sophisticated multi-class classification models including:
+Tests for sophisticated multi-class classification regression including:
 - Neural Network classifiers
 - Voting ensemble classifiers
 - Stacking ensemble classifiers
@@ -550,10 +550,10 @@ class TestCrossValidateClassifier(unittest.TestCase):
 
 @unittest.skipIf(not HAVE_SKLEARN or not HAVE_FINANCE_ML, "sklearn not available")
 class TestCompareFeatureImportance(unittest.TestCase):
-    """Test feature importance comparison across models."""
+    """Test feature importance comparison across regression."""
 
     def test_compare_feature_importance(self):
-        """Test comparing feature importance from multiple models."""
+        """Test comparing feature importance from multiple regression."""
         from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
         df, labels = create_sample_classification_data(n_samples=200)
@@ -564,7 +564,7 @@ class TestCompareFeatureImportance(unittest.TestCase):
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Train multiple models and extract feature importance
+        # Train multiple regression and extract feature importance
         rf = RandomForestClassifier(n_estimators=10, random_state=42)
         rf.fit(X_train, y_train)
 
@@ -595,7 +595,7 @@ class TestPlotConfusionMatrices(unittest.TestCase):
     """Test confusion matrix visualization."""
 
     def test_plot_confusion_matrices(self):
-        """Test plotting confusion matrices for multiple models."""
+        """Test plotting confusion matrices for multiple regression."""
         from sklearn.ensemble import RandomForestClassifier
 
         df, labels = create_sample_classification_data(n_samples=200)
@@ -608,7 +608,7 @@ class TestPlotConfusionMatrices(unittest.TestCase):
             X, y, test_size=0.2, random_state=42, stratify=labels
         )
 
-        # Train models and get predictions
+        # Train regression and get predictions
         model1 = RandomForestClassifier(n_estimators=10, random_state=42)
         model1.fit(X_train, y_train)
         y_pred1 = model1.predict(X_test)
@@ -1437,7 +1437,7 @@ class TestRandomForestAndSVM(unittest.TestCase):
 
         results = compare_classifiers(X_train, y_train, X_test, y_test, num_cols, cat_cols)
 
-        # Check that results is a DataFrame with multiple models
+        # Check that results is a DataFrame with multiple regression
         self.assertIsInstance(results, pd.DataFrame)
         self.assertGreater(len(results), 0)
 

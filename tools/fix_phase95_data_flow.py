@@ -3,7 +3,7 @@
 Fix Phase 9.5 data flow issues in ml_finance_model_main_v10.ipynb
 
 This script addresses multiple critical issues:
-1. Data flow: Pass imputed data to sector models (not original with NaN)
+1. Data flow: Pass imputed data to sector regression (not original with NaN)
 2. Feature selection: Use only numeric features for training
 3. Validation: Add checkpoints before sector model training
 4. Checkpoint system: Set regression_complete flag
@@ -21,13 +21,13 @@ if sys.platform == 'win32':
 
 def fix_phase95_notebook():
     """Fix Phase 9.5 cell in the notebook"""
-    
+
     notebook_path = Path("ml_finance_model_main_v10.ipynb")
-    
+
     if not notebook_path.exists():
         print(f"Error: {notebook_path} not found")
         return False
-    
+
     # Read notebook
     try:
         with open(notebook_path, 'r', encoding='utf-8') as f:
@@ -35,20 +35,20 @@ def fix_phase95_notebook():
     except Exception as e:
         print(f"Error reading notebook: {e}")
         return False
-    
+
     # Pattern to find the problematic code
     old_pattern = """    sector_models = train_sector_models(
             all_stocks_phase95, feature_cols, target_col, MIN_SECTOR_SAMPLES,
             RANDOM_STATE, out_models_dir
             )"""
-    
+
     # New corrected code with proper data flow
     new_pattern = """    # ========================================================================
-    # CRITICAL FIX: Use imputed data for sector models
+    # CRITICAL FIX: Use imputed data for sector regression
     # ========================================================================
     # Reconstruct fully imputed dataframe by combining imputed features
     # with original non-numeric columns
-    print("\\n🔧 Preparing imputed dataset for sector models...")
+    print("\\n🔧 Preparing imputed dataset for sector regression...")
     
     all_stocks_imputed = all_stocks_phase95.copy()
     
@@ -93,7 +93,7 @@ def fix_phase95_notebook():
     else:
         print("✓ Data validation passed - ready for sector model training")
     
-    # Train sector models with clean, imputed data
+    # Train sector regression with clean, imputed data
     sector_models = train_sector_models(
             all_stocks_imputed_reset,  # ✓ Imputed dataframe
             feature_info['numeric_features'],  # ✓ Only numeric features
@@ -102,14 +102,14 @@ def fix_phase95_notebook():
             RANDOM_STATE,
             out_models_dir
             )"""
-    
+
     # Also need to update the train_sector_models function definition
     train_sector_models_old = """def train_sector_models(df: pd.DataFrame, feature_cols: List[str],
                         target_col: str, min_samples: int,
                         random_state: int, output_dir: Path) -> Dict[str, Any]:
-    \"\"\"Train sector-specific models with preprocessing.\"\"\"
+    \"\"\"Train sector-specific regression with preprocessing.\"\"\"
     
-    logger.info(f\"Training sector-specific models for {df[sector_col].nunique()} sectors\")
+    logger.info(f\"Training sector-specific regression for {df[sector_col].nunique()} sectors\")
     
     sector_models, sector_results = train_sector_specific_models(
             df=df,
@@ -121,11 +121,11 @@ def fix_phase95_notebook():
             min_samples=min_samples,
             ensure_nonnegative=True
             )"""
-    
+
     train_sector_models_new = """def train_sector_models(df: pd.DataFrame, feature_cols: Union[List[str], Dict[str, List[str]]],
                         target_col: str, min_samples: int,
                         random_state: int, output_dir: Path) -> Dict[str, Any]:
-    \"\"\"Train sector-specific models with preprocessing and final imputation checkpoint.
+    \"\"\"Train sector-specific regression with preprocessing and final imputation checkpoint.
     
     Args:
         df: Input DataFrame (should be pre-imputed)
@@ -133,14 +133,14 @@ def fix_phase95_notebook():
         target_col: Target column name
         min_samples: Minimum samples per sector
         random_state: Random seed
-        output_dir: Output directory for models
+        output_dir: Output directory for regression
     
     Returns:
         Tuple of (sector_models dict, sector_results dict)
     \"\"\"
     from typing import Union
     
-    logger.info(f\"Training sector-specific models for {df['sector'].nunique()} sectors\")
+    logger.info(f\"Training sector-specific regression for {df['sector'].nunique()} sectors\")
     
     # Extract feature list if dict is passed
     if isinstance(feature_cols, dict):
@@ -171,7 +171,7 @@ def fix_phase95_notebook():
             min_samples=min_samples,
             ensure_nonnegative=True
             )"""
-    
+
     # Also add checkpoint flag setting at end of Phase 9.5
     checkpoint_code = """
     
@@ -183,35 +183,35 @@ def fix_phase95_notebook():
     print("\\n" + "="*80)
     print("✓ PHASE 9.5 COMPLETE - Checkpoint flag set")
     print("="*80)"""
-    
+
     modified = False
-    
+
     # Process each cell
     for cell in notebook.get('cells', []):
         if cell.get('cell_type') == 'code':
             source = cell.get('source', [])
-            
+
             # Join source lines
             if isinstance(source, list):
                 source_text = ''.join(source)
             else:
                 source_text = source
-            
+
             # Check if this is the Phase 9.5 cell with train_sector_models call
             if 'train_sector_models(' in source_text and 'all_stocks_phase95' in source_text:
-                print("Found Phase 9.5 sector models cell...")
-                
+                print("Found Phase 9.5 sector regression cell...")
+
                 # Replace the old pattern
                 if old_pattern in source_text:
                     source_text = source_text.replace(old_pattern, new_pattern)
                     modified = True
                     print("  [OK] Fixed sector_models call with imputed data flow")
-                
+
                 # Replace train_sector_models function definition
                 if 'def train_sector_models(' in source_text:
                     source_text = source_text.replace(train_sector_models_old, train_sector_models_new)
                     print("  [OK] Updated train_sector_models function signature")
-                
+
                 # Add checkpoint flag if not present
                 if 'regression_complete = True' not in source_text:
                     # Find a good place to add it (after the training completes)
@@ -227,17 +227,17 @@ def fix_phase95_notebook():
                             # Append at end
                             source_text += checkpoint_code
                         print("  [OK] Added regression_complete checkpoint flag")
-                
+
                 # Convert back to list format
                 if isinstance(source, list):
                     cell['source'] = source_text.splitlines(keepends=True)
                 else:
                     cell['source'] = source_text
-    
+
     if not modified:
         print("[WARNING] Pattern not found - notebook may have different structure")
         print("  Creating backup and attempting alternative fix...")
-    
+
     # Create backup
     backup_path = notebook_path.with_suffix('.ipynb.backup_phase95_fix')
     try:
@@ -246,7 +246,7 @@ def fix_phase95_notebook():
         print(f"[OK] Created backup: {backup_path}")
     except Exception as e:
         print(f"Warning: Could not create backup: {e}")
-    
+
     # Write modified notebook
     try:
         with open(notebook_path, 'w', encoding='utf-8', newline='\n') as f:
@@ -262,14 +262,14 @@ if __name__ == "__main__":
     print("PHASE 9.5 DATA FLOW FIX")
     print("="*80)
     print("\nThis script fixes:")
-    print("  1. Data flow: Pass imputed data to sector models")
+    print("  1. Data flow: Pass imputed data to sector regression")
     print("  2. Feature selection: Use only numeric features")
     print("  3. Validation: Add data quality checkpoints")
     print("  4. Checkpoint system: Set regression_complete flag")
     print("\n" + "="*80 + "\n")
-    
+
     success = fix_phase95_notebook()
-    
+
     if success:
         print("\n" + "="*80)
         print("[SUCCESS] FIX COMPLETE")
@@ -284,5 +284,5 @@ if __name__ == "__main__":
         print("[FAILED] FIX FAILED")
         print("="*80)
         print("\nPlease check error messages above and try manual fix if needed.")
-    
+
     sys.exit(0 if success else 1)

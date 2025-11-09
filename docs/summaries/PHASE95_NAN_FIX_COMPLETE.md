@@ -76,7 +76,7 @@ def prepare_data_for_training(df: pd.DataFrame, target_col: str, fallback_target
     
     Returns:
         Tuple: (X_train, X_test, y_train, y_test, feature_cols, actual_target, df_imputed)
-            - df_imputed: Cleaned DataFrame with zero NaN/Inf (for sector models)
+            - df_imputed: Cleaned DataFrame with zero NaN/Inf (for sector regression)
     """
     # ... preprocessing code ...
     df_imputed = prepare_phase95_data(...)

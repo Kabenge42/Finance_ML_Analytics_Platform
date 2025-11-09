@@ -148,8 +148,8 @@ def check_notebook_imports():
 
     # Check for key imports
     key_imports = [
-        "from finance_ml.models import train_and_evaluate_regression",
-        "from finance_ml.models import train_and_evaluate_regression_by_sector",
+        "from finance_ml.regression import train_and_evaluate_regression",
+        "from finance_ml.regression import train_and_evaluate_regression_by_sector",
         "from finance_ml import __version__",
     ]
 
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         print("   1. Open Jupyter: jupyter notebook ml_finance_model_main_backup.ipynb")
         print("   2. Navigate to cell 140 (Phase 9.5.1)")
         print("   3. Run cells 140-144 to test execution")
-        print("   4. Verify outputs in outputs/models/")
+        print("   4. Verify outputs in outputs/regression/")
         print("\n✓ Integration validation complete\n")
     else:
         print("\n⚠️  Please review the warnings above\n")

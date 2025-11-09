@@ -385,7 +385,7 @@ for cell in nb.get("cells", []):
         replacements += 1
         continue
 
-    # 6) Enhanced models replacement
+    # 6) Enhanced regression replacement
     if (
         "train_and_evaluate_regression_by_sector" in src
         and "export_predictions_to_excel" in src

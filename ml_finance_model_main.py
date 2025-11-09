@@ -15,7 +15,7 @@
 #
 # - `finance_ml.data`: Data loading, normalization, validation
 # - `finance_ml.features`: Feature engineering
-# - `finance_ml.models`: Classification, regression, ensembles
+# - `finance_ml.regression`: Classification, regression, ensembles
 # - `finance_ml.eval`: Analytics, visualizations, reporting
 # - `finance_ml.config`: Configuration management
 # - `finance_ml.cli`: Command-line interface
@@ -81,7 +81,19 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 
+# ============================================================================
 # Import all functions from finance_ml package
+# Phase 9.1-9.8 Modular Structure
+# ============================================================================
+# All functions are imported from package level with descriptive prefixes:
+#   - preprocessing_*: Phase 9.1 preprocessing
+#   - features_*: Phase 9.3 feature engineering
+#   - classification_*: Phase 9.4 classification
+#   - regression_*: Phase 9.5 regression
+#   - evaluation_*: Phase 9.6 evaluation
+#   - analytics_*: Phase 9.7 analytics
+#   - reporting_*: Phase 9.8 reporting
+# ============================================================================
 from finance_ml import (
     # Version
     __version__,
@@ -91,6 +103,10 @@ from finance_ml import (
     setup_logging,
     # Data loading and validation
     preprocess,
+    validate_schema,
+    check_missing_values,
+    simple_eda,
+    normalize_columns,
     # Notebook utilities
     display_config_summary,
     load_stock_data,
@@ -160,6 +176,15 @@ all_stocks = load_stock_data(config)
 if all_stocks is None or len(all_stocks) == 0:
     raise ValueError("Failed to load any stock data")
 
+# Normalize columns to canonical schema for downstream consistency
+try:
+    all_stocks = normalize_columns(all_stocks)
+    print(
+        "\n✓ Columns normalized to canonical schema (ticker, sector, region, last_price, price_target, ...)"
+    )
+except Exception as e:
+    logger.warning(f"Column normalization skipped: {e}")
+
 display_data_summary(all_stocks)
 
 # %% md
@@ -169,9 +194,8 @@ display_data_summary(all_stocks)
 #
 # %%
 # Unified validation reporting with error handling
+# Functions already imported from finance_ml at the top
 try:
-    from finance_ml.data import validate_schema, check_missing_values
-
     # Schema validation
     try:
         is_valid, errors = validate_schema(all_stocks, require_target=False)
@@ -213,9 +237,9 @@ except Exception as e:
 #
 # %%
 # Unified EDA display with proper output directory
+# Function already imported from finance_ml at the top
 try:
     from pathlib import Path
-    from finance_ml.data import simple_eda
 
     print("\n" + "=" * 80)
     print("EXPLORATORY DATA ANALYSIS")
@@ -314,8 +338,19 @@ try:
     # Train event classifier using the cleaned DataFrame
     classifier_results = train_event_classifier(df_for_classifier, event_labels)
     print(f"\n✓ Event classifier trained")
-    print(f"  Accuracy: {classifier_results.get('accuracy', 0):.4f}")
-    print(f"  F1 Score (macro): {classifier_results.get('f1_macro', 0):.4f}")
+    metrics_cls = (
+        classifier_results.get("metrics", {}) if isinstance(classifier_results, dict) else {}
+    )
+    acc = metrics_cls.get(
+        "accuracy",
+        classifier_results.get("accuracy", 0) if isinstance(classifier_results, dict) else 0,
+    )
+    f1m = metrics_cls.get(
+        "f1_macro",
+        classifier_results.get("f1_macro", 0) if isinstance(classifier_results, dict) else 0,
+    )
+    print(f"  Accuracy: {acc:.4f}")
+    print(f"  F1 Score (macro): {f1m:.4f}")
 
 except Exception as e:
     logger.error(f"Classification training failed: {e}")
@@ -323,7 +358,7 @@ except Exception as e:
 # %% md
 # ## Model Training - Regression
 #
-# Train regression models using finance_ml package.
+# Train regression regression using finance_ml package.
 #
 # %%
 # Train baseline regression model
@@ -331,7 +366,7 @@ try:
     # Use the proper training function with required parameters
     from pathlib import Path
 
-    # Use models directory from config
+    # Use regression directory from config
     regression_results = train_and_evaluate_regression(
         all_stocks_processed,
         out_dir=config.models_output_dir,
@@ -340,14 +375,43 @@ try:
 
     if regression_results:
         print(f"\n✓ Regression model trained")
-        print(f"  MAE: {regression_results.get('mae', 0):.4f}")
-        print(f"  RMSE: {regression_results.get('rmse', 0):.4f}")
-        print(f"  R²: {regression_results.get('r2', 0):.4f}")
+        metrics_reg = (
+            regression_results.get("metrics", {}) if isinstance(regression_results, dict) else {}
+        )
+        mae = metrics_reg.get(
+            "mae", regression_results.get("mae", 0) if isinstance(regression_results, dict) else 0
+        )
+        rmse = metrics_reg.get(
+            "rmse", regression_results.get("rmse", 0) if isinstance(regression_results, dict) else 0
+        )
+        r2 = metrics_reg.get(
+            "r2", regression_results.get("r2", 0) if isinstance(regression_results, dict) else 0
+        )
+        print(f"  MAE: {mae:.4f}")
+        print(f"  RMSE: {rmse:.4f}")
+        print(f"  R²: {r2:.4f}")
 
         # Store predictions in dataframe for later use
-        if "predictions" in regression_results:
-            pred_df = regression_results["predictions"]
-            all_stocks_processed.loc[pred_df.index, "predicted_target"] = pred_df["y_pred"].values
+        y_pred = None
+        if isinstance(regression_results, dict):
+            y_pred = regression_results.get("y_pred", regression_results.get("predictions"))
+        if y_pred is not None:
+            if isinstance(y_pred, pd.DataFrame):
+                target_series = y_pred.get("y_pred", y_pred.iloc[:, 0])
+                all_stocks_processed.loc[target_series.index, "predicted_target"] = (
+                    target_series.values
+                )
+            elif isinstance(y_pred, pd.Series):
+                all_stocks_processed.loc[y_pred.index, "predicted_target"] = y_pred.values
+            else:
+                # If it's a numpy array, align by current df index slice length if possible
+                try:
+                    idx = all_stocks_processed.index[: len(y_pred)]
+                    all_stocks_processed.loc[idx, "predicted_target"] = y_pred
+                except Exception:
+                    print("⚠ Unable to align predictions to dataframe index")
+        else:
+            print("⚠ No predictions found in regression results")
     else:
         print("⚠ Regression training skipped (insufficient data or dry run)")
 except Exception as e:
@@ -893,7 +957,7 @@ if HAVE_ENHANCED_MODELS:
         print("\n" + "=" * 80)
         print("PER-SECTOR REGRESSION METRICS")
         print("=" * 80)
-        # Use models directory from config for sector models
+        # Use regression directory from config for sector regression
         sector_metrics = train_and_evaluate_regression_by_sector(
             df_enhanced, config.models_output_dir
         )

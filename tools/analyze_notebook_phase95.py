@@ -45,7 +45,7 @@ subsections = [
     "9.5.6",
     "classification meta-features",
     "interaction features",
-    "multiple regression models",
+    "multiple regression regression",
     "sector-specific",
     "quantile regression",
     "model persistence",

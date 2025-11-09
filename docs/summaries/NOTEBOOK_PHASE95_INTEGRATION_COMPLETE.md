@@ -300,7 +300,7 @@ def prepare_phase95_data(
     return_stats: bool = False,
 ) -> pd.DataFrame | Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Prepare data for Phase 9.5 sector-specific regression models.
+    Prepare data for Phase 9.5 sector-specific regression regression.
     
     Returns:
         DataFrame with zero NaN/Inf values (ready for training)

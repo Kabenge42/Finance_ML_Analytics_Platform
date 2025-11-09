@@ -147,10 +147,10 @@ def fix_train_sector_models(code_lines: list) -> list:
     """Fix tuple unpacking in train_sector_models function."""
     fixed_lines = []
     i = 0
-    
+
     while i < len(code_lines):
         line = code_lines[i]
-        
+
         # Fix 3: train_sector_specific_models tuple unpacking
         if 'sector_models_result = train_sector_specific_models(' in line:
             # Find the closing parenthesis
@@ -159,7 +159,7 @@ def fix_train_sector_models(code_lines: list) -> list:
             while j < len(code_lines) and ')' not in ''.join(call_lines):
                 call_lines.append(code_lines[j])
                 j += 1
-            
+
             # Replace the call with tuple unpacking
             full_call = ''.join(call_lines)
             fixed_call = full_call.replace(
@@ -169,19 +169,19 @@ def fix_train_sector_models(code_lines: list) -> list:
             fixed_lines.extend(fixed_call.split('\n'))
             i = j
             continue
-        
-        # Fix 3b: Update None check for sector models
+
+        # Fix 3b: Update None check for sector regression
         if 'if sector_models_result is None:' in line:
             fixed_lines.append(line.replace('sector_models_result', 'sector_models'))
             i += 1
             continue
-        
+
         # Fix 3c: Remove dict access for sector_models
         if 'sector_models = sector_models_result[' in line:
             # Skip this line, we already have sector_models from tuple unpacking
             i += 1
             continue
-        
+
         # Fix 3d: Update sector_metrics access
         if 'sector_metrics = sector_models_result[' in line:
             fixed_lines.append(line.replace(
@@ -190,11 +190,11 @@ def fix_train_sector_models(code_lines: list) -> list:
             ))
             i += 1
             continue
-        
+
         # Add line if no match
         fixed_lines.append(line)
         i += 1
-    
+
     return fixed_lines
 
 

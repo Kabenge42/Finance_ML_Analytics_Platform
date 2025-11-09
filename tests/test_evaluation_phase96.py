@@ -129,7 +129,7 @@ class TestComprehensiveRegressionMetrics(unittest.TestCase):
         self.assertGreaterEqual(result['rmse'], result['mae'])
 
     def test_comprehensive_regression_metrics_r2_range(self):
-        """Test that R² is in reasonable range (can be negative for bad models)."""
+        """Test that R² is in reasonable range (can be negative for bad regression)."""
         result = comprehensive_regression_metrics(self.y_true, self.y_pred)
         self.assertIsInstance(result['r2'], (int, float))
         self.assertLessEqual(result['r2'], 1.0)

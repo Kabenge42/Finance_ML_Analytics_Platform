@@ -23,7 +23,7 @@ class FinanceMLConfig:
 
     # Data paths
     data_dir: Path = field(default_factory=lambda: Path("data"))
-    model_dir: Path = field(default_factory=lambda: Path("models"))
+    model_dir: Path = field(default_factory=lambda: Path("../outputs/regression"))
     cache_dir: Path = field(default_factory=lambda: Path(".cache"))
     output_dir: Path = field(default_factory=lambda: Path("outputs"))
 
@@ -36,8 +36,8 @@ class FinanceMLConfig:
 
     @property
     def models_output_dir(self) -> Path:
-        """Get models output directory."""
-        path = self.output_dir / "models"
+        """Get regression output directory."""
+        path = self.output_dir / "regression"
         path.mkdir(parents=True, exist_ok=True)
         return path
 
@@ -98,7 +98,7 @@ class FinanceMLConfig:
     db_table: str = "equities"
 
     # Model configuration
-    model_version: str = "v8_3"
+    model_version: str = "v9_8"
     random_seed: int = 42
     n_jobs: int = -1
 
@@ -125,13 +125,13 @@ class FinanceMLConfig:
         """Create configuration from environment variables."""
         return cls(
             data_dir=Path(os.getenv("DATA_DIR", "data")),
-            model_dir=Path(os.getenv("MODEL_DIR", "models")),
+            model_dir=Path(os.getenv("MODEL_DIR", "../outputs/regression")),
             cache_dir=Path(os.getenv("CACHE_DIR", ".cache")),
             output_dir=Path(os.getenv("OUTPUT_DIR", "outputs")),
             db_url=os.getenv("DB_URL"),
             db_schema=os.getenv("DB_SCHEMA", "public"),
             db_table=os.getenv("DB_TABLE", "equities"),
-            model_version=os.getenv("MODEL_VERSION", "v8_3"),
+            model_version=os.getenv("MODEL_VERSION", "v9_8"),
             random_seed=int(os.getenv("RANDOM_SEED", "42")),
             n_jobs=int(os.getenv("N_JOBS", "-1")),
             memory_limit=os.getenv("MEMORY_LIMIT"),

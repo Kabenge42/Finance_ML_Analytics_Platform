@@ -1,8 +1,8 @@
 """
-Test suite for finance_ml.models module
+Test suite for finance_ml.regression module
 
 This module tests machine learning model functions including classification,
-regression, quantile regression, and stacking ensemble models.
+regression, quantile regression, and stacking ensemble regression.
 Following TDD methodology for Phase 7 refactoring.
 """
 
@@ -467,7 +467,7 @@ class TestFeatureImportanceExport(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_train_and_evaluate_regression_exports_feature_importance(self):
-        """Should export feature importance to CSV for models that support it (Priority 5)"""
+        """Should export feature importance to CSV for regression that support it (Priority 5)"""
         from finance_ml.models import train_and_evaluate_regression
 
         result = train_and_evaluate_regression(
@@ -476,21 +476,21 @@ class TestFeatureImportanceExport(unittest.TestCase):
             n_jobs=1, 
             dry_run=False
         )
-        
+
         self.assertIsNotNone(result)
-        
+
         # Check that feature importance CSV is created
         importance_path = self.out_dir / "feature_importance.csv"
         self.assertTrue(importance_path.exists(), "Feature importance CSV should be created")
-        
+
         # Read and verify CSV content
         importance_df = pd.read_csv(importance_path)
         self.assertGreater(len(importance_df), 0, "Feature importance CSV should not be empty")
-        
+
         # Verify required columns
         self.assertIn("feature", importance_df.columns)
         self.assertIn("importance", importance_df.columns)
-        
+
         # Verify sorted by importance (descending)
         importances = importance_df["importance"].values
         self.assertTrue(all(importances[i] >= importances[i+1] for i in range(len(importances)-1)),
@@ -507,13 +507,13 @@ class TestFeatureImportanceExport(unittest.TestCase):
             dry_run=False,
             loss="huber"
         )
-        
+
         self.assertIsNotNone(result)
-        
+
         # GradientBoostingRegressor should also export feature importance
         importance_path = self.out_dir / "feature_importance.csv"
         self.assertTrue(importance_path.exists(), "Feature importance CSV should be created for Huber loss model")
-        
+
         importance_df = pd.read_csv(importance_path)
         self.assertGreater(len(importance_df), 0, "Feature importance should be available for GradientBoosting")
 

@@ -76,7 +76,7 @@ if stacking_model is None:
 quantile_result = train_quantile_regressor(...)
 if quantile_result is None:
     return {q: np.zeros(len(X_test)) for q in quantiles}
-quantile_models = quantile_result['models']  # ❌ TypeError
+quantile_models = quantile_result['regression']  # ❌ TypeError
 ```
 
 **After:**
@@ -96,7 +96,7 @@ if quantile_models is None:
 sector_models_result = train_sector_specific_models(...)
 if sector_models_result is None:
     return None
-sector_models = sector_models_result['models']  # ❌ TypeError
+sector_models = sector_models_result['regression']  # ❌ TypeError
 sector_metrics = sector_models_result['metrics']
 ```
 
@@ -297,7 +297,7 @@ PHASE 9.5 COMPLETE — SECTOR-OPTIMIZED REGRESSION MODELS
 **Check these files were created:**
 
 ```bash
-ls -lh outputs/models/
+ls -lh outputs/regression/
 # Should see:
 # - model_comparison_results.csv
 # - stacking_ensemble_phase95.joblib
@@ -312,7 +312,7 @@ ls -lh outputs/models/
 
 ```python
 import pandas as pd
-predictions = pd.read_csv('outputs/models/regression_predictions_phase95.csv')
+predictions = pd.read_csv('outputs/regression/regression_predictions_phase95.csv')
 print(predictions.shape)  # Should be (1600, ~10 columns)
 print(predictions.columns)  # Should include: y_true, y_pred, lower_10, median, upper_90
 ```

@@ -9,20 +9,24 @@ from datetime import datetime
 def create_phase_95_cells():
     """Create Phase 9.5 cells (Sector-Optimized Regression Models)"""
     cells = []
-    
+
     # Phase 9.5 header
-    cells.append({
-        "cell_type": "markdown",
-        "metadata": {},
-        "source": ["## Phase 9.5 — Sector-Optimized Regression Models\n",
-                   "\n",
-                   "Train sector-specific regression models with:\n",
-                   "- Multiple algorithms: Ridge, XGBoost, LightGBM, CatBoost\n",
-                   "- Classification features integrated\n",
-                   "- Ensemble methods (Stacking, Voting)\n",
-                   "- Non-negative prediction constraints"]
-    })
-    
+    cells.append(
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Phase 9.5 — Sector-Optimized Regression Models\n",
+                "\n",
+                "Train sector-specific regression regression with:\n",
+                "- Multiple algorithms: Ridge, XGBoost, LightGBM, CatBoost\n",
+                "- Classification features integrated\n",
+                "- Ensemble methods (Stacking, Voting)\n",
+                "- Non-negative prediction constraints",
+            ],
+        }
+    )
+
     # Phase 9.5 code cell
     cells.append({
         "cell_type": "code",
@@ -62,22 +66,26 @@ def create_phase_95_cells():
             "    print(f\"⚠ Validation warnings: {validation_result['issues']}\")\n"
         ]
     })
-    
+
     return cells
 
 def create_phase_951_cells():
     """Create Phase 9.5.1 cells (Model Optimization)"""
     cells = []
-    cells.append({
-        "cell_type": "markdown",
-        "metadata": {},
-        "source": ["### Phase 9.5.1 — Model Optimization Enhancements\n",
-                   "\n",
-                   "Optimize models with:\n",
-                   "- Hyperparameter tuning\n",
-                   "- Ensemble stacking\n",
-                   "- Quantile regression"]
-    })
+    cells.append(
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### Phase 9.5.1 — Model Optimization Enhancements\n",
+                "\n",
+                "Optimize regression with:\n",
+                "- Hyperparameter tuning\n",
+                "- Ensemble stacking\n",
+                "- Quantile regression",
+            ],
+        }
+    )
     cells.append({
         "cell_type": "code",
         "execution_count": None,

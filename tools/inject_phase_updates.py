@@ -8,9 +8,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-NOTEBOOK_PATH = Path('ml_finance_model_main_v10.ipynb')
+NOTEBOOK_PATH = Path("ml_finance_model_main_v10.ipynb")
 
 # Utility to build simple Jupyter cell dicts
+
 
 def md_cell(source: str):
     return {
@@ -31,15 +32,15 @@ def code_cell(source: str):
 
 
 def load_notebook(path: Path):
-    with path.open('r', encoding='utf-8') as f:
+    with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_notebook(path: Path, nb: dict):
     # backup
-    backup = path.with_suffix(path.suffix + '.backup_inject_phases')
-    backup.write_text(path.read_text(encoding='utf-8'), encoding='utf-8')
-    with path.open('w', encoding='utf-8') as f:
+    backup = path.with_suffix(path.suffix + ".backup_inject_phases")
+    backup.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+    with path.open("w", encoding="utf-8") as f:
         json.dump(nb, f, ensure_ascii=False, indent=1)
 
 
@@ -55,7 +56,9 @@ PHASE_96_MARKER = "# %% PHASE 9.6 — COMPREHENSIVE EVALUATION (finance_ml.eval)
 PHASE_97_MARKER = "# %% PHASE 9.7 — VALUATION & ANALYST COMPARISON"
 PHASE_98_MARKER = "# %% PHASE 9.8 — REPORTING EXPORTS"
 
-phase94_code = PHASE_94_MARKER + """
+phase94_code = (
+    PHASE_94_MARKER
+    + """
 try:
     from finance_ml import classification_enhanced as clf_enh
     print('Loaded finance_ml.classification_enhanced')
@@ -86,8 +89,11 @@ try:
 except Exception as e:
     print(f'⚠ Phase 9.4 enhanced classification skipped: {e}')
 """
+)
 
-phase95q_code = PHASE_95Q_MARKER + """
+phase95q_code = (
+    PHASE_95Q_MARKER
+    + """
 from pathlib import Path
 try:
     from finance_ml import advanced_models as am
@@ -110,7 +116,7 @@ try:
         sector_col='sector', model_type='random_forest', random_state=42,
         min_samples=20, ensure_nonnegative=True, auto_extract_fallback=True,
     )
-    # Quantile models for intervals
+    # Quantile regression for intervals
     q_model = am.train_quantile_regressor(
         df95[feature_cols].fillna(0), df95['price_target'], quantiles=[0.1,0.5,0.9]
     )
@@ -130,17 +136,20 @@ try:
         'best_rf': best_rf,
         'feature_cols': feature_cols,
     }
-    print('✓ Phase 9.5.2 quantiles + sector models complete -> phase95q_artifacts')
+    print('✓ Phase 9.5.2 quantiles + sector regression complete -> phase95q_artifacts')
 except Exception as e:
     print(f'⚠ Phase 9.5.2 failed: {e}')
 """
+)
 
-phase96_code = PHASE_96_MARKER + """
+phase96_code = (
+    PHASE_96_MARKER
+    + """
 try:
     from finance_ml import eval as fme
     import pandas as pd
     from pathlib import Path
-    out_dir = Path('outputs/models')
+    out_dir = Path('outputs/regression')
     out_dir.mkdir(parents=True, exist_ok=True)
     # Prefer all_stocks_featured with predictions; fallback to df95+RF if available
     if 'all_stocks_featured' in globals() and 'predicted_price_target' in all_stocks_featured.columns:
@@ -167,8 +176,11 @@ try:
 except Exception as e:
     print(f'⚠ Phase 9.6 evaluation skipped: {e}')
 """
+)
 
-phase97_code = PHASE_97_MARKER + """
+phase97_code = (
+    PHASE_97_MARKER
+    + """
 try:
     from finance_ml import eval as fme
     import pandas as pd
@@ -192,6 +204,7 @@ try:
 except Exception as e:
     print(f'⚠ Phase 9.7 skipped: {e}')
 """
+)
 
 phase98_code = f"""
 {PHASE_98_MARKER}
@@ -244,16 +257,16 @@ def insert_cells(nb: dict) -> bool:
         return False
     # Insert additions near Phase 9.5 section if found; else append at end
     target_idx = None
-    for i, cell in enumerate(nb.get('cells', [])):
-        if cell.get('cell_type') in ('markdown','code'):
-            text = ''.join(cell.get('source', []))
-            if '## Phase 9.5' in text:
+    for i, cell in enumerate(nb.get("cells", [])):
+        if cell.get("cell_type") in ("markdown", "code"):
+            text = "".join(cell.get("source", []))
+            if "## Phase 9.5" in text:
                 target_idx = i + 1
                 break
     if target_idx is None:
-        nb['cells'].extend(additions)
+        nb["cells"].extend(additions)
     else:
-        nb['cells'][target_idx:target_idx] = additions
+        nb["cells"][target_idx:target_idx] = additions
     return True
 
 
@@ -270,5 +283,6 @@ def main():
         print("No updates needed (markers present).")
     return 0
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     raise SystemExit(main())

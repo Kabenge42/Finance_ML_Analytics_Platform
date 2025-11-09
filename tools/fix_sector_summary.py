@@ -59,7 +59,7 @@ for i, line in enumerate(lines):
             "            else:\n",
             "                print(sector_summary.head(10).to_string())\n",
             "        else:\n",
-            '            print("   No sector models trained (insufficient samples per sector)")\n',
+            '            print("   No sector regression trained (insufficient samples per sector)")\n',
         ]
 
         # Replace lines 321-325 (indices i-1 to i+4)

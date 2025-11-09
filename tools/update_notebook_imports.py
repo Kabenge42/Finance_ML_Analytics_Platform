@@ -154,7 +154,7 @@ print(f"  DB URL: {'configured' if config.db_url else 'not configured'}")
             "\n",
             "- `finance_ml.data`: Data loading, normalization, validation\n",
             "- `finance_ml.features`: Feature engineering\n",
-            "- `finance_ml.models`: Classification, regression, ensembles\n",
+            "- `finance_ml.regression`: Classification, regression, ensembles\n",
             "- `finance_ml.eval`: Analytics, visualizations, reporting\n",
             "- `finance_ml.config`: Configuration management\n",
             "- `finance_ml.cli`: Command-line interface\n",

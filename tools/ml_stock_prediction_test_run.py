@@ -275,7 +275,7 @@ checkpoint("features_engineered", requires=["eda_complete"])
 
 # ## Step 4: Multi-Class Event Classification
 #
-# Financial event detection to enhance regression models.
+# Financial event detection to enhance regression regression.
 #
 
 # In[ ]:

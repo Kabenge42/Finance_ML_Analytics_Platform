@@ -365,7 +365,7 @@ LOG_LEVEL=INFO            # Python logging level
 #### Directory Paths
 ```bash
 DATA_DIR=data             # Directory containing CSV files
-MODEL_DIR=models          # Directory for saved models
+MODEL_DIR=regression          # Directory for saved regression
 CACHE_DIR=.cache          # Cache directory
 OUTPUT_DIR=outputs        # Output directory for artifacts
 ```
@@ -878,7 +878,7 @@ def train_xgboost_classifier(
 Evaluation and analytics module for Finance ML Analytics Platform.
 
 This module provides comprehensive evaluation, visualization, and reporting
-functions for machine learning models in financial applications.
+functions for machine learning regression in financial applications.
 
 Key Functions:
     - simple_eda: Exploratory data analysis with visualizations

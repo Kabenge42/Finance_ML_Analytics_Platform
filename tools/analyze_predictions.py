@@ -1,28 +1,29 @@
-﻿import pandas as pd
+#!/usr/bin/env python3
+"""Quick analysis of prediction coverage."""
 
-# Load the Excel file
-df = pd.read_excel(r"outputs\prediction_analyst_comparison_report.xlsx")
+import csv
 
-print("Shape:", df.shape)
-print("\nColumns:", df.columns.tolist())
+csv_path = "outputs/regression/regression_predictions_full.csv"
 
-# Check for negative predictions
-if "Predicted_Price_Target" in df.columns:
-    neg_mask = df["Predicted_Price_Target"] < 0
-    print(f"\nNegative predictions count: {neg_mask.sum()}")
-    if neg_mask.sum() > 0:
-        print(f'Min value: {df[neg_mask]["Predicted_Price_Target"].min()}')
-        print(f'Max negative value: {df[neg_mask]["Predicted_Price_Target"].max()}')
-        print(f"\nSample negative predictions:")
-        print(
-            df[neg_mask][
-                ["Ticker", "Sector", "Last_Price", "Predicted_Price_Target", "Analyst_Price_Target"]
-            ].head(10)
-        )
+total_rows = 0
+non_null_preds = 0
+null_preds = 0
 
-print("\nFirst 5 rows:")
-print(df.head())
+with open(csv_path, "r", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        total_rows += 1
+        y_pred = row.get("y_pred", "").strip()
+        if y_pred and y_pred != "":
+            non_null_preds += 1
+        else:
+            null_preds += 1
 
-print("\nBasic statistics for Predicted_Price_Target:")
-if "Predicted_Price_Target" in df.columns:
-    print(df["Predicted_Price_Target"].describe())
+print(f"Total stocks: {total_rows}")
+print(f"Non-null predictions: {non_null_preds}")
+print(f"Null predictions: {null_preds}")
+print(f"Coverage: {non_null_preds/total_rows*100:.1f}%")
+
+if null_preds > 0:
+    print(f"\n⚠ Found {null_preds} stocks WITHOUT predictions")
+    print("This indicates a data flow problem in the pipeline.")

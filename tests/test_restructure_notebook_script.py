@@ -36,7 +36,7 @@ class TestPhase95Detection(unittest.TestCase):
                     "source": [
                         "## Phase 9.5 — Sector-Optimized Regression Models\n",
                         "\n",
-                        "Train sector-specific models.",
+                        "Train sector-specific regression.",
                     ],
                 },
                 {

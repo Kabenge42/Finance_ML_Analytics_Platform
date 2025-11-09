@@ -35,11 +35,11 @@ outputs_dir.mkdir(parents=True, exist_ok=True)
 # Create subdirectories for different output types as recommended in IMPROVEMENT_PLAN.md
 (outputs_dir / 'enhanced_eda').mkdir(parents=True, exist_ok=True)
 (outputs_dir / 'processed').mkdir(parents=True, exist_ok=True)
-(outputs_dir / 'models').mkdir(parents=True, exist_ok=True)
+(outputs_dir / 'regression').mkdir(parents=True, exist_ok=True)
 (outputs_dir / 'analytics').mkdir(parents=True, exist_ok=True)
 
 print(f"✓ Output directory configured: {outputs_dir.absolute()}")
-print(f"  Subdirectories: enhanced_eda, processed, models, analytics")
+print(f"  Subdirectories: enhanced_eda, processed, regression, analytics")
 ```
 
 **Features**:
@@ -57,7 +57,7 @@ Replaced the duplicate definition block with a comment:
 ```python
 # %%
 # Note: outputs_dir is now configured in the Configuration section above
-# All subdirectories (enhanced_eda, processed, models, analytics) are created automatically
+# All subdirectories (enhanced_eda, processed, regression, analytics) are created automatically
 # %%
 ```
 
@@ -100,7 +100,7 @@ To verify the fix works correctly:
    ```python
    # Run the Configuration section cell and verify output:
    # ✓ Output directory configured: <path>/outputs
-   #   Subdirectories: enhanced_eda, processed, models, analytics
+   #   Subdirectories: enhanced_eda, processed, regression, analytics
    ```
 
 2. **Test Directory Creation**:
@@ -109,7 +109,7 @@ To verify the fix works correctly:
    assert outputs_dir.exists()
    assert (outputs_dir / 'enhanced_eda').exists()
    assert (outputs_dir / 'processed').exists()
-   assert (outputs_dir / 'models').exists()
+   assert (outputs_dir / 'regression').exists()
    assert (outputs_dir / 'analytics').exists()
    ```
 

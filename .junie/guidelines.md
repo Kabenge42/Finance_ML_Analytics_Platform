@@ -307,6 +307,13 @@ python -m unittest tests.test_advanced_models_phase95 -v
 
 4) Additional Development Information
 A. Code style and quality
+
+- **Comprehensive Code Guidelines**: See `docs/code_guidelines.md` for detailed standards on:
+    - Standardized function signatures and return types (train_* functions, dataset preparation)
+    - Column naming schema and dataframe conventions (normalized: last_price, price_target, sector, region)
+    - Typing, logging, and error handling
+    - Testing conventions and reproducibility
+    - Notebook and CLI alignment
 - Python style: PEP 8 (black-like formatting), type hints where possible.
 - Logging: prefer Python logging over prints. The notebook initializes a logger fallback if the custom one isn’t available.
 - Reproducibility: set RANDOM_SEED where applicable; record library versions for experiments.

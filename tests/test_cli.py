@@ -159,7 +159,7 @@ class TestMainFunction(unittest.TestCase):
                         mock_eda.assert_not_called()
 
     def test_main_trains_models_when_not_dry_run(self):
-        """Should train models when dry-run is not set."""
+        """Should train regression when dry-run is not set."""
         test_args = ["finance-ml", "--data-source", "csv", "--skip-eda"]
 
         with patch.object(sys, "argv", test_args):
@@ -188,8 +188,8 @@ class TestMainFunction(unittest.TestCase):
                             mock_sector.assert_called_once()
 
     def test_main_skips_sector_models_with_flag(self):
-        """Should skip sector models when --skip-sector-models flag is set."""
-        test_args = ["finance-ml", "--data-source", "csv", "--skip-eda", "--skip-sector-models"]
+        """Should skip sector regression when --skip-sector-regression flag is set."""
+        test_args = ["finance-ml", "--data-source", "csv", "--skip-eda", "--skip-sector-regression"]
 
         with patch.object(sys, "argv", test_args):
             with patch("finance_ml.cli._load_data") as mock_load:

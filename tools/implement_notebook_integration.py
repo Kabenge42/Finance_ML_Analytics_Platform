@@ -177,7 +177,7 @@ def create_phase_9_6_cells() -> List[Dict]:
     markdown = create_markdown_cell(
         "## Phase 9.6 — Model Evaluation and Error Analysis\n"
         "\n"
-        "Comprehensive evaluation of regression models:\n"
+        "Comprehensive evaluation of regression regression:\n"
         "1. Comprehensive regression metrics (MAE, RMSE, MAPE, R², Median AE, Max Error)\n"
         "2. Metrics by segment (sector, region, market cap, volatility)\n"
         "3. Residual analysis (normality tests, Q-Q plots, histograms)\n"

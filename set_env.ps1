@@ -17,7 +17,7 @@ $env:NO_COLOR = "1"
 
 # Directory paths
 $env:DATA_DIR = "data"
-$env:MODEL_DIR = "models"
+$env:MODEL_DIR = "regression"
 $env:CACHE_DIR = ".cache"
 $env:OUTPUT_DIR = "outputs"
 

@@ -1,7 +1,6 @@
 """
 Quick script to verify dashboard helper function coverage
 """
-
 import sys
 import subprocess
 

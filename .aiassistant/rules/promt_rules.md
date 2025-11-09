@@ -271,7 +271,7 @@ TF_CPP_MIN_LOG_LEVEL=2          # TensorFlow log level: 0=DEBUG, 1=INFO, 2=WARNI
 
 # Directory Paths
 DATA_DIR=data                    # Data directory
-MODEL_DIR=models                 # Saved models directory
+MODEL_DIR=regression                 # Saved regression directory
 CACHE_DIR=.cache                 # Cache directory
 OUTPUT_DIR=outputs               # Output directory
 

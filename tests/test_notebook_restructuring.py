@@ -301,10 +301,10 @@ class TestSection6Regression(unittest.TestCase):
         )
 
     def test_uses_ensemble_models(self):
-        """Test includes ensemble/stacking models."""
+        """Test includes ensemble/stacking regression."""
         self.assertTrue(
             "stacking" in self.content.lower() or "ensemble" in self.content.lower(),
-            "Must include ensemble/stacking models",
+            "Must include ensemble/stacking regression",
         )
 
 

@@ -2,10 +2,10 @@
 Test Phase 9.5: Non-negative Predictions and Classification Feature Integration
 
 This test module ensures that:
-1. All regression models produce non-negative predictions (price_target >= 0)
+1. All regression regression produce non-negative predictions (price_target >= 0)
 2. Classification features are correctly extracted and integrated
 3. Interaction features between classification probabilities and valuation metrics work
-4. Sector-specific models with classification features train properly
+4. Sector-specific regression with classification features train properly
 
 Following strict TDD approach.
 """
@@ -33,7 +33,7 @@ except ImportError:
     HAS_ADVANCED_MODELS = False
 
 
-@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced models not available")
+@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced regression not available")
 class TestNonNegativeRegressionWrapper(unittest.TestCase):
     """Test that NonNegativeRegressionWrapper ensures predictions >= 0"""
 
@@ -171,7 +171,7 @@ class TestNonNegativeRegressionWrapper(unittest.TestCase):
             np.testing.assert_array_almost_equal(base_predictions, wrapped_predictions, decimal=10)
 
 
-@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced models not available")
+@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced regression not available")
 class TestClassificationFeatureExtraction(unittest.TestCase):
     """Test extraction of classification features from trained classifiers"""
 
@@ -249,7 +249,7 @@ class TestClassificationFeatureExtraction(unittest.TestCase):
         np.testing.assert_array_equal(result["event_class_predicted"], expected_class)
 
 
-@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced models not available")
+@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced regression not available")
 class TestIntegrateClassificationFeatures(unittest.TestCase):
     """Test integration of classification features into main DataFrame"""
 
@@ -317,7 +317,7 @@ class TestIntegrateClassificationFeatures(unittest.TestCase):
         self.assertEqual(len(result), len(self.df))
 
 
-@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced models not available")
+@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced regression not available")
 class TestClassificationInteractionFeatures(unittest.TestCase):
     """Test creation of interaction features between classification probs and valuation metrics"""
 
@@ -386,7 +386,7 @@ class TestClassificationInteractionFeatures(unittest.TestCase):
         )
 
 
-@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced models not available")
+@unittest.skipIf(not HAS_ADVANCED_MODELS, "Advanced regression not available")
 class TestRegressionWithClassificationFeatures(unittest.TestCase):
     """Test end-to-end regression training with classification features"""
 

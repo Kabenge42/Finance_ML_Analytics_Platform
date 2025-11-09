@@ -103,11 +103,11 @@ Examples:
 
     # Execution options
     parser.add_argument(
-        "--dry-run", action="store_true", help="Run pipeline without training models"
+        "--dry-run", action="store_true", help="Run pipeline without training regression"
     )
     parser.add_argument("--skip-eda", action="store_true", help="Skip EDA step")
     parser.add_argument(
-        "--skip-sector-models", action="store_true", help="Skip per-sector model training"
+        "--skip-sector-regression", action="store_true", help="Skip per-sector model training"
     )
 
     # Performance options
@@ -183,11 +183,11 @@ Examples:
             )
             logger.info(f"Baseline model metrics: {metrics}")
 
-            # Per-sector models
+            # Per-sector regression
             if not args.skip_sector_models:
-                logger.info("Training per-sector models...")
+                logger.info("Training per-sector regression...")
                 sector_metrics = train_and_evaluate_regression_by_sector(df, config.output_dir)
-                logger.info(f"Sector models trained: {len(sector_metrics)} sectors")
+                logger.info(f"Sector regression trained: {len(sector_metrics)} sectors")
 
         logger.info("Pipeline complete!")
         return 0

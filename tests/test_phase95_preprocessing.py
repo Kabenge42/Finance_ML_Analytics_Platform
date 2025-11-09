@@ -1,7 +1,7 @@
 """
 Test Phase 9.5 Preprocessing Workflow with 4-Step Imputation Strategy
 
-Tests comprehensive data preparation for Phase 9.5 sector-specific regression models.
+Tests comprehensive data preparation for Phase 9.5 sector-specific regression regression.
 Ensures zero NaN values before training to prevent Ridge regression failures.
 
 Created: 2025-11-05

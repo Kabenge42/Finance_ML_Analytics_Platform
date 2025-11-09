@@ -41,14 +41,17 @@ if uploaded_file:
 
     # Normalize columns for robustness
     df.columns = df.columns.str.strip().str.lower()
-    # Handle common typo 'exchance' -> 'exchange'
-    if 'exchange' not in df.columns and 'exchance' in df.columns:
-        df = df.rename(columns={'exchance': 'exchange'})
+
     # Compute mispricing_score if missing
-    if 'mispricing_score' not in df.columns and {'predicted_price_target','last_price'}.issubset(df.columns):
-        with pd.option_context('mode.chained_assignment', None):
-            denom = pd.to_numeric(df['last_price'], errors='coerce').replace({0: pd.NA})
-            df['mispricing_score'] = (pd.to_numeric(df['predicted_price_target'], errors='coerce') - pd.to_numeric(df['last_price'], errors='coerce')) / denom
+    if "mispricing_score" not in df.columns and {"predicted_price_target", "last_price"}.issubset(
+        df.columns
+    ):
+        with pd.option_context("mode.chained_assignment", None):
+            denom = pd.to_numeric(df["last_price"], errors="coerce").replace({0: pd.NA})
+            df["mispricing_score"] = (
+                pd.to_numeric(df["predicted_price_target"], errors="coerce")
+                - pd.to_numeric(df["last_price"], errors="coerce")
+            ) / denom
 
     # Multi-select filters
     sectors = st.sidebar.multiselect(
@@ -137,7 +140,7 @@ if uploaded_file:
             selected_sector = st.selectbox("Select Sector", df["sector"].unique())
             sector_df = df[df["sector"] == selected_sector]
             if "mispricing_score" in sector_df.columns:
-                top_sector = sector_df.nlargest(5, "mispricing_score")
+                top_sector = sector_df.nlargest(5, "first")
                 st.dataframe(top_sector, use_container_width=True)
 
     with tab3:

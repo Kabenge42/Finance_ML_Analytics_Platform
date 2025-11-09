@@ -1,7 +1,7 @@
 ﻿"""
 Test suite for Phase 9.5: Advanced Regression Models with Classification Features
 
-This module tests the implementation of sector-optimized regression models enhanced
+This module tests the implementation of sector-optimized regression regression enhanced
 with classification meta-features, including diverse model architectures, hyperparameter
 optimization, ensemble methods, and quantile regression.
 
@@ -145,7 +145,7 @@ class TestFeatureIntegration(unittest.TestCase):
 
 
 class TestLinearModels(unittest.TestCase):
-    """Test linear regression models."""
+    """Test linear regression regression."""
 
     def setUp(self):
         """Set up test data."""
@@ -245,7 +245,7 @@ class TestLinearModels(unittest.TestCase):
 
 
 class TestGradientBoostingModels(unittest.TestCase):
-    """Test gradient boosting regression models."""
+    """Test gradient boosting regression regression."""
 
     def setUp(self):
         """Set up test data."""
@@ -321,7 +321,7 @@ class TestGradientBoostingModels(unittest.TestCase):
 
 
 class TestTreeAndNeuralModels(unittest.TestCase):
-    """Test tree ensemble and neural network models."""
+    """Test tree ensemble and neural network regression."""
 
     def setUp(self):
         """Set up test data."""
@@ -414,7 +414,7 @@ class TestEnsembleMethods(unittest.TestCase):
         self.assertIn("train_score", results)
         self.assertIn("base_models", results)
 
-        # Check multiple base models
+        # Check multiple base regression
         self.assertGreater(len(results["base_models"]), 1)
 
         y_pred = model.predict(self.X)
@@ -517,14 +517,14 @@ class TestModelComparison(unittest.TestCase):
         self.y = self.df["price_target"]
 
     def test_compare_regressors(self):
-        """Test comparison of multiple regression models."""
+        """Test comparison of multiple regression regression."""
         from finance_ml.advanced_models import compare_regressors
 
         results = compare_regressors(self.X, self.y, test_size=0.2, cv=3, random_state=42)
 
         self.assertIsInstance(results, dict)
 
-        # Check multiple models compared
+        # Check multiple regression compared
         self.assertGreater(len(results), 3)
 
         # Check each model has metrics
@@ -549,7 +549,7 @@ class TestSectorSpecificModels(unittest.TestCase):
         self.feature_cols = [c for c in self.df.columns if c.startswith("feature_")]
 
     def test_train_sector_specific_models(self):
-        """Test training separate models per sector."""
+        """Test training separate regression per sector."""
         from finance_ml.advanced_models import train_sector_specific_models
 
         sector_models, results = train_sector_specific_models(
@@ -561,7 +561,7 @@ class TestSectorSpecificModels(unittest.TestCase):
             random_state=42,
         )
 
-        # Check models for each sector
+        # Check regression for each sector
         sectors = self.df["sector"].unique()
         self.assertEqual(len(sector_models), len(sectors))
 
@@ -598,7 +598,7 @@ class TestModelPersistence(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_save_and_load_model(self):
-        """Test saving and loading trained models."""
+        """Test saving and loading trained regression."""
         from finance_ml.advanced_models import train_ridge_regressor, save_model, load_model
 
         # Train a model
@@ -654,13 +654,13 @@ class TestEnsureNonNegativeIntegration(unittest.TestCase):
         self.assertIsInstance(results, dict)
         self.assertGreater(len(results), 0)
 
-        # Check that all models are wrapped (by checking predictions are non-negative)
+        # Check that all regression are wrapped (by checking predictions are non-negative)
         # We'll verify this by checking the results contain expected model names
         self.assertIn("Ridge", results)
         self.assertIn("Lasso", results)
 
     def test_compare_regressors_produces_nonnegative_predictions(self):
-        """Test that models from compare_regressors with ensure_nonnegative produce no negative predictions."""
+        """Test that regression from compare_regressors with ensure_nonnegative produce no negative predictions."""
         from finance_ml.advanced_models import compare_regressors
         from sklearn.model_selection import train_test_split
 
@@ -668,7 +668,7 @@ class TestEnsureNonNegativeIntegration(unittest.TestCase):
             self.X, self.y, test_size=0.2, random_state=42
         )
 
-        # Note: compare_regressors doesn't return models directly, just metrics
+        # Note: compare_regressors doesn't return regression directly, just metrics
         # So we test that the function accepts the parameter without error
         results = compare_regressors(
             X_train, y_train, test_size=0.2, cv=2, random_state=42, ensure_nonnegative=True
@@ -717,7 +717,7 @@ class TestEnsureNonNegativeIntegration(unittest.TestCase):
             ensure_nonnegative=True,
         )
 
-        # Check models trained
+        # Check regression trained
         self.assertIsInstance(sector_models, dict)
         self.assertGreater(len(sector_models), 0)
 
@@ -770,7 +770,7 @@ class TestIntegrationWorkflow(unittest.TestCase):
             df_enhanced, target_col="price_target", test_size=0.2, random_state=42
         )
 
-        # Step 3: Compare models (quick comparison)
+        # Step 3: Compare regression (quick comparison)
         results = compare_regressors(
             X_train, y_train, test_size=0.2, cv=2, random_state=42  # Quick for testing
         )
@@ -815,21 +815,21 @@ class TestNaNHandling(unittest.TestCase):
         # Generate clean data first
         self.df_clean = generate_synthetic_regression_data(n_samples=200)
         self.feature_cols = [c for c in self.df_clean.columns if c.startswith("feature_")]
-        
+
         # Create data with NaN in target
         self.df_nan_target = self.df_clean.copy()
         self.df_nan_target.loc[10:20, "price_target"] = np.nan
-        
+
         # Create data with NaN in features
         self.df_nan_features = self.df_clean.copy()
         self.df_nan_features.loc[5:15, "feature_0"] = np.nan
         self.df_nan_features.loc[8:18, "feature_1"] = np.nan
-        
+
         # Create data with infinite values in features
         self.df_inf_features = self.df_clean.copy()
         self.df_inf_features.loc[3:7, "feature_2"] = np.inf
         self.df_inf_features.loc[12:16, "feature_3"] = -np.inf
-        
+
         # Create data with infinite values in target
         self.df_inf_target = self.df_clean.copy()
         self.df_inf_target.loc[5:10, "price_target"] = np.inf
@@ -837,14 +837,14 @@ class TestNaNHandling(unittest.TestCase):
     def test_train_random_forest_with_nan_target_raises_error(self):
         """Test that train_random_forest_regressor raises ValueError for NaN in target."""
         from finance_ml.advanced_models import train_random_forest_regressor
-        
+
         X = self.df_nan_target[self.feature_cols]
         y = self.df_nan_target["price_target"]
-        
+
         # Should raise ValueError with clear message about NaN in target
         with self.assertRaises(ValueError) as context:
             train_random_forest_regressor(X, y, random_state=42)
-        
+
         error_msg = str(context.exception).lower()
         self.assertIn("nan", error_msg)
         self.assertIn("target", error_msg.lower())
@@ -852,14 +852,14 @@ class TestNaNHandling(unittest.TestCase):
     def test_train_random_forest_with_nan_features_raises_error(self):
         """Test that train_random_forest_regressor raises ValueError for NaN in features."""
         from finance_ml.advanced_models import train_random_forest_regressor
-        
+
         X = self.df_nan_features[self.feature_cols]
         y = self.df_nan_features["price_target"]
-        
+
         # Should raise ValueError with clear message about NaN in features
         with self.assertRaises(ValueError) as context:
             train_random_forest_regressor(X, y, random_state=42)
-        
+
         error_msg = str(context.exception).lower()
         self.assertIn("nan", error_msg)
         self.assertIn("feature", error_msg.lower())
@@ -867,28 +867,28 @@ class TestNaNHandling(unittest.TestCase):
     def test_train_random_forest_with_inf_features_raises_error(self):
         """Test that train_random_forest_regressor raises ValueError for infinite values in features."""
         from finance_ml.advanced_models import train_random_forest_regressor
-        
+
         X = self.df_inf_features[self.feature_cols]
         y = self.df_inf_features["price_target"]
-        
+
         # Should raise ValueError with clear message about infinite values
         with self.assertRaises(ValueError) as context:
             train_random_forest_regressor(X, y, random_state=42)
-        
+
         error_msg = str(context.exception).lower()
         self.assertIn("inf", error_msg)
 
     def test_train_random_forest_with_inf_target_raises_error(self):
         """Test that train_random_forest_regressor raises ValueError for infinite values in target."""
         from finance_ml.advanced_models import train_random_forest_regressor
-        
+
         X = self.df_inf_target[self.feature_cols]
         y = self.df_inf_target["price_target"]
-        
+
         # Should raise ValueError with clear message about infinite values in target
         with self.assertRaises(ValueError) as context:
             train_random_forest_regressor(X, y, random_state=42)
-        
+
         error_msg = str(context.exception).lower()
         self.assertIn("inf", error_msg)
         self.assertIn("target", error_msg.lower())
@@ -896,15 +896,15 @@ class TestNaNHandling(unittest.TestCase):
     def test_train_sector_specific_models_drops_nan_target_rows(self):
         """Test that train_sector_specific_models drops rows with NaN in target."""
         from finance_ml.advanced_models import train_sector_specific_models
-        
+
         # Add sector column
         self.df_nan_target["sector"] = np.random.choice(["Tech", "Finance"], len(self.df_nan_target))
-        
+
         # Count NaN before
         nan_count_before = self.df_nan_target["price_target"].isna().sum()
         self.assertGreater(nan_count_before, 0, "Test data should have NaN in target")
-        
-        # Train models - should drop NaN target rows internally
+
+        # Train regression - should drop NaN target rows internally
         sector_models, sector_metrics = train_sector_specific_models(
             self.df_nan_target,
             feature_cols=self.feature_cols,
@@ -914,7 +914,7 @@ class TestNaNHandling(unittest.TestCase):
             random_state=42,
             min_samples=5,
         )
-        
+
         # Should successfully train without error
         self.assertIsInstance(sector_models, dict)
         self.assertGreater(len(sector_models), 0)
@@ -922,11 +922,11 @@ class TestNaNHandling(unittest.TestCase):
     def test_train_sector_specific_models_with_missing_target_col_raises_error(self):
         """Test that train_sector_specific_models raises ValueError if target column is missing."""
         from finance_ml.advanced_models import train_sector_specific_models
-        
+
         # Add sector column
         df = self.df_clean.copy()
         df["sector"] = np.random.choice(["Tech", "Finance"], len(df))
-        
+
         # Should raise ValueError with clear message
         with self.assertRaises(ValueError) as context:
             train_sector_specific_models(
@@ -937,7 +937,7 @@ class TestNaNHandling(unittest.TestCase):
                 model_type="ridge",
                 random_state=42,
             )
-        
+
         error_msg = str(context.exception).lower()
         self.assertIn("target", error_msg)
         self.assertIn("not found", error_msg)
@@ -945,17 +945,17 @@ class TestNaNHandling(unittest.TestCase):
     def test_train_random_forest_with_clean_data_succeeds(self):
         """Test that train_random_forest_regressor succeeds with clean data (no NaN/Inf)."""
         from finance_ml.advanced_models import train_random_forest_regressor
-        
+
         X = self.df_clean[self.feature_cols]
         y = self.df_clean["price_target"]
-        
+
         # Should train successfully
         model, results = train_random_forest_regressor(X, y, random_state=42)
-        
+
         self.assertIsNotNone(model)
         self.assertIn("train_score", results)
         self.assertIn("feature_importance", results)
-        
+
         # Make predictions
         y_pred = model.predict(X)
         self.assertEqual(len(y_pred), len(y))

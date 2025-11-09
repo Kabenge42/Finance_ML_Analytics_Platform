@@ -72,7 +72,7 @@ Ridge does not accept missing values encoded as NaN natively.
 
 checkpoint("regression_complete", requires=["classification_complete"])
 print("[OK] Checkpoint: regression_complete")
-print("  Phase 9.5 regression models ready for optimization and evaluation")
+print("  Phase 9.5 regression regression ready for optimization and evaluation")
 ```
 
 **Impact**:
@@ -179,7 +179,7 @@ for name, model in models.items():
             raise  # Re-raise unexpected errors
 
     except Exception as e:
-        # Log and continue with other models
+        # Log and continue with other regression
         results[name] = {"status": "failed_other", ...}
 ```
 
@@ -192,11 +192,11 @@ successful_models = {k: v for k, v in results.items()
 
 if len(successful_models) == 0:
     raise RuntimeError(
-        "All regression models failed. Data validation required."
+        "All regression regression failed. Data validation required."
     )
 
 if len(successful_models) < len(models):
-    logger.warning(f"{len(successful_models)}/{len(models)} models trained successfully")
+    logger.warning(f"{len(successful_models)}/{len(models)} regression trained successfully")
 ```
 
 **Benefits**:
@@ -323,7 +323,7 @@ X, y = prepare_features_for_training(df, feature_cols, target_col, apply_imputat
 # 2. Validate before training
 validation = validate_training_data(X, y, strict=True)
 if validation['valid']:
-    # 3. Train models with graceful fallback
+    # 3. Train regression with graceful fallback
     results = compare_regressors(X, y, ensure_nonnegative=True, loss="huber")
 ```
 

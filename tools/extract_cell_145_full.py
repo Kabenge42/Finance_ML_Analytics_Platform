@@ -36,7 +36,7 @@ print("=" * 80)
 sections = [
     ("9.5.2", "prepare_regression_data", "Prepare regression data"),
     ("9.5.3", "create_classification_interactions", "Create interaction features"),
-    ("9.5.4", "compare_regressors", "Train and compare multiple regression models"),
+    ("9.5.4", "compare_regressors", "Train and compare multiple regression regression"),
     ("9.5.5", "train_sector_specific_models", "Sector-specific model optimization"),
     ("9.5.6", "train_quantile_regressor", "Quantile regression"),
     ("9.5.7", "save_model", "Model persistence"),

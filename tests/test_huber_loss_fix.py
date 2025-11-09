@@ -58,7 +58,7 @@ def test_huber_loss_with_real_data_scenario():
             print(f"      {col}: {nan_count} ({nan_count/len(df)*100:.1f}%)")
 
     # Create output directory
-    out_dir = Path("outputs/models")
+    out_dir = Path("outputs/regression")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n🔧 Training regression model with Huber loss...")

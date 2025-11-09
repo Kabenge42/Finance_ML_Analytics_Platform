@@ -29,7 +29,7 @@ QUANTILES = [0.1, 0.5, 0.9]
 MIN_SECTOR_SAMPLES = 20
 
 # Create output directory
-out_models_dir = Path("outputs") / "models"
+out_models_dir = Path("outputs") / "regression"
 out_models_dir.mkdir(parents=True, exist_ok=True)
 
 try:
@@ -118,7 +118,7 @@ try:
     # ========================================================================
     # STEP 4: TRAIN AND COMPARE MULTIPLE REGRESSION MODELS
     # ========================================================================
-    print("\n🤖 Step 4: Training and comparing regression models...")
+    print("\n🤖 Step 4: Training and comparing regression regression...")
     print("  Models: Ridge, Lasso, RF, ExtraTrees, GradientBoosting, HistGradientBoosting")
 
     comparison_results = compare_regressors(
@@ -212,7 +212,7 @@ try:
     )
 
     if quantile_result is not None:
-        quantile_models = quantile_result["models"]
+        quantile_models = quantile_result["regression"]
 
         # Generate predictions for each quantile
         predictions_quantile = {}
@@ -227,7 +227,7 @@ try:
         print(f"  Mean prediction interval width: {interval_width.mean():.2f}")
         print(f"  Median prediction interval width: {np.median(interval_width):.2f}")
 
-        # Save quantile models
+        # Save quantile regression
         for q, model in zip(QUANTILES, quantile_models):
             quantile_metadata = {
                 "model_type": f"quantile_regressor_q{q}",
@@ -240,7 +240,7 @@ try:
             quantile_path = out_models_dir / f"quantile_q{int(q*100)}_phase95.joblib"
             save_model(model, str(quantile_path), metadata=quantile_metadata)
 
-        print(f"✓ Quantile models saved: {len(QUANTILES)} models")
+        print(f"✓ Quantile regression saved: {len(QUANTILES)} regression")
     else:
         print("⚠ Quantile regression training failed")
         predictions_quantile = {q: np.zeros(len(X_test)) for q in QUANTILES}
@@ -248,7 +248,7 @@ try:
     # ========================================================================
     # STEP 7: TRAIN SECTOR-SPECIFIC MODELS (OPTIONAL)
     # ========================================================================
-    print("\n🏢 Step 7: Training sector-specific models...")
+    print("\n🏢 Step 7: Training sector-specific regression...")
 
     if "sector" in all_stocks_phase95.columns:
         sector_counts = all_stocks_phase95["sector"].value_counts()
@@ -269,17 +269,17 @@ try:
             )
 
             if sector_models_result is not None:
-                sector_models = sector_models_result["models"]
+                sector_models = sector_models_result["regression"]
                 sector_metrics = sector_models_result["metrics"]
 
-                print(f"✓ Trained {len(sector_models)} sector-specific models")
+                print(f"✓ Trained {len(sector_models)} sector-specific regression")
                 print("\n📊 Top 3 Sector Model Performance:")
                 for sector, metrics in list(sector_metrics.items())[:3]:
                     print(f"  {sector}:")
                     print(f"    MAE: {metrics.get('mae', 0):.2f}")
                     print(f"    R²: {metrics.get('r2', 0):.4f}")
 
-                # Save sector models
+                # Save sector regression
                 for sector, model in sector_models.items():
                     sector_metadata = {
                         "model_type": "sector_specific_rf",
@@ -295,13 +295,13 @@ try:
                     sector_path = out_models_dir / sector_filename
                     save_model(model, str(sector_path), metadata=sector_metadata)
 
-                print(f"✓ Sector models saved: {len(sector_models)} models")
+                print(f"✓ Sector regression saved: {len(sector_models)} regression")
             else:
                 print("⚠ Sector-specific model training failed")
         else:
-            print(f"⚠ No sectors with >={MIN_SECTOR_SAMPLES} samples, skipping sector models")
+            print(f"⚠ No sectors with >={MIN_SECTOR_SAMPLES} samples, skipping sector regression")
     else:
-        print("⚠ 'sector' column not found, skipping sector-specific models")
+        print("⚠ 'sector' column not found, skipping sector-specific regression")
 
     # ========================================================================
     # STEP 8: STORE PREDICTIONS FOR DOWNSTREAM ANALYSIS
@@ -366,17 +366,17 @@ try:
     print(f"✓ Step 1: Prerequisites verified")
     print(f"✓ Step 2: Interaction features created")
     print(f"✓ Step 3: Regression data prepared ({len(X_train):,} train, {len(X_test):,} test)")
-    print(f"✓ Step 4: Multiple models compared (6+ algorithms)")
+    print(f"✓ Step 4: Multiple regression compared (6+ algorithms)")
     print(f"✓ Step 5: Stacking ensemble trained and saved")
     print(f"✓ Step 6: Quantile regression for prediction intervals")
-    print(f"✓ Step 7: Sector-specific models (optional)")
+    print(f"✓ Step 7: Sector-specific regression (optional)")
     print(f"✓ Step 8: Predictions stored for Phases 9.6, 9.7, 9.8")
     print("\n📁 Outputs saved to:")
     print(f"  - {out_models_dir}")
     print(f"  - regression_predictions_phase95.csv")
     print(f"  - stacking_ensemble_phase95.joblib")
-    print(f"  - quantile models (3 files)")
-    print(f"  - sector-specific models (if applicable)")
+    print(f"  - quantile regression (3 files)")
+    print(f"  - sector-specific regression (if applicable)")
 
     # Checkpoint for downstream phases
     checkpoint("phase_95_complete", requires=["classification_complete"])

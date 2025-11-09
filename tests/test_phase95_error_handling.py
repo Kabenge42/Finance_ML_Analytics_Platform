@@ -1,7 +1,7 @@
 ﻿"""
 Unit tests for Phase 9.5 error handling paths.
 
-Tests the robustness of advanced regression models when facing:
+Tests the robustness of advanced regression regression when facing:
 - Model comparison failures
 - Quantile results access edge cases
 - Empty or invalid data
@@ -244,7 +244,7 @@ class TestPhase95ErrorHandling(unittest.TestCase):
         )
 
         # prepare_regression_data should drop rows with NaN target, but keep NaN features
-        # (downstream models will need to handle them)
+        # (downstream regression will need to handle them)
         self.assertGreater(len(X_train), 0)
 
     def test_feature_info_structure(self):
@@ -296,7 +296,7 @@ class TestPhase95IntegrationScenarios(unittest.TestCase):
         )
 
     def test_full_workflow_with_interactions(self):
-        """Test complete workflow: prepare data → create interactions → train models."""
+        """Test complete workflow: prepare data → create interactions → train regression."""
         # Step 1: Prepare data
         X_train, X_test, y_train, y_test, feature_info = prepare_regression_data(
             self.test_df, target_col="price_target", test_size=0.2, random_state=42

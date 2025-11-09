@@ -278,14 +278,14 @@ for name, model in models.items():
             "error": str(e)
         }
 
-# Filter to successful models
+# Filter to successful regression
 successful_models = {k: v for k, v in results.items() if v.get('status') == 'success'}
 
 if len(successful_models) == 0:
-    logger.error("All models failed. Check data quality and imputation.")
-    raise RuntimeError("All regression models failed. Data validation required.")
+    logger.error("All regression failed. Check data quality and imputation.")
+    raise RuntimeError("All regression regression failed. Data validation required.")
 
-logger.info(f"✓ {len(successful_models)}/{len(models)} models trained successfully")
+logger.info(f"✓ {len(successful_models)}/{len(models)} regression trained successfully")
 ```
 
 ---
@@ -390,9 +390,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 **Implementation** (modify `compare_regressors()` line 1315-1331):
 
 ```python
-# Define models in order of NaN tolerance (most tolerant first)
+# Define regression in order of NaN tolerance (most tolerant first)
 models = OrderedDict([
-    # NaN-tolerant models (train first)
+    # NaN-tolerant regression (train first)
     ("HistGradientBoosting", HistGradientBoostingRegressor(
         max_iter=100, random_state=random_state
     )),
@@ -403,7 +403,7 @@ models = OrderedDict([
         random_state=random_state
     )),
     
-    # Tree-based models (moderately tolerant)
+    # Tree-based regression (moderately tolerant)
     ("RandomForest", RandomForestRegressor(
         n_estimators=100, random_state=random_state, n_jobs=-1
     )),
@@ -411,7 +411,7 @@ models = OrderedDict([
         n_estimators=100, random_state=random_state, n_jobs=-1
     )),
     
-    # Linear models (NaN-intolerant, train last with validation)
+    # Linear regression (NaN-intolerant, train last with validation)
     ("Ridge", Ridge(alpha=1.0, random_state=random_state)),
     ("Lasso", Lasso(alpha=0.1, random_state=random_state, max_iter=10000)),
 ])

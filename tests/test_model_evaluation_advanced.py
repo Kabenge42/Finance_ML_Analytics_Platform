@@ -153,7 +153,7 @@ class TestModelComparison(unittest.TestCase):
     """Test model comparison and selection framework."""
 
     def setUp(self):
-        """Create sample models and data."""
+        """Create sample regression and data."""
         np.random.seed(42)
         self.X = pd.DataFrame(np.random.randn(100, 5))
         self.y = pd.Series(np.random.randn(100))
@@ -179,7 +179,7 @@ class TestModelComparison(unittest.TestCase):
         self.assertIn("r2", result.columns)
 
     def test_statistical_model_comparison(self):
-        """Test statistical significance testing between models."""
+        """Test statistical significance testing between regression."""
         y_pred1 = self.model1.predict(self.X)
         y_pred2 = self.model2.predict(self.X)
 

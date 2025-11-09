@@ -1,0 +1,190 @@
+================================================================================
+CELL DEPENDENCY ANALYSIS REPORT
+================================================================================
+
+Notebook: ml_finance_model_main_v10.ipynb
+Total Code Cells: 89
+
+Summary:
+  Cells with dependencies: 81
+  Execution order issues: 26
+
+================================================================================
+
+⚠️  EXECUTION ORDER ISSUES
+================================================================================
+
+Variables used before definition:
+
+  Cell 1 uses 'missing' but it's not defined yet
+    Defined later in cells: [15]
+    Fix: Move cell 1 after cell 15
+
+  Cell 6 uses 'axes' but it's not defined yet
+    Defined later in cells: [38]
+    Fix: Move cell 6 after cell 38
+
+  Cell 20 uses 'sector' but it's not defined yet
+    Defined later in cells: [83]
+    Fix: Move cell 20 after cell 83
+
+  Cell 20 uses 'result' but it's not defined yet
+    Defined later in cells: [23]
+    Fix: Move cell 20 after cell 23
+
+  Cell 21 uses 'score' but it's not defined yet
+    Defined later in cells: [86]
+    Fix: Move cell 21 after cell 86
+
+  Cell 29 uses 'ticker' but it's not defined yet
+    Defined later in cells: [83, 86]
+    Fix: Move cell 29 after cell 83
+
+  Cell 33 uses 'sector' but it's not defined yet
+    Defined later in cells: [83]
+    Fix: Move cell 33 after cell 83
+
+  Cell 33 uses 'metrics' but it's not defined yet
+    Defined later in cells: [57, 71, 79, 82]
+    Fix: Move cell 33 after cell 57
+
+  Cell 36 uses 'sector' but it's not defined yet
+    Defined later in cells: [83]
+    Fix: Move cell 36 after cell 83
+
+  Cell 36 uses 'sector_counts' but it's not defined yet
+    Defined later in cells: [37]
+    Fix: Move cell 36 after cell 37
+
+  Cell 36 uses 'metrics' but it's not defined yet
+    Defined later in cells: [57, 71, 79, 82]
+    Fix: Move cell 36 after cell 57
+
+  Cell 37 uses 'all_stocks_featured' but it's not defined yet
+    Defined later in cells: [50, 79, 80]
+    Fix: Move cell 37 after cell 50
+
+  Cell 39 uses 'top_sectors' but it's not defined yet
+    Defined later in cells: [74]
+    Fix: Move cell 39 after cell 74
+
+  Cell 39 uses 'required_cols' but it's not defined yet
+    Defined later in cells: [85]
+    Fix: Move cell 39 after cell 85
+
+  Cell 50 uses 'feature_cols' but it's not defined yet
+    Defined later in cells: [58, 72, 78]
+    Fix: Move cell 50 after cell 58
+
+  Cell 50 uses 'importance_df' but it's not defined yet
+    Defined later in cells: [58, 72]
+    Fix: Move cell 50 after cell 58
+
+  Cell 50 uses 'score' but it's not defined yet
+    Defined later in cells: [86]
+    Fix: Move cell 50 after cell 86
+
+  Cell 56 uses 'sector' but it's not defined yet
+    Defined later in cells: [83]
+    Fix: Move cell 56 after cell 83
+
+  Cell 70 uses 'sector' but it's not defined yet
+    Defined later in cells: [83]
+    Fix: Move cell 70 after cell 83
+
+  Cell 74 uses 'sector' but it's not defined yet
+    Defined later in cells: [83]
+    Fix: Move cell 74 after cell 83
+
+  Cell 82 uses 'sector' but it's not defined yet
+    Defined later in cells: [83]
+    Fix: Move cell 82 after cell 83
+
+  Cell 84 uses 'unique_sectors' but it's not defined yet
+    Defined later in cells: [86]
+    Fix: Move cell 84 after cell 86
+
+  Cell 84 uses 'leaders' but it's not defined yet
+    Defined later in cells: [86]
+    Fix: Move cell 84 after cell 86
+
+  Cell 84 uses 'missing_cols' but it's not defined yet
+    Defined later in cells: [85]
+    Fix: Move cell 84 after cell 85
+
+  Cell 84 uses 'laggards' but it's not defined yet
+    Defined later in cells: [86]
+    Fix: Move cell 84 after cell 86
+
+  Cell 84 uses 'pdf_path' but it's not defined yet
+    Defined later in cells: [86]
+    Fix: Move cell 84 after cell 86
+
+
+📊 DEPENDENCY STATISTICS
+================================================================================
+
+Cells with most dependencies:
+  Cell 84: depends on 21 previous cells
+  Cell 86: depends on 21 previous cells
+  Cell 71: depends on 19 previous cells
+  Cell 79: depends on 18 previous cells
+  Cell 80: depends on 18 previous cells
+  Cell 83: depends on 18 previous cells
+  Cell 82: depends on 15 previous cells
+  Cell 85: depends on 14 previous cells
+  Cell 33: depends on 13 previous cells
+  Cell 67: depends on 13 previous cells
+
+Most critical cells (most dependencies on them):
+  Cell 2: 62 other cells depend on it
+  Cell 4: 32 other cells depend on it
+  Cell 23: 24 other cells depend on it
+  Cell 35: 18 other cells depend on it
+  Cell 51: 18 other cells depend on it
+  Cell 3: 17 other cells depend on it
+  Cell 1: 15 other cells depend on it
+  Cell 20: 15 other cells depend on it
+  Cell 52: 15 other cells depend on it
+  Cell 22: 14 other cells depend on it
+
+
+🔄 VARIABLE FLOW ANALYSIS
+================================================================================
+
+Most widely used variables (across cells):
+  all_stocks: used in 33 cells
+  c: used in 31 cells
+  col: used in 29 cells
+  e: used in 23 cells
+  np: used in 17 cells
+  config: used in 15 cells
+  pd: used in 15 cells
+  plt: used in 13 cells
+  traceback: used in 12 cells
+  print_section_header: used in 11 cells
+  all_stocks_processed: used in 11 cells
+  display_cols: used in 11 cells
+  Path: used in 10 cells
+  sector: used in 10 cells
+  logger: used in 9 cells
+
+
+🔒 CELL ISOLATION ANALYSIS
+================================================================================
+
+Isolated cells (no dependencies, no usages): [24, 32, 51, 65]
+  These cells can be run independently
+
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+1. Fix execution order issues by moving cells to respect dependencies
+2. Consider splitting cells with many dependencies for better modularity
+3. Critical cells should be well-tested as many cells depend on them
+4. Widely-used variables should have clear documentation
+5. Run cells in order from top to bottom for correct execution
+
+================================================================================

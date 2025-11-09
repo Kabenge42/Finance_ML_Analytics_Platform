@@ -91,7 +91,7 @@ segmentation.
 
 ```python
 def train_and_evaluate_regression_by_sector(df: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
-    """Train and evaluate regression models separately for each sector.
+    """Train and evaluate regression regression separately for each sector.
     
     Computes baseline regression metrics per sector by predicting the
     training-mean of the target on the test split.
@@ -294,7 +294,7 @@ python -m unittest tests.test_finance_ml_models -v
 # Coverage analysis
 python -m coverage run -m unittest tests.test_finance_ml_models
 python -m coverage report --include="finance_ml/models.py"
-# Result: 67% coverage on finance_ml/models.py (234 statements, 77 missed)
+# Result: 67% coverage on finance_ml/regression.py (234 statements, 77 missed)
 ```
 
 ### No Regressions
@@ -347,7 +347,7 @@ print_section_header("PHASE 9.5.1 — MODEL OPTIMIZATION ENHANCEMENTS")
 print("\n🔧 Training regression model with Huber loss for outlier robustness...")
 regression_result_robust = train_and_evaluate_regression(
     df=all_stocks_phase95,
-    out_dir=Path("outputs/models"),
+    out_dir=Path("outputs/regression"),
     n_jobs=4,
     loss="huber"  # Robust loss function
 )
@@ -359,7 +359,7 @@ if regression_result_robust:
     print(f"  R²:   {regression_result_robust['r2']:.4f}")
     
     # Feature importance analysis
-    importance_path = Path("outputs/models/feature_importance.csv")
+    importance_path = Path("outputs/regression/feature_importance.csv")
     if importance_path.exists():
         feature_importance = pd.read_csv(importance_path)
         print(f"\n📊 Top 10 Most Important Features:")
@@ -370,7 +370,7 @@ if 'sector' in all_stocks_phase95.columns:
     print("\n📈 Computing sector-level metrics...")
     sector_metrics = train_and_evaluate_regression_by_sector(
         df=all_stocks_phase95,
-        out_dir=Path("outputs/models")
+        out_dir=Path("outputs/regression")
     )
     
     print(f"\n✓ Sector-Level Performance:")
@@ -396,7 +396,7 @@ checkpoint("model_optimization_complete", requires=["regression_complete"])
 # ============================================================================
 print_section_header("PHASE 9.6.1 — ENHANCED ERROR ANALYSIS")
 
-predictions_path = Path("outputs/models/regression_predictions.csv")
+predictions_path = Path("outputs/regression/regression_predictions.csv")
 if predictions_path.exists():
     preds_df = pd.read_csv(predictions_path)
     
@@ -576,7 +576,7 @@ from finance_ml.models import (
 
 # Load data
 df = pd.read_csv("outputs/all_stocks.csv")
-out_dir = Path("outputs/models")
+out_dir = Path("outputs/regression")
 
 # Standard regression
 result = train_and_evaluate_regression(df, out_dir, n_jobs=4)

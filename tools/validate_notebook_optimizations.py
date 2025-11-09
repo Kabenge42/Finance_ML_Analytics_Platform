@@ -59,7 +59,7 @@ print("IMPORTS VERIFICATION")
 print("=" * 80)
 
 imports_to_check = [
-    ("train_and_evaluate_regression_by_sector", "finance_ml.models"),
+    ("train_and_evaluate_regression_by_sector", "finance_ml.regression"),
     ("compare_regressors", "finance_ml.advanced_models"),
     ("train_stacking_regressor", "finance_ml.advanced_models"),
 ]
@@ -90,7 +90,7 @@ for func_name, module_name in imports_to_check:
         print(f"⚠ {func_name} - import may be inline in Cell 145")
 
 # Check Cell 145 for inline imports
-if "from finance_ml.models import train_and_evaluate_regression_by_sector" in source_145:
+if "from finance_ml.regression import train_and_evaluate_regression_by_sector" in source_145:
     print("✓ train_and_evaluate_regression_by_sector imported inline in Cell 145")
 
 # Summary
@@ -101,13 +101,13 @@ print("=" * 80)
 if all_present:
     print("✓ All optimizations successfully integrated into Cell 145")
     print("\nExpected output files when Cell 145 is executed:")
-    print("  1. outputs/models/regression_predictions_phase95_enhanced.csv")
+    print("  1. outputs/regression/regression_predictions_phase95_enhanced.csv")
     print(
         "     - Columns: y_true, y_pred, residual, abs_error, pct_error, sector, ticker, market_cap"
     )
-    print("  2. outputs/models/regression_metrics_by_sector.csv")
+    print("  2. outputs/regression/regression_metrics_by_sector.csv")
     print("     - Per-sector MAE, RMSE, R² metrics")
-    print("  3. outputs/models/feature_importance_phase95.csv")
+    print("  3. outputs/regression/feature_importance_phase95.csv")
     print("     - Ranked features by importance")
     print("\nModel improvements:")
     print("  - Huber loss: Expected RMSE reduction from 4,643 → <500 (~90%)")

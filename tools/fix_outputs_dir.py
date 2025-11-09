@@ -62,7 +62,7 @@ def fix_outputs_dir_issue():
             "# Create subdirectories for different phases\n",
             "(outputs_dir / 'enhanced_eda').mkdir(parents=True, exist_ok=True)\n",
             "(outputs_dir / 'processed').mkdir(parents=True, exist_ok=True)\n",
-            "(outputs_dir / 'models').mkdir(parents=True, exist_ok=True)\n",
+            "(outputs_dir / 'regression').mkdir(parents=True, exist_ok=True)\n",
             "(outputs_dir / 'analytics').mkdir(parents=True, exist_ok=True)\n",
             "\n",
             'print(f"✓ Output directory configured: {outputs_dir.absolute()}")',
@@ -80,7 +80,7 @@ def fix_outputs_dir_issue():
     print(f"  Total cells now: {len(nb['cells'])} (was {len(nb['cells']) - 1})")
     print("\nCell defines:")
     print("  - outputs_dir = Path('outputs')")
-    print("  - Subdirectories: enhanced_eda, processed, models, analytics")
+    print("  - Subdirectories: enhanced_eda, processed, regression, analytics")
     print("\nThis fixes NameError at lines 1130, 1142, 1154, 1179, 1209")
 
     return True
