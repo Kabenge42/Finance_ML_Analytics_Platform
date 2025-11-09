@@ -281,7 +281,7 @@ class TestAutomatedEDA(unittest.TestCase):
             }
         )
 
-        # Create temporary directory for reports
+        # Create temporary directory for reporting
         self.temp_dir = tempfile.mkdtemp()
 
     def tearDown(self):

@@ -1,9 +1,10 @@
 # Finance ML Analytics Platform
 
-**Version 0.5.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.6.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-08  
-> **Latest Release**: v0.5.1 (aligned with pyproject.toml)
+> **Documentation Last Updated:** 2025-11-09  
+> **Latest Release**: v0.6.1 (per CHANGELOG.md)  
+> **Note**: pyproject.toml shows v0.5.1 — TODO: sync version across all files
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -599,7 +600,7 @@ LOG_LEVEL=INFO                   # Python logging level
 
 # Directories
 DATA_DIR=data                    # Data directory
-MODEL_DIR=regression                 # Model output directory
+MODEL_DIR=models                 # Model output directory
 OUTPUT_DIR=outputs               # General output directory
 CACHE_DIR=.cache                 # Cache directory
 
@@ -709,22 +710,31 @@ Finance_ML_Analytics_Platform/
 ├── finance_ml/                    # Main Python package
 │   ├── __init__.py               # Package exports
 │   ├── cli.py                    # CLI entry points (finance-ml, finance-ml-analyze, finance-ml-validate)
-│   ├── data.py                   # Data loading utilities
-│   ├── features.py               # Feature engineering
-│   ├── models.py                 # Model training utilities
-│   ├── eval.py                   # Evaluation and analytics (7751 lines)
-│   ├── advanced_models.py        # Sector-optimized regression models
-│   ├── classification.py         # Event classification models
-│   ├── classification_enhanced.py # Enhanced classification (Phase 9.5)
-│   ├── advanced_eda.py           # Enhanced EDA utilities
-│   ├── benchmarking.py           # Benchmarking module (Phase 9.2)
-│   ├── risk_metrics.py           # Risk analytics
-│   ├── portfolio_optimization.py # Portfolio optimization
+│   ├── data.py                   # Data loading utilities (legacy)
+│   ├── features.py               # Feature engineering (legacy, deprecated)
+│   ├── models.py                 # Model training utilities (legacy, deprecated)
+│   ├── advanced_models.py        # Sector-optimized regression models (legacy, deprecated)
+│   ├── classification.py         # Event classification models (legacy, deprecated)
+│   ├── classification_enhanced.py # Enhanced classification (legacy, deprecated)
+│   ├── advanced_eda.py           # Enhanced EDA utilities (legacy)
+│   ├── benchmarking.py           # Benchmarking module (legacy, moved to ml_workflow/eda/)
+│   ├── risk_metrics.py           # Risk analytics (legacy, moved to ml_workflow/analytics/)
+│   ├── portfolio_optimization.py # Portfolio optimization (legacy, moved to ml_workflow/analytics/)
 │   ├── data_catalog.py           # Data catalog and versioning
 │   ├── data_versioning.py        # Version tracking
-│   └── dashboards/               # Interactive dashboard applications
-│       ├── streamlit_app.py      # Streamlit dashboard
-│       └── dash_app.py           # Dash dashboard
+│   ├── dashboards/               # Interactive dashboard applications
+│   │   ├── streamlit_app.py      # Streamlit dashboard
+│   │   └── dash_app.py           # Dash dashboard
+│   └── ml_workflow/              # Phase 9.1-9.8 modular architecture (v9_8)
+│       ├── core/                 # Core utilities (config, types, utils)
+│       ├── preprocessing/        # Phase 9.1: Imputation, outliers, scaling, quality
+│       ├── eda/                  # Phase 9.2: EDA, benchmarking, reports
+│       ├── features/             # Phase 9.3: Core, advanced, selection, API
+│       ├── classification/       # Phase 9.4: Labels, tuning, models, evaluation
+│       ├── regression/           # Phase 9.5: Models, constraints, quantile, tuning, dataset, io
+│       ├── evaluation/           # Phase 9.6: Metrics, analysis
+│       ├── analytics/            # Phase 9.7: Mispricing, analyst comparison, portfolio, risk
+│       └── reporting/            # Phase 9.8: Dashboard data, export
 ├── tests/                         # Test suite (67+ modules)
 │   ├── test_*.py                 # Unit and integration tests
 │   └── ...
@@ -738,10 +748,18 @@ Finance_ML_Analytics_Platform/
 │   ├── screening_eu.csv          # EU equity data
 │   ├── screening_apac.csv        # APAC equity data
 │   └── screening_rotw.csv        # ROTW equity data
-├── outputs/                       # Generated outputs
-│   ├── eda/                      # EDA visualizations
-│   ├── models/                   # Trained models and predictions
-│   └── analytics/                # Analytics reports
+├── outputs/                       # Generated outputs (phase-aligned structure)
+│   ├── analytics/                # Analytics reports and rankings
+│   ├── catalog/                  # Data catalog metadata
+│   ├── classification/           # Classification model outputs
+│   ├── dashboards/               # Dashboard data exports
+│   ├── eda/                      # EDA visualizations and reports
+│   ├── evaluation/               # Model evaluation results
+│   ├── features/                 # Feature engineering artifacts
+│   ├── plots/                    # Visualization outputs (PNG, HTML)
+│   ├── preprocessing/            # Preprocessing artifacts and quality reports
+│   ├── regression/               # Regression model outputs and predictions
+│   └── reporting/                # Final reports (Excel, PDF)
 ├── docs/                          # Documentation
 │   ├── improvement_plan/         # Development roadmap and phase documentation
 │   └── summaries/                # Implementation summaries
@@ -798,7 +816,38 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.5.1 (Current Release)
+### Version 0.6.1 (Current Release - 2025-11-09)
+
+**Phase 9.5 Classification Meta-Features & Enhanced Imputation**:
+
+- Classification meta-feature extraction (`extract_classification_features`) to enhance regression models with sentiment
+  and event likelihood insights
+- New classification module structure with dedicated evaluation and models submodules:
+    - `finance_ml/ml_workflow/classification/evaluation.py` (1020 lines)
+    - `finance_ml/ml_workflow/classification/models.py` (1634 lines)
+- Enhanced 6-step imputation strategy in `finance_ml/ml_workflow/preprocessing/imputation.py` (505+ lines)
+- Modular regression pipelines including Ridge, Lasso, ElasticNet, Bayesian Ridge, and Gradient Boosting models
+
+**Testing & Documentation**:
+
+- Comprehensive test coverage with new test suites:
+    - `tests/test_classification_evaluation.py` (430 tests)
+    - `tests/test_classification_models.py` (488 tests)
+    - `tests/test_classification_phase943.py` (402 tests)
+    - `tests/test_imputation_6step.py` (482 tests)
+- Enhanced documentation:
+    - `docs/improvement_plan/imputation_function_enhancements.md` (627 lines)
+    - `docs/summaries/REPORTING_IMPLEMENTATION_SUMMARY.md` (161 lines)
+    - `docs/PHASE_9.4_CLASSIFICATION_REFACTOR.md` (678+ lines)
+
+**Notebook & Dashboard Enhancements**:
+
+- Enhanced `ml_finance_model_main.ipynb` with 1338+ lines of improvements integrating Phase 9.5 classification
+  meta-features and advanced regression workflows
+- Updated dashboard applications (`dash_app.py`, `streamlit_app.py`) with improved integration and error handling
+- Data catalog metadata with initial stock data tracking
+
+### Version 0.5.1 (Previous Release)
 
 **Phase 9.1-9.8 Module Structure (v9_8)**:
 
@@ -808,7 +857,7 @@ Finance_ML_Analytics_Platform/
 - Backward-compatible imports with deprecation warnings
 - Package-level exports with descriptive function prefixes
 
-**Key Features**:
+**All Phases Implementation**:
 
 - Phase 9.1: 4-step imputation pipeline (zero, KNN, price-based, median)
 - Phase 9.2: Enhanced EDA with benchmarking and statistical testing
@@ -818,13 +867,6 @@ Finance_ML_Analytics_Platform/
 - Phase 9.6: Comprehensive evaluation and error analysis
 - Phase 9.7: Stock valuation, mispricing analysis, and analyst comparison
 - Phase 9.8: Interactive dashboards and reporting
-
-**Testing & Documentation**:
-
-- 67+ test modules with comprehensive coverage (≥80% target)
-- Updated notebook (`ml_finance_model_main_v10.ipynb`) with Phase 9.1-9.8 integration
-- Enhanced CLI tools: finance-ml, finance-ml-analyze, finance-ml-validate
-- Complete migration guide and API documentation
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
@@ -937,5 +979,6 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-08  
-**README Version**: 2.0 (aligned with pyproject.toml v0.5.1)
+**Last Updated**: 2025-11-09  
+**README Version**: 2.1 (aligned with CHANGELOG.md v0.6.1)  
+**Note**: pyproject.toml still shows v0.5.1 — TODO: update to match current release version

@@ -11,21 +11,21 @@ from pathlib import Path
 
 def fix_notebook_issues(notebook_path):
     """Fix the two identified issues in the notebook."""
-    
+
     # Read notebook
     with open(notebook_path, 'r', encoding='utf-8') as f:
         notebook = json.load(f)
-    
+
     changes_made = []
-    
+
     # Fix both issues
     for cell_idx, cell in enumerate(notebook['cells']):
         if cell['cell_type'] != 'code':
             continue
-        
+
         source = ''.join(cell['source']) if isinstance(cell['source'], list) else cell['source']
         original_source = source
-        
+
         # Fix 1: VALUATION_CATEGORIES duplicate Hold
         if "VALUATION_CATEGORIES = ['Strong Buy', 'Buy', 'Hold', 'Hold', 'Sell', 'Strong Sell']" in source:
             source = source.replace(
@@ -33,14 +33,14 @@ def fix_notebook_issues(notebook_path):
                 "VALUATION_CATEGORIES = ['Strong Buy', 'Buy', 'Hold', 'Sell', 'Strong Sell']"
             )
             changes_made.append(f"Cell {cell_idx}: Fixed VALUATION_CATEGORIES duplicate")
-        
+
         # Fix 2: Add fallback for analytics_dir in setup_output_directory
         if 'def setup_output_directory():' in source and 'output_dir = config.analytics_dir' in source:
             # Replace the problematic section with a more robust version
             old_code = """def setup_output_directory():
     \"\"\"Setup and validate output directory.\"\"\"
     if not hasattr(config, 'output_dir'):
-        print("  ⚠ Error: config.output_dir not configured. Cannot generate reports.")
+        print("  ⚠ Error: config.output_dir not configured. Cannot generate reporting.")
         return None
 
     try:
@@ -51,11 +51,11 @@ def fix_notebook_issues(notebook_path):
     except (TypeError, AttributeError, OSError) as e:
         print(f"  ⚠ Error creating output directory: {str(e)}")
         return None"""
-            
+
             new_code = """def setup_output_directory():
     \"\"\"Setup and validate output directory.\"\"\"
     if not hasattr(config, 'output_dir'):
-        print("  ⚠ Error: config.output_dir not configured. Cannot generate reports.")
+        print("  ⚠ Error: config.output_dir not configured. Cannot generate reporting.")
         return None
 
     try:
@@ -71,11 +71,11 @@ def fix_notebook_issues(notebook_path):
     except (TypeError, AttributeError, OSError) as e:
         print(f"  ⚠ Error creating output directory: {str(e)}")
         return None"""
-            
+
             if old_code in source:
                 source = source.replace(old_code, new_code)
                 changes_made.append(f"Cell {cell_idx}: Fixed setup_output_directory() to handle analytics_dir")
-        
+
         # Update cell if changes were made
         if source != original_source:
             # Convert back to list format if needed
@@ -86,17 +86,17 @@ def fix_notebook_issues(notebook_path):
                                   for i, line in enumerate(cell['source'])]
             else:
                 cell['source'] = source
-    
+
     # Save the modified notebook
     backup_path = notebook_path.replace('.ipynb', '_backup_pre_fix.ipynb')
     print(f"Creating backup: {backup_path}")
     with open(backup_path, 'w', encoding='utf-8') as f:
         json.dump(notebook, f, indent=2, ensure_ascii=False)
-    
+
     print(f"Saving fixed notebook: {notebook_path}")
     with open(notebook_path, 'w', encoding='utf-8') as f:
         json.dump(notebook, f, indent=2, ensure_ascii=False)
-    
+
     return changes_made
 
 

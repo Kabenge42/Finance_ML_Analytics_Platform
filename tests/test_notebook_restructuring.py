@@ -376,10 +376,10 @@ class TestSection9Analytics(unittest.TestCase):
         self.assertIn("analyst_comparison", self.content.lower(), "Must include analyst comparison")
 
     def test_generates_reports(self):
-        """Test generates Excel/PDF reports."""
+        """Test generates Excel/PDF reporting."""
         self.assertTrue(
             "excel" in self.content.lower() or "pdf" in self.content.lower(),
-            "Must generate analytical reports",
+            "Must generate analytical reporting",
         )
 
 

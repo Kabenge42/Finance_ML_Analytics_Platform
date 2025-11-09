@@ -339,7 +339,7 @@ def find_tech_sectors(all_stocks_featured):
 
 
 def generate_reports_and_visualizations(all_stocks_featured):
-    """Generate all output files including visualizations and reports."""
+    """Generate all output files including visualizations and reporting."""
     print("\\n📊 Creating Interactive Visualizations...")
     
     output_dir = setup_output_directory()
@@ -355,7 +355,7 @@ def generate_reports_and_visualizations(all_stocks_featured):
 def setup_output_directory():
     """Setup and validate output directory."""
     if not hasattr(config, 'output_dir'):
-        print("  ⚠ Error: config.output_dir not configured. Cannot generate reports.")
+        print("  ⚠ Error: config.output_dir not configured. Cannot generate reporting.")
         return None
     
     try:

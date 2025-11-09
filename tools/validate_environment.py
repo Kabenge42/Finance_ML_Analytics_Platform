@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Environment Validation Script for Finance ML Analytics Platform
-Detects and reports environment conflicts, duplicate directories, and configuration issues.
+Detects and reporting environment conflicts, duplicate directories, and configuration issues.
 """
 
 import os

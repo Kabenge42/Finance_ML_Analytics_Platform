@@ -197,56 +197,62 @@ def create_phase_961_cells():
 def create_phase_98_cells():
     """Create Phase 9.8 cells (Comprehensive Analytics)"""
     cells = []
-    cells.append({
-        "cell_type": "markdown",
-        "metadata": {},
-        "source": ["## Phase 9.8 — Comprehensive Analytics\n",
-                   "\n",
-                   "Generate reports:\n",
-                   "- Excel report with predictions\n",
-                   "- PDF valuation report\n",
-                   "- Interactive dashboards"]
-    })
-    cells.append({
-        "cell_type": "code",
-        "execution_count": None,
-        "metadata": {},
-        "outputs": [],
-        "source": [
-            "from finance_ml.eval import (\n",
-            "    generate_prediction_analyst_excel_report,\n",
-            "    generate_enhanced_pdf_report,\n",
-            "    export_predictions_to_excel\n",
-            ")\n",
-            "\n",
-            "reports_dir = OUTPUT_DIR / 'reports'\n",
-            "reports_dir.mkdir(exist_ok=True)\n",
-            "\n",
-            "# Excel report\n",
-            "generate_prediction_analyst_excel_report(\n",
-            "    all_stocks_valued,\n",
-            "    excel_path=reports_dir / 'prediction_analyst_comparison.xlsx',\n",
-            "    top_n_opportunities=50\n",
-            ")\n",
-            "print(\"✓ Excel report generated\")\n",
-            "\n",
-            "# PDF report\n",
-            "generate_enhanced_pdf_report(\n",
-            "    all_stocks_valued,\n",
-            "    pdf_path=reports_dir / 'stock_valuation_report.pdf',\n",
-            "    title='Stock Price Target Analysis - Comprehensive Report',\n",
-            "    include_financial_dashboard=True,\n",
-            "    include_quality_alerts=True,\n",
-            "    include_hypothesis_tests=False,\n",
-            "    include_charts=False\n",
-            ")\n",
-            "print(\"✓ PDF report generated\")\n",
-            "\n",
-            "print(\"\\n\" + \"=\"*80)\n",
-            "print(\"PHASE 9 COMPLETE - ALL ANALYSES FINISHED\")\n",
-            "print(\"=\"*80)\n"
-        ]
-    })
+    cells.append(
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Phase 9.8 — Comprehensive Analytics\n",
+                "\n",
+                "Generate reporting:\n",
+                "- Excel report with predictions\n",
+                "- PDF valuation report\n",
+                "- Interactive dashboards",
+            ],
+        }
+    )
+    cells.append(
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "from finance_ml.eval import (\n",
+                "    generate_prediction_analyst_excel_report,\n",
+                "    generate_enhanced_pdf_report,\n",
+                "    export_predictions_to_excel\n",
+                ")\n",
+                "\n",
+                "reports_dir = OUTPUT_DIR / 'reporting'\n",
+                "reports_dir.mkdir(exist_ok=True)\n",
+                "\n",
+                "# Excel report\n",
+                "generate_prediction_analyst_excel_report(\n",
+                "    all_stocks_valued,\n",
+                "    excel_path=reports_dir / 'prediction_analyst_comparison.xlsx',\n",
+                "    top_n_opportunities=50\n",
+                ")\n",
+                'print("✓ Excel report generated")\n',
+                "\n",
+                "# PDF report\n",
+                "generate_enhanced_pdf_report(\n",
+                "    all_stocks_valued,\n",
+                "    pdf_path=reports_dir / 'stock_valuation_report.pdf',\n",
+                "    title='Stock Price Target Analysis - Comprehensive Report',\n",
+                "    include_financial_dashboard=True,\n",
+                "    include_quality_alerts=True,\n",
+                "    include_hypothesis_tests=False,\n",
+                "    include_charts=False\n",
+                ")\n",
+                'print("✓ PDF report generated")\n',
+                "\n",
+                'print("\\n" + "="*80)\n',
+                'print("PHASE 9 COMPLETE - ALL ANALYSES FINISHED")\n',
+                'print("="*80)\n',
+            ],
+        }
+    )
     return cells
 
 def integrate_phases_into_notebook(notebook_path, output_path=None):

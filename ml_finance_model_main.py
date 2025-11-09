@@ -1086,7 +1086,7 @@ if HAVE_ENHANCED_MODELS:
             and df_enhanced["mispricing_score"].notna().sum() > 0
         ):
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            # Use analytics directory from config for Excel reports
+            # Use analytics directory from config for Excel reporting
             excel_path = config.analytics_dir / f"Stock_Prediction_Analysis_Report_{ts}.xlsx"
             export_predictions_to_excel(df_enhanced, excel_path, include_summary=True)
             print(f"\n✓ Exported predictions and summaries to Excel: {excel_path}")

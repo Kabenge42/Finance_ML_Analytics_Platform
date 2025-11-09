@@ -30,7 +30,7 @@ Modified the `setup_output_directory()` function to handle both config types:
 def setup_output_directory():
     """Setup and validate output directory."""
     if not hasattr(config, 'output_dir'):
-        print("  ⚠ Error: config.output_dir not configured. Cannot generate reports.")
+        print("  ⚠ Error: config.output_dir not configured. Cannot generate reporting.")
         return None
 
     try:

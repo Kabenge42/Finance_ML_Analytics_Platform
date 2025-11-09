@@ -596,7 +596,7 @@ class TestPredictionAnalystExcelReport(unittest.TestCase):
             self.assertLessEqual(len(top_opp_df), 10)
 
     def test_excel_report_with_market_cap(self):
-        """Test that market_cap is included in reports when available"""
+        """Test that market_cap is included in reporting when available"""
         import tempfile
         from pathlib import Path
 

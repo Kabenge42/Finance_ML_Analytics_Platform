@@ -7893,7 +7893,7 @@ def create_structured_output_directory(base_dir: Path, run_id: str = None) -> di
     │   ├── regression/
     │   │   ├── checkpoints/
     │   │   └── feature_importance.csv
-    │   ├── reports/
+    │   ├── reporting/
     │   │   ├── ml_workflow_report.html
     │   │   ├── eda_report.html
     │   │   └── data_quality_dashboard.html
@@ -7926,7 +7926,7 @@ def create_structured_output_directory(base_dir: Path, run_id: str = None) -> di
         "data": run_dir / "data",
         "regression": run_dir / "regression",
         "model_checkpoints": run_dir / "regression" / "checkpoints",
-        "reports": run_dir / "reports",
+        "reporting": run_dir / "reporting",
         "visualizations": run_dir / "visualizations",
         "eda_viz": run_dir / "visualizations" / "eda",
         "prediction_viz": run_dir / "visualizations" / "predictions",
@@ -7948,16 +7948,16 @@ Generated: {pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 ## Directory Structure
 
-- **data/**: Processed datasets and imputation reports
+- **data/**: Processed datasets and imputation reporting
 - **regression/**: Trained model artifacts and checkpoints
-- **reports/**: HTML/PDF reports (workflow, EDA, data quality)
+- **reporting/**: HTML/PDF reporting (workflow, EDA, data quality)
 - **visualizations/**: All plots and charts organized by category
 - **analytics/**: Prediction results, rankings, and comparison tables
 - **logs/**: Pipeline execution logs
 
 ## Key Files
 
-- `reports/ml_workflow_report.html` - Comprehensive ML workflow report
+- `reporting/ml_workflow_report.html` - Comprehensive ML workflow report
 - `analytics/predictions.csv` - Stock predictions with confidence intervals
 - `analytics/stock_rankings.csv` - Undervalued/overvalued stock rankings
 - `visualizations/predictions/mispricing_scatter.png` - Mispricing analysis

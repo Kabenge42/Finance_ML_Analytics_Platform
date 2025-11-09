@@ -336,7 +336,7 @@ Models and Analytics
 metrics = train_and_evaluate_regression_by_sector(features_df, cfg.out_dir)
 q_models = train_quantile_regression_by_sector(features_df, quantiles=[0.1,0.5,0.9])
 all_predictions = calculate_mispricing_score(features_df, pred_col="pred", price_col="last_price")
-export_predictions_to_excel(all_predictions, cfg.out_dir / "reports")
+export_predictions_to_excel(all_predictions, cfg.out_dir / "reporting")
 ```
 
 ---

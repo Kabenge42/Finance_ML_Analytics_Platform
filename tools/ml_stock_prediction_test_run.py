@@ -27,7 +27,7 @@
 # - 📊 **Data Management**: PostgreSQL or CSV with validation
 # - 🔧 **Feature Engineering**: Financial ratios, sector-specific features
 # - 🤖 **ML Models**: Event classification + sector-optimized regression
-# - 📈 **Analytics**: Mispricing scores, stock rankings, comprehensive reports
+# - 📈 **Analytics**: Mispricing scores, stock rankings, comprehensive reporting
 # - 🧪 **Tested**: Comprehensive test coverage (≥80%)
 # - ⚙️ **Modular**: Uses finance_ml package for maintainability
 #

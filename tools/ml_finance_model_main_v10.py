@@ -658,7 +658,7 @@ print("=" * 80)
 # 1. **KNN Imputation with Sector-Aware Logic** - Preserve sector characteristics during imputation
 # 2. **Regularized Target Encoding** - CV-based encoding with smoothing for categorical features
 # 3. **Financial Ratio Transformers** - sklearn-compatible transformers for safe ratio calculations
-# 4. **Data Quality Dashboard** - Interactive HTML reports with comprehensive profiling
+# 4. **Data Quality Dashboard** - Interactive HTML reporting with comprehensive profiling
 #
 # These enhancements extend the basic Phase 9.1 preprocessing with production-ready tools.
 # %%
@@ -891,9 +891,9 @@ enhancement_summary = {
     "✓ KNN Imputation": "Sector-aware neighbor-based imputation preserving sector patterns",
     "✓ Regularized Target Encoding": "CV-based categorical encoding with smoothing regularization",
     "✓ Financial Ratio Transformers": "sklearn-compatible transformers with safe division handling",
-    "✓ Data Quality Dashboard": "Interactive HTML reports with comprehensive profiling",
-    "📊 Integration Status": "All enhancements integrated with existing Phase 9.1 workflow"
-    }
+    "✓ Data Quality Dashboard": "Interactive HTML reporting with comprehensive profiling",
+    "📊 Integration Status": "All enhancements integrated with existing Phase 9.1 workflow",
+}
 
 for key, value in enhancement_summary.items():
     print(f"\n{key}")
@@ -5323,7 +5323,7 @@ def find_tech_sectors(all_stocks_featured):
 
 
 def generate_reports_and_visualizations(all_stocks_featured):
-    """Generate all output files including visualizations and reports."""
+    """Generate all output files including visualizations and reporting."""
     print("\n📊 Creating Interactive Visualizations...")
 
     output_dir = setup_output_directory()
@@ -5350,7 +5350,7 @@ def generate_reports_and_visualizations(all_stocks_featured):
 def setup_output_directory():
     """Setup and validate output directory."""
     if not hasattr(config, 'output_dir'):
-        print("  ⚠ Error: config.output_dir not configured. Cannot generate reports.")
+        print("  ⚠ Error: config.output_dir not configured. Cannot generate reporting.")
         return None
 
     try:
@@ -5554,7 +5554,7 @@ else:
 # 2. **Sector Leaders & Laggards** — Identify top and bottom performers within each sector
 # 3. **Risk-Adjusted Mispricing** — Incorporate volatility and confidence intervals
 # 4. **Peer Comparisons** — Compare individual stocks to sector peers
-# 5. **PDF Report Generation** — Professional investment reports with charts
+# 5. **PDF Report Generation** — Professional investment reporting with charts
 # %%
 # Phase 9.7 Enhanced — Additional Valuation Analysis
 print("\n" + "=" * 80)

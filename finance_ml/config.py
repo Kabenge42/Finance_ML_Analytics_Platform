@@ -71,20 +71,84 @@ class FinanceMLConfig:
 
     @property
     def financial_data_quality_reports_dir(self) -> Path:
-        """Get financial data quality reports output directory."""
+        """Get financial data quality reporting output directory."""
         path = self.output_dir / "eda" / "financial_data_quality_reports"
         path.mkdir(parents=True, exist_ok=True)
         return path
 
+    @property
+    def catalog_dir(self) -> Path:
+        """Get data catalog output directory (Phase 9.1)."""
+        path = self.output_dir / "catalog"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def preprocessing_dir(self) -> Path:
+        """Get preprocessing output directory (Phase 9.1)."""
+        path = self.output_dir / "preprocessing"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def features_dir(self) -> Path:
+        """Get features output directory (Phase 9.3)."""
+        path = self.output_dir / "features"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def classification_dir(self) -> Path:
+        """Get classification output directory (Phase 9.4)."""
+        path = self.output_dir / "classification"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def evaluation_dir(self) -> Path:
+        """Get evaluation output directory (Phase 9.6)."""
+        path = self.output_dir / "evaluation"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def plots_dir(self) -> Path:
+        """Get plots output directory."""
+        path = self.output_dir / "plots"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def reporting_dir(self) -> Path:
+        """Get reporting output directory (Phase 9.8)."""
+        path = self.output_dir / "reporting"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def dashboards_dir(self) -> Path:
+        """Get dashboards output directory."""
+        path = self.output_dir / "dashboards"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
     def create_output_structure(self) -> None:
-        """Create all output subdirectories."""
+        """Create all Phase 9.1-9.8 output subdirectories."""
         # Create base output directory
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create main subdirectories
-        self.analytics_dir.mkdir(parents=True, exist_ok=True)
-        self.models_output_dir.mkdir(parents=True, exist_ok=True)
-        self.eda_dir.mkdir(parents=True, exist_ok=True)
+        # Create Phase 9.1-9.8 aligned subdirectories
+        self.catalog_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.1
+        self.preprocessing_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.1
+        self.eda_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.2
+        self.features_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.3
+        self.classification_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.4
+        self.models_output_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.5 (regression)
+        self.evaluation_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.6
+        self.analytics_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.7
+        self.reporting_dir.mkdir(parents=True, exist_ok=True)  # Phase 9.8
+        self.plots_dir.mkdir(parents=True, exist_ok=True)  # Visualizations
+        self.dashboards_dir.mkdir(parents=True, exist_ok=True)  # Dashboard data
 
         # Create EDA subdirectories
         self.eda_with_importance_dir.mkdir(parents=True, exist_ok=True)

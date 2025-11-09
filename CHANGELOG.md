@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-11-09
+
+### Added
+
+- Phase 9.5 classification meta-feature extraction (`extract_classification_features`) to enhance regression models with
+  sentiment and event likelihood insights
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- New classification module structure with dedicated evaluation and models submodules:
+  - `finance_ml/ml_workflow/classification/evaluation.py` for comprehensive classification evaluation (1020 lines)
+  - `finance_ml/ml_workflow/classification/models.py` for modular classification model implementations (1634 lines)
+    ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Modular regression pipelines including Ridge, Lasso, ElasticNet, Bayesian Ridge, and Gradient Boosting models with
+  improved abstraction
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Phase-specific analysis scripts with interaction feature creation and detailed logging for debugging and performance
+  monitoring
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Enhanced 6-step imputation strategy in `finance_ml/ml_workflow/preprocessing/imputation.py` (505+ lines of
+  improvements)
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Comprehensive test coverage with new test suites:
+  - `tests/test_classification_evaluation.py` (430 tests)
+  - `tests/test_classification_models.py` (488 tests)
+  - `tests/test_classification_phase943.py` (402 tests)
+  - `tests/test_imputation_6step.py` (482 tests)
+    ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Documentation enhancements:
+  - `docs/improvement_plan/imputation_function_enhancements.md` (627 lines)
+  - `docs/summaries/REPORTING_IMPLEMENTATION_SUMMARY.md` (161 lines)
+    ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Data catalog metadata with initial stock data tracking (`.cache/catalog/all_stocks_initial_metadata.json`)
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+
+### Changed
+
+- Enhanced `ml_finance_model_main.ipynb` with 1338+ lines of improvements integrating Phase 9.5 classification
+  meta-features and advanced regression workflows
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Expanded `docs/PHASE_9.4_CLASSIFICATION_REFACTOR.md` with 678+ lines of additional documentation and guidance
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Improved `finance_ml/__init__.py` with updated module exports for classification evaluation and models
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Enhanced `finance_ml/ml_workflow/analytics/__init__.py` with 136+ lines of analytics workflow improvements
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Relocated `eval.py` to `finance_ml/ml_workflow/analytics/` for better module organization
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Updated dashboard applications (`dash_app.py`, `streamlit_app.py`) with improved integration and error handling
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+- Enhanced overall workflow modularity, testability, and maintainability across Phase 9.5 components
+  ([14ce7a8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/14ce7a8e845c3511d56b6079b8c6096942038cec))
+
+---
+
+**Version Bump Recommendation**: PATCH (0.6.0 → 0.6.1)
+
+- Additive enhancements to existing Phase 9.5 functionality
+- New classification meta-features and regression pipelines extend existing capabilities
+- Improved module organization and test coverage
+- No breaking changes; backward compatible with 0.6.0
+
+**Date Generated**: 2025-11-09
+
 ## [0.6.0] - 2025-11-09
 
 ### Added

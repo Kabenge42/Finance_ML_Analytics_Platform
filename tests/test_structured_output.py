@@ -38,7 +38,7 @@ class TestStructuredOutput(unittest.TestCase):
         self.assertIn("run_dir", result)
         self.assertIn("data", result)
         self.assertIn("regression", result)
-        self.assertIn("reports", result)
+        self.assertIn("reporting", result)
         self.assertIn("visualizations", result)
         self.assertIn("analytics", result)
         self.assertIn("logs", result)

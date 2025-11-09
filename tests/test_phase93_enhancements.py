@@ -640,7 +640,7 @@ class TestEnhancedPDFReport(unittest.TestCase):
         self.assertEqual(result["template"], "modern")
 
     def test_multi_page_report_structure(self):
-        """Test that multi-page reports are properly structured."""
+        """Test that multi-page reporting are properly structured."""
         from finance_ml.eval import generate_enhanced_pdf_report
 
         output_path = Path(self.temp_dir) / "test_report.pdf"
