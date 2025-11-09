@@ -13,6 +13,7 @@ Phase 9.3 refactor: Consolidated and enhanced from features.py and advanced_feat
 
 # Core features
 from finance_ml.ml_workflow.features.core import (
+    preprocess_for_lightgbm,
     _safe_div,
     engineer_basic_ratios,
     engineer_margin_features,
@@ -51,6 +52,7 @@ from finance_ml.ml_workflow.features.selection import (
 
 __all__ = [
     # Core features (from core.py)
+    "preprocess_for_lightgbm",
     "_safe_div",
     "engineer_basic_ratios",
     "engineer_margin_features",

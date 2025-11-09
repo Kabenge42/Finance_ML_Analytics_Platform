@@ -16,12 +16,180 @@ Functions:
 from __future__ import annotations
 
 import logging
-from typing import Optional, Tuple, List
+from datetime import datetime
+from typing import Optional, Tuple, List, Dict
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 logger = logging.getLogger(__name__)
+
+
+def preprocess_for_lightgbm(
+    df: pd.DataFrame,
+    categorical_columns: Optional[List[str]] = None,
+    datetime_columns: Optional[List[str]] = None,
+    drop_columns: Optional[List[str]] = None,
+    return_encoders: bool = False,
+) -> Tuple[pd.DataFrame, Optional[Dict[str, LabelEncoder]]]:
+    """
+    Preprocess DataFrame for LightGBM compatibility.
+
+    LightGBM requires all input features to be numeric (int, float, or bool).
+    This function handles:
+    1. Categorical columns (object dtype) - converted to numeric using LabelEncoder
+    2. Datetime columns - extracted to numeric features (year, month, day, days_from_now)
+    3. Ensures all remaining columns are numeric
+
+    Args:
+        df: Input DataFrame
+        categorical_columns: List of categorical columns to encode. If None, auto-detects object dtype columns
+        datetime_columns: List of datetime columns to convert. If None, auto-detects datetime64 dtype columns
+        drop_columns: List of columns to drop before processing
+        return_encoders: If True, returns tuple (df, encoders_dict). If False, returns (df, None)
+
+    Returns:
+        Tuple of (preprocessed_df, encoders_dict or None)
+        - preprocessed_df: DataFrame with only numeric types
+        - encoders_dict: Dictionary mapping column names to fitted LabelEncoders (if return_encoders=True)
+
+    Examples:
+        >>> # Basic usage with auto-detection
+        >>> df_processed, encoders = preprocess_for_lightgbm(df, return_encoders=True)
+        >>>
+        >>> # Specify columns explicitly
+        >>> df_processed, _ = preprocess_for_lightgbm(
+        ...     df,
+        ...     categorical_columns=['sector', 'industry', 'region'],
+        ...     datetime_columns=['next_earnings', 'last_updated'],
+        ...     drop_columns=['description', 'ticker']
+        ... )
+        >>>
+        >>> # Use encoders to interpret results later
+        >>> df_processed, encoders = preprocess_for_lightgbm(df, return_encoders=True)
+        >>> original_sector = encoders['sector'].inverse_transform([0, 1, 2])
+
+    Notes:
+        - Handles missing values by filling NaN with placeholder strings for categoricals
+        - Datetime NaN values are filled with median or reference date
+        - All inf values are replaced with NaN and filled with 0
+        - Stores LabelEncoders if return_encoders=True for later interpretation
+    """
+    result = df.copy()
+    encoders = {} if return_encoders else None
+
+    # Drop specified columns
+    if drop_columns:
+        cols_to_drop = [col for col in drop_columns if col in result.columns]
+        if cols_to_drop:
+            result = result.drop(columns=cols_to_drop)
+            logger.info(f"Dropped {len(cols_to_drop)} columns: {cols_to_drop[:5]}")
+
+    # Auto-detect categorical columns if not specified
+    if categorical_columns is None:
+        categorical_columns = result.select_dtypes(include=["object", "category"]).columns.tolist()
+        # Exclude columns that look like datetime strings
+        date_keywords = ["date", "updated", "earnings", "time"]
+        categorical_columns = [
+            col
+            for col in categorical_columns
+            if not any(keyword in col.lower() for keyword in date_keywords)
+        ]
+
+    # Auto-detect datetime columns if not specified
+    if datetime_columns is None:
+        datetime_columns = result.select_dtypes(include=["datetime64"]).columns.tolist()
+
+        # Also check object columns that might be datetime strings
+        # Look for columns with datetime-like keywords that weren't classified as categorical
+        date_keywords = ["date", "updated", "earnings", "time"]
+        for col in result.select_dtypes(include=["object"]).columns:
+            if col not in categorical_columns and any(
+                keyword in col.lower() for keyword in date_keywords
+            ):
+                # Try to convert to datetime to confirm it's a date column
+                try:
+                    test_conversion = pd.to_datetime(result[col].dropna().head(10), errors="coerce")
+                    if test_conversion.notna().any():
+                        datetime_columns.append(col)
+                        logger.debug(f"Auto-detected datetime string column: '{col}'")
+                except Exception:
+                    pass
+
+    # Handle categorical columns with LabelEncoder
+    if categorical_columns:
+        categorical_columns = [col for col in categorical_columns if col in result.columns]
+        logger.info(f"Encoding {len(categorical_columns)} categorical columns")
+
+        for col in categorical_columns:
+            # Fill NaN with placeholder
+            result[col] = result[col].fillna("Unknown")
+
+            # Label encode
+            le = LabelEncoder()
+            result[col] = le.fit_transform(result[col].astype(str))
+
+            # Store encoder if requested
+            if return_encoders:
+                encoders[col] = le
+
+            logger.debug(f"Encoded '{col}' with {len(le.classes_)} unique values")
+
+    # Handle datetime columns
+    if datetime_columns:
+        datetime_columns = [col for col in datetime_columns if col in result.columns]
+        logger.info(f"Extracting features from {len(datetime_columns)} datetime columns")
+
+        for col in datetime_columns:
+            # Convert to datetime if not already
+            if not pd.api.types.is_datetime64_any_dtype(result[col]):
+                result[col] = pd.to_datetime(result[col], errors="coerce")
+
+            # Extract numeric features
+            result[f"{col}_year"] = result[col].dt.year
+            result[f"{col}_month"] = result[col].dt.month
+            result[f"{col}_day"] = result[col].dt.day
+
+            # Days from reference date (today)
+            reference_date = pd.Timestamp(datetime.now())
+            result[f"{col}_days_from_now"] = (result[col] - reference_date).dt.days
+
+            # Fill NaN in extracted features
+            for suffix in ["_year", "_month", "_day", "_days_from_now"]:
+                new_col = f"{col}{suffix}"
+                if new_col in result.columns:
+                    result[new_col] = result[new_col].fillna(0)
+
+            # Drop original datetime column
+            result = result.drop(columns=[col])
+            logger.debug(f"Extracted datetime features from '{col}'")
+
+    # Ensure all remaining columns are numeric
+    logger.info("Converting all remaining columns to numeric")
+    for col in result.columns:
+        if result[col].dtype == "object":
+            # Try to convert to numeric
+            result[col] = pd.to_numeric(result[col], errors="coerce")
+            logger.debug(f"Converted object column '{col}' to numeric")
+
+    # Handle infinite values
+    result = result.replace([np.inf, -np.inf], np.nan)
+
+    # Fill remaining NaN with 0
+    result = result.fillna(0)
+
+    # Final validation
+    non_numeric = result.select_dtypes(exclude=[np.number]).columns.tolist()
+    if non_numeric:
+        logger.warning(f"Non-numeric columns remain: {non_numeric}")
+        # Last resort: drop them
+        result = result.drop(columns=non_numeric)
+
+    logger.info(f"Preprocessing complete. Final shape: {result.shape}")
+    logger.info(f"Data types: {result.dtypes.value_counts().to_dict()}")
+
+    return result, encoders
 
 
 def _safe_div(numer: pd.Series, denom: pd.Series) -> pd.Series:

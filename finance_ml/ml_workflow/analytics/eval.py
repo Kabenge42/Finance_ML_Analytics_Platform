@@ -214,8 +214,9 @@ def simple_eda(
     """
     logging.info("Rows: %d, Columns: %d", df.shape[0], df.shape[1])
     # Robust dtype handling: some objects may raise AttributeError on dtype access
+    # Exclude datetime columns to prevent errors in statistical analysis (scipy.stats operations)
     try:
-        numeric_cols = [c for c in df.columns if getattr(df[c], "dtype", object) != object]
+        numeric_cols = [c for c in df.columns if np.issubdtype(df[c].dtype, np.number)]
     except AttributeError:
         # Fallback: treat no columns as numeric if dtype access fails
         logging.warning(
@@ -607,23 +608,55 @@ def simple_eda(
         else:
             # Convert summary to JSON-serializable format
             def convert_to_serializable(obj):
-                """Convert non-serializable objects to JSON-compatible types."""
+                """
+                Convert non-serializable objects to JSON-compatible types.
+                
+                Handles:
+                - NumPy types (int, float, bool, ndarray)
+                - Pandas types (Timestamp, Timedelta, Series, Index)
+                - NaN/Infinity values
+                - Nested structures (dict, list)
+                """
+                # Handle numpy scalar types
+                if isinstance(obj, (np.integer, np.int64, np.int32)):
+                    return int(obj)
+                if isinstance(obj, (np.floating, np.float64, np.float32)):
+                    if np.isnan(obj) or np.isinf(obj):
+                        return None
+                    return float(obj)
+                if isinstance(obj, np.bool_):
+                    return bool(obj)
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                
+                # Handle pandas types
                 if isinstance(obj, (pd.Timestamp, datetime)):
                     return obj.isoformat()
-                elif isinstance(obj, np.integer):
-                    return int(obj)
-                elif isinstance(obj, np.floating):
-                    return float(obj)
-                elif isinstance(obj, np.ndarray):
+                if isinstance(obj, pd.Timedelta):
+                    # Convert to string for human readability
+                    # Alternative: return obj.total_seconds() for numeric representation
+                    return str(obj)
+                if isinstance(obj, (pd.Series, pd.Index)):
                     return obj.tolist()
-                elif isinstance(obj, dict):
+                
+                # Handle dictionaries recursively
+                if isinstance(obj, dict):
                     return {k: convert_to_serializable(v) for k, v in obj.items()}
-                elif isinstance(obj, (list, tuple)):
+                
+                # Handle lists/tuples recursively
+                if isinstance(obj, (list, tuple)):
                     return [convert_to_serializable(item) for item in obj]
-                elif pd.isna(obj):
+                
+                # Handle NaN values
+                if pd.isna(obj):
                     return None
-                else:
+                
+                # Return as-is for JSON-compatible types
+                if isinstance(obj, (str, int, float, bool, type(None))):
                     return obj
+                
+                # Fallback: convert to string representation
+                return str(obj)
 
             out_path = out_dir / "eda_summary.json"
             with out_path.open("w", encoding="utf-8") as f:
