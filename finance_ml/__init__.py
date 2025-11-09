@@ -346,7 +346,7 @@ from finance_ml.ml_workflow.eval import (
     calculate_optimal_pca_components,
     compare_sector_means,
     compare_two_groups,
-    generate_eda_report,
+    # NOTE: generate_eda_report is imported from advanced_eda (line 38) - do not re-import from eval
     generate_sector_comparison_report,
     # Phase 9.1 Enhancement #3: Data Quality Dashboard
     generate_data_quality_dashboard,
