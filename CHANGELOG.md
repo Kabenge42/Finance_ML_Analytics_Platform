@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.0] - 2025-11-06
+## [0.6.0] - 2025-11-09
 
 ### Added
 
@@ -30,6 +30,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
 - Notebook restructuring utilities moved to root for easier access (`restructure_notebook.py`, `fix_phase_ordering.py`)
   ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
+- Version 0.3.0 notebook backup with modular `finance_ml` integration demonstrating streamlined ML workflow
+  ([e86ff32](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/e86ff32ac50504fd6d987dc91c136f194968bcc2))
+- Comprehensive notebook analysis and refactoring documentation:
+    - `NOTEBOOK_ANALYSIS_TOOLS_SUMMARY.md` with analysis utilities
+    - `NOTEBOOK_REFACTORING_SUMMARY.md` documenting refactoring strategies
+    - `PHASE95_FULL_PREDICTIONS_IMPLEMENTATION.md` for prediction pipeline details
+    - `PHASE95_INTEGRATION_SUMMARY.md` and `PHASE95_SECTOR_TRAINING_FIX.md` for integration guidance
+      ([e86ff32](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/e86ff32ac50504fd6d987dc91c136f194968bcc2))
+- Notebook analysis and validation tools (`analyze_notebook_issues.py`, `test_notebook_imports.py`,
+  `analyze_predictions.py`)
+  ([e86ff32](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/e86ff32ac50504fd6d987dc91c136f194968bcc2))
+- Extended test coverage for Phase 9.5:
+    - `tests/test_phase95_full_predictions.py` for full prediction workflow testing
+    - `tests/test_phase95_sector_preprocessing.py` for sector-specific preprocessing validation
+      ([e86ff32](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/e86ff32ac50504fd6d987dc91c136f194968bcc2))
+- Major platform refactoring with extensive tooling and documentation updates across 309 files
+  ([b9edd27](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b9edd27460a7a242b8ca9364cee7d2e78d41e021))
 
 ### Changed
 
@@ -49,6 +66,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
 - Enhanced `tools/apply_phase97_refactoring.py` with refined refactoring automation
   ([17f53c7](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/17f53c76b374cd9398c1cd41606d32e36ace407d))
+- Streamlined `ml_finance_model_main.ipynb` with notebook refactoring reducing complexity by ~150 lines
+  ([77939d2](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/77939d22e73fbac7c0a4b096c67131dcc7d212ec))
+- Comprehensive README.md update with enhanced project documentation, setup instructions, and workflow guidance
+  ([b9edd27](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b9edd27460a7a242b8ca9364cee7d2e78d41e021))
+- Enhanced `finance_ml/__init__.py` with improved module exports and organization
+  ([77939d2](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/77939d22e73fbac7c0a4b096c67131dcc7d212ec))
+- Updated development tools and utilities with improved notebook profiling, validation, and optimization capabilities
+  ([b9edd27](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b9edd27460a7a242b8ca9364cee7d2e78d41e021))
 
 ### Fixed
 
@@ -68,7 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bug fixes for Phase 9.5 data flow issues
 - No breaking changes; primarily additive with improvements
 
-**Date Generated**: 2025-11-06
+**Date Generated**: 2025-11-09
 
 ## [0.5.1] - 2025-11-05
 

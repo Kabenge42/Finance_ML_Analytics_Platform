@@ -389,6 +389,8 @@ surface that supports both notebook-first exploration and CLI/automation workflo
 - ✅ Phase 9.2: eda/ subpackage (eda, benchmarking, reports)
 - ✅ Phase 9.3: features/ subpackage (core, advanced, selection, api)
 - ✅ Phase 9.4: classification/ subpackage (labels, tuning, models, evaluation)
+    - ✅ **Phase 9.4.1** (2025-11-09): Extracted models.py (1578 lines), dtype fixes for gradient boosting,
+      fit_classifier orchestrator, Phase 9.3 feature integration, TDD test suite (474 lines)
 - ✅ Phase 9.5: regression/ subpackage (constraints, dataset, models, quantile, tuning, io)
 - ✅ Phase 9.6: evaluation/ subpackage (metrics, analysis)
 - ✅ Phase 9.7: analytics/ subpackage (mispricing, analyst_comparison, portfolio, risk)

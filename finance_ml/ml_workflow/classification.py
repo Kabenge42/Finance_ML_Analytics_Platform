@@ -99,18 +99,43 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # Phase 9.4 Refactor: Classification subpackage
 # ============================================================================
-# Some functions have been moved to finance_ml.ml_workflow.classification subpackage:
+# Functions have been moved to finance_ml.ml_workflow.classification subpackage:
+#
+# Phase 9.4.1 (Models):
 # - create_enhanced_event_labels -> classification.labels
 # - optimize_classifier_hyperparameters -> classification.tuning (from classification_enhanced)
 # - cross_validate_with_sector_stratification -> classification.tuning (from classification_enhanced)
+# - All model training functions -> classification.models
 #
-# This file maintains backward compatibility by importing from the new locations.
-# Functions will remain here with deprecation warnings for 1-2 releases.
+# Phase 9.4.2 (Evaluation - 2025-11-09):
+# - evaluate_classification -> classification.evaluation
+# - compute_shap_values -> classification.evaluation
+# - cross_validate_classifier -> classification.evaluation
+# - compare_feature_importance -> classification.evaluation
+# - plot_confusion_matrices -> classification.evaluation
+# - evaluate_classification_by_sector -> classification.evaluation
+# - plot_learning_curves -> classification.evaluation
+# - analyze_per_class_feature_importance -> classification.evaluation
+#
+# This file maintains backward compatibility by keeping original functions in place.
+# All functions remain importable from this module with deprecation warnings.
 # ============================================================================
 
 # Import from new classification subpackage for re-export
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels as _new_create_enhanced_event_labels,
+)
+
+# Import evaluation functions from new evaluation module (Phase 9.4.2)
+from finance_ml.ml_workflow.classification.evaluation import (
+    evaluate_classification as _eval_evaluate_classification,
+    compute_shap_values as _eval_compute_shap_values,
+    cross_validate_classifier as _eval_cross_validate_classifier,
+    compare_feature_importance as _eval_compare_feature_importance,
+    plot_confusion_matrices as _eval_plot_confusion_matrices,
+    evaluate_classification_by_sector as _eval_evaluate_classification_by_sector,
+    plot_learning_curves as _eval_plot_learning_curves,
+    analyze_per_class_feature_importance as _eval_analyze_per_class_feature_importance,
 )
 
 

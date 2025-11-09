@@ -174,7 +174,8 @@ from finance_ml.ml_workflow.reporting import dashboard_data
 from finance_ml.ml_workflow.advanced_preprocessing import detect_outliers_iqr
 from finance_ml.ml_workflow.advanced_features import build_comprehensive_features
 from finance_ml.ml_workflow.advanced_models import train_xgboost_regressor
-from finance_ml.ml_workflow.eval import calculate_mispricing_score
+# Note: eval.py moved to analytics/eval.py (Phase 9.7)
+from finance_ml.ml_workflow.analytics.eval import calculate_mispricing_score
 ```
 
 **New Pattern (Recommended):**
@@ -544,7 +545,8 @@ Access at [http://localhost:8050](http://localhost:8050)
 
 ```python
 # Evaluation and analytics helpers
-from finance_ml.ml_workflow.eval import (
+# Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
+from finance_ml.ml_workflow.analytics.eval import (
     calculate_mispricing_score,
     rank_stocks_by_sector,
     calculate_financial_metrics_dashboard,

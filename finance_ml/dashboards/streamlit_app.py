@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from pathlib import Path
 
 try:
-    from finance_ml.eval import (
+    from finance_ml.ml_workflow.analytics.eval import (
         prepare_plotly_dashboard_data,
         calculate_mispricing_score,
         rank_stocks_by_sector,
@@ -22,7 +22,7 @@ except ImportError:
     import sys
 
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from finance_ml.eval import (
+    from finance_ml.ml_workflow.analytics.eval import (
         prepare_plotly_dashboard_data,
         calculate_mispricing_score,
         rank_stocks_by_sector,

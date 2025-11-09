@@ -320,7 +320,8 @@ from finance_ml.ml_workflow.data_versioning import (
 )
 
 # Import from eval module (Phase 7 TDD implementation complete)
-from finance_ml.ml_workflow.eval import (
+# Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
+from finance_ml.ml_workflow.analytics.eval import (
     calculate_mispricing_score,
     rank_undervalued_stocks,
     rank_overvalued_stocks,
@@ -763,7 +764,8 @@ if HAVE_CLASSIFICATION_ENHANCED:
     )
 
 # Additional exports from eval module (dashboard helpers and advanced analytics)
-from finance_ml.ml_workflow.eval import (
+# Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
+from finance_ml.ml_workflow.analytics.eval import (
     calculate_risk_adjusted_mispricing,
     plot_outlier_boxplots,
     plot_outlier_violins,

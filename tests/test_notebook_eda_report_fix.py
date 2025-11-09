@@ -166,7 +166,10 @@ class TestEDAReportFunctionSignatures(unittest.TestCase):
     def test_eval_signature_different(self):
         """Document that eval.generate_eda_report has a DIFFERENT signature."""
         import inspect
-        from finance_ml.ml_workflow.eval import generate_eda_report as eval_generate_eda_report
+        # Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
+        from finance_ml.ml_workflow.analytics.eval import (
+            generate_eda_report as eval_generate_eda_report,
+        )
 
         sig = inspect.signature(eval_generate_eda_report)
         params = list(sig.parameters.keys())

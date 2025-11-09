@@ -15,6 +15,7 @@ comprehensive test coverage.
 
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -604,9 +605,29 @@ def simple_eda(
             # If out_dir cannot be created, continue without writing files
             logging.warning("Could not create out_dir=%s; skipping file outputs", out_dir)
         else:
+            # Convert summary to JSON-serializable format
+            def convert_to_serializable(obj):
+                """Convert non-serializable objects to JSON-compatible types."""
+                if isinstance(obj, (pd.Timestamp, datetime)):
+                    return obj.isoformat()
+                elif isinstance(obj, np.integer):
+                    return int(obj)
+                elif isinstance(obj, np.floating):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                elif isinstance(obj, dict):
+                    return {k: convert_to_serializable(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [convert_to_serializable(item) for item in obj]
+                elif pd.isna(obj):
+                    return None
+                else:
+                    return obj
+
             out_path = out_dir / "eda_summary.json"
             with out_path.open("w", encoding="utf-8") as f:
-                json.dump(summary, f)
+                json.dump(convert_to_serializable(summary), f, indent=2)
             logging.info("Wrote EDA summary to %s", out_path)
 
             # Generate visualizations if requested
@@ -819,11 +840,6 @@ def export_predictions_to_csv(
     """
     # Normalize column names to lower case for matching
     df_cols_lower = {c.lower(): c for c in df.columns}
-
-    # Handle common typo 'exchance' -> 'exchange'
-    if "exchange" not in df_cols_lower and "exchance" in df_cols_lower:
-        df = df.rename(columns={df_cols_lower["exchance"]: "exchange"})
-        df_cols_lower = {c.lower(): c for c in df.columns}
 
     # Compute mispricing_score if requested and possible
     if compute_mispricing and "mispricing_score" not in df_cols_lower:

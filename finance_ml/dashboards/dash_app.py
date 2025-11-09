@@ -21,7 +21,13 @@ def load_data():
     # Load from outputs or database
     csv_path = Path("outputs/analytics/predictions.csv")
     if csv_path.exists():
-        return pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path)
+        # Convert numeric columns to proper dtypes
+        numeric_columns = ["mispricing_score", "last_price", "market_cap"]
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+        return df
     # Return empty DataFrame with expected columns if file doesn't exist
     return pd.DataFrame(
         columns=["ticker", "sector", "region", "market_cap", "last_price", "mispricing_score"]
@@ -140,10 +146,15 @@ def update_dashboard(sectors, regions):
         heatmap_fig = {}
 
     # Top undervalued
-    if "mispricing_score" in filtered_df.columns:
-        top_stocks = filtered_df.nlargest(10, "mispricing_score")[
-            ["ticker", "sector", "mispricing_score", "last_price"]
-        ].to_dict("records")
+    if "mispricing_score" in filtered_df.columns and not filtered_df.empty:
+        # Filter out NaN values before sorting
+        valid_df = filtered_df.dropna(subset=["mispricing_score"])
+        if not valid_df.empty:
+            top_stocks = valid_df.nlargest(10, "mispricing_score")[
+                ["ticker", "sector", "mispricing_score", "last_price"]
+            ].to_dict("records")
+        else:
+            top_stocks = []
     else:
         top_stocks = []
 

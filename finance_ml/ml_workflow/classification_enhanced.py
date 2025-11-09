@@ -61,9 +61,14 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # Phase 9.4 Refactor: Classification subpackage
 # ============================================================================
-# Functions have been moved to finance_ml.ml_workflow.classification.tuning:
-# - optimize_classifier_hyperparameters
-# - cross_validate_with_sector_stratification
+# Functions have been moved to finance_ml.ml_workflow.classification subpackage:
+#
+# Phase 9.4.1 (Tuning):
+# - optimize_classifier_hyperparameters -> classification.tuning
+# - cross_validate_with_sector_stratification -> classification.tuning
+#
+# Phase 9.4.2 (Evaluation - 2025-11-09):
+# - analyze_calibration -> classification.evaluation
 #
 # This file maintains backward compatibility by importing from the new location.
 # These wrappers will remain here with deprecation warnings for 1-2 releases.
@@ -73,6 +78,11 @@ logger = logging.getLogger(__name__)
 from finance_ml.ml_workflow.classification.tuning import (
     optimize_classifier_hyperparameters as _new_optimize_classifier_hyperparameters,
     cross_validate_with_sector_stratification as _new_cross_validate_with_sector_stratification,
+)
+
+# Import from new classification.evaluation subpackage for re-export (Phase 9.4.2)
+from finance_ml.ml_workflow.classification.evaluation import (
+    analyze_calibration as _eval_analyze_calibration,
 )
 
 

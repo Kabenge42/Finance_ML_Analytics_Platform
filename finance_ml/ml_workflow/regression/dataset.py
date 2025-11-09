@@ -813,24 +813,24 @@ def train_sector_specific_models(
         # Train model
         try:
             if model_type == "random_forest":
-                result = train_random_forest_regressor(
+                # Code Guidelines Section 1.1: Training functions return (model, results_dict) tuple
+                model, result = train_random_forest_regressor(
                     X_sector, y_sector, n_estimators=50, random_state=random_state
                 )
-                model = result["model"]
                 metrics = {
                     "train_score": result.get("train_score", 0),
                     "cv_mean": result.get("cv_mean", 0),
                     "cv_std": result.get("cv_std", 0),
                 }
             else:  # ridge
-                result = train_ridge_regressor(
+                # Code Guidelines Section 1.1: Training functions return (model, results_dict) tuple
+                model, result = train_ridge_regressor(
                     X_sector,
                     y_sector,
                     cv=5,
                     random_state=random_state,
                     ensure_nonnegative=ensure_nonnegative,
                 )
-                model = result["model"]
                 metrics = {
                     "train_score": result.get("train_score", 0),
                     "cv_mean": result.get("cv_mean", 0),
