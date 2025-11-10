@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 # ============================================================================
 [project]
 name = "finance-ml"
-version = "0.5.1"
+version = "0.6.1"
 description = "A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
@@ -165,7 +165,7 @@ ensure_newline_before_comments = true
 
 # Mypy - Static Type Checking
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false

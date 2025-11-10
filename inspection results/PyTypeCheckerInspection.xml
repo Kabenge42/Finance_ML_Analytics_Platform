@@ -1,0 +1,44 @@
+<problems>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>344</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'Path', got 'str' instead</description>
+        <highlighted_element>catalog_dir=str(CATALOG_DIR)</highlighted_element>
+        <language>Python</language>
+        <offset>26</offset>
+        <length>28</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>1753</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'dict', got 'str' instead</description>
+        <highlighted_element>marker_color='green'</highlighted_element>
+        <language>Python</language>
+        <offset>19</offset>
+        <length>20</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>1759</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'dict', got 'str' instead</description>
+        <highlighted_element>marker_color='red'</highlighted_element>
+        <language>Python</language>
+        <offset>19</offset>
+        <length>18</length>
+    </problem>
+</problems>

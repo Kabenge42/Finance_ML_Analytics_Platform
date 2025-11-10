@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 def train_quantile_regressor(
     X: pd.DataFrame, y: pd.Series, quantiles: Optional[List[float]] = None, random_state: int = 42
-) -> Tuple[List[Any], Dict[str, Any]]:
+) -> Dict[str, Any]:
     """
     Train quantile regression for uncertainty estimation.
 
@@ -83,19 +83,21 @@ def train_quantile_regressor(
         random_state: Random seed for reproducibility (default: 42)
 
     Returns:
-        Tuple of (models, results):
-        - models: List of trained HistGradientBoostingRegressor models, one per quantile
-                 Ordered by quantile value (e.g., [model_0.1, model_0.5, model_0.9])
-        - results: Dictionary with aggregated metrics:
-          {
-              'quantiles': List of quantile values trained,
-              'n_models': Number of models (length of quantiles list),
-              'model_type': 'quantile_regression',
-              'quantile_results': List of per-quantile dicts with:
-                  - 'quantile': float (e.g., 0.1)
-                  - 'train_score': R² score on training data
-                  - 'model_type': 'quantile_regression'
-          }
+        Dictionary with standardized keys per code_guidelines.md Section 1.1:
+        {
+            'model': List of trained HistGradientBoostingRegressor models, one per quantile,
+                    ordered by quantile value (e.g., [model_0.1, model_0.5, model_0.9]),
+            'metrics': Dict[str, float] with 'mean_r2' (average R² across all quantiles),
+            'y_pred': None (not computed during training; predictions made per quantile model),
+            'artifacts': Dict with:
+                - 'models': List of models (for backward compatibility),
+                - 'quantiles': List of quantile values trained,
+                - 'n_models': Number of models (length of quantiles list),
+                - 'quantile_results': List of per-quantile dicts with:
+                    - 'quantile': float (e.g., 0.1)
+                    - 'train_score': R² score on training data
+                    - 'model_type': 'quantile_regression'
+        }
 
     Raises:
         ValueError: If quantiles list contains values outside (0, 1)
@@ -109,11 +111,12 @@ def train_quantile_regressor(
         >>> y = pd.Series(np.random.randn(100) * 10 + 50)
         >>>
         >>> # Train quantile models
-        >>> models, results = train_quantile_regressor(X, y, quantiles=[0.1, 0.5, 0.9])
+        >>> result = train_quantile_regressor(X, y, quantiles=[0.1, 0.5, 0.9])
         >>>
         >>> # Check results
-        >>> print(f"Trained {results['n_models']} quantile models")
-        >>> for qr in results['quantile_results']:
+        >>> models = result['model']
+        >>> print(f"Trained {len(models)} quantile models")
+        >>> for qr in result['artifacts']['quantile_results']:
         ...     print(f"  Q{qr['quantile']}: R² = {qr['train_score']:.3f}")
         >>>
         >>> # Make predictions
@@ -157,16 +160,23 @@ def train_quantile_regressor(
         )
         logger.debug(f"  Trained quantile {q:.2f}: R² = {train_score:.3f}")
 
-    results = {
-        "quantiles": quantiles,
-        "n_models": len(models),
-        "model_type": "quantile_regression",
-        "quantile_results": quantile_results,  # Add per-quantile results
-    }
+    # Calculate mean R² across all quantiles for metrics
+    mean_r2 = np.mean([qr["train_score"] for qr in quantile_results])
 
     logger.info(
         f"✓ Quantile regression training complete: {len(models)} models, "
-        f"mean R² = {np.mean([qr['train_score'] for qr in quantile_results]):.3f}"
+        f"mean R² = {mean_r2:.3f}"
     )
 
-    return models, results
+    # Return standardized dict format per code_guidelines.md Section 1.1
+    return {
+        "model": models,  # List of quantile models
+        "metrics": {"mean_r2": mean_r2},
+        "y_pred": None,  # Not computed during training
+        "artifacts": {
+            "models": models,  # Keep models in artifacts for backward compatibility
+            "quantiles": quantiles,
+            "n_models": len(models),
+            "quantile_results": quantile_results,
+        },
+    }

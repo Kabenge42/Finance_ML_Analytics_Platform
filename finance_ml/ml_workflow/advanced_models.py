@@ -1431,7 +1431,7 @@ def validate_training_data(X: pd.DataFrame, y: pd.Series, strict: bool = True) -
         if strict:
             raise ValueError(
                 f"{msg}. Apply imputation before training. "
-                f"Use finance_ml.advanced_preprocessing.apply_enhanced_imputation_strategy_4step()"
+                f"Use finance_ml.ml_workflow.preprocessing.imputation.apply_enhanced_imputation_strategy_6step()"
             )
         issues.append(msg)
 
@@ -1493,7 +1493,7 @@ def prepare_features_for_training(
         df: Input DataFrame
         feature_cols: Feature column names
         target_col: Target column name
-        apply_imputation: If True, apply 4-step imputation before extraction
+        apply_imputation: If True, apply 6-step imputation before extraction
         sector_column: Sector column for KNN imputation
 
     Returns:
@@ -1512,7 +1512,9 @@ def prepare_features_for_training(
         ... )
         >>> assert X.isnull().sum().sum() == 0
     """
-    from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
+    from finance_ml.ml_workflow.preprocessing.imputation import (
+        apply_enhanced_imputation_strategy_6step,
+    )
 
     # Extract target BEFORE imputation to preserve NaN for removal
     y = df[target_col].copy()
@@ -1528,7 +1530,7 @@ def prepare_features_for_training(
     # Apply final imputation if requested (only on features, target already extracted)
     if apply_imputation:
         logger.info("Applying final imputation before feature extraction...")
-        df = apply_enhanced_imputation_strategy_4step(
+        df = apply_enhanced_imputation_strategy_6step(
             df,
             sector_column=sector_column,
             n_neighbors=5,

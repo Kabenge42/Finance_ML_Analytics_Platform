@@ -1,11 +1,11 @@
 ---
-apply: always
+apply: off
 ---
 
 # Finance ML Analytics Platform — Project Rules
 
-**Version**: 0.5.0  
-**Last Updated**: 2025-11-01
+**Version**: 0.6.1  
+**Last Updated**: 2025-11-10
 
 ## Project Overview
 
@@ -16,9 +16,35 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Modular Python package (`finance_ml`) with clean, tested, reusable code
 - Interactive Jupyter notebook for exploration and prototyping
 - CLI tools for batch processing and automation
-- Comprehensive unit tests with good coverage
+- Comprehensive unit tests with good coverage (67 test modules, ≥80% target)
 - Configuration management via environment variables, JSON, or YAML
 
+### Module Architecture (v9_8 - Phase 9.1-9.8)
+
+The platform follows a **phase-aligned architecture** with dedicated subpackages:
+
+```
+finance_ml/ml_workflow/
+├── preprocessing/      # Phase 9.1: 4-step imputation, outliers, scaling, quality
+├── eda/               # Phase 9.2: EDA, benchmarking, reports
+├── features/          # Phase 9.3: Core, advanced, selection, API
+├── classification/    # Phase 9.4: Labels, tuning, models, evaluation
+├── regression/        # Phase 9.5: Models, constraints, quantile, tuning, dataset, io
+├── evaluation/        # Phase 9.6: Metrics, analysis
+├── analytics/         # Phase 9.7: Mispricing, analyst comparison, portfolio, risk
+└── reporting/         # Phase 9.8: Dashboard data, export
+```
+
+**8-Phase ML Workflow:**
+
+1. **Phase 9.1**: Loading and preprocessing with 4-step imputation strategy
+2. **Phase 9.2**: Enhanced EDA with statistical testing and benchmarking
+3. **Phase 9.3**: Advanced feature engineering with sector-specific optimizations
+4. **Phase 9.4**: Multi-class event classification using neural networks and ensembles
+5. **Phase 9.5**: Sector-optimized regression models with hyperparameter tuning
+6. **Phase 9.6**: Model evaluation and comprehensive error analysis
+7. **Phase 9.7**: Identification of under/overvalued stocks with visualization
+8. **Phase 9.8**: Comprehensive analytics and reporting
 
 ## Technology Stack
 
@@ -340,8 +366,8 @@ Create a `.env` file in the project root with the variables above. Tools that su
 ### Test Framework
 - **Framework**: Python's built-in `unittest`
 - **Location**: `tests/` directory
-- **Count**: 54 test modules
-- **Coverage**: Tracked in `.coverage` file
+- **Count**: 67 test modules
+- **Coverage**: Tracked in `.coverage` file (≥80% target for new code)
 
 ### Running Tests
 ```bash
@@ -358,7 +384,7 @@ pytest tests/ -v --cov=finance_ml
 python -m unittest discover -s tests -v
 ```
 
-### Test Suite Modules (54 total)
+### Test Suite Modules (67 total)
 
 - **`test_advanced_eda.py`** — Advanced EDA functions (correlation, PCA, statistical tests)
 - **`test_advanced_features.py`** — Phase 9.3 advanced feature engineering tests
@@ -370,6 +396,9 @@ python -m unittest discover -s tests -v
 - **`test_build_features.py`** — Feature building pipeline
 - **`test_classification.py`** — Event classification model tests
 - **`test_classification_phase94.py`** — Phase 9.4 advanced classification models
+- **`test_classification_evaluation.py`** — Classification evaluation module tests
+- **`test_classification_models.py`** — Classification models module tests
+- **`test_classification_phase943.py`** — Phase 9.4.3 classification tests
 - **`test_cli.py`** — Command-line interface tests
 - **`test_coverage_smoke.py`** — Smoke test for coverage validation
 - **`test_data_catalog.py`** — Data catalog management tests
@@ -377,6 +406,7 @@ python -m unittest discover -s tests -v
 - **`test_data_versioning.py`** — Data versioning and metadata tests
 - **`test_eda.py`** — Exploratory data analysis utilities
 - **`test_enhanced_eda_phase92.py`** — Phase 9.2 enhanced EDA tests
+- **`test_enhanced_imputation.py`** — Phase 9.1 4-step imputation strategy tests
 - **`test_evaluation_phase96.py`** — Phase 9.6 model evaluation and error analysis tests
 - **`test_features.py`** — Feature engineering functions
 - **`test_finance_ml_config.py`** — Configuration management tests
@@ -384,6 +414,7 @@ python -m unittest discover -s tests -v
 - **`test_finance_ml_eval.py`** — Evaluation and analytics module tests
 - **`test_finance_ml_features.py`** — Features module tests
 - **`test_finance_ml_models.py`** — Models module tests
+- **`test_imputation_6step.py`** — 6-step imputation strategy tests
 - **`test_improvement_plan_revision.py`** — Development plan validation
 - **`test_integration_cli_pipeline.py`** — CLI pipeline integration tests
 - **`test_integration_notebook_pipeline.py`** — Notebook pipeline integration tests
@@ -415,6 +446,9 @@ python -m unittest discover -s tests -v
 - **`test_valuation_phase97.py`** — Phase 9.7 stock valuation and identification tests
 - **`test_visualizations.py`** — Visualization functions tests
 
+**Note**: Full test suite can take significant time. See guidelines.md for selective test execution strategies (
+fast/medium/slow categories).
+
 ### Writing New Tests
 - Create files under `tests/` named `test_*.py` with `unittest.TestCase` classes
 - Keep tests isolated from external services
@@ -427,30 +461,43 @@ python -m unittest discover -s tests -v
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                     # Main Python package (v0.5.0)
+├── finance_ml/                     # Main Python package (v0.6.1)
 │   ├── __init__.py                # Package exports and version
+│   ├── ml_workflow/               # Phase-aligned modular workflow (v9_8)
+│   │   ├── preprocessing/         # Phase 9.1: imputation, outliers, scaling, quality, pipeline
+│   │   ├── eda/                   # Phase 9.2: eda, benchmarking, reports
+│   │   ├── features/              # Phase 9.3: core, advanced, selection, api
+│   │   ├── classification/        # Phase 9.4: labels, tuning, models, evaluation
+│   │   ├── regression/            # Phase 9.5: models, constraints, quantile, tuning, dataset, io
+│   │   ├── evaluation/            # Phase 9.6: metrics, analysis
+│   │   ├── analytics/             # Phase 9.7: mispricing, analyst_comparison, portfolio, risk, eval
+│   │   └── reporting/             # Phase 9.8: dashboard_data, export
 │   ├── advanced_eda.py            # Advanced EDA with statistical analysis
-│   ├── advanced_features.py       # Advanced feature engineering (Phase 9.3)
-│   ├── advanced_models.py         # Sector-optimized regression models (Phase 9.5)
-│   ├── advanced_preprocessing.py  # Advanced preprocessing and data quality
+│   ├── advanced_features.py       # Advanced feature engineering (deprecated, use ml_workflow.features)
+│   ├── advanced_models.py         # Sector-optimized regression models (deprecated, use ml_workflow.regression)
+│   ├── advanced_preprocessing.py  # Advanced preprocessing (deprecated, use ml_workflow.preprocessing)
 │   ├── benchmarking.py            # Comparative analysis and peer benchmarking
-│   ├── classification.py          # Multi-class event classification (Phase 9.4)
+│   ├── classification.py          # Multi-class event classification (deprecated, use ml_workflow.classification)
+│   ├── classification_enhanced.py # Enhanced classification (Phase 9.4)
 │   ├── cli.py                     # Command-line interface
 │   ├── config.py                  # Configuration management
 │   ├── data.py                    # Data loading, normalization, validation
 │   ├── data_catalog.py            # Centralized data asset registry (Phase 9.1)
 │   ├── data_versioning.py         # Dataset version tracking and metadata (Phase 9.1)
 │   ├── eval.py                    # Analytics, visualizations, reporting
-│   ├── features.py                # Feature engineering functions
+│   ├── features.py                # Feature engineering functions (deprecated, use ml_workflow.features)
 │   ├── logging_config.py          # Logging configuration utilities
-│   ├── models.py                  # ML models (classification, regression, ensembles)
+│   ├── models.py                  # ML models (deprecated, use ml_workflow.regression/classification)
 │   ├── notebook_config.py         # Notebook-specific helpers and config
 │   ├── notebook_utils.py          # Notebook utility functions
 │   ├── portfolio_optimization.py  # Portfolio optimization utilities
 │   ├── risk_metrics.py            # Risk metrics and portfolio risk analysis
-│   └── transformers.py            # Scikit-learn compatible feature transformers
+│   ├── transformers.py            # Scikit-learn compatible feature transformers
+│   └── dashboards/                # Interactive dashboards
+│       ├── dash_app.py            # Dash application
+│       └── streamlit_app.py       # Streamlit application
 │
-├── tests/                         # Unit tests (54 test modules)
+├── tests/                         # Unit tests (67 test modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
@@ -688,7 +735,11 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 
 ## Version History
 
-- **v0.5.0** (Current) — Complete Phase 9 implementation, 20 package modules, 51 test modules, comprehensive ML pipeline
+- **v0.6.1** (Current) — Phase 9.5 classification meta-features, enhanced imputation (6-step), modular workflow
+  refactor (v9_8), 67 test modules
+- **v0.6.0** — Phase 9.5 enhanced classification module, comprehensive data flow fixes, dashboard enhancements
+- **v0.5.1** — Phase 9.1 4-step imputation pipeline, notebook integration, comprehensive testing
+- **v0.5.0** — Complete Phase 9 implementation, 20 package modules, comprehensive ML pipeline
 - **v0.4.0** — Phase 9.7 valuation analysis, Phase 9.1 data versioning and catalog
 - **v0.3.0** — Modular package, CLI tools, configuration management, CI/CD
 - Earlier versions documented in `CHANGELOG.md`

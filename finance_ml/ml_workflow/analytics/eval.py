@@ -545,8 +545,8 @@ def simple_eda(
                     pca_result = perform_pca(X_multi, n_components=min(3, len(numeric_cols)))
                     # Convert numpy arrays to lists for JSON serialization
                     multivariate_analysis["pca"] = {
-                        "explained_variance_ratio": pca_result["explained_variance_ratio"].tolist(),
-                        "cumulative_variance": pca_result["cumulative_variance"].tolist(),
+                        "explained_variance_ratio": pca_result["explained_variance_ratio"],
+                        "cumulative_variance": pca_result["cumulative_variance"],
                         "n_components": pca_result["n_components"],
                         "feature_names": pca_result["feature_names"],
                         "components_shape": pca_result["components"].shape,
@@ -610,7 +610,7 @@ def simple_eda(
             def convert_to_serializable(obj):
                 """
                 Convert non-serializable objects to JSON-compatible types.
-                
+
                 Handles:
                 - NumPy types (int, float, bool, ndarray)
                 - Pandas types (Timestamp, Timedelta, Series, Index)
@@ -628,7 +628,7 @@ def simple_eda(
                     return bool(obj)
                 if isinstance(obj, np.ndarray):
                     return obj.tolist()
-                
+
                 # Handle pandas types
                 if isinstance(obj, (pd.Timestamp, datetime)):
                     return obj.isoformat()
@@ -638,23 +638,23 @@ def simple_eda(
                     return str(obj)
                 if isinstance(obj, (pd.Series, pd.Index)):
                     return obj.tolist()
-                
+
                 # Handle dictionaries recursively
                 if isinstance(obj, dict):
                     return {k: convert_to_serializable(v) for k, v in obj.items()}
-                
+
                 # Handle lists/tuples recursively
                 if isinstance(obj, (list, tuple)):
                     return [convert_to_serializable(item) for item in obj]
-                
+
                 # Handle NaN values
                 if pd.isna(obj):
                     return None
-                
+
                 # Return as-is for JSON-compatible types
                 if isinstance(obj, (str, int, float, bool, type(None))):
                     return obj
-                
+
                 # Fallback: convert to string representation
                 return str(obj)
 
@@ -2013,15 +2013,27 @@ def perform_pca(X: pd.DataFrame, n_components: int = 3) -> dict:
         components, columns=[f"PC{i+1}" for i in range(n_components)], index=X.index
     )
 
+    # Safely convert to list (handle case where it's already a list or array)
+    explained_var = pca.explained_variance_ratio_
+    if isinstance(explained_var, list):
+        explained_var_list = explained_var
+    else:
+        explained_var_list = explained_var.tolist()
+
+    cumulative_var = np.cumsum(pca.explained_variance_ratio_)
+    if isinstance(cumulative_var, list):
+        cumulative_var_list = cumulative_var
+    else:
+        cumulative_var_list = cumulative_var.tolist()
+
     return {
         "components": component_df,
-        "explained_variance_ratio": pca.explained_variance_ratio_.tolist(),
-        "cumulative_variance": np.cumsum(pca.explained_variance_ratio_).tolist(),
+        "explained_variance_ratio": explained_var_list,
+        "cumulative_variance": cumulative_var_list,
         "feature_loadings": pd.DataFrame(
             pca.components_.T, columns=[f"PC{i+1}" for i in range(n_components)], index=X.columns
         ),
     }
-
 
 def calculate_optimal_pca_components(X: pd.DataFrame, variance_threshold: float = 0.95) -> int:
     """Calculate optimal number of PCA components.
@@ -4932,7 +4944,18 @@ def generate_pdf_report(
         top_opportunities = df.head(top_n_opportunities)
 
     # Create table data
-    table_data = [["Ticker","Name", "Exchange", "Sector", "Current Price", "Target Price", "Upside %", "Category"]]
+    table_data = [
+        [
+            "Ticker",
+            "Name",
+            "Exchange",
+            "Sector",
+            "Current Price",
+            "Target Price",
+            "Upside %",
+            "Category",
+        ]
+    ]
 
     for _, row in top_opportunities.iterrows():
         ticker = row.get("ticker", "N/A")
@@ -4959,7 +4982,17 @@ def generate_pdf_report(
 
     # Create table
     table = Table(
-        table_data, colWidths=[1 * inch,3 *inch,1.5*inch, 1.5 * inch, 1 * inch, 1 * inch, 0.8 * inch, 1 * inch]
+        table_data,
+        colWidths=[
+            1 * inch,
+            3 * inch,
+            1.5 * inch,
+            1.5 * inch,
+            1 * inch,
+            1 * inch,
+            0.8 * inch,
+            1 * inch,
+        ],
     )
 
     # Table style

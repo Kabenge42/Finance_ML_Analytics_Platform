@@ -49,6 +49,7 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
     apply_price_imputation as _new_apply_price_imputation,
     apply_median_imputation as _new_apply_median_imputation,
     apply_enhanced_imputation_strategy_4step as _new_apply_enhanced_imputation_strategy_4step,
+    apply_enhanced_imputation_strategy_6step as _new_apply_enhanced_imputation_strategy_6step,
 )
 
 
@@ -948,10 +949,11 @@ def apply_enhanced_imputation_strategy_4step(
     n_neighbors: int = 5,
     price_column: str = "last_price",
 ) -> pd.DataFrame:
-    """Apply complete 4-step imputation strategy from Phase 9.1.
+    """Apply complete imputation strategy from Phase 9.1.
 
     .. deprecated:: Phase 9.1
-        Use :func:`finance_ml.ml_workflow.preprocessing.imputation.apply_enhanced_imputation_strategy_4step` instead.
+        Use :func:`finance_ml.ml_workflow.preprocessing.imputation.apply_enhanced_imputation_strategy_6step` instead.
+        This function now calls the 6-step strategy for full coverage.
 
     Args:
         df: Input DataFrame with financial data
@@ -960,15 +962,15 @@ def apply_enhanced_imputation_strategy_4step(
         price_column: Column to use for price target imputation
 
     Returns:
-        DataFrame with complete 4-step imputation applied (zero missing values)
+        DataFrame with complete 6-step imputation applied (zero missing values)
     """
     warnings.warn(
         "apply_enhanced_imputation_strategy_4step from advanced_preprocessing is deprecated. "
-        "Use finance_ml.ml_workflow.preprocessing.imputation.apply_enhanced_imputation_strategy_4step instead.",
+        "Use finance_ml.ml_workflow.preprocessing.imputation.apply_enhanced_imputation_strategy_6step instead.",
         DeprecationWarning,
         stacklevel=2,
     )
-    return _new_apply_enhanced_imputation_strategy_4step(
+    return _new_apply_enhanced_imputation_strategy_6step(
         df, sector_column, n_neighbors, price_column
     )
 
@@ -982,7 +984,7 @@ def prepare_phase95_data(
 ) -> pd.DataFrame | Tuple[pd.DataFrame, Dict[str, Any]]:
     """Prepare data for Phase 9.5 sector-specific regression regression with comprehensive imputation.
 
-    This function applies the complete 4-step imputation strategy with additional validation
+    This function applies the complete 6-step imputation strategy with additional validation
     and emergency fallback mechanisms to ensure ZERO NaN and infinite values before model training.
     Designed to prevent the Ridge regression failure caused by 171+ columns containing NaN values.
 
@@ -990,11 +992,13 @@ def prepare_phase95_data(
     1. Validates required columns exist
     2. Validates DataFrame is not empty
     3. Logs NaN statistics before imputation
-    4. Applies 4-step imputation strategy:
+    4. Applies 6-step imputation strategy:
        - Step 1: Zero imputation for exceptional events (48 columns)
        - Step 2: Sector-aware KNN imputation for financial metrics (148 columns)
        - Step 3: Price imputation for price targets (5 columns)
-       - Step 4: Median imputation for remaining columns
+       - Step 4: Median imputation for remaining numeric columns
+       - Step 5: Categorical imputation for string/object columns
+       - Step 6: Datetime imputation and formatting for date columns
     5. Handles infinite values (replaces with NaN, then re-imputes)
     6. Emergency fallback: fills any remaining NaN with 0
     7. Final validation: confirms zero NaN and infinite values
@@ -1037,7 +1041,7 @@ def prepare_phase95_data(
         Insert this at the beginning of Phase 9.5 (before model training):
 
         ```python
-        # Apply comprehensive data preparation with 4-step imputation
+        # Apply comprehensive data preparation with 6-step imputation
         all_stocks_phase95 = prepare_phase95_data(
             df=all_stocks_phase95,
             sector_column='sector',
@@ -1085,18 +1089,18 @@ def prepare_phase95_data(
         for col, count in top_nan_cols.items():
             logger.info(f"    - {col}: {count} NaN values")
 
-    # Apply comprehensive 4-step imputation strategy
-    logger.info("\n🔧 Applying 4-step imputation strategy...")
-    result = apply_enhanced_imputation_strategy_4step(
+    # Apply comprehensive 6-step imputation strategy
+    logger.info("\n🔧 Applying 6-step imputation strategy...")
+    result = _new_apply_enhanced_imputation_strategy_6step(
         df=result,
         sector_column=sector_column,
         n_neighbors=n_neighbors,
         price_column=price_column,
     )
 
-    # Check NaN after 4-step imputation
+    # Check NaN after 6-step imputation
     nan_after_imputation = result[numeric_cols].isnull().sum().sum()
-    logger.info(f"\n📊 Missing Values AFTER 4-Step Imputation: {nan_after_imputation:,}")
+    logger.info(f"\n📊 Missing Values AFTER 6-Step Imputation: {nan_after_imputation:,}")
 
     # Handle infinite values
     logger.info("\n🔧 Checking for infinite values...")

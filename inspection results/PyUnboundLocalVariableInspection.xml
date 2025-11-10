@@ -1,0 +1,16 @@
+<problems>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>1923</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyUnboundLocalVariableInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
+            Unbound local variables
+        </problem_class>
+        <description>Name 'sector_summary' can be undefined</description>
+        <highlighted_element>sector_summary</highlighted_element>
+        <language>Python</language>
+        <offset>8</offset>
+        <length>14</length>
+    </problem>
+</problems>

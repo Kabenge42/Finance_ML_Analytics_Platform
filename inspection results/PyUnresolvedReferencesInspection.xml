@@ -1,7 +1,7 @@
 <problems>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>529</line>
+    <line>1029</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -13,7 +13,7 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>529</line>
+    <line>1029</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -25,7 +25,7 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>530</line>
+    <line>1030</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
     <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
@@ -39,7 +39,7 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>530</line>
+    <line>1030</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -51,7 +51,7 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>531</line>
+    <line>1031</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -63,7 +63,7 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>531</line>
+    <line>1031</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
   <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
@@ -72,5 +72,19 @@
   <language>Python</language>
     <offset>64</offset>
     <length>3</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>2050</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'strftime' for class 'None'</description>
+        <highlighted_element>strftime</highlighted_element>
+        <language>Python</language>
+        <offset>55</offset>
+        <length>8</length>
 </problem>
 </problems>

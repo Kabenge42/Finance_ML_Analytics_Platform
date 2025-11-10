@@ -1,0 +1,16 @@
+<problems>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>1850</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyShadowingNamesInspection" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Shadowing
+            names from outer scopes
+        </problem_class>
+        <description>Shadows name 'idx' from outer scope</description>
+        <highlighted_element>idx</highlighted_element>
+        <language>Python</language>
+        <offset>12</offset>
+        <length>3</length>
+    </problem>
+</problems>

@@ -1,35 +1,7 @@
 <problems>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>106</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
-        imports
-    </problem_class>
-    <description>Unused import statement &lt;code&gt;check_missing_values&lt;/code&gt;</description>
-    <highlighted_element>check_missing_values</highlighted_element>
-  <language>Python</language>
-    <offset>23</offset>
-    <length>20</length>
-</problem>
-    <problem>
-        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>123</line>
-        <module>Finance_ML_Analytics_Platform</module>
-        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">
-            Unused imports
-        </problem_class>
-        <description>Unused import statement &lt;code&gt;compare_sector_distributions&lt;/code&gt;</description>
-        <highlighted_element>compare_sector_distributions</highlighted_element>
-        <language>Python</language>
-        <offset>4</offset>
-        <length>28</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>124</line>
+    <line>138</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
     <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
@@ -43,50 +15,7 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>133</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
-        imports
-    </problem_class>
-    <description>Unused import statement &lt;code&gt;engineer_valuation_ratios&lt;/code&gt;</description>
-    <highlighted_element>engineer_valuation_ratios</highlighted_element>
-  <language>Python</language>
-    <offset>4</offset>
-    <length>25</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>134</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
-        imports
-    </problem_class>
-    <description>Unused import statement &lt;code&gt;engineer_analyst_quality_features&lt;/code&gt;</description>
-    <highlighted_element>engineer_analyst_quality_features</highlighted_element>
-  <language>Python</language>
-    <offset>4</offset>
-    <length>33</length>
-</problem>
-    <problem>
-        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>141</line>
-        <module>Finance_ML_Analytics_Platform</module>
-        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">
-            Unused imports
-        </problem_class>
-        <description>Unused import statement &lt;code&gt;classification_optimize_hyperparameters&lt;/code&gt;
-        </description>
-        <highlighted_element>classification_optimize_hyperparameters</highlighted_element>
-        <language>Python</language>
-        <offset>4</offset>
-        <length>39</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>148</line>
+    <line>166</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
     <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
@@ -100,7 +29,7 @@
 </problem>
     <problem>
         <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>149</line>
+        <line>167</line>
         <module>Finance_ML_Analytics_Platform</module>
         <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
         <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">
@@ -114,7 +43,7 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>150</line>
+    <line>168</line>
   <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
     <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
@@ -128,89 +57,30 @@
 </problem>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>154</line>
-  <module>Finance_ML_Analytics_Platform</module>
+    <line>1822</line>
+    <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
     <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
         imports
     </problem_class>
-    <description>Unused import statement &lt;code&gt;regression_load_model&lt;/code&gt;</description>
-    <highlighted_element>regression_load_model</highlighted_element>
-  <language>Python</language>
+    <description>Unused import statement &lt;code&gt;export_predictions_to_excel&lt;/code&gt;</description>
+    <highlighted_element>export_predictions_to_excel</highlighted_element>
+    <language>Python</language>
     <offset>4</offset>
-    <length>21</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>174</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused
-        imports
-    </problem_class>
-    <description>Unused import statement &lt;code&gt;analytics_rank_by_sector&lt;/code&gt;</description>
-    <highlighted_element>analytics_rank_by_sector</highlighted_element>
-  <language>Python</language>
-    <offset>4</offset>
-    <length>24</length>
+    <length>27</length>
 </problem>
     <problem>
         <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>179</line>
+        <line>1823</line>
         <module>Finance_ML_Analytics_Platform</module>
         <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
         <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">
             Unused imports
         </problem_class>
-        <description>Unused import statement &lt;code&gt;optimize_portfolio_min_volatility&lt;/code&gt;</description>
-        <highlighted_element>optimize_portfolio_min_volatility</highlighted_element>
+        <description>Unused import statement &lt;code&gt;generate_pdf_report&lt;/code&gt;</description>
+        <highlighted_element>generate_pdf_report</highlighted_element>
         <language>Python</language>
         <offset>4</offset>
-        <length>33</length>
-    </problem>
-    <problem>
-        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>180</line>
-        <module>Finance_ML_Analytics_Platform</module>
-        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">
-            Unused imports
-        </problem_class>
-        <description>Unused import statement &lt;code&gt;generate_efficient_frontier&lt;/code&gt;</description>
-        <highlighted_element>generate_efficient_frontier</highlighted_element>
-        <language>Python</language>
-        <offset>4</offset>
-        <length>27</length>
-    </problem>
-    <problem>
-        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>187</line>
-        <module>Finance_ML_Analytics_Platform</module>
-        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">
-            Unused imports
-        </problem_class>
-        <description>Unused import statement &lt;code&gt;from finance_ml import ( reporting_financial_metrics,
-            reporting_quality_alerts, )&lt;/code&gt;
-        </description>
-        <highlighted_element>from finance_ml import ( reporting_financial_metrics, reporting_quality_alerts, )
-        </highlighted_element>
-        <language>Python</language>
-        <offset>0</offset>
-        <length>89</length>
-    </problem>
-    <problem>
-        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>193</line>
-        <module>Finance_ML_Analytics_Platform</module>
-        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-        <problem_class id="PyUnusedImportsInspection" severity="WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">
-            Unused imports
-        </problem_class>
-        <description>Unused import statement &lt;code&gt;from finance_ml import DataCatalog&lt;/code&gt;</description>
-        <highlighted_element>from finance_ml import DataCatalog</highlighted_element>
-        <language>Python</language>
-        <offset>0</offset>
-        <length>34</length>
+        <length>19</length>
 </problem>
 </problems>

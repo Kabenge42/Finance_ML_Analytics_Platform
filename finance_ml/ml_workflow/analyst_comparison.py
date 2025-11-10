@@ -186,11 +186,9 @@ def generate_prediction_analyst_excel_report(
     detail_cols = [
         "ticker",
         "name",
-        "country"
-        "exchange",
+        "country" "exchange",
         "sector",
-        "industry"
-        "region",
+        "industry" "region",
         "last_price",
         "predicted_price_target",
         "price_target",

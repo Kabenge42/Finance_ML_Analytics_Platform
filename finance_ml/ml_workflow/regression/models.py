@@ -799,7 +799,7 @@ def train_stacking_regressor(
     random_state: int = 42,
     ensure_nonnegative: bool = False,
     loss: str = "squared_error",
-) -> Tuple[Any, Dict[str, Any]]:
+) -> Dict[str, Any]:
     """
     Train stacking ensemble with meta-learner.
 
@@ -814,7 +814,13 @@ def train_stacking_regressor(
               If 'huber', uses robust loss for outlier handling (Model Optimization Priority 2.1)
 
     Returns:
-        Trained ensemble (wrapped if ensure_nonnegative=True) and results dictionary
+        Dictionary with standardized keys per code_guidelines.md Section 1.1:
+        {
+            'model': Fitted StackingRegressor (wrapped if ensure_nonnegative=True),
+            'metrics': Dict[str, float] with 'r2', 'cv_mean', 'cv_std',
+            'y_pred': None (not computed during training),
+            'artifacts': Dict with 'base_models', 'meta_model', 'cv_score', 'cv_std', 'ensure_nonnegative'
+        }
     """
     # Define base regression with robust loss support
     estimators = [
@@ -849,17 +855,23 @@ def train_stacking_regressor(
     # Cross-validation score (using base_model for CV to avoid wrapper issues)
     cv_scores = cross_val_score(base_model, X, y, cv=cv, scoring="r2")
 
-    results = {
-        "train_score": base_model.score(X, y),
-        "cv_score": cv_scores.mean(),
-        "cv_std": cv_scores.std(),
-        "base_models": [name for name, _ in estimators],
-        "meta_model": "Ridge",
-        "model_type": "stacking",
-        "ensure_nonnegative": ensure_nonnegative,
+    # Return standardized dict format per code_guidelines.md Section 1.1
+    return {
+        "model": model,
+        "metrics": {
+            "r2": base_model.score(X, y),
+            "cv_mean": cv_scores.mean(),
+            "cv_std": cv_scores.std(),
+        },
+        "y_pred": None,  # Not computed during training
+        "artifacts": {
+            "base_models": [name for name, _ in estimators],
+            "meta_model": "Ridge",
+            "cv_score": cv_scores.mean(),
+            "cv_std": cv_scores.std(),
+            "ensure_nonnegative": ensure_nonnegative,
+        },
     }
-
-    return model, results
 
 
 # ==============================================================================

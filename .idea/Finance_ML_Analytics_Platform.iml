@@ -24,10 +24,15 @@
     <option name="templateFileTypes">
       <list>
         <option value=".env file" />
+        <option value="CSV" />
+        <option value="CSV/TSV" />
         <option value="HTML" />
         <option value="JSON" />
+        <option value="JSON5" />
         <option value="Jupyter" />
+        <option value="Markdown" />
         <option value="PowerShell" />
+        <option value="PythonStub" />
         <option value="Requirements.txt" />
         <option value="Shell Script" />
         <option value="SQL" />

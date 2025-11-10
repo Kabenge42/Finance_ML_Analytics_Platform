@@ -2,9 +2,8 @@
 
 **Version 0.6.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-09  
-> **Latest Release**: v0.6.1 (per CHANGELOG.md)  
-> **Note**: pyproject.toml shows v0.5.1 — TODO: sync version across all files
+> **Documentation Last Updated:** 2025-11-10  
+> **Latest Release**: v0.6.1 (per CHANGELOG.md and pyproject.toml)
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
