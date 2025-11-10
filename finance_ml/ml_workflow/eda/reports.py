@@ -223,7 +223,7 @@ def _generate_html_content(df: pd.DataFrame, summary: dict, sector_column: str) 
             html += "<table><tr><th>Variable 1</th><th>Variable 2</th><th>Correlation</th></tr>"
             for col1, corr_dict in corr_data.items():
                 for col2, corr_val in corr_dict.items():
-                    if col1 < col2 and abs(corr_val) > 0.5 and abs(corr_val) < 0.999:
+                    if col1 < col2 and 0.5 < abs(corr_val) < 0.999:
                         html += f"<tr><td>{col1}</td><td>{col2}</td><td>{corr_val:.3f}</td></tr>"
             html += "</table>"
 
@@ -241,7 +241,7 @@ def generate_benchmarking_report(
     out_dir: Union[str, Path] = "outputs/eda",
     sector_column: str = "sector",
     region_column: str = "region",
-) -> Path:
+) -> dict:
     """
     Generate benchmarking report (wrapper for backward compatibility).
 

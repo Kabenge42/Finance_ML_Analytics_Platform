@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def export_predictions(
     predictions: Union[pd.DataFrame, Dict[str, Any]],
     out_path: Union[str, Path] = "outputs/regression_predictions.csv",
-    format: str = "auto",
+    file_format: str = "auto",
     include_metadata: bool = True,
 ) -> Path:
     """
@@ -25,7 +25,7 @@ def export_predictions(
     Args:
         predictions: Predictions dataframe or dict with 'predictions' key
         out_path: Output file path
-        format: Export format ('auto', 'csv', 'excel', 'json')
+        file_format: Export format ('auto', 'csv', 'excel', 'json')
         include_metadata: Whether to include metadata sheet (Excel only)
 
     Returns:
@@ -48,21 +48,21 @@ def export_predictions(
         metadata = {}
 
     # Auto-detect format from extension
-    if format == "auto":
+    if file_format == "auto":
         ext = out_path.suffix.lower()
         if ext in [".xlsx", ".xls"]:
-            format = "excel"
+            file_format = "excel"
         elif ext == ".json":
-            format = "json"
+            file_format = "json"
         else:
-            format = "csv"
+            file_format = "csv"
 
     # Export based on format
-    if format == "csv":
+    if file_format == "csv":
         df.to_csv(out_path, index=False)
         logger.info(f"Predictions exported to CSV: {out_path}")
 
-    elif format == "excel":
+    elif file_format == "excel":
         with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
             df.to_excel(writer, sheet_name="Predictions", index=False)
 
@@ -75,7 +75,7 @@ def export_predictions(
 
         logger.info(f"Predictions exported to Excel: {out_path}")
 
-    elif format == "json":
+    elif file_format == "json":
         if isinstance(df, pd.DataFrame):
             df.to_json(out_path, orient="records", indent=2)
         else:
@@ -86,7 +86,7 @@ def export_predictions(
         logger.info(f"Predictions exported to JSON: {out_path}")
 
     else:
-        raise ValueError(f"Unsupported format: {format}")
+        raise ValueError(f"Unsupported format: {file_format}")
 
     return out_path
 

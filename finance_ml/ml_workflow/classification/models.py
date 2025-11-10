@@ -1477,6 +1477,8 @@ def fit_classifier(
                 params["class_weight"] = dict(zip(classes, class_weights))
 
     # Hyperparameter tuning
+    tuning_result = None
+    tuned_model = None
     if tuning is not None:
         from finance_ml.ml_workflow.classification.tuning import optimize_classifier_hyperparameters
 

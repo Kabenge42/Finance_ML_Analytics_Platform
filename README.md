@@ -4,7 +4,8 @@
 
 > **Documentation Last Updated:** 2025-11-10  
 > **Latest Release**: v0.7.0 (2025-11-10 per CHANGELOG.md)  
-> **Model Version**: v9_9
+> **Model Version**: v9_9  
+> **Note**: Version files need synchronization - see Known Issues section below
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -288,7 +289,7 @@ sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
 # Edit environment_variables.txt and export or create .env
 
 # 6. Run main notebook
-jupyter notebook ml_finance_model_main_v10.ipynb
+jupyter notebook ml_finance_model_main.ipynb
 
 # Or run as Python script
 python ml_finance_model_main.py --data-source auto --limit 5000
@@ -420,7 +421,7 @@ python tools/import_sqlite.py --db equities.sqlite --data-dir data
 
 The primary workflow is notebook-based for exploration and experimentation.
 
-**Main Notebook**: `ml_finance_model_main_v10.ipynb`
+**Main Notebook**: `ml_finance_model_main.ipynb`
 
 ```powershell
 # Launch Jupyter
@@ -430,7 +431,7 @@ jupyter notebook
 jupyter lab
 ```
 
-Open `ml_finance_model_main_v10.ipynb` and run cells sequentially. The notebook includes:
+Open `ml_finance_model_main.ipynb` and run cells sequentially. The notebook includes:
 
 - Configuration and setup
 - Data loading from database or CSV
@@ -443,10 +444,11 @@ Open `ml_finance_model_main_v10.ipynb` and run cells sequentially. The notebook 
 - Stock ranking and valuation
 - Report generation
 
-**Backup Notebooks**:
+**Other Notebooks**:
 
-- `ml_finance_model_main.ipynb` — Previous stable version
-- `ml_finance_model_main_backup.ipynb` — Historical backup
+- `ml_finance_model_main_v10.ipynb` — Alternative notebook version
+- `equities_data_explorer.ipynb` — Data exploration and analysis
+- `ml_stock_prediction_model.ipynb` — Legacy prediction notebook
 
 ### Python Script
 
@@ -763,9 +765,11 @@ Finance_ML_Analytics_Platform/
 ├── docs/                          # Documentation
 │   ├── improvement_plan/         # Development roadmap and phase documentation
 │   └── summaries/                # Implementation summaries
-├── ml_finance_model_main_v10.ipynb # Main notebook (Phase 9.1-9.8)
-├── ml_finance_model_main.ipynb   # Previous stable notebook
+├── ml_finance_model_main.ipynb   # Main notebook (Phase 9.1-9.8)
+├── ml_finance_model_main_v10.ipynb # Alternative notebook version
 ├── ml_finance_model_main.py      # Python script version
+├── equities_data_explorer.ipynb  # Data exploration notebook
+├── ml_stock_prediction_model.ipynb # Legacy prediction notebook
 ├── create_equities_schema.sql    # PostgreSQL schema
 ├── import_equities_data.sql      # PostgreSQL data import
 ├── create_equities_schema_sqlite.sql # SQLite schema
@@ -784,15 +788,15 @@ Finance_ML_Analytics_Platform/
 
 ### Main Entry Points
 
-| Script/Tool                       | Description                   | Usage                                                  |
-|-----------------------------------|-------------------------------|--------------------------------------------------------|
-| `ml_finance_model_main_v10.ipynb` | Main notebook (Phase 9.1-9.8) | `jupyter notebook ml_finance_model_main_v10.ipynb`     |
-| `ml_finance_model_main.py`        | Python script version         | `python ml_finance_model_main.py --data-source auto`   |
-| `finance-ml`                      | CLI: Full pipeline            | `finance-ml --data-source auto --output-dir outputs`   |
-| `finance-ml-analyze`              | CLI: EDA/analytics only       | `finance-ml-analyze --data-source csv`                 |
-| `finance-ml-validate`             | CLI: Validation only          | `finance-ml-validate --data-source db`                 |
-| `streamlit_app.py`                | Streamlit dashboard           | `streamlit run finance_ml/dashboards/streamlit_app.py` |
-| `dash_app.py`                     | Dash dashboard                | `python finance_ml/dashboards/dash_app.py`             |
+| Script/Tool                   | Description                   | Usage                                                  |
+|-------------------------------|-------------------------------|--------------------------------------------------------|
+| `ml_finance_model_main.ipynb` | Main notebook (Phase 9.1-9.8) | `jupyter notebook ml_finance_model_main.ipynb`         |
+| `ml_finance_model_main.py`    | Python script version         | `python ml_finance_model_main.py --data-source auto`   |
+| `finance-ml`                  | CLI: Full pipeline            | `finance-ml --data-source auto --output-dir outputs`   |
+| `finance-ml-analyze`          | CLI: EDA/analytics only       | `finance-ml-analyze --data-source csv`                 |
+| `finance-ml-validate`         | CLI: Validation only          | `finance-ml-validate --data-source db`                 |
+| `streamlit_app.py`            | Streamlit dashboard           | `streamlit run finance_ml/dashboards/streamlit_app.py` |
+| `dash_app.py`                 | Dash dashboard                | `python finance_ml/dashboards/dash_app.py`             |
 
 ### Utility Scripts (tools/)
 
@@ -972,6 +976,24 @@ TensorFlow is optional and CPU-only installation is sufficient for this project.
 The core workflow uses scikit-learn and gradient boosting libraries (XGBoost, LightGBM, CatBoost) and will function
 without TensorFlow.
 
+### Version Synchronization
+
+**TODO**: The following files need version synchronization:
+
+**Current Status** (as of 2025-11-10):
+
+- **CHANGELOG.md**: Documents v0.7.0 release (2025-11-10) with MODEL_VERSION v9_9 ✓
+- **README.md**: Documents v0.7.0 with MODEL_VERSION v9_9 ✓
+- **pyproject.toml**: Shows version = "0.6.1" ❌ (needs update to 0.7.0)
+- **environment_variables.txt**: Shows Version: 0.5.1 with MODEL_VERSION=v0_5_0 ❌ (needs update to 0.7.0 and v9_9)
+- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓ (per CHANGELOG line 74-75)
+
+**Action Items**:
+
+1. Update `pyproject.toml` line 10: `version = "0.7.0"`
+2. Update `environment_variables.txt` line 4: `Version: 0.7.0`
+3. Update `environment_variables.txt` line 44: `MODEL_VERSION=v9_9` (uncomment and update)
+
 ### Future Enhancements
 
 **TODO**: Consider adding the following enhancements:
@@ -987,5 +1009,4 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 ---
 
 **Last Updated**: 2025-11-10  
-**README Version**: 2.2 (aligned with CHANGELOG.md v0.7.0)  
-**Note**: pyproject.toml and environment_variables.txt show v0.6.1 — TODO: update to match current release v0.7.0
+**README Version**: 2.3 (comprehensive update with verified information)

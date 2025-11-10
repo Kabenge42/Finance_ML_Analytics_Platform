@@ -114,7 +114,7 @@ def preprocess_for_lightgbm(
                     if test_conversion.notna().any():
                         datetime_columns.append(col)
                         logger.debug(f"Auto-detected datetime string column: '{col}'")
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
     # Handle categorical columns with LabelEncoder

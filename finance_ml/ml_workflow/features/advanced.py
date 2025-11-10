@@ -624,6 +624,7 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
     result = df.copy()
 
     def pct_change(cur: pd.Series, prev: pd.Series) -> pd.Series:
+        """Calculate percentage change between current and previous values."""
         return _safe_div(cur - prev, prev) * 100
 
     # Basic momentum windows
@@ -642,6 +643,7 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # RSI helper (row-wise due to per-row wide history columns)
     def compute_rsi_row(row: pd.Series, period: int) -> float:
+        """Compute RSI (Relative Strength Index) for a single row over specified period."""
         # Build sequence oldest->newest using daily columns if present
         prices = []
         # Include historical days period back to 1 day
@@ -683,6 +685,7 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Moving averages and signals using daily history + last_price
     def compute_ma_row(row: pd.Series, window: int) -> float:
+        """Compute moving average for a single row over specified window."""
         vals = []
         for d in range(window - 1, 0, -1):
             col = f"price_{d}d_ago"
@@ -739,7 +742,7 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
             result["return_stability_score"] = _safe_div(total_return_pct, vol)
             try:
                 rf = float(os.getenv("RISK_FREE_RATE_PCT", "0.0"))
-            except Exception:
+            except (ValueError, TypeError):
                 rf = 0.0
             excess = total_return_pct - rf
             result["sharpe_proxy"] = _safe_div(excess, vol)

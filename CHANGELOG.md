@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Phase 9.4 Classification Label Enhancements with Phase 9.3 Feature Integration**: Comprehensive update to all 13
+  event label creation methods in `finance_ml/ml_workflow/classification/labels.py`
+    - Added `_get_column()` helper function to support both original columns and Phase 9.3 engineered columns
+    - **Method 1 (price_momentum)**: Enhanced with Phase 9.3 momentum features
+        - Added price_momentum_1m/3m/6m, rsi_14d/30d, ma_crossover_signal, return_stability_score
+        - Creates composite momentum score from multiple signals
+        - Backward compatible with price_target/last_price approach
+    - **Method 2 (valuation)**: Enhanced with Phase 9.3 valuation ratios
+        - Added p_e_ratio, p_b_ratio, ev_ebitda_ratio, peg_ratio support
+        - Multi-metric composite valuation score
+        - Sector-relative percentile calculations
+    - **Method 3 (fundamental)**: Enhanced with Phase 9.3 profitability features
+        - Added gross_margin_pct, operating_margin_pct, net_margin_pct, roe, roa, roic, ebitda_margin_trend
+        - Comprehensive fundamental quality score
+    - **Method 4 (volatility)**: Enhanced with Phase 9.3 stability indicators
+        - Added return_stability_score, sharpe_proxy
+        - Composite volatility/stability score
+    - **Method 5 (analyst_rating)**: Enhanced with Phase 9.3 analyst quality features
+        - Added upside_potential, analyst_bullish_pct, analyst_coverage_quality
+        - Coverage quality used as confidence weight
+    - **Method 6 (market_events)**: Enhanced with Phase 9.3 sentiment indicators
+        - Added short_interest_ratio, systematic_risk_trend, sector-relative valuation metrics
+        - Comprehensive market/sector signal aggregation
+    - **Methods 7-13**: Verified to use correct Phase 9.3 column names (roe, roa, roic, debt_to_equity, current_ratio,
+      revenue_growth, accounting_quality_score, piotroski_f_score, altman_z_score, etc.)
+    - All 29 tests passing (0.034s execution)
+    - Backward compatible: works with both original and Phase 9.3 column naming conventions
+    - Meaningful class distributions ensured across all methods
+
+### Fixed
+
+- **Phase 9.4 Classification quality_event method**: Updated `quality_event` label creation to use Phase 9.3 generated
+  quality columns
+    - Changed from non-existent columns (accruals_to_assets, days_sales_outstanding, analyst_consensus_score,
+      analyst_revision_score)
+    - Now uses actual Phase 9.3 columns: accounting_quality_score, analyst_coverage_quality,
+      exceptional_items_to_ebitda, has_goodwill_impairment, has_asset_writedown, has_restructuring
+    - Resolves "No quality columns available, returning all neutral" warning
+    - Updated test data in `tests/test_classification_labels_phase94.py` to match Phase 9.3 schema
+    - All 29 classification label tests passing (0.029s execution)
+- **Notebook classification error handling**: Fixed RuntimeError in `ml_finance_model_main.ipynb` cell 33
+    - Added graceful handling for 2-class vs 3-class prediction mismatch (IndexError when accessing y_proba_all[:, 2])
+    - Implemented automatic class imbalance detection with fallback from quality_event to price_momentum method
+    - Added proper probability mapping for missing classes (fills with zeros)
+    - Provides informative warnings when severe class imbalance detected (>95% in one class)
+
 ## [0.7.0] - 2025-11-10
 
 ### Added

@@ -2030,10 +2030,13 @@ def perform_pca(X: pd.DataFrame, n_components: int = 3) -> dict:
         "components": component_df,
         "explained_variance_ratio": explained_var_list,
         "cumulative_variance": cumulative_var_list,
+        "n_components": n_components,
+        "feature_names": X.columns.tolist(),
         "feature_loadings": pd.DataFrame(
             pca.components_.T, columns=[f"PC{i+1}" for i in range(n_components)], index=X.columns
         ),
     }
+
 
 def calculate_optimal_pca_components(X: pd.DataFrame, variance_threshold: float = 0.95) -> int:
     """Calculate optimal number of PCA components.

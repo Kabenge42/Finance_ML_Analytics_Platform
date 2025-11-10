@@ -38,6 +38,30 @@ __all__ = [
 ]
 
 
+def _get_column(df: pd.DataFrame, *column_names: str) -> Optional[pd.Series]:
+    """Get the first available column from a list of column name variations.
+
+    This helper function tries multiple column name variations to support both:
+    - Original columns from data loading (e.g., "p_e", "roe")
+    - Phase 9.3 engineered columns (e.g., "p_e_ratio", "price_momentum_1m")
+
+    Args:
+        df: DataFrame to search
+        *column_names: Column names to try in order of preference
+
+    Returns:
+        Series if any column found, None otherwise
+
+    Example:
+        >>> # Try Phase 9.3 column first, fall back to original
+        >>> pe_col = _get_column(df, "p_e_ratio", "p_e")
+    """
+    for col_name in column_names:
+        if col_name in df.columns:
+            return df[col_name]
+    return None
+
+
 def create_enhanced_event_labels(
     df: pd.DataFrame,
     method: str = "price_momentum",
@@ -97,114 +121,340 @@ def create_enhanced_event_labels(
     labels = np.zeros(len(df), dtype=int)
 
     if method == "price_momentum":
-        # Price target momentum
-        if "price_target" not in df.columns or "last_price" not in df.columns:
-            logger.warning("price_target or last_price not available, returning all neutral")
+        # Enhanced price momentum using Phase 9.3 features when available
+        # Primary signal: price_target vs last_price
+        # Secondary signals: price_momentum_1m/3m/6m (Phase 9.3), rsi_14d, ma_crossover_signal
+
+        # Try price target momentum first (backward compatible)
+        momentum_score = pd.Series(0.0, index=df.index)
+        signal_count = 0
+
+        if "price_target" in df.columns and "last_price" in df.columns:
+            price_diff_pct = (df["price_target"] - df["last_price"]) / df["last_price"] * 100.0
+            momentum_score += price_diff_pct / 10.0  # Normalize to ~-10 to +10 range
+            signal_count += 1
+
+        # Add Phase 9.3 momentum features if available
+        momentum_1m = _get_column(df, "price_momentum_1m")
+        if momentum_1m is not None:
+            momentum_score += momentum_1m / 10.0
+            signal_count += 1
+
+        momentum_3m = _get_column(df, "price_momentum_3m")
+        if momentum_3m is not None:
+            momentum_score += momentum_3m / 20.0  # Slightly less weight for 3m
+            signal_count += 1
+
+        # RSI signal (normalized: >70 bullish, <30 bearish)
+        rsi = _get_column(df, "rsi_14d", "rsi_30d")
+        if rsi is not None:
+            rsi_signal = (rsi - 50) / 10.0  # Normalize to roughly -5 to +5
+            momentum_score += rsi_signal
+            signal_count += 1
+
+        # MA crossover signal (-1, 0, +1)
+        ma_signal = _get_column(df, "ma_crossover_signal")
+        if ma_signal is not None:
+            momentum_score += ma_signal * 3.0  # Weight crossover signals
+            signal_count += 1
+
+        # Return stability score (higher = more stable positive returns)
+        stability = _get_column(df, "return_stability_score")
+        if stability is not None:
+            momentum_score += stability.clip(-2, 2)  # Clip outliers
+            signal_count += 1
+
+        if signal_count == 0:
+            logger.warning("No momentum indicators available, returning all neutral")
             return labels
 
-        price_diff_pct = (df["price_target"] - df["last_price"]) / df["last_price"] * 100.0
+        # Average across available signals
+        momentum_score /= signal_count
 
         # Sector-specific adjustment
         if use_sector_adjustment and "sector" in df.columns:
             for sector in df["sector"].unique():
                 sector_mask = df["sector"] == sector
-                sector_vol = price_diff_pct[sector_mask].std()
+                sector_vol = momentum_score[sector_mask].std()
                 # Adjust thresholds based on sector volatility
-                adj_positive = threshold_positive * (1 + sector_vol / 50.0)
-                adj_negative = threshold_negative * (1 + sector_vol / 50.0)
+                adj_positive = 1.0 * (1 + sector_vol / 2.0)
+                adj_negative = -1.0 * (1 + sector_vol / 2.0)
 
-                labels[sector_mask & (price_diff_pct >= adj_positive)] = 1
-                labels[sector_mask & (price_diff_pct <= adj_negative)] = 2
+                labels[sector_mask & (momentum_score >= adj_positive)] = 1
+                labels[sector_mask & (momentum_score <= adj_negative)] = 2
         else:
-            labels[price_diff_pct >= threshold_positive] = 1
-            labels[price_diff_pct <= threshold_negative] = 2
+            # Use composite momentum score with adaptive thresholds
+            labels[momentum_score >= 1.0] = 1  # Strong positive momentum
+            labels[momentum_score <= -1.0] = 2  # Strong negative momentum
 
     elif method == "valuation":
-        # Valuation-based events (undervalued = positive, overvalued = negative)
-        if "p_e" not in df.columns:
-            logger.warning("p_e not available for valuation method, returning all neutral")
+        # Enhanced valuation-based events using Phase 9.3 features when available
+        # Uses multiple valuation metrics: P/E, P/B, EV/EBITDA, PEG
+        # Lower values = undervalued (positive), higher values = overvalued (negative)
+
+        valuation_metrics = []
+
+        # P/E ratio (try Phase 9.3 first, fall back to original)
+        pe_col = _get_column(df, "p_e_ratio", "p_e")
+        if pe_col is not None:
+            valuation_metrics.append(("p_e", pe_col))
+
+        # P/B ratio (Phase 9.3)
+        pb_col = _get_column(df, "p_b_ratio", "p_b")
+        if pb_col is not None:
+            valuation_metrics.append(("p_b", pb_col))
+
+        # EV/EBITDA ratio (Phase 9.3)
+        ev_ebitda_col = _get_column(df, "ev_ebitda_ratio", "ev_ebitda")
+        if ev_ebitda_col is not None:
+            valuation_metrics.append(("ev_ebitda", ev_ebitda_col))
+
+        # PEG ratio (Phase 9.3) - Price/Earnings to Growth
+        peg_col = _get_column(df, "peg_ratio")
+        if peg_col is not None:
+            valuation_metrics.append(("peg", peg_col))
+
+        if not valuation_metrics:
+            logger.warning("No valuation metrics available, returning all neutral")
             return labels
 
-        # Calculate percentiles within sector
-        if "sector" in df.columns:
-            df["p_e_percentile"] = df.groupby("sector")["p_e"].rank(pct=True)
-        else:
-            df["p_e_percentile"] = df["p_e"].rank(pct=True)
+        # Calculate percentile for each metric and average
+        valuation_score = pd.Series(0.0, index=df.index)
 
-        # Low P/E (undervalued) = positive, High P/E (overvalued) = negative
-        labels[df["p_e_percentile"] <= 0.25] = 1  # Bottom quartile = positive
-        labels[df["p_e_percentile"] >= 0.75] = 2  # Top quartile = negative
+        for metric_name, metric_col in valuation_metrics:
+            # Calculate percentiles within sector if available
+            if "sector" in df.columns:
+                percentile = df.groupby("sector")[metric_col.name].rank(pct=True)
+            else:
+                percentile = metric_col.rank(pct=True)
+
+            # Invert: low percentile = undervalued (good)
+            valuation_score += 1.0 - percentile
+
+        # Average across available metrics
+        valuation_score /= len(valuation_metrics)
+
+        # High score (undervalued) = positive, Low score (overvalued) = negative
+        labels[valuation_score >= 0.75] = 1  # Top quartile = undervalued = positive
+        labels[valuation_score <= 0.25] = 2  # Bottom quartile = overvalued = negative
 
     elif method == "fundamental":
-        # Fundamental events based on margin trends
-        margin_cols = [
-            c for c in ["gross_margin", "operating_margin", "net_margin"] if c in df.columns
-        ]
-        if not margin_cols:
-            logger.warning("No margin columns available, returning all neutral")
+        # Enhanced fundamental events using Phase 9.3 margin and profitability features
+        # Uses margin metrics, profitability ratios (ROE, ROA, ROIC), and margin trends
+
+        fundamental_metrics = []
+
+        # Margin metrics (try Phase 9.3 _pct variants first, fall back to originals)
+        gross_margin = _get_column(df, "gross_margin_pct", "gross_margin")
+        if gross_margin is not None:
+            fundamental_metrics.append(gross_margin)
+
+        operating_margin = _get_column(df, "operating_margin_pct", "operating_margin")
+        if operating_margin is not None:
+            fundamental_metrics.append(operating_margin)
+
+        net_margin = _get_column(df, "net_margin_pct", "net_margin")
+        if net_margin is not None:
+            fundamental_metrics.append(net_margin)
+
+        # Profitability ratios (Phase 9.3)
+        roe = _get_column(df, "roe")
+        if roe is not None:
+            fundamental_metrics.append(roe)
+
+        roa = _get_column(df, "roa")
+        if roa is not None:
+            fundamental_metrics.append(roa)
+
+        roic = _get_column(df, "roic")
+        if roic is not None:
+            fundamental_metrics.append(roic)
+
+        # Margin trends (Phase 9.3)
+        ebitda_margin_trend = _get_column(df, "ebitda_margin_trend")
+        if ebitda_margin_trend is not None:
+            fundamental_metrics.append(ebitda_margin_trend * 10)  # Scale trend
+
+        if not fundamental_metrics:
+            logger.warning("No fundamental metrics available, returning all neutral")
             return labels
 
-        # Calculate average margin score
-        margin_data = df[margin_cols].fillna(0)
-        avg_margin = margin_data.mean(axis=1)
+        # Calculate average fundamental score
+        fundamental_data = pd.concat(fundamental_metrics, axis=1).fillna(0)
+        avg_fundamental = fundamental_data.mean(axis=1)
 
-        # High margins = positive, low margins = negative
-        labels[avg_margin >= avg_margin.quantile(0.7)] = 1
-        labels[avg_margin <= avg_margin.quantile(0.3)] = 2
+        # High fundamentals = positive, low fundamentals = negative
+        labels[avg_fundamental >= avg_fundamental.quantile(0.7)] = 1
+        labels[avg_fundamental <= avg_fundamental.quantile(0.3)] = 2
 
     elif method == "volatility":
-        # Volatility-based events
+        # Enhanced volatility-based events using Phase 9.3 stability features
+        # High volatility + low stability = negative (risky)
+        # Low volatility + high stability = positive (stable)
+
+        volatility_score = pd.Series(0.0, index=df.index)
+        signal_count = 0
+
+        # Traditional volatility columns (original data)
         vol_cols = [c for c in df.columns if "volatility" in c.lower()]
-        if not vol_cols:
-            logger.warning("No volatility columns available, returning all neutral")
+        if vol_cols:
+            volatility = df[vol_cols[0]]
+            # Normalize: high vol = positive score (bad), low vol = negative score (good)
+            vol_normalized = (volatility - volatility.mean()) / (volatility.std() + 1e-10)
+            volatility_score += vol_normalized
+            signal_count += 1
+
+        # Return stability score (Phase 9.3) - higher is better
+        stability = _get_column(df, "return_stability_score")
+        if stability is not None:
+            # Normalize and invert: low stability = positive score (bad)
+            stab_normalized = -(stability - stability.mean()) / (stability.std() + 1e-10)
+            volatility_score += stab_normalized
+            signal_count += 1
+
+        # Sharpe proxy (Phase 9.3) - higher is better
+        sharpe = _get_column(df, "sharpe_proxy")
+        if sharpe is not None:
+            # Normalize and invert: low sharpe = positive score (bad)
+            sharpe_normalized = -(sharpe - sharpe.mean()) / (sharpe.std() + 1e-10)
+            volatility_score += sharpe_normalized
+            signal_count += 1
+
+        if signal_count == 0:
+            logger.warning("No volatility indicators available, returning all neutral")
             return labels
 
-        volatility = df[vol_cols[0]]
-        # High volatility = negative (risk), low volatility = positive (stable)
-        labels[volatility <= volatility.quantile(0.3)] = 1
-        labels[volatility >= volatility.quantile(0.7)] = 2
+        # Average across available signals
+        volatility_score /= signal_count
+
+        # High volatility score (risky) = negative, low score (stable) = positive
+        labels[volatility_score <= -0.5] = 1  # Low volatility/high stability = positive
+        labels[volatility_score >= 0.5] = 2  # High volatility/low stability = negative
 
     elif method == "analyst_rating":
-        # Analyst rating changes (upgrades/downgrades)
+        # Enhanced analyst rating events using Phase 9.3 analyst quality features
+        # Uses rating changes, consensus, upside potential, coverage quality
+
+        analyst_score = pd.Series(0.0, index=df.index)
+        signal_count = 0
+
+        # Analyst rating change (original data)
         if "analyst_rating_change" in df.columns:
             rating_change = df["analyst_rating_change"]
-            # Positive changes = upgrades (positive catalyst)
-            labels[rating_change >= 0.5] = 1
-            labels[rating_change <= -0.5] = 2
+            analyst_score += rating_change * 2.0  # Weight changes heavily
+            signal_count += 1
         elif "analyst_rating" in df.columns:
-            # If only rating available, use current rating
+            # Map rating to numeric score
             rating_map = {
-                "Buy": 1,
-                "Strong Buy": 1,
-                "Outperform": 1,
-                "Sell": 2,
-                "Strong Sell": 2,
-                "Underperform": 2,
-                "Hold": 0,
-                "Neutral": 0,
+                "Strong Buy": 2.0,
+                "Buy": 1.0,
+                "Outperform": 1.0,
+                "Hold": 0.0,
+                "Neutral": 0.0,
+                "Sell": -1.0,
+                "Strong Sell": -2.0,
+                "Underperform": -1.0,
             }
-            for idx, rating in enumerate(df["analyst_rating"]):
-                if rating in rating_map:
-                    labels[idx] = rating_map[rating]
-        else:
-            logger.warning("No analyst rating columns available, returning all neutral")
+            rating_score = df["analyst_rating"].map(rating_map).fillna(0)
+            analyst_score += rating_score
+            signal_count += 1
+
+        # Upside potential (Phase 9.3): (target - price) / price
+        upside = _get_column(df, "upside_potential")
+        if upside is not None:
+            # Normalize: high upside = positive
+            upside_normalized = upside.clip(-50, 50) / 25.0  # Scale to roughly -2 to +2
+            analyst_score += upside_normalized
+            signal_count += 1
+
+        # Analyst bullish percentage (Phase 9.3)
+        bullish_pct = _get_column(df, "analyst_bullish_pct")
+        if bullish_pct is not None:
+            # Convert to -1 to +1 scale (50% = neutral)
+            analyst_score += (bullish_pct - 50) / 25.0
+            signal_count += 1
+
+        # Analyst coverage quality (Phase 9.3)
+        coverage_quality = _get_column(df, "analyst_coverage_quality")
+        if coverage_quality is not None:
+            # High coverage quality = more reliable signal (amplifier, not direction)
+            # Use as confidence weight (0.5 to 1.5 range)
+            quality_weight = 0.5 + coverage_quality.clip(0, 2) / 2.0
+            analyst_score *= quality_weight
+
+        if signal_count == 0:
+            logger.warning("No analyst rating indicators available, returning all neutral")
             return labels
 
+        # Average across available signals
+        analyst_score /= signal_count
+
+        # Positive analyst score = positive catalyst, negative = negative catalyst
+        labels[analyst_score >= 0.5] = 1  # Strong bullish signals
+        labels[analyst_score <= -0.5] = 2  # Strong bearish signals
+
     elif method == "market_events":
-        # Market events (sector rotation, regional trends)
-        if "sector_momentum" in df.columns:
-            sector_mom = df["sector_momentum"]
-            # High sector momentum = positive, low = negative
-            labels[sector_mom >= sector_mom.quantile(0.7)] = 1
-            labels[sector_mom <= sector_mom.quantile(0.3)] = 2
-        elif "sector" in df.columns and "last_price" in df.columns:
-            # Calculate sector-relative performance
-            sector_perf = df.groupby("sector")["last_price"].transform(lambda x: x / x.mean())
-            labels[sector_perf >= 1.1] = 1  # Outperforming sector
-            labels[sector_perf <= 0.9] = 2  # Underperforming sector
-        else:
+        # Enhanced market events using Phase 9.3 sector and sentiment features
+        # Uses sector rotation, regional trends, sentiment indicators
+
+        market_score = pd.Series(0.0, index=df.index)
+        signal_count = 0
+
+        # Sector momentum (original data or Phase 9.3)
+        sector_momentum = _get_column(df, "sector_momentum")
+        if sector_momentum is not None:
+            # Normalize: high momentum = positive
+            mom_normalized = (sector_momentum - sector_momentum.mean()) / (
+                sector_momentum.std() + 1e-10
+            )
+            market_score += mom_normalized
+            signal_count += 1
+
+        # Sector-relative performance (calculated from price)
+        if "sector" in df.columns and "last_price" in df.columns:
+            sector_perf = df.groupby("sector")["last_price"].transform(
+                lambda x: (x / x.mean() - 1.0) * 100
+            )
+            market_score += sector_perf / 10.0  # Normalize to similar scale
+            signal_count += 1
+
+        # Short interest ratio (Phase 9.3 sentiment indicator)
+        short_interest = _get_column(df, "short_interest_ratio", "short_int_pct")
+        if short_interest is not None:
+            # High short interest = bearish sentiment (negative)
+            # Normalize and invert
+            short_normalized = -(short_interest - short_interest.median()) / (
+                short_interest.std() + 1e-10
+            )
+            market_score += short_normalized
+            signal_count += 1
+
+        # Beta trend (Phase 9.3): systematic risk changes
+        beta_trend = _get_column(df, "systematic_risk_trend")
+        if beta_trend is not None:
+            # Increasing beta = increasing risk (negative)
+            market_score += -beta_trend * 2.0
+            signal_count += 1
+
+        # Sector-relative valuation (Phase 9.3)
+        for metric in ["p_e_sector_relative", "ev_ebitda_sector_relative"]:
+            sector_rel = _get_column(df, metric)
+            if sector_rel is not None:
+                # Negative relative = undervalued = positive
+                market_score += -sector_rel
+                signal_count += 1
+                break  # Use first available
+
+        if signal_count == 0:
             logger.warning("No market event indicators available, returning all neutral")
             return labels
+
+        # Average across available signals
+        market_score /= signal_count
+
+        # Positive market signals = positive, negative = negative
+        labels[market_score >= 0.7] = 1  # Strong positive sector/market signals
+        labels[market_score <= -0.7] = 2  # Strong negative sector/market signals
 
     elif method == "profitability_event":
         # Profitability-based events using ROE, ROA, ROIC
@@ -212,11 +462,11 @@ def create_enhanced_event_labels(
         if not profitability_cols:
             logger.warning("No profitability columns available, returning all neutral")
             return labels
-        
+
         # Calculate average profitability score
         prof_data = df[profitability_cols].fillna(0)
         avg_profitability = prof_data.mean(axis=1)
-        
+
         # Check if there's any variance in the data
         if avg_profitability.std() > 1e-10:
             # High profitability = positive (top 30%), low/negative = negative (bottom 30%)
@@ -232,11 +482,11 @@ def create_enhanced_event_labels(
         if not leverage_cols:
             logger.warning("No leverage columns available, returning all neutral")
             return labels
-        
+
         # Calculate average leverage score (lower is better)
         leverage_data = df[leverage_cols].fillna(df[leverage_cols].median())
         avg_leverage = leverage_data.mean(axis=1)
-        
+
         # Low leverage = positive (bottom 30%), high leverage = negative (top 30%)
         labels[avg_leverage <= avg_leverage.quantile(0.3)] = 1
         labels[avg_leverage >= avg_leverage.quantile(0.7)] = 2
@@ -247,11 +497,11 @@ def create_enhanced_event_labels(
         if not liquidity_cols:
             logger.warning("No liquidity columns available, returning all neutral")
             return labels
-        
+
         # Calculate average liquidity score
         liquidity_data = df[liquidity_cols].fillna(0)
         avg_liquidity = liquidity_data.mean(axis=1)
-        
+
         # Check if there's any variance in the data
         if avg_liquidity.std() > 1e-10:
             # High liquidity = positive (top 30%), low liquidity = negative (bottom 30%)
@@ -267,11 +517,11 @@ def create_enhanced_event_labels(
         if not efficiency_cols:
             logger.warning("No efficiency columns available, returning all neutral")
             return labels
-        
+
         # Calculate average efficiency score
         efficiency_data = df[efficiency_cols].fillna(df[efficiency_cols].median())
         avg_efficiency = efficiency_data.mean(axis=1)
-        
+
         # High efficiency = positive (top 30%), low efficiency = negative (bottom 30%)
         labels[avg_efficiency >= avg_efficiency.quantile(0.7)] = 1
         labels[avg_efficiency <= avg_efficiency.quantile(0.3)] = 2
@@ -282,11 +532,11 @@ def create_enhanced_event_labels(
         if not growth_cols:
             logger.warning("No growth columns available, returning all neutral")
             return labels
-        
+
         # Calculate average growth score
         growth_data = df[growth_cols].fillna(0)
         avg_growth = growth_data.mean(axis=1)
-        
+
         # Check if there's any variance in the data
         if avg_growth.std() > 1e-10:
             # High growth = positive (top 30%), negative growth = negative (bottom 30%)
@@ -298,36 +548,63 @@ def create_enhanced_event_labels(
 
     elif method == "quality_event":
         # Quality-based events using accounting and analyst quality metrics
+        # Updated to use Phase 9.3 generated columns: accounting_quality_score, analyst_coverage_quality
         quality_cols = []
-        
-        # Accounting quality metrics (lower is better for accruals, DSO)
-        inverse_quality_cols = [c for c in ["accruals_to_assets", "days_sales_outstanding"] if c in df.columns]
-        # Analyst quality metrics (higher is better)
-        direct_quality_cols = [c for c in ["analyst_consensus_score", "analyst_revision_score"] if c in df.columns]
-        
-        if not inverse_quality_cols and not direct_quality_cols:
+
+        # Accounting quality score (higher is better - generated by engineer_accounting_quality_features)
+        direct_quality_cols = [
+            c
+            for c in [
+                "accounting_quality_score",
+                "analyst_coverage_quality",
+                "analyst_quality_score",
+            ]
+            if c in df.columns
+        ]
+        # Exceptional items and red flags (lower is better)
+        inverse_quality_cols = [
+            c
+            for c in [
+                "exceptional_items_to_ebitda",
+                "total_exceptional_items_ltm",
+                "goodwill_impairment_flag",
+                "has_goodwill_impairment",
+                "has_asset_writedown",
+                "has_restructuring",
+            ]
+            if c in df.columns
+        ]
+
+        if not direct_quality_cols and not inverse_quality_cols:
             logger.warning("No quality columns available, returning all neutral")
             return labels
-        
+
         # Create composite quality score
         quality_score = pd.Series(0.0, index=df.index)
-        
-        if inverse_quality_cols:
-            # Normalize inverse metrics (lower is better -> invert)
-            for col in inverse_quality_cols:
-                col_data = df[col].fillna(df[col].median())
-                # Invert: subtract from max and normalize
-                quality_score += (col_data.max() - col_data) / (col_data.max() - col_data.min() + 1e-10)
-        
+
         if direct_quality_cols:
             # Add direct metrics (higher is better)
             for col in direct_quality_cols:
                 col_data = df[col].fillna(df[col].median())
-                quality_score += col_data
-        
+                # Normalize to 0-1 range
+                col_min, col_max = col_data.min(), col_data.max()
+                if col_max - col_min > 1e-10:
+                    quality_score += (col_data - col_min) / (col_max - col_min + 1e-10)
+
+        if inverse_quality_cols:
+            # Normalize inverse metrics (lower is better -> invert)
+            for col in inverse_quality_cols:
+                col_data = df[col].fillna(df[col].median())
+                col_min, col_max = col_data.min(), col_data.max()
+                if col_max - col_min > 1e-10:
+                    # Invert: subtract from max and normalize
+                    quality_score += (col_max - col_data) / (col_max - col_min + 1e-10)
+
         # Normalize by number of metrics
-        quality_score /= len(inverse_quality_cols) + len(direct_quality_cols)
-        
+        total_metrics = len(direct_quality_cols) + len(inverse_quality_cols)
+        if total_metrics > 0:
+            quality_score /= total_metrics
+
         # High quality = positive (top 30%), low quality = negative (bottom 30%)
         labels[quality_score >= quality_score.quantile(0.7)] = 1
         labels[quality_score <= quality_score.quantile(0.3)] = 2
@@ -338,30 +615,30 @@ def create_enhanced_event_labels(
         if not composite_cols:
             logger.warning("No composite score columns available, returning all neutral")
             return labels
-        
+
         # Create composite score with proper normalization
         composite_score = pd.Series(0.0, index=df.index)
-        
+
         if "piotroski_f_score" in df.columns:
             # Piotroski F-Score: 0-9 scale, higher is better
             f_score = df["piotroski_f_score"].fillna(df["piotroski_f_score"].median())
             composite_score += f_score / 9.0  # Normalize to 0-1
-        
+
         if "altman_z_score" in df.columns:
             # Altman Z-Score: >2.99 safe, 1.81-2.99 grey, <1.81 distress
             z_score = df["altman_z_score"].fillna(df["altman_z_score"].median())
             # Normalize: clip at 0 and 5, then scale to 0-1
             composite_score += z_score.clip(0, 5) / 5.0
-        
+
         if "beneish_m_score" in df.columns:
             # Beneish M-Score: <-1.78 unlikely manipulator, >-1.78 possible manipulator
             m_score = df["beneish_m_score"].fillna(df["beneish_m_score"].median())
             # Invert: lower is better, clip at -3 to 1, then normalize
             composite_score += (1.0 - m_score.clip(-3, 1)) / 4.0
-        
+
         # Normalize by number of scores
-        composite_score = composite_score / len(composite_cols)
-        
+        composite_score /= len(composite_cols)
+
         # High composite score = positive (top 30%), low = negative (bottom 30%)
         labels[composite_score >= composite_score.quantile(0.7)] = 1
         labels[composite_score <= composite_score.quantile(0.3)] = 2

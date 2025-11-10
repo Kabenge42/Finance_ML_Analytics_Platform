@@ -410,17 +410,25 @@ def prepare_features_for_training(
         >>> assert X.isnull().sum().sum() == 0
     """
     # Import here to avoid circular dependency
-    try:
-        from finance_ml.ml_workflow.preprocessing.imputation import (
-            apply_enhanced_imputation_strategy_6step,
-        )
-    except ImportError:
-        # Fallback to old location
+    apply_imputation_func = None
+    if apply_imputation:
         try:
-            from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_6step
+            from finance_ml.ml_workflow.preprocessing.imputation import (
+                apply_enhanced_imputation_strategy_4step,
+            )
+
+            apply_imputation_func = apply_enhanced_imputation_strategy_4step
         except ImportError:
-            logger.warning("Could not import imputation function, skipping imputation")
-            apply_imputation = False
+            # Fallback to old location (legacy 6-step name)
+            try:
+                from finance_ml.advanced_preprocessing import (
+                    apply_enhanced_imputation_strategy_6step,
+                )
+
+                apply_imputation_func = apply_enhanced_imputation_strategy_6step
+            except ImportError:
+                logger.warning("Could not import imputation function, skipping imputation")
+                apply_imputation = False
 
     # Extract target BEFORE imputation to preserve NaN for removal
     y = df[target_col].copy()
@@ -434,9 +442,9 @@ def prepare_features_for_training(
         y = y[valid_mask]
 
     # Apply final imputation if requested (only on features, target already extracted)
-    if apply_imputation:
+    if apply_imputation and apply_imputation_func is not None:
         logger.info("Applying final imputation before feature extraction...")
-        df = apply_enhanced_imputation_strategy_6step(
+        df = apply_imputation_func(
             df,
             sector_column=sector_column,
             n_neighbors=5,

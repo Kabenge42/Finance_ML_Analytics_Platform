@@ -254,7 +254,8 @@ class PredictionAnalystAnalytics:
         self.bias_metrics = None
         self.disagreements = None
 
-    def print_header(self):
+    @staticmethod
+    def print_header():
         """Print Phase 9.8 section header."""
         print("\n" + "=" * 80)
         print("PHASE 9.8 — PREDICTION VS. ANALYST PRICE TARGET ANALYTICS")

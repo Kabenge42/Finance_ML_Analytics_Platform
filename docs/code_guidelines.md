@@ -87,6 +87,25 @@ n_neighbors: int = 5,
 return_stats: bool = True
 ) -> Tuple[pd.DataFrame, Optional[Dict[str, Any]]]
 # Returns: (preprocessed_df, quality_statistics_dict)
+
+# Phase 9.1 Enhanced Imputation (6-step strategy as of v0.6.1)
+from finance_ml.ml_workflow.preprocessing.imputation import (
+    apply_enhanced_imputation_strategy_4step,  # Core 4-step (zero, KNN, price, median)
+    apply_zero_imputation,
+    apply_knn_imputation_enhanced,
+    apply_price_imputation,
+    apply_median_imputation
+    )
+
+# Note: CHANGELOG refers to "6-step imputation" in v0.6.1 (505+ lines of improvements)
+# Current implementation provides modular 4-step base with extensibility for additional steps
+df_imputed = apply_enhanced_imputation_strategy_4step(
+        df: pd.DataFrame,
+zero_fill_columns: Optional[List[str]] = None,
+knn_neighbors: int = 5,
+price_columns: Optional[List[str]] = None
+) -> pd.DataFrame
+# Returns: DataFrame with all missing values imputed
 ```
 
 **Phase 9.3 — Features**
@@ -115,12 +134,20 @@ include_relative: bool = True,
 sector_col: str = "sector"
 ) -> pd.DataFrame
 # Returns: df with features based on preset
-# Presets: "basic", "momentum", "quality", "comprehensive", "full_enhanced"
+# Presets (v9_9):
+#   "basic" - Core ratios, margins, volatility, revenue CAGR
+#   "momentum" - Price momentum, RSI, moving averages, return stability
+#   "quality" - Accounting quality, financial distress signals (Altman Z)
+#   "comprehensive" - Full advanced feature set
+#   "full_enhanced" - Alias for comprehensive preset
 
 # finance_ml.ml_workflow.features.advanced
 from finance_ml.ml_workflow.features.advanced import (
     engineer_valuation_ratios,
     engineer_profitability_ratios,
+    engineer_momentum_features,
+    engineer_analyst_quality_features,
+    engineer_accounting_quality_features,
     build_comprehensive_features
     )
 
@@ -128,7 +155,12 @@ df_with_ratios = engineer_valuation_ratios(
         df: pd.DataFrame,
 fillna: bool = True
 ) -> pd.DataFrame
-# Returns: df with p_e, p_b, p_s, ev_ebitda, etc.
+# Returns: df with p_e, p_b, p_s, ev_ebitda, peg_ratio, etc.
+
+df_with_momentum = engineer_momentum_features(
+        df: pd.DataFrame
+) -> pd.DataFrame
+# Returns: df with price_momentum_1m/3m/6m, rsi_14d/30d, ma_crossover_signal, return_stability_score
 
 df_comprehensive = build_comprehensive_features(
         df: pd.DataFrame,
@@ -138,6 +170,7 @@ sector_col: str = "sector",
 preset: Optional[str] = None
 ) -> pd.DataFrame
 # Returns: df with all advanced features
+# Optional preset: "momentum", "quality", "comprehensive" for targeted feature sets
 ```
 
 **Phase 9.4 — Classification**
@@ -148,12 +181,28 @@ from finance_ml.ml_workflow.classification.labels import create_enhanced_event_l
 
 labels = create_enhanced_event_labels(
         df: pd.DataFrame,
-method: Literal['price_momentum', 'analyst_rating', 'volatility'] = 'price_momentum',
+method: Literal[
+    'price_momentum', 'valuation', 'fundamental', 'volatility',
+    'analyst_rating', 'market_events', 'combined_signals',
+    'profitability_event', 'leverage_event', 'liquidity_event',
+    'growth_event', 'efficiency_event', 'quality_event'
+] = 'price_momentum',
 threshold_positive: float = 10.0,
 threshold_negative: float = -10.0,
 use_sector_adjustment: bool = True
 ) -> np.ndarray
 # Returns: array of labels (0=Neutral, 1=Positive, 2=Negative)
+# 
+# Phase 9.4 enhancements (v9_9): All 13 methods support Phase 9.3 engineered columns
+# Method 1 (price_momentum): Uses price_momentum_1m/3m/6m, rsi_14d/30d, ma_crossover_signal
+# Method 2 (valuation): Uses p_e_ratio, p_b_ratio, ev_ebitda_ratio, peg_ratio
+# Method 3 (fundamental): Uses gross_margin_pct, operating_margin_pct, roe, roa, roic
+# Method 4 (volatility): Uses return_stability_score, sharpe_proxy
+# Method 5 (analyst_rating): Uses upside_potential, analyst_bullish_pct, analyst_coverage_quality
+# Method 6 (market_events): Uses short_interest_ratio, systematic_risk_trend, sector-relative metrics
+# Method 7 (combined_signals): Multi-metric composite
+# Methods 8-13: Profitability, leverage, liquidity, growth, efficiency, quality events
+# All methods backward compatible with original columns
 
 # finance_ml.ml_workflow.classification.tuning
 from finance_ml.ml_workflow.classification.tuning import optimize_classifier_hyperparameters
@@ -226,6 +275,28 @@ from finance_ml.ml_workflow.regression.constraints import NonNegativeRegressionW
 model = NonNegativeRegressionWrapper(base_estimator=your_regressor)
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)  # Guaranteed >= 0
+
+# Phase 9.5 Classification Meta-Features (v0.6.1+)
+# Extract classification probabilities to enhance regression models
+from finance_ml.ml_workflow.regression.dataset import extract_classification_features
+
+df_with_meta = extract_classification_features(
+        df: pd.DataFrame,
+classifier: Any,
+feature_cols: List[str]
+) -> pd.DataFrame
+# Returns: df with event_prob_neutral, event_prob_positive, event_prob_negative columns
+# These probabilities provide sentiment and event likelihood signals to regression models
+
+# Phase 9.5 Modular Regression Pipelines (v0.6.1+)
+# Ridge, Lasso, ElasticNet, Bayesian Ridge, Gradient Boosting with improved abstraction
+from finance_ml.ml_workflow.regression.models import (
+    train_ridge_regressor,
+    train_lasso_regressor,
+    train_elasticnet_regressor,
+    train_bayesian_ridge_regressor
+    )
+# All follow standardized return signature: {model, metrics, y_pred, feature_importance}
 ```
 
 **Phase 9.6 — Evaluation**
@@ -275,17 +346,55 @@ top_n: int = 20
 # Returns: Top N undervalued stocks sorted by mispricing score
 ```
 
-**Phase 9.8 — Reporting**
+**Phase 9.8 — Reporting and Analyst Comparison**
 
 ```python
 # finance_ml.ml_workflow.reporting
-from finance_ml.ml_workflow.reporting import prepare_plotly_dashboard_data
+from finance_ml.ml_workflow.reporting import (
+    prepare_plotly_dashboard_data,
+    calculate_financial_metrics_dashboard,
+    generate_data_quality_alerts
+    )
 
 dashboard_data = prepare_plotly_dashboard_data(
         predictions_df: pd.DataFrame,
 metrics_df: pd.DataFrame
 ) -> Dict[str, Any]
 # Returns: dict with plotly-ready data structures
+
+financial_metrics = calculate_financial_metrics_dashboard(
+        df: pd.DataFrame
+) -> Dict[str, Any]
+# Returns: automated KPI reporting metrics (Phase 9.2 enhanced EDA)
+
+quality_alerts = generate_data_quality_alerts(
+        df: pd.DataFrame,
+thresholds: Optional[Dict[str, float]] = None
+) -> List[Dict[str, Any]]
+# Returns: data validation and quality monitoring alerts
+
+# Phase 9.7 Analyst Comparison (v0.6.0+)
+from finance_ml.ml_workflow.analytics.analyst_comparison import (
+    compare_prediction_vs_analyst_targets,
+    calculate_agreement_rate,
+    calculate_directional_accuracy,
+    analyze_systematic_bias,
+    generate_prediction_analyst_excel_report
+    )
+
+comparison_df = compare_prediction_vs_analyst_targets(
+        predictions: pd.Series,
+analyst_targets: pd.Series,
+last_prices: pd.Series,
+tickers: pd.Series
+) -> pd.DataFrame
+# Returns: comprehensive comparison with agreement metrics
+
+excel_report = generate_prediction_analyst_excel_report(
+        comparison_df: pd.DataFrame,
+output_path: str
+) -> None
+# Generates Excel report with formatted comparison tables and charts
 ```
 
 2) Column Naming and Schema (all_stocks dataframe)
@@ -393,6 +502,22 @@ This table documents standard variable names used across the Finance ML Analytic
 | `classification_cols` | List[str] | Classification probability columns | `['event_prob_neutral', 'event_prob_positive', 'event_prob_negative']` |
 | `valuation_cols`      | List[str] | Valuation metric columns           | `['p_e', 'p_b', 'ev_ebitda', 'market_cap']`                            |
 | `financial_metrics`   | List[str] | Financial metric columns           | Various analysis contexts                                              |
+
+**Phase 9.3 Feature Categories (v9_9):**
+
+| Category                 | Example Features                                                                                  | Description                                 |
+|--------------------------|---------------------------------------------------------------------------------------------------|---------------------------------------------|
+| **Momentum & Technical** | `price_momentum_1m`, `price_momentum_3m`, `rsi_14d`, `rsi_30d`, `ma_crossover_signal`             | Price momentum, RSI, moving averages        |
+| **Valuation Ratios**     | `p_e_ratio`, `p_b_ratio`, `ev_ebitda_ratio`, `peg_ratio`, `p_s_ratio`                             | Comprehensive valuation metrics             |
+| **Profitability**        | `gross_margin_pct`, `operating_margin_pct`, `net_margin_pct`, `roe`, `roa`, `roic`                | Margin and return metrics                   |
+| **Quality & Risk**       | `altman_z_score`, `accounting_quality_score`, `exceptional_items_to_ebitda`, `return_stability`   | Financial distress and quality signals      |
+| **Analyst Sentiment**    | `upside_potential`, `analyst_bullish_pct`, `analyst_coverage_quality`, `price_target_range`       | Analyst consensus and price target features |
+| **Market Sentiment**     | `short_interest_ratio`, `systematic_risk_trend`, `beta_stability`                                 | Market and systematic risk indicators       |
+| **Cash Flow**            | `cfo_to_net_income`, `fcf_margin`, `cfo_growth_yoy`, `cash_conversion_cycle`                      | Cash flow quality and efficiency            |
+| **Capital Allocation**   | `capex_intensity`, `total_shareholder_return_yield`, `reinvestment_rate`, `acquisition_intensity` | Capital deployment metrics                  |
+| **Leverage & Liquidity** | `debt_to_equity`, `current_ratio`, `cash_ratio`, `working_capital_ratio`                          | Balance sheet strength indicators           |
+| **Temporal Patterns**    | `ltm_vs_5yavg_revenue`, `fq_vs_5yavg_ebitda`, `days_to_earnings`, `reporting_lag`                 | Time-series and seasonality features        |
+| **Composite Scores**     | `quality_score_composite`, `growth_quality_score`, `value_score`, `momentum_score`                | Multi-metric aggregated signals             |
 
 **Configuration and Metadata:**
 
@@ -911,3 +1036,146 @@ plural `columns`. Calling with wrong parameter names causes
 4. **Migration path**: Update imports to use new Phase 9.1 preprocessing modules once they're stable and fully tested.
 
 **Testing**: Add unit tests that verify function signatures match expected parameter names to catch these issues early.
+
+---
+
+## Appendix D — Version History and Recent Updates
+
+**Model Version: v9_9** (as of 2025-11-10, version 0.7.0)
+
+### Phase 9.3 Feature Engineering Enhancements (v9_9)
+
+**New Feature Categories (50-75 new features):**
+
+1. **Momentum & Technical Features**
+    - Price momentum indicators (1m, 3m, 6m, 1y)
+    - RSI (14-day, 30-day)
+    - Moving average crossover signals
+    - Return stability score and Sharpe proxy
+
+2. **Quality & Risk Signals**
+    - Altman Z-Score trends and volatility
+    - Financial distress composite scores
+    - Accounting quality metrics (exceptional items, goodwill impairment, restructuring)
+    - Asset quality indicators
+
+3. **Cash Flow & Capital Allocation**
+    - Cash flow quality (CFO/Net Income, FCF margin)
+    - Capital intensity and efficiency
+    - Total shareholder return yield
+    - Reinvestment and acquisition metrics
+
+4. **Market Sentiment & Analyst Features**
+    - Analyst consensus (bullish/bearish percentages)
+    - Price target features (upside potential, range, revisions)
+    - Short interest ratio and beta stability
+    - Analyst coverage quality
+
+5. **Profitability Trends**
+    - Margin evolution (EBITDA, gross, operating)
+    - Operating leverage
+    - Earnings quality scores
+    - Forward-looking profitability estimates
+
+6. **Balance Sheet Strength**
+    - Growth rates (debt, equity, assets)
+    - Liquidity trends and ratios
+    - Retained earnings patterns
+
+7. **Temporal & Composite Features**
+    - LTM vs 5Y average comparisons
+    - Earnings date features
+    - Quality/growth/value/momentum composite scores
+
+**API Enhancements:**
+
+- `build_features()` with presets: "basic", "momentum", "quality", "comprehensive", "full_enhanced"
+- `build_comprehensive_features()` accepts optional `preset` parameter
+- All features support Phase 9.3 column naming conventions
+
+### Phase 9.4 Classification Label Enhancements (v9_9)
+
+**13 Event Label Creation Methods:**
+
+1. `price_momentum` - Enhanced with Phase 9.3 momentum features
+2. `valuation` - Multi-metric valuation composite
+3. `fundamental` - Profitability and quality metrics
+4. `volatility` - Stability indicators
+5. `analyst_rating` - Analyst consensus with coverage quality
+6. `market_events` - Sentiment and sector-relative signals
+7. `combined_signals` - Multi-metric composite
+8. `profitability_event` - Margin and return events
+9. `leverage_event` - Debt and capital structure
+10. `liquidity_event` - Working capital and cash
+11. `growth_event` - Revenue and earnings growth
+12. `efficiency_event` - Asset turnover and productivity
+13. `quality_event` - Accounting quality and distress
+
+**Key Improvements:**
+
+- `_get_column()` helper for Phase 9.3 column support
+- Backward compatible with original columns
+- Meaningful class distributions across all methods
+- All 29 classification tests passing
+
+### Phase 9.5 Regression Enhancements (v0.6.1+)
+
+**Classification Meta-Features:**
+
+- `extract_classification_features()` adds event probabilities to regression datasets
+- Provides sentiment and event likelihood signals
+- Enhances prediction accuracy with multi-stage modeling
+
+**Modular Regression Pipelines:**
+
+- Ridge, Lasso, ElasticNet, Bayesian Ridge models
+- Standardized return signatures: {model, metrics, y_pred, feature_importance}
+- Improved abstraction and testability
+- NonNegativeRegressionWrapper for constraint enforcement
+
+### Phase 9.1 Preprocessing Updates (v0.5.1+)
+
+**Enhanced Imputation:**
+
+- 4-step strategy: zero-fill, KNN, price-based, median
+- Modular functions for each imputation step
+- 21 comprehensive tests with ≥80% coverage
+- Extensible architecture for additional steps
+
+### Phase 9.2 EDA Enhancements (v0.5.0+)
+
+**New Analysis Functions:**
+
+- `calculate_financial_metrics_dashboard()` - Automated KPI reporting
+- `generate_data_quality_alerts()` - Quality monitoring
+- `perform_comprehensive_hypothesis_tests()` - Statistical testing
+- Benchmarking module with sector/regional comparisons
+
+### Phase 9.7 Analytics Updates (v0.6.0+)
+
+**Analyst Comparison:**
+
+- `compare_prediction_vs_analyst_targets()` - Comprehensive comparison
+- Agreement rate and directional accuracy metrics
+- Systematic bias analysis
+- Excel report generation with charts
+
+### Testing and Quality (Current Status)
+
+- **Test Suite:** 67+ test modules
+- **Coverage Target:** ≥85% for new code, ≥80% overall
+- **Fast Tests:** < 100 lines, pure functions (coverage_smoke, loaders, validation)
+- **Medium Tests:** 100-500 lines, integration (imputation, risk_metrics, logging)
+- **Slow Tests:** > 500 lines, heavy ML (classification_phase94, advanced_models_phase95)
+
+**Recommended Testing Workflow:**
+
+1. Development: Run only affected module tests
+2. Before commit: Run fast + medium tests (~1-3 minutes)
+3. CI/CD: Run full suite with timeout protection
+
+---
+
+**Document Version:** 1.1  
+**Last Updated:** 2025-11-10  
+**Synchronized with:** CHANGELOG.md v0.7.0, README.md v0.7.0, Phase_9.3_feature_enhancement_plan.md
