@@ -1,0 +1,340 @@
+"""
+Risk Metrics Module for Finance ML Analytics Platform.
+
+This module provides comprehensive risk metrics calculations for portfolio analysis:
+- Value at Risk (VaR): Historical and Parametric methods
+- Conditional Value at Risk (CVaR): Expected shortfall
+- Sharpe Ratio: Risk-adjusted returns
+- Sortino Ratio: Downside risk-adjusted returns
+- Maximum Drawdown: Peak-to-trough decline
+
+Implemented using strict TDD methodology (Test-Driven Development).
+"""
+
+from __future__ import annotations
+
+from typing import Union, Dict, Any, Optional
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+
+def calculate_var_historical(returns: pd.Series, confidence_level: float = 0.95) -> float:
+    """
+    Calculate Value at Risk (VaR) using historical simulation method.
+
+    VaR represents the maximum expected loss at a given confidence level.
+    Historical VaR uses the empirical distribution of returns.
+
+    Args:
+        returns: Series of returns (e.g., daily returns)
+        confidence_level: Confidence level (e.g., 0.95 for 95% VaR)
+
+    Returns:
+        VaR value (negative number representing loss)
+
+    Raises:
+        ValueError: If returns is empty or confidence_level is invalid
+
+    Example:
+        >>> returns = pd.Series([0.01, -0.02, 0.015, -0.01, 0.005])
+        >>> var_95 = calculate_var_historical(returns, confidence_level=0.95)
+        >>> print(f"95% VaR: {var_95:.4f}")
+    """
+    if len(returns) == 0:
+        raise ValueError("Returns series cannot be empty")
+
+    if not 0 < confidence_level < 1:
+        raise ValueError("Confidence level must be between 0 and 1")
+
+    # Calculate the percentile corresponding to the confidence level
+    # For 95% confidence, we look at the 5th percentile (worst 5% of returns)
+    alpha = 1 - confidence_level
+    var = np.percentile(returns, alpha * 100)
+
+    return float(var)
+
+
+def calculate_var_parametric(returns: pd.Series, confidence_level: float = 0.95) -> float:
+    """
+    Calculate Value at Risk (VaR) using parametric method (normal distribution).
+
+    Assumes returns follow a normal distribution and uses mean and standard deviation.
+
+    Args:
+        returns: Series of returns
+        confidence_level: Confidence level (e.g., 0.95 for 95% VaR)
+
+    Returns:
+        VaR value (negative number representing loss)
+
+    Raises:
+        ValueError: If returns is empty or confidence_level is invalid
+
+    Example:
+        >>> returns = pd.Series(np.random.normal(0.001, 0.02, 1000))
+        >>> var_95 = calculate_var_parametric(returns, confidence_level=0.95)
+    """
+    if len(returns) == 0:
+        raise ValueError("Returns series cannot be empty")
+
+    if not 0 < confidence_level < 1:
+        raise ValueError("Confidence level must be between 0 and 1")
+
+    # Calculate mean and standard deviation
+    mean = returns.mean()
+    std = returns.std()
+
+    # Calculate z-score for the confidence level
+    alpha = 1 - confidence_level
+    z_score = stats.norm.ppf(alpha)
+
+    # Parametric VaR
+    var = mean + z_score * std
+
+    return float(var)
+
+
+def calculate_cvar(returns: pd.Series, confidence_level: float = 0.95) -> float:
+    """
+    Calculate Conditional Value at Risk (CVaR), also known as Expected Shortfall.
+
+    CVaR represents the expected loss given that the loss exceeds VaR.
+    It's the average of all losses beyond the VaR threshold.
+
+    Args:
+        returns: Series of returns
+        confidence_level: Confidence level (e.g., 0.95 for 95% CVaR)
+
+    Returns:
+        CVaR value (negative number representing expected loss beyond VaR)
+
+    Raises:
+        ValueError: If returns is empty or confidence_level is invalid
+
+    Example:
+        >>> returns = pd.Series(np.random.normal(0.001, 0.02, 1000))
+        >>> cvar_95 = calculate_cvar(returns, confidence_level=0.95)
+    """
+    if len(returns) == 0:
+        raise ValueError("Returns series cannot be empty")
+
+    if not 0 < confidence_level < 1:
+        raise ValueError("Confidence level must be between 0 and 1")
+
+    # First, calculate VaR
+    var = calculate_var_historical(returns, confidence_level)
+
+    # CVaR is the mean of all returns that are below VaR
+    cvar = returns[returns <= var].mean()
+
+    return float(cvar)
+
+
+def calculate_sharpe_ratio(
+    returns: pd.Series, risk_free_rate: float = 0.0, periods_per_year: int = 252
+) -> float:
+    """
+    Calculate Sharpe ratio for risk-adjusted returns.
+
+    Sharpe ratio measures excess return per unit of total risk (volatility).
+    Higher Sharpe ratio indicates better risk-adjusted performance.
+
+    Args:
+        returns: Series of returns (e.g., daily returns)
+        risk_free_rate: Annual risk-free rate (default: 0.0)
+        periods_per_year: Number of periods per year for annualization (default: 252 for daily)
+
+    Returns:
+        Annualized Sharpe ratio
+
+    Raises:
+        ValueError: If volatility is zero (no variation in returns)
+
+    Example:
+        >>> returns = pd.Series(np.random.normal(0.001, 0.02, 252))
+        >>> sharpe = calculate_sharpe_ratio(returns, risk_free_rate=0.02)
+    """
+    if len(returns) == 0:
+        raise ValueError("Returns series cannot be empty")
+
+    # Calculate mean and standard deviation
+    mean_return = returns.mean()
+    std_return = returns.std()
+
+    # Check for zero or near-zero volatility (with small epsilon for floating point precision)
+    if std_return < 1e-10:
+        raise ValueError("Standard deviation is zero; cannot calculate Sharpe ratio")
+
+    # Convert annual risk-free rate to period rate
+    rf_period = risk_free_rate / periods_per_year
+
+    # Calculate Sharpe ratio and annualize
+    sharpe = (mean_return - rf_period) / std_return
+    sharpe_annualized = sharpe * np.sqrt(periods_per_year)
+
+    return float(sharpe_annualized)
+
+
+def calculate_sortino_ratio(
+    returns: pd.Series,
+    risk_free_rate: float = 0.0,
+    target_return: float = 0.0,
+    periods_per_year: int = 252,
+) -> float:
+    """
+    Calculate Sortino ratio for downside risk-adjusted returns.
+
+    Similar to Sharpe ratio but only considers downside volatility (negative returns).
+    Better reflects risk for investors who care more about downside than upside volatility.
+
+    Args:
+        returns: Series of returns
+        risk_free_rate: Annual risk-free rate (default: 0.0)
+        target_return: Target return threshold (default: 0.0)
+        periods_per_year: Number of periods per year for annualization (default: 252)
+
+    Returns:
+        Annualized Sortino ratio
+
+    Raises:
+        ValueError: If downside deviation is zero
+
+    Example:
+        >>> returns = pd.Series(np.random.normal(0.001, 0.02, 252))
+        >>> sortino = calculate_sortino_ratio(returns, target_return=0.0)
+    """
+    if len(returns) == 0:
+        raise ValueError("Returns series cannot be empty")
+
+    # Calculate mean return
+    mean_return = returns.mean()
+
+    # Calculate downside deviation (only negative returns below target)
+    downside_returns = returns[returns < target_return]
+    downside_deviation = downside_returns.std()
+
+    # Check for zero or near-zero downside deviation (with small epsilon for floating point precision)
+    if downside_deviation < 1e-10 or len(downside_returns) == 0:
+        raise ValueError("Downside deviation is zero; cannot calculate Sortino ratio")
+
+    # Convert annual risk-free rate to period rate
+    rf_period = risk_free_rate / periods_per_year
+
+    # Calculate Sortino ratio and annualize
+    sortino = (mean_return - rf_period) / downside_deviation
+    sortino_annualized = sortino * np.sqrt(periods_per_year)
+
+    return float(sortino_annualized)
+
+
+def calculate_max_drawdown(
+    prices: pd.Series, return_details: bool = False
+) -> Union[float, Dict[str, Any]]:
+    """
+    Calculate maximum drawdown from peak to trough.
+
+    Maximum drawdown represents the largest peak-to-trough decline in value.
+    It's a key measure of downside risk.
+
+    Args:
+        prices: Series of prices or cumulative returns
+        return_details: If True, return dict with detailed metrics
+
+    Returns:
+        Maximum drawdown as float (negative percentage), or dict with details
+
+    Example:
+        >>> prices = pd.Series([100, 120, 80, 90, 110])
+        >>> max_dd = calculate_max_drawdown(prices)
+        >>> print(f"Max Drawdown: {max_dd:.2%}")
+    """
+    if len(prices) == 0:
+        raise ValueError("Prices series cannot be empty")
+
+    # Calculate running maximum (peak)
+    running_max = prices.expanding().max()
+
+    # Calculate drawdown from peak
+    drawdown = (prices - running_max) / running_max
+
+    # Find maximum drawdown
+    max_dd = drawdown.min()
+
+    if return_details:
+        # Find indices of peak and trough
+        max_dd_idx = drawdown.idxmin()
+        peak_idx = running_max[:max_dd_idx].idxmax() if max_dd_idx is not None else None
+
+        return {
+            "max_drawdown": float(max_dd),
+            "peak_date": peak_idx,
+            "trough_date": max_dd_idx,
+            "peak_value": float(prices[peak_idx]) if peak_idx is not None else None,
+            "trough_value": float(prices[max_dd_idx]) if max_dd_idx is not None else None,
+        }
+
+    return float(max_dd)
+
+
+def calculate_portfolio_risk_metrics(
+    returns: pd.Series,
+    prices: Optional[pd.Series] = None,
+    risk_free_rate: float = 0.0,
+    confidence_levels: list = None,
+) -> Dict[str, float]:
+    """
+    Calculate comprehensive portfolio risk metrics.
+
+    Combines multiple risk measures into a single comprehensive report.
+
+    Args:
+        returns: Series of returns
+        prices: Optional series of prices for drawdown calculation
+        risk_free_rate: Annual risk-free rate (default: 0.0)
+        confidence_levels: List of confidence levels for VaR/CVaR (default: [0.95, 0.99])
+
+    Returns:
+        Dictionary containing all risk metrics
+
+    Example:
+        >>> returns = pd.Series(np.random.normal(0.001, 0.02, 252))
+        >>> prices = (1 + returns).cumprod() * 100
+        >>> metrics = calculate_portfolio_risk_metrics(returns, prices)
+        >>> print(f"Sharpe Ratio: {metrics['sharpe_ratio']:.2f}")
+    """
+    if confidence_levels is None:
+        confidence_levels = [0.95, 0.99]
+
+    metrics = {"mean_return": float(returns.mean()), "volatility": float(returns.std())}
+
+    # Basic statistics
+
+    # VaR metrics
+    for conf in confidence_levels:
+        conf_pct = int(conf * 100)
+        metrics[f"var_{conf_pct}_historical"] = calculate_var_historical(returns, conf)
+        metrics[f"var_{conf_pct}_parametric"] = calculate_var_parametric(returns, conf)
+        metrics[f"cvar_{conf_pct}"] = calculate_cvar(returns, conf)
+
+    # Risk-adjusted return metrics
+    try:
+        metrics["sharpe_ratio"] = calculate_sharpe_ratio(returns, risk_free_rate)
+    except ValueError:
+        metrics["sharpe_ratio"] = np.nan
+
+    try:
+        metrics["sortino_ratio"] = calculate_sortino_ratio(returns, risk_free_rate)
+    except ValueError:
+        metrics["sortino_ratio"] = np.nan
+
+    # Drawdown metrics (if prices provided)
+    if prices is not None:
+        metrics["max_drawdown"] = calculate_max_drawdown(prices)
+    else:
+        # Calculate from cumulative returns
+        cum_returns = (1 + returns).cumprod()
+        metrics["max_drawdown"] = calculate_max_drawdown(cum_returns)
+
+    return metrics

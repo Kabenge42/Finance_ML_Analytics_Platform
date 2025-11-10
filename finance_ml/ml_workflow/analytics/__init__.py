@@ -29,6 +29,30 @@ from finance_ml.ml_workflow.analytics.mispricing import (
     rank_stocks_by_sector,
 )
 
+# Import from analyst_comparison module (Phase 9.7)
+from finance_ml.ml_workflow.analytics.analyst_comparison import (
+    PredictionAnalystAnalytics,
+)
+
+# Import from portfolio module (Phase 9.7)
+from finance_ml.ml_workflow.analytics.portfolio import (
+    calculate_portfolio_return,
+    calculate_portfolio_volatility,
+    calculate_portfolio_sharpe_ratio,
+    optimize_portfolio_max_sharpe,
+    optimize_portfolio_min_volatility,
+)
+
+# Import from risk module (Phase 9.7)
+from finance_ml.ml_workflow.analytics.risk import (
+    calculate_var_historical,
+    calculate_cvar,
+    calculate_sharpe_ratio,
+    calculate_sortino_ratio,
+    calculate_max_drawdown,
+    calculate_portfolio_risk_metrics,
+)
+
 # Import comprehensive eval module functions
 from finance_ml.ml_workflow.analytics.eval import (
     # Basic mispricing and ranking (note: some overlap with mispricing.py)
@@ -101,6 +125,21 @@ __all__ = [
     "rank_undervalued_stocks",
     "rank_overvalued_stocks",
     "rank_stocks_by_sector",
+    # Analyst comparison (Phase 9.7)
+    "PredictionAnalystAnalytics",
+    # Portfolio optimization (Phase 9.7)
+    "calculate_portfolio_return",
+    "calculate_portfolio_volatility",
+    "calculate_portfolio_sharpe_ratio",
+    "optimize_portfolio_max_sharpe",
+    "optimize_portfolio_min_volatility",
+    # Risk metrics (Phase 9.7)
+    "calculate_var_historical",
+    "calculate_cvar",
+    "calculate_sharpe_ratio",
+    "calculate_sortino_ratio",
+    "calculate_max_drawdown",
+    "calculate_portfolio_risk_metrics",
     # EDA and analysis
     "simple_eda",
     # Export functions

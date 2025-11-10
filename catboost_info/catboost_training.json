@@ -19,802 +19,802 @@
   "iterations": [
     {
       "learn": [
-        15317.84974
+        15504.91967
       ],
       "iteration": 0,
-      "passed_time": 0.1686538107,
-      "remaining_time": 16.69672726
+      "passed_time": 0.1508068177,
+      "remaining_time": 14.92987496
     },
     {
       "learn": [
-        14308.12213
+        14290.18209
       ],
       "iteration": 1,
-      "passed_time": 0.1772732596,
-      "remaining_time": 8.686389719
+      "passed_time": 0.1588022092,
+      "remaining_time": 7.781308249
     },
     {
       "learn": [
-        13246.0423
+        13321.5063
       ],
       "iteration": 2,
-      "passed_time": 0.1852663739,
-      "remaining_time": 5.990279422
+      "passed_time": 0.1663997484,
+      "remaining_time": 5.380258531
     },
     {
       "learn": [
-        12308.79676
+        12338.69043
       ],
       "iteration": 3,
-      "passed_time": 0.192956802,
-      "remaining_time": 4.630963249
+      "passed_time": 0.1739479871,
+      "remaining_time": 4.17475169
     },
     {
       "learn": [
-        11373.74325
+        11601.20112
       ],
       "iteration": 4,
-      "passed_time": 0.2008695692,
-      "remaining_time": 3.816521814
+      "passed_time": 0.1825742258,
+      "remaining_time": 3.468910291
     },
     {
       "learn": [
-        10648.20062
+        10728.87388
       ],
       "iteration": 5,
-      "passed_time": 0.2083983406,
-      "remaining_time": 3.264907337
+      "passed_time": 0.1906074208,
+      "remaining_time": 2.986182926
     },
     {
       "learn": [
-        9904.047126
+        9998.669188
       ],
       "iteration": 6,
-      "passed_time": 0.2161928799,
-      "remaining_time": 2.872276833
+      "passed_time": 0.1992233973,
+      "remaining_time": 2.646825136
     },
     {
       "learn": [
-        9248.216657
+        9286.109493
       ],
       "iteration": 7,
-      "passed_time": 0.2239704973,
-      "remaining_time": 2.575660719
+      "passed_time": 0.20737824,
+      "remaining_time": 2.38484976
     },
     {
       "learn": [
-        8628.260403
+        8633.605789
       ],
       "iteration": 8,
-      "passed_time": 0.232116227,
-      "remaining_time": 2.346952962
+      "passed_time": 0.2150494444,
+      "remaining_time": 2.174388827
     },
     {
       "learn": [
-        7970.409349
+        8057.495358
       ],
       "iteration": 9,
-      "passed_time": 0.2393922087,
-      "remaining_time": 2.154529879
+      "passed_time": 0.222780147,
+      "remaining_time": 2.005021323
     },
     {
       "learn": [
-        7395.951721
+        7500.340126
       ],
       "iteration": 10,
-      "passed_time": 0.2468010353,
-      "remaining_time": 1.99684474
+      "passed_time": 0.2304218286,
+      "remaining_time": 1.864322067
     },
     {
       "learn": [
-        6922.595711
+        7000.632438
       ],
       "iteration": 11,
-      "passed_time": 0.254397654,
-      "remaining_time": 1.865582796
+      "passed_time": 0.2382092484,
+      "remaining_time": 1.746867822
     },
     {
       "learn": [
-        6515.066207
+        6489.525831
       ],
       "iteration": 12,
-      "passed_time": 0.262112106,
-      "remaining_time": 1.754134863
+      "passed_time": 0.2459632712,
+      "remaining_time": 1.646061892
     },
     {
       "learn": [
-        6106.125989
+        5998.48123
       ],
       "iteration": 13,
-      "passed_time": 0.2700374206,
-      "remaining_time": 1.658801298
+      "passed_time": 0.2532636255,
+      "remaining_time": 1.555762271
     },
     {
       "learn": [
-        5747.402983
+        5636.650621
       ],
       "iteration": 14,
-      "passed_time": 0.2783193451,
-      "remaining_time": 1.577142956
+      "passed_time": 0.2604476401,
+      "remaining_time": 1.475869961
     },
     {
       "learn": [
-        5441.520297
+        5261.990838
       ],
       "iteration": 15,
-      "passed_time": 0.2864112802,
-      "remaining_time": 1.503659221
+      "passed_time": 0.2677140446,
+      "remaining_time": 1.405498734
     },
     {
       "learn": [
-        5095.323041
+        4899.131624
       ],
       "iteration": 16,
-      "passed_time": 0.2942709878,
-      "remaining_time": 1.436734823
+      "passed_time": 0.2755334458,
+      "remaining_time": 1.34525153
     },
     {
       "learn": [
-        4716.406803
+        4567.652818
       ],
       "iteration": 17,
-      "passed_time": 0.3024352789,
-      "remaining_time": 1.377760715
+      "passed_time": 0.2831449276,
+      "remaining_time": 1.289882448
     },
     {
       "learn": [
-        4407.753921
+        4226.72583
       ],
       "iteration": 18,
-      "passed_time": 0.3107363811,
-      "remaining_time": 1.324718256
+      "passed_time": 0.2901793136,
+      "remaining_time": 1.237080232
     },
     {
       "learn": [
-        4136.370487
+        3950.809346
       ],
       "iteration": 19,
-      "passed_time": 0.3193898414,
-      "remaining_time": 1.277559366
+      "passed_time": 0.2973792417,
+      "remaining_time": 1.189516967
     },
     {
       "learn": [
-        3876.203143
+        3692.87196
       ],
       "iteration": 20,
-      "passed_time": 0.3277746567,
-      "remaining_time": 1.233057042
+      "passed_time": 0.3046990135,
+      "remaining_time": 1.14624867
     },
     {
       "learn": [
-        3683.595796
+        3480.44649
       ],
       "iteration": 21,
-      "passed_time": 0.3363315145,
-      "remaining_time": 1.192448097
+      "passed_time": 0.3119602353,
+      "remaining_time": 1.106040834
     },
     {
       "learn": [
-        3434.195288
+        3305.104891
       ],
       "iteration": 22,
-      "passed_time": 0.3443932402,
-      "remaining_time": 1.152968674
+      "passed_time": 0.3192999597,
+      "remaining_time": 1.068960735
     },
     {
       "learn": [
-        3225.18679
+        3100.864782
       ],
       "iteration": 23,
-      "passed_time": 0.3526859751,
-      "remaining_time": 1.116838921
+      "passed_time": 0.3266684942,
+      "remaining_time": 1.034450232
     },
     {
       "learn": [
-        3017.254826
+        2884.146065
       ],
       "iteration": 24,
-      "passed_time": 0.3612875988,
-      "remaining_time": 1.083862796
+      "passed_time": 0.3356184274,
+      "remaining_time": 1.006855282
     },
     {
       "learn": [
-        2855.768611
+        2721.076881
       ],
       "iteration": 25,
-      "passed_time": 0.369179706,
-      "remaining_time": 1.05074224
+      "passed_time": 0.3444561838,
+      "remaining_time": 0.9803752922
     },
     {
       "learn": [
-        2693.772772
+        2552.861474
       ],
       "iteration": 26,
-      "passed_time": 0.3773182051,
-      "remaining_time": 1.020156629
+      "passed_time": 0.3525000539,
+      "remaining_time": 0.9530557012
     },
     {
       "learn": [
-        2547.999651
+        2396.807895
       ],
       "iteration": 27,
-      "passed_time": 0.3849682138,
-      "remaining_time": 0.9899182642
+      "passed_time": 0.3602493825,
+      "remaining_time": 0.9263555551
     },
     {
       "learn": [
-        2401.1047
+        2265.179523
       ],
       "iteration": 28,
-      "passed_time": 0.3932984459,
-      "remaining_time": 0.9629030917
+      "passed_time": 0.3681320529,
+      "remaining_time": 0.9012888191
     },
     {
       "learn": [
-        2259.529367
+        2130.841196
       ],
       "iteration": 29,
-      "passed_time": 0.4014840102,
-      "remaining_time": 0.9367960238
+      "passed_time": 0.3757446021,
+      "remaining_time": 0.8767374049
     },
     {
       "learn": [
-        2137.471995
+        2028.42966
       ],
       "iteration": 30,
-      "passed_time": 0.4095729849,
-      "remaining_time": 0.9116301923
+      "passed_time": 0.3833980989,
+      "remaining_time": 0.8533699621
     },
     {
       "learn": [
-        2004.052499
+        1902.162202
       ],
       "iteration": 31,
-      "passed_time": 0.4177871243,
-      "remaining_time": 0.8877976391
+      "passed_time": 0.3912574716,
+      "remaining_time": 0.8314221271
     },
     {
       "learn": [
-        1895.780262
+        1802.016518
       ],
       "iteration": 32,
-      "passed_time": 0.4262162648,
-      "remaining_time": 0.8653481739
+      "passed_time": 0.3992950775,
+      "remaining_time": 0.8106900058
     },
     {
       "learn": [
-        1794.98449
+        1698.660766
       ],
       "iteration": 33,
-      "passed_time": 0.4343695306,
-      "remaining_time": 0.8431879123
+      "passed_time": 0.4073412228,
+      "remaining_time": 0.7907211971
     },
     {
       "learn": [
-        1696.262483
+        1607.592649
       ],
       "iteration": 34,
-      "passed_time": 0.4423646523,
-      "remaining_time": 0.8215343543
+      "passed_time": 0.4151336384,
+      "remaining_time": 0.7709624713
     },
     {
       "learn": [
-        1608.350678
+        1519.264578
       ],
       "iteration": 35,
-      "passed_time": 0.4504911578,
-      "remaining_time": 0.8008731693
+      "passed_time": 0.4229349051,
+      "remaining_time": 0.7518842757
     },
     {
       "learn": [
-        1535.245899
+        1442.755285
       ],
       "iteration": 36,
-      "passed_time": 0.458725988,
-      "remaining_time": 0.7810739796
+      "passed_time": 0.4309480757,
+      "remaining_time": 0.7337764533
     },
     {
       "learn": [
-        1470.237499
+        1370.383685
       ],
       "iteration": 37,
-      "passed_time": 0.4665634033,
-      "remaining_time": 0.7612350265
+      "passed_time": 0.4390181952,
+      "remaining_time": 0.7162928448
     },
     {
       "learn": [
-        1393.20557
+        1323.78568
       ],
       "iteration": 38,
-      "passed_time": 0.47468057,
-      "remaining_time": 0.7424490967
+      "passed_time": 0.4467838107,
+      "remaining_time": 0.698815704
     },
     {
       "learn": [
-        1338.679035
+        1259.084316
       ],
       "iteration": 39,
-      "passed_time": 0.4825637226,
-      "remaining_time": 0.723845584
+      "passed_time": 0.4546137368,
+      "remaining_time": 0.6819206052
     },
     {
       "learn": [
-        1287.192541
+        1208.660936
       ],
       "iteration": 40,
-      "passed_time": 0.4906350965,
-      "remaining_time": 0.7060358706
+      "passed_time": 0.4622816863,
+      "remaining_time": 0.6652346218
     },
     {
       "learn": [
-        1237.324319
+        1161.845694
       ],
       "iteration": 41,
-      "passed_time": 0.4988280747,
-      "remaining_time": 0.6888578175
+      "passed_time": 0.4703647651,
+      "remaining_time": 0.6495513423
     },
     {
       "learn": [
-        1193.094634
+        1104.511503
       ],
       "iteration": 42,
-      "passed_time": 0.5069627772,
-      "remaining_time": 0.6720204256
+      "passed_time": 0.4781832352,
+      "remaining_time": 0.6338708002
     },
     {
       "learn": [
-        1151.857214
+        1057.28889
       ],
       "iteration": 43,
-      "passed_time": 0.5152781554,
-      "remaining_time": 0.6558085614
+      "passed_time": 0.486144087,
+      "remaining_time": 0.618728838
     },
     {
       "learn": [
-        1113.120602
+        1016.816913
       ],
       "iteration": 44,
-      "passed_time": 0.5235612962,
-      "remaining_time": 0.6399082509
+      "passed_time": 0.4935719032,
+      "remaining_time": 0.6032545484
     },
     {
       "learn": [
-        1070.732852
+        984.3943577
       ],
       "iteration": 45,
-      "passed_time": 0.5318060055,
-      "remaining_time": 0.6242940064
+      "passed_time": 0.5013543974,
+      "remaining_time": 0.5885464665
     },
     {
       "learn": [
-        1038.593169
+        949.0656811
       ],
       "iteration": 46,
-      "passed_time": 0.5403327851,
-      "remaining_time": 0.6093114385
+      "passed_time": 0.5090903909,
+      "remaining_time": 0.5740806536
     },
     {
       "learn": [
-        1003.789752
+        914.5993984
       ],
       "iteration": 47,
-      "passed_time": 0.5482747642,
-      "remaining_time": 0.5939643278
+      "passed_time": 0.5166994071,
+      "remaining_time": 0.559757691
     },
     {
       "learn": [
-        975.8965091
+        883.0409219
       ],
       "iteration": 48,
-      "passed_time": 0.5564902855,
-      "remaining_time": 0.5792041747
+      "passed_time": 0.5245920651,
+      "remaining_time": 0.5460039861
     },
     {
       "learn": [
-        947.2395404
+        854.4955737
       ],
       "iteration": 49,
-      "passed_time": 0.564482879,
-      "remaining_time": 0.564482879
+      "passed_time": 0.5327319554,
+      "remaining_time": 0.5327319554
     },
     {
       "learn": [
-        920.7695893
+        832.1023525
       ],
       "iteration": 50,
-      "passed_time": 0.5728276394,
-      "remaining_time": 0.5503638104
+      "passed_time": 0.5405402089,
+      "remaining_time": 0.5193425537
     },
     {
       "learn": [
-        894.0878912
+        804.9288267
       ],
       "iteration": 51,
-      "passed_time": 0.5812174075,
-      "remaining_time": 0.5365083762
+      "passed_time": 0.5481042459,
+      "remaining_time": 0.5059423808
     },
     {
       "learn": [
-        873.0448943
+        777.6381593
       ],
       "iteration": 52,
-      "passed_time": 0.5897761586,
-      "remaining_time": 0.5230090463
+      "passed_time": 0.5557790218,
+      "remaining_time": 0.492860642
     },
     {
       "learn": [
-        849.6672738
+        761.8209269
       ],
       "iteration": 53,
-      "passed_time": 0.5976955345,
-      "remaining_time": 0.5091480479
+      "passed_time": 0.5636732413,
+      "remaining_time": 0.4801660945
     },
     {
       "learn": [
-        833.408405
+        741.2920058
       ],
       "iteration": 54,
-      "passed_time": 0.6060763439,
-      "remaining_time": 0.495880645
+      "passed_time": 0.5713863766,
+      "remaining_time": 0.4674979445
     },
     {
       "learn": [
-        815.145758
+        722.4607551
       ],
       "iteration": 55,
-      "passed_time": 0.6139014056,
-      "remaining_time": 0.4823511044
+      "passed_time": 0.5793272071,
+      "remaining_time": 0.4551856627
     },
     {
       "learn": [
-        792.928874
+        714.4620828
       ],
       "iteration": 56,
-      "passed_time": 0.6222947489,
-      "remaining_time": 0.4694504246
+      "passed_time": 0.5873635752,
+      "remaining_time": 0.4430988374
     },
     {
       "learn": [
-        775.8615736
+        693.5438648
       ],
       "iteration": 57,
-      "passed_time": 0.6305003256,
-      "remaining_time": 0.4565692013
+      "passed_time": 0.5954925799,
+      "remaining_time": 0.4312187648
     },
     {
       "learn": [
-        759.8895716
+        674.5753483
       ],
       "iteration": 58,
-      "passed_time": 0.6396945712,
-      "remaining_time": 0.4445335156
+      "passed_time": 0.6034026473,
+      "remaining_time": 0.4193137041
     },
     {
       "learn": [
-        748.5570914
+        657.4479136
       ],
       "iteration": 59,
-      "passed_time": 0.6489147195,
-      "remaining_time": 0.432609813
+      "passed_time": 0.6111226246,
+      "remaining_time": 0.407415083
     },
     {
       "learn": [
-        735.6313721
+        640.8955234
       ],
       "iteration": 60,
-      "passed_time": 0.6592834527,
-      "remaining_time": 0.4215090927
+      "passed_time": 0.6188992099,
+      "remaining_time": 0.3956896588
     },
     {
       "learn": [
-        717.4189879
+        628.2425073
       ],
       "iteration": 61,
-      "passed_time": 0.6687463784,
-      "remaining_time": 0.4098768126
+      "passed_time": 0.6272368447,
+      "remaining_time": 0.3844354854
     },
     {
       "learn": [
-        708.0682725
+        612.1412635
       ],
       "iteration": 62,
-      "passed_time": 0.67855055,
-      "remaining_time": 0.3985138151
+      "passed_time": 0.6352332669,
+      "remaining_time": 0.373073506
     },
     {
       "learn": [
-        694.1150382
+        599.7102258
       ],
       "iteration": 63,
-      "passed_time": 0.6880025361,
-      "remaining_time": 0.3870014266
+      "passed_time": 0.6430248863,
+      "remaining_time": 0.3617014985
     },
     {
       "learn": [
-        684.5168446
+        589.90049
       ],
       "iteration": 64,
-      "passed_time": 0.6968420321,
-      "remaining_time": 0.3752226327
+      "passed_time": 0.6508680923,
+      "remaining_time": 0.3504674343
     },
     {
       "learn": [
-        671.2846499
+        579.6057799
       ],
       "iteration": 65,
-      "passed_time": 0.7056228547,
-      "remaining_time": 0.3635026827
+      "passed_time": 0.6588856128,
+      "remaining_time": 0.3394259218
     },
     {
       "learn": [
-        659.4633735
+        567.5802826
       ],
       "iteration": 66,
-      "passed_time": 0.7144415982,
-      "remaining_time": 0.3518891454
+      "passed_time": 0.6669383866,
+      "remaining_time": 0.3284920411
     },
     {
       "learn": [
-        646.9069652
+        557.0277729
       ],
       "iteration": 67,
-      "passed_time": 0.7228473292,
-      "remaining_time": 0.340163449
+      "passed_time": 0.6749100663,
+      "remaining_time": 0.3176047371
     },
     {
       "learn": [
-        638.3572475
+        547.3434692
       ],
       "iteration": 68,
-      "passed_time": 0.731987938,
-      "remaining_time": 0.328864146
+      "passed_time": 0.682374529,
+      "remaining_time": 0.3065740637
     },
     {
       "learn": [
-        629.4483112
+        539.6619291
       ],
       "iteration": 69,
-      "passed_time": 0.7417395487,
-      "remaining_time": 0.317888378
+      "passed_time": 0.6900797994,
+      "remaining_time": 0.2957484855
     },
     {
       "learn": [
-        622.2121714
+        529.4279131
       ],
       "iteration": 70,
-      "passed_time": 0.751384101,
-      "remaining_time": 0.3069033652
+      "passed_time": 0.6976471634,
+      "remaining_time": 0.2849544752
     },
     {
       "learn": [
-        615.7153536
+        519.4148481
       ],
       "iteration": 71,
-      "passed_time": 0.7607490777,
-      "remaining_time": 0.2958468636
+      "passed_time": 0.7052580122,
+      "remaining_time": 0.2742670048
     },
     {
       "learn": [
-        603.8352023
+        509.8734852
       ],
       "iteration": 72,
-      "passed_time": 0.7694180058,
-      "remaining_time": 0.2845792624
+      "passed_time": 0.7128051569,
+      "remaining_time": 0.2636402635
     },
     {
       "learn": [
-        595.3413189
+        500.1110744
       ],
       "iteration": 73,
-      "passed_time": 0.7780503702,
-      "remaining_time": 0.273369049
+      "passed_time": 0.7204708614,
+      "remaining_time": 0.2531384108
     },
     {
       "learn": [
-        591.0008613
+        491.9805641
       ],
       "iteration": 74,
-      "passed_time": 0.7864832562,
-      "remaining_time": 0.2621610854
+      "passed_time": 0.7283912336,
+      "remaining_time": 0.2427970779
     },
     {
       "learn": [
-        580.8185391
+        485.8028441
       ],
       "iteration": 75,
-      "passed_time": 0.7948824822,
-      "remaining_time": 0.2510155207
+      "passed_time": 0.7360186429,
+      "remaining_time": 0.2324269399
     },
     {
       "learn": [
-        567.4206384
+        479.6925458
       ],
       "iteration": 76,
-      "passed_time": 0.8035850998,
-      "remaining_time": 0.2400319129
+      "passed_time": 0.7438487614,
+      "remaining_time": 0.2221885911
     },
     {
       "learn": [
-        561.4792341
+        470.8378474
       ],
       "iteration": 77,
-      "passed_time": 0.813133998,
-      "remaining_time": 0.2293454866
+      "passed_time": 0.7511146412,
+      "remaining_time": 0.2118528475
     },
     {
       "learn": [
-        551.3443444
+        466.7878445
       ],
       "iteration": 78,
-      "passed_time": 0.8218956424,
-      "remaining_time": 0.2184785885
+      "passed_time": 0.7588099316,
+      "remaining_time": 0.2017089692
     },
     {
       "learn": [
-        544.5992168
+        457.623164
       ],
       "iteration": 79,
-      "passed_time": 0.8303009073,
-      "remaining_time": 0.2075752268
+      "passed_time": 0.7662965809,
+      "remaining_time": 0.1915741452
     },
     {
       "learn": [
-        536.7193011
+        452.229653
       ],
       "iteration": 80,
-      "passed_time": 0.8395223629,
-      "remaining_time": 0.1969249987
+      "passed_time": 0.7738754288,
+      "remaining_time": 0.1815263352
     },
     {
       "learn": [
-        533.282602
+        447.8784466
       ],
       "iteration": 81,
-      "passed_time": 0.8482677235,
-      "remaining_time": 0.18620511
+      "passed_time": 0.7822683898,
+      "remaining_time": 0.1717174514
     },
     {
       "learn": [
-        526.8279009
+        440.3662288
       ],
       "iteration": 82,
-      "passed_time": 0.8571797686,
-      "remaining_time": 0.1755669406
+      "passed_time": 0.7904671002,
+      "remaining_time": 0.1619029
     },
     {
       "learn": [
-        521.2254909
+        435.5503084
       ],
       "iteration": 83,
-      "passed_time": 0.8666733609,
-      "remaining_time": 0.1650806402
+      "passed_time": 0.7982083105,
+      "remaining_time": 0.1520396782
     },
     {
       "learn": [
-        513.8119693
+        432.2864014
       ],
       "iteration": 84,
-      "passed_time": 0.875879833,
-      "remaining_time": 0.1545670294
+      "passed_time": 0.806835502,
+      "remaining_time": 0.1423827356
     },
     {
       "learn": [
-        507.8218946
+        429.1556358
       ],
       "iteration": 85,
-      "passed_time": 0.8848321433,
-      "remaining_time": 0.1440424419
+      "passed_time": 0.8156728023,
+      "remaining_time": 0.1327839446
     },
     {
       "learn": [
-        504.4535893
+        422.088195
       ],
       "iteration": 86,
-      "passed_time": 0.8936481482,
-      "remaining_time": 0.1335336313
+      "passed_time": 0.8245640652,
+      "remaining_time": 0.1232107224
     },
     {
       "learn": [
-        494.6076126
+        417.1058792
       ],
       "iteration": 87,
-      "passed_time": 0.903888727,
-      "remaining_time": 0.1232575537
+      "passed_time": 0.8333080594,
+      "remaining_time": 0.1136329172
     },
     {
       "learn": [
-        486.5768921
+        411.2800728
       ],
       "iteration": 88,
-      "passed_time": 0.9129850136,
-      "remaining_time": 0.1128408444
+      "passed_time": 0.8415980163,
+      "remaining_time": 0.1040177324
     },
     {
       "learn": [
-        480.2336807
+        408.3179035
       ],
       "iteration": 89,
-      "passed_time": 0.921976476,
-      "remaining_time": 0.1024418307
+      "passed_time": 0.8504031995,
+      "remaining_time": 0.09448924438
     },
     {
       "learn": [
-        472.8336576
+        403.995877
       ],
       "iteration": 90,
-      "passed_time": 0.9301338969,
-      "remaining_time": 0.09199126453
+      "passed_time": 0.8593270847,
+      "remaining_time": 0.08498839299
     },
     {
       "learn": [
-        468.8804553
+        400.4973417
       ],
       "iteration": 91,
-      "passed_time": 0.9396249691,
-      "remaining_time": 0.08170651905
+      "passed_time": 0.8678093753,
+      "remaining_time": 0.0754616848
     },
     {
       "learn": [
-        463.5661561
+        395.0522313
       ],
       "iteration": 92,
-      "passed_time": 0.948010901,
-      "remaining_time": 0.07135565922
+      "passed_time": 0.8761078229,
+      "remaining_time": 0.06594359957
     },
     {
       "learn": [
-        459.7349251
+        389.9507671
       ],
       "iteration": 93,
-      "passed_time": 0.9569116751,
-      "remaining_time": 0.06107946862
+      "passed_time": 0.8851978565,
+      "remaining_time": 0.05650199084
     },
     {
       "learn": [
-        450.7583245
+        384.9486853
       ],
       "iteration": 94,
-      "passed_time": 0.9665718458,
-      "remaining_time": 0.05087220241
+      "passed_time": 0.8943355305,
+      "remaining_time": 0.04707029108
     },
     {
       "learn": [
-        443.9406412
+        381.1534009
       ],
       "iteration": 95,
-      "passed_time": 0.9751621038,
-      "remaining_time": 0.04063175432
+      "passed_time": 0.9034710405,
+      "remaining_time": 0.03764462669
     },
     {
       "learn": [
-        437.5000652
+        377.7300754
       ],
       "iteration": 96,
-      "passed_time": 0.9840484561,
-      "remaining_time": 0.03043448833
+      "passed_time": 0.9131197648,
+      "remaining_time": 0.02824081747
     },
     {
       "learn": [
-        430.8192492
+        374.374953
       ],
       "iteration": 97,
-      "passed_time": 0.9924981573,
-      "remaining_time": 0.02025506444
+      "passed_time": 0.9218296117,
+      "remaining_time": 0.01881284922
     },
     {
       "learn": [
-        425.1689283
+        370.7312124
       ],
       "iteration": 98,
-      "passed_time": 1.000898995,
-      "remaining_time": 0.01011009086
+      "passed_time": 0.9307505678,
+      "remaining_time": 0.009401520887
     },
     {
       "learn": [
-        415.7159336
+        368.3648465
       ],
       "iteration": 99,
-      "passed_time": 1.009669799,
+      "passed_time": 0.9398680731,
       "remaining_time": 0
     }
   ]
