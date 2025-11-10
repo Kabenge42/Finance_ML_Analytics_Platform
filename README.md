@@ -1,9 +1,10 @@
 # Finance ML Analytics Platform
 
-**Version 0.6.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.7.0** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
 > **Documentation Last Updated:** 2025-11-10  
-> **Latest Release**: v0.6.1 (per CHANGELOG.md and pyproject.toml)
+> **Latest Release**: v0.7.0 (2025-11-10 per CHANGELOG.md)  
+> **Model Version**: v9_9
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -609,7 +610,7 @@ DB_SCHEMA=public                 # Database schema
 DB_TABLE=equities                # Table name
 
 # Model Configuration
-MODEL_VERSION=v0_5_0             # Model version identifier
+MODEL_VERSION=v9_9               # Model version identifier (current: v9_9 as of v0.7.0)
 # TODO: Keep MODEL_VERSION synchronized with releases (see CHANGELOG.md)
 RANDOM_SEED=42                   # Random seed for reproducibility
 
@@ -815,38 +816,43 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.6.1 (Current Release - 2025-11-09)
+### Version 0.7.0 (Current Release - 2025-11-10)
+
+**Phase 9.3 Feature Engineering API**:
+
+- Public API with feature engineering presets (`finance_ml/ml_workflow/features/api.py`):
+    - `basic`: Core ratios, margins, volatility, and revenue CAGR
+    - `momentum`: Price momentum and technical indicators
+    - `quality`: Accounting quality and financial distress signals
+    - `comprehensive`: Full advanced feature set
+- Enhanced `build_comprehensive_features()` with optional preset parameter for flexible feature selection
+- Backward compatible: default behavior unchanged (comprehensive mode)
+
+**Test Infrastructure & Quality**:
+
+- Phase 9.3 test infrastructure with comprehensive fixtures:
+    - `tests/fixtures/feature_engineering_samples.py`: Sample DataFrames with edge cases
+    - `tests/utils/feature_test_helpers.py`: Validation utilities (assert_no_inf, assert_nan_ratio_below, time_block)
+    - `tests/test_feature_infra_phase93.py`: Infrastructure validation tests
+    - `tests/test_features_api_phase93.py`: API preset tests with TDD methodology
+- Fixed test import paths: `tests/test_risk_metrics.py` updated to Phase 9.7 module path
+
+**Model Version & Configuration**:
+
+- MODEL_VERSION bump to v9_9 (synchronized across all configuration files)
+- Updated `finance_ml/config.py`, test assertions, and environment files
+- Production readiness: Cross-validation with 138+ tests passing (fast and medium test suites)
+
+### Version 0.6.1 (Previous Release - 2025-11-09)
 
 **Phase 9.5 Classification Meta-Features & Enhanced Imputation**:
 
-- Classification meta-feature extraction (`extract_classification_features`) to enhance regression models with sentiment
-  and event likelihood insights
-- New classification module structure with dedicated evaluation and models submodules:
-    - `finance_ml/ml_workflow/classification/evaluation.py` (1020 lines)
-    - `finance_ml/ml_workflow/classification/models.py` (1634 lines)
-- Enhanced 6-step imputation strategy in `finance_ml/ml_workflow/preprocessing/imputation.py` (505+ lines)
+- Classification meta-feature extraction (`extract_classification_features`) to enhance regression models
+- New classification module structure with dedicated evaluation and models submodules
+- Enhanced 6-step imputation strategy with comprehensive test coverage
 - Modular regression pipelines including Ridge, Lasso, ElasticNet, Bayesian Ridge, and Gradient Boosting models
 
-**Testing & Documentation**:
-
-- Comprehensive test coverage with new test suites:
-    - `tests/test_classification_evaluation.py` (430 tests)
-    - `tests/test_classification_models.py` (488 tests)
-    - `tests/test_classification_phase943.py` (402 tests)
-    - `tests/test_imputation_6step.py` (482 tests)
-- Enhanced documentation:
-    - `docs/improvement_plan/imputation_function_enhancements.md` (627 lines)
-    - `docs/summaries/REPORTING_IMPLEMENTATION_SUMMARY.md` (161 lines)
-    - `docs/PHASE_9.4_CLASSIFICATION_REFACTOR.md` (678+ lines)
-
-**Notebook & Dashboard Enhancements**:
-
-- Enhanced `ml_finance_model_main.ipynb` with 1338+ lines of improvements integrating Phase 9.5 classification
-  meta-features and advanced regression workflows
-- Updated dashboard applications (`dash_app.py`, `streamlit_app.py`) with improved integration and error handling
-- Data catalog metadata with initial stock data tracking
-
-### Version 0.5.1 (Previous Release)
+### Version 0.5.1
 
 **Phase 9.1-9.8 Module Structure (v9_8)**:
 
@@ -945,13 +951,15 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### Optional Dependencies
 
-**Dashboards**: Streamlit and Dash are not included in `requirements.txt` by default. To use interactive dashboards:
+**Dashboards**: Streamlit and Dash are included in `requirements.txt` for interactive dashboard functionality. If you
+encounter issues or prefer to install them separately:
 
 ```powershell
 pip install streamlit dash plotly
 ```
 
-These can be added to `requirements.txt` or installed separately as needed.
+**Note**: Dashboard dependencies (streamlit>=1.30.0, dash>=2.14.0) are included by default in the unified
+requirements.txt but are optional in pyproject.toml.
 
 ### TensorFlow Installation
 
@@ -978,6 +986,6 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-09  
-**README Version**: 2.1 (aligned with CHANGELOG.md v0.6.1)  
-**Note**: pyproject.toml still shows v0.5.1 — TODO: update to match current release version
+**Last Updated**: 2025-11-10  
+**README Version**: 2.2 (aligned with CHANGELOG.md v0.7.0)  
+**Note**: pyproject.toml and environment_variables.txt show v0.6.1 — TODO: update to match current release v0.7.0

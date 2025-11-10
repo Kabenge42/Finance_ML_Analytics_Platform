@@ -104,6 +104,19 @@ return_encoders: bool = False
 ) -> Tuple[pd.DataFrame, Optional[Dict[str, LabelEncoder]]]
 # Returns: (numeric_df, label_encoders_dict or None)
 
+# finance_ml.ml_workflow.features.api (Phase 9.3 API - RECOMMENDED)
+from finance_ml.ml_workflow.features.api import build_features, PresetName
+
+df_with_features = build_features(
+        df: pd.DataFrame,
+preset: PresetName = "comprehensive",
+include_interactions: bool = True,
+include_relative: bool = True,
+sector_col: str = "sector"
+) -> pd.DataFrame
+# Returns: df with features based on preset
+# Presets: "basic", "momentum", "quality", "comprehensive", "full_enhanced"
+
 # finance_ml.ml_workflow.features.advanced
 from finance_ml.ml_workflow.features.advanced import (
     engineer_valuation_ratios,
@@ -119,10 +132,10 @@ fillna: bool = True
 
 df_comprehensive = build_comprehensive_features(
         df: pd.DataFrame,
-include_valuation: bool = True,
-include_profitability: bool = True,
-include_leverage: bool = True,
-include_sector_specific: bool = True
+include_interactions: bool = True,
+include_relative_values: bool = True,
+sector_col: str = "sector",
+preset: Optional[str] = None
 ) -> pd.DataFrame
 # Returns: df with all advanced features
 ```

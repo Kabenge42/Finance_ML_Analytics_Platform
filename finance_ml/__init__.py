@@ -142,6 +142,12 @@ from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_rfe as features_importance_rfe,
 )
 
+# Phase 9.3 API: Import from features.api (public API with presets)
+from finance_ml.ml_workflow.features.api import (
+    build_features,
+    PresetName,
+)
+
 # Import from analyst_comparison module (Phase 9.8)
 from finance_ml.ml_workflow.analyst_comparison import (
     compare_prediction_vs_analyst_targets,
@@ -707,6 +713,9 @@ __all__ = [
     "features_importance_rf",
     "features_importance_shap",
     "features_importance_rfe",
+    # Phase 9.3 API: Feature Engineering with Presets
+    "build_features",
+    "PresetName",
     # Phase 9.4: Classification
     "classification_create_enhanced_event_labels",
     "classification_optimize_hyperparameters",
