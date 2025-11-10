@@ -19,6 +19,7 @@ Phase 9.3 refactor: Extracted from advanced_features.py for better modularity.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Optional, List
 
 import numpy as np
@@ -40,7 +41,15 @@ __all__ = [
     "create_feature_interactions",
     "create_relative_value_features",
     "engineer_analyst_quality_features",
+    "engineer_market_sentiment_features",
     "engineer_accounting_quality_features",
+    "engineer_financial_distress_features",
+    "engineer_cash_flow_quality_features",
+    "engineer_capital_allocation_features",
+    "engineer_margin_trends",
+    "engineer_balance_sheet_trends",
+    "engineer_composite_scores",
+    "engineer_sector_relative_interactions",
     "engineer_employee_productivity_features",
     "build_comprehensive_features",
 ]
@@ -128,6 +137,7 @@ def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
     - Gross Margin %
     - Operating Margin %
     - Net Margin %
+    - EBITDA/EBIT adjustment ratios (adj/LTM)
 
     Args:
         df: Input DataFrame
@@ -161,6 +171,14 @@ def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
     # Net Margin %
     if "net_income" in df.columns and "revenue" in df.columns:
         result["net_margin_pct"] = _safe_div(df["net_income"], df["revenue"]) * 100
+
+    # Adjustment ratios (adj/LTM) as robustness/quality proxies
+    if "ebitda_adj_ltm" in df.columns and "ebitda_ltm" in df.columns:
+        result["ebitda_adjustment_ratio"] = _safe_div(
+            df["ebitda_adj_ltm"].abs(), df["ebitda_ltm"].abs()
+        )
+    if "ebit_adj_ltm" in df.columns and "ebit_ltm" in df.columns:
+        result["ebit_adjustment_ratio"] = _safe_div(df["ebit_adj_ltm"].abs(), df["ebit_ltm"].abs())
 
     logger.info("Engineered profitability ratios")
     return result
@@ -502,15 +520,17 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
 def engineer_temporal_features(
     df: pd.DataFrame, date_col: str = "next_earnings", reference_date: Optional[pd.Timestamp] = None
 ) -> pd.DataFrame:
-    """Engineer temporal features from date columns.
+    """Engineer temporal and seasonality features.
 
-    Args:
-        df: Input DataFrame
-        date_col: Name of date column to extract features from
-        reference_date: Optional reference date for calculating days since
-
-    Returns:
-        DataFrame with temporal features added
+    Adds:
+    - fiscal_quarter, month, year from date_col
+    - days_since_reference if reference_date provided
+    - days_to_earnings: (next_earnings - last_updated).days when both present
+    - earnings_report_recency: (reference_date - last_updated).days if both provided
+    - reporting_lag: (last_updated - income_statement_report_date).days when both present
+    - ltm_vs_5yavg_revenue: (total_revenues_ltm - 5Y avg)/5Y avg
+    - fq_vs_5yavg_ebitda: (ebitda_fq - ebitda_5yavgfq)/ebitda_5yavgfq
+    - quarterly_volatility_score: coefficient of variation across available quarterly EBITDA columns
     """
     result = df.copy()
 
@@ -526,6 +546,10 @@ def engineer_temporal_features(
             logger.warning(f"Could not convert {date_col} to datetime: {e}")
             return result
 
+    if result[date_col].isna().all():
+        logger.warning(f"All values in '{date_col}' are NaT. Skipping temporal features.")
+        return result
+
     # Extract fiscal quarter (1-4)
     result["fiscal_quarter"] = result[date_col].dt.quarter
 
@@ -539,7 +563,188 @@ def engineer_temporal_features(
     if reference_date is not None:
         result["days_since_reference"] = (result[date_col] - reference_date).dt.days
 
+    # Additional earnings/reporting timing features
+    if "next_earnings" in result.columns and "last_updated" in result.columns:
+        ne = pd.to_datetime(result["next_earnings"], errors="coerce")
+        lu = pd.to_datetime(result["last_updated"], errors="coerce")
+        result["days_to_earnings"] = (ne - lu).dt.days
+    if reference_date is not None and "last_updated" in result.columns:
+        lu = pd.to_datetime(result["last_updated"], errors="coerce")
+        result["earnings_report_recency"] = (reference_date - lu).dt.days
+    if "income_statement_report_date" in result.columns and "last_updated" in result.columns:
+        isrd = pd.to_datetime(result["income_statement_report_date"], errors="coerce")
+        lu = pd.to_datetime(result["last_updated"], errors="coerce")
+        result["reporting_lag"] = (lu - isrd).dt.days
+
+    # Seasonality vs 5Y averages
+    rev_5y_cols = [
+        c
+        for c in ("total_revenues_5yavg", "total_revenues_5yavgfq", "revenue_5yavg")
+        if c in result.columns
+    ]
+    if "total_revenues_ltm" in result.columns and rev_5y_cols:
+        base = result[rev_5y_cols[0]].astype(float)
+        result["ltm_vs_5yavg_revenue"] = _safe_div(
+            result["total_revenues_ltm"].astype(float) - base, base
+        )
+
+    if "ebitda_fq" in result.columns and "ebitda_5yavgfq" in result.columns:
+        base = result["ebitda_5yavgfq"].astype(float)
+        result["fq_vs_5yavg_ebitda"] = _safe_div(result["ebitda_fq"].astype(float) - base, base)
+
+    # Quarterly volatility score (across available quarterly EBITDA columns)
+    quarterly_cols = [c for c in result.columns if c.startswith("ebitda_fq_q")]
+    if quarterly_cols:
+        qmat = pd.concat([result[c].astype(float) for c in quarterly_cols], axis=1)
+        mean = qmat.mean(axis=1)
+        std = qmat.std(axis=1, ddof=0)
+        result["quarterly_volatility_score"] = _safe_div(std, mean)
+
     logger.info(f"Engineered temporal features from {date_col}")
+    return result
+
+
+def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer price momentum and technical indicators.
+
+    Features (added when sufficient columns are available):
+    - price_momentum_1m, 3m, 6m, 1y: Percent change vs price_Nm_ago columns
+    - price_acceleration_3m: mom_3m - mom_1m (rate-of-change proxy)
+    - rsi_14d: 14-day RSI computed from last_price and price_{1..14}d_ago columns
+    - rsi_30d: 30-day RSI if 30-day history is present
+    - ma_crossover_signal: 1 if MA20>MA50 and price>MA50, -1 if MA20<MA50 and price<MA50, else 0
+    - price_distance_from_ma: % distance of last_price from MA50
+    - return_stability_score: total_return_1y_pct / volatility_1y_pct
+    - sharpe_proxy: (total_return_1y_pct - risk_free_rate_pct) / volatility_1y_pct
+
+    Notes:
+    - All percentage features are expressed in percent (not decimals).
+    - Missing inputs result in NaN for the affected features; no exceptions raised.
+    """
+    result = df.copy()
+
+    def pct_change(cur: pd.Series, prev: pd.Series) -> pd.Series:
+        return _safe_div(cur - prev, prev) * 100
+
+    # Basic momentum windows
+    if "last_price" in df.columns and "price_1m_ago" in df.columns:
+        result["price_momentum_1m"] = pct_change(df["last_price"], df["price_1m_ago"])
+    if "last_price" in df.columns and "price_3m_ago" in df.columns:
+        result["price_momentum_3m"] = pct_change(df["last_price"], df["price_3m_ago"])
+    if "last_price" in df.columns and "price_6m_ago" in df.columns:
+        result["price_momentum_6m"] = pct_change(df["last_price"], df["price_6m_ago"])
+    if "last_price" in df.columns and "price_1y_ago" in df.columns:
+        result["price_momentum_1y"] = pct_change(df["last_price"], df["price_1y_ago"])
+
+    # Acceleration vs 1m
+    if "price_momentum_3m" in result.columns and "price_momentum_1m" in result.columns:
+        result["price_acceleration_3m"] = result["price_momentum_3m"] - result["price_momentum_1m"]
+
+    # RSI helper (row-wise due to per-row wide history columns)
+    def compute_rsi_row(row: pd.Series, period: int) -> float:
+        # Build sequence oldest->newest using daily columns if present
+        prices = []
+        # Include historical days period back to 1 day
+        for d in range(period, 0, -1):
+            col = f"price_{d}d_ago"
+            prices.append(row.get(col, np.nan))
+        prices.append(row.get("last_price", np.nan))
+        arr = np.asarray(prices, dtype=float)
+        if np.isnan(arr).any():
+            return np.nan
+        deltas = np.diff(arr)
+        gains = np.where(deltas > 0, deltas, 0.0)
+        losses = np.where(deltas < 0, -deltas, 0.0)
+        avg_gain = gains.mean()
+        avg_loss = losses.mean()
+        if avg_loss == 0 and avg_gain == 0:
+            return 50.0  # flat
+        if avg_loss == 0:
+            return 100.0
+        rs = avg_gain / avg_loss
+        rsi = 100.0 - (100.0 / (1.0 + rs))
+        return float(rsi)
+
+    # RSI 14d
+    have_14 = (
+        all(f"price_{d}d_ago" in df.columns for d in range(14, 0, -1))
+        and "last_price" in df.columns
+    )
+    if have_14:
+        result["rsi_14d"] = df.apply(lambda r: compute_rsi_row(r, 14), axis=1)
+
+    # RSI 30d
+    have_30 = (
+        all(f"price_{d}d_ago" in df.columns for d in range(30, 0, -1))
+        and "last_price" in df.columns
+    )
+    if have_30:
+        result["rsi_30d"] = df.apply(lambda r: compute_rsi_row(r, 30), axis=1)
+
+    # Moving averages and signals using daily history + last_price
+    def compute_ma_row(row: pd.Series, window: int) -> float:
+        vals = []
+        for d in range(window - 1, 0, -1):
+            col = f"price_{d}d_ago"
+            vals.append(row.get(col, np.nan))
+        vals.append(row.get("last_price", np.nan))
+        arr = np.asarray(vals, dtype=float)
+        if np.isnan(arr).any():
+            return np.nan
+        return float(np.mean(arr))
+
+    ma20 = (
+        df.apply(lambda r: compute_ma_row(r, 20), axis=1)
+        if "last_price" in df.columns
+        else pd.Series([np.nan] * len(df))
+    )
+    ma50 = (
+        df.apply(lambda r: compute_ma_row(r, 50), axis=1)
+        if "last_price" in df.columns
+        else pd.Series([np.nan] * len(df))
+    )
+
+    if isinstance(ma20, pd.Series):
+        result["ma_20d_simple"] = ma20
+    if isinstance(ma50, pd.Series):
+        result["ma_50d_simple"] = ma50
+
+    if "last_price" in df.columns:
+        # price distance from MA50
+        if "ma_50d_simple" in result.columns:
+            result["price_distance_from_ma"] = (
+                _safe_div(df["last_price"] - result["ma_50d_simple"], result["ma_50d_simple"]) * 100
+            )
+        # crossover signal
+        if "ma_20d_simple" in result.columns and "ma_50d_simple" in result.columns:
+            cond_up = (result["ma_20d_simple"] > result["ma_50d_simple"]) & (
+                df["last_price"] > result["ma_50d_simple"]
+            )
+            cond_down = (result["ma_20d_simple"] < result["ma_50d_simple"]) & (
+                df["last_price"] < result["ma_50d_simple"]
+            )
+            signal = pd.Series(0, index=df.index, dtype=float)
+            signal[cond_up] = 1.0
+            signal[cond_down] = -1.0
+            result["ma_crossover_signal"] = signal
+
+    # Return stability and Sharpe proxy
+    if "last_price" in df.columns and "price_1y_ago" in df.columns:
+        total_return_pct = pct_change(df["last_price"], df["price_1y_ago"]).rename(
+            "total_return_1y_pct"
+        )
+        result["total_return_1y_pct"] = total_return_pct
+        if "volatility_1y_pct" in df.columns:
+            vol = df["volatility_1y_pct"].astype(float)
+            result["return_stability_score"] = _safe_div(total_return_pct, vol)
+            try:
+                rf = float(os.getenv("RISK_FREE_RATE_PCT", "0.0"))
+            except Exception:
+                rf = 0.0
+            excess = total_return_pct - rf
+            result["sharpe_proxy"] = _safe_div(excess, vol)
+
+    logger.info("Engineered momentum & technical features")
     return result
 
 
@@ -756,73 +961,94 @@ def create_relative_value_features(
 
 
 def engineer_analyst_quality_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Engineer analyst quality and coverage features.
+    """Engineer analyst quality, consensus, and price target features.
 
-    Features computed:
-    - Analyst coverage (number of analysts)
-    - Price target spread (high - low / median)
-    - Price target consensus strength
-    - Rating distribution features
-    - Target vs current price deviation
+    Features computed (when inputs exist):
+    - Analyst consensus: analyst_bullish_pct, analyst_bearish_pct, analyst_conviction (abs diff in pct points)
+    - Price target metrics: price_target_spread_pct, price_target_range (alias), consensus_strength (100-spread),
+      upside_potential ((median-last)/last * 100), price_target_revision ((median - ytd_ago)/ytd_ago)
+    - Coverage quality: analyst_coverage_quality = (# analysts) / log1p(market_cap)
+    - Backward-compatibility: target_price_upside_pct alias retained if last_price + price_target present
 
-    Args:
-        df: Input DataFrame
-
-    Returns:
-        DataFrame with analyst quality features added
+    Column naming (normalized expected; legacy tolerated where possible):
+    - Ratings: strong_buy_ratings, buy_ratings, hold_ratings, sell_ratings, strong_sell_ratings
+    - Targets: price_target_median, price_target_high, price_target_low, price_target_ytd_ago, price_target_number
+    - Other: last_price, market_cap
     """
     result = df.copy()
 
-    # Analyst coverage
-    if "price_target_" in df.columns:
-        result["analyst_coverage"] = df["price_target_"].fillna(0)
-
-    # Price target spread (indicates consensus uncertainty)
+    # --- Price target spread and consensus strength ---
     if all(
-        col in df.columns
-        for col in ["price_target_high", "price_target_low", "price_target_median"]
+        c in df.columns for c in ("price_target_high", "price_target_low", "price_target_median")
     ):
-        target_range = df["price_target_high"] - df["price_target_low"]
-        result["price_target_spread_pct"] = _safe_div(target_range, df["price_target_median"]) * 100
+        target_range = df["price_target_high"].astype(float) - df["price_target_low"].astype(float)
+        spread_pct = _safe_div(target_range, df["price_target_median"].astype(float)) * 100
+        result["price_target_spread_pct"] = spread_pct
+        # Alias used by tests/plan
+        result["price_target_range"] = spread_pct
+        result["consensus_strength"] = 100 - spread_pct.clip(upper=100)
 
-    # Consensus strength (low spread = high consensus)
-    if "price_target_spread_pct" in result.columns:
-        result["consensus_strength"] = 100 - result["price_target_spread_pct"].clip(upper=100)
+    # --- Analyst ratings distribution & consensus ---
+    # Support normalized names primarily; allow legacy names with leading underscores if present
+    cols_norm = [
+        "strong_buy_ratings",
+        "buy_ratings",
+        "hold_ratings",
+        "sell_ratings",
+        "strong_sell_ratings",
+    ]
+    cols_legacy = [
+        "_strong_buy_ratings",
+        "_buy_ratings",
+        "_hold_ratings",
+        "_sell_ratings",
+        "_strong_sell_ratings",
+    ]
+    use_cols = None
+    if all(c in df.columns for c in cols_norm):
+        use_cols = cols_norm
+    elif all(c in df.columns for c in cols_legacy):
+        use_cols = cols_legacy
+    if use_cols is not None:
+        sb, b, h, s, ss = [df[c].astype(float).fillna(0) for c in use_cols]
+        total = sb + b + h + s + ss
+        bullish = sb + b
+        bearish = s + ss
+        result["analyst_bullish_pct"] = _safe_div(bullish, total) * 100
+        result["analyst_bearish_pct"] = _safe_div(bearish, total) * 100
+        # Conviction: absolute difference in percentage points
+        if "analyst_bullish_pct" in result.columns and "analyst_bearish_pct" in result.columns:
+            result["analyst_conviction"] = (
+                result["analyst_bullish_pct"] - result["analyst_bearish_pct"]
+            ).abs()
 
-    # Rating distribution features
-    if all(
-        col in df.columns
-        for col in [
-            "_strong_buy_ratings",
-            "_buy_ratings",
-            "_hold_ratings",
-            "_sell_ratings",
-            "_strong_sell_ratings",
-        ]
-    ):
-        total_ratings = (
-            df["_strong_buy_ratings"].fillna(0)
-            + df["_buy_ratings"].fillna(0)
-            + df["_hold_ratings"].fillna(0)
-            + df["_sell_ratings"].fillna(0)
-            + df["_strong_sell_ratings"].fillna(0)
+    # --- Upside potential and revisions ---
+    if all(c in df.columns for c in ("price_target_median", "last_price")):
+        upside = (
+            _safe_div(
+                df["price_target_median"].astype(float) - df["last_price"].astype(float),
+                df["last_price"].astype(float),
+            )
+            * 100
+        )
+        result["upside_potential"] = upside
+        # Backward-compatible alias
+        result["target_price_upside_pct"] = upside
+    if all(c in df.columns for c in ("price_target_median", "price_target_ytd_ago")):
+        result["price_target_revision"] = _safe_div(
+            df["price_target_median"].astype(float) - df["price_target_ytd_ago"].astype(float),
+            df["price_target_ytd_ago"].astype(float),
         )
 
-        # Bullish sentiment (Strong Buy + Buy) / Total
-        bullish_ratings = df["_strong_buy_ratings"].fillna(0) + df["_buy_ratings"].fillna(0)
-        result["analyst_bullish_pct"] = _safe_div(bullish_ratings, total_ratings) * 100
-
-        # Bearish sentiment (Sell + Strong Sell) / Total
-        bearish_ratings = df["_sell_ratings"].fillna(0) + df["_strong_sell_ratings"].fillna(0)
-        result["analyst_bearish_pct"] = _safe_div(bearish_ratings, total_ratings) * 100
-
-    # Target vs current price deviation
-    if "price_target" in df.columns and "last_price" in df.columns:
-        result["target_price_upside_pct"] = (
-            _safe_div((df["price_target"] - df["last_price"]), df["last_price"]) * 100
+    # --- Coverage quality (#analysts scaled by firm size) ---
+    if "price_target_number" in df.columns and "market_cap" in df.columns:
+        # log1p(market_cap) in denominator; safe-div guards zero/negatives (log1p of negative is NaN)
+        denom = pd.Series(np.log1p(df["market_cap"].astype(float)), index=df.index)
+        result["analyst_coverage_quality"] = _safe_div(
+            df["price_target_number"].astype(float), denom
         )
 
-    logger.info("Engineered analyst quality features")
+    logger.info("Engineered analyst quality & consensus features")
     return result
 
 
@@ -830,14 +1056,14 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer accounting quality and red flag features.
 
     Features computed:
-    - Exceptional items flags (goodwill impairment, asset writedowns, restructuring)
-    - Accounting red flags (large one-time items)
-    - Goodwill to assets ratio
-    - Intangibles to assets ratio
-    - Working capital quality
+    - Exceptional items flags and aggregation (goodwill impairment, asset writedowns, restructuring)
+    - Exceptional items scaling ratios (to EBITDA/Net Income) and trend (YoY if available)
+    - Goodwill to assets ratio (+ change rate), Intangibles intensity
+    - Restructuring intensity to total assets
+    - Composite accounting quality score (0-100, higher is better)
 
     Args:
-        df: Input DataFrame
+        df: Input DataFrame (normalized column names expected)
 
     Returns:
         DataFrame with accounting quality features added
@@ -849,6 +1075,8 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
         result["has_goodwill_impairment"] = (
             df["impairment_of_goodwill_ltm"].fillna(0) != 0
         ).astype(int)
+        # Alias for compatibility with tests/plan wording
+        result["goodwill_impairment_flag"] = result["has_goodwill_impairment"]
 
     # Asset writedown flag
     if "asset_writedown_ltm" in df.columns:
@@ -858,35 +1086,68 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     if "restructuring_charges_ltm" in df.columns:
         result["has_restructuring"] = (df["restructuring_charges_ltm"].fillna(0) != 0).astype(int)
 
-    # Goodwill to total assets ratio (high ratio can be risky)
-    if "goodwill_ltm" in df.columns and "total_assets_ltm" in df.columns:
-        result["goodwill_to_assets_pct"] = (
-            _safe_div(df["goodwill_ltm"], df["total_assets_ltm"]) * 100
-        )
-
-    # Intangibles intensity
-    if "intangible_assets" in df.columns and "total_assets_ltm" in df.columns:
-        result["intangibles_to_assets_pct"] = (
-            _safe_div(df["intangible_assets"], df["total_assets_ltm"]) * 100
-        )
-
-    # Exceptional items as % of net income (quality check)
+    # Aggregate exceptional items (LTM)
     if all(
-        col in df.columns
-        for col in [
-            "impairment_of_goodwill_ltm",
-            "asset_writedown_ltm",
-            "restructuring_charges_ltm",
-            "net_income_ltm",
-        ]
+        c in df.columns
+        for c in ["impairment_of_goodwill_ltm", "asset_writedown_ltm", "restructuring_charges_ltm"]
     ):
-        exceptional_items = (
+        exceptional_items_ltm = (
             df["impairment_of_goodwill_ltm"].fillna(0).abs()
             + df["asset_writedown_ltm"].fillna(0).abs()
             + df["restructuring_charges_ltm"].fillna(0).abs()
         )
-        result["exceptional_items_to_ni_pct"] = (
-            _safe_div(exceptional_items, df["net_income_ltm"].abs()) * 100
+        result["total_exceptional_items_ltm"] = exceptional_items_ltm
+
+        # Scale to EBITDA if available
+        if "ebitda_ltm" in df.columns:
+            result["exceptional_items_to_ebitda"] = _safe_div(
+                exceptional_items_ltm, df["ebitda_ltm"].abs()
+            )
+
+        # Backward compatible ratio to Net Income (percent)
+        if "net_income_ltm" in df.columns:
+            result["exceptional_items_to_ni_pct"] = (
+                _safe_div(exceptional_items_ltm, df["net_income_ltm"].abs()) * 100
+            )
+
+    # Exceptional items trend YoY if -1FY columns exist
+    if all(
+        c in df.columns
+        for c in ["impairment_of_goodwill_1fy", "asset_writedown_1fy", "restructuring_charges_1fy"]
+    ):
+        exceptional_items_1fy = (
+            df["impairment_of_goodwill_1fy"].fillna(0).abs()
+            + df["asset_writedown_1fy"].fillna(0).abs()
+            + df["restructuring_charges_1fy"].fillna(0).abs()
+        )
+        if "total_exceptional_items_ltm" in result.columns:
+            result["exceptional_items_trend"] = _safe_div(
+                result["total_exceptional_items_ltm"] - exceptional_items_1fy, exceptional_items_1fy
+            )
+
+    # Goodwill to total assets ratio (high ratio can be risky)
+    if "goodwill_ltm" in df.columns and "total_assets_ltm" in df.columns:
+        ratio = _safe_div(df["goodwill_ltm"], df["total_assets_ltm"])
+        result["goodwill_to_assets_pct"] = ratio * 100
+        # Aliases (fractional forms)
+        result["goodwill_to_assets"] = ratio
+
+    # Intangibles intensity
+    if "intangible_assets" in df.columns and "total_assets_ltm" in df.columns:
+        ratio = _safe_div(df["intangible_assets"], df["total_assets_ltm"])
+        result["intangibles_to_assets_pct"] = ratio * 100
+        result["intangible_intensity"] = ratio
+
+    # Goodwill change rate (YoY)
+    if "goodwill_ltm" in df.columns and "goodwill_1fy" in df.columns:
+        result["goodwill_change_rate"] = _safe_div(
+            df["goodwill_ltm"] - df["goodwill_1fy"], df["goodwill_1fy"]
+        )
+
+    # Restructuring intensity to total assets
+    if "restructuring_charges_ltm" in df.columns and "total_assets_ltm" in df.columns:
+        result["restructuring_intensity"] = _safe_div(
+            df["restructuring_charges_ltm"], df["total_assets_ltm"]
         )
 
     # Accounting quality score (lower is better, 0-100 scale)
@@ -907,6 +1168,199 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
         result["accounting_quality_score"] = (100 - total_penalties).clip(lower=0, upper=100)
 
     logger.info("Engineered accounting quality features")
+    return result
+
+
+def engineer_financial_distress_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer financial distress indicators using Altman Z-Score variants.
+
+    Features:
+    - altman_z_trend: FY vs 1FY (fallback to FQ vs LTM if FY/1FY missing)
+    - distress_risk_score: Composite 0–100 using available z-scores (higher = healthier)
+    - z_score_volatility: Std deviation across available z-score periods (FQ, FY, LTM)
+
+    Notes:
+    - For Financials sector (sector == 'Financials'), returns NaN for all features due to sector-specific model caveats.
+    - Missing inputs yield NaNs; function is robust to absent columns.
+    """
+    result = df.copy()
+
+    # Mask out Financials sector for these metrics
+    fin_mask = (
+        (result.get("sector").astype(str).str.lower() == "financials")
+        if "sector" in result.columns
+        else pd.Series(False, index=result.index)
+    )
+
+    # Columns for different periods
+    z_fy = result.get("altman_z_score_fy")
+    z_1fy = result.get("altman_z_score_1fy")
+    z_fq = result.get("altman_z_score_fq")
+    z_ltm = result.get("altman_z_score_ltm")
+
+    # Trend: prefer FY vs 1FY; fallback to FQ vs LTM
+    trend = pd.Series(np.nan, index=result.index, dtype=float)
+    if z_fy is not None and z_1fy is not None:
+        trend = z_fy.astype(float) - z_1fy.astype(float)
+    elif z_fq is not None and z_ltm is not None:
+        trend = z_fq.astype(float) - z_ltm.astype(float)
+    result["altman_z_trend"] = trend
+
+    # Volatility across available periods
+    z_stack = []
+    for s in (z_fq, z_fy, z_ltm):
+        if s is not None:
+            z_stack.append(s.astype(float))
+    if z_stack:
+        z_mat = np.vstack([s.to_numpy(copy=False) for s in z_stack]).astype(float)
+        # Std dev across rows (axis=0)
+        z_vol = np.nanstd(z_mat, axis=0)
+        result["z_score_volatility"] = pd.Series(z_vol, index=result.index)
+    else:
+        result["z_score_volatility"] = np.nan
+
+    # Distress risk score: map average z-score to 0–100
+    # Use simple clipping: z<=1.8 -> 0; z>=3.0 -> 100; linear in between
+    z_components = []
+    for s in (z_fq, z_fy, z_ltm):
+        if s is not None:
+            z_components.append(s.astype(float))
+    if z_components:
+        z_mean = pd.concat(z_components, axis=1).mean(axis=1)
+        score = ((z_mean - 1.8) / (3.0 - 1.8) * 100.0).clip(lower=0.0, upper=100.0)
+        result["distress_risk_score"] = score
+    else:
+        result["distress_risk_score"] = np.nan
+
+    # Apply Financials mask -> NaN
+    if fin_mask.any():
+        for col in ["altman_z_trend", "z_score_volatility", "distress_risk_score"]:
+            result.loc[fin_mask, col] = np.nan
+
+    logger.info("Engineered financial distress features (Altman Z-Score)")
+    return result
+
+
+def engineer_cash_flow_quality_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer cash flow quality and conversion metrics.
+
+    Features computed (added when inputs exist):
+    - cfo_to_net_income: CFO / Net Income (accruals quality)
+    - fcf_to_net_income: FCF / Net Income
+    - fcf_margin: FCF / Total Revenues (LTM)
+    - cfo_growth_yoy: (CFO_LTM - CFO_1FY) / CFO_1FY
+    - fcf_stability: Std deviation of available FCF periods (ltm, fy, 1fy)
+
+    Notes:
+    - Uses normalized column names (e.g., cfo_ltm, net_income_ltm, fcf_ltm, total_revenues_ltm)
+    - Safe divisions via _safe_div; returns NaNs when inputs missing.
+    """
+    result = df.copy()
+
+    # Core ratios
+    if "cfo_ltm" in df.columns and "net_income_ltm" in df.columns:
+        result["cfo_to_net_income"] = _safe_div(df["cfo_ltm"], df["net_income_ltm"])
+    if "fcf_ltm" in df.columns and "net_income_ltm" in df.columns:
+        result["fcf_to_net_income"] = _safe_div(df["fcf_ltm"], df["net_income_ltm"])
+    if "fcf_ltm" in df.columns and "total_revenues_ltm" in df.columns:
+        result["fcf_margin"] = _safe_div(df["fcf_ltm"], df["total_revenues_ltm"])
+
+    # Growth YoY
+    if "cfo_ltm" in df.columns and "cfo_1fy" in df.columns:
+        result["cfo_growth_yoy"] = _safe_div(df["cfo_ltm"] - df["cfo_1fy"], df["cfo_1fy"])
+
+    # Stability of FCF across available periods
+    fcf_cols = [c for c in ("fcf_ltm", "fcf_fy", "fcf_1fy") if c in df.columns]
+    if fcf_cols:
+        fcf_mat = pd.concat([df[c].astype(float) for c in fcf_cols], axis=1)
+        result["fcf_stability"] = fcf_mat.std(axis=1, ddof=0)
+
+    logger.info("Engineered cash flow quality features")
+    return result
+
+
+def engineer_capital_allocation_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer capital allocation efficiency and working capital metrics.
+
+    Features computed (added when inputs exist):
+    - capex_intensity: CapEx / Total Revenues (LTM)
+    - capex_to_depreciation: CapEx / Depreciation & Amortization (LTM)
+    - capex_growth_rate: (CapEx_LTM - CapEx_1FY) / CapEx_1FY
+    - capex_volatility: Coefficient of variation of CapEx across periods (if enough data)
+    - total_shareholder_return_yield: Dividend Yield + Buyback Yield (percent units)
+    - payout_ratio: (Dividends + Share Repurchases) / Net Income (LTM)
+    - reinvestment_rate: (CapEx + Cash Acquisitions) / CFO (LTM)
+    - acquisition_intensity: Cash Acquisitions / Total Assets (LTM)
+    - working_capital_efficiency: Revenues / Working Capital (LTM)
+    - working_capital_trend: (WC_LTM - WC_1FY) / Revenues_LTM
+    """
+    result = df.copy()
+
+    # Capital intensity & efficiency
+    if "capital_expenditure_ltm" in df.columns and "total_revenues_ltm" in df.columns:
+        result["capex_intensity"] = _safe_div(
+            df["capital_expenditure_ltm"], df["total_revenues_ltm"]
+        )
+    if "capital_expenditure_ltm" in df.columns and "depreciation_amortization_ltm" in df.columns:
+        result["capex_to_depreciation"] = _safe_div(
+            df["capital_expenditure_ltm"], df["depreciation_amortization_ltm"]
+        )
+    if "capital_expenditure_ltm" in df.columns and "capital_expenditure_1fy" in df.columns:
+        result["capex_growth_rate"] = _safe_div(
+            df["capital_expenditure_ltm"] - df["capital_expenditure_1fy"],
+            df["capital_expenditure_1fy"],
+        )
+
+    # CapEx volatility (coefficient of variation if at least 2 periods)
+    capex_cols = [
+        c
+        for c in ("capital_expenditure_ltm", "capital_expenditure_fy", "capital_expenditure_1fy")
+        if c in df.columns
+    ]
+    if len(capex_cols) >= 2:
+        capex_mat = pd.concat([df[c].astype(float) for c in capex_cols], axis=1)
+        mean = capex_mat.mean(axis=1)
+        std = capex_mat.std(axis=1, ddof=0)
+        result["capex_volatility"] = _safe_div(std, mean)
+
+    # Shareholder yield (percent inputs expected)
+    if "div_yield_ltm" in df.columns and "buyback_yield_ltm" in df.columns:
+        result["total_shareholder_return_yield"] = df["div_yield_ltm"].astype(float).fillna(0) + df[
+            "buyback_yield_ltm"
+        ].astype(float).fillna(0)
+
+    # Payout ratio and reinvestment
+    if all(
+        c in df.columns for c in ["dividends_paid_ltm", "share_repurchases_ltm", "net_income_ltm"]
+    ):
+        payout = df["dividends_paid_ltm"].fillna(0) + df["share_repurchases_ltm"].fillna(0)
+        result["payout_ratio"] = _safe_div(payout, df["net_income_ltm"].abs())
+    if all(
+        c in df.columns for c in ["capital_expenditure_ltm", "cash_acquisitions_ltm", "cfo_ltm"]
+    ):
+        reinvest = df["capital_expenditure_ltm"].fillna(0) + df["cash_acquisitions_ltm"].fillna(0)
+        result["reinvestment_rate"] = _safe_div(reinvest, df["cfo_ltm"].abs())
+
+    # Acquisition intensity
+    if "cash_acquisitions_ltm" in df.columns and "total_assets_ltm" in df.columns:
+        result["acquisition_intensity"] = _safe_div(
+            df["cash_acquisitions_ltm"], df["total_assets_ltm"]
+        )
+
+    # Working capital metrics
+    if "total_revenues_ltm" in df.columns and "working_capital_ltm" in df.columns:
+        result["working_capital_efficiency"] = _safe_div(
+            df["total_revenues_ltm"], df["working_capital_ltm"]
+        )
+    if all(
+        c in df.columns
+        for c in ["working_capital_ltm", "working_capital_1fy", "total_revenues_ltm"]
+    ):
+        result["working_capital_trend"] = _safe_div(
+            df["working_capital_ltm"] - df["working_capital_1fy"], df["total_revenues_ltm"]
+        )
+
+    logger.info("Engineered capital allocation & working capital features")
     return result
 
 
@@ -984,15 +1438,99 @@ def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer profitability margin trends and quality metrics.
+
+    Features computed (when inputs exist):
+    - ebitda_margin_trend: (ebitda_ltm/total_revenues_ltm) - (ebitda_1fy/total_revenues_1fy)
+    - gross_margin_trend: (gross_profit_ltm/total_revenues_ltm) - (gross_profit_fy/revenue_fy)
+    - operating_leverage: (%ΔEBIT) / (%ΔRevenue) using ltm vs 1fy
+    - margin_stability_5y: optional std of margins if 5Y averages exist (not required by tests)
+    - earnings_quality_score: 0–100 from adjustment ratios: 100 - 50*ebitda_adj_ratio - 30*ebit_adj_ratio
+
+    Notes:
+    - Uses normalized columns where available; falls back gracefully if missing.
+    - All divisions go through _safe_div to prevent inf.
+    """
+    result = df.copy()
+
+    # EBITDA margin trend
+    if all(
+        c in df.columns
+        for c in ("ebitda_ltm", "total_revenues_ltm", "ebitda_1fy", "total_revenues_1fy")
+    ):
+        cur = _safe_div(df["ebitda_ltm"].astype(float), df["total_revenues_ltm"].astype(float))
+        prev = _safe_div(df["ebitda_1fy"].astype(float), df["total_revenues_1fy"].astype(float))
+        result["ebitda_margin_trend"] = cur - prev
+
+    # Gross margin trend (FY reference for previous)
+    if all(
+        c in df.columns
+        for c in ("gross_profit_ltm", "total_revenues_ltm", "gross_profit_fy", "revenue_fy")
+    ):
+        cur = _safe_div(
+            df["gross_profit_ltm"].astype(float), df["total_revenues_ltm"].astype(float)
+        )
+        prev = _safe_div(df["gross_profit_fy"].astype(float), df["revenue_fy"].astype(float))
+        result["gross_margin_trend"] = cur - prev
+
+    # Operating leverage = (%ΔEBIT)/(%ΔRevenue)
+    if all(
+        c in df.columns
+        for c in ("ebit_ltm", "ebit_1fy", "total_revenues_ltm", "total_revenues_1fy")
+    ):
+        delta_ebit = _safe_div(
+            df["ebit_ltm"].astype(float) - df["ebit_1fy"].astype(float),
+            df["ebit_1fy"].astype(float),
+        )
+        delta_rev = _safe_div(
+            df["total_revenues_ltm"].astype(float) - df["total_revenues_1fy"].astype(float),
+            df["total_revenues_1fy"].astype(float),
+        )
+        result["operating_leverage"] = _safe_div(delta_ebit, delta_rev)
+
+    # Earnings quality score based on adjustment ratios (compute if ratios not present)
+    ebitda_adj_ratio = None
+    ebit_adj_ratio = None
+    if "ebitda_adjustment_ratio" in df.columns:
+        ebitda_adj_ratio = df["ebitda_adjustment_ratio"].astype(float)
+    elif all(c in df.columns for c in ("ebitda_adj_ltm", "ebitda_ltm")):
+        ebitda_adj_ratio = _safe_div(df["ebitda_adj_ltm"].abs(), df["ebitda_ltm"].abs())
+
+    if "ebit_adjustment_ratio" in df.columns:
+        ebit_adj_ratio = df["ebit_adjustment_ratio"].astype(float)
+    elif all(c in df.columns for c in ("ebit_adj_ltm", "ebit_ltm")):
+        ebit_adj_ratio = _safe_div(df["ebit_adj_ltm"].abs(), df["ebit_ltm"].abs())
+
+    if ebitda_adj_ratio is not None or ebit_adj_ratio is not None:
+        a = (
+            ebitda_adj_ratio
+            if ebitda_adj_ratio is not None
+            else pd.Series(np.nan, index=result.index)
+        )
+        b = ebit_adj_ratio if ebit_adj_ratio is not None else pd.Series(np.nan, index=result.index)
+        score = 100.0 - 50.0 * a - 30.0 * b
+        result["earnings_quality_score"] = score.clip(lower=0.0, upper=100.0)
+
+    logger.info("Engineered margin trend & profitability quality features")
+    return result
+
+
 def build_comprehensive_features(
     df: pd.DataFrame,
     include_interactions: bool = True,
     include_relative_values: bool = True,
     sector_col: str = "sector",
+    preset: Optional[str] = None,
 ) -> pd.DataFrame:
-    """Build comprehensive feature set by applying all feature engineering functions.
+    """Build feature sets by applying advanced feature engineering functions.
 
-    This orchestrator function applies all available feature engineering in sequence:
+    Supports presets for Phase 9 integration:
+    - preset=None or "comprehensive": full pipeline (backward compatible default)
+    - preset="momentum": only momentum & technical indicators
+    - preset="quality": accounting quality + financial distress (+ analyst quality)
+
+    This orchestrator applies feature groups in sequence for the comprehensive preset:
     1. Valuation ratios
     2. Profitability ratios
     3. Leverage ratios
@@ -1013,9 +1551,10 @@ def build_comprehensive_features(
         include_interactions: Whether to create polynomial/interaction features (default: True)
         include_relative_values: Whether to create sector-relative features (default: True)
         sector_col: Name of sector column (default: "sector")
+        preset: Optional preset name {None,"comprehensive","momentum","quality"}
 
     Returns:
-        DataFrame with comprehensive engineered features
+        DataFrame with engineered features
 
     Example:
         >>> from finance_ml.ml_workflow.features.advanced import build_comprehensive_features
@@ -1026,19 +1565,50 @@ def build_comprehensive_features(
         ...     sector_col="sector"
         ... )
     """
+    # Handle presets first (momentum/quality). None means comprehensive (BC)
+    preset_norm = (
+        (preset or "comprehensive").lower()
+        if isinstance(preset, str) or preset is None
+        else "comprehensive"
+    )
+    if preset_norm == "momentum":
+        result = engineer_momentum_features(df.copy())
+        return result.replace([np.inf, -np.inf], np.nan)
+    if preset_norm == "quality":
+        result = df.copy()
+        result = engineer_accounting_quality_features(result)
+        result = engineer_financial_distress_features(result)
+        result = engineer_analyst_quality_features(result)
+        return result.replace([np.inf, -np.inf], np.nan)
+
+    # Default comprehensive path
     result = df.copy()
 
     # Apply all feature engineering functions in sequence
     result = engineer_valuation_ratios(result)
     result = engineer_profitability_ratios(result)
+    # Phase 6: margins trends and leverage dynamics
+    result = engineer_margin_trends(result)
     result = engineer_leverage_ratios(result)
     result = engineer_liquidity_ratios(result)
     result = engineer_efficiency_ratios(result)
     result = engineer_growth_metrics(result)
+    # Momentum & technical features (Phase 9.3 Week 2)
+    result = engineer_momentum_features(result)
     result = engineer_sector_specific_features(result, sector_col=sector_col)
+    # Analyst and market sentiment (Phase 5)
     result = engineer_analyst_quality_features(result)
+    result = engineer_market_sentiment_features(result)
+    # Accounting and distress
     result = engineer_accounting_quality_features(result)
+    # Financial distress features (Altman Z trends & composite)
+    result = engineer_financial_distress_features(result)
+    # Phase 4: Cash flow & capital allocation
+    result = engineer_cash_flow_quality_features(result)
+    result = engineer_capital_allocation_features(result)
     result = engineer_employee_productivity_features(result)
+    # Phase 7: Balance sheet trends
+    result = engineer_balance_sheet_trends(result)
 
     # Temporal features (if date column exists)
     if "next_earnings" in result.columns:
@@ -1057,9 +1627,188 @@ def build_comprehensive_features(
     # Optional: Create relative value features
     if include_relative_values and sector_col in result.columns:
         result = create_relative_value_features(result, sector_col=sector_col)
+        # Additional sector-relative interactions (Phase 8)
+        result = engineer_sector_relative_interactions(result, sector_col=sector_col)
+
+    # Composite scores (Phase 8) — safe to compute regardless of flags
+    result = engineer_composite_scores(result)
+
+    # Final numeric hygiene: replace any infinities with NaN to avoid downstream issues
+    result = result.replace([np.inf, -np.inf], np.nan)
 
     logger.info(
         f"Built comprehensive features: {len(result.columns)} total features "
         f"({len(result.columns) - len(df.columns)} new features added)"
     )
+    return result
+
+
+def engineer_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer market sentiment features from short interest and betas.
+
+    Features computed (when inputs exist):
+    - short_interest_ratio: Pass-through of short_int_pct (already percent units)
+    - beta_stability: Population variance (ddof=0) across available betas (beta_1y, beta_2y, beta_5y)
+    - systematic_risk_trend: beta_1y - beta_5y (risk profile change)
+
+    Args:
+        df: Input DataFrame with normalized column names
+
+    Returns:
+        DataFrame with market sentiment features added
+    """
+    result = df.copy()
+
+    # Short interest (percent already)
+    if "short_int_pct" in df.columns:
+        result["short_interest_ratio"] = df["short_int_pct"].astype(float)
+
+    # Beta metrics
+    beta_cols = [c for c in ("beta_1y", "beta_2y", "beta_5y") if c in df.columns]
+    if beta_cols:
+        beta_mat = df[beta_cols].astype(float)
+        # Population variance across the provided beta horizons
+        result["beta_stability"] = beta_mat.var(axis=1, ddof=0)
+
+    if "beta_1y" in df.columns and "beta_5y" in df.columns:
+        result["systematic_risk_trend"] = df["beta_1y"].astype(float) - df["beta_5y"].astype(float)
+
+    logger.info("Engineered market sentiment features (short interest, betas)")
+    return result
+
+
+def engineer_balance_sheet_trends(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer balance sheet growth and liquidity trends.
+
+    Features computed (when inputs exist):
+    - debt_growth_rate, equity_growth_rate, asset_growth_rate
+    - balance_sheet_expansion: mean of available growth rates
+    - current_ratio_trend: current_ratio_ltm - current_ratio_fy
+    - cash_ratio: cash_and_equivalents / current_liabilities
+    - working_capital_ratio: working_capital_ltm / total_assets_ltm
+    - retained_earnings_growth: (retained_earnings_ltm - retained_earnings_fy) / total_equity_ltm
+    - earnings_retention_rate: (retained_earnings_ltm - retained_earnings_fy) / net_income_ltm
+    """
+    result = df.copy()
+
+    # Growth rates
+    if all(c in df.columns for c in ("total_debt_ltm", "total_debt_fy")):
+        result["debt_growth_rate"] = _safe_div(
+            df["total_debt_ltm"].astype(float) - df["total_debt_fy"].astype(float),
+            df["total_debt_fy"].astype(float),
+        )
+    if all(c in df.columns for c in ("total_equity_ltm", "total_equity_fy")):
+        result["equity_growth_rate"] = _safe_div(
+            df["total_equity_ltm"].astype(float) - df["total_equity_fy"].astype(float),
+            df["total_equity_fy"].astype(float),
+        )
+    if all(c in df.columns for c in ("total_assets_ltm", "total_assets_fy")):
+        result["asset_growth_rate"] = _safe_div(
+            df["total_assets_ltm"].astype(float) - df["total_assets_fy"].astype(float),
+            df["total_assets_fy"].astype(float),
+        )
+
+    # Composite expansion = mean of available growth rates
+    growth_cols = [
+        c
+        for c in ("debt_growth_rate", "equity_growth_rate", "asset_growth_rate")
+        if c in result.columns
+    ]
+    if growth_cols:
+        result["balance_sheet_expansion"] = result[growth_cols].mean(axis=1, skipna=True)
+
+    # Liquidity trends
+    if all(c in df.columns for c in ("current_ratio_ltm", "current_ratio_fy")):
+        result["current_ratio_trend"] = df["current_ratio_ltm"].astype(float) - df[
+            "current_ratio_fy"
+        ].astype(float)
+    if all(c in df.columns for c in ("cash_and_equivalents", "current_liabilities")):
+        result["cash_ratio"] = _safe_div(
+            df["cash_and_equivalents"].astype(float), df["current_liabilities"].astype(float)
+        )
+    if all(c in df.columns for c in ("working_capital_ltm", "total_assets_ltm")):
+        result["working_capital_ratio"] = _safe_div(
+            df["working_capital_ltm"].astype(float), df["total_assets_ltm"].astype(float)
+        )
+
+    # Retained earnings patterns
+    if all(
+        c in df.columns
+        for c in ("retained_earnings_ltm", "retained_earnings_fy", "total_equity_ltm")
+    ):
+        delta_re = df["retained_earnings_ltm"].astype(float) - df["retained_earnings_fy"].astype(
+            float
+        )
+        result["retained_earnings_growth"] = _safe_div(
+            delta_re, df["total_equity_ltm"].astype(float)
+        )
+    if all(
+        c in df.columns for c in ("retained_earnings_ltm", "retained_earnings_fy", "net_income_ltm")
+    ):
+        delta_re = df["retained_earnings_ltm"].astype(float) - df["retained_earnings_fy"].astype(
+            float
+        )
+        result["earnings_retention_rate"] = _safe_div(delta_re, df["net_income_ltm"].astype(float))
+
+    logger.info("Engineered balance sheet growth & liquidity trends")
+    return result
+
+
+def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer composite scores (quality, value, momentum) and keep within [0,100].
+
+    Minimal implementation focusing on quality score per plan:
+    - composite_quality_score: mean of available {distress_risk_score, accounting_quality_score}.
+    - momentum_score: optional, if price_momentum_1y and return_stability_score are present, scaled to 0-100.
+    - value_score: optional placeholder using inverse of p_e_ratio percentile within sector if available (not used in tests).
+    """
+    result = df.copy()
+
+    components = []
+    if "distress_risk_score" in df.columns:
+        components.append(df["distress_risk_score"].astype(float))
+    if "accounting_quality_score" in df.columns:
+        components.append(df["accounting_quality_score"].astype(float))
+    if components:
+        comp = pd.concat(components, axis=1).mean(axis=1)
+        result["composite_quality_score"] = comp.clip(lower=0.0, upper=100.0)
+
+    # Simple momentum score (0-100) if available: normalize return_stability_score to 0-100 by 2*atan scaling
+    if "return_stability_score" in df.columns:
+        rss = df["return_stability_score"].astype(float)
+        # map real line to (0,100) via arctan, center at 50
+        result["momentum_score"] = (np.arctan(rss) / (np.pi / 2) * 50.0 + 50.0).clip(0.0, 100.0)
+
+    logger.info("Engineered composite scores")
+    return result
+
+
+def engineer_sector_relative_interactions(
+    df: pd.DataFrame, sector_col: str = "sector"
+) -> pd.DataFrame:
+    """Create sector-relative interaction features for key metrics.
+
+    For each metric present among a small default set, compute:
+    - metric_vs_sector_median (if not already present)
+    - metric_vs_sector_top_quartile (metric - 75th percentile by sector)
+    """
+    result = df.copy()
+    if sector_col not in df.columns:
+        return result
+
+    metrics = [
+        m for m in ("p_e_ratio", "roe", "net_margin_pct", "ev_ebitda_ratio") if m in df.columns
+    ]
+    if not metrics:
+        return result
+
+    grouped = df.groupby(sector_col)
+    for m in metrics:
+        if f"{m}_vs_sector_median" not in result.columns:
+            sector_median = grouped[m].transform("median")
+            result[f"{m}_vs_sector_median"] = df[m] - sector_median
+        sector_q3 = grouped[m].transform(lambda s: s.quantile(0.75))
+        result[f"{m}_vs_sector_top_quartile"] = df[m] - sector_q3
+
+    logger.info("Engineered sector-relative interaction features")
     return result

@@ -4,7 +4,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 NB_PATH = PROJECT_ROOT / "ml_finance_model_main.ipynb"
-ENH_MD_PATH = PROJECT_ROOT / "NOTEBOOK_ENHANCEMENTS.md"
+ENH_MD_PATH = PROJECT_ROOT / "docs" / "summaries" / "NOTEBOOK_ENHANCEMENTS.md"
 
 
 def _read_notebook_text(path: Path) -> str:
@@ -35,14 +35,14 @@ class TestNotebookEnhancements(unittest.TestCase):
         cls.nb_text = _read_notebook_text(NB_PATH)
         cls.enh_md = ENH_MD_PATH.read_text(encoding="utf-8", errors="ignore")
 
-    def test_enhancement_plan_mentions_v8_3(self):
-        # Sanity check that the enhancement doc targets v8_3
-        self.assertIn("v8_3", self.enh_md)
+    def test_enhancement_plan_mentions_v9_9(self):
+        # Sanity check that the enhancement doc targets v9_9
+        self.assertIn("v9_9", self.enh_md)
 
     def test_model_version_marker_present_in_notebook(self):
-        # Acceptance: The notebook must clearly mark the new model version v8_3
+        # Acceptance: The notebook must clearly mark the new model version v9_9
         self.assertIn(
-            "v8_3", self.nb_text, msg="Notebook should include a visible 'v8_3' version marker"
+            "v9_9", self.nb_text, msg="Notebook should include a visible 'v9_9' version marker"
         )
 
     def test_uses_finance_ml_package_functions(self):

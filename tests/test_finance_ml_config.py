@@ -36,9 +36,9 @@ class TestFinanceMLConfig(unittest.TestCase):
         self.assertIsInstance(config.output_dir, Path)
         self.assertEqual(config.output_dir, Path("outputs"))
 
-        self.assertIsNone(config.db_url)
+        self.assertEqual(config.db_url, "postgresql+psycopg2://postgres:@localhost:5432/postgres")
         self.assertEqual(config.db_table, "equities")
-        self.assertEqual(config.model_version, "v8_2")
+        self.assertEqual(config.model_version, "v9_9")
         self.assertEqual(config.random_seed, 42)
         self.assertEqual(config.n_jobs, -1)
 
@@ -106,6 +106,7 @@ class TestConfigFromEnv(unittest.TestCase):
         self.assertEqual(config.cache_dir, Path(".cache"))
         self.assertEqual(config.output_dir, Path("outputs"))
         self.assertIsNone(config.db_url)
+        self.assertEqual(config.model_version, "v9_9")
         self.assertEqual(config.random_seed, 42)
         self.assertEqual(config.n_jobs, -1)
 
@@ -467,7 +468,7 @@ class TestLoadConfig(unittest.TestCase):
         config = load_config(use_env=False)
 
         self.assertEqual(config.data_dir, Path("data"))
-        self.assertEqual(config.model_version, "v8_2")
+        self.assertEqual(config.model_version, "v9_9")
         self.assertEqual(config.random_seed, 42)
 
 

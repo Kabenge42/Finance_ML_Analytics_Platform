@@ -1,11 +1,11 @@
-# Notebook Enhancements for ml_finance_model_v8_2.ipynb
+# Notebook Enhancements for ml_finance_model_main.ipynb
 
 Version: v8_3 (proposed)
 Last updated: 2025-10-25
 
 Purpose
 
-- Provide a comprehensive, actionable upgrade plan for ml_finance_model_v8_2.ipynb focused on:
+- Provide a comprehensive, actionable upgrade plan for ml_finance_model_main.ipynb focused on:
     - Data Management: unified all_stocks dataframe from PostgreSQL or CSV, with validation and quality checks
     - Feature Engineering: financial ratios, margins, volatility, revenue CAGR, categorical encodings
     - ML Models: financial event classification, sector-optimized regression, quantile models, stacking ensembles
@@ -298,7 +298,7 @@ Each cell should:
 
 12. Mapping to README and IMPROVEMENT_PLAN
 
-- README: Point the Notebook section to this enhancement plan; reference CLI parity in ml_finance_model_v8_2.py
+- README: Point the Notebook section to this enhancement plan; reference CLI parity in ml_finance_model_main.py
 - IMPROVEMENT_PLAN: Mark notebook roadmap items complete once implemented; keep analytics/reporting aligned with Excel
   export
 

@@ -22,7 +22,7 @@ $env:CACHE_DIR = ".cache"
 $env:OUTPUT_DIR = "outputs"
 
 # Model configuration
-$env:MODEL_VERSION = "v8_3"
+$env:MODEL_VERSION = "v9_9"
 $env:RANDOM_SEED = "42"
 
 # Performance settings
@@ -33,7 +33,7 @@ $env:LOG_LEVEL = "INFO"
 $env:TF_CPP_MIN_LOG_LEVEL = "2"
 
 # Database connection (update with your actual credentials)
-# $env:DB_URL = "postgresql+psycopg2://postgres:password@localhost:5432/postgres"
+$env:DB_URL = "postgresql+psycopg2://postgres:bItcfiTg142!@localhost:5432/postgres"
 
 Write-Host "Environment variables set successfully!" -ForegroundColor Green
 Write-Host "NO_COLOR: $env:NO_COLOR"

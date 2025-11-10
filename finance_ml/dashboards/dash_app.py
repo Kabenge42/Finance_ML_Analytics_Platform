@@ -21,13 +21,13 @@ def load_data():
     # Load from outputs or database
     csv_path = Path("outputs/analytics/predictions.csv")
     if csv_path.exists():
-        df = pd.read_csv(csv_path)
+        all_stocks_phase95 = pd.read_csv(csv_path)
         # Convert numeric columns to proper dtypes
         numeric_columns = ["mispricing_score", "last_price", "market_cap"]
         for col in numeric_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-        return df
+            if col in all_stocks_phase95.columns:
+                all_stocks_phase95[col] = pd.to_numeric(all_stocks_phase95[col], errors="coerce")
+        return all_stocks_phase95
     # Return empty DataFrame with expected columns if file doesn't exist
     return pd.DataFrame(
         columns=["ticker", "sector", "region", "market_cap", "last_price", "mispricing_score"]

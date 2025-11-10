@@ -97,7 +97,35 @@ if uploaded_file:
         col2.metric("Sectors", df["sector"].nunique() if "sector" in df.columns else 0)
         col3.metric("Regions", df["region"].nunique() if "region" in df.columns else 0)
         if "mispricing_score" in df.columns:
-            col4.metric("Avg Mispricing", f"{df['mispricing_score'].mean():.2%}")
+            avg_mispricing = df["mispricing_score"].mean()
+            col4.metric("Avg Mispricing", f"{avg_mispricing:.2%}")
+
+            # Add gauge chart for overall mispricing score
+            fig_gauge = go.Figure(
+                go.Indicator(
+                    mode="gauge+number+delta",
+                    value=avg_mispricing * 100,
+                    domain={"x": [0, 1], "y": [0, 1]},
+                    title={"text": "Average Mispricing Score (%)"},
+                    delta={"reference": 0},
+                    gauge={
+                        "axis": {"range": [-50, 50]},
+                        "bar": {"color": "darkblue"},
+                        "steps": [
+                            {"range": [-50, -10], "color": "lightcoral"},
+                            {"range": [-10, 10], "color": "lightgray"},
+                            {"range": [10, 50], "color": "lightgreen"},
+                        ],
+                        "threshold": {
+                            "line": {"color": "red", "width": 4},
+                            "thickness": 0.75,
+                            "value": avg_mispricing * 100,
+                        },
+                    },
+                )
+            )
+            fig_gauge.update_layout(height=300)
+            st.plotly_chart(fig_gauge, use_container_width=True)
 
         # Interactive scatter plot
         if "mispricing_score" in df.columns and "market_cap" in df.columns:
@@ -140,7 +168,7 @@ if uploaded_file:
             selected_sector = st.selectbox("Select Sector", df["sector"].unique())
             sector_df = df[df["sector"] == selected_sector]
             if "mispricing_score" in sector_df.columns:
-                top_sector = sector_df.nlargest(5, "first")
+                top_sector = sector_df.nlargest(5, "mispricing_score")
                 st.dataframe(top_sector, use_container_width=True)
 
     with tab3:
@@ -221,15 +249,32 @@ if uploaded_file:
             fig = px.histogram(pred_error, nbins=50, title="Prediction Error Distribution")
             st.plotly_chart(fig, use_container_width=True)
 
-            # Residual plot
+            # Residual plot using graph_objects for more control
             residuals = df["predicted_price_target"] - df["price_target"]
-            fig = px.scatter(
-                x=df["price_target"],
-                y=residuals,
-                title="Residual Plot: Predicted vs Actual Target",
-                labels={"x": "Actual Target", "y": "Residual"},
+            fig = go.Figure()
+            fig.add_trace(
+                go.Scatter(
+                    x=df["price_target"],
+                    y=residuals,
+                    mode="markers",
+                    marker=dict(
+                        size=8,
+                        color=residuals,
+                        colorscale="RdYlGn",
+                        showscale=True,
+                        colorbar=dict(title="Residual"),
+                    ),
+                    text=df["ticker"] if "ticker" in df.columns else None,
+                    hovertemplate="<b>%{text}</b><br>Target: %{x}<br>Residual: %{y}<extra></extra>",
+                )
             )
-            fig.add_hline(y=0, line_dash="dash", line_color="red")
+            fig.add_hline(y=0, line_dash="dash", line_color="red", annotation_text="Zero Error")
+            fig.update_layout(
+                title="Residual Plot: Predicted vs Actual Target",
+                xaxis_title="Actual Target",
+                yaxis_title="Residual",
+                hovermode="closest",
+            )
             st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("👆 Upload a predictions CSV file to start analysis")

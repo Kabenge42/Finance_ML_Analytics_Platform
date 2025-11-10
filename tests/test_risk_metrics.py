@@ -19,7 +19,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from finance_ml.risk_metrics import (
+from finance_ml.ml_workflow.analytics.risk import (
     calculate_var_historical,
     calculate_var_parametric,
     calculate_cvar,
@@ -27,7 +27,7 @@ from finance_ml.risk_metrics import (
     calculate_sortino_ratio,
     calculate_max_drawdown,
     calculate_portfolio_risk_metrics,
-    )
+)
 
 
 class TestValueAtRisk(unittest.TestCase):

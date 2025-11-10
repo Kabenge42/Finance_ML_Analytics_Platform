@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-11-10
+
+### Added
+
+- **Phase 9.3 Feature Engineering API** (`finance_ml/ml_workflow/features/api.py`): Public API with presets for flexible
+  feature engineering
+  - `basic`: Core ratios, margins, volatility, and revenue CAGR
+  - `momentum`: Price momentum and technical indicators
+  - `quality`: Accounting quality and financial distress signals
+  - `comprehensive`: Full advanced feature set
+  - `full_enhanced`: Alias for comprehensive preset
+- **Phase 9.3 Test Infrastructure**: Comprehensive test fixtures and helpers
+  - `tests/fixtures/feature_engineering_samples.py`: Sample DataFrames with edge cases
+  - `tests/utils/feature_test_helpers.py`: Validation utilities (assert_no_inf, assert_nan_ratio_below, time_block)
+  - `tests/test_feature_infra_phase93.py`: Infrastructure validation tests
+  - `tests/test_features_api_phase93.py`: API preset tests with TDD methodology
+
+### Changed
+
+- **MODEL_VERSION bump to v9_9**: Updated across all configuration files and tests
+  - `finance_ml/config.py`: Default and from_env() method updated to "v9_9"
+  - `tests/test_finance_ml_config.py`: Test assertions updated to expect v9_9
+  - `tests/test_notebook_enhancements.py`: Notebook version marker check updated to v9_9
+  - `set_env.ps1`: Example MODEL_VERSION updated to v9_9
+  - `environment_variables.txt`: Commented example updated to v9_9
+- **Phase 9.3 Feature Integration**: Enhanced `build_comprehensive_features()` in advanced.py with preset support
+  - Added optional `preset` parameter for momentum/quality/comprehensive paths
+  - Backward compatible: default behavior unchanged (comprehensive mode)
+  - Sanitizes infinities to NaN for numerical hygiene
+
+### Fixed
+
+- **Test import path correction**: Fixed `tests/test_risk_metrics.py` to use Phase 9.7 module path
+  - Changed from `finance_ml.risk_metrics` to `finance_ml.ml_workflow.analytics.risk`
+  - Resolves ModuleNotFoundError after v9_8 refactor
+  - All 24 risk metrics tests now passing
+
+### Documentation
+
+- Phase 10: Validation (Week 10) completion
+  - Cross-validation: Fast and medium test suites passing (138 tests)
+  - Production readiness: MODEL_VERSION v9_9 synchronized across codebase
+  - Test coverage maintained at ≥85% for new code
+
 ## [0.6.1] - 2025-11-09
 
 ### Added
