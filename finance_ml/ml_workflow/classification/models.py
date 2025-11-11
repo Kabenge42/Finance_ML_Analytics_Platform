@@ -224,17 +224,7 @@ def prepare_classification_data(
         Tuple of (X_train, X_test, y_train, y_test, numeric_cols, categorical_cols)
     """
     # Drop non-feature columns
-    drop_cols = [
-        "ticker",
-        "isin",
-        "name",
-        "description",
-        "price_target",
-        "price_target_median",
-        "last_updated",
-        "income_statement_report_date",
-        "p_e_percentile",
-    ]
+    drop_cols = ["ticker", "isin", "name", "description", "price_target", "last_updated"]
     drop_cols = [c for c in drop_cols if c in df.columns]
     X = df.drop(columns=drop_cols)
 

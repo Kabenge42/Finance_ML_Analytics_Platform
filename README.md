@@ -2,7 +2,7 @@
 
 **Version 0.7.0** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-10  
+> **Documentation Last Updated:** 2025-11-11  
 > **Latest Release**: v0.7.0 (2025-11-10 per CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Version files need synchronization - see Known Issues section below
@@ -50,7 +50,7 @@ portfolio optimization.
 
 The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8) aligned with industry best practices:
 
-1. **Phase 9.1**: Loading and preprocessing with 4-step imputation strategy
+1. **Phase 9.1**: Loading and preprocessing with 6-step imputation strategy
 2. **Phase 9.2**: Enhanced exploratory data analysis with statistical testing and benchmarking
 3. **Phase 9.3**: Advanced feature engineering with sector-specific optimizations
 4. **Phase 9.4**: Multi-class event classification using neural networks and ensembles
@@ -64,13 +64,15 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 ## Key Features
 
 - 📊 **Data Management**: PostgreSQL/SQLite integration + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
-- 🧹 **Data Quality**: 4-step imputation pipeline (zero-fill, KNN, price-based, median) with validation
+- 🧹 **Data Quality**: 6-step imputation pipeline (zero-fill, KNN, price-based, median) with validation
 - 🔧 **Feature Engineering**: Financial ratios, margins, volatility, revenue CAGR, sector-specific features
 - 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models, stacking ensembles
 - 📈 **Analytics**: Mispricing scores, stock ranking, analyst comparison, benchmarking, risk metrics
-- 📊 **Interactive Dashboards**: Streamlit and Dash applications for real-time visualization
+- 💼 **Portfolio Optimization**: Efficient frontier, maximum Sharpe ratio, minimum volatility portfolios
+- 📉 **Risk Metrics**: VaR, CVaR, Sharpe ratio, Sortino ratio, maximum drawdown analysis
+- 📊 **Interactive Dashboards**: Streamlit and Dash applications with portfolio & risk metrics visualization
 - 🎯 **Stock Prediction**: End-to-end 8-phase workflow for price target prediction
-- 📄 **Reporting**: Excel/PDF reports, interactive visualizations, valuation analysis
+- 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
 - 🧪 **Tested**: 67+ test modules with comprehensive coverage (≥80% target for new code)
 - 🚀 **CLI**: Three command-line tools for different workflows
@@ -84,7 +86,7 @@ The codebase follows a **phase-aligned architecture** with dedicated subpackages
 
 ```
 finance_ml/ml_workflow/
-├── preprocessing/      # Phase 9.1: 4-step imputation, outliers, scaling, quality
+├── preprocessing/      # Phase 9.1: 6-step imputation, outliers, scaling, quality
 ├── eda/               # Phase 9.2: EDA, benchmarking, reports
 ├── features/          # Phase 9.3: Core, advanced, selection, API
 ├── classification/    # Phase 9.4: Labels, tuning, models, evaluation
@@ -435,7 +437,7 @@ Open `ml_finance_model_main.ipynb` and run cells sequentially. The notebook incl
 
 - Configuration and setup
 - Data loading from database or CSV
-- 4-step imputation pipeline
+- 6-step imputation pipeline
 - EDA with visualizations
 - Feature engineering
 - Classification models
@@ -523,11 +525,13 @@ Two dashboard applications are available for interactive visualization and explo
 #### Streamlit Dashboard
 
 **Features**: Multi-page layout, KPI cards, interactive filters, stock rankings, data quality monitoring, model
-performance analytics.
+performance analytics, portfolio optimization & risk metrics visualization.
 
 ```powershell
 streamlit run finance_ml/dashboards/streamlit_app.py
 ```
+
+**Tabs**: Overview, Data Quality, Model Performance, Predictions Explorer, Sector Analysis, Portfolio & Risk Metrics.
 
 Upload a predictions CSV file with columns: `ticker`,`name`,`exchange`, `sector`, `region`, `last_price`,`price_target`,
 `predicted_price_target`,
@@ -535,12 +539,14 @@ Upload a predictions CSV file with columns: `ticker`,`name`,`exchange`, `sector`
 
 #### Dash Dashboard
 
-**Features**: Interactive filters (sector/region), scatter plots, heatmaps, top undervalued stocks table, reactive
-callbacks.
+**Features**: Interactive filters (sector/region), scatter plots, heatmaps, top undervalued stocks table, portfolio
+optimization & risk metrics visualization, reactive callbacks.
 
 ```powershell
 python finance_ml/dashboards/dash_app.py
 ```
+
+**Tabs**: Predictions, Data Quality, Model Performance, Portfolio & Risk Metrics.
 
 Access at [http://localhost:8050](http://localhost:8050)
 
@@ -820,7 +826,20 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.7.0 (Current Release - 2025-11-10)
+### Version 0.7.0 (Current Release - 2025-11-10, Updated 2025-11-11)
+
+**Portfolio Optimization & Risk Metrics Visualization** (2025-11-11):
+
+- Interactive Plotly visualizations for portfolio optimization and risk analysis
+- **Notebook Section 10**: Three comprehensive visualizations added to `ml_finance_model_main.ipynb`:
+    - Efficient Frontier with Maximum Sharpe Ratio and Minimum Volatility portfolios highlighted
+    - Risk Metrics Dashboard with VaR, CVaR, Sharpe, Sortino ratios, and gauge charts
+    - Portfolio Drawdown Analysis with time series visualization
+- **Dashboard Integration**: Portfolio & Risk Metrics tab added to both Streamlit and Dash applications
+- **Output Files**: 6 new visualization files saved to `outputs/analytics/` (3 HTML + 3 PNG)
+- **Functions Used**: Portfolio optimization (`finance_ml/ml_workflow/analytics/portfolio.py`) and risk metrics (
+  `finance_ml/ml_workflow/analytics/risk.py`)
+- See `docs/PORTFOLIO_VISUALIZATION_IMPLEMENTATION.md` for complete implementation details
 
 **Phase 9.3 Feature Engineering API**:
 
@@ -868,7 +887,7 @@ Finance_ML_Analytics_Platform/
 
 **All Phases Implementation**:
 
-- Phase 9.1: 4-step imputation pipeline (zero, KNN, price-based, median)
+- Phase 9.1: 6-step imputation pipeline (zero, KNN, price-based, median)
 - Phase 9.2: Enhanced EDA with benchmarking and statistical testing
 - Phase 9.3: Advanced feature engineering with sector-specific optimizations
 - Phase 9.4: Multi-class event classification with neural networks
@@ -1008,5 +1027,5 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-10  
-**README Version**: 2.3 (comprehensive update with verified information)
+**Last Updated**: 2025-11-11  
+**README Version**: 2.4 (added portfolio optimization & risk metrics visualization)

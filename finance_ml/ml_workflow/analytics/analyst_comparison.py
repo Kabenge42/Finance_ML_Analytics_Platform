@@ -378,7 +378,7 @@ class PredictionAnalystAnalytics:
                     f"avg diff: ${metrics['avg_model_analyst_diff']:+.2f})"
                 )
 
-    def generate_report(self, top_n_opportunities: int = 50):
+    def generate_report(self, top_n_opportunities: int = 100):
         """
         Generate comprehensive Excel report.
 
@@ -387,7 +387,12 @@ class PredictionAnalystAnalytics:
         """
         print("\n📊 Generating Comprehensive Excel Report...")
         try:
-            report_path = self.config.output_dir / "prediction_analyst_comparison_report.xlsx"
+            output_dir = (
+                self.config.output_dir
+                if self.config and hasattr(self.config, "output_dir")
+                else Path("outputs")
+            )
+            report_path = output_dir / "prediction_analyst_comparison_report.xlsx"
             generate_prediction_analyst_excel_report(
                 self.comparison_df, report_path, top_n_opportunities=top_n_opportunities
             )
@@ -403,7 +408,7 @@ class PredictionAnalystAnalytics:
             print(f"  ⚠ Failed to generate report: {str(e)}")
 
     def run_full_analysis(
-        self, disagreement_threshold: float = 10.0, top_n: int = 50
+        self, disagreement_threshold: float = 10.0, top_n: int = 100
     ) -> Optional[Dict[str, Any]]:
         """
         Execute complete Phase 9.8 analytics pipeline.

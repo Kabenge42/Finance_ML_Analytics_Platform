@@ -78,13 +78,14 @@ if uploaded_file:
         df = df[df["region"].isin(regions)]
 
     # Main tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         [
             "📈 Overview",
             "🎯 Stock Ranking",
             "📊 Sector Analysis",
             "🔍 Data Quality",
             "🤖 Model Performance",
+            "💼 Portfolio & Risk Metrics",
         ]
     )
 
@@ -237,8 +238,13 @@ if uploaded_file:
         ):
             st.subheader("📊 Prediction vs Analyst Comparison")
 
-            # Calculate errors
-            pred_error = abs(df["predicted_price_target"] - df["price_target"]) / df["price_target"]
+            # Calculate errors if not already present
+            if "prediction_error_pct" not in df.columns:
+                pred_error = (
+                    abs(df["predicted_price_target"] - df["price_target"]) / df["price_target"]
+                )
+            else:
+                pred_error = df["prediction_error_pct"] / 100
 
             col1, col2, col3 = st.columns(3)
             col1.metric("Mean Absolute Error", f"{pred_error.mean():.2%}")
@@ -276,5 +282,191 @@ if uploaded_file:
                 hovermode="closest",
             )
             st.plotly_chart(fig, use_container_width=True)
+
+            # Model vs Analyst disagreement analysis
+            if "model_analyst_diff_pct" in df.columns:
+                st.subheader("🎯 Model-Analyst Disagreement Analysis")
+
+                disagreement_fig = px.histogram(
+                    df,
+                    x="model_analyst_diff_pct",
+                    nbins=50,
+                    title="Distribution of Model-Analyst Disagreement",
+                    labels={"model_analyst_diff_pct": "Difference (%)"},
+                )
+                disagreement_fig.add_vline(
+                    x=0, line_dash="dash", line_color="red", annotation_text="Perfect Agreement"
+                )
+                st.plotly_chart(disagreement_fig, use_container_width=True)
+
+                # High-conviction disagreements
+                high_disagreement = df[abs(df["model_analyst_diff_pct"]) > 10].nlargest(
+                    10, "model_analyst_diff_pct"
+                )
+                if len(high_disagreement) > 0:
+                    st.subheader("📌 High-Conviction Disagreements (>10% difference)")
+                    display_cols = [
+                        c
+                        for c in [
+                            "ticker",
+                            "sector",
+                            "price_target",
+                            "predicted_price_target",
+                            "model_analyst_diff_pct",
+                        ]
+                        if c in high_disagreement.columns
+                    ]
+                    st.dataframe(high_disagreement[display_cols], use_container_width=True)
+
+            # Error by sector analysis
+            if "prediction_error_pct" in df.columns and "sector" in df.columns:
+                st.subheader("📊 Error Analysis by Sector")
+                sector_errors = (
+                    df.groupby("sector")["prediction_error_pct"]
+                    .agg(["mean", "median", "std"])
+                    .round(2)
+                )
+
+                fig = px.bar(
+                    sector_errors.reset_index(),
+                    x="sector",
+                    y="mean",
+                    error_y="std",
+                    title="Mean Prediction Error by Sector (with Std Dev)",
+                    labels={"mean": "Mean Error %", "sector": "Sector"},
+                )
+                fig.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig, use_container_width=True)
+
+                st.dataframe(sector_errors, use_container_width=True)
+
+            # Financial metrics display
+            if any(col in df.columns for col in ["p_e", "p_b", "roe", "ev_ebitda"]):
+                st.subheader("💰 Key Financial Metrics")
+                financial_cols = [
+                    c
+                    for c in [
+                        "ticker",
+                        "sector",
+                        "p_e",
+                        "p_b",
+                        "roe",
+                        "roa",
+                        "ev_ebitda",
+                        "operating_margin",
+                        "debt_to_equity",
+                    ]
+                    if c in df.columns
+                ]
+                if financial_cols:
+                    st.dataframe(df[financial_cols].head(20), use_container_width=True)
+
+    with tab6:
+        st.title("💼 Portfolio Optimization & Risk Metrics")
+
+        st.markdown(
+            """
+        This section displays portfolio optimization results and risk metrics analysis.
+        These visualizations are generated from Section 10 of the ml_finance_model_main.ipynb notebook.
+        """
+        )
+
+        # Check if portfolio visualization files exist
+        analytics_path = Path("outputs/analytics")
+        efficient_frontier_file = analytics_path / "efficient_frontier_interactive.html"
+        risk_metrics_file = analytics_path / "risk_metrics_dashboard.html"
+        drawdown_file = analytics_path / "portfolio_drawdown_analysis.html"
+
+        # Efficient Frontier Visualization
+        st.subheader("📊 Efficient Frontier")
+        if efficient_frontier_file.exists():
+            try:
+                with open(efficient_frontier_file, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                st.components.v1.html(html_content, height=650, scrolling=True)
+            except Exception as e:
+                st.warning(f"Could not load efficient frontier visualization: {e}")
+                st.info(
+                    "The file exists but could not be displayed. Try viewing it directly in outputs/analytics/"
+                )
+        else:
+            st.warning("⚠️ Efficient frontier visualization not found.")
+            st.info(
+                "Run Section 10 of ml_finance_model_main.ipynb to generate portfolio optimization visualizations."
+            )
+
+        st.divider()
+
+        # Risk Metrics Dashboard
+        st.subheader("📈 Risk Metrics Dashboard")
+        if risk_metrics_file.exists():
+            try:
+                with open(risk_metrics_file, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                st.components.v1.html(html_content, height=850, scrolling=True)
+            except Exception as e:
+                st.warning(f"Could not load risk metrics dashboard: {e}")
+                st.info(
+                    "The file exists but could not be displayed. Try viewing it directly in outputs/analytics/"
+                )
+        else:
+            st.warning("⚠️ Risk metrics dashboard not found.")
+            st.info(
+                "Run Section 10 of ml_finance_model_main.ipynb to generate risk metrics visualizations."
+            )
+
+        st.divider()
+
+        # Drawdown Analysis
+        st.subheader("📉 Portfolio Drawdown Analysis")
+        if drawdown_file.exists():
+            try:
+                with open(drawdown_file, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                st.components.v1.html(html_content, height=750, scrolling=True)
+            except Exception as e:
+                st.warning(f"Could not load drawdown analysis: {e}")
+                st.info(
+                    "The file exists but could not be displayed. Try viewing it directly in outputs/analytics/"
+                )
+        else:
+            st.warning("⚠️ Drawdown analysis not found.")
+            st.info(
+                "Run Section 10 of ml_finance_model_main.ipynb to generate drawdown visualizations."
+            )
+
+        st.divider()
+
+        # Summary of portfolio optimization features
+        st.subheader("📋 Portfolio Optimization Features")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown(
+                """
+            **Optimization Methods:**
+            - ✅ Maximum Sharpe Ratio
+            - ✅ Minimum Volatility
+            - ✅ Target Return Optimization
+            - ✅ Efficient Frontier Generation
+            """
+            )
+
+        with col2:
+            st.markdown(
+                """
+            **Risk Metrics:**
+            - 📊 Value at Risk (VaR)
+            - 📊 Conditional VaR (CVaR)
+            - 📊 Sharpe Ratio
+            - 📊 Sortino Ratio
+            - 📊 Maximum Drawdown
+            """
+            )
+
+        st.info(
+            "💡 To update these visualizations, run ml_finance_model_main.ipynb Section 10 with your latest data."
+        )
+
 else:
     st.info("👆 Upload a predictions CSV file to start analysis")

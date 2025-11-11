@@ -414,10 +414,10 @@ def prepare_features_for_training(
     if apply_imputation:
         try:
             from finance_ml.ml_workflow.preprocessing.imputation import (
-                apply_enhanced_imputation_strategy_4step,
+                apply_enhanced_imputation_strategy_6step,
             )
 
-            apply_imputation_func = apply_enhanced_imputation_strategy_4step
+            apply_imputation_func = apply_enhanced_imputation_strategy_6step
         except ImportError:
             # Fallback to old location (legacy 6-step name)
             try:

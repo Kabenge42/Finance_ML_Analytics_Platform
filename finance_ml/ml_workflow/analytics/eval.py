@@ -769,7 +769,7 @@ def export_predictions_to_excel(
 
     for engine in engines_to_try:
         try:
-            with pd.ExcelWriter(excel_path, engine=engine) as writer:
+            with pd.ExcelWriter(excel_path, engine="xlsxwriter") as writer:
                 # Main predictions sheet
                 df.to_excel(writer, sheet_name="Predictions", index=False)
 
@@ -854,10 +854,11 @@ def export_predictions_to_csv(
     csv_path: Path,
     required_columns: Optional[list] = None,
     compute_mispricing: bool = True,
+    export_all_columns: bool = False,
 ) -> Path:
     """Export standardized predictions CSV for dashboards and downstream tools.
 
-    Expected columns in output CSV:
+    Expected columns in output CSV (when export_all_columns=False):
     ticker, name, exchange, sector, region, last_price, price_target,
     predicted_price_target, market_cap, mispricing_score
 
@@ -867,6 +868,7 @@ def export_predictions_to_csv(
         required_columns: Optional explicit list of columns to include/order
         compute_mispricing: If True and mispricing_score missing, compute it as
             (predicted_price_target - last_price) / last_price
+        export_all_columns: If True, export all columns from the dataframe (overrides required_columns)
 
     Returns:
         The path to the written CSV file.
@@ -890,56 +892,88 @@ def export_predictions_to_csv(
         # refresh map after potential addition
         df_cols_lower = {c.lower(): c for c in df.columns}
 
-    default_required = [
-        "ticker",
-        "name",
-        "exchange",
-        "sector",
-        "region",
-        "last_price",
-        "price_target",
-        "predicted_price_target",
-        "market_cap",
-        "mispricing_score",
-    ]
-    use_columns = required_columns or default_required
+    # If export_all_columns is True, export everything
+    if export_all_columns:
+        out_df = df.copy()
+        # Ensure numeric types where applicable for common columns
+        numeric_cols = [
+            "last_price",
+            "price_target",
+            "predicted_price_target",
+            "market_cap",
+            "mispricing_score",
+            "mispricing_pct",
+            "prediction_error",
+            "prediction_error_pct",
+            "model_analyst_diff_pct",
+            "p_e",
+            "p_b",
+            "roe",
+            "roa",
+            "ev_ebitda",
+            "operating_margin",
+            "net_margin",
+            "debt_to_equity",
+            "current_ratio",
+        ]
+        for num_col in numeric_cols:
+            if num_col in out_df.columns:
+                with np.errstate(all="ignore"):
+                    out_df[num_col] = pd.to_numeric(out_df[num_col], errors="coerce")
+    else:
+        # Original behavior: use default or specified columns
+        default_required = [
+            "ticker",
+            "name",
+            "exchange",
+            "sector",
+            "region",
+            "last_price",
+            "price_target",
+            "predicted_price_target",
+            "market_cap",
+            "mispricing_score",
+        ]
+        use_columns = required_columns or default_required
 
-    # Build column mapping from desired lowercase to actual columns present
-    available = {}
-    missing = []
-    for col in use_columns:
-        if col in df_cols_lower:
-            available[col] = df_cols_lower[col]
-        else:
-            missing.append(col)
+        # Build column mapping from desired lowercase to actual columns present
+        available = {}
+        missing = []
+        for col in use_columns:
+            if col in df_cols_lower:
+                available[col] = df_cols_lower[col]
+            else:
+                missing.append(col)
 
-    if missing:
-        logging.info("Some required columns are missing and will be filled with NA: %s", missing)
-        # Create placeholders for missing columns with NA
-        for col in missing:
-            df[col] = np.nan
-            available[col] = col
+        if missing:
+            logging.info(
+                "Some required columns are missing and will be filled with NA: %s", missing
+            )
+            # Create placeholders for missing columns with NA
+            for col in missing:
+                df[col] = np.nan
+                available[col] = col
 
-    # Reorder and select
-    ordered_cols = [available[c] for c in use_columns]
-    out_df = df[ordered_cols].copy()
+        # Reorder and select
+        ordered_cols = [available[c] for c in use_columns]
+        out_df = df[ordered_cols].copy()
 
-    # Ensure numeric types where applicable
-    for num_col in [
-        "last_price",
-        "price_target",
-        "predicted_price_target",
-        "market_cap",
-        "mispricing_score",
-    ]:
-        if num_col in out_df.columns:
-            with np.errstate(all="ignore"):
-                out_df[num_col] = pd.to_numeric(out_df[num_col], errors="coerce")
+        # Ensure numeric types where applicable
+        for num_col in [
+            "last_price",
+            "price_target",
+            "predicted_price_target",
+            "market_cap",
+            "mispricing_score",
+        ]:
+            if num_col in out_df.columns:
+                with np.errstate(all="ignore"):
+                    out_df[num_col] = pd.to_numeric(out_df[num_col], errors="coerce")
 
     csv_path = Path(csv_path)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(csv_path, index=False)
-    logging.info("Exported predictions to CSV: %s", csv_path)
+    logging.info("Exported predictions to CSV: %s (%d columns)", csv_path, len(out_df.columns))
     return csv_path
 
 
