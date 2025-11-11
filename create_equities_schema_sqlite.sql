@@ -251,7 +251,8 @@ CREATE TABLE equities
     "Price (1Y Ago)"              NUMERIC,
     "Price (3Y Ago)"              NUMERIC,
     "Price (5Y Ago)"              NUMERIC,
-    "Price (QTD Ago)"             NUMERIC
+    "Price (QTD Ago)" NUMERIC,
+    "Rel. Volume"     NUMERIC
 );
 
 -- Create a unique index to support INSERT OR IGNORE de-duplication by Ticker+Region

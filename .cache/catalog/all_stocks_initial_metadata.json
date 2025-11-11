@@ -8,7 +8,7 @@
   ],
   "shape": [
     8000,
-    242
+    243
   ],
   "columns": [
     "ticker",
@@ -247,6 +247,7 @@
     "price_3y_ago",
     "price_5y_ago",
     "price_qtd_ago",
+    "rel_volume",
     "p_e",
     "revenue",
     "ebitda",
@@ -254,5 +255,5 @@
     "p_b",
     "gross_margin"
   ],
-  "checksum": "9dd595ec24e997c07bfe0b613b479a7b"
+  "checksum": "659a87bede37117aa58aa719e61e467a"
 }

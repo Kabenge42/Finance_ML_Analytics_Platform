@@ -12,6 +12,9 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+# Project root path for consistent path resolution
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
 
 # Sample data loading (replace with actual data source)
 def load_data():
@@ -21,9 +24,11 @@ def load_data():
         pd.DataFrame: Prediction data with all columns from predictions.csv
     """
     # Load from outputs or database
-    csv_path = Path("outputs/analytics/predictions.csv")
+    # Use project root path for consistent resolution
+    csv_path = PROJECT_ROOT / "outputs" / "analytics" / "predictions.csv"
+
     if csv_path.exists():
-        all_stocks_phase95 = pd.read_csv(csv_path)
+        all_stocks_phase95 = pd.read_csv(csv_path, low_memory=False)
         # Convert numeric columns to proper dtypes
         numeric_columns = [
             "market_cap",
@@ -191,8 +196,11 @@ app.layout = html.Div(
                                                 id="efficient-frontier-iframe",
                                                 src=(
                                                     "/assets/efficient_frontier_interactive.html"
-                                                    if Path(
-                                                        "outputs/analytics/efficient_frontier_interactive.html"
+                                                    if (
+                                                        PROJECT_ROOT
+                                                        / "outputs"
+                                                        / "analytics"
+                                                        / "efficient_frontier_interactive.html"
                                                     ).exists()
                                                     else ""
                                                 ),
@@ -202,8 +210,11 @@ app.layout = html.Div(
                                                     "border": "1px solid #ddd",
                                                 },
                                             )
-                                            if Path(
-                                                "outputs/analytics/efficient_frontier_interactive.html"
+                                            if (
+                                                PROJECT_ROOT
+                                                / "outputs"
+                                                / "analytics"
+                                                / "efficient_frontier_interactive.html"
                                             ).exists()
                                             else html.Div(
                                                 "⚠️ Run notebook Section 10 to generate portfolio optimization visualizations",
@@ -228,8 +239,11 @@ app.layout = html.Div(
                                                 id="risk-metrics-iframe",
                                                 src=(
                                                     "/assets/risk_metrics_dashboard.html"
-                                                    if Path(
-                                                        "outputs/analytics/risk_metrics_dashboard.html"
+                                                    if (
+                                                        PROJECT_ROOT
+                                                        / "outputs"
+                                                        / "analytics"
+                                                        / "risk_metrics_dashboard.html"
                                                     ).exists()
                                                     else ""
                                                 ),
@@ -239,8 +253,11 @@ app.layout = html.Div(
                                                     "border": "1px solid #ddd",
                                                 },
                                             )
-                                            if Path(
-                                                "outputs/analytics/risk_metrics_dashboard.html"
+                                            if (
+                                                PROJECT_ROOT
+                                                / "outputs"
+                                                / "analytics"
+                                                / "risk_metrics_dashboard.html"
                                             ).exists()
                                             else html.Div(
                                                 "⚠️ Risk metrics dashboard not available",
@@ -266,8 +283,11 @@ app.layout = html.Div(
                                                 id="drawdown-iframe",
                                                 src=(
                                                     "/assets/portfolio_drawdown_analysis.html"
-                                                    if Path(
-                                                        "outputs/analytics/portfolio_drawdown_analysis.html"
+                                                    if (
+                                                        PROJECT_ROOT
+                                                        / "outputs"
+                                                        / "analytics"
+                                                        / "portfolio_drawdown_analysis.html"
                                                     ).exists()
                                                     else ""
                                                 ),
@@ -277,8 +297,11 @@ app.layout = html.Div(
                                                     "border": "1px solid #ddd",
                                                 },
                                             )
-                                            if Path(
-                                                "outputs/analytics/portfolio_drawdown_analysis.html"
+                                            if (
+                                                PROJECT_ROOT
+                                                / "outputs"
+                                                / "analytics"
+                                                / "portfolio_drawdown_analysis.html"
                                             ).exists()
                                             else html.Div(
                                                 "⚠️ Drawdown analysis not available",

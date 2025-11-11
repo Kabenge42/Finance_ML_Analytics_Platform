@@ -90,7 +90,7 @@ def preprocess_for_lightgbm(
     if categorical_columns is None:
         categorical_columns = result.select_dtypes(include=["object", "category"]).columns.tolist()
         # Exclude columns that look like datetime strings
-        date_keywords = ["date", "updated", "earnings", "time"]
+        date_keywords = ["date", "updated", "earnings", "time", "income"]
         categorical_columns = [
             col
             for col in categorical_columns
@@ -103,7 +103,7 @@ def preprocess_for_lightgbm(
 
         # Also check object columns that might be datetime strings
         # Look for columns with datetime-like keywords that weren't classified as categorical
-        date_keywords = ["date", "updated", "earnings", "time"]
+        date_keywords = ["date", "updated", "earnings", "time", "income"]
         for col in result.select_dtypes(include=["object"]).columns:
             if col not in categorical_columns and any(
                 keyword in col.lower() for keyword in date_keywords

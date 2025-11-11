@@ -331,6 +331,7 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "Price (3Y Ago)": "price_3y_ago",
             "Price (5Y Ago)": "price_5y_ago",
             "Price (QTD Ago)": "price_qtd_ago",
+            "Rel. Volume": "rel_volume",
         }
 
         # Apply mapping to existing columns

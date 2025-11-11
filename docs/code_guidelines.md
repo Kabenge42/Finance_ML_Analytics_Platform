@@ -222,6 +222,198 @@ verbose: bool = True
 #   'study': optuna.Study,
 #   'model': fitted_classifier
 # }
+
+# finance_ml.ml_workflow.classification.models - Data Preparation
+from finance_ml.ml_workflow.classification import prepare_classification_data
+
+X_train, X_test, y_train, y_test, numeric_cols, categorical_cols = prepare_classification_data(
+        df: pd.DataFrame,
+labels: np.ndarray,
+test_size: float = 0.2,
+random_state: int = 42,
+feature_groups: Optional[List[str]] = None
+) -> Tuple[pd.DataFrame, pd.DataFrame, np.ndarray, np.ndarray, List[str], List[str]]
+# Returns: (X_train, X_test, y_train, y_test, numeric_features, categorical_features)
+# Handles train/test split, categorical encoding, and Phase 9.3 feature group integration
+
+# finance_ml.ml_workflow.classification.models - Model Training and Comparison
+from finance_ml.ml_workflow.classification import (
+    compare_classifiers,
+    fit_classifier,
+    train_xgboost_classifier,
+    train_lightgbm_classifier,
+    train_catboost_classifier
+    )
+
+# High-level orchestrator API (recommended)
+result = fit_classifier(
+        X_train: pd.DataFrame,
+y_train: np.ndarray,
+X_test: Optional[pd.DataFrame] = None,
+y_test: Optional[np.ndarray] = None,
+model: Union[str, List[str]] = "xgboost",
+params: Optional[Dict[str, Any]] = None,
+tuning: Optional[Dict[str, Any]] = None,
+cv: Optional[Dict[str, Any]] = None,
+class_weighting: Optional[str] = None,
+compare: bool = False
+) -> Dict[str, Any]
+# Returns: {
+#   'model': fitted_classifier,
+#   'metrics': {'accuracy': float, 'f1_macro': float, 'precision': float, 'recall': float},
+#   'y_pred': np.ndarray,
+#   'y_proba': np.ndarray,
+#   'artifacts': {'feature_importance': pd.DataFrame, 'confusion_matrix': np.ndarray}
+# }
+
+# Compare multiple classifiers
+comparison_results = compare_classifiers(
+        X_train: pd.DataFrame,
+y_train: np.ndarray,
+X_test: pd.DataFrame,
+y_test: np.ndarray,
+numeric_cols: List[str],
+categorical_cols: List[str]
+) -> Dict[str, Dict[str, Any]]
+# Returns: {model_name: {model, metrics, y_pred, y_proba}} for each classifier
+
+# finance_ml.ml_workflow.classification.evaluation - Metrics and Evaluation
+from finance_ml.ml_workflow.classification.evaluation import (
+    evaluate_classification,
+    evaluate_classification_by_sector,
+    cross_validate_classifier
+    )
+
+metrics = evaluate_classification(
+        y_true: np.ndarray,
+y_pred: np.ndarray,
+y_proba: Optional[np.ndarray] = None,
+class_names: Optional[List[str]] = None
+) -> Dict[str, Any]
+# Returns: {accuracy, precision, recall, f1_score, confusion_matrix, classification_report}
+
+sector_metrics = evaluate_classification_by_sector(
+        y_true: np.ndarray,
+y_pred: np.ndarray,
+sectors: pd.Series
+) -> pd.DataFrame
+# Returns: DataFrame with per-sector accuracy, precision, recall, f1
+
+cv_results = cross_validate_classifier(
+        model: ClassifierMixin,
+X: pd.DataFrame,
+y: np.ndarray,
+cv: int = 5,
+stratify_by: Optional[str] = None
+) -> Dict[str, Any]
+# Returns: {scores, mean_score, std_score, fold_details}
+
+# finance_ml.ml_workflow.classification.evaluation - Visualization
+from finance_ml.ml_workflow.classification.evaluation import (
+    plot_confusion_matrices,
+    plot_learning_curves
+    )
+
+plot_confusion_matrices(
+        models_results: Dict[str, Dict[str, Any]],
+class_names: Optional[List[str]] = None
+) -> None
+# Plots confusion matrices for multiple models side-by-side
+
+plot_learning_curves(
+        model: ClassifierMixin,
+X: pd.DataFrame,
+y: np.ndarray,
+cv: int = 5,
+train_sizes: Optional[np.ndarray] = None,
+scoring: str = "accuracy"
+) -> None
+# Plots learning curves showing train/validation scores vs training size
+
+# finance_ml.ml_workflow.classification.evaluation - SHAP Analysis
+from finance_ml.ml_workflow.classification.evaluation import (
+    compute_shap_values,
+    analyze_per_class_feature_importance,
+    analyze_shap_by_feature_groups
+    )
+
+shap_values = compute_shap_values(
+        model: Any,
+X_train: pd.DataFrame,
+X_test: pd.DataFrame,
+max_samples: int = 100
+) -> Any
+# Returns: SHAP values for interpretability analysis
+
+class_importance = analyze_per_class_feature_importance(
+        model: ClassifierMixin,
+X: pd.DataFrame,
+y: np.ndarray,
+feature_names: Optional[List[str]] = None,
+top_n: int = 10
+) -> Dict[int, pd.DataFrame]
+# Returns: {class_id: DataFrame of top features} for each class
+
+group_shap = analyze_shap_by_feature_groups(
+        shap_values: Any,
+feature_names: List[str],
+top_n_per_group: int = 10
+) -> Dict[str, pd.DataFrame]
+# Returns: SHAP analysis grouped by feature categories (Phase 9.3 groups)
+
+# finance_ml.ml_workflow.classification.evaluation - Feature Importance
+from finance_ml.ml_workflow.classification.evaluation import (
+    compare_feature_importance,
+    analyze_feature_importance_by_groups,
+    analyze_feature_importance_by_sector
+    )
+
+importance_comparison = compare_feature_importance(
+        models_dict: Dict[str, Dict[str, Any]],
+feature_names: List[str],
+top_n: int = 20
+) -> pd.DataFrame
+# Returns: DataFrame comparing feature importance across models
+
+group_importance = analyze_feature_importance_by_groups(
+        importance_dict: Dict[str, float],
+feature_names: Optional[List[str]] = None,
+top_n_per_group: int = 10
+) -> Dict[str, pd.DataFrame]
+# Returns: Feature importance grouped by Phase 9.3 categories
+
+sector_importance = analyze_feature_importance_by_sector(
+        model: Any,
+X: pd.DataFrame,
+y: np.ndarray,
+sector_col: str = "sector",
+top_n: int = 15
+) -> Dict[str, pd.DataFrame]
+# Returns: {sector: DataFrame of top features} for sector-specific analysis
+
+# finance_ml.ml_workflow.classification.evaluation - Calibration
+from finance_ml.ml_workflow.classification.evaluation import analyze_calibration
+
+calibration_metrics = analyze_calibration(
+        y_true: np.ndarray,
+y_proba: np.ndarray,
+n_bins: int = 10
+) -> Dict[str, Any]
+# Returns: {brier_score, log_loss, calibration_curve_data, ece, mce}
+
+# finance_ml.ml_workflow.classification.tuning - Sector-Stratified Cross-Validation
+from finance_ml.ml_workflow.classification.tuning import cross_validate_with_sector_stratification
+
+cv_results = cross_validate_with_sector_stratification(
+        model: Any,
+X: pd.DataFrame,
+y: np.ndarray,
+sector_col: str = "sector",
+n_splits: int = 5,
+random_state: int = 42
+) -> Dict[str, Any]
+# Returns: {scores, mean_score, std_score, per_sector_scores}
+# Uses StratifiedGroupKFold to maintain class and sector distribution
 ```
 
 **Phase 9.5 — Regression**
@@ -297,6 +489,176 @@ from finance_ml.ml_workflow.regression.models import (
     train_bayesian_ridge_regressor
     )
 # All follow standardized return signature: {model, metrics, y_pred, feature_importance}
+
+# finance_ml.ml_workflow.regression.dataset - Data Validation and Preparation
+from finance_ml.ml_workflow.regression import (
+    validate_training_data,
+    prepare_features_for_training,
+    extract_numeric_feature_columns,
+    integrate_classification_features_into_dataframe,
+    create_classification_interactions,
+    train_sector_specific_models
+    )
+
+validation_result = validate_training_data(
+        X: pd.DataFrame,
+y: pd.Series,
+strict: bool = True
+) -> Dict[str, Any]
+# Returns: {is_valid, issues, warnings, feature_stats}
+# Validates data quality before training
+
+X_prepared, y_prepared = prepare_features_for_training(
+        df: pd.DataFrame,
+feature_cols: List[str],
+target_col: str,
+apply_imputation: bool = True,
+sector_column: Optional[str] = None
+) -> Tuple[pd.DataFrame, pd.Series]
+# Returns: (X, y) with imputation applied if requested
+
+numeric_cols = extract_numeric_feature_columns(
+        df: pd.DataFrame,
+exclude_cols: Optional[List[str]] = None
+) -> List[str]
+# Returns: List of numeric column names, excluding specified columns
+
+df_enhanced = integrate_classification_features_into_dataframe(
+        df: pd.DataFrame,
+class_features: Dict[str, np.ndarray]
+) -> pd.DataFrame
+# Returns: df with classification probability columns added
+
+df_interactions = create_classification_interactions(
+        df: pd.DataFrame,
+class_proba_cols: List[str],
+value_cols: List[str]
+) -> pd.DataFrame
+# Returns: df with interaction features (class_prob * value)
+
+sector_models, results = train_sector_specific_models(
+        df: pd.DataFrame,
+feature_cols: List[str],
+target_col: str,
+sector_col: str = "sector",
+model_type: str = "random_forest",
+min_samples: int = 20,
+ensure_nonnegative: bool = False
+) -> Tuple[Dict[str, Any], Dict[str, Any]]
+# Returns: ({sector: model}, {metrics, n_sectors_trained, sectors_trained, fallback_used})
+
+# finance_ml.ml_workflow.regression.models - All Model Training Functions
+from finance_ml.ml_workflow.regression.models import (
+    # Linear models
+    train_ridge_regressor,
+    train_lasso_regressor,
+    train_elastic_net_regressor,
+    train_bayesian_ridge_regressor,
+    train_polynomial_regressor,
+    # Gradient boosting
+    train_xgboost_regressor,
+    train_lightgbm_regressor,
+    train_catboost_regressor,
+    train_histgb_regressor,
+    # Tree models
+    train_random_forest_regressor,
+    train_extra_trees_regressor,
+    # Neural network
+    train_neural_network_regressor,
+    # Ensemble methods
+    train_voting_regressor,
+    train_stacking_regressor,
+    )
+
+# Linear Models - All return: {model, metrics, y_pred, feature_importance}
+ridge_result = train_ridge_regressor(X_train, y_train, X_test, y_test, alpha=1.0)
+lasso_result = train_lasso_regressor(X_train, y_train, X_test, y_test, alpha=1.0)
+elastic_result = train_elastic_net_regressor(X_train, y_train, X_test, y_test, alpha=1.0, l1_ratio=0.5)
+bayes_result = train_bayesian_ridge_regressor(X_train, y_train, X_test, y_test)
+poly_result = train_polynomial_regressor(X_train, y_train, X_test, y_test, degree=2)
+
+# Gradient Boosting Models - All return: {model, metrics, y_pred, feature_importance}
+xgb_result = train_xgboost_regressor(X_train, y_train, X_test, y_test, n_estimators=100, max_depth=6)
+lgbm_result = train_lightgbm_regressor(X_train, y_train, X_test, y_test, n_estimators=100, max_depth=6)
+catboost_result = train_catboost_regressor(X_train, y_train, X_test, y_test, iterations=100, depth=6)
+histgb_result = train_histgb_regressor(X_train, y_train, X_test, y_test, max_iter=100, max_depth=6)
+
+# Tree Models - All return: {model, metrics, y_pred, feature_importance}
+rf_result = train_random_forest_regressor(X_train, y_train, X_test, y_test, n_estimators=100, max_depth=10)
+et_result = train_extra_trees_regressor(X_train, y_train, X_test, y_test, n_estimators=100, max_depth=10)
+
+# Neural Network - Returns: {model, metrics, y_pred, history}
+nn_result = train_neural_network_regressor(
+        X_train, y_train, X_test, y_test,
+        hidden_layers=[64, 32],
+        activation='relu',
+        epochs=50,
+        batch_size=32
+        )
+
+# Ensemble Methods - All return: {model, metrics, y_pred, feature_importance}
+voting_result = train_voting_regressor(
+        X_train, y_train, X_test, y_test,
+        estimators=[('rf', rf_model), ('xgb', xgb_model), ('lgbm', lgbm_model)]
+        )
+stacking_result = train_stacking_regressor(
+        X_train, y_train, X_test, y_test,
+        base_estimators=[rf_model, xgb_model, lgbm_model],
+        final_estimator=Ridge()
+        )
+
+# finance_ml.ml_workflow.regression.quantile - Quantile Regression
+from finance_ml.ml_workflow.regression.quantile import train_quantile_regressor
+
+quantile_result = train_quantile_regressor(
+        X_train: pd.DataFrame,
+y_train: pd.Series,
+X_test: Optional[pd.DataFrame] = None,
+y_test: Optional[pd.Series] = None,
+quantiles: List[float] = [0.1, 0.5, 0.9],
+** kwargs
+) -> Dict[str, Any]
+# Returns: {models: {quantile: model}, predictions: {quantile: y_pred}, metrics: {quantile: metrics}}
+# Provides prediction intervals for uncertainty estimation
+
+# finance_ml.ml_workflow.regression.tuning - Hyperparameter Optimization
+from finance_ml.ml_workflow.regression.tuning import optimize_hyperparameters_optuna
+
+tuning_result = optimize_hyperparameters_optuna(
+        X_train: pd.DataFrame,
+y_train: pd.Series,
+model_type: str = "xgboost",
+n_trials: int = 100,
+cv_folds: int = 5,
+optimization_metric: str = "neg_mean_absolute_error",
+** kwargs
+) -> Dict[str, Any]
+# Returns: {best_params, best_score, study, model}
+# Uses Bayesian optimization (Optuna) to find optimal hyperparameters
+
+# finance_ml.ml_workflow.regression.io - Model Persistence
+from finance_ml.ml_workflow.regression.io import save_model, load_model
+
+save_model(
+        model: Any,
+filepath: Union[str, Path],
+metadata: Optional[Dict[str, Any]] = None
+) -> None
+# Saves model with metadata (feature names, training date, version, etc.)
+
+loaded_model, metadata = load_model(
+        filepath: Union[str, Path]
+) -> Tuple[Any, Dict[str, Any]]
+# Returns: (model, metadata)
+# Loads model and associated metadata
+
+# finance_ml.ml_workflow.regression.constraints - Non-Negative Predictions
+from finance_ml.ml_workflow.regression.constraints import NonNegativeRegressionWrapper
+
+wrapped_model = NonNegativeRegressionWrapper(base_estimator=Ridge(alpha=1.0))
+wrapped_model.fit(X_train, y_train)
+predictions = wrapped_model.predict(X_test)  # All predictions >= 0
+# Ensures predictions are non-negative (critical for price predictions)
 ```
 
 **Phase 9.6 — Evaluation**

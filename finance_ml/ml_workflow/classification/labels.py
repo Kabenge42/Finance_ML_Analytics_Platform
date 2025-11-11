@@ -400,16 +400,6 @@ def create_enhanced_event_labels(
         market_score = pd.Series(0.0, index=df.index)
         signal_count = 0
 
-        # Sector momentum (original data or Phase 9.3)
-        sector_momentum = _get_column(df, "sector_momentum")
-        if sector_momentum is not None:
-            # Normalize: high momentum = positive
-            mom_normalized = (sector_momentum - sector_momentum.mean()) / (
-                sector_momentum.std() + 1e-10
-            )
-            market_score += mom_normalized
-            signal_count += 1
-
         # Sector-relative performance (calculated from price)
         if "sector" in df.columns and "last_price" in df.columns:
             sector_perf = df.groupby("sector")["last_price"].transform(
@@ -436,8 +426,8 @@ def create_enhanced_event_labels(
             market_score += -beta_trend * 2.0
             signal_count += 1
 
-        # Sector-relative valuation (Phase 9.3)
-        for metric in ["p_e_sector_relative", "ev_ebitda_sector_relative"]:
+        # Sector-relative valuation (Phase 9.3: vs_sector_median features)
+        for metric in ["p_e_ratio_vs_sector_median", "ev_ebitda_ratio_vs_sector_median"]:
             sector_rel = _get_column(df, metric)
             if sector_rel is not None:
                 # Negative relative = undervalued = positive
