@@ -328,18 +328,24 @@ def engineer_growth_metrics(df: pd.DataFrame) -> pd.DataFrame:
             _safe_div((df["revenue"] - df["revenue_previous_year"]), df["revenue_previous_year"])
             * 100
         )
+        # Backward-compatible alias for event labels
+        result["revenue_growth"] = result["revenue_growth_yoy"]
 
     # EPS Growth
     if "eps" in df.columns and "eps_previous_year" in df.columns:
         result["eps_growth_yoy"] = (
             _safe_div((df["eps"] - df["eps_previous_year"]), df["eps_previous_year"]) * 100
         )
+        # Backward-compatible alias for event labels
+        result["earnings_growth"] = result["eps_growth_yoy"]
 
     # EBITDA Growth
     if "ebitda" in df.columns and "ebitda_previous_year" in df.columns:
         result["ebitda_growth_yoy"] = (
             _safe_div((df["ebitda"] - df["ebitda_previous_year"]), df["ebitda_previous_year"]) * 100
         )
+        # Backward-compatible alias for event labels
+        result["ebitda_growth"] = result["ebitda_growth_yoy"]
 
     logger.info("Engineered growth metrics")
     return result
@@ -1760,13 +1766,173 @@ def engineer_balance_sheet_trends(df: pd.DataFrame) -> pd.DataFrame:
 def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer composite scores (quality, value, momentum) and keep within [0,100].
 
-    Minimal implementation focusing on quality score per plan:
-    - composite_quality_score: mean of available {distress_risk_score, accounting_quality_score}.
-    - momentum_score: optional, if price_momentum_1y and return_stability_score are present, scaled to 0-100.
-    - value_score: optional placeholder using inverse of p_e_ratio percentile within sector if available (not used in tests).
+    Composite scores computed:
+    - piotroski_f_score: 9-point fundamental strength score (0-9)
+    - altman_z_score: Bankruptcy prediction score (higher is better)
+    - beneish_m_score: Earnings manipulation detection (< -1.78 unlikely manipulator)
+    - composite_quality_score: mean of available {distress_risk_score, accounting_quality_score}
+    - momentum_score: normalized return_stability_score scaled to 0-100
+
+    Phase 9.3 Enhancement: Added Piotroski F-Score, Altman Z-Score, Beneish M-Score
+    for composite_event label method support.
     """
     result = df.copy()
 
+    # Piotroski F-Score (0-9): 9 binary signals for fundamental strength
+    # Profitability (4 points): ROA > 0, CFO > 0, ΔROAdelta > 0, Accruals (CFO > NI)
+    # Leverage (3 points): ΔLEV < 0, ΔLiquid > 0, No equity issuance
+    # Operating Efficiency (2 points): ΔMargin > 0, ΔTurnover > 0
+    f_score_components = []
+
+    # F1: Positive ROA
+    if "roa" in df.columns:
+        f_score_components.append((df["roa"].fillna(0) > 0).astype(int))
+
+    # F2: Positive Operating Cash Flow
+    if "cfo_ltm" in df.columns:
+        f_score_components.append((df["cfo_ltm"].fillna(0) > 0).astype(int))
+
+    # F3: Change in ROA (positive)
+    if "roa" in df.columns and "roa_previous_year" in df.columns:
+        delta_roa = df["roa"].fillna(0) - df["roa_previous_year"].fillna(0)
+        f_score_components.append((delta_roa > 0).astype(int))
+
+    # F4: Quality of Earnings (CFO > Net Income)
+    if "cfo_ltm" in df.columns and "net_income" in df.columns:
+        f_score_components.append(
+            (df["cfo_ltm"].fillna(0) > df["net_income"].fillna(0)).astype(int)
+        )
+
+    # F5: Decrease in Leverage (Long-term debt ratio)
+    if "debt_to_equity" in df.columns:
+        if "debt_to_equity_previous_year" in df.columns:
+            delta_lev = df["debt_to_equity"].fillna(0) - df["debt_to_equity_previous_year"].fillna(
+                0
+            )
+            f_score_components.append((delta_lev < 0).astype(int))
+        else:
+            # Fallback: low leverage is good
+            f_score_components.append((df["debt_to_equity"].fillna(0) < 1.0).astype(int))
+
+    # F6: Increase in Liquidity (Current Ratio)
+    if "current_ratio" in df.columns:
+        if "current_ratio_previous_year" in df.columns:
+            delta_liq = df["current_ratio"].fillna(0) - df["current_ratio_previous_year"].fillna(0)
+            f_score_components.append((delta_liq > 0).astype(int))
+        else:
+            # Fallback: healthy liquidity
+            f_score_components.append((df["current_ratio"].fillna(0) > 1.5).astype(int))
+
+    # F7: No new equity issuance (shares outstanding decreased or stable)
+    if "shares_outstanding" in df.columns and "shares_outstanding_previous_year" in df.columns:
+        delta_shares = df["shares_outstanding"].fillna(0) - df[
+            "shares_outstanding_previous_year"
+        ].fillna(0)
+        f_score_components.append((delta_shares <= 0).astype(int))
+
+    # F8: Increase in Gross Margin
+    if "gross_margin_pct" in df.columns:
+        if "gross_margin_pct_previous_year" in df.columns:
+            delta_margin = df["gross_margin_pct"].fillna(0) - df[
+                "gross_margin_pct_previous_year"
+            ].fillna(0)
+            f_score_components.append((delta_margin > 0).astype(int))
+        else:
+            # Fallback: healthy margin
+            f_score_components.append((df["gross_margin_pct"].fillna(0) > 30).astype(int))
+
+    # F9: Increase in Asset Turnover
+    if "asset_turnover" in df.columns:
+        if "asset_turnover_previous_year" in df.columns:
+            delta_turn = df["asset_turnover"].fillna(0) - df["asset_turnover_previous_year"].fillna(
+                0
+            )
+            f_score_components.append((delta_turn > 0).astype(int))
+        else:
+            # Fallback: efficient asset use
+            f_score_components.append((df["asset_turnover"].fillna(0) > 0.5).astype(int))
+
+    if f_score_components:
+        result["piotroski_f_score"] = pd.concat(f_score_components, axis=1).sum(axis=1)
+
+    # Altman Z-Score: Bankruptcy prediction model
+    # Z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
+    # X1 = Working Capital / Total Assets
+    # X2 = Retained Earnings / Total Assets
+    # X3 = EBIT / Total Assets
+    # X4 = Market Value of Equity / Total Liabilities
+    # X5 = Sales / Total Assets
+    # Z > 2.99: Safe zone, 1.81-2.99: Grey zone, < 1.81: Distress zone
+    z_components = {}
+
+    if "working_capital" in df.columns and "total_assets" in df.columns:
+        z_components["x1"] = _safe_div(df["working_capital"], df["total_assets"]) * 1.2
+
+    if "retained_earnings" in df.columns and "total_assets" in df.columns:
+        z_components["x2"] = _safe_div(df["retained_earnings"], df["total_assets"]) * 1.4
+
+    if "ebit" in df.columns and "total_assets" in df.columns:
+        z_components["x3"] = _safe_div(df["ebit"], df["total_assets"]) * 3.3
+
+    if "market_cap" in df.columns and "total_liabilities" in df.columns:
+        z_components["x4"] = _safe_div(df["market_cap"], df["total_liabilities"]) * 0.6
+
+    if "revenue" in df.columns and "total_assets" in df.columns:
+        z_components["x5"] = _safe_div(df["revenue"], df["total_assets"]) * 1.0
+
+    if z_components:
+        z_df = pd.DataFrame(z_components).fillna(0)
+        result["altman_z_score"] = z_df.sum(axis=1)
+
+    # Beneish M-Score: Earnings manipulation detection
+    # M = -4.84 + 0.92*DSRI + 0.528*GMI + 0.404*AQI + 0.892*SGI + 0.115*DEPI
+    #     - 0.172*SGAI + 4.679*TATA - 0.327*LVGI
+    # M < -1.78: Unlikely manipulator, M > -1.78: Possible manipulator
+    # Simplified version using available features
+    m_components = []
+    m_weights = []
+
+    # DSRI (Days Sales Receivable Index): (AR_t/Sales_t) / (AR_t-1/Sales_t-1)
+    if all(
+        c in df.columns
+        for c in [
+            "accounts_receivable",
+            "revenue",
+            "accounts_receivable_previous_year",
+            "revenue_previous_year",
+        ]
+    ):
+        dsr_current = _safe_div(df["accounts_receivable"], df["revenue"])
+        dsr_prior = _safe_div(df["accounts_receivable_previous_year"], df["revenue_previous_year"])
+        dsri = _safe_div(dsr_current, dsr_prior).fillna(1.0)
+        m_components.append(dsri)
+        m_weights.append(0.92)
+
+    # GMI (Gross Margin Index): GM_t-1 / GM_t (deteriorating margin = higher GMI = bad)
+    if "gross_margin_pct" in df.columns and "gross_margin_pct_previous_year" in df.columns:
+        gmi = _safe_div(df["gross_margin_pct_previous_year"], df["gross_margin_pct"]).fillna(1.0)
+        m_components.append(gmi)
+        m_weights.append(0.528)
+
+    # SGI (Sales Growth Index): Sales_t / Sales_t-1
+    if "revenue" in df.columns and "revenue_previous_year" in df.columns:
+        sgi = _safe_div(df["revenue"], df["revenue_previous_year"]).fillna(1.0)
+        m_components.append(sgi)
+        m_weights.append(0.892)
+
+    # LVGI (Leverage Index): Leverage_t / Leverage_t-1
+    if "debt_to_equity" in df.columns and "debt_to_equity_previous_year" in df.columns:
+        lvgi = _safe_div(df["debt_to_equity"], df["debt_to_equity_previous_year"]).fillna(1.0)
+        m_components.append(lvgi)
+        m_weights.append(-0.327)
+
+    if m_components:
+        m_score = pd.Series(-4.84, index=df.index)
+        for comp, weight in zip(m_components, m_weights):
+            m_score += comp * weight
+        result["beneish_m_score"] = m_score
+
+    # Original composite_quality_score
     components = []
     if "distress_risk_score" in df.columns:
         components.append(df["distress_risk_score"].astype(float))
@@ -1782,7 +1948,7 @@ def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
         # map real line to (0,100) via arctan, center at 50
         result["momentum_score"] = (np.arctan(rss) / (np.pi / 2) * 50.0 + 50.0).clip(0.0, 100.0)
 
-    logger.info("Engineered composite scores")
+    logger.info("Engineered composite scores (Piotroski F-Score, Altman Z-Score, Beneish M-Score)")
     return result
 
 

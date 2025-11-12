@@ -104,8 +104,7 @@ print(f"Trained {results['n_sectors_trained']} sector models")
 # Constraints
 from finance_ml.ml_workflow.regression.constraints import (
     NonNegativeRegressionWrapper,
-)
-
+    )
 # Dataset preparation and validation
 from finance_ml.ml_workflow.regression.dataset import (
     # Classification feature integration
@@ -120,9 +119,12 @@ from finance_ml.ml_workflow.regression.dataset import (
     extract_numeric_feature_columns,
     # Sector-specific training
     train_sector_specific_models,
-)
-
-
+    )
+# Phase 9.5.1: Model persistence
+from finance_ml.ml_workflow.regression.io import (
+    save_model,
+    load_model,
+    )
 # Phase 9.5.1: Model training functions
 from finance_ml.ml_workflow.regression.models import (
     # Linear models
@@ -146,24 +148,24 @@ from finance_ml.ml_workflow.regression.models import (
     train_stacking_regressor,
     # Model comparison
     compare_regressors,
-)
-
+    )
 # Phase 9.5.1: Quantile regression
 from finance_ml.ml_workflow.regression.quantile import (
     train_quantile_regressor,
-)
-
+    )
 # Phase 9.5.1: Hyperparameter tuning
 from finance_ml.ml_workflow.regression.tuning import (
     optimize_hyperparameters_optuna,
+    )
+# Phase 9.5.1: Uncertainty & conformal prediction
+from finance_ml.ml_workflow.regression.uncertainty import (
+    conformal_prediction_intervals,
+    compute_interval_coverage,
+    )
+from finance_ml.ml_workflow.regression.calibration import (
+    calibrate_predictions_by_sector,
+    DEFAULT_SECTOR_BIAS,
 )
-
-# Phase 9.5.1: Model persistence
-from finance_ml.ml_workflow.regression.io import (
-    save_model,
-    load_model,
-)
-
 
 __all__ = [
     # Constraints (Phase 9.5.0)
@@ -208,4 +210,10 @@ __all__ = [
     # Model persistence (Phase 9.5.1)
     "save_model",
     "load_model",
+    # Uncertainty & conformal prediction (Phase 9.5.1)
+    "conformal_prediction_intervals",
+    "compute_interval_coverage",
+    # Sector calibration (Priority 3)
+    "calibrate_predictions_by_sector",
+    "DEFAULT_SECTOR_BIAS",
 ]

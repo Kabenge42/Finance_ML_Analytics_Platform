@@ -21,38 +21,10 @@ Usage:
     )
 """
 
-from finance_ml.ml_workflow.analytics.mispricing import (
-    calculate_mispricing_score,
-    calculate_risk_adjusted_mispricing,
-    rank_undervalued_stocks,
-    rank_overvalued_stocks,
-    rank_stocks_by_sector,
-)
-
 # Import from analyst_comparison module (Phase 9.7)
 from finance_ml.ml_workflow.analytics.analyst_comparison import (
     PredictionAnalystAnalytics,
-)
-
-# Import from portfolio module (Phase 9.7)
-from finance_ml.ml_workflow.analytics.portfolio import (
-    calculate_portfolio_return,
-    calculate_portfolio_volatility,
-    calculate_portfolio_sharpe_ratio,
-    optimize_portfolio_max_sharpe,
-    optimize_portfolio_min_volatility,
-)
-
-# Import from risk module (Phase 9.7)
-from finance_ml.ml_workflow.analytics.risk import (
-    calculate_var_historical,
-    calculate_cvar,
-    calculate_sharpe_ratio,
-    calculate_sortino_ratio,
-    calculate_max_drawdown,
-    calculate_portfolio_risk_metrics,
-)
-
+    )
 # Import comprehensive eval module functions
 from finance_ml.ml_workflow.analytics.eval import (
     # Basic mispricing and ranking (note: some overlap with mispricing.py)
@@ -116,7 +88,31 @@ from finance_ml.ml_workflow.analytics.eval import (
     prepare_plotly_dashboard_data,
     generate_pdf_report,
     generate_enhanced_pdf_report,
-)
+    )
+from finance_ml.ml_workflow.analytics.mispricing import (
+    calculate_mispricing_score,
+    calculate_risk_adjusted_mispricing,
+    rank_undervalued_stocks,
+    rank_overvalued_stocks,
+    rank_stocks_by_sector,
+    )
+# Import from portfolio module (Phase 9.7)
+from finance_ml.ml_workflow.analytics.portfolio import (
+    calculate_portfolio_return,
+    calculate_portfolio_volatility,
+    calculate_portfolio_sharpe_ratio,
+    optimize_portfolio_max_sharpe,
+    optimize_portfolio_min_volatility,
+    )
+# Import from risk module (Phase 9.7)
+from finance_ml.ml_workflow.analytics.risk import (
+    calculate_var_historical,
+    calculate_cvar,
+    calculate_sharpe_ratio,
+    calculate_sortino_ratio,
+    calculate_max_drawdown,
+    calculate_portfolio_risk_metrics,
+    )
 
 __all__ = [
     # Mispricing functions

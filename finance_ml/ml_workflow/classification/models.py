@@ -20,7 +20,6 @@ Version: Phase 9.4.1
 """
 
 import logging
-import warnings
 from typing import Dict, Any, Optional, List, Tuple, Literal, Union
 
 import numpy as np
@@ -29,10 +28,7 @@ from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.metrics import (
     accuracy_score,
     precision_recall_fscore_support,
-    classification_report,
-    confusion_matrix,
-    roc_auc_score,
-)
+    )
 from sklearn.model_selection import train_test_split
 
 # Optional imports with fallback handling
@@ -1421,7 +1417,6 @@ def fit_classifier(
     # Phase 9.3: Prepare data with feature group selection
     if feature_groups is not None:
         # Use prepare_classification_data's feature_groups parameter
-        from sklearn.model_selection import train_test_split as sk_split
 
         # Reconstruct full dataset temporarily
         if X_test is not None and y_test is not None:

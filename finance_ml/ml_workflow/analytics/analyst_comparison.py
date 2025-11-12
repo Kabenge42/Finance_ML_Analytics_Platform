@@ -5,10 +5,11 @@ Compare ML model predictions against analyst consensus targets to identify
 opportunities where the model has a different view than analysts.
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, Any, Optional
 from pathlib import Path
+from typing import Dict, Any, Optional
+
+import numpy as np
+import pandas as pd
 
 __all__ = [
     "compare_prediction_vs_analyst_targets",

@@ -1,5 +1,5 @@
 ---
-apply: off
+apply: always
 ---
 
 # Finance ML Analytics Platform — Project Rules
@@ -25,7 +25,7 @@ The platform follows a **phase-aligned architecture** with dedicated subpackages
 
 ```
 finance_ml/ml_workflow/
-├── preprocessing/      # Phase 9.1: 4-step imputation, outliers, scaling, quality
+├── preprocessing/      # Phase 9.1: 6-step imputation, outliers, scaling, quality
 ├── eda/               # Phase 9.2: EDA, benchmarking, reports
 ├── features/          # Phase 9.3: Core, advanced, selection, API
 ├── classification/    # Phase 9.4: Labels, tuning, models, evaluation
@@ -37,7 +37,7 @@ finance_ml/ml_workflow/
 
 **8-Phase ML Workflow:**
 
-1. **Phase 9.1**: Loading and preprocessing with 4-step imputation strategy
+1. **Phase 9.1**: Loading and preprocessing with 6-step imputation strategy
 2. **Phase 9.2**: Enhanced EDA with statistical testing and benchmarking
 3. **Phase 9.3**: Advanced feature engineering with sector-specific optimizations
 4. **Phase 9.4**: Multi-class event classification using neural networks and ensembles
@@ -406,7 +406,7 @@ python -m unittest discover -s tests -v
 - **`test_data_versioning.py`** — Data versioning and metadata tests
 - **`test_eda.py`** — Exploratory data analysis utilities
 - **`test_enhanced_eda_phase92.py`** — Phase 9.2 enhanced EDA tests
-- **`test_enhanced_imputation.py`** — Phase 9.1 4-step imputation strategy tests
+- **`test_enhanced_imputation.py`** — Phase 9.16-step imputation strategy tests
 - **`test_evaluation_phase96.py`** — Phase 9.6 model evaluation and error analysis tests
 - **`test_features.py`** — Feature engineering functions
 - **`test_finance_ml_config.py`** — Configuration management tests
@@ -738,7 +738,7 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 - **v0.6.1** (Current) — Phase 9.5 classification meta-features, enhanced imputation (6-step), modular workflow
   refactor (v9_8), 67 test modules
 - **v0.6.0** — Phase 9.5 enhanced classification module, comprehensive data flow fixes, dashboard enhancements
-- **v0.5.1** — Phase 9.1 4-step imputation pipeline, notebook integration, comprehensive testing
+- **v0.5.1** — Phase 9.16-step imputation pipeline, notebook integration, comprehensive testing
 - **v0.5.0** — Complete Phase 9 implementation, 20 package modules, comprehensive ML pipeline
 - **v0.4.0** — Phase 9.7 valuation analysis, Phase 9.1 data versioning and catalog
 - **v0.3.0** — Modular package, CLI tools, configuration management, CI/CD

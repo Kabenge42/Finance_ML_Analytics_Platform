@@ -10,9 +10,10 @@ Phase 9.8 - Reporting Refactor
 """
 
 import logging
+from typing import Dict, Optional, List
+
 import numpy as np
 import pandas as pd
-from typing import Dict, Optional, List
 
 logger = logging.getLogger(__name__)
 

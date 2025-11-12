@@ -15,7 +15,6 @@ import pathlib
 import sys
 from typing import Optional
 
-from finance_ml.config import load_config, FinanceMLConfig
 from finance_ml.data import (
     load_from_csv,
     load_from_db,
@@ -23,9 +22,11 @@ from finance_ml.data import (
     setup_logging,
     validate_schema,
     check_missing_values,
-)
+    )
 from finance_ml.eval import simple_eda
 from finance_ml.models import train_and_evaluate_regression, train_and_evaluate_regression_by_sector
+
+from finance_ml.config import load_config, FinanceMLConfig
 
 logger = logging.getLogger(__name__)
 

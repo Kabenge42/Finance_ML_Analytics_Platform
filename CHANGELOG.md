@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2025-11-11
+
+### Added
+
+- **Interactive Portfolio Optimization and Risk Metrics Visualizations**: Comprehensive Plotly-based interactive
+  visualizations for portfolio analysis
+  ([8115173](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/811517397281b14db379d85a4808eb4afe6d3c8c))
+  - Efficient Frontier visualization with optimal portfolio markers and risk-return trade-off analysis
+  - Risk Metrics Dashboard displaying VaR, CVaR, Sharpe Ratio, Sortino Ratio, and Max Drawdown with interactive tooltips
+  - Drawdown Time Series visualization for temporal risk analysis
+  - Integrated into both Dash (`dash_app.py`) and Streamlit (`streamlit_app.py`) dashboards with new "Portfolio & Risk
+    Metrics" tabs
+  - Generates 6 output files (3 HTML + 3 PNG) saved to `outputs/analytics/` for easy access
+  - Comprehensive error handling and file existence checks for robust operation
+- **Phase 9.3 Build Features API**: Unified feature engineering API with named presets for simplified workflow
+  integration
+  ([d53d803](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d53d803c73e852b796615350536a199b121dd2af))
+  - `build_features` function with presets: `basic`, `momentum`, `quality`, `comprehensive`, `full_enhanced`
+  - Test fixtures (`tests/fixtures/feature_engineering_samples.py`) with synthetic datasets and edge cases
+  - Test utilities (`tests/utils/feature_test_helpers.py`) for feature validation, NaN checks, and execution timing
+  - New test suites: `test_balance_sheet_trends.py`, `test_cashflow_capital_features.py`,
+    `test_composite_interactions.py`, `test_feature_infra_phase93.py`, `test_features_api_phase93.py`
+  - Stronger modularity and comprehensive test coverage for Phase 9.3 feature engineering
+- **Phase 9.3 Enhanced Event Labels**: New classification label categories for improved event detection
+  ([2e55f3b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2e55f3b0167233fe5073ccfd8c95c2be524288a1))
+  - Added `profitability_event`, `leverage_event`, `liquidity_event` label creation methods to
+    `create_enhanced_event_labels` in `classification.labels`
+  - Enhanced test infrastructure with additional scenarios and edge-case coverage
+
+### Changed
+
+- **Major Script Refactoring**: Streamlined `ml_finance_model_main.py` from 3,147 to 1,140 lines (63% reduction)
+  ([55f0cc0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/55f0cc0309d15b8575016232547542b5f5255a1b))
+  - Introduced `PipelineConfig` dataclass for centralized configuration management
+  - Refactored imports for concise Phase 9.1-9.8 API usage and improved readability
+  - Consolidated redundant code blocks into reusable functions: `setup_environment`, `load_and_preprocess_data`
+  - Enhanced workflow documentation with standardized function type hints, signatures, and docstrings adhering to
+    `code_guidelines.md`
+  - Streamlined output directory creation logic to align with Phase workflows
+- **Documentation Updates**: Enhanced project documentation and synchronized versioning
+  ([2e55f3b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2e55f3b0167233fe5073ccfd8c95c2be524288a1),
+  [8115173](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/811517397281b14db379d85a4808eb4afe6d3c8c))
+  - Updated `README.md` for Version 0.7.0 with Phase 9.3 API details and portfolio visualization documentation
+  - Added `docs/PORTFOLIO_VISUALIZATION_IMPLEMENTATION.md` (489 lines) detailing visualization architecture
+  - Synchronized `MODEL_VERSION` to `v9_9` across configuration files
+  - Enhanced `ml_finance_model_main.ipynb` with improved modularity and module-level convenience APIs
+- **Feature Engineering API Integration**: Enhanced `finance_ml/ml_workflow/features/advanced.py` with preset support
+  ([d53d803](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d53d803c73e852b796615350536a199b121dd2af))
+  - Added optional `preset` parameter to `build_comprehensive_features()` for momentum/quality/comprehensive paths
+  - Backward compatible: default behavior unchanged (comprehensive mode)
+  - Sanitizes infinities to NaN for numerical hygiene
+
+### Fixed
+
+- **Code Quality and Inspection Resolutions**: Resolved critical PyCharm inspections across key modules
+  ([fafd872](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/fafd872ff589461700bc3236d48e1ed1afcb8b37))
+  - Added comprehensive docstrings to helper functions in `eval.py`, `advanced.py`, `__init__.py`
+  - Fixed 73 unresolved variable references and corrected imports in `models.py`, `dataset.py`,
+    `ml_finance_model_main.ipynb`
+  - Updated `__all__` in `features` module to clarify public API exports
+  - Static method fixes, chain comparison simplifications, and empty docstring additions
+- **Classification Label Column References**: Improved compatibility with Phase 9.3 feature naming
+  ([55f0cc0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/55f0cc0309d15b8575016232547542b5f5255a1b))
+  - Enhanced label creation methods to support both original and Phase 9.3 engineered column names
+  - Ensured backward compatibility for existing workflows
+
+### Documentation
+
+- **Session Summaries**: Added comprehensive documentation for recent development sessions
+  ([fafd872](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/fafd872ff589461700bc3236d48e1ed1afcb8b37))
+  - `docs/summaries/INSPECTION_FIXES_SESSION_2.md` (336 lines) documenting inspection resolution process
+  - `docs/summaries/NOTEBOOK_REFACTORING_SUMMARY_101125.md` (151 lines) covering notebook improvements
+  - Relocated and organized documentation files under `docs/summaries/` for better discoverability
+
+---
+
+**Version Bump Recommendation**: PATCH (0.7.0 → 0.7.1)
+
+- Additive features: portfolio visualizations, build_features API, enhanced event labels
+- Major refactoring improving maintainability without breaking changes
+- Bug fixes for code quality and classification compatibility
+- No breaking API changes; fully backward compatible with 0.7.0
+
+**Date Generated**: 2025-11-11
+
+**Commits Included**:
+
+- [55f0cc0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/55f0cc0309d15b8575016232547542b5f5255a1b) -
+  Refactor ml_finance_model_main.py
+- [8115173](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/811517397281b14db379d85a4808eb4afe6d3c8c) -
+  Portfolio optimization visualizations
+- [fafd872](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/fafd872ff589461700bc3236d48e1ed1afcb8b37) -
+  Code quality enhancements
+- [2e55f3b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2e55f3b0167233fe5073ccfd8c95c2be524288a1) -
+  Phase 9.3 API enhancements
+- [d53d803](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d53d803c73e852b796615350536a199b121dd2af) -
+  Build features API
+
+## [0.7.0] - 2025-11-10
+
 ### Added
 
 - **Phase 9.4 Classification Label Enhancements with Phase 9.3 Feature Integration**: Comprehensive update to all 13
@@ -262,7 +362,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Phase 9.1 comprehensive 4-step imputation pipeline with modular functions:
+- Phase 9.1 comprehensive6-step imputation pipeline with modular functions:
   - `apply_zero_imputation` for handling zeros in specific columns
   - `apply_knn_imputation_enhanced` with intelligent feature selection
   - `apply_price_imputation` for price-related fields
@@ -296,7 +396,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Ensured no missing values remain in dataset through comprehensive 4-step imputation strategy
+- Ensured no missing values remain in dataset through comprehensive6-step imputation strategy
   ([7a7de98](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7a7de98a354c3458fc28b836a4a8228d1a38e926))
 - Eliminated duplicate function definitions and improved module structure consistency
   ([c589271](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/c5892714c47883cb52991ffd830af472d4abe36a))

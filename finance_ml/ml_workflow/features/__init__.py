@@ -11,17 +11,6 @@ Modules:
 Phase 9.3 refactor: Consolidated and enhanced from features.py and advanced_features.py.
 """
 
-# Core features
-from finance_ml.ml_workflow.features.core import (
-    preprocess_for_lightgbm,
-    _safe_div,
-    engineer_basic_ratios,
-    engineer_margin_features,
-    engineer_volatility_features,
-    engineer_revenue_cagr,
-    build_features_and_target,
-)
-
 # Advanced features
 from finance_ml.ml_workflow.features.advanced import (
     engineer_valuation_ratios,
@@ -40,15 +29,24 @@ from finance_ml.ml_workflow.features.advanced import (
     engineer_accounting_quality_features,
     engineer_employee_productivity_features,
     build_comprehensive_features,
-)
-
+    )
+# Core features
+from finance_ml.ml_workflow.features.core import (
+    preprocess_for_lightgbm,
+    _safe_div,
+    engineer_basic_ratios,
+    engineer_margin_features,
+    engineer_volatility_features,
+    engineer_revenue_cagr,
+    build_features_and_target,
+    )
 # Feature selection
 from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_mutual_info,
     calculate_feature_importance_rf,
     calculate_feature_importance_shap,
     calculate_feature_importance_rfe,
-)
+    )
 
 __all__ = [
     # Core features (from core.py)

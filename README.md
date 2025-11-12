@@ -1,9 +1,9 @@
 # Finance ML Analytics Platform
 
-**Version 0.7.0** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.7.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
 > **Documentation Last Updated:** 2025-11-11  
-> **Latest Release**: v0.7.0 (2025-11-10 per CHANGELOG.md)  
+> **Latest Release**: v0.7.1 (2025-11-11 per CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Version files need synchronization - see Known Issues section below
 
@@ -74,7 +74,7 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 - 🎯 **Stock Prediction**: End-to-end 8-phase workflow for price target prediction
 - 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
-- 🧪 **Tested**: 67+ test modules with comprehensive coverage (≥80% target for new code)
+- 🧪 **Tested**: 119 test modules with comprehensive coverage (≥80% target for new code)
 - 🚀 **CLI**: Three command-line tools for different workflows
 - 🔍 **Model Interpretation**: SHAP analysis for explainability
 
@@ -650,7 +650,7 @@ export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 ## Testing
 
-The project uses Python's built-in `unittest` framework with 67+ test modules covering data loading, preprocessing,
+The project uses Python's built-in `unittest` framework with 119 test modules covering data loading, preprocessing,
 features, models, evaluation, and integration.
 
 ### Run All Tests
@@ -675,6 +675,17 @@ python -m unittest tests.test_classification -v         # Classification regress
 python -m unittest tests.test_regression -v             # Regression regression
 python -m unittest tests.test_dashboard_helpers -v      # Dashboard helpers
 ```
+
+### Fast Helper Tests (Selective)
+
+For a quick verification of the lightweight helper modules added in Model Optimization work (conformal uncertainty,
+robust outlier safety, sector features, sector calibration), use the fast test runner:
+
+```powershell
+python tools\run_fast_tests.py
+```
+
+This runs only small, dependency-light unit tests and completes in milliseconds.
 
 ### Coverage Analysis
 
@@ -806,12 +817,14 @@ Finance_ML_Analytics_Platform/
 
 ### Utility Scripts (tools/)
 
-| Script                   | Description                                     |
-|--------------------------|-------------------------------------------------|
-| `import_sqlite.py`       | Import CSVs into SQLite with chunked processing |
-| `validate_csv_import.py` | Validate CSV data quality before import         |
-| `analyze_notebook.py`    | Analyze notebook structure and cells            |
-| `analyze_predictions.py` | Analyze model prediction outputs                |
+| Script                   | Description                                      |
+|--------------------------|--------------------------------------------------|
+| `import_sqlite.py`       | Import CSVs into SQLite with chunked processing  |
+| `validate_csv_import.py` | Validate CSV data quality before import          |
+| `analyze_notebook.py`    | Analyze notebook structure and cells             |
+| `analyze_predictions.py` | Analyze model prediction outputs                 |
+| `run_fast_tests.py`      | Run fast helper unit tests (no heavy training)   |
+| `verify_outputs.py`      | Verify expected output files exist and non-empty |
 
 ### Database Scripts
 
@@ -826,7 +839,7 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.7.0 (Current Release - 2025-11-10, Updated 2025-11-11)
+### Version 0.7.1 (Current Release - 2025-11-11)
 
 **Portfolio Optimization & Risk Metrics Visualization** (2025-11-11):
 
@@ -865,6 +878,28 @@ Finance_ML_Analytics_Platform/
 - MODEL_VERSION bump to v9_9 (synchronized across all configuration files)
 - Updated `finance_ml/config.py`, test assertions, and environment files
 - Production readiness: Cross-validation with 138+ tests passing (fast and medium test suites)
+
+**Phase 9.5.1 Outputs and Validation Enhancements**:
+
+- Enhanced regression outputs with diagnostics and sector metadata
+- Added Time-Series Cross-Validation (guarded) metrics export when a date column is present
+- New scripts:
+    - `tools/run_fast_tests.py` — fast helper tests runner
+    - `tools/verify_outputs.py` — output artifact verification (see below)
+
+Expected output files (after running the notebook or script):
+
+- `outputs/regression/regression_predictions.csv`
+- `outputs/regression/regression_metrics_by_sector.csv`
+- `outputs/regression/quantile_predictions.csv`
+- `outputs/regression/feature_importance.csv`
+- `outputs/evaluation/tscv_metrics.csv` (when TimeSeriesSplit is applicable)
+
+Verify these with:
+
+```powershell
+python tools\verify_outputs.py
+```
 
 ### Version 0.6.1 (Previous Release - 2025-11-09)
 
@@ -999,18 +1034,18 @@ without TensorFlow.
 
 **TODO**: The following files need version synchronization:
 
-**Current Status** (as of 2025-11-10):
+**Current Status** (as of 2025-11-11):
 
-- **CHANGELOG.md**: Documents v0.7.0 release (2025-11-10) with MODEL_VERSION v9_9 ✓
-- **README.md**: Documents v0.7.0 with MODEL_VERSION v9_9 ✓
-- **pyproject.toml**: Shows version = "0.6.1" ❌ (needs update to 0.7.0)
-- **environment_variables.txt**: Shows Version: 0.5.1 with MODEL_VERSION=v0_5_0 ❌ (needs update to 0.7.0 and v9_9)
-- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓ (per CHANGELOG line 74-75)
+- **CHANGELOG.md**: Documents v0.7.1 release (2025-11-11) with MODEL_VERSION v9_9 ✓
+- **README.md**: Documents v0.7.1 with MODEL_VERSION v9_9 ✓
+- **pyproject.toml**: Shows version = "0.6.1" ❌ (needs update to 0.7.1)
+- **environment_variables.txt**: Shows Version: 0.5.1 with MODEL_VERSION=v0_5_0 ❌ (needs update to 0.7.1 and v9_9)
+- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓ (per CHANGELOG)
 
 **Action Items**:
 
-1. Update `pyproject.toml` line 10: `version = "0.7.0"`
-2. Update `environment_variables.txt` line 4: `Version: 0.7.0`
+1. Update `pyproject.toml` line 10: `version = "0.7.1"`
+2. Update `environment_variables.txt` line 4: `Version: 0.7.1`
 3. Update `environment_variables.txt` line 44: `MODEL_VERSION=v9_9` (uncomment and update)
 
 ### Future Enhancements
@@ -1028,4 +1063,5 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 ---
 
 **Last Updated**: 2025-11-11  
-**README Version**: 2.4 (added portfolio optimization & risk metrics visualization)
+**README Version**: 2.5 (updated version to 0.7.1, corrected test count to 119 modules, synchronized version
+information)

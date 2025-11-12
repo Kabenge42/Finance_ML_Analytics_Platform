@@ -51,7 +51,7 @@ Reference:
 """
 
 import logging
-from typing import List, Optional, Any, Dict, Tuple
+from typing import List, Optional, Any, Dict
 
 import numpy as np
 import pandas as pd

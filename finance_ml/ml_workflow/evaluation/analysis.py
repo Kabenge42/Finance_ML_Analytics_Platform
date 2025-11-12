@@ -4,10 +4,11 @@ Phase 9.6: Model Evaluation Analysis Module
 Residual analysis, error analysis, and model diagnostics for regression models.
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, Any, Optional, Union, List
 import logging
+from typing import Dict, Any, Optional, Union, List
+
+import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 

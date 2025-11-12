@@ -7,10 +7,10 @@ Phase 9.2: Exploratory Data Analysis - Benchmarking Implementation
 """
 
 import logging
-from typing import List, Dict, Optional, Union, Any
-import pandas as pd
+from typing import List, Dict, Optional, Union
+
 import numpy as np
-from pandas import DataFrame, Series
+import pandas as pd
 from scipy import stats
 
 

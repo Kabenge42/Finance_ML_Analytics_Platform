@@ -4,11 +4,12 @@ Phase 9.2: EDA Reports Module
 HTML and static report generation for EDA results.
 """
 
-import pandas as pd
+import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
-from datetime import datetime
-import logging
+
+import pandas as pd
 
 from finance_ml.ml_workflow.eda.eda import eda_summary
 

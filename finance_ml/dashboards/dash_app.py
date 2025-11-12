@@ -3,14 +3,13 @@ Plotly Dash Dashboard for Finance ML Analytics
 Run: python finance_ml/dashboards/dash_app.py
 """
 
+from pathlib import Path
+
 import dash
-from dash import dcc, html, Input, Output, dash_table
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import pandas as pd
-import numpy as np
-from pathlib import Path
+from dash import dcc, html, Input, Output, dash_table
 
 # Project root path for consistent path resolution
 PROJECT_ROOT = Path(__file__).parent.parent.parent

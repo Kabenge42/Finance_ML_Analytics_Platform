@@ -19,13 +19,12 @@ Backwards compatibility:
 
 from __future__ import annotations
 
-from typing import Literal, Optional
 import logging
+from typing import Literal
 
 import pandas as pd
 
-from finance_ml.ml_workflow.features import core as core_feats
-from finance_ml.ml_workflow.features import advanced as adv_feats
+from finance_ml.ml_workflow.features import core as core_feats, advanced as adv_feats
 
 logger = logging.getLogger(__name__)
 

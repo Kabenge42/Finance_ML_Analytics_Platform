@@ -1,6 +1,5 @@
 # Configure matplotlib backend before importing pyplot
 import matplotlib
-from pandas import Series
 
 matplotlib.use("Agg")  # Use non-interactive backend for headless environments
 
@@ -17,7 +16,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 
 import pandas as pd
 import numpy as np

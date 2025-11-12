@@ -4,10 +4,11 @@ Phase 9.2: EDA Module
 Quick summaries, distributions, correlations, and sector slices for exploratory data analysis.
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, Any, Optional, List
 import logging
+from typing import Dict, Any, Optional, List
+
+import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 

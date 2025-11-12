@@ -9,8 +9,8 @@ Phase 9.5 - Regression Refactor
 """
 
 import logging
-import numpy as np
 
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

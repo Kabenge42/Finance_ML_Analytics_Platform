@@ -72,7 +72,7 @@ def create_enhanced_event_labels(
     """Create sophisticated event classification labels.
 
     Multiple methods for event detection:
-    
+
     Original methods:
     1. price_momentum: Based on price target vs current price
     2. valuation: Based on valuation metric percentiles (P/E, P/B)
@@ -80,7 +80,7 @@ def create_enhanced_event_labels(
     4. volatility: Based on price volatility spikes
     5. analyst_rating: Based on analyst rating changes
     6. market_events: Based on sector rotation and regional trends
-    
+
     New Phase 9.3 feature-enhanced methods:
     7. profitability_event: Based on ROE, ROA, ROIC profitability ratios
     8. leverage_event: Based on debt ratios (debt_to_equity, net_debt_to_ebitda)
@@ -112,7 +112,7 @@ def create_enhanced_event_labels(
         >>> labels = create_enhanced_event_labels(
         ...     df, method="profitability_event"
         ... )
-        
+
         >>> # Composite event method
         >>> labels = create_enhanced_event_labels(
         ...     df, method="composite_event"
@@ -468,7 +468,9 @@ def create_enhanced_event_labels(
 
     elif method == "leverage_event":
         # Leverage-based events using debt ratios
-        leverage_cols = [c for c in ["debt_to_equity", "net_debt_to_ebitda", "debt_to_assets"] if c in df.columns]
+        leverage_cols = [
+            c for c in ["debt_to_equity", "net_debt_to_ebitda", "debt_to_assets"] if c in df.columns
+        ]
         if not leverage_cols:
             logger.warning("No leverage columns available, returning all neutral")
             return labels
@@ -483,7 +485,9 @@ def create_enhanced_event_labels(
 
     elif method == "liquidity_event":
         # Liquidity-based events using current ratio, quick ratio
-        liquidity_cols = [c for c in ["current_ratio", "quick_ratio", "cash_ratio"] if c in df.columns]
+        liquidity_cols = [
+            c for c in ["current_ratio", "quick_ratio", "cash_ratio"] if c in df.columns
+        ]
         if not liquidity_cols:
             logger.warning("No liquidity columns available, returning all neutral")
             return labels
@@ -503,7 +507,11 @@ def create_enhanced_event_labels(
 
     elif method == "efficiency_event":
         # Efficiency-based events using turnover ratios
-        efficiency_cols = [c for c in ["asset_turnover", "inventory_turnover", "receivables_turnover"] if c in df.columns]
+        efficiency_cols = [
+            c
+            for c in ["asset_turnover", "inventory_turnover", "receivables_turnover"]
+            if c in df.columns
+        ]
         if not efficiency_cols:
             logger.warning("No efficiency columns available, returning all neutral")
             return labels
@@ -518,7 +526,9 @@ def create_enhanced_event_labels(
 
     elif method == "growth_event":
         # Growth-based events using revenue and earnings growth
-        growth_cols = [c for c in ["revenue_growth", "earnings_growth", "ebitda_growth"] if c in df.columns]
+        growth_cols = [
+            c for c in ["revenue_growth", "earnings_growth", "ebitda_growth"] if c in df.columns
+        ]
         if not growth_cols:
             logger.warning("No growth columns available, returning all neutral")
             return labels
@@ -601,7 +611,9 @@ def create_enhanced_event_labels(
 
     elif method == "composite_event":
         # Composite events using Piotroski F-Score and Altman Z-Score
-        composite_cols = [c for c in ["piotroski_f_score", "altman_z_score", "beneish_m_score"] if c in df.columns]
+        composite_cols = [
+            c for c in ["piotroski_f_score", "altman_z_score", "beneish_m_score"] if c in df.columns
+        ]
         if not composite_cols:
             logger.warning("No composite score columns available, returning all neutral")
             return labels

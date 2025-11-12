@@ -8,8 +8,9 @@ Phase 9.7 - Analytics Refactor
 """
 
 import logging
-import pandas as pd
 from typing import Dict
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 

@@ -3,11 +3,12 @@ Interactive Streamlit Dashboard for Finance ML Analytics
 Run: streamlit run finance_ml/dashboards/streamlit_app.py
 """
 
-import streamlit as st
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from pathlib import Path
+import streamlit as st
 
 try:
     from finance_ml.ml_workflow.analytics.eval import (

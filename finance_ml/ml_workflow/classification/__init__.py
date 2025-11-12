@@ -41,16 +41,31 @@ From evaluation module:
 
 from __future__ import annotations
 
+from finance_ml.ml_workflow.classification.evaluation import (
+    # Metrics
+    evaluate_classification,
+    evaluate_classification_by_sector,
+    # Interpretation
+    compute_shap_values,
+    analyze_per_class_feature_importance,
+    # Cross-validation
+    cross_validate_classifier,
+    # Visualization
+    plot_confusion_matrices,
+    plot_learning_curves,
+    # Feature analysis
+    compare_feature_importance,
+    # Calibration
+    analyze_calibration,
+    # Phase 9.4.3 - Enhanced feature importance analysis
+    analyze_feature_importance_by_groups,
+    analyze_feature_importance_by_sector,
+    analyze_shap_by_feature_groups,
+    )
 # Import from new submodules
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels,
-)
-
-from finance_ml.ml_workflow.classification.tuning import (
-    optimize_classifier_hyperparameters,
-    cross_validate_with_sector_stratification,
-)
-
+    )
 from finance_ml.ml_workflow.classification.models import (
     # Data preparation
     prepare_classification_data,
@@ -75,29 +90,11 @@ from finance_ml.ml_workflow.classification.models import (
     # Comparison and orchestration
     compare_classifiers,
     fit_classifier,
-)
-
-from finance_ml.ml_workflow.classification.evaluation import (
-    # Metrics
-    evaluate_classification,
-    evaluate_classification_by_sector,
-    # Interpretation
-    compute_shap_values,
-    analyze_per_class_feature_importance,
-    # Cross-validation
-    cross_validate_classifier,
-    # Visualization
-    plot_confusion_matrices,
-    plot_learning_curves,
-    # Feature analysis
-    compare_feature_importance,
-    # Calibration
-    analyze_calibration,
-    # Phase 9.4.3 - Enhanced feature importance analysis
-    analyze_feature_importance_by_groups,
-    analyze_feature_importance_by_sector,
-    analyze_shap_by_feature_groups,
-)
+    )
+from finance_ml.ml_workflow.classification.tuning import (
+    optimize_classifier_hyperparameters,
+    cross_validate_with_sector_stratification,
+    )
 
 __all__ = [
     # Labels

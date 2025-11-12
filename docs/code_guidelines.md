@@ -90,7 +90,7 @@ return_stats: bool = True
 
 # Phase 9.1 Enhanced Imputation (6-step strategy as of v0.6.1)
 from finance_ml.ml_workflow.preprocessing.imputation import (
-    apply_enhanced_imputation_strategy_4step,  # Core 4-step (zero, KNN, price, median)
+    apply_enhanced_imputation_strategy_4step,  # Core 6-step (zero, KNN, price, median)
     apply_zero_imputation,
     apply_knn_imputation_enhanced,
     apply_price_imputation,
@@ -98,7 +98,7 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
     )
 
 # Note: CHANGELOG refers to "6-step imputation" in v0.6.1 (505+ lines of improvements)
-# Current implementation provides modular 4-step base with extensibility for additional steps
+# Current implementation provides modular 6-step base with extensibility for additional steps
 df_imputed = apply_enhanced_imputation_strategy_4step(
         df: pd.DataFrame,
 zero_fill_columns: Optional[List[str]] = None,
@@ -1499,7 +1499,7 @@ plural `columns`. Calling with wrong parameter names causes
 
 **Enhanced Imputation:**
 
-- 4-step strategy: zero-fill, KNN, price-based, median
+-6-step strategy: zero-fill, KNN, price-based, median
 - Modular functions for each imputation step
 - 21 comprehensive tests with ≥80% coverage
 - Extensible architecture for additional steps

@@ -41,6 +41,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import logging
 
 # Phase 9.1: Data loading and preprocessing
 # Phase 9.2: EDA and benchmarking
@@ -69,6 +70,7 @@ from finance_ml import (
     regression_save_model,
     regression_create_classification_interactions,
     regression_train_stacking,
+    train_quantile_regressor,
     evaluation_comprehensive_metrics,
     evaluation_metrics_by_segment,
     analytics_calculate_mispricing,
@@ -100,6 +102,11 @@ from finance_ml.ml_workflow.preprocessing.quality import (
     calculate_data_quality_score as preprocessing_calculate_quality,
 )
 from finance_ml.ml_workflow.preprocessing.scaling import scale_features
+from finance_ml.ml_workflow.features.sector_specific import engineer_features_by_sector
+from finance_ml.ml_workflow.regression.calibration import calibrate_predictions_by_sector
+
+# Module logger
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # Finance ML Package Imports - Phase 9.1-9.8 Modular Structure
@@ -310,9 +317,9 @@ def load_and_preprocess_data(config: PipelineConfig) -> Tuple[pd.DataFrame, Dict
         all_stocks[financial_metrics], contamination=0.1
     )
 
-    total_iqr = sum(mask.sum() for mask in outliers_iqr.values())
-    total_zscore = sum(mask.sum() for mask in outliers_zscore.values())
-    total_iforest = sum(mask.sum() for mask in outliers_iforest.values())
+    total_iqr = sum(mask.sum() for mask in outliers_iqr.values)
+    total_zscore = sum(mask.sum() for mask in outliers_zscore.values)
+    total_iforest = sum(mask.sum() for mask in outliers_iforest.values)
 
     print(f"✓ Outlier detection complete:")
     print(f"  IQR method: {total_iqr} outliers across {len(outliers_iqr)} columns")
@@ -604,6 +611,11 @@ def train_regression_models(
     )
     print(f"✓ Classification features integrated")
 
+    # Priority 3: Sector-specific feature engineering
+    print("\n🧩 Applying sector-specific feature engineering...")
+    df_with_class_features = engineer_features_by_sector(df_with_class_features, sector_col="sector")
+    print("✓ Sector-specific features added where applicable")
+
     # Prepare regression dataset
     print("\n🔧 Preparing regression dataset...")
     X_train, X_test, y_train, y_test, meta = regression_prepare_data(
@@ -641,6 +653,100 @@ def train_regression_models(
     regression_save_model(stacking_result["model"], model_path)
     print(f"✓ Model saved to {model_path}")
 
+    # ------------------------------------------------------------------
+    # Build detailed predictions DataFrame for diagnostics (Priority 1.1)
+    # ------------------------------------------------------------------
+    try:
+        y_pred_test = stacking_result["model"].predict(X_test)
+    except Exception:
+        # Fallback: if model cannot predict, create empty predictions
+        y_pred_test = np.array([])
+
+    # Construct enhanced results_df with errors
+    if len(y_pred_test) == len(y_test):
+        results_df = pd.DataFrame(
+            {
+                "y_true": y_test.values,
+                "y_pred": y_pred_test,
+                "residual": y_test.values - y_pred_test,
+                "abs_error": np.abs(y_test.values - y_pred_test),
+                # Avoid division by zero; set pct_error to NaN where y_true == 0
+                "pct_error": np.where(
+                    y_test.values != 0,
+                    ((y_test.values - y_pred_test) / y_test.values) * 100.0,
+                    np.nan,
+                ),
+            },
+            index=y_test.index,
+        )
+
+        # Add sector/ticker/market_cap if present in original df (aligned by index)
+        if "sector" in df.columns:
+            results_df["sector"] = df.loc[y_test.index, "sector"]
+        if "ticker" in df.columns:
+            results_df["ticker"] = df.loc[y_test.index, "ticker"]
+        if "market_cap" in df.columns:
+            results_df["market_cap"] = df.loc[y_test.index, "market_cap"]
+
+        # Priority 3: Sector-specific calibration layer (bias correction)
+        try:
+            results_df = calibrate_predictions_by_sector(results_df, sector_bias=None)
+            # Derive calibrated error columns
+            if "y_pred_calibrated" in results_df.columns:
+                ypc = results_df["y_pred_calibrated"].to_numpy()
+                yt = results_df["y_true"].to_numpy()
+                results_df["residual_calibrated"] = yt - ypc
+                results_df["abs_error_calibrated"] = np.abs(yt - ypc)
+                results_df["pct_error_calibrated"] = np.where(
+                    yt != 0, ((yt - ypc) / yt) * 100.0, np.nan
+                )
+        except Exception as e:
+            logger.warning(f"Sector calibration skipped due to error: {e}")
+
+        # Ensure output directory exists and export CSV
+        out_models_dir = config.output_dir / "regression"
+        out_models_dir.mkdir(parents=True, exist_ok=True)
+        predictions_path = out_models_dir / "regression_predictions.csv"
+        results_df.reset_index(drop=True).to_csv(predictions_path, index=False)
+        logger.info(f"Saved regression predictions to {predictions_path}")
+
+        # ------------------------------------------------------------------
+        # Populate sector-level metrics CSV (Priority 1.2)
+        # ------------------------------------------------------------------
+        if "sector" in results_df.columns:
+            try:
+                # Reuse evaluation utility to compute metrics by sector
+                # Prefer calibrated predictions if available
+                y_pred_col = "y_pred_calibrated" if "y_pred_calibrated" in results_df.columns else "y_pred"
+                sector_metrics = evaluation_metrics_by_segment(
+                    y_true=results_df["y_true"],
+                    y_pred=results_df[y_pred_col],
+                    segments=results_df["sector"],
+                )
+                # Normalize to DataFrame
+                if isinstance(sector_metrics, dict):
+                    sector_metrics_df = (
+                        pd.DataFrame(sector_metrics).T
+                        if not isinstance(next(iter(sector_metrics.values())), (list, tuple))
+                        else pd.DataFrame.from_dict(sector_metrics, orient="index")
+                    )
+                else:
+                    sector_metrics_df = pd.DataFrame(sector_metrics)
+
+                metrics_path = out_models_dir / "regression_metrics_by_sector.csv"
+                # If sector identifier ended up as index, keep it as a column
+                sector_metrics_df.index.name = sector_metrics_df.index.name or "sector"
+                sector_metrics_df.reset_index().to_csv(metrics_path, index=False)
+                logger.info(
+                    f"Sector-level metrics: {len(sector_metrics_df)} sectors evaluated; saved to {metrics_path}"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to compute/export sector metrics: {e}")
+    else:
+        logger.warning(
+            "Skipping predictions export: mismatch between y_pred_test and y_test lengths"
+        )
+
     # Combine results
     regression_result = {
         "model": stacking_result["model"],
@@ -650,6 +756,8 @@ def train_regression_models(
             "sector_models": sector_models_result,
             "feature_importance": stacking_result.get("artifacts", {}).get("feature_importance"),
             "model_path": str(model_path),
+            # Provide test indices for downstream consumers
+            "test_indices": list(getattr(X_test, "index", [])),
         },
     }
 
