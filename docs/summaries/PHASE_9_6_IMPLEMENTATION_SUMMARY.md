@@ -61,7 +61,7 @@ print(f"RMSE: ${metrics['rmse']:.2f}")
 print(f"R²: {metrics['r2']:.4f}")
 ```
 
-#### 1.2 `compute_metrics_by_segment(df, y_true_col, y_pred_col, segment_col)`
+#### 1.2 `compute_metrics_by_segment(df, y_true, y_pred, segment_col)`
 
 **Location**: `finance_ml/eval.py` lines 1184-1214  
 **Purpose**: Compute metrics for each segment (sector, region, market cap)
@@ -144,7 +144,7 @@ output_dir = Path('outputs/residual_analysis')
 residuals = residual_analysis_suite(y_true, y_pred, output_dir=output_dir)
 ```
 
-#### 1.4 `error_bucketing_analysis(df, y_true_col, y_pred_col, bucket_cols)`
+#### 1.4 `error_bucketing_analysis(df, y_true, y_pred, bucket_cols)`
 
 **Location**: `finance_ml/eval.py` lines 1305-1348  
 **Purpose**: Analyze prediction errors by various buckets and identify outliers
@@ -173,8 +173,8 @@ from finance_ml.eval import error_bucketing_analysis
 # Analyze errors by multiple dimensions
 error_analysis = error_bucketing_analysis(
         df,
-        y_true_col='actual',
-        y_pred_col='predicted',
+        y_true='actual',
+        y_pred='predicted',
         bucket_cols=['sector', 'market_cap_bucket', 'volatility_bucket']
         )
 
@@ -395,8 +395,8 @@ print("=" * 60)
 # Compute metrics for each sector
 sector_metrics = compute_metrics_by_segment(
         all_stocks,
-        y_true_col='actual_price_target',
-        y_pred_col='predicted_price_target',
+        y_true='actual_price_target',
+        y_pred='predicted_price_target',
         segment_col='sector'
         )
 
@@ -434,8 +434,8 @@ plt.show()
 # Metrics by region
 region_metrics = compute_metrics_by_segment(
         all_stocks,
-        y_true_col='actual_price_target',
-        y_pred_col='predicted_price_target',
+        y_true='actual_price_target',
+        y_pred='predicted_price_target',
         segment_col='region'
         )
 print("\nMETRICS BY REGION:")
@@ -445,8 +445,8 @@ print(region_metrics[['segment', 'n_samples', 'mae', 'rmse', 'r2']])
 if 'market_cap_bucket' in all_stocks.columns:
     cap_metrics = compute_metrics_by_segment(
             all_stocks,
-            y_true_col='actual_price_target',
-            y_pred_col='predicted_price_target',
+            y_true='actual_price_target',
+            y_pred='predicted_price_target',
             segment_col='market_cap_bucket'
             )
     print("\nMETRICS BY MARKET CAP:")
@@ -493,8 +493,8 @@ if 'volatility_bucket' in all_stocks.columns:
 
 error_buckets = error_bucketing_analysis(
         all_stocks,
-        y_true_col='actual_price_target',
-        y_pred_col='predicted_price_target',
+        y_true='actual_price_target',
+        y_pred='predicted_price_target',
         bucket_cols=bucket_cols
         )
 

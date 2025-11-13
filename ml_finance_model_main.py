@@ -104,6 +104,8 @@ from finance_ml.ml_workflow.preprocessing.quality import (
 from finance_ml.ml_workflow.preprocessing.scaling import scale_features
 from finance_ml.ml_workflow.features.sector_specific import engineer_features_by_sector
 from finance_ml.ml_workflow.regression.calibration import calibrate_predictions_by_sector
+from finance_ml.ml_workflow.regression.io import build_predictions_frame
+from finance_ml.ml_workflow.regression.quantile import enforce_monotonic_quantiles
 
 # Module logger
 logger = logging.getLogger(__name__)
@@ -662,31 +664,12 @@ def train_regression_models(
         # Fallback: if model cannot predict, create empty predictions
         y_pred_test = np.array([])
 
-    # Construct enhanced results_df with errors
+    # Construct enhanced results_df with standardized schema using build_predictions_frame
     if len(y_pred_test) == len(y_test):
-        results_df = pd.DataFrame(
-            {
-                "y_true": y_test.values,
-                "y_pred": y_pred_test,
-                "residual": y_test.values - y_pred_test,
-                "abs_error": np.abs(y_test.values - y_pred_test),
-                # Avoid division by zero; set pct_error to NaN where y_true == 0
-                "pct_error": np.where(
-                    y_test.values != 0,
-                    ((y_test.values - y_pred_test) / y_test.values) * 100.0,
-                    np.nan,
-                ),
-            },
-            index=y_test.index,
+        # Use build_predictions_frame for standardized schema (Priority 1)
+        results_df = build_predictions_frame(
+            y_true=y_test, y_pred=y_pred_test, df_source=df, extra_cols={}
         )
-
-        # Add sector/ticker/market_cap if present in original df (aligned by index)
-        if "sector" in df.columns:
-            results_df["sector"] = df.loc[y_test.index, "sector"]
-        if "ticker" in df.columns:
-            results_df["ticker"] = df.loc[y_test.index, "ticker"]
-        if "market_cap" in df.columns:
-            results_df["market_cap"] = df.loc[y_test.index, "market_cap"]
 
         # Priority 3: Sector-specific calibration layer (bias correction)
         try:
@@ -695,20 +678,98 @@ def train_regression_models(
             if "y_pred_calibrated" in results_df.columns:
                 ypc = results_df["y_pred_calibrated"].to_numpy()
                 yt = results_df["y_true"].to_numpy()
-                results_df["residual_calibrated"] = yt - ypc
                 results_df["abs_error_calibrated"] = np.abs(yt - ypc)
                 results_df["pct_error_calibrated"] = np.where(
-                    yt != 0, ((yt - ypc) / yt) * 100.0, np.nan
+                    yt != 0, ((ypc - yt) / yt) * 100.0, np.nan
                 )
         except Exception as e:
             logger.warning(f"Sector calibration skipped due to error: {e}")
 
-        # Ensure output directory exists and export CSV
+        # Add model_version and snapshot_date for standardized schema
+        model_version = os.environ.get("MODEL_VERSION", "v9_9")
+        results_df["model_version"] = model_version
+        results_df["snapshot_date"] = pd.Timestamp.now().strftime("%Y-%m-%d")
+
+        # Ensure output directory exists
         out_models_dir = config.output_dir / "regression"
         out_models_dir.mkdir(parents=True, exist_ok=True)
-        predictions_path = out_models_dir / "regression_predictions.csv"
-        results_df.reset_index(drop=True).to_csv(predictions_path, index=False)
-        logger.info(f"Saved regression predictions to {predictions_path}")
+
+        # Store base predictions for later merging with quantiles
+        results_df_base = results_df.copy()
+        logger.info(f"Predictions dataframe prepared (will merge quantiles if available)")
+
+        # ------------------------------------------------------------------
+        # Train quantile models and merge into detailed predictions (Priority 0)
+        # ------------------------------------------------------------------
+        try:
+            logger.info(f"Training quantile regression models: {config.quantiles}")
+            quantile_result = train_quantile_regressor(X_train, y_train, quantiles=config.quantiles)
+            quantile_models = quantile_result.get("model", [])
+
+            # Generate predictions for each quantile
+            predictions_quantile = {}
+            for q, model in zip(config.quantiles, quantile_models):
+                predictions_quantile[q] = model.predict(X_test)
+
+            # Enforce monotonic quantiles (Priority 0: Uncertainty Quantification)
+            predictions_quantile_monotonic = enforce_monotonic_quantiles(predictions_quantile)
+
+            # Add quantile columns to detailed predictions
+            results_df_detailed = results_df_base.copy()
+            results_df_detailed["pred_p10"] = predictions_quantile_monotonic.get(0.1)
+            results_df_detailed["pred_p50"] = predictions_quantile_monotonic.get(0.5)
+            results_df_detailed["pred_p90"] = predictions_quantile_monotonic.get(0.9)
+            results_df_detailed["interval_width"] = (
+                results_df_detailed["pred_p90"] - results_df_detailed["pred_p10"]
+            )
+
+            # Export unified predictions with standardized schema to regression_predictions_detailed.csv
+            detailed_path = out_models_dir / "regression_predictions_detailed.csv"
+            results_df_detailed.reset_index(drop=True).to_csv(detailed_path, index=False)
+            logger.info(f"Saved detailed predictions with quantiles to {detailed_path}")
+            logger.info(
+                f"  Schema ({len(results_df_detailed.columns)} columns): {list(results_df_detailed.columns)}"
+            )
+
+            # Also export separate quantile predictions CSV for backward compatibility
+            q_df = pd.DataFrame(
+                {
+                    "ticker": results_df_base.get("ticker", y_test.index.astype(str)),
+                    "y_true": y_test.values,
+                    "pred_p10": predictions_quantile_monotonic.get(0.1),
+                    "pred_p50": predictions_quantile_monotonic.get(0.5),
+                    "pred_p90": predictions_quantile_monotonic.get(0.9),
+                    "interval_width": predictions_quantile_monotonic.get(0.9)
+                    - predictions_quantile_monotonic.get(0.1),
+                    "model_version": model_version,
+                    "snapshot_date": (
+                        results_df_base["snapshot_date"].iloc[0]
+                        if "snapshot_date" in results_df_base.columns
+                        else pd.Timestamp.now().strftime("%Y-%m-%d")
+                    ),
+                }
+            )
+            if "sector" in results_df_base.columns:
+                q_df["sector"] = results_df_base["sector"].values
+            if "region" in results_df_base.columns:
+                q_df["region"] = results_df_base["region"].values
+
+            q_path = out_models_dir / "quantile_predictions.csv"
+            q_df.to_csv(q_path, index=False)
+            logger.info(f"Saved quantile predictions to {q_path}")
+
+            # Compute empirical coverage
+            if "pred_p10" in q_df.columns and "pred_p90" in q_df.columns:
+                coverage = (
+                    (q_df["y_true"] >= q_df["pred_p10"]) & (q_df["y_true"] <= q_df["pred_p90"])
+                ).mean()
+                logger.info(f"  Empirical coverage (10%-90%): {coverage:.1%} (target: 80%)")
+        except Exception as e:
+            logger.warning(f"Quantile predictions training/export skipped: {e}")
+            # Fallback: export base predictions without quantiles
+            detailed_path = out_models_dir / "regression_predictions_detailed.csv"
+            results_df_base.reset_index(drop=True).to_csv(detailed_path, index=False)
+            logger.info(f"Saved detailed predictions (without quantiles) to {detailed_path}")
 
         # ------------------------------------------------------------------
         # Populate sector-level metrics CSV (Priority 1.2)
@@ -717,10 +778,12 @@ def train_regression_models(
             try:
                 # Reuse evaluation utility to compute metrics by sector
                 # Prefer calibrated predictions if available
-                y_pred_col = "y_pred_calibrated" if "y_pred_calibrated" in results_df.columns else "y_pred"
+                y_pred = (
+                    "y_pred_calibrated" if "y_pred_calibrated" in results_df.columns else "y_pred"
+                )
                 sector_metrics = evaluation_metrics_by_segment(
                     y_true=results_df["y_true"],
-                    y_pred=results_df[y_pred_col],
+                    y_pred=results_df[y_pred],
                     segments=results_df["sector"],
                 )
                 # Normalize to DataFrame

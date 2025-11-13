@@ -260,3 +260,80 @@ def load_model(filepath: Union[str, Path]) -> Tuple[Any, Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Failed to load model from {filepath}: {e}")
         raise
+
+
+def build_predictions_frame(
+    y_true: "pd.Series",
+    y_pred: "np.ndarray",
+    df_source: "pd.DataFrame",
+    extra_cols: Optional[Dict[str, "np.ndarray"]] = None,
+) -> "pd.DataFrame":
+    """
+    Build standardized predictions DataFrame with required columns.
+
+    Creates a DataFrame combining predictions, errors, and metadata columns
+    (ticker, sector, region, last_price) from the source dataframe.
+
+    Addresses Priority 1: Missing sector/ticker in regression_predictions.csv
+
+    Args:
+        y_true: True target values (pandas Series with index)
+        y_pred: Model predictions (numpy array, same length as y_true)
+        df_source: Source dataframe containing metadata columns
+                   Should be indexed compatibly with y_true
+        extra_cols: Optional dict of additional columns to include
+                   E.g., {'pred_p10': array, 'pred_p50': array, 'pred_p90': array}
+
+    Returns:
+        DataFrame with standardized schema:
+        - y_true, y_pred (predictions)
+        - abs_error, pct_error (error metrics)
+        - ticker, sector, region, last_price (metadata, if available)
+        - Any columns from extra_cols
+
+    Example:
+        >>> import pandas as pd
+        >>> import numpy as np
+        >>> y_true = pd.Series([100, 200], index=[0, 1])
+        >>> y_pred = np.array([95, 210])
+        >>> df_source = pd.DataFrame({
+        ...     'ticker': ['AAPL', 'MSFT'],
+        ...     'sector': ['Tech', 'Tech'],
+        ...     'last_price': [150.0, 250.0]
+        ... }, index=[0, 1])
+        >>> result = build_predictions_frame(y_true, y_pred, df_source)
+        >>> result.columns
+        Index(['y_true', 'y_pred', 'abs_error', 'pct_error', 'ticker', 'sector', 'last_price'])
+    """
+    import pandas as pd
+    import numpy as np
+
+    # Build base predictions dataframe
+    result = pd.DataFrame(
+        {
+            "y_true": y_true.values,
+            "y_pred": y_pred,
+        },
+        index=y_true.index,
+    )
+
+    # Compute error metrics
+    result["abs_error"] = np.abs(result["y_true"] - result["y_pred"])
+
+    # Compute percentage error (handle divide-by-zero)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result["pct_error"] = ((result["y_pred"] - result["y_true"]) / result["y_true"]) * 100
+        result["pct_error"] = result["pct_error"].replace([np.inf, -np.inf], np.nan)
+
+    # Add metadata columns from source dataframe if available
+    metadata_cols = ["ticker", "isin", "sector", "region", "last_price", "market_cap"]
+    for col in metadata_cols:
+        if col in df_source.columns:
+            result[col] = df_source.loc[y_true.index, col]
+
+    # Add any extra columns (e.g., quantile predictions)
+    if extra_cols:
+        for col_name, col_values in extra_cols.items():
+            result[col_name] = col_values
+
+    return result

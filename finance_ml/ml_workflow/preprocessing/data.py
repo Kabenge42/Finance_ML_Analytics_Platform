@@ -18,6 +18,7 @@ from typing import Optional, List, TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 
 # Optional import for database access
 if TYPE_CHECKING:
@@ -676,7 +677,7 @@ def check_missing_values(df: pd.DataFrame) -> dict:
     return report
 
 
-def detect_outliers_iqr(df: pd.DataFrame, column: str, multiplier: float = 1.5) -> List[int]:
+def detect_outliers_iqr(df: pd.DataFrame, column: str, multiplier: float = 1.5) -> DataFrame:
     """Detect outliers in a numeric column using IQR method.
 
     .. deprecated:: v9_8

@@ -132,21 +132,24 @@ from finance_ml.ml_workflow.analytics import (
     rank_undervalued_stocks as analytics_rank_undervalued,
     rank_overvalued_stocks as analytics_rank_overvalued,
     rank_stocks_by_sector as analytics_rank_by_sector,
-    )
+)
+
 # Phase 9.4 Refactor: Import from new classification subpackage
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels as classification_create_enhanced_event_labels,
-    )
+)
 from finance_ml.ml_workflow.classification.tuning import (
     optimize_classifier_hyperparameters as classification_optimize_hyperparameters,
     cross_validate_with_sector_stratification as classification_cross_validate_sector,
-    )
+)
+
 # Phase 9.6 Refactor: Import from evaluation subpackage
 from finance_ml.ml_workflow.evaluation import (
     comprehensive_regression_metrics as evaluation_comprehensive_metrics,
     compute_metrics_by_segment as evaluation_metrics_by_segment,
     compute_sector_region_metrics as evaluation_sector_region_metrics,
-    )
+)
+
 # Phase 9.3 Refactor: Import from features.advanced (new schema-driven features)
 from finance_ml.ml_workflow.features.advanced import (
     engineer_valuation_ratios,
@@ -160,12 +163,14 @@ from finance_ml.ml_workflow.features.advanced import (
     engineer_accounting_quality_features,
     engineer_employee_productivity_features,
     build_comprehensive_features as features_build_comprehensive,
-    )
+)
+
 # Phase 9.3 API: Import from features.api (public API with presets)
 from finance_ml.ml_workflow.features.api import (
     build_features,
     PresetName,
-    )
+)
+
 # Phase 9.3 Refactor: Import from new features subpackage
 from finance_ml.ml_workflow.features.core import (
     _safe_div as features_safe_div,
@@ -174,14 +179,16 @@ from finance_ml.ml_workflow.features.core import (
     engineer_volatility_features as features_volatility_features,
     engineer_revenue_cagr as features_revenue_cagr,
     build_features_and_target as features_build_features_and_target,
-    )
+)
+
 # Phase 9.3 Refactor: Import from features.selection
 from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_mutual_info as features_importance_mi,
     calculate_feature_importance_rf as features_importance_rf,
     calculate_feature_importance_shap as features_importance_shap,
     calculate_feature_importance_rfe as features_importance_rfe,
-    )
+)
+
 # Phase 9.1 Refactor: Import from new preprocessing subpackage
 from finance_ml.ml_workflow.preprocessing import (
     # Quality module
@@ -189,11 +196,12 @@ from finance_ml.ml_workflow.preprocessing import (
     calculate_data_quality_score as preprocessing_calculate_quality,
     # Pipeline module
     prepare_phase91_data,
-    )
+)
+
 # Phase 9.5.0 Refactor: Import from new regression subpackage
 from finance_ml.ml_workflow.regression.constraints import (
     NonNegativeRegressionWrapper as regression_nonnegative_wrapper,
-    )
+)
 from finance_ml.ml_workflow.regression.dataset import (
     # Classification feature integration
     extract_classification_features as regression_extract_classification_features,
@@ -207,11 +215,12 @@ from finance_ml.ml_workflow.regression.dataset import (
     extract_numeric_feature_columns as regression_extract_numeric_features,
     # Sector-specific training
     train_sector_specific_models as regression_train_sector_models,
-    )
+)
 from finance_ml.ml_workflow.regression.io import (
     save_model as regression_save_model,
     load_model as regression_load_model,
-    )
+)
+
 # Phase 9.5.1 Refactor: Import model training, quantile, tuning, and I/O functions
 from finance_ml.ml_workflow.regression.models import (
     train_ridge_regressor as regression_train_ridge,
@@ -226,19 +235,20 @@ from finance_ml.ml_workflow.regression.models import (
     train_voting_regressor as regression_train_voting,
     train_stacking_regressor as regression_train_stacking,
     compare_regressors as regression_compare_regressors,
-    )
+)
 from finance_ml.ml_workflow.regression.quantile import (
     train_quantile_regressor as regression_train_quantile,
-    )
+)
 from finance_ml.ml_workflow.regression.tuning import (
     optimize_hyperparameters_optuna as regression_optimize_hyperparameters,
-    )
+)
+
 # Phase 9.8 Refactor: Import from reporting subpackage
 from finance_ml.ml_workflow.reporting import (
     calculate_financial_metrics_dashboard as reporting_financial_metrics,
     generate_data_quality_alerts as reporting_quality_alerts,
     prepare_plotly_dashboard_data as reporting_plotly_data,
-    )
+)
 
 # Import from classification_enhanced module (Phase 2.1)
 # Note: These are now also available from classification.tuning (Phase 9.4)
@@ -254,7 +264,7 @@ except ImportError:
     HAVE_CLASSIFICATION_ENHANCED = False
 
 # Import from benchmarking module (Phase 9.2)
-from finance_ml.ml_workflow.benchmarking import (
+from finance_ml.ml_workflow.eda.benchmarking import (
     compare_sector_distributions,
     compare_regional_valuations,
     find_peer_group,
@@ -273,7 +283,7 @@ from finance_ml.config import (
 )
 
 # Import from new modular structure (Phase 7 TDD implementation)
-from finance_ml.ml_workflow.data import (
+from finance_ml.ml_workflow.preprocessing.data import (
     setup_logging,
     get_env,
     normalize_columns,

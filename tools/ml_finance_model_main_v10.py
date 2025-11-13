@@ -5856,8 +5856,8 @@ from finance_ml.eval import create_sector_region_performance_heatmap
 # Assuming predictions_df has columns: y_true, y_pred, sector, region
 create_sector_region_performance_heatmap(
     predictions_df,
-    y_true_col="y_true",
-    y_pred_col="y_pred",
+    y_true="y_true",
+    y_pred="y_pred",
     metric="mae",
     output_path="outputs/performance_heatmap.png"
 )

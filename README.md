@@ -2,7 +2,7 @@
 
 **Version 0.7.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-11  
+> **Documentation Last Updated:** 2025-11-13  
 > **Latest Release**: v0.7.1 (2025-11-11 per CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Version files need synchronization - see Known Issues section below
@@ -64,17 +64,22 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 ## Key Features
 
 - 📊 **Data Management**: PostgreSQL/SQLite integration + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
-- 🧹 **Data Quality**: 6-step imputation pipeline (zero-fill, KNN, price-based, median) with validation
+- 🧹 **Data Quality**: 6-step imputation pipeline (zero-fill, KNN, price-based, median) with validation; outlier safety
+  rails (winsorization, robust loss, clipping)
 - 🔧 **Feature Engineering**: Financial ratios, margins, volatility, revenue CAGR, sector-specific features
-- 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models, stacking ensembles
+- 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models with conformal calibration,
+  stacking ensembles
 - 📈 **Analytics**: Mispricing scores, stock ranking, analyst comparison, benchmarking, risk metrics
 - 💼 **Portfolio Optimization**: Efficient frontier, maximum Sharpe ratio, minimum volatility portfolios
 - 📉 **Risk Metrics**: VaR, CVaR, Sharpe ratio, Sortino ratio, maximum drawdown analysis
 - 📊 **Interactive Dashboards**: Streamlit and Dash applications with portfolio & risk metrics visualization
-- 🎯 **Stock Prediction**: End-to-end 8-phase workflow for price target prediction
-- 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis
+- 🎯 **Stock Prediction**: End-to-end 8-phase workflow for price target prediction with standardized predictions schema
+- 🔬 **Uncertainty Quantification**: Quantile regression + conformal prediction for calibrated 80% prediction intervals
+- 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis, standardized predictions
+  output
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
-- 🧪 **Tested**: 119 test modules with comprehensive coverage (≥80% target for new code)
+- 🧪 **Tested**: 126 test modules with comprehensive coverage (≥80% target for new code); TDD conventions for
+  uncertainty, safety rails, and schema validation
 - 🚀 **CLI**: Three command-line tools for different workflows
 - 🔍 **Model Interpretation**: SHAP analysis for explainability
 
@@ -650,8 +655,9 @@ export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 ## Testing
 
-The project uses Python's built-in `unittest` framework with 119 test modules covering data loading, preprocessing,
-features, models, evaluation, and integration.
+The project uses Python's built-in `unittest` framework with 126 test modules covering data loading, preprocessing,
+features, models, evaluation, and integration. See [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 for TDD
+conventions and standards.
 
 ### Run All Tests
 
@@ -668,11 +674,20 @@ python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_valid
 # Medium tests (integration, limited ML)
 python -m unittest tests.test_enhanced_imputation tests.test_data_catalog tests.test_logging -v
 
+# New TDD modules for code_guidelines.md v1.2 standards (fast/medium)
+python -m unittest tests.test_uncertainty_calibration -v        # Uncertainty quantification
+python -m unittest tests.test_predictions_schema -v             # Standardized predictions schema
+python -m unittest tests.test_regression_sector_metrics -v      # Sector metrics validation
+python -m unittest tests.test_sector_bias_calibration -v        # Sector bias calibration
+python -m unittest tests.test_data_splits_policy -v             # Data split leakage prevention
+python -m unittest tests.test_stacking_default -v               # Stacking ensemble defaults
+python -m unittest tests.test_outlier_safety_rails -v           # Outlier safety rails
+
 # Specific feature areas
 python -m unittest tests.test_finance_ml_data -v        # Data loading
 python -m unittest tests.test_features -v               # Feature engineering
-python -m unittest tests.test_classification -v         # Classification regression
-python -m unittest tests.test_regression -v             # Regression regression
+python -m unittest tests.test_classification -v         # Classification models
+python -m unittest tests.test_regression -v             # Regression models
 python -m unittest tests.test_dashboard_helpers -v      # Dashboard helpers
 ```
 
@@ -889,9 +904,12 @@ Finance_ML_Analytics_Platform/
 
 Expected output files (after running the notebook or script):
 
-- `outputs/regression/regression_predictions.csv`
-- `outputs/regression/regression_metrics_by_sector.csv`
-- `outputs/regression/quantile_predictions.csv`
+- `outputs/regression/regression_predictions_detailed.csv` — Standardized predictions schema (
+  see [code_guidelines.md](docs/code_guidelines.md) v1.2)
+    - Required columns: ticker, isin, sector, region, last_price, y_true, y_pred, y_pred_calibrated, pred_p10, pred_p50,
+      pred_p90, interval_width, abs_error, pct_error, model_version, snapshot_date
+- `outputs/regression/regression_metrics_by_sector.csv` — Per-sector MAE, RMSE, R², MAPE, count
+- `outputs/regression/quantile_predictions.csv` — Uncertainty intervals with monotonicity guarantees
 - `outputs/regression/feature_importance.csv`
 - `outputs/evaluation/tscv_metrics.csv` (when TimeSeriesSplit is applicable)
 
@@ -941,10 +959,13 @@ Contributions are welcome! Please follow these guidelines:
 
 1. **Fork the repository** and create a feature branch
 2. **Follow PEP 8** code style (use `black`, `isort`)
-3. **Write tests** for new functionality (TDD preferred)
-4. **Run test suite** before submitting: `python -m unittest -v`
-5. **Update documentation** (README, docstrings, CHANGELOG)
-6. **Submit a pull request** with clear description
+3. **Follow coding standards** in [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 (function signatures, return
+   types, TDD conventions)
+4. **Write tests** for new functionality (TDD preferred; see code_guidelines.md for uncertainty, safety rails, and
+   schema validation standards)
+5. **Run test suite** before submitting: `python -m unittest -v`
+6. **Update documentation** (README, docstrings, CHANGELOG)
+7. **Submit a pull request** with clear description
 
 ### Development Workflow
 

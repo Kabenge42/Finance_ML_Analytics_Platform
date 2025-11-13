@@ -135,15 +135,15 @@ def comprehensive_regression_metrics(y_true, y_pred) -> Dict[str, Any]:
 
 
 def compute_metrics_by_segment(
-    df: pd.DataFrame, y_true_col: str, y_pred_col: str, segment_col: str
+    df: pd.DataFrame, y_true: str, y_pred: str, segment_col: str
 ) -> pd.DataFrame:
     """
     Compute regression metrics for each segment (sector, region, etc.).
 
     Args:
         df: DataFrame with predictions and actuals
-        y_true_col: Column name for true values
-        y_pred_col: Column name for predictions
+        y_true: Column name for true values
+        y_pred: Column name for predictions
         segment_col: Column name for segmentation (e.g., 'sector', 'region')
 
     Returns:
@@ -163,8 +163,8 @@ def compute_metrics_by_segment(
 
     for segment in segments:
         segment_df = df[df[segment_col] == segment]
-        y_true = segment_df[y_true_col]
-        y_pred = segment_df[y_pred_col]
+        y_true = segment_df[y_true]
+        y_pred = segment_df[y_pred]
 
         metrics = comprehensive_regression_metrics(y_true, y_pred)
         metrics[segment_col] = segment
@@ -175,8 +175,8 @@ def compute_metrics_by_segment(
 
 def compute_sector_region_metrics(
     df: pd.DataFrame,
-    y_true_col: str,
-    y_pred_col: str,
+    y_true: str,
+    y_pred: str,
     sector_col: str = "sector",
     region_col: str = "region",
 ) -> pd.DataFrame:
@@ -185,8 +185,8 @@ def compute_sector_region_metrics(
 
     Args:
         df: DataFrame with predictions and metadata
-        y_true_col: Column name for true values
-        y_pred_col: Column name for predictions
+        y_true: Column name for true values
+        y_pred: Column name for predictions
         sector_col: Column name for sector grouping
         region_col: Column name for region grouping
 
@@ -209,8 +209,8 @@ def compute_sector_region_metrics(
         if len(group_df) < 2:
             continue
 
-        y_true = group_df[y_true_col]
-        y_pred = group_df[y_pred_col]
+        y_true = group_df[y_true]
+        y_pred = group_df[y_pred]
 
         metrics = comprehensive_regression_metrics(y_true, y_pred)
         metrics[sector_col] = sector

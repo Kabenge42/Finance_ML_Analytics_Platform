@@ -1538,6 +1538,129 @@ plural `columns`. Calling with wrong parameter names causes
 
 ---
 
-**Document Version:** 1.1  
-**Last Updated:** 2025-11-10  
+## Uncertainty and Prediction Intervals (Standards)
+
+Purpose: Establish a single, consistent approach to predictive uncertainty for regression models (price targets) that is
+compatible with both notebook and CLI, and fully testable (TDD).
+
+1) Quantile Regression + Conformal Calibration
+
+- Primary approach: train quantile regressors at q ∈ {0.1, 0.5, 0.9} and apply distribution-free conformal calibration
+  on a calibration split to achieve target coverage.
+- Required package APIs (to be implemented in `finance_ml.ml_workflow.regression.quantiles`):
+    - `train_quantile_models(X_train, y_train, quantiles=(0.1, 0.5, 0.9), **kwargs) -> Dict[float, Any]`
+    - `predict_quantiles(models, X) -> Dict[float, np.ndarray]`
+    - `conformal_calibrate_intervals(y_cal, y_cal_pred, y_test_pred, alpha=0.2) -> Tuple[np.ndarray, np.ndarray]`
+- Monotonicity: enforce p10 ≤ p50 ≤ p90 post-prediction; if violated, sort the triplet per row.
+- Non-negativity: when the target is non-negative (price), clip lower bounds at 0.
+- Coverage target: 80% ± 5% overall; also compute per-sector coverage within ±10% of overall.
+
+2) Return Schema Extensions for Regression Functions
+
+- In addition to the standard return contract, extend with optional keys when uncertainty is requested:
+    - `y_quantiles`: Dict[str, np.ndarray] — keys: `p10`, `p50`, `p90`
+    - `intervals`: Dict[str, np.ndarray] — keys: `lower`, `upper`, `width`
+    - `calibration`: Dict[str, Any] — residual quantile used, coverage metrics by segment
+- Tests must verify presence and shapes when enabled.
+
+3) Artifact and File Output Contract
+
+- Quantile predictions CSV: `outputs/regression/quantile_predictions.csv` with columns:
+  -
+  `ticker, isin, sector, region, last_price, y_true, pred_p10, pred_p50, pred_p90, interval_width, model_version, snapshot_date`
+- Validation: no negative `pred_p10` when last_price ≥ 0; `pred_p10 ≤ pred_p50 ≤ pred_p90` for every row.
+
+4) TDD for Uncertainty
+
+- Add `tests/test_uncertainty_calibration.py`:
+    - Synthetic monotonic dataset; verify monotonic quantiles and coverage (75–85%) after conformal calibration.
+    - Verify lower bound non-negativity when target ≥ 0.
+    - Include per-sector synthetic split to validate segment coverage stability (±10%).
+
+---
+
+## Outlier Safety Rails Policy
+
+To mitigate catastrophic errors that disproportionately impact mean metrics:
+
+- Target winsorization: cap `y_train` at [1st, 99th] percentiles before training robust models; parameterize limits.
+- Robust loss: prefer Huber loss (or quantile) for baseline gradient boosting.
+- Post-prediction clipping: clip `y_pred` to mean ± 3·std of training target, lower bound 0 for prices.
+- Negative prediction guard: enforce non-negative outputs via wrapper where appropriate.
+- Diagnostics: compute counts above 100% and 1000% absolute percentage error; log top-k outliers for inspection.
+
+TDD: `tests/test_outlier_safety_rails.py` covers winsorization bounds, clipping behavior, and non-negativity.
+
+---
+
+## Data Split and Leakage Policy
+
+Choose the most leakage-safe split available given the dataset:
+
+1) If a time column exists (`as_of_date`, `snapshot_date`, `date`): use `TimeSeriesSplit(n_splits=5)` or explicit
+   pre/post temporal split; no shuffling.
+2) Else, if an entity identifier exists (`ticker`): use `GroupKFold`/`GroupShuffleSplit` grouping by `ticker`.
+3) Else, stratify by `sector` to preserve distribution balance.
+4) Else, use random split with fixed `RANDOM_SEED` from env.
+
+Provide utility:
+`finance_ml.ml_workflow.validation.splits.time_series_cv_or_grouped_split(df, date_col=None, group_col=None, stratify_col=None) -> Splitter`.
+
+TDD: `tests/test_data_splits_policy.py` verifies behavior for each scenario on synthetic data.
+
+---
+
+## Standardized Predictions Schema (Contract)
+
+All regression prediction outputs must include the following columns when available:
+
+- Core identifiers: `ticker, isin, name (optional), sector, region, snapshot_date`
+- Price columns: `last_price, y_true` (if in-sample/validation), `y_pred`
+- Calibrated prediction (optional): `y_pred_calibrated`
+- Uncertainty (optional): `pred_p10, pred_p50, pred_p90, interval_width`
+- Errors (if `y_true` present): `abs_error, pct_error`
+- Metadata: `model_version`
+
+Primary file path: `outputs/regression/regression_predictions_detailed.csv`.
+
+TDD: `tests/test_predictions_schema.py` asserts presence/dtypes of required columns and basic invariants (
+non-negativity, monotonic intervals).
+
+---
+
+## Sector Metrics and Calibration
+
+- The pipeline must compute and persist per-sector metrics to `outputs/models/regression_metrics_by_sector.csv` (MAE,
+  RMSE, R², MAPE, count).
+- Sector-specific bias calibration may be applied as a post-processing layer using
+  `finance_ml.ml_workflow.regression.calibration.calibrate_predictions_by_sector`.
+
+TDD:
+
+- `tests/test_regression_sector_metrics.py` ensures non-empty sector metrics on synthetic data.
+- `tests/test_sector_bias_calibration.py` verifies additive adjustments only for mapped sectors and optional
+  non-negativity.
+
+---
+
+## TDD Conventions and Selective Test Execution
+
+- Naming: all new tests live under `tests/` and follow `test_*.py` naming.
+- Fast tests (<100 lines): synthetic datasets, pure functions/utilities (include new safety rails, splits, schema
+  checks).
+- Medium tests (100–500 lines): integration across small pipelines (quantiles + conformal on synthetic; sector metrics).
+- Slow tests (>500 lines): heavy ML training; avoid adding new slow tests unless necessary.
+
+Selective execution examples:
+
+- Fast only:
+  -
+  `python -m unittest tests.test_predictions_schema tests.test_uncertainty_calibration tests.test_data_splits_policy -v`
+- Medium set:
+    - `python -m unittest tests.test_regression_sector_metrics tests.test_sector_bias_calibration -v`
+
+---
+
+**Document Version:** 1.2  
+**Last Updated:** 2025-11-13  
 **Synchronized with:** CHANGELOG.md v0.7.0, README.md v0.7.0, Phase_9.3_feature_enhancement_plan.md

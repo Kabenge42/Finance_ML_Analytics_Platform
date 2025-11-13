@@ -4,7 +4,7 @@ Based on comprehensive analysis of 8,000 predictions from `predictions.csv`, `re
 `prediction_analyst_comparison_report.xlsx`, here are actionable recommendations to optimize ML workflow output quality
 and prediction accuracy.
 
-**Last Updated**: 2025-11-12  
+**Last Updated**: 2025-11-13  
 **Dataset**: 8,000 stock predictions with 495 features
 
 ---
@@ -175,6 +175,58 @@ for sector in df['sector'].unique():
 
 ---
 
+### 🔎 Implementation Gaps Observed (Notebook vs Package)
+
+The following concrete implementation gaps were identified by diffing the current notebook workflow (
+`ml_finance_model_main.ipynb`), output artifacts (`outputs/analytics/predictions.csv`,
+`outputs/regression/regression_predictions.csv`) and the package APIs (`finance_ml/ml_workflow/*`). These gaps must be
+addressed before the recommendations can be reliably adopted.
+
+1) Uncertainty/Quantiles
+
+- Notebook generates quantile outputs ad‑hoc; package has duplicated/ambiguous quantile code in
+  `finance_ml/ml_workflow/models.py` (multiple `train_quantile_regression` and `train_stacking_ensemble` symbols
+  reported by file structure). This duplication risks import ambiguity and inconsistent behavior.
+- No conformal calibration utility exists in the package; intervals are not validated for coverage, monotonicity, or
+  non‑negativity.
+
+2) Predictions/Artifacts Schema
+
+- `regression_predictions.csv` and `analytics/predictions.csv` schemas are inconsistent and often omit critical
+  columns (`sector`, `region`, `ticker`, quantiles, calibrated predictions, error metrics). This blocks downstream
+  analytics and sector diagnostics.
+- `regression_metrics_by_sector.csv` remains empty because `train_and_evaluate_regression_by_sector()` is not invoked in
+  the main pipeline.
+
+3) Leakage and Splits
+
+- Notebook snippets indicate random splits in places where time-aware or grouped CV is required. No common split utility
+  enforces policy (time-based when `as_of_date`/`snapshot_date` exists; otherwise grouped by `ticker` or stratified by
+  `sector`).
+
+4) Outlier Safety Rails
+
+- No centralized outlier policy: target winsorization, post‑prediction clipping, and negative‑prediction guards are not
+  unified in utilities, leading to sporadic application.
+
+5) Sector Optimization
+
+- Sector‑specific models and calibrations are referenced (and a small calibration util exists in
+  `regression/calibration.py`) but are not wired into the default pipeline; no tests guarantee sector metrics are
+  produced and persisted.
+
+6) Classification as Meta‑features
+
+- Classification probabilities are not consistently exported and re‑joined as meta‑features in regression across
+  notebook and package, despite being part of the design.
+
+7) TDD and Tests
+
+- No dedicated tests for uncertainty coverage, quantile monotonicity, predictions schema, sector metrics persistence, or
+  data‑split leakage.
+
+---
+
 ### 🎯 Priority 1: Fix Critical Data Pipeline Issues
 
 #### Issue 1.1: Missing Sector Information in Predictions Output
@@ -227,6 +279,12 @@ if 'sector' in df.columns:
     sector_metrics = train_and_evaluate_regression_by_sector(df, out_dir)
     logger.info(f"Sector-level metrics: {len(sector_metrics)} sectors evaluated")
 ```
+
+✅ TDD acceptance tests to add:
+
+- `tests/test_predictions_schema.py` — asserts presence and dtypes of required columns in regression predictions output.
+- `tests/test_regression_sector_metrics.py` — runs a small synthetic dataset, calls sector evaluation, verifies
+  non-empty CSV and expected columns/aggregation.
 
 ---
 
@@ -373,6 +431,12 @@ def calibrate_predictions_by_sector(preds_df):
     return preds_df
 ```
 
+✅ TDD acceptance tests to add:
+
+- `tests/test_sector_bias_calibration.py` — validates that
+  `finance_ml.ml_workflow.regression.calibration.calibrate_predictions_by_sector` applies additive adjustments only to
+  mapped sectors and preserves others; verifies optional non-negativity clipping.
+
 #### Issue 3.2: Poor Performance in Real Estate & Health Care (14.3% agreement)
 
 **Recommendations**:
@@ -420,6 +484,13 @@ quantile_results = pd.DataFrame({
 
 quantile_results.to_csv('outputs/regression/quantile_predictions.csv', index=False)
 ```
+
+✅ TDD acceptance tests to add:
+
+- `tests/test_uncertainty_calibration.py` — on synthetic monotonic data, verify quantile monotonicity (p10 ≤ p50 ≤ p90),
+  coverage within 75–85% after conformal calibration, and absence of negative lower bounds when target is non-negative.
+- `tests/test_data_splits_policy.py` — verify that provided split utilities produce time-aware CV when date columns
+  present, otherwise grouped/stratified behavior as configured.
 
 ---
 
@@ -486,6 +557,11 @@ def build_stacking_pipeline(num_cols, cat_cols, n_jobs=1):
     return Pipeline([('preprocessor', preprocessor), ('regressor', stacking)])
 ```
 
+✅ TDD acceptance tests to add:
+
+- `tests/test_stacking_default.py` — ensures the default pipeline path uses stacking when configured; verifies output
+  metric keys and artifacts.
+
 ---
 
 ### 📋 Implementation Roadmap
@@ -496,15 +572,18 @@ def build_stacking_pipeline(num_cols, cat_cols, n_jobs=1):
     - Implement conformal prediction for calibrated intervals
     - Target: Achieve 75-85% coverage (currently 7.1%)
     - Add validation checks for interval width and coverage by sector
+   - Tests: `test_uncertainty_calibration.py` (coverage, monotonicity, non-negativity)
 
 2. **Priority 2A: Extreme Outlier Detection and Filtering**
     - Add pre-prediction filters for stocks with >3 missing critical features
     - Implement post-prediction clipping at 3 standard deviations
     - Flag predictions with >100% error for manual review
+   - Tests: `test_outlier_safety_rails.py` (winsorization/clipping bounds, negative prediction guard)
 
 3. **Priority 1: Fix Data Pipeline**
     - Add sector, ticker, abs_error, pct_error columns to all prediction outputs
     - Populate `regression_metrics_by_sector.csv` by calling sector-level function
+   - Tests: `test_predictions_schema.py`, `test_regression_sector_metrics.py`
 
 #### Short-term (1 week):
 
@@ -549,6 +628,51 @@ def build_stacking_pipeline(num_cols, cat_cols, n_jobs=1):
 12. **A/B Testing Framework**
     - Compare model versions systematically
     - Measure improvement in median error (more robust than mean)
+
+---
+
+### ✅ TDD Implementation Plan — Notebook vs Package
+
+This section decomposes the recommendations into concrete, test-first tasks split by the Jupyter notebook and the
+`finance_ml` package.
+
+1) Notebook (`ml_finance_model_main.ipynb`)
+
+- Replace ad‑hoc preprocessing, features, quantiles with package calls. Centralize config via env/CLI and `Path`.
+- Export standardized artifacts to `outputs/` as defined below (schema contract).
+- Add a thin wrapper cell that calls package functions for: data load, preprocess, features, model training, uncertainty
+  export, sector metrics export, diagnostics.
+- DoD: Integration test `tests/test_integration_notebook_pipeline.py` asserts presence and schema of
+  `regression_predictions_detailed.csv`, `quantile_predictions.csv`, `regression_metrics_by_sector.csv`.
+
+2) Package (`finance_ml`)
+
+- Uncertainty: Implement `finance_ml.ml_workflow.regression.quantiles` with: `train_quantile_models`,
+  `predict_quantiles`, and `conformal_calibrate_intervals`. Enforce monotonic quantiles and optional non-negativity.
+- Outliers: Implement `finance_ml.ml_workflow.regression.safety_rails` with: `winsorize_target`, `clip_predictions`,
+  `enforce_non_negative`.
+- Splits: Implement `finance_ml.ml_workflow.validation.splits` with:
+  `time_series_cv_or_grouped_split(df, date_col, group_col)`. Default policy: use time‑aware if `date_col` exists; else
+  grouped by `ticker`; else stratify by `sector`.
+- Sector: Ensure `train_and_evaluate_regression_by_sector()` is callable from the main API, writes
+  `regression_metrics_by_sector.csv`.
+- Schema: Add a helper `build_predictions_frame(y_true, y_pred, index, df_source, extra_cols=...)` that standardizes
+  columns.
+- DoD: Unit tests listed above pass on synthetic data; CI fast/medium suites include new tests without flakiness.
+
+3) CLI/Script
+
+- Ensure `ml_finance_model_main.py` emits the standardized artifacts and respects `--dry-run` for skipping model
+  training but still producing schema headers with zero rows.
+- Tests: `tests/test_cli.py` assertions on artifact presence under `--dry-run`.
+
+4) Standardized predictions schema (contract)
+
+- Columns (where available):
+  `ticker, isin, sector, region, last_price, y_true, y_pred, y_pred_calibrated, pred_p10, pred_p50, pred_p90, interval_width, abs_error, pct_error, model_version, snapshot_date`.
+- File path: `outputs/regression/regression_predictions_detailed.csv`.
+- DoD test: `tests/test_predictions_schema.py` validates required columns and non-negative `pred_p10` when
+  `last_price ≥ 0`.
 
 ---
 
@@ -619,6 +743,9 @@ outputs/models/
 └── model_diagnostics.json               # Validation checks
 ```
 
+Note on consistency: the notebook and CLI must both produce the same artifacts with identical schema. Where not
+applicable (e.g., missing `y_true` in out‑of‑time scoring), columns should still be present with nulls.
+
 ---
 
 ### 💡 Key Takeaways
@@ -663,5 +790,5 @@ sector-specific model deficiencies. Address Priority 0-3 immediately.
 **Document Status**: Comprehensive analysis complete. All recommendations based on actual 8,000-prediction dataset and
 are directly implementable in existing codebase structure.
 
-**Last Updated**: 2025-11-12  
+**Last Updated**: 2025-11-13  
 **Analysis Coverage**: Complete prediction pipeline evaluation with sector-level diagnostics

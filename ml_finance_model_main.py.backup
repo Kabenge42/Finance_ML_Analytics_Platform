@@ -2340,8 +2340,8 @@ if 'all_stocks_phase95' in dir() and 'predicted_price_target' in all_stocks_phas
             print('\n📊 Sector-Region Metrics (using finance_ml helper)...')
             sector_region_metrics = compute_sector_region_metrics(
                     all_stocks_phase95,
-                    y_true_col='price_target',
-                    y_pred_col='predicted_price_target',
+                    y_true='price_target',
+                    y_pred='predicted_price_target',
                     sector_col='sector',
                     region_col='region'
                     )

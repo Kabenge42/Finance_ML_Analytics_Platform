@@ -13,13 +13,13 @@ from typing import List, Optional
 import pandas as pd
 
 from .config import FinanceMLConfig
-from .ml_workflow.data import (
+from .ml_workflow.preprocessing.data import (
     load_from_db,
     load_from_csv,
     create_sample_financial_dataset,
     check_missing_values,
     validate_schema,
-    )
+)
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,7 @@ def perform_and_display_eda(df: pd.DataFrame) -> Optional[dict]:
 
     Returns the EDA results dict if available.
     """
-    from .ml_workflow.eval import simple_eda  # local import to avoid cycles
+    from .ml_workflow.analytics.eval import simple_eda  # local import to avoid cycles
 
     try:
         eda_results = simple_eda(df)

@@ -180,3 +180,51 @@ def train_quantile_regressor(
             "quantile_results": quantile_results,
         },
     }
+
+
+def enforce_monotonic_quantiles(quantile_preds: dict) -> dict:
+    """
+    Enforce monotonicity constraint on quantile predictions.
+
+    Ensures that for any sample i and quantiles q1 < q2:
+        pred_q1[i] <= pred_q2[i]
+
+    Uses averaging approach to resolve violations while minimizing changes.
+
+    Args:
+        quantile_preds: Dict mapping quantile values to prediction arrays.
+                       E.g., {0.1: array([...]), 0.5: array([...]), 0.9: array([...])}
+
+    Returns:
+        Dict with same structure but monotonic predictions.
+
+    Example:
+        >>> preds = {0.1: np.array([50, 40]), 0.5: np.array([60, 35]), 0.9: np.array([70, 30])}
+        >>> monotonic = enforce_monotonic_quantiles(preds)
+        >>> # Index 1 had violations (40 > 35 > 30), now fixed
+    """
+    if not quantile_preds:
+        return quantile_preds
+
+    # Sort quantiles
+    sorted_quantiles = sorted(quantile_preds.keys())
+
+    # Convert to numpy arrays and stack
+    n_samples = len(quantile_preds[sorted_quantiles[0]])
+    n_quantiles = len(sorted_quantiles)
+
+    # Stack predictions: shape (n_samples, n_quantiles)
+    pred_matrix = np.column_stack([quantile_preds[q] for q in sorted_quantiles])
+
+    # Apply monotonic constraint row by row
+    for i in range(n_samples):
+        row = pred_matrix[i, :]
+        # Sort the row to enforce monotonicity
+        pred_matrix[i, :] = np.sort(row)
+
+    # Convert back to dict
+    result = {}
+    for j, q in enumerate(sorted_quantiles):
+        result[q] = pred_matrix[:, j]
+
+    return result

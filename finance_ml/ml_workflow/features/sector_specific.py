@@ -12,13 +12,13 @@ Design goals:
 
 from __future__ import annotations
 
-from typing import Iterable, Optional
-
 import numpy as np
 import pandas as pd
 
 
-def _safe_div(numer: pd.Series | float, denom: pd.Series | float, default: float = 0.0) -> pd.Series:
+def _safe_div(
+    numer: pd.Series | float, denom: pd.Series | float, default: float = 0.0
+) -> pd.Series:
     """Element-wise safe division with zero/NaN protection, returns finite series.
 
     Accepts scalars or Series for convenience; always returns a Series aligned
@@ -60,9 +60,15 @@ def engineer_sector_features(df: pd.DataFrame, sector: str) -> pd.DataFrame:
 
     # Industrials: margins, asset turnover, operating leverage
     elif sector == "Industrials":
-        rev = result.get("revenue", result.get("total_revenues_ltm", pd.Series(0, index=result.index)))
-        assets = result.get("total_assets", result.get("total_assets_ltm", pd.Series(1, index=result.index)))
-        op_income = result.get("operating_income", result.get("operating_income_ltm", pd.Series(0, index=result.index)))
+        rev = result.get(
+            "revenue", result.get("total_revenues_ltm", pd.Series(0, index=result.index))
+        )
+        assets = result.get(
+            "total_assets", result.get("total_assets_ltm", pd.Series(1, index=result.index))
+        )
+        op_income = result.get(
+            "operating_income", result.get("operating_income_ltm", pd.Series(0, index=result.index))
+        )
 
         result["asset_turnover"] = _safe_div(rev, assets)
         result["operating_leverage"] = _safe_div(op_income, rev)
@@ -70,8 +76,12 @@ def engineer_sector_features(df: pd.DataFrame, sector: str) -> pd.DataFrame:
     # Information Technology: growth, R&D intensity, gross margins
     elif sector == "Information Technology":
         rd = result.get("r_d_expense", result.get("r_d_expenses", pd.Series(0, index=result.index)))
-        rev = result.get("revenue", result.get("total_revenues_ltm", pd.Series(1, index=result.index)))
-        gp = result.get("gross_profit", result.get("gross_profit_ltm", pd.Series(0, index=result.index)))
+        rev = result.get(
+            "revenue", result.get("total_revenues_ltm", pd.Series(1, index=result.index))
+        )
+        gp = result.get(
+            "gross_profit", result.get("gross_profit_ltm", pd.Series(0, index=result.index))
+        )
 
         result["rd_intensity"] = _safe_div(rd, rev)
         result["gross_margin"] = _safe_div(gp, rev)
@@ -89,16 +99,18 @@ def engineer_sector_features(df: pd.DataFrame, sector: str) -> pd.DataFrame:
 
     # Health Care: pipeline/regulatory proxies when available (Issue 3.2 hint)
     elif sector == "Health Care":
-        r_and_d = result.get("r_d_expense", result.get("r_d_expenses", pd.Series(0, index=result.index)))
-        rev = result.get("revenue", result.get("total_revenues_ltm", pd.Series(1, index=result.index)))
+        r_and_d = result.get(
+            "r_d_expense", result.get("r_d_expenses", pd.Series(0, index=result.index))
+        )
+        rev = result.get(
+            "revenue", result.get("total_revenues_ltm", pd.Series(1, index=result.index))
+        )
         result["rd_intensity"] = _safe_div(r_and_d, rev)
 
     return result
 
 
-def engineer_features_by_sector(
-    df: pd.DataFrame, sector_col: str = "sector"
-) -> pd.DataFrame:
+def engineer_features_by_sector(df: pd.DataFrame, sector_col: str = "sector") -> pd.DataFrame:
     """Apply sector-specific features across entire dataframe by sector.
 
     Returns a copy with new columns added where applicable.

@@ -15,7 +15,6 @@ from typing import Dict, Optional
 
 import pandas as pd
 
-
 DEFAULT_SECTOR_BIAS: Dict[str, float] = {
     # Negative values indicate over-prediction (subtract to correct)
     "Financials": -795.0,

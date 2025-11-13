@@ -26,12 +26,12 @@ from finance_ml.ml_workflow.evaluation.analysis import (
     model_diagnostics,
     prediction_intervals,
     cross_validation_analysis,
-    )
+)
 from finance_ml.ml_workflow.evaluation.metrics import (
     comprehensive_regression_metrics,
     compute_metrics_by_segment,
     compute_sector_region_metrics,
-    )
+)
 
 __all__ = [
     # Metrics functions

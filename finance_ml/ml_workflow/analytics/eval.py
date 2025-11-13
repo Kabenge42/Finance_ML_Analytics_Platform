@@ -2495,14 +2495,14 @@ def comprehensive_regression_metrics(y_true, y_pred):
     }
 
 
-def compute_metrics_by_segment(df, y_true_col, y_pred_col, segment_col):
+def compute_metrics_by_segment(df, y_true, y_pred, segment_col):
     """
     Compute regression metrics for each segment (sector, region, market cap, etc.).
 
     Args:
         df: DataFrame containing predictions and segment information
-        y_true_col: Name of column with true values
-        y_pred_col: Name of column with predicted values
+        y_true: Name of column with true values
+        y_pred: Name of column with predicted values
         segment_col: Name of column to segment by
 
     Returns:
@@ -2512,8 +2512,8 @@ def compute_metrics_by_segment(df, y_true_col, y_pred_col, segment_col):
 
     for segment_value in df[segment_col].dropna().unique():
         segment_data = df[df[segment_col] == segment_value]
-        y_true = segment_data[y_true_col].values
-        y_pred = segment_data[y_pred_col].values
+        y_true = segment_data[y_true].values
+        y_pred = segment_data[y_pred].values
 
         if len(y_true) > 0:
             metrics = comprehensive_regression_metrics(y_true, y_pred)
@@ -2620,14 +2620,14 @@ def residual_analysis_suite(y_true, y_pred, output_dir=None):
     return results
 
 
-def error_bucketing_analysis(df, y_true_col, y_pred_col, bucket_cols):
+def error_bucketing_analysis(df, y_true, y_pred, bucket_cols):
     """
     Analyze prediction errors by various buckets (market cap, volatility, sector).
 
     Args:
         df: DataFrame with predictions and bucketing columns
-        y_true_col: Name of column with true values
-        y_pred_col: Name of column with predicted values
+        y_true: Name of column with true values
+        y_pred: Name of column with predicted values
         bucket_cols: List of column names to bucket by
 
     Returns:
@@ -2637,13 +2637,13 @@ def error_bucketing_analysis(df, y_true_col, y_pred_col, bucket_cols):
 
     # Compute errors
     df = df.copy()
-    df["error"] = df[y_true_col] - df[y_pred_col]
+    df["error"] = df[y_true] - df[y_pred]
     df["abs_error"] = np.abs(df["error"])
 
     # Analyze each bucket type
     for bucket_col in bucket_cols:
         if bucket_col in df.columns:
-            bucket_metrics = compute_metrics_by_segment(df, y_true_col, y_pred_col, bucket_col)
+            bucket_metrics = compute_metrics_by_segment(df, y_true, y_pred, bucket_col)
             results[bucket_col] = bucket_metrics
 
     # Identify outliers (errors > 3 std dev)
@@ -3782,16 +3782,14 @@ def evaluate_with_time_series_cv(model, X, y, cv_type="expanding", n_splits=5, m
 # ============================================================================
 
 
-def compute_sector_region_metrics(
-    df, y_true_col, y_pred_col, sector_col="sector", region_col="region"
-):
+def compute_sector_region_metrics(df, y_true, y_pred, sector_col="sector", region_col="region"):
     """
     Compute metrics for each sector-region combination.
 
     Args:
         df: DataFrame with predictions and grouping columns
-        y_true_col: Column name for true values
-        y_pred_col: Column name for predictions
+        y_true: Column name for true values
+        y_pred: Column name for predictions
         sector_col: Column name for sector
         region_col: Column name for region
 
@@ -3806,8 +3804,8 @@ def compute_sector_region_metrics(
             subset = df[mask]
 
             if len(subset) > 0:
-                y_true = subset[y_true_col].values
-                y_pred = subset[y_pred_col].values
+                y_true = subset[y_true].values
+                y_pred = subset[y_pred].values
 
                 metrics = comprehensive_regression_metrics(y_true, y_pred)
                 metrics["sector"] = sector
@@ -3819,8 +3817,8 @@ def compute_sector_region_metrics(
 
 def create_sector_region_performance_heatmap(
     df,
-    y_true_col,
-    y_pred_col,
+    y_true,
+    y_pred,
     sector_col="sector",
     region_col="region",
     metric="mae",
@@ -3831,8 +3829,8 @@ def create_sector_region_performance_heatmap(
 
     Args:
         df: DataFrame with predictions
-        y_true_col: Column name for true values
-        y_pred_col: Column name for predictions
+        y_true: Column name for true values
+        y_pred: Column name for predictions
         sector_col: Column name for sector
         region_col: Column name for region
         metric: Metric to display ('mae', 'rmse', 'r2', 'mape')
@@ -3845,7 +3843,7 @@ def create_sector_region_performance_heatmap(
         raise ImportError("Matplotlib and seaborn are required for heatmaps")
 
     # Compute metrics
-    metrics_df = compute_sector_region_metrics(df, y_true_col, y_pred_col, sector_col, region_col)
+    metrics_df = compute_sector_region_metrics(df, y_true, y_pred, sector_col, region_col)
 
     # Pivot for heatmap
     heatmap_data = metrics_df.pivot(index=sector_col, columns=region_col, values=metric)
@@ -3887,14 +3885,14 @@ def create_sector_region_performance_heatmap(
 # ============================================================================
 
 
-def plot_residuals_vs_features(df, y_true_col, y_pred_col, feature_cols, output_dir=None):
+def plot_residuals_vs_features(df, y_true, y_pred, feature_cols, output_dir=None):
     """
     Plot residuals vs individual features to detect non-linearities.
 
     Args:
         df: DataFrame with predictions and features
-        y_true_col: Column name for true values
-        y_pred_col: Column name for predictions
+        y_true: Column name for true values
+        y_pred: Column name for predictions
         feature_cols: List of feature columns to plot
         output_dir: Directory to save plots
 
@@ -3905,7 +3903,7 @@ def plot_residuals_vs_features(df, y_true_col, y_pred_col, feature_cols, output_
         raise ImportError("Matplotlib is required for plotting")
 
     # Calculate residuals
-    residuals = df[y_true_col] - df[y_pred_col]
+    residuals = df[y_true] - df[y_pred]
 
     if output_dir:
         output_dir = Path(output_dir)
@@ -3928,14 +3926,14 @@ def plot_residuals_vs_features(df, y_true_col, y_pred_col, feature_cols, output_
                 plt.close()
 
 
-def identify_systematic_bias_patterns(df, y_true_col, y_pred_col, segment_cols):
+def identify_systematic_bias_patterns(df, y_true, y_pred, segment_cols):
     """
     Identify systematic bias patterns in predictions by segment.
 
     Args:
         df: DataFrame with predictions and segment columns
-        y_true_col: Column name for true values
-        y_pred_col: Column name for predictions
+        y_true: Column name for true values
+        y_pred: Column name for predictions
         segment_cols: List of columns to segment by
 
     Returns:
@@ -3952,7 +3950,7 @@ def identify_systematic_bias_patterns(df, y_true_col, y_pred_col, segment_cols):
                 subset = df[mask]
 
                 if len(subset) > 0:
-                    residuals = subset[y_true_col] - subset[y_pred_col]
+                    residuals = subset[y_true] - subset[y_pred]
                     mean_bias = float(residuals.mean())
                     std_bias = float(residuals.std())
 

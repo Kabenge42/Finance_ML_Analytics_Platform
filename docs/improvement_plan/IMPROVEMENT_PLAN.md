@@ -1,8 +1,11 @@
 # Finance ML Analytics Platform — Improvement Plan
 
-**Version 0.5.0** — Last Updated: 2025-11-03
+**Version 0.6.1** — Last Updated: 2025-11-13
 
-This document provides a comprehensive overview of the Finance ML Analytics Platform project, including its technology stack, setup instructions, project structure, and phased development roadmap.
+This document provides a comprehensive overview of the Finance ML Analytics Platform project, including its technology
+stack, setup instructions, project structure, and phased development roadmap. This revision integrates actionable
+recommendations from `docs/Model Optimization Recommendations.md` and technical standards from `docs/code_guidelines.md`
+v1.2.
 
 ---
 
@@ -17,7 +20,9 @@ This document provides a comprehensive overview of the Finance ML Analytics Plat
 8. [Project Structure](#project-structure)
 9. [Code Quality Improvement Tasks](#code-quality-improvement-tasks)
 10. [Development Phases](#development-phases)
-11. [License](#license)
+11. [Phase 10 — Model Optimization and Refinement](#phase-10--model-optimization-and-refinement)
+12. [Immediate Next Steps](#immediate-next-steps)
+13. [License](#license)
 
 ---
 
@@ -1129,42 +1134,123 @@ except ImportError:
 
 ## Immediate Next Steps (Current Sprint)
 
-### Notebook Quality Improvements
+**Focus**: Phase 10 — Model Optimization and Refinement (Critical Priorities)  
+**Timeline**: Week 1 (Days 1-7)  
+**Reference**: See [Phase 10](#phase-10--model-optimization-and-refinement) for complete details
 
-**Priority**: High - These improvements will significantly enhance notebook reliability and maintainability
+### 🚨 CRITICAL — Days 1-3 (Immediate Actions)
 
-**Estimated Total**: 1 day of focused work
+#### Priority 0: Fix Uncertainty Quantification Failure ⚠️
 
-#### 1. Fix Critical Import Issues (30 minutes)
+**Issue**: Prediction intervals capture only 7.1% of actual values (target: 75-85%)
 
-- Add NotebookConfig to imports
-- Move Path to main imports
-- Test import cell independence
+**Tasks**:
 
-#### 2. Fix Configuration Anti-Pattern (1 hour)
+1. Create `finance_ml.ml_workflow.regression.quantiles` module
 
-- Refactor config initialization
-- Remove config mutation
-- Add validation tests
+- Functions: `train_quantile_models()`, `predict_quantiles()`, `conformal_calibrate_intervals()`
+- Enforce monotonic quantiles (p10 ≤ p50 ≤ p90)
+- Optional non-negativity constraint
 
-#### 3. Fix simple_eda Bug (2 hours)
+2. Implement sector-specific interval calibration
+3. Export `outputs/regression/quantile_predictions.csv`
+4. **Test**: Create `tests/test_uncertainty_calibration.py` (target 75-85% coverage)
+5. **Standard**: Follow `docs/code_guidelines.md` v1.2, section "Uncertainty and Prediction Intervals"
 
-- Locate and fix .dtype/.dtypes issue in finance_ml/eval.py
-- Add unit test
-- Remove workaround from notebook
-- Test EDA pipeline end-to-end
+**Expected Impact**: Coverage 7.1% → 75-85%
 
-#### 4. Add Type Safety (1 hour)
+#### Priority 2A: Extreme Outlier Filtering ⚠️
 
-- Add isinstance checks
-- Improve error messages
-- Add validation docstrings
+**Issue**: Max error 10,152%, catastrophic predictions destroying metrics
 
-#### 5. Refactor Error Handling (2 hours)
+**Tasks**:
 
-- Flatten nested try-except
-- Standardize error pattern
-- Add proper logging
+1. Create `finance_ml.ml_workflow.regression.safety_rails` module
+
+- Functions: `winsorize_target()`, `clip_predictions()`, `enforce_non_negative()`
+
+2. Implement Huber loss for GradientBoostingRegressor
+3. Target winsorization at 1st/99th percentile by sector
+4. Post-prediction clipping at ±3σ from training mean
+5. **Test**: Create `tests/test_outlier_safety_rails.py`
+6. **Standard**: Follow `docs/code_guidelines.md` v1.2, section "Outlier Safety Rails Policy"
+
+**Expected Impact**: Max error 10,152% → <1,000%
+
+#### Priority 1: Fix Data Pipeline Issues ⚠️
+
+**Issue**: Missing critical columns in predictions output; empty sector metrics CSV
+
+**Tasks**:
+
+1. Enhance `regression_predictions.csv` schema:
+
+- Add columns: `sector`, `ticker`, `region`, `isin`, `market_cap`
+- Add: `abs_error`, `pct_error`, `y_pred_calibrated`
+- Add: `pred_p10`, `pred_p50`, `pred_p90`, `interval_width`
+- Add: `model_version`, `snapshot_date`
+
+2. Implement `build_predictions_frame()` helper in `finance_ml.ml_workflow.regression.io`
+3. Wire `train_and_evaluate_regression_by_sector()` into main pipeline
+4. Export `outputs/regression/regression_metrics_by_sector.csv`
+5. **Tests**: Create `tests/test_predictions_schema.py`, `tests/test_regression_sector_metrics.py`
+6. **Standard**: Follow `docs/code_guidelines.md` v1.2, sections "Standardized Predictions Schema" and "Sector Metrics
+   and Calibration"
+
+**Expected Impact**: Complete diagnostic visibility for sector debugging
+
+### Short-term — Days 4-7
+
+#### Priority 3: Sector-Specific Models
+
+**Tasks**:
+
+1. Implement sector-specific feature engineering (Real Estate, Materials, Energy)
+2. Wire `calibrate_predictions_by_sector()` into pipeline
+3. Train dedicated models for critical failure sectors
+4. **Test**: Create `tests/test_sector_bias_calibration.py`
+
+**Expected Impact**: Real Estate 518% → <400%, Materials 295% → <250%, Energy 283% → <250%
+
+#### Priority 4: Time-Series Cross-Validation
+
+**Tasks**:
+
+1. Create `finance_ml.ml_workflow.validation.splits` module
+2. Implement `time_series_cv_or_grouped_split()` with leakage-safe policy
+3. **Test**: Create `tests/test_data_splits_policy.py`
+4. **Standard**: Follow `docs/code_guidelines.md` v1.2, section "Data Split and Leakage Policy"
+
+#### Priority 5: Feature Importance Analysis
+
+**Tasks**:
+
+1. Add feature importance export to `train_and_evaluate_regression()`
+2. Export `outputs/regression/feature_importance.csv`
+3. SHAP analysis for predictions with >100% error
+
+### Validation Checklist (End of Week 1)
+
+- [ ] Uncertainty coverage: 75-85% on validation set
+- [ ] Max error reduced from 10,152% to <1,000%
+- [ ] All standardized artifacts present with correct schema
+- [ ] Sector metrics CSV populated with all 11 sectors
+- [ ] All 7 new test modules passing with ≥80% coverage
+- [ ] Integration tests validate end-to-end pipeline
+
+### Supporting Documentation
+
+**Before Starting**:
+
+- Review `docs/Model Optimization Recommendations.md` for detailed analysis
+- Review `docs/code_guidelines.md` v1.2 for technical standards
+- Review Phase 10 implementation gaps and TDD plan
+
+**Test Execution**:
+
+- Use selective test execution strategies from `.junie/guidelines.md` section 3D
+- Run fast tests during development: `python -m unittest tests.test_<module> -v`
+- Run medium tests before commit to validate integration
 
 ---
 
@@ -2402,6 +2488,494 @@ The Finance ML Analytics Platform is now a production-ready Python package with:
 - ✅ CI/CD pipeline
 - ✅ Modern packaging (`pyproject.toml`)
 - ✅ Complete documentation
+
+---
+
+## Phase 10 — Model Optimization and Refinement
+
+**Status**: In Progress (Priority 0-3: Critical)  
+**Based on**: `docs/Model Optimization Recommendations.md` (2025-11-13)  
+**Standards Reference**: `docs/code_guidelines.md` v1.2 (2025-11-13)  
+**Dataset**: 8,000 stock predictions analyzed from `outputs/analytics/predictions.csv`
+
+### Overview
+
+This phase addresses critical performance issues identified through comprehensive analysis of 8,000 predictions. The
+analysis revealed three **CRITICAL** failures that prevent production deployment:
+
+1. **Uncertainty Quantification Failure** (Priority 0): 80% prediction intervals capture only 7.1% of actual values (
+   target: 80%)
+2. **Extreme Outlier Problem** (Priority 2): Max error 10,152%, mean error 164.63% vs median 8.78%
+3. **Sector-Specific Failures** (Priority 3): Real Estate (518% error), Materials (295%), Energy (283%)
+
+**Key Insight**: 97% of predictions are reasonable (median error 8.78%), but 3% of catastrophic predictions destroy
+overall performance metrics.
+
+### Implementation Gaps Identified (Notebook vs Package)
+
+Analysis of `ml_finance_model_main.ipynb`, `outputs/analytics/predictions.csv`, and `finance_ml` package APIs revealed:
+
+1. **Uncertainty/Quantiles**: Duplicated/ambiguous quantile code in `finance_ml/ml_workflow/models.py`; no conformal
+   calibration
+2. **Predictions Schema**: Inconsistent schemas missing critical columns (`sector`, `region`, `ticker`, quantiles,
+   calibrated predictions)
+3. **Sector Metrics**: `regression_metrics_by_sector.csv` remains empty (function not invoked)
+4. **Data Splits**: Random splits where time-aware/grouped CV required; no common split utility
+5. **Outlier Safety**: No centralized outlier policy (winsorization, clipping, negative guards)
+6. **Sector Optimization**: Sector models/calibration not wired into default pipeline
+7. **Classification Meta-features**: Not consistently exported/rejoined across notebook and package
+
+### Priority 0: CRITICAL — Fix Uncertainty Quantification Failure
+
+**Issue**: Prediction intervals severely miscalibrated (7.1% coverage vs 80% target)
+
+**Root Causes**:
+
+- Quantile regression trained on wrong target or incorrect alpha parameters
+- Possible data leakage between train/test
+- Intervals don't account for sector-specific volatility
+- Feature scaling issues causing extreme predictions
+
+**Implementation Tasks**:
+
+- [ ] **Task 0.1**: Implement conformal prediction calibration
+  - [ ] Create `finance_ml.ml_workflow.regression.quantiles` module
+  - [ ] Functions: `train_quantile_models()`, `predict_quantiles()`, `conformal_calibrate_intervals()`
+  - [ ] Enforce monotonic quantiles (p10 ≤ p50 ≤ p90)
+  - [ ] Optional non-negativity constraint when target is non-negative
+  - [ ] **Test**: `tests/test_uncertainty_calibration.py` (target 75-85% coverage on holdout)
+  - [ ] **Standard**: See `code_guidelines.md` v1.2, section "Uncertainty and Prediction Intervals"
+
+- [ ] **Task 0.2**: Sector-specific interval calibration
+  - [ ] Adjust interval width based on sector volatility
+  - [ ] Validate coverage consistent across sectors (±10%)
+  - [ ] Validate coverage consistent across market cap buckets
+
+- [ ] **Task 0.3**: Export standardized quantile predictions
+  - [ ] File: `outputs/regression/quantile_predictions.csv`
+  - [ ] Columns: `ticker`, `y_true`, `pred_p10`, `pred_p50`, `pred_p90`, `interval_width`
+  - [ ] **Schema**: See `code_guidelines.md` v1.2, section "Standardized Predictions Schema"
+
+**Validation Checklist**:
+
+- [ ] Interval coverage on validation set: 75-85%
+- [ ] Interval width proportional to prediction uncertainty
+- [ ] Coverage consistent across sectors (±10%)
+- [ ] Coverage consistent across market cap buckets
+- [ ] No intervals with negative lower bounds
+
+**Expected Impact**: Coverage 7.1% → 75-85% (Week 1)
+
+### Priority 1: Fix Critical Data Pipeline Issues
+
+**Issue 1.1**: Missing sector information in predictions output
+
+**Implementation Tasks**:
+
+- [ ] **Task 1.1**: Enhance regression predictions schema
+  - [ ] Update `finance_ml.ml_workflow.regression` to add columns to `regression_predictions.csv`:
+    - [ ] `sector`, `ticker`, `region`, `isin`, `market_cap`
+    - [ ] `abs_error`, `pct_error`, `y_pred_calibrated`
+    - [ ] `pred_p10`, `pred_p50`, `pred_p90`, `interval_width`
+    - [ ] `model_version`, `snapshot_date`
+  - [ ] Implement `build_predictions_frame()` helper in `finance_ml.ml_workflow.regression.io`
+  - [ ] **Test**: `tests/test_predictions_schema.py` validates required columns and dtypes
+  - [ ] **Standard**: See `code_guidelines.md` v1.2, section "Standardized Predictions Schema"
+
+**Issue 1.2**: Empty `regression_metrics_by_sector.csv`
+
+**Implementation Tasks**:
+
+- [ ] **Task 1.2**: Wire sector-level evaluation into main pipeline
+  - [ ] Ensure `train_and_evaluate_regression_by_sector()` is called in main path
+  - [ ] Export: `outputs/regression/regression_metrics_by_sector.csv`
+  - [ ] Columns: `sector`, `mae`, `rmse`, `r2`, `mape`, `count`
+  - [ ] **Test**: `tests/test_regression_sector_metrics.py` verifies non-empty output
+  - [ ] **Standard**: See `code_guidelines.md` v1.2, section "Sector Metrics and Calibration"
+
+**Expected Impact**: Complete diagnostic visibility for sector-specific debugging
+
+### Priority 2: Address Extreme Outlier Problem
+
+**Issue**: Catastrophic predictions destroying overall performance (max error 10,152%)
+
+**Root Causes**:
+
+- Small-cap/penny stocks with low absolute prices
+- Recently IPO'd stocks with limited historical data
+- High volatility sectors (Materials 295%, Energy 283%, Real Estate 518%)
+- Feature scale issues and missing fundamental data
+
+**Implementation Tasks**:
+
+- [ ] **Task 2.1**: Implement robust loss functions
+  - [ ] Add Huber loss option for GradientBoostingRegressor
+  - [ ] Configure `loss='huber'`, `alpha=0.9`
+  - [ ] **Standard**: See `code_guidelines.md` v1.2, section "Outlier Safety Rails Policy"
+
+- [ ] **Task 2.2**: Implement target winsorization
+  - [ ] Create `finance_ml.ml_workflow.regression.safety_rails` module
+  - [ ] Functions: `winsorize_target()`, `clip_predictions()`, `enforce_non_negative()`
+  - [ ] Winsorize at 1st/99th percentile by sector
+  - [ ] **Test**: `tests/test_outlier_safety_rails.py` validates bounds and behavior
+
+- [ ] **Task 2.3**: Post-prediction clipping
+  - [ ] Clip predictions to ±3 std from training mean
+  - [ ] Enforce non-negativity when `last_price >= 0`
+  - [ ] Add diagnostics: count clipped predictions by sector
+
+- [ ] **Task 2.4**: Pre-prediction validation
+  - [ ] Flag stocks with >3 missing critical features
+  - [ ] Add quality score column to predictions output
+  - [ ] Create separate report for flagged predictions
+
+**Validation**:
+
+- [ ] 99th percentile error: 3,105% → <150%
+- [ ] Max error: 10,152% → <500%
+- [ ] Predictions >100% error: 3.8% (300 stocks) → <1% (80 stocks)
+
+**Expected Impact**:
+
+- Week 1: Max error 10,152% → <1,000%
+- Month 1: Mean error 164.63% → <100%
+
+### Priority 3: Improve Sector-Specific Modeling
+
+**Issue**: Massive sector performance variance (518% to 54% error range)
+
+**Critical Sector Failures**:
+
+- Real Estate: 518.3% (CRITICAL)
+- Materials: 294.8% (CRITICAL)
+- Energy: 283.2% (CRITICAL)
+- Financials: 230.8% (Very Poor)
+
+**Success Stories**:
+
+- Information Technology: 53.7% (Best)
+- Utilities: 59.1% (Best)
+- Health Care: 92.8% (Good)
+
+**Systematic Over-Prediction Bias**: All sectors show positive bias (+15 to +66)
+
+**Implementation Tasks**:
+
+- [ ] **Task 3.1**: Sector-specific feature engineering
+  - [ ] Financials: P_TBV, ROE, leverage_ratio
+  - [ ] Industrials: asset_turnover, operating_leverage
+  - [ ] Information Technology: rd_intensity, gross_margin
+  - [ ] Energy/Materials: capex_intensity, commodity_price_correlations
+  - [ ] Real Estate: FFO, AFFO, NOI, cap_rates
+  - [ ] Health Care: pipeline_risk, patent_expiry, FDA_approvals
+
+- [ ] **Task 3.2**: Sector-specific bias calibration
+  - [ ] Wire `finance_ml.ml_workflow.regression.calibration.calibrate_predictions_by_sector()` into pipeline
+  - [ ] Apply additive bias corrections computed from validation set
+  - [ ] **Test**: `tests/test_sector_bias_calibration.py` validates corrections
+  - [ ] **Standard**: See `code_guidelines.md` v1.2, section "Sector Metrics and Calibration"
+
+- [ ] **Task 3.3**: Train dedicated sector models
+  - [ ] Priority sectors: Real Estate, Materials, Energy
+  - [ ] Use sector-specific hyperparameters (Optuna tuning)
+  - [ ] Sector-specific loss functions (e.g., MAPE for Energy due to price volatility)
+
+**Expected Impact**:
+
+- Real Estate: 518% → <200% (Month 3)
+- Materials: 295% → <150% (Month 1)
+- Energy: 283% → <150% (Month 1)
+- Financials: 231% → <120% (Month 1)
+
+### Priority 4: Enhance Model Validation Strategy
+
+**Issue 4.1**: Single train/test split may not capture temporal dynamics
+
+**Implementation Tasks**:
+
+- [ ] **Task 4.1**: Implement time-series cross-validation
+  - [ ] Create `finance_ml.ml_workflow.validation.splits` module
+  - [ ] Function: `time_series_cv_or_grouped_split(df, date_col, group_col, stratify_col)`
+  - [ ] Policy: time-series split if `date_col` exists → else grouped by `ticker` → else stratified by `sector`
+  - [ ] **Test**: `tests/test_data_splits_policy.py` validates policy enforcement
+  - [ ] **Standard**: See `code_guidelines.md` v1.2, section "Data Split and Leakage Policy"
+
+- [ ] **Task 4.2**: Export uncertainty to main predictions
+  - [ ] Integrate quantile predictions into main `regression_predictions_detailed.csv`
+  - [ ] Add confidence intervals to interactive visualizations
+
+### Priority 5: Add Feature Importance Analysis
+
+**Implementation Tasks**:
+
+- [ ] **Task 5.1**: Export feature importance
+  - [ ] Add to `train_and_evaluate_regression()` function
+  - [ ] File: `outputs/regression/feature_importance.csv`
+  - [ ] Columns: `feature`, `importance`, `sector` (if sector-specific models)
+  - [ ] Sort by importance descending
+
+- [ ] **Task 5.2**: SHAP analysis for extreme errors
+  - [ ] For predictions with >100% error, compute SHAP values
+  - [ ] Export: `outputs/regression/shap_extreme_errors.csv`
+  - [ ] Identify which features drive catastrophic predictions
+
+### Priority 6: Ensemble & Stacking Improvements
+
+**Issue**: Stacking ensemble trained but not used in main pipeline
+
+**Implementation Tasks**:
+
+- [ ] **Task 6.1**: Make stacking ensemble the default
+  - [ ] Update default pipeline in `finance_ml.ml_workflow.regression.models`
+  - [ ] Base estimators: RandomForest, GradientBoosting (Huber), Ridge
+  - [ ] Meta-learner: RidgeCV
+  - [ ] **Test**: `tests/test_stacking_default.py` ensures stacking is used by default
+  - [ ] **Standard**: See `code_guidelines.md` v1.2, section "Stacking Ensemble Default Configuration"
+
+- [ ] **Task 6.2**: Sector-specific stacking
+  - [ ] Train separate stacking ensembles per sector
+  - [ ] Export sector-specific model artifacts
+
+**Expected Impact**: 10-15% error reduction overall
+
+### TDD Implementation Plan — Notebook vs Package vs CLI
+
+This section decomposes recommendations into concrete, test-first tasks by component.
+
+#### Notebook (`ml_finance_model_main.ipynb`)
+
+**Tasks**:
+
+- [ ] Replace ad-hoc preprocessing/features/quantiles with package calls
+- [ ] Centralize config via env/CLI and `Path`
+- [ ] Export standardized artifacts:
+  - [ ] `outputs/regression/regression_predictions_detailed.csv` (with all required columns)
+  - [ ] `outputs/regression/quantile_predictions.csv`
+  - [ ] `outputs/regression/regression_metrics_by_sector.csv`
+  - [ ] `outputs/regression/feature_importance.csv`
+- [ ] Add thin wrapper cells calling package functions
+- [ ] **DoD**: `tests/test_integration_notebook_pipeline.py` validates all artifacts present with correct schema
+
+#### Package (`finance_ml`)
+
+**New Modules to Create**:
+
+- [ ] `finance_ml.ml_workflow.regression.quantiles`
+  - [ ] `train_quantile_models()`, `predict_quantiles()`, `conformal_calibrate_intervals()`
+- [ ] `finance_ml.ml_workflow.regression.safety_rails`
+  - [ ] `winsorize_target()`, `clip_predictions()`, `enforce_non_negative()`
+- [ ] `finance_ml.ml_workflow.validation.splits`
+  - [ ] `time_series_cv_or_grouped_split()`
+- [ ] `finance_ml.ml_workflow.regression.io`
+  - [ ] `build_predictions_frame()` helper
+
+**Existing Modules to Update**:
+
+- [ ] `finance_ml.ml_workflow.regression.models`
+  - [ ] Consolidate duplicated quantile/stacking functions
+  - [ ] Wire sector evaluation into main path
+  - [ ] Wire bias calibration into pipeline
+  - [ ] Use safety rails by default
+- [ ] `finance_ml.ml_workflow.regression.calibration`
+  - [ ] Make sector bias calibration configurable
+  - [ ] Add validation/diagnostics
+
+**Tests Required** (7 new test modules):
+
+- [ ] `tests/test_uncertainty_calibration.py` — coverage 75-85%, monotonicity, non-negativity
+- [ ] `tests/test_predictions_schema.py` — required columns and invariants
+- [ ] `tests/test_regression_sector_metrics.py` — non-empty sector metrics persisted
+- [ ] `tests/test_sector_bias_calibration.py` — additive adjustments per sector
+- [ ] `tests/test_data_splits_policy.py` — time → grouped → stratified fallback
+- [ ] `tests/test_stacking_default.py` — default pipeline uses stacking
+- [ ] `tests/test_outlier_safety_rails.py` — winsorization/clipping/non-negativity
+
+**DoD**: All unit tests pass on synthetic data; CI fast/medium suites include new tests
+
+#### CLI/Script (`ml_finance_model_main.py`)
+
+**Tasks**:
+
+- [ ] Ensure standardized artifacts emitted
+- [ ] Respect `--dry-run` flag (emit schema headers with zero rows)
+- [ ] **Test**: `tests/test_cli.py` validates artifact presence under `--dry-run`
+
+#### Standardized Predictions Schema Contract
+
+**File**: `outputs/regression/regression_predictions_detailed.csv`
+
+**Required Columns** (when available):
+
+- `ticker`, `isin`, `sector`, `region`
+- `last_price`, `y_true`, `y_pred`, `y_pred_calibrated`
+- `pred_p10`, `pred_p50`, `pred_p90`, `interval_width`
+- `abs_error`, `pct_error`
+- `model_version`, `snapshot_date`
+
+**Invariants**:
+
+- `pred_p10 <= pred_p50 <= pred_p90` (monotonicity)
+- `pred_p10 >= 0` when `last_price >= 0` (non-negativity)
+- `interval_width = pred_p90 - pred_p10`
+- `abs_error = abs(y_true - y_pred)`
+- `pct_error = 100 * abs_error / y_true` (when `y_true != 0`)
+
+**Test**: `tests/test_predictions_schema.py` validates schema compliance
+
+### Implementation Roadmap
+
+#### 🚨 CRITICAL — Immediate Actions (Week 1, Days 1-3)
+
+1. **Priority 0: Fix Uncertainty Quantification** ⚠️
+
+- Implement conformal prediction (Task 0.1)
+- Target: 75-85% coverage (currently 7.1%)
+- Tests: `test_uncertainty_calibration.py`
+
+2. **Priority 2A: Extreme Outlier Filtering** ⚠️
+
+- Implement safety rails (Tasks 2.1-2.3)
+- Post-prediction clipping at 3σ
+- Tests: `test_outlier_safety_rails.py`
+
+3. **Priority 1: Fix Data Pipeline** ⚠️
+
+- Standardized predictions schema (Task 1.1)
+- Populate sector metrics CSV (Task 1.2)
+- Tests: `test_predictions_schema.py`, `test_regression_sector_metrics.py`
+
+#### Short-term (Week 1, Days 4-7)
+
+4. **Priority 3: Sector-Specific Models**
+
+- Real Estate, Materials, Energy dedicated models (Tasks 3.1-3.3)
+- Sector bias calibration (Task 3.2)
+- Target: Reduce error from 300%+ to <150%
+- Tests: `test_sector_bias_calibration.py`
+
+5. **Priority 4: Time-Series CV**
+
+- Implement leakage-safe splits (Task 4.1)
+- Tests: `test_data_splits_policy.py`
+
+6. **Priority 5: Feature Importance**
+
+- Export top features by sector (Task 5.1)
+- SHAP analysis for extreme errors (Task 5.2)
+
+#### Medium-term (Weeks 2-4)
+
+7. **Priority 6: Stacking Ensemble**
+
+- Make stacking default (Tasks 6.1-6.2)
+- Expected: 10-15% error reduction
+- Tests: `test_stacking_default.py`
+
+8. **Systematic Bias Correction**
+
+- Apply sector-specific bias adjustments
+- Validate on holdout set
+
+9. **Notebook/CLI Integration**
+
+- Replace ad-hoc code with package calls
+- Emit standardized artifacts
+- Tests: `test_integration_notebook_pipeline.py`, `test_cli.py`
+
+#### Long-term (Months 2-3)
+
+10. **Hyperparameter Optimization**
+
+- Optuna tuning for 11 sector-specific models
+- Target sectors: Real Estate, Materials, Energy first
+
+11. **Model Monitoring Dashboard**
+
+- Track error distribution over time
+- Alert when sector error exceeds threshold
+
+12. **A/B Testing Framework**
+
+- Compare model versions systematically
+- Measure improvement in median error
+
+### Expected Impact Summary
+
+| Metric                       | Current Baseline | Week 1 Target | Month 1 Target | Month 3 Target |
+|------------------------------|------------------|---------------|----------------|----------------|
+| **Uncertainty Coverage**     | 7.1%             | 75-85%        | 75-85%         | 75-85%         |
+| **Max Error**                | 10,152%          | <1,000%       | <500%          | <500%          |
+| **99th Percentile Error**    | 3,105%           | <500%         | <150%          | <150%          |
+| **Mean Absolute Error %**    | 164.63%          | <120%         | <100%          | <50%           |
+| **Median Absolute Error %**  | 8.78%            | <8%           | <7%            | <7%            |
+| **Predictions >100% error**  | 3.8% (300)       | <2% (160)     | <1% (80)       | <1% (80)       |
+| **Real Estate Sector Error** | 518.3%           | <400%         | <300%          | <200%          |
+| **Materials Sector Error**   | 294.8%           | <250%         | <150%          | <150%          |
+| **Energy Sector Error**      | 283.2%           | <250%         | <150%          | <150%          |
+
+### Monitoring & Validation
+
+**Validation Pipeline**:
+
+```python
+def validate_predictions(results_df):
+  """Validate prediction quality and flag issues."""
+  checks = {
+    'negative_predictions': (results_df['y_pred'] < 0).sum(),
+    'extreme_errors_pct': (results_df['abs_error'] > 1000).sum() / len(results_df) * 100,
+    'mean_abs_error': results_df['abs_error'].mean(),
+    'median_abs_error': results_df['abs_error'].median(),
+    'uncertainty_coverage': ((results_df['y_true'] >= results_df['pred_p10']) &
+                             (results_df['y_true'] <= results_df['pred_p90'])).mean(),
+    'sectors_with_bias': results_df.groupby('sector')['residual'].mean().abs().nlargest(3)
+    }
+  return checks
+```
+
+**File Outputs**:
+
+```
+outputs/
+├── regression/
+│   ├── regression_predictions_detailed.csv   # Standardized schema with all columns
+│   ├── regression_metrics_by_sector.csv      # Per-sector MAE, RMSE, R², MAPE, count
+│   ├── quantile_predictions.csv              # Uncertainty intervals (p10, p50, p90)
+│   ├── feature_importance.csv                # Top features by sector
+│   └── model_diagnostics.json                # Validation checks output
+└── analytics/
+    ├── predictions.csv                        # Enriched with mispricing scores
+    └── sector_performance_report.xlsx         # Executive summary
+```
+
+### Cross-References
+
+**Related Documentation**:
+
+- `docs/code_guidelines.md` v1.2 — Technical standards and contracts
+- `docs/Model Optimization Recommendations.md` — Detailed analysis and recommendations
+- `.junie/guidelines.md` — Development guidelines with TDD and selective test execution
+- `README.md` — Project overview with updated testing section (74 test modules)
+
+**Related Test Modules** (7 new, aligned with code_guidelines.md v1.2):
+
+- `tests/test_uncertainty_calibration.py`
+- `tests/test_predictions_schema.py`
+- `tests/test_regression_sector_metrics.py`
+- `tests/test_sector_bias_calibration.py`
+- `tests/test_data_splits_policy.py`
+- `tests/test_stacking_default.py`
+- `tests/test_outlier_safety_rails.py`
+
+**Related Phase 9 Implementations**:
+
+- Phase 9.1: Enhanced preprocessing with 6-step imputation
+- Phase 9.3: Advanced feature engineering with sector-specific features
+- Phase 9.4: Multi-class classification (meta-features for regression)
+- Phase 9.5: Sector-optimized regression models
+- Phase 9.6: Model evaluation and error analysis
+- Phase 9.7: Valuation analytics and stock ranking
+
+---
 
 ### Future Enhancements (TODO)
 
