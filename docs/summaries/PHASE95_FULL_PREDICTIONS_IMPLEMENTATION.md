@@ -11,7 +11,7 @@
 
 Successfully enhanced the Phase 9.5 regression pipeline to generate predictions for **ALL stocks in the dataset** (not
 just the test split), while maintaining rigorous data integrity and preventing data leakage. The enhancement applies the
-same robust 4-step imputation strategy throughout the entire ML workflow.
+same robust 6-step imputation strategy throughout the entire ML workflow.
 
 ### Key Metrics
 
@@ -71,7 +71,7 @@ analysis required predictions for ALL stocks.
     - Compute validation metrics on test set only
 
 3. **Generate Full Dataset Predictions** (lines 324-391):
-    - Apply 4-step imputation to **entire original dataset**
+    - Apply 6-step imputation to **entire original dataset**
     - Use `apply_enhanced_imputation_strategy_4step()` directly
     - Does NOT drop rows with missing targets
     - Generate predictions for all 8,000 stocks
@@ -101,7 +101,7 @@ analysis required predictions for ALL stocks.
 
 **Robust Imputation**:
 
-- Uses same 4-step imputation as sector-specific models
+- Uses same 6-step imputation as sector-specific models
 - Handles NaN in features without dropping rows
 - Emergency fallback: fillna(0) for any residual NaN/Inf
 - Comprehensive logging at each step
@@ -246,7 +246,7 @@ if regression_result_robust and 'full_predictions' in regression_result_robust:
 1. **100% Prediction Coverage**: All 8,000 stocks get predictions (vs 1,314 before)
 2. **No Data Leakage**: Validation metrics still computed only from test set
 3. **Downstream Analysis**: Full dataset available for Phase 9.6+ analytics
-4. **Robust Imputation**: Same 4-step strategy ensures data quality
+4. **Robust Imputation**: Same 6-step strategy ensures data quality
 
 ### Technical Benefits
 
@@ -376,7 +376,7 @@ Successfully implemented comprehensive enhancement to Phase 9.5 regression pipel
 
 ✅ **100% Prediction Coverage** (8,000/8,000 stocks vs 1,314/8,000)  
 ✅ **Zero Data Leakage** (validation metrics from test set only)  
-✅ **Robust Imputation** (4-step strategy throughout workflow)  
+✅ **Robust Imputation** (6-step strategy throughout workflow)  
 ✅ **Fully Tested** (51/51 tests pass, no regressions)  
 ✅ **Production Ready** (comprehensive error handling and logging)
 

@@ -290,7 +290,7 @@ except Exception as e:
     logger.error(f"Missing value check failed: {e}", exc_info=True)
     print(f"⚠ Missing value check failed: {e}")
 # %% md
-# ### Enhanced 4-Step Imputation Strategy
+# ### Enhanced 6-step Imputation Strategy
 #
 # Complete
 # imputation
@@ -320,7 +320,7 @@ except Exception as e:
 # for all other numerical columns
 # %%
 print("\n" + "=" * 80)
-print("9.1.8 ENHANCED 4-STEP IMPUTATION STRATEGY")
+print("9.1.8 ENHANCED 6-step IMPUTATION STRATEGY")
 print("=" * 80)
 
 from finance_ml.advanced_preprocessing import (
@@ -332,7 +332,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Show strategy overview
-print("\n4-Step Imputation Strategy:")
+print("\n6-step Imputation Strategy:")
 print("  Step 1: Zero Imputation      → 48 columns (exceptional events)")
 print("  Step 2: KNN Imputation       → 148 columns (financial metrics)")
 print("  Step 3: Price Imputation     → 5 columns (price targets)")
@@ -351,8 +351,8 @@ print(f"Step 2 (KNN): {len(knn_cols)} defined, "
 print(f"Step 3 (Price): {len(price_cols)} defined, "
       f"{sum(1 for c in price_cols if c in all_stocks.columns)} available")
 
-# Apply 4-step imputation
-print("\nApplying 4-step imputation strategy...")
+# Apply 6-step imputation
+print("\nApplying 6-step imputation strategy...")
 missing_before = all_stocks.select_dtypes(include=[np.number]).isna().sum().sum()
 
 all_stocks_imputed = apply_enhanced_imputation_strategy_4step(
@@ -435,7 +435,7 @@ plt.tight_layout()
 plt.savefig(output_dir / 'phase_9_1_4step_imputation.png', dpi=300, bbox_inches='tight')
 plt.show()
 
-print("\n✓ Enhanced 4-step imputation strategy completed successfully!")
+print("\n✓ Enhanced 6-step imputation strategy completed successfully!")
 print(f"  ✓ Zero missing values in output: {missing_after == 0}")
 print(f"  ✓ Visualization saved to: {output_dir / 'phase_9_1_4step_imputation.png'}")
 # %% md
@@ -4167,7 +4167,7 @@ class Phase95Config:
 
 def apply_imputation_strategy(df: pd.DataFrame, config: Phase95Config) -> pd.DataFrame:
     """
-    Apply 4-step imputation strategy to clean data.
+    Apply 6-step imputation strategy to clean data.
 
     Args:
         df: Input dataframe with potential missing values
@@ -4176,7 +4176,7 @@ def apply_imputation_strategy(df: pd.DataFrame, config: Phase95Config) -> pd.Dat
     Returns:
         Cleaned dataframe with imputed values
     """
-    print("\n  Applying 4-step imputation strategy...")
+    print("\n  Applying 6-step imputation strategy...")
     nan_before = df.select_dtypes(include=[np.number]).isnull().sum().sum()
     print(f"    NaN values before imputation: {nan_before:,}")
 

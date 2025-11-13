@@ -29,7 +29,7 @@ section_918_found = False
 for i, cell in enumerate(cells):
     if cell["cell_type"] == "markdown":
         source = "".join(cell["source"]) if isinstance(cell["source"], list) else cell["source"]
-        if "9.1.8" in source and "Enhanced 4-Step Imputation" in source:
+        if "9.1.8" in source and "Enhanced 6-step Imputation" in source:
             section_918_found = True
             print(f"✓ Found Section 9.1.8 at cell index {i}")
             break

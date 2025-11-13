@@ -81,7 +81,7 @@ except Exception as e:
 
 ### Key Benefits
 
-1. **Automatic NaN Handling**: Each sector's data is automatically imputed using the 4-step imputation strategy before
+1. **Automatic NaN Handling**: Each sector's data is automatically imputed using the 6-step imputation strategy before
    training
 2. **Graceful Error Handling**: If preprocessing fails for a sector, that sector is skipped with a warning instead of
    crashing

@@ -1051,6 +1051,41 @@ TensorFlow is optional and CPU-only installation is sufficient for this project.
 The core workflow uses scikit-learn and gradient boosting libraries (XGBoost, LightGBM, CatBoost) and will function
 without TensorFlow.
 
+### Version Numbering Convention
+
+**Package Version** (e.g., `0.7.1`):
+
+- Follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
+- **MAJOR**: Breaking API changes or major architectural updates
+- **MINOR**: New features, backward-compatible changes
+- **PATCH**: Bug fixes, documentation updates
+- Updated in: `pyproject.toml`, `README.md`, `CHANGELOG.md`, `environment_variables.txt`
+
+**Model Version** (e.g., `v9_9`):
+
+- Format: `v{PHASE}_{ITERATION}` (e.g., `v9_9` = Phase 9, Iteration 9)
+- **PHASE**: Major modeling phase (Phase 9 = modular refactor, Phase 10 = optimization)
+- **ITERATION**: Minor updates within phase (features, hyperparameters, calibration)
+- Updated in: `finance_ml/config.py`, `ml_finance_model_main.ipynb`, `README.md`
+
+**Alignment Requirements**:
+
+- **Notebook** (`ml_finance_model_main.ipynb`) and **Package** (`finance_ml/config.py`) MODEL_VERSION **must match**
+- Package version increments with each release; MODEL_VERSION increments with modeling changes
+- Example: Package v0.7.1 can have MODEL_VERSION v9_9 (no modeling changes from v0.7.0)
+
+**Current Versions** (as of 2025-11-13):
+
+- Package: `0.7.1`
+- Model: `v9_9`
+- Status: ✓ Aligned (notebook and package both use v9_9)
+
+**Version Update Checklist**:
+
+- [ ] Package version change: Update `pyproject.toml`, `README.md`, `CHANGELOG.md`, `environment_variables.txt`
+- [ ] Model version change: Update `finance_ml/config.py` and `ml_finance_model_main.ipynb` (must match!)
+- [ ] Document changes in `CHANGELOG.md` with clear explanation of what changed
+
 ### Version Synchronization
 
 **TODO**: The following files need version synchronization:

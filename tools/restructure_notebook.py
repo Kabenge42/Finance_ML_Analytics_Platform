@@ -5,7 +5,7 @@ This script implements the comprehensive notebook restructuring plan:
 1. Remove duplicate Phase 9.3 section (cells 111-127)
 2. Reorder Phase 9.5/9.6 sections
 3. Consolidate Phase 9.7 and 9.8 sections
-4. Update Phase 9.5 with 4-step imputation strategy
+4. Update Phase 9.5 with 6-step imputation strategy
 5. Add validation gates
 6. Standardize headers
 
@@ -219,7 +219,7 @@ def consolidate_phase98(notebook):
 
 
 def update_phase95_imputation(notebook):
-    """Update Phase 9.5 to use 4-step imputation strategy."""
+    """Update Phase 9.5 to use 6-step imputation strategy."""
     print("\n=== Step 5: Updating Phase 9.5 Imputation Strategy ===")
 
     # Find Phase 9.5 section
@@ -256,19 +256,19 @@ def update_phase95_imputation(notebook):
 
     print(f"  Found imputation code at Cell {imputation_cell_idx}")
 
-    # Replacement code using 4-step imputation
+    # Replacement code using 6-step imputation
     new_imputation_code = """# ============================================================================
-# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 4-STEP IMPUTATION
+# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 6-step IMPUTATION
 # ============================================================================
 from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
 
-print("\\n🔧 Step 2.1: Applying 4-step imputation strategy...")
+print("\\n🔧 Step 2.1: Applying 6-step imputation strategy...")
 
 # Log NaN counts before imputation
 nan_before = all_stocks_phase95.select_dtypes(include=[np.number]).isnull().sum().sum()
 print(f"  NaN values before imputation: {nan_before:,}")
 
-# Apply comprehensive 4-step imputation
+# Apply comprehensive 6-step imputation
 # Step 1: Zero imputation for exceptional events (48 cols)
 # Step 2: Sector-aware KNN imputation (148 cols)
 # Step 3: Price imputation for price targets (5 cols)
@@ -301,7 +301,7 @@ if inf_count > 0:
 
     # Update the cell
     notebook["cells"][imputation_cell_idx]["source"] = new_imputation_code.split("\n")
-    print(f"✓ Updated imputation strategy to use 4-step method")
+    print(f"✓ Updated imputation strategy to use 6-step method")
 
     return notebook
 

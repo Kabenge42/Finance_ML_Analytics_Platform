@@ -439,7 +439,7 @@ def scale_features(
 
 
 def get_zero_imputation_columns() -> List[str]:
-    """Return list of columns for zero imputation (Step 1 of 4-step strategy).
+    """Return list of columns for zero imputation (Step 1 of 6-step strategy).
 
     These columns represent rare/exceptional events (impairments, restructuring,
     acquisitions, etc.) where missing values typically mean the event did not occur.
@@ -511,7 +511,7 @@ def get_zero_imputation_columns() -> List[str]:
 
 
 def get_knn_imputation_columns() -> List[str]:
-    """Return list of columns for KNN imputation (Step 2 of 4-step strategy).
+    """Return list of columns for KNN imputation (Step 2 of 6-step strategy).
 
     These are core financial metrics where KNN can leverage sector relationships
     and correlations to provide better estimates than simple statistics.
@@ -841,7 +841,7 @@ def apply_price_imputation(
     price_column: str = "last_price",
     columns: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-    """Apply price imputation (Step 3 of 4-step strategy).
+    """Apply price imputation (Step 3 of 6-step strategy).
 
     Imputes price target columns using the current last_price as the best
     available estimate when analyst targets are missing.
@@ -903,7 +903,7 @@ def apply_price_imputation(
 
 
 def apply_median_imputation(df: pd.DataFrame) -> pd.DataFrame:
-    """Apply median imputation (Step 4 of 4-step strategy).
+    """Apply median imputation (Step 4 of 6-step strategy).
 
     Fallback imputation strategy that fills any remaining missing values
     in numerical columns with their median values.

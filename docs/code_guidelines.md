@@ -1661,6 +1661,407 @@ Selective execution examples:
 
 ---
 
-**Document Version:** 1.2  
+## Section 8: Notebook Implementation Guidelines (Phase 10)
+
+### 8.1 Configuration Management
+
+**Single Source of Truth Principle**:
+
+- Define all configuration constants in a single cell at the top of the notebook (after imports)
+- Avoid redefining constants in later sections
+- Use descriptive variable names matching code_guidelines.md conventions
+
+**Required Configuration Constants**:
+
+```python
+# Regression configuration
+TARGET_COL = 'price_target'  # Canonical target (Section 2.2)
+TARGET_COL_FALLBACK = 'last_price'  # Canonical fallback
+TEST_SIZE = 0.2
+CV_FOLDS = 5
+QUANTILES = [0.1, 0.5, 0.9]
+MIN_SECTOR_SAMPLES = 20
+RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
+
+# Output directories
+OUTPUT_DIR = Path("outputs")
+```
+
+**Configuration Validation**:
+
+- Add validation cell to check all required constants are defined
+- Verify OUTPUT_DIR structure exists (all Phase 9.1-9.8 subdirectories)
+- Log configuration summary for reproducibility
+
+### 8.2 Version Alignment Conventions
+
+**Notebook Version vs. Package Version**:
+
+- Notebook version should match or exceed package version
+- Document version in notebook title cell: `**Version X.Y.Z** — **Model Version: vN_M**`
+- Use environment variable `MODEL_VERSION` for consistency: `os.environ.get('MODEL_VERSION', 'v9_9')`
+
+**Version Number Format**:
+
+- Notebook version: Semantic versioning `X.Y.Z` (e.g., `2.1.0`)
+- Model version: Phase-aligned `vN_M` (e.g., `v9_9` for Phase 9.9)
+- Package version: Defined in `finance_ml/config.py` and `pyproject.toml`
+
+**Version Update Triggers**:
+
+- Major workflow changes → increment notebook major version
+- New features/sections → increment notebook minor version
+- Bug fixes/refactoring → increment notebook patch version
+- Model architecture changes → increment model version
+
+### 8.3 Import Organization Best Practices
+
+**Import Structure** (following Phase 9.1-9.8 modular design):
+
+1. **Standard library imports** (os, warnings, pathlib, datetime)
+2. **Third-party core imports** (numpy, pandas, matplotlib, seaborn)
+3. **Visualization imports** (plotly.express, plotly.graph_objects)
+4. **Phase 9.1-9.8 package imports** (organized by phase)
+
+**Package Import Pattern**:
+
+```python
+# Phase 9.1: Data loading and preprocessing
+from finance_ml import (
+    load_from_csv, load_from_db, validate_schema,
+    normalize_columns, check_missing_values,
+    )
+from finance_ml.ml_workflow.preprocessing.imputation import (
+    apply_enhanced_imputation_strategy_6step,
+    validate_imputation_completeness
+    )
+
+# Phase 9.3: Feature engineering
+from finance_ml import (
+    features_build_comprehensive,
+    features_importance_rf,
+    engineer_valuation_ratios,
+    )
+
+# Phase 9.5: Regression models
+from finance_ml import (
+    regression_prepare_data,
+    regression_train_xgboost,
+    regression_train_quantile,
+    )
+```
+
+**Import Best Practices**:
+
+- Use package-level convenience imports when available (avoid deep module paths)
+- Import all required functions once at the top (avoid scattered imports)
+- Add comments indicating which phase each import block corresponds to
+- Use descriptive prefixes for package functions (e.g., `preprocessing_*`, `features_*`, `regression_*`)
+
+### 8.4 Cell Execution Order Dependencies
+
+**Required Execution Order**:
+
+1. Configuration and Setup
+2. Data Loading and Preprocessing (Section 2)
+3. Exploratory Data Analysis (Section 3)
+4. Feature Engineering (Section 4)
+5. Classification (Section 5)
+6. Regression (Section 6)
+7. Evaluation (Section 7)
+8. Analytics (Section 8-10)
+
+**Dependency Validation**:
+
+- Add assertions to check required variables exist before use
+- Example: `assert 'all_stocks' in globals(), "Run Section 2 first to load data"`
+- Use meaningful variable names to track pipeline stages (e.g., `all_stocks`, `all_stocks_scaled`,
+  `all_stocks_features`, `all_stocks_enhanced`)
+
+**State Management**:
+
+- Avoid in-place modifications when possible; create new DataFrames with descriptive names
+- Document which cells modify state vs. create new objects
+- Clear variables that are no longer needed to free memory: `del large_dataframe`
+
+### 8.5 Output Artifact Validation
+
+**Required Output Artifacts** (Phase 9.1-9.8 aligned):
+
+- `outputs/eda/` — EDA visualizations and reports
+- `outputs/features/` — Feature importance and selection results
+- `outputs/classification/` — Classification models and metrics
+- `outputs/regression/regression_predictions_detailed.csv` — Standardized predictions schema
+- `outputs/regression/quantile_predictions.csv` — Quantile predictions
+- `outputs/regression/regression_metrics_by_sector.csv` — Sector-level metrics
+- `outputs/analytics/` — Mispricing scores, analyst comparison
+- `outputs/plots/` — Interactive visualizations (HTML)
+
+**Validation Checklist**:
+
+```python
+# After Section 6 (Regression)
+required_files = [
+    OUTPUT_DIR / "regression" / "regression_predictions_detailed.csv",
+    OUTPUT_DIR / "regression" / "quantile_predictions.csv",
+    OUTPUT_DIR / "regression" / "regression_metrics_by_sector.csv",
+    ]
+for filepath in required_files:
+    assert filepath.exists(), f"Missing required output: {filepath}"
+    assert filepath.stat().st_size > 0, f"Empty output file: {filepath}"
+print("✓ All required regression artifacts validated")
+```
+
+**Schema Validation**:
+
+- Verify standardized predictions schema columns (Section 2.2)
+- Check for non-negative intervals: `pred_p10 ≤ pred_p50 ≤ pred_p90`
+- Validate sector metrics CSV has expected columns and non-zero rows
+
+---
+
+## Section 9: Performance Optimization Guidelines (Phase 10)
+
+### 9.1 Quantile Calibration Standards
+
+**Coverage Target**: 75-85% empirical coverage (target: 80%)
+
+**Calibration Procedure**:
+
+1. Train quantile regression models with proper loss function:
+    - GradientBoostingRegressor with `loss='quantile'` and `alpha` parameter
+    - Use TimeSeriesSplit to prevent leakage
+2. Apply conformal calibration on separate calibration set
+3. Enforce monotonicity: `pred_p10 ≤ pred_p50 ≤ pred_p90` post-prediction
+4. Clip lower bounds at 0 for price predictions (non-negativity)
+5. Validate coverage per sector (within ±10% of overall target)
+
+**Validation Metrics**:
+
+```python
+# Compute empirical coverage
+coverage = ((y_true >= pred_p10) & (y_true <= pred_p90)).mean()
+assert 0.75 <= coverage <= 0.85, f"Coverage {coverage:.1%} outside target range 75-85%"
+
+# Check monotonicity
+assert (pred_p10 <= pred_p50).all(), "Monotonicity violated: p10 > p50"
+assert (pred_p50 <= pred_p90).all(), "Monotonicity violated: p50 > p90"
+
+# Verify non-negativity for prices
+assert (pred_p10 >= 0).all(), "Negative lower bound detected in price predictions"
+```
+
+**TDD Requirement**: `tests/test_quantile_calibration_coverage.py` must validate these properties
+
+### 9.2 Outlier Handling Policies
+
+**Outlier Definition**:
+
+- **Mild outliers**: Absolute percentage error > 100%
+- **Severe outliers**: Absolute percentage error > 500%
+- **Catastrophic outliers**: Absolute percentage error > 1,000%
+
+**Detection Thresholds**:
+
+- Mean/median error ratio > 3x indicates outlier problem
+- Max error > 1,000% requires investigation
+- > 1% predictions with >500% error is unacceptable
+
+**Filtering Strategy**:
+
+1. **Pre-training**: Winsorize target at [1st, 99th] percentiles
+2. **Post-prediction**: Clip predictions to `mean ± 3·std` of training target
+3. **Confidence scoring**: Assign confidence based on feature completeness and prediction uncertainty
+4. **Quality flagging**: Add `prediction_quality` column: {high, medium, low}
+
+**Confidence Score Calculation**:
+
+```python
+def calculate_prediction_confidence(df, feature_cols, interval_width):
+    """
+    Calculate confidence score (0-1) based on:
+    - Feature completeness (% non-null)
+    - Prediction interval width (lower is better)
+    - Sector-specific volatility adjustment
+    """
+    completeness = df[feature_cols].notna().mean(axis=1)
+    interval_score = 1 - np.clip(interval_width / interval_width.median(), 0, 1)
+    confidence = (completeness * 0.6) + (interval_score * 0.4)
+    return confidence
+
+
+# Apply quality flags
+df['confidence_score'] = calculate_prediction_confidence(df, feature_cols, df['interval_width'])
+df['prediction_quality'] = pd.cut(
+        df['confidence_score'],
+        bins=[0, 0.5, 0.75, 1.0],
+        labels=['low', 'medium', 'high']
+        )
+```
+
+**Reporting Strategy**:
+
+- Always report metrics for both **all predictions** and **high-confidence only**
+- Identify and log top-k outliers for manual inspection
+- Export outlier diagnostics: `outputs/evaluation/outlier_analysis.csv`
+
+**TDD Requirement**: `tests/test_outlier_prediction_filtering.py` must validate filtering logic
+
+### 9.3 Sector-Specific Modeling Criteria
+
+**When to Use Sector-Specific Models**:
+
+- Sector has ≥100 samples in training set (MIN_SECTOR_SAMPLES threshold)
+- Global model achieves >150% mean absolute percentage error for sector
+- Sector has unique feature importance patterns (>30% different from global)
+
+**Sector Model Training Procedure**:
+
+1. Filter training data by sector
+2. Apply sector-specific feature engineering (e.g., commodity prices for Energy)
+3. Tune hyperparameters separately using Optuna (≥30 trials)
+4. Validate performance vs. global model on hold-out set
+5. Use sector model only if it improves MAE by ≥10%
+
+**Fallback Strategy**:
+
+```python
+# Train global model first
+global_model = train_global_model(X_train, y_train)
+
+# Train sector-specific models
+sector_models = {}
+for sector in sectors_needing_optimization:
+    if len(X_train[X_train['sector'] == sector]) >= MIN_SECTOR_SAMPLES:
+        sector_model = train_sector_model(X_train, y_train, sector)
+        if sector_model.mae < global_model.mae * 0.9:  # 10% improvement
+            sector_models[sector] = sector_model
+        else:
+            print(f"Sector {sector}: Using global model (no improvement)")
+
+
+# Prediction routing
+def predict_with_sector_routing(X, global_model, sector_models):
+    predictions = np.zeros(len(X))
+    for i, row in X.iterrows():
+        sector = row['sector']
+        model = sector_models.get(sector, global_model)
+        predictions[i] = model.predict(row.values.reshape(1, -1))
+    return predictions
+```
+
+**Performance Thresholds**:
+
+- **Best**: <60% mean absolute percentage error
+- **Good**: 60-100% mean absolute percentage error
+- **Acceptable**: 100-150% mean absolute percentage error
+- **Needs optimization**: >150% mean absolute percentage error
+
+**TDD Requirement**: `tests/test_sector_specific_models.py` must validate sector model selection logic
+
+### 9.4 Bias Correction Procedures
+
+**When to Apply Bias Correction**:
+
+- Systematic over-prediction or under-prediction detected (mean bias > ±10)
+- Sector-specific bias patterns identified (>±20 difference between sectors)
+- Temporal drift detected (predictions increasingly biased over time)
+
+**Bias Correction Methods**:
+
+**1. Additive Sector Bias Correction** (simplest):
+
+```python
+# Calculate sector-wise bias on validation set
+sector_bias = val_df.groupby('sector').apply(lambda x: (x['y_pred'] - x['y_true']).mean())
+
+# Apply correction
+df['y_pred_calibrated'] = df.apply(
+        lambda row: row['y_pred'] - sector_bias.get(row['sector'], 0),
+        axis=1
+        )
+```
+
+**2. Isotonic Regression Calibration** (recommended):
+
+```python
+from sklearn.isotonic import IsotonicRegression
+
+# Train isotonic calibrator per sector
+isotonic_models = {}
+for sector in sectors:
+    sector_data = val_df[val_df['sector'] == sector]
+    iso = IsotonicRegression(out_of_bounds='clip')
+    iso.fit(sector_data['y_pred'], sector_data['y_true'])
+    isotonic_models[sector] = iso
+
+# Apply calibration
+df['y_pred_calibrated'] = df.apply(
+        lambda row: isotonic_models[row['sector']].transform([row['y_pred']])[0],
+        axis=1
+        )
+```
+
+**3. Market Cap Bucket Correction**:
+
+- Separate bias correction for small-cap (<$2B), mid-cap ($2-10B), large-cap (>$10B)
+- Small-caps often have higher prediction errors; apply stronger correction
+
+**Validation Requirements**:
+
+- Bias correction must not break monotonicity of quantile predictions
+- Non-negativity must be preserved (clip at 0 for prices)
+- Document bias reduction achieved: `(original_bias - corrected_bias) / original_bias`
+
+**TDD Requirement**: `tests/test_bias_correction_isotonic.py` must validate calibration logic
+
+### 9.5 Integration Testing for Optimization Features
+
+**End-to-End Validation**:
+
+```python
+# After training and applying all optimizations
+def validate_optimization_success(results_df):
+    """Validate that all Phase 10 optimizations were successfully applied."""
+
+    # 1. Quantile coverage validation
+    coverage = ((results_df['y_true'] >= results_df['pred_p10']) &
+                (results_df['y_true'] <= results_df['pred_p90'])).mean()
+    assert 0.75 <= coverage <= 0.85, f"Coverage {coverage:.1%} outside 75-85% target"
+
+    # 2. Outlier reduction validation
+    mean_error = results_df['pct_error'].abs().mean()
+    median_error = results_df['pct_error'].abs().median()
+    ratio = mean_error / median_error
+    assert ratio < 3, f"Mean/median error ratio {ratio:.1f}x still too high (target: <3x)"
+
+    # 3. Sector performance validation
+    sector_errors = results_df.groupby('sector')['pct_error'].apply(lambda x: x.abs().mean())
+    worst_sectors = sector_errors.nlargest(3)
+    for sector, error in worst_sectors.items():
+        if sector == 'Real Estate':
+            assert error < 200, f"{sector} error {error:.1f}% exceeds 200% target"
+        elif sector in ['Materials', 'Energy']:
+            assert error < 150, f"{sector} error {error:.1f}% exceeds 150% target"
+
+    # 4. Bias reduction validation
+    sector_bias = results_df.groupby('sector').apply(
+            lambda x: (x['y_pred_calibrated'] - x['y_true']).mean()
+            )
+    max_bias = sector_bias.abs().max()
+    assert max_bias < 30, f"Max sector bias {max_bias:.1f} exceeds ±30 target"
+
+    print("✅ All Phase 10 optimization targets validated successfully")
+```
+
+**Performance Baseline Tracking**:
+
+- Record baseline metrics before optimization
+- Track improvement percentages for each optimization
+- Export comparison report: `outputs/evaluation/optimization_impact_report.csv`
+
+---
+
+**Document Version:** 1.3 (Phase 10 Enhanced)  
 **Last Updated:** 2025-11-13  
-**Synchronized with:** CHANGELOG.md v0.7.0, README.md v0.7.0, Phase_9.3_feature_enhancement_plan.md
+**Synchronized with:** CHANGELOG.md v0.7.0, README.md v0.7.0, finance_ml_improvement_plan.md Phase 10

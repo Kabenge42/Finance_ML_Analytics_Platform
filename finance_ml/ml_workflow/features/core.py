@@ -62,7 +62,7 @@ def preprocess_for_lightgbm(
         >>> df_processed, _ = preprocess_for_lightgbm(
         ...     df,
         ...     categorical_columns=['sector', 'industry', 'region'],
-        ...     datetime_columns=['next_earnings', 'last_updated'],
+        ...     datetime_columns=['next_earnings', 'last_updated','income_statement_report_date'],
         ...     drop_columns=['description', 'ticker']
         ... )
         >>>

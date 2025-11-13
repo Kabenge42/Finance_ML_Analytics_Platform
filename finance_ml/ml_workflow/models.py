@@ -355,7 +355,7 @@ def train_and_evaluate_regression(
             apply_enhanced_imputation_strategy_4step,
         )
 
-        # Apply 4-step imputation to the full dataset (includes all rows)
+        # Apply 6-step imputation to the full dataset (includes all rows)
         df_full_clean = apply_enhanced_imputation_strategy_4step(
             df=df_original.copy(),
             sector_column="sector" if "sector" in df_original.columns else None,

@@ -396,7 +396,7 @@ if 'sector' in all_stocks_phase95.columns:
 The critical functions for:
 
 - ✅ Zero model training failures (validate_training_data)
-- ✅ Consistent predictions across sectors (4-step imputation)
+- ✅ Consistent predictions across sectors (6-step imputation)
 - ✅ Reliable deployment (graceful fallback, outlier handling)
 
 Are all properly integrated.

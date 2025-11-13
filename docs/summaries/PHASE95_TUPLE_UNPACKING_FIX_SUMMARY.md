@@ -251,7 +251,7 @@ Kernel → Restart Kernel
 
 1. Run imports and configuration cells (Cells 1-20)
 2. Run data loading cells (Cells 21-50)
-3. Run Phase 9.1: 4-step imputation (Cell ~78)
+3. Run Phase 9.1: 6-step imputation (Cell ~78)
 4. Run Phase 9.4: Classification (Cell ~130)
 5. Run Phase 9.5: Regression (Cell 140) ← **Fixed cell**
 

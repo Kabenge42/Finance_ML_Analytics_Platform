@@ -432,7 +432,7 @@ class TestValidateImputationCompleteness(unittest.TestCase):
 
 
 class TestBackwardCompatibility(unittest.TestCase):
-    """Test backward compatibility for 4-step function."""
+    """Test backward compatibility for 6-step function."""
 
     def setUp(self):
         """Create sample data."""
@@ -448,7 +448,7 @@ class TestBackwardCompatibility(unittest.TestCase):
         )
 
     def test_4step_wrapper_calls_6step(self):
-        """4-step function should be a wrapper calling 6-step."""
+        """6-step function should be a wrapper calling 6-step."""
         from finance_ml.ml_workflow.preprocessing.imputation import (
             apply_enhanced_imputation_strategy_4step,
         )
@@ -462,7 +462,7 @@ class TestBackwardCompatibility(unittest.TestCase):
         self.assertEqual(numeric_missing, 0)
 
     def test_4step_maintains_signature(self):
-        """4-step function should maintain original signature."""
+        """6-step function should maintain original signature."""
         from finance_ml.ml_workflow.preprocessing.imputation import (
             apply_enhanced_imputation_strategy_4step,
         )

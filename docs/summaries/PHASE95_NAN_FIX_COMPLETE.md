@@ -227,10 +227,10 @@ PHASE 9.5 — SECTOR-OPTIMIZED REGRESSION MODELS WITH CLASSIFICATION FEATURES
   
   📊 Missing Values BEFORE Imputation: 394,975
   
-  🔧 Applying 4-step imputation strategy...
-  [4-step imputation logs...]
+  🔧 Applying 6-step imputation strategy...
+  [6-step imputation logs...]
   
-  📊 Missing Values AFTER 4-Step Imputation: 0
+  📊 Missing Values AFTER 6-step Imputation: 0
   ✓ Zero NaN and infinite values confirmed
   
   Step 3.2: Extracting features and creating train/test split...
@@ -268,7 +268,7 @@ PHASE 9.5 COMPLETE — SECTOR-OPTIMIZED REGRESSION MODELS
 
 ### Why the Fix Works
 
-1. **Comprehensive Imputation**: `prepare_phase95_data()` applies the 4-step imputation strategy:
+1. **Comprehensive Imputation**: `prepare_phase95_data()` applies the 6-step imputation strategy:
     - Step 1: Zero imputation (48 columns) - exceptional events
     - Step 2: Sector-aware KNN imputation (148 columns) - financial metrics
     - Step 3: Price imputation (5 columns) - price targets

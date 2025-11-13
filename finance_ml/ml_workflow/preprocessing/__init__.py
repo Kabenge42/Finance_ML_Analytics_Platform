@@ -3,7 +3,7 @@ Preprocessing subpackage for finance_ml.ml_workflow.
 
 This package provides comprehensive data preprocessing functionality:
 - data: Data loading, normalization, and validation functions
-- imputation: 4-step imputation strategy (zero, KNN, price, median)
+- imputation: 6-step imputation strategy (zero, KNN, price, median)
 - outliers: Outlier detection and handling (IQR, Z-score, Isolation Forest)
 - scaling: Feature scaling with sector awareness
 - quality: Data quality assessment and scoring

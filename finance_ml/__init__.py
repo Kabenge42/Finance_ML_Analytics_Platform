@@ -96,7 +96,7 @@ try:
         impute_missing_values_knn_sector,
         create_scaler_pipeline,
         scale_features,
-        # Phase 9.1: Enhanced 4-Step Imputation Strategy
+        # Phase 9.1: Enhanced 6-step Imputation Strategy
         get_zero_imputation_columns,
         get_knn_imputation_columns,
         apply_zero_imputation,
@@ -524,7 +524,7 @@ __all__ = [
     "impute_missing_values_knn_sector",
     "create_scaler_pipeline",
     "scale_features",
-    # Phase 9.1: Enhanced 4-Step Imputation Strategy
+    # Phase 9.1: Enhanced 6-step Imputation Strategy
     "get_zero_imputation_columns",
     "get_knn_imputation_columns",
     "apply_zero_imputation",

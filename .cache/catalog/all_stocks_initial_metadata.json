@@ -7,7 +7,7 @@
     "phase_9.1"
   ],
   "shape": [
-    7030,
+    7029,
     305
   ],
   "columns": [
@@ -317,5 +317,5 @@
     "gross_margin_pct_previous_year",
     "asset_turnover_previous_year"
   ],
-  "checksum": "3644f1e2f1f1c7116609017ff9cdc3eb"
+  "checksum": "a565b8f1482ae251d35243b2b7c1116c"
 }

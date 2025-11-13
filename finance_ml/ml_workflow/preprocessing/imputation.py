@@ -1,7 +1,7 @@
 """
 Imputation module for finance_ml.ml_workflow.preprocessing.
 
-This module provides a comprehensive 4-step imputation strategy for financial data:
+This module provides a comprehensive 6-step imputation strategy for financial data:
 1. Zero imputation for exceptional event columns (48 columns)
 2. Sector-aware KNN imputation for core financial metrics (148 columns)
 3. Price imputation for price target columns
@@ -17,7 +17,7 @@ Functions:
     - apply_knn_imputation_enhanced: Apply KNN imputation (Step 2)
     - apply_price_imputation: Apply price imputation (Step 3)
     - apply_median_imputation: Apply median imputation (Step 4)
-    - apply_enhanced_imputation_strategy_4step: Complete 4-step pipeline
+    - apply_enhanced_imputation_strategy_4step: Complete 6-step pipeline
 
 Extracted from finance_ml.ml_workflow.advanced_preprocessing as part of Phase 9.1 refactor.
 """
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_zero_imputation_columns() -> List[str]:
-    """Return list of columns for zero imputation (Step 1 of 4-step strategy).
+    """Return list of columns for zero imputation (Step 1 of 6-step strategy).
 
     These columns represent rare/exceptional events (impairments, restructuring,
     acquisitions, etc.) where missing values typically mean the event did not occur.
@@ -341,7 +341,7 @@ def apply_datetime_imputation_and_formatting(
 
 
 def get_knn_imputation_columns() -> List[str]:
-    """Return list of columns for KNN imputation (Step 2 of 4-step strategy).
+    """Return list of columns for KNN imputation (Step 2 of 6-step strategy).
 
     These are core financial metrics where KNN can leverage sector relationships
     and correlations to provide better estimates than simple statistics.
@@ -706,7 +706,7 @@ def apply_price_imputation(
     price_column: str = "last_price",
     columns: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-    """Apply price imputation (Step 3 of 4-step strategy).
+    """Apply price imputation (Step 3 of 6-step strategy).
 
     Imputes price target columns using the current last_price as the best
     available estimate when analyst targets are missing.
@@ -768,7 +768,7 @@ def apply_price_imputation(
 
 
 def apply_median_imputation(df: pd.DataFrame) -> pd.DataFrame:
-    """Apply median imputation (Step 4 of 4-step strategy).
+    """Apply median imputation (Step 4 of 6-step strategy).
 
     Fallback imputation strategy that fills any remaining missing values
     in numerical columns with their median values.
@@ -1076,7 +1076,7 @@ def apply_enhanced_imputation_strategy_4step(
     n_neighbors: int = 5,
     price_column: str = "last_price",
 ) -> pd.DataFrame:
-    """Backward compatibility wrapper for 4-step imputation.
+    """Backward compatibility wrapper for 6-step imputation.
 
     DEPRECATED: Use apply_enhanced_imputation_strategy_6step() instead.
     This wrapper calls the 6-step function with categorical and date handling enabled.
@@ -1096,7 +1096,7 @@ def apply_enhanced_imputation_strategy_4step(
         DataFrame with complete imputation applied (zero missing values)
 
     Examples:
-        >>> # Apply complete 4-step imputation pipeline
+        >>> # Apply complete 6-step imputation pipeline
         >>> df_complete = apply_enhanced_imputation_strategy_4step(
         ...     all_stocks,
         ...     sector_column='sector',

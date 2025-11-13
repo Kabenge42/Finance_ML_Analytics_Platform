@@ -41,7 +41,7 @@ implement robust data quality gates, and standardize structure. The notebook was
 - **Simple Median Imputation**: Phase 9.5 used basic `fillna()` which fails on edge cases
 - **No Validation Gates**: Models trained without verifying zero NaN values
 - **Ridge Regression Failures**: NaN values caused training crashes
-- **Missing Best Practice**: 4-step imputation strategy not utilized
+- **Missing Best Practice**: 6-step imputation strategy not utilized
 
 ### 4. Inconsistent Headers
 
@@ -114,7 +114,7 @@ Phase 9.8   : Cell 140 (Comprehensive Analytics)
 - Kept "Phase 9.8 — Comprehensive Analytics" (Cell 154)
 - Result: Single Phase 9.8 section with clear purpose
 
-### D. Implemented 4-Step Imputation Strategy ✓
+### D. Implemented 6-step Imputation Strategy ✓
 
 **Replaced** (Cell ~128, old code):
 
@@ -132,17 +132,17 @@ df = df.fillna(0)  # Still may have NaN!
 
 ```python
 # ============================================================================
-# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 4-STEP IMPUTATION
+# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 6-step IMPUTATION
 # ============================================================================
 from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
 
-print("\n🔧 Step 2.1: Applying 4-step imputation strategy...")
+print("\n🔧 Step 2.1: Applying 6-step imputation strategy...")
 
 # Log NaN counts before imputation
 nan_before = all_stocks_phase95.select_dtypes(include=[np.number]).isnull().sum().sum()
 print(f"  NaN values before imputation: {nan_before:,}")
 
-# Apply comprehensive 4-step imputation
+# Apply comprehensive 6-step imputation
 # Step 1: Zero imputation for exceptional events (48 cols)
 # Step 2: Sector-aware KNN imputation (148 cols)
 # Step 3: Price imputation for price targets (5 cols)
@@ -175,7 +175,7 @@ if inf_count > 0:
 
 **Benefits**:
 
-- **Zero NaN guarantee**: 4-step strategy ensures no missing values
+- **Zero NaN guarantee**: 6-step strategy ensures no missing values
 - **Domain knowledge preserved**: Sector-aware imputation for financial metrics
 - **Comprehensive logging**: Clear visibility into imputation process
 - **Fallback safety**: Emergency cleanup prevents training crashes
@@ -285,7 +285,7 @@ Step 4: Consolidating Phase 9.8 Sections
   ✓ Consolidated 2 Phase 9.8 sections into 1
 
 Step 5: Updating Phase 9.5 Imputation Strategy
-  ✓ Updated to 4-step imputation method
+  ✓ Updated to 6-step imputation method
 
 Step 6: Adding Validation Gates
   ✓ Added validation gate before model training
@@ -324,7 +324,7 @@ Cells removed: 18
 
 **Implementation**:
 
-- ✅ 4-step imputation strategy applied in Phase 9.5 (Cell 128)
+- ✅ 6-step imputation strategy applied in Phase 9.5 (Cell 128)
 - ✅ `apply_enhanced_imputation_strategy_4step()` utilized
 - ✅ Zero NaN guarantee with logging
 - ✅ Infinite value handling
@@ -373,7 +373,7 @@ Cells removed: 18
     - Modular design enables easy updates
 
 4. **Domain Knowledge Preservation**
-    - 4-step imputation uses financial domain expertise
+    - 6-step imputation uses financial domain expertise
     - Sector-specific KNN for accurate imputation
     - Price target imputation from last_price (5 columns)
 
@@ -440,7 +440,7 @@ OK
 1. **ml_finance_model_main_backup.ipynb**
     - 160 → 142 cells (18 removed)
     - Phase ordering corrected
-    - 4-step imputation implemented
+   - 6-step imputation implemented
     - Validation gates added
     - Headers standardized
 
@@ -485,7 +485,7 @@ OK
 - ✅ Remove duplicate Phase 9.3 section
 - ✅ Fix phase ordering (9.1 → 9.2 → ... → 9.8)
 - ✅ Consolidate Phase 9.7 and 9.8 sections
-- ✅ Implement 4-step imputation in Phase 9.5
+- ✅ Implement 6-step imputation in Phase 9.5
 - ✅ Add validation gates before model training
 - ✅ Standardize section headers
 - ✅ Create comprehensive documentation
@@ -530,7 +530,7 @@ OK
 
 3. **README.md**
     - Phase 9 implementation status
-    - 4-step imputation strategy documentation
+   - 6-step imputation strategy documentation
     - ML workflow overview
 
 ### Code References
@@ -555,7 +555,7 @@ The comprehensive notebook restructuring successfully addressed all identified i
 
 1. ✅ **Eliminated 18 duplicate/misplaced cells** (11.3% reduction)
 2. ✅ **Fixed phase ordering** (9.1 → 9.2 → ... → 9.8)
-3. ✅ **Implemented robust data quality gates** (4-step imputation + validation)
+3. ✅ **Implemented robust data quality gates** (6-step imputation + validation)
 4. ✅ **Standardized structure** (consistent headers, clear sections)
 5. ✅ **Aligned with ML Workflow Improvement Plan** (Priority 1 & 3 complete)
 

@@ -27,7 +27,7 @@ All 8 critical issues identified in `docs/ML_Workflow_Improvement_Plan.md` have 
 ### 3. ✅ Missing Import: `apply_enhanced_imputation_strategy_4step`
 
 - **Fixed**: Added `from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step` (line 4096)
-- **Impact**: 4-step imputation strategy available for data preprocessing
+- **Impact**: 6-step imputation strategy available for data preprocessing
 - **Reference**: Function exists at `finance_ml/advanced_preprocessing.py:1097`
 
 ### 4. ✅ Missing Import: `validate_training_data`
@@ -321,7 +321,7 @@ While all critical issues are fixed, the following enhancements could further im
     - Generate automated data quality reports
 
 3. **A/B Testing** (Low Priority)
-    - Compare 4-step imputation vs. simple median imputation
+    - Compare 6-step imputation vs. simple median imputation
     - Measure impact on prediction accuracy
 
 ---

@@ -63,7 +63,7 @@ from reaching model training. All 16 unit tests pass (100% success rate).
 
 - Pre-model training imputation checkpoint
 - Extracts target BEFORE imputation to preserve NaN for removal
-- Applies 4-step imputation strategy on features
+- Applies 6-step imputation strategy on features
 - Handles infinite values and residual NaN with emergency fallback
 - Returns zero-NaN X and y ready for training
 
@@ -142,7 +142,7 @@ Based on ML Workflow Improvement Plan projections:
 
 ### Leverages Existing Infrastructure
 
-1. **4-Step Imputation** (`finance_ml/advanced_preprocessing.py`, lines 1097-1176):
+1. **6-step Imputation** (`finance_ml/advanced_preprocessing.py`, lines 1097-1176):
     - Already implemented and tested (21 tests in `test_enhanced_imputation.py`)
     - Guarantees zero NaN after application
     - `prepare_features_for_training()` uses this as the foundation
@@ -183,21 +183,21 @@ if nan_before > 0:
     df = df.fillna(0)
 ```
 
-**Replacement Code** (4-Step Imputation):
+**Replacement Code** (6-step Imputation):
 
 ```python
 # ============================================================================
-# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 4-STEP IMPUTATION
+# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 6-step IMPUTATION
 # ============================================================================
 from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
 
-print("\n🔧 Step 2.1: Applying 4-step imputation strategy...")
+print("\n🔧 Step 2.1: Applying 6-step imputation strategy...")
 
 # Log NaN counts before imputation
 nan_before = all_stocks_phase95.select_dtypes(include=[np.number]).isnull().sum().sum()
 print(f"  NaN values before imputation: {nan_before:,}")
 
-# Apply comprehensive 4-step imputation
+# Apply comprehensive 6-step imputation
 all_stocks_phase95 = apply_enhanced_imputation_strategy_4step(
     df=all_stocks_phase95,
     sector_column='sector',
@@ -269,7 +269,7 @@ if inf_count > 0:
 
 **Rationale**:
 
-1. Leverages existing, tested 4-step imputation strategy (21 existing tests)
+1. Leverages existing, tested 6-step imputation strategy (21 existing tests)
 2. All new code covered by unit tests (100% pass rate)
 3. Emergency fallback (`fillna(0)`) ensures training never crashes
 4. Non-breaking changes (new functions, no modifications to existing APIs)
@@ -324,7 +324,7 @@ TDD methodology:
 
 **Next Actions**:
 
-1. Update notebook Cell 147 with 4-step imputation (instructions provided above)
+1. Update notebook Cell 147 with 6-step imputation (instructions provided above)
 2. Run notebook end-to-end to verify 100% training success
 3. Consider Priority 2 (graceful model fallback) and Priority 4 (model reordering) as future enhancements
 

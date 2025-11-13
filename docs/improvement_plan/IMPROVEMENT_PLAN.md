@@ -1365,7 +1365,7 @@ advanced techniques from industry-standard ML references:
   - [x] **Summary Documentation**: PHASE_9_1_ENHANCEMENTS_SUMMARY.md with API docs and integration guide
   - [x] **Notebook Integration**: Section 9.1.6 with 218 lines of comprehensive examples
 
-- [x] **Phase 9.1 Enhanced 4-Step Imputation Strategy** (Complete - v0.4.1, 2025-11-03)
+- [x] **Phase 9.1 Enhanced 6-step Imputation Strategy** (Complete - v0.4.1, 2025-11-03)
   - [x] **Implementation Guide**: Implement__9.1_Loading_and_Preprocessing_Enhanced.md with complete TDD strategy
   - [x] **Step 1: Zero Imputation** (48 columns)
     - [x] `get_zero_imputation_columns()` - Returns 48 exceptional event columns
@@ -1395,7 +1395,7 @@ advanced techniques from industry-standard ML references:
     - [x] Implementation guide: Implement__9.1_Loading_and_Preprocessing_Enhanced.md (873 lines)
     - [x] Column mapping reference: Schema → Python normalized names
     - [x] TDD approach: Red-green-refactor cycle with ≥80% coverage requirement met
-  - [x] **Summary**: Complete 4-step imputation pipeline ensures zero missing values using economically sensible
+  - [x] **Summary**: Complete 6-step imputation pipeline ensures zero missing values using economically sensible
     strategies (zero for rare events, KNN for financials, last_price for targets, median fallback)
 
 - [ ] **Future Enhancements** (Deferred to future phases)

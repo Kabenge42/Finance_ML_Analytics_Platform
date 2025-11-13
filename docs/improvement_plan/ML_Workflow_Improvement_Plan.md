@@ -9,7 +9,7 @@
 ### Executive Summary
 
 The regression model execution failed due to insufficient NaN handling in Phase 9.5. While the project has a
-comprehensive **4-step imputation strategy** (`apply_enhanced_imputation_strategy_4step()`), the notebook implementation
+comprehensive **6-step imputation strategy** (`apply_enhanced_imputation_strategy_4step()`), the notebook implementation
 uses only simple median imputation, which fails to eliminate all missing values before model training.
 
 **Critical Finding**: The error is a **data pipeline integration gap**, not a missing capability. The solution already
@@ -55,7 +55,7 @@ model.fit(X_train, y_train)  # ← NaN values present in X_train
 
 ### Immediate Fix (Phase 9.5 Notebook Cell)
 
-#### Replace Simple Imputation with 4-Step Strategy
+#### Replace Simple Imputation with 6-step Strategy
 
 **Current Code** (Cell 147, lines 137-162):
 
@@ -77,17 +77,17 @@ if nan_before > 0:
 
 ```python
 # ============================================================================
-# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 4-STEP IMPUTATION
+# STEP 2.1: COMPREHENSIVE NaN HANDLING WITH 6-step IMPUTATION
 # ============================================================================
 from finance_ml.advanced_preprocessing import apply_enhanced_imputation_strategy_4step
 
-print("\n🔧 Step 2.1: Applying 4-step imputation strategy...")
+print("\n🔧 Step 2.1: Applying 6-step imputation strategy...")
 
 # Log NaN counts before imputation
 nan_before = all_stocks_phase95.select_dtypes(include=[np.number]).isnull().sum().sum()
 print(f"  NaN values before imputation: {nan_before:,}")
 
-# Apply comprehensive 4-step imputation
+# Apply comprehensive 6-step imputation
 # Step 1: Zero imputation for exceptional events (48 cols)
 # Step 2: Sector-aware KNN imputation (148 cols)
 # Step 3: Price imputation for price targets (5 cols)
@@ -313,7 +313,7 @@ def prepare_features_for_training(
         df: Input DataFrame
         feature_cols: Feature column names
         target_col: Target column name
-        apply_imputation: If True, apply 4-step imputation before extraction
+        apply_imputation: If True, apply 6-step imputation before extraction
         sector_column: Sector column for KNN imputation
     
     Returns:
@@ -433,7 +433,7 @@ def apply_sector_specific_imputation(
     sector_column: str = "sector"
 ) -> pd.DataFrame:
     """
-    Apply sector-specific imputation rules before 4-step imputation.
+    Apply sector-specific imputation rules before 6-step imputation.
     
     Sector-Specific Rules:
     - Financials: Prioritize book value, ROE, leverage metrics
@@ -598,7 +598,7 @@ python -m unittest tests.test_data_validation -v
 
 #### Immediate (Fix Current Error) — 1-2 hours
 
-- [x] **Notebook Fix**: Replace Cell 147 lines 137-162 with 4-step imputation
+- [x] **Notebook Fix**: Replace Cell 147 lines 137-162 with 6-step imputation
 - [ ] **Test**: Run Phase 9.5 end-to-end and verify zero errors
 - [ ] **Validate**: Check `regression_predictions_phase95.csv` is created
 
@@ -624,7 +624,7 @@ python -m unittest tests.test_data_validation -v
 - [ ] **Imputation strategy versioning**: Log which strategy was used for each model run
 - [ ] **Automated data quality reports**: Generate HTML report before each training run
 - [ ] **CI/CD integration**: Add data validation to GitHub Actions workflow
-- [ ] **A/B testing**: Compare 4-step imputation vs. simple median imputation
+- [ ] **A/B testing**: Compare 6-step imputation vs. simple median imputation
 
 ---
 
@@ -644,7 +644,7 @@ python -m unittest tests.test_data_validation -v
 
 #### Existing Implementations to Leverage
 
-1. **4-Step Imputation** (`finance_ml/advanced_preprocessing.py`, lines 1097-1176):
+1. **6-step Imputation** (`finance_ml/advanced_preprocessing.py`, lines 1097-1176):
     - Already implemented and tested (21 tests in `test_enhanced_imputation.py`)
     - Guarantees zero NaN after application
     - Used in Phase 9.1 but NOT in Phase 9.5
@@ -682,7 +682,7 @@ Contents:
 
 ### Conclusion
 
-The regression model error is **immediately fixable** by replacing simple median imputation with the existing 4-step
+The regression model error is **immediately fixable** by replacing simple median imputation with the existing 6-step
 imputation strategy. However, this reveals a deeper need for **systematic data validation gates** throughout the ML
 pipeline.
 

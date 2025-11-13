@@ -5,7 +5,7 @@ Part of Phase 9.1 refactor: Provides unified entry points for preprocessing work
 
 This module provides:
 - prepare_phase91_data: Complete Phase 9.1 preprocessing pipeline
-  (4-step imputation, outlier detection, winsorization, scaling, quality assessment)
+  (6-step imputation, outlier detection, winsorization, scaling, quality assessment)
 
 Future additions:
 - prepare_phase95_data: Regression-specific preprocessing with classification features
@@ -48,7 +48,7 @@ def prepare_phase91_data(
     """Complete Phase 9.1 preprocessing pipeline.
 
     Applies the full preprocessing workflow:
-    1. 4-step imputation strategy (zero, price, KNN, median)
+    1. 6-step imputation strategy (zero, price, KNN, median)
     2. Optional outlier detection (IQR, Z-score, Isolation Forest)
     3. Optional winsorization by sector
     4. Optional feature scaling by sector
@@ -85,8 +85,8 @@ def prepare_phase91_data(
     stats["initial_quality"] = initial_quality
     logger.info(f"Initial quality score: {initial_quality.overall_score:.2%}")
 
-    # Step 1: Apply 4-step imputation strategy
-    logger.info("Applying 4-step imputation strategy...")
+    # Step 1: Apply 6-step imputation strategy
+    logger.info("Applying 6-step imputation strategy...")
     df_imputed = apply_enhanced_imputation_strategy_4step(
         df=df,
         sector_column=sector_column,

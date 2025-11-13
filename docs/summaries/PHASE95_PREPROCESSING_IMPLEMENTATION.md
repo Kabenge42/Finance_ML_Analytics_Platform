@@ -39,7 +39,7 @@ ValueError: Input X contains NaN
 - `p_e_ntm`, `p_e_ltm`
 - Many others
 
-The Phase 9.5 data preparation didn't apply the 4-step imputation strategy from Phase 9.1, causing model training to
+The Phase 9.5 data preparation didn't apply the 6-step imputation strategy from Phase 9.1, causing model training to
 fail.
 
 ---
@@ -57,7 +57,7 @@ training.
 
 - ✅ Validates required columns (sector, price)
 - ✅ Validates DataFrame is not empty
-- ✅ Applies 4-step imputation strategy automatically
+- ✅ Applies 6-step imputation strategy automatically
 - ✅ Handles infinite values (replaces with NaN, re-imputes)
 - ✅ Emergency fallback with `fillna(0)`
 - ✅ Final validation to confirm zero NaN/Inf
@@ -80,7 +80,7 @@ def prepare_phase95_data(
 
 1. **Validation**: Check for empty DataFrame and required columns
 2. **Statistics Logging**: Log NaN counts before imputation
-3. **4-Step Imputation**: Apply comprehensive imputation strategy:
+3. **6-step Imputation**: Apply comprehensive imputation strategy:
    - Step 1: Zero imputation (48 columns) - exceptional events
    - Step 2: Sector-aware KNN imputation (148 columns) - financial metrics
    - Step 3: Price imputation (5 columns) - price targets from last_price
@@ -103,7 +103,7 @@ def prepare_phase95_data(
    - 171+ columns scenario
 
 2. `TestPhase95IntegrationWithImputation` (3 tests)
-   - Integration with 4-step imputation
+    - Integration with 6-step imputation
    - Logging verification
    - Statistics reporting
 
@@ -190,7 +190,7 @@ if 'all_stocks_phase95' not in locals():
    else:
       raise ValueError("Phase 9.4 must complete successfully before Phase 9.5")
 
-# Apply comprehensive data preparation with 4-step imputation
+# Apply comprehensive data preparation with 6-step imputation
 print("\n🔧 Applying comprehensive data preparation pipeline...")
 all_stocks_phase95 = prepare_phase95_data(
         df=all_stocks_phase95,
@@ -225,10 +225,10 @@ Phase 9.5 Data Preparation - Comprehensive Imputation Pipeline
     - price_target_ytd_ago: XXX NaN values
     ...
 
-🔧 Applying 4-step imputation strategy...
-[4-step imputation logs...]
+🔧 Applying 6-step imputation strategy...
+[6-step imputation logs...]
 
-📊 Missing Values AFTER 4-Step Imputation: 0
+📊 Missing Values AFTER 6-step Imputation: 0
 
 🔧 Checking for infinite values...
   ✓ No infinite values detected

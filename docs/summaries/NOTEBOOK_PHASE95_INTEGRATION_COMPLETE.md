@@ -45,8 +45,8 @@ from finance_ml.advanced_preprocessing import (
 **Before** (28 lines of manual imputation):
 
 ```python
-# Step 3.1: Apply 4-step imputation strategy to entire dataframe
-print("\n  Step 3.1: Applying 4-step imputation strategy...")
+# Step 3.1: Apply 6-step imputation strategy to entire dataframe
+print("\n  Step 3.1: Applying 6-step imputation strategy...")
 
 nan_before = df.select_dtypes(include=[np.number]).isnull().sum().sum()
 print(f"    NaN values before imputation: {nan_before:,}")
@@ -169,10 +169,10 @@ Phase 9.5 Data Preparation - Comprehensive Imputation Pipeline
     - price_target_ytd_ago: XXX NaN values
     ...
 
-🔧 Applying 4-step imputation strategy...
-[4-step imputation logs showing Step 1, 2, 3, 4]
+🔧 Applying 6-step imputation strategy...
+[6-step imputation logs showing Step 1, 2, 3, 4]
 
-📊 Missing Values AFTER 4-Step Imputation: 0
+📊 Missing Values AFTER 6-step Imputation: 0
 
 🔧 Checking for infinite values...
   ✓ No infinite values detected

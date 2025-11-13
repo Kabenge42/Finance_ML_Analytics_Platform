@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides instructions for manually integrating the **Section 9.1.8: Enhanced 4-Step Imputation Strategy**
+This document provides instructions for manually integrating the **Section 9.1.8: Enhanced 6-step Imputation Strategy**
 into `ml_finance_model_main.ipynb`.
 
 ## Status
@@ -36,9 +36,9 @@ Line 887: #%% md
 ```
 Line 866-886: [Existing Section 9.1.6.5]
 [NEW] Line 887: #%% md
-              ### 9.1.8 Enhanced 4-Step Imputation Strategy (Phase 9.1 Complete)
+              ### 9.1.8 Enhanced 6-step Imputation Strategy (Phase 9.1 Complete)
 [NEW] Line 888: #%%
-              [Code cell with 4-step imputation demonstration]
+              [Code cell with 6-step imputation demonstration]
 Line 889+: #%% md
            ## Phase 9.2 — Advanced Exploratory Data Analysis
 ```
@@ -58,7 +58,7 @@ Line 889+: #%% md
 
 3. **Insert a new Markdown cell** with this content:
    ```markdown
-   ### 9.1.8 Enhanced 4-Step Imputation Strategy (Phase 9.1 Complete)
+   ### 9.1.8 Enhanced 6-step Imputation Strategy (Phase 9.1 Complete)
 
    Complete imputation pipeline ensuring zero missing values:
    1. **Step 1: Zero Imputation** (48 columns) - Exceptional events (impairments, restructuring)
@@ -92,7 +92,7 @@ phase92_idx = next(
 )
 
 # Create new cells
-markdown_content = """### 9.1.8 Enhanced 4-Step Imputation Strategy (Phase 9.1 Complete)
+markdown_content = """### 9.1.8 Enhanced 6-step Imputation Strategy (Phase 9.1 Complete)
 
 Complete imputation pipeline ensuring zero missing values:
 1. **Step 1: Zero Imputation** (48 columns) - Exceptional events (impairments, restructuring)
@@ -128,7 +128,7 @@ After integration:
 
 1. **Run the notebook** through Section 9.1.8 to verify:
     - All imports resolve correctly
-    - The 4-step imputation executes without errors
+   - The 6-step imputation executes without errors
     - Visualizations render correctly
     - Output shows zero missing values after imputation
 
@@ -139,10 +139,10 @@ After integration:
 
 3. **Expected output**:
    ```
-   9.1.8 ENHANCED 4-STEP IMPUTATION STRATEGY
+   9.1.8 ENHANCED 6-step IMPUTATION STRATEGY
    ================================================================================
    
-   4-Step Imputation Strategy:
+   6-step Imputation Strategy:
      Step 1: Zero Imputation      → 48 columns (exceptional events)
      Step 2: KNN Imputation       → 148 columns (financial metrics)
      Step 3: Price Imputation     → 5 columns (price targets)
@@ -152,14 +152,14 @@ After integration:
    Step 2 (KNN): 148 defined, Y available
    Step 3 (Price): 5 defined, Z available
    
-   Applying 4-step imputation strategy...
+   Applying 6-step imputation strategy...
    
    Imputation Results:
      Missing values before: N,NNN
      Missing values after:  0
      Reduction:            N,NNN (100.0%)
    
-   ✓ Enhanced 4-step imputation strategy completed successfully!
+   ✓ Enhanced 6-step imputation strategy completed successfully!
      ✓ Zero missing values in output: True
      ✓ Visualization saved to: outputs\phase_9_1_4step_imputation.png
    ```

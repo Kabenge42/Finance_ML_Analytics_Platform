@@ -199,11 +199,11 @@ class TestSection2DataLoading(unittest.TestCase):
         )
 
     def test_uses_4step_imputation(self):
-        """Test uses 4-step imputation strategy from package."""
+        """Test uses 6-step imputation strategy from package."""
         self.assertIn(
             "apply_enhanced_imputation_strategy_4step",
             self.content,
-            "Must use 4-step imputation from advanced_preprocessing",
+            "Must use 6-step imputation from advanced_preprocessing",
         )
 
     def test_validates_schema(self):

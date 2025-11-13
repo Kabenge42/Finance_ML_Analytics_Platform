@@ -99,7 +99,7 @@ predictions = model.predict(X_test)  # All predictions >= 0
 6. **`prepare_features_for_training(df, feature_cols, target_col, apply_imputation, sector_column)`**
     - Pre-model training imputation checkpoint ensuring zero NaN values
     - Drops rows with NaN targets
-    - Applies 4-step imputation strategy from Phase 9.1
+   - Applies 6-step imputation strategy from Phase 9.1
     - Emergency fallback: fillna(0) if residual NaN/Inf remain
 
 7. **`extract_numeric_feature_columns(df, exclude_cols, exclude_patterns)`**

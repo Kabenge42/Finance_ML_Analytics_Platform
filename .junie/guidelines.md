@@ -220,7 +220,7 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_data_quality.py — Data validation and quality checks
 - tests/test_data_splits_policy.py — Data split leakage prevention policy validation (code_guidelines.md v1.2)
 - tests/test_eda.py — Exploratory data analysis utilities
-- tests/test_enhanced_imputation.py — Phase 9.1 4-step imputation strategy tests (21 tests)
+- tests/test_enhanced_imputation.py — Phase 9.1 6-step imputation strategy tests (21 tests)
 - tests/test_features.py — Feature engineering functions
 - tests/test_finance_ml_config.py — Configuration management tests
 - tests/test_finance_ml_data.py — Data loading module tests
@@ -280,7 +280,7 @@ python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_valid
 
 **Medium Tests** (100-500 lines, integration, limited ML):
 
-- test_enhanced_imputation.py — 4-step imputation (21 tests, ~2-5s)
+- test_enhanced_imputation.py — 6-step imputation (21 tests, ~2-5s)
 - test_data_catalog.py — Data catalog functionality
 - test_data_versioning.py — Version tracking
 - test_logging.py — Logging configuration

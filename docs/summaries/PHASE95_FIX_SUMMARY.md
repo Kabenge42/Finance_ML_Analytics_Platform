@@ -195,7 +195,7 @@ The fix ensures:
 **Solution**: Run Phase 9.4 first to generate required classification features.
 
 **Issue**: NaN values in training data  
-**Solution**: Phase 9.1's 4-step imputation should handle this. Verify Phase 9.1 completed successfully.
+**Solution**: Phase 9.1's 6-step imputation should handle this. Verify Phase 9.1 completed successfully.
 
 ---
 

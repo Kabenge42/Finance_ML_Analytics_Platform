@@ -163,10 +163,10 @@ def compute_metrics_by_segment(
 
     for segment in segments:
         segment_df = df[df[segment_col] == segment]
-        y_true = segment_df[y_true]
-        y_pred = segment_df[y_pred]
+        y_true_vals = segment_df[y_true]
+        y_pred_vals = segment_df[y_pred]
 
-        metrics = comprehensive_regression_metrics(y_true, y_pred)
+        metrics = comprehensive_regression_metrics(y_true_vals, y_pred_vals)
         metrics[segment_col] = segment
         results.append(metrics)
 
@@ -209,10 +209,10 @@ def compute_sector_region_metrics(
         if len(group_df) < 2:
             continue
 
-        y_true = group_df[y_true]
-        y_pred = group_df[y_pred]
+        y_true_vals = group_df[y_true]
+        y_pred_vals = group_df[y_pred]
 
-        metrics = comprehensive_regression_metrics(y_true, y_pred)
+        metrics = comprehensive_regression_metrics(y_true_vals, y_pred_vals)
         metrics[sector_col] = sector
         metrics[region_col] = region
         results.append(metrics)

@@ -39,7 +39,7 @@ df_imputed = apply_enhanced_imputation_strategy_4step(
 )
 ```
 
-- ✓ 4-step imputation (zero/sector-aware KNN/price/median)
+- ✓ 6-step imputation (zero/sector-aware KNN/price/median)
 - ✓ Guarantees zero NaN after application
 - ✓ **Implements ML Workflow Improvement Plan Priority 2 & 3**
 
@@ -185,7 +185,7 @@ results_df = calibrate_predictions_by_sector(results_df, sector_bias)
 | Priority | Feature                                     | Status         | Impact | Effort | Action       |
 |----------|---------------------------------------------|----------------|--------|--------|--------------|
 | ✅ P1     | Data validation (validate_training_data)    | **Integrated** | High   | -      | None needed  |
-| ✅ P2     | NaN handling (4-step imputation)            | **Integrated** | High   | -      | None needed  |
+| ✅ P2     | NaN handling (6-step imputation)            | **Integrated** | High   | -      | None needed  |
 | ✅ P3     | Graceful fallback (compare_regressors)      | **Integrated** | High   | -      | None needed  |
 | ⚠ P4     | Enhanced outputs (sector, ticker, metadata) | **Missing**    | High   | Low    | **Add code** |
 | ⚠ P5     | Feature importance export                   | **Missing**    | Medium | Low    | **Add code** |

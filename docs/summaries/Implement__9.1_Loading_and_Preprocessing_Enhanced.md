@@ -1,4 +1,4 @@
-# Implementation Guide: Phase 9.1 Enhanced Imputation Strategy with TDD (4-Step Complete)
+# Implementation Guide: Phase 9.1 Enhanced Imputation Strategy with TDD (6-step Complete)
 
 **Version**: 2.0  
 **Date**: 2025-11-03  
@@ -9,10 +9,10 @@
 
 ## Executive Overview
 
-This guide provides a complete TDD implementation strategy for the **4-step enhanced imputation pipeline** specified in
+This guide provides a complete TDD implementation strategy for the **6-step enhanced imputation pipeline** specified in
 Phase 9.1. The implementation follows strict Test-Driven Development principles and maintains ≥80% test coverage.
 
-### 4-Step Imputation Strategy
+### 6-step Imputation Strategy
 
 1. **Step 1: Zero Imputation** (48 columns) - Rare/exceptional events
 2. **Step 2: KNN Imputation** (148 columns) - Core financial metrics with sector awareness
@@ -195,7 +195,7 @@ def apply_zero_imputation(
     df: pd.DataFrame,
     columns: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-    """Apply zero imputation (Step 1 of 4-step strategy)."""
+    """Apply zero imputation (Step 1 of 6-step strategy)."""
     result = df.copy()
     if columns is None:
         columns = get_zero_imputation_columns()
@@ -407,7 +407,7 @@ def apply_price_imputation(
     price_column: str = "last_price",
     columns: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-    """Apply price imputation (Step 3 of 4-step strategy)."""
+    """Apply price imputation (Step 3 of 6-step strategy)."""
     result = df.copy()
     if columns is None:
         columns = ["price_target", "price_target_low", 
@@ -446,7 +446,7 @@ def apply_median_imputation(df: pd.DataFrame) -> pd.DataFrame:
 
 ---
 
-## Complete 4-Step Pipeline
+## Complete 6-step Pipeline
 
 ```python
 def apply_enhanced_imputation_strategy_4step(
@@ -455,7 +455,7 @@ def apply_enhanced_imputation_strategy_4step(
     n_neighbors: int = 5,
     price_column: str = "last_price",
 ) -> pd.DataFrame:
-    """Apply complete 4-step imputation pipeline."""
+    """Apply complete 6-step imputation pipeline."""
     
     # Step 1: Zero imputation
     result = apply_zero_imputation(df)
@@ -496,7 +496,7 @@ from finance_ml.advanced_preprocessing import (
 
 
 class TestEnhancedImputation4Step(unittest.TestCase):
-    """Comprehensive test suite for 4-step imputation strategy."""
+    """Comprehensive test suite for 6-step imputation strategy."""
     
     def setUp(self):
         """Create sample financial data."""
@@ -578,7 +578,7 @@ class TestEnhancedImputation4Step(unittest.TestCase):
     
     # FULL PIPELINE TEST
     def test_full_4step_pipeline(self):
-        """Test complete 4-step pipeline reduces all missing values."""
+        """Test complete 6-step pipeline reduces all missing values."""
         missing_before = self.df.select_dtypes(include=[np.number]).isna().sum().sum()
         
         result = apply_enhanced_imputation_strategy_4step(
@@ -648,11 +648,11 @@ Add to `ml_finance_model_main.ipynb` after existing preprocessing sections:
 
 ```python
 # ============================================================================
-# Section 9.1.8: Enhanced 4-Step Imputation Strategy (Phase 9.1 Complete)
+# Section 9.1.8: Enhanced 6-step Imputation Strategy (Phase 9.1 Complete)
 # ============================================================================
 
 print("\n" + "="*80)
-print("9.1.8 Enhanced 4-Step Imputation Strategy")
+print("9.1.8 Enhanced 6-step Imputation Strategy")
 print("="*80)
 
 from finance_ml.advanced_preprocessing import (
@@ -662,7 +662,7 @@ from finance_ml.advanced_preprocessing import (
 )
 
 # Show strategy overview
-print("\n4-Step Imputation Strategy:")
+print("\n6-step Imputation Strategy:")
 print("  Step 1: Zero Imputation      → 48 columns (exceptional events)")
 print("  Step 2: KNN Imputation       → 148 columns (financial metrics)")
 print("  Step 3: Price Imputation     → 5 columns (price targets)")
@@ -681,8 +681,8 @@ print(f"Step 2 (KNN): {len(knn_cols)} defined, "
 print(f"Step 3 (Price): {len(price_cols)} defined, "
       f"{sum(1 for c in price_cols if c in all_stocks.columns)} available")
 
-# Apply 4-step imputation
-print("\nApplying 4-step imputation strategy...")
+# Apply 6-step imputation
+print("\nApplying 6-step imputation strategy...")
 missing_before = all_stocks.select_dtypes(include=[np.number]).isna().sum().sum()
 
 all_stocks_imputed = apply_enhanced_imputation_strategy_4step(
@@ -759,7 +759,7 @@ plt.tight_layout()
 plt.savefig(outputs_dir / 'phase_9_1_4step_imputation.png', dpi=300, bbox_inches='tight')
 plt.show()
 
-print("\n✓ Enhanced 4-step imputation strategy completed successfully!")
+print("\n✓ Enhanced 6-step imputation strategy completed successfully!")
 ```
 
 ---
@@ -773,7 +773,7 @@ Add to Phase 9.1 section:
 
 **Status**: ✅ Complete (2025-11-03)
 
-#### 4-Step Imputation Pipeline
+#### 6-step Imputation Pipeline
 
 1. **Step 1: Zero Imputation** (48 columns)
    - Impairments, restructuring, acquisitions, writedowns
@@ -827,7 +827,7 @@ Add to Phase 9.1 section:
     - [ ] Add `apply_price_imputation()` function (Step 3)
     - [ ] Add `apply_median_imputation()` function (Step 4)
     - [ ] Add `apply_enhanced_imputation_strategy_4step()` master function
-    - [ ] Update docstrings with 4-step references
+  - [ ] Update docstrings with 6-step references
 
 - [ ] Update `finance_ml/__init__.py`:
     - [ ] Export new functions: `apply_price_imputation`, `apply_median_imputation`
@@ -857,7 +857,7 @@ Add to Phase 9.1 section:
 - [ ] Run full test suite: `python -m unittest -v`
 - [ ] Run notebook end-to-end
 - [ ] Verify no regression in existing functionality
-- [ ] Check that all_stocks has zero missing values after 4-step pipeline
+- [ ] Check that all_stocks has zero missing values after 6-step pipeline
 
 ---
 
@@ -865,7 +865,7 @@ Add to Phase 9.1 section:
 
 This implementation guide provides:
 
-✅ **Complete 4-step strategy** aligned to postgres.public.equities schema  
+✅ **Complete 6-step strategy** aligned to postgres.public.equities schema  
 ✅ **Exact column counts**: 48 zero, 148 KNN, 5 price, remaining median  
 ✅ **TDD approach** with comprehensive test suite (≥80% coverage)  
 ✅ **Step 3 (Price Imputation)** - NEW functionality  
@@ -875,5 +875,5 @@ This implementation guide provides:
 ✅ **Column mapping reference** for schema translation  
 ✅ **Implementation checklist** for systematic rollout
 
-The 4-step pipeline ensures zero missing values in the output while applying economically sensible imputation strategies
+The 6-step pipeline ensures zero missing values in the output while applying economically sensible imputation strategies
 tailored to each column type.

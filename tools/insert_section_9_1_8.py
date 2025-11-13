@@ -20,7 +20,7 @@ phase92_idx = next(
 print(f"Found Phase 9.2 at index {phase92_idx}")
 
 # Create markdown cell content
-markdown_content = """### 9.1.8 Enhanced 4-Step Imputation Strategy (Phase 9.1 Complete)
+markdown_content = """### 9.1.8 Enhanced 6-step Imputation Strategy (Phase 9.1 Complete)
 
 Complete imputation pipeline ensuring zero missing values:
 1. **Step 1: Zero Imputation** (48 columns) - Exceptional events (impairments, restructuring)

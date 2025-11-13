@@ -317,7 +317,7 @@ from finance_ml.advanced_models import (
     prepare_regression_data
 )
 
-# 1. Prepare data with 4-step imputation
+# 1. Prepare data with 6-step imputation
 X, y = prepare_features_for_training(df, feature_cols, target_col, apply_imputation=True)
 
 # 2. Validate before training
@@ -346,7 +346,7 @@ print(_CHECKPOINTS)
 
 ### If Models Still Fail with NaN Errors
 
-**Check**: Was 4-step imputation applied?
+**Check**: Was 6-step imputation applied?
 
 ```python
 # In notebook, after Phase 9.1:
@@ -354,7 +354,7 @@ nan_count = all_stocks_phase94.select_dtypes(include=[np.number]).isnull().sum()
 print(f"NaN count: {nan_count}")  # Should be 0
 ```
 
-**Solution**: Run Phase 9.1 4-step imputation cell.
+**Solution**: Run Phase 9.1 6-step imputation cell.
 
 ### If No Models Train Successfully
 
@@ -382,7 +382,7 @@ These were identified in the improvement plan but marked as lower priority:
     - Break monolithic cell into 8 modular steps
     - **Status**: Cell 140 already implements modular structure
 
-3. **Update Notebook to Use 4-Step Imputation** (Priority 1)
+3. **Update Notebook to Use 6-step Imputation** (Priority 1)
     - Replace simple imputation with `apply_enhanced_imputation_strategy_4step()`
     - **Status**: Already implemented in provided Cell 140 code (line 331-336)
 

@@ -215,7 +215,7 @@ variable.
 
 **Fix:**
 
-1. Updated to correct 4-step function name
+1. Updated to correct 6-step function name
 2. Added explicit variable initialization
 3. Added null check before use
 

@@ -8,7 +8,7 @@ categorical/string/date columns**, here are comprehensive enhancements to handle
 
 ### Problem Analysis
 
-The current 4-step imputation strategy in `imputation.py` (lines 578-660) only processes **numeric columns**:
+The current 6-step imputation strategy in `imputation.py` (lines 578-660) only processes **numeric columns**:
 
 - Step 1: Zero imputation (exceptional events)
 - Step 2: KNN imputation (financial metrics)
@@ -266,7 +266,7 @@ def apply_datetime_imputation_and_formatting(
 
 ---
 
-### Enhancement 3: Update Main 4-Step Function to 6-Step Strategy
+### Enhancement 3: Update Main 6-step Function to 6-Step Strategy
 
 **Replace** the existing `apply_enhanced_imputation_strategy_4step()` function (lines 578-660) with this enhanced
 version:
@@ -458,7 +458,7 @@ def apply_enhanced_imputation_strategy_4step(
         n_neighbors: int = 5,
         price_column: str = "last_price",
         ) -> pd.DataFrame:
-    """Backward compatibility wrapper for 4-step imputation.
+    """Backward compatibility wrapper for 6-step imputation.
     
     DEPRECATED: Use apply_enhanced_imputation_strategy_6step() instead.
     This wrapper calls the 6-step function with categorical and date handling enabled.
@@ -605,7 +605,7 @@ print(datetime_df)
 4. **`apply_enhanced_imputation_strategy_6step()`** - Comprehensive pipeline handling ALL data types (numeric +
    categorical + dates)
 5. **`validate_imputation_completeness()`** - Validation function to ensure readiness for Phase 9.3
-6. **Backward compatibility** - Old 4-step function maintained as wrapper
+6. **Backward compatibility** - Old 6-step function maintained as wrapper
 
 #### ✅ **Benefits:**
 
