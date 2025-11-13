@@ -3781,38 +3781,58 @@ def evaluate_with_time_series_cv(model, X, y, cv_type="expanding", n_splits=5, m
 # Performance Heatmaps (Sector × Region)
 # ============================================================================
 
+# ... existing code ...
 
-def compute_sector_region_metrics(df, y_true, y_pred, sector_col="sector", region_col="region"):
+def compute_sector_region_metrics(df, y_true, y_pred, sector_col, region_col):
     """
-    Compute metrics for each sector-region combination.
-
-    Args:
-        df: DataFrame with predictions and grouping columns
-        y_true: Column name for true values
-        y_pred: Column name for predictions
-        sector_col: Column name for sector
-        region_col: Column name for region
-
-    Returns:
-        pd.DataFrame: Metrics for each sector-region combination
+    Compute regression metrics grouped by sector and region.
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe containing predictions and targets.
+    y_true : str
+        Column name of the true target values.
+    y_pred : str
+        Column name of the predicted target values.
+    sector_col : str
+        Column name for sector grouping.
+    region_col : str
+        Column name for region grouping.
     """
+    # Preserve the original column name arguments
+    y_true_col = y_true
+    y_pred_col = y_pred
+
     results = []
 
-    for sector in df[sector_col].dropna().unique():
-        for region in df[region_col].dropna().unique():
+    sectors = df[sector_col].dropna().unique()
+    regions = df[region_col].dropna().unique()
+
+    for sector in sectors:
+        for region in regions:
             mask = (df[sector_col] == sector) & (df[region_col] == region)
             subset = df[mask]
 
             if len(subset) > 0:
-                y_true = subset[y_true].values
-                y_pred = subset[y_pred].values
+                # Use separate variable names for the arrays
+                y_true_values = subset[y_true_col].values
+                y_pred_values = subset[y_pred_col].values
 
-                metrics = comprehensive_regression_metrics(y_true, y_pred)
-                metrics["sector"] = sector
-                metrics["region"] = region
+                metrics = comprehensive_regression_metrics(
+                    y_true_values, y_pred_values
+                )
+                metrics.update(
+                    {
+                        "sector": sector,
+                        "region": region,
+                        "n_samples": len(subset),
+                    }
+                )
                 results.append(metrics)
 
     return pd.DataFrame(results)
+
+# ... existing code ...
 
 
 def create_sector_region_performance_heatmap(
