@@ -73,8 +73,8 @@ def preprocess_for_lightgbm(
         >>> # TRAINING MODE: Fit encoders and save reference date
         >>> X_train_processed, encoders = preprocess_for_lightgbm(
         ...     X_train,
-        ...     categorical_columns=['sector', 'industry', 'region'],
-        ...     datetime_columns=['next_earnings'],
+        ...     categorical_columns=['exchange', 'sector', 'industry', 'region', 'country','trading_country', 'style_class', 'size_class', 'next_earnings_status'],
+        ...     datetime_columns=['next_earnings','income_statement_report_date','last_updated'],
         ...     return_encoders=True  # Save encoders for later
         ... )
         >>> # Extract reference date for test consistency
@@ -83,8 +83,8 @@ def preprocess_for_lightgbm(
         >>> # TEST/INFERENCE MODE: Use training encoders and reference date
         >>> X_test_processed, _ = preprocess_for_lightgbm(
         ...     X_test,
-        ...     categorical_columns=['sector', 'industry', 'region'],
-        ...     datetime_columns=['next_earnings'],
+        ...     categorical_columns=['exchange', 'sector', 'industry', 'region', 'country','trading_country', 'style_class', 'size_class', 'next_earnings_status'],
+        ...     datetime_columns=['next_earnings','income_statement_report_date','last_updated'],
         ...     encoders=encoders,  # Use training encoders
         ...     reference_date=ref_date  # Use training reference date
         ... )

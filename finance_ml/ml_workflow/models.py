@@ -288,7 +288,26 @@ def train_and_evaluate_regression(
     )
     pipe.fit(X_train, y_train)
 
-    preds = pipe.predict(X_test)
+    # Generate raw predictions
+    preds_raw = pipe.predict(X_test)
+
+    # Apply adaptive clipping to eliminate zero predictions (ZERO_PREDICTIONS_FIX.md)
+    from finance_ml.ml_workflow.regression.robust import adaptive_clip_predictions
+
+    clip_result = adaptive_clip_predictions(preds_raw, y_train.values)
+    preds = clip_result["clipped_predictions"]
+
+    # Log clipping diagnostics
+    logging.info(
+        "Adaptive clipping: lower=%.2f, upper=%.2f, clipped_low=%d (%.1f%%), clipped_high=%d (%.1f%%)",
+        clip_result["lower_bound"],
+        clip_result["upper_bound"],
+        clip_result["n_clipped_lower"],
+        clip_result["pct_clipped_lower"],
+        clip_result["n_clipped_upper"],
+        clip_result["pct_clipped_upper"],
+    )
+
     mae = float(mean_absolute_error(y_test, preds))
     mse = float(mean_squared_error(y_test, preds))
     rmse = float(np.sqrt(mse))
@@ -378,9 +397,16 @@ def train_and_evaluate_regression(
             X_full = X_full.replace([np.inf, -np.inf], np.nan).fillna(0)
 
         # Generate predictions for all stocks
-        full_preds = pipe.predict(X_full)
+        full_preds_raw = pipe.predict(X_full)
 
-        logging.info(f"✓ Generated {len(full_preds)} predictions for full dataset")
+        # Apply adaptive clipping to full dataset predictions (ZERO_PREDICTIONS_FIX.md)
+        clip_result_full = adaptive_clip_predictions(full_preds_raw, y_train.values)
+        full_preds = clip_result_full["clipped_predictions"]
+
+        logging.info(
+            f"✓ Generated {len(full_preds)} predictions for full dataset "
+            f"(clipped: {clip_result_full['n_clipped_lower']} low, {clip_result_full['n_clipped_upper']} high)"
+        )
 
         # Create full predictions DataFrame
         full_results_df = pd.DataFrame(
