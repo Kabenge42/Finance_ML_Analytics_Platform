@@ -1343,7 +1343,9 @@ def compare_classifiers(
         categorical_cols: Categorical feature names
 
     Returns:
-        Dictionary mapping model names to their results
+        Dictionary mapping model names to their results with consistent metric schema.
+        Each result dict is guaranteed to have keys: 'model', 'accuracy', 'f1_macro',
+        'f1_weighted', 'precision_macro', 'recall_macro'
     """
     results = {}
 
@@ -1372,7 +1374,30 @@ def compare_classifiers(
         except Exception as e:
             logger.warning(f"CatBoost training failed: {e}")
 
-    logger.info(f"Compared {len(results)} classifiers")
+    # Standardize metric keys to ensure consistent schema across all models
+    # FIX 4: Add missing f1_macro, f1_weighted, precision_macro, recall_macro keys
+    for model_name, result in results.items():
+        # Add f1_macro (alias for f1_score which is computed with average='macro')
+        if "f1_macro" not in result and "f1_score" in result:
+            result["f1_macro"] = result["f1_score"]
+
+        # Compute f1_weighted if not present
+        if "f1_weighted" not in result and "y_pred" in result:
+            from sklearn.metrics import f1_score
+
+            result["f1_weighted"] = f1_score(
+                y_test, result["y_pred"], average="weighted", zero_division=0
+            )
+
+        # Add precision_macro (alias for precision which is computed with average='macro')
+        if "precision_macro" not in result and "precision" in result:
+            result["precision_macro"] = result["precision"]
+
+        # Add recall_macro (alias for recall which is computed with average='macro')
+        if "recall_macro" not in result and "recall" in result:
+            result["recall_macro"] = result["recall"]
+
+    logger.info(f"Compared {len(results)} classifiers with standardized metrics")
     return results
 
 

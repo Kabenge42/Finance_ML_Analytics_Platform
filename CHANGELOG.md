@@ -7,6 +7,193 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Notebook Inspection Issues**: Resolved critical ERROR-level inspection issues in `ml_finance_model_main.ipynb`
+  - Fixed 13 unresolved reference errors in documentation code blocks (lines 1288-1340, 1474-1483)
+  - Commented out example API usage code in Phase 9.3 and 9.4 documentation blocks to prevent false errors
+  - Changed documentation examples from executable code to commented examples with descriptive notes
+  - All ERROR-level issues resolved; WARNING-level issues verified as false positives (proper guards already in place)
+  - Validated notebook JSON structure: 99 cells (76 code, 23 markdown) with no syntax errors
+
+### Added
+
+- **Notebook Refactoring Test Suite**: Comprehensive TDD test suite for notebook structural validation
+  - `tests/test_notebook_refactoring.py` with 453 lines covering 30 tests (100% pass rate)
+  - Tests validate Phase 9.1-9.8 architecture alignment per code_guidelines.md v1.2
+  - Verifies phase headers, business goals, objectives, inputs/outputs, v1.2 standards, validation checkpoints
+  - Tests ensure Quick Reference Navigation and Workflow Overview use Phase nomenclature
+
+### Changed
+
+- **Major Notebook Architecture Refactoring**: Restructured `ml_finance_model_main.ipynb` to Phase 9.1-9.8
+  architecture (TDD approach)
+  - Renamed section headers from numbered (2-10) to phase-based (9.1-9.8) nomenclature
+  - Added comprehensive phase descriptions with business goals, key objectives, inputs/outputs for all 8 phases
+  - Documented v1.2 standards compliance (uncertainty quantification, outlier safety rails, data split policy)
+  - Consolidated Sections 8-10 into Phases 9.7 (Stock Ranking & Analytics) and 9.8 (Reporting & Dashboards)
+  - Updated Quick Reference Navigation and Workflow Overview with Phase 9.1-9.8 links
+  - Created `tools/refactor_notebook_phases.py` (520 lines) - automated refactoring script implementing Option C (Hybrid
+    Approach)
+  - Created `tools/update_notebook_toc.py` (125 lines) - navigation update script
+  - All changes follow NOTEBOOK_REFACTORING_SUMMARY.md requirements with strict TDD workflow
+
+### Documentation
+
+- Notebook now aligns with phase-based architecture specified in:
+  - `code_guidelines.md` v1.2 (Phase 9.1-9.8 API specifications)
+  - `finance_ml_improvement_plan.md` (module consolidation strategies)
+  - `README.md` (8-phase ML workflow description)
+- Each phase includes clear documentation of business objectives, v1.2 standards applied, and validation checkpoints
+- Backup created: `ml_finance_model_main.ipynb.backup`
+
+## [0.8.1] - 2025-11-14
+
+### Added
+
+- **LightGBM Preprocessing Test Suite**: New comprehensive test suite for LightGBM preprocessing validation
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - `tests/test_preprocess_lightgbm.py` with 112 lines of preprocessing validation tests
+  - Ensures consistent feature engineering across training and prediction pipelines
+  - Validates categorical encoding, datetime feature extraction, and column alignment
+- **Comprehensive Fix Documentation**: Three detailed fix summary documents added to `docs/summaries/`
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - `FIX_FEATURE_MISMATCH_FINAL.md` (204 lines) - LightGBM feature mismatch resolution (941 vs 461 features)
+  - `FIX_SUMMARY_SHAPE_MISMATCH.md` (220 lines) - Shape mismatch error fixes with robust column selection
+  - `FIX_EMOJI_AND_POOL_ISSUES.md` (243 lines) - Unicode encoding and model-agnostic scoring improvements
+
+### Changed
+
+- **Major Notebook Refactoring**: Extensive improvements to `ml_finance_model_main.ipynb` with 2,826 lines modified
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - Enhanced classification model training workflow with proper feature extraction from optimized models
+  - Improved feature alignment using `.reindex()` for exact column matching and ordering
+  - Added comprehensive diagnostic logging for feature count validation and alignment tracking
+  - Implemented model-agnostic accuracy calculation using sklearn.metrics instead of model-specific APIs
+- **Enhanced Validation Tools**: Updated prediction clipping validation scripts with improved diagnostics
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - `tools/validate_clipping_fix.py` enhanced with 103 lines (vs previous version)
+  - `tools/validate_zero_predictions_fix.py` updated with improved validation logic
+  - Both tools provide detailed comparison between old and new clipping strategies
+- **Module Enhancements**: Improved core feature engineering and classification modules
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - `finance_ml/ml_workflow/features/core.py` enhanced with 145 lines of improvements
+  - `finance_ml/ml_workflow/classification/models.py` updated with 29 lines of refinements
+  - `finance_ml/ml_workflow/classification/tuning.py` improved with 16 lines of enhancements
+  - `finance_ml/ml_workflow/analytics/eval.py` refined with 6 lines of updates
+- **Documentation Cleanup**: Removed redundant documentation files to streamline `docs/` directory
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - Removed `NOTEBOOK_REFACTORING_SUMMARY.md` (224 lines) - superseded by modular documentation
+  - Removed `TDD_IMPLEMENTATION_SUMMARY.md` (356 lines) - consolidated into existing test documentation
+  - Normalized file paths and annotations for consistency across documentation
+
+### Fixed
+
+- **Feature Mismatch Error**: Resolved critical LightGBM prediction error where model expected 461 features but received
+  941
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - Root cause: Using `model_feature_names` from wrong model instance after model reassignment
+  - Solution: Re-extract feature names from correct model (`result['model']`) after hyperparameter optimization
+  - Added support for CatBoost, XGBoost, and LightGBM feature name extraction with proper attribute access
+  - Implemented pre-preprocessing validation to catch column mismatches before processing
+  - All 20 core classification tests now pass successfully
+- **Column Selection and Alignment**: Fixed shape mismatch issues in data preprocessing pipeline
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - Replaced list comprehension column selection with `.reindex()` for exact column matching and order preservation
+  - Ensures raw features selected for preprocessing match training data exactly (X_train_cls columns)
+  - Added diagnostic validation before and after preprocessing to track feature count changes
+  - Enhanced SHAP computation with proper data alignment to prevent masker shape errors
+- **Unicode Encoding Issues**: Replaced all Unicode emojis with ASCII equivalents for universal terminal compatibility
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - Changed 🔍 → `[INFO]`, ✓ → `[OK]`, ⚠️ → `[WARN]`, ❌ → `[ERROR]`
+  - Prevents encoding issues on Windows PowerShell and other terminal environments
+  - Maintains visual clarity while ensuring cross-platform compatibility
+- **Model-Agnostic Scoring**: Fixed incorrect Pool-based scoring that was CatBoost-specific
+  ([45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945))
+  - Removed CatBoost Pool objects that don't work with LightGBM/XGBoost models
+  - Implemented sklearn.metrics.accuracy_score for consistent cross-model accuracy calculation
+  - Fixed NameError for undefined `test_pool` variable by using X_test_processed directly
+  - Ensures scoring works correctly regardless of model type (LightGBM, XGBoost, or CatBoost)
+
+---
+
+**Version Bump Recommendation**: PATCH (0.8.0 → 0.8.1)
+
+- Bug fixes for critical feature mismatch and model scoring errors
+- Improved documentation and code quality without breaking changes
+- Enhanced validation and testing infrastructure
+- No new features or breaking API changes; fully backward compatible with 0.8.0
+
+**Date Generated**: 2025-11-14
+
+**Commits Included**:
+
+- [45117fa](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/45117fa0010eb151f4ef8cbfd2be8d2fd375c945) -
+  Documentation cleanup and notebook refactoring
+- [7fb3ec0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7fb3ec0f1ee1bc4f4586c319ba7e4b4ca90cbc02) -
+  Phase 10 integration (included in 0.8.0)
+- [dd54d56](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/dd54d561e4620da13eafea22be436daa7694496a) -
+  Phase 10 integration (included in 0.8.0)
+- [582c9cd](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/582c9cd8e45496533ff90eee10cf65e62ca4fe6f) -
+  Train/test splitting utilities (included in 0.8.0)
+- [440d7e6](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/440d7e687974c3836fe0e8dd43df76b458d0ca28) -
+  Model optimization tasks (included in 0.8.0)
+
+## [0.8.0] - 2025-11-13
+
+### Added
+
+- **Phase 10 Integration - Prediction Confidence Scoring**: Comprehensive confidence scoring and outlier detection
+  system
+  ([7fb3ec0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7fb3ec0f1ee1bc4f4586c319ba7e4b4ca90cbc02),
+  [dd54d56](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/dd54d561e4620da13eafea22be436daa7694496a))
+  - New `finance_ml.ml_workflow.evaluation.confidence` module with confidence scoring methods
+  - Three confidence scoring approaches: ensemble-based, residual-based, and quantile-based
+  - Sector-specific model training utilities in `finance_ml.ml_workflow.regression.sector_models`
+  - Enhanced uncertainty quantification with isotonic bias correction and quantile calibration
+  - Comprehensive test suite: `test_bias_correction_isotonic.py`, `test_outlier_prediction_filtering.py`,
+    `test_quantile_calibration_coverage.py`, `test_sector_specific_models.py`
+  - Documentation: `docs/summaries/phase10_integration_summary.md` (526 lines)
+- **Intelligent Train/Test Splitting Utilities**: Leakage-prevention utilities for time-series and grouped data
+  ([582c9cd](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/582c9cd8e45496533ff90eee10cf65e62ca4fe6f))
+  - Time-series cross-validation with sector stratification
+  - Grouped splitting by ticker to prevent data leakage
+  - Enhanced documentation in multiple summary files
+- **Prediction Clipping Validation Tools**: Comprehensive validation scripts for prediction bound fixes
+  ([7fb3ec0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7fb3ec0f1ee1bc4f4586c319ba7e4b4ca90cbc02))
+  - `tools/validate_clipping_fix.py` - Upper bound validation (83.3% error reduction for high-value stocks)
+  - `tools/validate_zero_predictions_fix.py` - Lower bound validation (100% zero prediction elimination)
+  - Documentation: `docs/summaries/PREDICTION_CAPPING_FIX.md`, `docs/summaries/ZERO_PREDICTIONS_FIX.md`
+
+### Changed
+
+- **Model Optimization Task Completion**: Completed Priority 4-6 tasks from Model Optimization Recommendations
+  ([440d7e6](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/440d7e687974c3836fe0e8dd43df76b458d0ca28))
+  - Enhanced `ml_finance_model_main.ipynb` with time-series cross-validation, quantile regression export, and feature
+    importance analysis
+  - Default stacking ensemble usage with improved safety checks for missing data columns
+  - Generated comprehensive output CSV files for model evaluation
+  - Added fast helper test runner and output verification utility (16 tests passing)
+- **Regression and Classification Integration**: Comprehensive documentation of workflow integration
+  ([7fb3ec0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7fb3ec0f1ee1bc4f4586c319ba7e4b4ca90cbc02))
+  - `docs/summaries/REGRESSION_INTEGRATION_SUMMARY.md` (523 lines)
+  - `docs/summaries/CLASSIFICATION_INTEGRATION_SUMMARY.md` (209 lines)
+  - Complete workflow integration with error handling and output persistence
+- **Uncertainty Quantification Enhancements**: Improved calibration and uncertainty estimation
+  ([dd54d56](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/dd54d561e4620da13eafea22be436daa7694496a))
+  - Enhanced `finance_ml.ml_workflow.regression.calibration` (679 lines) with isotonic regression
+  - Improved `finance_ml.ml_workflow.regression.uncertainty` (525 lines) with conformal prediction
+  - Updated code guidelines with uncertainty quantification standards
+
+### Fixed
+
+- **Prediction Capping Issues**: Resolved systematic under-prediction for extreme values
+  ([7fb3ec0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/7fb3ec0f1ee1bc4f4586c319ba7e4b4ca90cbc02))
+  - Upper bound: Replaced statistical clipping (mean±3σ) with percentile-based clipping (1.5x p99.5)
+  - Lower bound: Replaced hard zero with adaptive lower bound (0.5x p0.5, min $0.10)
+  - Eliminated 348 zero predictions (24.75% reduction) while preserving low-value stock predictions
+  - Reduced high-value stock prediction error by 83.3%
+
 ## [0.7.1] - 2025-11-11
 
 ### Added

@@ -286,6 +286,118 @@ class TestPreprocessForLightGBM(unittest.TestCase):
                 err_msg=f"Encoder for {col} should be consistent with inverse transform",
             )
 
+    def test_train_test_encoder_reuse(self):
+        """Test train/test workflow with encoder reuse (addresses notebook TypeError issue)."""
+        # Create train data
+        train_data = self.sample_data.copy()
+
+        # Create test data with same structure but different values
+        test_data = pd.DataFrame(
+            {
+                "last_price": [110.0, 160.0, 90.0],
+                "market_cap": [1.2e9, 2.2e9, 0.8e9],
+                "eps": [5.5, 8.0, 4.5],
+                "exchange": ["NYSE", "NASDAQ", "LSE"],  # LSE is unseen category
+                "sector": ["Technology", "Healthcare", "Energy"],  # Energy is unseen
+                "industry": ["Software", "Biotech", "Oil"],
+                "region": ["US", "US", "EU"],
+                "country": ["USA", "USA", "France"],
+                "trading_country": ["USA", "USA", "France"],
+                "style_class": ["Growth", "Value", "Value"],
+                "size_class": ["Large", "Mid", "Small"],
+                "flag": ["A", "B", "D"],  # D is unseen
+                "next_earnings": [
+                    datetime(2025, 12, 10),
+                    datetime(2025, 12, 15),
+                    datetime(2025, 12, 20),
+                ],
+            }
+        )
+
+        # TRAINING MODE: Fit encoders with return_encoders=True
+        categorical_cols = [
+            "exchange",
+            "sector",
+            "industry",
+            "region",
+            "country",
+            "trading_country",
+            "style_class",
+            "size_class",
+            "flag",
+        ]
+        datetime_cols = ["next_earnings"]
+
+        X_train_processed, encoders = preprocess_for_lightgbm(
+            train_data,
+            categorical_columns=categorical_cols,
+            datetime_columns=datetime_cols,
+            return_encoders=True,  # Store encoders for test data
+        )
+
+        # Verify encoders were returned
+        self.assertIsNotNone(encoders)
+        self.assertIsInstance(encoders, dict)
+        for col in categorical_cols:
+            self.assertIn(col, encoders)
+        self.assertIn("_reference_date", encoders)  # Should have reference date
+
+        # Extract reference date for test consistency
+        ref_date = encoders.get("_reference_date")
+        self.assertIsNotNone(ref_date)
+
+        # TEST/INFERENCE MODE: Use training encoders (the pattern from the notebook)
+        X_test_processed, returned_encoders = preprocess_for_lightgbm(
+            test_data,
+            categorical_columns=categorical_cols,
+            datetime_columns=datetime_cols,
+            encoders=encoders,  # Pass the encoders from training
+            reference_date=ref_date,  # Use training reference date
+            # Note: return_encoders is False by default
+        )
+
+        # Verify the function returned None for encoders (since return_encoders=False)
+        self.assertIsNone(returned_encoders)
+
+        # Verify test data was processed successfully
+        self.assertEqual(X_test_processed.shape[0], 3)
+        non_numeric = X_test_processed.select_dtypes(exclude=[np.number]).columns.tolist()
+        self.assertEqual(len(non_numeric), 0, "All columns should be numeric")
+
+        # Verify datetime features use consistent reference date
+        self.assertIn("next_earnings_days_from_now", X_test_processed.columns)
+
+        # Verify unseen categories were handled (mapped to 'Unknown' class)
+        # LSE, Energy, Oil, D are unseen in train data but should be encoded without error
+        self.assertFalse(X_test_processed.isna().any().any(), "No NaN values should remain")
+
+        # Verify column names match between train and test
+        self.assertEqual(
+            set(X_train_processed.columns),
+            set(X_test_processed.columns),
+            "Train and test should have same columns",
+        )
+
+    def test_train_test_encoder_reuse_with_return_encoders_true(self):
+        """Test that we can pass encoders AND set return_encoders=True in test mode."""
+        train_data = self.sample_data.copy()
+        test_data = self.sample_data.iloc[:3].copy()
+
+        # Train mode
+        X_train, encoders = preprocess_for_lightgbm(train_data, return_encoders=True)
+
+        # Test mode with return_encoders=True (should return the same encoders)
+        X_test, returned_encoders = preprocess_for_lightgbm(
+            test_data,
+            encoders=encoders,
+            reference_date=encoders.get("_reference_date"),
+            return_encoders=True,  # Request encoders back
+        )
+
+        # Should return the provided encoders
+        self.assertIsNotNone(returned_encoders)
+        self.assertEqual(id(returned_encoders), id(encoders), "Should return same encoder object")
+
 
 if __name__ == "__main__":
     unittest.main()

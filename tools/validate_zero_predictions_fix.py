@@ -38,7 +38,9 @@ y_test = np.random.lognormal(mean=2.5, sigma=1.2, size=n_test)
 y_pred_raw = y_test + np.random.normal(0, y_test * 0.3, size=n_test)
 # Add some negative predictions (model artifacts for low-value stocks)
 negative_mask = np.random.rand(n_test) < 0.15
-y_pred_raw[negative_mask] = y_test[negative_mask] - np.abs(np.random.normal(2, 1, size=np.sum(negative_mask)))
+y_pred_raw[negative_mask] = y_test[negative_mask] - np.abs(
+    np.random.normal(2, 1, size=np.sum(negative_mask))
+)
 
 print("=" * 80)
 print("ZERO PREDICTIONS FIX - VALIDATION SCRIPT")
@@ -52,7 +54,9 @@ print(f"Training min: ${np.min(y_train):.2f}, max: ${np.max(y_train):.2f}")
 print(f"\nRaw predictions before clipping:")
 print(f"  Mean: ${np.mean(y_pred_raw):.2f}, median: ${np.median(y_pred_raw):.2f}")
 print(f"  Min: ${np.min(y_pred_raw):.2f}, max: ${np.max(y_pred_raw):.2f}")
-print(f"  Negative predictions: {np.sum(y_pred_raw < 0)} ({100*np.sum(y_pred_raw < 0)/n_test:.1f}%)")
+print(
+    f"  Negative predictions: {np.sum(y_pred_raw < 0)} ({100*np.sum(y_pred_raw < 0)/n_test:.1f}%)"
+)
 
 # ============================================================================
 # OLD APPROACH: Hard Zero Lower Bound
@@ -180,9 +184,11 @@ zero_examples = np.where((y_pred_old == 0) & (y_test < 10))[0][:5]
 
 if len(zero_examples) > 0:
     print(f"\nExamples where OLD approach clipped to zero:")
-    print(f"{'Actual':>10} {'Raw Pred':>10} {'OLD (clip)':>12} {'NEW (clip)':>12} {'OLD Error':>12} {'NEW Error':>12}")
+    print(
+        f"{'Actual':>10} {'Raw Pred':>10} {'OLD (clip)':>12} {'NEW (clip)':>12} {'OLD Error':>12} {'NEW Error':>12}"
+    )
     print("-" * 80)
-    
+
     for idx in zero_examples:
         actual = y_test[idx]
         raw = y_pred_raw[idx]
@@ -190,8 +196,10 @@ if len(zero_examples) > 0:
         new = y_pred_new[idx]
         err_old = abs(actual - old)
         err_new = abs(actual - new)
-        
-        print(f"${actual:>9.2f} ${raw:>9.2f} ${old:>11.2f} ${new:>11.2f} ${err_old:>11.2f} ${err_new:>11.2f}")
+
+        print(
+            f"${actual:>9.2f} ${raw:>9.2f} ${old:>11.2f} ${new:>11.2f} ${err_old:>11.2f} ${err_new:>11.2f}"
+        )
 
 # ============================================================================
 # SUMMARY
@@ -201,7 +209,9 @@ print("SUMMARY")
 print("=" * 80)
 
 print("\n✅ Fix Successfully Validated:")
-print(f"  1. Zero predictions reduced from {n_zeros_old} to {n_zeros_new} ({zero_reduction_pct:.1f}% reduction)")
+print(
+    f"  1. Zero predictions reduced from {n_zeros_old} to {n_zeros_new} ({zero_reduction_pct:.1f}% reduction)"
+)
 print(f"  2. Overall MAE improved by {mae_improvement_pct_all:.1f}%")
 print(f"  3. Low-value stock MAE improved by {mae_improvement_pct_low:.1f}%")
 print(f"  4. Legitimate low predictions preserved (min: ${np.min(y_pred_new):.2f})")

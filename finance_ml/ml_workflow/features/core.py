@@ -31,10 +31,12 @@ def preprocess_for_lightgbm(
     categorical_columns: Optional[List[str]] = None,
     datetime_columns: Optional[List[str]] = None,
     drop_columns: Optional[List[str]] = None,
+    encoders: Optional[Dict[str, LabelEncoder]] = None,
+    reference_date: Optional[pd.Timestamp] = None,
     return_encoders: bool = False,
 ) -> Tuple[pd.DataFrame, Optional[Dict[str, LabelEncoder]]]:
     """
-    Preprocess DataFrame for LightGBM compatibility.
+    Preprocess DataFrame for LightGBM compatibility with proper train/test split support.
 
     LightGBM requires all input features to be numeric (int, float, or bool).
     This function handles:
@@ -42,42 +44,84 @@ def preprocess_for_lightgbm(
     2. Datetime columns - extracted to numeric features (year, month, day, days_from_now)
     3. Ensures all remaining columns are numeric
 
+    **IMPORTANT for Train/Test Usage:**
+    - Training: Call with `return_encoders=True` to fit and save encoders
+    - Testing: Call with `encoders=<training_encoders>` to apply same transformations
+    - Always pass the same `reference_date` for consistent datetime features
+
     Args:
         df: Input DataFrame
         categorical_columns: List of categorical columns to encode. If None, auto-detects object dtype columns
         datetime_columns: List of datetime columns to convert. If None, auto-detects datetime64 dtype columns
         drop_columns: List of columns to drop before processing
+        encoders: Pre-fitted LabelEncoders from training data (for test/inference).
+                 If provided, uses transform() instead of fit_transform().
+                 If None, fits new encoders (training mode).
+        reference_date: Fixed reference date for datetime feature extraction.
+                       If None, uses current timestamp (NOT recommended for train/test splits).
+                       Store this from training and reuse for test data!
         return_encoders: If True, returns tuple (df, encoders_dict). If False, returns (df, None)
 
     Returns:
         Tuple of (preprocessed_df, encoders_dict or None)
         - preprocessed_df: DataFrame with only numeric types
-        - encoders_dict: Dictionary mapping column names to fitted LabelEncoders (if return_encoders=True)
+        - encoders_dict: Dictionary with:
+            - Column name -> LabelEncoder mappings (if return_encoders=True)
+            - '_reference_date' -> reference date used for datetime features
 
     Examples:
-        >>> # Basic usage with auto-detection
-        >>> df_processed, encoders = preprocess_for_lightgbm(df, return_encoders=True)
-        >>>
-        >>> # Specify columns explicitly
-        >>> df_processed, _ = preprocess_for_lightgbm(
-        ...     df,
+        >>> # TRAINING MODE: Fit encoders and save reference date
+        >>> X_train_processed, encoders = preprocess_for_lightgbm(
+        ...     X_train,
         ...     categorical_columns=['sector', 'industry', 'region'],
-        ...     datetime_columns=['next_earnings', 'last_updated','income_statement_report_date'],
-        ...     drop_columns=['description', 'ticker']
+        ...     datetime_columns=['next_earnings'],
+        ...     return_encoders=True  # Save encoders for later
+        ... )
+        >>> # Extract reference date for test consistency
+        >>> ref_date = encoders.get('_reference_date')
+        >>>
+        >>> # TEST/INFERENCE MODE: Use training encoders and reference date
+        >>> X_test_processed, _ = preprocess_for_lightgbm(
+        ...     X_test,
+        ...     categorical_columns=['sector', 'industry', 'region'],
+        ...     datetime_columns=['next_earnings'],
+        ...     encoders=encoders,  # Use training encoders
+        ...     reference_date=ref_date  # Use training reference date
         ... )
         >>>
-        >>> # Use encoders to interpret results later
-        >>> df_processed, encoders = preprocess_for_lightgbm(df, return_encoders=True)
+        >>> # Interpret results using encoders
         >>> original_sector = encoders['sector'].inverse_transform([0, 1, 2])
 
     Notes:
         - Handles missing values by filling NaN with placeholder strings for categoricals
-        - Datetime NaN values are filled with median or reference date
+        - Unseen categories in test data are mapped to 'Unknown' class
+        - Datetime NaN values are filled with 0 after feature extraction
         - All inf values are replaced with NaN and filled with 0
-        - Stores LabelEncoders if return_encoders=True for later interpretation
+        - Stores reference_date in encoders dict with key '_reference_date'
     """
     result = df.copy()
-    encoders = {} if return_encoders else None
+
+    # Determine if we're in training mode (fitting) or inference mode (transforming)
+    is_training = encoders is None
+
+    # Initialize encoders dict for training or use provided encoders for inference
+    if is_training:
+        encoders_out = {} if return_encoders else None
+        provided_encoders = {}
+    else:
+        encoders_out = encoders if return_encoders else None
+        provided_encoders = encoders.copy()
+        # Remove metadata keys from encoder dict
+        provided_encoders.pop("_reference_date", None)
+
+    # Set reference date for datetime features
+    if reference_date is None:
+        reference_date = pd.Timestamp(datetime.now())
+        if not is_training:
+            logger.warning(
+                "No reference_date provided for test/inference data. "
+                "Using current timestamp may cause train/test inconsistency!"
+            )
 
     # Drop specified columns
     if drop_columns:
@@ -120,26 +164,66 @@ def preprocess_for_lightgbm(
     # Handle categorical columns with LabelEncoder
     if categorical_columns:
         categorical_columns = [col for col in categorical_columns if col in result.columns]
-        logger.info(f"Encoding {len(categorical_columns)} categorical columns")
+        mode_str = "Fitting and encoding" if is_training else "Encoding"
+        logger.info(f"{mode_str} {len(categorical_columns)} categorical columns")
 
         for col in categorical_columns:
             # Fill NaN with placeholder
-            result[col] = result[col].fillna("Unknown")
+            result[col] = result[col].fillna("Unknown").astype(str)
 
-            # Label encode
-            le = LabelEncoder()
-            result[col] = le.fit_transform(result[col].astype(str))
+            if is_training:
+                # TRAINING MODE: Fit new encoder
+                le = LabelEncoder()
+                result[col] = le.fit_transform(result[col])
 
-            # Store encoder if requested
-            if return_encoders:
-                encoders[col] = le
+                # Store encoder if requested
+                if return_encoders and encoders_out is not None:
+                    encoders_out[col] = le
 
-            logger.debug(f"Encoded '{col}' with {len(le.classes_)} unique values")
+                logger.debug(f"Fitted encoder for '{col}' with {len(le.classes_)} unique values")
+            else:
+                # INFERENCE MODE: Use provided encoder
+                if col not in provided_encoders:
+                    raise ValueError(
+                        f"Column '{col}' requires encoding but no encoder was provided. "
+                        f"Available encoders: {list(provided_encoders.keys())}"
+                    )
+
+                le = provided_encoders[col]
+
+                # Handle unseen categories by mapping them to 'Unknown'
+                # First, ensure 'Unknown' is in the encoder's classes
+                if "Unknown" not in le.classes_:
+                    # Add 'Unknown' to the encoder classes
+                    le.classes_ = np.append(le.classes_, "Unknown")
+
+                # Map unseen categories to 'Unknown'
+                unknown_idx = np.where(le.classes_ == "Unknown")[0][0]
+                values = result[col].values
+
+                # Transform known categories
+                mask_known = np.isin(values, le.classes_)
+                encoded = np.full(len(values), unknown_idx, dtype=int)
+                if mask_known.any():
+                    encoded[mask_known] = le.transform(values[mask_known])
+
+                result[col] = encoded
+
+                # Log if unseen categories were found
+                unseen = set(values[~mask_known]) - {"Unknown"}
+                if unseen:
+                    logger.warning(
+                        f"Column '{col}' has {len(unseen)} unseen categories in test data. "
+                        f"Mapped to 'Unknown' class. Examples: {list(unseen)[:5]}"
+                    )
+
+                logger.debug(f"Transformed '{col}' using training encoder")
 
     # Handle datetime columns
     if datetime_columns:
         datetime_columns = [col for col in datetime_columns if col in result.columns]
         logger.info(f"Extracting features from {len(datetime_columns)} datetime columns")
+        logger.debug(f"Using reference_date: {reference_date}")
 
         for col in datetime_columns:
             # Convert to datetime if not already
@@ -151,8 +235,7 @@ def preprocess_for_lightgbm(
             result[f"{col}_month"] = result[col].dt.month
             result[f"{col}_day"] = result[col].dt.day
 
-            # Days from reference date (today)
-            reference_date = pd.Timestamp(datetime.now())
+            # Days from CONSISTENT reference date (critical for train/test consistency)
             result[f"{col}_days_from_now"] = (result[col] - reference_date).dt.days
 
             # Fill NaN in extracted features
@@ -164,6 +247,10 @@ def preprocess_for_lightgbm(
             # Drop original datetime column
             result = result.drop(columns=[col])
             logger.debug(f"Extracted datetime features from '{col}'")
+
+        # Store reference date in encoder dict for reproducibility (only when datetime columns exist)
+        if return_encoders and encoders_out is not None:
+            encoders_out["_reference_date"] = reference_date
 
     # Ensure all remaining columns are numeric
     logger.info("Converting all remaining columns to numeric")
@@ -189,7 +276,7 @@ def preprocess_for_lightgbm(
     logger.info(f"Preprocessing complete. Final shape: {result.shape}")
     logger.info(f"Data types: {result.dtypes.value_counts().to_dict()}")
 
-    return result, encoders
+    return result, encoders_out
 
 
 def _safe_div(numer: pd.Series, denom: pd.Series) -> pd.Series:

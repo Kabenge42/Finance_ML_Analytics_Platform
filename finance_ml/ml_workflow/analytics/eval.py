@@ -3783,6 +3783,7 @@ def evaluate_with_time_series_cv(model, X, y, cv_type="expanding", n_splits=5, m
 
 # ... existing code ...
 
+
 def compute_sector_region_metrics(df, y_true, y_pred, sector_col, region_col):
     """
     Compute regression metrics grouped by sector and region.
@@ -3818,9 +3819,7 @@ def compute_sector_region_metrics(df, y_true, y_pred, sector_col, region_col):
                 y_true_values = subset[y_true_col].values
                 y_pred_values = subset[y_pred_col].values
 
-                metrics = comprehensive_regression_metrics(
-                    y_true_values, y_pred_values
-                )
+                metrics = comprehensive_regression_metrics(y_true_values, y_pred_values)
                 metrics.update(
                     {
                         "sector": sector,
@@ -3831,6 +3830,7 @@ def compute_sector_region_metrics(df, y_true, y_pred, sector_col, region_col):
                 results.append(metrics)
 
     return pd.DataFrame(results)
+
 
 # ... existing code ...
 

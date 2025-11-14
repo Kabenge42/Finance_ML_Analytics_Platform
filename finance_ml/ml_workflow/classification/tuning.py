@@ -190,7 +190,21 @@ def optimize_classifier_hyperparameters(
 
             # Cross-validation with F1 macro score
             cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
-            scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="f1_macro", n_jobs=-1)
+
+            # Try parallel processing first, fallback to sequential if pickling fails
+            try:
+                scores = cross_val_score(
+                    model, X_train, y_train, cv=cv, scoring="f1_macro", n_jobs=-1
+                )
+            except Exception as pickle_error:
+                # Fallback to sequential processing (n_jobs=1) if parallelization fails
+                logger.debug(
+                    f"Parallel CV failed (pickling issue), using sequential: {pickle_error}"
+                )
+                scores = cross_val_score(
+                    model, X_train, y_train, cv=cv, scoring="f1_macro", n_jobs=1
+                )
+
             return scores.mean()
 
         except Exception as e:

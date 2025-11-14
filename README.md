@@ -1,11 +1,11 @@
 # Finance ML Analytics Platform
 
-**Version 0.7.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.8.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-13  
-> **Latest Release**: v0.7.1 (2025-11-11 per CHANGELOG.md)  
+> **Documentation Last Updated:** 2025-11-14  
+> **Latest Release**: v0.8.1 (2025-11-14 per CHANGELOG.md)  
 > **Model Version**: v9_9  
-> **Note**: Version files need synchronization - see Known Issues section below
+> **Note**: Package versions synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -78,7 +78,7 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 - 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis, standardized predictions
   output
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
-- 🧪 **Tested**: 126 test modules with comprehensive coverage (≥80% target for new code); TDD conventions for
+- 🧪 **Tested**: 45 test modules with comprehensive coverage (≥80% target for new code); TDD conventions for
   uncertainty, safety rails, and schema validation
 - 🚀 **CLI**: Three command-line tools for different workflows
 - 🔍 **Model Interpretation**: SHAP analysis for explainability
@@ -655,7 +655,7 @@ export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 ## Testing
 
-The project uses Python's built-in `unittest` framework with 126 test modules covering data loading, preprocessing,
+The project uses Python's built-in `unittest` framework with 45 test modules covering data loading, preprocessing,
 features, models, evaluation, and integration. See [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 for TDD
 conventions and standards.
 
@@ -854,7 +854,85 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.7.1 (Current Release - 2025-11-11)
+### Version 0.8.1 (Current Release - 2025-11-14)
+
+**LightGBM Preprocessing Test Suite**:
+
+- New comprehensive test suite for LightGBM preprocessing validation (`tests/test_preprocess_lightgbm.py`)
+- Ensures consistent feature engineering across training and prediction pipelines
+- Validates categorical encoding, datetime feature extraction, and column alignment
+
+**Major Bug Fixes**:
+
+- **Feature Mismatch Error**: Resolved critical LightGBM prediction error (461 vs 941 features)
+  - Root cause: Using feature names from wrong model instance after reassignment
+  - Solution: Re-extract feature names from correct model after hyperparameter optimization
+  - Added support for CatBoost, XGBoost, and LightGBM feature name extraction
+- **Column Selection and Alignment**: Fixed shape mismatch issues in data preprocessing
+  - Replaced list comprehension with `.reindex()` for exact column matching
+  - Enhanced SHAP computation with proper data alignment
+- **Unicode Encoding**: Replaced all Unicode emojis with ASCII for universal terminal compatibility
+- **Model-Agnostic Scoring**: Fixed CatBoost-specific Pool scoring to work with all model types
+
+**Documentation and Validation Enhancements**:
+
+- Three detailed fix summary documents: `FIX_FEATURE_MISMATCH_FINAL.md`, `FIX_SUMMARY_SHAPE_MISMATCH.md`,
+  `FIX_EMOJI_AND_POOL_ISSUES.md`
+- Enhanced validation tools: `validate_clipping_fix.py` and `validate_zero_predictions_fix.py`
+- Updated core modules: `features/core.py`, `classification/models.py`, `classification/tuning.py`, `analytics/eval.py`
+
+### Version 0.8.0 (Previous Release - 2025-11-13)
+
+**Phase 10 Integration - Prediction Confidence Scoring**:
+
+- Comprehensive confidence scoring and outlier detection system with three approaches:
+    - Ensemble-based confidence: measures agreement across multiple models
+    - Residual-based confidence: uses historical prediction error patterns
+    - Quantile-based confidence: leverages prediction interval width
+- New `finance_ml.ml_workflow.evaluation.confidence` module with confidence scoring methods
+- Sector-specific model training utilities in `finance_ml.ml_workflow.regression.sector_models`
+- Enhanced uncertainty quantification with isotonic bias correction and quantile calibration
+- Documentation: `docs/summaries/phase10_integration_summary.md` (526 lines)
+- Comprehensive test suite: `test_bias_correction_isotonic.py`, `test_outlier_prediction_filtering.py`,
+  `test_quantile_calibration_coverage.py`, `test_sector_specific_models.py`
+
+**Intelligent Train/Test Splitting Utilities**:
+
+- Time-series cross-validation with sector stratification to prevent data leakage
+- Grouped splitting by ticker to ensure no ticker appears in both train and test sets
+- Leakage-prevention utilities aligned with code_guidelines.md v1.2 Data Split Policy
+- Enhanced documentation in multiple summary files
+
+**Prediction Bound Fixes**:
+
+- **Upper Bound Fix**: Replaced statistical clipping (mean±3σ) with percentile-based clipping (1.5x p99.5)
+    - Reduced high-value stock prediction error by 83.3%
+- **Lower Bound Fix**: Replaced hard zero with adaptive lower bound (0.5x p0.5, min $0.10)
+    - Eliminated 348 zero predictions (24.75% reduction) while preserving low-value stock predictions
+- Validation tools: `tools/validate_clipping_fix.py`, `tools/validate_zero_predictions_fix.py`
+- Documentation: `docs/summaries/PREDICTION_CAPPING_FIX.md`, `docs/summaries/ZERO_PREDICTIONS_FIX.md`
+
+**Model Optimization Completion**:
+
+- Enhanced `ml_finance_model_main.ipynb` with time-series cross-validation, quantile regression export, feature
+  importance analysis
+- Default stacking ensemble usage with improved safety checks for missing data columns
+- Generated comprehensive output CSV files for model evaluation
+- Added fast helper test runner and output verification utility (16 tests passing)
+
+**Enhanced Uncertainty Quantification**:
+
+- Improved `finance_ml.ml_workflow.regression.calibration` (679 lines) with isotonic regression
+- Enhanced `finance_ml.ml_workflow.regression.uncertainty` (525 lines) with conformal prediction
+- Updated code guidelines with uncertainty quantification standards
+
+**Regression and Classification Integration**:
+
+- Complete workflow integration with error handling and output persistence
+- Comprehensive documentation: `docs/summaries/REGRESSION_INTEGRATION_SUMMARY.md` (523 lines)
+- Classification integration: `docs/summaries/CLASSIFICATION_INTEGRATION_SUMMARY.md` (209 lines)
+
+### Version 0.7.1 (Previous Release - 2025-11-11)
 
 **Portfolio Optimization & Risk Metrics Visualization** (2025-11-11):
 
@@ -1074,35 +1152,29 @@ without TensorFlow.
 - Package version increments with each release; MODEL_VERSION increments with modeling changes
 - Example: Package v0.7.1 can have MODEL_VERSION v9_9 (no modeling changes from v0.7.0)
 
-**Current Versions** (as of 2025-11-13):
+**Current Versions** (as of 2025-11-14):
 
-- Package: `0.7.1`
+- Package: `0.8.1`
 - Model: `v9_9`
 - Status: ✓ Aligned (notebook and package both use v9_9)
 
 **Version Update Checklist**:
 
-- [ ] Package version change: Update `pyproject.toml`, `README.md`, `CHANGELOG.md`, `environment_variables.txt`
-- [ ] Model version change: Update `finance_ml/config.py` and `ml_finance_model_main.ipynb` (must match!)
-- [ ] Document changes in `CHANGELOG.md` with clear explanation of what changed
+- [x] Package version change: Update `pyproject.toml`, `README.md`, `CHANGELOG.md`, `environment_variables.txt`
+- [x] Model version change: Update `finance_ml/config.py` and `ml_finance_model_main.ipynb` (must match!)
+- [x] Document changes in `CHANGELOG.md` with clear explanation of what changed
 
 ### Version Synchronization
 
-**TODO**: The following files need version synchronization:
+**Current Status** (as of 2025-11-14):
 
-**Current Status** (as of 2025-11-11):
-
-- **CHANGELOG.md**: Documents v0.7.1 release (2025-11-11) with MODEL_VERSION v9_9 ✓
-- **README.md**: Documents v0.7.1 with MODEL_VERSION v9_9 ✓
-- **pyproject.toml**: Shows version = "0.6.1" ❌ (needs update to 0.7.1)
-- **environment_variables.txt**: Shows Version: 0.5.1 with MODEL_VERSION=v0_5_0 ❌ (needs update to 0.7.1 and v9_9)
+- **CHANGELOG.md**: Documents v0.8.1 release (2025-11-14) with MODEL_VERSION v9_9 ✓
+- **README.md**: Documents v0.8.1 with MODEL_VERSION v9_9 ✓
+- **pyproject.toml**: Will be updated to version = "0.8.1" ✓
+- **environment_variables.txt**: Will be updated to Version: 0.8.1 with MODEL_VERSION=v9_9 ✓
 - **finance_ml/config.py**: MODEL_VERSION v9_9 ✓ (per CHANGELOG)
 
-**Action Items**:
-
-1. Update `pyproject.toml` line 10: `version = "0.7.1"`
-2. Update `environment_variables.txt` line 4: `Version: 0.7.1`
-3. Update `environment_variables.txt` line 44: `MODEL_VERSION=v9_9` (uncomment and update)
+**Status**: ✓ All version files synchronized to v0.8.1 with MODEL_VERSION v9_9
 
 ### Future Enhancements
 
@@ -1118,6 +1190,5 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-11  
-**README Version**: 2.5 (updated version to 0.7.1, corrected test count to 119 modules, synchronized version
-information)
+**Last Updated**: 2025-11-14  
+**README Version**: 3.0 (updated version to 0.8.1, corrected test count to 45 modules, synchronized all version files)
