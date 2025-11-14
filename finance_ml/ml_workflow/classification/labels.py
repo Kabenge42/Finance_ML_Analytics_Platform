@@ -21,6 +21,13 @@ New methods (Phase 9.4 - enhanced with Phase 9.3 features):
 - composite_event: Based on Piotroski F-Score, Altman Z-Score
 
 Phase 9.4 refactor: Extracted from classification.py for better modularity.
+
+Phase 9.6 enhancement: Upgraded from 3-class to 5-class label granularity:
+- 0 = Strong Negative
+- 1 = Negative
+- 2 = Neutral
+- 3 = Positive
+- 4 = Strong Positive
 """
 
 from __future__ import annotations
@@ -98,7 +105,7 @@ def create_enhanced_event_labels(
         use_sector_adjustment: If True, adjust thresholds by sector volatility
 
     Returns:
-        numpy array of labels (0=Neutral, 1=Positive, 2=Negative)
+        numpy array of labels (0=Strong Negative, 1=Negative, 2=Neutral, 3=Positive, 4=Strong Positive)
 
     Examples:
         >>> # Price momentum method
@@ -176,16 +183,26 @@ def create_enhanced_event_labels(
             for sector in df["sector"].unique():
                 sector_mask = df["sector"] == sector
                 sector_vol = momentum_score[sector_mask].std()
-                # Adjust thresholds based on sector volatility
-                adj_positive = 1.0 * (1 + sector_vol / 2.0)
-                adj_negative = -1.0 * (1 + sector_vol / 2.0)
+                # Adjust thresholds based on sector volatility (5-class)
+                adj_strong_pos = 1.5 * (1 + sector_vol / 2.0)
+                adj_pos = 0.75 * (1 + sector_vol / 2.0)
+                adj_neg = -0.75 * (1 + sector_vol / 2.0)
+                adj_strong_neg = -1.5 * (1 + sector_vol / 2.0)
 
-                labels[sector_mask & (momentum_score >= adj_positive)] = 1
-                labels[sector_mask & (momentum_score <= adj_negative)] = 2
+                labels[sector_mask & (momentum_score >= adj_strong_pos)] = 4
+                labels[
+                    sector_mask & (momentum_score >= adj_pos) & (momentum_score < adj_strong_pos)
+                ] = 3
+                labels[
+                    sector_mask & (momentum_score <= adj_neg) & (momentum_score > adj_strong_neg)
+                ] = 1
+                labels[sector_mask & (momentum_score <= adj_strong_neg)] = 0
         else:
-            # Use composite momentum score with adaptive thresholds
-            labels[momentum_score >= 1.0] = 1  # Strong positive momentum
-            labels[momentum_score <= -1.0] = 2  # Strong negative momentum
+            # Use composite momentum score with 5-class thresholds
+            labels[momentum_score >= 1.5] = 4  # Strong positive momentum
+            labels[(momentum_score >= 0.75) & (momentum_score < 1.5)] = 3  # Positive momentum
+            labels[(momentum_score <= -0.75) & (momentum_score > -1.5)] = 1  # Negative momentum
+            labels[momentum_score <= -1.5] = 0  # Strong negative momentum
 
     elif method == "valuation":
         # Enhanced valuation-based events using Phase 9.3 features when available
@@ -234,9 +251,11 @@ def create_enhanced_event_labels(
         # Average across available metrics
         valuation_score /= len(valuation_metrics)
 
-        # High score (undervalued) = positive, Low score (overvalued) = negative
-        labels[valuation_score >= 0.75] = 1  # Top quartile = undervalued = positive
-        labels[valuation_score <= 0.25] = 2  # Bottom quartile = overvalued = negative
+        # High score (undervalued) = positive, Low score (overvalued) = negative (5-class)
+        labels[valuation_score >= 0.85] = 4  # Top 15% = strongly undervalued = strong positive
+        labels[(valuation_score >= 0.65) & (valuation_score < 0.85)] = 3  # undervalued = positive
+        labels[(valuation_score <= 0.35) & (valuation_score > 0.15)] = 1  # overvalued = negative
+        labels[valuation_score <= 0.15] = 0  # Bottom 15% = strongly overvalued = strong negative
 
     elif method == "fundamental":
         # Enhanced fundamental events using Phase 9.3 margin and profitability features
@@ -283,9 +302,19 @@ def create_enhanced_event_labels(
         fundamental_data = pd.concat(fundamental_metrics, axis=1).fillna(0)
         avg_fundamental = fundamental_data.mean(axis=1)
 
-        # High fundamentals = positive, low fundamentals = negative
-        labels[avg_fundamental >= avg_fundamental.quantile(0.7)] = 1
-        labels[avg_fundamental <= avg_fundamental.quantile(0.3)] = 2
+        # High fundamentals = positive, low fundamentals = negative (5-class)
+        labels[avg_fundamental >= avg_fundamental.quantile(0.85)] = 4  # Top 15% = strong positive
+        labels[
+            (avg_fundamental >= avg_fundamental.quantile(0.65))
+            & (avg_fundamental < avg_fundamental.quantile(0.85))
+        ] = 3  # Positive
+        labels[
+            (avg_fundamental <= avg_fundamental.quantile(0.35))
+            & (avg_fundamental > avg_fundamental.quantile(0.15))
+        ] = 1  # Negative
+        labels[avg_fundamental <= avg_fundamental.quantile(0.15)] = (
+            0  # Bottom 15% = strong negative
+        )
 
     elif method == "volatility":
         # Enhanced volatility-based events using Phase 9.3 stability features
@@ -327,9 +356,15 @@ def create_enhanced_event_labels(
         # Average across available signals
         volatility_score /= signal_count
 
-        # High volatility score (risky) = negative, low score (stable) = positive
-        labels[volatility_score <= -0.5] = 1  # Low volatility/high stability = positive
-        labels[volatility_score >= 0.5] = 2  # High volatility/low stability = negative
+        # High volatility score (risky) = negative, low score (stable) = positive (5-class)
+        labels[volatility_score <= -1.0] = 4  # Very low volatility/high stability = strong positive
+        labels[(volatility_score <= -0.5) & (volatility_score > -1.0)] = (
+            3  # Low volatility = positive
+        )
+        labels[(volatility_score >= 0.5) & (volatility_score < 1.0)] = (
+            1  # High volatility = negative
+        )
+        labels[volatility_score >= 1.0] = 0  # Very high volatility/low stability = strong negative
 
     elif method == "analyst_rating":
         # Enhanced analyst rating events using Phase 9.3 analyst quality features
@@ -389,9 +424,11 @@ def create_enhanced_event_labels(
         # Average across available signals
         analyst_score /= signal_count
 
-        # Positive analyst score = positive catalyst, negative = negative catalyst
-        labels[analyst_score >= 0.5] = 1  # Strong bullish signals
-        labels[analyst_score <= -0.5] = 2  # Strong bearish signals
+        # Positive analyst score = positive catalyst, negative = negative catalyst (5-class)
+        labels[analyst_score >= 1.0] = 4  # Very strong bullish signals
+        labels[(analyst_score >= 0.5) & (analyst_score < 1.0)] = 3  # Bullish signals
+        labels[(analyst_score <= -0.5) & (analyst_score > -1.0)] = 1  # Bearish signals
+        labels[analyst_score <= -1.0] = 0  # Very strong bearish signals
 
     elif method == "market_events":
         # Enhanced market events using Phase 9.3 sector and sentiment features
@@ -442,9 +479,11 @@ def create_enhanced_event_labels(
         # Average across available signals
         market_score /= signal_count
 
-        # Positive market signals = positive, negative = negative
-        labels[market_score >= 0.7] = 1  # Strong positive sector/market signals
-        labels[market_score <= -0.7] = 2  # Strong negative sector/market signals
+        # Positive market signals = positive, negative = negative (5-class)
+        labels[market_score >= 1.2] = 4  # Very strong positive sector/market signals
+        labels[(market_score >= 0.6) & (market_score < 1.2)] = 3  # Positive signals
+        labels[(market_score <= -0.6) & (market_score > -1.2)] = 1  # Negative signals
+        labels[market_score <= -1.2] = 0  # Very strong negative sector/market signals
 
     elif method == "profitability_event":
         # Profitability-based events using ROE, ROA, ROIC
@@ -459,9 +498,21 @@ def create_enhanced_event_labels(
 
         # Check if there's any variance in the data
         if avg_profitability.std() > 1e-10:
-            # High profitability = positive (top 30%), low/negative = negative (bottom 30%)
-            labels[avg_profitability >= avg_profitability.quantile(0.7)] = 1
-            labels[avg_profitability <= avg_profitability.quantile(0.3)] = 2
+            # High profitability = positive, low/negative = negative (5-class)
+            labels[avg_profitability >= avg_profitability.quantile(0.85)] = (
+                4  # Top 15% = strong positive
+            )
+            labels[
+                (avg_profitability >= avg_profitability.quantile(0.65))
+                & (avg_profitability < avg_profitability.quantile(0.85))
+            ] = 3  # Positive
+            labels[
+                (avg_profitability <= avg_profitability.quantile(0.35))
+                & (avg_profitability > avg_profitability.quantile(0.15))
+            ] = 1  # Negative
+            labels[avg_profitability <= avg_profitability.quantile(0.15)] = (
+                0  # Bottom 15% = strong negative
+            )
         else:
             logger.warning("No variance in profitability data, returning all neutral")
             return labels
@@ -479,9 +530,21 @@ def create_enhanced_event_labels(
         leverage_data = df[leverage_cols].fillna(df[leverage_cols].median())
         avg_leverage = leverage_data.mean(axis=1)
 
-        # Low leverage = positive (bottom 30%), high leverage = negative (top 30%)
-        labels[avg_leverage <= avg_leverage.quantile(0.3)] = 1
-        labels[avg_leverage >= avg_leverage.quantile(0.7)] = 2
+        # Low leverage = positive, high leverage = negative (5-class, inverted)
+        labels[avg_leverage <= avg_leverage.quantile(0.15)] = (
+            4  # Bottom 15% = very low leverage = strong positive
+        )
+        labels[
+            (avg_leverage <= avg_leverage.quantile(0.35))
+            & (avg_leverage > avg_leverage.quantile(0.15))
+        ] = 3  # Low leverage = positive
+        labels[
+            (avg_leverage >= avg_leverage.quantile(0.65))
+            & (avg_leverage < avg_leverage.quantile(0.85))
+        ] = 1  # High leverage = negative
+        labels[avg_leverage >= avg_leverage.quantile(0.85)] = (
+            0  # Top 15% = very high leverage = strong negative
+        )
 
     elif method == "liquidity_event":
         # Liquidity-based events using current ratio, quick ratio
@@ -498,9 +561,19 @@ def create_enhanced_event_labels(
 
         # Check if there's any variance in the data
         if avg_liquidity.std() > 1e-10:
-            # High liquidity = positive (top 30%), low liquidity = negative (bottom 30%)
-            labels[avg_liquidity >= avg_liquidity.quantile(0.7)] = 1
-            labels[avg_liquidity <= avg_liquidity.quantile(0.3)] = 2
+            # High liquidity = positive, low liquidity = negative (5-class)
+            labels[avg_liquidity >= avg_liquidity.quantile(0.85)] = 4  # Top 15% = strong positive
+            labels[
+                (avg_liquidity >= avg_liquidity.quantile(0.65))
+                & (avg_liquidity < avg_liquidity.quantile(0.85))
+            ] = 3  # Positive
+            labels[
+                (avg_liquidity <= avg_liquidity.quantile(0.35))
+                & (avg_liquidity > avg_liquidity.quantile(0.15))
+            ] = 1  # Negative
+            labels[avg_liquidity <= avg_liquidity.quantile(0.15)] = (
+                0  # Bottom 15% = strong negative
+            )
         else:
             logger.warning("No variance in liquidity data, returning all neutral")
             return labels
@@ -520,9 +593,17 @@ def create_enhanced_event_labels(
         efficiency_data = df[efficiency_cols].fillna(df[efficiency_cols].median())
         avg_efficiency = efficiency_data.mean(axis=1)
 
-        # High efficiency = positive (top 30%), low efficiency = negative (bottom 30%)
-        labels[avg_efficiency >= avg_efficiency.quantile(0.7)] = 1
-        labels[avg_efficiency <= avg_efficiency.quantile(0.3)] = 2
+        # High efficiency = positive, low efficiency = negative (5-class)
+        labels[avg_efficiency >= avg_efficiency.quantile(0.85)] = 4  # Top 15% = strong positive
+        labels[
+            (avg_efficiency >= avg_efficiency.quantile(0.65))
+            & (avg_efficiency < avg_efficiency.quantile(0.85))
+        ] = 3  # Positive
+        labels[
+            (avg_efficiency <= avg_efficiency.quantile(0.35))
+            & (avg_efficiency > avg_efficiency.quantile(0.15))
+        ] = 1  # Negative
+        labels[avg_efficiency <= avg_efficiency.quantile(0.15)] = 0  # Bottom 15% = strong negative
 
     elif method == "growth_event":
         # Growth-based events using revenue and earnings growth
@@ -539,9 +620,15 @@ def create_enhanced_event_labels(
 
         # Check if there's any variance in the data
         if avg_growth.std() > 1e-10:
-            # High growth = positive (top 30%), negative growth = negative (bottom 30%)
-            labels[avg_growth >= avg_growth.quantile(0.7)] = 1
-            labels[avg_growth <= avg_growth.quantile(0.3)] = 2
+            # High growth = positive, negative growth = negative (5-class)
+            labels[avg_growth >= avg_growth.quantile(0.85)] = 4  # Top 15% = strong positive
+            labels[
+                (avg_growth >= avg_growth.quantile(0.65)) & (avg_growth < avg_growth.quantile(0.85))
+            ] = 3  # Positive
+            labels[
+                (avg_growth <= avg_growth.quantile(0.35)) & (avg_growth > avg_growth.quantile(0.15))
+            ] = 1  # Negative
+            labels[avg_growth <= avg_growth.quantile(0.15)] = 0  # Bottom 15% = strong negative
         else:
             logger.warning("No variance in growth data, returning all neutral")
             return labels
@@ -605,9 +692,17 @@ def create_enhanced_event_labels(
         if total_metrics > 0:
             quality_score /= total_metrics
 
-        # High quality = positive (top 30%), low quality = negative (bottom 30%)
-        labels[quality_score >= quality_score.quantile(0.7)] = 1
-        labels[quality_score <= quality_score.quantile(0.3)] = 2
+        # High quality = positive, low quality = negative (5-class)
+        labels[quality_score >= quality_score.quantile(0.85)] = 4  # Top 15% = strong positive
+        labels[
+            (quality_score >= quality_score.quantile(0.65))
+            & (quality_score < quality_score.quantile(0.85))
+        ] = 3  # Positive
+        labels[
+            (quality_score <= quality_score.quantile(0.35))
+            & (quality_score > quality_score.quantile(0.15))
+        ] = 1  # Negative
+        labels[quality_score <= quality_score.quantile(0.15)] = 0  # Bottom 15% = strong negative
 
     elif method == "composite_event":
         # Composite events using Piotroski F-Score and Altman Z-Score
@@ -641,16 +736,30 @@ def create_enhanced_event_labels(
         # Normalize by number of scores
         composite_score /= len(composite_cols)
 
-        # High composite score = positive (top 30%), low = negative (bottom 30%)
-        labels[composite_score >= composite_score.quantile(0.7)] = 1
-        labels[composite_score <= composite_score.quantile(0.3)] = 2
+        # High composite score = positive, low = negative (5-class)
+        labels[composite_score >= composite_score.quantile(0.85)] = 4  # Top 15% = strong positive
+        labels[
+            (composite_score >= composite_score.quantile(0.65))
+            & (composite_score < composite_score.quantile(0.85))
+        ] = 3  # Positive
+        labels[
+            (composite_score <= composite_score.quantile(0.35))
+            & (composite_score > composite_score.quantile(0.15))
+        ] = 1  # Negative
+        labels[composite_score <= composite_score.quantile(0.15)] = (
+            0  # Bottom 15% = strong negative
+        )
 
     else:
         logger.error(f"Unknown method: {method}")
 
     logger.info(
-        f"Created labels with method={method}: Neutral={np.sum(labels == 0)}, "
-        f"Positive={np.sum(labels == 1)}, Negative={np.sum(labels == 2)}"
+        f"Created labels with method={method}: "
+        f"Strong Negative={np.sum(labels == 0)}, "
+        f"Negative={np.sum(labels == 1)}, "
+        f"Neutral={np.sum(labels == 2)}, "
+        f"Positive={np.sum(labels == 3)}, "
+        f"Strong Positive={np.sum(labels == 4)}"
     )
 
     return labels

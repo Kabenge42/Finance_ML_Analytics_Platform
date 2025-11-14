@@ -62,25 +62,25 @@ class TestProfitabilityEventLabels(unittest.TestCase):
         self.assertIsInstance(labels, np.ndarray)
         # Should have same length as input
         self.assertEqual(len(labels), len(self.df))
-        # Labels should be 0, 1, or 2
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        # Labels should be 0, 1, 2, 3, or 4 (5-class)
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
     def test_profitability_event_high_profitability_positive(self):
-        """Test high profitability stocks get positive label (1)."""
+        """Test high profitability stocks get positive label (3 or 4)."""
         labels = create_enhanced_event_labels(self.df, method="profitability_event")
 
         # Stock A has highest profitability (ROE=0.25, ROA=0.15, ROIC=0.20)
-        # Should be labeled as positive (1)
-        self.assertEqual(labels[0], 1)
+        # Should be labeled as positive (3) or strong positive (4)
+        self.assertIn(labels[0], [3, 4])
 
     def test_profitability_event_low_profitability_negative(self):
-        """Test low/negative profitability stocks get negative label (2)."""
+        """Test low/negative profitability stocks get negative label (0 or 1)."""
         labels = create_enhanced_event_labels(self.df, method="profitability_event")
 
         # Stock D has low profitability (ROE=0.02, ROA=0.01, ROIC=0.015)
         # Stock F has negative profitability (ROE=-0.05, ROA=-0.03, ROIC=-0.04)
-        # At least one should be labeled as negative (2)
-        self.assertTrue(labels[3] == 2 or labels[5] == 2)
+        # At least one should be labeled as negative (0 or 1)
+        self.assertTrue(labels[3] in [0, 1] or labels[5] in [0, 1])
 
     def test_profitability_event_missing_columns(self):
         """Test profitability_event handles missing columns gracefully."""
@@ -104,9 +104,9 @@ class TestProfitabilityEventLabels(unittest.TestCase):
 
         labels = create_enhanced_event_labels(df_with_nan, method="profitability_event")
 
-        # Should still return valid labels
+        # Should still return valid labels (5-class)
         self.assertEqual(len(labels), len(df_with_nan))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
 
 class TestLeverageEventLabels(unittest.TestCase):
@@ -139,23 +139,23 @@ class TestLeverageEventLabels(unittest.TestCase):
 
         self.assertIsInstance(labels, np.ndarray)
         self.assertEqual(len(labels), len(self.df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
     def test_leverage_event_low_leverage_positive(self):
-        """Test low leverage stocks get positive label (1)."""
+        """Test low leverage stocks get positive label (3 or 4)."""
         labels = create_enhanced_event_labels(self.df, method="leverage_event")
 
         # Stock A has low leverage (debt_to_equity=0.3, net_debt_to_ebitda=0.5)
-        # Should be labeled as positive (1)
-        self.assertEqual(labels[0], 1)
+        # Should be labeled as positive (3) or strong positive (4)
+        self.assertIn(labels[0], [3, 4])
 
     def test_leverage_event_high_leverage_negative(self):
-        """Test high leverage stocks get negative label (2)."""
+        """Test high leverage stocks get negative label (0 or 1)."""
         labels = create_enhanced_event_labels(self.df, method="leverage_event")
 
         # Stock D has high leverage (debt_to_equity=4.0, net_debt_to_ebitda=6.0)
-        # Should be labeled as negative (2)
-        self.assertEqual(labels[3], 2)
+        # Should be labeled as negative (1) or strong negative (0)
+        self.assertIn(labels[3], [0, 1])
 
     def test_leverage_event_missing_columns(self):
         """Test leverage_event handles missing columns."""
@@ -191,21 +191,21 @@ class TestLiquidityEventLabels(unittest.TestCase):
 
         self.assertIsInstance(labels, np.ndarray)
         self.assertEqual(len(labels), len(self.df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
     def test_liquidity_event_high_liquidity_positive(self):
-        """Test high liquidity stocks get positive label (1)."""
+        """Test high liquidity stocks get positive label (3 or 4)."""
         labels = create_enhanced_event_labels(self.df, method="liquidity_event")
 
         # Stock A has high liquidity (current_ratio=3.5, quick_ratio=2.8)
-        self.assertEqual(labels[0], 1)
+        self.assertIn(labels[0], [3, 4])
 
     def test_liquidity_event_low_liquidity_negative(self):
-        """Test low liquidity stocks get negative label (2)."""
+        """Test low liquidity stocks get negative label (0 or 1)."""
         labels = create_enhanced_event_labels(self.df, method="liquidity_event")
 
         # Stock D has low liquidity (current_ratio=0.8, quick_ratio=0.5)
-        self.assertEqual(labels[3], 2)
+        self.assertIn(labels[3], [0, 1])
 
 
 class TestEfficiencyEventLabels(unittest.TestCase):
@@ -236,21 +236,21 @@ class TestEfficiencyEventLabels(unittest.TestCase):
 
         self.assertIsInstance(labels, np.ndarray)
         self.assertEqual(len(labels), len(self.df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
     def test_efficiency_event_high_efficiency_positive(self):
-        """Test high efficiency stocks get positive label (1)."""
+        """Test high efficiency stocks get positive label (3 or 4)."""
         labels = create_enhanced_event_labels(self.df, method="efficiency_event")
 
         # Stock B has high efficiency (asset_turnover=2.5, inventory_turnover=12.0)
-        self.assertEqual(labels[1], 1)
+        self.assertIn(labels[1], [3, 4])
 
     def test_efficiency_event_low_efficiency_negative(self):
-        """Test low efficiency stocks get negative label (2)."""
+        """Test low efficiency stocks get negative label (0 or 1)."""
         labels = create_enhanced_event_labels(self.df, method="efficiency_event")
 
         # Stock D has low efficiency (asset_turnover=0.6, inventory_turnover=3.0)
-        self.assertEqual(labels[3], 2)
+        self.assertIn(labels[3], [0, 1])
 
 
 class TestGrowthEventLabels(unittest.TestCase):
@@ -274,21 +274,21 @@ class TestGrowthEventLabels(unittest.TestCase):
 
         self.assertIsInstance(labels, np.ndarray)
         self.assertEqual(len(labels), len(self.df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
     def test_growth_event_high_growth_positive(self):
-        """Test high growth stocks get positive label (1)."""
+        """Test high growth stocks get positive label (3 or 4)."""
         labels = create_enhanced_event_labels(self.df, method="growth_event")
 
         # Stock A has high growth (revenue=0.25, earnings=0.30, ebitda=0.28)
-        self.assertEqual(labels[0], 1)
+        self.assertIn(labels[0], [3, 4])
 
     def test_growth_event_negative_growth_negative(self):
-        """Test negative growth stocks get negative label (2)."""
+        """Test negative growth stocks get negative label (0 or 1)."""
         labels = create_enhanced_event_labels(self.df, method="growth_event")
 
         # Stock D has negative growth (revenue=-0.10, earnings=-0.15)
-        self.assertEqual(labels[3], 2)
+        self.assertIn(labels[3], [0, 1])
 
 
 class TestQualityEventLabels(unittest.TestCase):
@@ -329,21 +329,21 @@ class TestQualityEventLabels(unittest.TestCase):
 
         self.assertIsInstance(labels, np.ndarray)
         self.assertEqual(len(labels), len(self.df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
     def test_quality_event_high_quality_positive(self):
-        """Test high quality stocks get positive label (1)."""
+        """Test high quality stocks get positive label (3 or 4)."""
         labels = create_enhanced_event_labels(self.df, method="quality_event")
 
         # Stock A has high quality (low accruals, low DSO, high analyst scores)
-        self.assertEqual(labels[0], 1)
+        self.assertIn(labels[0], [3, 4])
 
     def test_quality_event_low_quality_negative(self):
-        """Test low quality stocks get negative label (2)."""
+        """Test low quality stocks get negative label (0 or 1)."""
         labels = create_enhanced_event_labels(self.df, method="quality_event")
 
         # Stock D has low quality (high accruals, high DSO, low analyst scores)
-        self.assertEqual(labels[3], 2)
+        self.assertIn(labels[3], [0, 1])
 
 
 class TestCompositeEventLabels(unittest.TestCase):
@@ -374,21 +374,21 @@ class TestCompositeEventLabels(unittest.TestCase):
 
         self.assertIsInstance(labels, np.ndarray)
         self.assertEqual(len(labels), len(self.df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2])))
+        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
 
     def test_composite_event_high_scores_positive(self):
-        """Test high composite scores get positive label (1)."""
+        """Test high composite scores get positive label (3 or 4)."""
         labels = create_enhanced_event_labels(self.df, method="composite_event")
 
         # Stock A has high scores (Piotroski=8, Altman=4.5, Beneish=-2.5)
-        self.assertEqual(labels[0], 1)
+        self.assertIn(labels[0], [3, 4])
 
     def test_composite_event_low_scores_negative(self):
-        """Test low composite scores get negative label (2)."""
+        """Test low composite scores get negative label (0 or 1)."""
         labels = create_enhanced_event_labels(self.df, method="composite_event")
 
         # Stock D has low scores (Piotroski=2, Altman=0.8, Beneish=0.5)
-        self.assertEqual(labels[3], 2)
+        self.assertIn(labels[3], [0, 1])
 
     def test_composite_event_missing_columns(self):
         """Test composite_event handles missing columns."""
@@ -451,7 +451,7 @@ class TestEventLabelsEdgeCases(unittest.TestCase):
             with self.subTest(method=method):
                 labels = create_enhanced_event_labels(df_single, method=method)
                 self.assertEqual(len(labels), 1)
-                self.assertIn(labels[0], [0, 1, 2])
+                self.assertIn(labels[0], [0, 1, 2, 3, 4])
 
     def test_all_nan_columns(self):
         """Test methods handle all-NaN feature columns."""

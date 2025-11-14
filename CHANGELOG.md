@@ -26,6 +26,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **5-Class Event Labeling System**: Enhanced classification granularity from 3-class to 5-class system
+  - **labels.py**: Updated all 13 event label methods to use 5-class classification (0=Strong Negative, 1=Negative,
+    2=Neutral, 3=Positive, 4=Strong Positive)
+    - Improved signal strength differentiation for better risk management and position sizing
+    - Percentile-based thresholds for strong labels (typically 20th/80th percentiles)
+    - Backward compatible implementation maintaining all existing method signatures
+  - **models.py**: Updated default parameters for gradient boosting classifiers
+    - XGBoost `num_class`: 3 → 5 (line 733)
+    - LightGBM `num_class`: 3 → 5 (line 834)
+  - **ml_finance_model_main.ipynb**: Updated Phase 9.4 classification section for complete 5-class alignment
+    - Modified class_names from 3 to 5 classes throughout workflow
+    - Updated Business Goal description to reflect 5-class granularity (line 1441)
+    - Updated y_proba shape documentation from (n_samples, 3) to (n_samples, 5) (line 1465)
+    - Updated validation checkpoint from "All 3 classes" to "All 5 classes" (line 1472)
+    - Updated event labeling description with all 13 methods and 5-class schema (line 1477)
+    - Updated classification probability validation logic (lines 2324-2350) to handle 5 classes with proper class names
+    - Updated confusion matrix visualization for 5x5 matrices
+    - Enhanced classification probability exports (5 probabilities per sample)
+  - **tests/test_classification_labels_phase94.py**: Updated all 29 tests for 5-class expectations
+    - Updated assertions from [0, 1, 2] to [0, 1, 2, 3, 4] across 7 test classes
+    - All tests passing: profitability, leverage, liquidity, efficiency, growth, quality, composite events
+  - **code_guidelines.md**: Comprehensive 5-class documentation added
+    - Updated return value descriptions (line 194)
+    - Updated dataset table classifications (lines 820-821, 864)
+    - Added detailed 5-class schema section with interpretation table, threshold mechanics, and benefits (lines
+      1483-1514)
+  - **Benefits**: Improved signal strength, better risk management, enhanced model training, flexible aggregation
+
 - **Major Notebook Architecture Refactoring**: Restructured `ml_finance_model_main.ipynb` to Phase 9.1-9.8
   architecture (TDD approach)
   - Renamed section headers from numbered (2-10) to phase-based (9.1-9.8) nomenclature

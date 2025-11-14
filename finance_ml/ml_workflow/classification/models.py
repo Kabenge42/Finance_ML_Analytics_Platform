@@ -730,7 +730,7 @@ def train_xgboost_classifier(
     # Default parameters
     default_params = {
         "objective": "multi:softprob",
-        "num_class": 3,
+        "num_class": 5,
         "max_depth": 6,
         "learning_rate": 0.1,
         "n_estimators": 200,
@@ -831,7 +831,7 @@ def train_lightgbm_classifier(
     # Default parameters
     default_params = {
         "objective": "multiclass",
-        "num_class": 3,
+        "num_class": 5,
         "max_depth": 6,
         "learning_rate": 0.1,
         "n_estimators": 200,

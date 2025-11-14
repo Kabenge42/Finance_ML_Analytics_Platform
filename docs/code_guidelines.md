@@ -191,7 +191,7 @@ threshold_positive: float = 10.0,
 threshold_negative: float = -10.0,
 use_sector_adjustment: bool = True
 ) -> np.ndarray
-# Returns: array of labels (0=Neutral, 1=Positive, 2=Negative)
+# Returns: array of labels (0=Strong Negative, 1=Negative, 2=Neutral, 3=Positive, 4=Strong Positive)
 # 
 # Phase 9.4 enhancements (v9_9): All 13 methods support Phase 9.3 engineered columns
 # Method 1 (price_momentum): Uses price_momentum_1m/3m/6m, rsi_14d/30d, ma_crossover_signal
@@ -811,15 +811,15 @@ This table documents standard variable names used across the Finance ML Analytic
 
 **Dataset Splits (Classification):**
 
-| Variable Name       | Type         | Description                                | Source/Usage                      |
-|---------------------|--------------|--------------------------------------------|-----------------------------------|
-| `X_train_cls`       | pd.DataFrame | Classification training features (raw)     | `prepare_classification_data()`   |
-| `X_test_cls`        | pd.DataFrame | Classification test features (raw)         | `prepare_classification_data()`   |
-| `X_train_processed` | pd.DataFrame | Classification training features (numeric) | After `preprocess_for_lightgbm()` |
-| `X_test_processed`  | pd.DataFrame | Classification test features (numeric)     | After `preprocess_for_lightgbm()` |
-| `y_train_cls`       | np.ndarray   | Classification training labels (0, 1, 2)   | `prepare_classification_data()`   |
-| `y_test_cls`        | np.ndarray   | Classification test labels (0, 1, 2)       | `prepare_classification_data()`   |
-| `labels`            | np.ndarray   | Event labels for entire dataset            | `create_enhanced_event_labels()`  |
+| Variable Name       | Type         | Description                                    | Source/Usage                      |
+|---------------------|--------------|------------------------------------------------|-----------------------------------|
+| `X_train_cls`       | pd.DataFrame | Classification training features (raw)         | `prepare_classification_data()`   |
+| `X_test_cls`        | pd.DataFrame | Classification test features (raw)             | `prepare_classification_data()`   |
+| `X_train_processed` | pd.DataFrame | Classification training features (numeric)     | After `preprocess_for_lightgbm()` |
+| `X_test_processed`  | pd.DataFrame | Classification test features (numeric)         | After `preprocess_for_lightgbm()` |
+| `y_train_cls`       | np.ndarray   | Classification training labels (0, 1, 2, 3, 4) | `prepare_classification_data()`   |
+| `y_test_cls`        | np.ndarray   | Classification test labels (0, 1, 2, 3, 4)     | `prepare_classification_data()`   |
+| `labels`            | np.ndarray   | Event labels for entire dataset                | `create_enhanced_event_labels()`  |
 
 **Dataset Splits (Regression):**
 
@@ -857,13 +857,13 @@ This table documents standard variable names used across the Finance ML Analytic
 
 **Feature Categories:**
 
-| Variable Name         | Type      | Description                        | Source/Usage                                                           |
-|-----------------------|-----------|------------------------------------|------------------------------------------------------------------------|
-| `numeric_cols`        | List[str] | Numeric feature column names       | `prepare_classification_data()`                                        |
-| `categorical_cols`    | List[str] | Categorical feature column names   | `prepare_classification_data()`                                        |
-| `classification_cols` | List[str] | Classification probability columns | `['event_prob_neutral', 'event_prob_positive', 'event_prob_negative']` |
-| `valuation_cols`      | List[str] | Valuation metric columns           | `['p_e', 'p_b', 'ev_ebitda', 'market_cap']`                            |
-| `financial_metrics`   | List[str] | Financial metric columns           | Various analysis contexts                                              |
+| Variable Name         | Type      | Description                        | Source/Usage                                                                                                                       |
+|-----------------------|-----------|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `numeric_cols`        | List[str] | Numeric feature column names       | `prepare_classification_data()`                                                                                                    |
+| `categorical_cols`    | List[str] | Categorical feature column names   | `prepare_classification_data()`                                                                                                    |
+| `classification_cols` | List[str] | Classification probability columns | `['event_prob_strong_negative', 'event_prob_negative', 'event_prob_neutral', 'event_prob_positive', 'event_prob_strong_positive']` |
+| `valuation_cols`      | List[str] | Valuation metric columns           | `['p_e', 'p_b', 'ev_ebitda', 'market_cap']`                                                                                        |
+| `financial_metrics`   | List[str] | Financial metric columns           | Various analysis contexts                                                                                                          |
 
 **Phase 9.3 Feature Categories (v9_9):**
 
@@ -1479,6 +1479,39 @@ plural `columns`. Calling with wrong parameter names causes
 - Backward compatible with original columns
 - Meaningful class distributions across all methods
 - All 29 classification tests passing
+
+**5-Class Labeling System (Enhanced Granularity):**
+
+All event label creation methods now use a 5-class classification system instead of the previous 3-class system:
+
+| Label | Class Name      | Interpretation                                     | Use Case                                |
+|-------|-----------------|----------------------------------------------------|-----------------------------------------|
+| 0     | Strong Negative | Significantly unfavorable signal (bottom quintile) | High-conviction short/avoid signals     |
+| 1     | Negative        | Moderately unfavorable signal                      | Cautious/underweight positions          |
+| 2     | Neutral         | Mixed or insufficient signal                       | Hold/market-weight positions            |
+| 3     | Positive        | Moderately favorable signal                        | Opportunistic long positions            |
+| 4     | Strong Positive | Significantly favorable signal (top quintile)      | High-conviction long/overweight signals |
+
+**Threshold Mechanics:**
+
+- **Percentile-based**: Strong labels (0, 4) typically use 20th/80th percentiles
+- **Sector-adjusted**: Optional sector normalization for cross-sector comparability
+- **Method-specific**: Each method defines its own thresholds based on metric characteristics
+- **Backward compatible**: Existing 3-class code automatically benefits from finer granularity
+
+**Benefits of 5-Class System:**
+
+1. **Improved Signal Strength**: Distinguishes high-conviction from moderate signals
+2. **Better Risk Management**: Enables tiered position sizing (e.g., 2x allocation for class 4 vs class 3)
+3. **Enhanced Model Training**: More granular labels improve classifier performance
+4. **Flexible Aggregation**: Can collapse back to 3-class (0-1→Negative, 2→Neutral, 3-4→Positive) if needed
+
+**Implementation Notes:**
+
+- XGBoost/LightGBM `num_class` updated from 3 to 5
+- All 29 classification tests updated and passing
+- Notebook and submodules (models.py, tuning.py, evaluation.py) fully compatible
+- Classification probability columns now include 5 probabilities per sample
 
 ### Phase 9.5 Regression Enhancements (v0.6.1+)
 
