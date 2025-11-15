@@ -543,6 +543,20 @@ def impute_missing_values_knn_sector(
         logger.warning("No numeric columns to impute")
         return result
 
+    # FIX: Coerce all columns to numeric BEFORE sector loop
+    # This ensures string-contaminated columns are cleaned globally
+    non_numeric_global = []
+    for col in columns:
+        if result[col].dtype == "object":
+            non_numeric_global.append(col)
+            logger.debug(f"Pre-processing: Converting column '{col}' from object to numeric")
+            result[col] = pd.to_numeric(result[col], errors="coerce")
+
+    if non_numeric_global:
+        logger.info(
+            f"Pre-processed {len(non_numeric_global)} object columns to numeric before imputation"
+        )
+
     # Check if sector column exists
     if sector_column not in df.columns:
         logger.warning(
@@ -567,6 +581,28 @@ def impute_missing_values_knn_sector(
         if n_samples < 2:
             logger.warning(
                 f"Sector '{sector}' has only {n_samples} sample(s), skipping KNN imputation"
+            )
+            continue
+
+        # FIX: Coerce all columns to numeric, converting strings to NaN
+        # This prevents "could not convert string to float" errors in KNN imputation
+        non_numeric_cols = []
+        for col in columns:
+            if sector_data[col].dtype == "object":
+                non_numeric_cols.append(col)
+                logger.debug(f"Sector '{sector}': Converting column '{col}' from object to numeric")
+                sector_data[col] = pd.to_numeric(sector_data[col], errors="coerce")
+
+        if non_numeric_cols:
+            logger.info(
+                f"Sector '{sector}': Coerced {len(non_numeric_cols)} object columns to numeric"
+            )
+
+        # Validate no object dtypes remain
+        remaining_objects = sector_data.select_dtypes(include=["object"]).columns.tolist()
+        if remaining_objects:
+            logger.warning(
+                f"Sector '{sector}': Skipping KNN due to non-numeric columns: {remaining_objects}"
             )
             continue
 
@@ -595,6 +631,20 @@ def impute_missing_values_knn_sector(
     missing_sector_mask = df[sector_column].isna()
     if missing_sector_mask.any():
         missing_sector_data = df.loc[missing_sector_mask, columns].copy()
+
+        # FIX: Coerce all columns to numeric for global imputation
+        non_numeric_cols_global = []
+        for col in columns:
+            if missing_sector_data[col].dtype == "object":
+                non_numeric_cols_global.append(col)
+                logger.debug(f"Global imputation: Converting column '{col}' from object to numeric")
+                missing_sector_data[col] = pd.to_numeric(missing_sector_data[col], errors="coerce")
+
+        if non_numeric_cols_global:
+            logger.info(
+                f"Global imputation: Coerced {len(non_numeric_cols_global)} object columns to numeric"
+            )
+
         if missing_sector_data.isna().any().any():
             k = min(n_neighbors, missing_sector_data.shape[0] - 1)
             if k > 0:

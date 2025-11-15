@@ -201,6 +201,7 @@ def create_enhanced_event_labels(
             # Use composite momentum score with 5-class thresholds
             labels[momentum_score >= 1.5] = 4  # Strong positive momentum
             labels[(momentum_score >= 0.75) & (momentum_score < 1.5)] = 3  # Positive momentum
+            labels[(momentum_score >= -0.75) & (momentum_score < 0.75)] = 2  # Neutral momentum
             labels[(momentum_score <= -0.75) & (momentum_score > -1.5)] = 1  # Negative momentum
             labels[momentum_score <= -1.5] = 0  # Strong negative momentum
 
@@ -254,6 +255,7 @@ def create_enhanced_event_labels(
         # High score (undervalued) = positive, Low score (overvalued) = negative (5-class)
         labels[valuation_score >= 0.85] = 4  # Top 15% = strongly undervalued = strong positive
         labels[(valuation_score >= 0.65) & (valuation_score < 0.85)] = 3  # undervalued = positive
+        labels[(valuation_score >= 0.35) & (valuation_score < 0.65)] = 2  # Neutral (35-65%)
         labels[(valuation_score <= 0.35) & (valuation_score > 0.15)] = 1  # overvalued = negative
         labels[valuation_score <= 0.15] = 0  # Bottom 15% = strongly overvalued = strong negative
 
@@ -309,6 +311,10 @@ def create_enhanced_event_labels(
             & (avg_fundamental < avg_fundamental.quantile(0.85))
         ] = 3  # Positive
         labels[
+            (avg_fundamental >= avg_fundamental.quantile(0.35))
+            & (avg_fundamental < avg_fundamental.quantile(0.65))
+        ] = 2  # Neutral (35-65%)
+        labels[
             (avg_fundamental <= avg_fundamental.quantile(0.35))
             & (avg_fundamental > avg_fundamental.quantile(0.15))
         ] = 1  # Negative
@@ -361,6 +367,7 @@ def create_enhanced_event_labels(
         labels[(volatility_score <= -0.5) & (volatility_score > -1.0)] = (
             3  # Low volatility = positive
         )
+        labels[(volatility_score >= -0.5) & (volatility_score < 0.5)] = 2  # Neutral volatility
         labels[(volatility_score >= 0.5) & (volatility_score < 1.0)] = (
             1  # High volatility = negative
         )
@@ -427,6 +434,7 @@ def create_enhanced_event_labels(
         # Positive analyst score = positive catalyst, negative = negative catalyst (5-class)
         labels[analyst_score >= 1.0] = 4  # Very strong bullish signals
         labels[(analyst_score >= 0.5) & (analyst_score < 1.0)] = 3  # Bullish signals
+        labels[(analyst_score >= -0.5) & (analyst_score < 0.5)] = 2  # Neutral signals
         labels[(analyst_score <= -0.5) & (analyst_score > -1.0)] = 1  # Bearish signals
         labels[analyst_score <= -1.0] = 0  # Very strong bearish signals
 
@@ -482,6 +490,7 @@ def create_enhanced_event_labels(
         # Positive market signals = positive, negative = negative (5-class)
         labels[market_score >= 1.2] = 4  # Very strong positive sector/market signals
         labels[(market_score >= 0.6) & (market_score < 1.2)] = 3  # Positive signals
+        labels[(market_score >= -0.6) & (market_score < 0.6)] = 2  # Neutral signals
         labels[(market_score <= -0.6) & (market_score > -1.2)] = 1  # Negative signals
         labels[market_score <= -1.2] = 0  # Very strong negative sector/market signals
 
@@ -506,6 +515,10 @@ def create_enhanced_event_labels(
                 (avg_profitability >= avg_profitability.quantile(0.65))
                 & (avg_profitability < avg_profitability.quantile(0.85))
             ] = 3  # Positive
+            labels[
+                (avg_profitability >= avg_profitability.quantile(0.35))
+                & (avg_profitability < avg_profitability.quantile(0.65))
+            ] = 2  # Neutral (35-65%)
             labels[
                 (avg_profitability <= avg_profitability.quantile(0.35))
                 & (avg_profitability > avg_profitability.quantile(0.15))
@@ -568,6 +581,10 @@ def create_enhanced_event_labels(
                 & (avg_liquidity < avg_liquidity.quantile(0.85))
             ] = 3  # Positive
             labels[
+                (avg_liquidity >= avg_liquidity.quantile(0.35))
+                & (avg_liquidity < avg_liquidity.quantile(0.65))
+            ] = 2  # Neutral (35-65%)
+            labels[
                 (avg_liquidity <= avg_liquidity.quantile(0.35))
                 & (avg_liquidity > avg_liquidity.quantile(0.15))
             ] = 1  # Negative
@@ -600,6 +617,10 @@ def create_enhanced_event_labels(
             & (avg_efficiency < avg_efficiency.quantile(0.85))
         ] = 3  # Positive
         labels[
+            (avg_efficiency >= avg_efficiency.quantile(0.35))
+            & (avg_efficiency < avg_efficiency.quantile(0.65))
+        ] = 2  # Neutral (35-65%)
+        labels[
             (avg_efficiency <= avg_efficiency.quantile(0.35))
             & (avg_efficiency > avg_efficiency.quantile(0.15))
         ] = 1  # Negative
@@ -625,6 +646,9 @@ def create_enhanced_event_labels(
             labels[
                 (avg_growth >= avg_growth.quantile(0.65)) & (avg_growth < avg_growth.quantile(0.85))
             ] = 3  # Positive
+            labels[
+                (avg_growth >= avg_growth.quantile(0.35)) & (avg_growth < avg_growth.quantile(0.65))
+            ] = 2  # Neutral (35-65%)
             labels[
                 (avg_growth <= avg_growth.quantile(0.35)) & (avg_growth > avg_growth.quantile(0.15))
             ] = 1  # Negative
@@ -699,6 +723,10 @@ def create_enhanced_event_labels(
             & (quality_score < quality_score.quantile(0.85))
         ] = 3  # Positive
         labels[
+            (quality_score >= quality_score.quantile(0.35))
+            & (quality_score < quality_score.quantile(0.65))
+        ] = 2  # Neutral (35-65%)
+        labels[
             (quality_score <= quality_score.quantile(0.35))
             & (quality_score > quality_score.quantile(0.15))
         ] = 1  # Negative
@@ -742,6 +770,10 @@ def create_enhanced_event_labels(
             (composite_score >= composite_score.quantile(0.65))
             & (composite_score < composite_score.quantile(0.85))
         ] = 3  # Positive
+        labels[
+            (composite_score >= composite_score.quantile(0.35))
+            & (composite_score < composite_score.quantile(0.65))
+        ] = 2  # Neutral (35-65%)
         labels[
             (composite_score <= composite_score.quantile(0.35))
             & (composite_score > composite_score.quantile(0.15))

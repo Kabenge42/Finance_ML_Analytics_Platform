@@ -1120,7 +1120,7 @@ def train_voting_classifier(
     if HAVE_XGBOOST:
         xgb_clf = xgb.XGBClassifier(
             objective="multi:softprob",
-            num_class=3,
+            num_class=5,
             max_depth=6,
             learning_rate=0.1,
             n_estimators=100,
@@ -1132,7 +1132,7 @@ def train_voting_classifier(
     if HAVE_LIGHTGBM:
         lgb_clf = lgb.LGBMClassifier(
             objective="multiclass",
-            num_class=3,
+            num_class=5,
             max_depth=6,
             learning_rate=0.1,
             n_estimators=100,
@@ -1225,7 +1225,7 @@ def train_stacking_classifier(
     if HAVE_XGBOOST:
         xgb_clf = xgb.XGBClassifier(
             objective="multi:softprob",
-            num_class=3,
+            num_class=5,
             max_depth=6,
             learning_rate=0.1,
             n_estimators=100,
@@ -1237,7 +1237,7 @@ def train_stacking_classifier(
     if HAVE_LIGHTGBM:
         lgb_clf = lgb.LGBMClassifier(
             objective="multiclass",
-            num_class=3,
+            num_class=5,
             max_depth=6,
             learning_rate=0.1,
             n_estimators=100,

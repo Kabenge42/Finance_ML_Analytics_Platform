@@ -127,6 +127,8 @@ def optimize_classifier_hyperparameters(
         try:
             if classifier_type == "xgboost" and HAVE_XGBOOST:
                 params = {
+                    "objective": "multi:softprob",
+                    "num_class": 5,
                     "n_estimators": trial.suggest_int("n_estimators", 50, 500),
                     "max_depth": trial.suggest_int("max_depth", 3, 12),
                     "learning_rate": trial.suggest_float("learning_rate", 0.001, 0.3, log=True),
@@ -145,6 +147,8 @@ def optimize_classifier_hyperparameters(
 
             elif classifier_type == "lightgbm" and HAVE_LIGHTGBM:
                 params = {
+                    "objective": "multiclass",
+                    "num_class": 5,
                     "n_estimators": trial.suggest_int("n_estimators", 50, 500),
                     "max_depth": trial.suggest_int("max_depth", 3, 12),
                     "learning_rate": trial.suggest_float("learning_rate", 0.001, 0.3, log=True),
@@ -226,11 +230,15 @@ def optimize_classifier_hyperparameters(
         best_params["random_state"] = random_state
 
         if classifier_type == "xgboost" and HAVE_XGBOOST:
+            best_params["objective"] = "multi:softprob"
+            best_params["num_class"] = 5
             best_params["eval_metric"] = "mlogloss"
             best_params["use_label_encoder"] = False
             best_params["verbosity"] = 0
             best_model = xgb.XGBClassifier(**best_params)
         elif classifier_type == "lightgbm" and HAVE_LIGHTGBM:
+            best_params["objective"] = "multiclass"
+            best_params["num_class"] = 5
             best_params["verbose"] = -1
             best_model = lgb.LGBMClassifier(**best_params)
         elif classifier_type == "catboost" and HAVE_CATBOOST:

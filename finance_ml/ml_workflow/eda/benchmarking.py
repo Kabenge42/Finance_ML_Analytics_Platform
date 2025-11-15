@@ -50,9 +50,12 @@ def compare_sector_distributions(
 
         # Group by sector and calculate statistics
         for sector in df[sector_column].dropna().unique():
-            sector_data = df[df[sector_column] == sector][metric].dropna()
+            # NOTE: metrics may be stored as object with strings; coerce safely to numeric
+            raw_series = df.loc[df[sector_column] == sector, metric]
+            sector_data = pd.to_numeric(raw_series, errors="coerce").dropna()
 
             if len(sector_data) == 0:
+                # No numeric data for this (sector, metric) combination
                 continue
 
             results.append(
@@ -114,7 +117,8 @@ def compare_regional_valuations(
 
         # Group by region and calculate statistics
         for region in df[region_column].dropna().unique():
-            region_data = df[df[region_column] == region][metric].dropna()
+            raw_series = df.loc[df[region_column] == region, metric]
+            region_data = pd.to_numeric(raw_series, errors="coerce").dropna()
 
             if len(region_data) == 0:
                 continue
@@ -149,7 +153,8 @@ def compare_regional_valuations(
         regions = df[region_column].dropna().unique()
 
         for region in regions:
-            region_data = df[df[region_column] == region][metric].dropna()
+            raw_series = df.loc[df[region_column] == region, metric]
+            region_data = pd.to_numeric(raw_series, errors="coerce").dropna()
             if len(region_data) >= 3:  # Need at least 3 samples
                 region_groups.append(region_data.values)
 

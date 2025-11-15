@@ -9,6 +9,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **5-Class Classification Shape Mismatch**: Fixed critical bug where classifiers produced 4-class probabilities instead
+  of
+  required 5-class probabilities, causing `ValueError` in `export_classification_probabilities`
+  - **Root Cause**: Hyperparameter optimization in `tuning.py` didn't explicitly set `num_class=5`, so models inferred
+    class count from training data. When one class was missing, models produced shape `(n_samples, 4)` instead of
+    `(n_samples, 5)`, causing shape mismatch error
+  - **tuning.py fixes** (lines 130-131, 148-149, 233-234, 236-237):
+    - XGBoost: Added `objective="multi:softprob"` and `num_class=5` to both trial and final model creation
+    - LightGBM: Added `objective="multiclass"` and `num_class=5` to both trial and final model creation
+    - Ensures all gradient boosting classifiers are explicitly configured for 5-class system
+  - **Notebook validation** (lines 1744-1786): Added comprehensive 5-class validation after data preparation
+    - Checks `np.unique(y_train_cls)` contains all classes [0, 1, 2, 3, 4]
+    - Provides detailed warnings and recommendations if classes are missing
+    - Suggests threshold adjustments, alternative labeling methods, and detects severe class imbalance
+    - Prevents silent failures and guides users to fix label generation parameters
+  - **Implementation aligns with Option 1** from issue description: Ensure classifier is truly 5-class
+  - **Result**: Models now always produce shape `(n_samples, 5)` probabilities, resolving the traceback error
+- **5-Class System Consistency Across Codebase**: Comprehensive review and fixes to ensure consistent 5-class schema
+  application throughout Phase 9.5+ sections and all submodules
+  - **regression/dataset.py** (lines 205-208): Updated `integrate_classification_features` docstring
+    - Changed shape specification from `(n_samples, 3)` to `(n_samples, 5)`
+    - Updated column list to include all 7 meta-features for 5-class system
+    - Added explicit mention of 5-class event labeling system (Strong Negative through Strong Positive)
+  - **classification.py** (lines 1123, 1135, 1228, 1240): Fixed ensemble classifiers
+    - Updated `train_voting_classifier`: XGBoost and LightGBM now use `num_class=5`
+    - Updated `train_stacking_classifier`: XGBoost and LightGBM now use `num_class=5`
+    - Ensures all ensemble methods produce 5-class probabilities
+  - **advanced_models.py** (line 288): Added deprecation warning to legacy 3-class function
+    - Marked old `extract_classification_features` as deprecated
+    - Directs users to use 5-class version in `regression.dataset` module
+  - **Verification**: Confirmed notebook executable code and tests already use 5-class correctly
+    - Phase 9.4 classification section uses correct 5-class names
+    - test_classification_meta_features.py validates 5-class probabilities
+    - Legacy 3-class references found only in JSON output cells from old runs
+  - **Result**: Entire codebase now consistently enforces 5-class event labeling system
+- **Event Label Class Distribution Optimization**: Fixed systematic missing neutral class threshold across 11 event
+  labeling methods
+  - **Root Cause**: Event labeling methods in `labels.py` defined thresholds for classes 0, 1, 3, and 4, but were
+    missing
+    the explicit threshold assignment for class 2 (Neutral) in the 35th-65th percentile range
+  - **Impact**: Caused severe class imbalance with 0% neutral class, 78.5% negative classes, and only 21.5% positive
+    classes
+  - **Solution**: Implemented Option 1 Balanced 5-Class thresholds across all affected methods
+  - **Fixed methods** (11 total):
+    - **Percentile-based methods** (8): Added `labels[(score >= 0.35) & (score < 0.65)] = 2` threshold
+      - `valuation` (line 257): Neutral range for fair valuation (35-65th percentile)
+      - `fundamental` (lines 312-315): Neutral range for average fundamentals
+      - `profitability_event` (lines 518-521): Neutral range for average profitability
+      - `liquidity_event` (lines 583-586): Neutral range for average liquidity
+      - `efficiency_event` (lines 619-622): Neutral range for average efficiency
+      - `growth_event` (lines 649-651): Neutral range for moderate growth
+      - `quality_event` (lines 725-728): Neutral range for average quality
+      - `composite_event` (lines 773-776): Neutral range for balanced composite scores
+    - **Fixed-threshold methods** (3): Added neutral range between negative and positive thresholds
+      - `price_momentum` (line 204): Neutral range -0.75 to 0.75 for sideways momentum
+      - `volatility` (line 370): Neutral range -0.5 to 0.5 for moderate volatility
+      - `analyst_rating` (line 437): Neutral range -0.5 to 0.5 for mixed signals
+      - `market_events` (line 493): Neutral range -0.6 to 0.6 for balanced market signals
+  - **Expected distribution**: ~15% Strong Negative / 20% Negative / 30% Neutral / 20% Positive / 15% Strong Positive
+  - **Result**: Balanced 5-class distribution preventing the critical 0% neutral class issue
 - **Notebook Inspection Issues**: Resolved critical ERROR-level inspection issues in `ml_finance_model_main.ipynb`
   - Fixed 13 unresolved reference errors in documentation code blocks (lines 1288-1340, 1474-1483)
   - Commented out example API usage code in Phase 9.3 and 9.4 documentation blocks to prevent false errors

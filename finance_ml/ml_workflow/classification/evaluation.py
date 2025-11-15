@@ -170,29 +170,92 @@ def evaluate_classification(
         y_true: True labels
         y_pred: Predicted labels
         y_proba: Predicted probabilities (optional)
-        class_names: Names for classes (default: ['Neutral', 'Positive', 'Negative'])
+        class_names: Names for classes. If None, inferred based on number of classes.
+            - 3 classes → ["Neutral", "Positive", "Negative"]
+            - 5 classes → ["Strong Negative", "Negative", "Neutral", "Positive", "Strong Positive"]
 
     Returns:
         Dictionary with metrics, confusion matrix, and classification report
     """
-    if class_names is None:
-        class_names = ["Neutral", "Positive", "Negative"]
 
-    # Basic metrics
+    # Infer label set to ensure consistency across metrics and reports
+    if y_proba is not None and hasattr(y_proba, "shape") and len(y_proba.shape) == 2:
+        n_classes = int(y_proba.shape[1])
+        labels = list(range(n_classes))
+    else:
+        # Use union of observed labels to maintain backward compatibility
+        y_true_arr = np.asarray(y_true).ravel()
+        y_pred_arr = np.asarray(y_pred).ravel()
+        labels = sorted(list(set(np.unique(y_true_arr)).union(np.unique(y_pred_arr))))
+        # Ensure labels are int-like and contiguous starting at 0 if possible
+        try:
+            labels = [int(x) for x in labels]
+        except Exception:  # keep as-is if not castable
+            pass
+        n_classes = len(labels)
+
+    # Determine class names
+    default_3 = ["Neutral", "Positive", "Negative"]
+    default_5 = [
+        "Strong Negative",
+        "Negative",
+        "Neutral",
+        "Positive",
+        "Strong Positive",
+    ]
+
+    inferred_defaults = (
+        default_5
+        if n_classes == 5
+        else default_3 if n_classes == 3 else [f"Class {i}" for i in range(n_classes)]
+    )
+
+    if class_names is None:
+        class_names_use = inferred_defaults
+    else:
+        class_names_use = class_names
+
+    # If provided class_names length doesn't match the label count, reconcile to avoid ValueError
+    if len(class_names_use) != n_classes:
+        # Prefer using probability-derived class count when available, otherwise fall back to labels observed
+        logger.warning(
+            "Mismatch between number of classes (%d) and class_names (%d). Adjusting labels/names to align.",
+            n_classes,
+            len(class_names_use),
+        )
+        # If y_proba dictates number of classes and class_names provided match that, align labels accordingly
+        if (
+            y_proba is not None
+            and hasattr(y_proba, "shape")
+            and y_proba.shape[1] == len(class_names_use)
+        ):
+            labels = list(range(len(class_names_use)))
+            n_classes = len(labels)
+        else:
+            # Otherwise, override class_names with sensible defaults matching n_classes
+            class_names_use = inferred_defaults
+
+    # Compute metrics with explicit labels to ensure fixed-length outputs
     accuracy = accuracy_score(y_true, y_pred)
+
     precision, recall, f1, support = precision_recall_fscore_support(
-        y_true, y_pred, average=None, zero_division=0
+        y_true, y_pred, labels=labels, average=None, zero_division=0
     )
     precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(
-        y_true, y_pred, average="macro", zero_division=0
+        y_true, y_pred, labels=labels, average="macro", zero_division=0
     )
 
-    # Confusion matrix
-    cm = confusion_matrix(y_true, y_pred)
+    # Confusion matrix with explicit labels for stable NxN shape
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
 
-    # Classification report
+    # Classification report with aligned labels and names
     report = classification_report(
-        y_true, y_pred, target_names=class_names, output_dict=True, zero_division=0
+        y_true,
+        y_pred,
+        labels=labels,
+        target_names=class_names_use,
+        output_dict=True,
+        zero_division=0,
     )
 
     # ROC-AUC (if probabilities available)
@@ -204,14 +267,14 @@ def evaluate_classification(
             logger.warning("Could not compute ROC-AUC (likely due to missing classes)")
 
     return {
-        "accuracy": accuracy,
+        "accuracy": float(accuracy),
         "precision_per_class": precision.tolist(),
         "recall_per_class": recall.tolist(),
         "f1_per_class": f1.tolist(),
         "support_per_class": support.tolist(),
-        "precision_macro": precision_macro,
-        "recall_macro": recall_macro,
-        "f1_macro": f1_macro,
+        "precision_macro": float(precision_macro),
+        "recall_macro": float(recall_macro),
+        "f1_macro": float(f1_macro),
         "confusion_matrix": cm,
         "classification_report": report,
         "roc_auc": roc_auc,
@@ -400,7 +463,21 @@ def plot_confusion_matrices(
 
     for idx, (model_name, results) in enumerate(models_results.items()):
         if "y_pred" in results and "y_test" in results:
-            cm = confusion_matrix(results["y_test"], results["y_pred"])
+            # Ensure confusion matrix shape matches class_names length when provided
+            if class_names is not None:
+                labels = list(range(len(class_names)))
+            else:
+                # Infer labels from observed data
+                labels = sorted(
+                    list(set(np.unique(results["y_test"])).union(np.unique(results["y_pred"])))
+                )
+                # Coerce to int when possible
+                try:
+                    labels = [int(x) for x in labels]
+                except Exception:
+                    pass
+
+            cm = confusion_matrix(results["y_test"], results["y_pred"], labels=labels)
             sns.heatmap(
                 cm,
                 annot=True,

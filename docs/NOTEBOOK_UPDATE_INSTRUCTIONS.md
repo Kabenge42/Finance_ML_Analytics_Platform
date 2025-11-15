@@ -100,7 +100,7 @@ After updating the notebook:
    import pandas as pd
    import numpy as np
    
-   df = pd.read_csv('outputs/regression/regression_predictions_detailed.csv')
+   df = pd.read_csv('../outputs/regression/regression_predictions_detailed.csv')
    n_zeros = np.sum(df['y_pred'] == 0)
    print(f"Zero predictions: {n_zeros} (expected: 0)")
    ```

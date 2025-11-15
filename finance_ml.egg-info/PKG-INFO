@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: finance-ml
-Version: 0.5.0
+Version: 0.8.1
 Summary: A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions
 Author: Finance ML Team
 License: MIT
@@ -65,41 +65,46 @@ Dynamic: license-file
 
 # Finance ML Analytics Platform
 
-**Version 0.5.0** — A professional, modular Python package for equity screening, feature engineering, and machine
-learning models across global regions.
+**Version 0.8.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+
+> **Documentation Last Updated:** 2025-11-15  
+> **Latest Release**: v0.8.1 (2025-11-14 per CHANGELOG.md)  
+> **Model Version**: v9_9  
+> **Note**: Package versions synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Quick Start (TL;DR)
+---
 
-- Python: 3.12 or 3.13
-- Create and activate a virtual environment:
-    - Windows (PowerShell):
-        - python -m venv .venv
-        - .venv\Scripts\Activate.ps1
-    - macOS/Linux (bash):
-        - python3 -m venv .venv
-        - source .venv/bin/activate
-- Upgrade pip tools: python -m pip install --upgrade pip setuptools wheel
-- Install dependencies: pip install -r requirements.txt
-- PostgreSQL: ensure local Postgres is running; create schema:
-    - psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
-- Load data from CSVs into PostgreSQL:
-    - psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
-- Notebook: open **ml_finance_model_main.ipynb** and run cells in order
-- Script (optional): python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
-- CLI tools (after pip install -e .): finance-ml --data-source auto --limit 5000
-- Tests: python -m unittest -v
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Technology Stack](#technology-stack)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Database Setup](#database-setup)
+- [Usage](#usage)
+    - [Jupyter Notebook Workflow](#jupyter-notebook-workflow)
+    - [Python Script](#python-script)
+    - [CLI Tools](#cli-tools)
+    - [Interactive Dashboards](#interactive-dashboards)
+- [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Scripts and Tools](#scripts-and-tools)
+- [Recent Updates](#recent-updates)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Overview
 
-Finance ML Analytics Platform is a comprehensive toolkit for quantitative equity analysis combining:
-- **Unified data pipeline**: PostgreSQL integration + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
-- **Modular Python package** (`finance_ml`): Clean, tested, reusable code for data loading, feature engineering, modeling, and analytics
-- **Interactive notebook**: Jupyter-based workflow for exploration and prototyping
-- **CLI tools**: Command-line interface for batch processing and automation
-- **Production-ready**: Modern packaging, comprehensive tests, CI/CD, configuration management
+Finance ML Analytics Platform is a comprehensive toolkit for quantitative equity analysis combining unified data
+pipelines, modular Python packages, interactive notebooks, and production-ready CLI tools.
 
 ### Business Objective
 
@@ -108,1215 +113,1165 @@ portfolio optimization.
 
 **Target Variable**: "Predicted Price Target" for regression modeling
 
-The platform implements a sophisticated 8-step ML workflow aligned with industry best practices (
-see [IMPROVEMENT_PLAN.md Phase 9](improvement_plan/IMPROVEMENT_PLAN.md) for detailed implementation plan):
+The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8) aligned with industry best practices:
 
-1. Loading and preprocessing financial data from multiple regions
-2. Exploratory data analysis of financial metrics
-3. Advanced feature engineering with sector-specific optimizations
-4. Multi-class classification of financial events using sophisticated models
-5. Training sector-optimized regression models enhanced with classification features
-6. Model evaluation and error analysis
-7. Identification of under/overvalued stocks with visualization
-8. Comprehensive analytics: Predicted vs. Analyst Price Target comparison
+1. **Phase 9.1**: Loading and preprocessing with 6-step imputation strategy
+2. **Phase 9.2**: Enhanced exploratory data analysis with statistical testing and benchmarking
+3. **Phase 9.3**: Advanced feature engineering with sector-specific optimizations
+4. **Phase 9.4**: Multi-class event classification using neural networks and ensembles
+5. **Phase 9.5**: Sector-optimized regression models with hyperparameter tuning and quantile models
+6. **Phase 9.6**: Model evaluation and comprehensive error analysis
+7. **Phase 9.7**: Identification of under/overvalued stocks with visualization and analyst comparison
+8. **Phase 9.8**: Comprehensive analytics and reporting
 
-### Key Features
-- 📊 **Data Management**: Load from PostgreSQL or CSV, with validation and quality checks
-- 🔧 **Feature Engineering**: Financial ratios, margins, volatility, revenue CAGR, sector-specific optimizations (
-  Financials, Energy, Tech, Healthcare)
-- 🤖 **ML Models**: Multi-class event classification, sector-optimized regression, quantile models, stacking ensembles,
-  deep learning (TensorFlow/Keras)
-- 📈 **Analytics**: Mispricing scores, stock ranking, interactive visualizations, Predicted vs. Analyst Target comparison
-- 🎯 **Stock Prediction**: Sophisticated 8-step workflow for price target prediction with comprehensive error analysis
-- 📊 **Reporting**: Excel reports (matching Stock_Prediction_Analysis_Report format), PDF generation, interactive
-  dashboards
-- ⚙️ **Configuration**: Flexible config via environment variables, JSON, or YAML
-- 🧪 **Tested**: Comprehensive unit tests with good coverage
+---
+
+## Stack & Entry Points (Quick)
+
+- Language: Python 3.12–3.13
+- Package manager: pip (requirements.txt) + pyproject.toml (PEP 621)
+- Core frameworks: pandas, scikit-learn, XGBoost/LightGBM/CatBoost, plotly/matplotlib, SHAP
+- Optional: TensorFlow/Keras, SQLAlchemy + psycopg2 (PostgreSQL)
+- Database: PostgreSQL (primary), SQLite (local quick start)
+- CLI entry points (from pyproject.toml):
+  - finance-ml — full pipeline
+  - finance-ml-analyze — EDA/analytics only
+  - finance-ml-validate — validation-only
+- Main notebook: ml_finance_model_main.ipynb
+- Script alternative: ml_finance_model_main.py
+
+Note: If something appears missing for your environment, see environment_variables.txt and the Testing section’s selective execution tips. TODO: Add containerization instructions (Docker) if/when available.
+
+---
+
+## Key Features
+
+- 📊 **Data Management**: PostgreSQL/SQLite integration + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
+- 🧹 **Data Quality**: 6-step imputation pipeline (zero-fill, KNN, price-based, median) with validation; outlier safety
+  rails (winsorization, robust loss, clipping)
+- 🔧 **Feature Engineering**: Financial ratios, margins, volatility, revenue CAGR, sector-specific features
+- 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models with conformal calibration,
+  stacking ensembles
+- 📈 **Analytics**: Mispricing scores, stock ranking, analyst comparison, benchmarking, risk metrics
+- 💼 **Portfolio Optimization**: Efficient frontier, maximum Sharpe ratio, minimum volatility portfolios
+- 📉 **Risk Metrics**: VaR, CVaR, Sharpe ratio, Sortino ratio, maximum drawdown analysis
+- 📊 **Interactive Dashboards**: Streamlit and Dash applications with portfolio & risk metrics visualization
+- 🎯 **Stock Prediction**: End-to-end 8-phase workflow for price target prediction with standardized predictions schema
+- 🔬 **Uncertainty Quantification**: Quantile regression + conformal prediction for calibrated 80% prediction intervals
+- 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis, standardized predictions
+  output
+- ⚙️ **Configuration**: Flexible config via environment variables and CLI options
+- 🧪 **Tested**: 45 test modules with comprehensive coverage (≥80% target for new code); TDD conventions for
+  uncertainty, safety rails, and schema validation
 - 🚀 **CLI**: Three command-line tools for different workflows
-- 🔍 **Model Interpretation**: SHAP, LIME for explainability and feature importance analysis
+- 🔍 **Model Interpretation**: SHAP analysis for explainability
 
-### Phase 9 Implementation Status
+---
 
-**Advanced Stock Prediction ML System** — 8 of 8 phases complete (100%)
+## Module Structure (v9_8 - Phase 9.1-9.8 Refactor)
 
-✅ **Completed Phases:**
+The codebase follows a **phase-aligned architecture** with dedicated subpackages for each development phase:
 
-- **Phase 9.1**: Data versioning and catalog management — Dataset version tracking, metadata management, centralized
-  data
-  asset registry
-- **Phase 9.2**: Enhanced EDA with statistical analysis — Distribution analysis, outlier detection (IQR), normality
-  tests, correlation matrices (Pearson/Spearman), sector-wise summaries
-- **Phase 9.3**: Advanced feature engineering (978 lines, 13 functions) — Comprehensive financial ratios,
-  sector-specific features for all major sectors, temporal/market microstructure features, non-linear transforms,
-  feature interactions, automated feature selection (88 tests, 93% coverage)
-- **Phase 9.4**: Multi-class event classification (1,336 lines) — Neural networks, ensemble methods, SHAP interpretation
-- **Phase 9.5**: Sector-optimized regression (1,091 lines) — 12+ regression models, hyperparameter optimization,
-  stacking, comprehensive error handling, prediction flow validation
-- **Phase 9.6**: Model evaluation and error analysis (314 lines) — Comprehensive metrics (MAE, RMSE, MAPE, R²), residual
-  analysis, cross-validation strategies
-- **Phase 9.7**: Identification of under/overvalued stocks with visualization (395 lines) — Mispricing scores with
-  confidence intervals, valuation categories (Strong Buy/Buy/Hold/Sell/Strong Sell), sector-relative analysis,
-  multi-factor screening, interactive visualizations, PDF report generation, Excel export
-- **Phase 9.8**: Comprehensive analytics and reporting — Predicted vs. Analyst Price Target comparison, error analysis,
-  tracking, automated reporting
+```
+finance_ml/ml_workflow/
+├── preprocessing/      # Phase 9.1: 6-step imputation, outliers, scaling, quality
+├── eda/               # Phase 9.2: EDA, benchmarking, reports
+├── features/          # Phase 9.3: Core, advanced, selection, API
+├── classification/    # Phase 9.4: Labels, tuning, models, evaluation
+├── regression/        # Phase 9.5: Models, constraints, quantile, tuning, dataset, io
+├── evaluation/        # Phase 9.6: Metrics, analysis
+├── analytics/         # Phase 9.7: Mispricing, analyst comparison, portfolio, risk
+└── reporting/         # Phase 9.8: Dashboard data, export
+```
 
-**Latest Release (v0.4.0)**: Complete TDD implementation of Phase 9.7 with 15 new functions, 93 comprehensive tests,
-full notebook integration, and professional reporting capabilities.
+### Phase-to-Module Mapping
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed implementation notes and version history.
+| Phase   | Subpackage        | Purpose                                      | Import Prefix              | Key Functions                                                                                                                                 |
+|---------|-------------------|----------------------------------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| **9.1** | `preprocessing/`  | Data quality, imputation, outliers, scaling  | `preprocessing_*`          | `apply_enhanced_imputation_strategy_4step`, `preprocessing_calculate_quality`, `detect_outliers_iqr`, `winsorize_by_sector`, `scale_features` |
+| **9.2** | `eda/`            | EDA reports, benchmarking, statistical tests | `generate_*`, `compare_*`  | `generate_eda_report`, `generate_benchmarking_report`, `compare_sector_distributions`                                                         |
+| **9.3** | `features/`       | Feature engineering, importance, selection   | `features_*`, `engineer_*` | `features_build_comprehensive`, `features_importance_rf`, `engineer_valuation_ratios`, `engineer_analyst_quality_features`                    |
+| **9.4** | `classification/` | Event labels, hyperparameter tuning, models  | `classification_*`         | `classification_create_enhanced_event_labels`, `classification_optimize_hyperparameters`                                                      |
+| **9.5** | `regression/`     | Model training, quantile, constraints, I/O   | `regression_*`             | `regression_train_xgboost`, `regression_train_lightgbm`, `regression_compare_regressors`, `regression_save_model`                             |
+| **9.6** | `evaluation/`     | Metrics, error analysis, segmentation        | `evaluation_*`             | `evaluation_comprehensive_metrics`, `evaluation_metrics_by_segment`                                                                           |
+| **9.7** | `analytics/`      | Mispricing, rankings, portfolio, risk        | `analytics_*`              | `analytics_calculate_mispricing`, `analytics_rank_undervalued`, `analytics_rank_by_sector`                                                    |
+| **9.8** | `reporting/`      | Dashboard data, quality alerts, exports      | `reporting_*`              | `reporting_financial_metrics`, `reporting_quality_alerts`, `reporting_plotly_data`                                                            |
 
-### Phase 9.5 Robustness Improvements (2025-10-30)
+### Import Examples
 
-Recent enhancements to Phase 9.5 (Advanced Regression Models) improve reliability and testing:
+**Recommended Pattern (Package-Level Imports):**
 
-**Error Handling Enhancements:**
+```python
+# All Phase 9.1-9.8 functions are available at package level with descriptive prefixes
+from finance_ml import (
+    # Phase 9.1: Preprocessing
+    apply_enhanced_imputation_strategy_4step,
+    preprocessing_calculate_quality,
+    detect_outliers_iqr,
+    winsorize_by_sector,
+    scale_features,
 
-- ✅ Model comparison with graceful degradation when individual models fail
-- ✅ Safe quantile results access with comprehensive fallback handling
-- ✅ Zero/infinite value detection before creating interaction features
-- ✅ Validation of results dataframes before visualization
-- ✅ Dynamic date generation for model metadata (no hardcoded dates)
-- ✅ Index-aligned prediction storage to prevent pandas warnings
+    # Phase 9.2: EDA
+    generate_eda_report,
+    generate_benchmarking_report,
 
-**Prediction Flow Validation:**
+    # Phase 9.3: Features
+    features_build_comprehensive,
+    features_importance_rf,
+    engineer_analyst_quality_features,
 
-- ✅ Predictions properly stored in `all_stocks_featured` dataframe for Phases 9.6 and 9.7
-- ✅ Validation script (`validate_phase95_predictions.py`) tests end-to-end prediction flow
-- ✅ Comprehensive checks for required columns, data coverage, and prediction intervals
+    # Phase 9.4: Classification
+    classification_create_enhanced_event_labels,
+    classification_optimize_hyperparameters,
 
-**Testing Enhancements:**
+    # Phase 9.5: Regression
+    regression_train_xgboost,
+    regression_compare_regressors,
+    regression_save_model,
 
-- ✅ 16 new unit tests for Phase 9.5 error handling (`tests/test_phase95_error_handling.py`)
-- ✅ Tests cover edge cases: empty data, NaN handling, zeros, infinite values, small datasets
-- ✅ Integration tests verify full workflow and prediction storage patterns
-- ✅ All tests passing with 100% success rate
+    # Phase 9.6: Evaluation
+    evaluation_comprehensive_metrics,
+    evaluation_metrics_by_segment,
 
-**Documentation:**
+    # Phase 9.7: Analytics
+    analytics_calculate_mispricing,
+    analytics_rank_undervalued,
 
-- ✅ Detailed fixes summary in `PHASE_9_5_FIXES_SUMMARY.md`
-- ✅ Clear error messages and user feedback throughout Phase 9.5
-- ✅ Comprehensive docstrings and inline comments
+    # Phase 9.8: Reporting
+    reporting_financial_metrics,
+    reporting_quality_alerts,
+    )
+```
 
-These improvements ensure Phase 9.5 handles real-world data issues gracefully and provides reliable predictions for
-downstream analysis in Phases 9.6 and 9.7.
+**Alternative Pattern (Direct Subpackage Imports):**
 
-## Tech Stack
+```python
+# Import directly from subpackages for more explicit organization
+from finance_ml.ml_workflow.preprocessing import imputation, outliers, scaling
+from finance_ml.ml_workflow.eda import eda, benchmarking
+from finance_ml.ml_workflow.features import core, advanced, selection
+from finance_ml.ml_workflow.classification import labels, tuning, models
+from finance_ml.ml_workflow.regression import models, quantile, constraints
+from finance_ml.ml_workflow.evaluation import metrics
+from finance_ml.ml_workflow.analytics import mispricing
+from finance_ml.ml_workflow.reporting import dashboard_data
+```
 
-### Core Technologies
+### Migration Guide
 
-- **Language**: Python 3.12 or 3.13 (required)
-- **Package Manager**: pip + venv (primary), pipenv (alternative)
-- **Notebook**: Jupyter Notebook or JupyterLab
-- **Database**: PostgreSQL 15+ (local instance recommended)
+**Old Pattern (Deprecated):**
 
-### Key Libraries
-- **ML/DS Core**: numpy, pandas, scipy, scikit-learn, statsmodels
-- **Gradient Boosting**: xgboost, lightgbm, catboost
-- **Deep Learning**: tensorflow, scikeras (optional)
-- **Model Interpretation**: shap
+```python
+# These still work but trigger deprecation warnings
+from finance_ml.ml_workflow.advanced_preprocessing import detect_outliers_iqr
+from finance_ml.ml_workflow.advanced_features import build_comprehensive_features
+from finance_ml.ml_workflow.advanced_models import train_xgboost_regressor
+# Note: eval.py moved to analytics/eval.py (Phase 9.7)
+from finance_ml.ml_workflow.analytics.eval import calculate_mispricing_score
+```
+
+**New Pattern (Recommended):**
+
+```python
+# Use package-level imports with descriptive prefixes
+from finance_ml import (
+    detect_outliers_iqr,  # Phase 9.1
+    features_build_comprehensive,  # Phase 9.3
+    regression_train_xgboost,  # Phase 9.5
+    analytics_calculate_mispricing,  # Phase 9.7
+    )
+```
+
+### Key Design Principles
+
+✅ **Phase alignment**: Each subpackage maps directly to a business phase (9.1–9.8)  
+✅ **Backward compatibility**: Old imports still work with deprecation warnings for 1-2 releases  
+✅ **Clean imports**: All functions imported once at package level  
+✅ **Descriptive prefixes**: Function names indicate their module (preprocessing_*, features_*, etc.)  
+✅ **Consolidation**: Eliminated duplication across `features.py`/`advanced_features.py`, `models.py`/
+`advanced_models.py`, etc.  
+✅ **Testability**: Isolated modules are easier to unit test  
+✅ **Maintainability**: Clear module boundaries and responsibilities
+
+See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed migration guide and complete API reference.
+
+---
+
+## Technology Stack
+
+### Language & Runtime
+
+- **Python**: 3.12 or 3.13 (officially supported per `pyproject.toml`; 3.10-3.11 may work but untested)
+- **Package Manager**: pip with `requirements.txt` and `pyproject.toml`
+
+### Core Libraries
+
+- **Data**: pandas, numpy, scipy, statsmodels
+- **ML Frameworks**: scikit-learn, imbalanced-learn
+- **Gradient Boosting**: XGBoost, LightGBM, CatBoost
+- **Deep Learning** (optional): TensorFlow/Keras, scikeras
 - **Visualization**: matplotlib, seaborn, plotly
-- **Utilities**: tqdm, joblib, xlsxwriter, psutil
+- **Dashboards**: streamlit, dash
+- **Explainability**: SHAP
+- **Utilities**: joblib, tqdm, xlsxwriter, psutil
 
-See `requirements.txt` for complete list with version constraints.
+### Database
 
-### Package Installation Options
-The package supports optional dependency groups via `pyproject.toml`:
-- **`[dev]`**: pytest, black, flake8, mypy, isort (development tools)
-- **`[tensorflow]`**: tensorflow, scikeras (deep learning)
-- **`[database]`**: psycopg2-binary, SQLAlchemy, openpyxl (database access from Python)
-- **`[advanced-features]`**: boruta, numba (advanced feature selection and performance)
-- **`[notebook]`**: jupyter, notebook, ipykernel (Jupyter notebook support)
-- **`[all]`**: All optional dependencies combined
+- **Primary**: PostgreSQL 15+ (recommended for production)
+- **Alternative**: SQLite 3 (for quick local testing)
+- **Drivers**: psycopg2-binary, SQLAlchemy
 
+### Development Tools
+
+- **Testing**: unittest (built-in), pytest (optional), coverage
+- **Code Quality**: black, flake8, mypy, isort
+- **Notebooks**: Jupyter, notebook, ipykernel
+
+---
 
 ## Requirements
-- OS: Windows 10/11 (tested), macOS, or Linux
-- Python: 3.12 or 3.13
-- PostgreSQL: 15+ (local instance)
-- Optional: Git for version control
 
+### System Requirements
 
-## Setup
+- **OS**: Windows 10/11, macOS, or Linux
+- **Python**: 3.12 or 3.13 (officially supported)
+- **PostgreSQL**: 15+ (optional; SQLite works for local testing)
+- **Memory**: 8GB+ recommended for full dataset
+- **Disk**: 2GB+ for project, data, and models
 
-1) Create and activate a virtual environment
-- Windows (PowerShell):
-  - python -m venv .venv
-  - .venv\Scripts\Activate.ps1
-- macOS/Linux (bash):
-  - python3 -m venv .venv
-  - source .venv/bin/activate
+### Python Dependencies
 
-2) Upgrade packaging tools
-- python -m pip install --upgrade pip setuptools wheel
+Core dependencies are managed in `requirements.txt`. Optional extras include:
 
-3) Install Python dependencies
+- **tensorflow**: TensorFlow/Keras for deep learning (optional)
+- **database**: PostgreSQL drivers (psycopg2-binary, SQLAlchemy)
+- **dev**: Testing and code quality tools (pytest, black, mypy, etc.)
+- **notebook**: Jupyter notebook support
+- **dashboards**: Streamlit and Dash for interactive dashboards
 
-**Basic installation** (includes core + optional dependencies):
-- pip install -r requirements.txt
-    - Note: `requirements.txt` includes TensorFlow, database libraries (psycopg2, SQLAlchemy), Jupyter, and other
-      optional dependencies for a complete setup. If you encounter TensorFlow installation issues, you can comment it
-      out—the core workflow uses scikit-learn and gradient boosting libraries.
+---
 
-**Package installation** (for CLI tools with selective dependencies):
+## Quick Start
 
-- pip install -e . # Core package only (minimal dependencies)
-- pip install -e ".[dev]"             # With development tools
-- pip install -e ".[database]"        # With database client libraries
-- pip install -e ".[notebook]"        # With Jupyter notebook support
-- pip install -e ".[tensorflow]"      # With TensorFlow/Keras deep learning
-- pip install -e ".[all]"             # With all optional dependencies
+```powershell
+# 1. Clone repository (or download)
+git clone https://github.com/Kabenge42/Finance_ML_Analytics_Platform.git
+cd Finance_ML_Analytics_Platform
 
-**Note**: The package installation approach allows selective installation of optional features, while `requirements.txt`
-provides a batteries-included setup.
+# 2. Create and activate virtual environment
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 
-### Optional: Conda environment (Anaconda/Miniconda)
+# 3. Upgrade pip and install dependencies
+python -m pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
 
-If you prefer Conda, an environment file is provided:
+# 4. Set up database (PostgreSQL or SQLite)
+# PostgreSQL:
+psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/create_equities_schema.sql
+psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/import_equities_data.sql
 
-- Finance_ML_Analytics_Platform.yaml
+# SQLite (alternative):
+sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
+sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
 
-Create and activate the Conda env:
+# 5. Configure environment (optional)
+# Edit environment_variables.txt and export or create .env
 
-- conda env create -f Finance_ML_Analytics_Platform.yaml
-- conda activate Finance_ML_Analytics_Platform
+# 6. Run main notebook
+jupyter notebook ml_finance_model_main.ipynb
 
-Note: The primary, tested path is venv + pip. Avoid mixing Conda envs with Python venv in the same project.
+# Or run as Python script
+python ml_finance_model_main.py --data-source auto --limit 5000
 
-### Automated setup helper (optional)
+# Or use CLI
+finance-ml --data-source auto --output-dir outputs
 
-Use the setup helper to streamline local setup in one command:
+# Or launch interactive dashboard
+streamlit run finance_ml/dashboards/streamlit_app.py
+```
 
-- python setup_environment.py
+---
 
-Common flags:
+## Installation
 
-- --skip-db — Skip PostgreSQL setup
-- --skip-data-load — Skip CSV import into DB
-- --recreate-venv — Recreate the .venv
-- --install-db-libs — Also install psycopg2-binary and SQLAlchemy
-- --force — Continue even if a step fails (not recommended)
+### 1. Prerequisites
 
-See setup_environment.py --help for full usage.
+Ensure you have Python 3.12 or 3.13 installed:
 
-## PostgreSQL Setup and Data Load
-1) Ensure PostgreSQL is installed and running locally, and psql is on your PATH.
+```powershell
+python --version
+```
 
-2) Create the equities table by running the SQL script in the project root:
-- Windows (PowerShell):
-  - psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
+### 2. Virtual Environment Setup
 
-The script creates the equities table and assigns ownership to postgres (ALTER TABLE equities OWNER TO postgres;). Many column names contain spaces; always use double quotes in SQL when referencing them.
+**Windows (PowerShell):**
 
-3) (Optional but Recommended) Validate CSV data quality before import:
-- Windows (PowerShell):
-  - python validate_csv_import.py
-- This script validates schema, checks for missing values, and identifies potential data quality issues before database
-  import.
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
 
-4) Load the regional CSVs from data/ into the equities table using the comprehensive import script:
-- Windows (PowerShell):
-  - psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
-- This script handles all four regions (US, EU, APAC, ROTW) with proper NULL handling, staging tables, and validation.
+**macOS/Linux (bash):**
 
-Alternative: Manual import per region with proper NULL handling (if you need more control):
-- Example for US region using staging table approach:
-  - psql -h localhost -p 5432 -U postgres -d postgres -c "CREATE TEMP TABLE equities_staging (LIKE equities)"
-  - psql -h localhost -p 5432 -U postgres -d postgres -c "\\copy equities_staging FROM 'data/screening_us.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')"
-  - psql -h localhost -p 5432 -U postgres -d postgres -c "UPDATE equities_staging SET \"Region\"='US' WHERE \"Region\" IS NULL"
-  - psql -h localhost -p 5432 -U postgres -d postgres -c "INSERT INTO equities SELECT * FROM equities_staging ON CONFLICT DO NOTHING"
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-Key import parameters:
-- NULL '' - Treats empty strings as NULL values (critical for proper data import)
-- ENCODING 'UTF8' - Ensures proper character handling
-- HEADER true - Skips the CSV header row
+### 3. Install Dependencies
 
-Repeat per region (EU/APAC/ROTW) substituting the correct CSV and Region value.
+```powershell
+# Upgrade packaging tools
+python -m pip install --upgrade pip setuptools wheel
 
-### Security Note
+# Install all dependencies
+pip install -r requirements.txt
+```
 
-**⚠️ Important**: Never commit database passwords or API keys to version control.
+**Optional**: Install with specific extras:
 
-- Use environment variables or `.env` files (add `.env` to `.gitignore`)
-- The `environment_variables.txt` file contains example configurations with placeholders
-- For production deployments, use secure secret management (e.g., GitHub Secrets, AWS Secrets Manager)
-- Review all configuration files before committing to ensure no credentials are exposed
+```powershell
+# Install package in editable mode with extras
+pip install -e ".[dev,database,notebook]"
+```
+
+### 4. Verify Installation
+
+```powershell
+# Run smoke test
+python -m unittest tests.test_coverage_smoke -v
+
+# Check CLI tools
+finance-ml --help
+```
+
+---
+
+## Database Setup
+
+### Option 1: PostgreSQL (Recommended)
+
+1. **Install PostgreSQL** (version 15+):
+    - Download from [postgresql.org](https://www.postgresql.org/download/)
+    - Ensure `psql` is on PATH
+
+2. **Start PostgreSQL service** and verify access with user `postgres`
+
+3. **Create schema and table**:
+
+```powershell
+psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
+```
+
+4. **Import CSV data**:
+
+The comprehensive import script handles all regions with proper NULL handling:
+
+```powershell
+psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
+```
+
+**Optional**: Validate CSV data before import:
+
+```powershell
+python tools/validate_csv_import.py
+```
+
+5. **Connection details**:
+    - JDBC URL: `jdbc:postgresql://localhost:5432/postgres`
+    - SQLAlchemy URL: `postgresql+psycopg2://postgres:password@localhost:5432/postgres`
+
+### Option 2: SQLite (Quick Local Testing)
+
+1. **Create schema**:
+
+```powershell
+sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
+```
+
+2. **Import data**:
+
+```powershell
+# Using SQL script (recommended)
+sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
+
+# Or using Python importer
+python tools/import_sqlite.py --db equities.sqlite --data-dir data
+```
+
+3. **Connection**:
+    - SQLAlchemy URL: `sqlite:///equities.sqlite`
+
+---
+
+## Usage
+
+### Jupyter Notebook Workflow
+
+The primary workflow is notebook-based for exploration and experimentation.
+
+**Main Notebook**: `ml_finance_model_main.ipynb`
+
+```powershell
+# Launch Jupyter
+jupyter notebook
+
+# Or JupyterLab
+jupyter lab
+```
+
+Open `ml_finance_model_main.ipynb` and run cells sequentially. The notebook includes:
+
+- Configuration and setup
+- Data loading from database or CSV
+- 6-step imputation pipeline
+- EDA with visualizations
+- Feature engineering
+- Classification models
+- Regression models (sector-optimized)
+- Evaluation and error analysis
+- Stock ranking and valuation
+- Report generation
+
+**Other Notebooks**:
+
+- `ml_finance_model_main_v10.ipynb` — Alternative notebook version
+- `equities_data_explorer.ipynb` — Data exploration and analysis
+- `ml_stock_prediction_model.ipynb` — Legacy prediction notebook
+
+### Python Script
+
+Run the pipeline as a standalone Python script with CLI arguments.
+
+**Script**: `ml_finance_model_main.py`
+
+```powershell
+# Run with auto data source selection
+python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
+
+# Force database
+python ml_finance_model_main.py --data-source db --db-url "postgresql+psycopg2://postgres:@localhost:5432/postgres"
+
+# Force CSV
+python ml_finance_model_main.py --data-source csv --out-dir outputs
+
+# Dry run (skip training)
+python ml_finance_model_main.py --data-source auto --dry-run
+```
+
+**Arguments**:
+
+- `--data-source {auto|csv|db}` — Data source (default: auto)
+- `--db-url URL` — Database connection string (or use `DB_URL` env var)
+- `--limit N` — Limit rows for testing
+- `--out-dir PATH` — Output directory (default: outputs)
+- `--dry-run` — Skip model training
+
+### CLI Tools
+
+Three command-line tools are available via `pyproject.toml` console scripts:
+
+#### 1. `finance-ml` — Full Pipeline
+
+Run the complete ML pipeline (data load, preprocess, features, models, outputs).
+
+```powershell
+finance-ml --data-source auto --limit 5000 --output-dir outputs
+finance-ml --data-source db --db-url "postgresql+psycopg2://postgres:@localhost:5432/postgres"
+finance-ml --help
+```
+
+#### 2. `finance-ml-analyze` — EDA/Analytics Only
+
+Run exploratory data analysis and analytics workflows without training models.
+
+```powershell
+finance-ml-analyze --data-source csv --output-dir outputs
+finance-ml-analyze --data-source auto
+```
+
+#### 3. `finance-ml-validate` — Validation Only
+
+Run data validation workflows (schema checks, data quality, etc.).
+
+```powershell
+finance-ml-validate --data-source csv --output-dir outputs
+finance-ml-validate --data-source db
+```
+
+**Note**: CLI tools are defined in `finance_ml/cli.py` with entry points:
+
+- `finance-ml` → `finance_ml.cli:main`
+- `finance-ml-analyze` → `finance_ml.cli:analyze_main`
+- `finance-ml-validate` → `finance_ml.cli:validate_main`
+
+### Interactive Dashboards
+
+Two dashboard applications are available for interactive visualization and exploration.
+
+#### Streamlit Dashboard
+
+**Features**: Multi-page layout, KPI cards, interactive filters, stock rankings, data quality monitoring, model
+performance analytics, portfolio optimization & risk metrics visualization.
+
+```powershell
+streamlit run finance_ml/dashboards/streamlit_app.py
+```
+
+**Tabs**: Overview, Data Quality, Model Performance, Predictions Explorer, Sector Analysis, Portfolio & Risk Metrics.
+
+Upload a predictions CSV file with columns: `ticker`,`name`,`exchange`, `sector`, `region`, `last_price`,`price_target`,
+`predicted_price_target`,
+`market_cap`, `mispricing_score`.
+
+#### Dash Dashboard
+
+**Features**: Interactive filters (sector/region), scatter plots, heatmaps, top undervalued stocks table, portfolio
+optimization & risk metrics visualization, reactive callbacks.
+
+```powershell
+python finance_ml/dashboards/dash_app.py
+```
+
+**Tabs**: Predictions, Data Quality, Model Performance, Portfolio & Risk Metrics.
+
+Access at [http://localhost:8050](http://localhost:8050)
+
+**Programmatic Usage**:
+
+```python
+# Evaluation and analytics helpers
+# Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
+from finance_ml.ml_workflow.analytics.eval import (
+    calculate_mispricing_score,
+    rank_stocks_by_sector,
+    calculate_financial_metrics_dashboard,
+    generate_data_quality_alerts,
+    prepare_plotly_dashboard_data,
+    )
+
+import pandas as pd
+
+# Example DataFrame (replace with your predictions dataframe)
+df = pd.DataFrame({
+    'ticker': ['AAA', 'BBB', 'CCC'],
+    'sector': ['Tech', 'Health', 'Energy'],
+    'region': ['US', 'EU', 'APAC'],
+    'last_price': [100.0, 50.0, 75.0],
+    'predicted_price_target': [120.0, 45.0, 90.0],
+    'market_cap': [1e11, 5e10, 3e10],
+    })
+
+# Calculate mispricing
+mispricing = calculate_mispricing_score(df)
+df_with_scores = df.assign(mispricing_score=mispricing)
+
+# Get top undervalued stocks by sector
+rankings = rank_stocks_by_sector(df_with_scores, top_n=10)
+
+# Generate financial metrics
+metrics = calculate_financial_metrics_dashboard(df_with_scores, group_by='sector')
+
+# Check data quality
+alerts = generate_data_quality_alerts(df_with_scores)
+
+# Prepare Plotly chart data
+plotly_data = prepare_plotly_dashboard_data(df_with_scores)
+```
+
+---
 
 ## Environment Variables
 
-Environment variable defaults and examples live in `environment_variables.txt`. Key items:
+Environment variables can be set in your shell or in a `.env` file. See `environment_variables.txt` for the full
+reference.
 
-- **TF_CPP_MIN_LOG_LEVEL=2** — Reduces TensorFlow logging verbosity (0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR)
-- **LOG_LEVEL** — Python logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-- **Optional paths**: DATA_DIR, MODEL_DIR, CACHE_DIR, OUTPUT_DIR
-- **Optional modeling**: MODEL_VERSION, RANDOM_SEED
-- **Optional performance**: N_JOBS, MEMORY_LIMIT
-- **Database**: DB_URL, DB_SCHEMA, DB_TABLE
-- **External APIs**: ALPHA_VANTAGE_API_KEY, FINANCIAL_API_KEY (if using external data sources)
+### Core Variables
 
-Set them in your shell or via a .env file if your tools auto‑load it.
-- Windows (PowerShell):
-  - $env:TF_CPP_MIN_LOG_LEVEL = 2
-- macOS/Linux (bash):
-  - export TF_CPP_MIN_LOG_LEVEL=2
+```bash
+# Logging
+TF_CPP_MIN_LOG_LEVEL=2          # TensorFlow log level (0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR)
+LOG_LEVEL=INFO                   # Python logging level
 
-See `environment_variables.txt` for complete list with detailed descriptions.
+# Directories
+DATA_DIR=data                    # Data directory
+MODEL_DIR=models                 # Model output directory
+OUTPUT_DIR=outputs               # General output directory
+CACHE_DIR=.cache                 # Cache directory
 
-## Running the Project
+# Database
+DB_URL=postgresql+psycopg2://postgres:password@localhost:5432/postgres  # SQLAlchemy URL
+DB_SCHEMA=public                 # Database schema
+DB_TABLE=equities                # Table name
 
-This project is notebook‑first with two main interactive notebooks.
+# Model Configuration
+MODEL_VERSION=v9_9               # Model version identifier (current: v9_9 as of v0.7.0)
+# TODO: Keep MODEL_VERSION synchronized with releases (see CHANGELOG.md)
+RANDOM_SEED=42                   # Random seed for reproducibility
 
-### Interactive Notebooks
+# Performance
+N_JOBS=-1                        # Parallel jobs (-1=all cores)
+MEMORY_LIMIT=8GB                 # Memory limit
 
-1) Start Jupyter
-- jupyter notebook  (or: jupyter lab)
+# Analytics
+ENABLE_INTERACTIVE_PLOTS=true    # Enable interactive visualizations
+REPORT_FORMAT=html               # Report format (html, pdf, excel)
+ENABLE_BENCHMARKING=true         # Enable benchmarking analysis (Phase 9.2)
+```
 
-2) Primary notebooks:
+### Windows (PowerShell)
 
-- **ml_finance_model_main.ipynb** — Main end-to-end ML pipeline (data loading, feature engineering, modeling, analytics)
-- **equities_data_explorer.ipynb** — Data exploration and preparation workflow with EDA utilities
+```powershell
+$env:TF_CPP_MIN_LOG_LEVEL = "2"
+$env:DB_URL = "postgresql+psycopg2://postgres:password@localhost:5432/postgres"
+```
 
-Run cells in order. Both notebooks use environment variables and Path from pathlib to avoid hard‑coded paths.
+### macOS/Linux (bash)
 
-Outputs: model diagnostics, ranking tables, visualizations, and optional CSV/Excel exports.
+```bash
+export TF_CPP_MIN_LOG_LEVEL=2
+export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
+```
 
+---
 
-## Scripts and Entry Points
+## Testing
 
-### Main Entry Points
+The project uses Python's built-in `unittest` framework with 74 test modules covering data loading, preprocessing,
+features, models, evaluation, and integration. See [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 for TDD
+conventions and standards. The full suite can be slow; prefer selective execution during development (see below).
 
-- **ml_finance_model_main.ipynb** — Main Jupyter notebook for interactive exploration and modeling
-- **equities_data_explorer.ipynb** — Data exploration notebook with EDA utilities and preprocessing
-- **ml_finance_model_main.py** — Lightweight Python script with a minimal CLI:
-  - `--data-source {auto|csv|db}` — Data source selection (default: auto)
-  - `--db-url <url>` — Database connection string (or use DB_URL env var)
-  - `--limit <n>` — Limit rows for testing
-  - `--out-dir <path>` — Output directory (default: outputs)
-  - `--dry-run` — Skip model training
-  - `--n-jobs <n>` — Number of parallel jobs
-  - Note: This is a lightweight wrapper. For advanced options, use the console script `finance-ml`.
+### Run All Tests
 
-### Console Scripts (installed via pyproject)
+```powershell
+python -m unittest -v
+```
 
-- `finance-ml` — Main pipeline (finance_ml.cli:main)
-- `finance-ml-analyze` — EDA/analytics-only (finance_ml.cli:analyze_main)
-- `finance-ml-validate` — Validation-only (finance_ml.cli:validate_main)
+### Run Specific Test Modules (Selective Execution)
 
-### Database Setup Scripts
+```powershell
+# Fast unit tests (<100 lines, pure functions)
+python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_validation_regex tests.test_repository_setup -v
 
-- **create_equities_schema.sql** — SQL script to initialize the equities table in PostgreSQL
-- **create_equities_schema_sqlite.sql** — SQLite schema creation script
-- **import_equities_data.sql** — Comprehensive import script for all regional CSVs with staging tables and
-  validation (PostgreSQL)
-- **import_equities_data_sqlite.sql** — SQLite data import script with validation
+# Medium tests (100–500 lines, limited ML)
+python -m unittest tests.test_enhanced_imputation tests.test_logging tests.test_risk_metrics tests.test_portfolio_optimization -v
 
-### Utility Scripts (in tools/ directory)
+# Targeted standards (code_guidelines.md v1.2)
+python -m unittest tests.test_uncertainty_calibration -v        # Uncertainty quantification
+python -m unittest tests.test_predictions_schema -v             # Standardized predictions schema
+python -m unittest tests.test_regression_sector_metrics -v      # Sector metrics validation
+python -m unittest tests.test_data_splits_policy -v             # Data split leakage prevention
+python -m unittest tests.test_outlier_safety_rails -v           # Outlier safety rails
+python -m unittest tests.test_stacking_default -v               # Stacking defaults
 
-- **tools/setup_environment.py** — Automated environment setup utility:
-  - Checks prerequisites (Python, PostgreSQL, Git)
-  - Creates virtual environment
-  - Installs dependencies
-  - Sets up database and loads CSV data
-  - Configures environment variables
-  - Runs tests
-  - Provides activation instructions
-- **tools/validate_csv_import.py** — CSV data quality validator (runs validation functions before import)
-    - Validates schema compliance and critical column presence
-    - Checks for non-numeric values in numeric columns
-    - Identifies data quality issues before database import
-    - Produces validation reports for each region (US, EU, APAC, ROTW)
-- **tools/load_equities_data.py** — Legacy PostgreSQL CSV importer used to insert CSV data into the equities table
-    - WARNING: Contains a hard-coded password in the sample; update it or prefer env vars/DB_URL
-    - TODO: Replace inline credentials with environment variables or remove password entirely
-- **tools/import_sqlite.py** — Chunked CSV-to-SQLite importer for quick local testing
-    - Supports per-region imports with automatic Region backfilling
-    - Handles header removal and NULL value mapping
-    - Configurable chunk size for large CSV files
-    - Implements UNIQUE("Ticker","Region") constraint for deduplication
-- **tools/analyze_notebook.py** — Notebook structure analyzer (counts cells, previews content, searches for functions)
-- **tools/refactor_notebook.py** — Notebook refactoring helper
-- **tools/update_notebook.py** — Notebook synchronizer (extracts TDD functions from .py and inserts into .ipynb)
-- **tools/update_notebook_imports.py** — Update notebook imports utility
-- **tools/verify_notebook.py** — Notebook verification utility (checks for presence of TDD functions)
-- **tools/verify_preprocessing_improvements.py** — Verify preprocessing pipeline improvements
-- **tools/validate_phase95_predictions.py** — Phase 9.5 prediction flow validation script
-- **tools/validate_phase9_integration.py** — Automated Phase 9 integration validation script
-- **tools/apply_improvement_plan_updates.py** — Development plan update automation
-- **tools/apply_notebook_fixes.py** — Notebook maintenance utility
+# Specific feature areas
+python -m unittest tests.test_finance_ml_data -v        # Data loading
+python -m unittest tests.test_features -v               # Feature engineering
+python -m unittest tests.test_classification -v         # Classification models
+python -m unittest tests.test_regression -v             # Regression models
+python -m unittest tests.test_dashboard_helpers -v      # Dashboard helpers
+```
 
-### Important files at a glance
+### Fast Helper Tests (Selective)
 
-- Finance_ML_Analytics_Platform.yaml — Conda environment definition (optional)
-- environment_variables.txt — Default/env examples (includes TF_CPP_MIN_LOG_LEVEL=2)
-- requirements.txt — Python dependencies for pip installs
-- pyproject.toml — Modern packaging configuration with console scripts
-- ml_finance_model_main.ipynb — Primary notebook for end-to-end workflow
-- ml_finance_model_main.py — Lightweight script version with CLI
-- create_equities_schema.sql — PostgreSQL schema for equities table
-- create_equities_schema_sqlite.sql — SQLite schema for equities table
-- import_equities_data.sql — PostgreSQL CSV import script with validation
-- import_equities_data_sqlite.sql — SQLite CSV import script with validation
-- equities.sqlite — Example/working SQLite database file for local runs
-- identifier.sqlite — Auxiliary SQLite DB present in repo
-    - TODO: Clarify its role and whether it’s required by any scripts/tests
+For a quick verification of the lightweight helper modules added in Model Optimization work (conformal uncertainty,
+robust outlier safety, sector features, sector calibration), use the fast test runner:
 
+```powershell
+python tools\run_fast_tests.py
+```
 
-## Tests
-- We use Python’s built‑in unittest.
-- Run all tests from the project root:
-  - python -m unittest -v
+This runs only small, dependency-light unit tests and completes in milliseconds.
 
-Comprehensive test suite in tests/ directory (51 test modules):
+### Coverage Analysis
 
-- test_advanced_eda.py — Advanced EDA functions (correlation, PCA, statistical tests)
-- test_advanced_features.py — Phase 9.3 advanced feature engineering tests
-- test_advanced_models_phase95.py — Phase 9.5 advanced regression models and ensembles
-- test_advanced_preprocessing.py — Advanced preprocessing (outlier detection, winsorization, imputation)
-- test_analyst_comparison.py — Analyst comparison and target analysis tests
-- test_analytics.py — Analytics and stock ranking tests
-- test_benchmarking.py — Benchmarking and peer comparison tests
-- test_build_features.py — Feature building pipeline
-- test_classification.py — Event classification model tests
-- test_classification_phase94.py — Phase 9.4 advanced classification models
-- test_cli.py — Command-line interface tests
-- test_coverage_smoke.py — Smoke test for coverage validation
-- test_data_catalog.py — Data catalog management tests
-- test_data_quality.py — Data validation and quality checks
-- test_data_versioning.py — Data versioning and metadata tests
-- test_eda.py — Exploratory data analysis utilities
-- test_enhanced_eda_phase92.py — Phase 9.2 enhanced EDA tests
-- test_evaluation_phase96.py — Phase 9.6 model evaluation and error analysis tests
-- test_features.py — Feature engineering functions
-- test_finance_ml_config.py — Configuration management tests
-- test_finance_ml_data.py — Data loading module tests
-- test_finance_ml_eval.py — Evaluation and analytics module tests
-- test_finance_ml_features.py — Features module tests
-- test_finance_ml_models.py — Models module tests
-- test_improvement_plan_revision.py — Development plan validation
-- test_loaders.py — CSV and database loading functions
-- test_logging.py — Logging configuration tests
-- test_model_evaluation_advanced.py — Advanced model evaluation tests
-- test_notebook_config.py — Notebook configuration tests
-- test_notebook_enhancements.py — Notebook enhancements validation
-- test_notebook_integration.py — Notebook integration tests
-- test_notebook_quality_improvements.py — Notebook quality improvements tests (config API, type validation, error
-  handling)
-- test_onehot_encoding.py — One-hot encoding functionality tests
-- test_phase91_enhancements.py — Phase 9.1 enhancements tests
-- test_phase93_enhancements.py — Phase 9.3 enhancements tests
-- test_phase95_error_handling.py — Phase 9.5 error handling tests
-- test_portfolio_optimization.py — Portfolio optimization tests
-- test_preprocess_and_training.py — Preprocessing and training workflows
-- test_quantile_fix.py — Quantile regression fixes tests
-- test_regression.py — Regression model evaluation
-- test_repository_setup.py — Validates repository basics (required files, SQL schema, environment config)
-- test_risk_metrics.py — Risk metrics calculation tests
-- test_setup_environment.py — Setup script validation
-- test_sql_scripts.py — SQL script validation tests
-- test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
-- test_validate_csv_import.py — CSV validation (schema validation, data quality checks)
-- test_valuation_phase97.py — Phase 9.7 stock valuation and identification tests
-- test_visualizations.py — Visualization functions tests
+**Option A: coverage.py**
 
+```powershell
+pip install coverage
+coverage run -m unittest -v
+coverage report -m
+coverage html  # Generates htmlcov/index.html
+```
+
+**Option B: pytest + pytest-cov**
+
+```powershell
+pip install pytest pytest-cov
+pytest --cov=finance_ml --cov-report=term-missing
+```
+
+### Test Organization
+
+Tests are organized by feature area under `tests/`:
+
+- **Data/Loading**: `test_finance_ml_data`, `test_loaders`, `test_sqlite_import`, `test_validate_csv_import`
+- **Preprocessing**: `test_advanced_preprocessing`, `test_enhanced_imputation`, `test_data_quality`
+- **Features**: `test_features`, `test_advanced_features`, `test_finance_ml_features`
+- **Models**: `test_classification*`, `test_advanced_models*`, `test_finance_ml_models`, `test_regression`
+- **Evaluation**: `test_finance_ml_eval`, `test_analytics`, `test_evaluation_phase96`, `test_valuation_phase97`
+- **Integration**: `test_integration_*`, `test_notebook_*`
+- **Dashboards**: `test_dashboard_helpers*`, `test_streamlit_dashboard`, `test_dash_dashboard`
+
+**Note**: Some test modules are large (500+ lines) and involve heavy ML training. For faster development iterations, run
+smaller test modules or use test discovery patterns.
+
+---
 
 ## Project Structure
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                    # Main Python package (v0.5.0)
-│   ├── __init__.py               # Package exports and version
-│   ├── advanced_eda.py           # Advanced EDA with statistical analysis (Phase 9.2)
-│   ├── advanced_features.py      # Advanced feature engineering (Phase 9.3)
-│   ├── advanced_models.py        # Sector-optimized regression models (Phase 9.5)
-│   ├── advanced_preprocessing.py # Advanced preprocessing and data quality
-│   ├── analyst_comparison.py     # Analyst price target comparison and tracking (Phase 9.8)
-│   ├── benchmarking.py           # Comparative analysis and peer benchmarking (Phase 9.2)
-│   ├── classification.py         # Multi-class event classification (Phase 9.4)
-│   ├── cli.py                    # Command-line interface
-│   ├── config.py                 # Configuration management
-│   ├── data.py                   # Data loading, normalization, validation
-│   ├── data_catalog.py           # Centralized data asset registry (Phase 9.1)
-│   ├── data_versioning.py        # Dataset version tracking and metadata (Phase 9.1)
-│   ├── eval.py                   # Analytics, visualizations, reporting (Phase 9.6, 9.7)
-│   ├── features.py               # Feature engineering functions
-│   ├── logging_config.py         # Logging configuration utilities
-│   ├── models.py                 # ML models (classification, regression, ensembles)
-│   ├── notebook_config.py        # Notebook-specific helpers and config
-│   ├── notebook_utils.py         # Notebook utility functions
-│   ├── portfolio_optimization.py # Portfolio optimization utilities
-│   ├── risk_metrics.py           # Risk metrics and portfolio risk analysis
-│   ├── transformers.py           # Scikit-learn compatible feature transformers
-│   └── verify_requirements.py    # Requirements verification utility
-│
-├── tests/                        # Unit tests (comprehensive test suite, 47 modules)
-│   ├── test_advanced_eda.py
-│   ├── test_advanced_models_phase95.py
-│   ├── test_advanced_preprocessing.py
-│   ├── test_analytics.py
-│   ├── test_build_features.py
-│   ├── test_classification.py
-│   ├── test_classification_phase94.py
-│   ├── test_cli.py
-│   ├── test_coverage_smoke.py
-│   ├── test_data_quality.py
-│   ├── test_eda.py
-│   ├── test_features.py
-│   ├── test_finance_ml_config.py
-│   ├── test_finance_ml_data.py
-│   ├── test_finance_ml_eval.py
-│   ├── test_finance_ml_features.py
-│   ├── test_finance_ml_models.py
-│   ├── test_improvement_plan_revision.py
-│   ├── test_loaders.py
-│   ├── test_logging.py
-│   ├── test_notebook_config.py
-│   ├── test_notebook_enhancements.py
-│   ├── test_portfolio_optimization.py
-│   ├── test_preprocess_and_training.py
-│   ├── test_regression.py
-│   ├── test_repository_setup.py
-│   ├── test_risk_metrics.py
-│   ├── test_setup_environment.py
-│   ├── test_sqlite_import.py
-│   ├── test_sql_scripts.py
-│   ├── test_validate_csv_import.py
-│   └── test_visualizations.py
-│
-├── data/                         # Regional equity data (CSV files)
-│   ├── screening_us.csv
-│   ├── screening_eu.csv
-│   ├── screening_apac.csv
-│   └── screening_rotw.csv
-│
-├── sql/                          # SQL scripts and database files
-│   ├── create_equities_schema.sql        # PostgreSQL schema setup
-│   ├── create_equities_schema_sqlite.sql # SQLite schema setup
-│   ├── import_equities_data.sql          # Data import script (PostgreSQL)
-│   ├── import_equities_data_sqlite.sql   # SQLite data import script
-│   ├── equities.sqlite                   # Example SQLite database
-│   └── identifier.sqlite                 # Auxiliary SQLite database
-│
-├── ml_finance_model_main.ipynb   # Main interactive Jupyter notebook (end-to-end ML pipeline)
-├── equities_data_explorer.ipynb  # Data exploration and EDA notebook
-├── ml_finance_model_main.py      # Lightweight script version with CLI (uses finance_ml package)
-├── archive/                       # Archived versions (v8_2, etc.)
-│
-├── tools/                         # Utility scripts (30+ tools)
-│   ├── __init__.py                         # Package marker
-│   ├── setup_environment.py                # Automated environment setup
-│   ├── validate_csv_import.py              # CSV data validation helper
-│   ├── import_sqlite.py                    # Chunked CSV→SQLite importer
-│   ├── load_equities_data.py               # Legacy PostgreSQL CSV importer
-│   ├── analyze_notebook.py                 # Notebook structure analyzer
-│   ├── refactor_notebook.py                # Notebook refactoring helper
-│   ├── update_notebook.py                  # Sync functions between .py and .ipynb
-│   ├── update_notebook_imports.py          # Update notebook imports
-│   ├── verify_notebook.py                  # Verify notebook functions
-│   ├── verify_preprocessing_improvements.py # Verify preprocessing improvements
-│   ├── validate_phase95_predictions.py     # Phase 9.5 prediction validation
-│   ├── validate_phase9_integration.py      # Phase 9 integration validator
-│   ├── apply_improvement_plan_updates.py   # Development plan automation
-│   ├── apply_notebook_fixes.py             # Notebook maintenance utility
-│   └── ... (additional notebook and validation tools)
-│
-├── environment_variables.txt     # Environment configuration examples
-├── requirements.txt              # Core dependencies
-├── Pipfile                       # Pipenv (optional)
-├── pyproject.toml                # Modern packaging configuration (console scripts)
-├── setup.py                      # Legacy setup (editable installs)
-├── qodana.yaml                   # Static analysis configuration
-├── README.md                     # This file
-├── LICENSE                       # License
+├── finance_ml/                    # Main Python package
+│   ├── __init__.py               # Package exports
+│   ├── cli.py                    # CLI entry points (finance-ml, finance-ml-analyze, finance-ml-validate)
+│   ├── data.py                   # Data loading utilities (legacy)
+│   ├── features.py               # Feature engineering (legacy, deprecated)
+│   ├── models.py                 # Model training utilities (legacy, deprecated)
+│   ├── advanced_models.py        # Sector-optimized regression models (legacy, deprecated)
+│   ├── classification.py         # Event classification models (legacy, deprecated)
+│   ├── classification_enhanced.py # Enhanced classification (legacy, deprecated)
+│   ├── advanced_eda.py           # Enhanced EDA utilities (legacy)
+│   ├── benchmarking.py           # Benchmarking module (legacy, moved to ml_workflow/eda/)
+│   ├── risk_metrics.py           # Risk analytics (legacy, moved to ml_workflow/analytics/)
+│   ├── portfolio_optimization.py # Portfolio optimization (legacy, moved to ml_workflow/analytics/)
+│   ├── data_catalog.py           # Data catalog and versioning
+│   ├── data_versioning.py        # Version tracking
+│   ├── dashboards/               # Interactive dashboard applications
+│   │   ├── streamlit_app.py      # Streamlit dashboard
+│   │   └── dash_app.py           # Dash dashboard
+│   └── ml_workflow/              # Phase 9.1-9.8 modular architecture (v9_8)
+│       ├── core/                 # Core utilities (config, types, utils)
+│       ├── preprocessing/        # Phase 9.1: Imputation, outliers, scaling, quality
+│       ├── eda/                  # Phase 9.2: EDA, benchmarking, reports
+│       ├── features/             # Phase 9.3: Core, advanced, selection, API
+│       ├── classification/       # Phase 9.4: Labels, tuning, models, evaluation
+│       ├── regression/           # Phase 9.5: Models, constraints, quantile, tuning, dataset, io
+│       ├── evaluation/           # Phase 9.6: Metrics, analysis
+│       ├── analytics/            # Phase 9.7: Mispricing, analyst comparison, portfolio, risk
+│       └── reporting/            # Phase 9.8: Dashboard data, export
+├── tests/                         # Test suite (67+ modules)
+│   ├── test_*.py                 # Unit and integration tests
+│   └── ...
+├── tools/                         # Utility scripts and automation
+│   ├── import_sqlite.py          # SQLite import utility
+│   ├── validate_csv_import.py    # CSV validation
+│   ├── analyze_notebook.py       # Notebook analysis
+│   └── ...
+├── data/                          # CSV data files
+│   ├── screening_us.csv          # US equity data
+│   ├── screening_eu.csv          # EU equity data
+│   ├── screening_apac.csv        # APAC equity data
+│   └── screening_rotw.csv        # ROTW equity data
+├── outputs/                       # Generated outputs (phase-aligned structure)
+│   ├── analytics/                # Analytics reports and rankings
+│   ├── catalog/                  # Data catalog metadata
+│   ├── classification/           # Classification model outputs
+│   ├── dashboards/               # Dashboard data exports
+│   ├── eda/                      # EDA visualizations and reports
+│   ├── evaluation/               # Model evaluation results
+│   ├── features/                 # Feature engineering artifacts
+│   ├── plots/                    # Visualization outputs (PNG, HTML)
+│   ├── preprocessing/            # Preprocessing artifacts and quality reports
+│   ├── regression/               # Regression model outputs and predictions
+│   └── reporting/                # Final reports (Excel, PDF)
+├── docs/                          # Documentation
+│   ├── improvement_plan/         # Development roadmap and phase documentation
+│   └── summaries/                # Implementation summaries
+├── ml_finance_model_main.ipynb   # Main notebook (Phase 9.1-9.8)
+├── ml_finance_model_main_v10.ipynb # Alternative notebook version
+├── ml_finance_model_main.py      # Python script version
+├── equities_data_explorer.ipynb  # Data exploration notebook
+├── ml_stock_prediction_model.ipynb # Legacy prediction notebook
+├── pipeline/
+│   ├── create_equities_schema.sql    # PostgreSQL schema
+│   └── import_equities_data.sql      # PostgreSQL data import (staging + validation)
+├── create_equities_schema_sqlite.sql # SQLite schema
+├── import_equities_data_sqlite.sql   # SQLite data import
+├── requirements.txt              # Python dependencies
+├── pyproject.toml                # Package metadata and build config
+├── environment_variables.txt     # Environment configuration reference
 ├── CHANGELOG.md                  # Version history
-├── IMPROVEMENT_PLAN.md           # Development roadmap
-├── IMPLEMENTATION_SUMMARY.md     # Implementation notes
-├── PREPROCESSING_PIPELINE_IMPROVEMENTS.md # Docs
-├── NOTEBOOK_ENHANCEMENTS.md      # Docs
-├── REFACTORING_COMPLETE.md       # Docs
-├── REFACTORING_SUMMARY.md        # Docs
-├── TDD_IMPLEMENTATION_COMPLETE.md # Docs
-├── TDD_IMPLEMENTATION_SUMMARY.md  # Docs
-└── reports/                      # Generated reports (if any)
+├── LICENSE                       # MIT License
+└── README.md                     # This file
 ```
 
-### Package Modules
-
-#### `finance_ml.data`
-Data loading, normalization, and validation functions.
-- `load_from_csv()`, `load_from_db()`: Multi-source data loading
-- `preprocess()`: Data cleaning and normalization
-- `validate_schema()`, `check_missing_values()`: Quality checks
-- `detect_outliers_iqr()`, `validate_numeric_ranges()`: Outlier detection
-
-#### `finance_ml.features`
-Feature engineering for financial data.
-- `engineer_basic_ratios()`: EV/EBITDA, P/E, P/B ratios
-- `engineer_margin_features()`: Gross, operating, net margins
-- `engineer_volatility_features()`: Price volatility windows
-- `engineer_revenue_cagr()`: Revenue growth metrics
-- `build_features_and_target()`: Complete feature pipeline
-
-#### `finance_ml.models`
-Machine learning models for classification and regression.
-- `train_event_classifier()`: Multi-class event classification
-- `train_and_evaluate_regression()`: Baseline regression models
-- `train_and_evaluate_regression_by_sector()`: Sector-optimized models
-- `train_quantile_regression()`: Uncertainty estimation
-- `train_stacking_ensemble()`: Meta-learner stacking
-
-#### `finance_ml.eval`
-Analytics, visualizations, and reporting.
-- `calculate_mispricing_score()`: Valuation analysis
-- `rank_undervalued_stocks()`, `rank_overvalued_stocks()`: Stock ranking
-- `simple_eda()`: Exploratory data analysis
-- `create_sector_heatmap()`, `create_interactive_prediction_plot()`: Visualizations
-- `export_predictions_to_excel()`: Excel reporting
-
-#### `finance_ml.config`
-Configuration management system.
-- `FinanceMLConfig`: Configuration dataclass
-- `load_config()`: Load from environment/JSON/YAML
-- `get_config()`, `set_config()`: Global config management
-
-#### `finance_ml.cli`
-Command-line interface tools.
-- `finance-ml`: Main analysis pipeline
-- `finance-ml-analyze`: Quick data analysis
-- `finance-ml-validate`: Data validation
-
-#### `finance_ml.advanced_preprocessing`
-
-Advanced preprocessing and data quality (Phase 9.1).
-
-- `detect_outliers_iqr()`, `detect_outliers_zscore()`: Outlier detection methods
-- `detect_outliers_isolation_forest()`: Multivariate outlier detection
-- `winsorize_by_sector()`: Sector-specific winsorization
-- `calculate_data_quality_score()`: Comprehensive data quality assessment
-- `impute_missing_values()`: Advanced imputation strategies
-- `create_scaler_pipeline()`, `scale_features()`: Feature scaling pipelines
-
-#### `finance_ml.advanced_eda`
-
-Advanced exploratory data analysis with statistical testing (Phase 9.2).
-
-- `calculate_correlation_matrix()`: Pearson, Spearman, Kendall correlation analysis
-- `test_normality()`: Shapiro-Wilk, Kolmogorov-Smirnov, Anderson-Darling tests
-- `compare_sector_means()`: One-Way ANOVA, Kruskal-Wallis H-test
-- `perform_pca()`: Principal Component Analysis with loadings
-- `calculate_mutual_information()`: Feature importance via mutual information
-- `generate_eda_report()`: Automated comprehensive EDA report generation
-
-#### `finance_ml.advanced_features`
-
-Advanced feature engineering with sector-specific optimizations (Phase 9.3). 13 functions, 88 tests, 93% coverage.
-
-**Financial Ratio Engineering:**
+---
+
+## Scripts and Tools
+
+### Main Entry Points
+
+| Script/Tool                   | Description                   | Usage                                                  |
+|-------------------------------|-------------------------------|--------------------------------------------------------|
+| `ml_finance_model_main.ipynb` | Main notebook (Phase 9.1-9.8) | `jupyter notebook ml_finance_model_main.ipynb`         |
+| `ml_finance_model_main.py`    | Python script version         | `python ml_finance_model_main.py --data-source auto`   |
+| `finance-ml`                  | CLI: Full pipeline            | `finance-ml --data-source auto --output-dir outputs`   |
+| `finance-ml-analyze`          | CLI: EDA/analytics only       | `finance-ml-analyze --data-source csv`                 |
+| `finance-ml-validate`         | CLI: Validation only          | `finance-ml-validate --data-source db`                 |
+| `streamlit_app.py`            | Streamlit dashboard           | `streamlit run finance_ml/dashboards/streamlit_app.py` |
+| `dash_app.py`                 | Dash dashboard                | `python finance_ml/dashboards/dash_app.py`             |
 
-- `engineer_valuation_ratios()`: P/E, P/B, P/S, EV/EBITDA, EV/Sales, PEG ratio, Dividend Yield
-- `engineer_profitability_ratios()`: ROE, ROA, ROIC, Gross/Operating/Net Margins
-- `engineer_leverage_ratios()`: Debt/Equity, Net Debt/EBITDA, Interest Coverage, Debt/Assets, Equity Ratio
-- `engineer_liquidity_ratios()`: Current, Quick, Cash ratios, Working Capital/Sales
-- `engineer_efficiency_ratios()`: Asset/Inventory/Receivables Turnover, Revenue/Employee
-- `engineer_growth_metrics()`: Revenue/EPS/EBITDA Growth YoY
+### Utility Scripts (tools/)
+
+| Script                   | Description                                      |
+|--------------------------|--------------------------------------------------|
+| `import_sqlite.py`       | Import CSVs into SQLite with chunked processing  |
+| `validate_csv_import.py` | Validate CSV data quality before import          |
+| `analyze_notebook.py`    | Analyze notebook structure and cells             |
+| `analyze_predictions.py` | Analyze model prediction outputs                 |
+| `run_fast_tests.py`      | Run fast helper unit tests (no heavy training)   |
+| `verify_outputs.py`      | Verify expected output files exist and non-empty |
 
-**Sector-Specific & Advanced Features:**
-
-- `engineer_sector_specific_features()`: Sector-tailored features (Financials: TBV, P/TBV, NIM, Efficiency Ratio;
-  Energy/Materials: CAPEX intensity, Asset turnover; Technology: R&D intensity, SG&A efficiency, Rule of 40, Cash burn;
-  Healthcare: R&D/Revenue; Consumer: Inventory days, Marketing efficiency; Industrials: CAPEX/Depreciation, Working
-  capital efficiency; Utilities: Dividend payout ratio)
-- `engineer_temporal_features()`: Fiscal quarter, month, year, days since reference date
-- `engineer_market_microstructure_features()`: Volatility (30/60/90d), momentum, moving averages, price range
-- `engineer_nonlinear_transforms()`: Log, square root, inverse transforms for skewed distributions
+### Database Scripts
 
-**Feature Interactions & Relative Value:**
+| Script                              | Description                          |
+|-------------------------------------|--------------------------------------|
+| `pipeline/create_equities_schema.sql` | PostgreSQL schema creation           |
+| `pipeline/import_equities_data.sql`   | PostgreSQL data import (all regions) |
+| `create_equities_schema_sqlite.sql` | SQLite schema creation               |
+| `import_equities_data_sqlite.sql`   | SQLite data import (all regions)     |
 
-- `create_feature_interactions()`: Pairwise interactions and polynomial features (degree 2-3)
-- `create_relative_value_features()`: Sector median deviation, z-scores, percentile ranks
+---
+
+## Recent Updates
+
+### Version 0.8.1 (Current Release - 2025-11-14)
+
+**LightGBM Preprocessing Test Suite**:
+
+- New comprehensive test suite for LightGBM preprocessing validation (`tests/test_preprocess_lightgbm.py`)
+- Ensures consistent feature engineering across training and prediction pipelines
+- Validates categorical encoding, datetime feature extraction, and column alignment
+
+**Major Bug Fixes**:
+
+- **Feature Mismatch Error**: Resolved critical LightGBM prediction error (461 vs 941 features)
+  - Root cause: Using feature names from wrong model instance after reassignment
+  - Solution: Re-extract feature names from correct model after hyperparameter optimization
+  - Added support for CatBoost, XGBoost, and LightGBM feature name extraction
+- **Column Selection and Alignment**: Fixed shape mismatch issues in data preprocessing
+  - Replaced list comprehension with `.reindex()` for exact column matching
+  - Enhanced SHAP computation with proper data alignment
+- **Unicode Encoding**: Replaced all Unicode emojis with ASCII for universal terminal compatibility
+- **Model-Agnostic Scoring**: Fixed CatBoost-specific Pool scoring to work with all model types
+
+**Documentation and Validation Enhancements**:
+
+- Three detailed fix summary documents: `FIX_FEATURE_MISMATCH_FINAL.md`, `FIX_SUMMARY_SHAPE_MISMATCH.md`,
+  `FIX_EMOJI_AND_POOL_ISSUES.md`
+- Enhanced validation tools: `validate_clipping_fix.py` and `validate_zero_predictions_fix.py`
+- Updated core modules: `features/core.py`, `classification/models.py`, `classification/tuning.py`, `analytics/eval.py`
+
+### Version 0.8.0 (Previous Release - 2025-11-13)
 
-**Automated Feature Selection:**
+**Phase 10 Integration - Prediction Confidence Scoring**:
+
+- Comprehensive confidence scoring and outlier detection system with three approaches:
+    - Ensemble-based confidence: measures agreement across multiple models
+    - Residual-based confidence: uses historical prediction error patterns
+    - Quantile-based confidence: leverages prediction interval width
+- New `finance_ml.ml_workflow.evaluation.confidence` module with confidence scoring methods
+- Sector-specific model training utilities in `finance_ml.ml_workflow.regression.sector_models`
+- Enhanced uncertainty quantification with isotonic bias correction and quantile calibration
+- Documentation: `docs/summaries/phase10_integration_summary.md` (526 lines)
+- Comprehensive test suite: `test_bias_correction_isotonic.py`, `test_outlier_prediction_filtering.py`,
+  `test_quantile_calibration_coverage.py`, `test_sector_specific_models.py`
+
+**Intelligent Train/Test Splitting Utilities**:
+
+- Time-series cross-validation with sector stratification to prevent data leakage
+- Grouped splitting by ticker to ensure no ticker appears in both train and test sets
+- Leakage-prevention utilities aligned with code_guidelines.md v1.2 Data Split Policy
+- Enhanced documentation in multiple summary files
 
-- `calculate_feature_importance_mutual_info()`: Mutual information-based feature importance
-- `calculate_feature_importance_rf()`: Random Forest-based feature importance
-- `calculate_feature_importance_shap()`: SHAP value-based importance (with fallback to RF)
-- `calculate_feature_importance_rfe()`: Recursive Feature Elimination with cross-validation
+**Prediction Bound Fixes**:
+
+- **Upper Bound Fix**: Replaced statistical clipping (mean±3σ) with percentile-based clipping (1.5x p99.5)
+    - Reduced high-value stock prediction error by 83.3%
+- **Lower Bound Fix**: Replaced hard zero with adaptive lower bound (0.5x p0.5, min $0.10)
+    - Eliminated 348 zero predictions (24.75% reduction) while preserving low-value stock predictions
+- Validation tools: `tools/validate_clipping_fix.py`, `tools/validate_zero_predictions_fix.py`
+- Documentation: `docs/summaries/PREDICTION_CAPPING_FIX.md`, `docs/summaries/ZERO_PREDICTIONS_FIX.md`
 
-**Pipeline Orchestration:**
+**Model Optimization Completion**:
 
-- `build_comprehensive_features()`: End-to-end feature engineering pipeline with configurable options
+- Enhanced `ml_finance_model_main.ipynb` with time-series cross-validation, quantile regression export, feature
+  importance analysis
+- Default stacking ensemble usage with improved safety checks for missing data columns
+- Generated comprehensive output CSV files for model evaluation
+- Added fast helper test runner and output verification utility (16 tests passing)
 
-#### `finance_ml.classification`
+**Enhanced Uncertainty Quantification**:
 
-Multi-class event classification with advanced models (Phase 9.4).
+- Improved `finance_ml.ml_workflow.regression.calibration` (679 lines) with isotonic regression
+- Enhanced `finance_ml.ml_workflow.regression.uncertainty` (525 lines) with conformal prediction
+- Updated code guidelines with uncertainty quantification standards
+
+**Regression and Classification Integration**:
+
+- Complete workflow integration with error handling and output persistence
+- Comprehensive documentation: `docs/summaries/REGRESSION_INTEGRATION_SUMMARY.md` (523 lines)
+- Classification integration: `docs/summaries/CLASSIFICATION_INTEGRATION_SUMMARY.md` (209 lines)
 
-- `create_enhanced_event_labels()`: Enhanced event labeling (price momentum, sector-adjusted thresholds)
-- `train_neural_network_classifier()`: Deep neural network with batch normalization and dropout
-- `train_voting_classifier()`, `train_stacking_classifier()`: Ensemble methods (voting, stacking)
-- `compute_shap_values()`: SHAP-based model interpretation
-- `export_classification_features()`: Export classification probabilities as meta-features for regression
-- `cross_validate_classifier()`: Stratified k-fold cross-validation framework
-- `compare_classifiers()`: Compare 7 classifiers (RF, XGBoost, LightGBM, CatBoost, Neural Network, Voting, Stacking)
+### Version 0.7.1 (Previous Release - 2025-11-11)
 
-#### `finance_ml.advanced_models`
+**Portfolio Optimization & Risk Metrics Visualization** (2025-11-11):
 
-Sector-optimized regression models with classification features (Phase 9.5).
+- Interactive Plotly visualizations for portfolio optimization and risk analysis
+- **Notebook Section 10**: Three comprehensive visualizations added to `ml_finance_model_main.ipynb`:
+    - Efficient Frontier with Maximum Sharpe Ratio and Minimum Volatility portfolios highlighted
+    - Risk Metrics Dashboard with VaR, CVaR, Sharpe, Sortino ratios, and gauge charts
+    - Portfolio Drawdown Analysis with time series visualization
+- **Dashboard Integration**: Portfolio & Risk Metrics tab added to both Streamlit and Dash applications
+- **Output Files**: 6 new visualization files saved to `outputs/analytics/` (3 HTML + 3 PNG)
+- **Functions Used**: Portfolio optimization (`finance_ml/ml_workflow/analytics/portfolio.py`) and risk metrics (
+  `finance_ml/ml_workflow/analytics/risk.py`)
+- See `docs/PORTFOLIO_VISUALIZATION_IMPLEMENTATION.md` for complete implementation details
 
-- `prepare_regression_data_with_classification()`: Integrate classification meta-features into regression pipeline
-- `train_linear_regression()`, `train_ridge_regression()`, `train_lasso_regression()`: Linear models with regularization
-- `train_xgboost_regressor()`, `train_lightgbm_regressor()`, `train_catboost_regressor()`: Gradient boosting regressors
-- `train_random_forest_regressor()`, `train_extra_trees_regressor()`: Tree-based ensemble regressors
-- `train_neural_network_regressor()`: Deep learning regression with TensorFlow/Keras
-- `train_stacking_regressor()`, `train_voting_regressor()`: Meta-learning ensembles
-- `train_quantile_regressor()`: Uncertainty estimation via quantile regression
-- `optimize_hyperparameters()`: Optuna-based hyperparameter optimization
-- `compare_regression_models()`: Comprehensive model comparison framework
-- `train_sector_specific_models()`: Train separate models per sector
+**Phase 9.3 Feature Engineering API**:
 
-#### `finance_ml.risk_metrics`
+- Public API with feature engineering presets (`finance_ml/ml_workflow/features/api.py`):
+    - `basic`: Core ratios, margins, volatility, and revenue CAGR
+    - `momentum`: Price momentum and technical indicators
+    - `quality`: Accounting quality and financial distress signals
+    - `comprehensive`: Full advanced feature set
+- Enhanced `build_comprehensive_features()` with optional preset parameter for flexible feature selection
+- Backward compatible: default behavior unchanged (comprehensive mode)
 
-Risk metrics and portfolio risk analysis.
+**Test Infrastructure & Quality**:
 
-- `calculate_var_historical()`, `calculate_var_parametric()`: Value at Risk calculation
-- `calculate_cvar()`: Conditional Value at Risk
-- `calculate_sharpe_ratio()`, `calculate_sortino_ratio()`: Risk-adjusted returns
-- `calculate_max_drawdown()`: Maximum drawdown analysis
-- `calculate_portfolio_risk_metrics()`: Comprehensive portfolio risk
+- Phase 9.3 test infrastructure with comprehensive fixtures:
+    - `tests/fixtures/feature_engineering_samples.py`: Sample DataFrames with edge cases
+    - `tests/utils/feature_test_helpers.py`: Validation utilities (assert_no_inf, assert_nan_ratio_below, time_block)
+    - `tests/test_feature_infra_phase93.py`: Infrastructure validation tests
+    - `tests/test_features_api_phase93.py`: API preset tests with TDD methodology
+- Fixed test import paths: `tests/test_risk_metrics.py` updated to Phase 9.7 module path
 
-#### `finance_ml.portfolio_optimization`
+**Model Version & Configuration**:
 
-Modern Portfolio Theory and optimization.
+- MODEL_VERSION bump to v9_9 (synchronized across all configuration files)
+- Updated `finance_ml/config.py`, test assertions, and environment files
+- Production readiness: Cross-validation with 138+ tests passing (fast and medium test suites)
 
-- `calculate_portfolio_return()`, `calculate_portfolio_volatility()`: Portfolio metrics
-- `calculate_portfolio_sharpe_ratio()`: Portfolio Sharpe ratio
-- `generate_efficient_frontier()`: Efficient frontier generation
-- `optimize_portfolio_max_sharpe()`: Maximum Sharpe ratio optimization
-- `optimize_portfolio_min_volatility()`: Minimum volatility optimization
-- `optimize_portfolio_target_return()`: Target return optimization
-- `rebalance_portfolio()`: Portfolio rebalancing
+**Phase 9.5.1 Outputs and Validation Enhancements**:
 
-#### `finance_ml.logging_config`
+- Enhanced regression outputs with diagnostics and sector metadata
+- Added Time-Series Cross-Validation (guarded) metrics export when a date column is present
+- New scripts:
+    - `tools/run_fast_tests.py` — fast helper tests runner
+    - `tools/verify_outputs.py` — output artifact verification (see below)
 
-Logging configuration and management.
+Expected output files (after running the notebook or script):
 
-- `setup_file_logging()`: Configure file-based logging
-- `configure_logging()`: General logging configuration
-- `get_logger()`: Get configured logger instance
-- `add_file_handler()`, `remove_file_handlers()`: Manage log handlers
-- `get_log_level()`, `set_log_level()`: Log level management
+- `outputs/regression/regression_predictions_detailed.csv` — Standardized predictions schema (
+  see [code_guidelines.md](docs/code_guidelines.md) v1.2)
+    - Required columns: ticker, isin, sector, region, last_price, y_true, y_pred, y_pred_calibrated, pred_p10, pred_p50,
+      pred_p90, interval_width, abs_error, pct_error, model_version, snapshot_date
+- `outputs/regression/regression_metrics_by_sector.csv` — Per-sector MAE, RMSE, R², MAPE, count
+- `outputs/regression/quantile_predictions.csv` — Uncertainty intervals with monotonicity guarantees
+- `outputs/regression/feature_importance.csv`
+- `outputs/evaluation/tscv_metrics.csv` (when TimeSeriesSplit is applicable)
 
-#### `finance_ml.notebook_config`
+Verify these with:
 
-Notebook-specific configuration and helpers.
+```powershell
+python tools\verify_outputs.py
+```
 
-- `NotebookConfig`: Configuration dataclass for notebook environments
-- Integration with main configuration system
+### Version 0.6.1 (Previous Release - 2025-11-09)
 
-#### `finance_ml.notebook_utils`
+**Phase 9.5 Classification Meta-Features & Enhanced Imputation**:
 
-Notebook utility and display functions.
+- Classification meta-feature extraction (`extract_classification_features`) to enhance regression models
+- New classification module structure with dedicated evaluation and models submodules
+- Enhanced 6-step imputation strategy with comprehensive test coverage
+- Modular regression pipelines including Ridge, Lasso, ElasticNet, Bayesian Ridge, and Gradient Boosting models
 
-- `display_config_summary()`: Display configuration summary
-- `load_stock_data()`: Notebook data loading helper
-- `display_data_summary()`: Display data statistics
-- `display_validation_results()`: Show validation results
-- `display_missing_values_summary()`: Missing values report
-- `validate_and_display_data()`: Combined validation and display
-- `perform_and_display_eda()`: EDA execution and display
+### Version 0.5.1
 
-#### `finance_ml.data_versioning`
+**Phase 9.1-9.8 Module Structure (v9_8)**:
 
-Dataset version tracking and metadata management (Phase 9.1).
+- Complete subpackage refactoring into phase-aligned architecture
+- Dedicated subpackages: preprocessing/, eda/, features/, classification/, regression/, evaluation/, analytics/,
+  reporting/
+- Backward-compatible imports with deprecation warnings
+- Package-level exports with descriptive function prefixes
 
-- `create_version()`: Create new dataset version with metadata
-- `get_version()`: Retrieve version information
-- `list_versions()`: List all available versions
-- `compare_versions()`: Compare two dataset versions
-- `track_lineage()`: Track data lineage and transformations
+**All Phases Implementation**:
 
-#### `finance_ml.data_catalog`
+- Phase 9.1: 6-step imputation pipeline (zero, KNN, price-based, median)
+- Phase 9.2: Enhanced EDA with benchmarking and statistical testing
+- Phase 9.3: Advanced feature engineering with sector-specific optimizations
+- Phase 9.4: Multi-class event classification with neural networks
+- Phase 9.5: Sector-optimized regression with quantile models and ensembles
+- Phase 9.6: Comprehensive evaluation and error analysis
+- Phase 9.7: Stock valuation, mispricing analysis, and analyst comparison
+- Phase 9.8: Interactive dashboards and reporting
 
-Centralized data asset registry (Phase 9.1).
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
-- `register_dataset()`: Register new dataset in catalog
-- `get_dataset()`: Retrieve dataset metadata
-- `list_datasets()`: List all registered datasets
-- `search_datasets()`: Search datasets by criteria
-- `update_metadata()`: Update dataset metadata
-
-#### `finance_ml.benchmarking`
-
-Comparative analysis and peer benchmarking (Phase 9.2).
-
-- `compare_sector_distributions()`: Compare metric distributions across sectors with statistical tests
-- `compare_regional_valuations()`: Compare valuation metrics across regions (ANOVA/Kruskal-Wallis)
-- `find_peer_group()`: Identify peer companies based on sector and criteria (market cap, revenue, etc.)
-- `compare_to_peers()`: Compare a stock's metrics against its peer group
-- `analyze_metric_trend()`: Analyze time-series trends for specific metrics
-- `generate_benchmarking_report()`: Generate comprehensive benchmarking report with sector and regional comparisons
-
-#### `finance_ml.transformers`
-
-Scikit-learn compatible transformers for feature engineering pipelines.
-
-- `RegularizedTargetEncoder`: Target encoding with cross-validation and smoothing to prevent overfitting
-- `SafeDivisionTransformer`: Safe division with configurable fill values and capping for ratios
-- `FinancialRatioTransformer`: Automated calculation of common financial ratios (P/E, P/B, ROE, etc.)
-- `ValuationRatioTransformer`: Valuation ratio calculation with percentile-based capping for outliers
-
-#### `finance_ml.analyst_comparison`
-
-Analyst price target comparison and tracking (Phase 9.8).
-
-- `compare_predicted_vs_analyst_targets()`: Compare model predictions against analyst price targets
-- `calculate_prediction_accuracy_metrics()`: Calculate accuracy metrics for prediction vs. actual price performance
-- `identify_prediction_opportunities()`: Identify stocks where model predictions differ significantly from analyst
-  consensus
-- `track_target_revisions()`: Track changes in analyst price targets over time
-- `generate_analyst_comparison_report()`: Generate comprehensive analyst comparison report with visualizations
-
-#### `finance_ml.verify_requirements`
-
-Requirements verification utility.
-
-- Validates installed packages against project requirements
-- Checks Python version compatibility
-
-## Troubleshooting
-- TensorFlow installation issues: the project primarily uses scikit‑learn and gradient boosting libraries. CPU‑only TensorFlow is fine; ensure compatible system libraries. If installation is problematic on your machine, you can proceed with non‑TF parts first.
-- PostgreSQL quoting: many columns contain spaces/punctuation; always use double quotes in SQL identifiers.
-- Windows CSV imports: prefer \\copy from psql to avoid server‑side file permission issues.
-
-
-## Versioning
-- When materially changing modeling behavior, bump MODEL_VERSION (e.g., v8_3) and document changes in this README (features, labels, metrics). Default in environment_variables.txt is MODEL_VERSION=v8_2 (commented example).
-
+---
 
 ## Contributing
 
-Contributions are welcome! This project follows standard open-source contribution practices.
-
-### How to Contribute
+Contributions are welcome! Please follow these guidelines:
 
 1. **Fork the repository** and create a feature branch
-2. **Install development dependencies**: `pip install -e ".[dev]"`
-3. **Make your changes** following the code style guidelines
-4. **Run tests**: `python -m unittest discover -s tests -v`
-5. **Run code quality checks**:
-   - Format: `black finance_ml tests`
-   - Sort imports: `isort finance_ml tests`
-   - Lint: `flake8 finance_ml`
-   - Type check: `mypy finance_ml --ignore-missing-imports`
-6. **Submit a pull request** with a clear description of changes
+2. **Follow PEP 8** code style (use `black`, `isort`)
+3. **Follow coding standards** in [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 (function signatures, return
+   types, TDD conventions)
+4. **Write tests** for new functionality (TDD preferred; see code_guidelines.md for uncertainty, safety rails, and
+   schema validation standards)
+5. **Run test suite** before submitting: `python -m unittest -v`
+6. **Update documentation** (README, docstrings, CHANGELOG)
+7. **Submit a pull request** with clear description
 
-### Code Style
-
-- Follow PEP 8 conventions
-- Use `black` for code formatting (line length: 100)
-- Use `isort` for import sorting
-- Add type hints where possible
-- Write docstrings for public functions and classes
-
-### Testing
-
-- Write unit tests for new functionality
-- Maintain or improve test coverage
-- Use small, deterministic test data
-- Mock external dependencies (database, APIs)
-
-For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-Copyright (c) 2025 Finance ML Analytics Platform Contributors
-
-
-## CLI Usage
-
-The package provides three command-line tools after installation:
-
-### 1. `finance-ml` — Main Analysis Pipeline
-
-Full ML pipeline with data loading, EDA, feature engineering, and model training.
-
-```bash
-# Auto-detect data source (DB if available, else CSV)
-finance-ml --data-source auto --limit 5000
-
-# Use database
-finance-ml --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
-
-# Use CSV files
-finance-ml --data-source csv --data-dir ./data
-
-# Dry run (skip training)
-finance-ml --data-source csv --dry-run
-
-# Use config file
-finance-ml --config config.json
-
-# Full options
-finance-ml --data-source auto \
-           --output-dir ./outputs \
-           --n-jobs 4 \
-           --seed 42 \
-           --log-level INFO \
-           --verbose
-```
-
-### 2. `finance-ml-analyze` — Quick Analysis
-
-Fast EDA and data profiling.
-
-```bash
-# Analyze CSV data
-finance-ml-analyze --data-source csv --data-dir ./data
-
-# Analyze database
-finance-ml-analyze --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
-
-# Limit rows for quick check
-finance-ml-analyze --data-source csv --limit 1000 -v
-```
-
-### 3. `finance-ml-validate` — Data Validation
-
-Validate data quality and schema.
-
-```bash
-# Validate CSV data
-finance-ml-validate --data-source csv --data-dir ./data
-
-# Validate database
-finance-ml-validate --data-source db --db-url postgresql+psycopg2://postgres:@localhost:5432/postgres
-
-# Verbose output
-finance-ml-validate --data-source csv -v
-```
-
-### Lightweight Script
-
-The Python script can be run directly without package installation:
-
-```bash
-python ml_finance_model_main.py --data-source auto --limit 5000 --out-dir outputs
-python ml_finance_model_main.py --data-source csv --dry-run
-python ml_finance_model_main.py --data-source db --db-url postgresql+psycopg2://user:password@localhost:5432/postgres
-```
-
-Note: This script uses the `finance_ml` package internally. For advanced options, use the `finance-ml` console command.
-
-
-## Configuration Management
-
-### Environment Variables
-
-Set these in your shell or via `.env` file:
-
-```bash
-# macOS/Linux (bash/zsh)
-# Data paths
-export DATA_DIR=data
-export MODEL_DIR=models
-export CACHE_DIR=.cache
-export OUTPUT_DIR=outputs
-
-# Database
-export DB_URL=postgresql+psycopg2://postgres:@localhost:5432/postgres
-
-# Model settings
-export MODEL_VERSION=v8_2
-export RANDOM_SEED=42
-export N_JOBS=-1
-
-# Logging
-export LOG_LEVEL=INFO
-export TF_CPP_MIN_LOG_LEVEL=2
-```
+### Development Workflow
 
 ```powershell
-# Windows (PowerShell)
-# Data paths
-$env:DATA_DIR = "data"
-$env:MODEL_DIR = "models"
-$env:CACHE_DIR = ".cache"
-$env:OUTPUT_DIR = "outputs"
+# 1. Create feature branch
+git checkout -b feature/your-feature
 
-# Database
-$env:DB_URL = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
+# 2. Make changes and add tests
+# Edit code in finance_ml/
+# Add tests in tests/test_your_feature.py
 
-# Model settings
-$env:MODEL_VERSION = "v8_2"
-$env:RANDOM_SEED = "42"
-$env:N_JOBS = "-1"
+# 3. Run tests
+python -m unittest tests.test_your_feature -v
 
-# Logging
-$env:LOG_LEVEL = "INFO"
-$env:TF_CPP_MIN_LOG_LEVEL = "2"
+# 4. Run full test suite
+python -m unittest -v
+
+# 5. Check coverage
+coverage run -m unittest -v
+coverage report
+
+# 6. Format code
+black finance_ml/ tests/
+isort finance_ml/ tests/
+
+# 7. Commit and push
+git add .
+git commit -m "Add your feature"
+git push origin feature/your-feature
+
+# 8. Create pull request on GitHub
 ```
 
-### Configuration Files
-
-Create `config.json` or `config.yaml` for project settings:
-
-**config.json:**
-```json
-{
-  "data_dir": "data",
-  "output_dir": "outputs",
-  "db_url": "postgresql+psycopg2://postgres:@localhost:5432/postgres",
-  "model_version": "v8_2",
-  "random_seed": 42,
-  "n_jobs": -1
-}
-```
-
-**config.yaml:**
-```yaml
-data_dir: data
-output_dir: outputs
-db_url: postgresql+psycopg2://postgres:@localhost:5432/postgres
-model_version: v8_2
-random_seed: 42
-n_jobs: -1
-```
-
-Load config in Python:
-```python
-from finance_ml import load_config
-
-config = load_config("config.json")
-config.apply_to_env()
-```
-
-
-## Development
-
-### Running Tests
-
-```bash
-# Run all tests
-python -m unittest discover -s tests -v
-
-# Run with pytest (if installed)
-pytest tests/ -v --cov=finance_ml
-
-# Run specific test module
-python -m unittest tests.test_finance_ml_data
-```
-
-### Code Quality
-
-```bash
-# Format code
-black finance_ml tests
-
-# Sort imports
-isort finance_ml tests
-
-# Type checking
-mypy finance_ml --ignore-missing-imports
-
-# Linting
-flake8 finance_ml
-```
-
-### Installing in Development Mode
-
-```bash
-# Install package in editable mode
-pip install -e .
-
-# Install with dev dependencies
-pip install -e ".[dev]"
-
-# Install with all optional dependencies
-pip install -e ".[all]"
-```
-
-
-## CI/CD
-
-The project includes a comprehensive GitHub Actions workflow (`.github/workflows/tests.yml`) that runs automatically on
-push and pull requests to `main` and `develop` branches.
-
-### Workflow Jobs
-
-1. **test** — Matrix testing across multiple platforms and Python versions
-    - Platforms: Ubuntu, Windows, macOS
-   - Python versions: 3.12, 3.13
-    - Runs unittest suite with coverage reporting (pytest-cov and coverage.py)
-    - Uploads coverage to Codecov
-
-2. **test-optional-deps** — Tests with optional dependencies
-    - Includes psycopg2-binary, SQLAlchemy, PyYAML
-    - Validates database integration functionality
-
-3. **install-test** — Package installation validation
-    - Tests editable installation (`pip install -e .`)
-    - Validates CLI entry points (finance-ml, finance-ml-analyze, finance-ml-validate)
-    - Checks package imports and version info
-
-4. **code-quality** — Code quality checks (continue-on-error)
-    - black: Code formatting
-    - isort: Import sorting
-    - flake8: Linting (syntax errors and code quality)
-    - mypy: Static type checking
-
-### Running Checks Locally
-
-```bash
-# Run tests
-python -m unittest discover -s tests -v
-
-# Run with coverage
-pytest tests/ -v --cov=finance_ml --cov-report=term
-
-# Check code formatting
-black --check finance_ml tests
-
-# Check import sorting
-isort --check-only finance_ml tests
-
-# Lint code
-flake8 finance_ml
-
-# Type checking
-mypy finance_ml --ignore-missing-imports
-```
-
-## What's New in v0.3.0
-
-**Released: 2025-10-30**
-
-### Phase 9.7: Identification of Under/Overvalued Stocks — Complete TDD Implementation
-
-- ✅ **Valuation Analysis**: Mispricing score calculation with confidence intervals and risk-adjusted metrics
-- ✅ **Stock Categories**: Automated assignment (Strong Buy, Buy, Hold, Sell, Strong Sell) with sector-specific
-  thresholds
-- ✅ **Sector-Relative Analysis**: Z-scores and percentile ranks for comparative valuation
-- ✅ **Multi-Factor Screening**: Combined valuation, quality (ROE, margins), and growth (revenue CAGR) scoring
-- ✅ **Stock Ranking**: Automated identification of top undervalued/overvalued stocks and sector leaders/laggards
-- ✅ **Interactive Visualizations**: Valuation scatter plots, sector heatmaps, region-sector heatmaps
-- ✅ **Professional Reporting**: PDF generation with ReportLab, Excel export with comprehensive analytics
-- ✅ **15 new functions** in `finance_ml.eval` module
-- ✅ **93 comprehensive tests** (100% passing) in `tests/test_finance_ml_eval.py`
-- ✅ **Full notebook integration** in `ml_finance_model_main.ipynb` Phase 9.7 section
-
-### Phase 9.1: Data Versioning and Catalog Management — TDD Implementation
-
-- ✅ **Data Versioning**: Dataset version tracking and metadata management (`finance_ml.data_versioning`)
-- ✅ **Data Catalog**: Centralized data asset registry (`finance_ml.data_catalog`)
-- ✅ **728 lines of comprehensive tests** ensuring reliability
-- ✅ **Documentation**: `PHASE_9_1_TDD_IMPLEMENTATION.md`
-
-### Enhanced Test Coverage and Development Tools
-
-- ✅ **236+ new test cases** across multiple modules
-- ✅ **Development Tools**: `fix_notebook.py`, `verify_fixes.py` for automated notebook maintenance
-- ✅ **Notebook Validation**: Comprehensive validation and integrity tests
-
-### Previous Releases
-
-**v0.3.3**: Notebook quality improvements, Phase 9 workflow integration, configuration API enhancements  
-**v0.3.2**: Enhanced EDA with statistical analysis, distribution analysis, outlier detection  
-**v0.3.1**: Phase 9.6 (Model Evaluation) and Phase 9.7 initial implementation  
-**v0.3.0**: Configuration management, CLI tools, modern packaging, CI/CD
-
-## Development Roadmap
-
-### Phase 9: Advanced Stock Prediction ML System ✅ **COMPLETE**
-
-Phase 9 implementation is complete across all 8 phases. The platform now features:
-
-**Completed Enhancements**:
-
-- ✅ **Sector-Specific Features**: Tailored feature engineering for Financials, Energy, Technology, Healthcare, and
-  Consumer sectors (Phase 9.3)
-- ✅ **Advanced Classification**: Multi-class event classification with neural networks and gradient boosting ensembles (
-  Phase 9.4)
-- ✅ **Enhanced Regression**: Classification-enhanced sector-optimized models with hyperparameter optimization (Phase
-  9.5)
-- ✅ **Comprehensive Analytics**: Model evaluation, error analysis, and stock valuation with multi-factor screening (
-  Phases 9.6, 9.7)
-- ✅ **Data Management**: Version tracking and centralized catalog for datasets (Phase 9.1)
-- ✅ **Enhanced EDA**: Statistical analysis with normality tests, correlation analysis, and sector summaries (Phase 9.2)
-- ✅ **Model Interpretation**: SHAP integration for explainability and feature importance analysis
-- ✅ **Automated Reporting**: Excel and PDF report generation with professional formatting
-
-**Framework Alignment**: Phase 9 aligns with the standard 8-step ML project checklist for production-ready systems.
-
-### Future Development
-
-> **TODO**: Define next major development phase. Potential areas include:
-> - Real-time data feeds and live prediction updates
-> - Web API interface (Flask/FastAPI) for model serving
-> - Interactive dashboards with Plotly Dash/Streamlit
-> - Advanced ensemble techniques and AutoML integration
-> - Experiment tracking with MLflow/Weights & Biases
-> - Docker containerization and cloud deployment options
-
-See [IMPROVEMENT_PLAN.md](improvement_plan/IMPROVEMENT_PLAN.md) for complete version history and detailed implementation
-notes.
-
-## SQLite Local Setup and Data Load
-
-If you prefer a lightweight local database for quick testing, you can use SQLite alongside or instead of PostgreSQL.
-
-1) Create the SQLite schema (from project root):
-
-- sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
-
-2) Import CSVs into SQLite using the CLI script (recommended):
-
-- sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
-
-This script:
-
-- Uses per‑region staging tables
-- Deletes header rows if they are imported as data
-- Backfills missing Region values per file (US/EU/APAC/ROTW)
-- Inserts with INSERT OR IGNORE honoring the UNIQUE("Ticker","Region") index
-- Prints a post‑import validation summary
-
-3) Python alternative: chunked importer (useful for very large CSVs):
-
-- python tools/import_sqlite.py --db equities.sqlite --data-dir data --chunksize 2000
-- python tools/import_sqlite.py --db equities.sqlite --regions US,EU
-
-Notes:
-
-- The Python importer uses pandas to read CSVs with dtype=str to preserve raw values, converts empty strings to NULL,
-  and backfills Region per file.
-- sqlite3 is included with Python; no additional dependency is required for SQLite.
+---
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
+**Copyright (c) 2025 Finance ML Analytics Platform Contributors**
+
+---
+
+## Support and Contact
+
+- **Issues**: [GitHub Issues](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/issues)
+- **Documentation**: [README.md](README.md) and [docs/](docs/)
+- **Repository**: [GitHub](https://github.com/Kabenge42/Finance_ML_Analytics_Platform)
+
+---
+
+## Acknowledgments
+
+- Built with Python 3.12+ and modern ML libraries (scikit-learn, XGBoost, LightGBM, CatBoost)
+- Interactive dashboards powered by Streamlit and Dash
+- Data management with PostgreSQL and SQLite
+- Comprehensive testing with unittest and pytest
+
+---
+
+## Known Issues and TODOs
+
+### Optional Dependencies
+
+**Dashboards**: Streamlit and Dash are included in `requirements.txt` for interactive dashboard functionality. If you
+encounter issues or prefer to install them separately:
+
+```powershell
+pip install streamlit dash plotly
 ```
-MIT License
 
-Copyright (c) 2025 Finance ML Analytics Platform Contributors
+**Note**: Dashboard dependencies (streamlit>=1.30.0, dash>=2.14.0) are included by default in the unified
+requirements.txt but are optional in pyproject.toml.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+### TensorFlow Installation
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+TensorFlow is optional and CPU-only installation is sufficient for this project. For GPU acceleration:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+- Follow official [TensorFlow GPU installation guide](https://www.tensorflow.org/install/gpu)
+- Ensure CUDA/cuDNN compatibility with your GPU and TensorFlow version
+- If installation issues occur, TensorFlow can be temporarily removed from `requirements.txt`
 
-See [LICENSE](LICENSE) file for full text.
+The core workflow uses scikit-learn and gradient boosting libraries (XGBoost, LightGBM, CatBoost) and will function
+without TensorFlow.
+
+### Version Numbering Convention
+
+**Package Version** (e.g., `0.7.1`):
+
+- Follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
+- **MAJOR**: Breaking API changes or major architectural updates
+- **MINOR**: New features, backward-compatible changes
+- **PATCH**: Bug fixes, documentation updates
+- Updated in: `pyproject.toml`, `README.md`, `CHANGELOG.md`, `environment_variables.txt`
+
+**Model Version** (e.g., `v9_9`):
+
+- Format: `v{PHASE}_{ITERATION}` (e.g., `v9_9` = Phase 9, Iteration 9)
+- **PHASE**: Major modeling phase (Phase 9 = modular refactor, Phase 10 = optimization)
+- **ITERATION**: Minor updates within phase (features, hyperparameters, calibration)
+- Updated in: `finance_ml/config.py`, `ml_finance_model_main.ipynb`, `README.md`
+
+**Alignment Requirements**:
+
+- **Notebook** (`ml_finance_model_main.ipynb`) and **Package** (`finance_ml/config.py`) MODEL_VERSION **must match**
+- Package version increments with each release; MODEL_VERSION increments with modeling changes
+- Example: Package v0.7.1 can have MODEL_VERSION v9_9 (no modeling changes from v0.7.0)
+
+**Current Versions** (as of 2025-11-14):
+
+- Package: `0.8.1`
+- Model: `v9_9`
+- Status: ✓ Aligned (notebook and package both use v9_9)
+
+**Version Update Checklist**:
+
+- [x] Package version change: Update `pyproject.toml`, `README.md`, `CHANGELOG.md`, `environment_variables.txt`
+- [x] Model version change: Update `finance_ml/config.py` and `ml_finance_model_main.ipynb` (must match!)
+- [x] Document changes in `CHANGELOG.md` with clear explanation of what changed
+
+### Version Synchronization
+
+**Current Status** (as of 2025-11-14):
+
+- **CHANGELOG.md**: Documents v0.8.1 release (2025-11-14) with MODEL_VERSION v9_9 ✓
+- **README.md**: Documents v0.8.1 with MODEL_VERSION v9_9 ✓
+- **pyproject.toml**: Will be updated to version = "0.8.1" ✓
+- **environment_variables.txt**: Will be updated to Version: 0.8.1 with MODEL_VERSION=v9_9 ✓
+- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓ (per CHANGELOG)
+
+**Status**: ✓ All version files synchronized to v0.8.1 with MODEL_VERSION v9_9
+
+### Future Enhancements
+
+**TODO**: Consider adding the following enhancements:
+
+- Expand dashboard functionality with more interactive features
+- Add time-series forecasting capabilities
+- Implement automated hyperparameter tuning for all model types
+- Add support for real-time data streaming
+- Create Docker containerization for easier deployment
+
+See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed development roadmap.
+
+---
+
+**Last Updated**: 2025-11-14  
+**README Version**: 3.0 (updated version to 0.8.1, corrected test count to 45 modules, synchronized all version files)

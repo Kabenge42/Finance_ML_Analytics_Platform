@@ -285,6 +285,12 @@ def extract_classification_features(probabilities: np.ndarray) -> pd.DataFrame:
     """
     Extract classification features from predicted probabilities.
 
+    .. deprecated:: 0.8.2
+        This 3-class implementation is deprecated. Use the 5-class version from
+        ``finance_ml.ml_workflow.regression.dataset.extract_classification_features``
+        instead, which supports the standardized 5-class event labeling system
+        (Strong Negative, Negative, Neutral, Positive, Strong Positive).
+
     This function converts raw classifier probabilities into structured features
     that can be used as inputs for regression regression. The classification features
     provide meta-information about market sentiment and event likelihood.

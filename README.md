@@ -2,7 +2,7 @@
 
 **Version 0.8.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-14  
+> **Documentation Last Updated:** 2025-11-15  
 > **Latest Release**: v0.8.1 (2025-11-14 per CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt
@@ -58,6 +58,25 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 6. **Phase 9.6**: Model evaluation and comprehensive error analysis
 7. **Phase 9.7**: Identification of under/overvalued stocks with visualization and analyst comparison
 8. **Phase 9.8**: Comprehensive analytics and reporting
+
+---
+
+## Stack & Entry Points (Quick)
+
+- Language: Python 3.12–3.13
+- Package manager: pip (requirements.txt) + pyproject.toml (PEP 621)
+- Core frameworks: pandas, scikit-learn, XGBoost/LightGBM/CatBoost, plotly/matplotlib, SHAP
+- Optional: TensorFlow/Keras, SQLAlchemy + psycopg2 (PostgreSQL)
+- Database: PostgreSQL (primary), SQLite (local quick start)
+- CLI entry points (from pyproject.toml):
+  - finance-ml — full pipeline
+  - finance-ml-analyze — EDA/analytics only
+  - finance-ml-validate — validation-only
+- Main notebook: ml_finance_model_main.ipynb
+- Script alternative: ml_finance_model_main.py
+
+Note: If something appears missing for your environment, see environment_variables.txt and the Testing section’s
+selective execution tips. TODO: Add containerization instructions (Docker) if/when available.
 
 ---
 
@@ -285,8 +304,8 @@ pip install -r requirements.txt
 
 # 4. Set up database (PostgreSQL or SQLite)
 # PostgreSQL:
-psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
-psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
+psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/create_equities_schema.sql
+psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/import_equities_data.sql
 
 # SQLite (alternative):
 sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
@@ -655,9 +674,9 @@ export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 ## Testing
 
-The project uses Python's built-in `unittest` framework with 45 test modules covering data loading, preprocessing,
+The project uses Python's built-in `unittest` framework with 74 test modules covering data loading, preprocessing,
 features, models, evaluation, and integration. See [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 for TDD
-conventions and standards.
+conventions and standards. The full suite can be slow; prefer selective execution during development (see below).
 
 ### Run All Tests
 
@@ -665,23 +684,22 @@ conventions and standards.
 python -m unittest -v
 ```
 
-### Run Specific Test Modules
+### Run Specific Test Modules (Selective Execution)
 
 ```powershell
-# Fast unit tests (pure functions, no ML training)
-python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_validation_regex -v
+# Fast unit tests (<100 lines, pure functions)
+python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_validation_regex tests.test_repository_setup -v
 
-# Medium tests (integration, limited ML)
-python -m unittest tests.test_enhanced_imputation tests.test_data_catalog tests.test_logging -v
+# Medium tests (100–500 lines, limited ML)
+python -m unittest tests.test_enhanced_imputation tests.test_logging tests.test_risk_metrics tests.test_portfolio_optimization -v
 
-# New TDD modules for code_guidelines.md v1.2 standards (fast/medium)
+# Targeted standards (code_guidelines.md v1.2)
 python -m unittest tests.test_uncertainty_calibration -v        # Uncertainty quantification
 python -m unittest tests.test_predictions_schema -v             # Standardized predictions schema
 python -m unittest tests.test_regression_sector_metrics -v      # Sector metrics validation
-python -m unittest tests.test_sector_bias_calibration -v        # Sector bias calibration
 python -m unittest tests.test_data_splits_policy -v             # Data split leakage prevention
-python -m unittest tests.test_stacking_default -v               # Stacking ensemble defaults
 python -m unittest tests.test_outlier_safety_rails -v           # Outlier safety rails
+python -m unittest tests.test_stacking_default -v               # Stacking defaults
 
 # Specific feature areas
 python -m unittest tests.test_finance_ml_data -v        # Data loading
@@ -802,8 +820,9 @@ Finance_ML_Analytics_Platform/
 ├── ml_finance_model_main.py      # Python script version
 ├── equities_data_explorer.ipynb  # Data exploration notebook
 ├── ml_stock_prediction_model.ipynb # Legacy prediction notebook
-├── create_equities_schema.sql    # PostgreSQL schema
-├── import_equities_data.sql      # PostgreSQL data import
+├── pipeline/
+│   ├── create_equities_schema.sql    # PostgreSQL schema
+│   └── import_equities_data.sql      # PostgreSQL data import (staging + validation)
 ├── create_equities_schema_sqlite.sql # SQLite schema
 ├── import_equities_data_sqlite.sql   # SQLite data import
 ├── requirements.txt              # Python dependencies
@@ -843,12 +862,12 @@ Finance_ML_Analytics_Platform/
 
 ### Database Scripts
 
-| Script                              | Description                          |
-|-------------------------------------|--------------------------------------|
-| `create_equities_schema.sql`        | PostgreSQL schema creation           |
-| `import_equities_data.sql`          | PostgreSQL data import (all regions) |
-| `create_equities_schema_sqlite.sql` | SQLite schema creation               |
-| `import_equities_data_sqlite.sql`   | SQLite data import (all regions)     |
+| Script                                | Description                          |
+|---------------------------------------|--------------------------------------|
+| `pipeline/create_equities_schema.sql` | PostgreSQL schema creation           |
+| `pipeline/import_equities_data.sql`   | PostgreSQL data import (all regions) |
+| `create_equities_schema_sqlite.sql`   | SQLite schema creation               |
+| `import_equities_data_sqlite.sql`     | SQLite data import (all regions)     |
 
 ---
 

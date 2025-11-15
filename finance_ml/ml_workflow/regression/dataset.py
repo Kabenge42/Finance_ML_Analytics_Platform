@@ -188,11 +188,13 @@ def integrate_classification_features(df: pd.DataFrame, probabilities: np.ndarra
     :func:`integrate_classification_features_into_dataframe`.
 
     The resulting dataframe has the same number of rows as ``df`` and
-    includes the five event meta-feature columns
+    includes the seven event meta-feature columns for the 5-class system:
 
+    - ``event_prob_strong_negative``
+    - ``event_prob_negative``
     - ``event_prob_neutral``
     - ``event_prob_positive``
-    - ``event_prob_negative``
+    - ``event_prob_strong_positive``
     - ``event_class_predicted``
     - ``event_confidence``
 
@@ -201,7 +203,9 @@ def integrate_classification_features(df: pd.DataFrame, probabilities: np.ndarra
     df : pandas.DataFrame
         Base regression dataframe (ticker, sector, price_target, etc.).
     probabilities : numpy.ndarray
-        Class probabilities of shape ``(n_samples, 3)``.
+        Class probabilities of shape ``(n_samples, 5)`` for the 5-class
+        event labeling system (Strong Negative, Negative, Neutral,
+        Positive, Strong Positive).
 
     Returns
     -------
@@ -211,7 +215,7 @@ def integrate_classification_features(df: pd.DataFrame, probabilities: np.ndarra
     Raises
     ------
     ValueError
-        If ``probabilities`` does not have exactly 3 columns or its
+        If ``probabilities`` does not have exactly 5 columns or its
         row count does not match ``len(df)``.
     """
 
