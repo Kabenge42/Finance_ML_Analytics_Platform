@@ -337,3 +337,79 @@ def build_predictions_frame(
             result[col_name] = col_values
 
     return result
+
+
+def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
+    """Validate standardized regression predictions schema.
+
+    This lightweight helper enforces the core schema contract described in
+    ``code_guidelines.md`` Section 2.4 while remaining backward compatible
+    with existing artifacts.
+
+    The function focuses on three responsibilities:
+
+    1. Ensure **core prediction columns** are present::
+
+           ["y_true", "y_pred", "abs_error", "pct_error"]
+
+       If any are missing, a :class:`ValueError` is raised listing the
+       missing columns.
+
+    2. If lower/upper quantile columns (``pred_p10`` and ``pred_p90``) are
+       present but ``interval_width`` is missing, it derives::
+
+           interval_width = pred_p90 - pred_p10
+
+    3. Enforce simple invariants on non-negative price columns.  When a
+       ``last_price`` column is present, all finite values must be
+       non-negative; otherwise a :class:`ValueError` is raised.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Predictions dataframe to validate.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The validated (and possibly augmented) dataframe. A shallow copy is
+        returned when modifications are applied; otherwise the original
+        dataframe is returned unchanged.
+    """
+
+    import numpy as np
+    import pandas as pd
+
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("validate_predictions_schema expects a pandas DataFrame")
+
+    # 1. Core required prediction columns
+    required_core = ["y_true", "y_pred", "abs_error", "pct_error"]
+    missing = [col for col in required_core if col not in df.columns]
+    if missing:
+        raise ValueError(
+            f"Predictions schema validation failed: missing required columns: {missing}"
+        )
+
+    # Work on a shallow copy only if we need to mutate (e.g. add interval_width)
+    result = df
+
+    # 2. Derive interval_width from quantiles when available
+    has_p10 = "pred_p10" in df.columns
+    has_p90 = "pred_p90" in df.columns
+    has_interval = "interval_width" in df.columns
+
+    if has_p10 and has_p90 and not has_interval:
+        result = df.copy()
+        result["interval_width"] = result["pred_p90"] - result["pred_p10"]
+
+    # 3. Non-negative last_price invariant (if column exists)
+    if "last_price" in result.columns:
+        finite_mask = np.isfinite(result["last_price"])  # type: ignore[arg-type]
+        if (result.loc[finite_mask, "last_price"] < 0).any():
+            raise ValueError(
+                "Predictions schema validation failed: last_price contains negative values, "
+                "which violates the standardized predictions schema."
+            )
+
+    return result

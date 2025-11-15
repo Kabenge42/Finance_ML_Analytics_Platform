@@ -140,6 +140,104 @@ class TestPredictionsSchema(unittest.TestCase):
                 (result["pred_p10"] >= 0).all(), f"Found negative lower quantile predictions"
             )
 
+    def test_validate_predictions_schema_exists(self):
+        """validate_predictions_schema helper should be available in regression.io."""
+        try:
+            from finance_ml.ml_workflow.regression.io import validate_predictions_schema
+
+            self.assertTrue(callable(validate_predictions_schema))
+        except ImportError:
+            self.fail("validate_predictions_schema not implemented in regression.io")
+
+    def test_validate_predictions_schema_core_columns_required(self):
+        """Core prediction columns must be present for schema to be valid."""
+        from finance_ml.ml_workflow.regression.io import validate_predictions_schema
+
+        df = pd.DataFrame(
+            {
+                "ticker": ["AAPL", "MSFT"],
+                "sector": ["Tech", "Tech"],
+                "last_price": [150.0, 250.0],
+                "y_true": [100.0, 200.0],
+                "y_pred": [95.0, 210.0],
+                "abs_error": [5.0, 10.0],
+                "pct_error": [-5.0, 5.0],
+            }
+        )
+
+        # Should not raise for minimal core-compliant schema
+        validated = validate_predictions_schema(df)
+        self.assertIsInstance(validated, pd.DataFrame)
+
+    def test_validate_predictions_schema_missing_core_raises(self):
+        """Missing core columns should trigger a clear validation error."""
+        from finance_ml.ml_workflow.regression.io import validate_predictions_schema
+
+        df = pd.DataFrame(
+            {
+                "ticker": ["AAPL", "MSFT"],
+                "sector": ["Tech", "Tech"],
+                # Intentionally omit y_true / y_pred
+                "last_price": [150.0, 250.0],
+                "abs_error": [5.0, 10.0],
+                "pct_error": [-5.0, 5.0],
+            }
+        )
+
+        with self.assertRaises(ValueError) as ctx:
+            validate_predictions_schema(df)
+
+        msg = str(ctx.exception)
+        self.assertIn("missing required columns", msg)
+        self.assertIn("y_true", msg)
+
+    def test_validate_predictions_schema_adds_interval_width_when_quantiles_present(self):
+        """If quantiles exist but interval_width is missing, it should be derived."""
+        from finance_ml.ml_workflow.regression.io import validate_predictions_schema
+
+        df = pd.DataFrame(
+            {
+                "ticker": ["AAPL", "MSFT"],
+                "sector": ["Tech", "Tech"],
+                "last_price": [150.0, 250.0],
+                "y_true": [100.0, 200.0],
+                "y_pred": [95.0, 210.0],
+                "abs_error": [5.0, 10.0],
+                "pct_error": [-5.0, 5.0],
+                "pred_p10": [80.0, 180.0],
+                "pred_p90": [110.0, 240.0],
+            }
+        )
+
+        validated = validate_predictions_schema(df.copy())
+
+        self.assertIn("interval_width", validated.columns)
+        expected_width = validated["pred_p90"] - validated["pred_p10"]
+        pd.testing.assert_series_equal(
+            validated["interval_width"], expected_width, check_names=False
+        )
+
+    def test_validate_predictions_schema_rejects_negative_last_price(self):
+        """Last price should be non-negative in standardized prediction outputs."""
+        from finance_ml.ml_workflow.regression.io import validate_predictions_schema
+
+        df = pd.DataFrame(
+            {
+                "ticker": ["AAPL", "MSFT"],
+                "sector": ["Tech", "Tech"],
+                "last_price": [150.0, -10.0],  # Invalid negative price
+                "y_true": [100.0, 200.0],
+                "y_pred": [95.0, 210.0],
+                "abs_error": [5.0, 10.0],
+                "pct_error": [-5.0, 5.0],
+            }
+        )
+
+        with self.assertRaises(ValueError) as ctx:
+            validate_predictions_schema(df)
+
+        self.assertIn("last_price", str(ctx.exception))
+
 
 class TestPredictionsOutputFiles(unittest.TestCase):
     """Test that prediction files have correct schema."""

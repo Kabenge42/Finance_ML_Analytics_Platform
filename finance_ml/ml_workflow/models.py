@@ -235,6 +235,7 @@ def train_and_evaluate_regression(
     n_jobs: int = 1,
     dry_run: bool = False,
     loss: str = "squared_error",
+    use_safety_rails: bool = True,
 ) -> Optional[Dict[str, Any]]:
     """Train and evaluate regression model.
 
@@ -251,6 +252,13 @@ def train_and_evaluate_regression(
     """
     from finance_ml.ml_workflow.features import build_features_and_target
     from finance_ml.ml_workflow.advanced_models import prepare_features_for_training
+    from finance_ml.ml_workflow.regression.io import (
+        build_predictions_frame,
+        validate_predictions_schema,
+    )
+
+    # Phase 9.9 Gap 4: centralized outlier safety rails (winsorization + clipping)
+    from finance_ml.ml_workflow.regression.safety_rails import winsorize_target
 
     # Store original dataframe for full predictions later
     df_original = df.copy()
@@ -275,6 +283,20 @@ def train_and_evaluate_regression(
         return None
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # ------------------------------------------------------------------
+    # Phase 9.9: apply outlier safety rails to the training target only.
+    #
+    # We winsorize y_train to reduce the impact of catastrophic target
+    # values while keeping y_test (the evaluation target) unchanged so
+    # that metrics remain comparable to earlier versions.
+    # ------------------------------------------------------------------
+    if use_safety_rails:
+        try:
+            y_train_array = winsorize_target(y_train.values, lower=0.01, upper=0.99)
+            y_train = pd.Series(y_train_array, index=y_train.index, name=y_train.name)
+        except Exception as e:  # pragma: no cover - defensive, logs but does not fail
+            logging.warning("Winsorization failed; proceeding without target capping: %s", e)
 
     pipe = build_regression_pipeline(num_cols, cat_cols, n_jobs=n_jobs, loss=loss)
 
@@ -333,24 +355,17 @@ def train_and_evaluate_regression(
             logging.warning("Could not extract feature importance: %s", e)
 
     # Save predictions with enhanced metadata (Priority 1.1)
-    results_df = pd.DataFrame(
-        {
-            "y_true": y_test.values,
-            "y_pred": preds,
-            "residual": y_test.values - preds,
-            "abs_error": np.abs(y_test.values - preds),
-            "pct_error": ((y_test.values - preds) / y_test.values) * 100,
-        },
-        index=y_test.index,
-    )
+    # Use standardized helper to build core predictions frame, then add
+    # legacy columns (e.g., residual) for backward compatibility.
+    results_df = build_predictions_frame(y_test, preds, df)
 
-    # Add sector, ticker, and key features for diagnostic analysis
-    if "sector" in df.columns:
-        results_df["sector"] = df.loc[y_test.index, "sector"].values
-    if "ticker" in df.columns:
-        results_df["ticker"] = df.loc[y_test.index, "ticker"].values
-    if "market_cap" in df.columns:
-        results_df["market_cap"] = df.loc[y_test.index, "market_cap"].values
+    # Add residual column expected by some downstream analyses
+    results_df["residual"] = results_df["y_true"] - results_df["y_pred"]
+
+    # Validate schema before writing artifact to disk. This enforces core
+    # columns and simple invariants (e.g., non-negative last_price) while
+    # remaining lightweight.
+    results_df = validate_predictions_schema(results_df)
 
     results_path = out_dir / "regression_predictions.csv"
     results_df.to_csv(results_path, index=False)
@@ -408,39 +423,53 @@ def train_and_evaluate_regression(
             f"(clipped: {clip_result_full['n_clipped_lower']} low, {clip_result_full['n_clipped_upper']} high)"
         )
 
-        # Create full predictions DataFrame
-        full_results_df = pd.DataFrame(
-            {
-                "y_pred": full_preds,
-            },
-            index=original_index,
-        )
+        # Create full predictions DataFrame with standardized core columns
+        # where a target is available. We re-use build_predictions_frame on
+        # the subset of rows that have non-null targets, then align back to
+        # the full index while preserving original behavior.
 
-        # Add metadata columns
-        if "sector" in df_original.columns:
-            full_results_df["sector"] = df_original["sector"].values
-        if "ticker" in df_original.columns:
-            full_results_df["ticker"] = df_original["ticker"].values
-        if "market_cap" in df_original.columns:
-            full_results_df["market_cap"] = df_original["market_cap"].values
-        if "last_price" in df_original.columns:
-            full_results_df["last_price"] = df_original["last_price"].values
-
-        # Add actual target values where available (for comparison)
         target_col_name = y.name if hasattr(y, "name") and y.name else "price_target"
-        if target_col_name in df_original.columns:
-            full_results_df["y_true"] = df_original[target_col_name].values
-            # Calculate error metrics only for stocks with known targets
-            mask_with_target = ~full_results_df["y_true"].isna()
-            full_results_df["residual"] = np.nan
-            full_results_df["abs_error"] = np.nan
-            full_results_df.loc[mask_with_target, "residual"] = (
-                full_results_df.loc[mask_with_target, "y_true"]
-                - full_results_df.loc[mask_with_target, "y_pred"]
-            )
-            full_results_df.loc[mask_with_target, "abs_error"] = np.abs(
-                full_results_df.loc[mask_with_target, "residual"]
-            )
+        has_target = target_col_name in df_original.columns
+
+        if has_target:
+            y_full_true = pd.to_numeric(df_original[target_col_name], errors="coerce")
+            # Align predictions to df_original index
+            y_full_true = y_full_true.reindex(original_index)
+
+            # Build standardized frame only for rows with valid targets
+            mask_with_target = ~y_full_true.isna()
+            if mask_with_target.any():
+                full_core = build_predictions_frame(
+                    y_full_true.loc[mask_with_target],
+                    full_preds[mask_with_target.to_numpy()],
+                    df_original.loc[mask_with_target],
+                )
+                full_core = validate_predictions_schema(full_core)
+
+                # Start from a minimal frame for all rows, then inject
+                # standardized columns where available to keep behavior
+                # backwards-compatible for rows without targets.
+                full_results_df = pd.DataFrame(index=original_index)
+                full_results_df["y_pred"] = full_preds
+
+                for col in full_core.columns:
+                    full_results_df[col] = full_results_df.get(col, np.nan)
+                    full_results_df.loc[mask_with_target, col] = full_core[col]
+
+                # Preserve residual column naming for backward compatibility
+                if "residual" not in full_results_df.columns:
+                    full_results_df["residual"] = np.nan
+                mask_with_target = ~full_results_df["y_true"].isna()
+                full_results_df.loc[mask_with_target, "residual"] = (
+                    full_results_df.loc[mask_with_target, "y_true"]
+                    - full_results_df.loc[mask_with_target, "y_pred"]
+                )
+            else:
+                # Fallback: no valid target rows; keep minimal structure
+                full_results_df = pd.DataFrame({"y_pred": full_preds}, index=original_index)
+        else:
+            # Fallback when no target column exists in original dataframe
+            full_results_df = pd.DataFrame({"y_pred": full_preds}, index=original_index)
 
         # Save full predictions
         full_results_path = out_dir / "regression_predictions_full.csv"
@@ -463,6 +492,9 @@ def train_and_evaluate_regression(
         "r2": r2,
         "predictions": results_df,
         "full_predictions": full_results_df,
+        # Phase 9.9: expose metrics in a dedicated sub-dict while
+        # preserving existing top-level keys for backward compatibility.
+        "metrics": {"mae": mae, "rmse": rmse, "r2": r2},
     }
 
 
@@ -734,7 +766,9 @@ def train_stacking_ensemble(
             """Predict using the stacking ensemble"""
             return self.stacking_regressor.predict(X)
 
-    return StackingEnsembleModel(stacking_regressor)
+    # Phase 9.9 requirement: return standardized dict format instead of bare model
+    model = StackingEnsembleModel(stacking_regressor)
+    return {"model": model}
 
 
 def train_stacking_ensemble_by_sector(

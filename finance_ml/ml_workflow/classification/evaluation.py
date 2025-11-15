@@ -56,6 +56,108 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def export_classification_probabilities(
+    y_true: "np.ndarray",
+    y_pred: "np.ndarray",
+    y_proba: "np.ndarray",
+    index: "Optional[pd.Index]" = None,
+) -> "pd.DataFrame":
+    """Export standardized classification probabilities for meta-features.
+
+    This helper converts raw classifier outputs into a standardized
+    probabilities DataFrame that can be used both for diagnostics and
+    as input to the regression meta-feature pipeline (see
+    :mod:`finance_ml.ml_workflow.regression.dataset`).
+
+    The function is aligned with the **5-class event labeling system**
+    introduced in Phase 9.4 / 9.9 with the following class semantics
+    (per ``labels.py`` and ``code_guidelines.md``):
+
+    - 0 → Strong Negative
+    - 1 → Negative
+    - 2 → Neutral
+    - 3 → Positive
+    - 4 → Strong Positive
+
+    It expects ``y_proba`` with shape ``(n_samples, 5)`` ordered exactly
+    as above and returns seven columns:
+
+    - ``event_prob_strong_negative``  – probability of class 0
+    - ``event_prob_negative``         – probability of class 1
+    - ``event_prob_neutral``          – probability of class 2
+    - ``event_prob_positive``         – probability of class 3
+    - ``event_prob_strong_positive``  – probability of class 4
+    - ``event_class_predicted``       – predicted class label (from ``y_pred``)
+    - ``event_confidence``            – max probability across the five classes
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True class labels (used for shape validation; values 0–4).
+    y_pred : array-like of shape (n_samples,)
+        Predicted class labels from the classifier.
+    y_proba : array-like of shape (n_samples, 5)
+        Predicted class probabilities in 5-class order.
+    index : pandas.Index, optional
+        Optional index to apply to the returned DataFrame so that it
+        aligns with the main stock universe.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with 7 standardized columns and ``n_samples`` rows.
+
+    Raises
+    ------
+    ValueError
+        If ``y_proba`` does not have shape ``(n_samples, 5)`` or if
+        ``y_true`` / ``y_pred`` lengths do not match ``y_proba``.
+    """
+
+    import numpy as np
+    import pandas as pd
+
+    y_true_arr = np.asarray(y_true)
+    y_pred_arr = np.asarray(y_pred)
+    proba_arr = np.asarray(y_proba)
+
+    if proba_arr.ndim != 2 or proba_arr.shape[1] != 5:
+        raise ValueError(
+            "export_classification_probabilities expects probabilities with "
+            f"shape (n_samples, 5); got {proba_arr.shape}"
+        )
+
+    n_samples = proba_arr.shape[0]
+    if y_true_arr.shape[0] != n_samples or y_pred_arr.shape[0] != n_samples:
+        raise ValueError(
+            "y_true, y_pred, and y_proba must have the same number of samples "
+            f"(got y_true={y_true_arr.shape[0]}, y_pred={y_pred_arr.shape[0]}, "
+            f"y_proba={n_samples})"
+        )
+
+    # Confidence is simply the max probability; we rely on the provided
+    # y_pred for the predicted class to stay consistent with upstream
+    # classifier outputs.
+    event_confidence = proba_arr.max(axis=1)
+
+    probs_df = pd.DataFrame(
+        {
+            "event_prob_strong_negative": proba_arr[:, 0],
+            "event_prob_negative": proba_arr[:, 1],
+            "event_prob_neutral": proba_arr[:, 2],
+            "event_prob_positive": proba_arr[:, 3],
+            "event_prob_strong_positive": proba_arr[:, 4],
+            "event_class_predicted": y_pred_arr,
+            "event_confidence": event_confidence,
+        }
+    )
+
+    if index is not None:
+        probs_df.index = index
+
+    return probs_df
+
+
 def evaluate_classification(
     y_true: np.ndarray,
     y_pred: np.ndarray,

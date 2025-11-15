@@ -51,11 +51,15 @@ Reference:
 """
 
 import logging
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
+
+# Re-use conformal logic from the dedicated uncertainty module to avoid
+# duplication and keep all coverage maths in a single place.
+from .uncertainty import conformal_prediction_intervals
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -228,3 +232,72 @@ def enforce_monotonic_quantiles(quantile_preds: dict) -> dict:
         result[q] = pred_matrix[:, j]
 
     return result
+
+
+def conformal_calibrate_intervals(
+    y_cal: np.ndarray,
+    y_cal_pred: np.ndarray,
+    y_test_pred: np.ndarray,
+    alpha: float = 0.2,
+    clip_lower_at_zero: bool = True,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Thin wrapper around :func:`conformal_prediction_intervals`.
+
+    This helper exists to match the Phase 9.9 API described in
+    ``code_guidelines.md`` and the implementation plan.  It simply
+    delegates to :func:`conformal_prediction_intervals`, which already
+    implements the finite-sample conformal coverage logic and optional
+    non-negativity clipping.
+
+    The function is placed in ``quantile.py`` so that quantile-centric
+    workflows can import it alongside quantile training utilities while
+    keeping the actual maths in :mod:`uncertainty`.
+    """
+
+    lower, upper = conformal_prediction_intervals(
+        y_cal=y_cal,
+        y_cal_pred=y_cal_pred,
+        y_test_pred=y_test_pred,
+        alpha=alpha,
+        clip_lower_at_zero=clip_lower_at_zero,
+    )
+    return lower, upper
+
+
+def clip_negative_intervals(
+    lower: np.ndarray,
+    upper: np.ndarray,
+    zero_threshold: float = 0.0,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Clip interval lower bounds at a non-negative threshold.
+
+    This utility is a small post-processing step for price prediction
+    intervals to ensure that all lower bounds are at least
+    ``zero_threshold`` (default ``0.0``) while preserving the upper
+    bounds and the ordering ``lower <= upper``.
+
+    It is intentionally lightweight and operates element-wise:
+
+    - ``lower_clipped = max(lower, zero_threshold)``
+    - ``upper_clipped = max(upper, lower_clipped)``
+
+    The behaviour is validated by tests in
+    ``tests/test_uncertainty_calibration.py``.
+    """
+
+    lower_arr = np.asarray(lower, dtype=float)
+    upper_arr = np.asarray(upper, dtype=float)
+
+    # Raise early if shapes are incompatible
+    if lower_arr.shape != upper_arr.shape:
+        raise ValueError(
+            f"lower and upper must have the same shape; got {lower_arr.shape} and {upper_arr.shape}"
+        )
+
+    # Enforce non-negative lower bounds
+    lower_clipped = np.maximum(lower_arr, float(zero_threshold))
+
+    # Ensure upper is at least as large as the (possibly raised) lower
+    upper_clipped = np.maximum(upper_arr, lower_clipped)
+
+    return lower_clipped, upper_clipped

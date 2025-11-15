@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def analyze_notebook():
-    nb_path = Path("ml_finance_model_main.ipynb")
+    nb_path = Path("../ml_finance_model_main.ipynb")
 
     with open(nb_path, "r", encoding="utf-8") as f:
         nb = json.load(f)

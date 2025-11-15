@@ -6,6 +6,7 @@ otherwise grouped by ticker, otherwise stratified by sector.
 """
 
 import unittest
+from unittest import mock
 import pandas as pd
 import numpy as np
 
@@ -117,6 +118,55 @@ class TestDataSplitsPolicy(unittest.TestCase):
         # Should have 80/20 split approximately
         self.assertAlmostEqual(len(train) / len(df), 0.8, delta=0.05)
         self.assertAlmostEqual(len(test) / len(df), 0.2, delta=0.05)
+
+
+class TestSharedSplitIntegration(unittest.TestCase):
+    """Integration tests for shared split utilities in ml_workflow helpers."""
+
+    def test_prepare_regression_data_uses_shared_policy(self):
+        """prepare_regression_data should delegate to create_train_test_split.
+
+        This test patches ``create_train_test_split`` and asserts it is
+        invoked when ``prepare_regression_data`` is called, documenting the
+        Phase 9.9 requirement that regression data prep uses the shared
+        split policy instead of calling sklearn.train_test_split directly.
+        """
+
+        from finance_ml.ml_workflow.regression.dataset import prepare_regression_data
+
+        # Synthetic dataframe with policy-relevant columns so that
+        # create_train_test_split is the intended path.
+        df = pd.DataFrame(
+            {
+                "ticker": [f"T{i:03d}" for i in range(100)],
+                "sector": np.random.choice(["Tech", "Finance"], 100),
+                "snapshot_date": pd.date_range("2020-01-01", periods=100, freq="D"),
+                "price_target": np.random.uniform(50, 200, 100),
+                "feature_0": np.random.randn(100),
+                "feature_1": np.random.randn(100),
+            }
+        )
+
+        # Patch the shared helper in its defining module. The regression
+        # dataset module imports it from there, so this ensures the
+        # patched function is the one prepare_regression_data calls.
+        with mock.patch(
+            "finance_ml.ml_workflow.validation.splits.create_train_test_split",
+            wraps=lambda df_, **kwargs: (df_.iloc[:80].copy(), df_.iloc[80:].copy()),
+        ) as mocked_split:
+            X_train, X_test, y_train, y_test, feature_info = prepare_regression_data(
+                df, target_col="price_target", test_size=0.2, random_state=42
+            )
+
+        # Shared helper must have been invoked exactly once.
+        mocked_split.assert_called_once()
+
+        # Sanity-check resulting split sizes to ensure wiring did not
+        # break downstream behavior.
+        self.assertEqual(len(X_train), 80)
+        self.assertEqual(len(X_test), 20)
+        self.assertEqual(len(y_train), 80)
+        self.assertEqual(len(y_test), 20)
 
 
 class TestTimeSeriesCrossValidation(unittest.TestCase):

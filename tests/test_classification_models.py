@@ -84,6 +84,48 @@ class TestPrepareClassificationData(unittest.TestCase):
         self.assertIn("region", categorical_cols)
         self.assertGreater(len(numeric_cols), 0)
 
+    def test_prepare_classification_data_respects_shared_policy_when_possible(self):
+        """Classification data prep should respect shared split policy columns.
+
+        When the input dataframe contains policy-relevant columns such as
+        ``snapshot_date`` and ``ticker``, prepare_classification_data should
+        be able to rely on the shared split utilities (time-aware/grouped)
+        while still maintaining reasonable class balance. This test focuses
+        on the **behavioral contract** (no leakage via date ordering and
+        approximate label balance), not the exact internal implementation.
+        """
+
+        # Enrich sample data with policy columns
+        X = self.X.copy()
+        X["snapshot_date"] = pd.date_range("2020-01-01", periods=len(X), freq="D")
+        X["ticker"] = [f"T{i:03d}" for i in range(len(X))]
+
+        X_train, X_test, y_train, y_test, numeric_cols, categorical_cols = (
+            prepare_classification_data(X, self.y, test_size=0.25, random_state=42)
+        )
+
+        # No leakage on dates: test dates should be >= train dates minimum
+        if "snapshot_date" in X_train.columns and "snapshot_date" in X_test.columns:
+            self.assertLessEqual(
+                X_train["snapshot_date"].max(),
+                X_test["snapshot_date"].min(),
+            )
+
+        # Class balance should be roughly preserved between train and test
+        # (within a generous margin, since exact stratification is not
+        # required once grouped/time-aware policy is applied).
+        train_dist = pd.Series(y_train).value_counts(normalize=True).sort_index()
+        test_dist = pd.Series(y_test).value_counts(normalize=True).sort_index()
+
+        for cls in train_dist.index:
+            if cls in test_dist.index:
+                diff = abs(train_dist[cls] - test_dist[cls])
+                self.assertLess(
+                    diff,
+                    0.20,
+                    msg=f"Class distribution drift too high for class {cls}: {diff:.1%}",
+                )
+
     def test_prepare_classification_data_with_feature_groups(self):
         """Test data preparation with Phase 9.3 feature groups."""
         # Add Phase 9.3 features

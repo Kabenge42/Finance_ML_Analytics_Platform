@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv('outputs/analytics/predictions.csv')
+df = pd.read_csv("../outputs/analytics/predictions.csv")
 
 print('=== PREDICTION QUALITY ANALYSIS (8,000 predictions) ===\n')
 

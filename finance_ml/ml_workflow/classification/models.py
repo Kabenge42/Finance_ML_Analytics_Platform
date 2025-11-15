@@ -303,10 +303,48 @@ def prepare_classification_data(
     for col in categorical_cols:
         X[col] = X[col].fillna("Unknown")
 
-    # Train-test split with stratification
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, labels, test_size=test_size, random_state=random_state, stratify=labels
-    )
+    # ------------------------------------------------------------------
+    # Train-test split with shared Phase 9.9 policy where possible.
+    #
+    # For temporal / grouped data the policy prioritizes:
+    #   1) time-aware split by snapshot_date
+    #   2) grouped split by ticker
+    #   3) stratified split by sector
+    #   4) random split as a final fallback
+    #
+    # When none of these columns are present, we fall back to a pure
+    # label-stratified split using sklearn.train_test_split to preserve
+    # class balance semantics from earlier versions.
+    # ------------------------------------------------------------------
+    from finance_ml.ml_workflow.validation.splits import create_train_test_split
+
+    # Attach labels so the helper can operate on the full dataframe
+    df_for_split = X.copy()
+    df_for_split["__labels__"] = labels
+
+    date_col = "snapshot_date" if "snapshot_date" in df_for_split.columns else None
+    group_col = "ticker" if "ticker" in df.columns else None
+    stratify_col = "sector" if "sector" in df.columns else None
+
+    if date_col or group_col or stratify_col:
+        train_df, test_df = create_train_test_split(
+            df_for_split,
+            date_col=date_col,
+            group_col=group_col,
+            stratify_col=stratify_col,
+            test_size=test_size,
+            random_state=random_state,
+        )
+
+        X_train = train_df.drop(columns=["__labels__"])
+        X_test = test_df.drop(columns=["__labels__"])
+        y_train = train_df["__labels__"].to_numpy()
+        y_test = test_df["__labels__"].to_numpy()
+    else:
+        # Fallback: label-stratified split as in the original implementation
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, labels, test_size=test_size, random_state=random_state, stratify=labels
+        )
 
     logger.info(
         f"Train set: {len(X_train)} samples, Test set: {len(X_test)} samples, "

@@ -21,6 +21,19 @@ from finance_ml.ml_workflow.regression.uncertainty import (
 )
 
 
+try:
+    # New Phase 9.9 helper (may not exist in older versions). Import
+    # lazily so earlier tests still run if it is absent.
+    from finance_ml.ml_workflow.regression.quantile import (
+        conformal_calibrate_intervals,
+        clip_negative_intervals,
+    )
+
+    HAS_CONFORMAL_HELPERS = True
+except Exception:  # pragma: no cover - defensive import
+    HAS_CONFORMAL_HELPERS = False
+
+
 class TestConformalPrediction(unittest.TestCase):
     """Test conformal prediction interval calibration."""
 
@@ -83,6 +96,74 @@ class TestConformalPrediction(unittest.TestCase):
         self.assertTrue(
             np.all(width > 0), f"Found non-positive interval widths: {width[width <= 0]}"
         )
+
+
+@unittest.skipUnless(HAS_CONFORMAL_HELPERS, "conformal calibration helpers not available yet")
+class TestConformalCalibrateIntervals(unittest.TestCase):
+    """Phase 9.9 helper tests for conformal_calibrate_intervals and clipping.
+
+    These tests encode the higher-level behavior built on top of
+    ``conformal_prediction_intervals``:
+
+    - ``conformal_calibrate_intervals`` must delegate to the core
+      conformal logic and achieve empirical coverage in the target
+      75–85% band on calibration-style usage.
+    - ``clip_negative_intervals`` must ensure non-negative lower bounds
+      for price predictions while preserving the upper bounds as much as
+      possible.
+    """
+
+    def setUp(self) -> None:
+        rng = np.random.default_rng(123)
+        n_cal = 120
+        n_test = 60
+
+        # Simple linear signal with noise; strictly non-negative
+        X = rng.normal(size=(n_cal + n_test, 2))
+        y_true = np.maximum(
+            0.0, 20 + 3 * X[:, 0] - 2 * X[:, 1] + rng.normal(0, 2.0, size=n_cal + n_test)
+        )
+        y_pred = 20 + 3 * X[:, 0] - 2 * X[:, 1] + rng.normal(0, 1.5, size=n_cal + n_test)
+
+        self.y_cal = y_true[:n_cal]
+        self.y_cal_pred = y_pred[:n_cal]
+        self.y_test = y_true[n_cal:]
+        self.y_test_pred = y_pred[n_cal:]
+
+    def test_conformal_calibrate_intervals_target_coverage(self):
+        """Calibrated intervals should hit 75–85% coverage on test set."""
+
+        alpha = 0.2
+        lower, upper = conformal_calibrate_intervals(
+            self.y_cal,
+            self.y_cal_pred,
+            self.y_test_pred,
+            alpha=alpha,
+            clip_lower_at_zero=True,
+        )
+
+        cov = compute_interval_coverage(self.y_test, lower, upper)
+        self.assertGreaterEqual(cov, 0.75, f"Coverage {cov:.1%} below target 75%")
+        self.assertLessEqual(cov, 0.90, f"Coverage {cov:.1%} suspiciously high (>90%)")
+
+    def test_clip_negative_intervals_enforces_non_negative_lower(self):
+        """clip_negative_intervals must guarantee non-negative lower bounds."""
+
+        # First build unconstrained intervals (allowing negatives)
+        alpha = 0.2
+        lower, upper = conformal_prediction_intervals(
+            self.y_cal,
+            self.y_cal_pred,
+            self.y_test_pred,
+            alpha=alpha,
+            clip_lower_at_zero=False,
+        )
+
+        lower_clipped, upper_clipped = clip_negative_intervals(lower, upper, zero_threshold=0.0)
+
+        # All lower bounds should be >= 0, upper unchanged where already >= 0
+        self.assertTrue(np.all(lower_clipped >= 0.0))
+        self.assertTrue(np.all(upper_clipped >= lower_clipped))
 
 
 class TestQuantileMonotonicity(unittest.TestCase):

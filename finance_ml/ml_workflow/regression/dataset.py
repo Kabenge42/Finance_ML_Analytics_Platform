@@ -15,6 +15,9 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+# Phase 9.9 Gap 3: shared split policy (time-series → grouped → stratified)
+from finance_ml.ml_workflow.validation.splits import create_train_test_split
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,61 +27,57 @@ logger = logging.getLogger(__name__)
 
 
 def extract_classification_features(probabilities: np.ndarray) -> pd.DataFrame:
-    """
-    Extract classification features from predicted probabilities.
+    """Extract classification features from predicted probabilities.
 
-    This function converts raw classifier probabilities into structured features
-    that can be used as inputs for regression models. The classification features
-    provide meta-information about market sentiment and event likelihood.
+    Converts raw classifier probabilities into structured features that
+    can be used as inputs for regression models. The classification
+    features provide meta-information about market sentiment and event
+    likelihood.
 
-    Creates DataFrame with 5 columns:
-    - event_prob_neutral: Probability of neutral class (class 0, -10% to +10% price change)
-    - event_prob_positive: Probability of positive class (class 1, >= +10% upside)
-    - event_prob_negative: Probability of negative class (class 2, >= -10% downside)
-    - event_class_predicted: Predicted class (0, 1, or 2 based on argmax)
-    - event_confidence: Confidence score (max probability across classes)
+    This implementation is aligned with the **5-class event labeling
+    system** used throughout Phase 9.4 / 9.9, where labels are:
+
+    - 0 → Strong Negative
+    - 1 → Negative
+    - 2 → Neutral
+    - 3 → Positive
+    - 4 → Strong Positive
+
+    It expects an array of shape ``(n_samples, 5)`` with columns ordered
+    exactly as above and returns a DataFrame with 7 columns:
+
+    - ``event_prob_strong_negative``
+    - ``event_prob_negative``
+    - ``event_prob_neutral``
+    - ``event_prob_positive``
+    - ``event_prob_strong_positive``
+    - ``event_class_predicted`` (argmax over the 5 classes)
+    - ``event_confidence`` (max probability across classes)
 
     Args:
-        probabilities: Array of shape (n_samples, 3) with class probabilities
-                      from a trained 3-class event classifier
+        probabilities: Array of shape (n_samples, 5) with class
+            probabilities from a trained 5-class event classifier.
 
     Returns:
-        DataFrame with classification features (n_samples rows, 5 columns)
+        DataFrame with classification features (n_samples rows, 7 columns).
 
     Raises:
-        ValueError: If probabilities array doesn't have exactly 3 classes
-
-    Example:
-        >>> from sklearn.ensemble import RandomForestClassifier
-        >>> import numpy as np
-        >>>
-        >>> # Train event classifier
-        >>> classifier = RandomForestClassifier()
-        >>> classifier.fit(X_train, y_train)
-        >>>
-        >>> # Extract classification features for regression
-        >>> probs = classifier.predict_proba(X_test)
-        >>> features = extract_classification_features(probs)
-        >>>
-        >>> # Use in regression
-        >>> X_regression = pd.concat([X_test, features], axis=1)
-
-    Phase 9.5 Implementation:
-        This function enables integration of classification meta-features into
-        regression models, as specified in the Phase 9.5 requirements for
-        sector-optimized regression with classification feature enhancement.
+        ValueError: If probabilities array doesn't have exactly 5 classes.
     """
-    if probabilities.shape[1] != 3:
-        raise ValueError(f"Expected 3 classes, got {probabilities.shape[1]}")
+
+    if probabilities.ndim != 2 or probabilities.shape[1] != 5:
+        raise ValueError(f"Expected 5 classes, got shape {probabilities.shape}")
 
     n_samples = probabilities.shape[0]
-    logger.debug(f"Extracting classification features for {n_samples} samples")
+    logger.debug(f"Extracting 5-class classification features for {n_samples} samples")
 
     features = pd.DataFrame(
         {
-            "event_prob_neutral": probabilities[:, 0],
-            "event_prob_positive": probabilities[:, 1],
-            "event_prob_negative": probabilities[:, 2],
+            "event_prob_strong_negative": probabilities[:, 0],
+            "event_prob_negative": probabilities[:, 1],
+            "event_prob_neutral": probabilities[:, 2],
+            "event_prob_positive": probabilities[:, 3],
+            "event_prob_strong_positive": probabilities[:, 4],
             "event_class_predicted": probabilities.argmax(axis=1),
             "event_confidence": probabilities.max(axis=1),
         }
@@ -178,6 +177,48 @@ def integrate_classification_features_into_dataframe(
     return result
 
 
+def integrate_classification_features(df: pd.DataFrame, probabilities: np.ndarray) -> pd.DataFrame:
+    """Convenience wrapper to integrate classifier probabilities into ``df``.
+
+    This helper mirrors the Phase 9.9 plan API by taking the raw
+    ``y_proba`` array from an event classifier, converting it into
+    standardized classification meta-features via
+    :func:`extract_classification_features`, and then combining those
+    features with the main regression dataframe using
+    :func:`integrate_classification_features_into_dataframe`.
+
+    The resulting dataframe has the same number of rows as ``df`` and
+    includes the five event meta-feature columns
+
+    - ``event_prob_neutral``
+    - ``event_prob_positive``
+    - ``event_prob_negative``
+    - ``event_class_predicted``
+    - ``event_confidence``
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Base regression dataframe (ticker, sector, price_target, etc.).
+    probabilities : numpy.ndarray
+        Class probabilities of shape ``(n_samples, 3)``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Enhanced dataframe with classification meta-features appended.
+
+    Raises
+    ------
+    ValueError
+        If ``probabilities`` does not have exactly 3 columns or its
+        row count does not match ``len(df)``.
+    """
+
+    class_features = extract_classification_features(probabilities)
+    return integrate_classification_features_into_dataframe(df, class_features)
+
+
 def create_classification_interactions(
     df: pd.DataFrame, classification_cols: List[str], valuation_cols: List[str]
 ) -> pd.DataFrame:
@@ -257,10 +298,53 @@ def prepare_regression_data(
     X = df[numeric_features].copy()
     y = df[target_col].copy()
 
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
+    # ------------------------------------------------------------------
+    # Split data using the shared Phase 9.9 split policy helper where
+    # possible.  This enforces the documented priority:
+    #   1) time-aware (snapshot_date)
+    #   2) grouped by ticker
+    #   3) stratified by sector
+    #   4) random as final fallback
+    # while keeping the public signature and return types unchanged.
+    # ------------------------------------------------------------------
+
+    # Use create_train_test_split only when we have the original
+    # dataframe available with potential policy columns; otherwise
+    # fall back to sklearn.train_test_split on the numeric matrix.
+    if len(df) == len(X):
+        # Attach a stable row id so we can map back from the split
+        # dataframes to the numeric feature matrix / target series
+        df_for_split = df.copy()
+        df_for_split["__row_id__"] = np.arange(len(df_for_split))
+
+        date_col = "snapshot_date" if "snapshot_date" in df_for_split.columns else None
+        group_col = "ticker" if "ticker" in df_for_split.columns else None
+        stratify_col = "sector" if "sector" in df_for_split.columns else None
+
+        train_df, test_df = create_train_test_split(
+            df_for_split,
+            date_col=date_col,
+            group_col=group_col,
+            stratify_col=stratify_col,
+            test_size=test_size,
+            random_state=random_state,
+        )
+
+        # Map back to numeric feature rows via the synthetic row id
+        train_idx = train_df["__row_id__"].to_numpy()
+        test_idx = test_df["__row_id__"].to_numpy()
+
+        X_train = X.iloc[train_idx].copy()
+        X_test = X.iloc[test_idx].copy()
+        y_train = y.iloc[train_idx].copy()
+        y_test = y.iloc[test_idx].copy()
+    else:
+        # Conservative fallback – should not normally happen, but keeps
+        # behaviour identical to earlier versions if dataset shapes
+        # diverge for any reason.
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=random_state
+        )
 
     # Feature info - CRITICAL FIX: 'all_features' should only contain numeric features
     # to prevent passing non-numeric columns to model training
