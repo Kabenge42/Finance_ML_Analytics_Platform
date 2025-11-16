@@ -2,10 +2,11 @@
 
 **Version 0.8.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-15  
-> **Latest Release**: v0.8.1 (2025-11-14 per CHANGELOG.md)  
+> **Documentation Last Updated:** 2025-11-16  
+> **Latest Release**: v0.8.1 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
-> **Note**: Package versions synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt
+> **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
+> applicable.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -97,8 +98,8 @@ selective execution tips. TODO: Add containerization instructions (Docker) if/wh
 - 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis, standardized predictions
   output
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
-- 🧪 **Tested**: 45 test modules with comprehensive coverage (≥80% target for new code); TDD conventions for
-  uncertainty, safety rails, and schema validation
+- 🧪 **Tested**: Extensive unittest suite (≈74 test modules) with comprehensive coverage (≥80% target for new code);
+  TDD conventions for uncertainty, safety rails, and schema validation
 - 🚀 **CLI**: Three command-line tools for different workflows
 - 🔍 **Model Interpretation**: SHAP analysis for explainability
 
@@ -701,12 +702,11 @@ python -m unittest tests.test_data_splits_policy -v             # Data split lea
 python -m unittest tests.test_outlier_safety_rails -v           # Outlier safety rails
 python -m unittest tests.test_stacking_default -v               # Stacking defaults
 
-# Specific feature areas
+# Representative feature areas
 python -m unittest tests.test_finance_ml_data -v        # Data loading
 python -m unittest tests.test_features -v               # Feature engineering
 python -m unittest tests.test_classification -v         # Classification models
 python -m unittest tests.test_regression -v             # Regression models
-python -m unittest tests.test_dashboard_helpers -v      # Dashboard helpers
 ```
 
 ### Fast Helper Tests (Selective)
@@ -748,7 +748,8 @@ Tests are organized by feature area under `tests/`:
 - **Models**: `test_classification*`, `test_advanced_models*`, `test_finance_ml_models`, `test_regression`
 - **Evaluation**: `test_finance_ml_eval`, `test_analytics`, `test_evaluation_phase96`, `test_valuation_phase97`
 - **Integration**: `test_integration_*`, `test_notebook_*`
-- **Dashboards**: `test_dashboard_helpers*`, `test_streamlit_dashboard`, `test_dash_dashboard`
+- **Dashboards**: TODO — add dedicated dashboard test modules (e.g., Streamlit/Dash helpers) if and when dashboard
+  code is expanded.
 
 **Note**: Some test modules are large (500+ lines) and involve heavy ML training. For faster development iterations, run
 smaller test modules or use test discovery patterns.

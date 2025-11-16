@@ -4,8 +4,8 @@ apply: always
 
 # Finance ML Analytics Platform — Project Rules
 
-**Version**: 0.6.1  
-**Last Updated**: 2025-11-10
+**Version**: 0.8.1  
+**Last Updated**: 2025-11-16
 
 ## Project Overview
 
@@ -16,7 +16,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Modular Python package (`finance_ml`) with clean, tested, reusable code
 - Interactive Jupyter notebook for exploration and prototyping
 - CLI tools for batch processing and automation
-- Comprehensive unit tests with good coverage (67 test modules, ≥80% target)
+- Comprehensive unit tests with good coverage (≈74 test modules, ≥80% target)
 - Configuration management via environment variables, JSON, or YAML
 
 ### Module Architecture (v9_8 - Phase 9.1-9.8)
@@ -469,7 +469,7 @@ fast/medium/slow categories).
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                     # Main Python package (v0.6.1)
+├── finance_ml/                     # Main Python package (v0.8.1)
 │   ├── __init__.py                # Package exports and version
 │   ├── ml_workflow/               # Phase-aligned modular workflow (v9_8)
 │   │   ├── preprocessing/         # Phase 9.1: imputation, outliers, scaling, quality, pipeline

@@ -9,6 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Phase 9.5 Time-Series CV Cell Malformed Code**: Fixed malformed Time-Series Cross-Validation cell in section 6.5.1
+  with compressed single-line code
+  - **Root Cause**: Cell 61 contained 2487 characters compressed into only 4 lines, with the entire try-except block on
+    line 3 as a single unreadable line
+  - **Impact**: Code was unreadable and uneditable in the notebook interface; syntax errors prevented proper parsing
+  - **Solution**: Reformatted the cell with proper line breaks and indentation
+    - Expanded from 4 lines to 62 properly formatted lines
+    - Applied correct Python indentation (4 spaces per level)
+    - Preserved all functionality: time-series split, stacking ensemble, winsorization, adaptive clipping, metrics
+      export
+  - **Verification**: All content validation checks passed
+    - Uses correct dataframe: `all_stocks_enhanced` ✓
+    - Time-series split present: `TimeSeriesSplit` ✓
+    - Stacking ensemble used: `regression_train_stacking` ✓
+    - Target winsorization: `winsorize_target` ✓
+    - Adaptive clipping: `adaptive_clip_predictions` ✓
+    - Metrics export: `tscv_metrics.csv` ✓
+    - No old `df_reg` references ✓
+  - **Alignment**: Reformatted code aligns with code_guidelines.md v1.2 formatting standards (proper indentation,
+    readable structure)
+  - **Files**: `ml_finance_model_main.ipynb` (cell 61 fixed), `fix_timeseries_cv_cell.py` (183 lines),
+    `verify_tscv_fix.py` (114 lines)
+  - **Result**: Section 6.5.1 now properly formatted and executable; notebook maintains 97 cells with improved
+    readability
+- **Phase 9.5 Notebook df_reg NameError**: Resolved critical `NameError: name 'df_reg' is not defined` in Phase 9.5
+  regression section
+  - **Root Cause**: Duplicate cells in sections 6.1 and 6.2 referencing non-existent `df_reg` variable instead of
+    correct `all_stocks_enhanced` dataframe
+  - **Impact**: Notebook execution failed at Phase 9.5 when trying to extract classification columns with
+    `df_reg.columns`
+  - **Solution**: Removed duplicate cells and fixed variable references
+    - Removed duplicate section 6.1 cell (cell 51, 17 df_reg references)
+    - Removed duplicate section 6.2 cell (cell 54, 2 df_reg references)
+    - Fixed Time-Series CV section (cell 63, 2 df_reg references) to use `all_stocks_enhanced`
+    - Added validation guard to section 6.1 ensuring `all_stocks_with_classification` exists before execution
+  - **Verification**: Notebook reduced from 99 to 97 cells; 0 remaining df_reg references; all validation checks passed
+  - **Data Flow**: Properly uses `all_stocks_with_classification` → `all_stocks_enhanced` → regression pipeline
+  - **Alignment**: Fix implements code_guidelines.md v1.2 error prevention standards with clear validation guards
+  - **Files**: `ml_finance_model_main.ipynb` (fixed), `fix_notebook_df_reg.py` (164 lines), `verify_notebook_fix.py` (
+    102 lines), `DF_REG_FIX_SUMMARY.md` (146 lines)
+  - **Result**: Phase 9.5 now executes without NameError; cleaner notebook structure with explicit data flow
 - **5-Class Classification Shape Mismatch**: Fixed critical bug where classifiers produced 4-class probabilities instead
   of
   required 5-class probabilities, causing `ValueError` in `export_classification_probabilities`
