@@ -1174,21 +1174,31 @@ from finance_ml.ml_workflow.analytics import (
     calculate_risk_adjusted_mispricing,
     rank_undervalued_stocks,
     rank_overvalued_stocks,
-    rank_stocks_by_sector
+    rank_stocks_by_sector,
     )
 from finance_ml.ml_workflow.analytics.eval import (
     simple_eda,
     create_sector_heatmap,
-    create_interactive_prediction_plot
+    create_interactive_prediction_plot,
     )
-from finance_ml.ml_workflow.portfolio_optimization import (
-    calculate_portfolio_weights,
-    optimize_portfolio_sharpe
+from finance_ml.ml_workflow.analytics.portfolio import (
+    calculate_portfolio_return,
+    calculate_portfolio_volatility,
+    calculate_portfolio_sharpe_ratio,
+    generate_efficient_frontier,
+    optimize_portfolio_max_sharpe,
+    optimize_portfolio_min_volatility,
+    optimize_portfolio_target_return,
+    rebalance_portfolio,
     )
-from finance_ml.ml_workflow.risk_metrics import (
-    calculate_var,
+from finance_ml.ml_workflow.analytics.risk import (
+    calculate_var_historical,
+    calculate_var_parametric,
     calculate_cvar,
-    calculate_sharpe_ratio
+    calculate_sharpe_ratio,
+    calculate_sortino_ratio,
+    calculate_max_drawdown,
+    calculate_portfolio_risk_metrics,
     )
 
 # Backward-compatible imports

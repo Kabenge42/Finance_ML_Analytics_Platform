@@ -13,7 +13,7 @@ Implemented using strict TDD methodology (Test-Driven Development).
 
 from __future__ import annotations
 
-from typing import Union, Dict, Any, Optional
+from typing import Union, Dict, Any, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -338,3 +338,125 @@ def calculate_portfolio_risk_metrics(
         metrics["max_drawdown"] = calculate_max_drawdown(cum_returns)
 
     return metrics
+
+
+def calculate_expected_shortfall(returns: pd.Series, confidence: float = 0.95) -> float:
+    """Alias for CVaR/Expected Shortfall used in the enhancement plan.
+
+    This thin wrapper exists mainly for semantic clarity in the
+    portfolio optimisation roadmap: Expected Shortfall is implemented as
+    historical CVaR via :func:`calculate_cvar`.
+    """
+
+    return calculate_cvar(returns, confidence_level=confidence)
+
+
+def calculate_tracking_error(
+    portfolio_returns: pd.Series,
+    benchmark_returns: pd.Series,
+    periods_per_year: int = 252,
+) -> float:
+    """Calculate annualised tracking error vs a benchmark.
+
+    Tracking error is defined as the standard deviation of the
+    portfolio-minus-benchmark return series, annualised by
+    ``sqrt(periods_per_year)``.
+    """
+
+    if len(portfolio_returns) == 0 or len(benchmark_returns) == 0:
+        raise ValueError("Return series cannot be empty")
+
+    if len(portfolio_returns) != len(benchmark_returns):
+        raise ValueError("portfolio_returns and benchmark_returns must have the same length")
+
+    diff = portfolio_returns.astype(float) - benchmark_returns.astype(float)
+    te = diff.std(ddof=1) * np.sqrt(periods_per_year)
+    return float(te)
+
+
+def run_stress_tests(
+    weights: np.ndarray,
+    returns: pd.DataFrame,
+    scenarios: Dict[str, Dict[str, float]],
+    asset_class_mapping: Optional[Sequence[str]] = None,
+) -> Dict[str, Dict[str, float]]:
+    """Run simple portfolio stress tests for predefined scenarios.
+
+    Each scenario specifies shocks at the **asset-class** level (for
+    example ``{"equity": -0.30, "bonds": -0.10}``). Assets are mapped
+    to classes via ``asset_class_mapping`` which must be the same length
+    as the number of columns in ``returns``. If no mapping is provided,
+    all assets are assumed to belong to the ``"equity"`` class.
+
+    The function returns a dictionary keyed by scenario name containing
+    at least the scenario ``portfolio_loss`` (a negative number
+    indicates loss).
+    """
+
+    if returns.shape[1] != len(weights):
+        raise ValueError("weights length must match number of assets in returns")
+
+    n_assets = returns.shape[1]
+    if asset_class_mapping is None:
+        asset_class_mapping = ["equity"] * n_assets
+
+    if len(asset_class_mapping) != n_assets:
+        raise ValueError("asset_class_mapping length must match number of assets")
+
+    results: Dict[str, Dict[str, float]] = {}
+
+    for name, shocks in scenarios.items():
+        loss = 0.0
+        for w, asset_class in zip(weights, asset_class_mapping):
+            shock = shocks.get(asset_class, 0.0)
+            loss += w * shock
+
+        results[name] = {"portfolio_loss": float(loss)}
+
+    return results
+
+
+def run_monte_carlo_simulation(
+    weights: np.ndarray,
+    returns: pd.DataFrame,
+    n_simulations: int = 10_000,
+    time_horizon: int = 252,
+    confidence_levels: Sequence[float] | None = None,
+    random_state: Optional[int] = 21,
+) -> Dict[str, Any]:
+    """Run a Monte Carlo simulation for portfolio value paths.
+
+    The simulation uses a multivariate normal approximation calibrated on
+    the provided ``returns`` DataFrame. Outputs include the full matrix
+    of simulated paths and percentile summary paths suitable for
+    visualisation or risk analysis.
+    """
+
+    if confidence_levels is None:
+        confidence_levels = [0.05, 0.5, 0.95]
+
+    if returns.shape[1] != len(weights):
+        raise ValueError("weights length must match number of assets in returns")
+
+    rng = np.random.RandomState(random_state)
+
+    base = returns.to_numpy(dtype=float)
+    mean_vec = base.mean(axis=0)
+    cov_matrix = np.cov(base, rowvar=False)
+
+    paths = np.zeros((n_simulations, time_horizon), dtype=float)
+
+    for i in range(n_simulations):
+        simulated = rng.multivariate_normal(mean_vec, cov_matrix, size=time_horizon)
+        port_rets = simulated @ weights
+        paths[i] = (1 + port_rets).cumprod()
+
+    out: Dict[str, Any] = {"paths": paths}
+
+    # Add percentile paths keyed by pXX_path for each confidence level
+    for cl in confidence_levels:
+        pct = int(round(cl * 100))
+        key = f"p{pct:02d}_path"
+        out[key] = np.percentile(paths, pct, axis=0)
+
+    return out

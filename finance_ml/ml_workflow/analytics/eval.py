@@ -4541,6 +4541,7 @@ def filter_stocks_by_criteria(
     min_mispricing: Optional[float] = None,
     max_mispricing: Optional[float] = None,
     valuation_categories: Optional[list] = None,
+    cap_unit: str = "",  # New in portfolio optimization enhancement Phase 1.1.1
 ) -> pd.DataFrame:
     """
     Filter stocks based on multiple criteria.
@@ -4549,11 +4550,18 @@ def filter_stocks_by_criteria(
         df: DataFrame with stock data
         sectors: List of sectors to include (e.g., ['Tech', 'Finance'])
         regions: List of regions to include (e.g., ['US', 'EU'])
-        min_market_cap: Minimum market cap threshold
-        max_market_cap: Maximum market cap threshold
+        min_market_cap: Minimum market cap threshold (interpreted according to ``cap_unit``)
+        max_market_cap: Maximum market cap threshold (interpreted according to ``cap_unit``)
         min_mispricing: Minimum mispricing score threshold
         max_mispricing: Maximum mispricing score threshold
         valuation_categories: List of valuation categories to include
+        cap_unit: Optional unit for ``min_market_cap``/``max_market_cap``.
+            Supported values:
+                - "B": thresholds specified in billions
+                - "M": thresholds specified in millions
+                - "K": thresholds specified in thousands
+            Any other value (including empty string) preserves the original
+            behaviour and treats thresholds as absolute currency amounts.
 
     Returns:
         Filtered DataFrame
@@ -4569,6 +4577,24 @@ def filter_stocks_by_criteria(
         1
     """
     result = df.copy()
+
+    # Normalize cap_unit to uppercase for comparison, but treat None or empty
+    # as "no scaling" to preserve backward compatibility.
+    unit = (cap_unit or "").upper()
+
+    scale = 1.0
+    if unit == "B":
+        scale = 1e9
+    elif unit == "M":
+        scale = 1e6
+    elif unit == "K":
+        scale = 1e3
+
+    # Apply scaling to market cap thresholds if provided
+    if min_market_cap is not None:
+        min_market_cap = float(min_market_cap) * scale
+    if max_market_cap is not None:
+        max_market_cap = float(max_market_cap) * scale
 
     # Filter by sector
     if sectors is not None:
@@ -7707,11 +7733,11 @@ def generate_enhanced_pdf_report(
     df: pd.DataFrame,
     pdf_path: Path,
     title: str = "Enhanced Financial Analysis Report",
-    include_financial_dashboard: bool = False,
-    include_quality_alerts: bool = False,
-    include_hypothesis_tests: bool = False,
-    include_charts: bool = False,
-    include_toc: bool = False,
+    include_financial_dashboard: bool = True,
+    include_quality_alerts: bool = True,
+    include_hypothesis_tests: bool = True,
+    include_charts: bool = True,
+    include_toc: bool = True,
     template: str = "default",
 ) -> Dict:
     """
@@ -7803,7 +7829,7 @@ def generate_enhanced_pdf_report(
     if include_toc:
         toc_entries = ["1. Executive Summary"]
         if include_financial_dashboard:
-            toc_entries.append("2. Financial Metrics Dashboard")
+            toc_entries.append("2. <Financial Metrics Dashboard>")
         if include_quality_alerts:
             toc_entries.append("3. Data Quality Analysis")
         if include_hypothesis_tests:

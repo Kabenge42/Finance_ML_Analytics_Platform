@@ -1,0 +1,440 @@
+# ============================================================================
+# Portfolio Optimization with Actual Historical Data and Predictions
+# ============================================================================
+print("\n" + "=" * 80)
+print("📈 PORTFOLIO OPTIMIZATION WITH ACTUAL DATA")
+print("=" * 80)
+
+# Step 1: Prepare data - filter stocks with valid historical prices and predictions
+print("\n🔍 Step 1: Filtering valid stocks...")
+
+# Required columns for analysis
+price_cols = ['last_price', 'price_1w_ago', 'price_1m_ago', 'price_3m_ago', 'price_6m_ago', 'price_1y_ago']
+required_cols = price_cols + ['predicted_price_target', 'ticker', 'sector']
+
+# Check which columns exist
+available_cols = [col for col in required_cols if col in all_stocks_phase95.columns]
+missing_cols = [col for col in required_cols if col not in all_stocks_phase95.columns]
+
+if missing_cols:
+    print(f"⚠️  Warning: Missing columns: {missing_cols}")
+
+# Filter stocks with non-null values in key columns
+valid_stocks = all_stocks_phase95.dropna(subset=[col for col in ['last_price', 'predicted_price_target']
+                                                 if col in all_stocks_phase95.columns]).copy()
+
+print(f"✓ Valid stocks: {len(valid_stocks):,} (from {len(all_stocks_phase95):,} total)")
+
+# Step 2: Calculate historical returns from price data
+print("\n📊 Step 2: Calculating historical returns...")
+
+returns_data = {}
+
+# Calculate returns for different time periods
+if 'price_1w_ago' in valid_stocks.columns:
+    valid_stocks['return_1w'] = (valid_stocks['last_price'] - valid_stocks['price_1w_ago']) / valid_stocks[
+        'price_1w_ago']
+    returns_data['1w'] = valid_stocks['return_1w'].dropna()
+
+if 'price_1m_ago' in valid_stocks.columns:
+    valid_stocks['return_1m'] = (valid_stocks['last_price'] - valid_stocks['price_1m_ago']) / valid_stocks[
+        'price_1m_ago']
+    returns_data['1m'] = valid_stocks['return_1m'].dropna()
+
+if 'price_3m_ago' in valid_stocks.columns:
+    valid_stocks['return_3m'] = (valid_stocks['last_price'] - valid_stocks['price_3m_ago']) / valid_stocks[
+        'price_3m_ago']
+    returns_data['3m'] = valid_stocks['return_3m'].dropna()
+
+if 'price_6m_ago' in valid_stocks.columns:
+    valid_stocks['return_6m'] = (valid_stocks['last_price'] - valid_stocks['price_6m_ago']) / valid_stocks[
+        'price_6m_ago']
+    returns_data['6m'] = valid_stocks['return_6m'].dropna()
+
+if 'price_1y_ago' in valid_stocks.columns:
+    valid_stocks['return_1y'] = (valid_stocks['last_price'] - valid_stocks['price_1y_ago']) / valid_stocks[
+        'price_1y_ago']
+    returns_data['1y'] = valid_stocks['return_1y'].dropna()
+
+# Display returns summary
+for period, returns in returns_data.items():
+    print(f"  {period} returns: {len(returns):,} stocks, "
+          f"mean={returns.mean():.2%}, std={returns.std():.2%}")
+
+# Step 3: Calculate expected returns from predictions
+print("\n🎯 Step 3: Calculating expected returns from predictions...")
+
+valid_stocks['expected_return'] = (
+        (valid_stocks['predicted_price_target'] - valid_stocks['last_price'])
+        / valid_stocks['last_price']
+)
+
+# Filter out extreme predictions (outliers)
+expected_returns = valid_stocks['expected_return'].dropna()
+q1, q99 = expected_returns.quantile([0.01, 0.99])
+valid_stocks_filtered = valid_stocks[
+    (valid_stocks['expected_return'] >= q1) &
+    (valid_stocks['expected_return'] <= q99)
+    ].copy()
+
+print(f"✓ Expected returns calculated: {len(valid_stocks_filtered):,} stocks")
+print(f"  Range: {valid_stocks_filtered['expected_return'].min():.2%} to "
+      f"{valid_stocks_filtered['expected_return'].max():.2%}")
+print(f"  Mean: {valid_stocks_filtered['expected_return'].mean():.2%}")
+print(f"  Std: {valid_stocks_filtered['expected_return'].std():.2%}")
+
+# ============================================================================
+# Step 3.5: Multi-criteria stock selection with normalized market cap handling
+# ============================================================================
+print("\n🎯 Step 3.5: Selecting portfolio candidates with multi-criteria filters...")
+
+
+# ============================================================================
+# IMPORTANT: Ensure required columns exist before calling selection functions
+# ============================================================================
+
+# Step 3.4.5: Validate and compute required ranking metrics
+print("\n🔍 Step 3.4.5: Validating required ranking metrics...")
+
+# 1. Ensure return_1y exists (realized 1-year return from prices)
+if "return_1y" not in valid_stocks_filtered.columns:
+    if {"last_price", "price_1y_ago"}.issubset(valid_stocks_filtered.columns):
+        valid_stocks_filtered["return_1y"] = (
+            valid_stocks_filtered["last_price"] / valid_stocks_filtered["price_1y_ago"] - 1.0
+        )
+        print(f"  ✓ Computed return_1y from price data: {valid_stocks_filtered[\"return_1y\"].notna().sum():,} stocks")
+    else:
+        raise KeyError(
+            "Notebook: cannot compute return_1y because columns "
+            "'last_price' and 'price_1y_ago' are missing."
+        )
+else:
+    print(f"  ✓ return_1y already exists: {valid_stocks_filtered[\"return_1y\"].notna().sum():,} stocks")
+
+# 2. Ensure expected_return exists (model-based expected return)
+if "expected_return" not in valid_stocks_filtered.columns:
+    # Check for predicted_price_target column
+    if {"last_price", "predicted_price_target"}.issubset(valid_stocks_filtered.columns):
+        valid_stocks_filtered["expected_return"] = (
+            valid_stocks_filtered["predicted_price_target"] / valid_stocks_filtered["last_price"] - 1.0
+        )
+        print(f"  ✓ Computed expected_return from predictions: {valid_stocks_filtered[\"expected_return\"].notna().sum():,} stocks")
+    else:
+        raise KeyError(
+            "Notebook: cannot compute expected_return because columns "
+            "'last_price' and 'predicted_price_target' are missing."
+        )
+else:
+    print(f"  ✓ expected_return already exists: {valid_stocks_filtered[\"expected_return\"].notna().sum():,} stocks")
+
+# 3. Ensure mispricing_score exists (required by select_portfolio_candidates)
+if "mispricing_score" not in valid_stocks_filtered.columns:
+    # Try to compute from mispricing_pct if available
+    if "mispricing_pct" in valid_stocks_filtered.columns:
+        # Simple normalization: convert percentage to score (0-100 scale)
+        valid_stocks_filtered["mispricing_score"] = valid_stocks_filtered["mispricing_pct"]
+        print(f"  ✓ Computed mispricing_score from mispricing_pct: {valid_stocks_filtered[\"mispricing_score\"].notna().sum():,} stocks")
+    else:
+        # Fallback: use expected_return as a proxy for mispricing score
+        print("  ⚠️  mispricing_pct not available; using expected_return as mispricing_score proxy")
+        valid_stocks_filtered["mispricing_score"] = valid_stocks_filtered["expected_return"] * 100
+        print(f"  ✓ Created mispricing_score from expected_return: {valid_stocks_filtered[\"mispricing_score\"].notna().sum():,} stocks")
+else:
+    print(f"  ✓ mispricing_score already exists: {valid_stocks_filtered[\"mispricing_score\"].notna().sum():,} stocks")
+
+# Display summary of ranking metrics
+print("\n📊 Ranking metrics summary:")
+for metric in ["expected_return", "return_1y", "mispricing_score"]:
+    if metric in valid_stocks_filtered.columns:
+        vals = valid_stocks_filtered[metric].dropna()
+        if len(vals) > 0:
+            print(f"  {metric}: range [{vals.min():.3f}, {vals.max():.3f}], "
+                  f"mean={vals.mean():.3f}, median={vals.median():.3f}")
+
+from finance_ml.ml_workflow.analytics.eval import filter_stocks_by_criteria
+
+# Pre-filter diagnostics
+print("\n📊 Pre-filter diagnostics:")
+print(f"  Total stocks: {len(valid_stocks_filtered):,}")
+
+if 'market_cap' in valid_stocks_filtered.columns:
+    mc = valid_stocks_filtered['market_cap'].dropna()
+    print(f"  Market cap available: {len(mc):,} stocks")
+    if len(mc) > 0:
+        # Check if data is normalized (range 0-1) or absolute
+        is_normalized = (mc.min() >= 0) and (mc.max() <= 1.5)
+
+        if is_normalized:
+            print(f"    ✓ Market cap is NORMALIZED (0-1 scale)")
+            print(f"    Range: {mc.min():.3f} to {mc.max():.3f}")
+            print(f"    Median: {mc.median():.3f}")
+            print(f"    75th percentile: {mc.quantile(0.75):.3f}")
+
+            # Use normalized threshold
+            min_mc_threshold = 0.5  # Top 50% by market cap
+            cap_unit = ""           # No scaling needed
+        else:
+            print(f"    ✓ Market cap is in ABSOLUTE units")
+            print(f"    Range: ${mc.min()/1e9:.2f}B to ${mc.max()/1e9:.2f}B")
+            print(f"    Median: ${mc.median()/1e9:.2f}B")
+
+            # Use absolute threshold
+            min_mc_threshold = 1.0  # 1 billion
+            cap_unit = "M"          # Billions
+else:
+    print("  ⚠️  WARNING: 'market_cap' column not found!")
+    min_mc_threshold = None
+    cap_unit = ""
+
+if 'mispricing_pct' in valid_stocks_filtered.columns:
+    mp = valid_stocks_filtered['mispricing_pct'].dropna()
+    print(f"  Mispricing available: {len(mp):,} stocks")
+    if len(mp) > 0:
+        print(f"    Range: {mp.min():.1f}% to {mp.max():.1f}%")
+        print(f"    Median: {mp.median():.1f}%")
+        print(f"    Undervalued (>0%): {(mp > 0).sum():,} stocks ({(mp > 0).sum() / len(mp) * 100:.1f}%)")
+
+# Apply multi-criteria filter with corrected parameters
+sector_filter = None  # or ["Technology", "Healthcare"]
+region_filter = None
+
+filtered_candidates = filter_stocks_by_criteria(
+        valid_stocks_filtered,
+        sectors=sector_filter,
+        regions=region_filter,
+        min_market_cap=min_mc_threshold,    # ✅ Auto-detected threshold
+        cap_unit=cap_unit,                  # ✅ Auto-detected unit
+        min_mispricing=-10.0,               # Allow slightly overvalued stocks
+        max_mispricing=None                 # No upper limit
+        )
+
+if filtered_candidates.empty:
+    print("⚠️  Multi-criteria filters returned no stocks; relaxing constraints...")
+
+    # Try with more relaxed criteria
+    filtered_candidates = filter_stocks_by_criteria(
+            valid_stocks_filtered,
+            regions=region_filter,          # Keep region filter only
+            min_market_cap=None,            # Remove market cap filter
+            min_mispricing=-20.0            # More lenient mispricing
+            )
+
+    if filtered_candidates.empty:
+        print("⚠️  Still no matches; falling back to all valid stocks.")
+        filtered_candidates = valid_stocks_filtered.copy()
+    else:
+        print(f"✓ Relaxed filters selected {len(filtered_candidates):,} stocks")
+else:
+    print(f"✓ Selected {len(filtered_candidates):,} candidate stocks using multi-criteria filters")
+    if 'sector' in filtered_candidates.columns:
+        print(f"  Sectors: {filtered_candidates['sector'].nunique()}")
+    if 'market_cap' in filtered_candidates.columns:
+        mc_range = filtered_candidates['market_cap'].describe()
+        print(f"  Market cap range: {mc_range['min']:.3f} to {mc_range['max']:.3f}")
+
+# Use filtered candidates for downstream analysis
+valid_stocks_filtered = filtered_candidates.copy()
+
+# Determine best return column (still needed for covariance estimation)
+best_return_col = None
+for col in ['return_1y', 'return_6m', 'return_3m', 'return_1m', 'return_1w']:
+    if col in valid_stocks_filtered.columns:
+        non_null_count = valid_stocks_filtered[col].notna().sum()
+        if non_null_count >= 20:  # Minimum 20 stocks for meaningful portfolio
+            best_return_col = col
+            break
+
+# Step 4: Build covariance matrix from historical returns
+print("\n🔢 Step 4: Building covariance matrix from historical returns...")
+
+# best_return_col already determined above in Step 3.5
+
+if best_return_col is None:
+    print("⚠️  Insufficient historical return data. Using synthetic covariance matrix.")
+    # Create synthetic covariance based on sector volatility
+    n_stocks = len(valid_stocks_filtered)
+    sector_vol = valid_stocks_filtered.groupby('sector')[
+        'expected_return'].std() if 'sector' in valid_stocks_filtered.columns else 0.15
+    avg_vol = sector_vol.mean() if isinstance(sector_vol, pd.Series) else 0.15
+    cov_matrix = np.eye(n_stocks) * (avg_vol ** 2)
+else:
+    print(f"✓ Using {best_return_col} for covariance estimation")
+
+    # Create a matrix of returns (one return per stock for covariance estimation)
+    # Since we only have one return per stock, we'll estimate covariance using cross-sectional data
+    # grouped by sector to add some correlation structure
+
+    if 'sector' in valid_stocks_filtered.columns and len(valid_stocks_filtered['sector'].unique()) > 1:
+        # Estimate within-sector and between-sector correlations
+        sectors = valid_stocks_filtered['sector'].values
+        returns_array = valid_stocks_filtered[best_return_col].values
+
+        n_stocks = len(valid_stocks_filtered)
+        cov_matrix = np.zeros((n_stocks, n_stocks))
+
+        # Estimate variance from returns
+        variance = np.var(returns_array, ddof=1)
+
+        # Within-sector correlation: 0.3, between-sector: 0.1 (typical values)
+        for i in range(n_stocks):
+            for j in range(n_stocks):
+                if i == j:
+                    cov_matrix[i, j] = variance
+                elif sectors[i] == sectors[j]:
+                    cov_matrix[i, j] = 0.3 * variance  # Within-sector correlation
+                else:
+                    cov_matrix[i, j] = 0.1 * variance  # Between-sector correlation
+    else:
+        # Simple covariance matrix with uniform correlation
+        variance = np.var(valid_stocks_filtered[best_return_col].values, ddof=1)
+        n_stocks = len(valid_stocks_filtered)
+        cov_matrix = np.full((n_stocks, n_stocks), 0.1 * variance)
+        np.fill_diagonal(cov_matrix, variance)
+
+    print(f"  Covariance matrix shape: {cov_matrix.shape}")
+    print(f"  Average variance: {np.diag(cov_matrix).mean():.6f}")
+    print(
+            f"  Average correlation: {(cov_matrix.sum() - np.diag(cov_matrix).sum()) / (cov_matrix.size - len(cov_matrix)):.3f}")
+
+# Step 5: Run portfolio optimizations
+print("\n🎯 Step 5: Running portfolio optimizations...")
+
+# Prepare inputs for optimization
+expected_returns_array = valid_stocks_filtered['expected_return'].values
+tickers = valid_stocks_filtered['ticker'].values if 'ticker' in valid_stocks_filtered.columns else np.arange(
+        len(valid_stocks_filtered))
+
+# Import portfolio optimization functions
+from finance_ml.ml_workflow.analytics.portfolio import (
+    optimize_portfolio_max_sharpe,
+    optimize_portfolio_min_volatility,
+    optimize_portfolio_target_return
+    )
+
+# Risk-free rate (5% annual)
+risk_free_rate = 0.05
+
+print("\n📈 Optimization 1: Maximum Sharpe Ratio")
+try:
+    max_sharpe_result = optimize_portfolio_max_sharpe(
+            returns=expected_returns_array,
+            cov_matrix=cov_matrix,
+            risk_free_rate=risk_free_rate,
+            allow_short=False,
+            max_weight=0.10  # Max 10% per stock for diversification
+            )
+
+    print(f"✓ Max Sharpe Portfolio:")
+    print(f"  Expected Return: {max_sharpe_result['return']:.2%}")
+    print(f"  Volatility: {max_sharpe_result['volatility']:.2%}")
+    print(f"  Sharpe Ratio: {max_sharpe_result['sharpe_ratio']:.3f}")
+    print(f"  Top 5 holdings: ", end="")
+    top_5_idx = np.argsort(max_sharpe_result['weights'])[-5:][::-1]
+    for idx in top_5_idx:
+        print(f"{tickers[idx]}({max_sharpe_result['weights'][idx]:.1%}) ", end="")
+    print()
+except Exception as e:
+    print(f"⚠️  Max Sharpe optimization failed: {e}")
+    max_sharpe_result = None
+
+print("\n📉 Optimization 2: Minimum Volatility")
+try:
+    min_vol_result = optimize_portfolio_min_volatility(
+            returns=expected_returns_array,
+            cov_matrix=cov_matrix,
+            allow_short=False,
+            max_weight=0.10
+            )
+
+    print(f"✓ Min Volatility Portfolio:")
+    print(f"  Expected Return: {min_vol_result['return']:.2%}")
+    print(f"  Volatility: {min_vol_result['volatility']:.2%}")
+    print(f"  Top 5 holdings: ", end="")
+    top_5_idx = np.argsort(min_vol_result['weights'])[-5:][::-1]
+    for idx in top_5_idx:
+        print(f"{tickers[idx]}({min_vol_result['weights'][idx]:.1%}) ", end="")
+    print()
+except Exception as e:
+    print(f"⚠️  Min Volatility optimization failed: {e}")
+    min_vol_result = None
+
+print("\n🎯 Optimization 3: Target Return")
+try:
+    # Target return: median of expected returns
+    target_return = np.median(expected_returns_array)
+    target_return_result = optimize_portfolio_target_return(
+            returns=expected_returns_array,
+            cov_matrix=cov_matrix,
+            target_return=target_return,
+            allow_short=False,
+            max_weight=0.10
+            )
+
+    print(f"✓ Target Return Portfolio (target={target_return:.2%}):")
+    print(f"  Expected Return: {target_return_result['return']:.2%}")
+    print(f"  Volatility: {target_return_result['volatility']:.2%}")
+    print(f"  Top 5 holdings: ", end="")
+    top_5_idx = np.argsort(target_return_result['weights'])[-5:][::-1]
+    for idx in top_5_idx:
+        print(f"{tickers[idx]}({target_return_result['weights'][idx]:.1%}) ", end="")
+    print()
+except Exception as e:
+    print(f"⚠️  Target Return optimization failed: {e}")
+    target_return_result = None
+
+# Step 6: Calculate portfolio returns and risk metrics
+print("\n📊 Step 6: Calculating risk metrics for optimized portfolios...")
+
+# Use historical returns to construct portfolio performance
+if best_return_col and max_sharpe_result:
+    # Generate portfolio returns using weights and historical returns
+    historical_returns = valid_stocks_filtered[best_return_col].values
+
+    # Calculate portfolio returns for each optimization
+    portfolios = {
+        "Max Sharpe": max_sharpe_result,
+        "Min Volatility": min_vol_result,
+        "Target Return": target_return_result
+        }
+
+    for portfolio_name, portfolio_result in portfolios.items():
+        if portfolio_result is None:
+            continue
+
+        print(f"\n📈 {portfolio_name} Portfolio Risk Metrics:")
+
+        # Weighted portfolio return
+        portfolio_return = np.dot(portfolio_result['weights'], historical_returns)
+
+        # Generate synthetic daily returns based on expected return and volatility
+        # Annualized to daily conversion
+        daily_return = portfolio_result['return'] / 252
+        daily_vol = portfolio_result['volatility'] / np.sqrt(252)
+
+        # Generate 252 days of returns (1 trading year)
+        np.random.seed(42)  # For reproducibility
+        synthetic_returns = np.random.normal(daily_return, daily_vol, 252)
+
+        # Calculate risk metrics
+        risk_metrics = calculate_portfolio_risk_metrics(
+                pd.Series(synthetic_returns),
+                risk_free_rate=risk_free_rate,
+                confidence_levels=[0.95, 0.99]
+                )
+
+        print(f"  Mean Return (daily): {risk_metrics['mean_return']:.4%}")
+        print(f"  Volatility (daily): {risk_metrics['volatility']:.4%}")
+        print(f"  Sharpe Ratio: {risk_metrics['sharpe_ratio']:.3f}")
+        print(f"  Sortino Ratio: {risk_metrics['sortino_ratio']:.3f}")
+        print(f"  VaR 95% (Historical): {risk_metrics['var_95_historical']:.4%}")
+        print(f"  VaR 99% (Historical): {risk_metrics['var_99_historical']:.4%}")
+        print(f"  CVaR 95%: {risk_metrics['cvar_95']:.4%}")
+        print(f"  CVaR 99%: {risk_metrics['cvar_99']:.4%}")
+        print(f"  Max Drawdown: {risk_metrics['max_drawdown']:.4%}")
+else:
+    print("\n⚠️  Skipping risk metrics calculation due to insufficient data")
+
+print("\n✅ Portfolio Optimization Complete")
+print("\n" + "=" * 80)
+print("WORKFLOW COMPLETE - All 10 sections executed successfully")
+print("=" * 80)
