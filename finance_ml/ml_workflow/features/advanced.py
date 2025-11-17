@@ -36,6 +36,7 @@ __all__ = [
     "engineer_growth_metrics",
     "engineer_sector_specific_features",
     "engineer_temporal_features",
+    "engineer_technical_analysis_features",
     "engineer_market_microstructure_features",
     "engineer_nonlinear_transforms",
     "create_feature_interactions",
@@ -51,6 +52,10 @@ __all__ = [
     "engineer_composite_scores",
     "engineer_sector_relative_interactions",
     "engineer_employee_productivity_features",
+    "engineer_valuation_timeseries_features",
+    "engineer_revenue_forecast_features",
+    "engineer_dividend_reliability_features",
+    "engineer_employment_dynamics_features",
     "build_comprehensive_features",
 ]
 
@@ -754,6 +759,136 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
             result["sharpe_proxy"] = _safe_div(excess, vol)
 
     logger.info("Engineered momentum & technical features")
+    return result
+
+
+def engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer technical analysis features from EMA and 52-week range columns.
+
+    This function leverages Schema 1.3 normalized columns produced by
+    :func:`finance_ml.ml_workflow.preprocessing.data.normalize_columns`:
+
+    - Exponential moving averages: ``ema_20d``, ``ema_50d``, ``ema_100d``, ``ema_250d``
+    - 52-week extremes: ``52w_high_adj``, ``52w_low_adj``
+    - Relative volume: ``rel_volume``
+
+    Features (added when required inputs are present):
+
+    EMA-based signals
+    ------------------
+    - ``ema_crossover_20_50``: 1 if ema_20d > ema_50d, -1 if ema_20d < ema_50d, else 0.
+    - ``ema_crossover_50_250``: 1 if ema_50d > ema_250d, -1 if ema_50d < ema_250d, else 0.
+    - ``price_vs_ema_20d``: (last_price - ema_20d) / ema_20d
+    - ``price_vs_ema_250d``: (last_price - ema_250d) / ema_250d
+    - ``ema_trend_consistency``: summary score in [-1, 1] indicating alignment of
+      EMAs (positive when shorter EMAs are consistently above longer EMAs).
+
+    52-week range metrics
+    ---------------------
+    - ``pct_off_52w_high``: (52w_high_adj - last_price) / 52w_high_adj
+    - ``pct_above_52w_low``: (last_price - 52w_low_adj) / 52w_low_adj
+    - ``52w_range_position``: (last_price - low) / (high - low), clipped to [0, 1]
+    - ``near_52w_high_flag``: 1 if pct_off_52w_high <= 0.05, else 0
+    - ``near_52w_low_flag``: 1 if pct_above_52w_low <= 0.05, else 0
+
+    Volume & momentum composite
+    ---------------------------
+    - ``volume_momentum_score``: rel_volume * price_momentum_1m (if both available)
+    - ``breakout_signal``: 1 when volume_momentum_score is positive, the stock is
+      near its 52-week high, and price is above the mid-point of the 52-week range.
+
+    All divisions use :func:`_safe_div` to avoid +/- inf; when inputs are missing
+    or invalid, the corresponding features are left as NaN.
+    """
+
+    result = df.copy()
+
+    # EMA crossovers
+    if "ema_20d" in df.columns and "ema_50d" in df.columns:
+        ema20 = df["ema_20d"].astype(float)
+        ema50 = df["ema_50d"].astype(float)
+        crossover_20_50 = pd.Series(0.0, index=df.index)
+        crossover_20_50[ema20 > ema50] = 1.0
+        crossover_20_50[ema20 < ema50] = -1.0
+        result["ema_crossover_20_50"] = crossover_20_50
+
+    if "ema_50d" in df.columns and "ema_250d" in df.columns:
+        ema50 = df["ema_50d"].astype(float)
+        ema250 = df["ema_250d"].astype(float)
+        crossover_50_250 = pd.Series(0.0, index=df.index)
+        crossover_50_250[ema50 > ema250] = 1.0
+        crossover_50_250[ema50 < ema250] = -1.0
+        result["ema_crossover_50_250"] = crossover_50_250
+
+    # Price vs EMA deviations
+    if "last_price" in df.columns and "ema_20d" in df.columns:
+        result["price_vs_ema_20d"] = _safe_div(
+            df["last_price"].astype(float) - df["ema_20d"].astype(float),
+            df["ema_20d"].astype(float),
+        )
+    if "last_price" in df.columns and "ema_250d" in df.columns:
+        result["price_vs_ema_250d"] = _safe_div(
+            df["last_price"].astype(float) - df["ema_250d"].astype(float),
+            df["ema_250d"].astype(float),
+        )
+
+    # EMA trend consistency: score in [-1, 1]
+    ema_cols = [c for c in ("ema_20d", "ema_50d", "ema_100d", "ema_250d") if c in df.columns]
+    if len(ema_cols) >= 2:
+        ema_stack = df[ema_cols].astype(float)
+        # Rank EMAs within each row: shorter-period EMAs should rank highest in
+        # a strong uptrend and lowest in a strong downtrend.
+        ranks = ema_stack.rank(axis=1, method="average")
+        avg_rank = ranks.mean(axis=1)
+        mid_rank = (len(ema_cols) + 1) / 2.0
+        # Normalize so that avg_rank < mid_rank -> positive score
+        score = (mid_rank - avg_rank) / mid_rank
+        result["ema_trend_consistency"] = score.clip(-1.0, 1.0)
+
+    # 52-week range metrics
+    if "last_price" in df.columns and "52w_high_adj" in df.columns:
+        high = df["52w_high_adj"].astype(float)
+        result["pct_off_52w_high"] = _safe_div(high - df["last_price"].astype(float), high)
+    if "last_price" in df.columns and "52w_low_adj" in df.columns:
+        low = df["52w_low_adj"].astype(float)
+        result["pct_above_52w_low"] = _safe_div(
+            df["last_price"].astype(float) - low,
+            low,
+        )
+
+    if "last_price" in df.columns and "52w_high_adj" in df.columns and "52w_low_adj" in df.columns:
+        high = df["52w_high_adj"].astype(float)
+        low = df["52w_low_adj"].astype(float)
+        width = high - low
+        pos = _safe_div(df["last_price"].astype(float) - low, width)
+        result["52w_range_position"] = pos.clip(lower=0.0, upper=1.0)
+
+    # Near-high / near-low flags using 5% thresholds
+    if "pct_off_52w_high" in result.columns:
+        flag_high = pd.Series(0.0, index=result.index)
+        flag_high[result["pct_off_52w_high"] <= 0.05] = 1.0
+        result["near_52w_high_flag"] = flag_high
+    if "pct_above_52w_low" in result.columns:
+        flag_low = pd.Series(0.0, index=result.index)
+        flag_low[result["pct_above_52w_low"] <= 0.05] = 1.0
+        result["near_52w_low_flag"] = flag_low
+
+    # Volume & momentum composite
+    if "rel_volume" in df.columns and "price_momentum_1m" in df.columns:
+        # Use to_numeric with coerce to handle non-numeric chars like '-' safely
+        rel_vol = pd.to_numeric(df["rel_volume"], errors="coerce")
+        mom_1m = pd.to_numeric(df["price_momentum_1m"], errors="coerce")
+        result["volume_momentum_score"] = rel_vol * mom_1m
+
+        breakout = pd.Series(0.0, index=df.index)
+        # Conditions: positive momentum score, near 52w high, price in upper half of range.
+        cond_score = result["volume_momentum_score"] > 0
+        cond_near_high = result.get("near_52w_high_flag", pd.Series(0.0, index=df.index)) > 0
+        cond_pos = result.get("52w_range_position", pd.Series(np.nan, index=df.index)) >= 0.5
+        breakout[cond_score & cond_near_high & cond_pos] = 1.0
+        result["breakout_signal"] = breakout
+
+    logger.info("Engineered technical analysis features (EMAs, 52w range, volume)")
     return result
 
 
@@ -1538,6 +1673,7 @@ def build_comprehensive_features(
     - preset=None or "comprehensive": full pipeline (backward compatible default)
     - preset="momentum": only momentum & technical indicators
     - preset="quality": accounting quality + financial distress (+ analyst quality)
+    - preset="cashflow": cash flow quality + capital allocation metrics
 
     This orchestrator applies feature groups in sequence for the comprehensive preset:
     1. Valuation ratios
@@ -1589,6 +1725,11 @@ def build_comprehensive_features(
         result = engineer_financial_distress_features(result)
         result = engineer_analyst_quality_features(result)
         return result.replace([np.inf, -np.inf], np.nan)
+    if preset_norm == "cashflow":
+        result = df.copy()
+        result = engineer_cash_flow_quality_features(result)
+        result = engineer_capital_allocation_features(result)
+        return result.replace([np.inf, -np.inf], np.nan)
 
     # Default comprehensive path
     result = df.copy()
@@ -1602,8 +1743,9 @@ def build_comprehensive_features(
     result = engineer_liquidity_ratios(result)
     result = engineer_efficiency_ratios(result)
     result = engineer_growth_metrics(result)
-    # Momentum & technical features (Phase 9.3 Week 2)
+    # Momentum & technical features (Phase 9.3 Week 2 + Schema 1.3 technicals)
     result = engineer_momentum_features(result)
+    result = engineer_technical_analysis_features(result)
     result = engineer_sector_specific_features(result, sector_col=sector_col)
     # Analyst and market sentiment (Phase 5)
     result = engineer_analyst_quality_features(result)
@@ -1980,4 +2122,164 @@ def engineer_sector_relative_interactions(
         result[f"{m}_vs_sector_top_quartile"] = df[m] - sector_q3
 
     logger.info("Engineered sector-relative interaction features")
+    return result
+
+
+def engineer_valuation_timeseries_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer valuation multiples time-series features (Schema 1.3 subset).
+
+    This implementation focuses on a compact, well-tested subset of the
+    Phase 9.3 plan:
+
+    - ev_sales_trend_1y: (ev_sales_ltm - ev_sales_1fyltm) / ev_sales_1fyltm
+    - ev_sales_vs_3y_avg: (ev_sales_ltm - ev_sales_3yavgltm) / ev_sales_3yavgltm
+    - ev_ebitda_vs_3y_avg: (ev_ebitda_ltm - ev_ebitda_3yavgltm) / ev_ebitda_3yavgltm
+    - p_e_forward_discount: (p_e_est_fy1 - p_e_ltm) / p_e_ltm
+
+    All divisions are performed via :func:`_safe_div` to avoid infinities and
+    handle zero/NaN denominators gracefully.
+    """
+
+    result = df.copy()
+
+    # EV/Sales one‑year trend
+    if "ev_sales_ltm" in df.columns and "ev_sales_1fyltm" in df.columns:
+        result["ev_sales_trend_1y"] = _safe_div(
+            df["ev_sales_ltm"].astype(float) - df["ev_sales_1fyltm"].astype(float),
+            df["ev_sales_1fyltm"].astype(float),
+        )
+
+    # EV/Sales vs 3Y average
+    if "ev_sales_ltm" in df.columns and "ev_sales_3yavgltm" in df.columns:
+        result["ev_sales_vs_3y_avg"] = _safe_div(
+            df["ev_sales_ltm"].astype(float) - df["ev_sales_3yavgltm"].astype(float),
+            df["ev_sales_3yavgltm"].astype(float),
+        )
+
+    # EV/EBITDA vs 3Y average
+    if "ev_ebitda_ltm" in df.columns and "ev_ebitda_3yavgltm" in df.columns:
+        result["ev_ebitda_vs_3y_avg"] = _safe_div(
+            df["ev_ebitda_ltm"].astype(float) - df["ev_ebitda_3yavgltm"].astype(float),
+            df["ev_ebitda_3yavgltm"].astype(float),
+        )
+
+    # Forward P/E discount vs LTM
+    if "p_e_est_fy1" in df.columns and "p_e_ltm" in df.columns:
+        result["p_e_forward_discount"] = _safe_div(
+            df["p_e_est_fy1"].astype(float) - df["p_e_ltm"].astype(float),
+            df["p_e_ltm"].astype(float),
+        )
+
+    logger.info("Engineered valuation multiples time-series features (subset)")
+    return result
+
+
+def engineer_revenue_forecast_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer revenue forecasting & analyst consensus features (Schema 1.3).
+
+    Implemented subset:
+
+    - revenue_estimate_spread_ntm: (avg_ntm - med_ntm) / med_ntm
+    - revenue_estimate_spread_fy1e: (avg_fy1e - med_fy1e) / med_fy1e
+    - revenue_growth_implied_ntm: (avg_ntm - total_revenues_ltm) / total_revenues_ltm
+    """
+
+    result = df.copy()
+
+    if "revenues_est_avg_ntm" in df.columns and "revenues_est_med_ntm" in df.columns:
+        result["revenue_estimate_spread_ntm"] = _safe_div(
+            df["revenues_est_avg_ntm"].astype(float) - df["revenues_est_med_ntm"].astype(float),
+            df["revenues_est_med_ntm"].astype(float),
+        )
+
+    if "revenues_est_avg_fy1e" in df.columns and "revenues_est_med_fy1e" in df.columns:
+        result["revenue_estimate_spread_fy1e"] = _safe_div(
+            df["revenues_est_avg_fy1e"].astype(float) - df["revenues_est_med_fy1e"].astype(float),
+            df["revenues_est_med_fy1e"].astype(float),
+        )
+
+    if "revenues_est_avg_ntm" in df.columns and "total_revenues_ltm" in df.columns:
+        result["revenue_growth_implied_ntm"] = _safe_div(
+            df["revenues_est_avg_ntm"].astype(float) - df["total_revenues_ltm"].astype(float),
+            df["total_revenues_ltm"].astype(float),
+        )
+
+    logger.info("Engineered revenue forecast & consensus features (subset)")
+    return result
+
+
+def engineer_dividend_reliability_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer dividend reliability & income stock features (Schema 1.3 subset).
+
+    Implemented subset:
+
+    - dividend_streak_years: passthrough of ``dividend_streak``
+    - dividend_frequency_encoded: map frequency strings to counts per year
+    - dividend_consistency_score: simple 0-100 score from streak & frequency
+    - income_stock_flag: 1 if streak>=5 and frequency>=4 else 0
+    - dividend_payout_ratio: common_dividends_paid_ltm / net_income
+    """
+
+    result = df.copy()
+
+    # Streak
+    if "dividend_streak" in df.columns:
+        result["dividend_streak_years"] = df["dividend_streak"]
+
+    # Frequency encoding
+    if "dividend_record_frequency" in df.columns:
+        freq_map = {"annual": 1, "semi-annual": 2, "quarterly": 4, "monthly": 12}
+        freq_series = df["dividend_record_frequency"].astype("string").str.lower()
+        encoded = freq_series.map(freq_map).fillna(0).astype(int)
+        result["dividend_frequency_encoded"] = encoded
+    else:
+        encoded = pd.Series(0, index=df.index)
+
+    # Consistency score: normalized streak (capped at 20y) and frequency
+    streak = result.get("dividend_streak_years", pd.Series(0, index=df.index)).astype(float)
+    streak_norm = (streak.clip(lower=0.0, upper=20.0) / 20.0) * 50.0
+    freq_norm = (encoded.clip(lower=0, upper=12) / 12.0) * 50.0
+    result["dividend_consistency_score"] = (streak_norm + freq_norm).clip(0.0, 100.0)
+
+    # Income stock flag
+    result["income_stock_flag"] = ((streak >= 5) & (encoded >= 4)).astype(int)
+
+    # Payout ratio
+    if "common_dividends_paid_ltm" in df.columns and "net_income" in df.columns:
+        result["dividend_payout_ratio"] = _safe_div(
+            df["common_dividends_paid_ltm"].astype(float), df["net_income"].astype(float)
+        )
+
+    logger.info("Engineered dividend reliability & payout features (subset)")
+    return result
+
+
+def engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer employment dynamics & productivity features (Schema 1.3 subset).
+
+    Implemented subset:
+
+    - revenue_per_employee_fy: total_revenues_fy / total_employees_fy
+    - revenue_per_employee_ltm: total_revenues_ltm / avg_employees_ltm
+    - employee_base_scale_flag: 1 if total_employees_fy >= 10k else 0
+    """
+
+    result = df.copy()
+
+    if "total_revenues_fy" in df.columns and "total_employees_fy" in df.columns:
+        result["revenue_per_employee_fy"] = _safe_div(
+            df["total_revenues_fy"].astype(float), df["total_employees_fy"].astype(float)
+        )
+
+    if "total_revenues_ltm" in df.columns and "avg_employees_ltm" in df.columns:
+        result["revenue_per_employee_ltm"] = _safe_div(
+            df["total_revenues_ltm"].astype(float), df["avg_employees_ltm"].astype(float)
+        )
+
+    if "total_employees_fy" in df.columns:
+        result["employee_base_scale_flag"] = (
+            df["total_employees_fy"].astype(float) >= 10_000
+        ).astype(int)
+
+    logger.info("Engineered employment dynamics & productivity features (subset)")
     return result

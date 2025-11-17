@@ -235,13 +235,27 @@ def create_classification_interactions(
         valuation_cols: Valuation metric columns (e.g., P/E, P/B ratios)
 
     Returns:
-        DataFrame with additional interaction features
+        DataFrame with additional interaction features. Columns that are
+        not present in ``df`` are ignored gracefully so that callers can
+        pass a canonical valuation list without pre-filtering it to the
+        current dataset.
     """
     df_enhanced = df.copy()
 
-    # Create pairwise interactions
+    if not classification_cols or not valuation_cols:
+        # Nothing to do; return a shallow copy to keep behaviour predictable
+        return df_enhanced
+
+    # Create pairwise interactions only for columns that actually exist.
+    # This keeps the function robust when called with a superset of
+    # canonical valuation candidates (Phase 9.3 groups) on a narrower
+    # dataset.
     for class_col in classification_cols:
+        if class_col not in df.columns:
+            continue
         for val_col in valuation_cols:
+            if val_col not in df.columns:
+                continue
             interaction_name = f"{class_col}_x_{val_col}"
             df_enhanced[interaction_name] = df[class_col] * df[val_col]
 

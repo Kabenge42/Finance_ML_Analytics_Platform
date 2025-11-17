@@ -173,5 +173,82 @@ class TestEdaReports(unittest.TestCase):
         self.assertTrue(Path(result).exists())
 
 
+class TestEdaPhase93FeatureFamilies(unittest.TestCase):
+    """Phase 9.3: EDA awareness of advanced feature families.
+
+    This focuses on estimate vs reported sales/earnings and
+    earnings/accounting quality/distress/adjustment scores.
+    """
+
+    def setUp(self):
+        np.random.seed(123)
+        self.df = pd.DataFrame(
+            {
+                "ticker": ["AAA", "BBB", "CCC", "DDD"],
+                "sector": ["Tech", "Tech", "Health", "Health"],
+                "region": ["US", "EU", "US", "EU"],
+                # Estimate vs reported revenue/earnings style features
+                "revenue_estimate_spread_ntm": [0.05, 0.10, 0.02, 0.15],
+                "revenue_growth_implied_ntm": [0.12, 0.20, 0.08, 0.25],
+                # Earnings / accounting quality and distress style scores
+                "accounting_quality_score": [80.0, 60.0, 90.0, 50.0],
+                "earnings_quality_score": [75.0, 65.0, 85.0, 55.0],
+                "distress_risk_score": [10.0, 30.0, 5.0, 40.0],
+            }
+        )
+
+    def test_eda_summary_includes_feature_families_metadata(self):
+        """eda_summary should expose Phase 9.3 feature family metadata.
+
+        We expect a feature_families dict mapping column name -> family label
+        (e.g., "estimates", "quality", "distress").
+        """
+
+        from finance_ml.ml_workflow.eda.eda import eda_summary
+
+        result = eda_summary(self.df, sector_column="sector")
+
+        # Existing keys must still be present
+        self.assertIn("shape", result)
+        self.assertIn("numeric_summary", result)
+
+        # New Phase 9.3 metadata
+        self.assertIn("feature_families", result)
+        feature_families = result["feature_families"]
+        self.assertIsInstance(feature_families, dict)
+
+        # Representative mappings
+        self.assertEqual(feature_families.get("revenue_estimate_spread_ntm"), "estimates")
+        self.assertEqual(feature_families.get("revenue_growth_implied_ntm"), "estimates")
+        self.assertEqual(feature_families.get("accounting_quality_score"), "quality")
+        self.assertEqual(feature_families.get("earnings_quality_score"), "quality")
+        self.assertEqual(feature_families.get("distress_risk_score"), "distress")
+
+    def test_eda_summary_includes_sector_region_feature_distributions(self):
+        """eda_summary should provide sector/region distribution summaries for key scores.
+
+        The summaries must be JSON-serializable (dict-based) and keyed by
+        column name.
+        """
+
+        from finance_ml.ml_workflow.eda.eda import eda_summary
+
+        result = eda_summary(self.df, sector_column="sector")
+
+        # Sector-level distributions
+        self.assertIn("feature_family_sector_summary", result)
+        sector_summary = result["feature_family_sector_summary"]
+        self.assertIsInstance(sector_summary, dict)
+        self.assertIn("accounting_quality_score", sector_summary)
+        self.assertIsInstance(sector_summary["accounting_quality_score"], dict)
+
+        # Region-level distributions
+        self.assertIn("feature_family_region_summary", result)
+        region_summary = result["feature_family_region_summary"]
+        self.assertIsInstance(region_summary, dict)
+        self.assertIn("accounting_quality_score", region_summary)
+        self.assertIsInstance(region_summary["accounting_quality_score"], dict)
+
+
 if __name__ == "__main__":
     unittest.main()

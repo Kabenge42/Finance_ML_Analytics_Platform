@@ -1,0 +1,5 @@
+    print('\n✅ All portfolio optimization and risk metrics visualizations complete!')
+    print(f'   Interactive HTML files saved to: {analytics_dir}')
+
+else:
+    print('⚠️  Portfolio results not available for visualization')

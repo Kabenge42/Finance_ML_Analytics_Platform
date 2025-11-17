@@ -50,6 +50,104 @@ class TestCalculateMispricingScore(unittest.TestCase):
         self.assertAlmostEqual(result.iloc[0], 0.1, places=5)
 
 
+class TestStandardizedSchemaMispricing(unittest.TestCase):
+    """Phase 9.3: Mispricing using standardized predictions schema.
+
+    This focuses on estimate vs reported targets using standardized
+    columns (y_true, y_pred, y_pred_calibrated, pred_p10, pred_p50,
+    pred_p90, last_price) and risk-adjusted scores.
+    """
+
+    def setUp(self):
+        self.df = pd.DataFrame(
+            {
+                "ticker": ["AAA", "BBB"],
+                "sector": ["Tech", "Health"],
+                "region": ["US", "EU"],
+                "last_price": [100.0, 80.0],
+                "y_true": [110.0, 75.0],
+                "y_pred": [120.0, 70.0],
+                "y_pred_calibrated": [115.0, 72.0],
+                "pred_p10": [105.0, 65.0],
+                "pred_p50": [120.0, 70.0],
+                "pred_p90": [135.0, 75.0],
+            }
+        )
+
+    def test_mispricing_from_predictions_schema_uses_y_pred(self):
+        """Mispricing helper should use y_pred by default and add scores.
+
+        Expected formula: (y_pred - last_price) / last_price.
+        """
+
+        from finance_ml.ml_workflow.analytics.eval import (
+            calculate_mispricing_from_predictions_schema,
+        )
+
+        result = calculate_mispricing_from_predictions_schema(self.df)
+
+        self.assertIn("mispricing_score", result.columns)
+        self.assertIn("mispricing_pct", result.columns)
+
+        expected0 = (self.df.loc[0, "y_pred"] - self.df.loc[0, "last_price"]) / self.df.loc[
+            0, "last_price"
+        ]
+        self.assertAlmostEqual(result.loc[0, "mispricing_score"], expected0, places=6)
+
+    def test_mispricing_from_predictions_schema_can_use_calibrated(self):
+        """When use_calibrated=True, y_pred_calibrated should be used if available."""
+
+        from finance_ml.ml_workflow.analytics.eval import (
+            calculate_mispricing_from_predictions_schema,
+        )
+
+        result = calculate_mispricing_from_predictions_schema(self.df, use_calibrated=True)
+
+        expected0 = (
+            self.df.loc[0, "y_pred_calibrated"] - self.df.loc[0, "last_price"]
+        ) / self.df.loc[0, "last_price"]
+        self.assertAlmostEqual(result.loc[0, "mispricing_score"], expected0, places=6)
+
+    def test_risk_adjusted_mispricing_from_schema_uses_quantile_interval(self):
+        """Risk-adjusted helper should use prediction interval width as uncertainty proxy.
+
+        For two rows with the same expected return but different interval widths
+        (pred_p90 - pred_p10), the narrower interval should yield a higher
+        risk-adjusted score when use_quantile_interval=True.
+        """
+
+        from finance_ml.ml_workflow.analytics.eval import (
+            calculate_mispricing_from_predictions_schema,
+            calculate_risk_adjusted_mispricing_from_predictions_schema,
+        )
+
+        # Construct a small frame where both rows have the same
+        # expected return but different prediction interval widths.
+        df_equal_return = pd.DataFrame(
+            {
+                "last_price": [100.0, 100.0],
+                "y_pred": [120.0, 120.0],  # same expected return 20%
+                "pred_p10": [105.0, 110.0],  # width: 30 vs 20
+                "pred_p90": [135.0, 130.0],
+            }
+        )
+
+        mispricing_df = calculate_mispricing_from_predictions_schema(df_equal_return)
+
+        scores = calculate_risk_adjusted_mispricing_from_predictions_schema(
+            mispricing_df,
+            prediction_col="y_pred",
+            current_price_col="last_price",
+            risk_free_rate=0.0,
+            use_quantile_interval=True,
+        )
+
+        self.assertEqual(len(scores), len(df_equal_return))
+        # Row 0 has wider interval (135-105=30) than row 1 (130-110=20),
+        # so its uncertainty penalty should be larger (lower score).
+        self.assertLess(scores.iloc[0], scores.iloc[1])
+
+
 class TestRankUndervaluedStocks(unittest.TestCase):
     """Test undervalued stocks ranking"""
 

@@ -788,6 +788,90 @@ output_path: str
 - Use `validate_schema(df, require_target: bool)` to assert required fields.
 - For notebook/script workflows, validate after normalization and before heavy processing.
 
+2.4 Schema Changelog and Version History
+
+**Schema Version 1.3** — Updated 2025-11-18
+
+Major schema expansion adding 48 new columns to support enhanced feature engineering in Phase 9.3.
+
+**Schema Updates:**
+
+- Total columns: 310 (262 original + 48 new)
+- Updated files: `create_equities_schema.sql`, `create_equities_schema_sqlite.sql`,
+  `finance_ml/ml_workflow/preprocessing/data.py`
+
+**New Columns by Category:**
+
+1. **Revenue Forecasting (4 columns):**
+    - `revenues_est_avg_ntm` — Average revenue estimate (next twelve months)
+    - `revenues_est_avg_fy1e` — Average revenue estimate (fiscal year 1 estimate)
+    - `revenues_est_med_ntm` — Median revenue estimate (NTM)
+    - `revenues_est_med_fy1e` — Median revenue estimate (FY1E)
+
+2. **EV/Sales Valuation Multiples (11 columns):**
+    - `ev_sales_est_fy1` — EV/Sales ratio (estimated FY1)
+    - `ev_sales_ltm` — EV/Sales ratio (last twelve months)
+    - `ev_sales_ntm` — EV/Sales ratio (next twelve months)
+    - `ev_sales_1fyltm`, `ev_sales_2fyltm`, `ev_sales_3fyltm` — Historical FY comparisons
+    - `ev_sales_3yavgltm` — 3-year average EV/Sales
+    - `ev_sales_1fqltm`, `ev_sales_2fqltm`, `ev_sales_3fqltm`, `ev_sales_4fqltm` — Quarterly comparisons
+
+3. **Employment Metrics (2 columns):**
+    - `total_employees_fy` — Total employees (fiscal year)
+    - `total_employees_fq` — Total employees (fiscal quarter)
+
+4. **Technical Indicators (6 columns):**
+    - `52w_high_adj` — 52-week adjusted high price
+    - `52w_low_adj` — 52-week adjusted low price
+    - `ema_20d` — Exponential moving average (20 days)
+    - `ema_50d` — Exponential moving average (50 days)
+    - `ema_100d` — Exponential moving average (100 days)
+    - `ema_250d` — Exponential moving average (250 days)
+
+5. **EV/EBITDA Valuation Multiples (6 columns):**
+    - `ev_ebitda_ltm` — EV/EBITDA ratio (LTM)
+    - `ev_ebitda_ntm` — EV/EBITDA ratio (NTM)
+    - `ev_ebitda_1fyltm` — EV/EBITDA 1 fiscal year ago
+    - `ev_ebitda_1fqltm` — EV/EBITDA 1 fiscal quarter ago
+    - `ev_ebitda_3yavgltm` — 3-year average EV/EBITDA
+    - `ev_ebitda_est_fy1` — EV/EBITDA estimated FY1
+
+6. **Extended P/E History (11 columns):**
+    - `p_e_est_fy1` — P/E ratio (estimated FY1)
+    - `p_e_2fyltm`, `p_e_3fyltm` — Historical 2 and 3 fiscal years
+    - `p_e_3yavgltm` — 3-year average P/E
+    - `p_e_1fqltm`, `p_e_2fqltm`, `p_e_3fqltm` — Quarterly history
+    - `p_e_0fqqoqltm` — P/E quarter-over-quarter
+    - `p_e_0fyyoyltm`, `p_e_1fyyoyltm` — P/E year-over-year
+    - `p_e_0fqyoyltm` — P/E quarter year-over-year
+
+7. **Dividend Record Information (8 columns):**
+    - `dividend_record_announce_date` — Dividend announcement date (DATE)
+    - `dividend_record_ex_date` — Ex-dividend date (DATE)
+    - `dividend_record_payable_date` — Dividend payable date (DATE)
+    - `dividend_record_record_date` — Dividend record date (DATE)
+    - `dividend_record_frequency` — Dividend frequency (TEXT: quarterly, annual, etc.)
+    - `dividend_record_currency` — Dividend currency (TEXT)
+    - `dividend_record_amount` — Dividend amount (NUMERIC)
+    - `dividend_streak` — Number of consecutive dividend payments (NUMERIC)
+
+**Feature Engineering Implications for Phase 9.3:**
+
+These new columns enable advanced feature engineering strategies:
+
+- **Momentum & Mean Reversion:** EMA crossovers, distance from 52W high/low, price momentum signals
+- **Valuation Trends:** Time-series of EV/Sales and EV/EBITDA for valuation momentum detection
+- **Analyst Consensus:** Revenue estimate spread (avg vs median) as uncertainty indicator
+- **Employment Dynamics:** Employee growth rates as company expansion/contraction signals
+- **P/E Pattern Analysis:** Historical P/E ratios for sector-relative valuation scoring
+- **Dividend Reliability:** Dividend streak and frequency for income stock classification
+- **Forward-Looking Metrics:** NTM and FY1E estimates for forward valuation multiples
+
+**Backward Compatibility:**
+
+All existing column mappings remain unchanged. The new columns are additive only. Legacy code that doesn't reference the
+new columns will continue to work without modification.
+
 3) DataFrame Shape and Feature References
 
 - Keep `all_stocks` as the single, unified DataFrame across regions.
@@ -1073,7 +1157,7 @@ from finance_ml.ml_workflow.classification.models import (
     train_catboost_classifier,
     train_voting_classifier,
     train_stacking_classifier,
-    prepare_classification_data
+    prepare_classification_data,
     )
 from finance_ml.ml_workflow.classification.evaluation import (
     evaluate_classification,
@@ -1085,8 +1169,44 @@ from finance_ml.ml_workflow.classification.evaluation import (
 from finance_ml import (
     classification_create_enhanced_event_labels as create_enhanced_event_labels,
     classification_optimize_hyperparameters as optimize_classifier_hyperparameters,
-    classification_cross_validate_sector as cross_validate_with_sector_stratification
+    classification_cross_validate_sector as cross_validate_with_sector_stratification,
     )
+
+"""Phase 9.3 valuation candidates and interactions (summary).
+
+For event labeling and downstream regression interactions, the
+recommended valuation / quality candidate groups per method are:
+
+- valuation:
+  - P/E family: p_e_ratio, p_e, p_e_ntm, p_e_ltm, p_e_est_fy1,
+    p_e_1fyltm, p_e_2fyltm, p_e_3fyltm
+  - P/B family: p_b_ratio, p_b, p_b_ltm, p_b_1fy, p_b_5yavg
+  - EV/EBITDA family: ev_ebitda_ratio, ev_ebitda, ev_ebitda_ltm,
+    ev_ebitda_ntm, ev_ebitda_est_fy1
+  - Optional: peg_ratio
+- quality_event:
+  - accounting_quality_score, analyst_coverage_quality,
+    analyst_quality_score, exceptional_items_to_ebitda,
+    total_exceptional_items_ltm, goodwill_impairment_flag,
+    has_goodwill_impairment, has_asset_writedown, has_restructuring
+- composite_event:
+  - piotroski_f_score, altman_z_score, altman_z_score_ltm,
+    altman_z_score_fy, altman_z_score_fq, beneish_m_score
+
+create_enhanced_event_labels uses these families in a
+backward-compatible way, always trying Phase 9.3 engineered columns
+first and then falling back to Schema 1.3 timelines present in the
+normalized equities schema (see preprocessed_stocks_metadata.json).
+
+For regression interactions, finance_ml.ml_workflow.regression.dataset
+provides create_classification_interactions(df, classification_cols,
+valuation_cols), which multiplies event probability features (for
+example the event_prob_* meta-features produced in Phase 9.5) with a
+canonical list of valuation columns. Columns that are not present in
+df are ignored gracefully so callers may pass the full Phase 9.3
+valuation candidate list without pre-filtering it to the current
+dataset.
+"""
 
 # Legacy imports (deprecated but still working)
 from finance_ml.ml_workflow.classification import (
@@ -1174,21 +1294,31 @@ from finance_ml.ml_workflow.analytics import (
     calculate_risk_adjusted_mispricing,
     rank_undervalued_stocks,
     rank_overvalued_stocks,
-    rank_stocks_by_sector
+    rank_stocks_by_sector,
     )
 from finance_ml.ml_workflow.analytics.eval import (
     simple_eda,
     create_sector_heatmap,
-    create_interactive_prediction_plot
+    create_interactive_prediction_plot,
     )
-from finance_ml.ml_workflow.portfolio_optimization import (
-    calculate_portfolio_weights,
-    optimize_portfolio_sharpe
+from finance_ml.ml_workflow.analytics.portfolio import (
+    calculate_portfolio_return,
+    calculate_portfolio_volatility,
+    calculate_portfolio_sharpe_ratio,
+    generate_efficient_frontier,
+    optimize_portfolio_max_sharpe,
+    optimize_portfolio_min_volatility,
+    optimize_portfolio_target_return,
+    rebalance_portfolio,
     )
-from finance_ml.ml_workflow.risk_metrics import (
-    calculate_var,
+from finance_ml.ml_workflow.analytics.risk import (
+    calculate_var_historical,
+    calculate_var_parametric,
     calculate_cvar,
-    calculate_sharpe_ratio
+    calculate_sharpe_ratio,
+    calculate_sortino_ratio,
+    calculate_max_drawdown,
+    calculate_portfolio_risk_metrics,
     )
 
 # Backward-compatible imports

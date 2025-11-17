@@ -1,20 +1,27 @@
-"""
-Public API for feature engineering presets (Phase 9.3 Week 9).
+"""Public API for feature engineering presets (Phase 9.3 Week 9).
 
-Exposes a single entry point `build_features` that composes feature groups
-from core and advanced modules using named presets, while preserving backward
-compatibility with existing orchestrators.
+Exposes a single entry point :func:`build_features` that composes feature
+groups from core and advanced modules using named presets, while preserving
+backward compatibility with existing orchestrators.
 
-Presets:
-- "basic": core ratios, margins, volatility, and revenue CAGR
-- "momentum": momentum & technical indicators only
-- "quality": accounting quality and financial distress signals
-- "comprehensive" (alias): full advanced feature set (same as advanced.build_comprehensive_features)
-- "full_enhanced": same as "comprehensive"
+Presets
+-------
 
-Backwards compatibility:
-- The advanced.build_comprehensive_features remains available and unchanged by
-  default behavior. This API simply provides a user-friendly front end.
+- ``"basic"``: core ratios, margins, volatility, and revenue CAGR.
+- ``"momentum"``: momentum & technical indicators only.
+- ``"quality"``: accounting quality and financial distress signals.
+- ``"cashflow"``: cash flow quality and capital allocation metrics.
+- ``"comprehensive"``: full advanced feature set (same as
+  :func:`advanced.build_comprehensive_features`).
+- ``"full_enhanced"``: alias for ``"comprehensive"``.
+
+Backwards compatibility
+-----------------------
+
+The :func:`advanced.build_comprehensive_features` orchestrator remains
+available and unchanged in its default behavior. This API simply provides a
+user-friendly front end that delegates to the underlying core/advanced
+functions.
 """
 
 from __future__ import annotations
@@ -28,7 +35,15 @@ from finance_ml.ml_workflow.features import core as core_feats, advanced as adv_
 
 logger = logging.getLogger(__name__)
 
-PresetName = Literal["basic", "momentum", "quality", "comprehensive", "full_enhanced"]
+PresetName = Literal[
+    "basic",
+    "momentum",
+    "quality",
+    "cashflow",
+    "comprehensive",
+    "comprehensive_v2",
+    "full_enhanced",
+]
 
 
 def build_features(
@@ -42,11 +57,14 @@ def build_features(
     """Build features using a named preset.
 
     Args:
-        df: Input DataFrame
-        preset: One of {"basic", "momentum", "quality", "comprehensive", "full_enhanced"}
-        include_interactions: For comprehensive presets, whether to add interactions
-        include_relative: For comprehensive presets, whether to add relative/sector features
-        sector_col: Sector column name (used by some feature groups)
+        df: Input DataFrame.
+        preset: One of {"basic", "momentum", "quality", "cashflow",
+            "comprehensive", "full_enhanced"}.
+        include_interactions: For comprehensive presets, whether to add
+            interaction features.
+        include_relative: For comprehensive presets, whether to add
+            relative/sector-based features.
+        sector_col: Sector column name (used by some feature groups).
 
     Returns:
         DataFrame with engineered features added.
@@ -82,7 +100,15 @@ def build_features(
         logger.info("Built QUALITY features preset")
         return result
 
-    if preset_norm in ("comprehensive", "full_enhanced"):
+    if preset_norm == "cashflow":
+        result = df.copy()
+        result = adv_feats.engineer_cash_flow_quality_features(result)
+        result = adv_feats.engineer_capital_allocation_features(result)
+        result = result.replace([float("inf"), float("-inf")], pd.NA)
+        logger.info("Built CASHFLOW features preset")
+        return result
+
+    if preset_norm in ("comprehensive", "comprehensive_v2", "full_enhanced"):
         logger.info("Building COMPREHENSIVE features via advanced.build_comprehensive_features")
         return adv_feats.build_comprehensive_features(
             df,
@@ -92,5 +118,5 @@ def build_features(
         )
 
     raise ValueError(
-        f"Unknown preset '{preset}'. Expected one of: basic, momentum, quality, comprehensive, full_enhanced"
+        f"Unknown preset '{preset}'. Expected one of: basic, momentum, quality, cashflow, comprehensive, comprehensive_v2, full_enhanced"
     )

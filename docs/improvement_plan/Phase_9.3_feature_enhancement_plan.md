@@ -1,9 +1,52 @@
 # Phase 9.3 Feature Enhancement Plan
 
-**Date:** 2025-11-10  
-**Status:** DRAFT  
-**Version:** 1.0  
-**Model Version Target:** v9_9
+**Date:** 2025-11-18  
+**Status:** ACTIVE  
+**Version:** 1.1  
+**Model Version Target:** v9_9  
+**Schema Version:** 1.3 (310 columns)
+
+**Implementation status (Phase 9.3, current repo snapshot):**
+
+- Phase 1 infrastructure (fixtures and helpers) implemented and covered by tests.
+- Phase 2–5 feature groups (momentum, technical analysis, quality & distress, cash flow quality, capital allocation,
+  sentiment/analyst) implemented with dedicated unit and integration tests.
+- Schema 1.3 feature functions for valuation time-series, revenue forecasts, dividend reliability, and employment
+  dynamics implemented with strict TDD coverage.
+- Phase 6–8 trend, balance-sheet, temporal, and composite features wired into the advanced pipeline and validated via
+  targeted tests.
+- Phase 9 integration of valuation/estimate/quality feature families into
+  Phase 9.4 classification labels and Phase 9.5 regression interactions
+  is COMPLETE:
+   - Event labels: `finance_ml.ml_workflow.classification.labels.create_enhanced_event_labels`
+     now consume Schema 1.3 P/E, P/B, EV/EBITDA timelines and quality
+     scores (e.g., `p_e_ntm`, `p_b_ltm`, `ev_ebitda_ltm`,
+     `accounting_quality_score`, `distress_risk_score`).
+   - Notebook: `ml_finance_model_main.ipynb` Phase 9.3/9.4 sections use an
+     enhanced `valuation_candidates_by_method` mapping that aligns with
+     the preprocessed metadata catalog
+     (`outputs/catalog/preprocessed_stocks_metadata.json`).
+   - Regression: `finance_ml.ml_workflow.regression.dataset.create_classification_interactions`
+     creates interaction features between classification probabilities
+     and the canonical Phase 9.3 valuation groups, safely ignoring
+     columns that are absent in a given dataset.
+
+---
+
+## Version History
+
+### Version 1.1 (2025-11-18)
+
+- **Major Update:** Schema expansion from 262 to 310 columns (+48 new columns)
+- Added 7 new feature categories based on revised CSV data structure
+- Enhanced TDD specifications with comprehensive test requirements
+- Updated all column references to reflect Schema Version 1.3
+- Added technical indicators, valuation multiples time-series, and dividend analytics
+
+### Version 1.0 (2025-11-10)
+
+- Initial draft with baseline feature categories
+- Original schema with 262 columns
 
 ---
 
@@ -19,13 +62,228 @@ integrates with the existing `finance_ml.ml_workflow.features` module structure 
 - `advanced.py`: 14 feature engineering functions covering valuation, profitability, leverage, liquidity, efficiency,
   growth, sector-specific, temporal, microstructure, analyst quality, accounting quality, and employee productivity
 
+**Schema Version 1.3 Update:**
+
+The equities table now contains **310 columns** (expanded from 262) with 48 new columns added in Schema Version 1.3:
+
+- Revenue forecasting estimates (4 columns)
+- EV/Sales valuation multiples time-series (11 columns)
+- Employment metrics (2 columns)
+- Technical indicators: 52W high/low, EMAs (6 columns)
+- EV/EBITDA valuation multiples time-series (6 columns)
+- Extended P/E ratio history (11 columns)
+- Dividend record information (8 columns)
+
 **Gap Analysis:**
-The equities table contains 246 columns with rich temporal variations (FQ, FY, LTM, -1FY, 5YAVG) and quality indicators
-that are currently underutilized for ML features.
+The equities table contains rich temporal variations (FQ, FY, LTM, -1FY, 5YAVG, NTM, FY1E) and quality indicators
+that present significant opportunities for advanced ML feature engineering. The new Schema 1.3 columns enable:
+
+- Technical analysis integration with fundamental data
+- Forward-looking valuation metrics
+- Dividend reliability scoring
+- Employee dynamics tracking
+- Multi-period valuation trend analysis
 
 ---
 
 ## Feature Categories & Proposed Enhancements
+
+## NEW in Version 1.1: Schema 1.3 Feature Categories
+
+The following feature categories leverage the 48 new columns added in Schema Version 1.3.
+
+### NEW 1. Technical Analysis Integration Features
+
+**Database columns to leverage (Schema 1.3 additions):**
+
+- `EMA (20D)`, `EMA (50D)`, `EMA (100D)`, `EMA (250D)` — Exponential moving averages
+- `52W High/Adj`, `52W Low/Adj` — 52-week price extremes
+- `Rel. Volume` — Relative volume indicator
+
+**Proposed features:**
+
+1. **EMA-Based Signals**
+   - `ema_crossover_20_50`: Binary signal when 20D crosses above/below 50D
+   - `ema_crossover_50_250`: Binary signal for longer-term trend changes
+   - `price_vs_ema_20d`: (Last Price - EMA 20D) / EMA 20D
+   - `price_vs_ema_250d`: Long-term price deviation from trend
+   - `ema_slope_20d`: Rate of change in EMA 20D
+   - `ema_trend_consistency`: Alignment of all EMAs (bullish/bearish/mixed)
+
+2. **52-Week Position Features**
+   - `pct_off_52w_high`: (52W High - Last Price) / 52W High
+   - `pct_above_52w_low`: (Last Price - 52W Low) / 52W Low
+   - `52w_range_position`: Position within 52W range (0-1 normalized)
+   - `near_52w_high_flag`: Binary indicator if within 5% of 52W high
+   - `near_52w_low_flag`: Binary indicator if within 5% of 52W low
+
+3. **Volume & Momentum Composite**
+   - `volume_momentum_score`: Rel. Volume * Price Momentum
+   - `breakout_signal`: Combined EMA + 52W high proximity indicator
+
+**Implementation approach:**
+
+- Add `engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame` to advanced.py
+- Test module: `tests/test_technical_analysis_features.py`
+- TDD requirements: Test EMA crossovers, 52W position calculations, edge cases (missing EMAs)
+
+---
+
+### NEW 2. Valuation Multiples Time-Series Features
+
+**Database columns to leverage (Schema 1.3 additions):**
+
+- **EV/Sales:** `ev_sales_est_fy1`, `ev_sales_ltm`, `ev_sales_ntm`, `ev_sales_1fyltm`, `ev_sales_2fyltm`,
+  `ev_sales_3fyltm`, `ev_sales_3yavgltm`, `ev_sales_1fqltm` through `ev_sales_4fqltm`
+- **EV/EBITDA:** `ev_ebitda_ltm`, `ev_ebitda_ntm`, `ev_ebitda_1fyltm`, `ev_ebitda_1fqltm`, `ev_ebitda_3yavgltm`,
+  `ev_ebitda_est_fy1`
+- **P/E Extended:** `p_e_est_fy1`, `p_e_2fyltm`, `p_e_3fyltm`, `p_e_3yavgltm`, `p_e_1fqltm`, `p_e_2fqltm`, `p_e_3fqltm`,
+  `p_e_0fqqoqltm`, `p_e_0fyyoyltm`, `p_e_1fyyoyltm`, `p_e_0fqyoyltm`
+
+**Proposed features:**
+
+1. **Valuation Momentum Indicators**
+   - `ev_sales_trend_1y`: (EV/Sales LTM - EV/Sales 1FYLTM) / EV/Sales 1FYLTM
+   - `ev_sales_trend_3y`: 3-year trend slope using multiple points
+   - `ev_ebitda_momentum`: Rate of change in EV/EBITDA
+   - `p_e_momentum_yoy`: Year-over-year P/E change
+   - `p_e_momentum_qoq`: Quarter-over-quarter P/E change
+
+2. **Valuation Mean Reversion Features**
+   - `ev_sales_vs_3y_avg`: Current vs 3-year average (z-score)
+   - `ev_ebitda_vs_3y_avg`: Deviation from historical average
+   - `p_e_vs_3y_avg`: P/E mean reversion indicator
+   - `valuation_extreme_flag`: Binary flag for extreme deviations (>2 std)
+
+3. **Forward vs Trailing Valuation**
+   - `ev_sales_forward_discount`: (EV/Sales NTM - EV/Sales LTM) / EV/Sales LTM
+   - `ev_ebitda_forward_discount`: Forward vs trailing comparison
+   - `p_e_forward_discount`: (P/E EST FY1 - P/E LTM) / P/E LTM
+   - `growth_implied_by_valuation`: Implied growth from forward multiples
+
+4. **Quarterly Valuation Stability**
+   - `ev_sales_quarterly_volatility`: Std dev across 4 quarters
+   - `valuation_stability_score`: Inverse of quarterly volatility
+   - `valuation_trend_consistency`: Monotonicity measure across quarters
+
+**Implementation approach:**
+
+- Add `engineer_valuation_timeseries_features(df: pd.DataFrame) -> pd.DataFrame` to advanced.py
+- Test module: `tests/test_valuation_timeseries_features.py`
+- TDD requirements: Test trend calculations, mean reversion z-scores, forward/trailing spreads, edge cases (negative
+  multiples)
+
+---
+
+### NEW 3. Revenue Forecasting & Analyst Consensus Features
+
+**Database columns to leverage (Schema 1.3 additions):**
+
+- `Revenues - Est Avg (NTM)`, `Revenues - Est Avg (FY1E)`
+- `Revenues - Est Med (NTM)`, `Revenues - Est Med (FY1E)`
+- Existing: `Revenues - Est YoY % (FY1E)`
+
+**Proposed features:**
+
+1. **Analyst Consensus Metrics**
+   - `revenue_estimate_spread_ntm`: (Est Avg - Est Med) / Est Med (disagreement indicator)
+   - `revenue_estimate_spread_fy1e`: Analyst disagreement for FY1E
+   - `revenue_consensus_uncertainty_score`: Composite spread metric
+
+2. **Forward Revenue Expectations**
+   - `revenue_growth_implied_ntm`: (Est Avg NTM - Total Revenues LTM) / Total Revenues LTM
+   - `revenue_growth_implied_fy1e`: Expected growth rate from estimates
+   - `revenue_growth_acceleration`: FY1E growth vs historical CAGR
+
+3. **Estimate Quality Indicators**
+   - `avg_vs_median_bias`: Systematic difference between avg and median
+   - `estimate_confidence_flag`: Low spread = high confidence
+   - `growth_surprise_potential`: Gap between estimate and trend
+
+**Implementation approach:**
+
+- Add `engineer_revenue_forecast_features(df: pd.DataFrame) -> pd.DataFrame` to advanced.py
+- Test module: `tests/test_revenue_forecast_features.py`
+- TDD requirements: Test spread calculations, growth rates, missing estimate handling
+
+---
+
+### NEW 4. Dividend Reliability & Income Stock Features
+
+**Database columns to leverage (Schema 1.3 additions):**
+
+- `Dividend Record (Announce Date)`, `Dividend Record (Ex Date)`, `Dividend Record (Payable Date)`,
+  `Dividend Record (Record Date)`
+- `Dividend Record (Frequency)` — TEXT: quarterly, annual, etc.
+- `Dividend Record (Currency)` — TEXT
+- `Dividend Record (Amount)` — NUMERIC
+- `Dividend Streak` — Number of consecutive payments
+
+**Proposed features:**
+
+1. **Dividend Consistency Metrics**
+   - `dividend_streak_years`: Dividend Streak (already numeric)
+   - `dividend_consistency_score`: Weighted score based on streak + frequency
+   - `income_stock_flag`: Binary flag for reliable dividend payers (streak > threshold)
+
+2. **Dividend Coverage & Safety**
+   - `dividend_payout_ratio`: Dividend Amount / EPS (sustainability)
+   - `fcf_dividend_coverage`: FCF LTM / Total Dividends Paid
+   - `dividend_safety_score`: Composite coverage metric
+
+3. **Dividend Growth Features**
+   - `dividend_growth_trend`: Change in Dividend Amount over time
+   - `dividend_yield_vs_sector`: Sector-relative yield ranking
+   - `dividend_aristocrat_flag`: Long streak + growth indicator
+
+4. **Dividend Event Features**
+   - `days_since_ex_date`: Recency of last dividend
+   - `dividend_frequency_encoded`: Numerical encoding of frequency (quarterly=4, annual=1)
+   - `currency_risk_flag`: Non-USD dividend currency indicator
+
+**Implementation approach:**
+
+- Add `engineer_dividend_reliability_features(df: pd.DataFrame) -> pd.DataFrame` to advanced.py
+- Test module: `tests/test_dividend_reliability_features.py`
+- TDD requirements: Test streak calculations, coverage ratios, date parsing, frequency encoding
+
+---
+
+### NEW 5. Employment Dynamics & Growth Signals
+
+**Database columns to leverage (Schema 1.3 additions):**
+
+- `Total Employees (FY)`, `Total Employees (FQ)`
+- Existing: `Avg Employees (LTM)`, `Avg Employees (FY)`, `Avg Employees (5YAVGFY)`
+
+**Proposed features:**
+
+1. **Employee Growth Metrics**
+   - `employee_growth_yoy`: (Total Employees FY - prior year) / prior year
+   - `employee_growth_qoq`: Quarter-over-quarter employee change
+   - `employee_growth_cagr_5y`: Long-term employee growth rate
+   - `employee_growth_acceleration`: Change in growth rate
+
+2. **Productivity & Efficiency**
+   - `revenue_per_employee_fy`: Total Revenues FY / Total Employees FY
+   - `revenue_per_employee_ltm`: Total Revenues LTM / Avg Employees LTM
+   - `revenue_per_employee_trend`: YoY change in productivity
+   - `profit_per_employee`: Net Income / Total Employees
+
+3. **Scale & Workforce Indicators**
+   - `employee_base_scale_flag`: Large employer indicator (>10k employees)
+   - `workforce_volatility`: Std dev of employee counts across quarters
+   - `hiring_intensity_score`: Employee growth relative to sector
+
+**Implementation approach:**
+
+- Add `engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame` to advanced.py
+- Test module: `tests/test_employment_dynamics_features.py`
+- TDD requirements: Test growth calculations, productivity ratios, missing employee data handling
+
+---
+
+## Original Feature Categories (Version 1.0)
 
 ### 1. Momentum & Technical Features
 
@@ -482,18 +740,18 @@ that are currently underutilized for ML features.
 
 **10.1 Cross-validation**
 
-- Run full test suite: `python -m unittest discover -s tests -p "test_*.py" -v`
-- Ensure 100% pass rate
+- Run full test suite: `python -m unittest discover -s tests -p "test_*.py" -v`.
+- Ensure 100% pass rate.
 
 **10.2 Integration with Notebook**
 
-- Update `ml_finance_model_main.ipynb`
-- Add feature engineering demonstration cells
+- Update `ml_finance_model_main.ipynb`.
+- Add feature engineering demonstration cells.
 
 **10.3 Production Readiness**
 
-- Update `MODEL_VERSION` to v9_9
-- Tag release in version control
+- Confirm `MODEL_VERSION` is set to v9_9 in config and notebooks.
+- Tag release in version control (out of scope for automated changes).
 
 ---
 
@@ -528,19 +786,15 @@ that are currently underutilized for ML features.
 
 ### Test Naming Convention
 
-```python
-def test_<feature_group>_<specific_feature>_<scenario>():
-    """Test <specific_feature> under <scenario> conditions."""
-    pass
-```
+Use descriptive test names of the form::
 
-Example:
+    test_<feature_group>_<specific_feature>_<scenario>
 
-```python
-def test_momentum_rsi_14d_bullish_trend():
-    """Test RSI calculation with bullish trend data."""
-    pass
-```
+Example::
+
+    def test_momentum_rsi_14d_bullish_trend():
+        """Test RSI calculation with bullish trend data."""
+        ...
 
 ---
 
@@ -640,47 +894,47 @@ Follow existing conventions from `docs/code_guidelines.md`:
 
 ---
 
-## Appendix A: Feature Function Signatures
+## Appendix A: Feature Function Signatures (Implemented)
+
+The following feature functions are implemented in
+``finance_ml/ml_workflow/features/advanced.py``. Signatures are shown here
+for quick reference; see the module docstrings for detailed behavior.
 
 ```python
-def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
+def engineer_momentum_features(df):
     """Calculate price momentum and technical indicators."""
-    pass
 
-def engineer_financial_distress_features(df: pd.DataFrame) -> pd.DataFrame:
+
+def engineer_financial_distress_features(df):
     """Calculate Altman Z-Score trends and distress indicators."""
-    pass
 
-def engineer_cash_flow_quality_features(df: pd.DataFrame) -> pd.DataFrame:
+
+def engineer_cash_flow_quality_features(df):
     """Calculate cash flow quality and conversion metrics."""
-    pass
 
-def engineer_capital_allocation_features(df: pd.DataFrame) -> pd.DataFrame:
+
+def engineer_capital_allocation_features(df):
     """Calculate capital allocation efficiency metrics."""
-    pass
 
-def engineer_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
+
+def engineer_market_sentiment_features(df):
     """Calculate analyst consensus and market sentiment features."""
-    pass
 
-def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
+
+def engineer_margin_trends(df):
     """Calculate profitability margin trends and quality."""
-    pass
 
-def engineer_balance_sheet_trends(df: pd.DataFrame) -> pd.DataFrame:
+
+def engineer_balance_sheet_trends(df):
     """Calculate balance sheet growth and liquidity trends."""
-    pass
 
-def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
+
+def engineer_composite_scores(df):
     """Calculate composite quality, growth, value, and momentum scores."""
-    pass
 
-def engineer_sector_relative_interactions(
-    df: pd.DataFrame, 
-    sector_col: str = "sector"
-) -> pd.DataFrame:
+
+def engineer_sector_relative_interactions(df, sector_col: str = "sector"):
     """Create sector-relative features for key metrics."""
-    pass
 ```
 
 ---
