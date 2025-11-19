@@ -207,52 +207,23 @@ def create_enhanced_event_labels(
 
     elif method == "valuation":
         # Enhanced valuation-based events using Phase 9.3 features when available
-        # Uses multiple valuation metrics: P/E, P/B, EV/EBITDA, PEG (and
-        # their Schema 1.3 variants). Lower values = undervalued (positive),
-        # higher values = overvalued (negative).
+        # Uses multiple valuation metrics: P/E, P/B, EV/EBITDA, PEG
+        # Lower values = undervalued (positive), higher values = overvalued (negative)
 
         valuation_metrics = []
 
-        # P/E ratio
-        # Preference order:
-        #   1) Phase 9.3 engineered ratio (p_e_ratio)
-        #   2) Generic p_e
-        #   3) Schema 1.3 timelines (p_e_ntm, p_e_ltm, p_e_est_fy1, etc.)
-        pe_col = _get_column(
-            df,
-            "p_e_ratio",
-            "p_e",
-            "p_e_ntm",
-            "p_e_ltm",
-            "p_e_est_fy1",
-            "p_e_1fyltm",
-            "p_e_2fyltm",
-            "p_e_3fyltm",
-        )
+        # P/E ratio (try Phase 9.3 first, fall back to original)
+        pe_col = _get_column(df, "p_e_ratio", "p_e")
         if pe_col is not None:
             valuation_metrics.append(("p_e", pe_col))
 
-        # P/B ratio
-        pb_col = _get_column(
-            df,
-            "p_b_ratio",
-            "p_b",
-            "p_b_ltm",
-            "p_b_1fy",
-            "p_b_5yavg",
-        )
+        # P/B ratio (Phase 9.3)
+        pb_col = _get_column(df, "p_b_ratio", "p_b")
         if pb_col is not None:
             valuation_metrics.append(("p_b", pb_col))
 
-        # EV/EBITDA ratio
-        ev_ebitda_col = _get_column(
-            df,
-            "ev_ebitda_ratio",
-            "ev_ebitda",
-            "ev_ebitda_ltm",
-            "ev_ebitda_ntm",
-            "ev_ebitda_est_fy1",
-        )
+        # EV/EBITDA ratio (Phase 9.3)
+        ev_ebitda_col = _get_column(df, "ev_ebitda_ratio", "ev_ebitda")
         if ev_ebitda_col is not None:
             valuation_metrics.append(("ev_ebitda", ev_ebitda_col))
 
@@ -761,117 +732,37 @@ def create_enhanced_event_labels(
         ] = 1  # Negative
         labels[quality_score <= quality_score.quantile(0.15)] = 0  # Bottom 15% = strong negative
 
-    elif method == "dividend_event":
-        # Dividend-based events using dividend reliability metrics (Phase 9.3).
-        #
-        # This method is designed to work with the engineered features from
-        # engineer_dividend_reliability_features:
-        # - dividend_consistency_score: 0-100, higher is better
-        # - income_stock_flag: 1 for reliable income stocks
-        # - dividend_payout_ratio: very high payout ratios can be risky
-
-        has_consistency = "dividend_consistency_score" in df.columns
-        has_income_flag = "income_stock_flag" in df.columns
-        has_payout = "dividend_payout_ratio" in df.columns
-
-        if not (has_consistency or has_income_flag or has_payout):
-            logger.warning("No dividend reliability columns available, returning all neutral")
-            return labels
-
-        dividend_score = pd.Series(0.0, index=df.index)
-        signals = 0
-
-        if has_consistency:
-            cons = df["dividend_consistency_score"].astype(float).clip(lower=0.0, upper=100.0)
-            # Normalize to 0-1
-            dividend_score += cons / 100.0
-            signals += 1
-
-        if has_income_flag:
-            income_flag = df["income_stock_flag"].astype(float)
-            # Income flag is a positive tilt (0 or 1) scaled to 0-0.5
-            dividend_score += income_flag * 0.5
-            signals += 1
-
-        if has_payout:
-            payout = df["dividend_payout_ratio"].astype(float)
-            # Very high payout ratios (>1.5) are penalized more strongly.
-            # Clip to [0, 2] and map to [0, 1], then subtract as a risk factor.
-            payout_penalty = payout.clip(lower=0.0, upper=2.0) / 2.0
-            dividend_score -= payout_penalty
-            signals += 1
-
-        if signals == 0:
-            logger.warning("Dividend event: no usable signals after processing, returning neutral")
-            return labels
-
-        # Average across available signals to keep the scale consistent.
-        dividend_score /= signals
-
-        # Map dividend_score to 5 classes using quantiles, similar to other
-        # event methods: high score = strong positive, low score = strong negative.
-        labels[dividend_score >= dividend_score.quantile(0.85)] = 4
-        labels[
-            (dividend_score >= dividend_score.quantile(0.65))
-            & (dividend_score < dividend_score.quantile(0.85))
-        ] = 3
-        labels[
-            (dividend_score >= dividend_score.quantile(0.35))
-            & (dividend_score < dividend_score.quantile(0.65))
-        ] = 2
-        labels[
-            (dividend_score <= dividend_score.quantile(0.35))
-            & (dividend_score > dividend_score.quantile(0.15))
-        ] = 1
-        labels[dividend_score <= dividend_score.quantile(0.15)] = 0
-
     elif method == "composite_event":
-        # Composite events using Piotroski F-Score and Altman Z-Score.
-        # Phase 9.3: allow fallback to Schema 1.3 Altman columns
-        # (altman_z_score_fy/fq/ltm) when the aggregated altman_z_score
-        # feature is not present.
-
-        has_piotroski = "piotroski_f_score" in df.columns
-        # Prefer the aggregated feature if available, otherwise fall back
-        # to the schema-specific variants.
-        altman_source = _get_column(
-            df,
-            "altman_z_score",
-            "altman_z_score_ltm",
-            "altman_z_score_fy",
-            "altman_z_score_fq",
-        )
-        has_altman = altman_source is not None
-        has_beneish = "beneish_m_score" in df.columns
-
-        if not (has_piotroski or has_altman or has_beneish):
+        # Composite events using Piotroski F-Score and Altman Z-Score
+        composite_cols = [
+            c for c in ["piotroski_f_score", "altman_z_score", "beneish_m_score"] if c in df.columns
+        ]
+        if not composite_cols:
             logger.warning("No composite score columns available, returning all neutral")
             return labels
 
         # Create composite score with proper normalization
         composite_score = pd.Series(0.0, index=df.index)
 
-        if has_piotroski:
+        if "piotroski_f_score" in df.columns:
             # Piotroski F-Score: 0-9 scale, higher is better
             f_score = df["piotroski_f_score"].fillna(df["piotroski_f_score"].median())
             composite_score += f_score / 9.0  # Normalize to 0-1
 
-        if has_altman and altman_source is not None:
-            # Altman Z-Score family: >2.99 safe, 1.81-2.99 grey, <1.81 distress
-            z_score = altman_source.fillna(altman_source.median())
+        if "altman_z_score" in df.columns:
+            # Altman Z-Score: >2.99 safe, 1.81-2.99 grey, <1.81 distress
+            z_score = df["altman_z_score"].fillna(df["altman_z_score"].median())
             # Normalize: clip at 0 and 5, then scale to 0-1
             composite_score += z_score.clip(0, 5) / 5.0
 
-        if has_beneish:
+        if "beneish_m_score" in df.columns:
             # Beneish M-Score: <-1.78 unlikely manipulator, >-1.78 possible manipulator
             m_score = df["beneish_m_score"].fillna(df["beneish_m_score"].median())
             # Invert: lower is better, clip at -3 to 1, then normalize
             composite_score += (1.0 - m_score.clip(-3, 1)) / 4.0
 
-        # Normalize by number of scores actually used
-        metric_count = int(has_piotroski) + int(has_altman) + int(has_beneish)
-        if metric_count > 0:
-            composite_score /= metric_count
+        # Normalize by number of scores
+        composite_score /= len(composite_cols)
 
         # High composite score = positive, low = negative (5-class)
         labels[composite_score >= composite_score.quantile(0.85)] = 4  # Top 15% = strong positive

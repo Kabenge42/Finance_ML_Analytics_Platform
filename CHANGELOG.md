@@ -238,20 +238,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests validate Phase 9.1-9.8 architecture alignment per code_guidelines.md v1.2
   - Verifies phase headers, business goals, objectives, inputs/outputs, v1.2 standards, validation checkpoints
   - Tests ensure Quick Reference Navigation and Workflow Overview use Phase nomenclature
-- **Phase 9.3 Valuation & Quality Integration into Classification/Regression**
-  - Classification labels: `finance_ml.ml_workflow.classification.labels.create_enhanced_event_labels`
-    now fall back to Schema 1.3 valuation timelines (e.g., `p_e_ntm`,
-    `p_b_ltm`, `ev_ebitda_ltm`, `ev_ebitda_ntm`) when Phase 9.3
-    engineered ratios are missing, and composite/quality events make
-    use of Altman Z schema variants and accounting quality scores.
-  - Notebook: `ml_finance_model_main.ipynb` Phase 9.3/9.4 "Prepare
-    classification data with Phase 9.3 feature groups" section uses an
-    enhanced `valuation_candidates_by_method` mapping that only
-    references columns present in `preprocessed_stocks_metadata.json`.
-  - Regression interactions: `finance_ml.ml_workflow.regression.dataset.create_classification_interactions`
-    supports a canonical Phase 9.3 valuation candidate list and
-    gracefully ignores missing columns when creating interaction
-    features between event probabilities and valuation metrics.
 
 ### Changed
 

@@ -346,105 +346,6 @@ class TestQualityEventLabels(unittest.TestCase):
         self.assertIn(labels[3], [0, 1])
 
 
-class TestDividendEventLabels(unittest.TestCase):
-    """Test dividend_event label creation method (Phase 9.3 dividend features).
-
-    This suite verifies that the new dividend_event method in
-    create_enhanced_event_labels correctly interprets the Phase 9.3
-    dividend reliability features engineered by
-    engineer_dividend_reliability_features:
-
-    - dividend_consistency_score (0-100, higher is better)
-    - income_stock_flag (1 for reliable income stocks)
-    - dividend_payout_ratio (very high payout is a risk)
-    """
-
-    def setUp(self):
-        """Create sample data with dividend reliability features."""
-
-        self.df = pd.DataFrame(
-            {
-                "ticker": ["A", "B", "C", "D"],
-                # High consistency, income flag, reasonable payout
-                "dividend_consistency_score": [85.0, 20.0, 60.0, 40.0],
-                "income_stock_flag": [1, 0, 1, 0],
-                # Payout ratios: moderate, very high, low, negative (edge)
-                "dividend_payout_ratio": [0.6, 1.8, 0.3, -0.1],
-            }
-        )
-
-    def test_dividend_event_basic(self):
-        """Test dividend_event method returns valid 5-class labels."""
-
-        labels = create_enhanced_event_labels(self.df, method="dividend_event")
-
-        self.assertIsInstance(labels, np.ndarray)
-        self.assertEqual(len(labels), len(self.df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
-
-    def test_dividend_event_high_reliability_positive(self):
-        """High consistency & income flag should map to positive label (3 or 4)."""
-
-        labels = create_enhanced_event_labels(self.df, method="dividend_event")
-
-        # Stock A: high consistency, income flag, moderate payout
-        self.assertIn(labels[0], [3, 4])
-
-    def test_dividend_event_very_high_payout_negative(self):
-        """Very high payout ratio should act as a negative signal."""
-
-        labels = create_enhanced_event_labels(self.df, method="dividend_event")
-
-        # Stock B: low consistency, no income flag, very high payout
-        self.assertIn(labels[1], [0, 1])
-
-    def test_dividend_event_missing_columns(self):
-        """Method should return all neutral when dividend features are absent."""
-
-        df_incomplete = pd.DataFrame({"ticker": ["X", "Y"]})
-
-        labels = create_enhanced_event_labels(df_incomplete, method="dividend_event")
-        self.assertTrue(np.all(labels == 0))
-
-
-class TestValuationEventPhase93SchemaFallback(unittest.TestCase):
-    """Phase 9.3: valuation_event should use Schema 1.3 columns when ratios missing.
-
-    These tests ensure that create_enhanced_event_labels can fall back to
-    preprocessed valuation columns such as p_e_ntm, p_b_ltm, and
-    ev_ebitda_ltm when Phase 9.3 engineered ratios like p_e_ratio or
-    ev_ebitda_ratio are not present.
-    """
-
-    def test_valuation_uses_p_e_ntm_when_ratios_absent(self):
-        """With only p_e_ntm available, valuation labels should not be all neutral.
-
-        This approximates the preprocessed_stocks_metadata.json structure,
-        where raw P/E timelines (p_e_ntm, p_e_ltm, etc.) are present even if
-        p_e_ratio has not yet been engineered.
-        """
-
-        df = pd.DataFrame(
-            {
-                "ticker": ["A", "B", "C", "D", "E"],
-                "sector": ["Tech"] * 5,
-                # Monotonic P/E values to induce a clear ordering
-                "p_e_ntm": [5.0, 10.0, 15.0, 20.0, 25.0],
-            }
-        )
-
-        labels = create_enhanced_event_labels(df, method="valuation")
-
-        # Basic invariants
-        self.assertEqual(len(labels), len(df))
-        self.assertTrue(np.all(np.isin(labels, [0, 1, 2, 3, 4])))
-
-        # If p_e_ntm was ignored, the implementation would log a warning and
-        # return all-neutral (0). We assert that at least one label is
-        # non-zero to confirm the fallback column was used.
-        self.assertTrue(np.any(labels != 0), msg="valuation_event produced all neutral labels")
-
-
 class TestCompositeEventLabels(unittest.TestCase):
     """Test composite_event label creation method."""
 
@@ -517,7 +418,6 @@ class TestEventLabelsEdgeCases(unittest.TestCase):
             "growth_event",
             "quality_event",
             "composite_event",
-            "dividend_event",
         ]
 
         for method in methods:
@@ -545,7 +445,6 @@ class TestEventLabelsEdgeCases(unittest.TestCase):
             "growth_event",
             "quality_event",
             "composite_event",
-            "dividend_event",
         ]
 
         for method in methods:
@@ -573,7 +472,6 @@ class TestEventLabelsEdgeCases(unittest.TestCase):
             "growth_event",
             "quality_event",
             "composite_event",
-            "dividend_event",
         ]
 
         for method in methods:
