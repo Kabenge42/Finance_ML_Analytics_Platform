@@ -240,6 +240,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "goodwill_fy": {"dtype": "float", "role": "feature"},
     "goodwill_1fy": {"dtype": "float", "role": "feature"},
     "goodwill_5yavgfq": {"dtype": "float", "role": "feature"},
+    "intangible_assets": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
     "gross_intangible_assets_ltm": {"dtype": "float", "role": "feature"},
     "gross_intangible_assets_fy": {"dtype": "float", "role": "feature"},
     "gross_intangible_assets_5yavgfq": {"dtype": "float", "role": "feature"},
@@ -280,6 +281,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "gain_loss_on_sale_of_assets_ltm": {"dtype": "float", "role": "feature"},
     # Operating Expenses
     "cost_of_revenues_ltm": {"dtype": "float", "role": "feature"},
+    "r_d_expenses": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
     "r_d_expenses_ltm": {"dtype": "float", "role": "feature"},
     "selling_general_admin_expenses_total_fq": {"dtype": "float", "role": "feature"},
     "selling_general_admin_expenses_total_fy": {"dtype": "float", "role": "feature"},
@@ -288,6 +290,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "accounts_receivable_total_fy": {"dtype": "float", "role": "feature"},
     "accounts_receivable_total_1fy": {"dtype": "float", "role": "feature"},
     "accounts_receivable_total_5yavgfq": {"dtype": "float", "role": "feature"},
+    "marketing_expenses": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
     "marketing_expenses_fq": {"dtype": "float", "role": "feature"},
     "marketing_expenses_fy": {"dtype": "float", "role": "feature"},
     "marketing_expenses_1fy": {"dtype": "float", "role": "feature"},
@@ -298,6 +301,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "eps_adj_ltm": {"dtype": "float", "role": "feature"},
     "eps_norm_est_avg_ntm": {"dtype": "float", "role": "feature"},
     "eps_norm_est_avg_fy1e": {"dtype": "float", "role": "feature"},
+    "eps_previous_year": {"dtype": "float", "role": "feature"},  # Base column for YoY calculations
     # Dividends
     "dividend_per_share_ltm": {"dtype": "float", "role": "feature"},
     "div_yield_ind": {"dtype": "float", "role": "feature"},
@@ -317,6 +321,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "interest_expense_total_ltm": {"dtype": "float", "role": "feature"},
     "interest_income_on_investments_ltm": {"dtype": "float", "role": "feature"},
     # Employees
+    "employees": {"dtype": "int", "role": "feature"},  # Base column (current employee count)
     "avg_employees_ltm": {"dtype": "float", "role": "feature"},
     "avg_employees_fy": {"dtype": "float", "role": "feature"},
     "avg_employees_5yavgfy": {"dtype": "float", "role": "feature"},
@@ -324,6 +329,137 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "total_employees_fq": {"dtype": "float", "role": "feature"},
     # Country-specific
     "market_cap_country_r": {"dtype": "float", "role": "feature"},
+    # ==================================================================================
+    # NORMALIZATION VARIANTS & SIMPLIFIED ALIASES
+    # Added to resolve unknown column warnings from dtype_diagnostics.json
+    # These columns exist in the data pipeline but use different naming conventions
+    # ==================================================================================
+    # Analyst Ratings (normalized names without "num_" prefix)
+    "price_target_count": {"dtype": "float", "role": "auxiliary"},  # Alias for price_target_num
+    "strong_sell_ratings": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for num_strong_sell_ratings
+    "strong_buys_ratings": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for num_strong_buys_ratings
+    "hold_ratings": {"dtype": "float", "role": "feature"},  # Alias for num_hold_ratings
+    "buys_ratings": {"dtype": "float", "role": "feature"},  # Alias for num_buys_ratings
+    "sell_ratings": {"dtype": "float", "role": "feature"},  # Alias for num_sell_ratings
+    # Simplified Base Columns (without time suffixes - used as generic references)
+    "p_e": {"dtype": "float", "role": "feature"},  # Generic P/E ratio
+    "p_b": {"dtype": "float", "role": "feature"},  # Generic P/B ratio
+    "revenue": {"dtype": "float", "role": "feature"},  # Generic revenue
+    "ebitda": {"dtype": "float", "role": "feature"},  # Generic EBITDA
+    "ebit": {"dtype": "float", "role": "feature"},  # Generic EBIT
+    "net_income": {"dtype": "float", "role": "feature"},  # Generic net income
+    "net_income_ltm": {"dtype": "float", "role": "feature"},  # Duplicate of net_income_is_ltm
+    "gross_margin": {"dtype": "float", "role": "feature"},  # Generic gross margin
+    "eps": {"dtype": "float", "role": "feature"},  # Generic EPS
+    "total_equity": {"dtype": "float", "role": "feature"},  # Generic total equity
+    "total_assets": {"dtype": "float", "role": "feature"},  # Generic total assets
+    "total_debt": {"dtype": "float", "role": "feature"},  # Generic total debt
+    "inventory": {"dtype": "float", "role": "feature"},  # Generic inventory
+    "capex": {"dtype": "float", "role": "feature"},  # Generic capital expenditure
+    "cash_and_equivalents": {"dtype": "float", "role": "feature"},  # Generic cash
+    "current_assets": {"dtype": "float", "role": "feature"},  # Generic current assets
+    "current_liabilities": {"dtype": "float", "role": "feature"},  # Generic current liabilities
+    "working_capital": {"dtype": "float", "role": "feature"},  # Generic working capital
+    "retained_earnings": {"dtype": "float", "role": "feature"},  # Generic retained earnings
+    "cfo": {"dtype": "float", "role": "feature"},  # Generic cash flow from operations
+    "cfi": {"dtype": "float", "role": "feature"},  # Generic cash flow from investing
+    "cff": {"dtype": "float", "role": "feature"},  # Generic cash flow from financing
+    "fcf": {"dtype": "float", "role": "feature"},  # Generic free cash flow
+    "gross_profit": {"dtype": "float", "role": "feature"},  # Generic gross profit
+    "operating_income": {"dtype": "float", "role": "feature"},  # Generic operating income
+    "interest_expense": {"dtype": "float", "role": "feature"},  # Generic interest expense
+    "goodwill": {"dtype": "float", "role": "feature"},  # Generic goodwill
+    "dividend_per_share": {"dtype": "float", "role": "feature"},  # Generic dividend per share
+    "operating_expenses": {"dtype": "float", "role": "feature"},  # Generic operating expenses
+    "operating_cash_flow": {"dtype": "float", "role": "feature"},  # Alias for cfo
+    "dividends_paid": {"dtype": "float", "role": "feature"},  # Generic dividends paid
+    "dividends_paid_ltm": {"dtype": "float", "role": "feature"},  # Dividends paid LTM
+    # Additional normalized names
+    "price_target_number": {"dtype": "float", "role": "auxiliary"},  # Alias for price_target_num
+    "one_day_pct": {"dtype": "float", "role": "feature"},  # Alias for 1_day_pct
+    "shares_outstanding": {"dtype": "float", "role": "feature"},  # Alias for shrs_out
+    "p_e_5yavgltm": {"dtype": "float", "role": "feature"},  # 5-year average P/E LTM
+    # SG&A Expenses (normalized naming)
+    "sga_expenses": {"dtype": "float", "role": "feature"},  # Generic SG&A
+    "sga_expenses_fq": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for selling_general_admin_expenses_total_fq
+    "sga_expenses_fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for selling_general_admin_expenses_total_fy
+    "sga_expenses_1fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for selling_general_admin_expenses_total_1fy
+    "sga_expenses_5yavgfq": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for selling_general_admin_expenses_total_5yavgfq
+    # Accounts Receivable (normalized naming)
+    "accounts_receivable_fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for accounts_receivable_total_fy
+    "accounts_receivable_1fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for accounts_receivable_total_1fy
+    "accounts_receivable_5yavgfq": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Alias for accounts_receivable_total_5yavgfq
+    # ==================================================================================
+    # DERIVED & COMPUTED COLUMNS (Created during preprocessing/feature engineering)
+    # ==================================================================================
+    # Volatility percentage variants
+    "volatility_1y_pct": {"dtype": "float", "role": "feature"},  # 1-year volatility as percentage
+    # Year-over-Year (YoY) comparison columns (_previous_year suffix)
+    "revenue_previous_year": {"dtype": "float", "role": "feature"},  # Revenue from previous year
+    "ebitda_previous_year": {"dtype": "float", "role": "feature"},  # EBITDA from previous year
+    "total_equity_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Total equity from previous year
+    "total_assets_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Total assets from previous year
+    "gross_profit_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Gross profit from previous year
+    "accounts_receivable_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # AR from previous year
+    "roa_previous_year": {"dtype": "float", "role": "feature"},  # ROA from previous year
+    "current_ratio_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Current ratio from previous year
+    "shares_outstanding_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Shares outstanding from previous year
+    "gross_margin_pct_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Gross margin % from previous year
+    "asset_turnover_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Asset turnover from previous year
+    # Fiscal year variants (alternative naming)
+    "revenue_fy": {"dtype": "float", "role": "feature"},  # Alias for total_revenues_fy
+    "working_capital_1fy": {"dtype": "float", "role": "feature"},  # Working capital 1 fiscal year
 }
 
 

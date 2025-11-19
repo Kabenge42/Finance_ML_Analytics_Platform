@@ -321,10 +321,11 @@ def simple_eda(
         A dictionary with EDA summary statistics.
     """
     logging.info("Rows: %d, Columns: %d", df.shape[0], df.shape[1])
-    # Robust dtype handling: some objects may raise AttributeError on dtype access
+    # Robust dtype handling: use pandas API to handle all dtype variants including StringDtype
     # Exclude datetime columns to prevent errors in statistical analysis (scipy.stats operations)
     try:
-        numeric_cols = [c for c in df.columns if np.issubdtype(df[c].dtype, np.number)]
+        # Use pandas API instead of numpy to properly handle StringDtype ('string[python]')
+        numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     except AttributeError:
         # Fallback: treat no columns as numeric if dtype access fails
         logging.warning(
@@ -337,8 +338,9 @@ def simple_eda(
 
     try:
         basic_stats = df[numeric_cols].describe().to_dict() if numeric_cols else {}
-        numeric_count = int((df.dtypes != object).sum())
-        categorical_count = int((df.dtypes == object).sum())
+        numeric_count = len(numeric_cols)
+        # Count categorical as any non-numeric column (includes object, string, category dtypes)
+        categorical_count = len(df.columns) - numeric_count
     except AttributeError:
         basic_stats = {}
         numeric_count = 0

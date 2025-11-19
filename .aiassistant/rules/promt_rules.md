@@ -4,8 +4,8 @@ apply: always
 
 # Finance ML Analytics Platform — Project Rules
 
-**Version**: 0.8.1  
-**Last Updated**: 2025-11-16
+**Version**: 0.8.2  
+**Last Updated**: 2025-11-19
 
 ## Project Overview
 
@@ -16,7 +16,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Modular Python package (`finance_ml`) with clean, tested, reusable code
 - Interactive Jupyter notebook for exploration and prototyping
 - CLI tools for batch processing and automation
-- Comprehensive unit tests with good coverage (≈74 test modules, ≥80% target)
+- Comprehensive unit tests with good coverage (≈83 test modules, ≥80% target)
 - Configuration management via environment variables, JSON, or YAML
 
 ### Module Architecture (v9_8 - Phase 9.1-9.8)
@@ -366,7 +366,7 @@ Create a `.env` file in the project root with the variables above. Tools that su
 ### Test Framework
 - **Framework**: Python's built-in `unittest`
 - **Location**: `tests/` directory
-- **Count**: 74 test modules
+- **Count**: 83 test modules
 - **Coverage**: Tracked in `.coverage` file (≥80% target for new code)
 
 ### Running Tests
@@ -384,7 +384,7 @@ pytest tests/ -v --cov=finance_ml
 python -m unittest discover -s tests -v
 ```
 
-### Test Suite Modules (74 total)
+### Test Suite Modules (83 total)
 
 - **`test_advanced_eda.py`** — Advanced EDA functions (correlation, PCA, statistical tests)
 - **`test_advanced_features.py`** — Phase 9.3 advanced feature engineering tests
@@ -404,10 +404,12 @@ python -m unittest discover -s tests -v
 - **`test_data_catalog.py`** — Data catalog management tests
 - **`test_data_quality.py`** — Data validation and quality checks
 - **`test_data_splits_policy.py`** — Data split leakage prevention policy validation (code_guidelines.md v1.2)
+- **`test_data_types_detection.py`** — Schema-aware datatype detection and Phase 9.3 validation (9 tests, TDD v0.8.2)
 - **`test_data_versioning.py`** — Data versioning and metadata tests
 - **`test_eda.py`** — Exploratory data analysis utilities
 - **`test_enhanced_eda_phase92.py`** — Phase 9.2 enhanced EDA tests
 - **`test_enhanced_imputation.py`** — Phase 9.16-step imputation strategy tests
+- **`test_enhanced_imputation_phase93.py`** — Phase 9.3 enhanced imputation with schema alignment (8 tests, TDD v0.8.2)
 - **`test_evaluation_phase96.py`** — Phase 9.6 model evaluation and error analysis tests
 - **`test_features.py`** — Feature engineering functions
 - **`test_finance_ml_config.py`** — Configuration management tests
@@ -422,6 +424,7 @@ python -m unittest discover -s tests -v
 - **`test_integration_production_scenarios.py`** — Production scenario integration tests
 - **`test_loaders.py`** — CSV and database loading functions
 - **`test_logging.py`** — Logging configuration tests
+- **`test_metadata_catalog_quality.py`** — Metadata and quality stats validation (4 tests, TDD v0.8.2)
 - **`test_model_evaluation_advanced.py`** — Advanced model evaluation tests
 - **`test_notebook_config.py`** — Notebook configuration tests
 - **`test_notebook_enhancements.py`** — Notebook enhancements validation
@@ -435,7 +438,12 @@ python -m unittest discover -s tests -v
 - **`test_phase95_error_handling.py`** — Phase 9.5 error handling tests
 - **`test_phase95_nonnegative_predictions.py`** — Phase 9.5 non-negative prediction constraint tests
 - **`test_phase95_quick.py`** — Phase 9.5 quick validation tests
+- **`test_portfolio_backtesting.py`** — Portfolio backtesting framework (3 tests, Portfolio Phase 5)
+- **`test_portfolio_dashboards.py`** — Portfolio interactive dashboards (3 tests, Portfolio Phase 6)
+- **`test_portfolio_ml_prediction.py`** — ML-based return prediction and stock selection (9 tests, Portfolio Phases 1-2)
 - **`test_portfolio_optimization.py`** — Portfolio optimization tests
+- **`test_portfolio_optimization_advanced.py`** — Advanced optimization methods (4 tests, Portfolio Phase 3)
+- **`test_portfolio_risk_management.py`** — Risk management enhancements (4 tests, Portfolio Phase 4)
 - **`test_predictions_schema.py`** — Standardized predictions schema validation (code_guidelines.md v1.2)
 - **`test_preprocess_and_training.py`** — Preprocessing and training workflows
 - **`test_quantile_fix.py`** — Quantile regression fixes tests
@@ -445,6 +453,7 @@ python -m unittest discover -s tests -v
 - **`test_risk_metrics.py`** — Risk metrics calculation tests
 - **`test_sector_bias_calibration.py`** — Sector-specific bias calibration (code_guidelines.md v1.2)
 - **`test_setup_environment.py`** — Setup script validation
+- **`test_simple_eda_stringdtype.py`** — StringDtype compatibility validation (3 tests, TDD v0.8.2)
 - **`test_sql_scripts.py`** — SQL script validation tests
 - **`test_sqlite_import.py`** — SQLite import functionality (header removal, NULL handling, region backfilling)
 - **`test_stacking_default.py`** — Stacking ensemble default configuration (code_guidelines.md v1.2)
@@ -454,8 +463,16 @@ python -m unittest discover -s tests -v
 - **`test_valuation_phase97.py`** — Phase 9.7 stock valuation and identification tests
 - **`test_visualizations.py`** — Visualization functions tests
 
-**Note**: Full test suite can take significant time. See guidelines.md for selective test execution strategies (
-fast/medium/slow categories).
+**Note**: The test suite has grown to 83 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization).
+Full test suite can take significant time. See guidelines.md for selective test execution strategies (fast/medium/slow
+categories).
+
+**Recent Additions (v0.8.2, 2025-11-19):**
+
+- **TDD Implementation (4 modules, 24 tests):** Schema-aware datatype detection, Phase 9.3 enhanced imputation,
+  metadata catalog validation, StringDtype compatibility
+- **Portfolio Optimization (5 modules, 23 tests):** ML-based return prediction, advanced optimization methods
+  (Black-Litterman, Risk Parity, HRP), risk management enhancements, backtesting framework, interactive dashboards
 
 ### Writing New Tests
 - Create files under `tests/` named `test_*.py` with `unittest.TestCase` classes
@@ -469,16 +486,18 @@ fast/medium/slow categories).
 
 ```
 Finance_ML_Analytics_Platform/
-├── finance_ml/                     # Main Python package (v0.8.1)
+├── finance_ml/                     # Main Python package (v0.8.2)
 │   ├── __init__.py                # Package exports and version
 │   ├── ml_workflow/               # Phase-aligned modular workflow (v9_8)
-│   │   ├── preprocessing/         # Phase 9.1: imputation, outliers, scaling, quality, pipeline
+│   │   ├── data/                  # NEW v0.8.2: schema.py (column schema registry)
+│   │   ├── preprocessing/         # Phase 9.1: imputation, outliers, scaling, quality, pipeline, dtypes (NEW v0.8.2)
 │   │   ├── eda/                   # Phase 9.2: eda, benchmarking, reports
 │   │   ├── features/              # Phase 9.3: core, advanced, selection, api
 │   │   ├── classification/        # Phase 9.4: labels, tuning, models, evaluation
 │   │   ├── regression/            # Phase 9.5: models, constraints, quantile, tuning, dataset, io
 │   │   ├── evaluation/            # Phase 9.6: metrics, analysis
-│   │   ├── analytics/             # Phase 9.7: mispricing, analyst_comparison, portfolio, risk, eval
+│   │   ├── analytics/             # Phase 9.7: mispricing, analyst_comparison, portfolio, risk, eval,
+│   │   │                          #            stock_selection (NEW v0.8.2), ml_returns (NEW v0.8.2), attribution (NEW v0.8.2)
 │   │   └── reporting/             # Phase 9.8: dashboard_data, export
 │   ├── advanced_eda.py            # Advanced EDA with statistical analysis
 │   ├── advanced_features.py       # Advanced feature engineering (deprecated, use ml_workflow.features)
@@ -503,9 +522,10 @@ Finance_ML_Analytics_Platform/
 │   ├── transformers.py            # Scikit-learn compatible feature transformers
 │   └── dashboards/                # Interactive dashboards
 │       ├── dash_app.py            # Dash application
-│       └── streamlit_app.py       # Streamlit application
+│       ├── streamlit_app.py       # Streamlit application
+│       └── portfolio_widgets.py   # Portfolio interactive widgets (NEW v0.8.2)
 │
-├── tests/                         # Unit tests (67 test modules)
+├── tests/                         # Unit tests (83 test modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
@@ -754,10 +774,14 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 
 ## Version History
 
-- **v0.6.1** (Current) — Phase 9.5 classification meta-features, enhanced imputation (6-step), modular workflow
+- **v0.8.2** (Current, 2025-11-19) — TDD implementation (schema/dtypes modules, 24 tests), Phase 9.3 feature
+  enhancements (Schema 1.3 with 310 columns, 13 feature categories), Portfolio Optimization (6 phases complete:
+  stock selection, ML return prediction, advanced optimization methods [Black-Litterman, Risk Parity, HRP],
+  risk management, backtesting, dashboards; 23 tests), 83 test modules total (74 original + 4 TDD + 5 Portfolio)
+- **v0.6.1** — Phase 9.5 classification meta-features, enhanced imputation (6-step), modular workflow
   refactor (v9_8), 74 test modules (including 7 new TDD modules for code_guidelines.md v1.2 standards)
 - **v0.6.0** — Phase 9.5 enhanced classification module, comprehensive data flow fixes, dashboard enhancements
-- **v0.5.1** — Phase 9.16-step imputation pipeline, notebook integration, comprehensive testing
+- **v0.5.1** — Phase 9.1 6-step imputation pipeline, notebook integration, comprehensive testing
 - **v0.5.0** — Complete Phase 9 implementation, 20 package modules, comprehensive ML pipeline
 - **v0.4.0** — Phase 9.7 valuation analysis, Phase 9.1 data versioning and catalog
 - **v0.3.0** — Modular package, CLI tools, configuration management, CI/CD

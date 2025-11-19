@@ -59,7 +59,6 @@ from finance_ml import (
     generate_benchmarking_report,
     compare_sector_distributions,
     compare_regional_valuations,
-    features_build_comprehensive,
     features_importance_rf,
     engineer_analyst_quality_features,
     engineer_accounting_quality_features,
@@ -82,6 +81,7 @@ from finance_ml import (
     generate_efficient_frontier,
     calculate_portfolio_risk_metrics,
 )
+from finance_ml.ml_workflow.features.api import build_features
 from finance_ml.ml_workflow.analytics.portfolio import optimize_portfolio_min_volatility
 from finance_ml.ml_workflow.classification import prepare_classification_data
 from finance_ml.ml_workflow.eda.eda import (
@@ -469,9 +469,13 @@ def engineer_features(
 
     print("\n🔨 Building comprehensive feature set...")
 
-    # Build comprehensive features (Phase 9.3)
-    df_features = features_build_comprehensive(
-        df, include_sector_specific=True, include_interactions=True
+    # Build comprehensive features using Phase 9.3 API (code_guidelines.md v1.3+)
+    df_features = build_features(
+        df,
+        preset="comprehensive",
+        include_interactions=True,
+        include_relative=True,
+        sector_col="sector",
     )
     print(f"✓ Comprehensive features built: {df_features.shape[1]} features")
 

@@ -1102,9 +1102,24 @@ def apply_enhanced_imputation_strategy_6step(
     if missing_final > 0:
         # Identify which columns still have missing values
         cols_with_missing = result.columns[result.isna().any()].tolist()
+
+        # Import schema for diagnostic reporting
+        try:
+            from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
+
+            # Annotate columns with schema membership for diagnostics
+            cols_annotated = [
+                f"{col} ({'in_schema' if col in COLUMN_SCHEMA else 'NOT_IN_SCHEMA'})"
+                for col in cols_with_missing[:5]
+            ]
+            schema_info_msg = f"\n  Schema status: {cols_annotated}"
+        except ImportError:
+            schema_info_msg = ""
+
         logger.warning(
             f"WARNING: {missing_final} NaN values still present\n"
-            f"  Affected columns ({len(cols_with_missing)}): {cols_with_missing[:11]}..."
+            f"  Affected columns ({len(cols_with_missing)}): {cols_with_missing[:5]}..."
+            f"{schema_info_msg}"
         )
 
         # Emergency fallback: only fill if user requested that data type to be handled

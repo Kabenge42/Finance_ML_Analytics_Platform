@@ -210,7 +210,7 @@ B. How to add tests
 - Use small, deterministic samples; avoid loading full CSVs unless necessary.
 
 C. Test suite overview
-The project includes a comprehensive test suite with the following test modules (74 total):
+The project includes a comprehensive test suite with the following test modules (83 total):
 
 - tests/test_analytics.py — Analytics and stock ranking tests
 - tests/test_build_features.py — Feature building pipeline
@@ -219,8 +219,10 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_coverage_smoke.py — Smoke test for coverage validation
 - tests/test_data_quality.py — Data validation and quality checks
 - tests/test_data_splits_policy.py — Data split leakage prevention policy validation (code_guidelines.md v1.2)
+- tests/test_data_types_detection.py — Schema-aware datatype detection and Phase 9.3 validation (9 tests, TDD v0.8.2)
 - tests/test_eda.py — Exploratory data analysis utilities
 - tests/test_enhanced_imputation.py — Phase 9.1 6-step imputation strategy tests (21 tests)
+- tests/test_enhanced_imputation_phase93.py — Phase 9.3 enhanced imputation with schema alignment (8 tests, TDD v0.8.2)
 - tests/test_features.py — Feature engineering functions
 - tests/test_finance_ml_config.py — Configuration management tests
 - tests/test_finance_ml_data.py — Data loading module tests
@@ -233,13 +235,19 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_integration_production_scenarios.py — Production scenario integration tests
 - tests/test_loaders.py — CSV and database loading functions
 - tests/test_logging.py — Logging configuration tests
+- tests/test_metadata_catalog_quality.py — Metadata and quality stats validation (4 tests, TDD v0.8.2)
 - tests/test_notebook_config.py — Notebook configuration tests
 - tests/test_notebook_enhancements.py — Notebook enhancements validation
 - tests/test_outlier_safety_rails.py — Outlier safety rails (winsorization, clipping, non-negativity) (
   code_guidelines.md v1.2)
 - tests/test_phase95_nonnegative_predictions.py — Phase 9.5 non-negative prediction constraint tests
 - tests/test_phase95_quick.py — Phase 9.5 quick validation tests
+- tests/test_portfolio_backtesting.py — Portfolio backtesting framework (3 tests, Portfolio Phase 5)
+- tests/test_portfolio_dashboards.py — Portfolio interactive dashboards (3 tests, Portfolio Phase 6)
+- tests/test_portfolio_ml_prediction.py — ML-based return prediction and stock selection (9 tests, Portfolio Phases 1-2)
 - tests/test_portfolio_optimization.py — Portfolio optimization tests
+- tests/test_portfolio_optimization_advanced.py — Advanced optimization methods (4 tests, Portfolio Phase 3)
+- tests/test_portfolio_risk_management.py — Risk management enhancements (4 tests, Portfolio Phase 4)
 - tests/test_predictions_schema.py — Standardized predictions schema validation (code_guidelines.md v1.2)
 - tests/test_preprocess_and_training.py — Preprocessing and training workflows
 - tests/test_regression.py — Regression model evaluation
@@ -248,6 +256,7 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_risk_metrics.py — Risk metrics calculation tests
 - tests/test_sector_bias_calibration.py — Sector-specific bias calibration (code_guidelines.md v1.2)
 - tests/test_setup_environment.py — Setup script validation
+- tests/test_simple_eda_stringdtype.py — StringDtype compatibility validation (3 tests, TDD v0.8.2)
 - tests/test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
 - tests/test_sql_scripts.py — SQL script validation tests
 - tests/test_stacking_default.py — Stacking ensemble default configuration (code_guidelines.md v1.2)
@@ -256,13 +265,23 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_validation_regex.py — Regex validation and pattern matching tests
 - tests/test_visualizations.py — Visualization functions tests
 
-Note: The test suite has grown to 74 modules. See section 3D below for selective execution strategies.
-New TDD modules aligned with code_guidelines.md v1.2 standards for uncertainty quantification, outlier safety rails,
-standardized predictions schema, sector metrics, data split policies, and stacking defaults.
+Note: The test suite has grown to 83 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization).
+See section 3D below for selective execution strategies.
+
+**Recent Additions (v0.8.2, 2025-11-19):**
+
+- **TDD Implementation (4 modules, 24 tests):** Schema-aware datatype detection, Phase 9.3 enhanced imputation,
+  metadata catalog validation, StringDtype compatibility
+- **Portfolio Optimization (5 modules, 23 tests):** ML-based return prediction, advanced optimization methods
+  (Black-Litterman, Risk Parity, HRP), risk management enhancements, backtesting framework, interactive dashboards
+
+New TDD modules aligned with code_guidelines.md v1.3+ standards for schema and datatype management, uncertainty
+quantification, outlier safety rails, standardized predictions schema, sector metrics, data split policies, and
+stacking defaults.
 
 D. Test Execution Strategies (Avoiding Timeouts)
 
-The full test suite (74 modules) can take significant time to execute. To avoid timeouts and speed up development, use
+The full test suite (83 modules) can take significant time to execute. To avoid timeouts and speed up development, use
 selective test execution:
 
 **Fast Unit Tests** (< 100 lines, pure functions, no ML training):
@@ -324,6 +343,144 @@ python -m unittest tests.test_advanced_models_phase95 -v
 - Models: test_classification*, test_advanced_models*, test_finance_ml_models, test_regression
 - Evaluation: test_finance_ml_eval, test_analytics, test_evaluation_phase96, test_valuation_phase97
 - Integration: test_integration_*, test_notebook_*
+
+3.5) Recent Enhancements (v0.8.2, 2025-11-19)
+
+A. TDD Implementation: Data Preprocessing & Datatype Detection
+
+**Overview:**
+Implemented comprehensive data preprocessing and datatype detection features following strict Test-Driven Development (
+TDD)
+principles as documented in `docs/TDD_IMPLEMENTATION_SUMMARY.md`.
+
+**New Modules:**
+
+- **Schema Module** (`finance_ml/ml_workflow/data/schema.py`, 530 lines):
+  - Centralized column schema registry derived from `create_equities_schema.sql`
+  - `COLUMN_SCHEMA`: Dict mapping 350+ normalized column names to dtype and role
+  - `PHASE93_FEATURE_INPUTS`: Categorization of Phase 9.3 feature engineering buckets (momentum, valuation,
+    profitability, quality/risk, cash flow, growth)
+  - Helper functions: `get_expected_dtype()`, `get_column_role()`, `list_numeric_feature_cols()`,
+    `list_categorical_cols()`, `list_date_cols()`, `normalize_column_name()`
+
+- **Datatype Detection Module** (`finance_ml/ml_workflow/preprocessing/dtypes.py`, 326 lines):
+  - Schema-aware datatype detection, validation, and casting
+  - `detect_and_cast_dtypes()`: Main function for schema-driven type casting with diagnostics
+  - `_cast_to_numeric()`, `_cast_to_datetime()`: Type-specific casting with coercion tracking
+  - `_infer_and_cast_unknown_column()`: Heuristic-based type inference for unknown columns
+  - `validate_dtypes_against_schema()`: Post-casting validation
+  - `get_dtype_summary()`: Comprehensive dtype and missing value summary
+
+**Test Coverage:**
+
+- 24 tests total (23 passing, 1 skipped)
+- `test_data_types_detection.py` (9 tests): Schema-aware casting, coercion tracking, Phase 9.3 validation
+- `test_enhanced_imputation_phase93.py` (8 tests): Sector-aware KNN, categorical/datetime strategies
+- `test_metadata_catalog_quality.py` (4 tests): Metadata validation and quality stats
+- `test_simple_eda_stringdtype.py` (3 tests): StringDtype compatibility validation
+
+**Key Features:**
+
+- Schema-driven datatype casting with comprehensive diagnostics
+- Phase 9.3 feature categorization for ML pipeline
+- Enhanced imputation with schema consistency checks
+- Metadata catalog quality validation
+- StringDtype compatibility fixes in EDA functions
+
+B. Phase 9.3 Feature Enhancement Plan
+
+**Overview:**
+Comprehensive feature engineering enhancements documented in
+`docs/improvement_plan/Phase_9.3_feature_enhancement_plan.md`
+(Version 1.1, Status: ACTIVE).
+
+**Schema Version 1.3 Expansion:**
+
+- **310 columns total** (expanded from 262, +48 new columns)
+- Technical indicators: EMAs (20D, 50D, 100D, 250D), 52W High/Low, Relative Volume
+- Valuation multiples time-series: EV/Sales (11 cols), EV/EBITDA (6 cols), P/E extended (11 cols)
+- Revenue forecasting estimates (4 cols)
+- Dividend record information (8 cols)
+- Employment metrics (2 cols)
+
+**New Feature Categories (Schema 1.3):**
+
+1. **Technical Analysis Integration Features**: EMA crossovers, 52W position, volume momentum
+2. **Valuation Multiples Time-Series Features**: Momentum, mean reversion, forward vs trailing
+3. **Revenue Forecasting & Analyst Consensus Features**: Estimate spreads, growth acceleration
+4. **Dividend Reliability & Income Stock Features**: Consistency, coverage, growth
+5. **Employment Dynamics & Growth Signals**: Productivity, workforce volatility
+
+**Original Feature Categories (Version 1.0):**
+
+1. Momentum & Technical Features
+2. Quality & Risk Signals
+3. Cash Flow & Capital Allocation Features
+4. Market Sentiment & Analyst Features
+5. Profitability Trends & Margins
+6. Balance Sheet Strength & Temporal Patterns
+7. Time-Series & Seasonality Features
+8. Composite & Interaction Features
+
+**Implementation Status:**
+
+- Phase 1-5 feature groups implemented with TDD coverage
+- Phase 6-8 features wired into advanced pipeline
+- Phase 9 integration with classification/regression COMPLETE
+- All features accessible via `finance_ml.ml_workflow.features.advanced.py`
+
+**Model Version Target:** v9_9
+
+C. Portfolio Optimization Enhancement Plan
+
+**Overview:**
+6-phase portfolio optimization enhancement plan documented in
+`docs/improvement_plan/portfolio_optimization_enhancement_plan.md`. All phases complete as of 2025-11-17.
+
+**Completed Phases:**
+
+**Phase 1: Enhanced Stock Filtering & Selection** ✅
+
+- Module: `finance_ml/ml_workflow/analytics/stock_selection.py`
+- Features: Multi-metric ranking, sector-balanced selection, currency unit support
+
+**Phase 2: ML-Based Return Prediction** ✅
+
+- Module: `finance_ml/ml_workflow/analytics/ml_returns.py`
+- Features: ML feature engineering, linear predictor, ensemble predictions
+
+**Phase 3: Advanced Portfolio Optimization** ✅
+
+- Module: `finance_ml/ml_workflow/analytics/portfolio.py`
+- Features: Black-Litterman, Risk Parity, Hierarchical Risk Parity (HRP)
+
+**Phase 4: Risk Management Enhancements** ✅
+
+- Module: `finance_ml/ml_workflow/analytics/risk.py`
+- Features: Expected Shortfall, tracking error, stress testing, Monte Carlo simulation
+
+**Phase 5: Backtesting Framework** ✅
+
+- Modules: `analytics/portfolio.py`, `analytics/attribution.py`
+- Features: Vectorized backtest, walk-forward optimization, performance attribution
+
+**Phase 6: Interactive Dashboard Expansion** ✅
+
+- Module: `finance_ml/dashboards/portfolio_widgets.py`
+- Features: Rebalancing widget, multi-period comparison, factor exposure dashboard
+
+**Test Coverage:**
+
+- 23 tests total (all passing)
+- 5 new test modules covering all 6 phases
+- Notebook integration: Section 10 structure added to `ml_finance_model_main.ipynb`
+
+**Key Capabilities:**
+
+- Advanced optimization methods (Black-Litterman, Risk Parity, HRP)
+- Comprehensive risk management (ES, tracking error, stress tests, Monte Carlo)
+- Robust backtesting framework with performance attribution
+- Enhanced interactive dashboards for portfolio analytics
 
 4) Additional Development Information
 A. Code style and quality

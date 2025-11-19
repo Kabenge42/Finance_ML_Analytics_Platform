@@ -270,6 +270,61 @@ class TestSchemaHelpers(unittest.TestCase):
                 self.assertIn(col, categorical_cols)
                 break
 
+    def test_missing_base_columns_now_in_schema(self):
+        """Test that 5 previously missing base columns are now in COLUMN_SCHEMA.
+
+        This test validates the fix for the 25,990 NaN values issue where
+        base columns (no time suffix) were missing from the schema.
+
+        Arrange: List of 5 problematic columns that caused imputation failures.
+        Act: Check if each column exists in COLUMN_SCHEMA.
+        Assert:
+            - All 5 columns are in COLUMN_SCHEMA
+            - Each has expected dtype (float for most, int for employees)
+            - Each has role='feature'
+        """
+        # Arrange: The 5 columns that were causing WARNING: NaN values still present
+        missing_columns = [
+            ("r_d_expenses", "float"),
+            ("intangible_assets", "float"),
+            ("employees", "int"),
+            ("marketing_expenses", "float"),
+            ("eps_previous_year", "float"),
+        ]
+
+        # Act & Assert: Check each column is now in schema
+        for col_name, expected_dtype in missing_columns:
+            with self.subTest(column=col_name):
+                # Column should be in schema
+                self.assertIn(
+                    col_name,
+                    COLUMN_SCHEMA,
+                    f"Column '{col_name}' should be in COLUMN_SCHEMA (was missing before fix)",
+                )
+
+                # Check dtype matches expected
+                actual_dtype = COLUMN_SCHEMA[col_name]["dtype"]
+                self.assertEqual(
+                    actual_dtype,
+                    expected_dtype,
+                    f"Column '{col_name}' should have dtype='{expected_dtype}', got '{actual_dtype}'",
+                )
+
+                # Check role is 'feature'
+                actual_role = COLUMN_SCHEMA[col_name]["role"]
+                self.assertEqual(
+                    actual_role,
+                    "feature",
+                    f"Column '{col_name}' should have role='feature', got '{actual_role}'",
+                )
+
+        # Additional assertion: Schema should now have 283 columns (278 + 5 new)
+        self.assertGreaterEqual(
+            len(COLUMN_SCHEMA),
+            283,
+            f"COLUMN_SCHEMA should have at least 283 columns after adding 5 base columns, got {len(COLUMN_SCHEMA)}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

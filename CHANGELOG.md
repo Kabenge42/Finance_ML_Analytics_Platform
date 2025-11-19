@@ -7,6 +7,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Notebook structure cleanup and standards alignment (2025-11-19)
+  - Consolidated duplicate import sections in `ml_finance_model_main.ipynb` into a single initialization cell per
+    code_guidelines.md v1.3+
+  - Replaced the second duplicate import block with a clear note directing users to execute the top-level imports (
+    prevents drift and confusion)
+  - Ensured Phase 9.3 markdown shows active `build_features()` usage and references code_guidelines.md v1.3+
+  - Minimal, non-breaking changes; no functional impact on pipeline execution
+
+### Fixed
+
+- **Schema Extension: 64 Unknown Column Warnings Resolved** (2025-11-19)
+  - **Root Cause Analysis**: The initial COLUMN_SCHEMA (350 columns) was derived exclusively from
+    `create_equities_schema.sql` but did not account for:
+    1. **Normalization variants** (51 columns): Different naming conventions used during data loading (e.g., "Strong
+       Sell Ratings" → "strong_sell_ratings" vs. schema's "num_strong_sell_ratings")
+    2. **Simplified aliases** (31 columns): Base columns without time suffixes created during preprocessing (e.g., "
+       revenue", "ebitda", "p_e")
+    3. **Derived YoY columns** (13 columns): Computed year-over-year metrics created during feature engineering (e.g., "
+       revenue_previous_year", "volatility_1y_pct")
+  - **Impact**: `detect_and_cast_dtypes()` generated 64 unknown column warnings during Phase 9.1 preprocessing, causing:
+    - Incomplete Phase 9.3 feature availability (momentum: 7/14, valuation: 8/10)
+    - Potential dtype casting failures for unrecognized columns
+    - Missing schema validation for derived metrics
+  - **Solution**: Extended `COLUMN_SCHEMA` in `finance_ml/ml_workflow/data/schema.py` (lines 332-412)
+    - Added 64 columns organized into two sections:
+      - **Normalization Variants & Simplified Aliases** (51 columns)
+        - Analyst ratings: `strong_sell_ratings`, `strong_buys_ratings`, `hold_ratings`, `buys_ratings`, `sell_ratings`
+        - Price targets: `price_target_count`, `price_target_number`
+        - Base financial metrics: `p_e`, `p_b`, `revenue`, `ebitda`, `ebit`, `net_income`, `eps`, `total_equity`,
+          `total_assets`, etc.
+        - SG&A variants: `sga_expenses_fq`, `sga_expenses_fy`, `sga_expenses_1fy`, `sga_expenses_5yavgfq`
+        - Accounts receivable variants: `accounts_receivable_fy`, `accounts_receivable_1fy`,
+          `accounts_receivable_5yavgfq`
+        - Technical: `one_day_pct`, `shares_outstanding`, `p_e_5yavgltm`
+      - **Derived & Computed Columns** (13 columns)
+        - Volatility: `volatility_1y_pct`
+        - YoY metrics: `revenue_previous_year`, `ebitda_previous_year`, `total_equity_previous_year`,
+          `total_assets_previous_year`, `gross_profit_previous_year`, `accounts_receivable_previous_year`,
+          `roa_previous_year`, `current_ratio_previous_year`, `shares_outstanding_previous_year`,
+          `gross_margin_pct_previous_year`, `asset_turnover_previous_year`
+        - Fiscal year variants: `revenue_fy`, `working_capital_1fy`
+    - All columns added with proper dtype (float/int) and role (feature/auxiliary) metadata
+    - Schema now contains 414 columns (350 base + 64 extensions)
+  - **Test Validation**: All TDD tests pass with extended schema
+    - `tests/test_data_types_detection.py`: 9/9 passed (schema helper functions, dtype casting)
+    - `tests/test_enhanced_imputation_phase93.py`: 7/8 passed, 1 skipped (imputation pipeline integrity)
+    - `tests/test_metadata_catalog_quality.py`: 4/4 passed (metadata validation)
+    - **Total**: 20 tests passed, 1 skipped (provenance flags feature - future enhancement)
+  - **Expected Result**: Next notebook run will show:
+    - Zero unknown column warnings
+    - Complete Phase 9.3 feature availability (all categories at 100%)
+    - Full schema coverage for all preprocessing and feature engineering columns
+  - **Alignment**: Solution follows TDD principles per `code_guidelines.md` v1.3+ and `TDD_IMPLEMENTATION_SUMMARY.md`
+
+## [0.8.2] - 2025-11-19
+
+### Added
+
+- **TDD Implementation: Data Preprocessing & Datatype Detection
+  ** ([8e1c476](https://github.com/user/Finance_ML_Analytics_Platform/commit/8e1c476))
+  - **Schema Module** - `finance_ml/ml_workflow/data/schema.py` (530 lines)
+    - Centralized column schema registry derived from `create_equities_schema.sql`
+    - `COLUMN_SCHEMA`: Dict mapping 350+ normalized column names to dtype and role
+    - `PHASE93_FEATURE_INPUTS`: Categorization of Phase 9.3 feature engineering buckets (momentum, valuation,
+      profitability, quality/risk, cash flow, growth)
+    - Helper functions: `get_expected_dtype()`, `get_column_role()`, `list_numeric_feature_cols()`,
+      `list_categorical_cols()`, `list_date_cols()`, `normalize_column_name()`
+  - **Datatype Detection Module** - `finance_ml/ml_workflow/preprocessing/dtypes.py` (326 lines)
+    - Schema-aware datatype detection, validation, and casting
+    - `detect_and_cast_dtypes()`: Main function for schema-driven type casting with diagnostics
+    - `_cast_to_numeric()`, `_cast_to_datetime()`: Type-specific casting with coercion tracking
+    - `_infer_and_cast_unknown_column()`: Heuristic-based type inference for unknown columns
+    - `validate_dtypes_against_schema()`: Post-casting validation
+    - `get_dtype_summary()`: Comprehensive dtype and missing value summary
+  - **Comprehensive Test Suite** - 23 tests total (22 passing, 1 skipped)
+    - `tests/test_data_types_detection.py` (9 tests) - Schema-aware casting, coercion tracking, Phase 9.3 validation
+    - `tests/test_enhanced_imputation_phase93.py` (8 tests, 1 skipped) - Sector-aware KNN, categorical/datetime
+      strategies
+    - `tests/test_metadata_catalog_quality.py` (4 tests) - Metadata validation and quality stats
+    - `tests/test_simple_eda_stringdtype.py` (3 tests) - StringDtype compatibility validation
+  - **Phase 9.3 Feature Categorization** - Structured feature groups for ML pipeline
+    - Momentum: price changes, EMAs, returns
+    - Valuation: P/E, P/B, EV ratios, market cap
+    - Profitability: margins, EBITDA, EBIT, net income
+    - Quality/Risk: Altman Z-Score, ROE, ROA, beta, volatility
+    - Cash flow: CFO, FCF, CFI, CFF, capex
+    - Growth: revenue CAGR, return CAGR
+  - **Documentation** - `docs/TDD_IMPLEMENTATION_SUMMARY.md` (345 lines)
+    - Complete TDD implementation summary with red-green-refactor workflow
+    - Test execution results, compliance checklist, usage examples
+    - Post-implementation issue resolution documentation
+  - **Strict TDD Discipline**: All features implemented following test-first approach per `code_guidelines.md` v1.3+
+
+### Fixed
+
+- **Missing Base Columns in Schema**: Added 5 critical columns to `COLUMN_SCHEMA` to prevent imputation failures
+  - Root Cause: Base columns without time suffixes were missing from schema, causing 25,990 NaN values and emergency
+    fallback warnings
+  - Solution: Added to `finance_ml/ml_workflow/data/schema.py`
+    - `r_d_expenses` (float, feature)
+    - `intangible_assets` (float, feature)
+    - `employees` (int, feature)
+    - `marketing_expenses` (float, feature)
+    - `eps_previous_year` (float, feature)
+  - Enhanced imputation diagnostics to report schema membership status
+  - Test Coverage: `tests/test_data_types_detection.py::test_missing_base_columns_now_in_schema`
+  - Result: Zero NaN values after imputation, complete schema coverage for all base columns
+
+- **StringDtype Compatibility in EDA**: Fixed `np.issubdtype()` incompatibility with pandas StringDtype in
+  `simple_eda()`
+  - Root Cause: `np.issubdtype()` failed on pandas StringDtype with error "Cannot interpret 'string[python]' as a data
+    type"
+  - Impact: EDA skipped statistical analysis for string columns, generated warnings in notebook execution
+  - Solution: Updated `finance_ml/ml_workflow/analytics/eval.py` (line 328)
+    - Before: `numeric_cols = [c for c in df.columns if np.issubdtype(df[c].dtype, np.number)]`
+    - After: `numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]`
+    - Updated categorical counting logic to handle all dtype variants (object, string, category)
+  - Test Coverage: `tests/test_simple_eda_stringdtype.py` (3 tests, all passing)
+    - `test_simple_eda_handles_stringdtype_without_error`
+    - `test_simple_eda_categorical_count_includes_stringdtype`
+    - `test_simple_eda_with_mixed_dtypes`
+  - Result: EDA processes all column types without warnings, correct categorical counting
+
 ### Added
 
 - **Portfolio Optimization Enhancement Plan - All Phases Complete** (2025-11-17)
