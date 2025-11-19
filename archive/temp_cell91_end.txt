@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "<string>", line 1, in <module>
-    import json; nb=json.load(open('ml_finance_model_main.ipynb', encoding='utf-8')); cell=nb['cells'][91]; print(''.join(cell['source'])[-1200:])
-                                                                                                            ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\markm\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
-    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
-           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-UnicodeEncodeError: 'charmap' codec can't encode characters in position 1002-1003: character maps to <undefined>

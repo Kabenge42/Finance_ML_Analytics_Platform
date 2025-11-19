@@ -1,0 +1,90 @@
+[
+  {
+    "Sector": "Health Care",
+    "Samples": 133,
+    "Accuracy": 0.3458646616541353,
+    "Precision": 0.32973544973544977,
+    "Recall": 0.29797979797979796,
+    "F1-Score": 0.19272776757161325
+  },
+  {
+    "Sector": "Industrials",
+    "Samples": 257,
+    "Accuracy": 0.245136186770428,
+    "Precision": 0.3220549738219895,
+    "Recall": 0.3156603773584906,
+    "F1-Score": 0.1737026862026862
+  },
+  {
+    "Sector": "Consumer Discretionary",
+    "Samples": 172,
+    "Accuracy": 0.22093023255813954,
+    "Precision": 0.2925824857355495,
+    "Recall": 0.27464503042596344,
+    "F1-Score": 0.16230880230880232
+  },
+  {
+    "Sector": "Consumer Staples",
+    "Samples": 97,
+    "Accuracy": 0.2268041237113402,
+    "Precision": 0.29632107023411375,
+    "Recall": 0.28811188811188815,
+    "F1-Score": 0.1544973544973545
+  },
+  {
+    "Sector": "Information Technology",
+    "Samples": 183,
+    "Accuracy": 0.22404371584699453,
+    "Precision": 0.12313364055299539,
+    "Recall": 0.27272727272727276,
+    "F1-Score": 0.14173200285103352
+  },
+  {
+    "Sector": "Financials",
+    "Samples": 208,
+    "Accuracy": 0.2692307692307692,
+    "Precision": 0.10660045520380716,
+    "Recall": 0.24666666666666667,
+    "F1-Score": 0.13508771929824562
+  },
+  {
+    "Sector": "Energy",
+    "Samples": 63,
+    "Accuracy": 0.20634920634920634,
+    "Precision": 0.10734265734265733,
+    "Recall": 0.2533333333333333,
+    "F1-Score": 0.1205548549810845
+  },
+  {
+    "Sector": "Materials",
+    "Samples": 130,
+    "Accuracy": 0.16153846153846155,
+    "Precision": 0.2711961722488038,
+    "Recall": 0.24133333333333332,
+    "F1-Score": 0.10338756850384759
+  },
+  {
+    "Sector": "Communication Services",
+    "Samples": 69,
+    "Accuracy": 0.11594202898550725,
+    "Precision": 0.24790547798066598,
+    "Recall": 0.25833333333333336,
+    "F1-Score": 0.08489835666463785
+  },
+  {
+    "Sector": "Utilities",
+    "Samples": 48,
+    "Accuracy": 0.14583333333333334,
+    "Precision": 0.11904761904761904,
+    "Recall": 0.23157894736842105,
+    "F1-Score": 0.08278260869565217
+  },
+  {
+    "Sector": "Real Estate",
+    "Samples": 47,
+    "Accuracy": 0.06382978723404255,
+    "Precision": 0.013333333333333332,
+    "Recall": 0.2,
+    "F1-Score": 0.025
+  }
+]

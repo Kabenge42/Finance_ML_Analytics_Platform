@@ -1,0 +1,11 @@
+{
+  "test_accuracy": 0.9909016187099455,
+  "test_accuracy_std": 0.0024775962651150526,
+  "test_precision": 0.991408952557,
+  "test_precision_std": 0.0021186249232576487,
+  "test_recall": 0.9911866714369839,
+  "test_recall_std": 0.0027389387042647735,
+  "test_f1": 0.9912786875718366,
+  "test_f1_std": 0.0024479273559846744,
+  "train_accuracy": 1.0
+}

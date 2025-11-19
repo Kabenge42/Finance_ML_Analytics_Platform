@@ -304,11 +304,11 @@ python -m pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 
 # 4. Set up database (PostgreSQL or SQLite)
-# PostgreSQL (preferred for full pipeline):
-psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
-psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
+# PostgreSQL:
+psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/create_equities_schema.sql
+psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/import_equities_data.sql
 
-# SQLite (alternative for local quick start):
+# SQLite (alternative):
 sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
 sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
 
@@ -473,10 +473,9 @@ Open `ml_finance_model_main.ipynb` and run cells sequentially. The notebook incl
 
 **Other Notebooks**:
 
-- `portfolio_optimization_risk_management.ipynb` — Portfolio optimization & risk management workflow (Phase 1–6
-  enhancements)
-- `archive/ml_finance_model_main_v10.ipynb` — Alternative notebook version (archived; kept for reference)
-- TODO: Document any additional exploration/legacy notebooks once finalized and added to the root or docs.
+- `ml_finance_model_main_v10.ipynb` — Alternative notebook version
+- `equities_data_explorer.ipynb` — Data exploration and analysis
+- `ml_stock_prediction_model.ipynb` — Legacy prediction notebook
 
 ### Python Script
 

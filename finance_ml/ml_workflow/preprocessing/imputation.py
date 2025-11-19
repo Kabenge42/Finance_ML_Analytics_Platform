@@ -263,7 +263,7 @@ def apply_datetime_imputation_and_formatting(
     if date_columns is None:
         date_columns = []
         # Common date column patterns
-        date_patterns = ["date", "updated", "earnings", "report", "dividend"]
+        date_patterns = ["date", "updated", "earnings", "report"]
         for col in result.columns:
             if any(pattern in col.lower() for pattern in date_patterns):
                 date_columns.append(col)
@@ -876,15 +876,7 @@ def validate_imputation_completeness(
         - 'ready_for_temporal_features': bool - Ready for engineer_temporal_features()
     """
     if critical_date_columns is None:
-        critical_date_columns = [
-            "last_updated",
-            "income_statement_report_date",
-            "next_earnings",
-            "dividend_record_announce_date",
-            "dividend_record_ex_date",
-            "dividend_record_payable_date",
-            "dividend_record_record_date",
-        ]
+        critical_date_columns = ["last_updated", "income_statement_report_date", "next_earnings"]
 
     missing_total = df.isna().sum().sum()
     missing_numeric = df.select_dtypes(include=[np.number]).isna().sum().sum()
