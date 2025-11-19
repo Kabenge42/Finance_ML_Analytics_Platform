@@ -61,7 +61,7 @@ from sklearn.ensemble import (
     VotingRegressor,
     StackingRegressor,
     HistGradientBoostingRegressor,
-    )
+)
 from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score, GridSearchCV

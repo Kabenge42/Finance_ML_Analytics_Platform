@@ -1079,7 +1079,15 @@ def apply_enhanced_imputation_strategy_6step(
         )
 
         # Specify critical date columns for temporal features
-        critical_date_cols = ["last_updated", "income_statement_report_date", "next_earnings"]
+        critical_date_cols = [
+            "last_updated",
+            "income_statement_report_date",
+            "next_earnings",
+            "dividend_record_announce_date",
+            "dividend_record_ex_date",
+            "dividend_record_payable_date",
+            "dividend_record_record_date",
+        ]
 
         result = apply_datetime_imputation_and_formatting(
             result, date_columns=critical_date_cols, strategy=date_strategy

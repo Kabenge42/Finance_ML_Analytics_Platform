@@ -36,7 +36,9 @@ def winsorize_target(y: Iterable[float], lower: float = 0.01, upper: float = 0.9
         return y_arr
 
     if not (0 <= lower < 0.5) or not (0.5 < upper <= 1.0) or lower >= upper:
-        raise ValueError("Invalid winsorization limits: ensure 0<=lower<0.5<upper<=1 and lower<upper")
+        raise ValueError(
+            "Invalid winsorization limits: ensure 0<=lower<0.5<upper<=1 and lower<upper"
+        )
 
     # Percentile-based clipping for consistent small-sample behavior.
     #
@@ -71,7 +73,9 @@ def winsorize_target(y: Iterable[float], lower: float = 0.01, upper: float = 0.9
     return np.clip(y_arr, lo, hi)
 
 
-def clip_predictions(preds: Iterable[float], y_train: Iterable[float], n_std: float = 3.0) -> np.ndarray:
+def clip_predictions(
+    preds: Iterable[float], y_train: Iterable[float], n_std: float = 3.0
+) -> np.ndarray:
     """
     Clip predictions to within mean ± n_std * std of training target distribution.
 

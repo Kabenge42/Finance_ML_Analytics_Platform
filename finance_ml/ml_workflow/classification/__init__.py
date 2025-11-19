@@ -61,11 +61,12 @@ from finance_ml.ml_workflow.classification.evaluation import (
     analyze_feature_importance_by_groups,
     analyze_feature_importance_by_sector,
     analyze_shap_by_feature_groups,
-    )
+)
+
 # Import from new submodules
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels,
-    )
+)
 from finance_ml.ml_workflow.classification.models import (
     # Data preparation
     prepare_classification_data,
@@ -90,11 +91,11 @@ from finance_ml.ml_workflow.classification.models import (
     # Comparison and orchestration
     compare_classifiers,
     fit_classifier,
-    )
+)
 from finance_ml.ml_workflow.classification.tuning import (
     optimize_classifier_hyperparameters,
     cross_validate_with_sector_stratification,
-    )
+)
 
 __all__ = [
     # Labels

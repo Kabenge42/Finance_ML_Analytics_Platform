@@ -973,6 +973,83 @@ This table documents standard variable names used across the Finance ML Analytic
 | `quality_stats` | Dict[str, Any]          | Data quality statistics      | `prepare_phase91_data(return_stats=True)`       |
 | `config`        | FinanceMLConfig         | Configuration object         | `get_config()` from finance_ml.config           |
 
+### Schema and Datatype Management (v1.3+)
+
+All data loading and preprocessing **MUST** respect a centralized column schema defined in
+`finance_ml.ml_workflow.data.schema`.
+
+**Core Schema Components:**
+
+- **`COLUMN_SCHEMA`**: Authoritative registry mapping 350+ normalized column names to their expected dtype and role
+    - `dtype`: one of `float`, `int`, `string`, `category`, `datetime64[ns]`
+    - `role`: one of `id`, `feature`, `target`, `target_fallback`, `date`, `auxiliary`
+    - Derived directly from `create_equities_schema.sql` with normalized column names
+
+- **`PHASE93_FEATURE_INPUTS`**: Phase 9.3 feature engineering categorization
+    - `momentum`: Price changes, EMAs, returns, technical indicators
+    - `valuation`: P/E, P/B, EV ratios, market cap, valuation metrics
+    - `profitability`: Margins, EBITDA, EBIT, net income, profitability ratios
+    - `quality_risk`: Altman Z-Score, ROE, ROA, beta, volatility, quality indicators
+    - `cash_flow`: CFO, FCF, CFI, CFF, capex, cash flow quality metrics
+    - `growth`: Revenue CAGR, return CAGR, growth trajectories
+
+**Helper Functions:**
+
+```python
+from finance_ml.ml_workflow.data.schema import (
+    COLUMN_SCHEMA,
+    PHASE93_FEATURE_INPUTS,
+    get_expected_dtype,
+    get_column_role,
+    list_numeric_feature_cols,
+    list_categorical_cols,
+    list_date_cols,
+    normalize_column_name
+    )
+
+# Get expected dtype for a column
+dtype = get_expected_dtype('last_price')  # Returns 'float'
+
+# Get column role
+role = get_column_role('sector')  # Returns 'categorical'
+
+# Get all numeric feature columns
+numeric_cols = list_numeric_feature_cols()
+
+# Get Phase 9.3 momentum features
+momentum_features = PHASE93_FEATURE_INPUTS['momentum']
+```
+
+**Datatype Detection and Casting:**
+
+All CSV and DB imports **MUST** call `detect_and_cast_dtypes()` before any modeling logic or imputation:
+
+```python
+from finance_ml.ml_workflow.preprocessing.dtypes import detect_and_cast_dtypes
+
+# Cast DataFrame to schema-compliant dtypes
+df_cast, diagnostics = detect_and_cast_dtypes(df)
+
+# Diagnostics include:
+# - inferred_dtypes: {col: str} - dtypes before casting
+# - cast_applied: {col: str} - columns that were cast
+# - coercion_warnings: {col: int} - number of values coerced to NaN
+# - unknown_columns: list[str] - columns not in schema
+# - missing_expected_columns: list[str] - expected columns not in df
+```
+
+**Metadata Requirements:**
+
+- All type coercions (e.g., invalid numerics converted to NaN) must be tracked via diagnostics
+- Coercion counts and unknown columns must be logged and surfaced in metadata (`*_metadata.json`)
+- Metadata files must include `dtypes` and `missing_counts` sections aligned with schema expectations
+
+**Testing Requirements:**
+
+- Schema compliance tests: `tests/test_data_types_detection.py`
+- Metadata validation tests: `tests/test_metadata_catalog_quality.py`
+- All loaders must have tests verifying schema-aware dtype casting
+
 **Common Parameters:**
 
 | Parameter Name | Type  | Default        | Description                                  |
@@ -1139,6 +1216,40 @@ from finance_ml import (
     features_importance_rf as calculate_feature_importance_rf
     )
 ```
+
+**Phase 9.3 Data Prerequisites (v1.3+)**
+
+Before calling any Phase 9.3 feature engineering functions (e.g., `engineer_momentum_features`,
+`engineer_cash_flow_quality_features`, `build_comprehensive_features`), input dataframes **MUST**:
+
+1. **Schema Compliance:**
+    - Conform to `COLUMN_SCHEMA` dtypes via `detect_and_cast_dtypes()`
+    - All required columns for target feature buckets must be present with correct dtypes
+    - Numeric features must be `float` or `int`, dates must be `datetime64[ns]`, categoricals must be `string` or
+      `category`
+
+2. **Imputation Completeness:**
+    - Be fully imputed via `apply_enhanced_imputation_strategy_6step()`
+    - Zero missing values in Phase 9.3 core input features (momentum, valuation, profitability, quality/risk, cash flow,
+      growth)
+    - Validated via `validate_imputation_completeness()` before feature engineering
+
+3. **Safety Rails:**
+    - Satisfy non-negativity constraints for price, market cap, revenues, cash flows
+    - Satisfy outlier safety rails (winsorization, clipping) for all Phase 9.3 core inputs
+    - No infinite values (replaced with NaN during imputation)
+
+4. **Metadata Availability:**
+    - `quality_stats` including per-column missingness and imputation volume
+    - Catalog metadata (`*_metadata.json`) with `dtypes` and `missing_counts` sections
+    - Schema validation diagnostics from `detect_and_cast_dtypes()`
+
+**Testing Requirements:**
+
+- New tests for Phase 9.3 features must confirm that feature functions **do not perform their own imputation**
+- Instead, assume the standardized preprocessing pipeline (Phase 9.1) has already been executed
+- Feature engineering tests should use pre-imputed fixtures or mock data
+- Tests: `tests/test_features.py`, `tests/test_advanced_features.py`, `tests/test_finance_ml_features.py`
 
 **Phase 9.4 — Classification**
 
@@ -1658,14 +1769,73 @@ All event label creation methods now use a 5-class classification system instead
 - Improved abstraction and testability
 - NonNegativeRegressionWrapper for constraint enforcement
 
-### Phase 9.1 Preprocessing Updates (v0.5.1+)
+### Phase 9.1 Preprocessing Updates (v0.5.1+, v1.3+)
 
-**Enhanced Imputation:**
+**Enhanced 6-Step Imputation Strategy:**
 
--6-step strategy: zero-fill, KNN, price-based, median
-- Modular functions for each imputation step
-- 21 comprehensive tests with ≥80% coverage
-- Extensible architecture for additional steps
+The standardized imputation pipeline is implemented in
+`finance_ml.ml_workflow.preprocessing.imputation.apply_enhanced_imputation_strategy_6step`.
+It operates on a schema-validated dataframe and guarantees **zero missing values** for all Phase 9.x required features.
+
+**Six Steps:**
+
+1. **Zero Imputation (Schema-Driven)**
+    - Apply zero imputation to curated event and count metrics defined by `get_zero_imputation_columns()`
+    - Column selection derived from `COLUMN_SCHEMA` and Phase 9.3 feature inputs
+    - Only columns with natural zero (exceptional items, counts, certain ratios) are eligible
+    - Validation ensures no non-numeric columns in zero-impute list
+
+2. **Sector-Aware KNN Imputation (Core Metrics)**
+    - Use `impute_missing_values_knn_sector()` / `apply_knn_imputation_enhanced()` for core financial metrics
+    - Imputation performed within sector (and optionally region) groups to preserve domain patterns
+    - Column selection via `get_knn_imputation_columns()`, consistent with Phase 9.3 feature requirements
+    - Tests validate sector-aware neighbor selection
+
+3. **Price Imputation (Targets)**
+    - Apply domain-specific rules to fill `price_target` and related columns
+    - Uses `last_price`, `price_target_median`, and valuation metrics
+    - Preserves monotonicity and deterministic behavior
+    - Future: provenance flags (e.g., `price_target_imputed`) for all imputed target values
+
+4. **Median Imputation (Residual Numerics)**
+    - Robust median imputation for all remaining numeric columns
+    - After this step: **no missing numeric values** for modeling/analytics columns
+
+5. **Categorical Imputation (Groupwise + Global)**
+    - Groupwise imputation for selected categoricals (e.g., `size_class` within `sector`, `country` within `region`)
+    - Followed by global most-frequent or constant strategies
+    - Configuration defined in `get_categorical_imputation_config()` and overridable via `FinanceMLConfig`
+    - Tests validate mode-based sector-grouped imputation
+
+6. **Datetime Imputation and Formatting (Temporal Readiness)**
+    - Convert all date columns to `datetime64[ns]`
+    - Per-column strategies: forward-fill, median, or constants (defined in `get_datetime_imputation_config()`)
+    - Column-specific policies:
+        - `last_updated`: forward-fill within ticker
+        - `income_statement_report_date`: median or nearest valid date
+        - `next_earnings`: constant (NaT) or median with flag
+    - Future: imputation flags (e.g., `next_earnings_imputed`) for temporal features
+
+**Post-Conditions:**
+
+- `validate_imputation_completeness()` confirms zero missing values across numeric, categorical, and date columns
+- Non-negativity and outlier safety rails hold after imputation (no negative prices/market cap)
+- Imputation diagnostics (missingness before/after, coercion counts, sector/region summaries) recorded in
+  `quality_stats`
+- Metadata catalog persistence in `*_metadata.json`
+
+**Schema Integration (v1.3+):**
+
+- Column selection for each step driven by `COLUMN_SCHEMA` role and dtype metadata
+- All imputation functions receive schema-validated dataframes via `detect_and_cast_dtypes()`
+- Future enhancement: dynamic column derivation from schema to eliminate hard-coded lists
+
+**Testing Coverage:**
+
+- Core tests: `tests/test_enhanced_imputation.py` (21 tests)
+- Phase 9.3 integration: `tests/test_enhanced_imputation_phase93.py` (8 tests, 7 passed, 1 skipped)
+- Metadata validation: `tests/test_metadata_catalog_quality.py` (4 tests)
+- Coverage: ≥80% for imputation modules
 
 ### Phase 9.2 EDA Enhancements (v0.5.0+)
 

@@ -31,7 +31,7 @@ from sklearn.metrics import (
     roc_auc_score,
     brier_score_loss,
     log_loss,
-    )
+)
 from sklearn.model_selection import StratifiedKFold
 
 # Optional imports

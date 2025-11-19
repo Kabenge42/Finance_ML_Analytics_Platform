@@ -29,7 +29,9 @@ import numpy as np
 import pandas as pd
 
 
-def _validate_inputs(y_cal: np.ndarray, y_cal_pred: np.ndarray, y_test_pred: np.ndarray, alpha: float) -> None:
+def _validate_inputs(
+    y_cal: np.ndarray, y_cal_pred: np.ndarray, y_test_pred: np.ndarray, alpha: float
+) -> None:
     if not (0 < alpha < 1):
         raise ValueError("alpha must be in (0, 1)")
     if y_cal is None or y_cal_pred is None or y_test_pred is None:

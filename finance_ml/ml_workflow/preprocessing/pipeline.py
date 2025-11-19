@@ -25,10 +25,10 @@ from finance_ml.ml_workflow.preprocessing.outliers import (
     detect_outliers_zscore,
     detect_outliers_isolation_forest,
     winsorize_by_sector,
-    )
+)
 from finance_ml.ml_workflow.preprocessing.quality import (
     calculate_data_quality_score,
-    )
+)
 from finance_ml.ml_workflow.preprocessing.scaling import scale_features
 
 logger = logging.getLogger(__name__)

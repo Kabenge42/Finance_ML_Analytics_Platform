@@ -53,24 +53,24 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
     apply_price_imputation,
     apply_median_imputation,
     apply_enhanced_imputation_strategy_4step,
-    )
+)
 from finance_ml.ml_workflow.preprocessing.outliers import (
     detect_outliers_iqr,
     detect_outliers_zscore,
     detect_outliers_isolation_forest,
     winsorize_by_sector,
-    )
+)
 from finance_ml.ml_workflow.preprocessing.pipeline import (
     prepare_phase91_data,
-    )
+)
 from finance_ml.ml_workflow.preprocessing.quality import (
     DataQualityReport,
     calculate_data_quality_score,
-    )
+)
 from finance_ml.ml_workflow.preprocessing.scaling import (
     create_scaler_pipeline,
     scale_features,
-    )
+)
 
 __all__ = [
     # Data loading and validation
