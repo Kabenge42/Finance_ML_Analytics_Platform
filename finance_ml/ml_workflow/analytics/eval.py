@@ -6691,7 +6691,7 @@ def perform_comprehensive_hypothesis_tests(
         # Kruskal-Wallis test (non-parametric)
         try:
             h_stat, p_value = stats.kruskal(*group_data)
-            metric_results["kruskal_wallis"] = {
+            kruskal_payload = {
                 "statistic": float(h_stat),
                 "p_value": float(p_value),
                 "significant": p_value < alpha,
@@ -6701,8 +6701,14 @@ def perform_comprehensive_hypothesis_tests(
                     else f"No significant difference in distributions (p={p_value:.4f})"
                 ),
             }
+            # Primary key
+            metric_results["kruskal_wallis"] = kruskal_payload
+            # Backward-compatible alias expected by some Phase 9.2 notebook cells/docs
+            # See PHASE92_RESTRUCTURING_IMPLEMENTATION.md usage of 'kruskal'
+            metric_results["kruskal"] = dict(kruskal_payload)
         except Exception as e:
             metric_results["kruskal_wallis"] = {"error": str(e)}
+            metric_results["kruskal"] = {"error": str(e)}
 
         # Pairwise comparisons (if 2 groups, or store for later analysis)
         if len(group_data) == 2:

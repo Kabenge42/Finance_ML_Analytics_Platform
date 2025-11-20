@@ -1,0 +1,315 @@
+
+================================================================================
+CELL 34 - TYPE: MARKDOWN
+================================================================================
+## Phase 9.3: Advanced Feature Engineering with Sector-Specific Optimizations with Sector-Specific Optimizations
+
+### Business Goal
+Engineer comprehensive financial features including valuation ratios, profitability metrics, quality indicators, and sector-specific features to maximize model predictive power.
+
+### Key Objectives
+1. Engineer valuation ratios (P/E, P/B, EV/EBITDA, PEG)
+2. Engineer profitability features (margins, ROE, ROA, ROIC)
+3. Create momentum and technical indicators
+4. Engineer analyst quality features
+5. Create accounting quality scores (Altman Z, Piotroski F)
+6. Build sector-relative features
+7. Create interaction features
+
+### Inputs
+- `all_stocks_preprocessed`: Preprocessed data from Phase 9.1
+
+### Outputs
+- `all_stocks_features`: Data with 400+ engineered features
+- `outputs/features/`: Feature importance reports, correlation analysis
+
+### Phase 9.3 API
+
+The modern API is now actively used in this notebook (code_guidelines.md v1.3+):
+
+```python
+from finance_ml.ml_workflow.features.api import build_features
+
+all_stocks_features = build_features(
+    all_stocks_preprocessed,
+    preset="comprehensive",
+    include_interactions=True,
+    include_relative=True,
+    sector_col='sector'
+)
+```
+
+### Validation Checkpoint
+- 400+ features engineered
+- No infinite values (replaced with NaN)
+- Feature importance calculated
+- Top features identified
+
+### Phase 9.3 Data Prerequisites (v1.3+)
+
+Input dataframes must satisfy the following requirements (enforced by Phase 9.1):
+
+1. **Schema Compliance**: Columns conform to `COLUMN_SCHEMA` dtypes via `detect_and_cast_dtypes()`
+2. **Imputation Completeness**: Fully imputed via 6-step imputation strategy (zero missing values)
+3. **Safety Rails**: Non-negativity constraints and outlier safety rails applied
+4. **Feature Availability**: Phase 9.3 core inputs (momentum, valuation, profitability, quality/risk, cash flow, growth) present and properly typed
+
+See `code_guidelines.md` Phase 9.3 Data Prerequisites section 
+
+... [TRUNCATED - Total length: 3227 chars]
+
+================================================================================
+CELL 35 - TYPE: CODE
+================================================================================
+# Build comprehensive features using Phase 9.3 API (code_guidelines.md v1.3+)
+all_stocks_features = build_features(
+        all_stocks_scaled,
+        preset="comprehensive",
+        include_interactions=True,
+        include_relative=True,
+        sector_col='sector'
+        )
+print(f"[CHECK] Feature Engineering Complete")
+print(f"  Original features: {all_stocks_scaled.shape[1]}")
+print(f"  Engineered features: {all_stocks_features.shape[1]}")
+print(f"  New features added: {all_stocks_features.shape[1] - all_stocks.shape[1]}")
+
+
+================================================================================
+CELL 36 - TYPE: CODE
+================================================================================
+# Engineer additional valuation ratios using Phase 9.3 function
+print("\n📊 Engineering Additional Valuation Ratios...")
+all_stocks_features = engineer_valuation_ratios(all_stocks_features)
+print(f"[CHECK] Valuation ratios engineered")
+
+# Engineer analyst quality features using Phase 9.3 function
+print("\n📈 Engineering Analyst Quality Features...")
+all_stocks_features = engineer_analyst_quality_features(all_stocks_features)
+print(f"[CHECK] Analyst quality features engineered")
+
+# Engineer accounting quality features using Phase 9.3 function
+all_stocks_features = engineer_accounting_quality_features(all_stocks_features)
+print(f"[CHECK] Accounting quality features engineered")
+
+# Engineer employee productivity features using Phase 9.3 function
+all_stocks_features = engineer_employee_productivity_features(all_stocks_features)
+print(f"[CHECK] Employee productivity features engineered")
+
+print(f"  Total features after enrichment: {all_stocks_features.shape[1]}")
+
+
+================================================================================
+CELL 37 - TYPE: CODE
+================================================================================
+# Phase 9.3 Schema Version 1.3 - New Feature Categories
+print("\n" + "=" * 80)
+print("📊 PHASE 9.3 SCHEMA VERSION 1.3 - NEW FEATURE DEMONSTRATIONS")
+print("=" * 80)
+print("\nDemonstrating 5 new feature engineering functions from Schema 1.3:")
+print("1. Technical Analysis (EMA crossovers, 52W position, volume momentum)")
+print("2. Valuation Time-Series (momentum, mean reversion, forward/trailing)")
+print("3. Revenue Forecasts (analyst consensus, estimate quality)")
+print("4. Dividend Reliability (consistency, coverage, safety)")
+print("5. Employment Dynamics (growth, productivity, workforce indicators)")
+
+
+================================================================================
+CELL 38 - TYPE: CODE
+================================================================================
+# 1. Technical Analysis Features
+print("\n📈 Engineering Technical Analysis Features...")
+initial_cols = all_stocks_features.shape[1]
+all_stocks_features = engineer_technical_analysis_features(all_stocks_features)
+new_tech_features = all_stocks_features.shape[1] - initial_cols
+print(f"[CHECK] Technical analysis features engineered: {new_tech_features} new features")
+
+# Display sample technical features
+tech_features = [c for c in all_stocks_features.columns if any(
+        x in c for x in ['ema_crossover', 'price_vs_ema', '52w', 'volume_momentum', 'breakout']
+        )]
+if tech_features:
+    print(f"\n  Sample Technical Features ({len(tech_features)} total):")
+    for feat in tech_features[:10]:
+        non_null = all_stocks_features[feat].notna().sum()
+        print(f"    • {feat}: {non_null}/{len(all_stocks_features)} non-null")
+
+
+================================================================================
+CELL 39 - TYPE: CODE
+================================================================================
+# 2. Valuation Time-Series Features
+print("\n📊 Engineering Valuation Time-Series Features...")
+initial_cols = all_stocks_features.shape[1]
+all_stocks_features = engineer_valuation_timeseries_features(all_stocks_features)
+new_val_features = all_stocks_features.shape[1] - initial_cols
+print(f"[CHECK] Valuation time-series features engineered: {new_val_features} new features")
+
+# Display sample valuation features
+val_features = [c for c in all_stocks_features.columns if any(
+        x in c for x in
+        ['ev_sales_trend', 'ev_ebitda_momentum', 'p_e_momentum', 'valuation_stability', 'forward_discount']
+        )]
+if val_features:
+    print(f"\n  Sample Valuation Time-Series Features ({len(val_features)} total):")
+    for feat in val_features[:10]:
+        non_null = all_stocks_features[feat].notna().sum()
+        print(f"    • {feat}: {non_null}/{len(all_stocks_features)} non-null")
+
+
+================================================================================
+CELL 40 - TYPE: CODE
+================================================================================
+# 3. Revenue Forecast Features
+print("\n💰 Engineering Revenue Forecast Features...")
+initial_cols = all_stocks_features.shape[1]
+all_stocks_features = engineer_revenue_forecast_features(all_stocks_features)
+new_rev_features = all_stocks_features.shape[1] - initial_cols
+print(f"[CHECK] Revenue forecast features engineered: {new_rev_features} new features")
+
+# Display sample revenue forecast features
+rev_features = [c for c in all_stocks_features.columns if any(
+        x in c for x in ['revenue_estimate', 'revenue_growth_implied', 'revenue_consensus', 'estimate_confidence']
+        )]
+if rev_features:
+    print(f"\n  Sample Revenue Forecast Features ({len(rev_features)} total):")
+    for feat in rev_features[:10]:
+        non_null = all_stocks_features[feat].notna().sum()
+        print(f"    • {feat}: {non_null}/{len(all_stocks_features)} non-null")
+
+
+================================================================================
+CELL 41 - TYPE: CODE
+================================================================================
+# 4. Dividend Reliability Features
+print("\n💵 Engineering Dividend Reliability Features...")
+initial_cols = all_stocks_features.shape[1]
+all_stocks_features = engineer_dividend_reliability_features(all_stocks_features)
+new_div_features = all_stocks_features.shape[1] - initial_cols
+print(f"[CHECK] Dividend reliability features engineered: {new_div_features} new features")
+
+# Display sample dividend features
+div_features = [c for c in all_stocks_features.columns if any(
+        x in c for x in
+        ['dividend_consistency', 'dividend_safety', 'dividend_payout', 'income_stock', 'dividend_aristocrat']
+        )]
+if div_features:
+    print(f"\n  Sample Dividend Reliability Features ({len(div_features)} total):")
+    for feat in div_features[:10]:
+        non_null = all_stocks_features[feat].notna().sum()
+        print(f"    • {feat}: {non_null}/{len(all_stocks_features)} non-null")
+
+
+================================================================================
+CELL 42 - TYPE: CODE
+================================================================================
+# 5. Employment Dynamics Features
+print("\n👥 Engineering Employment Dynamics Features...")
+initial_cols = all_stocks_features.shape[1]
+all_stocks_features = engineer_employment_dynamics_features(all_stocks_features)
+new_emp_features = all_stocks_features.shape[1] - initial_cols
+print(f"[CHECK] Employment dynamics features engineered: {new_emp_features} new features")
+
+# Display sample employment features
+emp_features = [c for c in all_stocks_features.columns if any(
+        x in c for x in
+        ['employee_growth', 'revenue_per_employee', 'profit_per_employee', 'hiring_intensity', 'workforce']
+        )]
+if emp_features:
+    print(f"\n  Sample Employment Dynamics Features ({len(emp_features)} total):")
+    for feat in emp_features[:10]:
+        non_null = all_stocks_features[feat].notna().sum()
+        print(f"    • {feat}: {non_null}/{len(all_stocks_features)} non-null")
+
+
+================================================================================
+CELL 43 - TYPE: CODE
+================================================================================
+# Phase 9.3 Schema 1.3 Summary
+print("\n" + "=" * 80)
+print("📊 PHASE 9.3 SCHEMA VERSION 1.3 - SUMMARY")
+print("=" * 80)
+total_new_features = new_tech_features + new_val_features + new_rev_features + new_div_features + new_emp_features
+print(f"\n[CHECK] Total new features from Schema 1.3: {total_new_features}")
+print(f"  • Technical Analysis: {new_tech_features}")
+print(f"  • Valuation Time-Series: {new_val_features}")
+print(f"  • Revenue Forecasts: {new_rev_features}")
+print(f"  • Dividend Reliability: {new_div_features}")
+print(f"  • Employment Dynamics: {new_emp_features}")
+print(f"\n[CHECK] Total features in dataset: {all_stocks_features.shape[1]}")
+print(f"[CHECK] Schema expanded from 262 to 310 columns (+48, +18.3%)")
+print(f"[CHECK] Feature functions increased from 19 to 24 (+5, +26.3%)")
+
+
+================================================================================
+CELL 44 - TYPE: CODE
+================================================================================
+# Feature importance analysis
+exclude_cols = ['ma_20d_simple',
+                'ma_50d_simple',
+                'price_distance_from_ma',
+                'ma_crossover_signal',
+                'ffo_yield',
+                'p_e_ratio_squared',
+                'price_target'
+                ]
+feature_cols = [c for c in all_stocks_features.columns if c not in exclude_cols]
+
+if 'price_target' in all_stocks_features.columns:
+    X = all_stocks_features[feature_cols].select_dtypes(include=[np.number])
+    y = all_stocks_features['price_target']
+
+    # Use Phase 9.3 function: features_importance_rf
+    importance_df = features_importance_rf(X, y, top_k=20)
+
+    print('\n🎯 Top 20 Most Important Features:')
+    print(importance_df)
+
+
+================================================================================
+CELL 45 - TYPE: CODE
+================================================================================
+# 📊 Section 4 Enhanced Visualizations - Feature Engineering
+print('\n' + '=' * 80)
+print('📊 INTERACTIVE FEATURE ENGINEERING VISUALIZATIONS')
+print('=' * 80)
+
+# Feature importance visualization (if available from feature engineering)
+if 'X' in dir() and X is not None:
+    print('\n📈 Feature Importance Analysis...')
+
+    # Calculate feature correlations
+    import plotly.express as px
+    import plotly.graph_objects as go
+
+    numeric_features = X.select_dtypes(include=[np.number]).columns[:20]  # Top 20
+    corr_matrix = X[numeric_features].corr()
+
+    # Interactive correlation heatmap
+    fig = px.imshow(corr_matrix,
+                    text_auto='.2f',
+                    aspect='auto',
+                    color_continuous_scale='RdBu_r',
+                    title='Feature Correlation Heatmap (Top 20 Features)')
+    fig.update_layout(width=900, height=800)
+    fig.show()
+
+    # Feature distribution comparison by sector
+    if 'sector' in all_stocks_features.columns:
+        print('\n📊 Feature Distributions by Sector...')
+        key_features = ['market_cap', 'p_e'] if 'p_e' in all_stocks_features.columns else [
+            'market_cap']
+        for feature in key_features:
+            if feature in all_stocks_features.columns:
+                fig = px.box(all_stocks_features,
+                             x='sector',
+                             y=feature,
+                             color='sector',
+                             title=f'{feature.replace("_", " ").title()} Distribution by Sector',
+                             points='outliers')
+                fig.update_layout(showlegend=False, xaxis_tickangle=-45)
+                fig.show()
+                break  # Show just one example
+
+    print('[CHECK] Feature engineering visualizations complete')
+

@@ -1073,7 +1073,282 @@ df_cast, diagnostics = detect_and_cast_dtypes(df)
     - Expect training functions to return the standardized dict and read metrics via `res["metrics"]`
 - Maintain light wrapper logic in notebooks; delegate work to `finance_ml` package APIs.
 
-8) Comprehensive Import Examples by Phase
+8) Notebook Best Practices and TDD Conventions
+
+This section codifies best practices for notebook development following Test-Driven Development (TDD) principles,
+ensuring maintainability, testability, and consistency across the project.
+
+8.1) Centralized Configuration Constants (Single Source of Truth)
+
+**Policy**: All configuration constants must be defined once in a dedicated configuration cell at the top of the
+notebook. No magic numbers or duplicate constant definitions are allowed in subsequent cells.
+
+**Required Configuration Constants**:
+
+```python
+# ========== CONFIGURATION CONSTANTS ==========
+# Section 8.1: Single Source of Truth - All constants defined once
+
+# Target and fallback (Section 2.2)
+TARGET_COL = 'price_target'  # Canonical target (code_guidelines.md Section 2.2)
+TARGET_COL_FALLBACK = 'last_price'  # Canonical fallback target
+
+# Data splits
+TEST_SIZE = 0.2  # Train/test split ratio
+TRAIN_SIZE = 1 - TEST_SIZE  # Training set size (computed from TEST_SIZE)
+CV_FOLDS = 5  # Cross-validation folds
+
+# Quantile regression
+QUANTILES = [0.1, 0.5, 0.9]  # Lower, median, upper quantiles
+LOWER_QUANTILE = QUANTILES[0]
+MEDIAN_QUANTILE = QUANTILES[1]
+UPPER_QUANTILE = QUANTILES[2]
+
+# Sector constraints
+MIN_SECTOR_SAMPLES = 20  # Minimum samples required per sector
+
+# Portfolio constraints
+MAX_SECTOR_WEIGHT = 0.25  # Maximum portfolio weight per sector (25%)
+MAX_SINGLE_POSITION = 0.10  # Maximum weight for single position (10%)
+
+# Outlier thresholds
+IQR_MULTIPLIER = 1.5  # IQR multiplier for outlier detection
+ZSCORE_THRESHOLD = 3.0  # Z-score threshold for outliers
+WINSORIZE_LOWER = 0.01  # Lower percentile for winsorization (1%)
+WINSORIZE_UPPER = 0.99  # Upper percentile for winsorization (99%)
+
+# Confidence scoring
+CONFIDENCE_LOW_THRESHOLD = 0.50  # Low confidence threshold
+CONFIDENCE_MEDIUM_THRESHOLD = 0.75  # Medium confidence threshold
+
+# Random seed
+RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
+np.random.seed(RANDOM_SEED)
+```
+
+**Validation Function** (recommended):
+
+```python
+def validate_configuration():
+    """
+    Validate notebook configuration constants.
+    
+    Ensures all configuration values are properly defined and within valid ranges.
+    This provides a single source of truth validation for all configuration.
+    
+    Returns:
+        bool: True if all validations pass
+    
+    Raises:
+        ValueError: If any configuration value is invalid
+    """
+    # Validate target columns
+    if not TARGET_COL or not isinstance(TARGET_COL, str):
+        raise ValueError(f"TARGET_COL must be a non-empty string, got: {TARGET_COL}")
+    if not TARGET_COL_FALLBACK or not isinstance(TARGET_COL_FALLBACK, str):
+        raise ValueError(f"TARGET_COL_FALLBACK must be a non-empty string, got: {TARGET_COL_FALLBACK}")
+
+    # Validate test size
+    if not (0 < TEST_SIZE < 1):
+        raise ValueError(f"TEST_SIZE must be between 0 and 1, got: {TEST_SIZE}")
+    if not (0 < TRAIN_SIZE < 1):
+        raise ValueError(f"TRAIN_SIZE must be between 0 and 1, got: {TRAIN_SIZE}")
+
+    # Validate CV folds
+    if not isinstance(CV_FOLDS, int) or CV_FOLDS < 2:
+        raise ValueError(f"CV_FOLDS must be an integer >= 2, got: {CV_FOLDS}")
+
+    # Validate quantiles
+    if not all(0 <= q <= 1 for q in QUANTILES):
+        raise ValueError(f"All QUANTILES must be between 0 and 1, got: {QUANTILES}")
+
+    # Validate portfolio constraints
+    if not (0 < MAX_SECTOR_WEIGHT <= 1):
+        raise ValueError(f"MAX_SECTOR_WEIGHT must be between 0 and 1, got: {MAX_SECTOR_WEIGHT}")
+    if not (0 < MAX_SINGLE_POSITION <= 1):
+        raise ValueError(f"MAX_SINGLE_POSITION must be between 0 and 1, got: {MAX_SINGLE_POSITION}")
+
+    return True
+
+
+# Execute validation
+validate_configuration()
+```
+
+**Usage in Downstream Cells**:
+
+```python
+# ✅ CORRECT: Use configuration constants
+X_train, X_test, y_train, y_test = train_test_split(
+        X, y,
+        test_size=TEST_SIZE,  # Not 0.2
+        random_state=RANDOM_SEED,  # Not 42
+        stratify=sectors
+        )
+
+# ✅ CORRECT: Use target column constants
+target_col = TARGET_COL if TARGET_COL in df.columns else TARGET_COL_FALLBACK
+y = df[target_col]
+
+# ✅ CORRECT: Use quantile constants
+quantile_predictions = predict_quantiles(
+        model, X,
+        quantiles=QUANTILES,  # Not [0.05, 0.5, 0.95]
+        random_state=RANDOM_SEED
+        )
+
+# ✅ CORRECT: Use portfolio constraints
+optimized_weights = optimize_portfolio(
+        returns, cov_matrix,
+        max_sector_weight=MAX_SECTOR_WEIGHT,  # Not 0.25
+        max_single_position=MAX_SINGLE_POSITION  # Not 0.10
+        )
+
+# ❌ WRONG: Hardcoded values (magic numbers)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)  # Violation
+y = df['price_target']  # Violation: use TARGET_COL
+quantiles = [0.05, 0.5, 0.95]  # Violation: use QUANTILES
+max_weight = 0.25  # Violation: use MAX_SECTOR_WEIGHT
+```
+
+**Benefits**:
+
+- Single source of truth: Changes propagate automatically
+- Testability: Constants can be validated programmatically
+- Reproducibility: Clear documentation of all tunable parameters
+- Maintainability: Easy to audit and update configuration
+
+8.2) DataFrame Stage Naming Convention
+
+**Policy**: Use descriptive, stage-based naming for DataFrames instead of in-place mutations. Each transformation
+stage should produce a new DataFrame with a name that clearly indicates the pipeline stage.
+
+**Standard Stage Naming Pattern**:
+
+```python
+# ✅ CORRECT: Stage-based naming with clear progression
+all_stocks_raw = load_from_db(...)  # Initial load
+all_stocks_normalized = normalize_columns(all_stocks_raw)  # After normalization
+all_stocks_typed = detect_and_cast_dtypes(all_stocks_normalized)[0]  # After type detection
+all_stocks_winsorized = winsorize_by_sector(all_stocks_typed, ...)  # After winsorization
+all_stocks_imputed = apply_enhanced_imputation_strategy_6step(all_stocks_winsorized, ...)  # After imputation
+all_stocks_scaled = scale_features(all_stocks_imputed, ...)  # After scaling
+all_stocks_features = build_comprehensive_features(all_stocks_scaled, ...)  # After feature engineering
+all_stocks_enhanced = add_classification_probabilities(all_stocks_features, ...)  # After classification features
+
+# ❌ WRONG: In-place mutations (unclear pipeline progression)
+all_stocks = load_from_db(...)
+all_stocks = normalize_columns(all_stocks)  # Lost reference to raw data
+all_stocks = winsorize_by_sector(all_stocks, ...)  # Can't rollback to normalized
+all_stocks = apply_imputation(all_stocks, ...)  # Can't compare pre/post imputation
+```
+
+**Required Stage Names** (in order):
+
+1. `all_stocks_raw` — Initial data loaded from CSV or database (before any transformations)
+2. `all_stocks_normalized` — After column name normalization (`normalize_columns()`)
+3. `all_stocks_typed` — After datatype detection and casting (`detect_and_cast_dtypes()`)
+4. `all_stocks_winsorized` — After outlier winsorization (`winsorize_by_sector()`)
+5. `all_stocks_imputed` — After missing value imputation (6-step strategy)
+6. `all_stocks_scaled` — After feature scaling (`scale_features()`)
+7. `all_stocks_features` — After feature engineering (`build_comprehensive_features()`)
+8. `all_stocks_enhanced` — After adding classification probabilities or meta-features
+
+**Validation Checkpoints** (recommended after each stage):
+
+```python
+# After preprocessing
+assert 'all_stocks_scaled' in globals(), "❌ Missing all_stocks_scaled"
+assert all_stocks_scaled.shape[0] > 0, "❌ Empty DataFrame after preprocessing"
+assert all_stocks_scaled[TARGET_COL].notna().sum() > 0, f"❌ No valid targets in {TARGET_COL}"
+
+# After feature engineering
+assert 'all_stocks_features' in globals(), "❌ Missing all_stocks_features"
+expected_features = ['p_e_ratio', 'ev_ebitda', 'roe', 'roa']
+missing_features = [f for f in expected_features if f not in all_stocks_features.columns]
+assert len(missing_features) == 0, f"❌ Missing features: {missing_features}"
+```
+
+**Benefits**:
+
+- Debugging: Can inspect intermediate stages (e.g., compare `all_stocks_imputed` vs `all_stocks_scaled`)
+- Rollback: Can revert to previous stage without re-running entire pipeline
+- Testing: Each stage can be validated independently
+- Documentation: Pipeline progression is self-documenting in code
+
+8.3) Magic Numbers Policy
+
+**Policy**: All numeric literals with semantic meaning must be defined as named constants. Only use inline literals
+for universally understood values (e.g., 0, 1, 100 for percentage conversions) or when the value is used exactly once
+in a highly localized context.
+
+**Prohibited Magic Numbers** (must use constants):
+
+```python
+# ❌ WRONG: Magic numbers without semantic names
+random_state = 42  # Use RANDOM_SEED
+test_size = 0.2  # Use TEST_SIZE
+split_idx = int(len(X) * 0.8)  # Use TRAIN_SIZE or (1 - TEST_SIZE)
+max_sector_weight = 0.25  # Use MAX_SECTOR_WEIGHT
+quantiles = [0.05, 0.5, 0.95]  # Use QUANTILES
+threshold = 1.5  # Use IQR_MULTIPLIER
+lower = 0.01, upper = 0.99  # Use WINSORIZE_LOWER, WINSORIZE_UPPER
+
+# ✅ CORRECT: Use named constants
+random_state = RANDOM_SEED
+test_size = TEST_SIZE
+split_idx = int(len(X) * TRAIN_SIZE)
+max_sector_weight = MAX_SECTOR_WEIGHT
+quantiles = QUANTILES
+threshold = IQR_MULTIPLIER
+lower = WINSORIZE_LOWER, upper = WINSORIZE_UPPER
+```
+
+**Allowed Inline Literals** (universally understood or highly localized):
+
+```python
+# ✅ ALLOWED: Universal mathematical constants or type conversions
+percentage = value * 100  # Converting to percentage
+zero_fill = np.zeros(len(df))  # Creating zero array
+identity_matrix = np.eye(n)  # Identity matrix
+correlation_base = 0.8  # Matrix construction (with comment explaining purpose)
+
+# ✅ ALLOWED: Highly localized, single-use values with clear context
+if len(sector_group) < 5:  # Minimum group size for this specific check
+    warnings.warn(f"Small sector group: {len(sector_group)} samples")
+
+# Note: If the value appears more than once or has domain-specific meaning, use a constant
+```
+
+**Special Case: Correlation Matrix Construction**:
+
+```python
+# Correlation matrices often use mathematical weights that are part of the algorithm
+# These should be documented with comments explaining their purpose
+corr_matrix = np.eye(n_stocks) * 0.8 + np.ones((n_stocks, n_stocks)) * 0.2
+# ^^ 0.8 = diagonal weight (self-correlation), 0.2 = off-diagonal weight (cross-correlation)
+# These are algorithm parameters, not configuration values
+```
+
+**Testing Constants Usage**:
+
+The project includes `tests/test_notebook_tdd_compliance.py` which validates:
+
+- No hardcoded `random_state=42` (must use `RANDOM_SEED`)
+- No hardcoded `test_size=0.2` (must use `TEST_SIZE`)
+- No hardcoded train size `0.8` (must use `TRAIN_SIZE`)
+- No hardcoded quantile lists (must use `QUANTILES`)
+- No hardcoded sector weights (must use `MAX_SECTOR_WEIGHT`)
+- No hardcoded column names like `'price_target'` (must use `TARGET_COL`)
+
+**Benefits**:
+
+- Global tuning: Change one constant to affect all usages
+- Documentation: Constants serve as self-documenting parameters
+- Testing: Can validate constant usage programmatically
+- Code review: Easier to identify and audit configuration values
+
+9) Comprehensive Import Examples by Phase
 
 This section provides complete import patterns for each phase of the ML workflow, showing both new modular imports and
 backward-compatible top-level imports.

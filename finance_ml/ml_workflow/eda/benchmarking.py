@@ -403,23 +403,32 @@ def generate_benchmarking_report(
     metrics: List[str],
     sector_column: str = "sector",
     region_column: str = "region",
+    include_statistical_tests: bool = False,
 ) -> Dict:
     """Generate comprehensive benchmarking report.
 
     Combines sector distributions, regional valuations, and summary statistics.
+    Optionally includes statistical hypothesis tests for sector/region comparisons.
 
     Args:
         df: DataFrame with stock data
         metrics: List of metrics to analyze
         sector_column: Name of the sector column
         region_column: Name of the region column
+        include_statistical_tests: If True, perform ANOVA and Kruskal-Wallis tests
+            to compare metric distributions across sectors/regions (default: False)
 
     Returns:
-        Dictionary with 'sector_distributions', 'regional_valuations', and 'summary'
+        Dictionary with 'sector_distributions', 'regional_valuations', 'summary',
+        and optionally 'statistical_tests' (if include_statistical_tests=True)
 
     Example:
         >>> report = generate_benchmarking_report(df, metrics=['p_e', 'p_b'])
         >>> print(report['summary']['total_stocks'])
+        >>> report_with_tests = generate_benchmarking_report(
+        ...     df, metrics=['p_e', 'p_b'], include_statistical_tests=True
+        ... )
+        >>> print(report_with_tests['statistical_tests'])
     """
     report = {}
 
@@ -452,5 +461,112 @@ def generate_benchmarking_report(
     }
 
     report["summary"] = summary
+
+    # Statistical hypothesis tests (optional)
+    if include_statistical_tests:
+        statistical_tests = {}
+
+        for metric in metrics:
+            if metric not in df.columns:
+                continue
+
+            metric_tests = {}
+
+            # Convert to numeric and drop NaN values
+            metric_data = pd.to_numeric(df[metric], errors="coerce").dropna()
+
+            if len(metric_data) < 3:
+                # Not enough data for statistical tests
+                continue
+
+            # Sector-based tests
+            if sector_column in df.columns:
+                try:
+                    # Prepare groups for sector comparison
+                    sector_groups = []
+                    sector_names = []
+
+                    for sector in df[sector_column].dropna().unique():
+                        sector_mask = df[sector_column] == sector
+                        sector_values = pd.to_numeric(
+                            df.loc[sector_mask, metric], errors="coerce"
+                        ).dropna()
+
+                        if len(sector_values) >= 2:
+                            sector_groups.append(sector_values.values)
+                            sector_names.append(sector)
+
+                    if len(sector_groups) >= 2:
+                        # ANOVA test (parametric)
+                        f_stat, p_value_anova = stats.f_oneway(*sector_groups)
+
+                        # Kruskal-Wallis test (non-parametric)
+                        h_stat, p_value_kw = stats.kruskal(*sector_groups)
+
+                        metric_tests["sector_tests"] = {
+                            "anova": {
+                                "statistic": float(f_stat),
+                                "p_value": float(p_value_anova),
+                                "significant": bool(p_value_anova < 0.05),
+                            },
+                            "kruskal_wallis": {
+                                "statistic": float(h_stat),
+                                "p_value": float(p_value_kw),
+                                "significant": bool(p_value_kw < 0.05),
+                            },
+                            "groups_compared": sector_names,
+                            "n_groups": len(sector_groups),
+                        }
+
+                except Exception as e:
+                    logging.warning(f"Sector tests failed for metric '{metric}': {e}")
+
+            # Region-based tests
+            if region_column in df.columns:
+                try:
+                    # Prepare groups for region comparison
+                    region_groups = []
+                    region_names = []
+
+                    for region in df[region_column].dropna().unique():
+                        region_mask = df[region_column] == region
+                        region_values = pd.to_numeric(
+                            df.loc[region_mask, metric], errors="coerce"
+                        ).dropna()
+
+                        if len(region_values) >= 2:
+                            region_groups.append(region_values.values)
+                            region_names.append(region)
+
+                    if len(region_groups) >= 2:
+                        # ANOVA test (parametric)
+                        f_stat, p_value_anova = stats.f_oneway(*region_groups)
+
+                        # Kruskal-Wallis test (non-parametric)
+                        h_stat, p_value_kw = stats.kruskal(*region_groups)
+
+                        metric_tests["region_tests"] = {
+                            "anova": {
+                                "statistic": float(f_stat),
+                                "p_value": float(p_value_anova),
+                                "significant": bool(p_value_anova < 0.05),
+                            },
+                            "kruskal_wallis": {
+                                "statistic": float(h_stat),
+                                "p_value": float(p_value_kw),
+                                "significant": bool(p_value_kw < 0.05),
+                            },
+                            "groups_compared": region_names,
+                            "n_groups": len(region_groups),
+                        }
+
+                except Exception as e:
+                    logging.warning(f"Region tests failed for metric '{metric}': {e}")
+
+            # Store tests for this metric if any were performed
+            if metric_tests:
+                statistical_tests[metric] = metric_tests
+
+        report["statistical_tests"] = statistical_tests
 
     return report

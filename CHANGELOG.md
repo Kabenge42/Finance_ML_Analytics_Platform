@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Code Guidelines Enhancement: Notebook Best Practices and TDD Conventions** (2025-11-20)
+  - **New Section 8**: Added comprehensive "Notebook Best Practices and TDD Conventions" to `code_guidelines.md`
+    (+270 lines, document expanded from 2349 to 2619 lines)
+  - **Three Core Policies**:
+    1. **Section 8.1: Centralized Configuration Constants (Single Source of Truth)**
+      - Policy: All configuration constants defined once in dedicated config cell
+      - Required constants: TARGET_COL, TARGET_COL_FALLBACK, TEST_SIZE, TRAIN_SIZE, CV_FOLDS, QUANTILES,
+        MIN_SECTOR_SAMPLES, MAX_SECTOR_WEIGHT, MAX_SINGLE_POSITION, IQR_MULTIPLIER, ZSCORE_THRESHOLD,
+        WINSORIZE_LOWER, WINSORIZE_UPPER, CONFIDENCE thresholds, RANDOM_SEED
+      - Includes validate_configuration() function pattern with comprehensive validation logic
+      - Examples show correct usage (✅) vs violations (❌) with inline comments
+    2. **Section 8.2: DataFrame Stage Naming Convention**
+      - Policy: Use descriptive stage-based naming instead of in-place mutations
+      - Required stage names (8 stages): all_stocks_raw → all_stocks_normalized → all_stocks_typed →
+        all_stocks_winsorized → all_stocks_imputed → all_stocks_scaled → all_stocks_features → all_stocks_enhanced
+      - Validation checkpoints after each stage with assertion patterns
+      - Benefits: Debugging, rollback capability, independent stage testing, self-documenting code
+    3. **Section 8.3: Magic Numbers Policy**
+      - Policy: All numeric literals with semantic meaning must be named constants
+      - Prohibited magic numbers: random_state=42, test_size=0.2, 0.8 for train size, max_sector_weight=0.25,
+        quantile lists, IQR thresholds, winsorization bounds
+      - Allowed inline literals: Universal constants (0, 1, 100 for percentage), highly localized single-use values
+      - Special case documented: Correlation matrix construction with algorithm parameters
+      - References tests/test_notebook_tdd_compliance.py for validation
+  - **Old Section 8 Renumbered**: "Comprehensive Import Examples by Phase" moved to Section 9
+  - **Alignment**: Documents TDD refactoring implemented in ml_finance_model_main.ipynb (all 24 compliance tests pass)
+  - **Impact**: Establishes formal standards for notebook development following TDD principles, ensuring
+    maintainability, testability, and consistency across the project
+
 - Notebook structure cleanup and standards alignment (2025-11-19)
   - Consolidated duplicate import sections in `ml_finance_model_main.ipynb` into a single initialization cell per
     code_guidelines.md v1.3+
@@ -59,6 +88,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     dividend reliability scoring, and employment dynamics tracking
 
 ### Fixed
+
+- **Notebook Stage Naming Reference Alignment** (2025-11-20)
+  - **Root Cause**: NameError in `ml_finance_model_main.ipynb` Cell 12 (imputation) and Cell 13 (scaling) due to
+    outdated `all_stocks` variable references instead of correct stage-based names from code_guidelines.md Section 8.2
+  - **Impact**: Notebook execution failed with `NameError: name 'all_stocks' is not defined` when running
+    apply_enhanced_imputation_strategy_6step() function
+  - **Console Error**:
+    ```
+    Cell In[13], line 7
+    all_stocks_imputed = apply_enhanced_imputation_strategy_6step(
+        all_stocks,  # ❌ Undefined variable
+    NameError: name 'all_stocks' is not defined
+    ```
+  - **Solution**: Updated 4 variable references to align with DataFrame Stage Naming Convention (Section 8.2)
+    - Cell 12 line 7: `all_stocks` → `all_stocks_winsorized` (imputation input - follows stage 4)
+    - Cell 12 line 17: `all_stocks.isnull()` → `all_stocks_imputed.isnull()` (validation uses output of stage 5)
+    - Cell 12 line 22: `validate_imputation_completeness(all_stocks,` →
+      `validate_imputation_completeness(all_stocks_imputed,`
+      (validation input)
+    - Cell 13 line 7: `all_stocks.copy()` → `all_stocks_imputed.copy()` (scaling input - follows stage 5)
+  - **Validation**: All TDD compliance tests pass (test_dataframe_stage_naming_present,
+    test_no_excessive_inplace_mutations)
+  - **Stage Sequence Confirmed**: all_stocks_winsorized (stage 4) → all_stocks_imputed (stage 5) → all_stocks_scaled (
+    stage 6)
+  - **Files Modified**: `ml_finance_model_main.ipynb` (Cells 12, 13), `fix_stage_naming_references.py` (115 lines)
+  - **Alignment**: Implements DataFrame Stage Naming Convention per code_guidelines.md Section 8.2 and CHANGELOG.md
+    entry dated 2025-11-20
 
 - **Schema Extension: 64 Unknown Column Warnings Resolved** (2025-11-19)
   - **Root Cause Analysis**: The initial COLUMN_SCHEMA (350 columns) was derived exclusively from
