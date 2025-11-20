@@ -38,7 +38,7 @@ Example:
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Optional, Any
 
 import numpy as np
 import pandas as pd

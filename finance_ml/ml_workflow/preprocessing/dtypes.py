@@ -7,13 +7,13 @@ functionality aligned with code_guidelines.md v1.3+ requirements.
 
 import logging
 from typing import Dict, Tuple, List, Optional
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA,
     normalize_column_name,
-    get_expected_dtype,
 )
 
 logger = logging.getLogger(__name__)

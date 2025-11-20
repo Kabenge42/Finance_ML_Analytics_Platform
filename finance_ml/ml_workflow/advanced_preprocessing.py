@@ -17,14 +17,11 @@ from __future__ import annotations
 
 import logging
 import warnings
-from dataclasses import dataclass
 from typing import Optional, Dict, List, Tuple, Any
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import IsolationForest
 from sklearn.impute import KNNImputer, SimpleImputer
-from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +41,6 @@ from finance_ml.ml_workflow.preprocessing.quality import (
     calculate_data_quality_score as _new_calculate_data_quality_score,
 )
 from finance_ml.ml_workflow.preprocessing.imputation import (
-    apply_zero_imputation as _new_apply_zero_imputation,
-    apply_knn_imputation_enhanced as _new_apply_knn_imputation_enhanced,
-    apply_price_imputation as _new_apply_price_imputation,
-    apply_median_imputation as _new_apply_median_imputation,
-    apply_enhanced_imputation_strategy_4step as _new_apply_enhanced_imputation_strategy_4step,
     apply_enhanced_imputation_strategy_6step as _new_apply_enhanced_imputation_strategy_6step,
 )
 

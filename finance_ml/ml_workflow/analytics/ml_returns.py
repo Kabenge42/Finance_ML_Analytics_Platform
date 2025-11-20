@@ -15,7 +15,7 @@ run quickly while still exercising realistic workflows derived from
 
 from __future__ import annotations
 
-from typing import Iterable, List, Sequence, Dict, Any
+from typing import Sequence, Dict, Any
 
 import numpy as np
 import pandas as pd

@@ -71,6 +71,10 @@ from finance_ml.ml_workflow.preprocessing.scaling import (
     create_scaler_pipeline,
     scale_features,
 )
+from finance_ml.ml_workflow.preprocessing.dtypes import (
+    detect_and_cast_dtypes,
+    to_jsonable,
+)
 
 __all__ = [
     # Data loading and validation
@@ -122,4 +126,7 @@ __all__ = [
     "calculate_data_quality_score",
     # Pipeline
     "prepare_phase91_data",
+    # Dtypes (Phase 9.9)
+    "detect_and_cast_dtypes",
+    "to_jsonable",
 ]

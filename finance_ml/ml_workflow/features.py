@@ -19,7 +19,6 @@ import logging
 import warnings
 from typing import Optional, Tuple, List
 
-import numpy as np
 import pandas as pd
 
 # Phase 9.3: Import from new location for backward compatibility

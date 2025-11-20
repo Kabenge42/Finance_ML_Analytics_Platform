@@ -196,6 +196,9 @@ from finance_ml.ml_workflow.preprocessing import (
     calculate_data_quality_score as preprocessing_calculate_quality,
     # Pipeline module
     prepare_phase91_data,
+    # Dtypes module (Phase 9.9)
+    detect_and_cast_dtypes,
+    to_jsonable,
 )
 
 # Phase 9.5.0 Refactor: Import from new regression subpackage
@@ -241,6 +244,11 @@ from finance_ml.ml_workflow.regression.quantile import (
 )
 from finance_ml.ml_workflow.regression.tuning import (
     optimize_hyperparameters_optuna as regression_optimize_hyperparameters,
+)
+from finance_ml.ml_workflow.regression.robust import (
+    adaptive_clip_predictions,
+    winsorize_target,
+    clip_predictions,
 )
 
 # Phase 9.8 Refactor: Import from reporting subpackage
@@ -754,6 +762,10 @@ __all__ = [
     "regression_optimize_hyperparameters",
     "regression_save_model",
     "regression_load_model",
+    # Phase 9.9: Regression robust utilities
+    "adaptive_clip_predictions",
+    "winsorize_target",
+    "clip_predictions",
     # Phase 9.6: Evaluation
     "evaluation_comprehensive_metrics",
     "evaluation_metrics_by_segment",
@@ -915,6 +927,9 @@ __all__.extend(
         "PreprocessingDataQualityReport",
         "preprocessing_calculate_quality",
         "prepare_phase91_data",
+        # Phase 9.9: Preprocessing dtypes utilities
+        "detect_and_cast_dtypes",
+        "to_jsonable",
         # Phase 9.5.0 Refactor: New regression subpackage exports
         "regression_nonnegative_wrapper",
         "regression_extract_classification_features",
@@ -942,6 +957,10 @@ __all__.extend(
         "regression_optimize_hyperparameters",
         "regression_save_model",
         "regression_load_model",
+        # Phase 9.9: Regression robust utilities
+        "adaptive_clip_predictions",
+        "winsorize_target",
+        "clip_predictions",
         # Phase 9.6 Refactor: Evaluation subpackage exports
         "evaluation_comprehensive_metrics",
         "evaluation_metrics_by_segment",

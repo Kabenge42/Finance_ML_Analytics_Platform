@@ -14,22 +14,18 @@ Version: 2.1.0
 """
 
 import logging
-import warnings
-from typing import Dict, Any, Optional, List, Literal, Tuple
+from typing import Dict, Any, Literal
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
-    precision_score,
-    recall_score,
-    roc_auc_score,
     brier_score_loss,
     log_loss,
 )
+from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 # Optional imports
 try:
@@ -75,15 +71,8 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 # Import from new classification.tuning subpackage for re-export
-from finance_ml.ml_workflow.classification.tuning import (
-    optimize_classifier_hyperparameters as _new_optimize_classifier_hyperparameters,
-    cross_validate_with_sector_stratification as _new_cross_validate_with_sector_stratification,
-)
 
 # Import from new classification.evaluation subpackage for re-export (Phase 9.4.2)
-from finance_ml.ml_workflow.classification.evaluation import (
-    analyze_calibration as _eval_analyze_calibration,
-)
 
 
 def optimize_classifier_hyperparameters(

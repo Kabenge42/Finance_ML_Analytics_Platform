@@ -845,13 +845,27 @@ def apply_median_imputation(df: pd.DataFrame) -> pd.DataFrame:
     total_imputed = 0
 
     for col in numeric_cols:
+        # If column is an integer dtype (including pandas nullable Int64),
+        # cast to float before median imputation to avoid TypeError
+        if pd.api.types.is_integer_dtype(result[col].dtype) and not pd.api.types.is_bool_dtype(
+            result[col].dtype
+        ):
+            result[col] = result[col].astype("float64")
+            logger.debug(f"Cast column '{col}' from integer to float64 for median imputation")
+
         if result[col].isna().any():
             n_missing = result[col].isna().sum()
             median_val = result[col].median()
+
+            # If median is NaN (e.g., all values are NaN), skip this column
+            if pd.isna(median_val):
+                logger.debug(f"Skipping median imputation for column '{col}' because median is NaN")
+                continue
+
             result[col] = result[col].fillna(median_val)
             total_imputed += n_missing
             logger.debug(
-                f"Median-imputed {n_missing} values in column '{col}' with {median_val:.4f}"
+                f"Median-imputed {n_missing} values in column '{col}' with {float(median_val):.4f}"
             )
 
     logger.info(f"Applied median imputation to {total_imputed} total missing values")

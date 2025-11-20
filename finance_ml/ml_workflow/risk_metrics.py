@@ -1,31 +1,50 @@
 """
-Finance ML Risk Metrics Module
+Compatibility wrapper for risk metrics functions.
 
-DEPRECATED: This module has been moved to finance_ml.ml_workflow.analytics.risk
-as part of Phase 9.7 refactoring. Please update your imports:
+Historically, risk utilities lived in `finance_ml.risk_metrics`
+and, during the v9_8 refactor, were moved under
+`finance_ml.ml_workflow.analytics.risk`.
 
-    from finance_ml.ml_workflow.analytics.risk import (
+This module re-exports the public risk metrics API so that
+existing imports such as::
+
+    from finance_ml.ml_workflow.risk_metrics import (
         calculate_var_historical,
-        calculate_var_parametric,
-        calculate_cvar,
         calculate_sharpe_ratio,
-        calculate_sortino_ratio,
-        calculate_max_drawdown,
-        calculate_portfolio_risk_metrics,
+        ...
     )
 
-This compatibility wrapper will be removed in a future release.
+continue to work without modification.
+
+All implementations live in `finance_ml.ml_workflow.analytics.risk`.
 """
 
-import warnings
+from __future__ import annotations
 
-# Re-export all functions from new location
-from finance_ml.ml_workflow.analytics.risk import *
-
-# Issue deprecation warning when module is imported
-warnings.warn(
-    "finance_ml.ml_workflow.risk_metrics is deprecated and will be removed in a future release. "
-    "Please use finance_ml.ml_workflow.analytics.risk instead.",
-    DeprecationWarning,
-    stacklevel=2,
+from .analytics.risk import (
+    calculate_var_historical,
+    calculate_var_parametric,
+    calculate_cvar,
+    calculate_sharpe_ratio,
+    calculate_sortino_ratio,
+    calculate_max_drawdown,
+    calculate_portfolio_risk_metrics,
+    calculate_expected_shortfall,
+    calculate_tracking_error,
+    run_stress_tests,
+    run_monte_carlo_simulation,
 )
+
+__all__ = [
+    "calculate_var_historical",
+    "calculate_var_parametric",
+    "calculate_cvar",
+    "calculate_sharpe_ratio",
+    "calculate_sortino_ratio",
+    "calculate_max_drawdown",
+    "calculate_portfolio_risk_metrics",
+    "calculate_expected_shortfall",
+    "calculate_tracking_error",
+    "run_stress_tests",
+    "run_monte_carlo_simulation",
+]

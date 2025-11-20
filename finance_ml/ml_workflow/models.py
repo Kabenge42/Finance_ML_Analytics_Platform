@@ -251,7 +251,6 @@ def train_and_evaluate_regression(
         or None if dry_run or insufficient data
     """
     from finance_ml.ml_workflow.features import build_features_and_target
-    from finance_ml.ml_workflow.advanced_models import prepare_features_for_training
     from finance_ml.ml_workflow.regression.io import (
         build_predictions_frame,
         validate_predictions_schema,

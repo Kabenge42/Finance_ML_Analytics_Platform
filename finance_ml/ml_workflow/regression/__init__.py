@@ -101,6 +101,11 @@ print(f"Trained {results['n_sectors_trained']} sector models")
 ## Public API
 """
 
+from finance_ml.ml_workflow.regression.calibration import (
+    calibrate_predictions_by_sector,
+    DEFAULT_SECTOR_BIAS,
+)
+
 # Constraints
 from finance_ml.ml_workflow.regression.constraints import (
     NonNegativeRegressionWrapper,
@@ -168,9 +173,12 @@ from finance_ml.ml_workflow.regression.uncertainty import (
     conformal_prediction_intervals,
     compute_interval_coverage,
 )
-from finance_ml.ml_workflow.regression.calibration import (
-    calibrate_predictions_by_sector,
-    DEFAULT_SECTOR_BIAS,
+
+# Phase 9.9: Robust prediction utilities (outlier safety)
+from finance_ml.ml_workflow.regression.robust import (
+    winsorize_target,
+    clip_predictions,
+    adaptive_clip_predictions,
 )
 
 __all__ = [
@@ -222,4 +230,8 @@ __all__ = [
     # Sector calibration (Priority 3)
     "calibrate_predictions_by_sector",
     "DEFAULT_SECTOR_BIAS",
+    # Robust prediction utilities (Phase 9.9)
+    "winsorize_target",
+    "clip_predictions",
+    "adaptive_clip_predictions",
 ]

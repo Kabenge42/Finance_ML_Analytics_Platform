@@ -58,12 +58,13 @@ Reference:
 - Addresses Model Optimization Recommendations Priority 0
 """
 
+import logging
+from pathlib import Path
+from typing import Dict, Any
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from typing import Optional, Dict, Any
 from sklearn.ensemble import IsolationForest
-import logging
 
 logger = logging.getLogger(__name__)
 

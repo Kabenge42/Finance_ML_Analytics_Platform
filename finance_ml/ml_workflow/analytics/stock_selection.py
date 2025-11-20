@@ -15,7 +15,7 @@ and are easy to unit test.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd

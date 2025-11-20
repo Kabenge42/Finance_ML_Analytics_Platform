@@ -15,8 +15,8 @@ import logging
 from typing import Dict, Tuple, Optional, Sequence
 
 import numpy as np
-from scipy.optimize import minimize
 from scipy.cluster.hierarchy import linkage, leaves_list
+from scipy.optimize import minimize
 
 from .risk import calculate_sharpe_ratio, calculate_max_drawdown
 

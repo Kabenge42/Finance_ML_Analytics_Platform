@@ -127,16 +127,6 @@ from finance_ml.ml_workflow.classification.labels import (
 )
 
 # Import evaluation functions from new evaluation module (Phase 9.4.2)
-from finance_ml.ml_workflow.classification.evaluation import (
-    evaluate_classification as _eval_evaluate_classification,
-    compute_shap_values as _eval_compute_shap_values,
-    cross_validate_classifier as _eval_cross_validate_classifier,
-    compare_feature_importance as _eval_compare_feature_importance,
-    plot_confusion_matrices as _eval_plot_confusion_matrices,
-    evaluate_classification_by_sector as _eval_evaluate_classification_by_sector,
-    plot_learning_curves as _eval_plot_learning_curves,
-    analyze_per_class_feature_importance as _eval_analyze_per_class_feature_importance,
-)
 
 
 def _prepare_categorical_features(
@@ -259,14 +249,22 @@ def prepare_classification_data(
         logger.warning(f"Removing {X.columns.duplicated().sum()} duplicate columns")
         X = X.loc[:, ~X.columns.duplicated(keep="first")]
 
-    # Identify numeric and categorical columns
-    categorical_cols = [c for c in X.columns if X[c].dtype == "object"]
-    numeric_cols = [c for c in X.columns if c not in categorical_cols]
+    # Identify numeric and categorical columns using dtype-aware logic
+    # Categorical: object or category dtypes
+    categorical_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+
+    # Numeric: number / bool dtypes; ensure they are not in categorical_cols
+    numeric_cols = (
+        X.select_dtypes(include=[np.number, "bool"]).columns.difference(categorical_cols).tolist()
+    )
 
     # Fill NaN values
     for col in numeric_cols:
+        # Use median for numeric columns
         X[col] = X[col].fillna(X[col].median())
+
     for col in categorical_cols:
+        # Use a string placeholder for missing categories
         X[col] = X[col].fillna("Unknown")
 
     # Train-test split with stratification

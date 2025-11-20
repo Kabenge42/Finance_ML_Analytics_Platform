@@ -168,8 +168,21 @@ def preprocess_for_lightgbm(
         logger.info(f"{mode_str} {len(categorical_columns)} categorical columns")
 
         for col in categorical_columns:
-            # Fill NaN with placeholder
-            result[col] = result[col].fillna("Unknown").astype(str)
+            if col not in result.columns:
+                logger.warning(
+                    f"{mode_str} categorical column '{col}' not found in dataframe; skipping."
+                )
+                continue
+
+            # Ensure we don't operate on pandas CategoricalDtype directly.
+            # Convert to a string-compatible dtype first, then fill NaNs with a placeholder.
+            if isinstance(result[col].dtype, pd.CategoricalDtype):
+                # Convert Categorical to pandas StringDtype to avoid
+                # "Cannot setitem on a Categorical with a new category" errors.
+                result[col] = result[col].astype("string")
+
+            # Now perform null imputation and keep a stable string dtype.
+            result[col] = result[col].fillna("Unknown").astype("string")
 
             if is_training:
                 # TRAINING MODE: Fit new encoder

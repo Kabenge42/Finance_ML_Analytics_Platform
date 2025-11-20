@@ -293,15 +293,33 @@ def prepare_classification_data(
         logger.warning(f"Removing {X.columns.duplicated().sum()} duplicate columns")
         X = X.loc[:, ~X.columns.duplicated(keep="first")]
 
-    # Identify numeric and categorical columns
-    categorical_cols = [c for c in X.columns if X[c].dtype == "object"]
-    numeric_cols = [c for c in X.columns if c not in categorical_cols]
+    # Identify numeric and categorical columns using dtype-aware logic
+    # Categorical: object or category dtypes
+    categorical_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+
+    # Numeric: number / bool dtypes; ensure they are not in categorical_cols
+    numeric_cols = (
+        X.select_dtypes(include=[np.number, "bool"]).columns.difference(categorical_cols).tolist()
+    )
 
     # Fill NaN values
     for col in numeric_cols:
+        # Use median imputation for numeric columns
         X[col] = X[col].fillna(X[col].median())
+
     for col in categorical_cols:
-        X[col] = X[col].fillna("Unknown")
+        # Robust handling for categorical features:
+        # - If dtype is pandas Categorical, add "Unknown" to categories before fillna.
+        # - Otherwise, coerce to string dtype and fill missing with "Unknown".
+        if isinstance(X[col].dtype, pd.CategoricalDtype):
+            # Ensure "Unknown" is a valid category before using it as fill value
+            if "Unknown" not in X[col].cat.categories:
+                X[col] = X[col].cat.add_categories(["Unknown"])
+            X[col] = X[col].fillna("Unknown")
+        else:
+            # Coerce non-categorical types (e.g., object or StringDtype) to string,
+            # then safely fill missing values with "Unknown"
+            X[col] = X[col].astype("string").fillna("Unknown")
 
     # ------------------------------------------------------------------
     # Train-test split with shared Phase 9.9 policy where possible.
