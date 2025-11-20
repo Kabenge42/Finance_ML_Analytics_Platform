@@ -1,0 +1,209 @@
+# Core imports
+import os
+import warnings
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from finance_ml.ml_workflow.regression import (
+    adaptive_clip_predictions,
+    )
+
+# Interactive visualization imports
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# ============================================================================
+# Finance ML Package Imports - Phase 9.1-9.8 Modular Structure
+# ============================================================================
+# Using package-level imports for clean, maintainable code.
+# All Phase 9.1-9.8 functions are available with descriptive prefixes:
+#   - preprocessing_*: Phase 9.1 preprocessing functions
+#   - features_*: Phase 9.3 feature engineering
+#   - classification_*: Phase 9.4 classification models
+#   - regression_*: Phase 9.5 regression models
+#   - evaluation_*: Phase 9.6 evaluation metrics
+#   - analytics_*: Phase 9.7 analytics functions
+#   - reporting_*: Phase 9.8 reporting functions
+#
+# New Phase 9.2, 9.6, 9.7, 9.8 Import Paths (as of v9_9):
+#
+# Phase 9.2 - EDA/Benchmarking:
+#   from finance_ml.ml_workflow.eda.eda import eda_summary
+#   from finance_ml.ml_workflow.eda.benchmarking import generate_benchmarking_report
+#   from finance_ml.ml_workflow.eda.reports import generate_eda_report
+#
+# Phase 9.6 - Evaluation:
+#   from finance_ml.ml_workflow.evaluation.metrics import regression_report
+#   from finance_ml.ml_workflow.evaluation.analysis import residual_analysis
+#
+# Phase 9.7 - Analytics (mispricing, analyst comparison, portfolio, risk):
+#   from finance_ml.ml_workflow.analytics.mispricing import mispricing_scores, rank_by_sector
+#   from finance_ml.ml_workflow.analytics.analyst_comparison import PredictionAnalystAnalytics
+#   from finance_ml.ml_workflow.analytics.portfolio import optimize_portfolio_max_sharpe
+#   from finance_ml.ml_workflow.analytics.risk import calculate_portfolio_risk_metrics
+#
+# Phase 9.8 - Reporting:
+#   from finance_ml.ml_workflow.reporting.export import export_predictions
+#   from finance_ml.ml_workflow.reporting.dashboard_data import prepare_plotly_dashboard_data
+
+# Phase 9.1: Data loading and preprocessing
+# Direct imports from Phase 9.1 preprocessing modules (bypasses deprecated shims)
+from finance_ml import (
+    load_from_csv, load_from_db, validate_schema,
+    normalize_columns, check_missing_values,
+    )
+from finance_ml.ml_workflow.preprocessing.imputation import (
+    apply_enhanced_imputation_strategy_6step,
+    validate_imputation_completeness
+    )
+from finance_ml.ml_workflow.preprocessing.quality import calculate_data_quality_score as preprocessing_calculate_quality
+from finance_ml.ml_workflow.preprocessing.outliers import (
+    detect_outliers_iqr,
+    detect_outliers_zscore,
+    detect_outliers_isolation_forest,
+    winsorize_by_sector,
+    )
+from finance_ml.ml_workflow.preprocessing.scaling import scale_features
+
+# Sector-specific features and calibration (Priority 3)
+from finance_ml.ml_workflow.regression.calibration import calibrate_predictions_by_sector
+
+# Phase 9.2: EDA and benchmarking
+# Package-level imports (convenient, backward compatible)
+from finance_ml import (
+    generate_eda_report,
+    generate_benchmarking_report,
+    compare_sector_distributions,
+    compare_regional_valuations,
+    simple_eda,
+    )
+# Direct module imports (Phase 9.2 refactor - new modular paths)
+from finance_ml.ml_workflow.eda.eda import (
+    eda_summary,
+    sector_distribution_summary,
+    )
+
+# NOTE: Imports consolidated at the top of the notebook for consistency with
+# code_guidelines.md v1.3+. If executing this section directly in isolation,
+# please run the initial "Section 0: Imports & Setup" cell first to ensure
+# all required symbols are available.
+
+# Phase 9.3: Feature engineering
+# Direct import from features subpackage (Phase 9.3 refactor)
+from finance_ml import (
+    features_importance_rf,
+    engineer_valuation_ratios,
+    engineer_analyst_quality_features,
+    engineer_accounting_quality_features,
+    engineer_employee_productivity_features,
+    )
+
+from finance_ml.ml_workflow.features.api import build_features
+from finance_ml.ml_workflow.features.advanced import (
+    engineer_valuation_ratios,
+    engineer_analyst_quality_features,
+    engineer_accounting_quality_features,
+    engineer_employee_productivity_features,
+    )
+
+# Phase 9.4: Classification
+# Direct import from classification subpackage (Phase 9.4 refactor)
+from finance_ml import (
+    classification_create_enhanced_event_labels,
+    classification_optimize_hyperparameters,
+    )
+
+from finance_ml.ml_workflow.features.api import build_features
+from finance_ml.ml_workflow.features.advanced import (
+    engineer_valuation_ratios,
+    engineer_analyst_quality_features,
+    engineer_accounting_quality_features,
+    engineer_employee_productivity_features,
+    )
+
+# Import data preparation and model training functions
+from finance_ml.ml_workflow.classification import (
+    prepare_classification_data,
+    compare_classifiers,
+    )
+# Import evaluation functions for comprehensive model assessment
+from finance_ml.ml_workflow.classification import (
+    evaluate_classification,
+    evaluate_classification_by_sector,
+    plot_confusion_matrices,
+    compute_shap_values,
+    analyze_calibration,
+    cross_validate_classifier,
+    )
+# Phase 9.9: Classification meta-features export (Gap 6)
+from finance_ml.ml_workflow.classification.evaluation import export_classification_probabilities
+
+# Phase 9.5: Regression models
+# Direct import from regression subpackage (Phase 9.5 refactor)
+from finance_ml import (
+    regression_prepare_data,
+    regression_compare_regressors,
+    regression_train_sector_models,
+    regression_save_model,
+    regression_load_model,
+    regression_create_classification_interactions,
+    regression_train_stacking,
+    regression_train_quantile,
+    )
+# Import additional regression functions from subpackages (Phase 9.5 integration)
+from finance_ml.ml_workflow.regression import (
+    # Dataset preparation and validation
+    # Linear models
+    # Tree models
+    # Neural network
+    # Ensemble methods
+    # Quantile regression
+    # Hyperparameter tuning
+    # Model persistence
+    # Constraints
+    NonNegativeRegressionWrapper,
+    # Model comparison
+    )
+# Phase 9.9: Regression meta-features integration (Gap 6)
+from finance_ml.ml_workflow.regression.dataset import integrate_classification_features
+# Phase 9.9: Data split policy (Gap 3)
+
+# Phase 9.6: Evaluation
+# Package-level imports (convenient, backward compatible)
+from finance_ml import (
+    evaluation_comprehensive_metrics,
+    evaluation_metrics_by_segment,
+    )
+# Direct module imports (Phase 9.6 refactor - new modular paths)
+
+# Phase 9.7: Analytics
+# Package-level imports (convenient, backward compatible)
+from finance_ml import (
+    # Mispricing and ranking
+    analytics_calculate_mispricing,
+    analytics_rank_undervalued,
+    analytics_rank_overvalued,
+    analytics_rank_by_sector,
+    # Analyst comparison
+    PredictionAnalystAnalytics,
+    # Portfolio optimization
+    # Risk metrics
+    calculate_portfolio_risk_metrics,
+    )
+# Direct module imports (Phase 9.7 refactor - new modular paths)
+
+# Phase 9.8: Reporting and analytics
+# Package-level imports (convenient, backward compatible)
+from finance_ml import (
+    reporting_financial_metrics,
+    reporting_quality_alerts,
+    )
+# Direct module imports (Phase 9.8 refactor - new modular paths)
+
+# Data catalog for metadata management
+from finance_ml import DataCatalog
+
+warnings.filterwarnings('ignore')

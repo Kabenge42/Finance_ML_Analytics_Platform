@@ -17,6 +17,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensured Phase 9.3 markdown shows active `build_features()` usage and references code_guidelines.md v1.3+
   - Minimal, non-breaking changes; no functional impact on pipeline execution
 
+### Added
+
+- **Phase 9.3 Schema Version 1.3: 48 New Columns + 5 Feature Functions** (2025-11-20)
+  - **Schema Expansion**: Equities table expanded from 262 to 310 columns (+48, +18.3%)
+  - **Feature Engineering Enhancement**: Added 5 new feature engineering functions (19→24 functions, +26.3%)
+  - **New Column Categories** (48 total):
+    1. **Revenue Forecasting Estimates** (4 columns): revenues_est_avg_ntm, revenues_est_avg_fy1e, revenues_est_med_ntm,
+       revenues_est_med_fy1e
+    2. **EV/Sales Time-Series** (11 columns): ev_sales_est_fy1, ev_sales_ltm, ev_sales_ntm, ev_sales_1fyltm through
+       ev_sales_4fqltm
+    3. **Employment Metrics** (2 columns): total_employees_fy, total_employees_fq
+    4. **Technical Indicators** (6 columns): 52w_high_adj, 52w_low_adj, ema_20d, ema_50d, ema_100d, ema_250d
+    5. **EV/EBITDA Extended** (6 columns): ev_ebitda_ltm, ev_ebitda_ntm, ev_ebitda_1fyltm, ev_ebitda_1fqltm,
+       ev_ebitda_3yavgltm, ev_ebitda_est_fy1
+    6. **P/E Extended** (11 columns): p_e_est_fy1, p_e_2fyltm, p_e_3fyltm, p_e_3yavgltm, plus 7 quarterly/YoY variants
+    7. **Dividend Record** (8 columns): dividend_record dates (4), frequency, currency, amount, dividend_streak
+  - **New Feature Engineering Functions** (integrated into `build_comprehensive_features()`):
+    1. `engineer_technical_analysis_features()` (109 lines): EMA crossovers, 52W position indicators, volume momentum,
+       breakout signals
+    2. `engineer_valuation_timeseries_features()` (130 lines): Valuation momentum, mean reversion, forward/trailing
+       spreads, quarterly stability
+    3. `engineer_revenue_forecast_features()` (86 lines): Analyst consensus metrics, estimate quality indicators, growth
+       expectations
+    4. `engineer_dividend_reliability_features()` (108 lines): Dividend consistency scoring, coverage/safety metrics,
+       growth features
+    5. `engineer_employment_dynamics_features()` (103 lines): Employee growth metrics, productivity ratios, workforce
+       indicators
+  - **Files Modified**:
+    - SQL Schemas: `create_equities_schema.sql` (+56 lines), `create_equities_schema_sqlite.sql` (+56 lines)
+    - Python: `finance_ml/ml_workflow/preprocessing/data.py` (+56 lines schema_mapping), `imputation.py` (+3 lines)
+    - Features: `finance_ml/ml_workflow/features/advanced.py` (+543 lines, 5 new functions)
+    - Notebook: `ml_finance_model_main.ipynb` (+118 lines demonstration cells, restructured EDA metrics)
+    - Documentation: `code_guidelines.md` (+64 lines section 2.2), `README.md` (updated Feature Engineering)
+  - **Testing**: 4/4 tests passed (`tests/test_features_api_phase93.py`), 100% backward compatibility maintained
+  - **Documentation**:
+    - Implementation summary: `PHASE93_FEATURE_IMPLEMENTATION_SUMMARY.md` (509 lines)
+    - Column mapping reference: `phase93_new_columns_mapping.md` (90 lines)
+    - Enhancement plan: `docs/improvement_plan/Phase_9.3_feature_enhancement_plan.md` (v1.1)
+  - **Impact**: Enhanced ML capabilities with technical analysis integration, forward-looking valuation metrics,
+    dividend reliability scoring, and employment dynamics tracking
+
 ### Fixed
 
 - **Schema Extension: 64 Unknown Column Warnings Resolved** (2025-11-19)

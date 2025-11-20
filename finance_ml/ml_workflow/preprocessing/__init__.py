@@ -43,7 +43,10 @@ from finance_ml.ml_workflow.preprocessing.data import (
     create_temporal_split,
     create_expanding_windows,
 )
-
+from finance_ml.ml_workflow.preprocessing.dtypes import (
+    detect_and_cast_dtypes,
+    to_jsonable,
+)
 from finance_ml.ml_workflow.preprocessing.imputation import (
     get_zero_imputation_columns,
     get_knn_imputation_columns,
@@ -53,6 +56,8 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
     apply_price_imputation,
     apply_median_imputation,
     apply_enhanced_imputation_strategy_4step,
+    apply_enhanced_imputation_strategy_6step,
+    fillna_by_dtype,
 )
 from finance_ml.ml_workflow.preprocessing.outliers import (
     detect_outliers_iqr,
@@ -70,10 +75,6 @@ from finance_ml.ml_workflow.preprocessing.quality import (
 from finance_ml.ml_workflow.preprocessing.scaling import (
     create_scaler_pipeline,
     scale_features,
-)
-from finance_ml.ml_workflow.preprocessing.dtypes import (
-    detect_and_cast_dtypes,
-    to_jsonable,
 )
 
 __all__ = [
@@ -113,6 +114,8 @@ __all__ = [
     "apply_price_imputation",
     "apply_median_imputation",
     "apply_enhanced_imputation_strategy_4step",
+    "apply_enhanced_imputation_strategy_6step",
+    "fillna_by_dtype",
     # Outlier detection
     "detect_outliers_iqr",
     "detect_outliers_zscore",

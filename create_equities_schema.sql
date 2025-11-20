@@ -259,7 +259,63 @@ CREATE TABLE equities
     "Marketing Expenses (FQ)"                          NUMERIC,
     "Marketing Expenses (FY)"                          NUMERIC,
     "Marketing Expenses (-1FY)"                        NUMERIC,
-    "Marketing Expenses (5YAVGLTM)" NUMERIC
+    "Marketing Expenses (5YAVGLTM)"            NUMERIC,
+    -- Phase 9.3 Schema Version 1.3 additions: 48 new columns
+    -- Category 1: Revenue Forecasting Estimates (4 columns)
+    "Revenues - Est Avg (NTM)"                 NUMERIC,
+    "Revenues - Est Avg (FY1E)"                NUMERIC,
+    "Revenues - Est Med (NTM)"                 NUMERIC,
+    "Revenues - Est Med (FY1E)"                NUMERIC,
+    -- Category 2: EV/Sales Time-Series (11 columns)
+    "EV/Sales (EST FY1)"                       NUMERIC,
+    "EV/Sales (LTM)"                           NUMERIC,
+    "EV/Sales (NTM)"                           NUMERIC,
+    "EV/Sales (-1FYLTM)"                       NUMERIC,
+    "EV/Sales (-2FYLTM)"                       NUMERIC,
+    "EV/Sales (-3FYLTM)"                       NUMERIC,
+    "EV/Sales (3YAVGLTM)"                      NUMERIC,
+    "EV/Sales (-1FQLTM)"                       NUMERIC,
+    "EV/Sales (-2FQLTM)"                       NUMERIC,
+    "EV/Sales (-3FQLTM)"                       NUMERIC,
+    "EV/Sales (-4FQLTM)"                       NUMERIC,
+    -- Category 3: Employment Metrics (2 columns)
+    "Total Employees (FY)"                     NUMERIC,
+    "Total Employees (FQ)"                     NUMERIC,
+    -- Category 4: Technical Indicators (6 columns)
+    "52W High/Adj"                             NUMERIC,
+    "52W Low/Adj"                              NUMERIC,
+    "EMA (20D)"                                NUMERIC,
+    "EMA (50D)"                                NUMERIC,
+    "EMA (100D)"                               NUMERIC,
+    "EMA (250D)"                               NUMERIC,
+    -- Category 5: EV/EBITDA Extended Time-Series (6 columns)
+    "EV/EBITDA (LTM)"                          NUMERIC,
+    "EV/EBITDA (NTM)"                          NUMERIC,
+    "EV/EBITDA (-1FYLTM)"                      NUMERIC,
+    "EV/EBITDA (-1FQLTM)"                      NUMERIC,
+    "EV/EBITDA (3YAVGLTM)"                     NUMERIC,
+    "EV/EBITDA (EST FY1)"                      NUMERIC,
+    -- Category 6: P/E Extended Time-Series (11 columns)
+    "P/E (EST FY1)"                            NUMERIC,
+    "P/E (-2FYLTM)"                            NUMERIC,
+    "P/E (-3FYLTM)"                            NUMERIC,
+    "P/E (3YAVGLTM)"                           NUMERIC,
+    "P/E (-1FQLTM)"                            NUMERIC,
+    "P/E (-2FQLTM)"                            NUMERIC,
+    "P/E (-3FQLTM)"                            NUMERIC,
+    "P/E (-0FQQoQLTM)"                         NUMERIC,
+    "P/E (-0FYYoYLTM)"                         NUMERIC,
+    "P/E (-1FYYoYLTM)"                         NUMERIC,
+    "P/E (-0FQYoYLTM)"                         NUMERIC,
+    -- Category 7: Dividend Record Information (8 columns)
+    "Dividend Record (Announce Date)"          DATE,
+    "Dividend Record (Ex Date)"                DATE,
+    "Dividend Record (Payable Date)"           DATE,
+    "Dividend Record (Record Date)"            DATE,
+    "Dividend Record (Frequency)"              TEXT,
+    "Dividend Record (Currency)"               TEXT,
+    "Dividend Record (Amount)"                 NUMERIC,
+    "Dividend Streak"                          NUMERIC
 ) TABLESPACE pg_default;
 
 -- Set table ownership

@@ -242,13 +242,13 @@ from finance_ml.ml_workflow.regression.models import (
 from finance_ml.ml_workflow.regression.quantile import (
     train_quantile_regressor as regression_train_quantile,
 )
-from finance_ml.ml_workflow.regression.tuning import (
-    optimize_hyperparameters_optuna as regression_optimize_hyperparameters,
-)
 from finance_ml.ml_workflow.regression.robust import (
     adaptive_clip_predictions,
     winsorize_target,
     clip_predictions,
+)
+from finance_ml.ml_workflow.regression.tuning import (
+    optimize_hyperparameters_optuna as regression_optimize_hyperparameters,
 )
 
 # Phase 9.8 Refactor: Import from reporting subpackage

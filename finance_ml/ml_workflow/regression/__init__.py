@@ -163,6 +163,13 @@ from finance_ml.ml_workflow.regression.quantile import (
     train_quantile_regressor,
 )
 
+# Phase 9.9: Robust prediction utilities (outlier safety)
+from finance_ml.ml_workflow.regression.robust import (
+    winsorize_target,
+    clip_predictions,
+    adaptive_clip_predictions,
+)
+
 # Phase 9.5.1: Hyperparameter tuning
 from finance_ml.ml_workflow.regression.tuning import (
     optimize_hyperparameters_optuna,
@@ -172,13 +179,6 @@ from finance_ml.ml_workflow.regression.tuning import (
 from finance_ml.ml_workflow.regression.uncertainty import (
     conformal_prediction_intervals,
     compute_interval_coverage,
-)
-
-# Phase 9.9: Robust prediction utilities (outlier safety)
-from finance_ml.ml_workflow.regression.robust import (
-    winsorize_target,
-    clip_predictions,
-    adaptive_clip_predictions,
 )
 
 __all__ = [

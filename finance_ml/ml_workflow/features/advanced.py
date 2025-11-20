@@ -1619,6 +1619,13 @@ def build_comprehensive_features(
     # Phase 7: Balance sheet trends
     result = engineer_balance_sheet_trends(result)
 
+    # Phase 9.3 Schema Version 1.3: New feature categories
+    result = engineer_technical_analysis_features(result)
+    result = engineer_valuation_timeseries_features(result)
+    result = engineer_revenue_forecast_features(result)
+    result = engineer_dividend_reliability_features(result)
+    result = engineer_employment_dynamics_features(result)
+
     # Temporal features (if date column exists)
     if "next_earnings" in result.columns:
         result = engineer_temporal_features(result, date_col="next_earnings")
@@ -1980,4 +1987,539 @@ def engineer_sector_relative_interactions(
         result[f"{m}_vs_sector_top_quartile"] = df[m] - sector_q3
 
     logger.info("Engineered sector-relative interaction features")
+    return result
+
+
+def engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer technical analysis features using EMA and 52-week data.
+
+    Phase 9.3 Schema Version 1.3: Leverages new technical indicator columns
+    (EMA 20D/50D/100D/250D, 52W High/Low, Rel. Volume).
+
+    Features created:
+    - EMA crossover signals (20D/50D, 50D/250D)
+    - Price vs EMA deviations
+    - EMA slope and trend consistency
+    - 52-week range position indicators
+    - Volume momentum composite
+
+    Args:
+        df: Input DataFrame with technical indicator columns
+
+    Returns:
+        DataFrame with technical analysis features added
+
+    Example:
+        >>> df_tech = engineer_technical_analysis_features(stocks_df)
+        >>> print(df_tech[['ema_crossover_20_50', 'pct_off_52w_high']].head())
+    """
+    result = df.copy()
+
+    # 1. EMA-Based Signals
+    if "ema_20d" in df.columns and "ema_50d" in df.columns:
+        # EMA crossover: 1 if 20D > 50D (bullish), -1 if 20D < 50D (bearish), 0 if equal/missing
+        result["ema_crossover_20_50"] = np.where(
+            df["ema_20d"] > df["ema_50d"], 1, np.where(df["ema_20d"] < df["ema_50d"], -1, 0)
+        )
+
+    if "ema_50d" in df.columns and "ema_250d" in df.columns:
+        result["ema_crossover_50_250"] = np.where(
+            df["ema_50d"] > df["ema_250d"], 1, np.where(df["ema_50d"] < df["ema_250d"], -1, 0)
+        )
+
+    if "last_price" in df.columns and "ema_20d" in df.columns:
+        result["price_vs_ema_20d"] = _safe_div(df["last_price"] - df["ema_20d"], df["ema_20d"])
+
+    if "last_price" in df.columns and "ema_250d" in df.columns:
+        result["price_vs_ema_250d"] = _safe_div(df["last_price"] - df["ema_250d"], df["ema_250d"])
+
+    # EMA slope (approximate using 20D vs 50D as proxy for slope)
+    if "ema_20d" in df.columns and "ema_50d" in df.columns:
+        result["ema_slope_20d"] = _safe_div(df["ema_20d"] - df["ema_50d"], df["ema_50d"])
+
+    # EMA trend consistency: check if EMAs are aligned (all ascending or descending)
+    if all(c in df.columns for c in ["ema_20d", "ema_50d", "ema_100d", "ema_250d"]):
+        bullish = (
+            (df["ema_20d"] > df["ema_50d"])
+            & (df["ema_50d"] > df["ema_100d"])
+            & (df["ema_100d"] > df["ema_250d"])
+        )
+        bearish = (
+            (df["ema_20d"] < df["ema_50d"])
+            & (df["ema_50d"] < df["ema_100d"])
+            & (df["ema_100d"] < df["ema_250d"])
+        )
+        result["ema_trend_consistency"] = np.where(bullish, 1, np.where(bearish, -1, 0))
+
+    # 2. 52-Week Position Features
+    if "52w_high_adj" in df.columns and "last_price" in df.columns:
+        result["pct_off_52w_high"] = _safe_div(
+            df["52w_high_adj"] - df["last_price"], df["52w_high_adj"]
+        )
+
+    if "52w_low_adj" in df.columns and "last_price" in df.columns:
+        result["pct_above_52w_low"] = _safe_div(
+            df["last_price"] - df["52w_low_adj"], df["52w_low_adj"]
+        )
+
+    if all(c in df.columns for c in ["52w_high_adj", "52w_low_adj", "last_price"]):
+        # 52W range position: 0 at low, 1 at high
+        range_width = df["52w_high_adj"] - df["52w_low_adj"]
+        result["52w_range_position"] = _safe_div(
+            df["last_price"] - df["52w_low_adj"], range_width
+        ).clip(0, 1)
+
+        # Near 52W high/low flags
+        result["near_52w_high_flag"] = (result["pct_off_52w_high"] <= 0.05).astype(int)
+        result["near_52w_low_flag"] = (result["pct_above_52w_low"] <= 0.05).astype(int)
+
+    # 3. Volume & Momentum Composite
+    if "rel_volume" in df.columns and "price_chg_pct_1m" in df.columns:
+        result["volume_momentum_score"] = df["rel_volume"] * df["price_chg_pct_1m"]
+
+    # Breakout signal: EMA crossover + near 52W high
+    if "ema_crossover_20_50" in result.columns and "near_52w_high_flag" in result.columns:
+        result["breakout_signal"] = (
+            (result["ema_crossover_20_50"] == 1) & (result["near_52w_high_flag"] == 1)
+        ).astype(int)
+
+    logger.info("Engineered technical analysis features (Phase 9.3 Schema 1.3)")
+    return result
+
+
+def engineer_valuation_timeseries_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer valuation time-series features using extended EV/Sales, EV/EBITDA, and P/E data.
+
+    Phase 9.3 Schema Version 1.3: Leverages new valuation multiples time-series columns
+    (EV/Sales variants, EV/EBITDA extended, P/E extended history).
+
+    Features created:
+    - Valuation momentum indicators (1Y, 3Y trends)
+    - Mean reversion metrics (current vs 3Y average)
+    - Forward vs trailing valuation spreads
+    - Quarterly valuation stability metrics
+
+    Args:
+        df: Input DataFrame with valuation time-series columns
+
+    Returns:
+        DataFrame with valuation time-series features added
+
+    Example:
+        >>> df_val = engineer_valuation_timeseries_features(stocks_df)
+        >>> print(df_val[['ev_sales_trend_1y', 'p_e_forward_discount']].head())
+    """
+    result = df.copy()
+
+    # 1. Valuation Momentum Indicators
+    # EV/Sales trend (1Y)
+    if "ev_sales_ltm" in df.columns and "ev_sales_1fyltm" in df.columns:
+        result["ev_sales_trend_1y"] = _safe_div(
+            df["ev_sales_ltm"] - df["ev_sales_1fyltm"], df["ev_sales_1fyltm"]
+        )
+
+    # EV/Sales trend (3Y) - using 3-year lookback
+    if all(
+        c in df.columns
+        for c in ["ev_sales_ltm", "ev_sales_1fyltm", "ev_sales_2fyltm", "ev_sales_3fyltm"]
+    ):
+        # Linear trend slope approximation
+        y_vals = pd.concat(
+            [
+                df["ev_sales_3fyltm"],
+                df["ev_sales_2fyltm"],
+                df["ev_sales_1fyltm"],
+                df["ev_sales_ltm"],
+            ],
+            axis=1,
+        )
+        result["ev_sales_trend_3y"] = y_vals.apply(
+            lambda row: (
+                (row.iloc[-1] - row.iloc[0]) / (row.iloc[0] + 1e-9)
+                if row.notna().sum() >= 2
+                else np.nan
+            ),
+            axis=1,
+        )
+
+    # EV/EBITDA momentum
+    if "ev_ebitda_ltm" in df.columns and "ev_ebitda_1fyltm" in df.columns:
+        result["ev_ebitda_momentum"] = _safe_div(
+            df["ev_ebitda_ltm"] - df["ev_ebitda_1fyltm"], df["ev_ebitda_1fyltm"]
+        )
+
+    # P/E momentum (YoY)
+    if "p_e_ltm" in df.columns and "p_e_1fyltm" in df.columns:
+        result["p_e_momentum_yoy"] = _safe_div(df["p_e_ltm"] - df["p_e_1fyltm"], df["p_e_1fyltm"])
+
+    # P/E momentum (QoQ)
+    if "p_e_ltm" in df.columns and "p_e_1fqltm" in df.columns:
+        result["p_e_momentum_qoq"] = _safe_div(df["p_e_ltm"] - df["p_e_1fqltm"], df["p_e_1fqltm"])
+
+    # 2. Valuation Mean Reversion Features
+    if "ev_sales_ltm" in df.columns and "ev_sales_3yavgltm" in df.columns:
+        # Z-score: (current - mean) / std, approximated using deviation from 3Y avg
+        deviation = df["ev_sales_ltm"] - df["ev_sales_3yavgltm"]
+        result["ev_sales_vs_3y_avg"] = _safe_div(deviation, df["ev_sales_3yavgltm"])
+
+    if "ev_ebitda_ltm" in df.columns and "ev_ebitda_3yavgltm" in df.columns:
+        deviation = df["ev_ebitda_ltm"] - df["ev_ebitda_3yavgltm"]
+        result["ev_ebitda_vs_3y_avg"] = _safe_div(deviation, df["ev_ebitda_3yavgltm"])
+
+    if "p_e_ltm" in df.columns and "p_e_3yavgltm" in df.columns:
+        deviation = df["p_e_ltm"] - df["p_e_3yavgltm"]
+        result["p_e_vs_3y_avg"] = _safe_div(deviation, df["p_e_3yavgltm"])
+
+    # Valuation extreme flag (>2 std dev from mean, approximated as >200% deviation)
+    if "ev_sales_vs_3y_avg" in result.columns:
+        result["valuation_extreme_flag"] = (result["ev_sales_vs_3y_avg"].abs() > 2.0).astype(int)
+
+    # 3. Forward vs Trailing Valuation
+    if "ev_sales_ntm" in df.columns and "ev_sales_ltm" in df.columns:
+        result["ev_sales_forward_discount"] = _safe_div(
+            df["ev_sales_ntm"] - df["ev_sales_ltm"], df["ev_sales_ltm"]
+        )
+
+    if "ev_ebitda_ntm" in df.columns and "ev_ebitda_ltm" in df.columns:
+        result["ev_ebitda_forward_discount"] = _safe_div(
+            df["ev_ebitda_ntm"] - df["ev_ebitda_ltm"], df["ev_ebitda_ltm"]
+        )
+
+    if "p_e_est_fy1" in df.columns and "p_e_ltm" in df.columns:
+        result["p_e_forward_discount"] = _safe_div(df["p_e_est_fy1"] - df["p_e_ltm"], df["p_e_ltm"])
+
+    # Growth implied by valuation (forward discount as proxy for growth expectations)
+    if "ev_sales_forward_discount" in result.columns:
+        # Negative discount implies growth expectations
+        result["growth_implied_by_valuation"] = -result["ev_sales_forward_discount"]
+
+    # 4. Quarterly Valuation Stability
+    if all(
+        c in df.columns
+        for c in ["ev_sales_1fqltm", "ev_sales_2fqltm", "ev_sales_3fqltm", "ev_sales_4fqltm"]
+    ):
+        quarterly_vals = pd.concat(
+            [
+                df["ev_sales_1fqltm"],
+                df["ev_sales_2fqltm"],
+                df["ev_sales_3fqltm"],
+                df["ev_sales_4fqltm"],
+            ],
+            axis=1,
+        )
+        result["ev_sales_quarterly_volatility"] = quarterly_vals.std(axis=1)
+        result["valuation_stability_score"] = _safe_div(
+            1.0, result["ev_sales_quarterly_volatility"] + 0.01
+        )
+
+        # Valuation trend consistency (monotonicity check across quarters)
+        def check_monotonicity(row):
+            vals = row.dropna().values
+            if len(vals) < 2:
+                return 0
+            increasing = all(vals[i] <= vals[i + 1] for i in range(len(vals) - 1))
+            decreasing = all(vals[i] >= vals[i + 1] for i in range(len(vals) - 1))
+            return 1 if increasing else (-1 if decreasing else 0)
+
+        result["valuation_trend_consistency"] = quarterly_vals.apply(check_monotonicity, axis=1)
+
+    logger.info("Engineered valuation time-series features (Phase 9.3 Schema 1.3)")
+    return result
+
+
+def engineer_revenue_forecast_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer revenue forecasting and analyst consensus features.
+
+    Phase 9.3 Schema Version 1.3: Leverages new revenue estimate columns
+    (Revenues Est Avg/Med for NTM and FY1E).
+
+    Features created:
+    - Analyst consensus metrics (estimate spreads, disagreement)
+    - Forward revenue expectations (implied growth rates)
+    - Estimate quality indicators (avg vs median bias, confidence flags)
+
+    Args:
+        df: Input DataFrame with revenue estimate columns
+
+    Returns:
+        DataFrame with revenue forecast features added
+
+    Example:
+        >>> df_rev = engineer_revenue_forecast_features(stocks_df)
+        >>> print(df_rev[['revenue_estimate_spread_ntm', 'revenue_growth_implied_fy1e']].head())
+    """
+    result = df.copy()
+
+    # 1. Analyst Consensus Metrics
+    # Revenue estimate spread NTM (disagreement indicator)
+    if "revenues_est_avg_ntm" in df.columns and "revenues_est_med_ntm" in df.columns:
+        result["revenue_estimate_spread_ntm"] = _safe_div(
+            df["revenues_est_avg_ntm"] - df["revenues_est_med_ntm"], df["revenues_est_med_ntm"]
+        )
+
+    # Revenue estimate spread FY1E
+    if "revenues_est_avg_fy1e" in df.columns and "revenues_est_med_fy1e" in df.columns:
+        result["revenue_estimate_spread_fy1e"] = _safe_div(
+            df["revenues_est_avg_fy1e"] - df["revenues_est_med_fy1e"], df["revenues_est_med_fy1e"]
+        )
+
+    # Revenue consensus uncertainty score (composite of both spreads)
+    if (
+        "revenue_estimate_spread_ntm" in result.columns
+        and "revenue_estimate_spread_fy1e" in result.columns
+    ):
+        result["revenue_consensus_uncertainty_score"] = (
+            result["revenue_estimate_spread_ntm"].abs()
+            + result["revenue_estimate_spread_fy1e"].abs()
+        ) / 2.0
+
+    # 2. Forward Revenue Expectations
+    # Revenue growth implied NTM
+    if "revenues_est_avg_ntm" in df.columns and "total_revenues_ltm" in df.columns:
+        result["revenue_growth_implied_ntm"] = _safe_div(
+            df["revenues_est_avg_ntm"] - df["total_revenues_ltm"], df["total_revenues_ltm"]
+        )
+
+    # Revenue growth implied FY1E
+    if "revenues_est_avg_fy1e" in df.columns and "total_revenues_ltm" in df.columns:
+        result["revenue_growth_implied_fy1e"] = _safe_div(
+            df["revenues_est_avg_fy1e"] - df["total_revenues_ltm"], df["total_revenues_ltm"]
+        )
+
+    # Revenue growth acceleration (FY1E growth vs historical CAGR)
+    if (
+        "revenue_growth_implied_fy1e" in result.columns
+        and "total_revenues_cagr_5y_fy" in df.columns
+    ):
+        result["revenue_growth_acceleration"] = (
+            result["revenue_growth_implied_fy1e"] - df["total_revenues_cagr_5y_fy"]
+        )
+
+    # 3. Estimate Quality Indicators
+    # Avg vs median bias (systematic difference between average and median)
+    if "revenue_estimate_spread_ntm" in result.columns:
+        result["avg_vs_median_bias"] = result["revenue_estimate_spread_ntm"]
+
+    # Estimate confidence flag (low spread = high confidence)
+    # Threshold: spread < 5% indicates high confidence
+    if "revenue_consensus_uncertainty_score" in result.columns:
+        result["estimate_confidence_flag"] = (
+            result["revenue_consensus_uncertainty_score"] < 0.05
+        ).astype(int)
+
+    # Growth surprise potential (gap between estimate and trend)
+    if (
+        "revenue_growth_implied_fy1e" in result.columns
+        and "total_revenues_cagr_5y_fy" in df.columns
+    ):
+        result["growth_surprise_potential"] = (
+            result["revenue_growth_implied_fy1e"] - df["total_revenues_cagr_5y_fy"]
+        ).abs()
+
+    logger.info("Engineered revenue forecast features (Phase 9.3 Schema 1.3)")
+    return result
+
+
+def engineer_dividend_reliability_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer dividend reliability and income stock features.
+
+    Phase 9.3 Schema Version 1.3: Leverages new dividend record columns
+    (Dividend Record dates, frequency, currency, amount, streak).
+
+    Features created:
+    - Dividend consistency metrics (streak years, consistency score, income stock flag)
+    - Dividend coverage & safety (payout ratio, FCF coverage, safety score)
+    - Dividend growth features (growth trend, yield vs sector, aristocrat flag)
+    - Dividend event features (days since ex-date, frequency encoding, currency risk)
+
+    Args:
+        df: Input DataFrame with dividend record columns
+
+    Returns:
+        DataFrame with dividend reliability features added
+
+    Example:
+        >>> df_div = engineer_dividend_reliability_features(stocks_df)
+        >>> print(df_div[['dividend_consistency_score', 'dividend_safety_score']].head())
+    """
+    result = df.copy()
+
+    # 1. Dividend Consistency Metrics
+    # Dividend streak years (already numeric in schema)
+    if "dividend_streak" in df.columns:
+        result["dividend_streak_years"] = df["dividend_streak"]
+
+        # Dividend consistency score (weighted: streak + frequency)
+        # Assuming quarterly frequency is ideal (4 payments/year)
+        if "dividend_record_frequency" in df.columns:
+            freq_map = {"quarterly": 4, "semi-annual": 2, "annual": 1, "monthly": 12}
+            freq_encoded = df["dividend_record_frequency"].map(freq_map).fillna(1)
+            # Score: (streak / 10) * 0.7 + (freq / 4) * 0.3, normalized to 0-100
+            result["dividend_consistency_score"] = (df["dividend_streak"] / 10.0).clip(
+                0, 1
+            ) * 70 + (freq_encoded / 4.0).clip(0, 1) * 30
+        else:
+            # Without frequency, just use streak
+            result["dividend_consistency_score"] = (df["dividend_streak"] / 10.0).clip(0, 1) * 100
+
+        # Income stock flag (reliable dividend payers: streak > 5 years)
+        result["income_stock_flag"] = (df["dividend_streak"] > 5).astype(int)
+
+    # 2. Dividend Coverage & Safety
+    # Dividend payout ratio (Dividend Amount / EPS)
+    if "dividend_record_amount" in df.columns and "eps_adj_ltm" in df.columns:
+        result["dividend_payout_ratio"] = _safe_div(df["dividend_record_amount"], df["eps_adj_ltm"])
+
+    # FCF dividend coverage (FCF LTM / Total Dividends Paid)
+    if "fcf_ltm" in df.columns and "common_dividends_paid_ltm" in df.columns:
+        result["fcf_dividend_coverage"] = _safe_div(df["fcf_ltm"], df["common_dividends_paid_ltm"])
+
+    # Dividend safety score (composite coverage metric)
+    # Safe if payout ratio < 0.8 and FCF coverage > 1.2
+    if "dividend_payout_ratio" in result.columns and "fcf_dividend_coverage" in result.columns:
+        payout_safe = (result["dividend_payout_ratio"] < 0.8) | result[
+            "dividend_payout_ratio"
+        ].isna()
+        fcf_safe = (result["fcf_dividend_coverage"] > 1.2) | result["fcf_dividend_coverage"].isna()
+        result["dividend_safety_score"] = payout_safe.astype(int) * 50 + fcf_safe.astype(int) * 50
+
+    # 3. Dividend Growth Features
+    # Dividend growth trend (change in Dividend Per Share LTM vs historical)
+    if "dividend_per_share_ltm" in df.columns:
+        # Approximate growth using current vs lagged values (if available)
+        # For now, create a placeholder for future enhancement
+        result["dividend_growth_trend"] = 0.0  # Placeholder
+
+    # Dividend yield vs sector (sector-relative ranking)
+    if "div_yield_ltm" in df.columns and "sector" in df.columns:
+        sector_median = df.groupby("sector")["div_yield_ltm"].transform("median")
+        result["dividend_yield_vs_sector"] = df["div_yield_ltm"] - sector_median
+
+    # Dividend aristocrat flag (long streak + positive growth)
+    if "dividend_streak" in df.columns:
+        # Aristocrats typically have 25+ years of consecutive increases
+        result["dividend_aristocrat_flag"] = (df["dividend_streak"] >= 25).astype(int)
+
+    # 4. Dividend Event Features
+    # Days since ex-date (recency of last dividend)
+    if "dividend_record_ex_date" in df.columns:
+        try:
+            ex_dates = pd.to_datetime(df["dividend_record_ex_date"], errors="coerce")
+            today = pd.Timestamp.now()
+            result["days_since_ex_date"] = (today - ex_dates).dt.days
+        except Exception:
+            result["days_since_ex_date"] = np.nan
+
+    # Dividend frequency encoded (numerical encoding)
+    if "dividend_record_frequency" in df.columns:
+        freq_map = {"monthly": 12, "quarterly": 4, "semi-annual": 2, "annual": 1}
+        result["dividend_frequency_encoded"] = (
+            df["dividend_record_frequency"].map(freq_map).fillna(0)
+        )
+
+    # Currency risk flag (non-USD dividend currency)
+    if "dividend_record_currency" in df.columns:
+        result["currency_risk_flag"] = (
+            df["dividend_record_currency"].fillna("USD") != "USD"
+        ).astype(int)
+
+    logger.info("Engineered dividend reliability features (Phase 9.3 Schema 1.3)")
+    return result
+
+
+def engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer employment dynamics and growth signal features.
+
+    Phase 9.3 Schema Version 1.3: Leverages new employee count columns
+    (Total Employees FY/FQ) and existing employee averages.
+
+    Features created:
+    - Employee growth metrics (YoY, QoQ, 5Y CAGR, acceleration)
+    - Productivity & efficiency (revenue/profit per employee, trends)
+    - Scale & workforce indicators (large employer flag, volatility, hiring intensity)
+
+    Args:
+        df: Input DataFrame with employment columns
+
+    Returns:
+        DataFrame with employment dynamics features added
+
+    Example:
+        >>> df_emp = engineer_employment_dynamics_features(stocks_df)
+        >>> print(df_emp[['employee_growth_yoy', 'revenue_per_employee_fy']].head())
+    """
+    result = df.copy()
+
+    # 1. Employee Growth Metrics
+    # Employee growth YoY (using FY data)
+    if "total_employees_fy" in df.columns and "avg_employees_fy" in df.columns:
+        # Approximate prior year using avg_employees_fy as proxy
+        result["employee_growth_yoy"] = _safe_div(
+            df["total_employees_fy"] - df["avg_employees_fy"], df["avg_employees_fy"]
+        )
+
+    # Employee growth QoQ (using FQ data)
+    if "total_employees_fq" in df.columns and "avg_employees_ltm" in df.columns:
+        # Approximate prior quarter using LTM average
+        result["employee_growth_qoq"] = _safe_div(
+            df["total_employees_fq"] - df["avg_employees_ltm"], df["avg_employees_ltm"]
+        )
+
+    # Employee growth CAGR 5Y
+    if "total_employees_fy" in df.columns and "avg_employees_5yavgfy" in df.columns:
+        # CAGR = (End/Start)^(1/5) - 1
+        # Approximate using current vs 5Y avg
+        ratio = _safe_div(df["total_employees_fy"], df["avg_employees_5yavgfy"])
+        result["employee_growth_cagr_5y"] = (ratio**0.2) - 1.0
+
+    # Employee growth acceleration (change in growth rate)
+    if "employee_growth_yoy" in result.columns and "employee_growth_cagr_5y" in result.columns:
+        result["employee_growth_acceleration"] = (
+            result["employee_growth_yoy"] - result["employee_growth_cagr_5y"]
+        )
+
+    # 2. Productivity & Efficiency
+    # Revenue per employee (FY)
+    if "total_revenues_fy" in df.columns and "total_employees_fy" in df.columns:
+        result["revenue_per_employee_fy"] = _safe_div(
+            df["total_revenues_fy"], df["total_employees_fy"]
+        )
+
+    # Revenue per employee (LTM)
+    if "total_revenues_ltm" in df.columns and "avg_employees_ltm" in df.columns:
+        result["revenue_per_employee_ltm"] = _safe_div(
+            df["total_revenues_ltm"], df["avg_employees_ltm"]
+        )
+
+    # Revenue per employee trend (YoY change in productivity)
+    if "revenue_per_employee_fy" in result.columns and "revenue_per_employee_ltm" in result.columns:
+        result["revenue_per_employee_trend"] = _safe_div(
+            result["revenue_per_employee_fy"] - result["revenue_per_employee_ltm"],
+            result["revenue_per_employee_ltm"],
+        )
+
+    # Profit per employee (Net Income / Total Employees)
+    if "net_income_adj_fy" in df.columns and "total_employees_fy" in df.columns:
+        result["profit_per_employee"] = _safe_div(df["net_income_adj_fy"], df["total_employees_fy"])
+    elif "net_income_adj_ltm" in df.columns and "avg_employees_ltm" in df.columns:
+        result["profit_per_employee"] = _safe_div(df["net_income_adj_ltm"], df["avg_employees_ltm"])
+
+    # 3. Scale & Workforce Indicators
+    # Large employer flag (>10,000 employees)
+    if "total_employees_fy" in df.columns:
+        result["employee_base_scale_flag"] = (df["total_employees_fy"] > 10000).astype(int)
+
+    # Workforce volatility (std dev of employee counts)
+    if "total_employees_fq" in df.columns and "avg_employees_ltm" in df.columns:
+        # Approximate volatility using difference between FQ and LTM avg
+        result["workforce_volatility"] = (
+            (df["total_employees_fq"] - df["avg_employees_ltm"]).abs() / df["avg_employees_ltm"]
+        ).fillna(0)
+
+    # Hiring intensity score (employee growth relative to sector)
+    if "employee_growth_yoy" in result.columns and "sector" in df.columns:
+        sector_median_growth = df.groupby("sector")["employee_growth_yoy"].transform("median")
+        result["hiring_intensity_score"] = result["employee_growth_yoy"] - sector_median_growth
+
+    logger.info("Engineered employment dynamics features (Phase 9.3 Schema 1.3)")
     return result

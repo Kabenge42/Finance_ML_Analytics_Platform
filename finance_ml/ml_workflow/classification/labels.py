@@ -87,15 +87,16 @@ def create_enhanced_event_labels(
     4. volatility: Based on price volatility spikes
     5. analyst_rating: Based on analyst rating changes
     6. market_events: Based on sector rotation and regional trends
+    7. combined_signals: Multi-metric composite (momentum + valuation + fundamentals)
 
     New Phase 9.3 feature-enhanced methods:
-    7. profitability_event: Based on ROE, ROA, ROIC profitability ratios
-    8. leverage_event: Based on debt ratios (debt_to_equity, net_debt_to_ebitda)
-    9. liquidity_event: Based on current_ratio, quick_ratio
-    10. efficiency_event: Based on asset_turnover, inventory_turnover
-    11. growth_event: Based on revenue_growth, earnings_growth
-    12. quality_event: Based on accounting quality and analyst quality metrics
-    13. composite_event: Based on Piotroski F-Score, Altman Z-Score
+    8. profitability_event: Based on ROE, ROA, ROIC profitability ratios
+    9. leverage_event: Based on debt ratios (debt_to_equity, net_debt_to_ebitda)
+    10. liquidity_event: Based on current_ratio, quick_ratio
+    11. efficiency_event: Based on asset_turnover, inventory_turnover
+    12. growth_event: Based on revenue_growth, earnings_growth
+    13. quality_event: Based on accounting quality and analyst quality metrics
+    14. composite_event: Based on Piotroski F-Score, Altman Z-Score
 
     Args:
         df: DataFrame with required columns
@@ -493,6 +494,70 @@ def create_enhanced_event_labels(
         labels[(market_score >= -0.6) & (market_score < 0.6)] = 2  # Neutral signals
         labels[(market_score <= -0.6) & (market_score > -1.2)] = 1  # Negative signals
         labels[market_score <= -1.2] = 0  # Very strong negative sector/market signals
+
+    elif method == "combined_signals":
+        # Combined signals: Multi-metric composite combining price momentum, valuation, and fundamentals
+        # This method provides a balanced view across different signal types
+        composite_score = pd.Series(0.0, index=df.index)
+        signal_count = 0
+
+        # Component 1: Price momentum (from price_momentum method logic)
+        if "price_target" in df.columns and "last_price" in df.columns:
+            price_diff_pct = (df["price_target"] - df["last_price"]) / df["last_price"] * 100.0
+            composite_score += price_diff_pct / 10.0  # Normalize
+            signal_count += 1
+
+        # Component 2: Valuation (lower P/E, P/B = undervalued = positive)
+        pe_col = _get_column(df, "p_e_ratio", "p_e", "p_e_ltm")
+        if pe_col is not None:
+            pe_percentile = pe_col.rank(pct=True)
+            # Invert: lower P/E = higher score
+            composite_score += (1.0 - pe_percentile) * 2.0
+            signal_count += 1
+
+        pb_col = _get_column(df, "p_b_ratio", "p_b", "p_b_ltm")
+        if pb_col is not None:
+            pb_percentile = pb_col.rank(pct=True)
+            # Invert: lower P/B = higher score
+            composite_score += (1.0 - pb_percentile) * 2.0
+            signal_count += 1
+
+        # Component 3: Fundamental (higher margins = positive)
+        margin_cols = [
+            _get_column(df, "net_margin_pct", "net_income_margin_pct_ltm"),
+            _get_column(df, "gross_margin_pct", "gross_profit_margin_pct_ltm"),
+        ]
+        for margin_col in margin_cols:
+            if margin_col is not None:
+                margin_percentile = margin_col.rank(pct=True)
+                composite_score += margin_percentile * 2.0
+                signal_count += 1
+                break  # Use first available
+
+        if signal_count == 0:
+            logger.warning("No combined signal indicators available, returning all neutral")
+            return labels
+
+        # Average across available signals
+        composite_score /= signal_count
+
+        # Apply 5-class thresholds
+        labels[composite_score >= composite_score.quantile(0.85)] = 4  # Top 15% = strong positive
+        labels[
+            (composite_score >= composite_score.quantile(0.65))
+            & (composite_score < composite_score.quantile(0.85))
+        ] = 3  # Positive
+        labels[
+            (composite_score >= composite_score.quantile(0.35))
+            & (composite_score < composite_score.quantile(0.65))
+        ] = 2  # Neutral (35-65%)
+        labels[
+            (composite_score <= composite_score.quantile(0.35))
+            & (composite_score > composite_score.quantile(0.15))
+        ] = 1  # Negative
+        labels[composite_score <= composite_score.quantile(0.15)] = (
+            0  # Bottom 15% = strong negative
+        )
 
     elif method == "profitability_event":
         # Profitability-based events using ROE, ROA, ROIC

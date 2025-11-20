@@ -138,6 +138,9 @@ def get_categorical_imputation_config() -> dict:
         # Text descriptions - use constant
         "description": ("constant", "No description available"),
         "name": ("constant", "Unknown"),
+        # Phase 9.3: Dividend record categorical columns
+        "dividend_record_frequency": "most_frequent",
+        "dividend_record_currency": "most_frequent",
     }
 
 
@@ -1153,6 +1156,119 @@ def apply_enhanced_imputation_strategy_6step(
 
             missing_final = result.isna().sum().sum()
             logger.info(f"After emergency fallback: {missing_final} missing values remain")
+
+    return result
+
+
+def fillna_by_dtype(
+    df: pd.DataFrame,
+    numeric_fill: float = 0,
+    categorical_strategy: str = "mode",
+    string_fill: str = "Unknown",
+    datetime_strategy: str = "forward_fill",
+) -> pd.DataFrame:
+    """Fill missing values by respecting column dtypes.
+
+    This function implements a type-aware filling strategy to avoid errors when
+    applying numeric fill values to categorical columns. It's the recommended
+    approach for handling mixed-type DataFrames.
+
+    Strategy:
+        - Numeric columns: Fill with numeric_fill (default: 0)
+        - Categorical columns: Fill with mode (most frequent) or add new category
+        - String/object columns: Fill with string_fill (default: "Unknown")
+        - Datetime columns: Forward fill or fill with current timestamp
+
+    Args:
+        df: Input DataFrame with potentially missing values
+        numeric_fill: Value to use for numeric columns (default: 0)
+        categorical_strategy: Strategy for categorical columns:
+            - "mode": Use most frequent value (default)
+            - "unknown": Add "Unknown" category and fill
+            - "add_value": Add numeric_fill as a new category
+        string_fill: String to use for object/string columns (default: "Unknown")
+        datetime_strategy: Strategy for datetime columns:
+            - "forward_fill": Forward fill (default)
+            - "now": Fill with current timestamp
+
+    Returns:
+        DataFrame with missing values filled according to dtype
+
+    Examples:
+        >>> # Safe filling that respects column types
+        >>> df_filled = fillna_by_dtype(df, numeric_fill=0, categorical_strategy="mode")
+
+        >>> # Fill categoricals by adding 0 as a new category
+        >>> df_filled = fillna_by_dtype(df, categorical_strategy="add_value")
+
+    Note:
+        This function prevents the common error:
+        "TypeError: Cannot setitem on a Categorical with a new category (0)"
+        which occurs when using df.fillna(0) on DataFrames with categorical columns.
+    """
+    result = df.copy()
+
+    # 1. Fill numeric columns
+    numeric_cols = result.select_dtypes(include=["number"]).columns
+    if len(numeric_cols) > 0:
+        result[numeric_cols] = result[numeric_cols].fillna(numeric_fill)
+        logger.debug(f"Filled {len(numeric_cols)} numeric columns with {numeric_fill}")
+
+    # 2. Fill categorical columns
+    categorical_cols = result.select_dtypes(include=["category"]).columns
+    for col in categorical_cols:
+        if result[col].isna().any():
+            if categorical_strategy == "mode":
+                # Use mode (most frequent value)
+                mode_val = result[col].mode(dropna=True)
+                if not mode_val.empty:
+                    fill_val = mode_val.iloc[0]
+                    result[col] = result[col].fillna(fill_val)
+                    logger.debug(f"Filled categorical column '{col}' with mode: {fill_val}")
+                else:
+                    # All NaN or empty - convert to object and fill with "Unknown"
+                    result[col] = result[col].astype("object").fillna("Unknown")
+                    logger.debug(f"Filled empty categorical column '{col}' with 'Unknown'")
+            elif categorical_strategy == "unknown":
+                # Add "Unknown" as a category
+                if "Unknown" not in result[col].cat.categories:
+                    result[col] = result[col].cat.add_categories(["Unknown"])
+                result[col] = result[col].fillna("Unknown")
+                logger.debug(f"Filled categorical column '{col}' with 'Unknown' category")
+            elif categorical_strategy == "add_value":
+                # Add numeric_fill as a category
+                if numeric_fill not in result[col].cat.categories:
+                    result[col] = result[col].cat.add_categories([numeric_fill])
+                result[col] = result[col].fillna(numeric_fill)
+                logger.debug(f"Filled categorical column '{col}' with new category: {numeric_fill}")
+
+    # 3. Fill string/object columns
+    object_cols = result.select_dtypes(include=["object"]).columns
+    if len(object_cols) > 0:
+        result[object_cols] = result[object_cols].fillna(string_fill)
+        logger.debug(f"Filled {len(object_cols)} object columns with '{string_fill}'")
+
+    # 4. Fill datetime columns
+    datetime_cols = result.select_dtypes(include=["datetime64"]).columns
+    for col in datetime_cols:
+        if result[col].isna().any():
+            if datetime_strategy == "forward_fill":
+                result[col] = result[col].fillna(method="ffill")
+                # If still NaN (first values), backfill
+                result[col] = result[col].fillna(method="bfill")
+                logger.debug(f"Forward-filled datetime column '{col}'")
+            elif datetime_strategy == "now":
+                result[col] = result[col].fillna(pd.Timestamp.now())
+                logger.debug(f"Filled datetime column '{col}' with current timestamp")
+
+    missing_after = result.isna().sum().sum()
+    if missing_after > 0:
+        logger.warning(
+            f"After type-aware filling, {missing_after} missing values remain. "
+            f"Consider running apply_enhanced_imputation_strategy_6step() first."
+        )
+    else:
+        logger.info("All missing values filled successfully using type-aware strategy")
 
     return result
 

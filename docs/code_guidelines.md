@@ -777,13 +777,81 @@ output_path: str
     - Trim leading/trailing underscores
     - Preserve data types
 
-2.2 Downstream assumptions
+2.2 Phase 9.3 Schema Version 1.3 (310 columns)
+
+**Schema Expansion:** As of 2025-11-20, the equities schema has been expanded from 262 to 310 columns (+48, +18.3%) to
+support advanced feature engineering.
+
+**48 New Columns by Category:**
+
+1. **Revenue Forecasting Estimates (4 columns):**
+    - revenues_est_avg_ntm, revenues_est_avg_fy1e, revenues_est_med_ntm, revenues_est_med_fy1e
+
+2. **EV/Sales Time-Series (11 columns):**
+    - ev_sales_est_fy1, ev_sales_ltm, ev_sales_ntm, ev_sales_1fyltm through ev_sales_4fqltm
+
+3. **Employment Metrics (2 columns):**
+    - total_employees_fy, total_employees_fq
+
+4. **Technical Indicators (6 columns):**
+    - 52w_high_adj, 52w_low_adj, ema_20d, ema_50d, ema_100d, ema_250d
+
+5. **EV/EBITDA Extended Time-Series (6 columns):**
+    - ev_ebitda_ltm, ev_ebitda_ntm, ev_ebitda_1fyltm, ev_ebitda_1fqltm, ev_ebitda_3yavgltm, ev_ebitda_est_fy1
+
+6. **P/E Extended Time-Series (11 columns):**
+    - p_e_est_fy1, p_e_2fyltm, p_e_3fyltm, p_e_3yavgltm, plus 7 quarterly/YoY variants
+
+7. **Dividend Record Information (8 columns):**
+    - dividend_record_announce_date, dividend_record_ex_date, dividend_record_payable_date, dividend_record_record_date
+    - dividend_record_frequency, dividend_record_currency, dividend_record_amount, dividend_streak
+
+**5 New Feature Engineering Functions:**
+
+These functions leverage the new Schema 1.3 columns and are integrated into `build_comprehensive_features()`:
+
+1. `engineer_technical_analysis_features()` - EMA crossovers, 52W position, volume momentum, breakout signals
+2. `engineer_valuation_timeseries_features()` - Valuation momentum, mean reversion, forward/trailing spreads, quarterly
+   stability
+3. `engineer_revenue_forecast_features()` - Analyst consensus, estimate quality, growth expectations
+4. `engineer_dividend_reliability_features()` - Dividend consistency, coverage, safety scores, growth metrics
+5. `engineer_employment_dynamics_features()` - Employee growth, productivity, workforce indicators
+
+**Usage:**
+
+```python
+from finance_ml.ml_workflow.features.advanced import (
+    build_comprehensive_features,
+    engineer_technical_analysis_features,
+    engineer_valuation_timeseries_features,
+    engineer_revenue_forecast_features,
+    engineer_dividend_reliability_features,
+    engineer_employment_dynamics_features
+    )
+
+# Comprehensive pipeline (includes all 5 new functions)
+df_features = build_comprehensive_features(df, preset="comprehensive")
+
+# Or use individual functions
+df = engineer_technical_analysis_features(df)
+df = engineer_valuation_timeseries_features(df)
+# ... etc
+```
+
+**Reference Documentation:**
+
+- Complete column mapping: `phase93_new_columns_mapping.md`
+- Feature enhancement plan: `docs/improvement_plan/Phase_9.3_feature_enhancement_plan.md`
+- Implementation summary: `PHASE93_FEATURE_IMPLEMENTATION_SUMMARY.md`
+- Feature categories table: See section 3.1 "Phase 9.3 Feature Categories (v9_9)" below
+
+2.3 Downstream assumptions
 
 - All modules must assume normalized names. Do not mix raw CSV header style (e.g., "Last Price" or "Price Target").
 - When joining/merging, preserve index alignment and canonical names.
 - Tests assume normalized columns for loaders and downstream utilities.
 
-2.3 Validation
+2.4 Validation
 
 - Use `validate_schema(df, require_target: bool)` to assert required fields.
 - For notebook/script workflows, validate after normalization and before heavy processing.

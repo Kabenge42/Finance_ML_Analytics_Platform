@@ -26,14 +26,17 @@ def create_ml_return_features(
     df: pd.DataFrame,
     lags: Sequence[int] | None = None,
     technical_indicators: Sequence[str] | None = None,
+    return_col: str | None = None,
+    price_col: str | None = None,
 ) -> pd.DataFrame:
     """Create features for ML-based return prediction.
 
     Parameters
     ----------
     df:
-        Input DataFrame that must contain at least ``return_1d`` and
-        ``last_price`` columns.
+        Input DataFrame that must contain at least a return column and
+        price column. If not specified via ``return_col`` and ``price_col``,
+        will auto-detect from common schema patterns.
     lags:
         Collection of integer lags (in days) for which lagged returns will be
         created. Defaults to ``[5, 10, 20]`` when ``None``.
@@ -41,6 +44,12 @@ def create_ml_return_features(
         Collection specifying which technical indicators to include. Supported
         values are ``"sma"``, ``"momentum"`` and ``"volatility"``. When
         ``None``, all three are used.
+    return_col:
+        Name of the daily return column. If ``None``, will attempt to detect
+        from common patterns: ``return_1d``, ``1_day_pct``, ``1_day_%``.
+    price_col:
+        Name of the price column. If ``None``, will attempt to detect
+        from common patterns: ``last_price``, ``price``.
 
     Returns
     -------
@@ -50,8 +59,37 @@ def create_ml_return_features(
         result contains no missing values.
     """
 
-    if "return_1d" not in df.columns or "last_price" not in df.columns:
-        raise KeyError("df must contain 'return_1d' and 'last_price' columns")
+    # Auto-detect return column if not specified
+    if return_col is None:
+        for candidate in ["return_1d", "1_day_pct", "1_day_%", "return_1d_pct"]:
+            if candidate in df.columns:
+                return_col = candidate
+                break
+        if return_col is None:
+            raise KeyError(
+                "Could not find daily return column. Expected one of: "
+                "return_1d, 1_day_pct, 1_day_%, return_1d_pct. "
+                "Specify explicitly via return_col parameter."
+            )
+
+    # Auto-detect price column if not specified
+    if price_col is None:
+        for candidate in ["last_price", "price", "close", "close_price"]:
+            if candidate in df.columns:
+                price_col = candidate
+                break
+        if price_col is None:
+            raise KeyError(
+                "Could not find price column. Expected one of: "
+                "last_price, price, close, close_price. "
+                "Specify explicitly via price_col parameter."
+            )
+
+    # Verify columns exist
+    if return_col not in df.columns:
+        raise KeyError(f"Specified return column '{return_col}' not found in DataFrame")
+    if price_col not in df.columns:
+        raise KeyError(f"Specified price column '{price_col}' not found in DataFrame")
 
     if lags is None:
         lags = [5, 10, 20]
@@ -61,22 +99,22 @@ def create_ml_return_features(
 
     features = df.copy()
 
-    # Lagged returns
+    # Lagged returns - use detected return column
     for lag in lags:
-        features[f"return_lag_{lag}"] = features["return_1d"].shift(lag)
+        features[f"return_lag_{lag}"] = features[return_col].shift(lag)
 
     # Technical indicators – window sizes chosen to mirror the examples in
     # the enhancement plan while remaining lightweight.
     tech_set = {t.lower() for t in technical_indicators}
 
     if "sma" in tech_set:
-        features["sma_20"] = features["last_price"].rolling(20, min_periods=20).mean()
+        features["sma_20"] = features[price_col].rolling(20, min_periods=20).mean()
 
     if "momentum" in tech_set:
-        features["momentum_10"] = features["return_1d"].rolling(10, min_periods=10).mean()
+        features["momentum_10"] = features[return_col].rolling(10, min_periods=10).mean()
 
     if "volatility" in tech_set:
-        features["volatility_20"] = features["return_1d"].rolling(20, min_periods=20).std(ddof=0)
+        features["volatility_20"] = features[return_col].rolling(20, min_periods=20).std(ddof=0)
 
     # Drop rows with any NaNs so downstream models receive clean data.
     features = features.dropna(axis=0, how="any")

@@ -1,9 +1,9 @@
 # Finance ML Analytics Platform
 
-**Version 0.8.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.8.2** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-16  
-> **Latest Release**: v0.8.1 (see CHANGELOG.md)  
+> **Documentation Last Updated:** 2025-11-20  
+> **Latest Release**: v0.8.2 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
 > applicable.
@@ -85,21 +85,26 @@ selective execution tips. TODO: Add containerization instructions (Docker) if/wh
 
 - 📊 **Data Management**: PostgreSQL/SQLite integration + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
 - 🧹 **Data Quality**: 6-step imputation pipeline (zero-fill, KNN, price-based, median) with validation; outlier safety
-  rails (winsorization, robust loss, clipping)
-- 🔧 **Feature Engineering**: Financial ratios, margins, volatility, revenue CAGR, sector-specific features
+  rails (winsorization, robust loss, clipping); schema-aware datatype detection
+- 🔧 **Feature Engineering**: Phase 9.3 Schema Version 1.3 (310 columns, +48 new): Financial ratios, margins, volatility,
+  technical indicators (EMA 20D/50D/100D/250D, 52W High/Low), valuation time-series (EV/Sales, EV/EBITDA, P/E extended),
+  revenue forecasts (NTM, FY1E), dividend reliability (frequency, streak, coverage), employment dynamics (FY/FQ
+  metrics), sector-specific features
 - 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models with conformal calibration,
   stacking ensembles
 - 📈 **Analytics**: Mispricing scores, stock ranking, analyst comparison, benchmarking, risk metrics
-- 💼 **Portfolio Optimization**: Efficient frontier, maximum Sharpe ratio, minimum volatility portfolios
-- 📉 **Risk Metrics**: VaR, CVaR, Sharpe ratio, Sortino ratio, maximum drawdown analysis
+- 💼 **Portfolio Optimization**: Advanced methods (Black-Litterman, Risk Parity, Hierarchical Risk Parity), efficient
+  frontier, maximum Sharpe ratio, minimum volatility, backtesting framework, performance attribution
+- 📉 **Risk Metrics**: VaR, CVaR (Expected Shortfall), Sharpe ratio, Sortino ratio, maximum drawdown, tracking error,
+  stress testing, Monte Carlo simulation
 - 📊 **Interactive Dashboards**: Streamlit and Dash applications with portfolio & risk metrics visualization
 - 🎯 **Stock Prediction**: End-to-end 8-phase workflow for price target prediction with standardized predictions schema
 - 🔬 **Uncertainty Quantification**: Quantile regression + conformal prediction for calibrated 80% prediction intervals
 - 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis, standardized predictions
   output
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
-- 🧪 **Tested**: Extensive unittest suite (≈74 test modules) with comprehensive coverage (≥80% target for new code);
-  TDD conventions for uncertainty, safety rails, and schema validation
+- 🧪 **Tested**: Comprehensive unittest suite (83 test modules) with extensive coverage (≥80% target for new code);
+  TDD conventions for uncertainty, safety rails, schema validation, and datatype detection
 - 🚀 **CLI**: Three command-line tools for different workflows
 - 🔍 **Model Interpretation**: SHAP analysis for explainability
 
@@ -675,8 +680,9 @@ export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 ## Testing
 
-The project uses Python's built-in `unittest` framework with 74 test modules covering data loading, preprocessing,
-features, models, evaluation, and integration. See [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 for TDD
+The project uses Python's built-in `unittest` framework with 83 test modules covering data loading, preprocessing,
+features, models, evaluation, portfolio optimization, and integration.
+See [docs/code_guidelines.md](docs/code_guidelines.md) v1.3+ for TDD
 conventions and standards. The full suite can be slow; prefer selective execution during development (see below).
 
 ### Run All Tests
@@ -743,13 +749,17 @@ pytest --cov=finance_ml --cov-report=term-missing
 Tests are organized by feature area under `tests/`:
 
 - **Data/Loading**: `test_finance_ml_data`, `test_loaders`, `test_sqlite_import`, `test_validate_csv_import`
-- **Preprocessing**: `test_advanced_preprocessing`, `test_enhanced_imputation`, `test_data_quality`
+- **Preprocessing**: `test_advanced_preprocessing`, `test_enhanced_imputation`, `test_enhanced_imputation_phase93`,
+  `test_data_quality`, `test_data_types_detection`
+- **Schema & Metadata**: `test_metadata_catalog_quality`, `test_simple_eda_stringdtype`
 - **Features**: `test_features`, `test_advanced_features`, `test_finance_ml_features`
 - **Models**: `test_classification*`, `test_advanced_models*`, `test_finance_ml_models`, `test_regression`
 - **Evaluation**: `test_finance_ml_eval`, `test_analytics`, `test_evaluation_phase96`, `test_valuation_phase97`
+- **Portfolio Optimization**: `test_portfolio_ml_prediction`, `test_portfolio_optimization_advanced`,
+  `test_portfolio_risk_management`, `test_portfolio_backtesting`, `test_portfolio_dashboards`
 - **Integration**: `test_integration_*`, `test_notebook_*`
-- **Dashboards**: TODO — add dedicated dashboard test modules (e.g., Streamlit/Dash helpers) if and when dashboard
-  code is expanded.
+- **Standards & Policy**: `test_uncertainty_calibration`, `test_predictions_schema`, `test_regression_sector_metrics`,
+  `test_data_splits_policy`, `test_outlier_safety_rails`, `test_stacking_default`
 
 **Note**: Some test modules are large (500+ lines) and involve heavy ML training. For faster development iterations, run
 smaller test modules or use test discovery patterns.
@@ -874,7 +884,72 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.8.1 (Current Release - 2025-11-14)
+### Version 0.8.2 (Current Release - 2025-11-19)
+
+**TDD Implementation: Data Preprocessing & Datatype Detection**:
+
+- **Schema-Aware Datatype Detection**: New `finance_ml.ml_workflow.preprocessing.dtypes` module (326 lines) with
+  schema-driven type casting, validation, and comprehensive diagnostics
+- **Centralized Schema Registry**: `finance_ml.ml_workflow.data.schema` module (530 lines) with 350+ normalized column
+  mappings derived from SQL schema
+- **Phase 9.3 Feature Categorization**: Organized feature inputs into 6 buckets (momentum, valuation, profitability,
+  quality/risk, cash flow, growth) for ML pipeline
+- **Enhanced Imputation**: Phase 9.3 enhanced imputation with schema consistency checks, sector-aware KNN,
+  categorical/datetime strategies
+- **Test Coverage**: 24 new TDD tests (23 passing, 1 skipped) across 4 modules:
+  - `test_data_types_detection.py` (9 tests): Schema-aware casting, coercion tracking, Phase 9.3 validation
+  - `test_enhanced_imputation_phase93.py` (8 tests): Sector-aware KNN, categorical/datetime strategies
+  - `test_metadata_catalog_quality.py` (4 tests): Metadata validation and quality stats
+  - `test_simple_eda_stringdtype.py` (3 tests): StringDtype compatibility validation
+- **Documentation**: `docs/TDD_IMPLEMENTATION_SUMMARY.md` with complete implementation details
+
+**Portfolio Optimization Enhancement Plan (6 Phases Complete)**:
+
+- **Phase 1: Enhanced Stock Filtering & Selection** ✓
+  - Module: `finance_ml/ml_workflow/analytics/stock_selection.py`
+  - Multi-metric ranking, sector-balanced selection, currency unit support
+- **Phase 2: ML-Based Return Prediction** ✓
+  - Module: `finance_ml/ml_workflow/analytics/ml_returns.py`
+  - ML feature engineering, linear predictor, ensemble predictions
+- **Phase 3: Advanced Portfolio Optimization** ✓
+  - Module: `finance_ml/ml_workflow/analytics/portfolio.py`
+  - Black-Litterman, Risk Parity, Hierarchical Risk Parity (HRP)
+- **Phase 4: Risk Management Enhancements** ✓
+  - Module: `finance_ml/ml_workflow/analytics/risk.py`
+  - Expected Shortfall (CVaR), tracking error, stress testing, Monte Carlo simulation
+- **Phase 5: Backtesting Framework** ✓
+  - Modules: `analytics/portfolio.py`, `analytics/attribution.py`
+  - Vectorized backtest, walk-forward optimization, performance attribution
+- **Phase 6: Interactive Dashboard Expansion** ✓
+  - Module: `finance_ml/dashboards/portfolio_widgets.py`
+  - Rebalancing widget, multi-period comparison, factor exposure dashboard
+- **Test Coverage**: 23 new tests across 5 modules covering all 6 phases
+- **Notebook Integration**: Section 10 structure added to `ml_finance_model_main.ipynb`
+- **Documentation**: `docs/improvement_plan/portfolio_optimization_enhancement_plan.md`
+
+**Phase 9.3 Feature Enhancement Plan (Schema Version 1.3)**:
+
+- **Schema Expansion**: 310 columns total (expanded from 262, +48 new columns, +18.3%)
+- **New Feature Categories**:
+  - Technical indicators: EMAs (20D, 50D, 100D, 250D), 52W High/Low, Relative Volume
+  - Valuation multiples time-series: EV/Sales (11 cols), EV/EBITDA (6 cols), P/E extended (11 cols)
+  - Revenue forecasting estimates: NTM, FY1E (4 cols)
+  - Dividend record information: Frequency, streak, coverage (8 cols)
+  - Employment metrics: FY/FQ employee counts (2 cols)
+- **Implementation Status**: All features wired into advanced pipeline, accessible via
+  `finance_ml.ml_workflow.features.advanced.py`
+- **Model Version Target**: v9_9
+- **Documentation**: `docs/improvement_plan/Phase_9.3_feature_enhancement_plan.md` (Version 1.1)
+
+**Test Suite Expansion**:
+
+- **Total Test Modules**: 83 (expanded from 74, +9 new modules)
+- **New Test Categories**:
+  - TDD Implementation: 4 modules, 24 tests
+  - Portfolio Optimization: 5 modules, 23 tests
+- **Test Execution Strategies**: Fast/medium/slow test categorization for development efficiency (see Testing section)
+
+### Version 0.8.1 (Previous Release - 2025-11-14)
 
 **LightGBM Preprocessing Test Suite**:
 
@@ -1172,9 +1247,9 @@ without TensorFlow.
 - Package version increments with each release; MODEL_VERSION increments with modeling changes
 - Example: Package v0.7.1 can have MODEL_VERSION v9_9 (no modeling changes from v0.7.0)
 
-**Current Versions** (as of 2025-11-14):
+**Current Versions** (as of 2025-11-20):
 
-- Package: `0.8.1`
+- Package: `0.8.2`
 - Model: `v9_9`
 - Status: ✓ Aligned (notebook and package both use v9_9)
 
@@ -1186,15 +1261,15 @@ without TensorFlow.
 
 ### Version Synchronization
 
-**Current Status** (as of 2025-11-14):
+**Current Status** (as of 2025-11-20):
 
-- **CHANGELOG.md**: Documents v0.8.1 release (2025-11-14) with MODEL_VERSION v9_9 ✓
-- **README.md**: Documents v0.8.1 with MODEL_VERSION v9_9 ✓
-- **pyproject.toml**: Will be updated to version = "0.8.1" ✓
-- **environment_variables.txt**: Will be updated to Version: 0.8.1 with MODEL_VERSION=v9_9 ✓
-- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓ (per CHANGELOG)
+- **CHANGELOG.md**: Documents v0.8.2 release (2025-11-19) with MODEL_VERSION v9_9 ✓
+- **README.md**: Documents v0.8.2 with MODEL_VERSION v9_9 ✓
+- **pyproject.toml**: Version = "0.8.1" (TODO: update to 0.8.2)
+- **environment_variables.txt**: Version 0.8.1 (TODO: update to 0.8.2 with MODEL_VERSION=v9_9)
+- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓
 
-**Status**: ✓ All version files synchronized to v0.8.1 with MODEL_VERSION v9_9
+**Status**: ⚠️ README.md and CHANGELOG.md updated to v0.8.2; pyproject.toml and environment_variables.txt require update
 
 ### Future Enhancements
 
@@ -1210,5 +1285,6 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-14  
-**README Version**: 3.0 (updated version to 0.8.1, corrected test count to 45 modules, synchronized all version files)
+**Last Updated**: 2025-11-20  
+**README Version**: 4.0 (updated to v0.8.2 with TDD implementation, 83 test modules, Phase 9.3 schema expansion to 310
+columns, 6-phase portfolio optimization completion)
