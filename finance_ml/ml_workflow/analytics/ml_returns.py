@@ -28,6 +28,7 @@ def create_ml_return_features(
     technical_indicators: Sequence[str] | None = None,
     return_col: str | None = None,
     price_col: str | None = None,
+    require_time_series: bool = False,
 ) -> pd.DataFrame:
     """Create features for ML-based return prediction.
 
@@ -50,6 +51,11 @@ def create_ml_return_features(
     price_col:
         Name of the price column. If ``None``, will attempt to detect
         from common patterns: ``last_price``, ``price``.
+    require_time_series:
+        If ``False`` (default), the function will detect cross-sectional data
+        (insufficient time-series observations) and return the input DataFrame
+        unchanged with a warning. If ``True``, will raise an error when
+        insufficient time-series data is available.
 
     Returns
     -------
@@ -57,6 +63,14 @@ def create_ml_return_features(
         A new DataFrame with the original columns plus engineered features.
         Leading rows that do not have full feature coverage are dropped so the
         result contains no missing values.
+
+        For cross-sectional data (when ``require_time_series=False``), returns
+        the input DataFrame unchanged if insufficient observations are available.
+
+    Raises
+    ------
+    ValueError
+        When ``require_time_series=True`` and data is cross-sectional.
     """
 
     # Auto-detect return column if not specified
@@ -96,6 +110,40 @@ def create_ml_return_features(
 
     if technical_indicators is None:
         technical_indicators = ["sma", "momentum", "volatility"]
+
+    # Detect if data is cross-sectional (insufficient time-series observations)
+    # Required minimum observations = max of (max lag, max window size)
+    max_lag = max(lags) if lags else 0
+    tech_set = {t.lower() for t in technical_indicators}
+    max_window = (
+        20
+        if "sma" in tech_set or "volatility" in tech_set
+        else (10 if "momentum" in tech_set else 0)
+    )
+    min_required_obs = max(max_lag, max_window)
+
+    # Check if we have sufficient observations
+    if len(df) < min_required_obs:
+        # Cross-sectional data detected
+        if require_time_series:
+            raise ValueError(
+                f"Insufficient time-series data: {len(df)} rows < {min_required_obs} required. "
+                f"Cannot create ML features with lags={lags} and technical_indicators={list(technical_indicators)}. "
+                f"Data appears to be cross-sectional (single snapshot). "
+                f"Either provide historical time-series data or set require_time_series=False."
+            )
+        else:
+            # Return input unchanged with a warning in a way that's visible to the caller
+            # The caller should check if the output == input to detect this case
+            import warnings
+
+            warnings.warn(
+                f"Cross-sectional data detected ({len(df)} rows < {min_required_obs} required for time-series features). "
+                f"Returning input DataFrame unchanged. ML features not created.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return df.copy()
 
     features = df.copy()
 

@@ -222,10 +222,10 @@ def preprocess_for_lightgbm(
 
                 result[col] = encoded
 
-                # Log if unseen categories were found
+                # Log if unseen categories were found (INFO level - this is expected behavior)
                 unseen = set(values[~mask_known]) - {"Unknown"}
                 if unseen:
-                    logger.warning(
+                    logger.info(
                         f"Column '{col}' has {len(unseen)} unseen categories in test data. "
                         f"Mapped to 'Unknown' class. Examples: {list(unseen)[:5]}"
                     )

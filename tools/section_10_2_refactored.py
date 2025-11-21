@@ -1,0 +1,229 @@
+# 10.2 ML-Based Return Prediction
+print("\n" + "=" * 80)
+print("10.2 ML-BASED RETURN PREDICTION")
+print("=" * 80)
+
+if portfolio_candidates is not None and len(portfolio_candidates) >= MIN_PORTFOLIO_CANDIDATES:
+
+    from finance_ml.ml_workflow.analytics.ml_returns import (
+        create_ml_return_features,
+        train_linear_return_predictor,
+        create_ensemble_return_predictions,
+    )
+
+    logger.info(
+        f"Generating ML-based return predictions for " f"{len(portfolio_candidates)} candidates"
+    )
+    print(
+        f"\n✓ Generating ML-based return predictions for " f"{len(portfolio_candidates)} candidates"
+    )
+
+    # Stage 1: Ensure return_1y exists
+    # (calculate from price history or use YTD return)
+    if "return_1y" not in portfolio_candidates.columns:
+        if (
+            "last_price" in portfolio_candidates.columns
+            and "price_1y_ago" in portfolio_candidates.columns
+        ):
+            # Calculate 1-year return from price history
+            portfolio_candidates["return_1y"] = (
+                (portfolio_candidates[TARGET_COL_FALLBACK] - portfolio_candidates["price_1y_ago"])
+                / portfolio_candidates["price_1y_ago"]
+            ).fillna(0.0)
+            logger.info("Calculated return_1y from price history")
+            print("  ✓ Calculated return_1y from last_price and price_1y_ago")
+        elif "total_return_ytd" in portfolio_candidates.columns:
+            # Use YTD return as proxy
+            portfolio_candidates["return_1y"] = portfolio_candidates["total_return_ytd"].fillna(
+                DEFAULT_EXPECTED_RETURN
+            )
+            logger.info("Using total_return_ytd as proxy for return_1y")
+            print("  ✓ Using total_return_ytd as proxy for return_1y")
+        else:
+            # Default to configured expected return
+            portfolio_candidates["return_1y"] = DEFAULT_EXPECTED_RETURN
+            logger.warning(
+                f"No return data available, using default "
+                f"{DEFAULT_EXPECTED_RETURN:.1%} for return_1y"
+            )
+            print(
+                f"  ⚠️  No return data available, using default "
+                f"{DEFAULT_EXPECTED_RETURN:.1%} for return_1y"
+            )
+
+    # Stage 2: Create ML features for return prediction
+    print("\n📊 Creating ML Features...")
+    logger.info("Starting ML feature creation")
+
+    # Step 1: Validate data structure
+    # Schema v1.3 uses 'last_updated' as canonical date column
+    # (code_guidelines.md Section 2.2)
+    required_cols = ["ticker", "last_updated", "last_price"]
+    missing_cols = [col for col in required_cols if col not in portfolio_candidates.columns]
+
+    if missing_cols:
+        logger.error(f"Missing required columns: {missing_cols}")
+        print(f"  ⚠️  Missing required columns: {missing_cols}")
+        print("  ⚠️  Skipping ML feature creation")
+        ml_features_df = None
+    else:
+        # Step 2: Check data structure (cross-sectional vs time-series)
+        dates_per_ticker = portfolio_candidates.groupby("ticker")["last_updated"].nunique()
+        avg_dates_per_ticker = dates_per_ticker.mean()
+        is_cross_sectional = avg_dates_per_ticker < MIN_DATES_FOR_TIMESERIES
+
+        if is_cross_sectional:
+            logger.info(
+                f"Detected cross-sectional data " f"(avg {avg_dates_per_ticker:.1f} dates/ticker)"
+            )
+            print(
+                f"  ✓ Detected cross-sectional data "
+                f"(avg {avg_dates_per_ticker:.1f} dates/ticker)"
+            )
+            print("  → Skipping time-series ML features " "(requires historical data)")
+            print("  → Will use existing expected_return for optimization")
+            # Set ml_features_df to None to signal no ML features available
+            ml_features_df = None
+        else:
+            # Time-series data available - proceed with ML feature creation
+            logger.info(
+                f"Detected time-series data " f"(avg {avg_dates_per_ticker:.1f} dates/ticker)"
+            )
+            print(
+                f"  ✓ Detected time-series data " f"(avg {avg_dates_per_ticker:.1f} dates/ticker)"
+            )
+
+            # Step 2a: Calculate daily returns if not present
+            if "return_1d" not in portfolio_candidates.columns:
+                logger.info("Calculating daily returns")
+                print("  Calculating daily returns...")
+
+                # Sort by ticker and date
+                portfolio_candidates = portfolio_candidates.sort_values(["ticker", "last_updated"])
+
+                # Calculate returns grouped by ticker
+                portfolio_candidates["return_1d"] = portfolio_candidates.groupby("ticker")[
+                    "last_price"
+                ].pct_change()
+
+                # Drop NaN returns (first observation per ticker)
+                initial_count = len(portfolio_candidates)
+                portfolio_candidates = portfolio_candidates.dropna(subset=["return_1d"])
+                rows_dropped = initial_count - len(portfolio_candidates)
+                logger.info(f"Calculated returns ({rows_dropped} rows dropped)")
+                print(f"  ✓ Calculated returns ({rows_dropped} rows dropped)")
+
+            # Step 3: Verify sufficient time series data
+            if dates_per_ticker.mean() < MIN_DATES_FOR_RELIABLE_ML:
+                logger.warning(
+                    f"Limited time series data " f"(avg {dates_per_ticker.mean():.1f} dates/ticker)"
+                )
+                print(
+                    f"  ⚠️  Warning: Limited time series data "
+                    f"(avg {dates_per_ticker.mean():.1f} dates/ticker)"
+                )
+                print("     ML features may be less reliable")
+
+            # Step 4: Create ML features
+            logger.info(
+                f"Creating ML features with lags={LAG_PERIODS}, "
+                f"indicators={TECHNICAL_INDICATORS}"
+            )
+            ml_features_df = create_ml_return_features(
+                portfolio_candidates, lags=LAG_PERIODS, technical_indicators=TECHNICAL_INDICATORS
+            )
+            logger.info(
+                f"Created {ml_features_df.shape[1]} ML features, " f"{len(ml_features_df)} rows"
+            )
+            print(f"  ✓ Created {ml_features_df.shape[1]} ML features")
+            print(f"  ✓ Final dataset: {len(ml_features_df)} rows")
+
+    # Stage 3: Train linear return predictor (if we have historical returns)
+    if ml_features_df is not None and "return_1y" in portfolio_candidates.columns:
+        print("\n📊 Training Linear Return Predictor...")
+        logger.info("Training linear return predictor")
+
+        feature_cols = [
+            col
+            for col in ml_features_df.columns
+            if col.startswith("lag_") or col.startswith("tech_")
+        ]
+
+        if len(feature_cols) > 0:
+            X = ml_features_df[feature_cols].fillna(0)
+            y = portfolio_candidates["return_1y"].fillna(DEFAULT_EXPECTED_RETURN)
+
+            # Split for training (use configured train size)
+            split_idx = int(len(X) * TRAIN_SIZE)
+            X_train, y_train = X.iloc[:split_idx], y.iloc[:split_idx]
+
+            logger.info(
+                f"Training with {len(feature_cols)} features, " f"{len(X_train)} training samples"
+            )
+            linear_model = train_linear_return_predictor(X_train.values, y_train.values)
+            print(f"  ✓ Linear model trained with {len(feature_cols)} features")
+
+            # Generate predictions
+            ml_predicted_returns = pd.Series(
+                linear_model.predict(X.values), index=portfolio_candidates.index
+            )
+
+            # Stage-based naming: add ML predictions
+            portfolio_candidates_with_ml = portfolio_candidates.copy()
+            portfolio_candidates_with_ml["ml_predicted_return"] = ml_predicted_returns
+            portfolio_candidates = portfolio_candidates_with_ml
+
+            logger.info(
+                f"ML predictions: mean={ml_predicted_returns.mean():.3f}, "
+                f"std={ml_predicted_returns.std():.3f}"
+            )
+            print(
+                f"  ✓ ML predictions: mean={ml_predicted_returns.mean():.3f}, "
+                f"std={ml_predicted_returns.std():.3f}"
+            )
+
+    # Stage 4: Create ensemble return predictions
+    print("\n📊 Creating Ensemble Return Predictions...")
+    logger.info("Creating ensemble return predictions")
+
+    available_models = []
+    if "expected_return" in portfolio_candidates.columns:
+        available_models.append("expected_return")
+    if "return_1y" in portfolio_candidates.columns:
+        available_models.append("return_1y")
+    if "ml_predicted_return" in portfolio_candidates.columns:
+        available_models.append("ml_predicted_return")
+
+    if len(available_models) >= 2:
+        # Equal weights for ensemble
+        ensemble_weights = [1.0 / len(available_models)] * len(available_models)
+
+        logger.info(
+            f"Creating ensemble from {len(available_models)} models: " f"{available_models}"
+        )
+        portfolio_candidates_with_ensemble = create_ensemble_return_predictions(
+            portfolio_candidates,
+            models=available_models,
+            weights=ensemble_weights,
+            ensemble_col="ensemble_return",
+        )
+        portfolio_candidates = portfolio_candidates_with_ensemble
+
+        ensemble_mean = portfolio_candidates["ensemble_return"].mean()
+        logger.info(f"Ensemble returns: mean={ensemble_mean:.3f}")
+        print(f"  ✓ Ensemble combines {len(available_models)} models: " f"{available_models}")
+        print(f"  ✓ Ensemble returns: mean={ensemble_mean:.3f}")
+
+        # Use ensemble as the primary expected return
+        portfolio_candidates["expected_return"] = portfolio_candidates["ensemble_return"]
+        logger.info("Set ensemble_return as primary expected_return")
+
+    logger.info("ML-based return prediction complete")
+    print("\n✓ ML-based return prediction complete")
+else:
+    logger.warning(
+        f"Skipping ML return prediction - insufficient candidates "
+        f"(need {MIN_PORTFOLIO_CANDIDATES}, have "
+        f"{len(portfolio_candidates) if portfolio_candidates is not None else 0})"
+    )
+    print("\n⚠️  Skipping ML return prediction - insufficient candidates")

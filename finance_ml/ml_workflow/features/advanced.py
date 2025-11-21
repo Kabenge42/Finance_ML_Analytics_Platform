@@ -55,16 +55,20 @@ __all__ = [
 ]
 
 
-def _safe_div(numer: pd.Series, denom: pd.Series) -> pd.Series:
-    """Safely divide two Series, replacing inf/NaN with appropriate values.
+def _safe_div(numer: pd.Series | float | int, denom: pd.Series) -> pd.Series:
+    """Safely divide two Series (or scalar and Series), replacing inf/NaN with appropriate values.
 
     Args:
-        numer: Numerator Series
+        numer: Numerator Series or scalar (float/int)
         denom: Denominator Series
 
     Returns:
         Result Series with inf/NaN handled
     """
+    # Handle scalar numerator by converting to Series
+    if isinstance(numer, (float, int)):
+        numer = pd.Series(numer, index=denom.index)
+
     result = numer.astype(float) / denom.astype(float).replace(0, np.nan)
     result = result.replace([np.inf, -np.inf], np.nan)
     return result
@@ -2391,9 +2395,9 @@ def engineer_dividend_reliability_features(df: pd.DataFrame) -> pd.DataFrame:
         result["dividend_growth_trend"] = 0.0  # Placeholder
 
     # Dividend yield vs sector (sector-relative ranking)
-    if "div_yield_ltm" in df.columns and "sector" in df.columns:
-        sector_median = df.groupby("sector")["div_yield_ltm"].transform("median")
-        result["dividend_yield_vs_sector"] = df["div_yield_ltm"] - sector_median
+    if "div_yield_ltm" in result.columns and "sector" in result.columns:
+        sector_median = result.groupby("sector")["div_yield_ltm"].transform("median")
+        result["dividend_yield_vs_sector"] = result["div_yield_ltm"] - sector_median
 
     # Dividend aristocrat flag (long streak + positive growth)
     if "dividend_streak" in df.columns:
@@ -2518,7 +2522,7 @@ def engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Hiring intensity score (employee growth relative to sector)
     if "employee_growth_yoy" in result.columns and "sector" in df.columns:
-        sector_median_growth = df.groupby("sector")["employee_growth_yoy"].transform("median")
+        sector_median_growth = result.groupby("sector")["employee_growth_yoy"].transform("median")
         result["hiring_intensity_score"] = result["employee_growth_yoy"] - sector_median_growth
 
     logger.info("Engineered employment dynamics features (Phase 9.3 Schema 1.3)")

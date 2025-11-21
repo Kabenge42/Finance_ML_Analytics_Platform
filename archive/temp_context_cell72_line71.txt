@@ -1,0 +1,5 @@
+69:     # Add metadata columns for standardized schema
+70:     q_df['model_version'] = os.environ.get('MODEL_VERSION', 'v9_9')
+71:     q_df['snapshot_date'] = pd.Timestamp.now().strftime('%Y-%m-%d')
+72: 
+73:     out_q_path = out_models_dir / 'quantile_predictions.csv'

@@ -856,6 +856,114 @@ df = engineer_valuation_timeseries_features(df)
 - Use `validate_schema(df, require_target: bool)` to assert required fields.
 - For notebook/script workflows, validate after normalization and before heavy processing.
 
+2.5 Schema Module and Helper Functions (v0.8.2+)
+
+**Module**: `finance_ml.ml_workflow.data.schema`
+
+**Purpose**: Centralized column schema registry providing datatype and role information for all 310+ columns, enabling
+schema-aware preprocessing, validation, and feature engineering.
+
+**COLUMN_SCHEMA Registry**: Dictionary mapping normalized column names to metadata:
+
+```python
+COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
+    "ticker": {"dtype": "string", "role": "id"},
+    "sector": {"dtype": "category", "role": "categorical"},
+    "last_price": {"dtype": "float", "role": "feature"},
+    "price_target": {"dtype": "float", "role": "target"},
+    "last_updated": {"dtype": "datetime64[ns]", "role": "date"},
+    # ... 310+ total columns
+    }
+```
+
+**Helper Functions**:
+
+```python
+from finance_ml.ml_workflow.data.schema import (
+    list_categorical_cols,  # Get all categorical column names
+    list_date_cols,  # Get all date/datetime column names
+    list_numeric_feature_cols,  # Get all numeric feature columns
+    get_expected_dtype,  # Get expected dtype for a column
+    get_column_role,  # Get role for a column (id, feature, target, etc.)
+    normalize_column_name,  # Normalize column name to schema format
+    COLUMN_SCHEMA,  # Access full schema registry
+    PHASE93_FEATURE_INPUTS  # Phase 9.3 feature categorization
+    )
+
+# Example usage in preprocessing
+categorical_columns = list_categorical_cols()
+# Returns: ['sector', 'industry', 'region', 'country', 'trading_country', 'exchange', ...]
+
+date_columns = list_date_cols()
+# Returns: ['last_updated', 'income_statement_report_date', 'next_earnings', ...]
+
+numeric_features = list_numeric_feature_cols()
+# Returns: ['last_price', 'market_cap', 'enterprise_value', 'p_e_ntm', ...]
+
+# Get metadata for specific column
+dtype = get_expected_dtype("sector")  # Returns: "category"
+role = get_column_role("price_target")  # Returns: "target"
+
+# Normalize column names
+normalized = normalize_column_name("Last Price")  # Returns: "last_price"
+```
+
+**Schema-Aware Preprocessing Pattern** (see Section 8.2 for notebook integration):
+
+```python
+from finance_ml.ml_workflow.data.schema import list_categorical_cols, list_date_cols
+from finance_ml.ml_workflow.features.core import preprocess_for_lightgbm
+
+# Extract schema-based column lists
+categorical_columns = list_categorical_cols()
+datetime_columns = list_date_cols()
+
+# Apply preprocessing with schema columns
+X_processed, encoders = preprocess_for_lightgbm(
+        df,
+        categorical_columns=categorical_columns,
+        datetime_columns=datetime_columns,
+        drop_columns=['name', 'description'],
+        return_encoders=True
+        )
+```
+
+**PHASE93_FEATURE_INPUTS** (Feature Categorization):
+
+The schema module also provides `PHASE93_FEATURE_INPUTS` dictionary categorizing columns by feature type:
+
+```python
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
+
+# Available categories:
+# - 'momentum': Price momentum, RSI, moving averages, return stability
+# - 'valuation': P/E, P/B, EV/EBITDA, PEG ratios
+# - 'profitability': Margins, ROE, ROA, ROIC
+# - 'quality_risk': Altman Z-Score, beta, volatility
+# - 'cash_flow': FCF, operating cash flow, capex
+# - 'growth': Revenue growth, earnings growth, CAGR
+
+momentum_cols = PHASE93_FEATURE_INPUTS['momentum']
+valuation_cols = PHASE93_FEATURE_INPUTS['valuation']
+```
+
+**Benefits**:
+
+1. **Single Source of Truth**: All column metadata centralized in one place
+2. **Schema-Driven Preprocessing**: Automatic column type detection and handling
+3. **Type Safety**: Consistent dtype casting based on schema definitions
+4. **Testability**: Schema functions are fully tested (100% coverage, 44 tests)
+5. **Maintainability**: Schema changes propagate automatically to all consumers
+
+**Test Coverage**: See `tests/test_notebook_schema_integration.py` for 44 comprehensive tests covering all schema helper
+functions and integration patterns.
+
+**Related Documentation**:
+
+- Schema implementation: `docs/TDD_IMPLEMENTATION_SUMMARY.md`
+- Test coverage: `tests/test_data_types_detection.py`, `tests/test_enhanced_imputation_phase93.py`
+- Usage examples: See Section 8.2 "Schema-Aware Preprocessing Pattern"
+
 3) DataFrame Shape and Feature References
 
 - Keep `all_stocks` as the single, unified DataFrame across regions.
@@ -1218,7 +1326,159 @@ max_weight = 0.25  # Violation: use MAX_SECTOR_WEIGHT
 - Reproducibility: Clear documentation of all tunable parameters
 - Maintainability: Easy to audit and update configuration
 
-8.2) DataFrame Stage Naming Convention
+8.2) Schema-Aware Preprocessing Pattern (v0.8.2+)
+
+**Policy**: Use the schema module helper functions to extract categorical and date columns for preprocessing pipelines.
+This ensures consistency with the centralized COLUMN_SCHEMA registry and eliminates hardcoded column lists.
+
+**Required Pattern for Notebook Preprocessing**:
+
+```python
+# Import schema helper functions at the top of preprocessing section
+from finance_ml.ml_workflow.data.schema import list_categorical_cols, list_date_cols
+
+# Extract schema-based column lists
+categorical_columns_from_schema = list_categorical_cols()
+datetime_cols_from_schema = list_date_cols()
+
+# Use in preprocessing pipeline
+prep_params = {
+    'cat_cols': categorical_columns_from_schema,
+    'date_cols': datetime_cols_from_schema,
+    'drop_cols': auxiliary_cols_to_drop,  # ['name', 'description', etc.]
+    'encoders': encoders,
+    'ref_date': reference_date
+    }
+
+# Apply preprocessing
+X_processed, encoders = preprocess_for_lightgbm(
+        df,
+        categorical_columns=prep_params['cat_cols'],
+        datetime_columns=prep_params['date_cols'],
+        drop_columns=prep_params['drop_cols'],
+        encoders=prep_params['encoders'],
+        reference_date=prep_params['ref_date']
+        )
+```
+
+**Complete Example (Notebook Classification Section)**:
+
+```python
+#%% Classification Preprocessing
+from finance_ml.ml_workflow.data.schema import list_categorical_cols, list_date_cols
+from finance_ml.ml_workflow.features.core import preprocess_for_lightgbm
+
+# 1. Extract schema-based column lists
+categorical_columns_from_schema = list_categorical_cols()
+datetime_cols_from_schema = list_date_cols()
+
+print(f"[INFO] Schema integration:")
+print(f"  Categorical columns from schema: {len(categorical_columns_from_schema)}")
+print(f"  Date columns from schema: {len(datetime_cols_from_schema)}")
+
+# 2. Define auxiliary columns to drop
+auxiliary_cols_to_drop = ['name', 'description', 'flag', 'unit']
+
+# 3. Prepare data for model prediction/inference
+def _prepare_inference_data(df_raw, raw_train_columns, model_feature_names, prep_params):
+    """
+    Preprocess raw data and align exactly to model features for inference.
+    
+    Args:
+        df_raw: DataFrame containing all raw features
+        raw_train_columns: List of columns expected by preprocessing (from training)
+        model_feature_names: List of features expected by trained model
+        prep_params: Dict with cat_cols, date_cols, drop_cols, encoders, ref_date
+    """
+    # Step 1: Align raw columns to training structure
+    X_raw = df_raw.reindex(columns=raw_train_columns)
+    
+    # Step 2: Apply preprocessing using training encoders (Inference Mode)
+    X_processed, _ = preprocess_for_lightgbm(
+        X_raw.copy(),
+        categorical_columns=prep_params['cat_cols'],
+        datetime_columns=prep_params['date_cols'],
+        drop_columns=prep_params['drop_cols'],
+        encoders=prep_params['encoders'],
+        reference_date=prep_params['ref_date']
+    )
+    
+    # Step 3: Align processed data to model schema (handle missing/extra columns)
+    missing_cols = set(model_feature_names) - set(X_processed.columns)
+    extra_cols = set(X_processed.columns) - set(model_feature_names)
+    
+    if missing_cols:
+        for col in missing_cols:
+            X_processed[col] = 0
+    
+    if extra_cols:
+        X_processed = X_processed.drop(columns=list(extra_cols))
+    
+    # Step 4: Final reorder to match model expectation
+    return X_processed[model_feature_names]
+
+# 4. Prepare preprocessing parameters
+prep_params = {
+    'cat_cols': categorical_columns_from_schema,
+    'date_cols': datetime_cols_from_schema,
+    'drop_cols': auxiliary_cols_to_drop,
+    'encoders': encoders,  # From training
+    'ref_date': reference_date
+}
+
+# 5. Apply preprocessing for inference
+X_all_processed = _prepare_inference_data(
+    all_stocks_features,
+    X_train_cls.columns,  # Columns from training
+    model_feature_names,   # Features expected by model
+    prep_params
+)
+
+print(f"  [OK] Final shape aligned to model: {X_all_processed.shape}")
+```
+
+**Benefits**:
+
+1. **Schema Consistency**: Automatic synchronization with COLUMN_SCHEMA registry
+2. **Maintainability**: Column list changes propagate automatically from schema
+3. **Type Safety**: Schema-aware preprocessing ensures correct dtype handling
+4. **Testability**: Schema functions are fully tested (100% coverage)
+5. **Reduced Errors**: Eliminates hardcoded column lists that can become stale
+
+**Anti-Patterns (Avoid)**:
+
+```python
+# ❌ WRONG: Hardcoded categorical columns list
+categorical_columns = ['sector', 'industry', 'region', 'country']  # Becomes stale
+
+# ❌ WRONG: Undefined variable usage
+prep_params = {
+    'cat_cols': categorical_columns_from_schema,  # NameError if not defined!
+    'date_cols': datetime_cols_from_schema
+    }
+
+# ❌ WRONG: Direct column specification without schema
+X_processed, _ = preprocess_for_lightgbm(
+        df,
+        categorical_columns=['sector', 'industry'],  # Incomplete, hardcoded
+        datetime_columns=['last_updated']  # Missing other date columns
+        )
+```
+
+**Test Coverage**: The schema integration pattern is validated by 44 tests in
+`tests/test_notebook_schema_integration.py`, covering:
+
+- Schema helper function behavior
+- Integration with preprocessing pipeline
+- Edge cases (empty lists, unknown columns)
+- Consistency across multiple calls
+
+**Related Sections**:
+
+- Section 2.5: Schema Module and Helper Functions (complete API documentation)
+- Section 1.3: Phase 9.3 Features module (preprocessing functions)
+
+8.3) DataFrame Stage Naming Convention
 
 **Policy**: Use descriptive, stage-based naming for DataFrames instead of in-place mutations. Each transformation
 stage should produce a new DataFrame with a name that clearly indicates the pipeline stage.
@@ -2080,11 +2340,13 @@ It operates on a schema-validated dataframe and guarantees **zero missing values
 
 ### Testing and Quality (Current Status)
 
-- **Test Suite:** 67+ test modules
+- **Test Suite:** 83 test modules (updated 2025-11-21)
+    - Includes TDD v0.8.2 additions: schema integration (44 tests), datatype detection, Phase 9.3 enhancements
+    - Portfolio Optimization: 5 modules, 23 tests covering ML-based returns, advanced optimization, risk management
 - **Coverage Target:** ≥85% for new code, ≥80% overall
-- **Fast Tests:** < 100 lines, pure functions (coverage_smoke, loaders, validation)
-- **Medium Tests:** 100-500 lines, integration (imputation, risk_metrics, logging)
-- **Slow Tests:** > 500 lines, heavy ML (classification_phase94, advanced_models_phase95)
+- **Fast Tests:** < 100 lines, pure functions (coverage_smoke, loaders, validation, repository_setup)
+- **Medium Tests:** 100-500 lines, integration (imputation, risk_metrics, logging, notebook_schema_integration)
+- **Slow Tests:** > 500 lines, heavy ML (classification_phase94, advanced_models_phase95, finance_ml_eval)
 
 **Recommended Testing Workflow:**
 

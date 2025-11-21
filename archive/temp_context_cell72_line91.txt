@@ -1,0 +1,5 @@
+89:             # Required columns: ticker, isin, sector, region, last_price, y_true, y_pred,
+90:             #                   y_pred_calibrated, pred_p10, pred_p50, pred_p90, interval_width,
+91:             #                   abs_error, pct_error, model_version, snapshot_date
+92:             detailed_path = out_models_dir / 'regression_predictions_detailed.csv'
+93:             results_df_detailed.reset_index(drop=True).to_csv(detailed_path, index=False)

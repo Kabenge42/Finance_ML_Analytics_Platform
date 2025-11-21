@@ -117,6 +117,27 @@ from finance_ml.ml_workflow.analytics.risk import (
     calculate_portfolio_risk_metrics,
 )
 
+# Import ML returns functions (Portfolio Phase 2)
+from finance_ml.ml_workflow.analytics.ml_returns import (
+    create_ml_return_features,
+    train_linear_return_predictor,
+    create_ensemble_return_predictions,
+    evaluate_return_predictions,
+)
+
+# Import configuration constants for ML returns (Section 8.1 compliance)
+from finance_ml.ml_workflow.config import (
+    MIN_DATES_FOR_TIMESERIES,
+    MIN_DATES_FOR_RELIABLE_ML,
+    MIN_PORTFOLIO_CANDIDATES,
+    DEFAULT_EXPECTED_RETURN,
+    TRAIN_SIZE,
+    TARGET_COL,
+    TARGET_COL_FALLBACK,
+    LAG_PERIODS,
+    TECHNICAL_INDICATORS,
+)
+
 __all__ = [
     # Mispricing functions
     "calculate_mispricing_score",
@@ -139,6 +160,21 @@ __all__ = [
     "calculate_sortino_ratio",
     "calculate_max_drawdown",
     "calculate_portfolio_risk_metrics",
+    # ML returns functions (Portfolio Phase 2)
+    "create_ml_return_features",
+    "train_linear_return_predictor",
+    "create_ensemble_return_predictions",
+    "evaluate_return_predictions",
+    # Configuration constants (Section 8.1)
+    "MIN_DATES_FOR_TIMESERIES",
+    "MIN_DATES_FOR_RELIABLE_ML",
+    "MIN_PORTFOLIO_CANDIDATES",
+    "DEFAULT_EXPECTED_RETURN",
+    "TRAIN_SIZE",
+    "TARGET_COL",
+    "TARGET_COL_FALLBACK",
+    "LAG_PERIODS",
+    "TECHNICAL_INDICATORS",
     # EDA and analysis
     "simple_eda",
     # Export functions

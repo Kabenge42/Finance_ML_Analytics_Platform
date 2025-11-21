@@ -286,6 +286,7 @@ def compute_shap_values(
     X_train: pd.DataFrame,
     X_test: pd.DataFrame,
     max_samples: int = 100,
+    max_evals: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Compute SHAP values for model interpretation.
 
@@ -294,6 +295,8 @@ def compute_shap_values(
         X_train: Training data (for background)
         X_test: Test data (for SHAP values)
         max_samples: Maximum samples for SHAP computation
+        max_evals: Maximum evaluations for SHAP explainer (auto-calculated if None)
+                   Required for PermutationExplainer: must be >= 2 * n_features + 1
 
     Returns:
         Dictionary with SHAP values and explainer
@@ -313,8 +316,15 @@ def compute_shap_values(
         else:
             explainer = shap.Explainer(model.predict, X_train_sample)
 
-        # Compute SHAP values
-        shap_values = explainer(X_test_sample)
+        # Calculate max_evals if not provided (required for PermutationExplainer)
+        # PermutationExplainer needs: max_evals >= 2 * num_features + 1
+        n_features = X_test_sample.shape[1]
+        if max_evals is None:
+            max_evals = max(500, 2 * n_features + 1)
+            logger.info(f"Auto-calculated max_evals={max_evals} for {n_features} features")
+
+        # Compute SHAP values with explicit max_evals
+        shap_values = explainer(X_test_sample, max_evals=max_evals)
 
         logger.info(f"SHAP values computed for {len(X_test_sample)} samples")
 
