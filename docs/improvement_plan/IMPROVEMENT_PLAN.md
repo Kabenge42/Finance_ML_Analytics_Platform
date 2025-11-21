@@ -52,7 +52,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 
 ### Language
 
-- **Python**: 3.12 or 3.13 (required)
+- **Python**: 3.12, 3.13, or 3.14 (required)
 
 ### Package Managers
 - **pip + venv** (primary): Dependencies in `requirements.txt`
@@ -108,7 +108,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 
 ### System Requirements
 - **OS**: Windows 10/11 (tested), macOS, or Linux
-- **Python**: 3.12 or 3.13
+- **Python**: 3.12, 3.13, or 3.14
 - **PostgreSQL**: 15+ (local instance with psql on PATH)
 - **Git**: Optional but recommended for version control
 
@@ -1057,7 +1057,7 @@ except ImportError:
 
 - [ ] Review and fix type alias usage in notebook
 - [ ] Use proper generic syntax: `List[str]` not `list:2`
-- [ ] Ensure compatibility with Python 3.12+ type system
+- [ ] Ensure compatibility with Python 3.12–3.14 type system
 
 ---
 

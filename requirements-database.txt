@@ -2,7 +2,7 @@
 # Database Dependencies for Finance ML Analytics Platform
 # ============================================================================
 # Install with: pip install -r requirements-database.txt
-# Python version: >=3.12,<3.14
+# Python version: >=3.12,<3.15
 # This includes all core dependencies plus database connectivity tools
 
 # Core dependencies

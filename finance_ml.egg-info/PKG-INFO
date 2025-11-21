@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: finance-ml
-Version: 0.8.1
+Version: 0.8.3
 Summary: A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions
 Author: Finance ML Team
 License: MIT
@@ -16,12 +16,14 @@ Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
 Classifier: Topic :: Office/Business :: Financial :: Investment
-Requires-Python: <3.14,>=3.12
+Requires-Python: <3.15,>=3.12
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: numpy<2.0.0,>=1.26.0
+Requires-Dist: numpy<2.0.0,>=1.26.0; python_version < "3.14"
+Requires-Dist: numpy<3.0.0,>=2.0.0; python_version >= "3.14"
 Requires-Dist: pandas<3.0.0,>=2.0.0
 Requires-Dist: scipy<2.0.0,>=1.11.0
 Requires-Dist: statsmodels<1.0.0,>=0.14.0
@@ -29,8 +31,8 @@ Requires-Dist: scikit-learn<2.0.0,>=1.4.0
 Requires-Dist: imbalanced-learn<1.0.0,>=0.11.0
 Requires-Dist: xgboost<3.0.0,>=2.0.3
 Requires-Dist: lightgbm<5.0.0,>=4.0.0
-Requires-Dist: catboost<2.0.0,>=1.2.0
-Requires-Dist: shap<1.0.0,>=0.42.0
+Requires-Dist: catboost<2.0.0,>=1.2.0; python_version < "3.14"
+Requires-Dist: shap<1.0.0,>=0.42.0; python_version < "3.14"
 Requires-Dist: matplotlib<4.0.0,>=3.7.0
 Requires-Dist: seaborn<1.0.0,>=0.12.0
 Requires-Dist: plotly<6.0.0,>=5.14.0
@@ -46,15 +48,14 @@ Requires-Dist: flake8<8.0.0,>=6.0.0; extra == "dev"
 Requires-Dist: mypy<2.0.0,>=1.5.0; extra == "dev"
 Requires-Dist: isort<6.0.0,>=5.12.0; extra == "dev"
 Provides-Extra: tensorflow
-Requires-Dist: tensorflow<3.0.0,>=2.13.0; extra == "tensorflow"
-Requires-Dist: scikeras<1.0.0,>=0.12.0; extra == "tensorflow"
+Requires-Dist: tensorflow<3.0.0,>=2.13.0; (python_version < "3.14") and extra == "tensorflow"
+Requires-Dist: scikeras<1.0.0,>=0.12.0; (python_version < "3.14") and extra == "tensorflow"
 Provides-Extra: database
 Requires-Dist: psycopg2-binary<3.0.0,>=2.9.0; extra == "database"
 Requires-Dist: SQLAlchemy<3.0.0,>=2.0.0; extra == "database"
 Requires-Dist: openpyxl<4.0.0,>=3.1.0; extra == "database"
 Provides-Extra: advanced-features
 Requires-Dist: boruta<1.0.0,>=0.3.0; extra == "advanced-features"
-Requires-Dist: numba<1.0.0,>=0.57.0; extra == "advanced-features"
 Provides-Extra: notebook
 Requires-Dist: jupyter<2.0.0,>=1.0.0; extra == "notebook"
 Requires-Dist: notebook<8.0.0,>=7.0.0; extra == "notebook"

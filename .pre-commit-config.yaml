@@ -1,5 +1,5 @@
 # Pre-commit hooks configuration for Finance ML Analytics Platform
-# Python version: 3.12 or 3.13 (>=3.12,<3.14)
+# Python version: 3.12, 3.13, or 3.14 (>=3.12,<3.15)
 # Install: pip install pre-commit
 # Setup: pre-commit install
 # Run manually: pre-commit run --all-files
@@ -21,7 +21,7 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-        language_version: python3.12
+        language_version: python3.14
         args: [ '--line-length=100' ]
 
   # Import sorting
@@ -43,7 +43,7 @@ repos:
     rev: v1.13.0
     hooks:
       - id: mypy
-        args: [ '--ignore-missing-imports', '--python-version=3.12' ]
+        args: [ '--ignore-missing-imports', '--python-version=3.14' ]
         additional_dependencies: [ ]
 
   # Security checks

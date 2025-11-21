@@ -2,10 +2,12 @@
 # Core Dependencies for Finance ML Analytics Platform
 # ============================================================================
 # Install with: pip install -r requirements-core.txt
-# Python version: >=3.12,<3.14
+# Python version: >=3.12,<3.15
 
 # Numerical computing and data structures
-numpy>=1.26.0,<2.0.0
+# For Python 3.14+, many libraries ship against NumPy 2.x. Allow NumPy 2 on 3.14+.
+numpy>=1.26.0,<2.0.0; python_version < '3.14'
+numpy>=2.0.0,<3.0.0; python_version >= '3.14'
 pandas>=2.0.0,<3.0.0
 scipy>=1.11.0,<2.0.0
 statsmodels>=0.14.0,<1.0.0
@@ -17,10 +19,13 @@ imbalanced-learn>=0.11.0,<1.0.0
 # Machine learning - gradient boosting
 xgboost>=2.0.3,<3.0.0
 lightgbm>=4.0.0,<5.0.0
-catboost>=1.2.0,<2.0.0
+# CatBoost: gate on Python 3.14 due to missing cp314 wheels (2025-11). Install on 3.13
+# if needed, or wait for official 3.14 wheels.
+catboost>=1.2.0,<2.0.0; python_version < '3.14'
 
 # Model interpretability and explainability
-shap>=0.42.0,<1.0.0
+# SHAP depends on numba, which (as of 2025-11) does not support Python 3.14 yet.
+shap>=0.42.0,<1.0.0; python_version < '3.14'
 
 # Data visualization
 matplotlib>=3.7.0,<4.0.0

@@ -33,6 +33,7 @@ $env:LOG_LEVEL = "INFO"
 $env:TF_CPP_MIN_LOG_LEVEL = "2"
 
 # Database connection (update with your actual credentials)
+# TODO: Update credentials before use or set via secure credential management
 $env:DB_URL = "postgresql+psycopg2://postgres:bItcfiTg142!@localhost:5432/postgres"
 
 Write-Host "Environment variables set successfully!" -ForegroundColor Green

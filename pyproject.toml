@@ -7,10 +7,10 @@ build-backend = "setuptools.build_meta"
 # ============================================================================
 [project]
 name = "finance-ml"
-version = "0.8.1"
+version = "0.8.3"
 description = "A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions"
 readme = "README.md"
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.12,<3.15"
 license = { text = "MIT" }
 authors = [{ name = "Finance ML Team" }]
 
@@ -30,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Office/Business :: Financial :: Investment",
 ]
@@ -39,7 +40,9 @@ classifiers = [
 # ============================================================================
 dependencies = [
     # Numerical computing and data structures
-    "numpy>=1.26.0,<2.0.0",
+    # NumPy: require 2.x on Python 3.14+ to ensure prebuilt wheels are available
+    "numpy>=1.26.0,<2.0.0; python_version < '3.14'",
+    "numpy>=2.0.0,<3.0.0; python_version >= '3.14'",
     "pandas>=2.0.0,<3.0.0",
     "scipy>=1.11.0,<2.0.0",
     "statsmodels>=0.14.0,<1.0.0",
@@ -49,9 +52,13 @@ dependencies = [
     # Machine learning - gradient boosting
     "xgboost>=2.0.3,<3.0.0",
     "lightgbm>=4.0.0,<5.0.0",
-    "catboost>=1.2.0,<2.0.0",
+    # CatBoost: gate on Python 3.14 due to missing cp314 wheels (2025-11). Install on 3.13
+    # if needed, or wait for official 3.14 wheels.
+    "catboost>=1.2.0,<2.0.0; python_version < '3.14'",
     # Model interpretability and explainability
-    "shap>=0.42.0,<1.0.0",
+    # SHAP depends on numba, which (as of 2025-11) does not support Python 3.14 yet.
+    # Gate SHAP on <3.14 to avoid installation failure on 3.14.
+    "shap>=0.42.0,<1.0.0; python_version < '3.14'",
     # Data visualization
     "matplotlib>=3.7.0,<4.0.0",
     "seaborn>=0.12.0,<1.0.0",
@@ -79,8 +86,10 @@ dev = [
 
 # Deep learning support with TensorFlow/Keras
 tensorflow = [
-    "tensorflow>=2.13.0,<3.0.0",
-    "scikeras>=0.12.0,<1.0.0",
+    # Note: Official TensorFlow wheels for Python 3.14 on Windows may lag behind.
+    # Gate TF/Keras extras on <3.14 to avoid source builds and installation failures.
+    "tensorflow>=2.13.0,<3.0.0; python_version < '3.14'",
+    "scikeras>=0.12.0,<1.0.0; python_version < '3.14'",
 ]
 
 # Database connectivity for PostgreSQL and SQL operations
@@ -93,7 +102,7 @@ database = [
 # Advanced feature selection and optimization
 advanced-features = [
     "boruta>=0.3.0,<1.0.0",
-    "numba>=0.57.0,<1.0.0",
+
 ]
 
 # Jupyter notebook support
@@ -141,7 +150,7 @@ finance_ml = ["py.typed"]
 # Black - Code Formatter
 [tool.black]
 line-length = 100
-target-version = ["py312", "py313"]
+target-version = ["py312", "py313", "py314"]
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -165,7 +174,7 @@ ensure_newline_before_comments = true
 
 # Mypy - Static Type Checking
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false

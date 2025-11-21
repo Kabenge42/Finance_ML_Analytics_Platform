@@ -1,16 +1,4 @@
-﻿# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Changed
-
-- **Code Guidelines Enhancement: Notebook Best Practices and TDD Conventions** (2025-11-20)
-  - **New Section 8**: Added comprehensive "Notebook Best Practices and TDD Conventions" to `code_guidelines.md`
+﻿  - **New Section 8**: Added comprehensive "Notebook Best Practices and TDD Conventions" to `code_guidelines.md`
     (+270 lines, document expanded from 2349 to 2619 lines)
   - **Three Core Policies**:
     1. **Section 8.1: Centralized Configuration Constants (Single Source of Truth)**
@@ -1132,3 +1120,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Breaking changes minimal; primarily additive changes
 
 **Date Generated**: 2025-10-31
+
+## [0.8.3] - 2025-11-21
+
+### Added
+
+- README: Python 3.14 Compatibility Notes section with clear guidance for Windows users (venv setup, installation, and
+  optional package caveats).
+
+### Changed
+
+- Bumped package version to 0.8.3 in pyproject.toml.
+- Python compatibility confirmed and enforced for 3.12–3.14 (requires-python >=3.12,<3.15).
+- Dependency policy updated to ensure smooth installs on Python 3.14 (especially Windows):
+  - NumPy now uses 2.x on Python 3.14+ and 1.26.x on earlier versions.
+  - SHAP gated on Python < 3.14 due to transitive numba incompatibility with 3.14.
+  - CatBoost gated on Python < 3.14 (no cp314 wheels published at time of release; avoids source builds).
+  - Streamlit gated on Python < 3.14 to avoid pyarrow source builds until cp314 wheels are widely available.
+  - TensorFlow/Keras extras gated on Python < 3.14 pending official 3.14 wheels.
+- Synced constraints across files: pyproject.toml, requirements.txt, requirements-core.txt, requirements-all.txt,
+  requirements-tensorflow.txt, Pipfile.
+- Pre-commit: black and mypy hooks configured for Python 3.14; mypy args updated accordingly.
+
+### Notes
+
+- These changes prioritize out-of-the-box installation reliability for Python 3.14 while preserving full feature
+  availability on Python 3.12–3.13.
+- Once upstream projects publish Python 3.14 wheels (numba, CatBoost, pyarrow, TensorFlow), gated requirements can be
+  re-enabled for 3.14 in a subsequent release.

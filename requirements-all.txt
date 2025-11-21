@@ -2,7 +2,7 @@
 # Complete Installation - All Dependencies for Finance ML Analytics Platform
 # ============================================================================
 # Install with: pip install -r requirements-all.txt
-# Python version: >=3.12,<3.14
+# Python version: >=3.12,<3.15
 # This includes ALL optional dependencies: dev, tensorflow, database, advanced-features, notebook
 
 # Core dependencies
@@ -17,8 +17,10 @@ isort>=5.12.0,<6.0.0
 mypy>=1.5.0,<2.0.0
 
 # Deep learning frameworks
-tensorflow>=2.13.0,<3.0.0
-scikeras>=0.12.0,<1.0.0
+# Note: Official TensorFlow wheels for Python 3.14 on Windows may lag behind.
+# Gate TF/Keras on <3.14 to avoid source builds and installation failures.
+tensorflow>=2.13.0,<3.0.0; python_version < '3.14'
+scikeras>=0.12.0,<1.0.0; python_version < '3.14'
 
 # Database connectivity
 psycopg2-binary>=2.9.0,<3.0.0
@@ -27,7 +29,9 @@ openpyxl>=3.1.0,<4.0.0
 
 # Advanced feature selection and optimization
 boruta>=0.3.0,<1.0.0
-numba>=0.57.0,<1.0.0
+# numba is a transitive dependency of SHAP and currently (2025-11) does not
+# support Python 3.14. Keep it only for Python <3.14 to avoid install failure.
+numba>=0.57.0,<1.0.0; python_version < '3.14'
 
 # Jupyter notebook support
 jupyter>=1.0.0,<2.0.0

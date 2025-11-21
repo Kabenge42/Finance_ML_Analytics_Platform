@@ -8,7 +8,7 @@
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
 > applicable.
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%20|%203.13%20|%203.14-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -64,7 +64,7 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 
 ## Stack & Entry Points (Quick)
 
-- Language: Python 3.12–3.13
+- Language: Python 3.12–3.14
 - Package manager: pip (requirements.txt) + pyproject.toml (PEP 621)
 - Core frameworks: pandas, scikit-learn, XGBoost/LightGBM/CatBoost, plotly/matplotlib, SHAP
 - Optional: TensorFlow/Keras, SQLAlchemy + psycopg2 (PostgreSQL)
@@ -243,7 +243,7 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed migratio
 
 ### Language & Runtime
 
-- **Python**: 3.12 or 3.13 (officially supported per `pyproject.toml`; 3.10-3.11 may work but untested)
+- **Python**: 3.12, 3.13, or 3.14 (officially supported per `pyproject.toml`; 3.10-3.11 may work but untested)
 - **Package Manager**: pip with `requirements.txt` and `pyproject.toml`
 
 ### Core Libraries
@@ -276,7 +276,7 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed migratio
 ### System Requirements
 
 - **OS**: Windows 10/11, macOS, or Linux
-- **Python**: 3.12 or 3.13 (officially supported)
+- **Python**: 3.12, 3.13, or 3.14 (officially supported)
 - **PostgreSQL**: 15+ (optional; SQLite works for local testing)
 - **Memory**: 8GB+ recommended for full dataset
 - **Disk**: 2GB+ for project, data, and models
@@ -339,7 +339,7 @@ streamlit run finance_ml/dashboards/streamlit_app.py
 
 ### 1. Prerequisites
 
-Ensure you have Python 3.12 or 3.13 installed:
+Ensure you have Python 3.12, 3.13, or 3.14 installed:
 
 ```powershell
 python --version
@@ -376,6 +376,36 @@ pip install -r requirements.txt
 ```powershell
 # Install package in editable mode with extras
 pip install -e ".[dev,database,notebook]"
+```
+
+#### Python 3.14 Compatibility Notes
+
+As of 2025-11-21, Python 3.14 is officially supported by this project (requires-python >=3.12,<3.15). Some optional
+packages still lag behind with prebuilt wheels on Windows for 3.14. We applied safe defaults in our dependency files to
+ensure a smooth install:
+
+- NumPy 2.x is used automatically on Python 3.14+; NumPy 1.26.x is used on earlier supported versions.
+- SHAP is gated on Python < 3.14 due to its `numba` dependency not publishing 3.14 wheels yet.
+- CatBoost is gated on Python < 3.14 because cp314 wheels are not yet available on Windows; this avoids slow/fragile
+  source builds.
+- Streamlit is gated on Python < 3.14 to avoid `pyarrow` source builds until cp314 wheels are broadly available.
+- TensorFlow/Keras extras are gated on Python < 3.14 pending official 3.14 wheel availability.
+
+What this means for you:
+
+- On Python 3.14, `pip install -r requirements.txt` installs the full core stack (
+  NumPy/Pandas/SciPy/Scikit-Learn/XGBoost/LightGBM/etc.) without attempting to build problematic optional packages.
+- If you need any gated optional package immediately, use Python 3.13 for that environment or install the package later
+  once official 3.14 wheels are released.
+
+Quick Windows setup for Python 3.14:
+
+```powershell
+py -3.14 -m venv .venv
+. .\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip setuptools wheel
+pip cache purge
+pip install -r requirements.txt
 ```
 
 ### 4. Verify Installation

@@ -17,14 +17,15 @@
       <excludeFolder url="file://$MODULE_DIR$/backups" />
     </content>
     <content url="file://$MODULE_DIR$/data" />
-    <orderEntry type="jdk" jdkName="Python 3.13" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.14" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Python 3.13 interpreter library" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="templateFileTypes">
       <list>
-        <option value=".env file" />
+        <option value="AiIgnore file" />
+        <option value="GitIgnore file" />
         <option value="CSV" />
         <option value="CSV/TSV" />
         <option value="HTML" />

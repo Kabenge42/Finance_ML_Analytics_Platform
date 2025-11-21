@@ -50,7 +50,7 @@ finance_ml/ml_workflow/
 
 ### Language and Runtime
 
-- **Language**: Python 3.12–3.13 (3.13 recommended)
+- **Language**: Python 3.12–3.14 (3.13–3.14 recommended)
 - **Notebook Environment**: Jupyter Notebook or JupyterLab
 - **Database**: PostgreSQL 15+ (local instance)
 
