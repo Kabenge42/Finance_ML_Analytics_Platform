@@ -5,6 +5,21 @@
 .DS_Store
 *.log
 *.tmp
+risk_metrics.py
+portfolio_optimization.py
+classification_enhanced.py
+features.py
+analyst_comparison.py
+benchmarking.py
+classification.py
+models.py
+transformers.py
+advanced_preprocessing.py
+advanced_models.py
+advanced_features.py
+data_versioning.py
+data_catalog.py
+advanced_eda.py
 
 # or folders
 dist/

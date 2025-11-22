@@ -1,9 +1,9 @@
 # Finance ML Analytics Platform
 
-**Version 0.8.2** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.8.3** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-20  
-> **Latest Release**: v0.8.2 (see CHANGELOG.md)  
+> **Documentation Last Updated:** 2025-11-22  
+> **Latest Release**: v0.8.3 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
 > applicable.
@@ -966,7 +966,18 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.8.2 (Current Release - 2025-11-19)
+### Version 0.8.3 (Current Release - 2025-11-22)
+
+- Packaging: pyproject.toml bumped to 0.8.3; CLI entry points unchanged (finance-ml, finance-ml-analyze,
+  finance-ml-validate)
+- Notebook: Output directory configuration standardized; added missing subdirectories and unified OUTPUT_DIR usage
+  across cells (see NOTEBOOK_OUTPUT_DIR_FIX_SUMMARY.md)
+- Notebook: Integrated Phases 9.5–9.8 sections with artifacts and structural tests passing (see
+  IMPLEMENTATION_SUMMARY_PHASE95_98.md)
+- Documentation: This README updated for alignment with pyproject.toml and latest guidance
+- TODO: Confirm CHANGELOG.md includes 0.8.3 entry and update environment_variables.txt version header accordingly
+
+### Version 0.8.2 (2025-11-19)
 
 **TDD Implementation: Data Preprocessing & Datatype Detection**:
 
@@ -1329,9 +1340,9 @@ without TensorFlow.
 - Package version increments with each release; MODEL_VERSION increments with modeling changes
 - Example: Package v0.7.1 can have MODEL_VERSION v9_9 (no modeling changes from v0.7.0)
 
-**Current Versions** (as of 2025-11-20):
+**Current Versions** (as of 2025-11-22):
 
-- Package: `0.8.2`
+- Package: `0.8.3`
 - Model: `v9_9`
 - Status: ✓ Aligned (notebook and package both use v9_9)
 
@@ -1343,15 +1354,16 @@ without TensorFlow.
 
 ### Version Synchronization
 
-**Current Status** (as of 2025-11-20):
+**Current Status** (as of 2025-11-22):
 
-- **CHANGELOG.md**: Documents v0.8.2 release (2025-11-19) with MODEL_VERSION v9_9 ✓
-- **README.md**: Documents v0.8.2 with MODEL_VERSION v9_9 ✓
-- **pyproject.toml**: Version = "0.8.1" (TODO: update to 0.8.2)
-- **environment_variables.txt**: Version 0.8.1 (TODO: update to 0.8.2 with MODEL_VERSION=v9_9)
-- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓
+- **pyproject.toml**: Version = "0.8.3" ✓
+- **README.md**: Updated to 0.8.3 ✓
+- **CHANGELOG.md**: TODO — verify 0.8.3 entry and add if missing
+- **environment_variables.txt**: TODO — verify version header reflects 0.8.3 and MODEL_VERSION=v9_9
+- **finance_ml/config.py**: MODEL_VERSION v9_9 (unchanged)
 
-**Status**: ⚠️ README.md and CHANGELOG.md updated to v0.8.2; pyproject.toml and environment_variables.txt require update
+**Status**: Partial — packaging and README aligned at 0.8.3; ensure CHANGELOG.md and environment_variables.txt are
+updated
 
 ### Future Enhancements
 
@@ -1367,6 +1379,6 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-20  
-**README Version**: 4.0 (updated to v0.8.2 with TDD implementation, 83 test modules, Phase 9.3 schema expansion to 310
-columns, 6-phase portfolio optimization completion)
+**Last Updated**: 2025-11-22  
+**README Version**: 4.1 (aligned to v0.8.3; notebook OUTPUT_DIR fixes; phases 9.5–9.8 integration; TDD modules and 83
+test modules retained)

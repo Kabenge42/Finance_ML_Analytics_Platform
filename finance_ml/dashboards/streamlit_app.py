@@ -369,17 +369,62 @@ if uploaded_file:
             """
         This section displays portfolio optimization results and risk metrics analysis.
         These visualizations are generated from Section 10 of the ml_finance_model_main.ipynb notebook.
+        
+        **Section 10 artifacts** are now located in `outputs/portfolio/` following the enhanced reporting structure.
         """
         )
 
-        # Check if portfolio visualization files exist
-        analytics_path = Path("outputs/analytics")
-        efficient_frontier_file = analytics_path / "efficient_frontier_interactive.html"
-        risk_metrics_file = analytics_path / "risk_metrics_dashboard.html"
-        drawdown_file = analytics_path / "portfolio_drawdown_analysis.html"
+        # Portfolio artifacts path (Section 10 structure)
+        portfolio_path = Path("outputs/portfolio")
+        
+        # Section 10.2: Universe & Filters Diagnostics
+        st.subheader("📊 Universe & Filters Diagnostics")
+        universe_summary_file = portfolio_path / "portfolio_universe_summary.html"
+        if universe_summary_file.exists():
+            try:
+                with open(universe_summary_file, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                st.components.v1.html(html_content, height=400, scrolling=True)
+            except Exception as e:
+                st.warning(f"Could not load universe summary: {e}")
+        else:
+            st.info("Run Section 10.2 of ml_finance_model_main.ipynb to generate universe diagnostics.")
 
-        # Efficient Frontier Visualization
-        st.subheader("📊 Efficient Frontier")
+        st.divider()
+        
+        # Section 10.3: Expected Returns & Risk Inputs QA
+        st.subheader("📈 Expected Returns & Risk Inputs")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            returns_dist_file = portfolio_path / "expected_returns_distribution.html"
+            if returns_dist_file.exists():
+                try:
+                    with open(returns_dist_file, "r", encoding="utf-8") as f:
+                        html_content = f.read()
+                    st.components.v1.html(html_content, height=400, scrolling=True)
+                except Exception as e:
+                    st.warning(f"Could not load returns distribution: {e}")
+            else:
+                st.info("Returns distribution not found (Section 10.3)")
+        
+        with col2:
+            corr_heatmap_file = portfolio_path / "risk_correlation_heatmap.html"
+            if corr_heatmap_file.exists():
+                try:
+                    with open(corr_heatmap_file, "r", encoding="utf-8") as f:
+                        html_content = f.read()
+                    st.components.v1.html(html_content, height=400, scrolling=True)
+                except Exception as e:
+                    st.warning(f"Could not load correlation heatmap: {e}")
+            else:
+                st.info("Correlation heatmap not found (Section 10.3)")
+
+        st.divider()
+
+        # Section 10.4: Efficient Frontier
+        st.subheader("🎯 Efficient Frontier & Constraints")
+        efficient_frontier_file = portfolio_path / "efficient_frontier.html"
         if efficient_frontier_file.exists():
             try:
                 with open(efficient_frontier_file, "r", encoding="utf-8") as f:
@@ -387,70 +432,85 @@ if uploaded_file:
                 st.components.v1.html(html_content, height=650, scrolling=True)
             except Exception as e:
                 st.warning(f"Could not load efficient frontier visualization: {e}")
-                st.info(
-                    "The file exists but could not be displayed. Try viewing it directly in outputs/analytics/"
-                )
         else:
             st.warning("⚠️ Efficient frontier visualization not found.")
-            st.info(
-                "Run Section 10 of ml_finance_model_main.ipynb to generate portfolio optimization visualizations."
-            )
+            st.info("Run Section 10.4 of ml_finance_model_main.ipynb to generate optimization visualizations.")
 
         st.divider()
 
-        # Risk Metrics Dashboard
-        st.subheader("📈 Risk Metrics Dashboard")
-        if risk_metrics_file.exists():
+        # Section 10.5: Risk Decomposition
+        st.subheader("🔍 Portfolio Breakdown & Risk Decomposition")
+        risk_decomp_file = portfolio_path / "risk_decomposition.html"
+        if risk_decomp_file.exists():
             try:
-                with open(risk_metrics_file, "r", encoding="utf-8") as f:
+                with open(risk_decomp_file, "r", encoding="utf-8") as f:
                     html_content = f.read()
-                st.components.v1.html(html_content, height=850, scrolling=True)
+                st.components.v1.html(html_content, height=600, scrolling=True)
             except Exception as e:
-                st.warning(f"Could not load risk metrics dashboard: {e}")
-                st.info(
-                    "The file exists but could not be displayed. Try viewing it directly in outputs/analytics/"
-                )
+                st.warning(f"Could not load risk decomposition: {e}")
         else:
-            st.warning("⚠️ Risk metrics dashboard not found.")
-            st.info(
-                "Run Section 10 of ml_finance_model_main.ipynb to generate risk metrics visualizations."
-            )
+            st.info("Risk decomposition not found. Run Section 10.5 to generate.")
+        
+        # Stress tests
+        stress_tests_file = portfolio_path / "stress_tests_dashboard.html"
+        if stress_tests_file.exists():
+            with st.expander("⚡ Stress Tests", expanded=False):
+                try:
+                    with open(stress_tests_file, "r", encoding="utf-8") as f:
+                        html_content = f.read()
+                    st.components.v1.html(html_content, height=500, scrolling=True)
+                except Exception as e:
+                    st.warning(f"Could not load stress tests: {e}")
 
         st.divider()
 
-        # Drawdown Analysis
-        st.subheader("📉 Portfolio Drawdown Analysis")
-        if drawdown_file.exists():
+        # Section 10.6: Backtesting
+        st.subheader("📉 Backtesting & Performance Attribution")
+        backtest_file = portfolio_path / "backtest_performance.html"
+        if backtest_file.exists():
             try:
-                with open(drawdown_file, "r", encoding="utf-8") as f:
+                with open(backtest_file, "r", encoding="utf-8") as f:
                     html_content = f.read()
-                st.components.v1.html(html_content, height=750, scrolling=True)
+                st.components.v1.html(html_content, height=650, scrolling=True)
             except Exception as e:
-                st.warning(f"Could not load drawdown analysis: {e}")
-                st.info(
-                    "The file exists but could not be displayed. Try viewing it directly in outputs/analytics/"
-                )
+                st.warning(f"Could not load backtest performance: {e}")
         else:
-            st.warning("⚠️ Drawdown analysis not found.")
-            st.info(
-                "Run Section 10 of ml_finance_model_main.ipynb to generate drawdown visualizations."
-            )
+            st.info("Backtest performance not found. Run Section 10.6 to generate.")
+        
+        # Attribution
+        attribution_file = portfolio_path / "performance_attribution.html"
+        if attribution_file.exists():
+            with st.expander("📊 Performance Attribution", expanded=False):
+                try:
+                    with open(attribution_file, "r", encoding="utf-8") as f:
+                        html_content = f.read()
+                    st.components.v1.html(html_content, height=500, scrolling=True)
+                except Exception as e:
+                    st.warning(f"Could not load attribution: {e}")
 
         st.divider()
 
-        # Phase 6 – Interactive Dashboard snapshots (optional)
-        st.subheader("🧭 Phase 6 – Interactive Portfolio Analytics")
-        st.markdown(
-            """
-            The following optional views are generated by the Phase 6 cells in
-            Section 10 (10.6 Interactive Dashboard). If a panel is empty, run
-            the corresponding notebook cells to create the HTML snapshots under
-            `outputs/analytics/`.
-            """
-        )
+        # Section 10.7: Risk Management Dashboard
+        st.subheader("🛡️ Risk Management Dashboard")
+        risk_mgmt_file = portfolio_path / "risk_management_dashboard.html"
+        if risk_mgmt_file.exists():
+            try:
+                with open(risk_mgmt_file, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                st.components.v1.html(html_content, height=700, scrolling=True)
+            except Exception as e:
+                st.warning(f"Could not load risk management dashboard: {e}")
+        else:
+            st.warning("⚠️ Risk management dashboard not found.")
+            st.info("Run Section 10.7 of ml_finance_model_main.ipynb to generate risk management visuals.")
 
-        # Multi-period performance comparison
-        multi_period_file = analytics_path / "portfolio_multi_period_comparison.html"
+        st.divider()
+
+        # Section 10.8: Multi-Period Comparison & Summary
+        st.subheader("🧭 Portfolio Summary & Multi-Period Comparison")
+        
+        # Multi-period comparison (now in portfolio/)
+        multi_period_file = portfolio_path / "portfolio_multi_period_comparison.html"
         with st.expander("Multi-Period Performance Comparison", expanded=False):
             if multi_period_file.exists():
                 try:
@@ -458,14 +518,12 @@ if uploaded_file:
                         html_content = f.read()
                     st.components.v1.html(html_content, height=500, scrolling=True)
                 except Exception as e:
-                    st.warning(f"Could not load multi-period comparison visualization: {e}")
+                    st.warning(f"Could not load multi-period comparison: {e}")
             else:
-                st.info(
-                    "Multi-period comparison HTML not found. Run Section 10.6 in the "
-                    "notebook to generate `portfolio_multi_period_comparison.html`."
-                )
+                st.info("Multi-period comparison not found. Run Section 10.8 to generate.")
 
-        # Factor exposure dashboard
+        # Factor exposure dashboard (legacy analytics/ path for backward compatibility)
+        analytics_path = Path("outputs/analytics")
         factor_exposure_file = analytics_path / "portfolio_factor_exposure_dashboard.html"
         with st.expander("Factor Exposure Dashboard", expanded=False):
             if factor_exposure_file.exists():
