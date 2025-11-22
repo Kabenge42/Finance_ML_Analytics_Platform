@@ -100,14 +100,25 @@ selective execution tips. TODO: Add containerization instructions (Docker) if/wh
   stress testing, Monte Carlo simulation
 - 📊 **Interactive Dashboards**: Streamlit and Dash applications with portfolio & risk metrics visualization
 - 🎯 **Stock Prediction**: End-to-end 8-phase workflow for price target prediction with standardized predictions schema
-- 🔬 **Uncertainty Quantification**: Quantile regression + conformal prediction for calibrated 80% prediction intervals
+- 🔬 **Uncertainty Quantification**: Quantile regression + conformal prediction for calibrated 80% prediction intervals;
+  interval coverage diagnostics, reliability diagrams, sector-level uncertainty analysis
+- 🛡️ **Safety Rails & Monitoring**: Winsorization effect tracking, non-negativity constraint validation, outlier
+  detection sensitivity analysis, interactive safety rails dashboards
+- 🔍 **Data Split Validation**: CV fold overlap analysis, grouped stratification balance metrics, time-based leakage
+  detection with severity assessment
+- 📊 **Sector Bias Calibration**: Pre/post calibration bias estimation, versioned metrics persistence, MAE/MAPE trend
+  visualization, interactive sector bias dashboards
+- 📋 **Model Governance**: Stacking ensemble diagnostics, base model contribution analysis, auto-generated model cards
+  (markdown), complete lineage tracking (datasets → features → models → artifacts), meta-learner error maps
 - 📄 **Reporting**: Excel/PDF reports, interactive Plotly visualizations, valuation analysis, standardized predictions
-  output
+  output, 30+ artifacts across 5 governance directories (uncertainty/, safety_rails/, splits/, calibration/,
+  governance/)
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
-- 🧪 **Tested**: Comprehensive unittest suite (83 test modules) with extensive coverage (≥80% target for new code);
-  TDD conventions for uncertainty, safety rails, schema validation, and datatype detection
+- 🧪 **Tested**: Comprehensive unittest suite (85 test modules) with extensive coverage (≥80% target for new code);
+  TDD conventions for uncertainty, safety rails, splits validation, calibration, governance, schema validation, and
+  datatype detection
 - 🚀 **CLI**: Three command-line tools for different workflows
-- 🔍 **Model Interpretation**: SHAP analysis for explainability
+- 🔍 **Model Interpretation**: SHAP analysis for explainability (with permutation importance fallback)
 
 ---
 

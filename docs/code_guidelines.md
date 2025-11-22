@@ -759,6 +759,272 @@ output_path: str
 # Generates Excel report with formatted comparison tables and charts
 ```
 
+**Advanced Evaluation and Governance (Extended Reporting)**
+
+This section documents the Phase 9.4-9.8 advanced evaluation modules for uncertainty quantification, safety rails
+monitoring, data split validation, sector bias calibration, and model governance. These modules generate comprehensive
+artifacts for transparency, reproducibility, and regulatory compliance.
+
+```python
+# Phase 9.4 — Uncertainty Quantification & Conformal Calibration
+# finance_ml.ml_workflow.evaluation.uncertainty
+from finance_ml.ml_workflow.evaluation import (
+    build_quantile_diagnostics,
+    plot_interval_coverage,
+    plot_reliability_diagram,
+    )
+
+diagnostics_df = build_quantile_diagnostics(
+        predictions_df: pd.DataFrame,
+output_dir: Path,
+y_true_col: str = "y_true",
+pred_cols: Dict[str, str] = {"p10": "pred_p10", "p50": "pred_p50", "p90": "pred_p90"},
+sector_col: str = "sector",
+region_col: str = "region",
+target_coverage: float = 0.8
+) -> pd.DataFrame
+# Returns: DataFrame with coverage_flag, interval_width, calibration_error per prediction
+# Creates: outputs/uncertainty/quantile_predictions_diagnostics.csv,
+#          coverage_by_sector.json, uncertainty_summary.json
+
+plot_interval_coverage(
+        diagnostics_df: pd.DataFrame,
+output_dir: Path,
+last_price_col: str = "last_price"
+) -> None
+# Creates: outputs/uncertainty/interval_width_by_bucket.html,
+#          coverage_heatmap_region_sector.html
+
+plot_reliability_diagram(
+        diagnostics_df: pd.DataFrame,
+output_dir: Path,
+pre_calibration_df: Optional[pd.DataFrame] = None
+) -> None
+# Creates: outputs/uncertainty/reliability_diagram_conformal.html
+
+# Phase 9.5 — Outlier Safety Rails & Non-Negative Constraints
+# finance_ml.ml_workflow.evaluation.safety_rails
+from finance_ml.ml_workflow.evaluation import (
+    summarize_winsorization_effects,
+    track_constraint_violations,
+    safety_rails_sensitivity_app,
+    )
+
+summary_dict = summarize_winsorization_effects(
+        df_raw: pd.DataFrame,
+df_winsorized: pd.DataFrame,
+numeric_cols: List[str],
+output_dir: Path,
+sector_col: str = "sector"
+) -> Dict[str, Any]
+# Returns: Dict with per-feature statistics (mean, std, pct_changed, kurtosis reduction)
+# Creates: outputs/safety_rails/clipping_effect_summary.json,
+#          pre_post_winsorization_distributions.html
+
+violations_dict = track_constraint_violations(
+        predictions_df: pd.DataFrame,
+output_dir: Path,
+pred_col: str = "y_pred",
+sector_col: str = "sector"
+) -> Dict[str, Any]
+# Returns: Dict with total_violations, violation_rate, violations_by_sector
+# Creates: outputs/safety_rails/non_negative_violations.json,
+#          violation_heatmap_by_feature_sector.html
+
+safety_rails_sensitivity_app(
+        df_raw: pd.DataFrame,
+output_dir: Path,
+thresholds: List[float] = [0.01, 0.05, 0.1]
+) -> None
+# Creates: outputs/safety_rails/safety_rails_sensitivity_dashboard.html
+
+# Phase 9.6 — Data Split and Leakage Policy Validation
+# finance_ml.ml_workflow.evaluation.splits
+from finance_ml.ml_workflow.evaluation import (
+    compute_fold_overlap,
+    summarize_grouped_cv_balance,
+    time_leakage_checks,
+    )
+
+overlap_dict = compute_fold_overlap(
+        fold_assignments: Dict[int, List[str]],
+output_dir: Path,
+group_col: str = "ticker"
+) -> Dict[str, Any]
+# Returns: Dict with overlap matrix, zero_overlap_validated flag
+# Creates: outputs/splits/fold_overlap_heatmap.html
+
+balance_dict = summarize_grouped_cv_balance(
+        df: pd.DataFrame,
+fold_assignments: Dict[int, List[str]],
+output_dir: Path,
+stratify_cols: List[str] = ["sector", "region"]
+) -> Dict[str, Any]
+# Returns: Dict with per-fold sample counts, group counts, stratification distribution
+# Creates: outputs/splits/grouped_cv_balance_metrics.json
+
+leakage_report = time_leakage_checks(
+        df: pd.DataFrame,
+fold_assignments: Dict[int, List[str]],
+output_dir: Path,
+date_col: str = "snapshot_date"
+) -> Dict[str, Any]
+# Returns: Dict with violations, severity, remediation hints
+# Creates: outputs/splits/leakage_report.json
+
+# Phase 9.7 — Sector Bias Calibration & Metrics Persistence
+# finance_ml.ml_workflow.evaluation.calibration
+from finance_ml.ml_workflow.evaluation import (
+    estimate_sector_bias,
+    plot_metrics_by_sector_time,
+    create_sector_bias_dashboard,
+    )
+
+bias_dict = estimate_sector_bias(
+        predictions_df: pd.DataFrame,
+output_dir: Path,
+y_true_col: str = "y_true",
+y_pred_col: str = "y_pred",
+y_pred_calibrated_col: str = "y_pred_calibrated",
+sector_col: str = "sector",
+model_version: str = "v9_9"
+) -> Dict[str, Any]
+# Returns: Dict with per-sector bias, MAE, MSE before/after calibration
+# Creates: outputs/calibration/sector_bias_calibration_v{MODEL_VERSION}.json
+
+plot_metrics_by_sector_time(
+        metrics_history: pd.DataFrame,
+output_dir: Path,
+snapshot_date_col: str = "snapshot_date"
+) -> None
+# Creates: outputs/calibration/metrics_by_sector_time.html
+
+create_sector_bias_dashboard(
+        predictions_df: pd.DataFrame,
+bias_dict: Dict[str, Any],
+output_dir: Path
+) -> None
+# Creates: outputs/calibration/sector_bias_dashboard.html
+
+# Phase 9.8 — Stacking Ensemble Diagnostics & Model Governance
+# finance_ml.ml_workflow.evaluation.stacking
+from finance_ml.ml_workflow.evaluation import (
+    compute_stacking_contributions,
+    meta_error_maps,
+    generate_model_card,
+    build_lineage_json,
+    )
+
+contributions_df = compute_stacking_contributions(
+        base_predictions: Dict[str, np.ndarray],
+meta_predictions: np.ndarray,
+y_true: np.ndarray,
+output_dir: Path
+) -> pd.DataFrame
+# Returns: DataFrame with model weights, correlations, contribution percentages
+# Creates: outputs/governance/stacking_contributions.csv,
+#          stacking_contributions.html
+
+meta_error_maps(
+        predictions_df: pd.DataFrame,
+output_dir: Path,
+error_col: str = "abs_error",
+sector_col: str = "sector"
+) -> None
+# Creates: outputs/governance/meta_error_map.html
+
+generate_model_card(
+        model_info: Dict[str, Any],
+output_dir: Path,
+model_version: str = "v9_9"
+) -> None
+# Creates: outputs/governance/model_card_v{MODEL_VERSION}.md
+# Sections: Overview, Data, Features, Models, Validation, Fairness, Risks,
+#           Versioning, Governance, Artifacts, References
+
+lineage_dict = build_lineage_json(
+        datasets: Dict[str, str],
+features: Dict[str, Any],
+models: Dict[str, Any],
+artifacts: List[str],
+metrics: Dict[str, Any],
+output_dir: Path,
+model_version: str = "v9_9"
+) -> Dict[str, Any]
+# Returns: Dict with complete lineage (datasets → features → models → artifacts)
+# Creates: outputs/governance/lineage.json
+```
+
+**Artifact Directory Structure:**
+
+```
+outputs/
+├── uncertainty/
+│   ├── quantile_predictions_diagnostics.csv
+│   ├── coverage_by_sector.json
+│   ├── uncertainty_summary.json
+│   ├── interval_width_by_bucket.html
+│   ├── coverage_heatmap_region_sector.html
+│   └── reliability_diagram_conformal.html
+├── safety_rails/
+│   ├── clipping_effect_summary.json
+│   ├── non_negative_violations.json
+│   ├── safety_rails_summary.json
+│   ├── pre_post_winsorization_distributions.html
+│   ├── violation_heatmap_by_feature_sector.html
+│   └── safety_rails_sensitivity_dashboard.html
+├── splits/
+│   ├── fold_overlap_heatmap.html
+│   ├── grouped_cv_balance_metrics.json
+│   ├── leakage_report.json
+│   └── fold_assignments.csv (optional)
+├── calibration/
+│   ├── sector_bias_calibration_v{MODEL_VERSION}.json
+│   ├── metrics_by_sector_time.html
+│   └── sector_bias_dashboard.html
+└── governance/
+    ├── stacking_contributions.csv
+    ├── stacking_contributions.html
+    ├── meta_error_map.html
+    ├── model_card_v{MODEL_VERSION}.md
+    └── lineage.json
+```
+
+**Usage Example:**
+
+```python
+from pathlib import Path
+from finance_ml.ml_workflow.evaluation import (
+    build_quantile_diagnostics,
+    plot_interval_coverage,
+    summarize_winsorization_effects,
+    track_constraint_violations,
+    estimate_sector_bias,
+    generate_model_card,
+    build_lineage_json,
+    )
+
+# Setup
+output_dir = Path("outputs")
+predictions_df = pd.read_csv("outputs/regression/regression_predictions_detailed.csv")
+
+# Phase 9.4 - Uncertainty Quantification
+diagnostics_df = build_quantile_diagnostics(predictions_df, output_dir / "uncertainty")
+plot_interval_coverage(diagnostics_df, output_dir / "uncertainty")
+
+# Phase 9.5 - Safety Rails
+violations = track_constraint_violations(predictions_df, output_dir / "safety_rails")
+assert violations["total_violations"] == 0, "Non-negativity constraint violated"
+
+# Phase 9.7 - Sector Bias Calibration
+bias_dict = estimate_sector_bias(predictions_df, output_dir / "calibration", model_version="v9_9")
+
+# Phase 9.8 - Model Governance
+generate_model_card(model_info, output_dir / "governance", model_version="v9_9")
+lineage = build_lineage_json(datasets, features, models, artifacts, metrics,
+                             output_dir / "governance", model_version="v9_9")
+```
+
 2) Column Naming and Schema (all_stocks dataframe)
 
 2.1 Normalized column names based on `create_equities_schema.sql schema`

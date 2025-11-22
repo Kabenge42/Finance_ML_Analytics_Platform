@@ -148,6 +148,27 @@ from finance_ml.ml_workflow.evaluation import (
     comprehensive_regression_metrics as evaluation_comprehensive_metrics,
     compute_metrics_by_segment as evaluation_metrics_by_segment,
     compute_sector_region_metrics as evaluation_sector_region_metrics,
+    # Phase 9.4 - Uncertainty Quantification & Conformal Calibration
+    build_quantile_diagnostics as evaluation_build_quantile_diagnostics,
+    plot_interval_coverage as evaluation_plot_interval_coverage,
+    plot_reliability_diagram as evaluation_plot_reliability_diagram,
+    # Phase 9.5 - Safety Rails & Non-Negative Constraints
+    summarize_winsorization_effects as evaluation_summarize_winsorization,
+    track_constraint_violations as evaluation_track_violations,
+    safety_rails_sensitivity_app as evaluation_safety_rails_app,
+    # Phase 9.6 - Data Split and Leakage Validation
+    compute_fold_overlap as evaluation_compute_fold_overlap,
+    summarize_grouped_cv_balance as evaluation_summarize_cv_balance,
+    time_leakage_checks as evaluation_time_leakage_checks,
+    # Phase 9.7 - Sector Bias Calibration
+    estimate_sector_bias as evaluation_estimate_sector_bias,
+    plot_metrics_by_sector_time as evaluation_plot_metrics_by_sector,
+    create_sector_bias_dashboard as evaluation_sector_bias_dashboard,
+    # Phase 9.8 - Stacking & Governance
+    compute_stacking_contributions as evaluation_stacking_contributions,
+    meta_error_maps as evaluation_meta_error_maps,
+    generate_model_card as evaluation_generate_model_card,
+    build_lineage_json as evaluation_build_lineage_json,
 )
 
 # Phase 9.3 Refactor: Import from features.advanced (new schema-driven features)
