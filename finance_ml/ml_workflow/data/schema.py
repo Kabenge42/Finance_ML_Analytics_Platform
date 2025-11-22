@@ -5,6 +5,21 @@ This module defines the authoritative COLUMN_SCHEMA derived from
 create_equities_schema.sql, providing centralized datatype and role
 information for all preprocessing, feature engineering, and modeling.
 
+Schema: 318 columns total (262 original + 48 Phase 9.3 additions)
+
+Database Tables:
+- equities: Original table with per-region data loading
+- all_stocks: Unified table combining four regional screening tables
+  (screening_us, screening_eu, screening_apac, screening_rotw)
+  Created by: all_stocks/all_stocks.sql
+  Primary key: (Ticker, Region)
+  Indexes: ticker, region, sector, industry, country, last_price, market_cap, sector_region
+
+Data Loading:
+- load_from_csv(): Load from CSV files in data/ directory
+- load_from_db(): Load from equities table with Region filter
+- load_from_all_stocks(): Load from unified all_stocks table (recommended)
+
 Aligned with code_guidelines.md v1.3+ Schema and Datatype Management.
 """
 

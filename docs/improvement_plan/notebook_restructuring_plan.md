@@ -13,7 +13,8 @@ governance artifacts. The plan aligns with `docs/code_guidelines.md` v1.2+, reus
     - Classification probabilities (if available): `outputs/classification/classification_predictions.csv`
 - Environment variables: `OUTPUT_DIR`, `MODEL_VERSION`, `ENABLE_INTERACTIVE_PLOTS`, `REPORT_FORMAT` (HTML first),
   `N_JOBS`.
-- Python 3.14 gating: `shap` and `catboost` may be unavailable. All SHAP-related visuals are optional and guarded by
+- Python 3.14 gating: SHAP 0.50.0 (with enhanced explainability features and improved performance) and `catboost` may be
+  unavailable on Python 3.14. All SHAP-related visuals are optional and guarded by
   presence checks. Provide fallbacks (permutation importance, partial dependence).
 - File naming convention: new artifacts live under dedicated subfolders to keep outputs organized and testable.
 

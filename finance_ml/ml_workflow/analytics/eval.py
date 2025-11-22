@@ -302,6 +302,7 @@ def simple_eda(
     save_plots: bool = False,
     target_column: Optional[str] = None,
     include_multivariate: bool = False,
+    include_phase93_summary: bool = False,
 ) -> dict:
     """Perform exploratory data analysis.
 
@@ -309,6 +310,7 @@ def simple_eda(
     Always return the computed summary as a dictionary for programmatic use.
 
     Phase 9.2 enhancements: Added feature importance and multivariate analysis integration.
+    Phase 9.3 enhancements: Added Phase 9.3 feature family tracking.
 
     Args:
         df: DataFrame to analyze
@@ -316,6 +318,7 @@ def simple_eda(
         save_plots: If True and out_dir is provided, generate and save matplotlib visualizations
         target_column: Optional target column name for feature importance analysis
         include_multivariate: If True, include PCA and other multivariate analysis
+        include_phase93_summary: If True, include Phase 9.3 feature category coverage
 
     Returns:
         A dictionary with EDA summary statistics.
@@ -860,6 +863,17 @@ def simple_eda(
                     except Exception as e:
                         logging.warning("Error generating visualizations: %s", e)
 
+    # Phase 9.3: Add feature family coverage tracking
+    if include_phase93_summary:
+        try:
+            from finance_ml.ml_workflow.eda.phase93_categories import get_phase93_coverage_stats
+
+            summary["phase93_coverage"] = get_phase93_coverage_stats(df)
+        except ImportError:
+            logging.warning("Phase 9.3 categories module not available")
+        except Exception as e:
+            logging.warning("Error computing Phase 9.3 coverage: %s", e)
+
     return summary
 
 
@@ -965,12 +979,15 @@ def export_predictions_to_csv(
     required_columns: Optional[list] = None,
     compute_mispricing: bool = True,
     export_all_columns: bool = False,
+    include_phase93_metadata: bool = False,
 ) -> Path:
     """Export standardized predictions CSV for dashboards and downstream tools.
 
     Expected columns in output CSV (when export_all_columns=False):
     ticker, name, exchange, sector, region, last_price, price_target,
     predicted_price_target, market_cap, mispricing_score
+
+    Phase 9.3 enhancement: Can optionally generate metadata JSON with Phase 9.3 feature tracking.
 
     Args:
         df: DataFrame containing predictions and related fields
@@ -979,6 +996,7 @@ def export_predictions_to_csv(
         compute_mispricing: If True and mispricing_score missing, compute it as
             (predicted_price_target - last_price) / last_price
         export_all_columns: If True, export all columns from the dataframe (overrides required_columns)
+        include_phase93_metadata: If True, generate companion metadata JSON with Phase 9.3 feature tracking
 
     Returns:
         The path to the written CSV file.
@@ -1084,6 +1102,34 @@ def export_predictions_to_csv(
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(csv_path, index=False)
     logging.info("Exported predictions to CSV: %s (%d columns)", csv_path, len(out_df.columns))
+
+    # Phase 9.3: Generate metadata file with feature tracking
+    if include_phase93_metadata:
+        try:
+            from finance_ml.ml_workflow.eda.phase93_categories import (
+                get_phase93_coverage_stats,
+                categorize_dataframe_columns,
+            )
+
+            metadata = {
+                "csv_file": csv_path.name,
+                "generated_at": datetime.now().isoformat(),
+                "total_rows": len(out_df),
+                "total_columns": len(out_df.columns),
+                "phase93_features": get_phase93_coverage_stats(df),
+                "phase93_categorized": categorize_dataframe_columns(df),
+            }
+
+            metadata_path = csv_path.parent / f"{csv_path.stem}_metadata.json"
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+            logging.info("Exported Phase 9.3 metadata to: %s", metadata_path)
+
+        except ImportError:
+            logging.warning("Phase 9.3 categories module not available for metadata")
+        except Exception as e:
+            logging.warning("Error generating Phase 9.3 metadata: %s", e)
+
     return csv_path
 
 

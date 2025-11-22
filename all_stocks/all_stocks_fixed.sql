@@ -20,9 +20,10 @@
 DO
 $$
     DECLARE
-        v_start_time TIMESTAMP;
-        v_end_time   TIMESTAMP;
-        v_row_count  INTEGER;
+        v_start_time    TIMESTAMP;
+        v_end_time      TIMESTAMP;
+        v_row_count     INTEGER;
+        v_source_schema TEXT := 'postgres.public';
     BEGIN
         v_start_time := clock_timestamp();
 
@@ -411,8 +412,10 @@ $$
 
         RAISE NOTICE 'Created all_stocks table structure';
 
+        -- Insert data from regional tables using UNION ALL
+        -- Note: Explicit casts removed as they're redundant when types match
         -- Insert data from regional tables using UNION ALL with explicit type casting
-        -- This ensures type compatibility across regional tables with different schemas
+-- This ensures type compatibility across regional tables with different schemas
         INSERT INTO all_stocks ("Ticker",
                                 "ISIN",
                                 "Name",

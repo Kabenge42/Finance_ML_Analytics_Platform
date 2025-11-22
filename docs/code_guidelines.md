@@ -1487,7 +1487,11 @@ stage should produce a new DataFrame with a name that clearly indicates the pipe
 
 ```python
 # ✅ CORRECT: Stage-based naming with clear progression
-all_stocks_raw = load_from_db(...)  # Initial load
+# Data Loading Options:
+# - load_from_csv(): Load from CSV files in data/ directory
+# - load_from_db(): Load from equities table with Region filter
+# - load_from_all_stocks(): Load from unified all_stocks table (RECOMMENDED)
+all_stocks_raw = load_from_all_stocks(db_url)  # Initial load from unified table
 all_stocks_normalized = normalize_columns(all_stocks_raw)  # After normalization
 all_stocks_typed = detect_and_cast_dtypes(all_stocks_normalized)[0]  # After type detection
 all_stocks_winsorized = winsorize_by_sector(all_stocks_typed, ...)  # After winsorization
@@ -1497,7 +1501,7 @@ all_stocks_features = build_comprehensive_features(all_stocks_scaled, ...)  # Af
 all_stocks_enhanced = add_classification_probabilities(all_stocks_features, ...)  # After classification features
 
 # ❌ WRONG: In-place mutations (unclear pipeline progression)
-all_stocks = load_from_db(...)
+all_stocks = load_from_all_stocks(db_url)
 all_stocks = normalize_columns(all_stocks)  # Lost reference to raw data
 all_stocks = winsorize_by_sector(all_stocks, ...)  # Can't rollback to normalized
 all_stocks = apply_imputation(all_stocks, ...)  # Can't compare pre/post imputation

@@ -2,6 +2,8 @@
 Phase 9.2: EDA Module
 
 Quick summaries, distributions, correlations, and sector slices for exploratory data analysis.
+
+Phase 9.3 Integration: Enhanced with Phase 9.3 feature family tracking and reporting.
 """
 
 import logging
@@ -9,6 +11,12 @@ from typing import Dict, Any, Optional, List
 
 import numpy as np
 import pandas as pd
+
+from finance_ml.ml_workflow.eda.phase93_categories import (
+    categorize_dataframe_columns,
+    get_phase93_coverage_stats,
+    get_category_description,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -178,3 +186,122 @@ def distribution_summary(
         }
 
     return summary
+
+
+# ============================================================================
+# Phase 9.3 Integration: Feature Family Tracking
+# ============================================================================
+
+
+def eda_summary_with_phase93(
+    df: pd.DataFrame,
+    sector_column: str = "sector",
+    include_correlations: bool = False,
+) -> Dict[str, Any]:
+    """
+    Generate EDA summary with explicit Phase 9.3 feature category coverage.
+
+    This is an enhanced version of eda_summary() that includes Phase 9.3
+    feature family tracking.
+
+    Args:
+        df: Input dataframe
+        sector_column: Name of sector column for sector-specific analysis
+        include_correlations: Whether to include correlation matrix
+
+    Returns:
+        Dictionary with standard EDA summary plus phase93_category_coverage
+    """
+    # Get standard EDA summary
+    summary = eda_summary(df, sector_column, include_correlations)
+
+    # Add Phase 9.3 category coverage
+    summary["phase93_category_coverage"] = get_phase93_coverage_stats(df)
+
+    return summary
+
+
+def generate_phase93_coverage_report(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Generate comprehensive Phase 9.3 feature coverage report.
+
+    Args:
+        df: DataFrame with potential Phase 9.3 features
+
+    Returns:
+        Dictionary with coverage statistics and breakdown
+    """
+    categorized = categorize_dataframe_columns(df)
+    coverage_stats = get_phase93_coverage_stats(df)
+
+    total_present = sum(coverage_stats.values())
+
+    # Calculate coverage percentage (out of all possible Phase 9.3 features)
+    from finance_ml.ml_workflow.eda.phase93_categories import list_all_phase93_features
+
+    total_possible = len(list_all_phase93_features())
+    coverage_pct = (total_present / total_possible * 100) if total_possible > 0 else 0.0
+
+    report = {
+        "total_phase93_features": total_present,
+        "total_possible_features": total_possible,
+        "coverage_percentage": coverage_pct,
+        "category_breakdown": coverage_stats,
+        "categorized_columns": categorized,
+    }
+
+    # Add category descriptions
+    descriptions = {}
+    for category in coverage_stats.keys():
+        descriptions[category] = get_category_description(category)
+    report["category_descriptions"] = descriptions
+
+    return report
+
+
+def analyze_phase93_by_sector(
+    df: pd.DataFrame,
+    sector_column: str = "sector",
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Analyze Phase 9.3 feature distributions by sector.
+
+    Args:
+        df: DataFrame with Phase 9.3 features
+        sector_column: Name of sector column
+
+    Returns:
+        Dictionary mapping sector names to their Phase 9.3 summaries
+    """
+    if sector_column not in df.columns:
+        logger.warning(f"Sector column '{sector_column}' not found")
+        return {}
+
+    categorized = categorize_dataframe_columns(df)
+    sector_analysis = {}
+
+    for sector in df[sector_column].unique():
+        if pd.isna(sector):
+            continue
+
+        sector_df = df[df[sector_column] == sector]
+        sector_summary = {}
+
+        # For each Phase 9.3 category, compute sector-specific statistics
+        for category, features in categorized.items():
+            present_features = [f for f in features if f in sector_df.columns]
+            if present_features:
+                # Compute summary stats for numeric features in this category
+                numeric_features = (
+                    sector_df[present_features].select_dtypes(include=[np.number]).columns.tolist()
+                )
+                if numeric_features:
+                    sector_summary[category] = {
+                        "feature_count": len(numeric_features),
+                        "mean_values": sector_df[numeric_features].mean().to_dict(),
+                        "std_values": sector_df[numeric_features].std().to_dict(),
+                    }
+
+        sector_analysis[sector] = sector_summary
+
+    return sector_analysis

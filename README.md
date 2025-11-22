@@ -83,7 +83,8 @@ selective execution tips. TODO: Add containerization instructions (Docker) if/wh
 
 ## Key Features
 
-- 📊 **Data Management**: PostgreSQL/SQLite integration + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
+- 📊 **Data Management**: PostgreSQL/SQLite integration with unified all_stocks table (318 columns) combining four
+  regional screening tables + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
 - 🧹 **Data Quality**: 6-step imputation pipeline (zero-fill, KNN, price-based, median) with validation; outlier safety
   rails (winsorization, robust loss, clipping); schema-aware datatype detection
 - 🔧 **Feature Engineering**: Phase 9.3 Schema Version 1.3 (310 columns, +48 new): Financial ratios, margins, volatility,
@@ -313,6 +314,10 @@ pip install -r requirements.txt
 psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/create_equities_schema.sql
 psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/import_equities_data.sql
 
+# PostgreSQL - Create unified all_stocks table (RECOMMENDED):
+psql -h localhost -p 5432 -U postgres -d postgres -f all_stocks/all_stocks.sql
+# This creates a unified 318-column table combining all four regional screening tables
+
 # SQLite (alternative):
 sqlite3 equities.sqlite ".read create_equities_schema_sqlite.sql"
 sqlite3 equities.sqlite ".read import_equities_data_sqlite.sql"
@@ -332,6 +337,41 @@ finance-ml --data-source auto --output-dir outputs
 # Or launch interactive dashboard
 streamlit run finance_ml/dashboards/streamlit_app.py
 ```
+
+### Data Loading Options
+
+The platform supports three data loading methods:
+
+```python
+from finance_ml.ml_workflow.preprocessing import (
+    load_from_csv,           # Load from CSV files in data/ directory
+    load_from_db,            # Load from equities table with Region filter
+    load_from_all_stocks,    # Load from unified all_stocks table (RECOMMENDED)
+)
+
+# Option 1: Load from unified all_stocks table (RECOMMENDED)
+# This is the fastest and most efficient method after running all_stocks/all_stocks.sql
+db_url = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
+all_stocks_df = load_from_all_stocks(db_url, limit=10000)
+print(f"Loaded {len(all_stocks_df)} stocks from unified all_stocks table")
+print(all_stocks_df['region'].value_counts())
+
+# Option 2: Load from regional equities table
+all_stocks_df = load_from_db(db_url, limit=10000)
+
+# Option 3: Load from CSV files (fallback when database not available)
+from pathlib import Path
+data_dir = Path("data")
+all_stocks_df = load_from_csv(data_dir, limit=10000)
+```
+
+**Unified all_stocks Table Benefits:**
+
+- Single query instead of UNION ALL across four regional tables
+- Faster query performance with optimized indexes
+- Simplified data pipeline code
+- Pre-joined 318-column schema (262 original + 48 Phase 9.3 additions)
+- Primary key: (Ticker, Region) ensures data integrity
 
 ---
 
@@ -385,7 +425,8 @@ packages still lag behind with prebuilt wheels on Windows for 3.14. We applied s
 ensure a smooth install:
 
 - NumPy 2.x is used automatically on Python 3.14+; NumPy 1.26.x is used on earlier supported versions.
-- SHAP is gated on Python < 3.14 due to its `numba` dependency not publishing 3.14 wheels yet.
+- SHAP 0.50.0 (with enhanced explainability features and improved performance) is gated on Python < 3.14 due to its
+  `numba` dependency not publishing 3.14 wheels yet.
 - CatBoost is gated on Python < 3.14 because cp314 wheels are not yet available on Windows; this avoids slow/fragile
   source builds.
 - Streamlit is gated on Python < 3.14 to avoid `pyarrow` source builds until cp314 wheels are broadly available.

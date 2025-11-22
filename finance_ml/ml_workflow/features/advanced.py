@@ -1612,6 +1612,9 @@ def build_comprehensive_features(
     # Analyst and market sentiment (Phase 5)
     result = engineer_analyst_quality_features(result)
     result = engineer_market_sentiment_features(result)
+    # Market microstructure features (time-series price patterns)
+    # Note: Requires historical price data; gracefully skips if unavailable
+    result = engineer_market_microstructure_features(result)
     # Accounting and distress
     result = engineer_accounting_quality_features(result)
     # Financial distress features (Altman Z trends & composite)
@@ -1630,9 +1633,12 @@ def build_comprehensive_features(
     result = engineer_dividend_reliability_features(result)
     result = engineer_employment_dynamics_features(result)
 
-    # Temporal features (if date column exists)
-    if "next_earnings" in result.columns:
-        result = engineer_temporal_features(result, date_col="next_earnings")
+    # Temporal features (if any date column exists)
+    # Try multiple date columns in priority order
+    date_col_candidates = ["next_earnings", "last_updated", "income_statement_report_date"]
+    date_col = next((c for c in date_col_candidates if c in result.columns), None)
+    if date_col:
+        result = engineer_temporal_features(result, date_col=date_col)
 
     # Non-linear transforms on key features
     log_features = ["market_cap", "revenue", "total_assets"]

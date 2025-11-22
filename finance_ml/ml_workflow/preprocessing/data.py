@@ -636,6 +636,73 @@ def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
     return df
 
 
+def load_from_all_stocks(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
+    """Load equity data from unified all_stocks table in PostgreSQL.
+
+    This function loads from the all_stocks table created by all_stocks/all_stocks.sql,
+    which combines data from four regional screening tables (screening_us, screening_eu,
+    screening_apac, screening_rotw) into a single unified view.
+
+    The all_stocks table has 318 columns (262 original + 48 Phase 9.3 additions) with
+    primary key (Ticker, Region) and includes all regions in a single table.
+
+    Environment overrides:
+      - DB_SCHEMA (default: 'public')
+      - DB_ALL_STOCKS_TABLE (default: 'all_stocks')
+
+    Args:
+        db_url: SQLAlchemy database URL (e.g., postgresql+psycopg2://user:pass@host:5432/postgres)
+        limit: Optional row limit for loaded data
+
+    Returns:
+        DataFrame with normalized columns from unified all_stocks table
+
+    Raises:
+        ImportError: If SQLAlchemy not available
+
+    Example:
+        >>> db_url = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
+        >>> all_stocks_df = load_from_all_stocks(db_url)
+        >>> print(f"Loaded {len(all_stocks_df)} stocks from all regions")
+        >>> print(all_stocks_df['region'].value_counts())
+
+    Note:
+        This function expects the all_stocks table to be created using:
+          - all_stocks/all_stocks.sql (unified table creation script)
+
+        The unified table approach eliminates the need for UNION ALL queries
+        and simplifies data access for ML pipeline workflows.
+    """
+    if create_engine is None:
+        raise ImportError(
+            "SQLAlchemy not available. Install psycopg2-binary and SQLAlchemy or use CSV data source."
+        )
+
+    # Type narrowing: assert create_engine is callable after None check
+    assert callable(create_engine), "create_engine must be callable"
+
+    # Resolve schema and table from environment
+    schema = os.environ.get("DB_SCHEMA", "public")
+    table = os.environ.get("DB_ALL_STOCKS_TABLE", "all_stocks")
+    # Fully qualified table reference
+    table_ref = f"{schema}.{table}"
+
+    logging.info("Loading from unified all_stocks table: %s (table: %s)", db_url, table_ref)
+    engine = create_engine(db_url)
+
+    # Simple query - no Region filter needed since all_stocks contains all regions
+    base_query = f"SELECT * FROM {table_ref}"
+    query = base_query if limit is None else f"{base_query} LIMIT {int(limit)}"
+
+    df = pd.read_sql(query, engine)
+
+    # Normalize column names
+    df = normalize_columns(df)
+
+    logging.info("Loaded %d rows from all_stocks table", len(df))
+    return df
+
+
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     """Preprocess DataFrame with basic cleaning and type conversions.
 

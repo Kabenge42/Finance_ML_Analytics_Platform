@@ -42,7 +42,7 @@ FROM equities;
 \echo '==================================================================='
 
 -- Create temporary staging table for US data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_us
+CREATE TEMP TABLE IF NOT EXISTS screening_us
 (
     LIKE equities
 );
@@ -52,14 +52,14 @@ CREATE TEMP TABLE IF NOT EXISTS equities_staging_us
 --   NULL '' - treats empty strings as NULL values
 --   ENCODING 'UTF8' - ensures proper character handling
 --   HEADER true - skips the CSV header row
-\copy equities_staging_us FROM 'data/screening_us.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
+\copy screening_us FROM 'data/screening_us.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
 SELECT 'US staging table loaded:' AS status, COUNT(*) AS row_count
-FROM equities_staging_us;
+FROM screening_us;
 
 -- Set Region for all US records (if not already set in CSV)
-UPDATE equities_staging_us
+UPDATE screening_us
 SET "Region" = 'US'
 WHERE "Region" IS NULL
    OR "Region" = '';
@@ -67,7 +67,7 @@ WHERE "Region" IS NULL
 -- Insert into main table with conflict handling
 INSERT INTO equities
 SELECT *
-FROM equities_staging_us
+FROM screening_us
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
@@ -76,7 +76,7 @@ FROM equities
 WHERE "Region" = 'US';
 
 -- Clean up staging table
-DROP TABLE equities_staging_us;
+DROP TABLE screening_us;
 
 \echo 'US Region import completed.'
 \echo ''
@@ -90,20 +90,20 @@ DROP TABLE equities_staging_us;
 \echo '==================================================================='
 
 -- Create temporary staging table for EU data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_eu
+CREATE TEMP TABLE IF NOT EXISTS screening_eu
 (
     LIKE equities
 );
 
 -- Import CSV with proper NULL handling and encoding
-\copy equities_staging_eu FROM 'data/screening_eu.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
+\copy screening_eu FROM 'data/screening_eu.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
 SELECT 'EU staging table loaded:' AS status, COUNT(*) AS row_count
-FROM equities_staging_eu;
+FROM screening_eu;
 
 -- Set Region for all EU records (if not already set in CSV)
-UPDATE equities_staging_eu
+UPDATE screening_eu
 SET "Region" = 'EU'
 WHERE "Region" IS NULL
    OR "Region" = '';
@@ -111,7 +111,7 @@ WHERE "Region" IS NULL
 -- Insert into main table with conflict handling
 INSERT INTO equities
 SELECT *
-FROM equities_staging_eu
+FROM screening_eu
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
@@ -120,7 +120,7 @@ FROM equities
 WHERE "Region" = 'EU';
 
 -- Clean up staging table
-DROP TABLE equities_staging_eu;
+DROP TABLE screening_eu;
 
 \echo 'EU Region import completed.'
 \echo ''
@@ -134,20 +134,20 @@ DROP TABLE equities_staging_eu;
 \echo '==================================================================='
 
 -- Create temporary staging table for APAC data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_apac
+CREATE TEMP TABLE IF NOT EXISTS screening_apac
 (
     LIKE equities
 );
 
 -- Import CSV with proper NULL handling and encoding
-\copy equities_staging_apac FROM 'data/screening_apac.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
+\copy screening_apac FROM 'data/screening_apac.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
 SELECT 'APAC staging table loaded:' AS status, COUNT(*) AS row_count
-FROM equities_staging_apac;
+FROM screening_apac;
 
 -- Set Region for all APAC records (if not already set in CSV)
-UPDATE equities_staging_apac
+UPDATE screening_apac
 SET "Region" = 'APAC'
 WHERE "Region" IS NULL
    OR "Region" = '';
@@ -155,7 +155,7 @@ WHERE "Region" IS NULL
 -- Insert into main table with conflict handling
 INSERT INTO equities
 SELECT *
-FROM equities_staging_apac
+FROM screening_apac
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
@@ -164,7 +164,7 @@ FROM equities
 WHERE "Region" = 'APAC';
 
 -- Clean up staging table
-DROP TABLE equities_staging_apac;
+DROP TABLE screening_apac;
 
 \echo 'APAC Region import completed.'
 \echo ''
@@ -178,20 +178,20 @@ DROP TABLE equities_staging_apac;
 \echo '==================================================================='
 
 -- Create temporary staging table for ROTW data
-CREATE TEMP TABLE IF NOT EXISTS equities_staging_rotw
+CREATE TEMP TABLE IF NOT EXISTS screening_rotw
 (
     LIKE equities
 );
 
 -- Import CSV with proper NULL handling and encoding
-\copy equities_staging_rotw FROM 'data/screening_rotw.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
+\copy screening_rotw FROM 'data/screening_rotw.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Display staging table statistics
 SELECT 'ROTW staging table loaded:' AS status, COUNT(*) AS row_count
-FROM equities_staging_rotw;
+FROM screening_rotw;
 
 -- Set Region for all ROTW records (if not already set in CSV)
-UPDATE equities_staging_rotw
+UPDATE screening_rotw
 SET "Region" = 'ROTW'
 WHERE "Region" IS NULL
    OR "Region" = '';
@@ -199,7 +199,7 @@ WHERE "Region" IS NULL
 -- Insert into main table with conflict handling
 INSERT INTO equities
 SELECT *
-FROM equities_staging_rotw
+FROM screening_rotw
 ON CONFLICT DO NOTHING;
 
 -- Display post-import statistics
@@ -208,7 +208,7 @@ FROM equities
 WHERE "Region" = 'ROTW';
 
 -- Clean up staging table
-DROP TABLE equities_staging_rotw;
+DROP TABLE screening_rotw;
 
 \echo 'ROTW Region import completed.'
 \echo ''

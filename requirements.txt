@@ -34,10 +34,11 @@ catboost>=1.2.0,<2.0.0; python_version < '3.14'
 boruta>=0.3.0,<1.0.0
 
 # Model Interpretation & Explainability
+# SHAP 0.50.0 provides enhanced explainability features with improved performance.
 # SHAP pulls in numba which (as of 2025-11) does not support Python 3.14 yet.
 # Gate SHAP on <3.14 to avoid installation failure on 3.14. You can still
 # manually install SHAP later once numba publishes 3.14-compatible wheels.
-shap>=0.42.0,<1.0.0; python_version < '3.14'
+shap==0.50.0; python_version < '3.14'
 
 # Visualization Libraries
 matplotlib>=3.7.0,<4.0.0
