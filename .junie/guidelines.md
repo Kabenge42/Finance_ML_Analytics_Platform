@@ -108,12 +108,23 @@ G. Accessing the database from Python (optional)
    The notebook (ml_finance_model_main.ipynb) implements the pipeline below. Use all_stocks as the single, unified
    dataframe sourced from PostgreSQL across regions.
 
+   Notebook Best Practices (docs/code_guidelines.md §8, v1.4):
+
+- Centralized Configuration Constants: define all constants once (TARGET_COL, TARGET_COL_FALLBACK, TEST_SIZE,
+  TRAIN_SIZE, CV_FOLDS, QUANTILES, MIN_SECTOR_SAMPLES, MAX_SECTOR_WEIGHT, MAX_SINGLE_POSITION, IQR_MULTIPLIER,
+  ZSCORE_THRESHOLD, WINSORIZE_LOWER, WINSORIZE_UPPER, CONFIDENCE thresholds, RANDOM_SEED).
+- DataFrame Stage Naming (no in-place mutation):
+  all_stocks_raw → all_stocks_normalized → all_stocks_typed → all_stocks_winsorized → all_stocks_imputed →
+  all_stocks_scaled → all_stocks_features → all_stocks_enhanced.
+- Magic Numbers Policy: avoid embedding meaningful numeric literals in code; use named constants for splits,
+  quantiles, winsorization bounds, sector/portfolio constraints, thresholds.
+
 A. Loading and preprocessing
 - Source: equities table in PostgreSQL populated from the four CSVs.
 - Recommended filters: drop rows with missing Ticker, Sector, Last_Price, and critical financials needed for targets.
 - Type coercion: convert numeric columns with pd.to_numeric(errors='coerce'), then handle NaNs.
 - Deduplication: drop_duplicates on Ticker if needed; for multiple listings, choose Trading_Country or Exchange priority.
-- Train/validation split: Follow Data Split and Leakage Policy (code_guidelines.md v1.2): time-series split if snapshot
+- Train/validation split: Follow Data Split and Leakage Policy (code_guidelines.md v1.4): time-series split if snapshot
   dates available; otherwise grouped by Ticker; else stratified by Sector or Region to maintain balance and prevent
   leakage.
 
@@ -146,7 +157,7 @@ E. Sector-optimized regression models enhanced with classification features
 - Strategy: Train one regressor per Sector for Price_Target or Price_Target_Median using Gradient Boosting (XGBoost/LightGBM/CatBoost) and/or linear models with elastic nets as benchmarks.
 - Features: Core engineered features + classification probabilities + key categorical encodings.
 - Uncertainty Quantification: Use quantile regression (p10, p50, p90) + conformal calibration for 80% prediction
-  intervals (code_guidelines.md v1.2). Enforce monotonicity and non-negativity constraints.
+  intervals (code_guidelines.md v1.4). Enforce monotonicity and non-negativity constraints.
 - Stacking: Optionally stack sector models with a meta-learner trained on out-of-fold predictions.
 
 F. Model evaluation and error analysis
@@ -163,7 +174,7 @@ H. Comprehensive analytics of prediction results
 - Confusion matrices for event classifier; PR/ROC curves.
 - Regression error buckets: by Sector, Region, and Volatility.
 - Stability checks across snapshots (if multiple dates exist).
-- Export: write CSV/Excel of predictions using Standardized Predictions Schema (code_guidelines.md v1.2). Required
+- Export: write CSV/Excel of predictions using Standardized Predictions Schema (code_guidelines.md v1.4). Required
   columns: ticker, isin, sector, region, last_price, y_true, y_pred, y_pred_calibrated, pred_p10, pred_p50, pred_p90,
   interval_width, abs_error, pct_error, model_version, snapshot_date. Consider xlsxwriter for formatted reports.
 
@@ -191,7 +202,7 @@ C. Data source selection
 
 D. Outputs
 
-- Artifacts are written to the outputs/ directory following standardized schema (code_guidelines.md v1.2):
+- Artifacts are written to the outputs/ directory following standardized schema (code_guidelines.md v1.4):
   - outputs/regression/regression_predictions_detailed.csv — Standardized predictions schema with required columns
   - outputs/regression/regression_metrics_by_sector.csv — Per-sector MAE, RMSE, R², MAPE, count
   - outputs/regression/quantile_predictions.csv — Uncertainty intervals with monotonicity guarantees
@@ -212,7 +223,7 @@ B. How to add tests
 - Use small, deterministic samples; avoid loading full CSVs unless necessary.
 
 C. Test suite overview
-The project includes a comprehensive test suite with the following test modules (83 total):
+The project includes a comprehensive test suite with the following test modules (85 total):
 
 - tests/test_analytics.py — Analytics and stock ranking tests
 - tests/test_build_features.py — Feature building pipeline
@@ -220,7 +231,7 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_cli.py — Command-line interface tests
 - tests/test_coverage_smoke.py — Smoke test for coverage validation
 - tests/test_data_quality.py — Data validation and quality checks
-- tests/test_data_splits_policy.py — Data split leakage prevention policy validation (code_guidelines.md v1.2)
+- tests/test_data_splits_policy.py — Data split leakage prevention policy validation (code_guidelines.md v1.4)
 - tests/test_data_types_detection.py — Schema-aware datatype detection and Phase 9.3 validation (9 tests, TDD v0.8.2)
 - tests/test_eda.py — Exploratory data analysis utilities
 - tests/test_enhanced_imputation.py — Phase 9.1 6-step imputation strategy tests (21 tests)
@@ -241,7 +252,7 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_notebook_config.py — Notebook configuration tests
 - tests/test_notebook_enhancements.py — Notebook enhancements validation
 - tests/test_outlier_safety_rails.py — Outlier safety rails (winsorization, clipping, non-negativity) (
-  code_guidelines.md v1.2)
+  code_guidelines.md v1.4)
 - tests/test_phase95_nonnegative_predictions.py — Phase 9.5 non-negative prediction constraint tests
 - tests/test_phase95_quick.py — Phase 9.5 quick validation tests
 - tests/test_portfolio_backtesting.py — Portfolio backtesting framework (3 tests, Portfolio Phase 5)
@@ -250,24 +261,25 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_portfolio_optimization.py — Portfolio optimization tests
 - tests/test_portfolio_optimization_advanced.py — Advanced optimization methods (4 tests, Portfolio Phase 3)
 - tests/test_portfolio_risk_management.py — Risk management enhancements (4 tests, Portfolio Phase 4)
-- tests/test_predictions_schema.py — Standardized predictions schema validation (code_guidelines.md v1.2)
+- tests/test_predictions_schema.py — Standardized predictions schema validation (code_guidelines.md v1.4)
 - tests/test_preprocess_and_training.py — Preprocessing and training workflows
 - tests/test_regression.py — Regression model evaluation
-- tests/test_regression_sector_metrics.py — Sector-level metrics persistence validation (code_guidelines.md v1.2)
+- tests/test_regression_sector_metrics.py — Sector-level metrics persistence validation (code_guidelines.md v1.4)
 - tests/test_repository_setup.py — Validates repository basics (required files, SQL schema, environment config)
 - tests/test_risk_metrics.py — Risk metrics calculation tests
-- tests/test_sector_bias_calibration.py — Sector-specific bias calibration (code_guidelines.md v1.2)
+- tests/test_sector_bias_calibration.py — Sector-specific bias calibration (code_guidelines.md v1.4)
 - tests/test_setup_environment.py — Setup script validation
 - tests/test_simple_eda_stringdtype.py — StringDtype compatibility validation (3 tests, TDD v0.8.2)
 - tests/test_sqlite_import.py — SQLite import functionality (header removal, NULL handling, region backfilling)
 - tests/test_sql_scripts.py — SQL script validation tests
-- tests/test_stacking_default.py — Stacking ensemble default configuration (code_guidelines.md v1.2)
-- tests/test_uncertainty_calibration.py — Uncertainty quantification with conformal prediction (code_guidelines.md v1.2)
+- tests/test_stacking_default.py — Stacking ensemble default configuration (code_guidelines.md v1.4)
+- tests/test_uncertainty_calibration.py — Uncertainty quantification with conformal prediction (code_guidelines.md v1.4)
 - tests/test_validate_csv_import.py — CSV validation (schema validation, data quality checks)
 - tests/test_validation_regex.py — Regex validation and pattern matching tests
 - tests/test_visualizations.py — Visualization functions tests
 
-Note: The test suite has grown to 83 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization).
+Note: The test suite has grown to 85 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization + 2 advanced
+evaluation reporting).
 See section 3D below for selective execution strategies.
 
 **Recent Additions (v0.8.2, 2025-11-19):**
@@ -283,7 +295,7 @@ stacking defaults.
 
 D. Test Execution Strategies (Avoiding Timeouts)
 
-The full test suite (83 modules) can take significant time to execute. To avoid timeouts and speed up development, use
+The full test suite (85 modules) can take significant time to execute. To avoid timeouts and speed up development, use
 selective test execution:
 
 **Fast Unit Tests** (< 100 lines, pure functions, no ML training):
@@ -487,18 +499,23 @@ C. Portfolio Optimization Enhancement Plan
 4) Additional Development Information
 A. Code style and quality
 
-- **Comprehensive Code Guidelines**: See `docs/code_guidelines.md` v1.2 (updated 2025-11-13) for detailed standards on:
+- **Comprehensive Code Guidelines**: See `docs/code_guidelines.md` v1.4 (updated 2025-11-23) for detailed standards on:
     - Standardized function signatures and return types (train_* functions, dataset preparation)
     - Column naming schema and dataframe conventions (normalized: last_price, price_target, sector, region)
     - Typing, logging, and error handling
     - Testing conventions and reproducibility
     - Notebook and CLI alignment
-  - **NEW in v1.2**: Uncertainty and Prediction Intervals (quantile regression + conformal calibration)
-  - **NEW in v1.2**: Outlier Safety Rails Policy (winsorization, robust loss, clipping, non-negativity)
-  - **NEW in v1.2**: Data Split and Leakage Policy (time-series → grouped → stratified)
-  - **NEW in v1.2**: Standardized Predictions Schema (required columns and invariants)
-  - **NEW in v1.2**: Sector Metrics and Calibration (persistence contract, bias correction)
-  - **NEW in v1.2**: TDD Conventions and Selective Test Execution
+  - Uncertainty and Prediction Intervals (quantile regression + conformal calibration)
+  - Outlier Safety Rails Policy (winsorization, robust loss, clipping, non-negativity)
+  - Data Split and Leakage Policy (time-series → grouped → stratified)
+  - Standardized Predictions Schema (required columns and invariants)
+  - Sector Metrics and Calibration (persistence contract, bias correction)
+  - TDD Conventions and Selective Test Execution
+  - NEW in v1.4: Notebook Best Practices and TDD Conventions (Section 8)
+    - Centralized Configuration Constants (single source of truth)
+    - DataFrame Stage Naming (8-stage pipeline): all_stocks_raw → all_stocks_normalized → all_stocks_typed →
+      all_stocks_winsorized → all_stocks_imputed → all_stocks_scaled → all_stocks_features → all_stocks_enhanced
+    - Magic Numbers Policy (replace meaningful literals with named constants)
 - Python style: PEP 8 (black-like formatting), type hints where possible.
 - Logging: prefer Python logging over prints. The notebook initializes a logger fallback if the custom one isn’t available.
 - Reproducibility: set RANDOM_SEED where applicable; record library versions for experiments.

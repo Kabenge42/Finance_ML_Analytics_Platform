@@ -23,6 +23,7 @@ def summarize_winsorization_effects(
     features_winsorized: pd.DataFrame,
     output_dir: Union[str, Path],
     feature_cols: Optional[list] = None,
+    sector_col: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Summarize winsorization effects on features.
@@ -41,6 +42,8 @@ def summarize_winsorization_effects(
         Directory to save artifacts
     feature_cols : Optional[list]
         List of feature columns to analyze. If None, auto-detect numeric columns.
+    sector_col : Optional[str]
+        Name of sector column (reserved for future sector-specific analysis)
 
     Returns
     -------
@@ -173,6 +176,7 @@ def track_constraint_violations(
     predictions_df: pd.DataFrame,
     output_dir: Union[str, Path],
     prediction_col: str = "y_pred_raw",
+    sector_col: str = "sector",
 ) -> Dict[str, Any]:
     """
     Track constraint violations (e.g., negative predictions).
@@ -188,7 +192,9 @@ def track_constraint_violations(
     output_dir : Union[str, Path]
         Directory to save artifacts
     prediction_col : str
-        Name of prediction column to check for violations
+        Name of prediction column to check for violations (default: "y_pred_raw")
+    sector_col : str
+        Name of sector column for grouping violations (default: "sector")
 
     Returns
     -------
@@ -212,9 +218,9 @@ def track_constraint_violations(
 
     # Group violations by sector
     violations_by_sector = {}
-    if "sector" in predictions_df.columns and total_violations > 0:
-        for sector in violations_df["sector"].unique():
-            sector_violations = violations_df[violations_df["sector"] == sector]
+    if sector_col in predictions_df.columns and total_violations > 0:
+        for sector in violations_df[sector_col].unique():
+            sector_violations = violations_df[violations_df[sector_col] == sector]
             violations_by_sector[sector] = {
                 "count": int(len(sector_violations)),
                 "min_value": float(sector_violations[prediction_col].min()),
@@ -242,13 +248,13 @@ def track_constraint_violations(
     try:
         import plotly.graph_objects as go
 
-        if "sector" in predictions_df.columns and total_violations > 0:
+        if sector_col in predictions_df.columns and total_violations > 0:
             # Create violation counts by sector
             sector_counts = []
-            sectors = sorted(predictions_df["sector"].unique())
+            sectors = sorted(predictions_df[sector_col].unique())
 
             for sector in sectors:
-                sector_df = predictions_df[predictions_df["sector"] == sector]
+                sector_df = predictions_df[predictions_df[sector_col] == sector]
                 sector_violations = (sector_df[prediction_col] < 0).sum()
                 sector_counts.append(sector_violations)
 
@@ -282,6 +288,7 @@ def safety_rails_sensitivity_app(
     output_dir: Union[str, Path],
     default_lower_pct: float = 0.05,
     default_upper_pct: float = 0.95,
+    thresholds: Optional[list] = None,
 ) -> Path:
     """
     Create interactive sensitivity dashboard for safety rails thresholds.
@@ -296,9 +303,12 @@ def safety_rails_sensitivity_app(
     output_dir : Union[str, Path]
         Directory to save HTML dashboard
     default_lower_pct : float
-        Default lower percentile for winsorization
+        Default lower percentile for winsorization (used if thresholds not provided)
     default_upper_pct : float
-        Default upper percentile for winsorization
+        Default upper percentile for winsorization (used if thresholds not provided)
+    thresholds : Optional[list]
+        List of threshold values to test (e.g., [0.01, 0.05, 0.1] for lower bounds).
+        If provided, creates scenarios using (threshold, 1-threshold) pairs.
 
     Returns
     -------
@@ -334,11 +344,19 @@ def safety_rails_sensitivity_app(
         feature_values = data_df[feature_col].dropna()
 
         # Create figure with multiple percentile scenarios
-        percentile_scenarios = [
-            (0.01, 0.99, "Mild (1-99%)"),
-            (0.05, 0.95, "Standard (5-95%)"),
-            (0.10, 0.90, "Aggressive (10-90%)"),
-        ]
+        if thresholds is not None and len(thresholds) > 0:
+            # Generate scenarios from thresholds list
+            percentile_scenarios = [
+                (thresh, 1 - thresh, f"{thresh*100:.1f}-{(1-thresh)*100:.1f}%")
+                for thresh in thresholds
+            ]
+        else:
+            # Use default scenarios
+            percentile_scenarios = [
+                (0.01, 0.99, "Mild (1-99%)"),
+                (0.05, 0.95, "Standard (5-95%)"),
+                (0.10, 0.90, "Aggressive (10-90%)"),
+            ]
 
         fig = make_subplots(
             rows=len(percentile_scenarios),

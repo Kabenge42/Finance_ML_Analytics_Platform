@@ -16,6 +16,8 @@
       <excludeFolder url="file://$MODULE_DIR$/archive" />
       <excludeFolder url="file://$MODULE_DIR$/backups" />
       <excludeFolder url="file://$MODULE_DIR$/.venv13" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
+      <excludeFolder url="file://$MODULE_DIR$/.ipynb_checkpoints" />
     </content>
     <content url="file://$MODULE_DIR$/data" />
     <orderEntry type="jdk" jdkName="Python 3.13 (Finance_ML_Analytics_Platform)" jdkType="Python SDK" />

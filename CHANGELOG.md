@@ -2,6 +2,21 @@
 
 ### Added
 
+- Python Script/Module Review Checklist — Static Analyzer and TDD (2025-11-23)
+  - Implemented a fast, AST-based static analysis tool for docs/code_guidelines.md §6.2
+    - New module: `finance_ml/ml_workflow/quality/script_review.py`
+    - Public API (re-exported): `finance_ml.ml_workflow.quality.review_python_source`, `review_python_file`
+    - Checks implemented:
+      - Import grouping/order: stdlib → third-party → local
+      - Global mutable state detection at module scope
+      - Function type hints presence (params and return)
+      - Print statement detection (prefer logging)
+      - Training function return schema (dict with keys: model, metrics, y_pred, y_proba, artifacts)
+      - Dataset prep return contract (5-tuple or DatasetSplit)
+  - Added unit tests (strict TDD): `tests/test_script_module_review_checklist.py`
+    - Synthetic good/bad module cases and a smoke test on a real module
+  - Design: fast, deterministic, no execution/import of target modules
+
 - **Phase 9.4-9.8 Integration Completion** (2025-11-22)
   - **Overview**: Completed integration of Phase 9.4-9.8 advanced evaluation modules into the Finance ML package
     ecosystem

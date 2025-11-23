@@ -4,8 +4,8 @@ apply: always
 
 # Finance ML Analytics Platform — Project Rules
 
-**Version**: 0.8.2  
-**Last Updated**: 2025-11-19
+**Version**: 0.8.3  
+**Last Updated**: 2025-11-23
 
 ## Project Overview
 
@@ -16,7 +16,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Modular Python package (`finance_ml`) with clean, tested, reusable code
 - Interactive Jupyter notebook for exploration and prototyping
 - CLI tools for batch processing and automation
-- Comprehensive unit tests with good coverage (≈83 test modules, ≥80% target)
+- Comprehensive unit tests with good coverage (≈85 test modules, ≥80% target)
 - Configuration management via environment variables, JSON, or YAML
 
 ### Module Architecture (v9_8 - Phase 9.1-9.8)
@@ -366,7 +366,7 @@ Create a `.env` file in the project root with the variables above. Tools that su
 ### Test Framework
 - **Framework**: Python's built-in `unittest`
 - **Location**: `tests/` directory
-- **Count**: 83 test modules
+- **Count**: 85 test modules
 - **Coverage**: Tracked in `.coverage` file (≥80% target for new code)
 
 ### Running Tests
@@ -384,7 +384,7 @@ pytest tests/ -v --cov=finance_ml
 python -m unittest discover -s tests -v
 ```
 
-### Test Suite Modules (83 total)
+### Test Suite Modules (85 total)
 
 - **`test_advanced_eda.py`** — Advanced EDA functions (correlation, PCA, statistical tests)
 - **`test_advanced_features.py`** — Phase 9.3 advanced feature engineering tests
@@ -403,7 +403,7 @@ python -m unittest discover -s tests -v
 - **`test_coverage_smoke.py`** — Smoke test for coverage validation
 - **`test_data_catalog.py`** — Data catalog management tests
 - **`test_data_quality.py`** — Data validation and quality checks
-- **`test_data_splits_policy.py`** — Data split leakage prevention policy validation (code_guidelines.md v1.2)
+- **`test_data_splits_policy.py`** — Data split leakage prevention policy validation (code_guidelines.md v1.4)
 - **`test_data_types_detection.py`** — Schema-aware datatype detection and Phase 9.3 validation (9 tests, TDD v0.8.2)
 - **`test_data_versioning.py`** — Data versioning and metadata tests
 - **`test_eda.py`** — Exploratory data analysis utilities
@@ -432,7 +432,7 @@ python -m unittest discover -s tests -v
 - **`test_notebook_quality_improvements.py`** — Notebook quality improvements tests
 - **`test_onehot_encoding.py`** — One-hot encoding functionality tests
 - **`test_outlier_safety_rails.py`** — Outlier safety rails (winsorization, clipping, non-negativity) (
-  code_guidelines.md v1.2)
+  code_guidelines.md v1.4)
 - **`test_phase91_enhancements.py`** — Phase 9.1 enhancements tests
 - **`test_phase93_enhancements.py`** — Phase 9.3 enhancements tests
 - **`test_phase95_error_handling.py`** — Phase 9.5 error handling tests
@@ -444,26 +444,27 @@ python -m unittest discover -s tests -v
 - **`test_portfolio_optimization.py`** — Portfolio optimization tests
 - **`test_portfolio_optimization_advanced.py`** — Advanced optimization methods (4 tests, Portfolio Phase 3)
 - **`test_portfolio_risk_management.py`** — Risk management enhancements (4 tests, Portfolio Phase 4)
-- **`test_predictions_schema.py`** — Standardized predictions schema validation (code_guidelines.md v1.2)
+- **`test_predictions_schema.py`** — Standardized predictions schema validation (code_guidelines.md v1.4)
 - **`test_preprocess_and_training.py`** — Preprocessing and training workflows
 - **`test_quantile_fix.py`** — Quantile regression fixes tests
 - **`test_regression.py`** — Regression model evaluation
-- **`test_regression_sector_metrics.py`** — Sector-level metrics persistence validation (code_guidelines.md v1.2)
+- **`test_regression_sector_metrics.py`** — Sector-level metrics persistence validation (code_guidelines.md v1.4)
 - **`test_repository_setup.py`** — Validates repository basics (files, SQL schema, environment config)
 - **`test_risk_metrics.py`** — Risk metrics calculation tests
-- **`test_sector_bias_calibration.py`** — Sector-specific bias calibration (code_guidelines.md v1.2)
+- **`test_sector_bias_calibration.py`** — Sector-specific bias calibration (code_guidelines.md v1.4)
 - **`test_setup_environment.py`** — Setup script validation
 - **`test_simple_eda_stringdtype.py`** — StringDtype compatibility validation (3 tests, TDD v0.8.2)
 - **`test_sql_scripts.py`** — SQL script validation tests
 - **`test_sqlite_import.py`** — SQLite import functionality (header removal, NULL handling, region backfilling)
-- **`test_stacking_default.py`** — Stacking ensemble default configuration (code_guidelines.md v1.2)
-- **`test_uncertainty_calibration.py`** — Uncertainty quantification with conformal prediction (code_guidelines.md v1.2)
+- **`test_stacking_default.py`** — Stacking ensemble default configuration (code_guidelines.md v1.4)
+- **`test_uncertainty_calibration.py`** — Uncertainty quantification with conformal prediction (code_guidelines.md v1.4)
 - **`test_validate_csv_import.py`** — CSV validation (schema validation, data quality checks)
 - **`test_validation_regex.py`** — Regex validation and pattern matching tests
 - **`test_valuation_phase97.py`** — Phase 9.7 stock valuation and identification tests
 - **`test_visualizations.py`** — Visualization functions tests
 
-**Note**: The test suite has grown to 83 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization).
+**Note**: The test suite has grown to 85 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization + 2 advanced
+evaluation reporting).
 Full test suite can take significant time. See guidelines.md for selective test execution strategies (fast/medium/slow
 categories).
 
@@ -714,16 +715,29 @@ See `.junie/guidelines.md` for comprehensive development guidelines covering:
 - Code style and quality standards
 - Troubleshooting tips
 
-See `docs/code_guidelines.md` v1.2 (updated 2025-11-13) for detailed coding standards:
+See `docs/code_guidelines.md` v1.4 (updated 2025-11-23) for detailed coding standards:
 
 - Standardized function signatures and return types
 - Column naming schema and dataframe conventions
-- **NEW in v1.2**: Uncertainty and Prediction Intervals (quantile regression + conformal calibration)
-- **NEW in v1.2**: Outlier Safety Rails Policy (winsorization, robust loss, clipping, non-negativity)
-- **NEW in v1.2**: Data Split and Leakage Policy (time-series → grouped → stratified)
-- **NEW in v1.2**: Standardized Predictions Schema (required columns and invariants)
-- **NEW in v1.2**: Sector Metrics and Calibration (persistence contract, bias correction)
-- **NEW in v1.2**: TDD Conventions and Selective Test Execution
+- Highlights:
+  - Uncertainty and Prediction Intervals (quantile regression + conformal calibration)
+  - Outlier Safety Rails Policy (winsorization, robust loss, clipping, non-negativity)
+  - Data Split and Leakage Policy (time-series → grouped → stratified)
+  - Standardized Predictions Schema (required columns and invariants)
+  - Sector Metrics and Calibration (persistence contract, bias correction)
+  - TDD Conventions and Selective Test Execution
+  - NEW in v1.4: Notebook Best Practices and TDD Conventions (Section 8)
+    - Centralized Configuration Constants (single source of truth)
+    - DataFrame Stage Naming (8-stage pipeline):
+      all_stocks_raw → all_stocks_normalized → all_stocks_typed → all_stocks_winsorized →
+      all_stocks_imputed → all_stocks_scaled → all_stocks_features → all_stocks_enhanced
+    - Magic Numbers Policy (replace meaningful literals with named constants)
+
+Portfolio Optimization Workflow
+
+- See portfolio optimization guidelines and examples in `docs/code_guidelines.md` (v1.4) and the enhancement plan in
+  docs/improvement_plan. The rules align with Phase 6 dashboard, Phase 5 backtesting, and optimization methods (
+  Black-Litterman, Risk Parity, HRP).
 
 See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 1. Foundations
@@ -774,12 +788,15 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 
 ## Version History
 
-- **v0.8.2** (Current, 2025-11-19) — TDD implementation (schema/dtypes modules, 24 tests), Phase 9.3 feature
+- **v0.8.3** (Current, 2025-11-23) — Section 8 Notebook Best Practices added to code_guidelines.md v1.4 (centralized
+  configuration constants, 8-stage DataFrame naming, magic numbers policy); Portfolio optimization guidelines aligned;
+  test suite expanded to 85 modules; documentation synchronized across README.md, guidelines.md, and promt_rules.md.
+- **v0.8.2** — TDD implementation (schema/dtypes modules, 24 tests), Phase 9.3 feature
   enhancements (Schema 1.3 with 310 columns, 13 feature categories), Portfolio Optimization (6 phases complete:
   stock selection, ML return prediction, advanced optimization methods [Black-Litterman, Risk Parity, HRP],
   risk management, backtesting, dashboards; 23 tests), 83 test modules total (74 original + 4 TDD + 5 Portfolio)
 - **v0.6.1** — Phase 9.5 classification meta-features, enhanced imputation (6-step), modular workflow
-  refactor (v9_8), 74 test modules (including 7 new TDD modules for code_guidelines.md v1.2 standards)
+  refactor (v9_8), 74 test modules (including 7 new TDD modules for code_guidelines.md v1.4 standards)
 - **v0.6.0** — Phase 9.5 enhanced classification module, comprehensive data flow fixes, dashboard enhancements
 - **v0.5.1** — Phase 9.1 6-step imputation pipeline, notebook integration, comprehensive testing
 - **v0.5.0** — Complete Phase 9 implementation, 20 package modules, comprehensive ML pipeline

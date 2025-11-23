@@ -55,20 +55,25 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
         if Path(self.temp_dir).exists():
             shutil.rmtree(self.temp_dir)
 
-    def test_build_quantile_diagnostics_returns_path(self):
-        """Test that function returns Path to diagnostics CSV."""
+    def test_build_quantile_diagnostics_returns_dataframe_and_creates_csv(self):
+        """Test that function returns diagnostics DataFrame and creates CSV."""
         from finance_ml.ml_workflow.evaluation import build_quantile_diagnostics
 
-        result = build_quantile_diagnostics(
+        diagnostics_df = build_quantile_diagnostics(
             predictions_df=self.predictions_df,
             output_dir=self.output_dir,
             target_coverage=0.8,
             tolerance=0.1,
         )
 
-        self.assertIsInstance(result, Path)
-        self.assertTrue(result.exists())
-        self.assertEqual(result.name, "quantile_predictions_diagnostics.csv")
+        # Return type should be a DataFrame
+        self.assertIsInstance(diagnostics_df, pd.DataFrame)
+        self.assertGreater(len(diagnostics_df), 0)
+
+        # CSV path should still exist with the expected name
+        csv_path = self.output_dir / "quantile_predictions_diagnostics.csv"
+        self.assertTrue(csv_path.exists())
+        self.assertEqual(csv_path.name, "quantile_predictions_diagnostics.csv")
 
     def test_build_quantile_diagnostics_creates_artifacts(self):
         """Test that all required artifacts are created."""
@@ -94,12 +99,10 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
         """Test that diagnostics CSV contains required columns."""
         from finance_ml.ml_workflow.evaluation import build_quantile_diagnostics
 
-        csv_path = build_quantile_diagnostics(
+        diagnostics_df = build_quantile_diagnostics(
             predictions_df=self.predictions_df,
             output_dir=self.output_dir,
         )
-
-        diagnostics_df = pd.read_csv(csv_path)
 
         required_columns = ["coverage_flag_p90", "interval_width", "calibration_error"]
 
@@ -123,12 +126,10 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
             }
         )
 
-        csv_path = build_quantile_diagnostics(
+        diagnostics_df = build_quantile_diagnostics(
             predictions_df=test_df,
             output_dir=self.output_dir,
         )
-
-        diagnostics_df = pd.read_csv(csv_path)
 
         # A and B should be covered (y_true within [p10, p90])
         # C should not be covered (150 > 60)
@@ -219,12 +220,10 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
         # Create df without y_true
         df_no_ytrue = self.predictions_df.drop(columns=["y_true"])
 
-        csv_path = build_quantile_diagnostics(
+        diagnostics_df = build_quantile_diagnostics(
             predictions_df=df_no_ytrue,
             output_dir=self.output_dir,
         )
-
-        diagnostics_df = pd.read_csv(csv_path)
 
         # Should have coverage_flag_p90 column set to 0
         self.assertIn("coverage_flag_p90", diagnostics_df.columns)
@@ -434,16 +433,15 @@ class TestIntegrationPhase94(unittest.TestCase):
         )
 
         # Step 1: Build diagnostics
-        diagnostics_path = build_quantile_diagnostics(
+        diagnostics_df = build_quantile_diagnostics(
             predictions_df=self.predictions_df,
             output_dir=self.output_dir,
             target_coverage=0.8,
         )
 
-        self.assertTrue(diagnostics_path.exists())
-
-        # Load diagnostics for next steps
-        diagnostics_df = pd.read_csv(diagnostics_path)
+        # Diagnostics CSV should exist for downstream consumers
+        csv_path = self.output_dir / "quantile_predictions_diagnostics.csv"
+        self.assertTrue(csv_path.exists())
 
         # Step 2: Plot interval coverage
         plot_interval_coverage(

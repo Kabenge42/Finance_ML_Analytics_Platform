@@ -4,9 +4,11 @@ Handles data type conversion and cleaning for the equities table.
 """
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import psycopg2
+from psycopg2 import sql
 from psycopg2.extras import execute_values
 
 
@@ -76,18 +78,30 @@ def load_csv_to_postgres(csv_file, conn):
 
         records.append(tuple(record))
 
-    # Create INSERT query
-    column_names = [f'"{col}"' for col in columns]
-    insert_query = f"""
-        INSERT INTO equities ({', '.join(column_names)})
-        VALUES %s
-        ON CONFLICT DO NOTHING
-    """
+    # Create INSERT query using psycopg2.sql to safely handle special characters in column names
+    # This prevents issues with columns containing /, %, (, ), etc.
+    insert_query = sql.SQL(
+        "INSERT INTO equities ({}) VALUES %s ON CONFLICT DO NOTHING"
+    ).format(
+        sql.SQL(', ').join([sql.Identifier(col) for col in columns])
+    )
+
+    # Create placeholders template for execute_values
+    placeholders = sql.SQL('({})').format(
+        sql.SQL(', ').join([sql.Placeholder()] * len(columns))
+    )
 
     # Insert data in batches
     cur = conn.cursor()
     try:
-        execute_values(cur, insert_query, records, page_size=1000)
+        # Convert SQL objects to strings for execute_values
+        execute_values(
+            cur,
+            insert_query.as_string(conn),
+            records,
+            template=placeholders.as_string(conn),
+            page_size=1000
+        )
         conn.commit()
         print(f"  Inserted {len(records)} records")
     except Exception as e:
@@ -109,12 +123,18 @@ def main():
         'password': 'bItcfiTg142!'  # Update with your password
     }
 
-    # CSV files to load
+    # Determine project root directory
+    # Script is in tools/ subdirectory, so project root is parent directory
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent
+    data_dir = project_root / 'data'
+
+    # CSV files to load (using absolute paths)
     csv_files = [
-        'data/screening_us.csv',
-        'data/screening_eu.csv',
-        'data/screening_apac.csv',
-        'data/screening_rotw.csv'
+        data_dir / 'screening_us.csv',
+        data_dir / 'screening_eu.csv',
+        data_dir / 'screening_apac.csv',
+        data_dir / 'screening_rotw.csv'
     ]
 
     # Connect to database
@@ -132,8 +152,8 @@ def main():
         print(f"\nRecords in database before import: {total_before}")
 
         for csv_file in csv_files:
-            if os.path.exists(csv_file):
-                load_csv_to_postgres(csv_file, conn)
+            if csv_file.exists():
+                load_csv_to_postgres(str(csv_file), conn)
             else:
                 print(f"\nWarning: {csv_file} not found, skipping...")
 

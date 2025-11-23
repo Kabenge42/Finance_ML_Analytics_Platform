@@ -71,16 +71,16 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
         """Test that build_quantile_diagnostics creates diagnostics CSV."""
         from finance_ml.ml_workflow.evaluation.uncertainty import build_quantile_diagnostics
 
-        result_path = build_quantile_diagnostics(
+        diagnostics_df = build_quantile_diagnostics(
             predictions_df=self.predictions_df, output_dir=self.output_dir
         )
 
-        # CSV should exist
-        self.assertTrue(result_path.exists())
-        self.assertEqual(result_path.name, "quantile_predictions_diagnostics.csv")
+        # CSV should exist at the expected path
+        csv_path = self.output_dir / "quantile_predictions_diagnostics.csv"
+        self.assertTrue(csv_path.exists())
+        self.assertEqual(csv_path.name, "quantile_predictions_diagnostics.csv")
 
-        # Load and validate
-        diagnostics_df = pd.read_csv(result_path)
+        # Validate returned diagnostics DataFrame
         self.assertGreater(len(diagnostics_df), 0)
 
         # Required columns
@@ -99,11 +99,9 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
         """Test that coverage flags are computed correctly."""
         from finance_ml.ml_workflow.evaluation.uncertainty import build_quantile_diagnostics
 
-        result_path = build_quantile_diagnostics(
+        diagnostics_df = build_quantile_diagnostics(
             predictions_df=self.predictions_df, output_dir=self.output_dir
         )
-
-        diagnostics_df = pd.read_csv(result_path)
 
         # coverage_flag_p90 should be boolean (0 or 1)
         self.assertTrue(diagnostics_df["coverage_flag_p90"].isin([0, 1, True, False]).all())
@@ -122,9 +120,9 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
         bad_df.loc[0, "pred_p50"] = 80  # Violation: p50 < p10
         bad_df.loc[0, "pred_p90"] = 120
 
-        result_path = build_quantile_diagnostics(predictions_df=bad_df, output_dir=self.output_dir)
-
-        diagnostics_df = pd.read_csv(result_path)
+        diagnostics_df = build_quantile_diagnostics(
+            predictions_df=bad_df, output_dir=self.output_dir
+        )
 
         # Should flag or handle monotonicity violations
         # At minimum, function should not crash

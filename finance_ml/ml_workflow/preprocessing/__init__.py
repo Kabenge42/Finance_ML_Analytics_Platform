@@ -47,6 +47,7 @@ from finance_ml.ml_workflow.preprocessing.data import (
 from finance_ml.ml_workflow.preprocessing.dtypes import (
     detect_and_cast_dtypes,
     to_jsonable,
+    validate_dtypes_against_schema,
 )
 from finance_ml.ml_workflow.preprocessing.imputation import (
     get_zero_imputation_columns,
@@ -134,4 +135,5 @@ __all__ = [
     # Dtypes (Phase 9.9)
     "detect_and_cast_dtypes",
     "to_jsonable",
+    "validate_dtypes_against_schema",
 ]

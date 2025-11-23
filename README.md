@@ -2,7 +2,7 @@
 
 **Version 0.8.3** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-22  
+> **Documentation Last Updated:** 2025-11-23  
 > **Latest Release**: v0.8.3 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
@@ -558,6 +558,16 @@ Open `ml_finance_model_main.ipynb` and run cells sequentially. The notebook incl
 - Stock ranking and valuation
 - Report generation
 
+Note on Notebook Best Practices (see docs/code_guidelines.md §8):
+
+- Centralized Configuration Constants: define all constants once (TARGET_COL, TEST_SIZE, CV_FOLDS, QUANTILES,
+  RANDOM_SEED, winsorization bounds, sector/portfolio constraints).
+- DataFrame Stage Naming (no in-place mutation):
+  all_stocks_raw → all_stocks_normalized → all_stocks_typed → all_stocks_winsorized → all_stocks_imputed →
+  all_stocks_scaled → all_stocks_features → all_stocks_enhanced.
+- Magic Numbers Policy: replace meaningful numeric literals (e.g., 0.2 test_size, 0.25 max sector weight) with named
+  constants.
+
 **Other Notebooks**:
 
 - `ml_finance_model_main_v10.ipynb` — Alternative notebook version
@@ -762,9 +772,9 @@ export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 ## Testing
 
-The project uses Python's built-in `unittest` framework with 83 test modules covering data loading, preprocessing,
+The project uses Python's built-in `unittest` framework with 85 test modules covering data loading, preprocessing,
 features, models, evaluation, portfolio optimization, and integration.
-See [docs/code_guidelines.md](docs/code_guidelines.md) v1.3+ for TDD
+See [docs/code_guidelines.md](docs/code_guidelines.md) v1.4 for TDD
 conventions and standards. The full suite can be slow; prefer selective execution during development (see below).
 
 ### Run All Tests
@@ -782,7 +792,7 @@ python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_valid
 # Medium tests (100–500 lines, limited ML)
 python -m unittest tests.test_enhanced_imputation tests.test_logging tests.test_risk_metrics tests.test_portfolio_optimization -v
 
-# Targeted standards (code_guidelines.md v1.2)
+# Targeted standards (code_guidelines.md v1.4)
 python -m unittest tests.test_uncertainty_calibration -v        # Uncertainty quantification
 python -m unittest tests.test_predictions_schema -v             # Standardized predictions schema
 python -m unittest tests.test_regression_sector_metrics -v      # Sector metrics validation
@@ -1088,7 +1098,7 @@ Finance_ML_Analytics_Platform/
 
 - Time-series cross-validation with sector stratification to prevent data leakage
 - Grouped splitting by ticker to ensure no ticker appears in both train and test sets
-- Leakage-prevention utilities aligned with code_guidelines.md v1.2 Data Split Policy
+- Leakage-prevention utilities aligned with code_guidelines.md v1.4 Data Split Policy
 - Enhanced documentation in multiple summary files
 
 **Prediction Bound Fixes**:
@@ -1171,7 +1181,7 @@ Finance_ML_Analytics_Platform/
 Expected output files (after running the notebook or script):
 
 - `outputs/regression/regression_predictions_detailed.csv` — Standardized predictions schema (
-  see [code_guidelines.md](docs/code_guidelines.md) v1.2)
+  see [code_guidelines.md](docs/code_guidelines.md) v1.4)
     - Required columns: ticker, isin, sector, region, last_price, y_true, y_pred, y_pred_calibrated, pred_p10, pred_p50,
       pred_p90, interval_width, abs_error, pct_error, model_version, snapshot_date
 - `outputs/regression/regression_metrics_by_sector.csv` — Per-sector MAE, RMSE, R², MAPE, count
@@ -1225,7 +1235,7 @@ Contributions are welcome! Please follow these guidelines:
 
 1. **Fork the repository** and create a feature branch
 2. **Follow PEP 8** code style (use `black`, `isort`)
-3. **Follow coding standards** in [docs/code_guidelines.md](docs/code_guidelines.md) v1.2 (function signatures, return
+3. **Follow coding standards** in [docs/code_guidelines.md](docs/code_guidelines.md) v1.4 (function signatures, return
    types, TDD conventions)
 4. **Write tests** for new functionality (TDD preferred; see code_guidelines.md for uncertainty, safety rails, and
    schema validation standards)

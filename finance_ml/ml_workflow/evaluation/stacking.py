@@ -98,7 +98,7 @@ def compute_stacking_contributions(
 
     except ImportError:
         logger.warning("Plotly not available, creating minimal HTML")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write("<html><body><h1>Stacking Contributions</h1>")
             f.write("<table><tr><th>Model</th><th>Correlation</th></tr>")
             for model, stats in contributions.items():
@@ -170,14 +170,14 @@ def meta_error_maps(
             fig.write_html(str(html_path))
             logger.info(f"Saved meta error map to {html_path}")
         else:
-            with open(html_path, "w") as f:
+            with open(html_path, "w", encoding="utf-8") as f:
                 f.write("<html><body><h1>Meta Error Map</h1>")
                 f.write(f"<p>Mean Absolute Error: {errors.mean():.2f}</p>")
                 f.write("</body></html>")
 
     except ImportError:
         logger.warning("Plotly not available, creating minimal HTML")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write("<html><body><h1>Meta-Learner Error Map</h1>")
             f.write("<p>Plotly required for interactive visualization</p>")
             f.write("</body></html>")
@@ -326,7 +326,7 @@ def generate_model_card(
 - Improvement Plan: `docs/improvement_plan/`
 """
 
-    with open(card_path, "w") as f:
+    with open(card_path, "w", encoding="utf-8") as f:
         f.write(content)
 
     logger.info(f"Saved model card to {card_path}")
@@ -439,7 +439,7 @@ def build_lineage_json(
     }
 
     json_path = output_dir / "lineage.json"
-    with open(json_path, "w") as f:
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(lineage, f, indent=2)
 
     logger.info(f"Saved lineage JSON to {json_path}")
