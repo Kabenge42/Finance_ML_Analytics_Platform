@@ -1,0 +1,67 @@
+{
+  "model_version": "v9_9",
+  "created_at": "2025-11-24T04:03:21.006573",
+  "datasets": {
+    "train": "equities_table_2025",
+    "validation": "hold_out_2025"
+  },
+  "features": {
+    "count": 310,
+    "groups": [
+      "momentum",
+      "valuation",
+      "profitability",
+      "quality",
+      "risk",
+      "cash_flow",
+      "capital_allocation",
+      "analyst_sentiment",
+      "market_sentiment"
+    ],
+    "selection_method": "Boruta + SHAP"
+  },
+  "models": {
+    "base": [
+      "xgboost",
+      "lightgbm",
+      "catboost"
+    ],
+    "meta": "linear_ridge",
+    "hyperparameters": "See model_card for details"
+  },
+  "artifacts": [
+    "outputs/regression/regression_predictions_detailed.csv",
+    "outputs/uncertainty/quantile_predictions_diagnostics.csv",
+    "outputs/uncertainty/coverage_by_sector.json",
+    "outputs/uncertainty/uncertainty_summary.json",
+    "outputs/safety_rails/clipping_effect_summary.json",
+    "outputs/safety_rails/non_negative_violations.json",
+    "outputs/splits/grouped_cv_balance_metrics.json",
+    "outputs/splits/leakage_report.json",
+    "outputs/calibration/sector_bias_calibration_v9_9.json",
+    "outputs/governance/stacking_contributions.csv",
+    "outputs/governance/model_card_v9_9.md"
+  ],
+  "metrics": {
+    "overall": {
+      "overall": {
+        "MAE": 0.0,
+        "RMSE": 0.0,
+        "R2": 0.0
+      },
+      "by_sector": {}
+    },
+    "by_sector": {},
+    "uncertainty_coverage": 0.8
+  },
+  "validation": {
+    "strategy": "Grouped CV by ticker",
+    "n_folds": 5,
+    "leakage_check": "PASS"
+  },
+  "governance": {
+    "approval_status": "Development",
+    "owner": "ML Team",
+    "review_date": "2025-11-24"
+  }
+}

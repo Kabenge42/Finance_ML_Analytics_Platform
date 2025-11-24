@@ -1,0 +1,28 @@
+{
+  "n": 141,
+  "by_sector": {
+    "Communication Services": 7,
+    "Consumer Discretionary": 15,
+    "Consumer Staples": 3,
+    "Energy": 2,
+    "Financials": 6,
+    "Health Care": 16,
+    "Industrials": 22,
+    "Information Technology": 37,
+    "Materials": 31,
+    "Real Estate": 1,
+    "Utilities": 1
+  },
+  "by_region": {
+    "Africa / Middle East": 8,
+    "Asia / Pacific": 63,
+    "Europe": 12,
+    "Latin America and Caribbean": 2,
+    "United States and Canada": 56
+  },
+  "market_cap_buckets": {
+    "small": 47,
+    "mid": 47,
+    "large": 47
+  }
+}

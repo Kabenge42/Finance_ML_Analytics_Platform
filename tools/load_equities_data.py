@@ -5,11 +5,21 @@ Handles data type conversion and cleaning for the equities table.
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import List, Tuple
 
 import pandas as pd
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import execute_values
+
+
+# Constants for column classification (optimized for fast lookup)
+DATE_COLUMNS = frozenset(['Last Updated', 'Income Statement Report Date', 'Next Earnings'])
+TEXT_COLUMNS = frozenset([
+    'Ticker', 'ISIN', 'Name', 'Description', 'Exchange', 'Unit',
+    'Sector', 'Industry', 'Style Class', 'Next Earnings (Status)',
+    'Size Class', 'Region', 'Country', 'Trading Country'
+])
 
 
 def convert_to_date(value):
@@ -45,56 +55,82 @@ def convert_to_text(value):
     return str(value).strip()
 
 
-def load_csv_to_postgres(csv_file, conn):
-    """Load a single CSV file into the equities table."""
-    print(f"\nProcessing {csv_file}...")
+def _prepare_records_for_insert(df: pd.DataFrame) -> Tuple[List[str], List[tuple]]:
+    """
+    Prepare records from DataFrame with optimized type conversion.
 
-    # Read CSV
-    df = pd.read_csv(csv_file)
-    print(f"  Loaded {len(df)} rows")
+    Segregates data transformation logic and optimizes by mapping columns
+    to converter functions once (pre-loop) instead of checking column names
+    against lists for every cell value.
 
-    # Get column names from the CSV
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame with equity data
+
+    Returns
+    -------
+    columns : List[str]
+        List of column names
+    records : List[tuple]
+        List of tuples, each representing a row with converted values
+    """
     columns = df.columns.tolist()
+    converters = []
 
-    # Prepare data for insertion
+    # Map columns to converters once to avoid repetitive checks
+    for col in columns:
+        if col in DATE_COLUMNS:
+            converters.append(convert_to_date)
+        elif col in TEXT_COLUMNS:
+            converters.append(convert_to_text)
+        else:
+            converters.append(convert_to_numeric)
+
     records = []
+    for _, row in df.iterrows():
+        # Apply converters by position
+        record = tuple(converter(row[col]) for col, converter in zip(columns, converters))
+        records.append(record)
 
-    for idx, row in df.iterrows():
-        record = []
-        for col in columns:
-            value = row[col]
+    return columns, records
 
-            # Date columns
-            if col in ['Last Updated', 'Income Statement Report Date', 'Next Earnings']:
-                record.append(convert_to_date(value))
-            # Text columns (first 18 columns are mostly text)
-            elif col in ['Ticker', 'ISIN', 'Name', 'Description', 'Exchange', 'Unit',
-                        'Sector', 'Industry', 'Style Class', 'Next Earnings (Status)',
-                        'Size Class', 'Flag', 'Region', 'Country', 'Trading Country']:
-                record.append(convert_to_text(value))
-            # All other columns are NUMERIC
-            else:
-                record.append(convert_to_numeric(value))
 
-        records.append(tuple(record))
+def _execute_db_insert(conn: psycopg2.extensions.connection, columns: List[str], records: List[tuple]) -> None:
+    """
+    Execute batch insert into PostgreSQL with proper transaction management.
 
-    # Create INSERT query using psycopg2.sql to safely handle special characters in column names
-    # This prevents issues with columns containing /, %, (, ), etc.
+    Isolates database interaction logic (SQL query construction, transaction
+    management, and batch execution) following Single Responsibility Principle.
+
+    Parameters
+    ----------
+    conn : psycopg2.extensions.connection
+        Active database connection
+    columns : List[str]
+        List of column names to insert
+    records : List[tuple]
+        List of tuples containing row data
+
+    Raises
+    ------
+    Exception
+        If insert operation fails, rolls back transaction and re-raises
+    """
+    # Create INSERT query using psycopg2.sql safely
     insert_query = sql.SQL(
         "INSERT INTO equities ({}) VALUES %s ON CONFLICT DO NOTHING"
     ).format(
         sql.SQL(', ').join([sql.Identifier(col) for col in columns])
     )
 
-    # Create placeholders template for execute_values
+    # Create placeholders template
     placeholders = sql.SQL('({})').format(
         sql.SQL(', ').join([sql.Placeholder()] * len(columns))
     )
 
-    # Insert data in batches
     cur = conn.cursor()
     try:
-        # Convert SQL objects to strings for execute_values
         execute_values(
             cur,
             insert_query.as_string(conn),
@@ -110,6 +146,36 @@ def load_csv_to_postgres(csv_file, conn):
         raise
     finally:
         cur.close()
+
+
+def load_csv_to_postgres(csv_file: str, conn: psycopg2.extensions.connection) -> None:
+    """
+    Load a single CSV file into the equities table.
+
+    High-level orchestrator function that coordinates data loading,
+    preparation, and insertion following the Extract Method pattern.
+
+    Parameters
+    ----------
+    csv_file : str
+        Path to CSV file to load
+    conn : psycopg2.extensions.connection
+        Active database connection
+
+    Raises
+    ------
+    Exception
+        If CSV loading or database insertion fails
+    """
+    print(f"\nProcessing {csv_file}...")
+
+    # Read CSV
+    df = pd.read_csv(csv_file)
+    print(f"  Loaded {len(df)} rows")
+
+    # Prepare data and execute insert
+    columns, records = _prepare_records_for_insert(df)
+    _execute_db_insert(conn, columns, records)
 
 
 def main():

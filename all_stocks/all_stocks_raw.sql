@@ -1,6 +1,6 @@
 ﻿-- ============================================================================
--- all_stocks.sql
--- Comprehensive SQL script to create unified all_stocks table
+-- all_stocks_raw.sql
+-- Comprehensive SQL script to create unified all_stocks_raw table
 -- Combines data from four regional screening tables into a single view
 -- Schema: 318 columns (262 original + 48 Phase 9.3 additions)
 --
@@ -27,14 +27,14 @@ $$
     BEGIN
         v_start_time := clock_timestamp();
 
-        RAISE NOTICE 'Starting all_stocks table creation at %', v_start_time;
+        RAISE NOTICE 'Starting all_stocks_raw table creation at %', v_start_time;
 
         -- Drop existing table with cascade to remove dependencies
-        DROP TABLE IF EXISTS all_stocks CASCADE;
-        RAISE NOTICE 'Dropped existing all_stocks table';
+        DROP TABLE IF EXISTS all_stocks_raw CASCADE;
+        RAISE NOTICE 'Dropped existing all_stocks_raw table';
 
-        -- Create all_stocks table with optimized column definitions
-        CREATE TABLE all_stocks
+        -- Create all_stocks_raw table with optimized column definitions
+        CREATE TABLE all_stocks_raw
         (
             -- Primary Identifiers
             "Ticker"                                           TEXT NOT NULL,
@@ -410,13 +410,13 @@ $$
             CONSTRAINT all_stocks_region_check CHECK ("Region" IN ('US', 'EU', 'APAC', 'ROTW'))
         ) TABLESPACE pg_default;
 
-        RAISE NOTICE 'Created all_stocks table structure';
+        RAISE NOTICE 'Created all_stocks_raw table structure';
 
         -- Insert data from regional tables using UNION ALL
         -- Note: Explicit casts removed as they're redundant when types match
         -- Insert data from regional tables using UNION ALL with explicit type casting
 -- This ensures type compatibility across regional tables with different schemas
-        INSERT INTO all_stocks ("Ticker",
+        INSERT INTO all_stocks_raw ("Ticker",
                                 "ISIN",
                                 "Name",
                                 "Description",
@@ -1931,49 +1931,49 @@ $$
         RAISE NOTICE 'Creating indexes...';
 
         -- Single column indexes for frequent filters
-        CREATE INDEX idx_all_stocks_ticker ON all_stocks ("Ticker") WHERE "Ticker" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_region ON all_stocks ("Region");
-        CREATE INDEX idx_all_stocks_sector ON all_stocks ("Sector") WHERE "Sector" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_industry ON all_stocks ("Industry") WHERE "Industry" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_country ON all_stocks ("Country") WHERE "Country" IS NOT NULL;
+        CREATE INDEX idx_all_stocks_ticker ON all_stocks_raw ("Ticker") WHERE "Ticker" IS NOT NULL;
+        CREATE INDEX idx_all_stocks_region ON all_stocks_raw ("Region");
+        CREATE INDEX idx_all_stocks_sector ON all_stocks_raw ("Sector") WHERE "Sector" IS NOT NULL;
+        CREATE INDEX idx_all_stocks_industry ON all_stocks_raw ("Industry") WHERE "Industry" IS NOT NULL;
+        CREATE INDEX idx_all_stocks_country ON all_stocks_raw ("Country") WHERE "Country" IS NOT NULL;
 
         -- Indexes for numerical filters (with WHERE clause for nulls)
-        CREATE INDEX idx_all_stocks_last_price ON all_stocks ("Last Price")
+        CREATE INDEX idx_all_stocks_last_price ON all_stocks_raw ("Last Price")
             WHERE "Last Price" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_market_cap ON all_stocks ("Market Cap")
+        CREATE INDEX idx_all_stocks_market_cap ON all_stocks_raw ("Market Cap")
             WHERE "Market Cap" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_pe_ltm ON all_stocks ("P/E (LTM)")
+        CREATE INDEX idx_all_stocks_pe_ltm ON all_stocks_raw ("P/E (LTM)")
             WHERE "P/E (LTM)" IS NOT NULL AND "P/E (LTM)" > 0;
-        CREATE INDEX idx_all_stocks_ev_ebitda ON all_stocks ("EV/EBITDA (LTM)")
+        CREATE INDEX idx_all_stocks_ev_ebitda ON all_stocks_raw ("EV/EBITDA (LTM)")
             WHERE "EV/EBITDA (LTM)" IS NOT NULL AND "EV/EBITDA (LTM)" > 0;
 
         -- Composite indexes for common query patterns
-        CREATE INDEX idx_all_stocks_sector_region ON all_stocks ("Sector", "Region")
+        CREATE INDEX idx_all_stocks_sector_region ON all_stocks_raw ("Sector", "Region")
             WHERE "Sector" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_industry_region ON all_stocks ("Industry", "Region")
+        CREATE INDEX idx_all_stocks_industry_region ON all_stocks_raw ("Industry", "Region")
             WHERE "Industry" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_country_sector ON all_stocks ("Country", "Sector")
+        CREATE INDEX idx_all_stocks_country_sector ON all_stocks_raw ("Country", "Sector")
             WHERE "Country" IS NOT NULL AND "Sector" IS NOT NULL;
-        CREATE INDEX idx_all_stocks_region_market_cap ON all_stocks ("Region", "Market Cap" DESC)
+        CREATE INDEX idx_all_stocks_region_market_cap ON all_stocks_raw ("Region", "Market Cap" DESC)
             WHERE "Market Cap" IS NOT NULL;
 
         -- Date index for temporal queries
-        CREATE INDEX idx_all_stocks_last_updated ON all_stocks ("Last Updated")
+        CREATE INDEX idx_all_stocks_last_updated ON all_stocks_raw ("Last Updated")
             WHERE "Last Updated" IS NOT NULL;
 
         RAISE NOTICE 'Created all indexes';
 
         -- Update statistics for query optimizer
-        ANALYZE all_stocks;
+        ANALYZE all_stocks_raw;
         RAISE NOTICE 'Updated table statistics';
 
         -- Set table ownership
-        ALTER TABLE all_stocks
+        ALTER TABLE all_stocks_raw
             OWNER TO postgres;
 
         -- Add comprehensive table comment using dynamic SQL
         EXECUTE format(
-                'COMMENT ON TABLE all_stocks IS %L',
+                'COMMENT ON TABLE all_stocks_raw IS %L',
                 'Unified equities screening data combining US, EU, APAC, and ROTW regional tables. ' ||
                 'Schema: 318 columns (262 original + 48 Phase 9.3 additions). ' ||
                 'Primary key: (Ticker, Region). ' ||
@@ -1982,11 +1982,11 @@ $$
                 );
 
         -- Add column comments for key fields
-        COMMENT ON COLUMN all_stocks."Ticker" IS 'Stock ticker symbol (primary identifier)';
-        COMMENT ON COLUMN all_stocks."Region" IS 'Geographic region: US, EU, APAC, or ROTW';
-        COMMENT ON COLUMN all_stocks."Sector" IS 'Business sector classification';
-        COMMENT ON COLUMN all_stocks."Market Cap" IS 'Market capitalization in base currency';
-        COMMENT ON COLUMN all_stocks."Last Updated" IS 'Date of last data update';
+        COMMENT ON COLUMN all_stocks_raw."Ticker" IS 'Stock ticker symbol (primary identifier)';
+        COMMENT ON COLUMN all_stocks_raw."Region" IS 'Geographic region: US, EU, APAC, or ROTW';
+        COMMENT ON COLUMN all_stocks_raw."Sector" IS 'Business sector classification';
+        COMMENT ON COLUMN all_stocks_raw."Market Cap" IS 'Market capitalization in base currency';
+        COMMENT ON COLUMN all_stocks_raw."Last Updated" IS 'Date of last data update';
 
         v_end_time := clock_timestamp();
         RAISE NOTICE 'Completed in % seconds', EXTRACT(EPOCH FROM (v_end_time - v_start_time));
@@ -2004,7 +2004,7 @@ $$
 
             FOR v_region_record IN
                 SELECT "Region", COUNT(*) as region_count
-                FROM all_stocks
+                FROM all_stocks_raw
                 GROUP BY "Region"
                 ORDER BY "Region"
                 LOOP
@@ -2028,7 +2028,7 @@ $$
         SELECT COUNT(*)
         INTO v_row_count
         FROM (SELECT "Ticker", "Region", COUNT(*) as dup_count
-              FROM all_stocks
+              FROM all_stocks_raw
               GROUP BY "Ticker", "Region"
               HAVING COUNT(*) > 1) dups;
 
@@ -2042,7 +2042,7 @@ $$
         SELECT COUNT(*)
         INTO v_row_count
         FROM information_schema.columns
-        WHERE table_name = 'all_stocks'
+        WHERE table_name = 'all_stocks_raw'
           AND table_schema = 'public';
 
         RAISE NOTICE 'Schema contains % columns (expected: 318)', v_row_count;
@@ -2055,7 +2055,7 @@ $$
 $$;
 
 -- Grant appropriate permissions
-GRANT SELECT ON all_stocks TO PUBLIC;
+GRANT SELECT ON all_stocks_raw TO PUBLIC;
 
 -- Create a view for commonly queried columns to simplify queries
 CREATE OR REPLACE VIEW all_stocks_summary AS
@@ -2074,12 +2074,12 @@ SELECT "Ticker",
        "Beta (1Y)",
        "Analyst Rating",
        "Last Updated"
-FROM all_stocks;
+FROM all_stocks_raw;
 
 COMMENT ON VIEW all_stocks_summary IS
-    'Simplified view of all_stocks table with most commonly queried columns';
+    'Simplified view of all_stocks_raw table with most commonly queried columns';
 
-\echo 'all_stocks table created and populated successfully'
+\echo 'all_stocks_raw table created and populated successfully'
 \echo 'Run the following queries to validate:'
-\echo '  SELECT "Region", COUNT(*) FROM all_stocks GROUP BY "Region";'
+\echo '  SELECT "Region", COUNT(*) FROM all_stocks_raw GROUP BY "Region";'
 \echo '  SELECT * FROM all_stocks_summary LIMIT 10;'

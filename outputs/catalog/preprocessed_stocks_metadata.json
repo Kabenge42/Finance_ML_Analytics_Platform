@@ -1,6 +1,6 @@
 {
   "name": "preprocessed_stocks",
-  "version": "20251119_161114",
+  "version": "20251124_032809",
   "description": "Phase 9.1 - Fully preprocessed stock data (post-imputation, winsorization, scaling)",
   "tags": [
     "phase_9.1",
@@ -8,7 +8,7 @@
     "validated"
   ],
   "shape": [
-    7034,
+    7036,
     351
   ],
   "columns": [
@@ -364,6 +364,6 @@
     "gross_margin_pct_previous_year",
     "asset_turnover_previous_year"
   ],
-  "quality_score": 0.9300021790780961,
-  "checksum": "083e50537acd67de85d8ff177b6068b8"
+  "quality_score": 0.9317248371824836,
+  "checksum": "bd35a7add21c2a804489373363d799aa"
 }

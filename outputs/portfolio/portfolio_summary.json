@@ -1,0 +1,11 @@
+{
+  "kpis": {
+    "max_sharpe_return": 2.7298712928578537,
+    "max_sharpe_volatility": 0.0855446926213208,
+    "max_sharpe_ratio": 31.91163834023143,
+    "backtest_sharpe": 0.3791206337523907,
+    "backtest_max_drawdown": -0.24138986415504396,
+    "backtest_turnover": 4.749999999965857
+  },
+  "notes": "Auto-generated summary placeholder"
+}

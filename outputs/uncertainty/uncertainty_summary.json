@@ -1,0 +1,21 @@
+{
+  "overall_coverage": 0.8081023454157783,
+  "mean_interval_width": 329.71856888246987,
+  "target_coverage": 0.8,
+  "tolerance": 0.1,
+  "sectors_under_covered": [
+    {
+      "sector": "Utilities",
+      "coverage": 0.6851851851851852,
+      "delta": 0.11481481481481481
+    }
+  ],
+  "sectors_over_covered": [],
+  "validation_status": "PASS",
+  "within_tolerance": true,
+  "under_covered_sectors": [
+    "Utilities"
+  ],
+  "over_covered_sectors": [],
+  "total_predictions": 1407
+}

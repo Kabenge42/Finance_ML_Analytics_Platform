@@ -1,0 +1,61 @@
+{
+  "sector_tests": {
+    "p_e": {
+      "anova": {
+        "statistic": 27.844976563905973,
+        "p_value": 6.9806224832016455e-53,
+        "significant": "True",
+        "interpretation": "Groups have significantly different means (p=0.0000)"
+      },
+      "kruskal_wallis": {
+        "statistic": 866.4572721586769,
+        "p_value": 1.0516480249040818e-179,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      },
+      "kruskal": {
+        "statistic": 866.4572721586769,
+        "p_value": 1.0516480249040818e-179,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      }
+    },
+    "p_b": {
+      "anova": {
+        "statistic": 24.10484270206252,
+        "p_value": 2.7304521987643143e-45,
+        "significant": "True",
+        "interpretation": "Groups have significantly different means (p=0.0000)"
+      },
+      "kruskal_wallis": {
+        "statistic": 1007.9920229631067,
+        "p_value": 3.55029227489931e-210,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      },
+      "kruskal": {
+        "statistic": 1007.9920229631067,
+        "p_value": 3.55029227489931e-210,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      }
+    },
+    "summary": {
+      "total_metrics_tested": 1,
+      "groups_compared": [
+        "Information Technology",
+        "Communication Services",
+        "Consumer Discretionary",
+        "Financials",
+        "Health Care",
+        "Consumer Staples",
+        "Energy",
+        "Industrials",
+        "Materials",
+        "Utilities",
+        "Real Estate"
+      ],
+      "alpha": 0.05
+    }
+  }
+}

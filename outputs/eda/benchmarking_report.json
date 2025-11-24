@@ -1,0 +1,708 @@
+{
+  "sector_distributions": [
+    {
+      "sector": "Information Technology",
+      "metric": "p_e",
+      "mean": 40.95059101654846,
+      "median": 22.95,
+      "std": 49.635711455778406,
+      "min": 0.3,
+      "max": 389.2,
+      "count": 846,
+      "q25": 18.5,
+      "q75": 42.075
+    },
+    {
+      "sector": "Communication Services",
+      "metric": "p_e",
+      "mean": 25.388439306358382,
+      "median": 18.5,
+      "std": 29.15485460643549,
+      "min": 0.6,
+      "max": 276.8,
+      "count": 346,
+      "q25": 13.1,
+      "q75": 24.875
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "metric": "p_e",
+      "mean": 23.74384236453202,
+      "median": 18.5,
+      "std": 21.903685573243603,
+      "min": 3.1,
+      "max": 269.9,
+      "count": 812,
+      "q25": 12.674999999999999,
+      "q75": 25.725
+    },
+    {
+      "sector": "Financials",
+      "metric": "p_e",
+      "mean": 17.974136403897255,
+      "median": 12.7,
+      "std": 21.401017507107778,
+      "min": 1.4,
+      "max": 262.6,
+      "count": 1129,
+      "q25": 9.2,
+      "q75": 18.5
+    },
+    {
+      "sector": "Health Care",
+      "metric": "p_e",
+      "mean": 33.03574593796159,
+      "median": 18.5,
+      "std": 39.9579060122287,
+      "min": 3.8,
+      "max": 393.6,
+      "count": 677,
+      "q25": 18.5,
+      "q75": 33.2
+    },
+    {
+      "sector": "Consumer Staples",
+      "metric": "p_e",
+      "mean": 26.36869918699187,
+      "median": 18.5,
+      "std": 34.35620222461047,
+      "min": 0.7,
+      "max": 368.2,
+      "count": 492,
+      "q25": 14.9,
+      "q75": 25.125
+    },
+    {
+      "sector": "Energy",
+      "metric": "p_e",
+      "mean": 19.637267080745342,
+      "median": 16.85,
+      "std": 17.36538189784609,
+      "min": 0.1,
+      "max": 177.7,
+      "count": 322,
+      "q25": 11.5,
+      "q75": 18.5
+    },
+    {
+      "sector": "Industrials",
+      "metric": "p_e",
+      "mean": 28.991426344505065,
+      "median": 18.5,
+      "std": 35.932172905072456,
+      "min": 2.0,
+      "max": 492.6,
+      "count": 1283,
+      "q25": 15.0,
+      "q75": 30.2
+    },
+    {
+      "sector": "Materials",
+      "metric": "p_e",
+      "mean": 30.135257410296408,
+      "median": 18.5,
+      "std": 44.629360136828076,
+      "min": 4.9,
+      "max": 485.5,
+      "count": 641,
+      "q25": 15.1,
+      "q75": 27.0
+    },
+    {
+      "sector": "Utilities",
+      "metric": "p_e",
+      "mean": 22.342700729927007,
+      "median": 17.8,
+      "std": 29.134634450211866,
+      "min": 2.8,
+      "max": 352.3,
+      "count": 274,
+      "q25": 12.325000000000001,
+      "q75": 21.3
+    },
+    {
+      "sector": "Real Estate",
+      "metric": "p_e",
+      "mean": 21.794859813084113,
+      "median": 16.15,
+      "std": 26.797498687298194,
+      "min": 1.8,
+      "max": 251.8,
+      "count": 214,
+      "q25": 9.825000000000001,
+      "q75": 19.475
+    },
+    {
+      "sector": "Information Technology",
+      "metric": "p_b",
+      "mean": 6.849881796690307,
+      "median": 3.8,
+      "std": 11.665073291550895,
+      "min": 0.3,
+      "max": 187.0,
+      "count": 846,
+      "q25": 2.1,
+      "q75": 7.5
+    },
+    {
+      "sector": "Communication Services",
+      "metric": "p_b",
+      "mean": 4.540173410404624,
+      "median": 2.1,
+      "std": 10.655225511197749,
+      "min": 0.2,
+      "max": 153.7,
+      "count": 346,
+      "q25": 1.225,
+      "q75": 4.05
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "metric": "p_b",
+      "mean": 4.452339901477833,
+      "median": 2.1,
+      "std": 11.148077723754865,
+      "min": 0.2,
+      "max": 277.0,
+      "count": 812,
+      "q25": 1.3,
+      "q75": 4.6
+    },
+    {
+      "sector": "Financials",
+      "metric": "p_b",
+      "mean": 2.3722763507528786,
+      "median": 1.3,
+      "std": 4.595827803579928,
+      "min": 0.1,
+      "max": 85.4,
+      "count": 1129,
+      "q25": 0.9,
+      "q75": 2.2
+    },
+    {
+      "sector": "Health Care",
+      "metric": "p_b",
+      "mean": 8.814475627769571,
+      "median": 3.4,
+      "std": 25.8669249795507,
+      "min": 0.2,
+      "max": 353.2,
+      "count": 677,
+      "q25": 2.0,
+      "q75": 6.4
+    },
+    {
+      "sector": "Consumer Staples",
+      "metric": "p_b",
+      "mean": 4.248983739837398,
+      "median": 2.3,
+      "std": 6.534032712383431,
+      "min": 0.1,
+      "max": 76.2,
+      "count": 492,
+      "q25": 1.4,
+      "q75": 4.6
+    },
+    {
+      "sector": "Energy",
+      "metric": "p_b",
+      "mean": 2.866149068322981,
+      "median": 1.5,
+      "std": 8.337940351104804,
+      "min": 0.2,
+      "max": 137.3,
+      "count": 322,
+      "q25": 1.0,
+      "q75": 2.4
+    },
+    {
+      "sector": "Industrials",
+      "metric": "p_b",
+      "mean": 4.15580670303975,
+      "median": 2.4,
+      "std": 5.823425194719047,
+      "min": 0.3,
+      "max": 82.6,
+      "count": 1283,
+      "q25": 1.4,
+      "q75": 4.7
+    },
+    {
+      "sector": "Materials",
+      "metric": "p_b",
+      "mean": 2.930265210608424,
+      "median": 2.0,
+      "std": 3.5096324716134357,
+      "min": 0.1,
+      "max": 37.1,
+      "count": 641,
+      "q25": 1.1,
+      "q75": 3.4
+    },
+    {
+      "sector": "Utilities",
+      "metric": "p_b",
+      "mean": 2.0875912408759123,
+      "median": 1.55,
+      "std": 2.3707603842094453,
+      "min": 0.2,
+      "max": 23.1,
+      "count": 274,
+      "q25": 1.1,
+      "q75": 2.2
+    },
+    {
+      "sector": "Real Estate",
+      "metric": "p_b",
+      "mean": 1.5018691588785045,
+      "median": 1.0,
+      "std": 1.7506259810488458,
+      "min": 0.1,
+      "max": 15.0,
+      "count": 214,
+      "q25": 0.6,
+      "q75": 1.6
+    },
+    {
+      "sector": "Information Technology",
+      "metric": "market_cap",
+      "mean": 0.15032365175295803,
+      "median": 0.055119530538600275,
+      "std": 0.24957541893526233,
+      "min": 0.0,
+      "max": 0.9999999999999999,
+      "count": 846,
+      "q25": 0.019751974915216443,
+      "q75": 0.13596450108620378
+    },
+    {
+      "sector": "Communication Services",
+      "metric": "market_cap",
+      "mean": 0.1616266571303744,
+      "median": 0.05777731552593613,
+      "std": 0.2558208664937011,
+      "min": 0.0,
+      "max": 0.9999999999999999,
+      "count": 346,
+      "q25": 0.022235901440972795,
+      "q75": 0.15405851522029199
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "metric": "market_cap",
+      "mean": 0.16145385447410487,
+      "median": 0.06649842249663017,
+      "std": 0.25180768919606694,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 812,
+      "q25": 0.017893753931291487,
+      "q75": 0.15542721711641405
+    },
+    {
+      "sector": "Financials",
+      "metric": "market_cap",
+      "mean": 0.17175707915877583,
+      "median": 0.059208458716168894,
+      "std": 0.2621486905630938,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 1129,
+      "q25": 0.019986384417612704,
+      "q75": 0.17592744047420417
+    },
+    {
+      "sector": "Health Care",
+      "metric": "market_cap",
+      "mean": 0.16517343033994622,
+      "median": 0.05901215924828043,
+      "std": 0.26087538223570156,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 677,
+      "q25": 0.023118456253810267,
+      "q75": 0.16413864960313193
+    },
+    {
+      "sector": "Consumer Staples",
+      "metric": "market_cap",
+      "mean": 0.17331195500748195,
+      "median": 0.06657878894629912,
+      "std": 0.2617170650955218,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 492,
+      "q25": 0.014202656095733318,
+      "q75": 0.19237416842948657
+    },
+    {
+      "sector": "Energy",
+      "metric": "market_cap",
+      "mean": 0.18979536845985673,
+      "median": 0.06262714333310233,
+      "std": 0.28556986322835803,
+      "min": 0.0,
+      "max": 0.9999999999999999,
+      "count": 322,
+      "q25": 0.026021528674140138,
+      "q75": 0.19743298856282604
+    },
+    {
+      "sector": "Industrials",
+      "metric": "market_cap",
+      "mean": 0.1889989812127507,
+      "median": 0.08361499425549487,
+      "std": 0.25917873899823396,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 1283,
+      "q25": 0.028814063693024635,
+      "q75": 0.2119196202712687
+    },
+    {
+      "sector": "Materials",
+      "metric": "market_cap",
+      "mean": 0.1963415560874914,
+      "median": 0.10135092401516083,
+      "std": 0.2550540269441074,
+      "min": 0.0,
+      "max": 0.9999999999999999,
+      "count": 641,
+      "q25": 0.03983602003262627,
+      "q75": 0.21373543045942303
+    },
+    {
+      "sector": "Utilities",
+      "metric": "market_cap",
+      "mean": 0.23758851966930952,
+      "median": 0.12804083856537424,
+      "std": 0.2721466993203353,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 274,
+      "q25": 0.05450765803283468,
+      "q75": 0.31662882900356865
+    },
+    {
+      "sector": "Real Estate",
+      "metric": "market_cap",
+      "mean": 0.22478077471291363,
+      "median": 0.11704430213123454,
+      "std": 0.28044162297606384,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 214,
+      "q25": 0.02428542180012548,
+      "q75": 0.2915574757107678
+    }
+  ],
+  "regional_valuations": [
+    {
+      "region": "United States and Canada",
+      "metric": "p_e",
+      "mean": 29.89192030990592,
+      "median": 18.5,
+      "std": 37.4163998518274,
+      "min": 0.7,
+      "max": 399.1,
+      "count": 1807
+    },
+    {
+      "region": "Asia / Pacific",
+      "metric": "p_e",
+      "mean": 32.56176327325864,
+      "median": 19.0,
+      "std": 42.6382757356353,
+      "min": 1.8,
+      "max": 492.6,
+      "count": 2053
+    },
+    {
+      "region": "Europe",
+      "metric": "p_e",
+      "mean": 24.045060827250612,
+      "median": 18.5,
+      "std": 27.26245878297796,
+      "min": 0.1,
+      "max": 377.9,
+      "count": 2055
+    },
+    {
+      "region": "Latin America and Caribbean",
+      "metric": "p_e",
+      "mean": 17.51763085399449,
+      "median": 14.9,
+      "std": 17.57737803772321,
+      "min": 1.8,
+      "max": 198.3,
+      "count": 363
+    },
+    {
+      "region": "Africa / Middle East",
+      "metric": "p_e",
+      "mean": 20.219525065963058,
+      "median": 15.7,
+      "std": 28.646857510321723,
+      "min": 0.7,
+      "max": 438.0,
+      "count": 758
+    },
+    {
+      "region": "United States and Canada",
+      "metric": "p_b",
+      "mean": 6.299225235196459,
+      "median": 2.7,
+      "std": 16.5201353519316,
+      "min": 0.3,
+      "max": 353.2,
+      "count": 1807
+    },
+    {
+      "region": "Asia / Pacific",
+      "metric": "p_b",
+      "mean": 4.460204578665367,
+      "median": 2.3,
+      "std": 9.097036948626563,
+      "min": 0.2,
+      "max": 277.0,
+      "count": 2053
+    },
+    {
+      "region": "Europe",
+      "metric": "p_b",
+      "mean": 3.4661313868613135,
+      "median": 1.9,
+      "std": 8.660939937221958,
+      "min": 0.1,
+      "max": 203.7,
+      "count": 2055
+    },
+    {
+      "region": "Latin America and Caribbean",
+      "metric": "p_b",
+      "mean": 2.3038567493112945,
+      "median": 1.3,
+      "std": 6.9584470310835105,
+      "min": 0.1,
+      "max": 120.8,
+      "count": 363
+    },
+    {
+      "region": "Africa / Middle East",
+      "metric": "p_b",
+      "mean": 2.9620052770448546,
+      "median": 1.85,
+      "std": 3.7304746196277465,
+      "min": 0.1,
+      "max": 54.5,
+      "count": 758
+    },
+    {
+      "region": "United States and Canada",
+      "metric": "market_cap",
+      "mean": 0.2617752653192025,
+      "median": 0.10504063006877803,
+      "std": 0.31873482180407636,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 1807
+    },
+    {
+      "region": "Asia / Pacific",
+      "metric": "market_cap",
+      "mean": 0.21203279261331556,
+      "median": 0.11422186595522596,
+      "std": 0.23749587460496785,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 2053
+    },
+    {
+      "region": "Europe",
+      "metric": "market_cap",
+      "mean": 0.12491846421864497,
+      "median": 0.023728504537117036,
+      "std": 0.24034841766329962,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 2055
+    },
+    {
+      "region": "Latin America and Caribbean",
+      "metric": "market_cap",
+      "mean": 0.08944314718156544,
+      "median": 0.02698552306916772,
+      "std": 0.16488588587979533,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 363
+    },
+    {
+      "region": "Africa / Middle East",
+      "metric": "market_cap",
+      "mean": 0.06642921406870436,
+      "median": 0.017904594223859413,
+      "std": 0.14910828117569985,
+      "min": 0.0,
+      "max": 1.0,
+      "count": 758
+    }
+  ],
+  "summary": {
+    "total_stocks": 7036,
+    "n_sectors": 11,
+    "n_regions": 5,
+    "metrics_analyzed": [
+      "p_e",
+      "p_b",
+      "market_cap"
+    ]
+  },
+  "statistical_tests": {
+    "p_e": {
+      "sector_tests": {
+        "anova": {
+          "statistic": 27.844976563905973,
+          "p_value": 6.9806224832016455e-53,
+          "significant": true
+        },
+        "kruskal_wallis": {
+          "statistic": 866.4572721586769,
+          "p_value": 1.0516480249040818e-179,
+          "significant": true
+        },
+        "groups_compared": [
+          "Information Technology",
+          "Communication Services",
+          "Consumer Discretionary",
+          "Financials",
+          "Health Care",
+          "Consumer Staples",
+          "Energy",
+          "Industrials",
+          "Materials",
+          "Utilities",
+          "Real Estate"
+        ],
+        "n_groups": 11
+      },
+      "region_tests": {
+        "anova": {
+          "statistic": 33.734175562094684,
+          "p_value": 6.365693053893449e-28,
+          "significant": true
+        },
+        "kruskal_wallis": {
+          "statistic": 363.1780700701891,
+          "p_value": 2.502411939829953e-77,
+          "significant": true
+        },
+        "groups_compared": [
+          "United States and Canada",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "Africa / Middle East"
+        ],
+        "n_groups": 5
+      }
+    },
+    "p_b": {
+      "sector_tests": {
+        "anova": {
+          "statistic": 24.10484270206252,
+          "p_value": 2.7304521987643143e-45,
+          "significant": true
+        },
+        "kruskal_wallis": {
+          "statistic": 1007.9920229631067,
+          "p_value": 3.55029227489931e-210,
+          "significant": true
+        },
+        "groups_compared": [
+          "Information Technology",
+          "Communication Services",
+          "Consumer Discretionary",
+          "Financials",
+          "Health Care",
+          "Consumer Staples",
+          "Energy",
+          "Industrials",
+          "Materials",
+          "Utilities",
+          "Real Estate"
+        ],
+        "n_groups": 11
+      },
+      "region_tests": {
+        "anova": {
+          "statistic": 23.871336529419676,
+          "p_value": 1.222710337386633e-19,
+          "significant": true
+        },
+        "kruskal_wallis": {
+          "statistic": 426.5187197621243,
+          "p_value": 5.171024465256811e-91,
+          "significant": true
+        },
+        "groups_compared": [
+          "United States and Canada",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "Africa / Middle East"
+        ],
+        "n_groups": 5
+      }
+    },
+    "market_cap": {
+      "sector_tests": {
+        "anova": {
+          "statistic": 4.41493500742716,
+          "p_value": 3.24269235573628e-06,
+          "significant": true
+        },
+        "kruskal_wallis": {
+          "statistic": 123.3820675956627,
+          "p_value": 1.0404273663838676e-21,
+          "significant": true
+        },
+        "groups_compared": [
+          "Information Technology",
+          "Communication Services",
+          "Consumer Discretionary",
+          "Financials",
+          "Health Care",
+          "Consumer Staples",
+          "Energy",
+          "Industrials",
+          "Materials",
+          "Utilities",
+          "Real Estate"
+        ],
+        "n_groups": 11
+      },
+      "region_tests": {
+        "anova": {
+          "statistic": 130.99646014924892,
+          "p_value": 4.436547541975371e-108,
+          "significant": true
+        },
+        "kruskal_wallis": {
+          "statistic": 1656.4001691447781,
+          "p_value": 0.0,
+          "significant": true
+        },
+        "groups_compared": [
+          "United States and Canada",
+          "Asia / Pacific",
+          "Europe",
+          "Latin America and Caribbean",
+          "Africa / Middle East"
+        ],
+        "n_groups": 5
+      }
+    }
+  }
+}

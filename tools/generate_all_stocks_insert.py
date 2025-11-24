@@ -1,8 +1,8 @@
 """
-Generate SQL INSERT statement for all_stocks.sql with proper type casting.
+Generate SQL INSERT statement for all_stocks_raw.sql with proper type casting.
 
-This script reads the CREATE TABLE statement from all_stocks.sql and generates:
-1. INSERT INTO all_stocks column list
+This script reads the CREATE TABLE statement from all_stocks_raw.sql and generates:
+1. INSERT INTO all_stocks_raw column list
 2. Four SELECT statements (US, EU, APAC, ROTW) with proper type casting
 3. Handles DATE, NUMERIC, TEXT, and INTEGER types appropriately
 
@@ -22,12 +22,12 @@ def extract_columns_from_sql(sql_file_path):
     """Extract column definitions from CREATE TABLE statement."""
     sql_content = Path(sql_file_path).read_text(encoding="utf-8")
 
-    # Find CREATE TABLE all_stocks section
-    create_pattern = r"CREATE TABLE all_stocks\s*\((.*?)\s*CONSTRAINT"
+    # Find CREATE TABLE all_stocks_raw section
+    create_pattern = r"CREATE TABLE all_stocks_raw\s*\((.*?)\s*CONSTRAINT"
     match = re.search(create_pattern, sql_content, re.IGNORECASE | re.DOTALL)
 
     if not match:
-        raise ValueError("Could not find CREATE TABLE all_stocks statement")
+        raise ValueError("Could not find CREATE TABLE all_stocks_raw statement")
 
     table_def = match.group(1)
 
@@ -108,7 +108,7 @@ def generate_insert_sql(columns, output_file=None):
     # Complete INSERT statement
     full_sql = f"""-- Insert data from regional tables using UNION ALL with explicit type casting
 -- This ensures type compatibility across regional tables with different schemas
-INSERT INTO all_stocks (
+INSERT INTO all_stocks_raw (
   {insert_columns}
 )
 {union_sql};"""
@@ -124,7 +124,9 @@ def main():
     """Main entry point."""
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    sql_file = project_root / "all_stocks" / "all_stocks.sql"
+    
+    # Correct path to use 'all_stocks' directory instead of 'all_stocks_raw'
+    sql_file = project_root / "all_stocks" / "all_stocks_raw.sql"
     output_file = project_root / "all_stocks" / "insert_statement_generated.sql"
 
     print(f"Reading column definitions from: {sql_file}")
@@ -139,7 +141,7 @@ def main():
     print("\n".join(sql.splitlines()[:20]))
 
     print("\n" + "=" * 80)
-    print("IMPORTANT: Review the generated SQL and replace lines 415-428 in all_stocks.sql")
+    print("IMPORTANT: Review the generated SQL and replace lines 415-428 in all_stocks_raw.sql")
     print("=" * 80)
 
 

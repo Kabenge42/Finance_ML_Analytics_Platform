@@ -1,0 +1,69 @@
+{
+  "phase": "9.3",
+  "data_source": "all_stocks_features DataFrame (post-feature-engineering)",
+  "timestamp": "2025-11-24T03:28:16.475538",
+  "total_stocks": 7036,
+  "total_columns": 571,
+  "phase93_features_present": 131,
+  "phase93_features_expected": 146,
+  "coverage_percentage": 89.72602739726028,
+  "category_coverage": {
+    "Momentum & Technical": {
+      "present": 25,
+      "expected": 27,
+      "coverage_pct": 92.5925925925926
+    },
+    "Valuation Ratios": {
+      "present": 21,
+      "expected": 23,
+      "coverage_pct": 91.30434782608695
+    },
+    "Profitability": {
+      "present": 12,
+      "expected": 12,
+      "coverage_pct": 100.0
+    },
+    "Quality & Risk": {
+      "present": 18,
+      "expected": 18,
+      "coverage_pct": 100.0
+    },
+    "Cash Flow": {
+      "present": 5,
+      "expected": 5,
+      "coverage_pct": 100.0
+    },
+    "Capital Allocation": {
+      "present": 20,
+      "expected": 22,
+      "coverage_pct": 90.9090909090909
+    },
+    "Analyst Sentiment": {
+      "present": 7,
+      "expected": 10,
+      "coverage_pct": 70.0
+    },
+    "Market Sentiment": {
+      "present": 3,
+      "expected": 5,
+      "coverage_pct": 60.0
+    },
+    "Leverage & Liquidity": {
+      "present": 8,
+      "expected": 9,
+      "coverage_pct": 88.88888888888889
+    },
+    "Temporal Patterns": {
+      "present": 7,
+      "expected": 10,
+      "coverage_pct": 70.0
+    },
+    "Composite Scores": {
+      "present": 5,
+      "expected": 5,
+      "coverage_pct": 100.0
+    }
+  },
+  "categories_with_features": 11,
+  "note": "Analysis performed on engineered features DataFrame after Phase 9.3 completion"
+}

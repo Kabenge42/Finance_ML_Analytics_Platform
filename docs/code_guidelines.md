@@ -1,13 +1,23 @@
 # Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.4  
+**Version:** 1.5  
 **Last Updated:** 2025-11-23  
 **Package Version:** 0.8.3  
 **Model Version:** v9_9
 
-These guidelines codify conventions for the Finance ML Analytics Platform, covering tech stack, configuration,
+These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
 architecture, function signatures, column naming, and best practices. They align with the project's 8-phase ML
 workflow (Phase 9.1-9.8) and business objectives.
+
+**Recent Updates (v1.5):**
+
+- Updated technology stack from pyproject.toml (Python 3.12-3.14, setuptools build system)
+- Clarified CLI entry points: finance-ml, finance-ml-analyze, finance-ml-validate
+- Updated package architecture with 14 ml_workflow submodules
+- Confirmed Schema v1.3 with 318 columns (262 original + 48 Phase 9.3 + 8 additional)
+- Added Python Script/Module Review Checklist (Section 6.2) with AST-based static analysis
+- Updated code examples to remove unresolved reference errors
+- Aligned with CHANGELOG.md Phase 9.4-9.8 integration and recent enhancements
 
 ---
 
@@ -47,7 +57,7 @@ The platform implements a sophisticated **8-phase ML workflow**:
 
 1. **Phase 9.1**: Loading and preprocessing with 6-step imputation strategy
 2. **Phase 9.2**: Enhanced exploratory data analysis with statistical testing
-3. **Phase 9.3**: Advanced feature engineering (Schema v1.3, 310 columns)
+3. **Phase 9.3**: Advanced feature engineering (Schema v1.3, 318 columns)
 4. **Phase 9.4**: Multi-class event classification
 5. **Phase 9.5**: Sector-optimized regression with quantile models
 6. **Phase 9.6**: Model evaluation and error analysis
@@ -101,6 +111,8 @@ principle. Constants are defined once and validated at initialization.
 ### 2.1 Core Constants
 
 ```python
+import os
+
 # Target columns (code_guidelines.md Section 8.2)
 TARGET_COL = 'price_target'  # Canonical target
 TARGET_COL_FALLBACK = 'last_price'  # Fallback target
@@ -143,6 +155,8 @@ MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
 Environment variables provide runtime configuration overrides (see `environment_variables.txt`):
 
 ```python
+import os
+
 # Required
 TF_CPP_MIN_LOG_LEVEL = '2'  # Reduce TensorFlow verbosity
 
@@ -313,7 +327,7 @@ Each subpackage maps directly to a business phase:
 |-------|-------------------|-------------------------------------------------------|
 | 9.1   | `preprocessing/`  | Data loading, imputation, scaling, outlier handling   |
 | 9.2   | `eda/`            | Exploratory analysis, benchmarking, statistical tests |
-| 9.3   | `features/`       | Feature engineering (310 columns, Schema v1.3)        |
+| 9.3   | `features/`       | Feature engineering (318 columns, Schema v1.3)        |
 | 9.4   | `classification/` | Event classification (13 label methods)               |
 | 9.5   | `regression/`     | Regression models, quantile, stacking                 |
 | 9.6   | `evaluation/`     | Metrics, uncertainty, calibration, safety rails       |
@@ -322,36 +336,89 @@ Each subpackage maps directly to a business phase:
 
 ### 4.3 Import Patterns
 
-**Recommended Pattern (Package-level imports):**
+**Recommended Pattern (Module-level imports):**
 
 ```python
-from finance_ml import (
-   # Phase 9.1: Preprocessing
-   preprocessing_impute_6step,
-   preprocessing_detect_outliers,
+# Phase 9.1: Preprocessing
+from finance_ml.ml_workflow.preprocessing import (
+    impute_missing_values,
+    detect_outliers,
+    winsorize_features,
+    scale_features,
+    detect_and_cast_dtypes,
+)
 
-   # Phase 9.3: Features
-   features_build_comprehensive,
-   features_importance_rf,
+# Phase 9.2: EDA
+from finance_ml.ml_workflow.eda import (
+    compute_descriptive_stats,
+    plot_distributions,
+    compute_correlation_matrix,
+)
 
-   # Phase 9.5: Regression
-   regression_prepare_data,
-   regression_train_xgboost,
-   regression_train_quantile,
+# Phase 9.3: Features
+from finance_ml.ml_workflow.features import (
+    build_valuation_features,
+    build_momentum_features,
+    build_quality_features,
+    select_features_rf,
+)
 
-   # Phase 9.7: Analytics
-   analytics_calculate_mispricing,
-   analytics_rank_undervalued,
+# Phase 9.4: Classification
+from finance_ml.ml_workflow.classification import (
+    create_event_labels,
+    train_event_classifier,
+    tune_classifier_hyperparameters,
+)
+
+# Phase 9.5: Regression
+from finance_ml.ml_workflow.regression import (
+    train_sector_models,
+    train_quantile_regressor,
+    apply_nonnegative_constraint,
+)
+
+# Phase 9.6: Evaluation
+from finance_ml.ml_workflow.evaluation import (
+    compute_regression_metrics,
+    build_quantile_diagnostics,
+    track_constraint_violations,
+    calibrate_sector_bias,
+)
+
+# Phase 9.7: Analytics
+from finance_ml.ml_workflow.analytics import (
+    calculate_mispricing_scores,
+    rank_stocks,
+    optimize_portfolio,
+    compute_risk_metrics,
+)
+
+# Phase 9.8: Reporting
+from finance_ml.ml_workflow.reporting import (
+    generate_dashboard_data,
+    create_quality_alerts,
+)
+```
+
+**Data Schema Access:**
+
+```python
+from finance_ml.ml_workflow.data.schema import (
+   COLUMN_SCHEMA,
+   PHASE93_FEATURE_INPUTS,
+   get_expected_dtype,
+   get_column_role,
+   normalize_column_name,
    )
 ```
 
-**Alternative Pattern (Direct subpackage imports):**
+**Configuration:**
 
 ```python
-from finance_ml.ml_workflow.preprocessing import imputation, outliers
-from finance_ml.ml_workflow.features import advanced, selection
-from finance_ml.ml_workflow.regression import models, quantile
-from finance_ml.ml_workflow.analytics import mispricing, portfolio
+from finance_ml.ml_workflow.config import (
+   get_default_config,
+   validate_config,
+   )
 ```
 
 ---
@@ -458,7 +525,7 @@ Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_INPU
 
 **Feature Engineering:**
 
-- [ ] Features aligned with Phase 9.3 Schema v1.3 (310 columns)
+- [ ] Features aligned with Phase 9.3 Schema v1.3 (318 columns)
 - [ ] Feature preset used or documented: "basic", "momentum", "quality", "comprehensive"
 - [ ] No target leakage in feature construction
 - [ ] Feature importance analyzed and documented
@@ -529,6 +596,102 @@ Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_INPU
 - [ ] Flake8 compliant
 - [ ] Mypy type checks pass (where applicable)
 - [ ] No unused imports or variables
+
+### 6.2.2 Common Parameter Naming Conventions
+
+To prevent parameter mismatch TypeErrors and maintain consistency across the codebase, follow these naming conventions:
+
+**Data Parameters:**
+
+- `data_df` or `df` — Full DataFrame input (raw or intermediate data)
+- `features_df` — Feature matrix as DataFrame
+- `predictions_df` — Predictions DataFrame with metadata (ticker, sector, y_true, y_pred, etc.)
+- `X_train`, `X_test` — Feature arrays/DataFrames (NOT `X_tr`, `X_tst`)
+- `y_train`, `y_test` — Target arrays/Series (NOT `y_tr`, `y_tst`)
+
+**Column Name Parameters:**
+
+- Use `*_col` suffix: `target_col`, `sector_col`, `date_col`, `region_col`
+- NOT: `target_column`, `sector_name`, `date_field`, `region_colname`
+
+**Output Parameters:**
+
+- `output_dir` — Always Path or str for output directory (NOT `out_dir`, `save_dir`, `results_dir`)
+
+**Model Parameters:**
+
+- `model_info` — Dictionary containing model metadata (datasets, features, models, artifacts, metrics)
+- NOT: Separate parameters like `datasets=`, `features=`, `models=`, etc. when a dict is expected
+
+**Examples:**
+
+```python
+# ✅ CORRECT
+safety_rails_sensitivity_app(
+    data_df=all_stocks_raw,
+    output_dir=safety_rails_dir,
+    thresholds=[0.01, 0.05, 0.1]
+)
+
+estimate_sector_bias(
+    predictions_df=predictions_df,
+    output_dir=calibration_dir,
+    model_version=MODEL_VERSION
+)
+
+plot_metrics_by_sector_time(
+    predictions_df=metrics_history_df,
+    output_dir=calibration_dir,
+    date_col="snapshot_date"
+)
+
+build_lineage_json(
+    model_info={
+        'datasets': datasets,
+        'features': features,
+        'models': models
+    },
+    output_dir=governance_dir,
+    model_version=MODEL_VERSION
+)
+
+# ❌ INCORRECT
+safety_rails_sensitivity_app(
+    df_raw=all_stocks_raw,  # Wrong: should be data_df
+    out_dir=safety_rails_dir  # Wrong: should be output_dir
+)
+
+estimate_sector_bias(
+    predictions_df=predictions_df,
+    y_true_col="y_true",  # Wrong: function uses hardcoded column names
+    sector_col="sector"
+)
+
+plot_metrics_by_sector_time(
+    metrics_history=df,  # Wrong: should be predictions_df
+    snapshot_date_col="date"  # Wrong: should be date_col
+)
+
+build_lineage_json(
+    datasets=datasets,  # Wrong: should be in model_info dict
+    features=features,
+    models=models
+)
+```
+
+**Validation:**
+
+Use the static analyzer to check notebooks and scripts for parameter mismatches:
+
+```bash
+# Check notebook function signatures
+python -m finance_ml.ml_workflow.quality.notebook_review ml_finance_model_main.ipynb
+
+# Check Python script
+python -m finance_ml.ml_workflow.quality.script_review path/to/script.py
+```
+
+Run `tests/test_evaluation_function_signatures.py` to validate evaluation module function signatures.
 
 ---
 
