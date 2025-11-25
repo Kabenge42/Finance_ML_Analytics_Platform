@@ -359,11 +359,11 @@ def get_knn_imputation_columns() -> List[str]:
         "market_cap_country_r",
         # Analyst ratings (6 columns)
         "analyst_rating",
-        "strong_sell_ratings",
-        "strong_buys_ratings",
-        "hold_ratings",
-        "buys_ratings",
-        "sell_ratings",
+        "num_strong_sell_ratings",
+        "num_strong_buys_ratings",
+        "num_hold_ratings",
+        "num_buys_ratings",
+        "num_sell_ratings",
         # Returns (4 columns)
         "total_return_ytd",
         "total_return_5y",
@@ -893,7 +893,15 @@ def validate_imputation_completeness(
         - 'ready_for_temporal_features': bool - Ready for engineer_temporal_features()
     """
     if critical_date_columns is None:
-        critical_date_columns = ["last_updated", "income_statement_report_date", "next_earnings"]
+        critical_date_columns = [
+            "last_updated",
+            "income_statement_report_date",
+            "next_earnings",
+            "dividend_record_announce_date",
+            "dividend_record_ex_date",
+            "dividend_record_payable_date",
+            "dividend_record_record_date",
+        ]
 
     missing_total = df.isna().sum().sum()
     missing_numeric = df.select_dtypes(include=[np.number]).isna().sum().sum()

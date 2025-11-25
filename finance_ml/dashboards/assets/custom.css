@@ -1,0 +1,57 @@
+/* Custom CSS for Dark Theme Adaptation */
+
+/* Style the Dropdown to match Darkly theme */
+.Select-control {
+    background-color: #303030 !important;
+    border-color: #444 !important;
+    color: white !important;
+}
+
+.Select-placeholder, .Select--single > .Select-control .Select-value {
+    color: #aaa !important;
+}
+
+.Select-value-label {
+    color: white !important;
+}
+
+.Select-menu-outer {
+    background-color: #303030 !important;
+    border-color: #444 !important;
+    color: white !important;
+}
+
+.Select-option {
+    background-color: #303030 !important;
+    color: white !important;
+}
+
+.Select-option:hover {
+    background-color: #555 !important;
+}
+
+/* Filter container styling */
+.filter-container {
+    background-color: #222 !important;
+    border-bottom: 1px solid #444 !important;
+    padding: 20px;
+}
+
+.filter-label {
+    color: #ddd;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Flexbox layout for filters */
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.filter-item {
+    flex: 1 1 200px; /* Grow, shrink, min-width */
+    min-width: 200px;
+}

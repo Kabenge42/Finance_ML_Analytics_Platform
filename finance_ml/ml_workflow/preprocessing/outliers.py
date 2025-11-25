@@ -191,6 +191,8 @@ def winsorize_by_sector(
     lower_percentile: float = 0.01,
     upper_percentile: float = 0.99,
     by_sector: bool = True,
+    exclude_price_columns: bool = True,
+    exclude_ratio_columns: bool = True,
 ) -> pd.DataFrame:
     """Winsorize extreme values by replacing with percentile bounds.
 
@@ -200,24 +202,62 @@ def winsorize_by_sector(
         lower_percentile: Lower percentile bound (default: 0.01 = 1%)
         upper_percentile: Upper percentile bound (default: 0.99 = 99%)
         by_sector: Apply winsorization separately by sector (default: True)
+        exclude_price_columns: If True, exclude price/valuation columns (default: True)
+        exclude_ratio_columns: If True, exclude pre-normalized ratios (default: True)
 
     Returns:
         DataFrame with winsorized values
+
+    Note:
+        Price columns (last_price, price_target, market_cap) are excluded by default
+        to preserve original dollar values required for business metrics:
+        (Predicted_Target - Last_Price) / Last_Price
     """
+    from finance_ml.ml_workflow.preprocessing.column_semantics import (
+        PRICE_COLUMNS,
+        RATIO_COLUMNS,
+        PERCENTAGE_COLUMNS,
+    )
+
     result = df.copy()
 
     if columns is None:
         columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
-    for col in columns:
+    # Apply semantic filtering
+    excluded = set()
+    if exclude_price_columns:
+        excluded.update(PRICE_COLUMNS)
+    if exclude_ratio_columns:
+        excluded.update(RATIO_COLUMNS)
+        excluded.update(PERCENTAGE_COLUMNS)  # Also exclude percentages when excluding ratios
+
+    # Filter columns: keep only those not in excluded set and present in DataFrame
+    winsorizable = [c for c in columns if c.lower() not in excluded and c in df.columns]
+    excluded_present = [c for c in columns if c.lower() in excluded and c in df.columns]
+
+    logger.info(
+        f"Winsorizing {len(winsorizable)} columns, excluding {len(excluded_present)} semantic columns "
+        f"(price={exclude_price_columns}, ratio={exclude_ratio_columns})"
+    )
+
+    for col in winsorizable:
         if col not in df.columns:
             continue
+
+        # CRITICAL FIX: Cast integer columns to float64 BEFORE clipping operations
+        # This prevents TypeError: "Invalid value 'X.Y' for dtype 'Int64'"
+        # when assigning float clip results to Int64/Int32/Int16/Int8 columns
+        # Follows same pattern as apply_median_imputation fix (test_median_imputation_int64_fix.py)
+        if pd.api.types.is_integer_dtype(result[col]):
+            result[col] = result[col].astype(float)
 
         if by_sector and "sector" in df.columns:
             # Sector-specific winsorization
             for sector in df["sector"].dropna().unique():
                 mask = df["sector"] == sector
-                sector_data = df.loc[mask, col]
+                # Use result[col] (already float) instead of df[col] to avoid dtype issues
+                sector_data = result.loc[mask, col]
 
                 if sector_data.isna().all():
                     continue
@@ -228,12 +268,13 @@ def winsorize_by_sector(
                 result.loc[mask, col] = sector_data.clip(lower=lower_bound, upper=upper_bound)
         else:
             # Global winsorization
-            lower_bound = df[col].quantile(lower_percentile)
-            upper_bound = df[col].quantile(upper_percentile)
+            # Use result[col] (already float) instead of df[col] to avoid dtype issues
+            lower_bound = result[col].quantile(lower_percentile)
+            upper_bound = result[col].quantile(upper_percentile)
 
-            result[col] = df[col].clip(lower=lower_bound, upper=upper_bound)
+            result[col] = result[col].clip(lower=lower_bound, upper=upper_bound)
 
     logger.info(
-        f"Winsorized {len(columns)} columns (percentiles: {lower_percentile:.2%}-{upper_percentile:.2%})"
+        f"Winsorized {len(winsorizable)} columns (percentiles: {lower_percentile:.2%}-{upper_percentile:.2%})"
     )
     return result

@@ -1181,24 +1181,25 @@ def create_sector_heatmap(
             return None
 
         # Create heatmap
-        fig, ax = plt.subplots(figsize=(10, max(6, len(sector_stats) * 0.5)))
-        sns.heatmap(
-            pivot_data.T,
-            annot=True,
-            fmt=".3f",
-            cmap="RdYlGn",
-            center=0,
-            ax=ax,
-            cbar_kws={"label": metric},
-        )
-        ax.set_title(f"{metric} by Sector")
-        ax.set_xlabel("Sector")
-        ax.set_ylabel("Statistic")
-        plt.tight_layout()
+        with plt.style.context('dark_background'):
+            fig, ax = plt.subplots(figsize=(10, max(6, len(sector_stats) * 0.5)))
+            sns.heatmap(
+                pivot_data.T,
+                annot=True,
+                fmt=".3f",
+                cmap="RdYlGn",
+                center=0,
+                ax=ax,
+                cbar_kws={"label": metric},
+            )
+            ax.set_title(f"{metric} by Sector")
+            ax.set_xlabel("Sector")
+            ax.set_ylabel("Statistic")
+            plt.tight_layout()
 
-        if out_path:
-            plt.savefig(out_path, dpi=100, bbox_inches="tight")
-            logging.info("Saved sector heatmap to %s", out_path)
+            if out_path:
+                plt.savefig(out_path, dpi=100, bbox_inches="tight", facecolor=fig.get_facecolor())
+                logging.info("Saved sector heatmap to %s", out_path)
 
         return fig
 
@@ -1246,7 +1247,9 @@ def create_interactive_prediction_plot(df: pd.DataFrame, out_path: Optional[Path
                 "last_price": "Current Price",
                 "predicted_price_target": "Predicted Target Price",
             },
+            template="plotly_dark",
         )
+        fig.update_layout(font_family="Arial")
 
         # Add diagonal line (y=x) for reference
         min_val = float(min(df_plot["last_price"].min(), df_plot["predicted_price_target"].min()))
@@ -1258,7 +1261,7 @@ def create_interactive_prediction_plot(df: pd.DataFrame, out_path: Optional[Path
                     y=[min_val, max_val],
                     mode="lines",
                     name="Perfect Prediction",
-                    line=dict(dash="dash", color="gray"),
+                    line=dict(dash="dash", color="#e74c3c"),  # Danger color
                 )
             )
 
@@ -1310,24 +1313,25 @@ def create_region_sector_heatmap(
             return None
 
         # Create heatmap
-        fig, ax = plt.subplots(figsize=(12, max(8, len(pivot_data) * 0.6)))
-        sns.heatmap(
-            pivot_data,
-            annot=True,
-            fmt=".3f",
-            cmap="RdYlGn",
-            center=0,
-            ax=ax,
-            cbar_kws={"label": metric},
-        )
-        ax.set_title(f"{metric} by Region and Sector")
-        ax.set_xlabel("Region")
-        ax.set_ylabel("Sector")
-        plt.tight_layout()
+        with plt.style.context('dark_background'):
+            fig, ax = plt.subplots(figsize=(12, max(8, len(pivot_data) * 0.6)))
+            sns.heatmap(
+                pivot_data,
+                annot=True,
+                fmt=".3f",
+                cmap="RdYlGn",
+                center=0,
+                ax=ax,
+                cbar_kws={"label": metric},
+            )
+            ax.set_title(f"{metric} by Region and Sector")
+            ax.set_xlabel("Region")
+            ax.set_ylabel("Sector")
+            plt.tight_layout()
 
-        if out_path:
-            plt.savefig(out_path, dpi=100, bbox_inches="tight")
-            logging.info("Saved region-sector heatmap to %s", out_path)
+            if out_path:
+                plt.savefig(out_path, dpi=100, bbox_inches="tight", facecolor=fig.get_facecolor())
+                logging.info("Saved region-sector heatmap to %s", out_path)
 
         return fig
 
@@ -1367,36 +1371,37 @@ def plot_outlier_boxplots(df: pd.DataFrame, columns: list, out_path: Optional[Pa
             return None
 
         # Create figure
-        n_cols = len(data.columns)
-        n_rows = (n_cols + 2) // 3  # 3 plots per row
-        fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
+        with plt.style.context('dark_background'):
+            n_cols = len(data.columns)
+            n_rows = (n_cols + 2) // 3  # 3 plots per row
+            fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
 
-        # Flatten axes for easier iteration
-        if n_cols == 1:
-            axes = [axes]
-        elif n_rows == 1:
-            axes = axes if isinstance(axes, np.ndarray) else [axes]
-        else:
-            axes = axes.flatten()
+            # Flatten axes for easier iteration
+            if n_cols == 1:
+                axes = [axes]
+            elif n_rows == 1:
+                axes = axes if isinstance(axes, np.ndarray) else [axes]
+            else:
+                axes = axes.flatten()
 
-        # Create box plot for each column
-        for idx, col in enumerate(data.columns):
-            ax = axes[idx] if n_cols > 1 else axes[0]
-            data[col].dropna().plot(kind="box", ax=ax)
-            ax.set_title(f"Box Plot: {col}")
-            ax.set_ylabel("Value")
-            ax.grid(True, alpha=0.3)
+            # Create box plot for each column
+            for idx, col in enumerate(data.columns):
+                ax = axes[idx] if n_cols > 1 else axes[0]
+                data[col].dropna().plot(kind="box", ax=ax)
+                ax.set_title(f"Box Plot: {col}")
+                ax.set_ylabel("Value")
+                ax.grid(True, alpha=0.3)
 
-        # Hide unused subplots
-        for idx in range(n_cols, len(axes)):
-            axes[idx].set_visible(False)
+            # Hide unused subplots
+            for idx in range(n_cols, len(axes)):
+                axes[idx].set_visible(False)
 
-        plt.tight_layout()
+            plt.tight_layout()
 
-        if out_path:
-            plt.savefig(out_path, dpi=100, bbox_inches="tight")
-            logging.info("Saved outlier box plots to %s", out_path)
-            plt.close()
+            if out_path:
+                plt.savefig(out_path, dpi=100, bbox_inches="tight", facecolor=fig.get_facecolor())
+                logging.info("Saved outlier box plots to %s", out_path)
+                plt.close()
 
         return fig
 
@@ -1436,41 +1441,42 @@ def plot_outlier_violins(df: pd.DataFrame, columns: list, out_path: Optional[Pat
             return None
 
         # Create figure
-        n_cols = len(data.columns)
-        n_rows = (n_cols + 2) // 3  # 3 plots per row
-        fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
+        with plt.style.context('dark_background'):
+            n_cols = len(data.columns)
+            n_rows = (n_cols + 2) // 3  # 3 plots per row
+            fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
 
-        # Flatten axes for easier iteration
-        if n_cols == 1:
-            axes = [axes]
-        elif n_rows == 1:
-            axes = axes if isinstance(axes, np.ndarray) else [axes]
-        else:
-            axes = axes.flatten()
-
-        # Create violin plot for each column
-        for idx, col in enumerate(data.columns):
-            ax = axes[idx] if n_cols > 1 else axes[0]
-            col_data = data[col].dropna()
-            if len(col_data) >= 2:
-                sns.violinplot(y=col_data, ax=ax)
-                ax.set_title(f"Violin Plot: {col}")
-                ax.set_ylabel("Value")
-                ax.grid(True, alpha=0.3)
+            # Flatten axes for easier iteration
+            if n_cols == 1:
+                axes = [axes]
+            elif n_rows == 1:
+                axes = axes if isinstance(axes, np.ndarray) else [axes]
             else:
-                ax.text(0.5, 0.5, "Insufficient data", ha="center", va="center")
-                ax.set_title(f"Violin Plot: {col}")
+                axes = axes.flatten()
 
-        # Hide unused subplots
-        for idx in range(n_cols, len(axes)):
-            axes[idx].set_visible(False)
+            # Create violin plot for each column
+            for idx, col in enumerate(data.columns):
+                ax = axes[idx] if n_cols > 1 else axes[0]
+                col_data = data[col].dropna()
+                if len(col_data) >= 2:
+                    sns.violinplot(y=col_data, ax=ax)
+                    ax.set_title(f"Violin Plot: {col}")
+                    ax.set_ylabel("Value")
+                    ax.grid(True, alpha=0.3)
+                else:
+                    ax.text(0.5, 0.5, "Insufficient data", ha="center", va="center")
+                    ax.set_title(f"Violin Plot: {col}")
 
-        plt.tight_layout()
+            # Hide unused subplots
+            for idx in range(n_cols, len(axes)):
+                axes[idx].set_visible(False)
 
-        if out_path:
-            plt.savefig(out_path, dpi=100, bbox_inches="tight")
-            logging.info("Saved outlier violin plots to %s", out_path)
-            plt.close()
+            plt.tight_layout()
+
+            if out_path:
+                plt.savefig(out_path, dpi=100, bbox_inches="tight", facecolor=fig.get_facecolor())
+                logging.info("Saved outlier violin plots to %s", out_path)
+                plt.close()
 
         return fig
 
@@ -1535,49 +1541,50 @@ def plot_outlier_scatter(
         z_combined = np.maximum(z_x, z_y)  # Max z-score for coloring
 
         # Create figure
-        fig, ax = plt.subplots(figsize=(10, 8))
+        with plt.style.context('dark_background'):
+            fig, ax = plt.subplots(figsize=(10, 8))
 
-        # Scatter plot with z-score coloring
-        scatter = ax.scatter(
-            x_aligned,
-            y_aligned,
-            c=z_combined,
-            cmap="RdYlGn_r",
-            s=50,
-            alpha=0.6,
-            edgecolors="black",
-            linewidths=0.5,
-        )
-
-        # Add colorbar
-        cbar = plt.colorbar(scatter, ax=ax)
-        cbar.set_label("Max Z-Score", rotation=270, labelpad=20)
-
-        # Highlight outliers
-        outliers = z_combined > z_threshold
-        if outliers.any():
-            ax.scatter(
-                x_aligned[outliers],
-                y_aligned[outliers],
-                s=100,
-                facecolors="none",
-                edgecolors="red",
-                linewidths=2,
-                label=f"Outliers (|z| > {z_threshold})",
+            # Scatter plot with z-score coloring
+            scatter = ax.scatter(
+                x_aligned,
+                y_aligned,
+                c=z_combined,
+                cmap="RdYlGn_r",
+                s=50,
+                alpha=0.6,
+                edgecolors="black",
+                linewidths=0.5,
             )
-            ax.legend()
 
-        ax.set_xlabel(col_x)
-        ax.set_ylabel(col_y)
-        ax.set_title(f"Outlier Scatter Plot: {col_x} vs {col_y}")
-        ax.grid(True, alpha=0.3)
+            # Add colorbar
+            cbar = plt.colorbar(scatter, ax=ax)
+            cbar.set_label("Max Z-Score", rotation=270, labelpad=20)
 
-        plt.tight_layout()
+            # Highlight outliers
+            outliers = z_combined > z_threshold
+            if outliers.any():
+                ax.scatter(
+                    x_aligned[outliers],
+                    y_aligned[outliers],
+                    s=100,
+                    facecolors="none",
+                    edgecolors="#e74c3c",
+                    linewidths=2,
+                    label=f"Outliers (|z| > {z_threshold})",
+                )
+                ax.legend()
 
-        if out_path:
-            plt.savefig(out_path, dpi=100, bbox_inches="tight")
-            logging.info("Saved outlier scatter plot to %s", out_path)
-            plt.close()
+            ax.set_xlabel(col_x)
+            ax.set_ylabel(col_y)
+            ax.set_title(f"Outlier Scatter Plot: {col_x} vs {col_y}")
+            ax.grid(True, alpha=0.3)
+
+            plt.tight_layout()
+
+            if out_path:
+                plt.savefig(out_path, dpi=100, bbox_inches="tight", facecolor=fig.get_facecolor())
+                logging.info("Saved outlier scatter plot to %s", out_path)
+                plt.close()
 
         return fig
 
@@ -4026,35 +4033,36 @@ def create_sector_region_performance_heatmap(
     heatmap_data = metrics_df.pivot(index=sector_col, columns=region_col, values=metric)
 
     # Create heatmap
-    plt.figure(figsize=(10, 8))
+    with plt.style.context('dark_background'):
+        plt.figure(figsize=(10, 8))
 
-    # Choose colormap based on metric (lower is better for mae/rmse/mape, higher is better for r2)
-    if metric == "r2":
-        cmap = "RdYlGn"
-        fmt = ".3f"
-    else:
-        cmap = "RdYlGn_r"
-        fmt = ".2f"
+        # Choose colormap based on metric (lower is better for mae/rmse/mape, higher is better for r2)
+        if metric == "r2":
+            cmap = "RdYlGn"
+            fmt = ".3f"
+        else:
+            cmap = "RdYlGn_r"
+            fmt = ".2f"
 
-    sns.heatmap(
-        heatmap_data,
-        annot=True,
-        fmt=fmt,
-        cmap=cmap,
-        cbar_kws={"label": metric.upper()},
-        linewidths=0.5,
-    )
+        sns.heatmap(
+            heatmap_data,
+            annot=True,
+            fmt=fmt,
+            cmap=cmap,
+            cbar_kws={"label": metric.upper()},
+            linewidths=0.5,
+        )
 
-    plt.title(f"Performance Heatmap: {metric.upper()} by Sector × Region")
-    plt.xlabel("Region")
-    plt.ylabel("Sector")
-    plt.tight_layout()
+        plt.title(f"Performance Heatmap: {metric.upper()} by Sector × Region")
+        plt.xlabel("Region")
+        plt.ylabel("Sector")
+        plt.tight_layout()
 
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(output_path, dpi=100, bbox_inches="tight")
-        plt.close()
+        if output_path:
+            output_path = Path(output_path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(output_path, dpi=100, bbox_inches="tight", facecolor=plt.gcf().get_facecolor())
+            plt.close()
 
 
 # ============================================================================
@@ -4958,7 +4966,9 @@ def create_valuation_scatter_plot(
             opacity=opacity,
             height=height,
             width=width,
+            template="plotly_dark",
         )
+        fig.update_layout(font_family="Arial")
 
         # Customize marker appearance
         fig.update_traces(
@@ -4985,7 +4995,7 @@ def create_valuation_scatter_plot(
                     x=[line_start, line_end],
                     y=[line_start, line_end],
                     mode="lines",
-                    line=dict(dash="dash", color="gray", width=2),
+                    line=dict(dash="dash", color="#e74c3c", width=2),  # Danger color for reference
                     name="Fair Value (y=x)",
                     showlegend=True,
                     hoverinfo="skip",

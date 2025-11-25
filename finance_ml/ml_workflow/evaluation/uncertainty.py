@@ -320,7 +320,10 @@ def plot_interval_coverage(
                 y=interval_width_col,
                 title="Interval Width by Price Bucket",
                 labels={"price_bucket": "Price Bucket", interval_width_col: "Interval Width"},
+                template="plotly_dark",
+                color_discrete_sequence=["#375a7f"],
             )
+            fig.update_layout(font_family="Arial")
 
             width_html_path = output_dir / "interval_width_by_bucket.html"
             fig.write_html(str(width_html_path))
@@ -346,7 +349,10 @@ def plot_interval_coverage(
                 title="Coverage Heatmap: Region vs Sector",
                 color_continuous_scale="RdYlGn",
                 aspect="auto",
+                text_auto=".2%",
+                template="plotly_dark",
             )
+            fig.update_layout(font_family="Arial")
 
             heatmap_html_path = output_dir / "coverage_heatmap_region_sector.html"
             fig.write_html(str(heatmap_html_path))
@@ -420,7 +426,7 @@ def plot_reliability_diagram(
                     y=[0, 1],
                     mode="lines",
                     name="Perfect Calibration",
-                    line=dict(dash="dash", color="gray"),
+                    line=dict(dash="dash", color="#adb5bd"),
                 )
             )
 
@@ -431,7 +437,7 @@ def plot_reliability_diagram(
                     y=[actual_coverage],
                     mode="markers",
                     name="Actual (80% interval)",
-                    marker=dict(size=12, color="blue"),
+                    marker=dict(size=12, color="#375a7f"),
                 )
             )
 
@@ -442,7 +448,9 @@ def plot_reliability_diagram(
                 showlegend=True,
                 width=800,
                 height=600,
+                template="plotly_dark",
             )
+            fig.update_layout(font_family="Arial")
 
             fig.write_html(str(html_path))
             logger.info("Saved reliability diagram to %s", html_path)

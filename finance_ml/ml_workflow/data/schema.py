@@ -156,7 +156,6 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "rel_volume": {"dtype": "float", "role": "feature"},
     "shrs_out": {"dtype": "float", "role": "feature"},
     "shrs_out_1fy": {"dtype": "float", "role": "feature"},
-    "short_int_pct": {"dtype": "float", "role": "feature"},
     # Revenues & Growth
     "total_revenues_fy": {"dtype": "float", "role": "feature"},
     "total_revenues_ltm": {"dtype": "float", "role": "feature"},
@@ -326,6 +325,11 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "selling_general_admin_expenses_total_fy": {"dtype": "float", "role": "feature"},
     "selling_general_admin_expenses_total_1fy": {"dtype": "float", "role": "feature"},
     "selling_general_admin_expenses_total_5yavgfq": {"dtype": "float", "role": "feature"},
+    # SG&A with "and" (correct normalization from "Selling General & Admin Expenses/Total")
+    "selling_general_and_admin_expenses_total_fq": {"dtype": "float", "role": "feature"},
+    "selling_general_and_admin_expenses_total_fy": {"dtype": "float", "role": "feature"},
+    "selling_general_and_admin_expenses_total_1fy": {"dtype": "float", "role": "feature"},
+    "selling_general_and_admin_expenses_total_5yavgfq": {"dtype": "float", "role": "feature"},
     "accounts_receivable_total_fy": {"dtype": "float", "role": "feature"},
     "accounts_receivable_total_1fy": {"dtype": "float", "role": "feature"},
     "accounts_receivable_total_5yavgfq": {"dtype": "float", "role": "feature"},

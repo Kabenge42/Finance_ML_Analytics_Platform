@@ -8,8 +8,29 @@ This module provides a centralized registry of Phase 9.3 feature families
 to enable explicit tracking and analysis in EDA summaries, dashboards,
 and analytics workflows.
 
-UPDATED: Registry synchronized with actual generator outputs from advanced.py
-All feature names verified to match what generator functions actually produce.
+UPDATED: 2025-11-24
+Registry fully synchronized with actual generator outputs from advanced.py.
+- 196 features registered across 16 categories
+- 100% coverage: All generated features are registered
+- All feature names verified to match actual generator outputs
+
+Categories:
+1. Momentum & Technical (27 features)
+2. Valuation Ratios (23 features)
+3. Profitability (12 features)
+4. Quality & Risk (18 features)
+5. Cash Flow (5 features)
+6. Capital Allocation (23 features)
+7. Analyst Sentiment (10 features)
+8. Market Sentiment (5 features)
+9. Leverage & Liquidity (9 features)
+10. Temporal Patterns (16 features)
+11. Composite Scores (5 features)
+12. Growth Metrics (6 features)
+13. Efficiency Ratios (4 features)
+14. Employee Productivity (16 features)
+15. Balance Sheet Dynamics (8 features)
+16. Revenue Forecasting (9 features)
 """
 
 from typing import Dict, List, Optional
@@ -122,6 +143,7 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "capex_volatility",
         "currency_risk_flag",
         "days_since_ex_date",
+        "div_yield_ltm",
         "dividend_aristocrat_flag",
         "dividend_consistency_score",
         "dividend_frequency_encoded",
@@ -172,12 +194,18 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "days_since_reference",
         "days_to_earnings",
         "earnings_report_recency",
+        "ebitda_5yavgfq",
+        "ebitda_fq",
         "fiscal_quarter",
         "fq_vs_5yavg_ebitda",
+        "income_statement_report_date",
+        "last_updated",
         "ltm_vs_5yavg_revenue",
         "month",
+        "next_earnings",
         "quarterly_volatility_score",
         "reporting_lag",
+        "total_revenues_ltm",
         "year",
     ],
     "Composite Scores": [
@@ -186,6 +214,59 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "composite_quality_score",
         "momentum_score",
         "piotroski_f_score",
+    ],
+    "Growth Metrics": [
+        "earnings_growth",
+        "ebitda_growth",
+        "ebitda_growth_yoy",
+        "eps_growth_yoy",
+        "revenue_growth",
+        "revenue_growth_yoy",
+    ],
+    "Efficiency Ratios": [
+        "asset_turnover",
+        "inventory_turnover",
+        "receivables_turnover",
+        "revenue_per_employee",
+    ],
+    "Employee Productivity": [
+        "assets_per_employee",
+        "ebitda_per_employee",
+        "employee_base_scale_flag",
+        "employee_growth_acceleration",
+        "employee_growth_cagr_5y",
+        "employee_growth_qoq",
+        "employee_growth_yoy",
+        "employee_growth_yoy_pct",
+        "hiring_intensity_score",
+        "operating_income_per_employee",
+        "profit_per_employee",
+        "revenue_per_employee_fy",
+        "revenue_per_employee_ltm",
+        "revenue_per_employee_trend",
+        "revenue_per_employee_vs_5y_pct",
+        "workforce_volatility",
+    ],
+    "Balance Sheet Dynamics": [
+        "asset_growth_rate",
+        "balance_sheet_expansion",
+        "current_ratio_trend",
+        "debt_growth_rate",
+        "earnings_retention_rate",
+        "equity_growth_rate",
+        "retained_earnings_growth",
+        "working_capital_ratio",
+    ],
+    "Revenue Forecasting": [
+        "avg_vs_median_bias",
+        "estimate_confidence_flag",
+        "growth_surprise_potential",
+        "revenue_consensus_uncertainty_score",
+        "revenue_estimate_spread_fy1e",
+        "revenue_estimate_spread_ntm",
+        "revenue_growth_acceleration",
+        "revenue_growth_implied_fy1e",
+        "revenue_growth_implied_ntm",
     ],
 }
 
@@ -276,7 +357,12 @@ def get_category_description(category: str) -> str:
         "Analyst Sentiment": "Analyst ratings, consensus strength, target revisions",
         "Market Sentiment": "Market microstructure, liquidity, short interest, sentiment indicators",
         "Leverage & Liquidity": "Debt ratios, coverage ratios, liquidity metrics, financial flexibility",
-        "Temporal Patterns": "Seasonality, trend consistency, cyclicality indicators",
+        "Temporal Patterns": "Seasonality, trend consistency, cyclicality indicators, reporting dates",
         "Composite Scores": "Multi-factor composite scores combining quality, growth, value, momentum",
+        "Growth Metrics": "Revenue, earnings, and EBITDA growth rates (YoY and multi-period)",
+        "Efficiency Ratios": "Asset turnover, inventory turnover, receivables efficiency, revenue per employee",
+        "Employee Productivity": "Workforce metrics, employee growth, revenue/profit per employee, hiring intensity",
+        "Balance Sheet Dynamics": "Asset/equity/debt growth rates, balance sheet expansion, retained earnings trends",
+        "Revenue Forecasting": "Analyst estimate spreads, consensus uncertainty, implied growth, forecast reliability",
     }
     return descriptions.get(category, "")

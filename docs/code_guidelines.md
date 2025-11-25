@@ -1,7 +1,7 @@
 # Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.5  
-**Last Updated:** 2025-11-23  
+**Version:** 1.7  
+**Last Updated:** 2025-11-25  
 **Package Version:** 0.8.3  
 **Model Version:** v9_9
 
@@ -9,15 +9,30 @@ These guidelines codify conventions for the Finance ML Analytics Platform, cover
 architecture, function signatures, column naming, and best practices. They align with the project's 8-phase ML
 workflow (Phase 9.1-9.8) and business objectives.
 
-**Recent Updates (v1.5):**
+**Recent Updates (v1.7):**
 
+- **NEW:** Added Section 8.5 Preprocessing Stage Naming and Semantic Column Classification (2025-11-25)
+    - **Section 8.5.1**: Column Semantic Classification — Five semantic categories (price, market value, ratio,
+      percentage, count)
+    - **Section 8.5.2**: Price Column Preservation Policy — Price columns must never be winsorized, scaled, or
+      transformed in place
+    - **Section 8.5.3**: Alternative Transformations for Skewed Data — Use log-transforms instead of winsorization for
+      market value columns
+    - CI/CD validation via 36 tests in test_column_semantics.py, test_selective_winsorization.py,
+      test_log_transforms.py, test_selective_scaling.py
+    - New modules: column_semantics.py (324 lines), transforms.py (214 lines)
+    - Updated functions: outliers.py (winsorize_by_sector), scaling.py (scale_features) with exclude_price_columns=True
+      defaults
+    - **Business Impact**: Protects core valuation metric `(Predicted_Target - Last_Price) / Last_Price` from corruption
+
+**Previous Updates (v1.6):**
+
+- Added Section 5.5 Column Normalization Consistency Policy (2025-11-24)
 - Updated technology stack from pyproject.toml (Python 3.12-3.14, setuptools build system)
 - Clarified CLI entry points: finance-ml, finance-ml-analyze, finance-ml-validate
 - Updated package architecture with 14 ml_workflow submodules
 - Confirmed Schema v1.3 with 318 columns (262 original + 48 Phase 9.3 + 8 additional)
 - Added Python Script/Module Review Checklist (Section 6.2) with AST-based static analysis
-- Updated code examples to remove unresolved reference errors
-- Aligned with CHANGELOG.md Phase 9.4-9.8 integration and recent enhancements
 
 ---
 
@@ -30,14 +45,16 @@ workflow (Phase 9.1-9.8) and business objectives.
 5. [Column Naming and Mapping](#5-column-naming-and-mapping)
 6. [Code Review Checklist](#6-code-review-checklist)
 7. [Standardized Function Signatures](#7-standardized-function-signatures)
-8. [Column Schema and DataFrame Conventions](#8-column-schema-and-dataframe-conventions)
-9. [Data Split and Leakage Policy](#9-data-split-and-leakage-policy)
-10. [Standardized Predictions Schema](#10-standardized-predictions-schema)
-11. [Sector Metrics and Calibration](#11-sector-metrics-and-calibration)
-12. [Outlier Safety Rails Policy](#12-outlier-safety-rails-policy)
-13. [Uncertainty and Prediction Intervals](#13-uncertainty-and-prediction-intervals)
-14. [Jupyter Notebook Guidelines](#14-jupyter-notebook-guidelines)
-15. [Model Optimization and Performance](#15-model-optimization-and-performance)
+8. [Notebook Best Practices and TDD Conventions](#8-notebook-best-practices-and-tdd-conventions)
+9. [Column Schema and DataFrame Conventions](#9-column-schema-and-dataframe-conventions)
+10. [Data Split and Leakage Policy](#10-data-split-and-leakage-policy)
+11. [Standardized Predictions Schema](#11-standardized-predictions-schema)
+12. [Sector Metrics and Calibration](#12-sector-metrics-and-calibration)
+13. [Outlier Safety Rails Policy](#13-outlier-safety-rails-policy)
+14. [Uncertainty and Prediction Intervals](#14-uncertainty-and-prediction-intervals)
+15. [Jupyter Notebook Guidelines](#15-jupyter-notebook-guidelines)
+16. [Model Optimization and Performance](#16-model-optimization-and-performance)
+17. [Styles Guides for Visual Elements](#17-styles-guides-for-visual-elements)
 
 ---
 
@@ -501,6 +518,95 @@ Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_INPU
 - **Cash Flow**: fcf_yield, ocf_to_sales, capex_intensity, fcf_growth
 - **Growth**: revenue_growth_yoy, earnings_growth_yoy, sales_cagr_3y, ebitda_growth
 
+### 5.5 Column Normalization Consistency Policy
+
+**Version:** 1.6 (added 2025-11-24)  
+**Status:** ENFORCED via CI/CD tests
+
+**Canonical Normalization Function:**
+
+All column name normalization MUST use `normalize_column_name()` from `finance_ml.ml_workflow.data.schema`:
+
+```python
+from finance_ml.ml_workflow.data.schema import normalize_column_name
+
+# Correct usage
+normalized = normalize_column_name("# Strong Sell Ratings")  # → "num_strong_sell_ratings"
+normalized = normalize_column_name("Selling General & Admin Expenses/Total (FQ)")  # → "selling_general_and_admin_expenses_total_fq"
+normalized = normalize_column_name("1-Day %")  # → "1_day_pct"
+```
+
+**Normalization Rules:**
+
+The canonical function applies these transformations in order:
+
+1. `#` → `num` (analyst rating counts)
+2. `%` → `pct` (percentages)
+3. `&` → `and` (conjunctions)
+4. `/` → `_` (ratios, divisions)
+5. `(`, `)` → removed (parentheses)
+6. `-` → `_` (hyphens, negative indicators)
+7. Multiple spaces → single `_`
+8. Multiple underscores → single `_`
+9. Leading/trailing `_` → stripped
+10. Lowercase conversion
+
+**Enforcement Rules:**
+
+1. **ALL** column name normalization MUST use `normalize_column_name()` from schema.py
+2. **NO** alternative normalization functions allowed in data loading or preprocessing
+3. All `COLUMN_SCHEMA` keys MUST be producible via `normalize_column_name()` from SQL schema column names
+4. Test coverage REQUIRED: Any PR touching normalization must include round-trip tests
+5. CI pipeline runs `test_schema_normalization.py` to prevent drift
+
+**Examples of Correct vs. Incorrect:**
+
+```python
+# ✅ CORRECT: Use canonical function
+from finance_ml.ml_workflow.data.schema import normalize_column_name
+df.columns = [normalize_column_name(col) for col in df.columns]
+
+# ❌ INCORRECT: Custom regex normalization
+df.columns = df.columns.str.replace(r"[^0-9a-zA-Z]+", "_", regex=True).str.strip("_").str.lower()
+# This produces "strong_sell_ratings" instead of "num_strong_sell_ratings"
+
+# ❌ INCORRECT: Manual string operations
+df.columns = [col.lower().replace(" ", "_").replace("#", "") for col in df.columns]
+# Missing semantic transformations (# → num, & → and, etc.)
+```
+
+**Critical Columns Affected:**
+
+- **Analyst Ratings** (5 columns): Must have `num_` prefix
+    - `# Strong Sell Ratings` → `num_strong_sell_ratings`
+    - `# Strong Buys Ratings` → `num_strong_buys_ratings`
+    - `# Hold Ratings` → `num_hold_ratings`
+    - `# Buys Ratings` → `num_buys_ratings`
+    - `# Sell Ratings` → `num_sell_ratings`
+
+- **SG&A Expenses** (4 columns): Must include `and` connector
+    - `Selling General & Admin Expenses/Total (FQ)` → `selling_general_and_admin_expenses_total_fq`
+    - (Similar for FY, -1FY, 5YAVGFQ variants)
+
+- **Percentage Columns**: Must use `pct` suffix
+    - `1-Day %` → `1_day_pct`
+    - `Short Int. (%)` → `short_int_pct` (deprecated, removed from schema)
+
+**Validation:**
+
+CI/CD enforces normalization consistency via:
+
+- `tests/test_schema_normalization.py` - 16 tests covering normalization rules and round-trip validation
+- `tests/test_schema_completeness.py` - 17 tests validating COLUMN_SCHEMA integrity
+- `tests/test_data_loading_normalization.py` - 7 integration tests for CSV/DB loading
+
+**References:**
+
+- Schema Registry: `finance_ml/ml_workflow/data/schema.py` (COLUMN_SCHEMA, normalize_column_name)
+- Data Loading: `finance_ml/ml_workflow/preprocessing/data.py` (normalize_columns, load_from_csv)
+- Test Suite: `tests/test_schema_normalization.py`, `tests/test_data_loading_normalization.py`
+- Documentation: `docs/improvement_plan/data_preprocessing improvement_plan.md` (Section 0, TDD plan)
+
 ---
 
 ## 6. Code Review Checklist
@@ -522,6 +628,8 @@ Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_INPU
 - [ ] Missing value handling uses 6-step imputation strategy
 - [ ] Outliers detected and handled (winsorization, clipping)
 - [ ] Data types validated against schema: `validate_dtypes_against_schema()`
+- [ ] Critical date columns included: `last_updated`, `income_statement_report_date`, `next_earnings`,
+  `dividend_record_*`
 
 **Feature Engineering:**
 
@@ -1273,6 +1381,189 @@ includes:
 
 ---
 
+### 8.5 Preprocessing Stage Naming and Semantic Column Classification
+
+This section establishes formal standards for preprocessing stages 4-8 (winsorization, imputation, scaling, feature
+engineering) to ensure business-critical columns (prices, valuations) are handled correctly. All policies are validated
+via `tests/test_column_semantics.py`, `tests/test_selective_winsorization.py`, `tests/test_log_transforms.py`, and
+`tests/test_selective_scaling.py` (36 tests passing).
+
+#### 8.5.1 Column Semantic Classification
+
+**Policy**: All preprocessing functions must respect semantic column types defined in
+`finance_ml/ml_workflow/preprocessing/column_semantics.py`.
+
+**Five Semantic Categories**:
+
+1. **Price Columns** (`PRICE_COLUMNS`): Never transform, clip, or scale
+    - `last_price`, `price_target`, `price_target_median`, `price_target_ytd_ago`, `price_target_12m_ago`
+
+2. **Market Value Columns** (`MARKET_VALUE_COLUMNS`): Apply log-transforms instead of winsorization
+    - `market_cap`, `ev`, `total_assets`, `revenue`, `total_debt`, `ebitda`, `operating_income`, `net_income`,
+      `cash_and_equivalents`
+
+3. **Ratio Columns** (`RATIO_COLUMNS`): Pre-normalized, exclude from winsorization
+    - `p_e`, `p_b`, `p_s`, `ev_ebitda`, `ev_sales`, `roe`, `roa`, `roic`, `debt_equity`, `current_ratio`, `quick_ratio`
+
+4. **Percentage Columns** (`PERCENTAGE_COLUMNS`): Bounded [0, 100], exclude from winsorization
+    - `gross_margin`, `operating_margin`, `net_margin`, `ebitda_margin`, `revenue_growth_yoy`, `volatility_20d`,
+      `volatility_60d`
+
+5. **Count Columns** (`COUNT_COLUMNS`): Discrete integers, inappropriate for continuous scaling
+    - `num_analysts`, `num_employees`, `num_strong_buy_ratings`, `num_buy_ratings`, `num_hold_ratings`
+
+**Helper Functions**:
+
+```python
+from finance_ml.ml_workflow.preprocessing.column_semantics import (
+    classify_columns,           # Classify all columns by semantic type
+    get_winsorizable_columns,   # Get columns safe for winsorization
+    get_log_transform_columns,  # Get columns requiring log-transform
+    get_scalable_columns,       # Get columns safe for scaling
+)
+
+# Example: Semantic-aware preprocessing
+winsorizable = get_winsorizable_columns(df.columns.tolist())
+df_winsorized = winsorize_by_sector(df, columns=winsorizable, exclude_price_columns=True)
+```
+
+**Rationale**: The core business metric `(Predicted_Target - Last_Price) / Last_Price` requires original price scale.
+Winsorizing or scaling price columns destroys interpretability and invalidates valuation analysis.
+
+#### 8.5.2 Price Column Preservation Policy
+
+**Policy**: Price columns (`last_price`, `price_target`, `price_target_median`) must **NEVER** be:
+
+1. **Winsorized** — Capping extreme prices corrupts valid high-growth stock valuations
+2. **Scaled** (StandardScaler, RobustScaler, MinMaxScaler) — Destroys dollar interpretability
+3. **Log-transformed** in place — Only create new columns (`log_market_cap`) while preserving originals
+4. **Clipped or capped** — Valid extreme values must be preserved
+
+**Enforcement**:
+
+All preprocessing functions default to `exclude_price_columns=True`:
+
+```python
+# ✅ CORRECT: Price columns excluded by default
+df_winsorized = winsorize_by_sector(
+    df,
+    columns=numeric_cols,
+    exclude_price_columns=True,  # Default: True
+    exclude_ratio_columns=True    # Default: True
+)
+
+df_scaled = scale_features(
+    df,
+    scaler_type='robust',
+    exclude_price_columns=True    # Default: True
+)
+
+# ❌ INCORRECT: Treating all numeric columns uniformly
+df_corrupted = winsorize_by_sector(df)  # Corrupts price columns if not excluded!
+df_corrupted = scale_features(df)        # Destroys price interpretability!
+```
+
+**Validation**:
+
+```python
+# Verify price columns unchanged after preprocessing
+price_cols = ['last_price', 'price_target', 'price_target_median']
+for col in price_cols:
+    if col in df_processed.columns and col in df_original.columns:
+        assert df_processed[col].equals(df_original[col]), f"{col} must not be modified"
+```
+
+**Rationale**: The core business objective (stock valuation and mispricing detection) depends on comparing predicted
+targets to actual prices in original dollar units. Any transformation of price columns invalidates the fundamental
+metric.
+
+#### 8.5.3 Alternative Transformations for Skewed Data
+
+**Policy**: Use log-transforms instead of winsorization for highly skewed market value columns (market_cap, revenue,
+total_assets) to preserve information about extreme but valid values (e.g., mega-cap stocks).
+
+**Log-Transform Methods**:
+
+```python
+from finance_ml.ml_workflow.preprocessing.transforms import apply_log_transforms
+
+# Method 1: log1p for non-negative values (handles zeros)
+df = apply_log_transforms(df, method='log1p')
+# Creates: log_market_cap, log_revenue, log_total_assets, etc.
+# Formula: log(1 + x)
+
+# Method 2: signed_log for values that can be negative (debt, income)
+df = apply_log_transforms(df, method='signed_log')
+# Creates: log_market_cap, log_revenue, log_net_income, etc.
+# Formula: sign(x) * log(1 + |x|)
+```
+
+**Benefits**:
+
+1. **Reduces skewness** by ≥50% while preserving rank order
+2. **Preserves information** about extreme values (mega-cap stocks, high-revenue companies)
+3. **Handles zeros and negatives** appropriately
+4. **Reversible** via `inverse_log_transform()` for interpretability
+
+**Recommended Pipeline** (Stage 4):
+
+```python
+# Step 1: Apply log-transforms to skewed market value columns
+from finance_ml.ml_workflow.preprocessing.transforms import apply_log_transforms
+from finance_ml.ml_workflow.preprocessing.column_semantics import get_winsorizable_columns
+
+all_stocks_log_transformed = apply_log_transforms(
+    all_stocks_typed,
+    method='signed_log'  # Handles negative values (debt, income)
+)
+
+# Step 2: Selective winsorization (excludes prices, ratios, percentages)
+winsorizable_cols = get_winsorizable_columns(all_stocks_log_transformed.columns.tolist())
+all_stocks_winsorized = winsorize_by_sector(
+    all_stocks_log_transformed,
+    columns=winsorizable_cols,
+    lower_percentile=WINSORIZE_LOWER,
+    upper_percentile=WINSORIZE_UPPER,
+    by_sector=True,
+    exclude_price_columns=True,
+    exclude_ratio_columns=True
+)
+
+print(f"✓ Stage 4 Complete: Log-transformed {len([c for c in all_stocks_winsorized.columns if c.startswith('log_')])} columns")
+print(f"✓ Winsorized {len(winsorizable_cols)} columns (excluded price/ratio columns)")
+```
+
+**Example: Comparing Approaches**:
+
+```python
+# ❌ BAD: Winsorization loses information
+df['market_cap_winsorized'] = df['market_cap'].clip(lower=p1, upper=p99)
+# Result: Apple ($3T) and Nvidia ($2T) capped at p99 (~$500B), losing $2.5T information
+
+# ✅ GOOD: Log-transform preserves information
+df['log_market_cap'] = np.sign(df['market_cap']) * np.log1p(np.abs(df['market_cap']))
+# Result: Apple (28.7) and Nvidia (28.3) maintain relative ordering and magnitude information
+```
+
+**Validation**:
+
+Test coverage for log-transforms (`tests/test_log_transforms.py`, 9 tests):
+
+- Skewness reduction (≥50% improvement)
+- Zero and negative value handling
+- Null preservation
+- Reversibility via `inverse_log_transform()`
+
+**References**:
+
+- Implementation: `finance_ml/ml_workflow/preprocessing/transforms.py` (214 lines)
+- Column semantics: `finance_ml/ml_workflow/preprocessing/column_semantics.py` (324 lines)
+- Updated functions: `outliers.py` (winsorize_by_sector), `scaling.py` (scale_features)
+- Test suite: 36 tests passing (column_semantics, selective_winsorization, log_transforms, selective_scaling)
+- Improvement plan: `docs/improvement_plan/preprocessing_stages_4-8_improvement_plan.md`
+
+---
+
 ## 9. Column Schema and DataFrame Conventions
 
 ### 10.1 Canonical Column Names
@@ -1737,4 +2028,73 @@ stacking_model.fit(X_train, y_train)
 **Package Version:** 0.8.3  
 **Model Version:** v9_9  
 **Synchronized with:** README.md v0.8.3, CHANGELOG.md v0.8.3, pyproject.toml v0.8.3
+
+---
+
+## 17. Styles Guides for Visual Elements
+
+### 17.1 Plot Formatting and Labeling
+
+Standardize all visualizations (Plotly, Matplotlib, Seaborn) to ensure consistency across dashboards and reports.
+
+**General Principles:**
+
+- **Theme:** Use Dark Mode compatible themes (`template="plotly_dark"` for Plotly).
+- **Font:** Use a standard sans-serif font (e.g., Arial, Roboto) for legibility.
+- **Titles:** Clear, descriptive titles with consistent sizing (H3 equivalent).
+- **Labels:** Always label axes with units (e.g., "Price ($)", "Market Cap (Billion $)", "Return (%)").
+- **Tooltips:** Include detailed hover information (Ticker, Name, Sector, Metric Value).
+
+**Color Palette:**
+
+- **Primary:** `#375a7f` (Blue/Primary)
+- **Success:** `#00bc8c` (Green/Positive)
+- **Warning:** `#f39c12` (Orange/Warning)
+- **Danger:** `#e74c3c` (Red/Negative/Error)
+- **Info:** `#3498db` (Light Blue/Info)
+- **Neutral:** `#adb5bd` (Gray)
+
+**Heatmaps and Conditional Formatting:**
+
+- Use Diverging color scales for metrics centered around zero (e.g., `RdYlGn` for correlation or errors).
+- Use Sequential color scales for magnitude (e.g., `Viridis` or `Blues`).
+- Always include value annotations (`text_auto=True` or formatted text) for readability.
+- Ensure sufficient contrast between text and background.
+
+### 17.2 Dashboard Layout and Structure
+
+**Dashboards (Streamlit & Dash):**
+
+- **Header:** Clear application title and status indicators.
+- **Navigation:** Logical tab-based structure grouped by business function (Overview, Analysis, Governance, Portfolio).
+- **Filters:**
+    - Use a dedicated sidebar or top filter bar.
+    - Use distinct styles for active vs. inactive filters.
+    - Enable multi-select for categorical fields (Sector, Region).
+    - Implement "Dark Mode" styling for dropdowns and inputs (`custom.css` for Dash).
+- **KPI Cards:** Use summary cards at the top for high-level metrics.
+- **Responsiveness:** Ensure plots resize dynamically (`width='stretch'` in Streamlit, Flexbox in Dash).
+
+### 17.3 Table Structure
+
+- **Headers:** Bold, sentence case.
+- **Numbers:**
+    - Currency: `$1,234.56`
+    - Percentages: `12.34%`
+    - Decimals: limit to 2-4 decimal places.
+- **Conditional Formatting:** Highlight outliers or significant values (e.g., top/bottom 10%).
+- **Pagination:** Use pagination for tables with >20 rows.
+
+### 17.4 Font Style
+
+- **Family:** System sans-serif preference (Segoe UI, Roboto, Helvetica Neue, Arial).
+- **Size:**
+    - H1: 2rem (32px)
+    - H2: 1.5rem (24px)
+    - H3: 1.25rem (20px)
+    - Body: 1rem (16px)
+    - Caption/Label: 0.875rem (14px)
+- **Color:**
+    - Primary Text: `#ffffff` (on dark), `#333333` (on light)
+    - Secondary Text: `#aaaaaa` (on dark), `#666666` (on light)
 

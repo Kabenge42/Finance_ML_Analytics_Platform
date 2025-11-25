@@ -217,21 +217,21 @@ if uploaded_file:
                     delta={"reference": 0},
                     gauge={
                         "axis": {"range": [-50, 50]},
-                        "bar": {"color": "darkblue"},
+                        "bar": {"color": "#375a7f"},  # Primary
                         "steps": [
-                            {"range": [-50, -10], "color": "lightcoral"},
-                            {"range": [-10, 10], "color": "lightgray"},
-                            {"range": [10, 50], "color": "lightgreen"},
+                            {"range": [-50, -10], "color": "#e74c3c"},  # Danger
+                            {"range": [-10, 10], "color": "#adb5bd"},    # Neutral
+                            {"range": [10, 50], "color": "#00bc8c"},     # Success
                         ],
                         "threshold": {
-                            "line": {"color": "red", "width": 4},
+                            "line": {"color": "#e74c3c", "width": 4},  # Danger
                             "thickness": 0.75,
                             "value": avg_mispricing * 100,
                         },
                     },
                 )
             )
-            fig_gauge.update_layout(height=300)
+            fig_gauge.update_layout(height=300, template="plotly_dark", font_family="Arial")
             st.plotly_chart(fig_gauge, width='stretch')
 
         # Interactive scatter plot
@@ -245,7 +245,9 @@ if uploaded_file:
                 hover_data=["ticker"] if "ticker" in df.columns else None,
                 title="Mispricing Score vs Market Cap",
                 labels={"mispricing_score": "Mispricing Score", "market_cap": "Market Cap"},
+                template="plotly_dark",
             )
+            fig.update_layout(font_family="Arial")
             st.plotly_chart(fig, width='stretch')
 
     with tab2:
@@ -301,7 +303,10 @@ if uploaded_file:
                 text_auto=".2f",
                 aspect="auto",
                 title="Average Mispricing Score by Sector and Region",
+                template="plotly_dark",
+                color_continuous_scale="RdYlGn",
             )
+            fig.update_layout(font_family="Arial")
             st.plotly_chart(fig, width='stretch')
 
         st.divider()
@@ -368,7 +373,10 @@ if uploaded_file:
             y="Column",
             orientation="h",
             title="Top 20 Columns by Missing Data %",
+            template="plotly_dark",
+            color_discrete_sequence=["#375a7f"],  # Primary
         )
+        fig.update_layout(font_family="Arial")
         st.plotly_chart(fig, width='stretch')
 
         st.divider()
@@ -399,7 +407,14 @@ if uploaded_file:
             col3.metric("RMSE", f"{(pred_error**2).mean()**0.5:.2%}")
 
             # Error distribution
-            fig = px.histogram(pred_error, nbins=50, title="Prediction Error Distribution")
+            fig = px.histogram(
+                pred_error, 
+                nbins=50, 
+                title="Prediction Error Distribution",
+                template="plotly_dark",
+                color_discrete_sequence=["#375a7f"],  # Primary
+            )
+            fig.update_layout(font_family="Arial")
             st.plotly_chart(fig, width='stretch')
 
             # Residual plot using graph_objects for more control
@@ -421,12 +436,14 @@ if uploaded_file:
                     hovertemplate="<b>%{text}</b><br>Target: %{x}<br>Residual: %{y}<extra></extra>",
                 )
             )
-            fig.add_hline(y=0, line_dash="dash", line_color="red", annotation_text="Zero Error")
+            fig.add_hline(y=0, line_dash="dash", line_color="#e74c3c", annotation_text="Zero Error")  # Danger
             fig.update_layout(
                 title="Residual Plot: Predicted vs Actual Target",
                 xaxis_title="Actual Target",
                 yaxis_title="Residual",
                 hovermode="closest",
+                template="plotly_dark",
+                font_family="Arial",
             )
             st.plotly_chart(fig, width='stretch')
 
@@ -440,9 +457,12 @@ if uploaded_file:
                     nbins=50,
                     title="Distribution of Model-Analyst Disagreement",
                     labels={"model_analyst_diff_pct": "Difference (%)"},
+                    template="plotly_dark",
+                    color_discrete_sequence=["#375a7f"],  # Primary
                 )
+                disagreement_fig.update_layout(font_family="Arial")
                 disagreement_fig.add_vline(
-                    x=0, line_dash="dash", line_color="red", annotation_text="Perfect Agreement"
+                    x=0, line_dash="dash", line_color="#e74c3c", annotation_text="Perfect Agreement"  # Danger
                 )
                 st.plotly_chart(disagreement_fig, width='stretch')
 
@@ -481,8 +501,10 @@ if uploaded_file:
                     error_y="std",
                     title="Mean Prediction Error by Sector (with Std Dev)",
                     labels={"mean": "Mean Error %", "sector": "Sector"},
+                    template="plotly_dark",
+                    color_discrete_sequence=["#375a7f"],  # Primary
                 )
-                fig.update_layout(xaxis_tickangle=-45)
+                fig.update_layout(xaxis_tickangle=-45, font_family="Arial")
                 st.plotly_chart(fig, width='stretch')
 
                 st.dataframe(sector_errors, width='stretch')

@@ -136,7 +136,7 @@ def _create_portfolio_composition_pie(weights: pd.Series, title: str = "Portfoli
         textfont_size=textfont_size,
         hole=hole_size,
         pull=pull_values,
-        marker=dict(line=dict(color='white', width=2)),
+        marker=dict(line=dict(color='#303030', width=2)),  # Dark border
         hovertemplate="<b>%{label}</b><br>Weight: %{value:.2%}<br>Value: %{value:.4f}<extra></extra>"
     )])
     
@@ -159,7 +159,8 @@ def _create_portfolio_composition_pie(weights: pd.Series, title: str = "Portfoli
             x=1.02,
             font=dict(size=textfont_size)
         ),
-        margin=dict(l=20, r=200, t=80, b=20)
+        margin=dict(l=20, r=200, t=80, b=20),
+        template="plotly_dark"
     )
     
     return fig
@@ -173,7 +174,7 @@ def _create_returns_distribution_histogram(mu: pd.Series) -> "go.Figure":
     fig = go.Figure(data=[go.Histogram(
         x=mu.values,
         nbinsx=30,
-        marker=dict(color='steelblue', line=dict(color='white', width=1)),
+        marker=dict(color='#375a7f', line=dict(color='#303030', width=1)),  # Primary
         hovertemplate="Return: %{x:.2%}<br>Count: %{y}<extra></extra>"
     )])
     
@@ -184,7 +185,7 @@ def _create_returns_distribution_histogram(mu: pd.Series) -> "go.Figure":
         width=900,
         height=600,
         showlegend=False,
-        template="plotly_white"
+        template="plotly_dark"
     )
     
     return fig
@@ -209,7 +210,7 @@ def _create_correlation_heatmap(cov: np.ndarray, asset_names: List[str]) -> "go.
         z=corr,
         x=asset_names,
         y=asset_names,
-        colorscale='RdBu',
+        colorscale='RdYlGn',
         zmid=0,
         zmin=-1,
         zmax=1,
@@ -221,7 +222,7 @@ def _create_correlation_heatmap(cov: np.ndarray, asset_names: List[str]) -> "go.
         width=1000,
         height=900,
         xaxis=dict(tickangle=-45),
-        template="plotly_white"
+        template="plotly_dark"
     )
     
     return fig
@@ -241,7 +242,7 @@ def _create_efficient_frontier_chart(returns: List[float], risks: List[float],
         y=returns,
         mode='lines+markers',
         name='Efficient Frontier',
-        line=dict(color='steelblue', width=3),
+        line=dict(color='#375a7f', width=3),  # Primary
         marker=dict(size=6),
         hovertemplate="Risk: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>"
     ))
@@ -253,7 +254,7 @@ def _create_efficient_frontier_chart(returns: List[float], risks: List[float],
             y=[returns[max_sharpe_idx]],
             mode='markers',
             name='Max Sharpe',
-            marker=dict(size=15, color='red', symbol='star'),
+            marker=dict(size=15, color='#e74c3c', symbol='star'),  # Danger/Highlight
             hovertemplate="Max Sharpe<br>Risk: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>"
         ))
     
@@ -263,7 +264,7 @@ def _create_efficient_frontier_chart(returns: List[float], risks: List[float],
         yaxis_title="Portfolio Return",
         width=900,
         height=600,
-        template="plotly_white"
+        template="plotly_dark"
     )
     
     return fig
@@ -281,9 +282,9 @@ def _create_backtest_performance_chart(dates: pd.DatetimeIndex, cumulative_retur
         y=cumulative_returns.values,
         mode='lines',
         name='Portfolio',
-        line=dict(color='steelblue', width=2),
+        line=dict(color='#375a7f', width=2),  # Primary
         fill='tozeroy',
-        fillcolor='rgba(70, 130, 180, 0.2)',
+        fillcolor='rgba(55, 90, 127, 0.2)',  # Primary with opacity
         hovertemplate="Date: %{x}<br>Cumulative Return: %{y:.2%}<extra></extra>"
     ))
     
@@ -293,7 +294,7 @@ def _create_backtest_performance_chart(dates: pd.DatetimeIndex, cumulative_retur
         yaxis_title="Cumulative Return",
         width=1000,
         height=600,
-        template="plotly_white",
+        template="plotly_dark",
         hovermode='x unified'
     )
     
@@ -310,7 +311,7 @@ def _create_attribution_bar_chart(tickers: List[str], contributions: List[float]
     df = df.sort_values('contribution', ascending=True)
     
     # Color coding: green for positive, red for negative
-    colors = ['green' if c >= 0 else 'red' for c in df['contribution']]
+    colors = ['#00bc8c' if c >= 0 else '#e74c3c' for c in df['contribution']]  # Success/Danger
     
     fig = go.Figure(data=[go.Bar(
         y=df['ticker'],
@@ -326,7 +327,7 @@ def _create_attribution_bar_chart(tickers: List[str], contributions: List[float]
         yaxis_title="Asset",
         width=900,
         height=max(500, len(tickers) * 20),  # Dynamic height
-        template="plotly_white",
+        template="plotly_dark",
         showlegend=False
     )
     
@@ -348,9 +349,9 @@ def _create_risk_decomposition_waterfall(components: Dict[str, float]) -> "go.Fi
         x=labels,
         y=values,
         connector={"line": {"color": "rgb(63, 63, 63)"}},
-        decreasing={"marker": {"color": "red"}},
-        increasing={"marker": {"color": "green"}},
-        totals={"marker": {"color": "steelblue"}},
+        decreasing={"marker": {"color": "#e74c3c"}},  # Danger
+        increasing={"marker": {"color": "#00bc8c"}},  # Success
+        totals={"marker": {"color": "#375a7f"}},  # Primary
         hovertemplate="%{x}<br>Contribution: %{y:.4f}<extra></extra>"
     ))
     
@@ -360,7 +361,7 @@ def _create_risk_decomposition_waterfall(components: Dict[str, float]) -> "go.Fi
         yaxis_title="Risk Contribution",
         width=1000,
         height=600,
-        template="plotly_white"
+        template="plotly_dark"
     )
     
     return fig

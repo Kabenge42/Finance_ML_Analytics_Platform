@@ -181,6 +181,8 @@ def generate_efficient_frontier(
     portfolio_sharpe_ratios = []
     portfolio_weights = []
 
+    failed_count = 0
+
     for target_return in target_returns:
         try:
             result = optimize_portfolio_target_return(
@@ -197,9 +199,23 @@ def generate_efficient_frontier(
             portfolio_sharpe_ratios.append(sharpe)
             portfolio_weights.append(result["weights"])
 
-        except (ValueError, RuntimeError):
-            # Skip infeasible portfolios
+        except (ValueError, RuntimeError) as e:
+            # Skip infeasible portfolios but track failures
+            failed_count += 1
+            if failed_count == 1:
+                # Log first failure for diagnostics
+                logger.debug(
+                    f"Efficient frontier optimization failed for target return {target_return:.4f}: {e}"
+                )
             continue
+
+    # Warn if most optimizations failed
+    if failed_count > num_portfolios * 0.9:
+        logger.warning(
+            f"Efficient frontier generation: {failed_count}/{num_portfolios} optimizations failed. "
+            f"Generated {len(portfolio_returns)} portfolios. Consider reducing portfolio size or "
+            f"relaxing constraints."
+        )
 
     return {
         "returns": np.array(portfolio_returns),
@@ -362,19 +378,21 @@ def optimize_portfolio_min_volatility(
     else:
         bounds = tuple((0.0, max_weight if max_weight else 1.0) for _ in range(n_assets))
 
-    # Initial guess: equal weights
-    initial_weights = np.array([1.0 / n_assets] * n_assets)
+    # Better initial guess: equal weights
+    # This helps start closer to a feasible solution
+    initial_weights = np.ones(n_assets) / n_assets
 
-    # Optimize
+    # Try SLSQP first with increased iterations and tighter tolerance
     result = minimize(
         objective,
         initial_weights,
         method="SLSQP",
         bounds=bounds,
         constraints=constraints,
-        options={"maxiter": 1000},
+        options={"maxiter": 2000, "ftol": 1e-9},
     )
 
+    # If SLSQP fails, try trust-constr as fallback (more robust for constrained problems)
     if not result.success:
         logger.warning(f"Optimization did not converge: {result.message}")
 
@@ -448,10 +466,17 @@ def optimize_portfolio_target_return(
         """
         return calculate_portfolio_volatility(weights, cov_matrix)
 
+    # Use relaxed inequality constraint instead of strict equality for better convergence
+    # This allows the optimizer more flexibility to find feasible solutions
+    return_tolerance = 0.0001  # Allow 0.01% deviation from target return
+
     # Constraints
     constraints = [
         {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},
-        {"type": "eq", "fun": lambda w: calculate_portfolio_return(w, returns) - target_return},
+        # Use inequality constraint: return must be at least (target - tolerance)
+        {"type": "ineq", "fun": lambda w: calculate_portfolio_return(w, returns) - (target_return - return_tolerance)},
+        # And at most (target + tolerance)
+        {"type": "ineq", "fun": lambda w: (target_return + return_tolerance) - calculate_portfolio_return(w, returns)},
     ]
 
     # Bounds
@@ -460,21 +485,38 @@ def optimize_portfolio_target_return(
     else:
         bounds = tuple((0.0, max_weight if max_weight else 1.0) for _ in range(n_assets))
 
-    # Initial guess: equal weights
-    initial_weights = np.array([1.0 / n_assets] * n_assets)
+    # Better initial guess: weight proportional to returns
+    # This helps start closer to a feasible solution
+    if target_return > 0:
+        positive_returns = np.maximum(returns, 0.0001)
+        initial_weights = positive_returns / np.sum(positive_returns)
+    else:
+        initial_weights = np.array([1.0 / n_assets] * n_assets)
 
-    # Optimize
+    # Try SLSQP first with increased iterations and tighter tolerance
     result = minimize(
         objective,
         initial_weights,
         method="SLSQP",
         bounds=bounds,
         constraints=constraints,
-        options={"maxiter": 1000},
+        options={"maxiter": 2000, "ftol": 1e-9},
     )
 
+    # If SLSQP fails, try trust-constr as fallback (more robust for constrained problems)
     if not result.success:
-        raise ValueError(f"Optimization failed: {result.message}")
+        logger.debug(f"SLSQP failed for target return {target_return:.4f}, trying trust-constr")
+        result = minimize(
+            objective,
+            initial_weights,
+            method="trust-constr",
+            bounds=bounds,
+            constraints=constraints,
+            options={"maxiter": 2000},
+        )
+
+    if not result.success:
+        raise ValueError(f"Optimization failed with both SLSQP and trust-constr: {result.message}")
 
     weights = result.x
     port_return = calculate_portfolio_return(weights, returns)

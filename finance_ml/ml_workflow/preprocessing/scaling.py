@@ -51,6 +51,7 @@ def scale_features(
     columns: Optional[List[str]] = None,
     scaler_type: str = "robust",
     by_sector: bool = True,
+    exclude_price_columns: bool = True,
 ) -> pd.DataFrame:
     """Scale features using specified scaler.
 
@@ -59,14 +60,41 @@ def scale_features(
         columns: Columns to scale (default: all numeric)
         scaler_type: Type of scaler ('standard', 'robust', 'minmax')
         by_sector: Scale separately by sector (default: True)
+        exclude_price_columns: If True, exclude price/valuation columns (default: True)
 
     Returns:
         DataFrame with scaled features
+        
+    Note:
+        Price columns (last_price, price_target) are excluded by default to preserve
+        original dollar values required for business metrics:
+        (Predicted_Target - Last_Price) / Last_Price
+        
+        Scaling price columns would destroy the interpretability needed for valuation
+        comparison.
     """
+    from finance_ml.ml_workflow.preprocessing.column_semantics import (
+        PRICE_COLUMNS,
+    )
+
     result = df.copy()
 
     if columns is None:
         columns = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    # Apply semantic filtering
+    if exclude_price_columns:
+        excluded = [c for c in columns if c.lower() in PRICE_COLUMNS and c in df.columns]
+        scalable = [c for c in columns if c.lower() not in PRICE_COLUMNS and c in df.columns]
+        logger.info(
+            f"Scaling {len(scalable)} columns, excluding {len(excluded)} price columns"
+        )
+        columns = scalable
+    
+    # If no columns to scale after filtering, return original
+    if not columns:
+        logger.warning("No columns to scale after applying exclusions")
+        return result
 
     scaler, _ = create_scaler_pipeline(scaler_type, by_sector)
 

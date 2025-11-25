@@ -91,6 +91,9 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
     Returns:
         DataFrame with normalized column names
     """
+    # Import here to avoid circular dependencies
+    from finance_ml.ml_workflow.data.schema import normalize_column_name
+
     df = df.copy()
 
     if preserve_schema:
@@ -133,11 +136,11 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "Beta (2Y)": "beta_2y",
             "Beta (5Y)": "beta_5y",
             "Analyst Rating": "analyst_rating",
-            "# Strong Sell Ratings": "strong_sell_ratings",
-            "# Strong Buys Ratings": "strong_buys_ratings",
-            "# Hold Ratings": "hold_ratings",
-            "# Buys Ratings": "buys_ratings",
-            "# Sell Ratings": "sell_ratings",
+            "# Strong Sell Ratings": "num_strong_sell_ratings",
+            "# Strong Buys Ratings": "num_strong_buys_ratings",
+            "# Hold Ratings": "num_hold_ratings",
+            "# Buys Ratings": "num_buys_ratings",
+            "# Sell Ratings": "num_sell_ratings",
             "Total Revenues/CAGR (5Y FY)": "total_revenues_cagr_5y_fy",
             "Total Revenues (FQ)": "total_revenues_fq",
             "Total Revenues (-1FY)": "total_revenues_1fy",
@@ -188,7 +191,6 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "Volatility (6M)": "volatility_6m",
             "Volatility (1Y)": "volatility_1y",
             "Volume (Shrs)": "volume_shrs",
-            "Short Int. (%)": "short_int_pct",
             "Dividend Per Share (LTM)": "dividend_per_share_ltm",
             "Div Yield (Ind)": "div_yield_ind",
             "Div Yield (LTM)": "div_yield_ltm",
@@ -337,10 +339,10 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "Shrs Out (-1FY)": "shrs_out_1fy",
             "Common Dividends Paid (LTM)": "common_dividends_paid_ltm",
             "Common Dividends Paid (FY)": "common_dividends_paid_fy",
-            "Selling General & Admin Expenses/Total (FQ)": "sga_expenses_fq",
-            "Selling General & Admin Expenses/Total (FY)": "sga_expenses_fy",
-            "Selling General & Admin Expenses/Total (-1FY)": "sga_expenses_1fy",
-            "Selling General & Admin Expenses/Total (5YAVGFQ)": "sga_expenses_5yavgfq",
+            "Selling General & Admin Expenses/Total (FQ)": "selling_general_and_admin_expenses_total_fq",
+            "Selling General & Admin Expenses/Total (FY)": "selling_general_and_admin_expenses_total_fy",
+            "Selling General & Admin Expenses/Total (-1FY)": "selling_general_and_admin_expenses_total_1fy",
+            "Selling General & Admin Expenses/Total (5YAVGFQ)": "selling_general_and_admin_expenses_total_5yavgfq",
             "Accounts Receivable/Total (FY)": "accounts_receivable_fy",
             "Accounts Receivable/Total (-1FY)": "accounts_receivable_1fy",
             "Accounts Receivable/Total (5YAVGFQ)": "accounts_receivable_5yavgfq",
@@ -414,7 +416,7 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             (
                 col
                 if col in schema_mapping.values()
-                else re.sub(r"[^0-9a-zA-Z]+", "_", str(col)).strip("_").lower()
+                else normalize_column_name(str(col))
             )
             for col in df.columns
         ]
@@ -494,10 +496,9 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
                 df[alias] = df[source_col]
 
     else:
-        # Legacy behavior: convert to lowercase with underscores
-        df.columns = (
-            df.columns.str.replace(r"[^0-9a-zA-Z]+", "_", regex=True).str.strip("_").str.lower()
-        )
+        # Use canonical normalization from schema module
+        from finance_ml.ml_workflow.data.schema import normalize_column_name
+        df.columns = [normalize_column_name(col) for col in df.columns]
 
     return df
 

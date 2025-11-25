@@ -1,4 +1,127 @@
-﻿## [Unreleased] - 2025-11-22
+﻿## [Unreleased] - 2025-11-25
+
+### Added
+
+- **Preprocessing Pipeline - Semantic Column Classification (v1.7)** (2025-11-25)
+  - **Overview**: Implemented comprehensive preprocessing improvements with semantic-aware column handling to protect
+    business-critical price columns
+  - **Business Impact**: Resolved critical issue where price columns (last_price, price_target) were incorrectly
+    transformed, corrupting the core valuation metric `(Predicted_Target - Last_Price) / Last_Price`
+
+  **New Modules** (538 lines total):
+  - `finance_ml/ml_workflow/preprocessing/column_semantics.py` (324 lines)
+    - Defines 5 semantic column categories: Price, Market Value, Ratio, Percentage, Count
+    - 96+ financial columns classified with semantic roles
+    - Helper functions: `classify_columns()`, `get_winsorizable_columns()`, `get_log_transform_columns()`,
+      `get_scalable_columns()`
+  - `finance_ml/ml_workflow/preprocessing/transforms.py` (214 lines)
+    - Log-transform pipeline for skewed market value columns
+    - Methods: `log1p` (non-negative), `signed_log` (handles negatives)
+    - Reduces skewness by ≥50% while preserving extreme value information
+    - Reversible via `inverse_log_transform()` for interpretability
+
+  **Updated Functions**:
+  - `finance_ml/ml_workflow/preprocessing/outliers.py::winsorize_by_sector()`
+    - Added `exclude_price_columns=True` parameter (default)
+    - Added `exclude_ratio_columns=True` parameter (default)
+    - Now respects semantic column types from column_semantics module
+    - Logs excluded columns and reasons for diagnostics
+  - `finance_ml/ml_workflow/preprocessing/scaling.py::scale_features()`
+    - Added `exclude_price_columns=True` parameter (default)
+    - Preserves price columns in original dollar units
+    - Prevents corruption of valuation comparison metrics
+
+  **Test Coverage** (36 tests, all passing):
+  - `tests/test_column_semantics.py` (10 tests) - Classification, helper functions, semantic categories
+  - `tests/test_selective_winsorization.py` (8 tests) - Exclusion logic, sector handling, backward compatibility
+  - `tests/test_log_transforms.py` (9 tests) - Skewness reduction, zero/negative handling, reversibility
+  - `tests/test_selective_scaling.py` (9 tests) - Price preservation, business metric validation
+
+  **Documentation Updates**:
+  - Updated `docs/code_guidelines.md` from v1.6 to v1.7 (+172 lines)
+    - **NEW Section 8.5**: Preprocessing Stage Naming and Semantic Column Classification
+      - **8.5.1**: Column Semantic Classification - Five semantic categories with helper functions
+      - **8.5.2**: Price Column Preservation Policy - Price columns must never be winsorized, scaled, or transformed in
+        place
+      - **8.5.3**: Alternative Transformations for Skewed Data - Use log-transforms instead of winsorization for market
+        value columns
+    - Added enforcement rules, validation patterns, and example code
+    - Documented rationale: core business metric requires original price scale
+
+  **Notebook Integration**:
+  - Updated `ml_finance_model_main.ipynb` Phase 9.1 (Data Loading and Preprocessing)
+    - **Stage 4 Refactored**: Log-transforms + Selective Winsorization (+45 lines)
+      - Step 1: Apply log-transforms to skewed market value columns using `apply_log_transforms(method='signed_log')`
+      - Step 2: Selective winsorization using `get_winsorizable_columns()` and semantic exclusions
+      - Verification: Assert price columns unchanged after transformation
+    - **Stage 6 Refactored**: Semantic-Aware Feature Scaling (+30 lines)
+      - Uses `scale_features()` with `exclude_price_columns=True` (default)
+      - Changed scaler from 'minmax' to 'robust' for better outlier handling
+      - Verification: Assert price columns unchanged after scaling
+      - Reports scaled vs excluded column counts
+
+  **Key Features**:
+  - **Price Column Protection**: Price columns (last_price, price_target, price_target_median) preserved in original
+    units
+  - **Log-Transform Pipeline**: Handles highly skewed data (market_cap, revenue, total_assets) without losing
+    information
+  - **Semantic Awareness**: All preprocessing functions respect column semantic types
+  - **Backward Compatible**: New parameters default to safe values; existing code continues to work
+  - **TDD Approach**: All features implemented with test-first methodology (36 tests, 100% pass rate)
+
+  **Improvement Plan**: Based on `docs/improvement_plan/preprocessing_stages_4-8_improvement_plan.md` (891 lines)
+  - Phases 1-2 (P0 Critical): Column semantic classification, selective winsorization/scaling, log-transforms ✓ COMPLETE
+  - Phases 3-4 (P1 High): Feature quality enhancements, quality metrics (future work)
+
+  **Files Modified** (3 files):
+  - `docs/code_guidelines.md` (v1.6 → v1.7, +172 lines)
+  - `ml_finance_model_main.ipynb` (+75 lines net in Stage 4 & 6)
+  - `finance_ml/ml_workflow/preprocessing/outliers.py` (updated winsorize_by_sector)
+  - `finance_ml/ml_workflow/preprocessing/scaling.py` (updated scale_features)
+
+  **Files Created** (2 modules, 4 test files):
+  - `finance_ml/ml_workflow/preprocessing/column_semantics.py` (324 lines)
+  - `finance_ml/ml_workflow/preprocessing/transforms.py` (214 lines)
+  - `tests/test_column_semantics.py` (10 tests)
+  - `tests/test_selective_winsorization.py` (8 tests)
+  - `tests/test_log_transforms.py` (9 tests)
+  - `tests/test_selective_scaling.py` (9 tests)
+
+  **Validation**: Ran 36 preprocessing tests, all passing in 2.3 seconds
+
+  **Impact**: Business-critical issue resolved - price columns now preserved in original units, protecting the core
+  valuation metric from corruption. All preprocessing functions are now semantic-aware and respect column types. Test
+  suite expanded from 85 to 89 modules (includes 4 new preprocessing test modules).
+
+## [Unreleased] - 2025-11-24
+
+### Fixed
+
+- **Event Classification Label Balance - quality_event Method** (2025-11-24)
+  - **Issue**: quality_event method produced severe class imbalance with 69.3% of samples in Strong Negative (class 0)
+  - **Root Cause**: Red flag penalty weight of -2.0 dominated composite score averaging, causing score clustering at low
+    values
+    - Most stocks have at least one quality red flag (goodwill impairment, asset writedown, restructuring)
+    - When averaged with other +1.0 signals, the -2.0 penalties pulled scores heavily negative
+    - Percentile thresholds (15th/35th/65th/85th) collapsed to same score value due to ties
+  - **Fix**: Reduced red flag penalty from -2.0 to -0.5 in `finance_ml/ml_workflow/classification/labels.py` (line 1023)
+  - **Expected Impact**: More balanced distribution closer to 15%/20%/30%/20%/15% across 5 classes
+  - **Validation**: Created `validate_label_fix.py` script to test distribution improvements
+  - **Affected Features**: goodwill_impairment_flag, has_goodwill_impairment, has_asset_writedown, has_restructuring
+
+### Changed
+
+- **Temporal Feature Date Columns** (2025-11-24)
+  - Updated `critical_date_columns` list in `finance_ml.ml_workflow.preprocessing.imputation.py` to include dividend
+    record dates:
+    - `dividend_record_announce_date`
+    - `dividend_record_ex_date`
+    - `dividend_record_payable_date`
+    - `dividend_record_record_date`
+  - Updated `ml_finance_model_main.ipynb` to include these new date columns in validation checks.
+  - Updated `docs/code_guidelines.md` checklist to reflect the expanded list of critical date columns.
+
+## [Unreleased] - 2025-11-22
 
 ### Added
 

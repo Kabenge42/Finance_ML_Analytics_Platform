@@ -199,61 +199,61 @@ app.layout = html.Div(
         # Filters
         html.Div(
             [
-                html.H4("Filters", style={"marginBottom": "10px"}),
+                html.H4("Filters", style={"marginBottom": "10px", "color": "white"}),
                 html.Div([
                     # Row 1
                     html.Div([
-                        html.Label("Sector"),
+                        html.Label("Sector", className="filter-label"),
                         dcc.Dropdown(id="sector-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['sector'].dropna().unique())] if 'sector' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                     html.Div([
-                        html.Label("Region"),
+                        html.Label("Region", className="filter-label"),
                         dcc.Dropdown(id="region-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['region'].dropna().unique())] if 'region' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                     html.Div([
-                        html.Label("Country"),
+                        html.Label("Country", className="filter-label"),
                         dcc.Dropdown(id="country-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['country'].dropna().unique())] if 'country' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                     html.Div([
-                        html.Label("Trading Country"),
+                        html.Label("Trading Country", className="filter-label"),
                         dcc.Dropdown(id="trading-country-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['trading_country'].dropna().unique())] if 'trading_country' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block"}),
-                ], style={"marginBottom": "10px"}),
+                    ], className="filter-item"),
+                ], className="filter-row"),
                 html.Div([
                     # Row 2
                     html.Div([
-                        html.Label("Industry"),
+                        html.Label("Industry", className="filter-label"),
                         dcc.Dropdown(id="industry-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['industry'].dropna().unique())] if 'industry' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                     html.Div([
-                        html.Label("Style Class"),
+                        html.Label("Style Class", className="filter-label"),
                         dcc.Dropdown(id="style-class-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['style_class'].dropna().unique())] if 'style_class' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                     html.Div([
-                        html.Label("Size Class"),
+                        html.Label("Size Class", className="filter-label"),
                         dcc.Dropdown(id="size-class-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['size_class'].dropna().unique())] if 'size_class' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                     html.Div([
-                        html.Label("Next Earnings"),
+                        html.Label("Next Earnings", className="filter-label"),
                         dcc.Dropdown(id="earnings-status-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['next_earnings_status'].dropna().unique())] if 'next_earnings_status' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block"}),
-                ], style={"marginBottom": "10px"}),
+                    ], className="filter-item"),
+                ], className="filter-row"),
                  html.Div([
                     # Row 3
                     html.Div([
-                        html.Label("Exchange"),
+                        html.Label("Exchange", className="filter-label"),
                         dcc.Dropdown(id="exchange-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['exchange'].dropna().unique())] if 'exchange' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                     html.Div([
-                        html.Label("Unit"),
+                        html.Label("Unit", className="filter-label"),
                         dcc.Dropdown(id="unit-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['unit'].dropna().unique())] if 'unit' in df.columns else [])
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
+                    ], className="filter-item"),
                      html.Div([
-                        html.Label("Model Version"),
+                        html.Label("Model Version", className="filter-label"),
                         dcc.Dropdown(id="model-version-dropdown", options=[{'label': 'v9_9', 'value': 'v9_9'}], value='v9_9')
-                    ], style={"width": "24%", "display": "inline-block", "paddingRight": "10px"}),
-                ]),
-            ], style={"padding": "20px", "backgroundColor": "#f9f9f9", "borderBottom": "1px solid #eee"}
+                    ], className="filter-item"),
+                ], className="filter-row"),
+            ], className="filter-container"
         ),
         # Tabs for different views
         dcc.Tabs(
@@ -293,7 +293,28 @@ app.layout = html.Div(
                                 html.Div(
                                     [
                                         html.H3("Top Undervalued Stocks"),
-                                        dash_table.DataTable(id="undervalued-table", page_size=10),
+                                        dash_table.DataTable(
+                                            id="undervalued-table", 
+                                            page_size=10,
+                                            style_table={'overflowX': 'auto'},
+                                            style_header={
+                                                'backgroundColor': 'rgb(30, 30, 30)',
+                                                'color': 'white',
+                                                'fontWeight': 'bold',
+                                                'border': '1px solid #444'
+                                            },
+                                            style_data={
+                                                'backgroundColor': 'rgb(50, 50, 50)',
+                                                'color': 'white',
+                                                'border': '1px solid #444'
+                                            },
+                                            style_data_conditional=[
+                                                {
+                                                    'if': {'row_index': 'odd'},
+                                                    'backgroundColor': 'rgb(40, 40, 40)'
+                                                }
+                                            ]
+                                        ),
                                     ],
                                     style={
                                         "width": "48%",
@@ -304,7 +325,28 @@ app.layout = html.Div(
                                 html.Div(
                                     [
                                         html.H3("Top Overvalued Stocks"),
-                                        dash_table.DataTable(id="overvalued-table", page_size=10),
+                                        dash_table.DataTable(
+                                            id="overvalued-table", 
+                                            page_size=10,
+                                            style_table={'overflowX': 'auto'},
+                                            style_header={
+                                                'backgroundColor': 'rgb(30, 30, 30)',
+                                                'color': 'white',
+                                                'fontWeight': 'bold',
+                                                'border': '1px solid #444'
+                                            },
+                                            style_data={
+                                                'backgroundColor': 'rgb(50, 50, 50)',
+                                                'color': 'white',
+                                                'border': '1px solid #444'
+                                            },
+                                            style_data_conditional=[
+                                                {
+                                                    'if': {'row_index': 'odd'},
+                                                    'backgroundColor': 'rgb(40, 40, 40)'
+                                                }
+                                            ]
+                                        ),
                                     ],
                                     style={
                                         "width": "48%",
@@ -789,6 +831,7 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             labels={"market_cap": "Market Cap", "mispricing_score": "Mispricing Score"},
             template="plotly_dark",
         )
+        scatter_fig.update_layout(font_family="Arial")
     else:
         scatter_fig = {}
 
@@ -805,6 +848,7 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             color_continuous_scale="RdYlGn",
             template="plotly_dark",
         )
+        heatmap_fig.update_layout(font_family="Arial")
     else:
         heatmap_fig = {}
 
@@ -817,8 +861,10 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             title="Distribution of Prediction Errors (%)",
             labels={"prediction_error_pct": "Prediction Error (%)"},
             template="plotly_dark",
+            color_discrete_sequence=["#375a7f"],  # Primary color
         )
-        error_fig.add_vline(x=0, line_dash="dash", line_color="red", annotation_text="Zero Error")
+        error_fig.add_vline(x=0, line_dash="dash", line_color="#e74c3c", annotation_text="Zero Error")  # Danger color
+        error_fig.update_layout(font_family="Arial")
     else:
         error_fig = {}
 
@@ -838,6 +884,7 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             labels={"price_target": "Analyst Target", "predicted_price_target": "Model Prediction"},
             template="plotly_dark",
         )
+        comparison_fig.update_layout(font_family="Arial")
         # Add perfect agreement line
         if not filtered_df.empty:
             min_val = min(
@@ -851,7 +898,7 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
                     x=[min_val, max_val],
                     y=[min_val, max_val],
                     mode="lines",
-                    line=dict(color="red", dash="dash"),
+                    line=dict(color="#e74c3c", dash="dash"),  # Danger color
                     name="Perfect Agreement",
                     showlegend=True,
                 )

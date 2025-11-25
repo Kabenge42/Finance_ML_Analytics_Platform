@@ -11,104 +11,57 @@ following strict TDD methodology.
 
 #### 1.1 Streamlit Dashboard (`finance_ml/dashboards/streamlit_app.py`)
 
-- **Lines of Code**: 222
+- **Lines of Code**: ~750
 - **Features Implemented**:
-    - ✅ Multi-page layout with 5 tabs (Overview, Stock Ranking, Sector Analysis, Data Quality, Model Performance)
-    - ✅ File uploader for CSV predictions
-    - ✅ Interactive filters (sector, region, market cap slider)
-    - ✅ KPI cards and metrics
-    - ✅ Plotly interactive charts (scatter, heatmap, histogram, residuals)
-    - ✅ Stock rankings (undervalued/overvalued)
-    - ✅ Data quality monitoring with alerts
-    - ✅ Model performance analytics
+    - ✅ Multi-page layout with 10 tabs (Executive Summary, Overview, Stock Ranking, Sector Analysis, Uncertainty, Safety
+      Rails, Data Quality, Governance, Portfolio)
+    - ✅ Comprehensive Filtering (Sector, Region, Country, Industry, Style, Size, Earnings, Exchange, Unit)
+    - ✅ Phase 9.3 EDA Integration (Correlations, Distributions, Radar Charts)
+    - ✅ Phase 9.4-9.8 Artifact Integration (Uncertainty, Calibration, Safety Rails, Governance)
+    - ✅ Model Card Display & Download
+    - ✅ Quick Access Sidebar & File Age Indicators
+    - ✅ KPI cards, interactive Plotly charts, and Data Quality monitoring
 
 **Run Command**: `streamlit run finance_ml/dashboards/streamlit_app.py`
 
 #### 1.2 Dash Dashboard (`finance_ml/dashboards/dash_app.py`)
 
-- **Lines of Code**: 155
+- **Lines of Code**: ~900
 - **Features Implemented**:
-    - ✅ Interactive filters (sector and region dropdowns)
-    - ✅ Scatter plot (mispricing vs market cap)
-    - ✅ Sector-region heatmap
-    - ✅ Top undervalued stocks table
+    - ✅ 7-Tab Layout including new Analysis & Governance tabs
+    - ✅ Status Indicators in Header
+    - ✅ Comprehensive Filtering (matches Streamlit capabilities)
+    - ✅ Dynamic Artifact Loading with Freshness Timestamps
+    - ✅ Interactive Scatter & Heatmap plots
     - ✅ Reactive callbacks for real-time updates
 
 **Run Command**: `python finance_ml/dashboards/dash_app.py`
 
-### 2. Dashboard Helper Functions (in `finance_ml/eval.py`)
+### 2. Infrastructure & Tools
+
+- **`finance_ml/dashboards/artifact_registry.py`**: Centralized metadata registry for 30+ ML artifacts.
+- **`tools/setup_dashboard_assets.py`**: Automation script to sync artifacts from `outputs/` to `assets/`.
+- **`finance_ml/dashboards/README.md`**: User documentation and quick start guide.
+
+### 3. Dashboard Helper Functions (in `finance_ml/eval.py`)
 
 All 5 required helper functions were already implemented and are now comprehensively tested:
 
-1. **`calculate_mispricing_score()`** (lines 40-73, 34 lines)
-    - Calculates undervalued/overvalued scores
-    - Tested with 8 test cases
+1. **`calculate_mispricing_score()`**
+2. **`rank_stocks_by_sector()`**
+3. **`calculate_financial_metrics_dashboard()`**
+4. **`generate_data_quality_alerts()`**
+5. **`prepare_plotly_dashboard_data()`**
 
-2. **`rank_stocks_by_sector()`** (lines 167-187, 21 lines)
-    - Ranks stocks within sectors by mispricing score
-    - Tested with 6 test cases (including overvalued order)
+### 4. Test Coverage (TDD Approach)
 
-3. **`calculate_financial_metrics_dashboard()`** (lines 5747-5852, 106 lines)
-    - Calculates valuation, profitability, growth, and leverage metrics
-    - Tested with 9 test cases covering all metric categories
+#### Test Files:
 
-4. **`generate_data_quality_alerts()`** (lines 5855-5987, 133 lines)
-    - Detects missing values, outliers, and negative values
-    - Tested with 12 test cases covering all severity levels
+1. **`tests/test_dashboards_integration.py`** (Integration tests for UI structure and artifact loading)
+2. **`tests/test_dashboard_helpers.py`** (Unit tests for logic)
+3. **`tests/test_dashboard_helpers_enhanced.py`** (Enhanced coverage)
 
-5. **`prepare_plotly_dashboard_data()`** (lines 7059-7225, 167 lines)
-    - Prepares data structures for Plotly charts
-    - Tested with 11 test cases covering all chart types
-
-**Total Helper Function Lines**: 461 (5.9% of eval.py's 7,751 lines)
-
-### 3. Test Coverage (TDD Approach)
-
-#### Test Files Created/Enhanced:
-
-1. **`tests/test_dashboard_helpers.py`** (372 lines, 28 tests) - Original comprehensive tests
-2. **`tests/test_dashboard_helpers_enhanced.py`** (311 lines, 18 tests) - Enhanced coverage tests
-3. **`tests/test_streamlit_dashboard.py`** (180 lines, 11 tests) - Streamlit structure tests
-4. **`tests/test_dash_dashboard.py`** (176 lines, 12 tests) - Dash structure tests
-
-**Total Test Code**: 1,039 lines
-**Total Tests**: 68 tests (all passing ✅)
-
-#### Test Execution Results:
-
-```
-Ran 68 tests in 0.462s
-OK
-```
-
-#### Coverage Analysis:
-
-**Overall Coverage Report**:
-
-- `finance_ml/dashboards/__init__.py`: 100% (1 stmt, 0 miss)
-- `finance_ml/dashboards/dash_app.py`: 45% (31 stmt, 17 miss)
-- `finance_ml/dashboards/streamlit_app.py`: 0% (102 stmt, 102 miss)
-- `finance_ml/eval.py`: 11% (2758 stmt, 2465 miss)
-
-**Note on Coverage Metrics**:
-
-- **Dashboard UI files** (streamlit_app.py, dash_app.py): Low execution coverage is expected because:
-    - These are interactive UI applications that require server runtime
-    - Tests validate structure, syntax, imports, and configuration (not runtime execution)
-    - This is standard practice for UI testing (structure validation vs. execution testing)
-
-- **Helper Functions in eval.py**: While overall eval.py shows 11% coverage:
-    - The 5 dashboard helper functions represent only 461 lines (5.9%) of the 7,751-line file
-    - These specific functions are comprehensively tested with 46 test cases
-    - All critical code paths (branches, error handling, edge cases) are covered
-    - Coverage annotation shows high execution coverage for helper function bodies
-
-**Functional Coverage of Helper Functions**:
-
-- ✅ calculate_mispricing_score: ~100% (all lines executed)
-- ✅ rank_stocks_by_sector: ~95% (both undervalued and overvalued orders tested)
-- ✅ calculate_financial_metrics_dashboard: ~85% (all 4 metric categories tested)
-- ✅ generate_data_quality_alerts: ~80% (all severity levels and detection types tested)
+**Status**: All tests passing.
 - ✅ prepare_plotly_dashboard_data: ~75% (all chart types tested with appropriate data)
 
 ### 4. TDD Methodology Applied

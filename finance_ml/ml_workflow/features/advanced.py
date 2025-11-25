@@ -693,34 +693,13 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
     if have_30:
         result["rsi_30d"] = df.apply(lambda r: compute_rsi_row(r, 30), axis=1)
 
-    # Moving averages and signals using daily history + last_price
-    def compute_ma_row(row: pd.Series, window: int) -> float:
-        """Compute moving average for a single row over specified window."""
-        vals = []
-        for d in range(window - 1, 0, -1):
-            col = f"price_{d}d_ago"
-            vals.append(row.get(col, np.nan))
-        vals.append(row.get("last_price", np.nan))
-        arr = np.asarray(vals, dtype=float)
-        if np.isnan(arr).any():
-            return np.nan
-        return float(np.mean(arr))
-
-    ma20 = (
-        df.apply(lambda r: compute_ma_row(r, 20), axis=1)
-        if "last_price" in df.columns
-        else pd.Series([np.nan] * len(df))
-    )
-    ma50 = (
-        df.apply(lambda r: compute_ma_row(r, 50), axis=1)
-        if "last_price" in df.columns
-        else pd.Series([np.nan] * len(df))
-    )
-
-    if isinstance(ma20, pd.Series):
-        result["ma_20d_simple"] = ma20
-    if isinstance(ma50, pd.Series):
-        result["ma_50d_simple"] = ma50
+    # Use existing EMA columns from database instead of computing MAs from non-existent daily history
+    # The database provides ema_20d, ema_50d, ema_100d, ema_250d which are already calculated
+    # EMAs provide equivalent (arguably better) technical signals than simple moving averages
+    if "ema_20d" in df.columns:
+        result["ma_20d_simple"] = df["ema_20d"]
+    if "ema_50d" in df.columns:
+        result["ma_50d_simple"] = df["ema_50d"]
 
     if "last_price" in df.columns:
         # price distance from MA50
@@ -1004,11 +983,11 @@ def engineer_analyst_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     # --- Analyst ratings distribution & consensus ---
     # Support normalized names primarily; allow legacy names with leading underscores if present
     cols_norm = [
-        "strong_buy_ratings",
-        "buy_ratings",
-        "hold_ratings",
-        "sell_ratings",
-        "strong_sell_ratings",
+        "num_strong_buys_ratings",
+        "num_buys_ratings",
+        "num_hold_ratings",
+        "num_sell_ratings",
+        "num_strong_sell_ratings",
     ]
     cols_legacy = [
         "_strong_buy_ratings",
