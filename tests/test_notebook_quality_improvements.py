@@ -16,8 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from finance_ml import load_config, NotebookConfig
-from finance_ml.eval import simple_eda
+from finance_ml import load_config, NotebookConfig, simple_eda
 
 
 class TestLoadConfigWithOutputDir(unittest.TestCase):

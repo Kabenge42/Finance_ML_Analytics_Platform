@@ -123,6 +123,29 @@ from finance_ml.ml_workflow.analytics.ml_returns import (
     train_linear_return_predictor,
     create_ensemble_return_predictions,
     evaluate_return_predictions,
+    # Phase 7.1-7.3 Enhancement functions
+    clip_expected_returns,
+    calculate_historical_returns,
+    get_phase93_return_features,
+    create_ml_return_features_enhanced,
+    validate_expected_returns,
+    # Phase 7.4: DNN Implementation
+    build_dnn_return_predictor,
+    train_dnn_return_predictor,
+    train_dnn_quantile_predictor,
+    # Phase 7.5: Ensemble Enhancement
+    ReturnEnsemble,
+    create_return_ensemble,
+    create_dynamic_ensemble,
+    # Phase 7.6: Black-Litterman ML Integration
+    create_bl_views_from_ml,
+    detect_market_regime,
+    # Phase 7.7: Robust Covariance Estimation
+    estimate_covariance_shrinkage,
+    estimate_covariance_ewm,
+    # Phase 7.8: Model Validation & Diagnostics
+    calculate_return_prediction_diagnostics,
+    validate_portfolio_metrics,
 )
 
 # Import configuration constants for ML returns (Section 8.1 compliance)
@@ -165,6 +188,29 @@ __all__ = [
     "train_linear_return_predictor",
     "create_ensemble_return_predictions",
     "evaluate_return_predictions",
+    # Phase 7.1-7.3 Enhancement functions
+    "clip_expected_returns",
+    "calculate_historical_returns",
+    "get_phase93_return_features",
+    "create_ml_return_features_enhanced",
+    "validate_expected_returns",
+    # Phase 7.4: DNN Implementation
+    "build_dnn_return_predictor",
+    "train_dnn_return_predictor",
+    "train_dnn_quantile_predictor",
+    # Phase 7.5: Ensemble Enhancement
+    "ReturnEnsemble",
+    "create_return_ensemble",
+    "create_dynamic_ensemble",
+    # Phase 7.6: Black-Litterman ML Integration
+    "create_bl_views_from_ml",
+    "detect_market_regime",
+    # Phase 7.7: Robust Covariance Estimation
+    "estimate_covariance_shrinkage",
+    "estimate_covariance_ewm",
+    # Phase 7.8: Model Validation & Diagnostics
+    "calculate_return_prediction_diagnostics",
+    "validate_portfolio_metrics",
     # Configuration constants (Section 8.1)
     "MIN_DATES_FOR_TIMESERIES",
     "MIN_DATES_FOR_RELIABLE_ML",

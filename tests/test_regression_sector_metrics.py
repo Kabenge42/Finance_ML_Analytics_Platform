@@ -113,6 +113,32 @@ class TestRegressionSectorMetrics(unittest.TestCase):
                 f"Missing sectors in metrics. Expected: {expected_sectors}, Got: {actual_sectors}",
             )
 
+    def test_sector_training_accepts_meta_features(self):
+        """Test that sector training accepts meta-feature arguments (Phase 9.5)."""
+        from finance_ml.ml_workflow.models import train_and_evaluate_regression_by_sector
+
+        # Create probabilities aligned with df
+        n_samples = len(self.df)
+        probs = np.random.random((n_samples, 5))
+        probs = probs / probs.sum(axis=1, keepdims=True)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir)
+
+            # Call with new arguments
+            result = train_and_evaluate_regression_by_sector(
+                self.df,
+                out_dir,
+                feature_cols=["market_cap", "pe_ratio", "debt_to_equity"],
+                use_meta_features=True,
+                classification_probabilities=probs,
+                cv_policy="time_series",
+                date_col="snapshot_date" if "snapshot_date" in self.df.columns else None,
+            )
+
+            self.assertIsInstance(result, pd.DataFrame)
+            self.assertGreater(len(result), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

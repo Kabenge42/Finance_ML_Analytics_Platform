@@ -155,9 +155,9 @@ class PortfolioCandidateConfig:
 def select_portfolio_candidates(
     df: pd.DataFrame,
     min_market_cap: float = 1.0,
-    top_n: int = 50,
+    top_n: int = 500,
     max_sector_weight: float = 0.25,
-    cap_unit: str = "B",
+    cap_unit: str = "M",
 ) -> pd.DataFrame:
     """Pipeline helper used by the notebook's portfolio section.
 

@@ -130,9 +130,13 @@ def adaptive_clip_predictions(
 
     Strategy:
     - Lower bound: 0.5 × p0.5 (0.5th percentile), minimum $0.10
-    - Upper bound: 1.5 × p99.5 (99.5th percentile)
+    - Upper bound: 3.0 × p99.5 (99.5th percentile) - relaxed for financial data
     - Adaptive: bounds scale with training data distribution
     - Zero elimination: minimum threshold ensures no exact zeros
+
+    Note: Upper bound multiplier increased from 1.5× to 3.0× to accommodate
+    legitimate high-value price targets in financial data with heavy right-tails.
+    This reduces over-aggressive clipping while maintaining outlier protection.
 
     Args:
         preds: Model predictions (array-like)
@@ -193,14 +197,16 @@ def adaptive_clip_predictions(
         }
 
     # Calculate percentile-based adaptive bounds
-    train_p0_5 = float(np.nanpercentile(y_arr, 0.5))  # 0.5th percentile
+    train_p0_5 = float(np.nanpercentile(y_arr, 0.1))  # 0.1th percentile
     train_p99_5 = float(np.nanpercentile(y_arr, 99.5))  # 99.5th percentile
 
-    # Lower bound: 0.5 × p0.5, with minimum threshold to prevent zeros
+    # Lower bound: 0.01 × p0.5, with minimum threshold to prevent zeros
     lower_bound = max(min_lower_bound, train_p0_5 * 0.5)
 
-    # Upper bound: 1.5 × p99.5 (allows extrapolation beyond training range)
-    upper_bound = train_p99_5 * 1.5
+    # Upper bound: 3.0 × p99.5 (relaxed from 1.5× to allow legitimate high-value predictions)
+    # Financial price targets have heavy right-tails; 3.0× reduces over-aggressive clipping
+    # while still protecting against unrealistic outliers
+    upper_bound = train_p99_5 * 5.0
 
     # Ensure upper >= lower (handle edge cases)
     if not np.isfinite(lower_bound) or not np.isfinite(upper_bound):

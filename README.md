@@ -2,7 +2,7 @@
 
 **Version 0.8.3** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-23  
+> **Documentation Last Updated:** 2025-11-26  
 > **Latest Release**: v0.8.3 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
@@ -114,7 +114,7 @@ selective execution tips. TODO: Add containerization instructions (Docker) if/wh
   output, 30+ artifacts across 5 governance directories (uncertainty/, safety_rails/, splits/, calibration/,
   governance/)
 - ⚙️ **Configuration**: Flexible config via environment variables and CLI options
-- 🧪 **Tested**: Comprehensive unittest suite (85 test modules) with extensive coverage (≥80% target for new code);
+- 🧪 **Tested**: Comprehensive unittest suite (128 test modules) with extensive coverage (≥80% target for new code);
   TDD conventions for uncertainty, safety rails, splits validation, calibration, governance, schema validation, and
   datatype detection
 - 🚀 **CLI**: Three command-line tools for different workflows
@@ -772,9 +772,9 @@ export DB_URL="postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 ## Testing
 
-The project uses Python's built-in `unittest` framework with 85 test modules covering data loading, preprocessing,
+The project uses Python's built-in `unittest` framework with 128 test modules covering data loading, preprocessing,
 features, models, evaluation, portfolio optimization, and integration.
-See [docs/code_guidelines.md](docs/code_guidelines.md) v1.4 for TDD
+See [docs/code_guidelines.md](docs/code_guidelines.md) v1.7 for TDD
 conventions and standards. The full suite can be slow; prefer selective execution during development (see below).
 
 ### Run All Tests
@@ -792,7 +792,7 @@ python -m unittest tests.test_coverage_smoke tests.test_loaders tests.test_valid
 # Medium tests (100–500 lines, limited ML)
 python -m unittest tests.test_enhanced_imputation tests.test_logging tests.test_risk_metrics tests.test_portfolio_optimization -v
 
-# Targeted standards (code_guidelines.md v1.4)
+# Targeted standards (code_guidelines.md v1.7)
 python -m unittest tests.test_uncertainty_calibration -v        # Uncertainty quantification
 python -m unittest tests.test_predictions_schema -v             # Standardized predictions schema
 python -m unittest tests.test_regression_sector_metrics -v      # Sector metrics validation
@@ -890,7 +890,7 @@ Finance_ML_Analytics_Platform/
 │       ├── evaluation/           # Phase 9.6: Metrics, analysis
 │       ├── analytics/            # Phase 9.7: Mispricing, analyst comparison, portfolio, risk
 │       └── reporting/            # Phase 9.8: Dashboard data, export
-├── tests/                         # Test suite (67+ modules)
+├── tests/                         # Test suite (128 modules)
 │   ├── test_*.py                 # Unit and integration tests
 │   └── ...
 ├── tools/                         # Utility scripts and automation
@@ -1046,7 +1046,7 @@ Finance_ML_Analytics_Platform/
 
 **Test Suite Expansion**:
 
-- **Total Test Modules**: 83 (expanded from 74, +9 new modules)
+- **Total Test Modules**: 128 (expanded significantly with preprocessing, semantic column, and feature tests)
 - **New Test Categories**:
   - TDD Implementation: 4 modules, 24 tests
   - Portfolio Optimization: 5 modules, 23 tests
@@ -1098,7 +1098,7 @@ Finance_ML_Analytics_Platform/
 
 - Time-series cross-validation with sector stratification to prevent data leakage
 - Grouped splitting by ticker to ensure no ticker appears in both train and test sets
-- Leakage-prevention utilities aligned with code_guidelines.md v1.4 Data Split Policy
+- Leakage-prevention utilities aligned with code_guidelines.md v1.7 Data Split Policy
 - Enhanced documentation in multiple summary files
 
 **Prediction Bound Fixes**:
@@ -1181,7 +1181,7 @@ Finance_ML_Analytics_Platform/
 Expected output files (after running the notebook or script):
 
 - `outputs/regression/regression_predictions_detailed.csv` — Standardized predictions schema (
-  see [code_guidelines.md](docs/code_guidelines.md) v1.4)
+  see [code_guidelines.md](docs/code_guidelines.md) v1.7)
     - Required columns: ticker, isin, sector, region, last_price, y_true, y_pred, y_pred_calibrated, pred_p10, pred_p50,
       pred_p90, interval_width, abs_error, pct_error, model_version, snapshot_date
 - `outputs/regression/regression_metrics_by_sector.csv` — Per-sector MAE, RMSE, R², MAPE, count
@@ -1235,7 +1235,7 @@ Contributions are welcome! Please follow these guidelines:
 
 1. **Fork the repository** and create a feature branch
 2. **Follow PEP 8** code style (use `black`, `isort`)
-3. **Follow coding standards** in [docs/code_guidelines.md](docs/code_guidelines.md) v1.4 (function signatures, return
+3. **Follow coding standards** in [docs/code_guidelines.md](docs/code_guidelines.md) v1.7 (function signatures, return
    types, TDD conventions)
 4. **Write tests** for new functionality (TDD preferred; see code_guidelines.md for uncertainty, safety rails, and
    schema validation standards)
@@ -1350,7 +1350,7 @@ without TensorFlow.
 - Package version increments with each release; MODEL_VERSION increments with modeling changes
 - Example: Package v0.7.1 can have MODEL_VERSION v9_9 (no modeling changes from v0.7.0)
 
-**Current Versions** (as of 2025-11-22):
+**Current Versions** (as of 2025-11-26):
 
 - Package: `0.8.3`
 - Model: `v9_9`
@@ -1364,16 +1364,15 @@ without TensorFlow.
 
 ### Version Synchronization
 
-**Current Status** (as of 2025-11-22):
+**Current Status** (as of 2025-11-26):
 
 - **pyproject.toml**: Version = "0.8.3" ✓
 - **README.md**: Updated to 0.8.3 ✓
-- **CHANGELOG.md**: TODO — verify 0.8.3 entry and add if missing
-- **environment_variables.txt**: TODO — verify version header reflects 0.8.3 and MODEL_VERSION=v9_9
-- **finance_ml/config.py**: MODEL_VERSION v9_9 (unchanged)
+- **CHANGELOG.md**: Unreleased changes for 2025-11-25 (semantic column classification)
+- **environment_variables.txt**: Version = 0.8.3, MODEL_VERSION=v9_9 ✓
+- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓
 
-**Status**: Partial — packaging and README aligned at 0.8.3; ensure CHANGELOG.md and environment_variables.txt are
-updated
+**Status**: ✓ Aligned — all version references synchronized at 0.8.3 with MODEL_VERSION v9_9
 
 ### Future Enhancements
 
@@ -1389,6 +1388,5 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-22  
-**README Version**: 4.1 (aligned to v0.8.3; notebook OUTPUT_DIR fixes; phases 9.5–9.8 integration; TDD modules and 83
-test modules retained)
+**Last Updated**: 2025-11-26  
+**README Version**: 4.2 (aligned to v0.8.3; 128 test modules; code_guidelines.md v1.7; semantic column classification)

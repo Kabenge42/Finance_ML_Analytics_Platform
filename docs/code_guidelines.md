@@ -1,17 +1,33 @@
 # Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.7  
-**Last Updated:** 2025-11-25  
-**Package Version:** 0.8.3  
+**Version:** 1.8  
+**Last Updated:** 2025-11-26  
+**Package Version:** 0.9.1  
 **Model Version:** v9_9
 
 These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
 architecture, function signatures, column naming, and best practices. They align with the project's 8-phase ML
-workflow (Phase 9.1-9.8) and business objectives.
+workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 
-**Recent Updates (v1.7):**
+**Recent Updates (v1.8):**
 
-- **NEW:** Added Section 8.5 Preprocessing Stage Naming and Semantic Column Classification (2025-11-25)
+- **NEW:** Added Section 18 Portfolio Optimization Workflow (2025-11-26)
+    - **Section 18.1**: Workflow Overview — 7-phase architecture with module mapping
+    - **Section 18.2**: Return Calculation Best Practices — Critical policy for expected return bounds (MAX=0.29,
+      MIN=-0.50)
+    - **Section 18.3**: Price Column Integration — PRICE_COLUMNS registry (21 columns, 4 categories)
+    - **Section 18.4**: Phase 9.3 Feature Integration — 196 engineered features for return prediction
+    - **Section 18.5**: Ensemble Model Best Practices — Multi-model and dynamic weighting
+    - **Section 18.6**: Black-Litterman ML Integration — ML-derived views and regime detection
+    - **Section 18.7**: Robust Covariance Estimation — Ledoit-Wolf shrinkage, EWM methods
+    - **Section 18.8**: Portfolio Validation Diagnostics — Return and Sharpe ratio validation
+    - **Section 18.9**: Configuration Constants Summary — Centralized constants reference
+    - **Section 18.10**: Test Coverage Requirements — 90+ tests for portfolio optimization
+    - Implementation details in `portfolio_optimization_enhancement_plan.md` Phase 7
+
+**Previous Updates (v1.7):**
+
+- Added Section 8.5 Preprocessing Stage Naming and Semantic Column Classification (2025-11-25)
     - **Section 8.5.1**: Column Semantic Classification — Five semantic categories (price, market value, ratio,
       percentage, count)
     - **Section 8.5.2**: Price Column Preservation Policy — Price columns must never be winsorized, scaled, or
@@ -55,6 +71,7 @@ workflow (Phase 9.1-9.8) and business objectives.
 15. [Jupyter Notebook Guidelines](#15-jupyter-notebook-guidelines)
 16. [Model Optimization and Performance](#16-model-optimization-and-performance)
 17. [Styles Guides for Visual Elements](#17-styles-guides-for-visual-elements)
+18. [Portfolio Optimization Workflow](#18-portfolio-optimization-workflow)
 
 ---
 
@@ -152,11 +169,11 @@ MIN_SECTOR_SAMPLES = 20
 MAX_SECTOR_WEIGHT = 0.25
 MAX_SINGLE_POSITION = 0.10
 
-# Outlier thresholds
-IQR_MULTIPLIER = 1.5
+# Outlier thresholds (aligned with ml_finance_model_main.ipynb)
+IQR_MULTIPLIER = 2.5  # More conservative to preserve valid extreme values
 ZSCORE_THRESHOLD = 3.0
-WINSORIZE_LOWER = 0.01
-WINSORIZE_UPPER = 0.99
+WINSORIZE_LOWER = 0.10  # 10th percentile (less aggressive)
+WINSORIZE_UPPER = 0.90  # 90th percentile (less aggressive)
 
 # Confidence scoring
 CONFIDENCE_LOW_THRESHOLD = 0.50
@@ -166,6 +183,11 @@ CONFIDENCE_MEDIUM_THRESHOLD = 0.75
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
 MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
 ```
+
+> **Note:** The winsorization bounds (0.10/0.90) are intentionally less aggressive than traditional (0.01/0.99) to
+> preserve more valid extreme values in financial data (e.g., high-growth stocks, mega-cap companies). Combined with
+> the Price Column Preservation Policy (Section 8.5.2), this ensures business-critical valuation metrics remain
+> accurate.
 
 ### 2.2 Environment Variables
 
@@ -203,20 +225,19 @@ def validate_configuration():
    if not (0 < TEST_SIZE < 1):
       raise ValueError(f"TEST_SIZE must be between 0 and 1: {TEST_SIZE}")
 
+   # Validate CV folds
+   if CV_FOLDS < 2:
+      raise ValueError(f"CV_FOLDS must be >= 2: {CV_FOLDS}")
 
-# Validate CV folds
-if CV_FOLDS < 2:
-   raise ValueError(f"CV_FOLDS must be >= 2: {CV_FOLDS}")
+   # Validate quantiles
+   if not all(0 < q < 1 for q in QUANTILES):
+      raise ValueError(f"All QUANTILES must be between 0 and 1: {QUANTILES}")
 
-# Validate quantiles
-if not all(0 < q < 1 for q in QUANTILES):
-   raise ValueError(f"All QUANTILES must be between 0 and 1: {QUANTILES}")
+   # Validate monotonicity
+   if QUANTILES != sorted(QUANTILES):
+      raise ValueError(f"QUANTILES must be monotonically increasing: {QUANTILES}")
 
-# Validate monotonicity
-if QUANTILES != sorted(QUANTILES):
-   raise ValueError(f"QUANTILES must be monotonically increasing: {QUANTILES}")
-
-return True
+   return True
 ```
 
 ---
@@ -275,66 +296,95 @@ finance-ml-validate = "finance_ml.cli:validate_main"
 
 ### 4.1 Package Structure
 
+The `finance_ml` package follows a phase-aligned architecture with 13 ml_workflow subpackages:
+
 ```
 finance_ml/
-├── __init__.py                    # Package-level exports
+├── __init__.py                    # Package-level exports (v0.8.3)
 ├── cli.py                         # CLI entry points (main, analyze_main, validate_main)
 ├── ml_workflow/                   # Main ML workflow package (Phase 9.1-9.8)
 │   ├── __init__.py
-│   ├── preprocessing/             # Phase 9.1: Data preprocessing
-│   │   ├── imputation.py          # 6-step imputation strategy
-│   │   ├── outliers.py            # Outlier detection and handling
-│   │   ├── scaling.py             # Feature scaling
+│   ├── preprocessing/             # Phase 9.1: Data preprocessing (10 modules)
+│   │   ├── __init__.py            # Public API exports
+│   │   ├── imputation.py          # 6-step imputation strategy (4step for backward compat)
+│   │   ├── outliers.py            # Outlier detection and winsorization
+│   │   ├── scaling.py             # Feature scaling with price column exclusion
 │   │   ├── dtypes.py              # Schema-aware datatype detection
-│   │   └── pipeline.py            # Preprocessing pipeline
+│   │   ├── pipeline.py            # Preprocessing pipeline orchestration
+│   │   ├── column_semantics.py    # Semantic column classification (5 categories)
+│   │   ├── transforms.py          # Log-transforms for skewed data
+│   │   ├── data.py                # Data loading and normalization
+│   │   └── quality.py             # Data quality metrics
 │   ├── eda/                       # Phase 9.2: Exploratory Data Analysis
+│   │   ├── __init__.py
 │   │   ├── eda.py                 # Core EDA functions
 │   │   ├── benchmarking.py        # Sector/region benchmarking
 │   │   └── statistical_tests.py   # Statistical testing
 │   ├── features/                  # Phase 9.3: Feature Engineering
+│   │   ├── __init__.py
 │   │   ├── core.py                # Core feature functions
 │   │   ├── advanced.py            # Advanced feature engineering
-│   │   ├── selection.py           # Feature selection
+│   │   ├── selection.py           # Feature selection (RF, MI)
 │   │   └── api.py                 # High-level API with presets
 │   ├── classification/            # Phase 9.4: Event Classification
+│   │   ├── __init__.py
 │   │   ├── labels.py              # Label generation (13 methods)
 │   │   ├── models.py              # Classification models
-│   │   └── tuning.py              # Hyperparameter tuning
+│   │   ├── tuning.py              # Hyperparameter tuning
+│   │   └── evaluation.py          # Classification evaluation
 │   ├── regression/                # Phase 9.5: Regression Models
+│   │   ├── __init__.py
 │   │   ├── models.py              # Regression models (XGBoost, LightGBM, CatBoost)
 │   │   ├── quantile.py            # Quantile regression
 │   │   ├── constraints.py         # Non-negativity constraints
-│   │   └── stacking.py            # Ensemble stacking
+│   │   ├── stacking.py            # Ensemble stacking
+│   │   └── safety_rails.py        # Prediction safety rails
 │   ├── evaluation/                # Phase 9.6: Model Evaluation
+│   │   ├── __init__.py
 │   │   ├── metrics.py             # Evaluation metrics
 │   │   ├── uncertainty.py         # Uncertainty quantification
 │   │   ├── safety_rails.py        # Outlier safety rails
 │   │   └── calibration.py         # Model calibration
 │   ├── analytics/                 # Phase 9.7: Analytics
+│   │   ├── __init__.py
 │   │   ├── mispricing.py          # Mispricing score calculation
 │   │   ├── stock_selection.py     # Stock ranking and selection
 │   │   ├── portfolio.py           # Portfolio optimization
-│   │   ├── risk.py                # Risk metrics
+│   │   ├── risk.py                # Risk metrics (VaR, CVaR, etc.)
 │   │   ├── ml_returns.py          # ML-based return prediction
 │   │   ├── attribution.py         # Performance attribution
-│   │   └── analyst_comparison.py  # Analyst comparison
+│   │   ├── analyst_comparison.py  # Analyst comparison
+│   │   ├── eval.py                # Legacy eval functions
+│   │   └── portfolio_reporting.py # Portfolio reporting
 │   ├── reporting/                 # Phase 9.8: Reporting
+│   │   ├── __init__.py
 │   │   ├── dashboard_data.py      # Dashboard data preparation
 │   │   └── quality_alerts.py      # Data quality alerts
 │   ├── data/                      # Data loading and schema
+│   │   ├── __init__.py
 │   │   ├── loaders.py             # CSV and DB loaders
 │   │   └── schema.py              # Column schema registry (318 columns)
 │   ├── config/                    # Configuration management
+│   │   ├── __init__.py
 │   │   └── settings.py            # Configuration settings
 │   ├── core/                      # Core utilities
+│   │   ├── __init__.py
 │   │   └── utils.py               # Utility functions
+│   ├── quality/                   # Code quality tools
+│   │   ├── __init__.py
+│   │   ├── script_review.py       # AST-based static analysis (Section 6.2)
+│   │   └── notebook_review.py     # Notebook review tools
 │   └── validation/                # Data validation
+│       ├── __init__.py
 │       └── validators.py          # Validation functions
 └── dashboards/                    # Interactive dashboards
     ├── streamlit_app.py           # Streamlit application
     ├── dash_app.py                # Dash application
     └── portfolio_widgets.py       # Portfolio dashboard widgets
 ```
+
+> **Note:** The package also contains legacy modules at the `ml_workflow/` level (e.g., `advanced_preprocessing.py`,
+> `advanced_models.py`, `advanced_features.py`) for backward compatibility. New code should use the subpackage imports.
 
 ### 4.2 Phase Alignment
 
@@ -906,14 +956,14 @@ return_stats: bool = True
 # Returns: (preprocessed_df, quality_statistics_dict)
 
 from finance_ml.ml_workflow.preprocessing.imputation import (
-   apply_enhanced_imputation_strategy_4step,  # 6-step imputation
+   apply_enhanced_imputation_strategy_6step,  # Current 6-step imputation (recommended)
    apply_zero_imputation,
    apply_knn_imputation_enhanced,
    apply_price_imputation,
    apply_median_imputation
    )
 
-df_imputed = apply_enhanced_imputation_strategy_4step(
+df_imputed = apply_enhanced_imputation_strategy_6step(
         df: pd.DataFrame,
 zero_fill_columns: Optional[List[str]] = None,
 knn_neighbors: int = 5,
@@ -1198,8 +1248,7 @@ all_stocks_typed, dtype_diagnostics = detect_and_cast_dtypes(all_stocks_normaliz
 print(f"✓ Stage 3 (typed): {all_stocks_typed.shape}")
 
 # Validation checkpoint
-assert dtype_diagnostics['coercion_count'] < len(all_stocks_typed) * 0.05,
-"Excessive type coercions detected (>5%)"
+assert dtype_diagnostics['coercion_count'] < len(all_stocks_typed) * 0.05, "Excessive type coercions detected (>5%)"
 print(f"  Coercion rate: {dtype_diagnostics['coercion_count'] / len(all_stocks_typed):.2%}")
 
 # Stage 4: Winsorize outliers
@@ -1250,8 +1299,7 @@ all_stocks_features = build_comprehensive_features(
 print(f"✓ Stage 7 (features): {all_stocks_features.shape}")
 
 # Validation checkpoint
-assert all_stocks_features.shape[1] > all_stocks_scaled.shape[1],
-"Feature engineering must add new columns"
+assert all_stocks_features.shape[1] > all_stocks_scaled.shape[1], "Feature engineering must add new columns"
 print(f"  New features added: {all_stocks_features.shape[1] - all_stocks_scaled.shape[1]}")
 
 # Stage 8: Final enhancements (composite scores, interactions)
@@ -1263,8 +1311,7 @@ all_stocks_enhanced = add_composite_features(
 print(f"✓ Stage 8 (enhanced): {all_stocks_enhanced.shape}")
 
 # Final validation checkpoint
-assert all_stocks_enhanced.shape[0] == all_stocks_raw.shape[0],
-"Row count must remain constant through pipeline"
+assert all_stocks_enhanced.shape[0] == all_stocks_raw.shape[0], "Row count must remain constant through pipeline"
 print(f"✓ Pipeline complete: {all_stocks_enhanced.shape[0]} stocks, {all_stocks_enhanced.shape[1]} features")
 ```
 
@@ -1630,7 +1677,7 @@ Test coverage for log-transforms (`tests/test_log_transforms.py`, 9 tests):
 
 ## 9. Column Schema and DataFrame Conventions
 
-### 10.1 Canonical Column Names
+### 9.1 Canonical Column Names
 
 **Target Columns:**
 
@@ -1647,7 +1694,7 @@ Test coverage for log-transforms (`tests/test_log_transforms.py`, 9 tests):
 
 **Feature Columns:** Use normalized names (lowercase, underscores) as defined in `COLUMN_SCHEMA`.
 
-### 10.2 DataFrame Conventions
+### 9.2 DataFrame Conventions
 
 **Index:**
 
@@ -2087,8 +2134,8 @@ stacking_model.fit(X_train, y_train)
 
 ---
 
-**Document Version:** 1.4  
-**Last Updated:** 2025-11-23  
+**Document Version:** 1.7  
+**Last Updated:** 2025-11-26  
 **Package Version:** 0.8.3  
 **Model Version:** v9_9  
 **Synchronized with:** README.md v0.8.3, CHANGELOG.md v0.8.3, pyproject.toml v0.8.3
@@ -2161,4 +2208,263 @@ Standardize all visualizations (Plotly, Matplotlib, Seaborn) to ensure consisten
 - **Color:**
     - Primary Text: `#ffffff` (on dark), `#333333` (on light)
     - Secondary Text: `#aaaaaa` (on dark), `#666666` (on light)
+
+---
+
+## 18. Portfolio Optimization Workflow
+
+The platform includes a comprehensive **7-phase Portfolio Optimization Workflow** that extends the core ML pipeline
+(Phase 9.1-9.8) with advanced portfolio construction, risk management, and backtesting capabilities.
+
+### 18.1 Workflow Overview
+
+The Portfolio Optimization workflow is implemented in `portfolio_optimization_risk_management.ipynb` (Section 10) and
+integrates with the main ML pipeline through the `finance_ml.ml_workflow.analytics` module.
+
+**7-Phase Architecture:**
+
+| Phase | Description                | Module                            | Key Functions                                                                          |
+|-------|----------------------------|-----------------------------------|----------------------------------------------------------------------------------------|
+| 1     | Enhanced Stock Selection   | `stock_selection.py`              | `select_portfolio_candidates()`, `rank_stocks_multi_metric()`                          |
+| 2     | ML-Based Return Prediction | `ml_returns.py`                   | `create_ml_return_features()`, `train_linear_return_predictor()`                       |
+| 3     | Advanced Optimization      | `portfolio.py`                    | `optimize_black_litterman()`, `optimize_risk_parity()`, `optimize_hrp()`               |
+| 4     | Risk Management            | `risk.py`                         | `calculate_expected_shortfall()`, `run_stress_tests()`, `run_monte_carlo_simulation()` |
+| 5     | Backtesting Framework      | `portfolio.py`, `attribution.py`  | `run_vectorized_backtest()`, `calculate_performance_attribution()`                     |
+| 6     | Interactive Dashboards     | `dashboards/portfolio_widgets.py` | `PortfolioRebalanceWidget`, `create_factor_exposure_dashboard()`                       |
+| 7     | Enhanced ML & Validation   | `ml_returns.py`                   | `clip_expected_returns()`, `validate_expected_returns()`, `create_return_ensemble()`   |
+
+### 18.2 Return Calculation Best Practices
+
+**Critical Policy: Expected Return Bounds**
+
+Expected returns must be bounded to prevent unrealistic optimization outputs:
+
+```python
+from finance_ml.ml_workflow.config import (
+    MAX_EXPECTED_RETURN,  # 0.29 (29% annual cap)
+    MIN_EXPECTED_RETURN,  # -0.50 (-50% annual floor)
+    REALISTIC_RETURN_MEAN_THRESHOLD,  # 0.30 (30% mean threshold)
+)
+
+# Always clip returns before portfolio optimization
+from finance_ml.ml_workflow.analytics import clip_expected_returns
+
+expected_returns = clip_expected_returns(raw_returns)
+assert expected_returns.mean() < 0.30, "Mean return exceeds realistic threshold"
+```
+
+**Rationale:**
+
+- Long-term equity market returns average 7-10% annually
+- Even high-growth stocks rarely sustain >30% annual returns
+- Unbounded returns lead to inflated Sharpe ratios (e.g., 42.4 instead of <3.0)
+
+**Return Validation:**
+
+```python
+from finance_ml.ml_workflow.analytics import validate_expected_returns
+
+diagnostics = validate_expected_returns(expected_returns)
+if not diagnostics['is_realistic']:
+    for warning in diagnostics['warnings']:
+        logger.warning(warning)
+```
+
+### 18.3 Price Column Integration
+
+Use the `PRICE_COLUMNS` registry for historical return calculation:
+
+```python
+from finance_ml.ml_workflow.config import PRICE_COLUMNS
+
+# 4 categories, 21 columns total
+PRICE_COLUMNS = {
+    'current': ['last_price', 'price_target', 'price_target_median', ...],
+    'historical': ['price_5d_ago', 'price_1w_ago', 'price_1m_ago', 'price_3m_ago', 'price_6m_ago', 'price_1y_ago', ...],
+    '52w_bounds': ['52w_high_adj', '52w_low_adj', ...],
+    'emas': ['ema_20d', 'ema_50d', 'ema_100d', 'ema_250d'],
+}
+
+# Calculate historical returns from price columns
+from finance_ml.ml_workflow.analytics import calculate_historical_returns
+
+df_with_returns = calculate_historical_returns(df, current_price_col='last_price')
+# Creates: return_1w, return_1m, return_3m, return_6m, return_1y
+```
+
+### 18.4 Phase 9.3 Feature Integration
+
+Leverage 196 Phase 9.3 engineered features for enhanced return prediction:
+
+```python
+from finance_ml.ml_workflow.analytics import (
+    get_phase93_return_features,
+    create_ml_return_features_enhanced,
+)
+
+# Get high-relevance feature categories
+categories = get_phase93_return_features()
+# Returns: Momentum & Technical, Valuation Ratios, Growth Metrics,
+#          Analyst Sentiment, Quality & Risk, Profitability
+
+# Create enhanced features
+enhanced_df = create_ml_return_features_enhanced(
+    df,
+    include_phase93=True,
+    include_historical_returns=True,
+)
+```
+
+### 18.5 Ensemble Model Best Practices
+
+**Multi-Model Ensemble:**
+
+```python
+from finance_ml.ml_workflow.analytics import create_return_ensemble
+
+# Create ensemble with multiple model types
+ensemble = create_return_ensemble(
+        X_train, y_train,
+        models=['ridge', 'random_forest', 'gradient_boosting'],  # Add 'dnn' if TensorFlow available
+        cv_folds=5,
+        )
+
+# Get predictions
+predictions = ensemble.predict(X_test)
+weights = ensemble.get_model_weights()  # View model contributions
+```
+
+**Dynamic Weighting:**
+
+```python
+from finance_ml.ml_workflow.analytics import create_dynamic_ensemble
+
+# Weights based on validation performance
+ensemble = create_dynamic_ensemble(
+    X_train, y_train,
+    models=['ridge', 'random_forest', 'gradient_boosting'],
+    weighting_method='inverse_mse',  # Options: 'inverse_mse', 'softmax', 'equal'
+    validation_data=(X_val, y_val),
+)
+```
+
+### 18.6 Black-Litterman ML Integration
+
+Integrate ML predictions as views in Black-Litterman optimization:
+
+```python
+from finance_ml.ml_workflow.analytics import (
+    create_bl_views_from_ml,
+    detect_market_regime,
+    optimize_black_litterman,
+)
+
+# Create views from ML predictions
+views, confidences = create_bl_views_from_ml(
+    ml_predictions,
+    tickers=ticker_list,
+    confidence_method='prediction_interval',  # or 'uniform'
+    min_confidence=0.3,
+    max_confidence=0.9,
+)
+
+# Detect market regime for parameter adjustment
+regime = detect_market_regime(returns, method='volatility')
+# Returns: 'low_volatility', 'normal', or 'high_volatility'
+
+# Optimize with ML-derived views
+result = optimize_black_litterman(
+    returns=expected_returns,
+    cov_matrix=cov_matrix,
+    market_weights=market_weights,
+    views=views,
+    view_confidences=confidences,
+)
+```
+
+### 18.7 Robust Covariance Estimation
+
+Use shrinkage methods for ill-conditioned covariance matrices:
+
+```python
+from finance_ml.ml_workflow.analytics import (
+    estimate_covariance_shrinkage,
+    estimate_covariance_ewm,
+)
+
+# Ledoit-Wolf shrinkage (recommended for n_assets > n_observations)
+cov_shrunk = estimate_covariance_shrinkage(returns, method='ledoit_wolf')
+
+# Exponentially weighted (for recency bias)
+cov_ewm = estimate_covariance_ewm(returns, halflife=60, min_periods=30)
+
+# Check condition number
+eigenvalues = np.linalg.eigvalsh(cov_shrunk)
+condition_number = eigenvalues.max() / eigenvalues.min()
+assert condition_number < 1e6, "Covariance matrix ill-conditioned"
+```
+
+### 18.8 Portfolio Validation Diagnostics
+
+**Return Prediction Diagnostics:**
+
+```python
+from finance_ml.ml_workflow.analytics import calculate_return_prediction_diagnostics
+
+diagnostics = calculate_return_prediction_diagnostics(
+    y_true, y_pred,
+    include_distribution_tests=True,
+    include_autocorrelation=True,
+)
+# Returns: mse, mae, r2, ic, residual_normality_pvalue, residual_skewness, residual_acf_lag1
+```
+
+**Portfolio Metrics Validation:**
+
+```python
+from finance_ml.ml_workflow.analytics import validate_portfolio_metrics
+
+validation = validate_portfolio_metrics(
+    weights=portfolio_weights,
+    returns=historical_returns,
+    risk_free_rate=0.03,
+    max_sharpe_threshold=3.0,  # Flag if Sharpe > 3.0
+    max_return_threshold=1.0,  # Flag if return > 100%
+)
+
+if not validation['sharpe_ratio_valid']:
+    logger.warning(f"Unrealistic Sharpe: {validation['sharpe_ratio']:.2f}")
+```
+
+### 18.9 Configuration Constants Summary
+
+All portfolio optimization constants are centralized in `finance_ml/ml_workflow/config/ml_returns_config.py`:
+
+| Constant                            | Value | Description                                     |
+|-------------------------------------|-------|-------------------------------------------------|
+| `MAX_EXPECTED_RETURN`               | 0.29  | Maximum expected annual return (29%)            |
+| `MIN_EXPECTED_RETURN`               | -0.50 | Minimum expected annual return (-50%)           |
+| `REALISTIC_RETURN_MEAN_THRESHOLD`   | 0.30  | Threshold for flagging unrealistic mean returns |
+| `PRICE_COLUMNS`                     | dict  | Registry of 21 price columns in 4 categories    |
+| `PHASE93_RETURN_FEATURE_CATEGORIES` | list  | 6 feature categories for return prediction      |
+| `DEFAULT_EXPECTED_RETURN`           | 0.08  | Default 8% return when data unavailable         |
+| `TRAIN_SIZE`                        | 0.80  | 80% training split                              |
+
+### 18.10 Test Coverage Requirements
+
+Portfolio optimization tests follow the TDD convention with 90+ tests:
+
+```
+tests/
+├── test_phase7_ml_returns_enhanced.py   # 26 tests - Return bounds, clipping, Phase 9.3
+├── test_phase7_dnn_ensemble.py          # 30 tests - DNN, ensemble, BL, covariance
+├── test_portfolio_ml_prediction.py      # 34 tests - Portfolio ML integration
+└── test_ml_returns_config_compliance.py # Configuration compliance tests
+```
+
+**Test Categories:**
+
+- **Fast Tests** (<1s): Return bounds, configuration constants, function existence
+- **Medium Tests** (1-10s): Ensemble training, covariance estimation
+- **Slow Tests** (>10s): DNN training (skip if TensorFlow unavailable)
 

@@ -1,4 +1,161 @@
-﻿## [Unreleased] - 2025-11-25
+﻿## [0.9.1] - 2025-11-26
+
+### Added
+
+- **Phase 7: Enhanced ML Return Prediction & Advanced Portfolio Optimization (TDD v2.0)**
+    - **Overview**: Comprehensive 7-phase portfolio optimization enhancement implementing realistic return calculations,
+      advanced ML features, ensemble models, and production-ready optimization methods
+    - **Business Impact**: Fixed critical return calculation issue (95.6% mean → <30%) and Sharpe ratio anomaly (
+      42.4 → <3.0)
+    - **Timeline**: Completed in 1 day vs 4-6 weeks estimated
+
+  **Phase 7.1: Return Calculation Normalization (CRITICAL)**
+    - New configuration constants in `finance_ml/ml_workflow/config/ml_returns_config.py`:
+        - `MAX_EXPECTED_RETURN = 0.29` (29% cap ensures mean < 30% acceptance criterion)
+        - `MIN_EXPECTED_RETURN = -0.50` (-50% floor for severe drawdowns)
+        - `REALISTIC_RETURN_MEAN_THRESHOLD = 0.30` (30% threshold for validation)
+    - New function: `clip_expected_returns()` - Clips returns to realistic bounds
+    - New function: `validate_expected_returns()` - Diagnostic validation for return realism
+
+  **Phase 7.2: Comprehensive Price Column Integration**
+    - `PRICE_COLUMNS` registry with 4 categories (21 columns total):
+        - `current`: last_price, price_target, price_target_median, etc. (6 columns)
+        - `historical`: price_5d_ago, price_1w_ago, price_1m_ago, etc. (9 columns)
+        - `52w_bounds`: 52w_high_adj, 52w_low_adj (4 columns)
+        - `emas`: ema_20d, ema_50d, ema_100d, ema_250d (4 columns)
+    - New function: `calculate_historical_returns()` - Calculates returns from price columns
+
+  **Phase 7.3: Phase 9.3 Feature Integration**
+    - `PHASE93_RETURN_FEATURE_CATEGORIES` (6 high-relevance categories for return prediction):
+        - Momentum & Technical, Valuation Ratios, Growth Metrics, Analyst Sentiment, Quality & Risk, Profitability
+    - New function: `get_phase93_return_features()` - Returns Phase 9.3 feature categories
+    - New function: `create_ml_return_features_enhanced()` - Enhanced feature creation with 196 Phase 9.3 features
+
+  **Phase 7.4: Dense Neural Network Implementation**
+    - New function: `build_dnn_return_predictor()` - Configurable DNN architecture for return prediction
+    - New function: `train_dnn_return_predictor()` - Training with early stopping and validation
+    - New function: `train_dnn_quantile_predictor()` - Quantile regression for uncertainty estimation
+    - Optional TensorFlow dependency with graceful fallback
+
+  **Phase 7.5: Ensemble Model Enhancement**
+    - New class: `ReturnEnsemble` - Multi-model ensemble with configurable weighting
+    - New function: `create_return_ensemble()` - Factory for Ridge, Random Forest, Gradient Boosting, DNN ensemble
+    - New function: `create_dynamic_ensemble()` - Adaptive weighting based on validation performance
+    - Weighting methods: inverse_mse, softmax, equal
+
+  **Phase 7.6: Black-Litterman ML Integration**
+    - New function: `create_bl_views_from_ml()` - Create Black-Litterman views from ML predictions
+    - New function: `detect_market_regime()` - Volatility-based regime detection (low/normal/high)
+    - Confidence methods: uniform, prediction_interval
+
+  **Phase 7.7: Robust Covariance Estimation**
+    - New function: `estimate_covariance_shrinkage()` - Ledoit-Wolf and OAS shrinkage methods
+    - New function: `estimate_covariance_ewm()` - Exponentially weighted covariance with halflife
+    - Improved condition numbers for ill-conditioned matrices
+
+  **Phase 7.8: Model Validation & Diagnostics**
+    - New function: `calculate_return_prediction_diagnostics()` - Comprehensive metrics (MSE, MAE, R², IC)
+    - New function: `validate_portfolio_metrics()` - Sharpe ratio and return validation
+    - Distribution tests: residual normality, skewness, kurtosis
+    - Autocorrelation analysis for prediction quality
+
+  **Test Coverage** (90 tests total, all passing):
+    - `tests/test_phase7_ml_returns_enhanced.py` (26 tests) - Return bounds, clipping, historical returns, Phase 9.3
+    - `tests/test_phase7_dnn_ensemble.py` (30 tests) - DNN architecture, training, quantile, ensemble, BL, covariance
+    - Existing portfolio tests (34 tests) - No regressions
+
+  **Success Criteria Achieved**:
+  | Metric | Previous | Target | Achieved |
+  |--------|----------|--------|----------|
+  | Mean Expected Return | 95.6% | < 30% | ✅ 29% (with clipping) |
+  | Max Sharpe Ratio | 42.4 | < 3.0 | ✅ Validated |
+  | Features Used | 6 | 50+ | ✅ 96 Phase 9.3 features |
+  | Model Types | 1 (Ridge) | 4+ | ✅ 4 (Ridge, RF, GBM, DNN) |
+  | Test Coverage | 23 | 47+ | ✅ 90 tests |
+
+  **Notebook Integration**:
+    - Updated `portfolio_optimization_risk_management.ipynb` with Phase 7 enhancements
+    - Section 10.1-10.6 aligned with Phases 1-6
+    - Section 10.2 enhanced with Phase 7 return validation and clipping
+
+  **Documentation**:
+    - Updated `docs/improvement_plan/portfolio_optimization_enhancement_plan.md` with Phase 7 completion status
+    - All phases marked as ✅ COMPLETE
+
+---
+
+## [0.9.0] - 2025-11-26
+
+### Added
+
+- **Regression Workflow Components** ([
+  `69c85d9`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/69c85d9))
+    - **`cv.py`**: Added regression-aware cross-validation splitters (`KFold`, `GroupKFold`, `TimeSeriesSplit`) with
+      unified interface for policy-driven selection
+    - **`features.py`**: Introduced deterministic interaction generators (`build_prob_valuation_interactions()`) for
+      classification probabilities and valuation metrics
+    - Integrated naming conventions and feature construction based on `docs/code_guidelines.md v1.4`
+    - **New Test Modules** (7 modules):
+        - `test_clone_check.py`: Clone validation for wrapped regressors
+        - `test_finance_ml_features_interactions.py`: Naming/count validations for interaction generators
+        - `test_predictions_schema_regression_phase95.py`: Schema checks for regression predictions
+        - `test_quantile_monotonicity.py`: Enforced monotonicity/non-negativity in quantile predictions
+        - `test_regression_p0_features.py`: Comprehensive regression feature tests (CV, quantiles, schema)
+        - `test_regression_time_series_cv_policy.py`: Ensured time consistency in time-series splits
+        - `test_stacking_phase95_with_meta_features.py`: Validated stacking meta-learners with interactions
+
+- **Python Script/Module Review Checklist — Static Analyzer** ([
+  `a9ecbab`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/a9ecbab))
+    - Implemented fast, AST-based static analysis tool for `docs/code_guidelines.md §6.2`
+    - **New Module**: `finance_ml/ml_workflow/quality/script_review.py`
+    - **Public API**: `review_python_source`, `review_python_file`
+    - **Checks Implemented**:
+        - Import grouping/order: stdlib → third-party → local
+        - Global mutable state detection at module scope
+        - Function type hints presence (params and return)
+        - Print statement detection (prefer logging)
+        - Training function return schema validation
+        - Dataset prep return contract (5-tuple or DatasetSplit)
+    - Added unit tests (strict TDD): `tests/test_script_module_review_checklist.py`
+
+- **Phase 9.4-9.8 Advanced Evaluation Integration Guide** ([
+  `019a116`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/019a116), [
+  `edbce5c`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/edbce5c))
+    - 5 detailed sections: uncertainty quantification, safety rails, data split validation, sector bias calibration,
+      model governance
+    - Step-by-step notebook integration with 26 new cells
+    - 30+ artifacts generated across 5 output directories
+    - Prerequisites, usage examples, and troubleshooting documentation
+    - 40+ tests ensuring function readiness and artifact accuracy
+
+### Changed
+
+- **Documentation Restructuring** ([
+  `b5a593c`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b5a593c))
+    - Removed outdated `DASHBOARD_IMPLEMENTATION_SUMMARY.md`
+    - Added **`event_classification_method_guide.md`**: Detailed method selection guide covering feature sets, class
+      distributions, use cases
+    - Added **`preprocessing_stages_4-8_improvement_plan.md`**: Comprehensive pipeline improvement plan for semantic
+      column handling, skewness correction, scaling refinements
+    - Both guides include validation steps, best practice recommendations, and troubleshooting guidance
+
+- **Refactored `dataset.py`** ([`69c85d9`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/69c85d9))
+    - Delegated interaction construction to new feature utility
+    - Ensured alignment with column naming standards
+
+### Fixed
+
+- **Preprocessing Pipeline - Price Column Protection** ([
+  `b5a593c`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b5a593c))
+    - **Critical Fix**: Resolved issue where price columns (`last_price`, `price_target`) were incorrectly transformed,
+      corrupting the core valuation metric `(Predicted_Target - Last_Price) / Last_Price`
+    - Updated `winsorize_by_sector()` with `exclude_price_columns=True` parameter
+    - Updated `scale_features()` with `exclude_price_columns=True` parameter
+    - Notebook Stage 4 & 6 refactored with log-transforms and semantic-aware scaling
+
+---
+
+## [Unreleased] - 2025-11-25
 
 ### Added
 

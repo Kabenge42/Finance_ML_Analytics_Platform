@@ -807,7 +807,7 @@ def train_stacking_regressor(
     # Phase 9.5 new args for meta-features and interactions
     use_meta_features: bool = False,
     classification_probabilities: Optional[np.ndarray] = None,
-    enable_interactions: bool = False,
+    enable_interactions: bool = True,
     interaction_valuation_cols: Optional[List[str]] = None,
     cv_policy: str = "kfold",
     date_col: str = "snapshot_date",

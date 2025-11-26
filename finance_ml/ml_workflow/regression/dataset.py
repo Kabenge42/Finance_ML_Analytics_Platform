@@ -474,7 +474,7 @@ def prepare_features_for_training(
     df: pd.DataFrame,
     feature_cols: List[str],
     target_col: str,
-    apply_imputation: bool = True,
+    apply_imputation: bool = False,
     sector_column: str = "sector",
 ) -> Tuple[pd.DataFrame, pd.Series]:
     """

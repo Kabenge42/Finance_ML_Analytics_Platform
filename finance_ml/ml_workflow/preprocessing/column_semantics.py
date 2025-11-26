@@ -5,18 +5,21 @@ This module defines semantic categories for financial columns to enable
 intelligent preprocessing decisions:
 
 - Price columns: Must be preserved in original units (never transform)
+  - Includes: current prices, targets, historical prices, 52w bounds, EMAs (21 total)
 - Market value columns: Highly skewed, require log-transforms
 - Ratio columns: Pre-normalized financial ratios
 - Percentage columns: Bounded [0, 100]
 - Count columns: Discrete integer counts
 
 Aligned with preprocessing_stages_4-8_improvement_plan.md Task 1.1
-and code_guidelines.md v1.5 Section 8.5: Preprocessing Stage Naming
+and code_guidelines.md v1.7 Section 8.5: Preprocessing Stage Naming
 
 Business Rationale:
 The core business metric (Predicted_Target - Last_Price) / Last_Price requires
-price columns to remain in original dollar units. Transforming prices corrupts
-the valuation analysis.
+price columns to remain in original dollar units. This extends to historical
+prices (for momentum: (price - price_1m_ago) / price_1m_ago), 52-week bounds
+(for relative positioning), and EMAs (for technical analysis). Transforming
+these columns corrupts the valuation and momentum analysis.
 """
 
 from __future__ import annotations
@@ -30,13 +33,31 @@ logger = logging.getLogger(__name__)
 # Price Columns - NEVER transform (critical for business metric)
 # These columns must remain in original dollar units for valuation analysis
 PRICE_COLUMNS: Set[str] = {
-    'last_price',              # Current market price (critical)
-    'price_target',            # Analyst consensus target (critical)
-    'price_target_median',     # Median analyst target
-    'price_target_ytd_ago',    # Historical target (YTD)
-    'price_target_12m_ago',    # Historical target (12M)
-    'price_target_low',        # Low analyst target
-    'price_target_high',       # High analyst target
+    # Current prices and targets
+    "last_price",  # Current market price (critical)
+    "price_target",  # Analyst consensus target (critical)
+    "price_target_median",  # Median analyst target
+    "price_target_ytd_ago",  # Historical target (YTD)
+    "price_target_low",  # Low analyst target
+    "price_target_high",  # High analyst target
+    # Historical prices (for momentum calculations)
+    "price_5d_ago",  # Price 5 days ago
+    "price_1w_ago",  # Price 1 week ago
+    "price_1m_ago",  # Price 1 month ago
+    "price_3m_ago",  # Price 3 months ago
+    "price_6m_ago",  # Price 6 months ago
+    "price_1y_ago",  # Price 1 year ago
+    "price_3y_ago",  # Price 3 years ago
+    "price_5y_ago",  # Price 5 years ago
+    "price_qtd_ago",  # Price at quarter-to-date start
+    # 52-week bounds (for relative positioning)
+    "52w_high_adj",  # 52-week adjusted high
+    "52w_low_adj",  # 52-week adjusted low
+    # Exponential moving averages (technical indicators)
+    "ema_20d",  # 20-day EMA
+    "ema_50d",  # 50-day EMA
+    "ema_100d",  # 100-day EMA
+    "ema_250d",  # 250-day EMA (1-year trend proxy)
 }
 
 

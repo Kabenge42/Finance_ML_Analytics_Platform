@@ -941,20 +941,34 @@ def create_enhanced_event_labels(
         growth_score /= signal_count
 
         # High growth = positive (5-class)
-        labels[growth_score >= growth_score.quantile(0.85)] = 4
-        labels[
-            (growth_score >= growth_score.quantile(0.65))
-            & (growth_score < growth_score.quantile(0.85))
-        ] = 3
-        labels[
-            (growth_score >= growth_score.quantile(0.35))
-            & (growth_score < growth_score.quantile(0.65))
-        ] = 2
-        labels[
-            (growth_score <= growth_score.quantile(0.35))
-            & (growth_score > growth_score.quantile(0.15))
-        ] = 1
-        labels[growth_score <= growth_score.quantile(0.15)] = 0
+        # FIXED 2025-11-26: Use pd.qcut for proper quintile-based binning to ensure balanced distribution
+        # Previous manual quantile logic had gaps/overlaps causing 64.2% class 0 imbalance
+        try:
+            # pd.qcut creates balanced bins; labels 0-4 map to quintiles (low to high growth)
+            labels_series = pd.qcut(
+                growth_score.rank(method="first"),  # Use rank to handle ties
+                q=5,
+                labels=[0, 1, 2, 3, 4],
+                duplicates="drop",
+            )
+            labels = labels_series.fillna(2).astype(int).values  # NaN -> neutral (2)
+        except ValueError:
+            # Fallback if qcut fails (e.g., too few unique values)
+            logger.warning("pd.qcut failed for growth_event, using percentile fallback")
+            labels[growth_score >= growth_score.quantile(0.85)] = 4
+            labels[
+                (growth_score >= growth_score.quantile(0.65))
+                & (growth_score < growth_score.quantile(0.85))
+            ] = 3
+            labels[
+                (growth_score >= growth_score.quantile(0.35))
+                & (growth_score < growth_score.quantile(0.65))
+            ] = 2
+            labels[
+                (growth_score <= growth_score.quantile(0.35))
+                & (growth_score > growth_score.quantile(0.15))
+            ] = 1
+            labels[growth_score <= growth_score.quantile(0.15)] = 0
 
     elif method == "quality_event":
         # Quality events using ALL 18 Phase 9.3 Quality & Risk features
@@ -1039,20 +1053,34 @@ def create_enhanced_event_labels(
         quality_score /= signal_count
 
         # High quality = positive (5-class)
-        labels[quality_score >= quality_score.quantile(0.85)] = 4
-        labels[
-            (quality_score >= quality_score.quantile(0.65))
-            & (quality_score < quality_score.quantile(0.85))
-        ] = 3
-        labels[
-            (quality_score >= quality_score.quantile(0.35))
-            & (quality_score < quality_score.quantile(0.65))
-        ] = 2
-        labels[
-            (quality_score <= quality_score.quantile(0.35))
-            & (quality_score > quality_score.quantile(0.15))
-        ] = 1
-        labels[quality_score <= quality_score.quantile(0.15)] = 0
+        # FIXED 2025-11-26: Use pd.qcut for proper quintile-based binning to ensure balanced distribution
+        # Previous manual quantile logic had gaps/overlaps causing 63.2% class 0 imbalance
+        try:
+            # pd.qcut creates balanced bins; labels 0-4 map to quintiles (low to high quality)
+            labels_series = pd.qcut(
+                quality_score.rank(method="first"),  # Use rank to handle ties
+                q=5,
+                labels=[0, 1, 2, 3, 4],
+                duplicates="drop",
+            )
+            labels = labels_series.fillna(2).astype(int).values  # NaN -> neutral (2)
+        except ValueError:
+            # Fallback if qcut fails (e.g., too few unique values)
+            logger.warning("pd.qcut failed for quality_event, using percentile fallback")
+            labels[quality_score >= quality_score.quantile(0.85)] = 4
+            labels[
+                (quality_score >= quality_score.quantile(0.65))
+                & (quality_score < quality_score.quantile(0.85))
+            ] = 3
+            labels[
+                (quality_score >= quality_score.quantile(0.35))
+                & (quality_score < quality_score.quantile(0.65))
+            ] = 2
+            labels[
+                (quality_score <= quality_score.quantile(0.35))
+                & (quality_score > quality_score.quantile(0.15))
+            ] = 1
+            labels[quality_score <= quality_score.quantile(0.15)] = 0
 
     elif method == "composite_event":
         # Composite events using ALL 5 Phase 9.3 Composite Scores features
@@ -1258,20 +1286,34 @@ def create_enhanced_event_labels(
 
         capital_score /= signal_count
 
-        labels[capital_score >= capital_score.quantile(0.85)] = 4
-        labels[
-            (capital_score >= capital_score.quantile(0.65))
-            & (capital_score < capital_score.quantile(0.85))
-        ] = 3
-        labels[
-            (capital_score >= capital_score.quantile(0.35))
-            & (capital_score < capital_score.quantile(0.65))
-        ] = 2
-        labels[
-            (capital_score <= capital_score.quantile(0.35))
-            & (capital_score > capital_score.quantile(0.15))
-        ] = 1
-        labels[capital_score <= capital_score.quantile(0.15)] = 0
+        # FIXED 2025-11-26: Use pd.qcut for proper quintile-based binning to ensure balanced distribution
+        # Previous manual quantile logic had gaps/overlaps causing 69.1% class 0 imbalance
+        try:
+            # pd.qcut creates balanced bins; labels 0-4 map to quintiles (low to high capital allocation quality)
+            labels_series = pd.qcut(
+                capital_score.rank(method="first"),  # Use rank to handle ties
+                q=5,
+                labels=[0, 1, 2, 3, 4],
+                duplicates="drop",
+            )
+            labels = labels_series.fillna(2).astype(int).values  # NaN -> neutral (2)
+        except ValueError:
+            # Fallback if qcut fails (e.g., too few unique values)
+            logger.warning("pd.qcut failed for capital_allocation_event, using percentile fallback")
+            labels[capital_score >= capital_score.quantile(0.85)] = 4
+            labels[
+                (capital_score >= capital_score.quantile(0.65))
+                & (capital_score < capital_score.quantile(0.85))
+            ] = 3
+            labels[
+                (capital_score >= capital_score.quantile(0.35))
+                & (capital_score < capital_score.quantile(0.65))
+            ] = 2
+            labels[
+                (capital_score <= capital_score.quantile(0.35))
+                & (capital_score > capital_score.quantile(0.15))
+            ] = 1
+            labels[capital_score <= capital_score.quantile(0.15)] = 0
 
     elif method == "employee_productivity_event":
         # Employee productivity events using ALL 16 Phase 9.3 Employee Productivity features

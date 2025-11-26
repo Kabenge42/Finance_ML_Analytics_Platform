@@ -119,10 +119,7 @@ class TestSelectPortfolioCandidates(unittest.TestCase):
         all_stocks = create_sample_portfolio_data()
 
         candidates = select_portfolio_candidates(
-            all_stocks,
-            min_market_cap=1,
-            top_n=5,
-            max_sector_weight=0.4,
+            all_stocks, min_market_cap=1, top_n=5, max_sector_weight=0.4
         )
 
         self.assertLessEqual(len(candidates), 5)
