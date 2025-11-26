@@ -93,6 +93,102 @@
   valuation metric from corruption. All preprocessing functions are now semantic-aware and respect column types. Test
   suite expanded from 85 to 89 modules (includes 4 new preprocessing test modules).
 
+- **Preprocessing Pipeline - Expanded PRICE_COLUMNS to 21 Columns** (2025-11-25)
+    - **Overview**: Expanded `PRICE_COLUMNS` from 7 to 21 columns to protect historical prices, 52-week bounds, and
+      technical indicators (EMAs) throughout the preprocessing pipeline
+    - **Business Impact**: Preserves momentum analysis, relative positioning, and technical indicator calculations by
+      keeping historical price data in original dollar units
+
+  **PRICE_COLUMNS Expansion** (7 → 21 columns, +14 new):
+    - **Current prices and targets** (6): `last_price`, `price_target`, `price_target_median`, `price_target_ytd_ago`,
+      `price_target_low`, `price_target_high`
+    - **Historical prices** (9): `price_5d_ago`, `price_1w_ago`, `price_1m_ago`, `price_3m_ago`, `price_6m_ago`,
+      `price_1y_ago`, `price_3y_ago`, `price_5y_ago`, `price_qtd_ago`
+    - **52-week bounds** (2): `52w_high_adj`, `52w_low_adj`
+    - **Exponential Moving Averages** (4): `ema_20d`, `ema_50d`, `ema_100d`, `ema_250d`
+
+  **Protected Use Cases**:
+    1. **Momentum Features**: Historical price comparisons require original dollar scale
+        - Example: `price_momentum_1m = (last_price - price_1m_ago) / price_1m_ago`
+    2. **Technical Indicators**: 52w positioning and EMA deviations require price-scale consistency
+        - Example: `price_vs_52w_range = (last_price - 52w_low) / (52w_high - 52w_low)`
+        - Example: `ema_50d_deviation = (last_price - ema_50d) / ema_50d`
+    3. **Cross-Stock Analysis**: Relative metrics depend on absolute price preservation
+
+  **Module Updates**:
+    - `finance_ml/ml_workflow/preprocessing/column_semantics.py`
+        - Expanded `PRICE_COLUMNS` set from 7 to 21 columns (+14 new)
+        - Updated module docstring with expanded rationale covering momentum, technical analysis, and relative
+          positioning
+        - All 21 columns now automatically excluded from winsorization and scaling
+
+  **Documentation Updates**:
+    - `docs/code_guidelines.md` (v1.7)
+        - **Section 5.2**: Added 14 new SQL → Python column mappings for price columns
+        - **Section 5.4**: Documented new columns as inputs to Phase 9.3 feature categories (Momentum, Technical
+          Indicators)
+        - **Section 8.5.2**: Expanded Price Column Preservation Policy with:
+            - Complete 21-column list breakdown by category
+            - New validation examples using `PRICE_COLUMNS` import
+            - Three concrete use cases with code examples
+
+  **Notebook Integration** (ml_finance_model_main.ipynb):
+    - **Phase 9.1 - Stage 4 (Winsorization)**: Updated verification to check all 21 price columns
+        - Added `from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS`
+        - Changed verification from 3 hardcoded columns to all 21 columns from `PRICE_COLUMNS` set
+        - Reports: `✓ Verified {n}/21 price columns preserved (business metric protection)`
+    - **Phase 9.1 - Stage 6 (Scaling)**: Updated verification to check all 21 price columns
+        - Uses `PRICE_COLUMNS` import for comprehensive verification
+        - Updated scaled column count logic to exclude all 21 price columns
+        - Reports: `✓ Verified {n}/21 price columns preserved (business metric protection)`
+    - **Phase 9.3 (Feature Engineering)**: Added new verification checkpoint
+        - Verifies all 21 price columns preserved after feature engineering
+        - Inherits price columns from `all_stocks_scaled` → `all_stocks_features`
+        - Reports: `✓ Verified {n}/21 price columns preserved after feature engineering (business metric protection)`
+    - **Phase 9.5 (Classification Meta-Features)**: Added new verification checkpoint
+        - Verifies all 21 price columns preserved after Phase 9.5 preprocessing
+        - Inherits from `all_stocks_with_classification` → `all_stocks_enhanced`
+        - Handles index alignment for dropped rows (dropna operations)
+        - Reports:
+          `✓ Verified {n}/21 price columns preserved after Phase 9.5 preprocessing (business metric protection)`
+
+  **Test Coverage** (27 tests, all passing):
+    - `tests/test_column_semantics.py` (10 tests) - Verifies all 21 columns across 4 categories
+    - `tests/test_selective_winsorization.py` (8 tests) - Tests exclusion of historical prices, 52w bounds, EMAs
+    - `tests/test_selective_scaling.py` (9 tests) - Verifies all 21 price columns excluded from scaling
+
+  **Validation**:
+    - ✅ All 27 preprocessing tests passing (test_column_semantics, test_selective_winsorization, test_selective_scaling)
+    - ✅ Notebook verification checkpoints confirm preservation at each stage (9.1, 9.3, 9.5)
+    - ✅ Backward compatible - all changes additive (expanding the protected set)
+
+  **Files Modified** (3 files):
+    - `finance_ml/ml_workflow/preprocessing/column_semantics.py` (+14 columns in PRICE_COLUMNS, updated docstring)
+    - `docs/code_guidelines.md` (Sections 5.2, 5.4, 8.5.2 updated with 21-column examples)
+    - `ml_finance_model_main.ipynb` (Phase 9.1, 9.3, 9.5 - added comprehensive 21-column verification)
+
+  **Files Updated** (1 test file):
+    - `tests/test_column_semantics.py` (expanded test coverage for 21 columns across 4 categories)
+
+  **Impact**: All preprocessing stages (winsorization, scaling, feature engineering, classification meta-features) now
+  protect the complete set of 21 price-related columns. This ensures momentum features, technical indicators, and
+  relative positioning calculations work correctly throughout the ML pipeline. The notebook provides comprehensive
+  verification at each stage with clear diagnostic messages.
+
+### Fixed
+
+- **Regression Features - Duplicate Index Error** (2025-11-25)
+    - **Issue**: `ValueError: cannot reindex on an axis with duplicate labels` when creating interaction features in
+      `build_prob_valuation_interactions()` (Phase 9.5 stacking ensemble with meta-features)
+    - **Root Cause**: Line 54 in `finance_ml/ml_workflow/regression/features.py` used pandas Series multiplication
+      `out[v] * out[p]`, which triggers index alignment checks that fail when duplicate indices exist in training data
+    - **Fix**: Changed to NumPy array multiplication `out[v].values * out[p].values` to bypass pandas index alignment
+    - **Impact**: Stacking regressor with classification meta-features and interactions now works with real-world data
+      containing duplicate tickers or dates
+    - **Validation**: All 6 regression tests pass (test_regression_p0_features,
+      test_stacking_phase95_with_meta_features)
+    - **Files Modified**: `finance_ml/ml_workflow/regression/features.py` (line 54-55)
+
 ## [Unreleased] - 2025-11-24
 
 ### Fixed

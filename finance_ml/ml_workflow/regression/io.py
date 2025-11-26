@@ -346,7 +346,7 @@ def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
     ``code_guidelines.md`` Section 2.4 while remaining backward compatible
     with existing artifacts.
 
-    The function focuses on three responsibilities:
+    The function focuses on core responsibilities aligned with code_guidelines.md v1.4+:
 
     1. Ensure **core prediction columns** are present::
 
@@ -355,14 +355,17 @@ def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
        If any are missing, a :class:`ValueError` is raised listing the
        missing columns.
 
-    2. If lower/upper quantile columns (``pred_p10`` and ``pred_p90``) are
-       present but ``interval_width`` is missing, it derives::
+    2. If lower/upper quantile columns (``pred_p10``/``pred_p50``/``pred_p90``)
+       are present:
+       - **interval_width** must be present (Phase 9.5 P0.4).
+       - Values must be non-negative (>=0).
+       - Monotonicity per-row (p10 ≤ p50 ≤ p90) must be satisfied.
+       - If violations are found, a :class:`ValueError` is raised.
 
-           interval_width = pred_p90 - pred_p10
-
-    3. Enforce simple invariants on non-negative price columns.  When a
-       ``last_price`` column is present, all finite values must be
+    3. Enforce simple invariants on non-negative price-like columns. When
+       a ``last_price`` column is present, all finite values must be
        non-negative; otherwise a :class:`ValueError` is raised.
+       Any negative ``y_pred`` values raise a :class:`ValueError` (Phase 9.5 P0.4).
 
     Parameters
     ----------
@@ -372,9 +375,8 @@ def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
     Returns
     -------
     pandas.DataFrame
-        The validated (and possibly augmented) dataframe. A shallow copy is
-        returned when modifications are applied; otherwise the original
-        dataframe is returned unchanged.
+        The validated dataframe. A shallow copy is returned if modifications
+        are needed (though strict mode prefers raising errors).
     """
 
     import numpy as np
@@ -391,17 +393,52 @@ def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
             f"Predictions schema validation failed: missing required columns: {missing}"
         )
 
-    # Work on a shallow copy only if we need to mutate (e.g. add interval_width)
     result = df
 
-    # 2. Derive interval_width from quantiles when available
+    # 2. Quantile handling: non-negativity, monotonicity and interval width
     has_p10 = "pred_p10" in df.columns
+    has_p50 = "pred_p50" in df.columns
     has_p90 = "pred_p90" in df.columns
     has_interval = "interval_width" in df.columns
 
-    if has_p10 and has_p90 and not has_interval:
-        result = df.copy()
-        result["interval_width"] = result["pred_p90"] - result["pred_p10"]
+    if has_p10 and has_p50 and has_p90:
+        # Strict check for interval_width (Phase 9.5 P0.4)
+        if not has_interval:
+            raise ValueError(
+                "Predictions schema validation failed: 'interval_width' column is required "
+                "when quantile predictions (p10, p50, p90) are present."
+            )
+
+        # Strict check for non-negativity
+        for qcol in ("pred_p10", "pred_p50", "pred_p90"):
+            neg_count = (result[qcol] < 0).sum(skipna=True)
+            if neg_count > 0:
+                raise ValueError(
+                    f"Predictions schema validation failed: {qcol} contains {neg_count} negative values. "
+                    "Models must enforce non-negativity before validation."
+                )
+
+        # Strict check for monotonicity
+        # p10 <= p50 <= p90
+        # Allow small floating point tolerance if needed, but here we enforce strict <=
+        monotonic_violation = (
+            (result["pred_p10"] > result["pred_p50"]) | (result["pred_p50"] > result["pred_p90"])
+        ).sum(skipna=True)
+
+        if monotonic_violation > 0:
+            raise ValueError(
+                f"Predictions schema validation failed: {monotonic_violation} rows violate "
+                "quantile monotonicity (p10 <= p50 <= p90)."
+            )
+
+    # Strict check for negative y_pred
+    if "y_pred" in df.columns:
+        neg_pred = (result["y_pred"] < 0).sum(skipna=True)
+        if neg_pred > 0:
+            raise ValueError(
+                f"Predictions schema validation failed: y_pred contains {neg_pred} negative values. "
+                "Models must enforce non-negativity before validation."
+            )
 
     # 3. Non-negative last_price invariant (if column exists)
     if "last_price" in result.columns:

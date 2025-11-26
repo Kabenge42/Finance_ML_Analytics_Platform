@@ -134,6 +134,9 @@ from finance_ml.ml_workflow.analytics import (
     rank_stocks_by_sector as analytics_rank_by_sector,
 )
 
+# Re-export eval submodule so tests/notebooks can use `from finance_ml.eval import simple_eda`
+from finance_ml.ml_workflow.analytics import eval as eval  # noqa: F401
+
 # Phase 9.4 Refactor: Import from new classification subpackage
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels as classification_create_enhanced_event_labels,
@@ -516,6 +519,8 @@ __all__ = [
     "reset_config",
     # Notebook configuration
     "NotebookConfig",
+    # Submodules
+    "eval",
     # Data module
     "normalize_columns",
     "infer_region_from_filename",

@@ -169,6 +169,16 @@ def integrate_classification_features_into_dataframe(
     df_reset = df.reset_index(drop=True)
     features_reset = classification_features.reset_index(drop=True)
 
+    # Drop overlapping columns from base dataframe to prevent duplicates
+    # (e.g. if integrate_classification_features is called multiple times)
+    overlap_cols = [col for col in features_reset.columns if col in df_reset.columns]
+    if overlap_cols:
+        logger.debug(
+            f"Dropping {len(overlap_cols)} overlapping classification columns "
+            f"from base dataframe to avoid duplicates: {overlap_cols}"
+        )
+        df_reset = df_reset.drop(columns=overlap_cols)
+
     # Concatenate horizontally
     result = pd.concat([df_reset, features_reset], axis=1)
 
@@ -229,23 +239,24 @@ def create_classification_interactions(
     """
     Create interaction features between classification probabilities and valuation metrics.
 
+    Delegates to the unified `build_prob_valuation_interactions` utility
+    (Phase 9.5 P2).
+
     Args:
         df: Input DataFrame
-        classification_cols: Classification feature columns (e.g., event probabilities)
-        valuation_cols: Valuation metric columns (e.g., P/E, P/B ratios)
+        classification_cols: Classification feature columns
+        valuation_cols: Valuation metric columns
 
     Returns:
         DataFrame with additional interaction features
     """
-    df_enhanced = df.copy()
+    from finance_ml.ml_workflow.regression.features import build_prob_valuation_interactions
 
-    # Create pairwise interactions
-    for class_col in classification_cols:
-        for val_col in valuation_cols:
-            interaction_name = f"{class_col}_x_{val_col}"
-            df_enhanced[interaction_name] = df[class_col] * df[val_col]
-
-    return df_enhanced
+    # Note: build_prob_valuation_interactions naming convention is {val}_x_{prob}
+    # The original implementation here was {class}_x_{val}.
+    # Code guidelines prefer valuation first.
+    # We will use the new utility which enforces standard.
+    return build_prob_valuation_interactions(df, valuation_cols, classification_cols)
 
 
 # ==============================================================================

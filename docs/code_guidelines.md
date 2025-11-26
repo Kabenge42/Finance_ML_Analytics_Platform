@@ -485,6 +485,21 @@ def normalize_column_name(col: str) -> str:
 | `"Volatility (1M)"`        | `volatility_1m`        | feature         | float    |
 | `"Beta (5Y)"`              | `beta_5y`              | feature         | float    |
 | `"Analyst Rating"`         | `analyst_rating`       | feature         | float    |
+| `"Price (5D Ago)"`         | `price_5d_ago`         | feature         | float    |
+| `"Price (1W Ago)"`         | `price_1w_ago`         | feature         | float    |
+| `"Price (1M Ago)"`         | `price_1m_ago`         | feature         | float    |
+| `"Price (3M Ago)"`         | `price_3m_ago`         | feature         | float    |
+| `"Price (6M Ago)"`         | `price_6m_ago`         | feature         | float    |
+| `"Price (1Y Ago)"`         | `price_1y_ago`         | feature         | float    |
+| `"Price (3Y Ago)"`         | `price_3y_ago`         | feature         | float    |
+| `"Price (5Y Ago)"`         | `price_5y_ago`         | feature         | float    |
+| `"Price (QTD Ago)"`        | `price_qtd_ago`        | feature         | float    |
+| `"52W High/Adj."`          | `52w_high_adj`         | feature         | float    |
+| `"52W Low/Adj."`           | `52w_low_adj`          | feature         | float    |
+| `"EMA (20D)"`              | `ema_20d`              | feature         | float    |
+| `"EMA (50D)"`              | `ema_50d`              | feature         | float    |
+| `"EMA (100D)"`             | `ema_100d`             | feature         | float    |
+| `"EMA (250D)"`             | `ema_250d`             | feature         | float    |
 
 ### 5.3 Schema Registry
 
@@ -512,6 +527,10 @@ numeric_cols = list_numeric_feature_cols()  # Returns list of numeric feature co
 Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_INPUTS`):
 
 - **Momentum**: price_momentum_1m/3m/6m, rsi_14d/30d, ma_crossover_signal, return_stability_score
+    - **Input Columns** (from PRICE_COLUMNS): price_5d_ago, price_1w_ago, price_1m_ago, price_3m_ago, price_6m_ago,
+      price_1y_ago, price_3y_ago, price_5y_ago, price_qtd_ago
+- **Technical Indicators**: ema_crossover_signal, price_vs_52w_range, ema_deviation
+    - **Input Columns** (from PRICE_COLUMNS): 52w_high_adj, 52w_low_adj, ema_20d, ema_50d, ema_100d, ema_250d
 - **Valuation**: p_e_ratio, p_b_ratio, p_s_ratio, ev_ebitda_ratio, peg_ratio, price_to_fcf
 - **Profitability**: gross_margin_pct, operating_margin_pct, net_margin_pct, roe, roa, roic
 - **Quality/Risk**: altman_z_score, debt_to_equity, current_ratio, interest_coverage, leverage_ratio
@@ -1432,12 +1451,21 @@ Winsorizing or scaling price columns destroys interpretability and invalidates v
 
 #### 8.5.2 Price Column Preservation Policy
 
-**Policy**: Price columns (`last_price`, `price_target`, `price_target_median`) must **NEVER** be:
+**Policy**: All 21 price columns (current prices, targets, historical prices, 52w bounds, EMAs) must **NEVER** be:
 
 1. **Winsorized** — Capping extreme prices corrupts valid high-growth stock valuations
 2. **Scaled** (StandardScaler, RobustScaler, MinMaxScaler) — Destroys dollar interpretability
 3. **Log-transformed** in place — Only create new columns (`log_market_cap`) while preserving originals
 4. **Clipped or capped** — Valid extreme values must be preserved
+
+**Complete PRICE_COLUMNS List (21 columns)**:
+
+- Current: `last_price`, `price_target`, `price_target_median`, `price_target_ytd_ago`, `price_target_low`,
+  `price_target_high` (6 columns)
+- Historical: `price_5d_ago`, `price_1w_ago`, `price_1m_ago`, `price_3m_ago`, `price_6m_ago`, `price_1y_ago`,
+  `price_3y_ago`, `price_5y_ago`, `price_qtd_ago` (9 columns)
+- 52w Bounds: `52w_high_adj`, `52w_low_adj` (2 columns)
+- EMAs: `ema_20d`, `ema_50d`, `ema_100d`, `ema_250d` (4 columns)
 
 **Enforcement**:
 
@@ -1467,15 +1495,51 @@ df_corrupted = scale_features(df)        # Destroys price interpretability!
 
 ```python
 # Verify price columns unchanged after preprocessing
-price_cols = ['last_price', 'price_target', 'price_target_median']
+from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS
+
+price_cols = [col for col in PRICE_COLUMNS if col in df_processed.columns]
 for col in price_cols:
-    if col in df_processed.columns and col in df_original.columns:
+    if col in df_original.columns:
         assert df_processed[col].equals(df_original[col]), f"{col} must not be modified"
+
+# Expected: 21 price columns preserved
+print(f"Verified {len(price_cols)} price columns unchanged")
+```
+
+**Examples of Protected Use Cases**:
+
+✅ **Historical Prices** (momentum calculations):
+
+```python
+# Momentum feature requires original dollar scale
+df['price_momentum_1m'] = (df['last_price'] - df['price_1m_ago']) / df['price_1m_ago']
+# Winsorizing price_1m_ago would corrupt this calculation
+```
+
+✅ **52-Week Bounds** (relative positioning):
+
+```python
+# Requires original price scale for meaningful positioning
+df['price_vs_52w_range'] = (df['last_price'] - df['52w_low_adj']) / (df['52w_high_adj'] - df['52w_low_adj'])
+# Scaling 52w_high_adj/52w_low_adj destroys cross-stock comparability
+```
+
+✅ **EMAs** (technical analysis):
+
+```python
+# EMA deviation calculation requires same dollar scale
+df['ema_50d_deviation'] = (df['last_price'] - df['ema_50d']) / df['ema_50d']
+# Transforming ema_50d invalidates technical signals
 ```
 
 **Rationale**: The core business objective (stock valuation and mispricing detection) depends on comparing predicted
-targets to actual prices in original dollar units. Any transformation of price columns invalidates the fundamental
-metric.
+targets to actual prices in original dollar units. This extends to:
+
+- **Momentum features**: Historical price comparisons require consistent scale
+- **Technical indicators**: 52w bounds and EMAs are price-derived and must maintain dollar interpretability
+- **Cross-stock analysis**: Relative price metrics depend on absolute price preservation
+
+Any transformation of these columns invalidates valuation, momentum, and technical analysis.
 
 #### 8.5.3 Alternative Transformations for Skewed Data
 

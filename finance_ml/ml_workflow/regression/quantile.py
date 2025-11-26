@@ -186,6 +186,54 @@ def train_quantile_regressor(
     }
 
 
+def predict_quantile_regression(
+    models: List[Any],
+    quantiles: List[float],
+    X: pd.DataFrame,
+    enforce_nonnegative: bool = True,
+) -> pd.DataFrame:
+    """
+    Make predictions using trained quantile models with safety rails.
+
+    This function:
+    1. Generates raw predictions from each quantile model
+    2. Enforces monotonicity (q1 <= q2 <= q3)
+    3. Enforces non-negativity (pred >= 0) if requested
+    4. Returns a DataFrame with named columns (pred_q{q})
+
+    Args:
+        models: List of trained quantile models
+        quantiles: List of quantile values corresponding to models
+        X: Feature matrix
+        enforce_nonnegative: Whether to clip predictions at 0 (default: True)
+
+    Returns:
+        DataFrame with columns pred_q{q} for each quantile
+    """
+    if len(models) != len(quantiles):
+        raise ValueError(
+            f"Number of models ({len(models)}) must match number of quantiles ({len(quantiles)})"
+        )
+
+    # Generate raw predictions
+    raw_preds = {}
+    for model, q in zip(models, quantiles):
+        raw_preds[q] = model.predict(X)
+
+    # Enforce monotonicity (Phase 9.5 P0.3)
+    monotonic_preds = enforce_monotonic_quantiles(raw_preds)
+
+    # Enforce non-negativity (Phase 9.5 P0.3)
+    result = pd.DataFrame(index=X.index)
+    for q in quantiles:
+        preds = monotonic_preds[q]
+        if enforce_nonnegative:
+            preds = np.maximum(preds, 0.0)
+        result[f"pred_q{q}"] = preds
+
+    return result
+
+
 def enforce_monotonic_quantiles(quantile_preds: dict) -> dict:
     """
     Enforce monotonicity constraint on quantile predictions.
