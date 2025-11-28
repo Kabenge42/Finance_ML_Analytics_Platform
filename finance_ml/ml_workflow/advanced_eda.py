@@ -10,11 +10,20 @@ This module implements sophisticated EDA techniques including:
 - Feature importance via mutual information and Random Forest
 
 Part of Phase 9.2 implementation.
+
+.. deprecated:: v9_8
+    This module is maintained for backward compatibility. New code should use
+    the EDA subpackage:
+    - :mod:`finance_ml.ml_workflow.eda.descriptive` for basic statistics
+    - :mod:`finance_ml.ml_workflow.eda.correlations` for correlation analysis
+    - :mod:`finance_ml.ml_workflow.eda.distributions` for distribution analysis
+    - :mod:`finance_ml.ml_workflow.eda.statistical_tests` for hypothesis testing
 """
 
 from __future__ import annotations
 
 import logging
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple, Any
@@ -26,6 +35,15 @@ from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import mutual_info_regression
 from sklearn.preprocessing import StandardScaler
+
+# Emit deprecation warning when module is imported
+warnings.warn(
+    "The advanced_eda module is deprecated as of v9_8. "
+    "Use finance_ml.ml_workflow.eda subpackage instead. "
+    "See docs/improvement_plan/finance_ml_restructuring_plan.md for migration guidance.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 logger = logging.getLogger(__name__)
 

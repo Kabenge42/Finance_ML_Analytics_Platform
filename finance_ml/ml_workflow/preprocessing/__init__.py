@@ -73,6 +73,8 @@ from finance_ml.ml_workflow.preprocessing.pipeline import (
 from finance_ml.ml_workflow.preprocessing.quality import (
     DataQualityReport,
     calculate_data_quality_score,
+    check_nan_inf,
+    validate_winsorization_bounds,
 )
 from finance_ml.ml_workflow.preprocessing.scaling import (
     create_scaler_pipeline,
@@ -130,6 +132,8 @@ __all__ = [
     # Quality
     "DataQualityReport",
     "calculate_data_quality_score",
+    "check_nan_inf",
+    "validate_winsorization_bounds",
     # Pipeline
     "prepare_phase91_data",
     # Dtypes (Phase 9.9)

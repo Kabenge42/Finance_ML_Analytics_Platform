@@ -130,8 +130,6 @@ def get_categorical_imputation_config() -> dict:
         "region": "most_frequent",
         "country": "most_frequent",
         "trading_country": "most_frequent",
-        # Flags - use constant 'Unknown' or most frequent
-        "flag": ("constant", "Unknown"),
         # Identifiers - use constant 'MISSING'
         "ticker": ("constant", "N/A"),
         "isin": ("constant", "N/A"),

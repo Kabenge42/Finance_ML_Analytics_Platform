@@ -2468,3 +2468,92 @@ tests/
 - **Medium Tests** (1-10s): Ensemble training, covariance estimation
 - **Slow Tests** (>10s): DNN training (skip if TensorFlow unavailable)
 
+<!-- v1.4.1 (2025-11-27) Regression Workflow Integration Updates -->
+
+# Addendum v1.4.1 — Regression Workflow Integration and Safety Rails
+
+This addendum documents the finalized regression workflow implementations and package structure aligned with Section
+16.4 performance targets and recent Phase 9.1/9.3/9.5/9.8 improvements. It complements, not replaces, existing sections
+in this document.
+
+1) Standardized Predictions Schema (Phase 9.5)
+
+- Required base columns: [y_true, y_pred, abs_error, pct_error]
+- Quantiles: QUANTILES = [0.1, 0.5, 0.9] for 80% intervals
+- When quantiles are present:
+    - Required columns: pred_p10, pred_p50, pred_p90, interval_width
+    - Monotonicity invariant: p10 ≤ p50 ≤ p90 (row-wise)
+    - Non-negativity: all four columns must be ≥ 0
+- Centralized helpers (finance_ml.ml_workflow.regression.io):
+    - build_predictions_frame(): constructs schema-compliant frame and auto-adds interval_width
+    - validate_predictions_schema(): enforces invariants; raises if violated
+- Safety Rails: Negative predictions are clamped to 0.0 before error computation in build_predictions_frame.
+
+2) Shared Data Split & Leakage Policy (Phase 9.9)
+
+- Priority order: time-aware by snapshot_date → grouped by ticker → stratified by sector → random fallback
+- Function: finance_ml.ml_workflow.validation.splits.create_train_test_split()
+- Integration: finance_ml.ml_workflow.regression.dataset.prepare_regression_data() uses the shared policy when policy
+  columns exist in the input dataframe.
+
+3) Phase 9.3 Feature Engineering Review & Sector Interactions
+
+- Utilities (finance_ml.ml_workflow.features):
+    - validate_feature_coverage(X, expected=318): quick coverage check by count or names
+    - prune_low_importance_features(X_train, X_test, feature_importance_df, threshold=0.01): drops features <1%
+      importance while preserving classification probability features
+    - save_feature_list(features, path): persist lists for auditability
+- Integration point: prepare_regression_data() optionally prunes based on outputs/regression/feature_importance.csv and
+  records a structured report in feature_info/meta.
+- Sector-specific interaction features (default ON): one-hot(sector) × curated base
+  columns [p_e_ratio, ev_ebitda_ratio, gross_margin, market_cap, beta_5y].
+    - Toggle via environment variable FEATURE_SECTOR_INTERACTIONS ("1"/"0").
+    - Pruning threshold configurable via FEATURE_IMPORTANCE_THRESHOLD (default 0.01).
+
+4) Phase 9.1 Data Quality Validation
+
+- Lightweight validators (finance_ml.ml_workflow.preprocessing):
+    - check_nan_inf(df): returns NaN/Inf counts; raises if any Inf present (post-imputation guard)
+    - validate_winsorization_bounds(df, lower=0.10, upper=0.90, exclude=[price columns]): reports median 10th/90th
+      percentiles for numeric columns to validate winsorization bounds
+- Recommended notebook hooks: call immediately after 6-step imputation and after winsorization.
+
+5) Stacking Ensemble and Baseline Models (Phase 16.4 Optimizations)
+
+- Stacking base learners and hyperparameters (finance_ml.ml_workflow.regression.models.train_stacking_regressor):
+    - RandomForestRegressor: n_estimators=200, max_depth=15, min_samples_split=5, max_features="sqrt"
+    - ExtraTreesRegressor: n_estimators=200, max_depth=15, min_samples_split=5
+    - GradientBoostingRegressor: n_estimators=150, max_depth=6, learning_rate=0.05, subsample=0.8
+    - XGBoost (optional): n_estimators=150, max_depth=6, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8
+    - Meta-learner: Ridge(alpha=1.0)
+- Model comparison defaults (compare_regressors): 2×-increased estimators and depth controls for RF/ET/GB/HGB.
+
+6) Notebook and Script Alignment
+
+- QUANTILES are standardized to [0.1, 0.5, 0.9]; ensure notebooks use these values.
+- ml_finance_model_main.ipynb integrates:
+    - prepare_regression_data() meta summary prints (feature coverage, pruned features saved under
+      outputs/regression/pruned_features.txt, sector interactions count)
+    - Phase 9.8 stacking governance enabled by preparing base_predictions and y_pred_meta
+
+7) Package Architecture Exports (for stable imports)
+
+- finance_ml.ml_workflow.features now exports:
+    - validate_feature_coverage, prune_low_importance_features, save_feature_list
+- finance_ml.ml_workflow.preprocessing now exports:
+    - check_nan_inf, validate_winsorization_bounds
+
+8) Environment Variables (centralized toggles)
+
+- FEATURE_IMPORTANCE_THRESHOLD: float threshold for pruning (default 0.01)
+- FEATURE_SECTOR_INTERACTIONS: enable sector interaction features (default enabled)
+- DB_URL, DATA_DIR, MODEL_DIR, CACHE_DIR, MODEL_VERSION, RANDOM_SEED, N_JOBS (as documented elsewhere in this file)
+
+9) Performance Targets (Section 16.4)
+
+- Targets remain unchanged; these implementations are designed to help meet:
+    - Overall: R² > 0.7 and MAE < 40%
+    - Sector-specific MAE thresholds as already defined
+
+Refer to docs/summaries/MODEL_OPTIMIZATION_PHASE16_4_SUMMARY.md and CHANGELOG.md for implementation details and test
+coverage.

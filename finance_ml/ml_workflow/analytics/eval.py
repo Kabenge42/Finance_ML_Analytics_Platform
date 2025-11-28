@@ -8,11 +8,23 @@ Finance ML Evaluation Module
 
 Evaluation, analytics, and visualization functions for model results.
 
+DEPRECATION NOTICE (Phase 1 – Restructuring in progress):
+This legacy module is being decomposed into focused modules. Prefer importing
+from the new locations where available:
+- finance_ml.ml_workflow.analytics.mispricing  (mispricing, ranking)
+- finance_ml.ml_workflow.eda.correlations     (correlation utilities)
+- finance_ml.ml_workflow.evaluation.explainability  (SHAP/LIME)
+- finance_ml.ml_workflow.evaluation.learning_curves (learning/validation curves, CV helpers)
+
+Backwards compatibility is maintained during the transition. Existing imports
+from analytics.eval will continue to work until removal in a later version.
+
 Phase 7 TDD refactoring: Extracted from ml_finance_model_v8_2.py with
 comprehensive test coverage.
 """
 
 import json
+import warnings
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -37,263 +49,66 @@ except ImportError:
     go = None
 
 
-def calculate_mispricing_score(
-    df: pd.DataFrame, predicted_col: str = "predicted_price_target", current_col: str = "last_price"
-) -> pd.DataFrame:
-    """Calculate mispricing score for each stock.
+# --- Internal helpers -------------------------------------------------------
+# Emit a deprecation warning on import to guide users to new module paths
+warnings.warn(
+    "DEPRECATION NOTICE: finance_ml.ml_workflow.analytics.eval is being decomposed. "
+    "Prefer importing from focused modules: analytics.mispricing, eda.correlations, "
+    "evaluation.explainability, evaluation.learning_curves, evaluation.hypothesis.",
+    DeprecationWarning,
+)
 
-    Formula: (predicted_price_target - last_price) / last_price
 
-    Positive score = undervalued (predicted > current)
-    Negative score = overvalued (predicted < current)
+def _safe_savefig(path: Path, *, dpi: int = 100, bbox_inches: str = "tight", facecolor=None):
+    """Safely save a matplotlib figure, avoiding unsupported extensions.
 
-    Args:
-        df: DataFrame with stock data
-        predicted_col: Name of predicted price column (default: "predicted_price_target")
-        current_col: Name of current price column (default: "last_price")
-
-    Returns:
-        DataFrame with added 'mispricing_pct' column
-
-    Raises:
-        ValueError: If required columns are missing
+    - If the requested path has an HTML/HTM extension, convert to PNG of the
+      same stem in the same directory (e.g., report.html -> report.png) and log
+      a warning. This prevents ValueError: Format 'html' is not supported.
+    - Otherwise call plt.savefig with provided kwargs.
     """
-    required_columns = [predicted_col, current_col]
-    missing_columns = [col for col in required_columns if col not in df.columns]
-
-    if missing_columns:
-        raise ValueError(f"Missing required columns: {missing_columns}")
-
-    result_df = df.copy()
-    mispricing = (df[predicted_col] - df[current_col]) / df[current_col]
-    result_df["mispricing_pct"] = mispricing * 100
-    result_df["mispricing_score"] = (
-        mispricing  # Alias for backward compatibility with rank functions
-    )
-    return result_df
-
-
-def calculate_mispricing_from_predictions_schema(
-    df: pd.DataFrame,
-    prediction_col: str = "y_pred",
-    calibrated_col: str = "y_pred_calibrated",
-    current_price_col: str = "last_price",
-    use_calibrated: bool = False,
-) -> pd.DataFrame:
-    """Calculate mispricing using standardized predictions schema.
-
-    This helper is Phase 9.3–aware and is designed for DataFrames that
-    follow the standardized predictions schema (y_true, y_pred,
-    y_pred_calibrated, pred_p10/50/90, last_price, etc.).
-
-    It delegates to :func:`calculate_mispricing_score` while selecting the
-    appropriate prediction column.
-
-    Args:
-        df: Input dataframe with standardized prediction columns.
-        prediction_col: Name of base prediction column (default ``"y_pred"``).
-        calibrated_col: Name of calibrated prediction column
-            (default ``"y_pred_calibrated"``).
-        current_price_col: Name of current price column
-            (default ``"last_price"``).
-        use_calibrated: If True and ``calibrated_col`` exists, use it
-            instead of ``prediction_col``.
-
-    Returns:
-        DataFrame with added ``mispricing_pct`` and ``mispricing_score``
-        columns, preserving all original columns.
-    """
-
-    if use_calibrated and calibrated_col in df.columns:
-        predicted_col = calibrated_col
-    else:
-        predicted_col = prediction_col
-
-    return calculate_mispricing_score(
-        df, predicted_col=predicted_col, current_col=current_price_col
-    )
+    if path is None:
+        return
+    try:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        suffix = (path.suffix or "").lower()
+        if suffix in {".html", ".htm"}:
+            # Redirect to PNG to satisfy callers that mistakenly pass .html
+            png_path = path.with_suffix(".png")
+            logging.warning(
+                "Requested to save a matplotlib figure to %s; HTML is unsupported by savefig. "
+                "Saving PNG instead: %s",
+                path,
+                png_path,
+            )
+            if facecolor is not None:
+                plt.savefig(png_path, dpi=dpi, bbox_inches=bbox_inches, facecolor=facecolor)
+            else:
+                plt.savefig(png_path, dpi=dpi, bbox_inches=bbox_inches)
+        else:
+            if facecolor is not None:
+                plt.savefig(path, dpi=dpi, bbox_inches=bbox_inches, facecolor=facecolor)
+            else:
+                plt.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
+    except Exception as e:
+        logging.error("Failed to save figure to %s: %s", path, e)
+        raise
 
 
-def calculate_risk_adjusted_mispricing(
-    df: pd.DataFrame,
-    risk_free_rate: float = 0.0,
-    use_confidence_interval: bool = False,
-    default_volatility: float = 0.20,
-) -> pd.Series:
-    """Calculate risk-adjusted mispricing score.
+# ============================================================================
+# Mispricing Functions (Moved to analytics.mispricing)
+# ============================================================================
 
-    Formula: (Expected_Return - Risk_Free_Rate) / Volatility
-
-    This adjusts the mispricing score by the stock's volatility to account for risk.
-    Higher risk-adjusted scores indicate better risk-reward opportunities.
-
-    Args:
-        df: DataFrame with 'predicted_price_target', 'last_price', and 'volatility' columns
-        risk_free_rate: Risk-free rate to subtract from expected return (default 0.0)
-        use_confidence_interval: If True and confidence intervals available, adjust for uncertainty
-        default_volatility: Default volatility to use if column missing (default 0.20)
-
-    Returns:
-        Series with risk-adjusted mispricing scores
-
-    Example:
-        >>> df = pd.DataFrame({
-        ...     'predicted_price_target': [120, 90],
-        ...     'last_price': [100, 100],
-        ...     'volatility': [0.20, 0.30]
-        ... })
-        >>> scores = calculate_risk_adjusted_mispricing(df, risk_free_rate=0.05)
-        >>> scores.iloc[0] > 0  # Undervalued with positive risk-adjusted return
-        True
-    """
-    # Calculate expected return
-    expected_return = (df["predicted_price_target"] - df["last_price"]) / df["last_price"]
-
-    # Use volatility column if available, otherwise use default
-    if "volatility" in df.columns:
-        volatility = df["volatility"].copy()
-    else:
-        logging.warning(f"Volatility column not found; using default {default_volatility}")
-        volatility = pd.Series(default_volatility, index=df.index)
-
-    # Replace zero or negative volatility with a small value to avoid division by zero
-    volatility = volatility.clip(lower=0.01)
-
-    # Adjust for confidence interval width if requested
-    if (
-        use_confidence_interval
-        and "confidence_lower" in df.columns
-        and "confidence_upper" in df.columns
-    ):
-        # Wider confidence intervals indicate more uncertainty
-        ci_width = (df["confidence_upper"] - df["confidence_lower"]) / df["last_price"]
-        # Penalize by confidence interval width (wider = more uncertain = lower score)
-        uncertainty_penalty = 1.0 / (1.0 + ci_width)
-        risk_adjusted = ((expected_return - risk_free_rate) / volatility) * uncertainty_penalty
-    else:
-        # Standard risk-adjusted calculation
-        risk_adjusted = (expected_return - risk_free_rate) / volatility
-
-    return risk_adjusted
-
-
-def calculate_risk_adjusted_mispricing_from_predictions_schema(
-    df: pd.DataFrame,
-    prediction_col: str = "y_pred",
-    current_price_col: str = "last_price",
-    risk_free_rate: float = 0.0,
-    use_quantile_interval: bool = False,
-    default_volatility: float = 0.20,
-    pred_p10_col: str = "pred_p10",
-    pred_p90_col: str = "pred_p90",
-    volatility_col: str = "volatility",
-) -> pd.Series:
-    """Risk-adjusted mispricing for standardized predictions schema.
-
-    This helper wires the standardized prediction columns into
-    :func:`calculate_risk_adjusted_mispricing` while optionally
-    using the prediction interval width as a volatility proxy when
-    ``use_quantile_interval`` is True and explicit volatility is
-    not available.
-
-    Args:
-        df: DataFrame with standardized prediction columns.
-        prediction_col: Column containing point predictions (default
-            ``"y_pred"``).
-        current_price_col: Column containing current prices (default
-            ``"last_price"``).
-        risk_free_rate: Risk-free rate to subtract from expected return.
-        use_quantile_interval: If True and ``pred_p10_col`` / ``pred_p90_col``
-            are present, use the interval width as a volatility proxy when
-            an explicit ``volatility_col`` is missing.
-        default_volatility: Fallback volatility when no other information
-            is available.
-        pred_p10_col: Lower prediction quantile column name.
-        pred_p90_col: Upper prediction quantile column name.
-        volatility_col: Column name for explicit volatility, if present.
-
-    Returns:
-        Series with risk-adjusted mispricing scores aligned to ``df.index``.
-    """
-
-    tmp = pd.DataFrame(index=df.index)
-    tmp["predicted_price_target"] = df[prediction_col]
-    tmp["last_price"] = df[current_price_col]
-
-    # Determine volatility: explicit column, quantile-based proxy, or default.
-    if volatility_col in df.columns:
-        tmp["volatility"] = df[volatility_col]
-        use_ci = False
-    elif use_quantile_interval and pred_p10_col in df.columns and pred_p90_col in df.columns:
-        # Use prediction interval width as a volatility proxy.
-        width = (df[pred_p90_col] - df[pred_p10_col]).abs()
-        # Normalize by current price to keep scale comparable and avoid zeros.
-        with np.errstate(divide="ignore", invalid="ignore"):
-            vol_proxy = width / df[current_price_col].replace(0, np.nan)
-        vol_proxy = vol_proxy.fillna(default_volatility)
-        tmp["volatility"] = vol_proxy
-        use_ci = False
-    else:
-        tmp["volatility"] = default_volatility
-        use_ci = False
-
-    return calculate_risk_adjusted_mispricing(
-        tmp,
-        risk_free_rate=risk_free_rate,
-        use_confidence_interval=use_ci,
-        default_volatility=default_volatility,
-    )
-
-
-def rank_undervalued_stocks(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
-    """Rank and return top N most undervalued stocks.
-
-    Args:
-        df: DataFrame with 'mispricing_score' column
-        top_n: Number of top stocks to return
-
-    Returns:
-        DataFrame sorted by mispricing_score descending (most undervalued first)
-    """
-    sorted_df = df.sort_values("mispricing_score", ascending=False)
-    return sorted_df.head(top_n)
-
-
-def rank_overvalued_stocks(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
-    """Rank and return top N most overvalued stocks.
-
-    Args:
-        df: DataFrame with 'mispricing_score' column
-        top_n: Number of top stocks to return
-
-    Returns:
-        DataFrame sorted by mispricing_score ascending (most overvalued first)
-    """
-    sorted_df = df.sort_values("mispricing_score", ascending=True)
-    return sorted_df.head(top_n)
-
-
-def rank_stocks_by_sector(
-    df: pd.DataFrame, top_n: int = 5, order: str = "undervalued"
-) -> Dict[str, pd.DataFrame]:
-    """Rank stocks within each sector.
-
-    Args:
-        df: DataFrame with 'sector' and 'mispricing_score' columns
-        top_n: Number of top stocks per sector
-        order: 'undervalued' (descending score) or 'overvalued' (ascending score)
-
-    Returns:
-        Dict with sector names as keys and ranked DataFrames as values
-    """
-    result = {}
-    ascending = order == "overvalued"
-
-    for sector, group in df.groupby("sector"):
-        sorted_group = group.sort_values("mispricing_score", ascending=ascending)
-        result[sector] = sorted_group.head(top_n)
-
-    return result
+from finance_ml.ml_workflow.analytics.mispricing import (
+    calculate_mispricing_score,
+    calculate_mispricing_from_predictions_schema,
+    calculate_risk_adjusted_mispricing,
+    calculate_risk_adjusted_mispricing_from_predictions_schema,
+    rank_undervalued_stocks,
+    rank_overvalued_stocks,
+    rank_stocks_by_sector,
+)
 
 
 def simple_eda(
@@ -887,6 +702,33 @@ def export_predictions_to_excel(
         excel_path: Path to save Excel file
         include_summary: If True, create multiple sheets with summary statistics
     """
+    # Ensure mispricing_score exists for reporting if derivable
+    try:
+        if "mispricing_score" not in df.columns:
+            if "predicted_price_target" in df.columns and "last_price" in df.columns:
+                with np.errstate(all="ignore"):
+                    df = df.copy()
+                    df["mispricing_score"] = (
+                        pd.to_numeric(df["predicted_price_target"], errors="coerce")
+                        - pd.to_numeric(df["last_price"], errors="coerce")
+                    ) / pd.to_numeric(df["last_price"], errors="coerce")
+            elif "y_pred" in df.columns and "last_price" in df.columns:
+                with np.errstate(all="ignore"):
+                    df = df.copy()
+                    df["mispricing_score"] = (
+                        pd.to_numeric(df["y_pred"], errors="coerce")
+                        - pd.to_numeric(df["last_price"], errors="coerce")
+                    ) / pd.to_numeric(df["last_price"], errors="coerce")
+            elif "y_pred_calibrated" in df.columns and "last_price" in df.columns:
+                with np.errstate(all="ignore"):
+                    df = df.copy()
+                    df["mispricing_score"] = (
+                        pd.to_numeric(df["y_pred_calibrated"], errors="coerce")
+                        - pd.to_numeric(df["last_price"], errors="coerce")
+                    ) / pd.to_numeric(df["last_price"], errors="coerce")
+    except Exception as e:
+        logging.warning("Could not derive mispricing_score for Excel export: %s", e)
+
     # Try multiple Excel engines
     engines_to_try = ["openpyxl", "xlsxwriter"]
     writer_created = False
@@ -1198,7 +1040,9 @@ def create_sector_heatmap(
             plt.tight_layout()
 
             if out_path:
-                plt.savefig(out_path, dpi=100, bbox_inches="tight", facecolor=fig.get_facecolor())
+                _safe_savefig(
+                    Path(out_path), dpi=100, bbox_inches="tight", facecolor=fig.get_facecolor()
+                )
                 logging.info("Saved sector heatmap to %s", out_path)
 
         return fig
@@ -2925,397 +2769,20 @@ def evaluate_with_cross_validation(model, X, y, cv_strategy="simple", groups=Non
         "cv_strategy": cv_strategy,
     }
 
-
 # ============================================================================
-# SHAP Detailed Analysis
-# ============================================================================
-
-
-def compute_shap_values(model, X, model_type="auto", n_samples=100):
-    """
-    Compute SHAP values for a given model and dataset.
-
-    Args:
-        model: Trained model (scikit-learn compatible)
-        X: Feature data (DataFrame or array)
-        model_type: Type of explainer to use
-            - "auto": Automatically detect best explainer
-            - "tree": Use TreeExplainer (for tree-based regression)
-            - "kernel": Use KernelExplainer (model-agnostic, slower)
-            - "linear": Use LinearExplainer (for linear regression only)
-        n_samples: Number of background samples for KernelExplainer
-
-    Returns:
-        dict with keys:
-            - "shap_values": SHAP values array
-            - "expected_value": Base value
-            - "feature_names": List of feature names
-    """
-    import shap
-
-    # Convert to DataFrame if needed
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-
-    # Get base model if this is a stacking ensemble
-    base_model = getattr(model, "final_estimator_", model)
-
-    # Auto-detect model type if requested
-    if model_type == "auto":
-        model_type = _detect_model_type(base_model)
-
-    # Compute SHAP values based on model type
-    if model_type == "tree":
-        try:
-            explainer = shap.TreeExplainer(base_model)
-            shap_values = explainer.shap_values(X)
-        except Exception as e:
-            print(f"TreeExplainer failed: {e}. Falling back to KernelExplainer.")
-            model_type = "kernel"
-
-    if model_type == "linear":
-        try:
-            # For stacking regression, we need to check if final estimator is truly linear
-            if hasattr(base_model, "coef_"):
-                n_coef = len(base_model.coef_)
-                n_features = X.shape[1]
-
-                if n_coef != n_features:
-                    print(
-                        f"Warning: Coefficient count ({n_coef}) doesn't match feature count ({n_features}). Using KernelExplainer instead."
-                    )
-                    model_type = "kernel"
-                else:
-                    explainer = shap.LinearExplainer(base_model, X)
-                    shap_values = explainer.shap_values(X)
-            else:
-                print("Model doesn't have coef_ attribute. Using KernelExplainer instead.")
-                model_type = "kernel"
-        except Exception as e:
-            print(f"LinearExplainer failed: {e}. Falling back to KernelExplainer.")
-            model_type = "kernel"
-
-    if model_type == "kernel":
-        # Use a subset for background distribution
-        background = shap.sample(X, min(n_samples, len(X)))
-        explainer = shap.KernelExplainer(model.predict, background)
-        shap_values = explainer.shap_values(X)
-
-    # Handle multi-output case (for multi-class classification)
-    if isinstance(shap_values, list):
-        shap_values = shap_values[0]  # Use first class for visualization
-
-    return {
-        "shap_values": shap_values,
-        "expected_value": explainer.expected_value,
-        "feature_names": list(X.columns) if hasattr(X, "columns") else None,
-    }
-
-
-def _detect_model_type(model):
-    """Detect appropriate SHAP explainer type for a model."""
-    model_class = type(model).__name__
-
-    # Tree-based regression
-    tree_models = [
-        "RandomForest",
-        "GradientBoosting",
-        "XGBoost",
-        "LightGBM",
-        "CatBoost",
-        "ExtraTrees",
-        "DecisionTree",
-    ]
-    if any(tree in model_class for tree in tree_models):
-        return "tree"
-
-    # Linear regression
-    linear_models = ["Linear", "Ridge", "Lasso", "ElasticNet", "SGD"]
-    if any(linear in model_class for linear in linear_models):
-        return "linear"
-
-    # Default to kernel for everything else
-    return "kernel"
-
-
-def create_shap_summary_plot(model, X, output_path=None, model_type="auto", n_samples=100):
-    """
-    Create SHAP summary plot showing feature importance.
-
-    Args:
-        model: Trained model
-        X: Feature data
-        output_path: Path to save plot (optional)
-        model_type: Type of explainer ("auto", "tree", "kernel", "linear")
-        n_samples: Number of samples for KernelExplainer
-    """
-    import shap
-    import matplotlib.pyplot as plt
-
-    # Convert to DataFrame if needed
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-
-    # Compute SHAP values with automatic fallback
-    result = compute_shap_values(model, X, model_type=model_type, n_samples=n_samples)
-    shap_values = result["shap_values"]
-
-    # Create summary plot
-    plt.figure(figsize=(12, 8))
-    shap.summary_plot(shap_values, X, show=False)
-    plt.tight_layout()
-
-    if output_path:
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
-        print(f"SHAP summary plot saved to {output_path}")
-
-    plt.close()
-
-    print("✓ SHAP analysis complete")
-
-
-def create_shap_waterfall_plot(
-    model, X, sample_idx=0, output_path=None, model_type="tree", n_samples=100
-):
-    """
-    Create SHAP waterfall plot for individual prediction explanation.
-
-    Args:
-        model: Trained model
-        X: Feature matrix
-        sample_idx: Index of sample to explain
-        output_path: Path to save plot
-        model_type: Type of model
-        n_samples: Number of background samples
-
-    Returns:
-        None (saves plot to file)
-    """
-    try:
-        import shap
-    except ImportError:
-        raise ImportError("SHAP library is required. Install with: pip install shap")
-
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-
-    # Compute SHAP values
-    result = compute_shap_values(model, X, model_type=model_type, n_samples=n_samples)
-    shap_values = result["shap_values"]
-    expected_value = result["expected_value"]
-
-    # Create waterfall plot for specific sample
-    if isinstance(shap_values, list):
-        # Multi-output model, use first output
-        shap_values_sample = shap_values[0][sample_idx]
-    else:
-        shap_values_sample = shap_values[sample_idx]
-
-    # Create explanation object
-    explanation = shap.Explanation(
-        values=shap_values_sample,
-        base_values=expected_value,
-        data=X.iloc[sample_idx].values,
-        feature_names=list(X.columns),
-    )
-
-    shap.plots.waterfall(explanation, show=False)
-
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(output_path, dpi=100, bbox_inches="tight")
-        plt.close()
-
-
-def create_shap_dependence_plot(
-    model, X, feature, output_path=None, model_type="tree", n_samples=100
-):
-    """
-    Create SHAP dependence plot showing feature interactions.
-
-    Args:
-        model: Trained model
-        X: Feature matrix
-        feature: Feature name or index for dependence plot
-        output_path: Path to save plot
-        model_type: Type of model
-        n_samples: Number of background samples
-
-    Returns:
-        None (saves plot to file)
-    """
-    try:
-        import shap
-    except ImportError:
-        raise ImportError("SHAP library is required. Install with: pip install shap")
-
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-
-    # Compute SHAP values
-    result = compute_shap_values(model, X, model_type=model_type, n_samples=n_samples)
-    shap_values = result["shap_values"]
-
-    # Create dependence plot
-    shap.dependence_plot(feature, shap_values, X, show=False)
-
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(output_path, dpi=100, bbox_inches="tight")
-        plt.close()
-
-
-def analyze_shap_by_sector(model, X, sectors, model_type="tree", n_samples=100):
-    """
-    Analyze SHAP values separately by sector.
-
-    Args:
-        model: Trained model
-        X: Feature matrix
-        sectors: Series with sector labels
-        model_type: Type of model
-        n_samples: Number of background samples
-
-    Returns:
-        dict: SHAP analysis for each sector
-    """
-    try:
-        import shap
-    except ImportError:
-        raise ImportError("SHAP library is required. Install with: pip install shap")
-
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-
-    results = {}
-
-    for sector in sectors.unique():
-        sector_mask = sectors == sector
-        X_sector = X[sector_mask]
-
-        if len(X_sector) > 0:
-            result = compute_shap_values(
-                model, X_sector, model_type=model_type, n_samples=n_samples
-            )
-
-            # Compute mean absolute SHAP values for feature importance
-            shap_values = result["shap_values"]
-            mean_abs_shap = np.abs(shap_values).mean(axis=0)
-
-            results[sector] = {
-                "shap_values": shap_values,
-                "expected_value": result["expected_value"],
-                "feature_importance": dict(zip(result["feature_names"], mean_abs_shap)),
-                "n_samples": len(X_sector),
-            }
-
-    return results
-
-
-# ============================================================================
-# LIME Integration
+# SHAP Detailed Analysis (Moved to evaluation.explainability)
 # ============================================================================
 
-
-def explain_with_lime(model, X, sample_idx=0, output_path=None, n_features=10):
-    """
-    Generate LIME explanation for a single prediction.
-
-    Args:
-        model: Trained model
-        X: Feature matrix
-        sample_idx: Index of sample to explain
-        output_path: Optional path to save HTML explanation
-        n_features: Number of features to show in explanation
-
-    Returns:
-        dict: LIME explanation with feature weights
-    """
-    try:
-        from lime.lime_tabular import LimeTabularExplainer
-    except ImportError:
-        raise ImportError("LIME library is required. Install with: pip install lime")
-
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-
-    # Create LIME explainer
-    explainer = LimeTabularExplainer(
-        X.values, feature_names=list(X.columns), mode="regression", random_state=42
-    )
-
-    # Generate explanation for sample
-    explanation = explainer.explain_instance(
-        X.iloc[sample_idx].values, model.predict, num_features=n_features
-    )
-
-    # Extract feature weights
-    feature_weights = dict(explanation.as_list())
-
-    # Save HTML if requested
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        explanation.save_to_file(str(output_path))
-
-    return {
-        "feature_weights": feature_weights,
-        "prediction": float(model.predict(X.iloc[[sample_idx]])[0]),
-        "intercept": explanation.intercept[0] if hasattr(explanation, "intercept") else 0.0,
-        "score": explanation.score if hasattr(explanation, "score") else None,
-    }
-
-
-def compare_lime_shap_consistency(model, X, sample_idx=0, model_type="tree", n_features=10):
-    """
-    Compare LIME and SHAP explanations for consistency.
-
-    Args:
-        model: Trained model
-        X: Feature matrix
-        sample_idx: Index of sample to explain
-        model_type: Type of model for SHAP
-        n_features: Number of features to compare
-
-    Returns:
-        dict: Comparison results with correlation metric
-    """
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-
-    # Get LIME explanation
-    lime_result = explain_with_lime(model, X, sample_idx=sample_idx, n_features=n_features)
-    lime_weights = lime_result["feature_weights"]
-
-    # Get SHAP explanation
-    shap_result = compute_shap_values(model, X.iloc[[sample_idx]], model_type=model_type)
-    shap_values = shap_result["shap_values"]
-
-    if isinstance(shap_values, list):
-        shap_values = shap_values[0]
-
-    shap_dict = dict(zip(X.columns, shap_values[0] if len(shap_values.shape) > 1 else shap_values))
-
-    # Compare feature importances
-    common_features = set(lime_weights.keys()) & set(shap_dict.keys())
-
-    if len(common_features) > 0:
-        lime_vals = [lime_weights[f] for f in common_features]
-        shap_vals = [shap_dict[f] for f in common_features]
-
-        # Calculate correlation
-        correlation = np.corrcoef(lime_vals, shap_vals)[0, 1]
-    else:
-        correlation = np.nan
-
-    return {
-        "lime_weights": lime_weights,
-        "shap_values": shap_dict,
-        "correlation": float(correlation) if not np.isnan(correlation) else None,
-        "common_features": list(common_features),
-    }
+from finance_ml.ml_workflow.evaluation.explainability import (
+    compute_shap_values,
+    _detect_model_type,
+    create_shap_summary_plot,
+    create_shap_waterfall_plot,
+    create_shap_dependence_plot,
+    analyze_shap_by_sector,
+    explain_with_lime,
+    compare_lime_shap_consistency,
+)
 
 
 # ============================================================================

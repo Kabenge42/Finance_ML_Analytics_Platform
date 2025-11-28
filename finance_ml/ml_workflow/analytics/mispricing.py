@@ -11,6 +11,7 @@ import logging
 from typing import Dict
 
 import pandas as pd
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,47 @@ def calculate_mispricing_score(
         mispricing  # Alias for backward compatibility with rank functions
     )
     return result_df
+
+
+def calculate_mispricing_from_predictions_schema(
+    df: pd.DataFrame,
+    prediction_col: str = "y_pred",
+    calibrated_col: str = "y_pred_calibrated",
+    current_price_col: str = "last_price",
+    use_calibrated: bool = False,
+) -> pd.DataFrame:
+    """Calculate mispricing using standardized predictions schema.
+
+    This helper is Phase 9.3–aware and is designed for DataFrames that
+    follow the standardized predictions schema (y_true, y_pred,
+    y_pred_calibrated, pred_p10/50/90, last_price, etc.).
+
+    It delegates to :func:`calculate_mispricing_score` while selecting the
+    appropriate prediction column.
+
+    Args:
+        df: Input dataframe with standardized prediction columns.
+        prediction_col: Name of base prediction column (default ``"y_pred"``).
+        calibrated_col: Name of calibrated prediction column
+            (default ``"y_pred_calibrated"``).
+        current_price_col: Name of current price column
+            (default ``"last_price"``).
+        use_calibrated: If True and ``calibrated_col`` exists, use it
+            instead of ``prediction_col``.
+
+    Returns:
+        DataFrame with added ``mispricing_pct`` and ``mispricing_score``
+        columns, preserving all original columns.
+    """
+
+    if use_calibrated and calibrated_col in df.columns:
+        predicted_col = calibrated_col
+    else:
+        predicted_col = prediction_col
+
+    return calculate_mispricing_score(
+        df, predicted_col=predicted_col, current_col=current_price_col
+    )
 
 
 def calculate_risk_adjusted_mispricing(
@@ -122,6 +164,74 @@ def calculate_risk_adjusted_mispricing(
         risk_adjusted = (expected_return - risk_free_rate) / volatility
 
     return risk_adjusted
+
+
+def calculate_risk_adjusted_mispricing_from_predictions_schema(
+    df: pd.DataFrame,
+    prediction_col: str = "y_pred",
+    current_price_col: str = "last_price",
+    risk_free_rate: float = 0.0,
+    use_quantile_interval: bool = False,
+    default_volatility: float = 0.20,
+    pred_p10_col: str = "pred_p10",
+    pred_p90_col: str = "pred_p90",
+    volatility_col: str = "volatility",
+) -> pd.Series:
+    """Risk-adjusted mispricing for standardized predictions schema.
+
+    This helper wires the standardized prediction columns into
+    :func:`calculate_risk_adjusted_mispricing` while optionally
+    using the prediction interval width as a volatility proxy when
+    ``use_quantile_interval`` is True and explicit volatility is
+    not available.
+
+    Args:
+        df: DataFrame with standardized prediction columns.
+        prediction_col: Column containing point predictions (default
+            ``"y_pred"``).
+        current_price_col: Column containing current prices (default
+            ``"last_price"``).
+        risk_free_rate: Risk-free rate to subtract from expected return.
+        use_quantile_interval: If True and ``pred_p10_col`` / ``pred_p90_col``
+            are present, use the interval width as a volatility proxy when
+            an explicit ``volatility_col`` is missing.
+        default_volatility: Fallback volatility when no other information
+            is available.
+        pred_p10_col: Lower prediction quantile column name.
+        pred_p90_col: Upper prediction quantile column name.
+        volatility_col: Column name for explicit volatility, if present.
+
+    Returns:
+        Series with risk-adjusted mispricing scores aligned to ``df.index``.
+    """
+
+    tmp = pd.DataFrame(index=df.index)
+    tmp["predicted_price_target"] = df[prediction_col]
+    tmp["last_price"] = df[current_price_col]
+
+    # Determine volatility: explicit column, quantile-based proxy, or default.
+    if volatility_col in df.columns:
+        tmp["volatility"] = df[volatility_col]
+        use_ci = False
+    elif use_quantile_interval and pred_p10_col in df.columns and pred_p90_col in df.columns:
+        # Use prediction interval width as a volatility proxy.
+        width = (df[pred_p90_col] - df[pred_p10_col]).abs()
+        # Normalize by current price to keep scale comparable and avoid zeros.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            vol_proxy = width / df[current_price_col].replace(0, np.nan)
+        vol_proxy = vol_proxy.fillna(default_volatility)
+        tmp["volatility"] = vol_proxy
+        use_ci = False
+    else:
+        tmp["volatility"] = default_volatility
+        use_ci = False
+
+    return calculate_risk_adjusted_mispricing(
+        tmp,
+        risk_free_rate=risk_free_rate,
+        use_confidence_interval=use_ci,
+        default_volatility=default_volatility,
+    )
 
 
 def rank_undervalued_stocks(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:

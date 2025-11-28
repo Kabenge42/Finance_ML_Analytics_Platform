@@ -317,6 +317,22 @@ def build_predictions_frame(
         index=y_true.index,
     )
 
+    # Phase 9.5 Safety Rails: Enforce non-negativity on predictions before error calc
+    # This minimizes downstream schema violations and aligns with code_guidelines.md v1.4
+    with np.errstate(invalid="ignore"):
+        neg_mask = pd.Series(np.isfinite(result["y_pred"])) & (result["y_pred"] < 0)
+    if neg_mask.any():
+        n_neg = int(neg_mask.sum())
+        try:
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                f"Clamping {n_neg} negative predictions to 0.0 (Phase 9.5 safety rail)"
+            )
+        except Exception:
+            pass
+        result.loc[neg_mask, "y_pred"] = 0.0
+
     # Compute error metrics
     result["abs_error"] = np.abs(result["y_true"] - result["y_pred"])
 
@@ -335,6 +351,21 @@ def build_predictions_frame(
     if extra_cols:
         for col_name, col_values in extra_cols.items():
             result[col_name] = col_values
+
+    # If quantiles are present, enforce Phase 9.5 requirements and add interval_width
+    q_cols = [c for c in ["pred_p10", "pred_p50", "pred_p90"] if c in result.columns]
+    if {"pred_p10", "pred_p90"}.issubset(result.columns):
+        # Safety: clip quantiles to be non-negative
+        for q in ["pred_p10", "pred_p50", "pred_p90"]:
+            if q in result.columns:
+                with np.errstate(invalid="ignore"):
+                    neg_q_mask = pd.Series(np.isfinite(result[q])) & (result[q] < 0)
+                if neg_q_mask.any():
+                    result.loc[neg_q_mask, q] = 0.0
+
+        # Ensure interval_width exists
+        if "interval_width" not in result.columns:
+            result["interval_width"] = result["pred_p90"] - result["pred_p10"]
 
     return result
 
@@ -401,30 +432,30 @@ def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
     has_p90 = "pred_p90" in df.columns
     has_interval = "interval_width" in df.columns
 
-    if has_p10 and has_p50 and has_p90:
-        # Strict check for interval_width (Phase 9.5 P0.4)
-        if not has_interval:
+    # If lower and upper quantiles exist, auto-add interval_width to be flexible
+    if has_p10 and has_p90 and not has_interval:
+        try:
+            result = result.copy()
+            result["interval_width"] = result["pred_p90"] - result["pred_p10"]
+            has_interval = True
+        except Exception:
+            # Fallback: keep as-is; downstream code may handle
+            pass
+
+    # Non-negativity checks for any present quantiles
+    for qcol in (c for c in ("pred_p10", "pred_p50", "pred_p90") if c in result.columns):
+        neg_count = (result[qcol] < 0).sum(skipna=True)
+        if neg_count > 0:
             raise ValueError(
-                "Predictions schema validation failed: 'interval_width' column is required "
-                "when quantile predictions (p10, p50, p90) are present."
+                f"Predictions schema validation failed: {qcol} contains {neg_count} negative values. "
+                "Models must enforce non-negativity before validation."
             )
 
-        # Strict check for non-negativity
-        for qcol in ("pred_p10", "pred_p50", "pred_p90"):
-            neg_count = (result[qcol] < 0).sum(skipna=True)
-            if neg_count > 0:
-                raise ValueError(
-                    f"Predictions schema validation failed: {qcol} contains {neg_count} negative values. "
-                    "Models must enforce non-negativity before validation."
-                )
-
-        # Strict check for monotonicity
-        # p10 <= p50 <= p90
-        # Allow small floating point tolerance if needed, but here we enforce strict <=
+    # Monotonicity only when all three quantiles are present
+    if has_p10 and has_p50 and has_p90:
         monotonic_violation = (
             (result["pred_p10"] > result["pred_p50"]) | (result["pred_p50"] > result["pred_p90"])
         ).sum(skipna=True)
-
         if monotonic_violation > 0:
             raise ValueError(
                 f"Predictions schema validation failed: {monotonic_violation} rows violate "

@@ -1,23 +1,100 @@
+"""Top-level package for the Finance ML Analytics Platform.
+
+This module historically re-exported a very large number of functions
+from the internal ``finance_ml.ml_workflow`` subpackages. As part of the
+restructuring plan (Phase 6 – API streamlining), new code should prefer
+the focused :mod:`finance_ml.api` facade or import directly from the
+relevant subpackages instead of relying on broad ``finance_ml.*``
+exports.
+
+Backward compatibility
+----------------------
+- Existing symbols that tests and notebooks rely on (e.g.
+  ``FinanceMLConfig``, ``NotebookConfig``, ``simple_eda``) remain
+  available at the top level for now.
+- A new ``finance_ml.api`` attribute exposes the clean public API
+  documented in :mod:`finance_ml.api`.
+- Over time, additional symbols may be deprecated and removed from the
+  root namespace; use :mod:`finance_ml.api` for a stable surface.
+
+The ``__all__`` definition below documents the *curated* set of
+first-class, stable exports from :mod:`finance_ml`. Other attributes are
+retained for backward compatibility but may move or be removed in a
+future major version; code that relies on them should migrate to
+subpackages or :mod:`finance_ml.api`.
 """
-Finance ML Analytics Platform - Package
 
-Modular package for equity screening, feature engineering, and ML regression.
+__version__ = "0.9.1"
 
-Modules:
-- finance_ml.data: Data loading, normalization, and validation
-- finance_ml.advanced_preprocessing: Advanced preprocessing (Phase 9.1)
-- finance_ml.features: Feature engineering functions
-- finance_ml.regression: Classification, regression, and ensemble regression
-- finance_ml.eval: Analytics, visualizations, and reporting
-- finance_ml.config: Configuration management
-- finance_ml.cli: Command-line interface
-- finance_ml.risk_metrics: Risk metrics and portfolio risk analysis
-- finance_ml.logging_config: Logging configuration and file handlers
-- finance_ml.portfolio_optimization: Modern Portfolio Theory and optimization
-- finance_ml.analyst_comparison: Prediction vs. Analyst analytics (Phase 9.8)
-"""
+# Expose the clean public API facade at the package root. Importing here
+# is cheap because it only re-exports already-tested functions and does
+# not introduce heavy side effects.
+from . import api  # noqa: F401
 
-__version__ = "0.4.1"
+
+# Curated top-level public surface
+# --------------------------------
+#
+# These names are intended to remain stable and are validated by
+# tests/test_init_public_surface.py. Additional attributes continue to be
+# available on the package for backward compatibility but are not part of
+# the long-term supported surface.
+# Legacy export list retained for reference only
+# --------------------------------------------
+#
+# NOTE: This list previously defined the behaviour of
+# ``from finance_ml import *``. As part of Phase 6 API streamlining we
+# now treat it as an internal reference and keep the curated top-level
+# ``__all__`` defined near the top of this file as the only public
+# contract. Attribute access (``import finance_ml as mod; mod.symbol``)
+# continues to work because all names are still bound below; only
+# wildcard imports are affected.
+__all__ = [
+    # Version
+    "__version__",
+    # Public API facade
+    "api",
+    # Configuration (essential for all users)
+    "FinanceMLConfig",
+    "load_config",
+    # Notebook configuration (essential for notebook users)
+    "NotebookConfig",
+    # High-level EDA helper (heavily used in notebooks/tests)
+    "simple_eda",
+    # Core preprocessing (imported below)
+    "normalize_columns",
+    # Regression (imported below)
+    "train_stacking_regressor",
+    # Analytics (imported below)
+    "calculate_mispricing_score",
+    "rank_undervalued_stocks",
+    "rank_overvalued_stocks",
+    # Evaluation (imported below)
+    "comprehensive_regression_metrics",
+    # Export (imported below)
+    "export_predictions_to_csv",
+    "export_predictions_to_excel",
+]
+
+# Legacy export list retained for reference only
+# --------------------------------------------
+#
+# NOTE: This list previously defined the behaviour of
+# ``from finance_ml import *``. The curated __all__ above now controls
+# wildcard imports. Additional attributes continue to be available on the
+# package for backward compatibility but are not part of the long-term
+# supported surface.
+__legacy_all__ = [
+    "__version__",
+    "api",
+    # Configuration
+    "FinanceMLConfig",
+    "load_config",
+    # Notebook configuration
+    "NotebookConfig",
+    # High-level EDA helper used heavily in notebooks/tests
+    "simple_eda",
+]
 
 # Many legacy imports below are optional; guard them to avoid breaking basic imports
 try:
@@ -505,7 +582,9 @@ from finance_ml.ml_workflow.transformers import (
     ValuationRatioTransformer,
 )
 
-__all__ = [
+# Legacy exports list - retained for backward compatibility reference
+# The curated __all__ is defined at the top of this file
+__legacy_exports__ = [
     # Version
     "__version__",
     # Utilities
@@ -810,7 +889,7 @@ __all__ = [
 
 # Conditionally add enhanced classification functions
 if HAVE_CLASSIFICATION_ENHANCED:
-    __all__.extend(
+    __legacy_exports__.extend(
         [
             "optimize_classifier_hyperparameters",
             "cross_validate_with_sector_stratification",
@@ -885,7 +964,7 @@ from finance_ml.ml_workflow.analytics.eval import (
     generate_enhanced_pdf_report,
 )
 
-__all__.extend(
+__legacy_exports__.extend(
     [
         "calculate_risk_adjusted_mispricing",
         "plot_outlier_boxplots",

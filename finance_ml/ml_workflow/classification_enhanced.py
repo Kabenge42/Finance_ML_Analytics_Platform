@@ -11,9 +11,16 @@ Additional functionality for classification tasks:
 Author: Finance ML Team
 Date: 2025-11-05
 Version: 2.1.0
+
+.. deprecated:: v9_8
+    This module is maintained for backward compatibility. New code should use
+    the classification subpackage:
+    - :mod:`finance_ml.ml_workflow.classification.tuning` for hyperparameter optimization
+    - :mod:`finance_ml.ml_workflow.classification.evaluation` for calibration analysis
 """
 
 import logging
+import warnings
 from typing import Dict, Any, Literal
 
 import numpy as np
@@ -53,6 +60,16 @@ except ImportError:
     HAVE_CATBOOST = False
 
 logger = logging.getLogger(__name__)
+
+# Emit deprecation warning when module is imported
+warnings.warn(
+    "The classification_enhanced module is deprecated as of v9_8. "
+    "Use finance_ml.ml_workflow.classification.tuning and "
+    "finance_ml.ml_workflow.classification.evaluation instead. "
+    "See docs/improvement_plan/finance_ml_restructuring_plan.md for migration guidance.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 # ============================================================================
 # Phase 9.4 Refactor: Classification subpackage
@@ -424,7 +441,39 @@ def analyze_calibration(
     return results
 
 
-# Export main functions
+# ---------------------------------------------------------------------------
+# Phase 2.2: Deprecation shim to classification.tuning / classification.evaluation
+# ---------------------------------------------------------------------------
+import warnings as _warnings
+
+from finance_ml.ml_workflow.classification.tuning import (
+    optimize_classifier_hyperparameters as _tuning_optimize_classifier_hyperparameters,
+    cross_validate_with_sector_stratification as _tuning_cross_validate_with_sector_stratification,
+)
+from finance_ml.ml_workflow.classification.evaluation import (
+    analyze_calibration as _evaluation_analyze_calibration,
+)
+
+
+_warnings.warn(
+    "DEPRECATION NOTICE: 'finance_ml.ml_workflow.classification_enhanced' has been "
+    "consolidated into the 'finance_ml.ml_workflow.classification' subpackage. "
+    "Import from 'classification.tuning' and 'classification.evaluation' "
+    "instead. This shim will be removed in a future release.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+
+# Rebind public symbols to the canonical implementations in the
+# classification subpackage. This ensures that any existing imports from
+# classification_enhanced transparently use the new code paths.
+optimize_classifier_hyperparameters = _tuning_optimize_classifier_hyperparameters
+cross_validate_with_sector_stratification = _tuning_cross_validate_with_sector_stratification
+analyze_calibration = _evaluation_analyze_calibration
+
+
+# Export main functions (backwards-compatible public API)
 __all__ = [
     "optimize_classifier_hyperparameters",
     "cross_validate_with_sector_stratification",

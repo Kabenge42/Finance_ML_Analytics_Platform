@@ -290,12 +290,21 @@ def create_enhanced_event_labels(
                 ] = 1
                 labels[sector_mask & (momentum_score <= adj_strong_neg)] = 0
         else:
-            # Use composite momentum score with 5-class thresholds
-            labels[momentum_score >= 1.5] = 4  # Strong positive momentum
-            labels[(momentum_score >= 0.75) & (momentum_score < 1.5)] = 3  # Positive momentum
-            labels[(momentum_score >= -0.75) & (momentum_score < 0.75)] = 2  # Neutral momentum
-            labels[(momentum_score <= -0.75) & (momentum_score > -1.5)] = 1  # Negative momentum
-            labels[momentum_score <= -1.5] = 0  # Strong negative momentum
+            # Use quantile-based thresholds to ensure balanced class distribution
+            labels[momentum_score >= momentum_score.quantile(0.85)] = 4  # Strong positive momentum
+            labels[
+                (momentum_score >= momentum_score.quantile(0.65))
+                & (momentum_score < momentum_score.quantile(0.85))
+            ] = 3  # Positive momentum
+            labels[
+                (momentum_score >= momentum_score.quantile(0.35))
+                & (momentum_score < momentum_score.quantile(0.65))
+            ] = 2  # Neutral momentum
+            labels[
+                (momentum_score <= momentum_score.quantile(0.35))
+                & (momentum_score > momentum_score.quantile(0.15))
+            ] = 1  # Negative momentum
+            labels[momentum_score <= momentum_score.quantile(0.15)] = 0  # Strong negative momentum
 
     elif method == "valuation":
         # Enhanced valuation using ALL 23 Phase 9.3 Valuation Ratios features
@@ -377,11 +386,23 @@ def create_enhanced_event_labels(
         valuation_score /= signal_count
 
         # High score (undervalued) = positive, low score (overvalued) = negative (5-class)
-        labels[valuation_score >= 0.85] = 4  # Top 15% = strongly undervalued
-        labels[(valuation_score >= 0.65) & (valuation_score < 0.85)] = 3  # Undervalued
-        labels[(valuation_score >= 0.35) & (valuation_score < 0.65)] = 2  # Neutral
-        labels[(valuation_score <= 0.35) & (valuation_score > 0.15)] = 1  # Overvalued
-        labels[valuation_score <= 0.15] = 0  # Strongly overvalued
+        # Use quantile-based thresholds to ensure balanced class distribution
+        labels[valuation_score >= valuation_score.quantile(0.85)] = (
+            4  # Top 15% = strongly undervalued
+        )
+        labels[
+            (valuation_score >= valuation_score.quantile(0.65))
+            & (valuation_score < valuation_score.quantile(0.85))
+        ] = 3  # Undervalued
+        labels[
+            (valuation_score >= valuation_score.quantile(0.35))
+            & (valuation_score < valuation_score.quantile(0.65))
+        ] = 2  # Neutral
+        labels[
+            (valuation_score <= valuation_score.quantile(0.35))
+            & (valuation_score > valuation_score.quantile(0.15))
+        ] = 1  # Overvalued
+        labels[valuation_score <= valuation_score.quantile(0.15)] = 0  # Strongly overvalued
 
     elif method == "fundamental":
         # Enhanced fundamental using ALL 12 Phase 9.3 Profitability features
@@ -495,15 +516,26 @@ def create_enhanced_event_labels(
         volatility_score /= signal_count
 
         # High volatility score (risky) = negative, low score (stable) = positive (5-class)
-        labels[volatility_score <= -1.0] = 4  # Very low volatility/high stability = strong positive
-        labels[(volatility_score <= -0.5) & (volatility_score > -1.0)] = (
-            3  # Low volatility = positive
+        # Use quantile-based thresholds to ensure balanced class distribution
+        # Note: For volatility, low score is good, so we invert the quantile logic
+        labels[volatility_score <= volatility_score.quantile(0.15)] = (
+            4  # Very low volatility/high stability = strong positive
         )
-        labels[(volatility_score >= -0.5) & (volatility_score < 0.5)] = 2  # Neutral volatility
-        labels[(volatility_score >= 0.5) & (volatility_score < 1.0)] = (
-            1  # High volatility = negative
+        labels[
+            (volatility_score <= volatility_score.quantile(0.35))
+            & (volatility_score > volatility_score.quantile(0.15))
+        ] = 3  # Low volatility = positive
+        labels[
+            (volatility_score >= volatility_score.quantile(0.35))
+            & (volatility_score < volatility_score.quantile(0.65))
+        ] = 2  # Neutral volatility
+        labels[
+            (volatility_score >= volatility_score.quantile(0.65))
+            & (volatility_score < volatility_score.quantile(0.85))
+        ] = 1  # High volatility = negative
+        labels[volatility_score >= volatility_score.quantile(0.85)] = (
+            0  # Very high volatility/low stability = strong negative
         )
-        labels[volatility_score >= 1.0] = 0  # Very high volatility/low stability = strong negative
 
     elif method == "analyst_rating":
         # Analyst rating events using ALL 10 Phase 9.3 Analyst Sentiment features
@@ -588,11 +620,21 @@ def create_enhanced_event_labels(
         analyst_score /= signal_count
 
         # Positive analyst score = positive catalyst (5-class)
-        labels[analyst_score >= 1.0] = 4
-        labels[(analyst_score >= 0.5) & (analyst_score < 1.0)] = 3
-        labels[(analyst_score >= -0.5) & (analyst_score < 0.5)] = 2
-        labels[(analyst_score <= -0.5) & (analyst_score > -1.0)] = 1
-        labels[analyst_score <= -1.0] = 0
+        # Use quantile-based thresholds to ensure balanced class distribution
+        labels[analyst_score >= analyst_score.quantile(0.85)] = 4
+        labels[
+            (analyst_score >= analyst_score.quantile(0.65))
+            & (analyst_score < analyst_score.quantile(0.85))
+        ] = 3
+        labels[
+            (analyst_score >= analyst_score.quantile(0.35))
+            & (analyst_score < analyst_score.quantile(0.65))
+        ] = 2
+        labels[
+            (analyst_score <= analyst_score.quantile(0.35))
+            & (analyst_score > analyst_score.quantile(0.15))
+        ] = 1
+        labels[analyst_score <= analyst_score.quantile(0.15)] = 0
 
     elif method == "market_events":
         # Market events using ALL 5 Phase 9.3 Market Sentiment features
@@ -648,11 +690,21 @@ def create_enhanced_event_labels(
         market_score /= signal_count
 
         # Positive market signals = positive (5-class)
-        labels[market_score >= 1.2] = 4
-        labels[(market_score >= 0.6) & (market_score < 1.2)] = 3
-        labels[(market_score >= -0.6) & (market_score < 0.6)] = 2
-        labels[(market_score <= -0.6) & (market_score > -1.2)] = 1
-        labels[market_score <= -1.2] = 0
+        # Use quantile-based thresholds to ensure balanced class distribution
+        labels[market_score >= market_score.quantile(0.85)] = 4
+        labels[
+            (market_score >= market_score.quantile(0.65))
+            & (market_score < market_score.quantile(0.85))
+        ] = 3
+        labels[
+            (market_score >= market_score.quantile(0.35))
+            & (market_score < market_score.quantile(0.65))
+        ] = 2
+        labels[
+            (market_score <= market_score.quantile(0.35))
+            & (market_score > market_score.quantile(0.15))
+        ] = 1
+        labels[market_score <= market_score.quantile(0.15)] = 0
 
     elif method == "combined_signals":
         # Combined signals: Multi-metric composite combining price momentum, valuation, and fundamentals

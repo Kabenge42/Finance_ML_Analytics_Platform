@@ -1,0 +1,25 @@
+# SOLUTION FOR CELL 62: Filter out sector interaction features before passing to train_and_evaluate_regression_by_sector
+
+# The issue: X_train.columns includes sector interaction features like:
+#   - sector_Technology__x__ev_ebitda_ratio
+#   - sector_Financials__x__beta_5y
+# These don't exist in all_stocks_enhanced (they were only created during training)
+
+# BEFORE (line causing error):
+feature_cols=list(X_train.columns),
+
+# AFTER (filter to only base features that exist in all_stocks_enhanced):
+# Filter out sector interaction features (contain '__x__') - they'll be regenerated per sector
+feature_cols=[c for c in X_train.columns if '__x__' not in c and c in all_stocks_enhanced.columns],
+
+# Alternative: Be even more explicit and only use base features
+# base_feature_cols = [c for c in X_train.columns 
+#                      if c in all_stocks_enhanced.columns 
+#                      and not c.startswith('sector_')]
+
+# EXPLANATION:
+# - Sector interaction features are sector-specific by design
+# - The train_and_evaluate_regression_by_sector function will train models per sector
+# - It will regenerate sector-specific features internally if needed
+# - Passing sector interaction features from training causes a mismatch
+# - Filter keeps only features that exist in both X_train and all_stocks_enhanced
