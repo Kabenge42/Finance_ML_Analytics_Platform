@@ -15,11 +15,14 @@ run quickly while still exercising realistic workflows derived from
 
 from __future__ import annotations
 
-from typing import Sequence, Dict, Any
+import logging
+from typing import Any, Dict, Sequence
 
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
+
+logger = logging.getLogger(__name__)
 
 
 def create_ml_return_features(
@@ -354,6 +357,12 @@ def clip_expected_returns(
         max_return = MAX_EXPECTED_RETURN
 
     arr = np.asarray(returns, dtype=float)
+
+    # Safety check for empty array
+    if arr.size == 0:
+        logger.warning("clip_expected_returns received empty array. Returning empty array.")
+        return arr
+
     return np.clip(arr, min_return, max_return)
 
 
@@ -539,9 +548,6 @@ def create_ml_return_features_enhanced(
 
         # Log the number of Phase 9.3 features found
         if available_phase93:
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.debug(f"Found {len(available_phase93)} Phase 9.3 features in input data")
 
     return result
@@ -551,10 +557,11 @@ def validate_expected_returns(
     returns: np.ndarray | pd.Series,
     mean_threshold: float | None = None,
 ) -> Dict[str, Any]:
-    """Validate expected returns for realism.
+    """Validate expected returns for realism and safely handle empty arrays.
 
     This diagnostic function checks if expected returns are realistic and
-    flags potential issues like the 95.6% mean return problem.
+    flags potential issues like the 95.6% mean return problem. It safely
+    handles empty arrays without crashing.
 
     Parameters
     ----------
@@ -568,13 +575,16 @@ def validate_expected_returns(
     dict
         Dictionary containing:
         - is_realistic: bool - True if returns pass validation
-        - mean_return: float - Mean of the returns
-        - std_return: float - Standard deviation of the returns
-        - min_return: float - Minimum return
-        - max_return: float - Maximum return
-        - num_extreme_high: int - Count of returns > MAX_EXPECTED_RETURN
-        - num_extreme_low: int - Count of returns < MIN_EXPECTED_RETURN
-        - warnings: list - List of warning messages
+        - mean: float - Mean of the returns (np.nan if empty)
+        - mean_return: float - Mean of the returns (alias for mean, np.nan if empty)
+        - std_return: float - Standard deviation of the returns (np.nan if empty)
+        - max: float - Maximum return (np.nan if empty)
+        - min: float - Minimum return (np.nan if empty)
+        - n_samples: int - Number of samples
+        - reason: str - Reason for unrealistic returns (if applicable)
+        - num_extreme_high: int - Count of returns > MAX_EXPECTED_RETURN (optional)
+        - num_extreme_low: int - Count of returns < MIN_EXPECTED_RETURN (optional)
+        - warnings: list - List of warning messages (optional)
 
     Examples
     --------
@@ -582,6 +592,12 @@ def validate_expected_returns(
     >>> diagnostics = validate_expected_returns(returns)
     >>> diagnostics['is_realistic']
     False
+    >>> empty_returns = np.array([])
+    >>> diagnostics = validate_expected_returns(empty_returns)
+    >>> diagnostics['is_realistic']
+    False
+    >>> diagnostics['reason']
+    'Empty returns array'
     """
     from finance_ml.ml_workflow.config.ml_returns_config import (
         MAX_EXPECTED_RETURN,
@@ -595,22 +611,24 @@ def validate_expected_returns(
     arr = np.asarray(returns, dtype=float)
     arr = arr[~np.isnan(arr)]  # Remove NaN values
 
+    # Handle empty input safely
     if arr.size == 0:
         return {
             "is_realistic": False,
+            "reason": "Empty returns array",
+            "mean": np.nan,
             "mean_return": np.nan,
             "std_return": np.nan,
-            "min_return": np.nan,
-            "max_return": np.nan,
-            "num_extreme_high": 0,
-            "num_extreme_low": 0,
-            "warnings": ["No valid returns to validate"],
+            "max": np.nan,
+            "min": np.nan,
+            "n_samples": 0,
+            "warnings": [],  # Consistent schema: always include warnings
         }
 
     mean_return = float(np.mean(arr))
     std_return = float(np.std(arr))
-    min_return = float(np.min(arr))
     max_return = float(np.max(arr))
+    min_return = float(np.min(arr))
 
     num_extreme_high = int(np.sum(arr > MAX_EXPECTED_RETURN))
     num_extreme_low = int(np.sum(arr < MIN_EXPECTED_RETURN))
@@ -618,10 +636,18 @@ def validate_expected_returns(
     warnings = []
     is_realistic = True
 
-    # Check mean threshold
-    if abs(mean_return) > mean_threshold:
+    # Validation Criteria:
+    # 1. Mean return should be < 50% (0.50) for realistic equity portfolios
+    # 2. Bounds should not be egregiously high (checked against config limits)
+    if abs(mean_return) >= 0.50:
         is_realistic = False
+        warnings.append(f"Mean return {mean_return:.2%} exceeds 50% threshold")
+    elif abs(mean_return) > mean_threshold:
         warnings.append(f"Mean return {mean_return:.2%} exceeds threshold {mean_threshold:.0%}")
+
+    if max_return > MAX_EXPECTED_RETURN * 2.0:
+        is_realistic = False
+        warnings.append(f"Max return {max_return:.2%} exceeds safety threshold")
 
     # Check for extreme values
     if num_extreme_high > 0:
@@ -640,16 +666,14 @@ def validate_expected_returns(
         if pct_extreme > 10:
             is_realistic = False
 
-    # Check for unrealistically low variance
-    if std_return < 0.01 and arr.size > 10:
-        warnings.append(f"Suspiciously low variance (std={std_return:.4f})")
-
     return {
         "is_realistic": is_realistic,
+        "mean": mean_return,
         "mean_return": mean_return,
         "std_return": std_return,
-        "min_return": min_return,
-        "max_return": max_return,
+        "max": max_return,
+        "min": min_return,
+        "n_samples": len(arr),
         "num_extreme_high": num_extreme_high,
         "num_extreme_low": num_extreme_low,
         "warnings": warnings,

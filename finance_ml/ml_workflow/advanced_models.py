@@ -1,284 +1,37 @@
-﻿"""
-Phase 9.5: Advanced Regression Models with Classification Features
+﻿"""Deprecation shim for advanced regression models (archived).
 
-This module implements sector-optimized regression regression enhanced with classification
-meta-features, including:
-- Diverse model architectures (linear, gradient boosting, neural networks)
-- Hyperparameter optimization with Optuna
-- Advanced ensemble methods (stacking, voting)
-- Quantile regression for uncertainty estimation
-- Model persistence and versioning
-- Sector-specific optimization
+This module has been archived. Please import from the structured regression
+subpackage instead:
+  - finance_ml.ml_workflow.regression.models
+  - finance_ml.ml_workflow.regression.quantile
+  - finance_ml.ml_workflow.regression.tuning
+  - finance_ml.ml_workflow.regression.io
+  - finance_ml.ml_workflow.regression.constraints
 
-Reference notebooks:
-- 04_training_linear_models.ipynb
-- 07_ensemble_learning_and_random_forests.ipynb
-- 10_neural_nets_with_keras.ipynb
-- 11_training_deep_neural_networks.ipynb
-
-## ⚠️ PHASE 9.5 REFACTOR NOTICE ⚠️
-
-Parts of this module have been refactored into the new regression subpackage:
-    finance_ml.ml_workflow.regression/
-
-### Already Migrated (Phase 9.5.0):
-    - NonNegativeRegressionWrapper → regression.constraints
-    - extract_classification_features → regression.dataset
-    - integrate_classification_features_into_dataframe → regression.dataset
-    - create_classification_interactions → regression.dataset
-    - prepare_regression_data → regression.dataset
-    - validate_training_data → regression.dataset
-    - prepare_features_for_training → regression.dataset
-    - extract_numeric_feature_columns → regression.dataset
-    - train_sector_specific_models → regression.dataset
-
-For new code, import from the regression subpackage:
-    from finance_ml.ml_workflow.regression.constraints import NonNegativeRegressionWrapper
-    from finance_ml.ml_workflow.regression.dataset import (
-        extract_classification_features,
-        prepare_regression_data,
-        validate_training_data,
-        train_sector_specific_models,
-    )
-
-### Migrated in Phase 9.5.1 (✅ COMPLETED):
-    - All 14 train_*_regressor functions → regression.models
-      (ridge, lasso, elastic_net, bayesian_ridge, polynomial, xgboost, lightgbm,
-       catboost, histgb, random_forest, extra_trees, neural_network, voting, stacking)
-    - compare_regressors → regression.models
-    - train_quantile_regressor → regression.quantile
-    - optimize_hyperparameters_optuna → regression.tuning
-    - save_model, load_model → regression.io
-
-For new code, import from the regression subpackage:
-    from finance_ml.ml_workflow.regression.models import train_xgboost_regressor
-    from finance_ml.ml_workflow.regression.quantile import train_quantile_regressor
-    from finance_ml.ml_workflow.regression.tuning import optimize_hyperparameters_optuna
-    from finance_ml.ml_workflow.regression.io import save_model, load_model
-
-This file remains for backward compatibility. All functions are now available
-from both locations (here and regression/) during the transition period.
+This shim re-exports the archived implementation to preserve behavior during
+the transition.
 """
 
-import logging
-import time
+from __future__ import annotations
+
 import warnings
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any, Union
 
-import joblib
-import numpy as np
-import pandas as pd
-
-# Configure logger for this module
-logger = logging.getLogger(__name__)
-from sklearn.ensemble import (
-    RandomForestRegressor,
-    ExtraTreesRegressor,
-    GradientBoostingRegressor,
-    VotingRegressor,
-    StackingRegressor,
-    HistGradientBoostingRegressor,
+warnings.warn(
+    "DEPRECATION NOTICE: 'finance_ml.ml_workflow.advanced_models' is archived. "
+    "Use 'finance_ml.ml_workflow.regression.*' modules instead.",
+    DeprecationWarning,
+    stacklevel=2,
 )
-from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Scikit-learn imports
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+# Re-export archived implementation only; no additional legacy content
+from .archive.advanced_models import *  # noqa: F401,F403,E402
 
-# Optional dependencies with graceful fallback
-try:
-    import xgboost as xgb
+try:  # pragma: no cover
+    from .archive.advanced_models import __all__ as _ALL  # type: ignore
 
-    HAS_XGBOOST = True
-except ImportError:
-    xgb = None  # type: ignore
-    HAS_XGBOOST = False
-
-try:
-    import lightgbm as lgb
-
-    HAS_LIGHTGBM = True
-except ImportError:
-    lgb = None  # type: ignore
-    HAS_LIGHTGBM = False
-
-try:
-    from catboost import CatBoostRegressor
-
-    HAS_CATBOOST = True
-except ImportError:
-    CatBoostRegressor = None  # type: ignore
-    HAS_CATBOOST = False
-
-try:
-    import optuna
-
-    HAS_OPTUNA = True
-except ImportError:
-    optuna = None  # type: ignore
-    HAS_OPTUNA = False
-
-try:
-    import tensorflow as tf
-    from tensorflow import keras
-    from tensorflow.keras import layers
-
-    HAS_TENSORFLOW = True
-except ImportError:
-    tf = None  # type: ignore
-    keras = None  # type: ignore
-    layers = None  # type: ignore
-    HAS_TENSORFLOW = False
-
-# Suppress warnings
-warnings.filterwarnings("ignore")
-
-
-# ==============================================================================
-# Non-Negative Prediction Constraint
-# ==============================================================================
-
-
-class NonNegativeRegressionWrapper:
-    """
-    Wrapper for regression regression that ensures predictions are non-negative.
-
-    This wrapper clips predictions to be >= 0, which is essential for price
-    target predictions since stock prices cannot be negative. Linear regression
-    (Ridge, Lasso, ElasticNet) can produce negative predictions without
-    constraints, especially when features have extreme values or the model
-    is poorly regularized.
-
-    The wrapper applies post-prediction clipping using np.maximum(pred, 0.0),
-    which is computationally efficient and maintains differentiability at
-    the boundary.
-
-    Args:
-        base_model: Any sklearn-compatible regression model
-
-    Attributes:
-        base_model: The wrapped regression model
-
-    Example:
-        >>> from sklearn.linear_model import Ridge
-        >>> import pandas as pd
-        >>> import numpy as np
-        >>>
-        >>> # Create training data
-        >>> X = pd.DataFrame({'feature1': np.random.randn(100)})
-        >>> y = pd.Series(np.abs(np.random.randn(100)) * 10 + 5)
-        >>>
-        >>> # Train with non-negative constraint
-        >>> base = Ridge(alpha=1.0)
-        >>> model = NonNegativeRegressionWrapper(base)
-        >>> model.fit(X, y)
-        >>> predictions = model.predict(X)
-        >>> assert (predictions >= 0).all()  # All predictions >= 0
-
-    Phase 9.5 TDD Implementation:
-        This class was implemented following strict TDD to solve the critical
-        issue of negative price target predictions observed in production regression.
-    """
-
-    def __init__(self, base_model):
-        """
-        Initialize wrapper with base regression model.
-
-        Args:
-            base_model: sklearn-compatible regression model (must have fit and predict methods)
-        """
-        self.base_model = base_model
-
-    def fit(self, X, y):
-        """
-        Fit the base model.
-
-        Args:
-            X: Feature matrix (pandas DataFrame or numpy array)
-            y: Target vector (pandas Series or numpy array)
-
-        Returns:
-            self (for method chaining)
-        """
-        self.base_model.fit(X, y)
-        return self
-
-    def predict(self, X):
-        """
-        Predict and ensure all predictions are non-negative.
-
-        This method:
-        1. Gets predictions from base model
-        2. Clips predictions to be >= 0 using np.maximum
-        3. Returns clipped predictions
-
-        Args:
-            X: Feature matrix (pandas DataFrame or numpy array)
-
-        Returns:
-            Non-negative predictions (numpy array with all values >= 0)
-
-        Note:
-            The clipping operation is applied element-wise and has minimal
-            performance overhead. For most financial regression, less than 5% of
-            predictions require clipping.
-        """
-        predictions = self.base_model.predict(X)
-
-        # Count how many predictions would be negative (for monitoring)
-        n_negative = np.sum(predictions < 0)
-        if n_negative > 0:
-            import logging
-
-            pct_negative = 100.0 * n_negative / len(predictions)
-            logging.debug(
-                f"NonNegativeRegressionWrapper: Clipped {n_negative}/{len(predictions)} "
-                f"({pct_negative:.1f}%) negative predictions to 0"
-            )
-
-        # Clip predictions to ensure they're >= 0
-        return np.maximum(predictions, 0.0)
-
-    def __getattr__(self, name):
-        """
-        Delegate attribute access to base model.
-
-        This method is called when an attribute is not found in the wrapper.
-        It delegates to the wrapped base_model, allowing transparent access
-        to base model attributes and methods.
-
-        Args:
-            name: Name of the attribute to access
-
-        Returns:
-            Attribute value from base model
-        """
-        # Prevent infinite recursion during copying/pickling
-        # by not delegating special methods that don't exist
-        if name.startswith("__") and name.endswith("__"):
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
-
-        # Prevent recursion if base_model is not yet set (during __init__ or unpickling)
-        if "base_model" not in self.__dict__:
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
-
-        return getattr(self.base_model, name)
-
-    def __getstate__(self):
-        """Support for pickling/copying."""
-        return self.__dict__.copy()
-
-    def __setstate__(self, state):
-        """Support for unpickling/copying."""
-        self.__dict__.update(state)
-
-
-# ==============================================================================
-# Category 1: Feature Integration
-# ==============================================================================
+    __all__ = list(_ALL)
+except Exception:  # pragma: no cover
+    __all__ = [name for name in globals().keys() if not name.startswith("_")]
 
 
 def extract_classification_features(probabilities: np.ndarray) -> pd.DataFrame:

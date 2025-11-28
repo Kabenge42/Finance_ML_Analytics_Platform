@@ -1,9 +1,9 @@
 # Finance ML Analytics Platform
 
-**Version 0.8.3** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.9.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-26  
-> **Latest Release**: v0.8.3 (see CHANGELOG.md)  
+> **Documentation Last Updated:** 2025-11-30  
+> **Latest Release**: v0.9.1 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
 > applicable.
@@ -1364,15 +1364,15 @@ without TensorFlow.
 
 ### Version Synchronization
 
-**Current Status** (as of 2025-11-26):
+**Current Status** (as of 2025-11-30):
 
-- **pyproject.toml**: Version = "0.8.3" ✓
-- **README.md**: Updated to 0.8.3 ✓
-- **CHANGELOG.md**: Unreleased changes for 2025-11-25 (semantic column classification)
-- **environment_variables.txt**: Version = 0.8.3, MODEL_VERSION=v9_9 ✓
+- **pyproject.toml**: Version = "0.9.1" ✓
+- **README.md**: Updated to 0.9.1 ✓
+- **CHANGELOG.md**: See CHANGELOG.md for version history
+- **environment_variables.txt**: Version = 0.9.1, MODEL_VERSION=v9_9 ✓
 - **finance_ml/config.py**: MODEL_VERSION v9_9 ✓
 
-**Status**: ✓ Aligned — all version references synchronized at 0.8.3 with MODEL_VERSION v9_9
+**Status**: ✓ Aligned — all version references synchronized at 0.9.1 with MODEL_VERSION v9_9
 
 ### Future Enhancements
 
@@ -1388,5 +1388,5 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-26  
-**README Version**: 4.2 (aligned to v0.8.3; 128 test modules; code_guidelines.md v1.7; semantic column classification)
+**Last Updated**: 2025-11-30  
+**README Version**: 4.3 (aligned to v0.9.1; 128 test modules; code_guidelines.md v1.7; semantic column classification)

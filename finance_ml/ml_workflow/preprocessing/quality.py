@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -136,3 +136,61 @@ def calculate_data_quality_score(df: pd.DataFrame) -> DataQualityReport:
 
     logger.info(f"Data quality assessment complete: {overall:.2%} overall score")
     return report
+
+
+# === Phase 9.1 lightweight validators for notebook hooks ===
+def check_nan_inf(df: pd.DataFrame) -> Dict[str, int]:
+    """Return counts of NaN and Inf by column. Raises if any Inf present.
+
+    Intended to be called after the 6-step imputation to confirm no residual
+    NaN/Inf values remain. Non-fatal for NaNs (caller decides), but will log.
+    """
+    nan_counts = df.isna().sum()
+    with np.errstate(invalid="ignore"):  # robustness
+        inf_mask = (
+            np.isinf(df.select_dtypes(include=[np.number]))
+            .reindex(df.columns, axis=1)
+            .fillna(False)
+        )
+    inf_counts = (
+        inf_mask.sum() if isinstance(inf_mask, pd.DataFrame) else pd.Series(0, index=df.columns)
+    )
+
+    total_nan = int(nan_counts.sum())
+    total_inf = int(inf_counts.sum())
+    if total_inf > 0:
+        logger.error("Infinite values detected after imputation – this violates Phase 9.1 policy")
+        raise ValueError("Infinite values detected after imputation")
+
+    logger.info(f"NaN/Inf check complete: NaN={total_nan}, Inf={total_inf}")
+    return {"nan_total": total_nan, "inf_total": total_inf}
+
+
+def validate_winsorization_bounds(
+    df: pd.DataFrame,
+    lower: float = 0.10,
+    upper: float = 0.90,
+    exclude: Optional[List[str]] = None,
+) -> Dict[str, float]:
+    """Validate winsorization-like bounds by reporting global quantiles.
+
+    This function does not mutate data; it reports the empirical 10th/90th
+    percentiles for numeric columns to help verify reasonable clipping bounds
+    were configured and applied (per code_guidelines.md v1.4 Outlier policy).
+    Price columns should be excluded by the caller.
+    """
+    if exclude is None:
+        exclude = []
+
+    numeric = df.select_dtypes(include=[np.number]).drop(
+        columns=[c for c in exclude if c in df.columns], errors="ignore"
+    )
+    if numeric.empty:
+        return {"p_low": np.nan, "p_high": np.nan}
+
+    p_low = float(numeric.quantile(lower, interpolation="linear").median())
+    p_high = float(numeric.quantile(upper, interpolation="linear").median())
+    logger.info(
+        f"Winsorization bounds check (median over columns): p{int(lower*100)}={p_low:.4g}, p{int(upper*100)}={p_high:.4g}"
+    )
+    return {"p_low": p_low, "p_high": p_high}

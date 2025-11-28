@@ -4,6 +4,12 @@ finance_ml.data - Data loading, normalization, and validation
 This module provides functions for loading equity data from CSV files or databases,
 normalizing column names, and validating data quality.
 
+Deprecation notice:
+    Loading helpers are being consolidated under
+    ``finance_ml.ml_workflow.data.loaders`` per the restructuring plan. New
+    code should import loaders from that module. This module will remain for
+    backward compatibility during the transition.
+
 Functions extracted from ml_finance_model_v8_2.py as part of Phase 7 refactoring.
 """
 
@@ -14,6 +20,7 @@ import os
 import re
 import warnings
 from pathlib import Path
+import warnings as _warnings
 from typing import Optional, List, TYPE_CHECKING, Any
 
 import numpy as np
@@ -33,6 +40,14 @@ try:
     from sqlalchemy import create_engine
 except ImportError:  # pragma: no cover
     create_engine: Optional[CreateEngineType] = None  # type: ignore
+
+# Emit a one-time deprecation warning on import (low noise)
+_warnings.warn(
+    "DEPRECATION: preprocessing.data loading utilities are moving to "
+    "finance_ml.ml_workflow.data.loaders. Please update imports.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 # Import from preprocessing for deprecation shims
 try:

@@ -5,117 +5,235 @@ DROP TABLE IF EXISTS equities;
 DROP TABLE IF EXISTS "Equities";
 DROP TABLE IF EXISTS equities;
 
+/*
+ * SEMANTIC CATEGORY CLASSIFICATION SYSTEM
+ * =======================================
+ *
+ * This schema integrates semantic categories from finance_ml/ml_workflow/preprocessing/column_semantics.py
+ * to enable intelligent preprocessing decisions. Each numerical column is classified into one of five
+ * semantic categories that determine appropriate preprocessing transformations:
+ *
+ * 1. PRICE COLUMNS (21 columns)
+ *    - Definition: Current prices, price targets, historical prices, 52w bounds, EMAs
+ *    - Preprocessing: NEVER transform - must preserve original dollar units
+ *    - Business Rationale: Required for core valuation metric (Predicted_Target - Last_Price) / Last_Price
+ *    - Examples: last_price, price_target, price_5d_ago, 52w_high_adj, ema_20d
+ *
+ * 2. MARKET_VALUE COLUMNS (20 columns)
+ *    - Definition: Market cap, enterprise value, balance sheet, income statement, cash flow items
+ *    - Preprocessing: Log-transform recommended (highly skewed, often skewness > 2.0)
+ *    - Business Rationale: Preserve information about valid extremes while normalizing scale
+ *    - Examples: market_cap, enterprise_value, revenue, ebitda, total_assets, total_debt
+ *
+ * 3. RATIO COLUMNS (~70 columns)
+ *    - Definition: Pre-normalized financial ratios (valuation, profitability, leverage, liquidity)
+ *    - Preprocessing: Already normalized - winsorization may not be needed
+ *    - Business Rationale: Ratios are relative metrics already normalized across scales
+ *    - Examples: p_e, p_b, roe, roa, debt_equity, current_ratio, ev_ebitda, ev_sales
+ *
+ * 4. PERCENTAGE COLUMNS (~25 columns)
+ *    - Definition: Margin metrics, growth rates, volatility measures (bounded [0, 100])
+ *    - Preprocessing: Already bounded - percentile capping inappropriate
+ *    - Business Rationale: Naturally bounded percentage metrics
+ *    - Examples: gross_margin, operating_margin, revenue_growth_yoy, volatility_1y, beta
+ *
+ * 5. COUNT COLUMNS (8 columns)
+ *    - Definition: Discrete integer counts (analyst ratings, employees)
+ *    - Preprocessing: Discrete values - inappropriate for continuous scaling
+ *    - Business Rationale: Integer counts require different treatment than continuous variables
+ *    - Examples: num_analysts, num_strong_buy_ratings, num_employees
+ *
+ * CATEGORICAL COLUMNS (9 columns)
+ *    - Definition: Non-numeric categories for grouping and encoding
+ *    - Preprocessing: One-hot encoding, label encoding, or target encoding
+ *    - Examples: sector, industry, region, country, exchange, style_class, size_class
+ *
+ * PREPROCESSING IMPLICATIONS:
+ * - Winsorization: Apply to MARKET_VALUE and OTHER columns only
+ * - Log-Transform: Apply to MARKET_VALUE columns only
+ * - Scaling: Apply to all except PRICE columns
+ * - Encoding: Apply to CATEGORICAL columns only
+ *
+ * See finance_ml/ml_workflow/preprocessing/column_semantics.py for implementation details.
+ */
+
 -- Create equities table with appropriate data types
 CREATE TABLE equities
 (
+    -- ====================
+    -- IDENTIFIER COLUMNS
+    -- ====================
     "Ticker"                                   TEXT,
     "ISIN"                                     TEXT,
     "Name"                                     TEXT,
     "Description"                              TEXT,
+    -- CATEGORICAL: Exchange where stock trades
     "Exchange"                                 TEXT,
     "Unit"                                     TEXT,
+    -- CATEGORICAL: GICS Sector classification
     "Sector"                                   TEXT,
+    -- CATEGORICAL: GICS Industry classification
     "Industry"                                 TEXT,
     "Last Updated"                             DATE,
     "Income Statement Report Date"             DATE,
     "Next Earnings"                            DATE,
+    -- CATEGORICAL: Investment style (Value, Growth, Blend)
     "Style Class"                              TEXT,
+    -- CATEGORICAL: Earnings announcement status
     "Next Earnings (Status)"                   TEXT,
+    -- CATEGORICAL: Market cap size (Small, Mid, Large)
     "Size Class"                               TEXT,
+    -- CATEGORICAL: Geographic region
     "Region"                                   TEXT,
+    -- CATEGORICAL: Country of incorporation
     "Country"                                  TEXT,
+    -- CATEGORICAL: Country where stock trades
     "Trading Country"                          TEXT,
-    "Market Cap"                               NUMERIC,
-    "Enterprise Value"                         NUMERIC,
-    "Last Price"                               NUMERIC,
-    "Price Target (YTD Ago)"                   NUMERIC,
-    "Total Return (YTD)"                       NUMERIC,
-    "Price Target"                             NUMERIC,
-    "Price Target - Low"                       NUMERIC,
-    "Price Target - Median"                    NUMERIC,
-    "Price Target - High"                      NUMERIC,
-    "Price Target - #"                         NUMERIC,
-    "P/E (NTM)"                                NUMERIC,
-    "P/E (LTM)"                                NUMERIC,
-    "Altman Z-Score (FY)"                      NUMERIC,
-    "Altman Z-Score (FQ)"                      NUMERIC,
-    "Altman Z-Score (LTM)"                     NUMERIC,
-    "Beta (1Y)"                                NUMERIC,
-    "Beta (2Y)"                                NUMERIC,
-    "Beta (5Y)"                                NUMERIC,
-    "Analyst Rating"                           NUMERIC,
-    "# Strong Sell Ratings"                    NUMERIC,
-    "# Strong Buys Ratings"                    NUMERIC,
-    "# Hold Ratings"                           NUMERIC,
-    "# Buys Ratings"                           NUMERIC,
-    "# Sell Ratings"                           NUMERIC,
-    "Total Revenues/CAGR (5Y FY)"              NUMERIC,
-    "Total Revenues (FQ)"                      NUMERIC,
-    "Total Revenues (-1FY)"                    NUMERIC,
-    "Total Revenues (FY)"                      NUMERIC,
-    "Total Revenues (LTM)"                     NUMERIC,
-    "Total Operating Expenses (LTM)"           NUMERIC,
-    "P/TBV (LTM)"                              NUMERIC,
-    "TBV (FY)"                                 NUMERIC,
-    "TBV (LTM)"                                NUMERIC,
-    "Market Cap (Country R)"                   NUMERIC,
-    "Tot. Return %/CAGR (3Y)"                  NUMERIC,
-    "Tot. Return %/CAGR (10Y)"                 NUMERIC,
-    "Total Return (5Y)"                        NUMERIC,
-    "Total Return (10Y)"                       NUMERIC,
-    "Net Income/Adj. (-1FY)"                   NUMERIC,
-    "CFF (LTM)"                                NUMERIC,
-    "CFI (LTM)"                                NUMERIC,
-    "FCF (LTM)"                                NUMERIC,
-    "CFO (LTM)"                                NUMERIC,
-    "EBITDA (FQ)"                              NUMERIC,
-    "EBITDA (LTM)"                             NUMERIC,
-    "EBITDA (FY)"                              NUMERIC,
-    "EBITDA (-1FY)"                            NUMERIC,
-    "EBITDA/Adj. (LTM)"                        NUMERIC,
-    "EBITDA/Adj. (FY)"                         NUMERIC,
-    "EBITDA/Adj. (-1FY)"                       NUMERIC,
-    "EBIT (FQ)"                                NUMERIC,
-    "EBIT (LTM)"                               NUMERIC,
-    "EBIT (FY)"                                NUMERIC,
-    "EBIT (-1FY)"                              NUMERIC,
-    "EBIT/Adj. (-1FY)"                         NUMERIC,
-    "EBIT/Adj. (FY)"                           NUMERIC,
-    "EBIT/Adj. (LTM)"                          NUMERIC,
-    "EBIT - Est Med (FY1E)"                    NUMERIC,
-    "EBIT - Est Med (NTM)"                     NUMERIC,
-    "Return On Equity % (LTM)"                 NUMERIC,
-    "Return On Equity % (FY)"                  NUMERIC,
-    "Net Income - (IS) (FY)"                   NUMERIC,
-    "Net Income - (IS) (LTM)"                  NUMERIC,
-    "Normalized Net Income (FY)"               NUMERIC,
-    "Normalized Net Income (LTM)"              NUMERIC,
-    "Net Income/Adj. (FY)"                     NUMERIC,
-    "Net Income/Adj. (LTM)"                    NUMERIC,
-    "Net Income Margin % (FY)"                 NUMERIC,
-    "Net Income Margin % (LTM)"                NUMERIC,
-    "Volatility (1M)"                          NUMERIC,
-    "Volatility (3M)"                          NUMERIC,
-    "Volatility (6M)"                          NUMERIC,
-    "Volatility (1Y)"                          NUMERIC,
-    "Volume (Shrs)"                            NUMERIC,
-    "Dividend Per Share (LTM)"                 NUMERIC,
-    "Div Yield (Ind)"                          NUMERIC,
-    "Div Yield (LTM)"                          NUMERIC,
-    "Total Debt (FY)"                          NUMERIC,
-    "Total Equity (FY)"                        NUMERIC,
-    "Total Equity (LTM)"                       NUMERIC,
-    "Total Debt (LTM)"                         NUMERIC,
-    "Total Assets (LTM)"                       NUMERIC,
-    "Total Assets (FY)"                        NUMERIC,
-    "Current Ratio (FY)"                       NUMERIC,
-    "Current Ratio (LTM)"                      NUMERIC,
-    "Gross Profit Margin % (FY)"               NUMERIC,
-    "Gross Profit Margin % (LTM)"              NUMERIC,
-    "Asset Turnover (FY)"                      NUMERIC,
-    "Asset Turnover (LTM)"                     NUMERIC,
-    "Gross Profit (LTM)"                       NUMERIC,
-    "Gross Profit (FY)"                        NUMERIC,
+
+    -- ====================
+    -- MARKET VALUE COLUMNS - Log-transform recommended
+    -- ====================
+    "Market Cap"                               NUMERIC, -- MARKET_VALUE: Market capitalization
+    "Enterprise Value"                         NUMERIC, -- MARKET_VALUE: Enterprise value
+
+    -- ====================
+    -- PRICE COLUMNS - NEVER transform (preserve original dollar units)
+    -- ====================
+    "Last Price"                               NUMERIC, -- PRICE: Current market price (critical for valuation)
+    "Price Target (YTD Ago)"                   NUMERIC, -- PRICE: Historical price target (YTD)
+    "Total Return (YTD)"                       NUMERIC, -- PERCENTAGE: YTD return percentage
+    "Price Target"                             NUMERIC, -- PRICE: Analyst consensus target price
+    "Price Target - Low"                       NUMERIC, -- PRICE: Low analyst price target
+    "Price Target - Median"                    NUMERIC, -- PRICE: Median analyst price target
+    "Price Target - High"                      NUMERIC, -- PRICE: High analyst price target
+    "Price Target - #"                         NUMERIC, -- COUNT: Number of price targets
+
+    -- ====================
+    -- RATIO COLUMNS - Pre-normalized financial ratios
+    -- ====================
+    "P/E (NTM)"                                NUMERIC, -- RATIO: Price-to-Earnings (Next Twelve Months)
+    "P/E (LTM)"                                NUMERIC, -- RATIO: Price-to-Earnings (Last Twelve Months)
+    "Altman Z-Score (FY)"                      NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Year)
+    "Altman Z-Score (FQ)"                      NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Quarter)
+    "Altman Z-Score (LTM)"                     NUMERIC, -- RATIO: Bankruptcy prediction score (LTM)
+
+    -- ====================
+    -- PERCENTAGE COLUMNS - Volatility & Risk Metrics
+    -- ====================
+    "Beta (1Y)"                                NUMERIC, -- PERCENTAGE: 1-year beta
+    "Beta (2Y)"                                NUMERIC, -- PERCENTAGE: 2-year beta
+    "Beta (5Y)"                                NUMERIC, -- PERCENTAGE: 5-year beta
+
+    -- ====================
+    -- COUNT COLUMNS - Analyst Coverage
+    -- ====================
+    "Analyst Rating"                           NUMERIC, -- COUNT: Consensus analyst rating
+    "# Strong Sell Ratings"                    NUMERIC, -- COUNT: Number of strong sell ratings
+    "# Strong Buys Ratings"                    NUMERIC, -- COUNT: Number of strong buy ratings
+    "# Hold Ratings"                           NUMERIC, -- COUNT: Number of hold ratings
+    "# Buys Ratings"                           NUMERIC, -- COUNT: Number of buy ratings
+    "# Sell Ratings"                           NUMERIC, -- COUNT: Number of sell ratings
+
+    -- ====================
+    -- PERCENTAGE/MARKET_VALUE - Growth & Revenue Metrics
+    -- ====================
+    "Total Revenues/CAGR (5Y FY)"              NUMERIC, -- PERCENTAGE: 5-year revenue CAGR
+    "Total Revenues (FQ)"                      NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Quarter)
+    "Total Revenues (-1FY)"                    NUMERIC, -- MARKET_VALUE: Total revenues (Previous Fiscal Year)
+    "Total Revenues (FY)"                      NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Year)
+    "Total Revenues (LTM)"                     NUMERIC, -- MARKET_VALUE: Total revenues (Last Twelve Months)
+    "Total Operating Expenses (LTM)"           NUMERIC, -- MARKET_VALUE: Operating expenses (LTM)
+
+    -- RATIO: Tangible Book Value Metrics
+    "P/TBV (LTM)"                              NUMERIC, -- RATIO: Price-to-Tangible Book Value (LTM)
+    "TBV (FY)"                                 NUMERIC, -- MARKET_VALUE: Tangible book value (FY)
+    "TBV (LTM)"                                NUMERIC, -- MARKET_VALUE: Tangible book value (LTM)
+    "Market Cap (Country R)"                   NUMERIC, -- MARKET_VALUE: Market cap country ranking
+
+    -- PERCENTAGE: Total Return Metrics
+    "Tot. Return %/CAGR (3Y)"                  NUMERIC, -- PERCENTAGE: 3-year total return CAGR
+    "Tot. Return %/CAGR (10Y)"                 NUMERIC, -- PERCENTAGE: 10-year total return CAGR
+    "Total Return (5Y)"                        NUMERIC, -- PERCENTAGE: 5-year total return
+    "Total Return (10Y)"                       NUMERIC, -- PERCENTAGE: 10-year total return
+
+    -- MARKET_VALUE: Net Income & Cash Flow Metrics
+    "Net Income/Adj. (-1FY)"                   NUMERIC, -- MARKET_VALUE: Adjusted net income (Previous FY)
+    "CFF (LTM)"                                NUMERIC, -- MARKET_VALUE: Cash from financing (LTM)
+    "CFI (LTM)"                                NUMERIC, -- MARKET_VALUE: Cash from investing (LTM)
+    "FCF (LTM)"                                NUMERIC, -- MARKET_VALUE: Free cash flow (LTM)
+    "CFO (LTM)"                                NUMERIC, -- MARKET_VALUE: Cash from operations (LTM)
+
+    -- MARKET_VALUE: EBITDA Metrics
+    "EBITDA (FQ)"                              NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Quarter)
+    "EBITDA (LTM)"                             NUMERIC, -- MARKET_VALUE: EBITDA (Last Twelve Months)
+    "EBITDA (FY)"                              NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Year)
+    "EBITDA (-1FY)"                            NUMERIC, -- MARKET_VALUE: EBITDA (Previous Fiscal Year)
+    "EBITDA/Adj. (LTM)"                        NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (LTM)
+    "EBITDA/Adj. (FY)"                         NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (FY)
+    "EBITDA/Adj. (-1FY)"                       NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (Previous FY)
+
+    -- MARKET_VALUE: EBIT Metrics
+    "EBIT (FQ)"                                NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Quarter)
+    "EBIT (LTM)"                               NUMERIC, -- MARKET_VALUE: EBIT (Last Twelve Months)
+    "EBIT (FY)"                                NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Year)
+    "EBIT (-1FY)"                              NUMERIC, -- MARKET_VALUE: EBIT (Previous Fiscal Year)
+    "EBIT/Adj. (-1FY)"                         NUMERIC, -- MARKET_VALUE: Adjusted EBIT (Previous FY)
+    "EBIT/Adj. (FY)"                           NUMERIC, -- MARKET_VALUE: Adjusted EBIT (FY)
+    "EBIT/Adj. (LTM)"                          NUMERIC, -- MARKET_VALUE: Adjusted EBIT (LTM)
+    "EBIT - Est Med (FY1E)"                    NUMERIC, -- MARKET_VALUE: EBIT estimate median (FY1E)
+    "EBIT - Est Med (NTM)"                     NUMERIC, -- MARKET_VALUE: EBIT estimate median (NTM)
+
+    -- RATIO: Profitability Metrics
+    "Return On Equity % (LTM)"                 NUMERIC, -- RATIO: ROE percentage (LTM)
+    "Return On Equity % (FY)"                  NUMERIC, -- RATIO: ROE percentage (FY)
+
+    -- MARKET_VALUE: Net Income Metrics
+    "Net Income - (IS) (FY)"                   NUMERIC, -- MARKET_VALUE: Net income from income statement (FY)
+    "Net Income - (IS) (LTM)"                  NUMERIC, -- MARKET_VALUE: Net income from income statement (LTM)
+    "Normalized Net Income (FY)"               NUMERIC, -- MARKET_VALUE: Normalized net income (FY)
+    "Normalized Net Income (LTM)"              NUMERIC, -- MARKET_VALUE: Normalized net income (LTM)
+    "Net Income/Adj. (FY)"                     NUMERIC, -- MARKET_VALUE: Adjusted net income (FY)
+    "Net Income/Adj. (LTM)"                    NUMERIC, -- MARKET_VALUE: Adjusted net income (LTM)
+
+    -- PERCENTAGE: Margin Metrics
+    "Net Income Margin % (FY)"                 NUMERIC, -- PERCENTAGE: Net income margin (FY)
+    "Net Income Margin % (LTM)"                NUMERIC, -- PERCENTAGE: Net income margin (LTM)
+
+    -- PERCENTAGE: Volatility Metrics
+    "Volatility (1M)"                          NUMERIC, -- PERCENTAGE: 1-month volatility
+    "Volatility (3M)"                          NUMERIC, -- PERCENTAGE: 3-month volatility
+    "Volatility (6M)"                          NUMERIC, -- PERCENTAGE: 6-month volatility
+    "Volatility (1Y)"                          NUMERIC, -- PERCENTAGE: 1-year volatility
+
+    -- OTHER: Volume & Dividend Metrics
+    "Volume (Shrs)"                            NUMERIC, -- OTHER: Trading volume in shares
+    "Dividend Per Share (LTM)"                 NUMERIC, -- PRICE: Dividend per share (LTM)
+    "Div Yield (Ind)"                          NUMERIC, -- PERCENTAGE: Dividend yield (Indicated)
+    "Div Yield (LTM)"                          NUMERIC, -- PERCENTAGE: Dividend yield (LTM)
+
+    -- MARKET_VALUE: Balance Sheet Metrics
+    "Total Debt (FY)"                          NUMERIC, -- MARKET_VALUE: Total debt (FY)
+    "Total Equity (FY)"                        NUMERIC, -- MARKET_VALUE: Total equity (FY)
+    "Total Equity (LTM)"                       NUMERIC, -- MARKET_VALUE: Total equity (LTM)
+    "Total Debt (LTM)"                         NUMERIC, -- MARKET_VALUE: Total debt (LTM)
+    "Total Assets (LTM)"                       NUMERIC, -- MARKET_VALUE: Total assets (LTM)
+    "Total Assets (FY)"                        NUMERIC, -- MARKET_VALUE: Total assets (FY)
+
+    -- RATIO: Liquidity & Efficiency Ratios
+    "Current Ratio (FY)"                       NUMERIC, -- RATIO: Current ratio (FY)
+    "Current Ratio (LTM)"                      NUMERIC, -- RATIO: Current ratio (LTM)
+
+    -- PERCENTAGE: Margin Ratios
+    "Gross Profit Margin % (FY)"               NUMERIC, -- PERCENTAGE: Gross profit margin (FY)
+    "Gross Profit Margin % (LTM)"              NUMERIC, -- PERCENTAGE: Gross profit margin (LTM)
+
+    -- RATIO: Efficiency Metrics
+    "Asset Turnover (FY)"                      NUMERIC, -- RATIO: Asset turnover (FY)
+    "Asset Turnover (LTM)"                     NUMERIC, -- RATIO: Asset turnover (LTM)
+
+    -- MARKET_VALUE: Gross Profit
+    "Gross Profit (LTM)"                       NUMERIC, -- MARKET_VALUE: Gross profit (LTM)
+    "Gross Profit (FY)"                        NUMERIC, -- MARKET_VALUE: Gross profit (FY)
     "EPS Norm - Est Avg (NTM)"                 NUMERIC,
     "EPS/Adj. (-1FY)"                          NUMERIC,
     "EPS/Adj. (FY)"                            NUMERIC,
@@ -230,18 +348,21 @@ CREATE TABLE equities
     "EBIT (5YAVGLTM)"                          NUMERIC,
     "Total Revenues (5YAVGLTM)"                NUMERIC,
     "Revenues - Est YoY % (FY1E)"                      NUMERIC,
-    "Price Chg. % (1M)"                                NUMERIC,
-    "Price Chg. % (3M)"                                NUMERIC,
-    "1-Day %"                                          NUMERIC,
-    "Price (5D Ago)"                                   NUMERIC,
-    "Price (1W Ago)"                                   NUMERIC,
-    "Price (1M Ago)"                                   NUMERIC,
-    "Price (3M Ago)"                                   NUMERIC,
-    "Price (6M Ago)"                                   NUMERIC,
-    "Price (1Y Ago)"                                   NUMERIC,
-    "Price (3Y Ago)"                                   NUMERIC,
-    "Price (5Y Ago)"                                   NUMERIC,
-    "Price (QTD Ago)"                                  NUMERIC,
+    -- PERCENTAGE: Price Change Metrics
+    "Price Chg. % (1M)"                        NUMERIC, -- PERCENTAGE: 1-month price change
+    "Price Chg. % (3M)"                        NUMERIC, -- PERCENTAGE: 3-month price change
+    "1-Day %"                                  NUMERIC, -- PERCENTAGE: 1-day price change
+
+    -- PRICE: Historical Prices (for momentum calculations)
+    "Price (5D Ago)"                           NUMERIC, -- PRICE: Price 5 days ago
+    "Price (1W Ago)"                           NUMERIC, -- PRICE: Price 1 week ago
+    "Price (1M Ago)"                           NUMERIC, -- PRICE: Price 1 month ago
+    "Price (3M Ago)"                           NUMERIC, -- PRICE: Price 3 months ago
+    "Price (6M Ago)"                           NUMERIC, -- PRICE: Price 6 months ago
+    "Price (1Y Ago)"                           NUMERIC, -- PRICE: Price 1 year ago
+    "Price (3Y Ago)"                           NUMERIC, -- PRICE: Price 3 years ago
+    "Price (5Y Ago)"                           NUMERIC, -- PRICE: Price 5 years ago
+    "Price (QTD Ago)"                          NUMERIC, -- PRICE: Price quarter-to-date ago
     "Rel. Volume"                                      NUMERIC,
     "Shrs Out"                                         NUMERIC,
     "Shrs Out (-1FY)"                                  NUMERIC,
@@ -260,60 +381,62 @@ CREATE TABLE equities
     "Marketing Expenses (5YAVGLTM)"            NUMERIC,
     -- Phase 9.3 Schema Version 1.3 additions: 48 new columns
     -- Category 1: Revenue Forecasting Estimates (4 columns)
-    "Revenues - Est Avg (NTM)"                 NUMERIC,
-    "Revenues - Est Avg (FY1E)"                NUMERIC,
-    "Revenues - Est Med (NTM)"                 NUMERIC,
-    "Revenues - Est Med (FY1E)"                NUMERIC,
+    "Revenues - Est Avg (NTM)"                 NUMERIC, -- MARKET_VALUE: Revenue estimate average (NTM)
+    "Revenues - Est Avg (FY1E)"                NUMERIC, -- MARKET_VALUE: Revenue estimate average (FY1E)
+    "Revenues - Est Med (NTM)"                 NUMERIC, -- MARKET_VALUE: Revenue estimate median (NTM)
+    "Revenues - Est Med (FY1E)"                NUMERIC, -- MARKET_VALUE: Revenue estimate median (FY1E)
     -- Category 2: EV/Sales Time-Series (11 columns)
-    "EV/Sales (EST FY1)"                       NUMERIC,
-    "EV/Sales (LTM)"                           NUMERIC,
-    "EV/Sales (NTM)"                           NUMERIC,
-    "EV/Sales (-1FYLTM)"                       NUMERIC,
-    "EV/Sales (-2FYLTM)"                       NUMERIC,
-    "EV/Sales (-3FYLTM)"                       NUMERIC,
-    "EV/Sales (3YAVGLTM)"                      NUMERIC,
-    "EV/Sales (-1FQLTM)"                       NUMERIC,
-    "EV/Sales (-2FQLTM)"                       NUMERIC,
-    "EV/Sales (-3FQLTM)"                       NUMERIC,
-    "EV/Sales (-4FQLTM)"                       NUMERIC,
+    "EV/Sales (EST FY1)"                       NUMERIC, -- RATIO: EV/Sales (Estimate FY1)
+    "EV/Sales (LTM)"                           NUMERIC, -- RATIO: EV/Sales (Last Twelve Months)
+    "EV/Sales (NTM)"                           NUMERIC, -- RATIO: EV/Sales (Next Twelve Months)
+    "EV/Sales (-1FYLTM)"                       NUMERIC, -- RATIO: EV/Sales (1 FY ago LTM)
+    "EV/Sales (-2FYLTM)"                       NUMERIC, -- RATIO: EV/Sales (2 FY ago LTM)
+    "EV/Sales (-3FYLTM)"                       NUMERIC, -- RATIO: EV/Sales (3 FY ago LTM)
+    "EV/Sales (3YAVGLTM)"                      NUMERIC, -- RATIO: EV/Sales (3-year average LTM)
+    "EV/Sales (-1FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (1 FQ ago LTM)
+    "EV/Sales (-2FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (2 FQ ago LTM)
+    "EV/Sales (-3FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (3 FQ ago LTM)
+    "EV/Sales (-4FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (4 FQ ago LTM)
     -- Category 3: Employment Metrics (2 columns)
-    "Total Employees (FY)"                     NUMERIC,
-    "Total Employees (FQ)"                     NUMERIC,
+    "Total Employees (FY)"                     NUMERIC, -- COUNT: Total employees (Fiscal Year)
+    "Total Employees (FQ)"                     NUMERIC, -- COUNT: Total employees (Fiscal Quarter)
     -- Category 4: Technical Indicators (6 columns)
-    "52W High/Adj"                             NUMERIC,
-    "52W Low/Adj"                              NUMERIC,
-    "EMA (20D)"                                NUMERIC,
-    "EMA (50D)"                                NUMERIC,
-    "EMA (100D)"                               NUMERIC,
-    "EMA (250D)"                               NUMERIC,
+    -- PRICE: 52-Week Bounds (for relative positioning)
+    "52W High/Adj"                             NUMERIC, -- PRICE: 52-week adjusted high
+    "52W Low/Adj"                              NUMERIC, -- PRICE: 52-week adjusted low
+    -- PRICE: Exponential Moving Averages (technical indicators)
+    "EMA (20D)"                                NUMERIC, -- PRICE: 20-day EMA
+    "EMA (50D)"                                NUMERIC, -- PRICE: 50-day EMA
+    "EMA (100D)"                               NUMERIC, -- PRICE: 100-day EMA
+    "EMA (250D)"                               NUMERIC, -- PRICE: 250-day EMA (1-year trend proxy)
     -- Category 5: EV/EBITDA Extended Time-Series (6 columns)
-    "EV/EBITDA (LTM)"                          NUMERIC,
-    "EV/EBITDA (NTM)"                          NUMERIC,
-    "EV/EBITDA (-1FYLTM)"                      NUMERIC,
-    "EV/EBITDA (-1FQLTM)"                      NUMERIC,
-    "EV/EBITDA (3YAVGLTM)"                     NUMERIC,
-    "EV/EBITDA (EST FY1)"                      NUMERIC,
+    "EV/EBITDA (LTM)"                          NUMERIC, -- RATIO: EV/EBITDA (Last Twelve Months)
+    "EV/EBITDA (NTM)"                          NUMERIC, -- RATIO: EV/EBITDA (Next Twelve Months)
+    "EV/EBITDA (-1FYLTM)"                      NUMERIC, -- RATIO: EV/EBITDA (1 FY ago LTM)
+    "EV/EBITDA (-1FQLTM)"                      NUMERIC, -- RATIO: EV/EBITDA (1 FQ ago LTM)
+    "EV/EBITDA (3YAVGLTM)"                     NUMERIC, -- RATIO: EV/EBITDA (3-year average LTM)
+    "EV/EBITDA (EST FY1)"                      NUMERIC, -- RATIO: EV/EBITDA (Estimate FY1)
     -- Category 6: P/E Extended Time-Series (11 columns)
-    "P/E (EST FY1)"                            NUMERIC,
-    "P/E (-2FYLTM)"                            NUMERIC,
-    "P/E (-3FYLTM)"                            NUMERIC,
-    "P/E (3YAVGLTM)"                           NUMERIC,
-    "P/E (-1FQLTM)"                            NUMERIC,
-    "P/E (-2FQLTM)"                            NUMERIC,
-    "P/E (-3FQLTM)"                            NUMERIC,
-    "P/E (-0FQQoQLTM)"                         NUMERIC,
-    "P/E (-0FYYoYLTM)"                         NUMERIC,
-    "P/E (-1FYYoYLTM)"                         NUMERIC,
-    "P/E (-0FQYoYLTM)"                         NUMERIC,
+    "P/E (EST FY1)"                            NUMERIC, -- RATIO: P/E (Estimate FY1)
+    "P/E (-2FYLTM)"                            NUMERIC, -- RATIO: P/E (2 FY ago LTM)
+    "P/E (-3FYLTM)"                            NUMERIC, -- RATIO: P/E (3 FY ago LTM)
+    "P/E (3YAVGLTM)"                           NUMERIC, -- RATIO: P/E (3-year average LTM)
+    "P/E (-1FQLTM)"                            NUMERIC, -- RATIO: P/E (1 FQ ago LTM)
+    "P/E (-2FQLTM)"                            NUMERIC, -- RATIO: P/E (2 FQ ago LTM)
+    "P/E (-3FQLTM)"                            NUMERIC, -- RATIO: P/E (3 FQ ago LTM)
+    "P/E (-0FQQoQLTM)"                         NUMERIC, -- RATIO: P/E (Quarter-over-Quarter LTM)
+    "P/E (-0FYYoYLTM)"                         NUMERIC, -- RATIO: P/E (Year-over-Year LTM)
+    "P/E (-1FYYoYLTM)"                         NUMERIC, -- RATIO: P/E (1 FY YoY LTM)
+    "P/E (-0FQYoYLTM)"                         NUMERIC, -- RATIO: P/E (Quarter YoY LTM)
     -- Category 7: Dividend Record Information (8 columns)
-    "Dividend Record (Announce Date)"          DATE,
-    "Dividend Record (Ex Date)"                DATE,
-    "Dividend Record (Payable Date)"           DATE,
-    "Dividend Record (Record Date)"            DATE,
-    "Dividend Record (Frequency)"              TEXT,
-    "Dividend Record (Currency)"               TEXT,
-    "Dividend Record (Amount)"                 NUMERIC,
-    "Dividend Streak"                          NUMERIC
+    "Dividend Record (Announce Date)"          DATE,    -- Date: Dividend announcement date
+    "Dividend Record (Ex Date)"                DATE,    -- Date: Dividend ex-date
+    "Dividend Record (Payable Date)"           DATE,    -- Date: Dividend payable date
+    "Dividend Record (Record Date)"            DATE,    -- Date: Dividend record date
+    "Dividend Record (Frequency)"              TEXT,    -- CATEGORICAL: Dividend frequency (Quarterly, Annual, etc.)
+    "Dividend Record (Currency)"               TEXT,    -- CATEGORICAL: Dividend currency
+    "Dividend Record (Amount)"                 NUMERIC, -- PRICE: Dividend amount
+    "Dividend Streak"                          NUMERIC  -- COUNT: Consecutive years of dividend payments
 ) TABLESPACE pg_default;
 
 -- Set table ownership
@@ -322,3 +445,160 @@ ALTER TABLE equities
 
 -- Add comments
 COMMENT ON TABLE equities IS 'Equities screening data with financial metrics and company information';
+
+/*
+ * =======================================
+ * SEMANTIC CATEGORY SUMMARY & COLUMN INDEX
+ * =======================================
+ *
+ * This section provides a complete mapping of columns to their semantic categories
+ * as defined in finance_ml/ml_workflow/preprocessing/column_semantics.py
+ *
+ * PRICE COLUMNS (21 total - NEVER transform):
+ * -------------------------------------------
+ * Current prices and targets:
+ *   - Last Price, Price Target, Price Target (YTD Ago)
+ *   - Price Target - Low, Price Target - Median, Price Target - High
+ *
+ * Historical prices (for momentum):
+ *   - Price (5D Ago), Price (1W Ago), Price (1M Ago)
+ *   - Price (3M Ago), Price (6M Ago), Price (1Y Ago)
+ *   - Price (3Y Ago), Price (5Y Ago), Price (QTD Ago)
+ *
+ * 52-week bounds (for relative positioning):
+ *   - 52W High/Adj, 52W Low/Adj
+ *
+ * Exponential moving averages (technical indicators):
+ *   - EMA (20D), EMA (50D), EMA (100D), EMA (250D)
+ *
+ * Other price-related:
+ *   - Dividend Record (Amount)
+ *
+ * MARKET_VALUE COLUMNS (20+ core columns - Log-transform recommended):
+ * ---------------------------------------------------------------------
+ * Market cap & enterprise value:
+ *   - Market Cap, Enterprise Value, Market Cap (Country R)
+ *
+ * Balance sheet items:
+ *   - Total Assets (FY/LTM), Total Debt (FY/LTM), Total Equity (FY/LTM)
+ *   - TBV (FY/LTM), Cash And Equivalents, Tangible Book Value
+ *
+ * Income statement items:
+ *   - Total Revenues (FQ/FY/LTM/-1FY/5YAVG variants)
+ *   - EBITDA (FQ/FY/LTM/-1FY/Adj/5YAVG variants)
+ *   - EBIT (FQ/FY/LTM/-1FY/Adj/5YAVG variants)
+ *   - Net Income variants, Operating Income, Gross Profit
+ *   - Total Operating Expenses (LTM)
+ *
+ * Cash flow items:
+ *   - CFO (Cash from Operations), CFI (Cash from Investing)
+ *   - CFF (Cash from Financing), FCF (Free Cash Flow)
+ *   - All with FQ/FY/LTM/-1FY/5YAVG variants
+ *
+ * Revenue estimates:
+ *   - Revenues - Est Avg (NTM/FY1E), Revenues - Est Med (NTM/FY1E)
+ *
+ * RATIO COLUMNS (~70 columns - Pre-normalized):
+ * ----------------------------------------------
+ * Valuation ratios:
+ *   - P/E (NTM/LTM/EST FY1 and extended time-series variants)
+ *   - P/B (LTM/-1FY/5YAVG), P/TBV (LTM)
+ *   - EV/EBITDA (LTM/NTM/EST FY1 and time-series variants)
+ *   - EV/Sales (LTM/NTM/EST FY1 and time-series variants)
+ *
+ * Profitability ratios:
+ *   - Return On Equity % (LTM/FY), Return on Assets (ROA) % (LTM/FY)
+ *
+ * Leverage & liquidity ratios:
+ *   - Current Ratio (FY/LTM)
+ *
+ * Efficiency ratios:
+ *   - Asset Turnover (FY/LTM)
+ *
+ * Risk scores:
+ *   - Altman Z-Score (FY/FQ/LTM)
+ *
+ * PERCENTAGE COLUMNS (~25 columns - Already bounded):
+ * ----------------------------------------------------
+ * Margin metrics:
+ *   - Gross Profit Margin % (FY/LTM)
+ *   - Net Income Margin % (FY/LTM)
+ *
+ * Growth rates:
+ *   - Total Revenues/CAGR (5Y FY)
+ *   - Tot. Return %/CAGR (3Y/10Y)
+ *   - Total Return (5Y/10Y/YTD)
+ *   - Revenues - Est YoY % (FY1E)
+ *
+ * Volatility & risk metrics:
+ *   - Volatility (1M/3M/6M/1Y)
+ *   - Beta (1Y/2Y/5Y)
+ *
+ * Price change metrics:
+ *   - Price Chg. % (1M/3M), 1-Day %
+ *
+ * Dividend yields:
+ *   - Div Yield (Ind/LTM/TTM/NTM/5YAVGLTM/-1FYInd)
+ *
+ * COUNT COLUMNS (8 columns - Discrete integers):
+ * -----------------------------------------------
+ * Analyst coverage:
+ *   - Price Target - #, Analyst Rating
+ *   - # Strong Sell Ratings, # Strong Buys Ratings
+ *   - # Hold Ratings, # Buys Ratings, # Sell Ratings
+ *
+ * Employment:
+ *   - Total Employees (FY/FQ)
+ *
+ * Dividend history:
+ *   - Dividend Streak
+ *
+ * CATEGORICAL COLUMNS (11 columns - Require encoding):
+ * -----------------------------------------------------
+ * Geographic & market classification:
+ *   - Exchange, Sector, Industry
+ *   - Region, Country, Trading Country
+ *
+ * Company classification:
+ *   - Style Class (Value/Growth/Blend)
+ *   - Size Class (Small/Mid/Large Cap)
+ *
+ * Status indicators:
+ *   - Next Earnings (Status)
+ *
+ * Dividend information:
+ *   - Dividend Record (Frequency), Dividend Record (Currency)
+ *
+ * PREPROCESSING DECISION RULES:
+ * ==============================
+ * Based on column_semantics.py functions:
+ *
+ * 1. get_winsorizable_columns():
+ *    - Include: MARKET_VALUE, OTHER
+ *    - Exclude: PRICE, RATIO, PERCENTAGE, COUNT
+ *
+ * 2. get_log_transform_columns():
+ *    - Include: MARKET_VALUE (if not already log_* prefixed)
+ *    - Exclude: PRICE, RATIO, PERCENTAGE, COUNT
+ *
+ * 3. get_scalable_columns():
+ *    - Include: MARKET_VALUE, RATIO, PERCENTAGE, COUNT, OTHER
+ *    - Exclude: PRICE (critical - must preserve original units)
+ *
+ * 4. Encoding:
+ *    - Apply to: CATEGORICAL columns only
+ *    - Methods: One-hot, label, or target encoding
+ *
+ * BUSINESS RATIONALE:
+ * ===================
+ * The core business metric requires price columns in original dollar units:
+ *
+ *   Mispricing = (Predicted_Target - Last_Price) / Last_Price
+ *
+ * This extends to:
+ * - Historical prices: for momentum calculations like (price - price_1m_ago) / price_1m_ago
+ * - 52-week bounds: for relative positioning (price - 52w_low) / (52w_high - 52w_low)
+ * - EMAs: for technical analysis and trend identification
+ *
+ * Transforming these columns would corrupt valuation and momentum analysis.
+ */

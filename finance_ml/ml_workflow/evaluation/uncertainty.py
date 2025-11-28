@@ -11,12 +11,69 @@ Functions for generating notebook-friendly uncertainty diagnostics:
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Union, List, Dict, Any
+from typing import Optional, Union, List, Dict, Any, Tuple
 
 import pandas as pd
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+def conformal_prediction_intervals(
+    y_cal: Union[pd.Series, np.ndarray],
+    y_cal_pred: Union[pd.Series, np.ndarray],
+    y_test_pred: Union[pd.Series, np.ndarray],
+    *,
+    alpha: float = 0.2,
+    clip_lower_at_zero: bool = True,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Compute conformal prediction intervals using absolute residuals.
+
+    This lightweight implementation follows the split-conformal approach:
+    - Compute calibration residuals r_i = |y_cal - y_cal_pred|
+    - q = quantile_{1-alpha} of residuals
+    - Intervals for each test prediction: [y_test_pred - q, y_test_pred + q]
+
+    Args:
+        y_cal: Calibration true targets
+        y_cal_pred: Calibration predictions
+        y_test_pred: Test predictions (intervals will be built around these)
+        alpha: Miscoverage rate (e.g., 0.2 for 80% intervals)
+        clip_lower_at_zero: If True, clip lower bounds at 0 to enforce non-negativity
+
+    Returns:
+        (lower, upper) interval arrays
+    """
+    y_cal_arr = np.asarray(y_cal, dtype=float)
+    y_cal_pred_arr = np.asarray(y_cal_pred, dtype=float)
+    y_test_pred_arr = np.asarray(y_test_pred, dtype=float)
+
+    # Compute absolute residuals on calibration set
+    residuals = np.abs(y_cal_arr - y_cal_pred_arr)
+
+    # Finite-sample correction per conformal prediction literature
+    # Using quantile at ceil((n+1)*(1-alpha)) / n
+    n = residuals.shape[0]
+    if n == 0:
+        q = 0.0
+    else:
+        # Use numpy quantile with interpolation method compatible with numpy>=1.22
+        quantile_level = min(1.0, max(0.0, np.ceil((n + 1) * (1 - alpha)) / n))
+        q = float(
+            np.quantile(
+                residuals, quantile_level, method="higher" if hasattr(np, "quantile") else None
+            )
+        )
+
+    lower = y_test_pred_arr - q
+    upper = y_test_pred_arr + q
+
+    if clip_lower_at_zero:
+        lower = np.maximum(lower, 0.0)
+        upper = np.maximum(upper, lower)
+
+    return lower, upper
+
 
 def build_quantile_diagnostics(
     predictions_df: pd.DataFrame,

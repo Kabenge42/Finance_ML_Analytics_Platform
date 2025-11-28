@@ -1,4 +1,4 @@
-﻿## [0.9.1] - 2025-11-26
+## [0.9.1] - 2025-11-26
 
 ### Added
 
@@ -1891,3 +1891,28 @@
   availability on Python 3.12–3.13.
 - Once upstream projects publish Python 3.14 wheels (numba, CatBoost, pyarrow, TensorFlow), gated requirements can be
   re-enabled for 3.14 in a subsequent release.
+
+## [0.9.2] - 2025-11-27
+
+### Added
+
+- Documentation Addendum v1.4.1 in docs/code_guidelines.md capturing finalized Regression Workflow integrations:
+    - Standardized predictions schema with QUANTILES = [0.1, 0.5, 0.9], interval_width requirement, and
+      non-negativity/monotonicity invariants (Phase 9.5)
+    - Shared split & leakage policy and reference to create_train_test_split (Phase 9.9)
+    - Phase 9.3 feature engineering review utilities and sector interaction feature toggle
+    - Phase 9.1 data quality validators: check_nan_inf and validate_winsorization_bounds
+    - Stacking ensemble hyperparameter summary aligned with Section 16.4
+
+### Changed
+
+- Package exports for stable imports in notebooks and CLI:
+    - finance_ml.ml_workflow.features now exports validate_feature_coverage, prune_low_importance_features,
+      save_feature_list
+    - finance_ml.ml_workflow.preprocessing now exports check_nan_inf, validate_winsorization_bounds
+
+### Notes
+
+- These changes align the package structure and documentation with the Regression Workflow implemented across Phases
+  9.1, 9.3, 9.5, 9.8, and 9.9. See docs/summaries/MODEL_OPTIMIZATION_PHASE16_4_SUMMARY.md for optimization specifics and
+  tests.

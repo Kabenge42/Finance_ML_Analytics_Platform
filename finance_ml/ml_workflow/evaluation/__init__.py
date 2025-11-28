@@ -89,7 +89,8 @@ from finance_ml.ml_workflow.evaluation.calibration import (
 )
 
 # Phase 9.8 - Stacking Ensemble Diagnostics & Model Governance
-from finance_ml.ml_workflow.evaluation.stacking import (
+# Note: stacking diagnostics live under regression.stacking in target architecture
+from finance_ml.ml_workflow.regression.stacking import (
     compute_stacking_contributions,
     meta_error_maps,
     generate_model_card,

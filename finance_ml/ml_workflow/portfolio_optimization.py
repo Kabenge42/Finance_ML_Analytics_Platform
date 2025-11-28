@@ -1,25 +1,30 @@
-"""
-Compatibility wrapper for portfolio optimization functions.
+"""Compatibility wrapper for portfolio optimization functions.
 
-Historically, portfolio utilities lived in `finance_ml.portfolio_optimization`
+Historically, portfolio utilities lived in :mod:`finance_ml.portfolio_optimization`
 and, during the v9_8 refactor, were moved under
-`finance_ml.ml_workflow.analytics.portfolio`.
+``finance_ml.ml_workflow.analytics.portfolio``.
 
-This module re-exports the public portfolio optimization API so that
-existing imports such as::
+This module re-exports the public portfolio optimization API so that existing
+imports such as::
 
     from finance_ml.ml_workflow.portfolio_optimization import (
         calculate_portfolio_return,
         optimize_portfolio_max_sharpe,
-        ...
+        ...,
     )
 
 continue to work without modification.
 
-All implementations live in `finance_ml.ml_workflow.analytics.portfolio`.
+.. deprecated:: v9_8
+   This module is kept for backward compatibility only. New code should import
+   from :mod:`finance_ml.ml_workflow.analytics.portfolio` instead.
+
+All implementations live in :mod:`finance_ml.ml_workflow.analytics.portfolio`.
 """
 
 from __future__ import annotations
+
+import warnings
 
 from .analytics.portfolio import (
     calculate_portfolio_return,
@@ -36,6 +41,17 @@ from .analytics.portfolio import (
     optimize_hrp,
     run_vectorized_backtest,
     run_walk_forward_optimization,
+)
+
+
+# Emit deprecation warning on import so callers are guided to the new module
+warnings.warn(
+    "DEPRECATION NOTICE: 'finance_ml.ml_workflow.portfolio_optimization' has been "
+    "consolidated into 'finance_ml.ml_workflow.analytics.portfolio'. Import from "
+    "'finance_ml.ml_workflow.analytics.portfolio' instead. This shim will be "
+    "removed in a future release.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
 __all__ = [

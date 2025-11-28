@@ -40,6 +40,7 @@ class NotebookConfig:
     enable_region_analysis: bool = True
     enable_interactive_plots: bool = True
     enable_excel_export: bool = True
+    enable_portfolio_optimization: bool = True
 
     # Package configuration (loaded later)
     finance_ml_config: Optional[object] = None
@@ -66,6 +67,9 @@ class NotebookConfig:
             f"  Interactive Plots:           {self._format_status(self.enable_interactive_plots)}"
         )
         print(f"  Excel Export:                {self._format_status(self.enable_excel_export)}")
+        print(
+            f"  Portfolio Optimization:      {self._format_status(self.enable_portfolio_optimization)}"
+        )
 
         print("\nDevelopment:")
         print(f"  Debug Mode:                  {self._format_status(self.debug_mode)}")
@@ -110,6 +114,8 @@ class NotebookConfig:
             "interactiveplots": self.enable_interactive_plots,
             "excel": self.enable_excel_export,
             "excelexport": self.enable_excel_export,
+            "portfolio": self.enable_portfolio_optimization,
+            "portfoliooptimization": self.enable_portfolio_optimization,
             "debug": self.debug_mode,
             "debugmode": self.debug_mode,
             # Full attribute names (normalized)
@@ -121,5 +127,6 @@ class NotebookConfig:
             "enableregionanalysis": self.enable_region_analysis,
             "enableinteractiveplots": self.enable_interactive_plots,
             "enableexcelexport": self.enable_excel_export,
+            "enableportfoliooptimization": self.enable_portfolio_optimization,
         }
         return feature_map.get(normalized, False)

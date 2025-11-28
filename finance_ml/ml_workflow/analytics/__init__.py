@@ -7,8 +7,9 @@ This package provides analytics functions including:
 - Stock screening and filtering
 - Comprehensive evaluation and reporting (eval.py)
 - EDA, visualizations, and dashboard data preparation
+- Enhanced HTML and Excel report generation (Phase 9.7)
 
-Phase 9.7 - Analytics Refactor
+Phase 9.7 - Analytics Refactor & Reporting Enhancement
 
 Usage:
     from finance_ml.ml_workflow.analytics import (
@@ -17,7 +18,12 @@ Usage:
         rank_stocks_by_sector,
         simple_eda,
         export_predictions_to_excel,
-        generate_pdf_report
+        generate_pdf_report,
+        # Phase 9.7 Enhanced Reports
+        generate_enhanced_analysis_html,
+        generate_enhanced_excel_report,
+        HTMLReportConfig,
+        ExcelReportConfig,
     )
 """
 
@@ -26,9 +32,51 @@ from finance_ml.ml_workflow.analytics.analyst_comparison import (
     PredictionAnalystAnalytics,
 )
 
+# HTML Reports (Phase 9.7 Enhancement)
+from finance_ml.ml_workflow.analytics.html_reports import (
+    generate_enhanced_analysis_html,
+    generate_executive_summary_html,
+    generate_sector_breakdown_html,
+    generate_quality_filtered_html,
+    generate_risk_warnings_html,
+    generate_phase93_summary_html,
+)
+
+# Excel Reports (Phase 9.7 Enhancement)
+from finance_ml.ml_workflow.analytics.excel_reports import (
+    generate_enhanced_excel_report,
+    create_executive_summary_sheet,
+    create_quality_opportunities_sheet,
+    create_sector_leaders_sheet,
+    create_sector_laggards_sheet,
+    create_risk_assessment_sheet,
+    create_phase93_analysis_sheet,
+)
+
+# Report Configuration (Phase 9.7 Enhancement)
+from finance_ml.ml_workflow.analytics.report_config import (
+    HTMLReportConfig,
+    ExcelReportConfig,
+    REPORT_TOP_N_DEFAULT,
+    QUALITY_THRESHOLD_DEFAULT,
+    RISK_ZSCORE_THRESHOLD,
+    DISTRESS_SCORE_THRESHOLD,
+)
+
+# Prefer focused modules where available (ongoing decomposition)
+from finance_ml.ml_workflow.analytics.mispricing import (
+    calculate_mispricing_score,
+    calculate_mispricing_from_predictions_schema,
+    calculate_risk_adjusted_mispricing,
+    calculate_risk_adjusted_mispricing_from_predictions_schema,
+    rank_undervalued_stocks,
+    rank_overvalued_stocks,
+    rank_stocks_by_sector,
+)
+
 # Import comprehensive eval module functions
 from finance_ml.ml_workflow.analytics.eval import (
-    # Basic mispricing and ranking (note: some overlap with mispricing.py)
+    # EDA & Visualizations
     simple_eda,
     # Export functions
     export_predictions_to_excel,
@@ -37,7 +85,7 @@ from finance_ml.ml_workflow.analytics.eval import (
     create_sector_heatmap,
     create_interactive_prediction_plot,
     create_region_sector_heatmap,
-    # Advanced EDA functions
+    # Advanced EDA functions (correlations)
     calculate_correlation_matrix,
     find_top_correlations,
     test_normality,
@@ -282,4 +330,26 @@ __all__ = [
     "prepare_plotly_dashboard_data",
     "generate_pdf_report",
     "generate_enhanced_pdf_report",
+    # Phase 9.7 Enhanced HTML Reports
+    "generate_enhanced_analysis_html",
+    "generate_executive_summary_html",
+    "generate_sector_breakdown_html",
+    "generate_quality_filtered_html",
+    "generate_risk_warnings_html",
+    "generate_phase93_summary_html",
+    # Phase 9.7 Enhanced Excel Reports
+    "generate_enhanced_excel_report",
+    "create_executive_summary_sheet",
+    "create_quality_opportunities_sheet",
+    "create_sector_leaders_sheet",
+    "create_sector_laggards_sheet",
+    "create_risk_assessment_sheet",
+    "create_phase93_analysis_sheet",
+    # Phase 9.7 Report Configuration
+    "HTMLReportConfig",
+    "ExcelReportConfig",
+    "REPORT_TOP_N_DEFAULT",
+    "QUALITY_THRESHOLD_DEFAULT",
+    "RISK_ZSCORE_THRESHOLD",
+    "DISTRESS_SCORE_THRESHOLD",
 ]

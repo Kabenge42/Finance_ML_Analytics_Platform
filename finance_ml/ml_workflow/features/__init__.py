@@ -50,6 +50,13 @@ from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_rfe,
 )
 
+# Phase 9.3 — Feature validation and pruning utilities
+from finance_ml.ml_workflow.features.validation import (
+    validate_feature_coverage,
+    prune_low_importance_features,
+    save_feature_list,
+)
+
 __all__ = [
     # Core features (from core.py)
     "preprocess_for_lightgbm",
@@ -81,4 +88,8 @@ __all__ = [
     "calculate_feature_importance_rf",
     "calculate_feature_importance_shap",
     "calculate_feature_importance_rfe",
+    # Feature validation/pruning (from validation.py)
+    "validate_feature_coverage",
+    "prune_low_importance_features",
+    "save_feature_list",
 ]

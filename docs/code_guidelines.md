@@ -805,7 +805,7 @@ To prevent parameter mismatch TypeErrors and maintain consistency across the cod
 ```python
 # ✅ CORRECT
 safety_rails_sensitivity_app(
-    data_df=all_stocks_raw,
+    data_df=all_stocks_preprocessed,
     output_dir=safety_rails_dir,
     thresholds=[0.01, 0.05, 0.1]
 )
@@ -834,7 +834,7 @@ build_lineage_json(
 
 # ❌ INCORRECT
 safety_rails_sensitivity_app(
-    df_raw=all_stocks_raw,  # Wrong: should be data_df
+    df_raw=all_stocks_preprocessed,  # Wrong: should be data_df
     out_dir=safety_rails_dir  # Wrong: should be output_dir
 )
 
@@ -1206,140 +1206,146 @@ TEST_SIZE = 0.25  # ❌ Redefining constant creates confusion
 **Policy**: Use descriptive stage-based naming instead of in-place mutations. Each transformation stage produces a new
 DataFrame with a descriptive suffix indicating the preprocessing stage.
 
-**Required Stage Names** (8-stage pipeline):
+**Required Stage Names** (4-stage pipeline):
 
-1. **`all_stocks_raw`** — Initial data load (from database or CSV)
-2. **`all_stocks_normalized`** — Column names normalized (lowercase, underscores)
-3. **`all_stocks_typed`** — Schema-aware datatype casting with diagnostics
-4. **`all_stocks_winsorized`** — Outlier handling via winsorization
-5. **`all_stocks_imputed`** — 6-step enhanced imputation strategy applied
-6. **`all_stocks_scaled`** — Feature scaling applied
-7. **`all_stocks_features`** — Advanced feature engineering applied
-8. **`all_stocks_enhanced`** — Final dataset with all transformations
+The pipeline is organized into four high-level stages that align with the unified ETL pipeline
+(`finance_ml.ml_workflow.preprocessing.etl`):
+
+1. **`all_stocks_preprocessed`** — ETL pipeline output: extraction, normalization, validation, sanitization,
+   imputation (6-step), and optional scaling. This consolidates the low-level preprocessing steps into a single
+   ETL call using `run_etl_pipeline()` or `etl_with_imputation()`.
+
+2. **`all_stocks_features`** — DataFrame enhanced with engineered features (Phase 9.3 feature categories:
+   momentum, valuation, profitability, quality/risk, cash flow, growth).
+
+3. **`all_stocks_classification`** — DataFrame enhanced with classification model outputs (event probabilities,
+   predicted classes) for use as meta-features in regression.
+
+4. **`all_stocks_enhanced`** — Final Phase 9.5 regression-ready dataset with all transformations including
+   classification meta-features.
+
+**ETL Pipeline Internal Stages** (handled automatically by `run_etl_pipeline()`):
+
+The ETL pipeline internally handles these preprocessing steps in sequence:
+
+- Stage 1: Column normalization (lowercase, underscores)
+- Stage 2: Schema validation
+- Stage 3: Drop invalid rows (missing ticker, sector, last_price)
+- Stage 4: Data sanitization (inf, nan, extremes)
+- Stage 5: Imputation (6-step: zero, sector-KNN, price, median, categorical, datetime)
+- Stage 6: Log transforms (optional)
+- Stage 7: Feature scaling (optional, excludes price columns)
 
 **Benefits**:
 
+- **Simplified Pipeline**: ETL handles low-level preprocessing; notebook focuses on ML stages
 - **Debugging**: Inspect intermediate stages without re-running expensive operations
 - **Rollback**: Revert to earlier stage if downstream transformation fails
-- **Testing**: Validate each stage independently with assertions
+- **Metrics Tracking**: ETL returns `ETLMetrics` with imputation/scaling statistics
 - **Self-documenting**: Stage names clearly indicate transformation history
 
 **Implementation Pattern**:
 
 ```python
-# Stage 1: Load raw data
-all_stocks_raw = load_from_db(DB_URL, limit=None)
-print(f"✓ Stage 1 (raw): {all_stocks_raw.shape}")
+from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline, ETLConfig
+
+# Stage 1: ETL Pipeline (preprocessing)
+config = ETLConfig(
+    apply_imputation=True,
+    imputation_strategy='6step',
+    apply_scaling=False,  # Scale later if needed
+    validate_quality=True,
+)
+all_stocks_preprocessed, etl_metrics = run_etl_pipeline(
+    source='csv',  # or 'db', 'all_stocks'
+    data_dir='data/',
+    config=config,
+    return_metrics=True,
+)
+print(f"✓ Stage 1 (preprocessed): {all_stocks_preprocessed.shape}")
+print(f"  Imputation: {etl_metrics.missing_values_before_imputation} → "
+      f"{etl_metrics.missing_values_after_imputation} missing values")
 
 # Validation checkpoint
-assert not all_stocks_raw.empty, "Raw data must not be empty"
-assert 'Ticker' in all_stocks_raw.columns, "Ticker column required"
+assert not all_stocks_preprocessed.empty, "Preprocessed data must not be empty"
+assert etl_metrics.imputation_completeness, "Imputation must be complete"
 
-# Stage 2: Normalize column names
-all_stocks_normalized = normalize_columns(all_stocks_raw)
-print(f"✓ Stage 2 (normalized): {all_stocks_normalized.shape}")
+# Stage 2: Feature Engineering
+from finance_ml.ml_workflow.features.advanced import build_comprehensive_features
 
-# Validation checkpoint
-validate_schema(all_stocks_normalized, require_target=True)
-assert all_stocks_normalized.columns.str.islower().all(), "All columns must be lowercase"
-
-# Stage 3: Cast datatypes with schema awareness
-all_stocks_typed, dtype_diagnostics = detect_and_cast_dtypes(all_stocks_normalized)
-print(f"✓ Stage 3 (typed): {all_stocks_typed.shape}")
-
-# Validation checkpoint
-assert dtype_diagnostics['coercion_count'] < len(all_stocks_typed) * 0.05, "Excessive type coercions detected (>5%)"
-print(f"  Coercion rate: {dtype_diagnostics['coercion_count'] / len(all_stocks_typed):.2%}")
-
-# Stage 4: Winsorize outliers
-all_stocks_winsorized = winsorize_by_sector(
-        all_stocks_typed,
-        lower=WINSORIZE_LOWER,
-        upper=WINSORIZE_UPPER,
-        group_col='sector'
-        )
-print(f"✓ Stage 4 (winsorized): {all_stocks_winsorized.shape}")
-
-# Validation checkpoint
-quality_report = preprocessing_calculate_quality(all_stocks_winsorized)
-assert quality_report['outlier_rate'] < 0.10, "Excessive outliers remaining (>10%)"
-
-# Stage 5: Impute missing values
-all_stocks_imputed = apply_enhanced_imputation_strategy_6step(
-        all_stocks_winsorized,
-        target_col=TARGET_COL,
-        strategy='sector_knn',
-        sector_col='sector'
-        )
-print(f"✓ Stage 5 (imputed): {all_stocks_imputed.shape}")
-
-# Validation checkpoint
-remaining_nulls = all_stocks_imputed.isnull().sum().sum()
-assert remaining_nulls == 0, f"Imputation incomplete: {remaining_nulls} nulls remaining"
-
-# Stage 6: Scale features
-all_stocks_scaled = scale_features(
-        all_stocks_imputed.copy(),
-        method='robust',
-        exclude_cols=['ticker', 'sector', 'region']
-        )
-print(f"✓ Stage 6 (scaled): {all_stocks_scaled.shape}")
-
-# Validation checkpoint
-numeric_cols = all_stocks_scaled.select_dtypes(include=[np.number]).columns
-for col in numeric_cols:
-   if col not in ['ticker', 'sector', 'region']:
-      assert all_stocks_scaled[col].std() > 0, f"Column {col} has zero variance"
-
-# Stage 7: Build advanced features
 all_stocks_features = build_comprehensive_features(
-        all_stocks_scaled,
-        phase93_categories=['momentum', 'valuation', 'profitability', 'quality_risk', 'cash_flow', 'growth']
-        )
-print(f"✓ Stage 7 (features): {all_stocks_features.shape}")
+    all_stocks_preprocessed,
+    phase93_categories=['momentum', 'valuation', 'profitability', 'quality_risk', 'cash_flow', 'growth']
+)
+print(f"✓ Stage 2 (features): {all_stocks_features.shape}")
 
 # Validation checkpoint
-assert all_stocks_features.shape[1] > all_stocks_scaled.shape[1], "Feature engineering must add new columns"
-print(f"  New features added: {all_stocks_features.shape[1] - all_stocks_scaled.shape[1]}")
+new_features = all_stocks_features.shape[1] - all_stocks_preprocessed.shape[1]
+assert new_features > 0, "Feature engineering must add new columns"
+print(f"  New features added: {new_features}")
 
-# Stage 8: Final enhancements (composite scores, interactions)
-all_stocks_enhanced = add_composite_features(
-        all_stocks_features,
-        interaction_terms=True,
-        polynomial_degree=2
-        )
-print(f"✓ Stage 8 (enhanced): {all_stocks_enhanced.shape}")
+# Stage 3: Classification (event prediction)
+from finance_ml.ml_workflow.models.classification import train_event_classifier
+
+X_class = all_stocks_features[feature_cols]
+y_class = all_stocks_features['event_label']  # Derived event labels
+
+classifier_result = train_event_classifier(X_class, y_class, model_type='lightgbm')
+class_probs = classifier_result['model'].predict_proba(X_class)
+
+all_stocks_classification = all_stocks_features.copy()
+all_stocks_classification['class_prob_positive'] = class_probs[:, 1]
+all_stocks_classification['class_prob_negative'] = class_probs[:, 2] if class_probs.shape[1] > 2 else 0
+print(f"✓ Stage 3 (classification): {all_stocks_classification.shape}")
+
+# Validation checkpoint
+assert 'class_prob_positive' in all_stocks_classification.columns, "Classification probabilities required"
+
+# Stage 4: Final Enhanced Dataset (regression-ready)
+all_stocks_enhanced = all_stocks_classification.copy()
+# Add any final composite features or interactions
+print(f"✓ Stage 4 (enhanced): {all_stocks_enhanced.shape}")
 
 # Final validation checkpoint
-assert all_stocks_enhanced.shape[0] == all_stocks_raw.shape[0], "Row count must remain constant through pipeline"
+assert all_stocks_enhanced.shape[0] == all_stocks_preprocessed.shape[0], "Row count must remain constant"
 print(f"✓ Pipeline complete: {all_stocks_enhanced.shape[0]} stocks, {all_stocks_enhanced.shape[1]} features")
 ```
 
 **Examples**:
 
-✅ **Correct Usage** (Stage-based naming):
+✅ **Correct Usage** (Stage-based naming with ETL pipeline):
 
 ```python
-all_stocks_raw = load_from_csv(Path("data"))
-all_stocks_normalized = normalize_columns(all_stocks_raw)
-all_stocks_typed = detect_and_cast_dtypes(all_stocks_normalized)
+from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline
+
+# Stage 1: Preprocessing via ETL
+all_stocks_preprocessed, metrics = run_etl_pipeline(source='csv', data_dir='data/', return_metrics=True)
+
+# Stage 2: Feature engineering
+all_stocks_features = build_comprehensive_features(all_stocks_preprocessed)
+
+# Stage 3: Classification meta-features
+all_stocks_classification = add_classification_features(all_stocks_features)
+
+# Stage 4: Final enhanced dataset
+all_stocks_enhanced = all_stocks_classification.copy()
 # Each stage preserves history and enables rollback
 ```
 
 ❌ **Violation** (In-place mutation):
 
 ```python
-all_stocks = load_from_csv(Path("data"))
-all_stocks = normalize_columns(all_stocks)  # ❌ Overwrites original, no rollback
-all_stocks = detect_and_cast_dtypes(all_stocks)  # ❌ Cannot inspect intermediate stages
+all_stocks = run_etl_pipeline(source='csv', data_dir='data/')
+all_stocks = build_comprehensive_features(all_stocks)  # ❌ Overwrites original, no rollback
+all_stocks = add_classification_features(all_stocks)  # ❌ Cannot inspect intermediate stages
 ```
 
 ❌ **Violation** (Unclear naming):
 
 ```python
-df1 = load_from_csv(Path("data"))
-df2 = normalize_columns(df1)  # ❌ Generic names don't indicate transformation
-df3 = detect_and_cast_dtypes(df2)  # ❌ What does df3 represent?
+df1 = run_etl_pipeline(source='csv', data_dir='data/')
+df2 = build_comprehensive_features(df1)  # ❌ Generic names don't indicate transformation
+df3 = add_classification_features(df2)  # ❌ What does df3 represent?
 ```
 
 ### 8.3 Magic Numbers Policy
@@ -1616,15 +1622,23 @@ df = apply_log_transforms(df, method='signed_log')
 3. **Handles zeros and negatives** appropriately
 4. **Reversible** via `inverse_log_transform()` for interpretability
 
-**Recommended Pipeline** (Stage 4):
+**ETL Integration Note**:
+
+> **As of v0.8.3**: Log transforms and winsorization are now handled internally by the unified ETL pipeline
+> (`run_etl_pipeline()`) via the `apply_log_transforms` and `apply_scaling` configuration options.
+> The examples below are provided for understanding the internal operations and for advanced users who
+> need fine-grained control outside the ETL pipeline.
+
+**Manual Pipeline** (for advanced use cases):
 
 ```python
+# Note: For most use cases, use run_etl_pipeline() instead (see Section 8.2)
 # Step 1: Apply log-transforms to skewed market value columns
 from finance_ml.ml_workflow.preprocessing.transforms import apply_log_transforms
 from finance_ml.ml_workflow.preprocessing.column_semantics import get_winsorizable_columns
 
 all_stocks_log_transformed = apply_log_transforms(
-    all_stocks_typed,
+    all_stocks_preprocessed,  # Output from ETL pipeline
     method='signed_log'  # Handles negative values (debt, income)
 )
 
@@ -1640,7 +1654,7 @@ all_stocks_winsorized = winsorize_by_sector(
     exclude_ratio_columns=True
 )
 
-print(f"✓ Stage 4 Complete: Log-transformed {len([c for c in all_stocks_winsorized.columns if c.startswith('log_')])} columns")
+print(f"✓ Log-transformed {len([c for c in all_stocks_winsorized.columns if c.startswith('log_')])} columns")
 print(f"✓ Winsorized {len(winsorizable_cols)} columns (excluded price/ratio columns)")
 ```
 
@@ -2468,3 +2482,92 @@ tests/
 - **Medium Tests** (1-10s): Ensemble training, covariance estimation
 - **Slow Tests** (>10s): DNN training (skip if TensorFlow unavailable)
 
+<!-- v1.4.1 (2025-11-27) Regression Workflow Integration Updates -->
+
+# Addendum v1.4.1 — Regression Workflow Integration and Safety Rails
+
+This addendum documents the finalized regression workflow implementations and package structure aligned with Section
+16.4 performance targets and recent Phase 9.1/9.3/9.5/9.8 improvements. It complements, not replaces, existing sections
+in this document.
+
+1) Standardized Predictions Schema (Phase 9.5)
+
+- Required base columns: [y_true, y_pred, abs_error, pct_error]
+- Quantiles: QUANTILES = [0.1, 0.5, 0.9] for 80% intervals
+- When quantiles are present:
+    - Required columns: pred_p10, pred_p50, pred_p90, interval_width
+    - Monotonicity invariant: p10 ≤ p50 ≤ p90 (row-wise)
+    - Non-negativity: all four columns must be ≥ 0
+- Centralized helpers (finance_ml.ml_workflow.regression.io):
+    - build_predictions_frame(): constructs schema-compliant frame and auto-adds interval_width
+    - validate_predictions_schema(): enforces invariants; raises if violated
+- Safety Rails: Negative predictions are clamped to 0.0 before error computation in build_predictions_frame.
+
+2) Shared Data Split & Leakage Policy (Phase 9.9)
+
+- Priority order: time-aware by snapshot_date → grouped by ticker → stratified by sector → random fallback
+- Function: finance_ml.ml_workflow.validation.splits.create_train_test_split()
+- Integration: finance_ml.ml_workflow.regression.dataset.prepare_regression_data() uses the shared policy when policy
+  columns exist in the input dataframe.
+
+3) Phase 9.3 Feature Engineering Review & Sector Interactions
+
+- Utilities (finance_ml.ml_workflow.features):
+    - validate_feature_coverage(X, expected=318): quick coverage check by count or names
+    - prune_low_importance_features(X_train, X_test, feature_importance_df, threshold=0.01): drops features <1%
+      importance while preserving classification probability features
+    - save_feature_list(features, path): persist lists for auditability
+- Integration point: prepare_regression_data() optionally prunes based on outputs/regression/feature_importance.csv and
+  records a structured report in feature_info/meta.
+- Sector-specific interaction features (default ON): one-hot(sector) × curated base
+  columns [p_e_ratio, ev_ebitda_ratio, gross_margin, market_cap, beta_5y].
+    - Toggle via environment variable FEATURE_SECTOR_INTERACTIONS ("1"/"0").
+    - Pruning threshold configurable via FEATURE_IMPORTANCE_THRESHOLD (default 0.01).
+
+4) Phase 9.1 Data Quality Validation
+
+- Lightweight validators (finance_ml.ml_workflow.preprocessing):
+    - check_nan_inf(df): returns NaN/Inf counts; raises if any Inf present (post-imputation guard)
+    - validate_winsorization_bounds(df, lower=0.10, upper=0.90, exclude=[price columns]): reports median 10th/90th
+      percentiles for numeric columns to validate winsorization bounds
+- Recommended notebook hooks: call immediately after 6-step imputation and after winsorization.
+
+5) Stacking Ensemble and Baseline Models (Phase 16.4 Optimizations)
+
+- Stacking base learners and hyperparameters (finance_ml.ml_workflow.regression.models.train_stacking_regressor):
+    - RandomForestRegressor: n_estimators=200, max_depth=15, min_samples_split=5, max_features="sqrt"
+    - ExtraTreesRegressor: n_estimators=200, max_depth=15, min_samples_split=5
+    - GradientBoostingRegressor: n_estimators=150, max_depth=6, learning_rate=0.05, subsample=0.8
+    - XGBoost (optional): n_estimators=150, max_depth=6, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8
+    - Meta-learner: Ridge(alpha=1.0)
+- Model comparison defaults (compare_regressors): 2×-increased estimators and depth controls for RF/ET/GB/HGB.
+
+6) Notebook and Script Alignment
+
+- QUANTILES are standardized to [0.1, 0.5, 0.9]; ensure notebooks use these values.
+- ml_finance_model_main.ipynb integrates:
+    - prepare_regression_data() meta summary prints (feature coverage, pruned features saved under
+      outputs/regression/pruned_features.txt, sector interactions count)
+    - Phase 9.8 stacking governance enabled by preparing base_predictions and y_pred_meta
+
+7) Package Architecture Exports (for stable imports)
+
+- finance_ml.ml_workflow.features now exports:
+    - validate_feature_coverage, prune_low_importance_features, save_feature_list
+- finance_ml.ml_workflow.preprocessing now exports:
+    - check_nan_inf, validate_winsorization_bounds
+
+8) Environment Variables (centralized toggles)
+
+- FEATURE_IMPORTANCE_THRESHOLD: float threshold for pruning (default 0.01)
+- FEATURE_SECTOR_INTERACTIONS: enable sector interaction features (default enabled)
+- DB_URL, DATA_DIR, MODEL_DIR, CACHE_DIR, MODEL_VERSION, RANDOM_SEED, N_JOBS (as documented elsewhere in this file)
+
+9) Performance Targets (Section 16.4)
+
+- Targets remain unchanged; these implementations are designed to help meet:
+    - Overall: R² > 0.7 and MAE < 40%
+    - Sector-specific MAE thresholds as already defined
+
+Refer to docs/summaries/MODEL_OPTIMIZATION_PHASE16_4_SUMMARY.md and CHANGELOG.md for implementation details and test
+coverage.

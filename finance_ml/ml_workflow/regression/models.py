@@ -71,10 +71,13 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 # Import NonNegativeRegressionWrapper from constraints module
 from finance_ml.ml_workflow.regression.constraints import NonNegativeRegressionWrapper
 from finance_ml.ml_workflow.regression.cv import get_regression_cv_splitter
+
+# Import dataset utilities for classification feature integration
 from finance_ml.ml_workflow.regression.dataset import (
     integrate_classification_features,
     create_classification_interactions,
 )
+
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -903,19 +906,60 @@ def train_stacking_regressor(
                 splitter = cv
 
     # Define base regression with robust loss support
+    # Optimized hyperparameters for Section 16.4 Performance Thresholds (R² > 0.7, MAE < 40%)
     estimators = [
-        ("rf", RandomForestRegressor(n_estimators=50, random_state=random_state, n_jobs=-1)),
-        ("et", ExtraTreesRegressor(n_estimators=50, random_state=random_state, n_jobs=-1)),
+        (
+            "rf",
+            RandomForestRegressor(
+                n_estimators=200,
+                max_depth=15,
+                min_samples_split=5,
+                max_features="sqrt",
+                random_state=random_state,
+                n_jobs=-1,
+            ),
+        ),
+        (
+            "et",
+            ExtraTreesRegressor(
+                n_estimators=200,
+                max_depth=15,
+                min_samples_split=5,
+                random_state=random_state,
+                n_jobs=-1,
+            ),
+        ),
         (
             "gb",
             GradientBoostingRegressor(
                 loss=loss,
                 alpha=0.9 if loss == "huber" else 0.9,  # Quantile for Huber transition
-                n_estimators=50,
+                n_estimators=150,
+                max_depth=6,
+                learning_rate=0.05,
+                subsample=0.8,
                 random_state=random_state,
             ),
         ),
     ]
+
+    # Add XGBoost if available (better performance than linear models)
+    if HAS_XGBOOST:
+        estimators.append(
+            (
+                "xgb",
+                xgb.XGBRegressor(
+                    n_estimators=150,
+                    max_depth=6,
+                    learning_rate=0.05,
+                    subsample=0.8,
+                    colsample_bytree=0.8,
+                    random_state=random_state,
+                    n_jobs=-1,
+                    verbosity=0,
+                ),
+            )
+        )
 
     # Meta-learner
     meta_model = Ridge(alpha=1.0)
@@ -1068,21 +1112,36 @@ def compare_regressors(
     results = {}
 
     # Define models to compare
+    # Optimized hyperparameters for Section 16.4 Performance Thresholds (R² > 0.7, MAE < 40%)
     models = {
         "Ridge": Ridge(alpha=1.0, random_state=random_state),
         "Lasso": Lasso(alpha=0.1, random_state=random_state, max_iter=10000),
         "RandomForest": RandomForestRegressor(
-            n_estimators=50, random_state=random_state, n_jobs=-1
+            n_estimators=100,
+            max_depth=15,
+            min_samples_split=5,
+            max_features="sqrt",
+            random_state=random_state,
+            n_jobs=-1,
         ),
-        "ExtraTrees": ExtraTreesRegressor(n_estimators=50, random_state=random_state, n_jobs=-1),
+        "ExtraTrees": ExtraTreesRegressor(
+            n_estimators=100,
+            max_depth=15,
+            min_samples_split=5,
+            random_state=random_state,
+            n_jobs=-1,
+        ),
         "GradientBoosting": GradientBoostingRegressor(
             loss=loss,
             alpha=0.9 if loss == "huber" else 0.9,  # Quantile for Huber transition
-            n_estimators=50,
+            n_estimators=100,
+            max_depth=5,
+            learning_rate=0.1,
+            subsample=0.8,
             random_state=random_state,
         ),
         "HistGradientBoosting": HistGradientBoostingRegressor(
-            max_iter=50, random_state=random_state
+            max_iter=100, max_depth=10, learning_rate=0.1, random_state=random_state
         ),
     }
 

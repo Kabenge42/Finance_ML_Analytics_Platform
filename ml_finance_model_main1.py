@@ -547,11 +547,7 @@ financial_metrics = [c for c in numeric_cols if c not in ["ticker", "isin"]]
 # Detect outliers using multiple methods - process each column individually
 outliers_iqr = {}
 for col in financial_metrics[:50]:
-    outliers_iqr[col] = detect_outliers_iqr(
-        all_stocks,
-        columns=[col],  # NEW Phase 9.1: plural 'columns' parameter
-        iqr_multiplier=1.5,  # NEW Phase 9.1: 'iqr_multiplier' not 'multiplier'
-    )
+    outliers_iqr[col] = detect_outliers_iqr(all_stocks, columns=[col], iqr_multiplier=1.5)
 
 outliers_zscore = {}
 for col in financial_metrics[:50]:
@@ -564,10 +560,7 @@ for col in financial_metrics[:50]:
 outliers_iforest = {}
 for col in financial_metrics[:50]:
     outliers_iforest[col] = detect_outliers_isolation_forest(
-        all_stocks,
-        columns=[col],  # Changed to list: columns (plural) expects a list
-        contamination=0.1,
-        random_state=42,
+        all_stocks, columns=[col], contamination=0.1, random_state=42
     )
 
 # Aggregate results for reporting

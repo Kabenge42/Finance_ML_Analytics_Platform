@@ -57,9 +57,11 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-# Re-use conformal logic from the dedicated uncertainty module to avoid
-# duplication and keep all coverage maths in a single place.
-from .uncertainty import conformal_prediction_intervals
+# Re-use conformal logic from the dedicated evaluation.uncertainty module to avoid
+# duplication and keep all coverage maths in a single place (target architecture).
+from finance_ml.ml_workflow.evaluation.uncertainty import (
+    conformal_prediction_intervals,
+)
 
 # Configure logger
 logger = logging.getLogger(__name__)

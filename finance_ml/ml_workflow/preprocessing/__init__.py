@@ -17,10 +17,6 @@ from finance_ml.ml_workflow.preprocessing.data import (
     setup_logging,
     get_env,
     normalize_columns,
-    infer_region_from_filename,
-    load_from_csv,
-    load_from_db,
-    load_from_all_stocks,
     preprocess,
     validate_schema,
     check_missing_values,
@@ -44,6 +40,22 @@ from finance_ml.ml_workflow.preprocessing.data import (
     create_temporal_split,
     create_expanding_windows,
 )
+
+# Redirect data loading utilities to canonical location (Phase 4 consolidation)
+try:  # pragma: no cover - light import redirection
+    from finance_ml.ml_workflow.data.loaders import (
+        infer_region_from_filename,
+        load_from_csv,
+        load_from_db,
+        load_from_all_stocks,
+    )
+except Exception:  # pragma: no cover - fallback to deprecated paths
+    from finance_ml.ml_workflow.preprocessing.data import (
+        infer_region_from_filename,  # type: ignore
+        load_from_csv,  # type: ignore
+        load_from_db,  # type: ignore
+        load_from_all_stocks,  # type: ignore
+    )
 from finance_ml.ml_workflow.preprocessing.dtypes import (
     detect_and_cast_dtypes,
     to_jsonable,
@@ -73,6 +85,8 @@ from finance_ml.ml_workflow.preprocessing.pipeline import (
 from finance_ml.ml_workflow.preprocessing.quality import (
     DataQualityReport,
     calculate_data_quality_score,
+    check_nan_inf,
+    validate_winsorization_bounds,
 )
 from finance_ml.ml_workflow.preprocessing.scaling import (
     create_scaler_pipeline,
@@ -130,6 +144,8 @@ __all__ = [
     # Quality
     "DataQualityReport",
     "calculate_data_quality_score",
+    "check_nan_inf",
+    "validate_winsorization_bounds",
     # Pipeline
     "prepare_phase91_data",
     # Dtypes (Phase 9.9)

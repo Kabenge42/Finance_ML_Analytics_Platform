@@ -1,0 +1,183 @@
+print("=" * 80)
+print("6.4 — Training Stacking Ensemble (Phase 9.9 Default)")
+print("=" * 80)
+
+# Phase 9.9: Stacking ensemble is now the default regression approach (Task 9.9.8)
+# - Integrates classification meta-features from Phase 9.4 via integrate_classification_features()
+# - Uses robust Huber loss for base models (outlier safety rails)
+# - Non-negative constraints applied AFTER calibration (single point of enforcement)
+# - Standardized predictions schema via build_predictions_frame()
+
+# Prepare classification probabilities for meta-features (Phase 9.5)
+prob_cols = [
+    "event_prob_strong_negative", "event_prob_negative",
+    "event_prob_neutral", "event_prob_positive", "event_prob_strong_positive"
+    ]
+train_probs = None
+# Check if all probability columns exist
+if all(c in all_stocks_enhanced.columns for c in prob_cols):
+    # Extract probabilities aligned with X_train index
+    train_probs = all_stocks_enhanced.loc[X_train.index, prob_cols].values
+    print(f"✓ Found classification probability columns for meta-features")
+else:
+    # Fallback: try to find any cols starting with event_prob_
+    alt_prob_cols = [c for c in all_stocks_enhanced.columns if c.startswith('event_prob_')]
+    if len(alt_prob_cols) == 5:
+        prob_cols = sorted(alt_prob_cols)  # Sort to ensure deterministic order
+        train_probs = all_stocks_enhanced.loc[X_train.index, prob_cols].values
+        print(f"✓ Found alternative classification probability columns: {prob_cols}")
+    else:
+        print(f"ℹ️ Classification probabilities not found. Training without meta-features.")
+
+# Code Guidelines Section 1.1: train_* functions return dict {model, metrics, y_pred, y_proba, artifacts}
+# Use robust Huber loss for GradientBoosting base model inside stacking (Priority 2)
+# CHANGE: Removed ensure_nonnegative=True to allow model natural predictions
+# Non-negativity will be enforced once at the end after calibration
+stacking_result = regression_train_stacking(
+        X_train, y_train,
+        cv=CV_FOLDS,
+        ensure_nonnegative=False,  # Changed from True - apply constraint after calibration
+        loss="huber",
+        use_meta_features=(train_probs is not None),
+        classification_probabilities=train_probs,
+        enable_interactions=False,
+        interaction_valuation_cols=valuation_cols_method_aware,
+        cv_policy="time_series" if "snapshot_date" in all_stocks_enhanced.columns else "kfold",
+        date_col="snapshot_date",
+        dates=all_stocks_enhanced.loc[
+            X_train.index, "snapshot_date"] if "snapshot_date" in all_stocks_enhanced.columns else None
+        )
+
+stacking_model = stacking_result['model']
+stacking_results = stacking_result.get('artifacts', {})
+
+print(f"\n✓ Stacking Ensemble Trained:")
+print(f"  Base models: {', '.join(stacking_results.get('base_models', []))}")
+print(f"  Meta-learner: {stacking_results.get('meta_model', 'Unknown')}")
+print(f"  Train R²: {stacking_result['metrics'].get('r2', 0):.4f}")
+print(f"  CV R² (mean ± std): {stacking_results.get('cv_score', 0):.4f} ± {stacking_results.get('cv_std', 0):.4f}")
+
+# Test set predictions - NO intermediate clipping
+# Let predictions flow naturally to calibration step
+
+# CRITICAL FIX: Enhance X_test with classification features (Phase 9.5)
+# The train_stacking_regressor function internally adds classification features to X_train
+# when use_meta_features=True. We must apply the same transformation to X_test.
+test_probs = None
+X_test_for_prediction = X_test.copy()
+
+if train_probs is not None:
+    # Extract test set probabilities aligned with X_test index
+    test_probs = all_stocks_enhanced.loc[X_test.index, prob_cols].values
+    print(f"🔧 Enhancing X_test with classification meta-features...")
+
+    # Import feature integration functions
+    from finance_ml.ml_workflow.regression.dataset import (
+        integrate_classification_features,
+        create_classification_interactions
+        )
+
+    # Add probability columns and event_confidence to X_test
+    X_test_for_prediction = integrate_classification_features(X_test_for_prediction, test_probs)
+    print(f"  ✓ Added classification probability features")
+
+    # Ensure configuration variable is defined to prevent NameError (Code Guidelines Section 8.1)
+    if 'enable_interactions' not in locals():
+        enable_interactions = False  # Set to True if you specifically want interaction features
+
+    # Add interaction features if they were enabled during training
+    if enable_interactions and interaction_valuation_cols:
+        class_cols = [
+            c for c in X_test_for_prediction.columns
+            if c.startswith("event_prob_") or c == "event_confidence"
+            ]
+        X_test_for_prediction = create_classification_interactions(
+                X_test_for_prediction, class_cols, valuation_cols_method_aware
+                )
+        print(
+                f"  ✓ Added interaction features: {len(class_cols)} prob cols × {len(valuation_cols_method_aware)} valuation cols")
+
+    print(f"  ✓ X_test shape: {X_test.shape} → {X_test_for_prediction.shape}")
+
+# === FIX START: Align X_test features with Model features ===
+# 1. Identify if interactions are missing
+model_features = getattr(stacking_model, "feature_names_in_", None)
+if model_features is None and hasattr(stacking_model, "estimators_"):
+    # Try getting features from the first base estimator if wrapper hides them
+    model_features = getattr(stacking_model.estimators_[0], "feature_names_in_", None)
+
+if model_features is not None:
+    missing_cols = set(model_features) - set(X_test_for_prediction.columns)
+
+    if missing_cols:
+        print(f"⚠ Detected {len(missing_cols)} missing interaction features. Regenerating...")
+
+        # Import helpers if not available
+        from finance_ml.ml_workflow.regression.dataset import create_classification_interactions
+
+        # Define columns for interaction creation (same as Section 6.1)
+        # Identify classification probability columns currently in X_test
+        cls_cols = [c for c in X_test_for_prediction.columns if c.startswith('event_prob_') or c == 'event_confidence']
+
+        # Identify valuation columns (fallback to default if method-aware list not found)
+        val_cols = globals().get('valuation_cols_method_aware', [
+            'market_cap', 'enterprise_value', 'ebitda', 'p_e', 'p_b',
+            'gross_margin', 'revenue', 'net_income'
+            ])
+        val_cols = [c for c in val_cols if c in X_test_for_prediction.columns]
+
+        # Regenerate interactions on Test Data
+        X_test_for_prediction = create_classification_interactions(
+                X_test_for_prediction,
+                classification_cols=cls_cols,
+                valuation_cols=val_cols
+                )
+
+        # Final alignment: Ensure exact column order and fill any remaining gaps with 0
+        X_test_for_prediction = X_test_for_prediction.reindex(columns=model_features, fill_value=0)
+        print(f"✓ X_test aligned. New shape: {X_test_for_prediction.shape}")
+# === FIX END ===
+
+# Predict using feature-aligned X_test
+y_pred_stacking = stacking_model.predict(X_test_for_prediction)
+
+# Diagnostic: Check raw prediction range before calibration
+print(f"\n📊 Raw Predictions (before calibration):")
+print(f"  Min: ${y_pred_stacking.min():.2f}")
+print(f"  Max: ${y_pred_stacking.max():.2f}")
+print(f"  Negative: {(y_pred_stacking < 0).sum()} ({(y_pred_stacking < 0).sum() / len(y_pred_stacking) * 100:.1f}%)")
+
+test_metrics = {
+    'mae': mean_absolute_error(y_test, y_pred_stacking),
+    'rmse': np.sqrt(mean_squared_error(y_test, y_pred_stacking)),
+    'r2': r2_score(y_test, y_pred_stacking)
+    }
+
+print(f"\n📊 Test Set Performance (raw predictions):")
+print(f"  MAE: {test_metrics['mae']:.2f}")
+print(f"  RMSE: {test_metrics['rmse']:.2f}")
+print(f"  R²: {test_metrics['r2']:.4f}")
+
+# === Phase 9.8 Preparation: Extract base model predictions for stacking contribution analysis ===
+# This enables Phase 9.8's compute_stacking_contributions() to analyze each base model's influence
+base_predictions = {}
+base_model_names = stacking_results.get('base_models', [])
+
+if hasattr(stacking_model, 'estimators_') and stacking_model.estimators_:
+    print(f"\n🔍 Extracting base model predictions for Phase 9.8 analysis...")
+    for i, estimator in enumerate(stacking_model.estimators_):
+        # Use model name from artifacts if available, otherwise use index
+        model_name = base_model_names[i] if i < len(base_model_names) else f"base_model_{i}"
+        try:
+            base_pred = estimator.predict(X_test_for_prediction)
+            base_predictions[model_name] = base_pred
+            print(f"  ✓ {model_name}: predictions extracted")
+        except Exception as e:
+            print(f"  ⚠ {model_name}: failed to extract predictions ({e})")
+    
+    print(f"  Total base models: {len(base_predictions)}")
+
+# Create y_pred_meta alias for Phase 9.8 compatibility
+y_pred_meta = y_pred_stacking
+print(f"✓ Phase 9.8 variables prepared: base_predictions ({len(base_predictions)} models), y_pred_meta")
+# === End Phase 9.8 Preparation ===

@@ -17,6 +17,18 @@ from sklearn.model_selection import train_test_split
 
 # Phase 9.9 Gap 3: shared split policy (time-series → grouped → stratified)
 from finance_ml.ml_workflow.validation.splits import create_train_test_split
+from pathlib import Path
+import os
+
+# Phase 16.4: Feature validation/pruning utilities (Phase 9.3 review)
+try:
+    from finance_ml.ml_workflow.features.validation import (
+        validate_feature_coverage,
+        prune_low_importance_features,
+    )
+except Exception:  # pragma: no cover - optional at runtime
+    validate_feature_coverage = None
+    prune_low_importance_features = None
 
 logger = logging.getLogger(__name__)
 
@@ -361,16 +373,220 @@ def prepare_regression_data(
             X, y, test_size=test_size, random_state=random_state
         )
 
-    # Feature info - CRITICAL FIX: 'all_features' should only contain numeric features
-    # to prevent passing non-numeric columns to model training
+    # === Phase 9.3: Feature engineering review and optimizations ===
     feature_info = {
         "numeric_features": numeric_features,
         "categorical_features": categorical_features,
         "classification_features": classification_features,
-        "all_features": numeric_features,  # ✓ Only numeric features for training
+        "all_features": list(X.columns),
+        "pruned_features": [],
+        "added_sector_interactions": 0,
     }
 
+    # 1) Validate feature coverage (expect ~318 engineered features in rich setups)
+    try:
+        if validate_feature_coverage is not None:
+            ok, report = validate_feature_coverage(X, expected=318, strict=False)
+            feature_info["feature_coverage_ok"] = bool(ok)
+            feature_info["feature_coverage_report"] = report
+    except Exception:
+        # Non-fatal
+        pass
+
+    # 2) Optional low-importance pruning using persisted feature_importance.csv
+    #    Threshold can be overridden via env FEATURE_IMPORTANCE_THRESHOLD (default 0.01)
+    try:
+        threshold = float(os.getenv("FEATURE_IMPORTANCE_THRESHOLD", "0.01"))
+    except Exception:
+        threshold = 0.01
+
+    try:
+        fi_path = Path("outputs") / "regression" / "feature_importance.csv"
+        if prune_low_importance_features is not None and fi_path.exists():
+            fi_df = pd.read_csv(fi_path)
+            # Preserve classification probability features and confidence
+            keep_cols = [
+                c for c in X_train.columns if c.startswith("event_prob_") or c == "event_confidence"
+            ]
+            X_train, X_test, kept_imp = prune_low_importance_features(
+                X_train, X_test, fi_df, threshold=threshold, keep_cols=keep_cols
+            )
+            feature_info["all_features"] = list(X_train.columns)
+            pruned = [c for c in fi_df["feature"].tolist() if c not in X_train.columns]
+            feature_info["pruned_features"] = pruned
+    except Exception:
+        # If importance file malformed or any issue, skip pruning silently to avoid breaking pipeline
+        pass
+
+    # 3) Add sector-specific interaction terms (Phase 9.3)
+    #    Controlled by env FEATURE_SECTOR_INTERACTIONS (default: 1/True)
+    def _add_sector_interactions(X_in: pd.DataFrame, idx_like) -> pd.DataFrame:
+        # Craft a curated list of base columns; only include if present in X
+        base_cols = [
+            "p_e_ratio",
+            "ev_ebitda_ratio",
+            "gross_margin",
+            "market_cap",
+            "beta_5y",
+        ]
+        existing = [c for c in base_cols if c in X_in.columns]
+        if not existing:
+            return X_in
+        if "sector" not in df.columns:
+            return X_in
+        sectors = (
+            df.loc[idx_like, "sector"]
+            if isinstance(idx_like, (pd.Index, list, np.ndarray))
+            else df.loc[X_in.index, "sector"]
+        )
+        dummies = pd.get_dummies(sectors.astype(str), prefix="sector", dummy_na=False)
+        # Align indices
+        dummies.index = X_in.index
+        # Create interactions
+        new_cols = {}
+        for dcol in dummies.columns:
+            d = dummies[dcol]
+            for bcol in existing:
+                inter_name = f"{dcol}__x__{bcol}"
+                # Multiply safely; cast to float
+                new_cols[inter_name] = d.values.astype(float) * X_in[bcol].values.astype(float)
+        if new_cols:
+            interactions_df = pd.DataFrame(new_cols, index=X_in.index)
+            X_out = pd.concat([X_in, interactions_df], axis=1)
+            return X_out
+        return X_in
+
+    enable_sector_ix = os.getenv("FEATURE_SECTOR_INTERACTIONS", "1").strip() not in {
+        "0",
+        "false",
+        "False",
+    }
+    if enable_sector_ix:
+        try:
+            before_cols = set(X_train.columns)
+            X_train = _add_sector_interactions(X_train, X_train.index)
+            X_test = _add_sector_interactions(X_test, X_test.index)
+            added = len(set(X_train.columns) - before_cols)
+            feature_info["added_sector_interactions"] = added
+            feature_info["all_features"] = list(X_train.columns)
+        except Exception:
+            # Non-fatal
+            pass
+
     return X_train, X_test, y_train, y_test, feature_info
+
+
+def add_sector_interactions_for_prediction(
+    X: pd.DataFrame, df_with_sector: pd.DataFrame, base_cols: Optional[List[str]] = None
+) -> pd.DataFrame:
+    """
+    Add sector interaction features to prediction data.
+
+    Replicates the sector interaction logic from prepare_regression_data()
+    for use on new/unseen data during prediction. This ensures feature parity
+    between training and prediction pipelines.
+
+    **Purpose**: The `prepare_regression_data()` function automatically generates
+    sector-specific interaction features (e.g., `sector_Technology__x__p_e_ratio`)
+    during training. When making predictions on new data (e.g., `all_stocks_phase95`),
+    these interactions must be regenerated to match the model's expected feature set.
+
+    **Feature Naming Convention**: `sector_{SectorName}__x__{base_feature}`
+    - Example: `sector_Information Technology__x__ev_ebitda_ratio`
+    - Total features: n_sectors × n_base_cols (e.g., 11 sectors × 5 features = 55)
+
+    Args:
+        X: Feature matrix (numeric features only, same index as df_with_sector)
+        df_with_sector: Original DataFrame with 'sector' column aligned to X
+        base_cols: Base columns for interactions. Defaults to:
+            ['p_e_ratio', 'ev_ebitda_ratio', 'gross_margin', 'market_cap', 'beta_5y']
+
+    Returns:
+        X with sector interaction features appended (column order: original + interactions)
+
+    Raises:
+        ValueError: If X and df_with_sector have mismatched indices
+
+    Example:
+        >>> # After training with prepare_regression_data() which added sector interactions
+        >>> X_train, X_test, y_train, y_test, meta = prepare_regression_data(df_train)
+        >>> print(X_train.shape)  # (5631, 42) including 22 sector interactions
+        >>>
+        >>> # For prediction on new data
+        >>> X_pred = all_stocks_phase95[base_feature_cols].copy()
+        >>> X_pred = add_sector_interactions_for_prediction(
+        ...     X_pred,
+        ...     df_with_sector=all_stocks_phase95
+        ... )
+        >>> print(X_pred.shape)  # (7055, 42) - now matches X_train features
+        >>>
+        >>> # Safe to predict
+        >>> predictions = model.predict(X_pred)
+
+    Note:
+        - Only adds interactions for base_cols that exist in X
+        - Returns original X unchanged if 'sector' column missing from df_with_sector
+        - Controlled by FEATURE_SECTOR_INTERACTIONS environment variable (default: enabled)
+        - Indices must match between X and df_with_sector for proper alignment
+
+    See Also:
+        - prepare_regression_data(): Training-time function that generates these features
+        - docs/code_guidelines.md Section 16.5: Sector interaction feature policy
+    """
+    if base_cols is None:
+        base_cols = ["p_e_ratio", "ev_ebitda_ratio", "gross_margin", "market_cap", "beta_5y"]
+
+    # Validate inputs
+    if len(X) != len(df_with_sector):
+        raise ValueError(
+            f"Index mismatch: X has {len(X)} rows, df_with_sector has {len(df_with_sector)} rows"
+        )
+
+    # Check if sector column exists
+    if "sector" not in df_with_sector.columns:
+        logger.warning("No 'sector' column in df_with_sector; skipping sector interactions")
+        return X
+
+    # Filter base_cols to only those present in X
+    existing = [c for c in base_cols if c in X.columns]
+    if not existing:
+        logger.warning(
+            f"None of the base_cols {base_cols} found in X; skipping sector interactions"
+        )
+        return X
+
+    logger.info(
+        f"Generating sector interactions for {len(existing)} base features "
+        f"across {df_with_sector['sector'].nunique()} sectors"
+    )
+
+    # Get sector values aligned to X's index
+    sectors = df_with_sector.loc[X.index, "sector"]
+
+    # Create one-hot encoded sector dummies
+    dummies = pd.get_dummies(sectors.astype(str), prefix="sector", dummy_na=False)
+    dummies.index = X.index
+
+    # Generate interaction features: sector_dummy × base_feature
+    new_cols = {}
+    for dcol in dummies.columns:
+        d = dummies[dcol]
+        for bcol in existing:
+            inter_name = f"{dcol}__x__{bcol}"
+            # Element-wise multiplication: binary sector indicator × continuous feature
+            new_cols[inter_name] = d.values.astype(float) * X[bcol].values.astype(float)
+
+    if new_cols:
+        interactions_df = pd.DataFrame(new_cols, index=X.index)
+        X_out = pd.concat([X, interactions_df], axis=1)
+        logger.info(
+            f"✓ Added {len(new_cols)} sector interaction features "
+            f"({X.shape[1]} → {X_out.shape[1]} columns)"
+        )
+        return X_out
+
+    logger.warning("No sector interactions generated (empty dummies or existing features)")
+    return X
 
 
 # ==============================================================================

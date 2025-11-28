@@ -1,0 +1,205 @@
+# 6.4.1 — Export Enhanced Predictions and Sector Metrics (Priority 1)
+# Using build_predictions_frame from finance_ml.ml_workflow.regression.io for standardized schema
+
+from finance_ml.ml_workflow.regression.io import build_predictions_frame
+from finance_ml.ml_workflow.regression.quantile import enforce_monotonic_quantiles
+import os
+
+# Build detailed predictions DataFrame for diagnostics and export
+try:
+    # Use build_predictions_frame for standardized schema (Priority 1)
+    source_df = all_stocks_enhanced if 'all_stocks_enhanced' in globals() else None
+
+    # Call build_predictions_frame - it safely handles metadata columns using .loc[] alignment
+    # No need to drop 'sector' - the function doesn't use DataFrame.insert()
+    results_df = build_predictions_frame(
+            y_true=y_test,
+            y_pred=y_pred_stacking,
+            df_source=source_df if source_df is not None else pd.DataFrame(index=y_test.index),
+            extra_cols={}
+            )
+
+    out_models_dir = OUTPUT_DIR / 'regression'
+    out_models_dir.mkdir(parents=True, exist_ok=True)
+
+    # Priority 3: Apply isotonic calibration by sector (monotonic, no fixed bias)
+    # Requires calibration dataset with y_true values for fitting isotonic regression
+    try:
+        # Step 1: Create calibration DataFrame from training data
+        print("\n" + "=" * 80)
+        print("ISOTONIC CALIBRATION BY SECTOR")
+        print("=" * 80)
+
+        # === FIX START: Align X_train features with Model features for calibration ===
+        # Same logic as in Section 6.4: ensure X_train has all features the model expects
+        X_train_for_calibration = X_train.copy()
+
+        # Get model's expected feature names
+        model_features_cal = getattr(stacking_model, "feature_names_in_", None)
+        if model_features_cal is None and hasattr(stacking_model, "estimators_"):
+            # Try getting features from the first base estimator if wrapper hides them
+            model_features_cal = getattr(stacking_model.estimators_[0], "feature_names_in_", None)
+
+        if model_features_cal is not None:
+            missing_cols_cal = set(model_features_cal) - set(X_train_for_calibration.columns)
+
+            if missing_cols_cal:
+                print(f"⚠ Detected {len(missing_cols_cal)} missing interaction features in X_train. Regenerating...")
+
+                # Import helpers if not available
+                from finance_ml.ml_workflow.regression.dataset import (
+                    integrate_classification_features,
+                    create_classification_interactions
+                    )
+
+                # Add classification probability features if available
+                if train_probs is not None:
+                    X_train_for_calibration = integrate_classification_features(X_train_for_calibration, train_probs)
+
+                # Identify classification probability columns currently in X_train
+                cls_cols_cal = [c for c in X_train_for_calibration.columns if
+                                c.startswith('event_prob_') or c == 'event_confidence']
+
+                # Identify valuation columns (fallback to default if method-aware list not found)
+                val_cols_cal = globals().get('valuation_cols_method_aware', [
+                    'market_cap', 'enterprise_value', 'ebitda', 'p_e', 'p_b',
+                    'gross_margin', 'revenue', 'net_income'
+                    ])
+                val_cols_cal = [c for c in val_cols_cal if c in X_train_for_calibration.columns]
+
+                # Regenerate interactions on Training Data
+                if cls_cols_cal and val_cols_cal:
+                    X_train_for_calibration = create_classification_interactions(
+                            X_train_for_calibration,
+                            classification_cols=cls_cols_cal,
+                            valuation_cols=val_cols_cal
+                            )
+
+                # Final alignment: Ensure exact column order and fill any remaining gaps with 0
+                X_train_for_calibration = X_train_for_calibration.reindex(columns=model_features_cal, fill_value=0)
+                print(f"✓ X_train aligned for calibration. New shape: {X_train_for_calibration.shape}")
+        # === FIX END ===
+
+        y_pred_train = stacking_model.predict(X_train_for_calibration)
+
+        # Build calibration df with required columns
+        cal_df = pd.DataFrame({
+            "y_true": y_train.values,
+            "y_pred": y_pred_train,
+            "sector": source_df.loc[y_train.index, "sector"].values
+            })
+
+        print(f"\n✓ Calibration set: {len(cal_df):,} samples")
+        print(f"  Sectors: {cal_df['sector'].nunique()}")
+
+        # Step 2: Apply isotonic calibration (learns monotonic transformation per sector)
+        results_df = calibrate_predictions_by_sector(
+                preds_df=results_df,
+                cal_df=cal_df,
+                method="isotonic",  # CHANGED from "additive" - no fixed bias subtraction
+                sector_col="sector",
+                pred_col="y_pred",
+                true_col="y_true",
+                output_col="y_pred_calibrated",
+                min_samples=5
+                )
+
+        # Step 3: Apply final non-negative constraint + outlier clipping (single enforcement point)
+        if "y_pred_calibrated" in results_df.columns:
+            y_pred_calib = results_df["y_pred_calibrated"].to_numpy()
+
+            # Diagnostic: Check calibrated predictions before final clipping
+            n_neg_before = (y_pred_calib < 0).sum()
+            print(f"\n📊 Calibrated predictions (before final clipping):")
+            print(f"  Negative predictions: {n_neg_before} ({n_neg_before / len(y_pred_calib) * 100:.1f}%)")
+            print(f"  Range: ${y_pred_calib.min():.2f} to ${y_pred_calib.max():.2f}")
+
+            # Apply adaptive clipping: non-negative + outlier bounds
+            clip_result = adaptive_clip_predictions(y_pred_calib, y_train)
+            y_pred_final = clip_result["clipped_predictions"]
+
+            # Update results_df with final clipped predictions
+            results_df["y_pred_calibrated"] = y_pred_final
+
+            # Recompute errors with final predictions
+            yt = results_df["y_true"].to_numpy()
+            results_df["abs_error_calibrated"] = np.abs(yt - y_pred_final)
+            results_df["pct_error_calibrated"] = np.where(yt != 0, ((y_pred_final - yt) / yt) * 100.0, np.nan)
+
+            # Final diagnostic
+            n_zeros = (y_pred_final == 0).sum()
+            n_neg = (y_pred_final < 0).sum()
+            print(f"\n✅ Final predictions (after adaptive clipping):")
+            print(f"  Lower bound: ${clip_result['lower_bound']:.2f}")
+            print(f"  Upper bound: ${clip_result['upper_bound']:.2f}")
+            print(f"  Clipped to lower: {clip_result['n_clipped_lower']} ({clip_result['pct_clipped_lower']:.1f}%)")
+            print(f"  Clipped to upper: {clip_result['n_clipped_upper']} ({clip_result['pct_clipped_upper']:.1f}%)")
+            print(f"  Zero predictions: {n_zeros} ({n_zeros / len(y_pred_final) * 100:.1f}%) - TARGET: <1%")
+            print(f"  Negative predictions: {n_neg} (should be 0)")
+            print(f"  Range: ${y_pred_final.min():.2f} to ${y_pred_final.max():.2f}")
+            print("=" * 80)
+    except Exception as e:
+        print(f"\n⚠️ Warning: Isotonic calibration failed: {e}")
+        print("  Falling back to uncalibrated predictions")
+        results_df["y_pred_calibrated"] = results_df["y_pred"]
+
+    # Add model_version and snapshot_date for standardized schema
+    model_version = os.environ.get('MODEL_VERSION', 'v9_9')
+    results_df['model_version'] = model_version
+    results_df['snapshot_date'] = pd.Timestamp.now().strftime('%Y-%m-%d')
+
+    # Store for later merging with quantile predictions
+    results_df_base = results_df.copy()
+
+    # Export to standardized path: regression_predictions_detailed.csv (will be updated after quantiles)
+    predictions_path = out_models_dir / 'regression_predictions_detailed.csv'
+    print(f"\nℹ️  Predictions dataframe prepared (will merge quantiles before final export)")
+
+    # Compute and export sector-level metrics if sector present
+    if 'sector' in results_df.columns:
+        print(f"\n📊 Training Sector-Optimized Models and Metrics (Phase 9.5)...")
+        from finance_ml.ml_workflow.models import train_and_evaluate_regression_by_sector
+
+        # Prepare probabilities for full dataset (if available)
+        full_probs = None
+        # Use prob_cols from previous step if defined, otherwise re-detect
+        local_prob_cols = [c for c in all_stocks_enhanced.columns if c.startswith('event_prob_')]
+        # Filter to 5 classes if possible
+        if len(local_prob_cols) >= 5:
+            # Prefer standard names if present
+            std_cols = ["event_prob_strong_negative", "event_prob_negative", "event_prob_neutral",
+                        "event_prob_positive", "event_prob_strong_positive"]
+            if all(c in all_stocks_enhanced.columns for c in std_cols):
+                local_prob_cols = std_cols
+            else:
+                local_prob_cols = sorted(local_prob_cols)[:5]
+            full_probs = all_stocks_enhanced[local_prob_cols].values
+
+        # Train and evaluate per sector (supports stacking per sector)
+        sector_metrics_df = train_and_evaluate_regression_by_sector(
+                all_stocks_enhanced,
+                out_models_dir,
+                feature_cols=list(X_train.columns),
+                use_meta_features=(full_probs is not None),
+                classification_probabilities=full_probs,
+                cv_policy="time_series" if "snapshot_date" in all_stocks_enhanced.columns else "kfold",
+                date_col="snapshot_date"
+                )
+        print(f"✓ Saved sector metrics to {out_models_dir / 'regression_metrics_by_sector.csv'}")
+
+    # Priority 5: Feature importance export
+    try:
+        fi_path = out_models_dir / 'feature_importance.csv'
+        # StackingRegressor rarely exposes feature_importances_. Use Section 4 RF importance if available.
+        if 'importance_df' in globals() and isinstance(importance_df, pd.DataFrame) and not importance_df.empty:
+            importance_df.to_csv(fi_path, index=False)
+            print(f"✓ Saved feature importance to {fi_path} (from RF importance)")
+        else:
+            # Fallback: compute quickly using features_importance_rf on training data
+            tmp_fi = features_importance_rf(X_train, y_train, top_k=min(50, X_train.shape[1]))
+            tmp_fi.to_csv(fi_path, index=False)
+            print(f"✓ Saved feature importance to {fi_path} (computed fallback)")
+    except Exception as e:
+        print(f"⚠ Feature importance export skipped: {e}")
+except Exception as e:
+    print(f"⚠ Failed to export enhanced predictions/metrics: {e}")

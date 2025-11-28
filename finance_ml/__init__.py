@@ -1,23 +1,114 @@
+"""Top-level package for the Finance ML Analytics Platform.
+
+This module historically re-exported a very large number of functions
+from the internal ``finance_ml.ml_workflow`` subpackages. As part of the
+restructuring plan (Phase 6 – API streamlining), new code should prefer
+the focused :mod:`finance_ml.api` facade or import directly from the
+relevant subpackages instead of relying on broad ``finance_ml.*``
+exports.
+
+Backward compatibility
+----------------------
+- Existing symbols that tests and notebooks rely on (e.g.
+  ``FinanceMLConfig``, ``NotebookConfig``, ``simple_eda``) remain
+  available at the top level for now.
+- A new ``finance_ml.api`` attribute exposes the clean public API
+  documented in :mod:`finance_ml.api`.
+- Over time, additional symbols may be deprecated and removed from the
+  root namespace; use :mod:`finance_ml.api` for a stable surface.
+
+The ``__all__`` definition below documents the *curated* set of
+first-class, stable exports from :mod:`finance_ml`. Other attributes are
+retained for backward compatibility but may move or be removed in a
+future major version; code that relies on them should migrate to
+subpackages or :mod:`finance_ml.api`.
 """
-Finance ML Analytics Platform - Package
 
-Modular package for equity screening, feature engineering, and ML regression.
+__version__ = "0.9.1"
 
-Modules:
-- finance_ml.data: Data loading, normalization, and validation
-- finance_ml.advanced_preprocessing: Advanced preprocessing (Phase 9.1)
-- finance_ml.features: Feature engineering functions
-- finance_ml.regression: Classification, regression, and ensemble regression
-- finance_ml.eval: Analytics, visualizations, and reporting
-- finance_ml.config: Configuration management
-- finance_ml.cli: Command-line interface
-- finance_ml.risk_metrics: Risk metrics and portfolio risk analysis
-- finance_ml.logging_config: Logging configuration and file handlers
-- finance_ml.portfolio_optimization: Modern Portfolio Theory and optimization
-- finance_ml.analyst_comparison: Prediction vs. Analyst analytics (Phase 9.8)
-"""
+# Expose the clean public API facade at the package root. Some environments
+# import ``finance_ml`` only to access deeply nested modules (e.g., tests that
+# import finance_ml.ml_workflow.analytics.report_config). Importing the full
+# API can pull heavy optional dependencies. To keep imports resilient, lazily
+# expose ``api`` if immediate import fails due to optional stacks.
+try:  # pragma: no cover - defensive import
+    from . import api  # type: ignore  # noqa: F401
+except Exception:  # pragma: no cover
+    import importlib
+    import types
 
-__version__ = "0.4.1"
+    class _LazyAPI(types.ModuleType):
+        def __getattr__(self, item):
+            real = importlib.import_module("finance_ml.api")
+            globals()["api"] = real
+            return getattr(real, item)
+
+    api = _LazyAPI("finance_ml.api")  # type: ignore
+
+
+# Curated top-level public surface
+# --------------------------------
+#
+# These names are intended to remain stable and are validated by
+# tests/test_init_public_surface.py. Additional attributes continue to be
+# available on the package for backward compatibility but are not part of
+# the long-term supported surface.
+# Legacy export list retained for reference only
+# --------------------------------------------
+#
+# NOTE: This list previously defined the behaviour of
+# ``from finance_ml import *``. As part of Phase 6 API streamlining we
+# now treat it as an internal reference and keep the curated top-level
+# ``__all__`` defined near the top of this file as the only public
+# contract. Attribute access (``import finance_ml as mod; mod.symbol``)
+# continues to work because all names are still bound below; only
+# wildcard imports are affected.
+__all__ = [
+    # Version
+    "__version__",
+    # Public API facade
+    "api",
+    # Configuration (essential for all users)
+    "FinanceMLConfig",
+    "load_config",
+    # Notebook configuration (essential for notebook users)
+    "NotebookConfig",
+    # High-level EDA helper (heavily used in notebooks/tests)
+    "simple_eda",
+    # Core preprocessing (imported below)
+    "normalize_columns",
+    # Regression (imported below)
+    "train_stacking_regressor",
+    # Analytics (imported below)
+    "calculate_mispricing_score",
+    "rank_undervalued_stocks",
+    "rank_overvalued_stocks",
+    # Evaluation (imported below)
+    "comprehensive_regression_metrics",
+    # Export (imported below)
+    "export_predictions_to_csv",
+    "export_predictions_to_excel",
+]
+
+# Legacy export list retained for reference only
+# --------------------------------------------
+#
+# NOTE: This list previously defined the behaviour of
+# ``from finance_ml import *``. The curated __all__ above now controls
+# wildcard imports. Additional attributes continue to be available on the
+# package for backward compatibility but are not part of the long-term
+# supported surface.
+__legacy_all__ = [
+    "__version__",
+    "api",
+    # Configuration
+    "FinanceMLConfig",
+    "load_config",
+    # Notebook configuration
+    "NotebookConfig",
+    # High-level EDA helper used heavily in notebooks/tests
+    "simple_eda",
+]
 
 # Many legacy imports below are optional; guard them to avoid breaking basic imports
 try:
@@ -125,17 +216,21 @@ try:
 except Exception:  # pragma: no cover - optional import guard
     pass
 
-# Phase 9.7 Refactor: Import from analytics subpackage
-from finance_ml.ml_workflow.analytics import (
-    calculate_mispricing_score as analytics_calculate_mispricing,
-    calculate_risk_adjusted_mispricing as analytics_risk_adjusted_mispricing,
-    rank_undervalued_stocks as analytics_rank_undervalued,
-    rank_overvalued_stocks as analytics_rank_overvalued,
-    rank_stocks_by_sector as analytics_rank_by_sector,
-)
+# Phase 9.7 Refactor: Import from analytics subpackage (guarded)
+try:  # pragma: no cover - optional heavy import
+    from finance_ml.ml_workflow.analytics import (
+        calculate_mispricing_score as analytics_calculate_mispricing,
+        calculate_risk_adjusted_mispricing as analytics_risk_adjusted_mispricing,
+        rank_undervalued_stocks as analytics_rank_undervalued,
+        rank_overvalued_stocks as analytics_rank_overvalued,
+        rank_stocks_by_sector as analytics_rank_by_sector,
+    )
 
-# Re-export eval submodule so tests/notebooks can use `from finance_ml.eval import simple_eda`
-from finance_ml.ml_workflow.analytics import eval as eval  # noqa: F401
+    # Re-export eval submodule so tests/notebooks can use `from finance_ml.eval import simple_eda`
+    from finance_ml.ml_workflow.analytics import eval as eval  # noqa: F401
+except Exception:
+    # Analytics stack is optional for light imports
+    pass
 
 # Phase 9.4 Refactor: Import from new classification subpackage
 from finance_ml.ml_workflow.classification.labels import (
@@ -229,51 +324,69 @@ from finance_ml.ml_workflow.preprocessing import (
 from finance_ml.ml_workflow.regression.constraints import (
     NonNegativeRegressionWrapper as regression_nonnegative_wrapper,
 )
-from finance_ml.ml_workflow.regression.dataset import (
-    # Classification feature integration
-    extract_classification_features as regression_extract_classification_features,
-    integrate_classification_features_into_dataframe as regression_integrate_classification_features,
-    create_classification_interactions as regression_create_classification_interactions,
-    # Data preparation
-    prepare_regression_data as regression_prepare_data,
-    # Validation
-    validate_training_data as regression_validate_training_data,
-    prepare_features_for_training as regression_prepare_features_for_training,
-    extract_numeric_feature_columns as regression_extract_numeric_features,
-    # Sector-specific training
-    train_sector_specific_models as regression_train_sector_models,
-)
-from finance_ml.ml_workflow.regression.io import (
-    save_model as regression_save_model,
-    load_model as regression_load_model,
-)
+try:  # pragma: no cover - allow import without full regression stack present
+    from finance_ml.ml_workflow.regression.dataset import (
+        # Classification feature integration
+        extract_classification_features as regression_extract_classification_features,
+        integrate_classification_features_into_dataframe as regression_integrate_classification_features,
+        create_classification_interactions as regression_create_classification_interactions,
+        # Data preparation
+        prepare_regression_data as regression_prepare_data,
+        # Validation
+        validate_training_data as regression_validate_training_data,
+        prepare_features_for_training as regression_prepare_features_for_training,
+        extract_numeric_feature_columns as regression_extract_numeric_features,
+        # Sector-specific training
+        train_sector_specific_models as regression_train_sector_models,
+    )
+    from finance_ml.ml_workflow.regression.io import (
+        save_model as regression_save_model,
+        load_model as regression_load_model,
+    )
+except Exception:  # pragma: no cover
+    pass
 
 # Phase 9.5.1 Refactor: Import model training, quantile, tuning, and I/O functions
-from finance_ml.ml_workflow.regression.models import (
-    train_ridge_regressor as regression_train_ridge,
-    train_lasso_regressor as regression_train_lasso,
-    train_elastic_net_regressor as regression_train_elastic_net,
-    train_xgboost_regressor as regression_train_xgboost,
-    train_lightgbm_regressor as regression_train_lightgbm,
-    train_catboost_regressor as regression_train_catboost,
-    train_random_forest_regressor as regression_train_random_forest,
-    train_extra_trees_regressor as regression_train_extra_trees,
-    train_neural_network_regressor as regression_train_neural_network,
-    train_voting_regressor as regression_train_voting,
-    train_stacking_regressor as regression_train_stacking,
-    compare_regressors as regression_compare_regressors,
-)
-from finance_ml.ml_workflow.regression.quantile import (
-    train_quantile_regressor as regression_train_quantile,
-)
-from finance_ml.ml_workflow.regression.robust import (
-    adaptive_clip_predictions,
-    winsorize_target,
-    clip_predictions,
-)
-from finance_ml.ml_workflow.regression.tuning import (
-    optimize_hyperparameters_optuna as regression_optimize_hyperparameters,
-)
+try:  # pragma: no cover - optional heavy imports
+    from finance_ml.ml_workflow.regression.models import (
+        train_ridge_regressor as regression_train_ridge,
+        train_lasso_regressor as regression_train_lasso,
+        train_elastic_net_regressor as regression_train_elastic_net,
+        train_xgboost_regressor as regression_train_xgboost,
+        train_lightgbm_regressor as regression_train_lightgbm,
+        train_catboost_regressor as regression_train_catboost,
+        train_random_forest_regressor as regression_train_random_forest,
+        train_extra_trees_regressor as regression_train_extra_trees,
+        train_neural_network_regressor as regression_train_neural_network,
+        train_voting_regressor as regression_train_voting,
+        train_stacking_regressor as regression_train_stacking,
+        compare_regressors as regression_compare_regressors,
+    )
+except Exception:  # pragma: no cover
+    pass
+
+try:  # pragma: no cover - optional heavy import
+    from finance_ml.ml_workflow.regression.quantile import (
+        train_quantile_regressor as regression_train_quantile,
+    )
+except Exception:  # pragma: no cover
+    pass
+
+try:  # pragma: no cover - lightweight utils but guard anyway
+    from finance_ml.ml_workflow.regression.robust import (
+        adaptive_clip_predictions,
+        winsorize_target,
+        clip_predictions,
+    )
+except Exception:  # pragma: no cover
+    pass
+
+try:  # pragma: no cover - optional heavy import
+    from finance_ml.ml_workflow.regression.tuning import (
+        optimize_hyperparameters_optuna as regression_optimize_hyperparameters,
+    )
+except Exception:  # pragma: no cover
+    pass
 
 # Phase 9.8 Refactor: Import from reporting subpackage
 from finance_ml.ml_workflow.reporting import (
@@ -444,19 +557,25 @@ from finance_ml.logging_config import (
 )
 
 # Import from regression module (Phase 7 TDD implementation complete)
-from finance_ml.ml_workflow.models import (
-    create_event_labels,
-    train_event_classifier,
-    build_regression_pipeline,
-    train_and_evaluate_regression,
-    train_and_evaluate_regression_by_sector,
-    train_quantile_regression,
-    predict_quantile_regression,
-    train_quantile_regression_by_sector,
-    train_stacking_ensemble,
-    train_stacking_ensemble_by_sector,
-    monitor_ensemble_training,
-)
+# Note: Guard heavy or legacy imports to keep top-level import resilient.
+try:  # pragma: no cover - defensive import to avoid hard failures during tests
+    from finance_ml.ml_workflow.models import (
+        create_event_labels,
+        train_event_classifier,
+        build_regression_pipeline,
+        train_and_evaluate_regression,
+        train_and_evaluate_regression_by_sector,
+        train_quantile_regression,
+        predict_quantile_regression,
+        train_quantile_regression_by_sector,
+        train_stacking_ensemble,
+        train_stacking_ensemble_by_sector,
+        monitor_ensemble_training,
+    )
+except Exception:  # pragma: no cover - allow partial surface if optional deps missing
+    # Minimal fallbacks provided via api facade or shims; detailed functions
+    # remain accessible when users import structured submodules explicitly.
+    pass
 
 # Import notebook configuration module
 from finance_ml.notebook_config import NotebookConfig
@@ -505,7 +624,9 @@ from finance_ml.ml_workflow.transformers import (
     ValuationRatioTransformer,
 )
 
-__all__ = [
+# Legacy exports list - retained for backward compatibility reference
+# The curated __all__ is defined at the top of this file
+__legacy_exports__ = [
     # Version
     "__version__",
     # Utilities
@@ -810,7 +931,7 @@ __all__ = [
 
 # Conditionally add enhanced classification functions
 if HAVE_CLASSIFICATION_ENHANCED:
-    __all__.extend(
+    __legacy_exports__.extend(
         [
             "optimize_classifier_hyperparameters",
             "cross_validate_with_sector_stratification",
@@ -885,7 +1006,7 @@ from finance_ml.ml_workflow.analytics.eval import (
     generate_enhanced_pdf_report,
 )
 
-__all__.extend(
+__legacy_exports__.extend(
     [
         "calculate_risk_adjusted_mispricing",
         "plot_outlier_boxplots",

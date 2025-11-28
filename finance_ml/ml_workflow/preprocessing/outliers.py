@@ -26,7 +26,7 @@ def detect_outliers_iqr(
     df: pd.DataFrame,
     columns: Optional[List[str]] = None,
     by_sector: bool = True,
-    iqr_multiplier: float = 1.5,
+    iqr_multiplier: float = 2.5,
 ) -> pd.DataFrame:
     """Detect outliers using Interquartile Range (IQR) method.
 
@@ -150,7 +150,7 @@ def detect_outliers_zscore(
 def detect_outliers_isolation_forest(
     df: pd.DataFrame,
     columns: Optional[List[str]] = None,
-    contamination: float = 0.1,
+    contamination: float = 0.05,
     random_state: int = 42,
 ) -> pd.Series:
     """Detect outliers using Isolation Forest algorithm.
@@ -188,8 +188,8 @@ def detect_outliers_isolation_forest(
 def winsorize_by_sector(
     df: pd.DataFrame,
     columns: Optional[List[str]] = None,
-    lower_percentile: float = 0.01,
-    upper_percentile: float = 0.99,
+    lower_percentile: float = 0.05,
+    upper_percentile: float = 0.95,
     by_sector: bool = True,
     exclude_price_columns: bool = True,
     exclude_ratio_columns: bool = True,
