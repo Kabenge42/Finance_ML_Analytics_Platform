@@ -4,8 +4,8 @@ apply: always
 
 # Finance ML Analytics Platform — Project Rules
 
-**Version**: 0.8.3  
-**Last Updated**: 2025-11-23
+**Version**: 0.9.1  
+**Last Updated**: 2025-12-04
 
 ## Project Overview
 
@@ -16,7 +16,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Modular Python package (`finance_ml`) with clean, tested, reusable code
 - Interactive Jupyter notebook for exploration and prototyping
 - CLI tools for batch processing and automation
-- Comprehensive unit tests with good coverage (≈85 test modules, ≥80% target)
+- Comprehensive unit tests with good coverage (≈128 test modules, ≥80% target)
 - Configuration management via environment variables, JSON, or YAML
 
 ### Module Architecture (v9_8 - Phase 9.1-9.8)
@@ -366,7 +366,7 @@ Create a `.env` file in the project root with the variables above. Tools that su
 ### Test Framework
 - **Framework**: Python's built-in `unittest`
 - **Location**: `tests/` directory
-- **Count**: 85 test modules
+- **Count**: 128 test modules
 - **Coverage**: Tracked in `.coverage` file (≥80% target for new code)
 
 ### Running Tests
@@ -384,7 +384,7 @@ pytest tests/ -v --cov=finance_ml
 python -m unittest discover -s tests -v
 ```
 
-### Test Suite Modules (85 total)
+### Test Suite Modules (128 total)
 
 - **`test_advanced_eda.py`** — Advanced EDA functions (correlation, PCA, statistical tests)
 - **`test_advanced_features.py`** — Phase 9.3 advanced feature engineering tests
@@ -463,9 +463,9 @@ python -m unittest discover -s tests -v
 - **`test_valuation_phase97.py`** — Phase 9.7 stock valuation and identification tests
 - **`test_visualizations.py`** — Visualization functions tests
 
-**Note**: The test suite has grown to 85 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization + 2 advanced
-evaluation reporting).
-Full test suite can take significant time. See guidelines.md for selective test execution strategies (fast/medium/slow
+**Note**: The test suite has grown to 128 modules (comprehensive coverage across all phases).
+Full test suite can take significant time. See code_guidelines.md for selective test execution strategies (
+fast/medium/slow
 categories).
 
 **Recent Additions (v0.8.2, 2025-11-19):**
@@ -526,7 +526,7 @@ Finance_ML_Analytics_Platform/
 │       ├── streamlit_app.py       # Streamlit application
 │       └── portfolio_widgets.py   # Portfolio interactive widgets (NEW v0.8.2)
 │
-├── tests/                         # Unit tests (83 test modules)
+├── tests/                         # Unit tests (128 test modules)
 │   ├── test_finance_ml_data.py
 │   ├── test_finance_ml_features.py
 │   ├── test_finance_ml_models.py
@@ -715,7 +715,7 @@ See `.junie/guidelines.md` for comprehensive development guidelines covering:
 - Code style and quality standards
 - Troubleshooting tips
 
-See `docs/code_guidelines.md` v1.4 (updated 2025-11-23) for detailed coding standards:
+See `docs/code_guidelines.md` v1.8 (updated 2025-11-26) for detailed coding standards:
 
 - Standardized function signatures and return types
 - Column naming schema and dataframe conventions
@@ -788,13 +788,15 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 
 ## Version History
 
-- **v0.8.3** (Current, 2025-11-23) — Section 8 Notebook Best Practices added to code_guidelines.md v1.4 (centralized
-  configuration constants, 8-stage DataFrame naming, magic numbers policy); Portfolio optimization guidelines aligned;
-  test suite expanded to 85 modules; documentation synchronized across README.md, guidelines.md, and promt_rules.md.
+- **v0.9.1** (Current, 2025-12-04) — Package version 0.9.1, code_guidelines.md v1.8 with Portfolio Optimization Workflow
+  (Section 18), semantic column classification, price column preservation policy; 128 test modules; documentation
+  synchronized across README.md, code_guidelines.md, and promt_rules.md.
+- **v0.8.3** (2025-11-23) — Section 8 Notebook Best Practices added to code_guidelines.md v1.4 (centralized
+  configuration constants, 8-stage DataFrame naming, magic numbers policy); Portfolio optimization guidelines aligned.
 - **v0.8.2** — TDD implementation (schema/dtypes modules, 24 tests), Phase 9.3 feature
   enhancements (Schema 1.3 with 310 columns, 13 feature categories), Portfolio Optimization (6 phases complete:
   stock selection, ML return prediction, advanced optimization methods [Black-Litterman, Risk Parity, HRP],
-  risk management, backtesting, dashboards; 23 tests), 83 test modules total (74 original + 4 TDD + 5 Portfolio)
+  risk management, backtesting, dashboards; 23 tests)
 - **v0.6.1** — Phase 9.5 classification meta-features, enhanced imputation (6-step), modular workflow
   refactor (v9_8), 74 test modules (including 7 new TDD modules for code_guidelines.md v1.4 standards)
 - **v0.6.0** — Phase 9.5 enhanced classification module, comprehensive data flow fixes, dashboard enhancements

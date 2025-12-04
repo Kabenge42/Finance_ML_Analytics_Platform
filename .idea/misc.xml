@@ -8,12 +8,9 @@
   <component name="ProjectResources">
     <xml-schema-version>XMLSchema_1_1</xml-schema-version>
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.14 virtualenv at C:\Users\markm\.virtualenvs\Finance_ML_Analytics_Platform-O-ow2JSe" project-jdk-type="Python SDK" />
   <component name="PyCharmDSProjectLayout">
     <option name="id" value="JupyterRightHiddenStructureLayout" />
-  </component>
-  <component name="PyPackaging">
-    <option name="earlyReleasesAsUpgrades" value="true" />
   </component>
   <component name="PythonCompatibilityInspectionAdvertiser">
     <option name="version" value="3" />

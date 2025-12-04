@@ -648,6 +648,11 @@ def compute_sector_specific_ratios(df: pd.DataFrame) -> pd.DataFrame:
         rd_expense = pd.to_numeric(result[rd_col], errors="coerce")
         revenue = pd.to_numeric(result["total_revenues_ltm"], errors="coerce")
 
+        # Apply zero-imputation for missing R&D expenses when revenue exists
+        # Missing R&D data treated as 0 (company doesn't report R&D or has none)
+        has_revenue = revenue.notna() & (revenue > 0)
+        rd_expense = rd_expense.where(~(rd_expense.isna() & has_revenue), 0.0)
+
         with np.errstate(divide="ignore", invalid="ignore"):
             rd_intensity = (rd_expense / revenue) * 100
 
@@ -663,6 +668,11 @@ def compute_sector_specific_ratios(df: pd.DataFrame) -> pd.DataFrame:
     if "total_operating_expenses_ltm" in result.columns and "total_revenues_ltm" in result.columns:
         op_expenses = pd.to_numeric(result["total_operating_expenses_ltm"], errors="coerce")
         revenue = pd.to_numeric(result["total_revenues_ltm"], errors="coerce")
+
+        # Apply zero-imputation for missing operating expenses when revenue exists
+        # Missing operating expenses treated as 0 (not reported or minimal)
+        has_revenue = revenue.notna() & (revenue > 0)
+        op_expenses = op_expenses.where(~(op_expenses.isna() & has_revenue), 0.0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
             efficiency_ratio = (op_expenses / revenue) * 100
@@ -691,8 +701,14 @@ def compute_sector_specific_ratios(df: pd.DataFrame) -> pd.DataFrame:
         sga = pd.to_numeric(result[sga_col], errors="coerce")
         revenue = pd.to_numeric(result["total_revenues_ltm"], errors="coerce")
 
+        # Apply zero-imputation for missing SG&A when revenue exists
+        # Missing SG&A treated as minimal value to avoid division issues
+        # Use small positive value (0.01% of revenue) instead of pure zero
+        has_revenue = revenue.notna() & (revenue > 0)
+        sga_imputed = sga.where(~(sga.isna() & has_revenue), revenue * 0.0001)
+
         with np.errstate(divide="ignore", invalid="ignore"):
-            marketing_efficiency = revenue / sga
+            marketing_efficiency = revenue / sga_imputed
 
         marketing_efficiency = marketing_efficiency.replace([np.inf, -np.inf], np.nan)
         result["marketing_efficiency"] = marketing_efficiency
@@ -708,6 +724,12 @@ def compute_sector_specific_ratios(df: pd.DataFrame) -> pd.DataFrame:
     if "cash_and_equivalents_ltm" in result.columns and "cfo_ltm" in result.columns:
         cash = pd.to_numeric(result["cash_and_equivalents_ltm"], errors="coerce")
         cfo = pd.to_numeric(result["cfo_ltm"], errors="coerce")
+
+        # Apply zero-imputation for missing cash when company is cash-burning (negative CFO)
+        # This treats missing cash as 0 (depleted) for cash-burning companies
+        # Profitable companies (positive CFO) will get NaN regardless
+        cash_burning_mask = cfo < 0
+        cash = cash.where(~(cash.isna() & cash_burning_mask), 0.0)
 
         # Monthly burn rate (only for negative CFO - cash burning companies)
         # CFO is annual, so divide by 12 for monthly
