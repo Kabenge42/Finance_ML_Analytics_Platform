@@ -1,4 +1,5 @@
 """
+
 finance_ml.data - Data loading, normalization, and validation
 
 This module provides functions for loading equity data from CSV files or databases,
@@ -1062,19 +1063,28 @@ def sanitize_dataframe_with_logging(df: pd.DataFrame) -> pd.DataFrame:
             nan_count = int(df[col].isnull().sum())
             median_val = df[col].median()
             if pd.notna(median_val):
-                df[col].fillna(median_val, inplace=True)
+                # Handle nullable integer dtypes (Int8, Int16, Int32, Int64, UInt8, etc.)
+                # These dtypes cannot accept float values, so we must convert median to int
+                col_dtype = df[col].dtype
+                if pd.api.types.is_integer_dtype(col_dtype):
+                    # Round median to nearest integer for integer columns
+                    median_val = int(round(median_val))
+                df[col] = df[col].fillna(median_val)
                 nan_filled += nan_count
                 logging.debug(
-                    "Filled %d NaN values in column '%s' with median %.3f",
+                    "Filled %d NaN values in column '%s' with median %s",
                     nan_count,
                     col,
                     median_val,
                 )
             else:
                 # If median is NaN, fill with 0
-                df[col].fillna(0.0, inplace=True)
+                fill_val = 0 if pd.api.types.is_integer_dtype(df[col].dtype) else 0.0
+                df[col] = df[col].fillna(fill_val)
                 nan_filled += nan_count
-                logging.debug("Filled %d NaN values in column '%s' with 0.0", nan_count, col)
+                logging.debug(
+                    "Filled %d NaN values in column '%s' with %s", nan_count, col, fill_val
+                )
 
     logging.info(
         "Sanitization complete: %d infinity replaced, %d NaN filled, %d extreme values capped",

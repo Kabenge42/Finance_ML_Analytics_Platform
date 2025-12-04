@@ -21,7 +21,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.ipynb_checkpoints" />
     </content>
     <content url="file://$MODULE_DIR$/data" />
-    <orderEntry type="jdk" jdkName="Python 3.13" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.14 virtualenv at C:\Users\markm\.virtualenvs\Finance_ML_Analytics_Platform-O-ow2JSe" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Python 3.13 interpreter library" level="application" />
   </component>
