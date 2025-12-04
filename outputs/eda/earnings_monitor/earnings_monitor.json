@@ -1,0 +1,376 @@
+{
+  "timestamp": "2025-12-03T19:27:28.561771",
+  "reference_date": "2025-12-03T00:00:00",
+  "earnings_window_days": 10,
+  "total_stocks_analyzed": 6957,
+  "stocks_in_earnings_window": 511,
+  "earnings_calendar": [
+    {
+      "ticker": "AVGO",
+      "sector": "Information Technology",
+      "last_price": 381.57,
+      "days_to_earnings": 8
+    },
+    {
+      "ticker": "COST",
+      "sector": "Consumer Staples",
+      "last_price": 922.03,
+      "days_to_earnings": 8
+    },
+    {
+      "ticker": "CRM",
+      "sector": "Information Technology",
+      "last_price": 234.71,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "RY",
+      "sector": "Financials",
+      "last_price": 216.21,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "TD",
+      "sector": "Financials",
+      "last_price": 118.2,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "ADBE",
+      "sector": "Information Technology",
+      "last_price": 322.81,
+      "days_to_earnings": 7
+    },
+    {
+      "ticker": "CRWD",
+      "sector": "Information Technology",
+      "last_price": 516.55,
+      "days_to_earnings": -1
+    },
+    {
+      "ticker": "BMO",
+      "sector": "Financials",
+      "last_price": 175.78,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "SNOW",
+      "sector": "Information Technology",
+      "last_price": 259.68,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "BNS",
+      "sector": "Financials",
+      "last_price": 98.72,
+      "days_to_earnings": -1
+    },
+    {
+      "ticker": "SNPS",
+      "sector": "Information Technology",
+      "last_price": 449.35,
+      "days_to_earnings": 7
+    },
+    {
+      "ticker": "CM",
+      "sector": "Financials",
+      "last_price": 121.06,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "MRVL",
+      "sector": "Information Technology",
+      "last_price": 92.89,
+      "days_to_earnings": -1
+    },
+    {
+      "ticker": "AZO",
+      "sector": "Consumer Discretionary",
+      "last_price": 3826.77,
+      "days_to_earnings": 6
+    },
+    {
+      "ticker": "FERG",
+      "sector": "Industrials",
+      "last_price": 252.29,
+      "days_to_earnings": 6
+    },
+    {
+      "ticker": "KR",
+      "sector": "Consumer Staples",
+      "last_price": 67.03,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "DOL",
+      "sector": "Consumer Discretionary",
+      "last_price": 196.89,
+      "days_to_earnings": 8
+    },
+    {
+      "ticker": "PSTG",
+      "sector": "Information Technology",
+      "last_price": 94.72,
+      "days_to_earnings": -1
+    },
+    {
+      "ticker": "HPE",
+      "sector": "Information Technology",
+      "last_price": 21.92,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "CIEN",
+      "sector": "Information Technology",
+      "last_price": 202.5,
+      "days_to_earnings": 8
+    },
+    {
+      "ticker": "ULTA",
+      "sector": "Consumer Discretionary",
+      "last_price": 548.05,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "DG",
+      "sector": "Consumer Staples",
+      "last_price": 110.03,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "DLTR",
+      "sector": "Consumer Staples",
+      "last_price": 108.99,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "IOT",
+      "sector": "Information Technology",
+      "last_price": 37.98,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "LULU",
+      "sector": "Consumer Discretionary",
+      "last_price": 182.4,
+      "days_to_earnings": 8
+    },
+    {
+      "ticker": "CASY",
+      "sector": "Consumer Staples",
+      "last_price": 566.81,
+      "days_to_earnings": 6
+    },
+    {
+      "ticker": "GWRE",
+      "sector": "Information Technology",
+      "last_price": 214.72,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "COO",
+      "sector": "Health Care",
+      "last_price": 75.84,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "OKTA",
+      "sector": "Information Technology",
+      "last_price": 81.87,
+      "days_to_earnings": -1
+    },
+    {
+      "ticker": "BFB",
+      "sector": "Consumer Staples",
+      "last_price": 29.89,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "CHWY",
+      "sector": "Consumer Discretionary",
+      "last_price": 33.47,
+      "days_to_earnings": 7
+    },
+    {
+      "ticker": "DOCU",
+      "sector": "Information Technology",
+      "last_price": 68.86,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "RBRK",
+      "sector": "Information Technology",
+      "last_price": 69.4,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "TOL",
+      "sector": "Consumer Discretionary",
+      "last_price": 139.1,
+      "days_to_earnings": 5
+    },
+    {
+      "ticker": "NDSN",
+      "sector": "Industrials",
+      "last_price": 236.53,
+      "days_to_earnings": 7
+    },
+    {
+      "ticker": "AVAV",
+      "sector": "Industrials",
+      "last_price": 264.95,
+      "days_to_earnings": 6
+    },
+    {
+      "ticker": "HRL",
+      "sector": "Consumer Staples",
+      "last_price": 23.09,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "SAIL",
+      "sector": "Information Technology",
+      "last_price": 19.14,
+      "days_to_earnings": 6
+    },
+    {
+      "ticker": "DCI",
+      "sector": "Industrials",
+      "last_price": 88.16,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "CPB",
+      "sector": "Consumer Staples",
+      "last_price": 29.89,
+      "days_to_earnings": 6
+    },
+    {
+      "ticker": "FIVE",
+      "sector": "Consumer Discretionary",
+      "last_price": 158.9,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "HQY",
+      "sector": "Health Care",
+      "last_price": 98.88,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "EMPA",
+      "sector": "Consumer Staples",
+      "last_price": 51.0,
+      "days_to_earnings": 8
+    },
+    {
+      "ticker": "TTAN",
+      "sector": "Information Technology",
+      "last_price": 90.075,
+      "days_to_earnings": 1
+    },
+    {
+      "ticker": "PATH",
+      "sector": "Information Technology",
+      "last_price": 14.3,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "OLLI",
+      "sector": "Consumer Discretionary",
+      "last_price": 119.72,
+      "days_to_earnings": 6
+    },
+    {
+      "ticker": "GTLB",
+      "sector": "Information Technology",
+      "last_price": 43.37,
+      "days_to_earnings": -1
+    },
+    {
+      "ticker": "DSG",
+      "sector": "Information Technology",
+      "last_price": 115.39,
+      "days_to_earnings": 0
+    },
+    {
+      "ticker": "NTSK",
+      "sector": "Information Technology",
+      "last_price": 17.88,
+      "days_to_earnings": 8
+    },
+    {
+      "ticker": "BETA",
+      "sector": "Industrials",
+      "last_price": 28.37,
+      "days_to_earnings": 1
+    }
+  ],
+  "category_distribution": {
+    "Next 3 Days": 181,
+    "Today": 104,
+    "Next Week": 102,
+    "Later": 70,
+    "Recently Reported": 54
+  },
+  "sector_distribution": {
+    "Consumer Discretionary": 91,
+    "Industrials": 84,
+    "Financials": 78,
+    "Health Care": 54,
+    "Information Technology": 54,
+    "Materials": 52,
+    "Consumer Staples": 42,
+    "Communication Services": 24,
+    "Real Estate": 14,
+    "Energy": 10,
+    "Utilities": 8
+  },
+  "earnings_surprise_analysis": {
+    "Revenue": {
+      "estimate_col": "revenues_est_avg_ntm",
+      "actual_col": "total_revenues_ltm",
+      "count": 6708,
+      "mean_surprise_pct": 10.996079085154054,
+      "median_surprise_pct": 3.4134033748600303,
+      "positive_surprises": 3868,
+      "negative_surprises": 2840
+    },
+    "EBITDA": {
+      "estimate_col": "ebitda_1fy",
+      "actual_col": "ebitda_ltm",
+      "count": 6216,
+      "mean_surprise_pct": 7.984460883421329,
+      "median_surprise_pct": -4.1914630434699305,
+      "positive_surprises": 2669,
+      "negative_surprises": 3547
+    },
+    "EBIT": {
+      "estimate_col": "ebit_est_med_ntm",
+      "actual_col": "ebit_ltm",
+      "count": 6728,
+      "mean_surprise_pct": 331.11136094004394,
+      "median_surprise_pct": 22.066270678879988,
+      "positive_surprises": 4653,
+      "negative_surprises": 2075
+    },
+    "Net Income": {
+      "estimate_col": "net_income_adj_1fy",
+      "actual_col": "net_income_is_ltm",
+      "count": 3368,
+      "mean_surprise_pct": 33.82433438853819,
+      "median_surprise_pct": 19.47233664266465,
+      "positive_surprises": 1770,
+      "negative_surprises": 1598
+    },
+    "EPS": {
+      "estimate_col": "eps_norm_est_avg_ntm",
+      "actual_col": "eps_adj_ltm",
+      "count": 6213,
+      "mean_surprise_pct": -232.75591952710093,
+      "median_surprise_pct": 73.85074626865672,
+      "positive_surprises": 3476,
+      "negative_surprises": 2737
+    }
+  }
+}

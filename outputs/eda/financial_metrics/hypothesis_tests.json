@@ -1,0 +1,121 @@
+{
+  "sector_tests": {
+    "roe": {
+      "anova": {
+        "statistic": 1.1571829328753809,
+        "p_value": 0.3149466131193727,
+        "significant": "False",
+        "interpretation": "No significant difference in means (p=0.3149)"
+      },
+      "kruskal_wallis": {
+        "statistic": 238.29961588212277,
+        "p_value": 1.558688969224027e-45,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      },
+      "kruskal": {
+        "statistic": 238.29961588212277,
+        "p_value": 1.558688969224027e-45,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      }
+    },
+    "roa": {
+      "anova": {
+        "statistic": 27.419410028076772,
+        "p_value": 5.239695651489066e-52,
+        "significant": "True",
+        "interpretation": "Groups have significantly different means (p=0.0000)"
+      },
+      "kruskal_wallis": {
+        "statistic": 332.2827275957768,
+        "p_value": 2.2800324361178814e-65,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      },
+      "kruskal": {
+        "statistic": 332.2827275957768,
+        "p_value": 2.2800324361178814e-65,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      }
+    },
+    "p_e_ratio": {
+      "anova": {
+        "statistic": 1.0333045794095992,
+        "p_value": 0.41192369974414594,
+        "significant": "False",
+        "interpretation": "No significant difference in means (p=0.4119)"
+      },
+      "kruskal_wallis": {
+        "statistic": 93.31844665041174,
+        "p_value": 1.1741182520190496e-15,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      },
+      "kruskal": {
+        "statistic": 93.31844665041174,
+        "p_value": 1.1741182520190496e-15,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      }
+    },
+    "debt_to_equity": {
+      "anova": {
+        "statistic": 2.300391358249478,
+        "p_value": 0.010823894654503279,
+        "significant": "True",
+        "interpretation": "Groups have significantly different means (p=0.0108)"
+      },
+      "kruskal_wallis": {
+        "statistic": 444.15275397857494,
+        "p_value": 3.690716406217836e-89,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      },
+      "kruskal": {
+        "statistic": 444.15275397857494,
+        "p_value": 3.690716406217836e-89,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      }
+    },
+    "price_momentum_1m": {
+      "anova": {
+        "statistic": 0.8530057624442078,
+        "p_value": 0.5772369584226332,
+        "significant": "False",
+        "interpretation": "No significant difference in means (p=0.5772)"
+      },
+      "kruskal_wallis": {
+        "statistic": 176.39739038261828,
+        "p_value": 1.310232799987773e-32,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      },
+      "kruskal": {
+        "statistic": 176.39739038261828,
+        "p_value": 1.310232799987773e-32,
+        "significant": "True",
+        "interpretation": "Groups have significantly different distributions (p=0.0000)"
+      }
+    },
+    "summary": {
+      "total_metrics_tested": 4,
+      "groups_compared": [
+        "Information Technology",
+        "Communication Services",
+        "Consumer Discretionary",
+        "Financials",
+        "Health Care",
+        "Consumer Staples",
+        "Energy",
+        "Industrials",
+        "Materials",
+        "Utilities",
+        "Real Estate"
+      ],
+      "alpha": 0.05
+    }
+  }
+}

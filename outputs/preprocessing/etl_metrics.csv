@@ -1,0 +1,8 @@
+timestamp,model_version,rows_loaded,columns_loaded,missing_values_before_imputation,missing_values_after_imputation,imputation_completeness,imputation_strategy,date_columns_ready,quality_score,processing_time_sec,warnings_count,errors_count
+2025-11-30T03:24:07.663795,v9_9,7037,350,11434,0,True,6step,True,1.0,0.5387659072875977,0,0
+2025-11-30T04:02:46.419330,v9_9,6989,350,13413,0,True,6step,True,1.0,0.6216871738433838,0,0
+2025-11-30T04:51:44.756496,v9_9,6989,350,13413,0,True,6step,True,1.0,0.8544857501983643,0,0
+2025-11-30T13:50:15.567542,v9_9,6989,350,13413,0,True,6step,True,1.0,0.613654375076294,0,0
+2025-12-01T22:05:51.127237,v9_9,6989,350,13413,0,True,6step,True,1.0,0.8177716732025146,0,0
+2025-12-01T23:32:05.010720,v9_9,6989,350,13413,0,True,6step,True,1.0,0.7916646003723145,0,0
+2025-12-01T23:34:10.455280,v9_9,6989,350,13413,0,True,6step,True,1.0,0.7664670944213867,0,0
