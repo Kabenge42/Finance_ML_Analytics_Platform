@@ -211,6 +211,44 @@ from finance_ml.ml_workflow.analytics import mispricing
 from finance_ml.ml_workflow.reporting import dashboard_data
 ```
 
+**Unified ETL Pipeline (Recommended for Complete Preprocessing):**
+
+```python
+# Single entry point for all preprocessing + financial metrics (NEW in v0.9.2)
+from finance_ml.ml_workflow.preprocessing.etl import (
+    run_etl_pipeline,  # Core ETL pipeline
+    etl_with_financial_metrics,  # Complete ETL + financial metrics in one call
+    ETLConfig,  # Configuration dataclass
+    ETLMetrics,  # Metrics tracking
+    )
+
+# Option 1: Complete ETL + financial metrics (recommended)
+all_stocks_preprocessed, metrics = etl_with_financial_metrics(
+        source='csv',
+        data_dir='data/',
+        compute_all_metrics=True,  # Valuation, profitability, growth, leverage
+        output_dir='outputs/financial_metrics',
+        return_metrics=True,
+        )
+
+# Option 2: Fine-grained control via ETLConfig
+config = ETLConfig(
+        apply_imputation=True,
+        imputation_strategy='6step',
+        compute_valuation_metrics=True,
+        compute_profitability_metrics=True,
+        compute_growth_metrics=True,
+        compute_leverage_metrics=True,
+        compute_target_vs_price=True,
+        handle_sector_specific_metrics=True,
+        generate_quality_alerts=True,
+        generate_metrics_dashboard=True,
+        )
+all_stocks_preprocessed, metrics = run_etl_pipeline(
+        source='csv', data_dir='data/', config=config, return_metrics=True
+        )
+```
+
 ### Migration Guide
 
 **Old Pattern (Deprecated):**
@@ -222,6 +260,12 @@ from finance_ml.ml_workflow.advanced_features import build_comprehensive_feature
 from finance_ml.ml_workflow.advanced_models import train_xgboost_regressor
 # Note: eval.py moved to analytics/eval.py (Phase 9.7)
 from finance_ml.ml_workflow.analytics.eval import calculate_mispricing_score
+
+# DEPRECATED in v0.9.2: financial_metrics_etl module consolidated into etl.py
+from finance_ml.ml_workflow.preprocessing.financial_metrics_etl import (
+    run_financial_metrics_etl,  # ⚠️ Use etl_with_financial_metrics() instead
+    FinancialMetricsETLConfig,  # ⚠️ Use ETLConfig with financial metrics flags
+    )
 ```
 
 **New Pattern (Recommended):**

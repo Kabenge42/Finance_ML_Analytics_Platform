@@ -1,9 +1,9 @@
 {
   "phase": "9.3",
   "schema_version": "1.3",
-  "timestamp": "2025-11-24T03:28:12.570237",
+  "timestamp": "2025-12-01T23:32:27.551918",
   "data_summary": {
-    "total_stocks": 7036,
+    "total_stocks": 6989,
     "sectors": 11,
     "regions": 5,
     "total_metrics": 76

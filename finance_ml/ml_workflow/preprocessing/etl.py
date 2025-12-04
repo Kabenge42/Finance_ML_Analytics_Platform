@@ -79,6 +79,19 @@ from finance_ml.ml_workflow.preprocessing.column_semantics import (
     PRICE_COLUMNS,
 )
 
+# Import financial metrics functions for unified ETL API
+from finance_ml.ml_workflow.preprocessing.financial_metrics_etl import (
+    compute_valuation_metrics,
+    compute_profitability_metrics,
+    compute_growth_metrics,
+    compute_leverage_metrics,
+    compute_target_vs_price_metrics,
+    handle_sector_specific_metrics,
+    compute_sector_specific_ratios,
+    generate_data_quality_alerts,
+    generate_metrics_dashboard,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -131,6 +144,19 @@ class ETLConfig:
     log_transform_columns: Optional[List[str]] = None
     custom_validators: List[Any] = field(default_factory=list)
 
+    # Financial metrics computation flags (default OFF for backward compatibility)
+    compute_valuation_metrics: bool = False
+    compute_profitability_metrics: bool = False
+    compute_growth_metrics: bool = False
+    compute_leverage_metrics: bool = False
+    compute_target_vs_price: bool = False
+    handle_sector_specific_metrics: bool = False
+
+    # Quality reporting options
+    generate_quality_alerts: bool = False
+    generate_metrics_dashboard: bool = False
+    output_subdir: str = "financial_metrics"
+
 
 @dataclass
 class ETLMetrics:
@@ -182,6 +208,14 @@ class ETLMetrics:
     scaled_columns_count: int = 0
     price_columns_protected: bool = True  # Always True with default settings
 
+    # Financial metrics tracking
+    valuation_metrics_added: int = 0
+    profitability_metrics_added: int = 0
+    growth_metrics_added: int = 0
+    leverage_metrics_added: int = 0
+    target_vs_price_metrics_added: int = 0
+    sector_specific_metrics_added: int = 0
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert metrics to dictionary."""
         return {
@@ -215,6 +249,14 @@ class ETLMetrics:
                 "scaled_columns": self.scaled_columns_count,
                 "price_columns_protected": self.price_columns_protected,
             },
+            "financial_metrics": {
+                "valuation_added": self.valuation_metrics_added,
+                "profitability_added": self.profitability_metrics_added,
+                "growth_added": self.growth_metrics_added,
+                "leverage_added": self.leverage_metrics_added,
+                "target_vs_price_added": self.target_vs_price_metrics_added,
+                "sector_specific_added": self.sector_specific_metrics_added,
+            },
             "stages_executed": self.stages_executed,
             "warnings": self.warnings,
             "errors": self.errors,
@@ -241,6 +283,25 @@ class ETLMetrics:
                 f"Price Protected: {protection_icon}"
             )
 
+        # Financial metrics info
+        total_metrics = (
+            self.valuation_metrics_added
+            + self.profitability_metrics_added
+            + self.growth_metrics_added
+            + self.leverage_metrics_added
+            + self.target_vs_price_metrics_added
+            + self.sector_specific_metrics_added
+        )
+        financial_metrics_info = ""
+        if total_metrics > 0:
+            financial_metrics_info = (
+                f"\n  Financial Metrics: {total_metrics} added "
+                f"(valuation: {self.valuation_metrics_added}, "
+                f"profitability: {self.profitability_metrics_added}, "
+                f"growth: {self.growth_metrics_added}, "
+                f"leverage: {self.leverage_metrics_added})"
+            )
+
         return (
             f"ETL Pipeline Summary:\n"
             f"  Source: {self.source_type}\n"
@@ -251,7 +312,8 @@ class ETLMetrics:
             f"  Data: {self.rows_input} → {self.rows_output} rows, "
             f"{self.columns_input} → {self.columns_output} columns"
             f"{imputation_info}"
-            f"{scaling_info}\n"
+            f"{scaling_info}"
+            f"{financial_metrics_info}\n"
             f"  Quality: {self.quality_score:.3f}, "
             f"Validation: {self.validation_score:.3f}\n"
             f"  Stages: {', '.join(self.stages_executed)}\n"
@@ -559,6 +621,63 @@ class ETLPipeline:
                 logger.warning("No columns to scale after applying exclusions")
                 if self.metrics:
                     self.metrics.warnings.append("Scaling skipped: no valid columns found")
+
+        # Stage 8: Compute financial metrics (optional)
+        initial_cols = set(result.columns)
+
+        if self.config.compute_valuation_metrics:
+            logger.info("Stage 8a: Computing valuation metrics")
+            result = compute_valuation_metrics(result)
+            new_cols = set(result.columns) - initial_cols
+            if self.metrics:
+                self.metrics.valuation_metrics_added = len(new_cols)
+                self.metrics.stages_executed.append("valuation_metrics")
+            initial_cols = set(result.columns)
+
+        if self.config.compute_profitability_metrics:
+            logger.info("Stage 8b: Computing profitability metrics")
+            result = compute_profitability_metrics(result)
+            new_cols = set(result.columns) - initial_cols
+            if self.metrics:
+                self.metrics.profitability_metrics_added = len(new_cols)
+                self.metrics.stages_executed.append("profitability_metrics")
+            initial_cols = set(result.columns)
+
+        if self.config.compute_growth_metrics:
+            logger.info("Stage 8c: Computing growth metrics")
+            result = compute_growth_metrics(result)
+            new_cols = set(result.columns) - initial_cols
+            if self.metrics:
+                self.metrics.growth_metrics_added = len(new_cols)
+                self.metrics.stages_executed.append("growth_metrics")
+            initial_cols = set(result.columns)
+
+        if self.config.compute_leverage_metrics:
+            logger.info("Stage 8d: Computing leverage metrics")
+            result = compute_leverage_metrics(result)
+            new_cols = set(result.columns) - initial_cols
+            if self.metrics:
+                self.metrics.leverage_metrics_added = len(new_cols)
+                self.metrics.stages_executed.append("leverage_metrics")
+            initial_cols = set(result.columns)
+
+        if self.config.compute_target_vs_price:
+            logger.info("Stage 8e: Computing target vs price metrics")
+            result = compute_target_vs_price_metrics(result)
+            new_cols = set(result.columns) - initial_cols
+            if self.metrics:
+                self.metrics.target_vs_price_metrics_added = len(new_cols)
+                self.metrics.stages_executed.append("target_vs_price_metrics")
+            initial_cols = set(result.columns)
+
+        if self.config.handle_sector_specific_metrics:
+            logger.info("Stage 8f: Handling sector-specific metrics")
+            result = handle_sector_specific_metrics(result)
+            result = compute_sector_specific_ratios(result)
+            new_cols = set(result.columns) - initial_cols
+            if self.metrics:
+                self.metrics.sector_specific_metrics_added = len(new_cols)
+                self.metrics.stages_executed.append("sector_specific_metrics")
 
         logger.info(f"Transformation complete: {len(result)} rows, {len(result.columns)} columns")
         return result
@@ -1004,6 +1123,112 @@ def etl_with_imputation_and_scaling(
         scale_by_sector=scale_by_sector,
         exclude_price_columns_from_scaling=True,  # CRITICAL: Always protect
         apply_log_transforms=False,  # User can enable via full config if needed
+    )
+
+    return run_etl_pipeline(
+        source=source,
+        data_dir=data_dir,
+        db_url=db_url,
+        config=config,
+        return_metrics=return_metrics,
+    )
+
+
+def etl_with_financial_metrics(
+    source: Literal["csv", "db", "all_stocks"],
+    data_dir: Optional[Path | str] = None,
+    db_url: Optional[str] = None,
+    compute_all_metrics: bool = True,
+    output_dir: Optional[Path] = None,
+    return_metrics: bool = True,
+) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
+    """
+    Complete ETL pipeline with financial metrics computation.
+
+    Unified entry point for: Extract → Transform (with imputation + scaling +
+    financial metrics) → Load
+
+    This function consolidates the functionality of run_etl_pipeline() and
+    run_financial_metrics_etl() into a single call.
+
+    Args:
+        source: Data source type
+            - 'csv': Load from regional CSV files
+            - 'db': Load from PostgreSQL equities table
+            - 'all_stocks': Load from unified all_stocks table (recommended)
+        data_dir: Directory for CSV files (required if source='csv')
+        db_url: Database URL (required if source='db' or 'all_stocks')
+        compute_all_metrics: Enable all financial metrics computation (default: True)
+            When True, computes:
+            - Valuation metrics (P/E, P/S, EV/EBITDA, EV/Sales)
+            - Profitability metrics (margins, ROE, ROA)
+            - Growth metrics (revenue, EBITDA, earnings growth)
+            - Leverage metrics (debt ratios)
+            - Target vs price metrics
+            - Sector-specific ratios
+        output_dir: Optional directory for quality alerts and dashboard JSON files
+        return_metrics: Return metrics for monitoring (default: True)
+
+    Returns:
+        (DataFrame, ETLMetrics) tuple if return_metrics=True
+        DataFrame only if return_metrics=False
+
+    Examples:
+        Basic usage with all metrics:
+            >>> from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
+            >>> df, metrics = etl_with_financial_metrics(
+            ...     source='csv',
+            ...     data_dir='data/',
+            ...     compute_all_metrics=True
+            ... )
+            >>> print(metrics.summary())
+            >>> print(f"Valuation metrics added: {metrics.valuation_metrics_added}")
+
+        Selective metrics computation:
+            >>> from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline, ETLConfig
+            >>> config = ETLConfig(
+            ...     apply_imputation=True,
+            ...     compute_valuation_metrics=True,
+            ...     compute_profitability_metrics=True,
+            ...     compute_growth_metrics=False,
+            ...     compute_leverage_metrics=False,
+            ... )
+            >>> df, metrics = run_etl_pipeline(
+            ...     source='csv',
+            ...     data_dir='data/',
+            ...     config=config,
+            ...     return_metrics=True
+            ... )
+
+    Note:
+        This function replaces the two-step approach:
+            # OLD (deprecated):
+            # df = run_etl_pipeline(source='csv', data_dir='data/')
+            # df, metrics = run_financial_metrics_etl(df, output_dir=output_dir)
+
+            # NEW (recommended):
+            df, metrics = etl_with_financial_metrics(
+                source='csv',
+                data_dir='data/',
+                output_dir=output_dir
+            )
+    """
+    config = ETLConfig(
+        # Standard ETL options
+        apply_imputation=True,
+        imputation_strategy="6step",
+        apply_scaling=False,  # Keep raw values for financial metrics
+        # Financial metrics options
+        compute_valuation_metrics=compute_all_metrics,
+        compute_profitability_metrics=compute_all_metrics,
+        compute_growth_metrics=compute_all_metrics,
+        compute_leverage_metrics=compute_all_metrics,
+        compute_target_vs_price=compute_all_metrics,
+        handle_sector_specific_metrics=compute_all_metrics,
+        # Quality reporting options
+        generate_quality_alerts=True if output_dir else False,
+        generate_metrics_dashboard=True if output_dir else False,
+        output_subdir=str(output_dir) if output_dir else "financial_metrics",
     )
 
     return run_etl_pipeline(

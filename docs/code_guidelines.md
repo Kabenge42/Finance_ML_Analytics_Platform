@@ -1,4 +1,4 @@
-# Finance ML Analytics Platform — Code Guidelines
+﻿# Finance ML Analytics Platform — Code Guidelines
 
 **Version:** 1.8  
 **Last Updated:** 2025-11-26  
@@ -1212,8 +1212,9 @@ The pipeline is organized into four high-level stages that align with the unifie
 (`finance_ml.ml_workflow.preprocessing.etl`):
 
 1. **`all_stocks_preprocessed`** — ETL pipeline output: extraction, normalization, validation, sanitization,
-   imputation (6-step), and optional scaling. This consolidates the low-level preprocessing steps into a single
-   ETL call using `run_etl_pipeline()` or `etl_with_imputation()`.
+   imputation (6-step), optional scaling, and optional financial metrics computation. This consolidates all
+   preprocessing steps into a single ETL call using `run_etl_pipeline()`, `etl_with_imputation()`, or
+   `etl_with_financial_metrics()` for comprehensive preprocessing with valuation/profitability/growth/leverage metrics.
 
 2. **`all_stocks_features`** — DataFrame enhanced with engineered features (Phase 9.3 feature categories:
    momentum, valuation, profitability, quality/risk, cash flow, growth).
@@ -1235,6 +1236,13 @@ The ETL pipeline internally handles these preprocessing steps in sequence:
 - Stage 5: Imputation (6-step: zero, sector-KNN, price, median, categorical, datetime)
 - Stage 6: Log transforms (optional)
 - Stage 7: Feature scaling (optional, excludes price columns)
+- Stage 8: Financial metrics computation (optional, via `etl_with_financial_metrics()` or ETLConfig flags):
+    - Valuation metrics: P/E, P/S, EV/EBITDA, EV/Sales ratios
+    - Profitability metrics: gross/operating/net margins, ROE, ROA
+    - Growth metrics: revenue, EBITDA, earnings YoY growth
+    - Leverage metrics: debt-to-equity, debt-to-assets
+    - Target vs price metrics: analyst target upside/downside
+    - Sector-specific metrics: P/TBV (financials), R&D intensity (tech/healthcare), Rule of 40 (SaaS)
 
 **Benefits**:
 
@@ -1330,6 +1338,53 @@ all_stocks_classification = add_classification_features(all_stocks_features)
 # Stage 4: Final enhanced dataset
 all_stocks_enhanced = all_stocks_classification.copy()
 # Each stage preserves history and enables rollback
+```
+
+✅ **Correct Usage** (Unified ETL with financial metrics - recommended):
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
+
+# Stage 1: Complete ETL + financial metrics in one call
+all_stocks_preprocessed, etl_metrics = etl_with_financial_metrics(
+    source='csv',
+    data_dir='data/',
+    compute_all_metrics=True,  # Valuation, profitability, growth, leverage
+    output_dir='outputs/financial_metrics',  # Optional: saves quality alerts and dashboard
+    return_metrics=True,
+)
+print(f"✓ Preprocessed with financial metrics: {all_stocks_preprocessed.shape}")
+print(f"  Valuation metrics added: {etl_metrics.valuation_metrics_added}")
+print(f"  Profitability metrics added: {etl_metrics.profitability_metrics_added}")
+print(f"  Growth metrics added: {etl_metrics.growth_metrics_added}")
+print(f"  Leverage metrics added: {etl_metrics.leverage_metrics_added}")
+
+# Stage 2: Feature engineering (builds on financial metrics)
+all_stocks_features = build_comprehensive_features(all_stocks_preprocessed)
+```
+
+✅ **Correct Usage** (Fine-grained control via ETLConfig):
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline, ETLConfig
+
+# Selective financial metrics computation
+config = ETLConfig(
+    apply_imputation=True,
+    imputation_strategy='6step',
+    # Financial metrics flags (new in v1.5)
+    compute_valuation_metrics=True,
+    compute_profitability_metrics=True,
+    compute_growth_metrics=False,  # Skip growth metrics
+    compute_leverage_metrics=True,
+    compute_target_vs_price=True,
+    handle_sector_specific_metrics=True,  # P/TBV, R&D intensity, etc.
+    generate_quality_alerts=True,
+    generate_metrics_dashboard=True,
+)
+all_stocks_preprocessed, etl_metrics = run_etl_pipeline(
+    source='csv', data_dir='data/', config=config, return_metrics=True
+)
 ```
 
 ❌ **Violation** (In-place mutation):

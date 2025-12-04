@@ -1,180 +1,112 @@
 """
-finance_ml.features - Feature engineering functions
+Compact interaction generators for regression features (Phase 9.5 P2).
 
-DEPRECATION NOTICE (Phase 9.3 refactor):
-Core functions from this module have been moved to finance_ml.ml_workflow.features.core:
-- _safe_div, engineer_basic_ratios, engineer_margin_features
-- engineer_volatility_features, engineer_revenue_cagr, build_features_and_target
-
-This module provides backward compatibility shims. Please update imports to use the new structure:
-    from finance_ml.ml_workflow.features.core import engineer_basic_ratios
-
-Advanced feature engineering functions remain in advanced_features.py and will be
-refactored in a follow-up phase.
+Provides utilities to create interaction features between classification
+probabilities (event_prob_*) and valuation metrics in a deterministic and
+lightweight way, aligned with docs/code_guidelines.md v1.4.
 """
 
 from __future__ import annotations
 
 import logging
-import warnings
-from typing import Optional, Tuple, List
+from typing import Iterable, List, Sequence
 
-import numpy as np
 import pandas as pd
-
-# Phase 9.3: Import from new location for backward compatibility
-from finance_ml.ml_workflow.features.core import (
-    _safe_div as _new_safe_div,
-    engineer_basic_ratios as _new_engineer_basic_ratios,
-    engineer_margin_features as _new_engineer_margin_features,
-    engineer_volatility_features as _new_engineer_volatility_features,
-    engineer_revenue_cagr as _new_engineer_revenue_cagr,
-    build_features_and_target as _new_build_features_and_target,
-)
 
 logger = logging.getLogger(__name__)
 
 
-# Deprecation wrappers for Phase 9.3 refactor
-def _safe_div(numer: pd.Series, denom: pd.Series) -> pd.Series:
-    """Safely divide two Series, replacing inf with NaN.
-
-    .. deprecated:: Phase 9.3
-        Use :func:`finance_ml.ml_workflow.features.core._safe_div` instead.
-
-    Args:
-        numer: Numerator Series
-        denom: Denominator Series
-
-    Returns:
-        Result Series with inf values replaced by NaN
-    """
-    warnings.warn(
-        "_safe_div from features is deprecated. "
-        "Use finance_ml.ml_workflow.features.core._safe_div instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _new_safe_div(numer, denom)
-
-
-def engineer_basic_ratios(df: pd.DataFrame) -> pd.DataFrame:
-    """Add a minimal set of engineered ratio features if source columns exist.
-
-    .. deprecated:: Phase 9.3
-        Use :func:`finance_ml.ml_workflow.features.core.engineer_basic_ratios` instead.
-
-    Args:
-        df: Input DataFrame
-
-    Returns:
-        DataFrame with ratio features added (preserves original columns)
-    """
-    warnings.warn(
-        "engineer_basic_ratios from features is deprecated. "
-        "Use finance_ml.ml_workflow.features.core.engineer_basic_ratios instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _new_engineer_basic_ratios(df)
-
-
-def engineer_margin_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add margin features if source columns exist.
-
-    .. deprecated:: Phase 9.3
-        Use :func:`finance_ml.ml_workflow.features.core.engineer_margin_features` instead.
-
-    Args:
-        df: Input DataFrame
-
-    Returns:
-        DataFrame with margin features added
-    """
-    warnings.warn(
-        "engineer_margin_features from features is deprecated. "
-        "Use finance_ml.ml_workflow.features.core.engineer_margin_features instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _new_engineer_margin_features(df)
-
-
-def engineer_volatility_features(df: pd.DataFrame, window: int = 30) -> pd.DataFrame:
-    """Calculate or aggregate volatility features.
-
-    .. deprecated:: Phase 9.3
-        Use :func:`finance_ml.ml_workflow.features.core.engineer_volatility_features` instead.
-
-    Args:
-        df: Input DataFrame
-        window: Rolling window size for volatility calculation (default: 30)
-
-    Returns:
-        DataFrame with volatility features added
-    """
-    warnings.warn(
-        "engineer_volatility_features from features is deprecated. "
-        "Use finance_ml.ml_workflow.features.core.engineer_volatility_features instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _new_engineer_volatility_features(df, window)
-
-
-def engineer_revenue_cagr(df: pd.DataFrame) -> pd.DataFrame:
-    """Calculate revenue CAGR (Compound Annual Growth Rate).
-
-    .. deprecated:: Phase 9.3
-        Use :func:`finance_ml.ml_workflow.features.core.engineer_revenue_cagr` instead.
-
-    Args:
-        df: Input DataFrame
-
-    Returns:
-        DataFrame with revenue CAGR features added
-    """
-    warnings.warn(
-        "engineer_revenue_cagr from features is deprecated. "
-        "Use finance_ml.ml_workflow.features.core.engineer_revenue_cagr instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _new_engineer_revenue_cagr(df)
-
-
-def build_features_and_target(
+def build_prob_valuation_interactions(
     df: pd.DataFrame,
-) -> Tuple[pd.DataFrame, Optional[pd.Series], List[str], List[str]]:
-    """Build feature matrix and target variable from DataFrame.
+    valuation_cols: Sequence[str],
+    prob_cols: Sequence[str] | None = None,
+) -> pd.DataFrame:
+    """
+    Create pairwise interaction features: valuation_col x prob_col.
 
-    .. deprecated:: Phase 9.3
-        Use :func:`finance_ml.ml_workflow.features.core.build_features_and_target` instead.
+    Naming convention: "{valuation_col}_x_{prob_col}" to keep valuation terms
+    first for easier scanning and consistency with docs. The function does not
+    introduce NaN values beyond those already present in the input columns
+    (multiplication propagates existing NaNs only).
 
     Args:
-        df: Input DataFrame
+        df: Input DataFrame.
+        valuation_cols: List/sequence of valuation metric column names.
+        prob_cols: Optional list/sequence of classification probability columns. If
+                   None, autodetects columns starting with "event_prob_".
 
     Returns:
-        Tuple of (X, y, numeric_features, categorical_features)
+        A new DataFrame with added interaction columns.
     """
-    warnings.warn(
-        "build_features_and_target from features is deprecated. "
-        "Use finance_ml.ml_workflow.features.core.build_features_and_target instead.",
-        DeprecationWarning,
-        stacklevel=2,
+
+    out = df.copy()
+    if prob_cols is None:
+        prob_cols = [c for c in out.columns if c.startswith("event_prob_")]
+
+    if not valuation_cols or not prob_cols:
+        return out
+
+    # Debug: Log input shapes for troubleshooting
+    logger.debug(
+        f"Creating {len(valuation_cols) * len(prob_cols)} interactions: "
+        f"{len(valuation_cols)} valuation × {len(prob_cols)} probability columns"
     )
-    return _new_build_features_and_target(df)
 
+    # Deterministic order: keep original input order for both lists
+    for v in valuation_cols:
+        if v not in out.columns:
+            continue
+        for p in prob_cols:
+            if p not in out.columns:
+                continue
 
-# Module exports
-__all__ = [
-    # Phase 9.3 refactor: Core feature engineering functions (now in features.core)
-    "_safe_div",
-    "engineer_basic_ratios",
-    "engineer_margin_features",
-    "engineer_volatility_features",
-    "engineer_revenue_cagr",
-    "build_features_and_target",
-    # Note: Advanced feature engineering functions remain in advanced_features.py
-    # and will be refactored in a future phase.
-]
+            name = f"{v}_x_{p}"
+
+            # Extract valuation values (should always be 1D)
+            v_values = out[v].values
+            if v_values.ndim != 1:
+                raise ValueError(
+                    f"Valuation column '{v}' has unexpected shape {v_values.shape}. "
+                    f"Expected 1D array with shape (n_samples,)"
+                )
+
+            # Extract probability values with robust 2D handling
+            p_values = out[p].values
+
+            # Handle 2D probability arrays (e.g., from duplicate columns or predict_proba)
+            if p_values.ndim == 2:
+                if p_values.shape[1] == 1:
+                    # Single column wrapped in 2D array - flatten
+                    p_values = p_values[:, 0]
+                    logger.debug(f"Flattened 2D column '{p}' with shape (n, 1) to 1D")
+                elif p_values.shape[1] == 2:
+                    # Binary classification: take positive class probability (index 1)
+                    p_values = p_values[:, 1]
+                    logger.warning(
+                        f"Probability column '{p}' has shape {out[p].values.shape}. "
+                        f"Assuming binary classification and selecting positive class (index 1). "
+                        f"If this is incorrect, ensure DataFrame columns are properly structured."
+                    )
+                else:
+                    raise ValueError(
+                        f"Probability column '{p}' has shape {p_values.shape}. "
+                        f"Expected 1D array or 2D array with shape (n_samples, 1) or (n_samples, 2). "
+                        f"For multi-class (>2) probabilities, columns should be separate."
+                    )
+            elif p_values.ndim != 1:
+                raise ValueError(
+                    f"Probability column '{p}' has unexpected dimensionality {p_values.ndim}. "
+                    f"Expected 1D or 2D array, got shape {p_values.shape}"
+                )
+
+            # Validate shapes match
+            if len(v_values) != len(p_values):
+                raise ValueError(
+                    f"Shape mismatch: '{v}' has {len(v_values)} rows, "
+                    f"'{p}' has {len(p_values)} rows after reshaping"
+                )
+
+            # Create interaction feature
+            out[name] = v_values * p_values
+
+    return out

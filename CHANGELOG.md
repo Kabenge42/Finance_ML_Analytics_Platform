@@ -1,3 +1,65 @@
+## [0.9.2] - 2025-12-04
+
+### Added
+
+- **ETL Consolidation: Unified Financial Metrics Pipeline**
+    - Consolidated `financial_metrics_etl.py` into unified `etl.py` pipeline
+    - Single entry point: `run_etl_pipeline()` now handles all preprocessing + financial metrics
+    - New convenience function: `etl_with_financial_metrics()` for one-call complete ETL
+    - **New ETLConfig flags** for financial metrics computation:
+        - `compute_valuation_metrics`: P/E, P/S, EV/EBITDA, EV/Sales ratios
+        - `compute_profitability_metrics`: gross/operating/net margins, ROE, ROA
+        - `compute_growth_metrics`: revenue, EBITDA, earnings YoY growth
+        - `compute_leverage_metrics`: debt-to-equity, debt-to-assets
+        - `compute_target_vs_price`: analyst target upside/downside
+        - `handle_sector_specific_metrics`: P/TBV, R&D intensity, Rule of 40
+        - `generate_quality_alerts`: data quality alert JSON generation
+        - `generate_metrics_dashboard`: metrics dashboard JSON generation
+    - **New ETLMetrics tracking fields**:
+        - `valuation_metrics_added`, `profitability_metrics_added`, `growth_metrics_added`
+        - `leverage_metrics_added`, `target_vs_price_metrics_added`, `sector_specific_metrics_added`
+    - **Backward Compatibility**: Deprecated `financial_metrics_etl.py` with wrapper functions
+    - **Test Coverage**: 34 new tests in `test_etl_consolidation.py`, all passing
+
+- **Enhanced Price Target Analytics & Visualizations (Cell 10.5)**
+    - **Price Target Scatter Plot**: Last Price vs Price Target with sector coloring
+        - Diagonal reference line for fair value visualization
+        - Interactive hover with ticker and upside percentage
+    - **Price Target by Sector Bar Chart**: With 25th-75th percentile confidence bands
+        - Color-coded positive (green) / negative (red) upside
+        - Sorted by mean upside for easy comparison
+    - **EMA Comparison Chart**: 20D, 50D, 100D, 250D EMAs vs Last Price
+        - Grouped bar chart showing stocks above/below each EMA
+    - **52-Week Range Position Analysis**: Position within 52W High/Low range
+        - Color gradient from red (near low) to green (near high)
+        - Mid-range reference line
+    - **Valuation Opportunities JSON**: Categorized stock analysis
+        - Categories: Deeply Undervalued, Undervalued, Fairly Valued, Overvalued, Deeply Overvalued
+        - Top 10 undervalued/overvalued stocks per category
+
+- **Documentation Updates**
+    - Updated `docs/code_guidelines.md` v1.5:
+        - Added Stage 8 (Financial Metrics) to ETL internal stages
+        - New examples for `etl_with_financial_metrics()` usage
+        - Fine-grained control examples via ETLConfig flags
+    - Updated `etl_data_explorer.ipynb` Cell 10.5:
+        - Replaced deprecated `financial_metrics_etl` imports with unified ETL
+        - Added 4 new interactive Plotly visualizations
+        - Enhanced markdown documentation
+
+### Changed
+
+- **ETL Pipeline Stage Naming**: `all_stocks_preprocessed` now optionally includes computed financial metrics
+- **Notebook Integration**: Cell 10.5 uses unified ETL functions instead of separate financial_metrics_etl calls
+
+### Deprecated
+
+- `finance_ml.ml_workflow.preprocessing.financial_metrics_etl` module
+    - Use `etl_with_financial_metrics()` from `finance_ml.ml_workflow.preprocessing.etl` instead
+    - Deprecation warnings added; module will be removed in v2.0
+
+---
+
 ## [0.9.1] - 2025-11-26
 
 ### Added

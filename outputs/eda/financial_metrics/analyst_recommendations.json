@@ -1,0 +1,142 @@
+{
+  "timestamp": "2025-12-04T05:23:42.383825",
+  "total_stocks_analyzed": 6957,
+  "available_columns": {
+    "analyst_rating": "analyst_rating",
+    "buy_ratings": "num_buys_ratings",
+    "hold_ratings": "num_hold_ratings",
+    "sell_ratings": "num_strong_sell_ratings",
+    "target_price": "price_target_ytd_ago",
+    "target_high": "price_target_high",
+    "target_low": "price_target_low"
+  },
+  "rating_distribution": {},
+  "by_sector": {
+    "Information Technology": {
+      "count": 828,
+      "mean_target": 2679.137649637681,
+      "median_target": 44.783699999999996,
+      "mean_upside": 28.04631722532016,
+      "positive_upside_pct": 86.95652173913044
+    },
+    "Communication Services": {
+      "count": 339,
+      "mean_target": 1886.6277104719763,
+      "median_target": 31.3857,
+      "mean_upside": 30.555355539909133,
+      "positive_upside_pct": 89.97050147492625
+    },
+    "Consumer Discretionary": {
+      "count": 905,
+      "mean_target": 2900.2404670165743,
+      "median_target": 42.73795,
+      "mean_upside": 24.651194121670756,
+      "positive_upside_pct": 86.74033149171271
+    },
+    "Financials": {
+      "count": 1048,
+      "mean_target": 2588.412001192748,
+      "median_target": 42.73795,
+      "mean_upside": 16.993982144417235,
+      "positive_upside_pct": 84.92366412213741
+    },
+    "Health Care": {
+      "count": 691,
+      "mean_target": 4604.270318740955,
+      "median_target": 46.0,
+      "mean_upside": 42.354283093989956,
+      "positive_upside_pct": 91.8958031837916
+    },
+    "Consumer Staples": {
+      "count": 476,
+      "mean_target": 2792.166378571429,
+      "median_target": 42.73795,
+      "mean_upside": 23.784297274516906,
+      "positive_upside_pct": 89.28571428571429
+    },
+    "Energy": {
+      "count": 313,
+      "mean_target": 1140.8631683706071,
+      "median_target": 31.45,
+      "mean_upside": 27.538170959513312,
+      "positive_upside_pct": 86.26198083067092
+    },
+    "Industrials": {
+      "count": 1290,
+      "mean_target": 2866.2014138372097,
+      "median_target": 46.8214,
+      "mean_upside": 26.920325774656273,
+      "positive_upside_pct": 87.13178294573643
+    },
+    "Materials": {
+      "count": 633,
+      "mean_target": 3241.7491789889414,
+      "median_target": 37.7323,
+      "mean_upside": 26.17601020026392,
+      "positive_upside_pct": 82.93838862559242
+    },
+    "Utilities": {
+      "count": 235,
+      "mean_target": 842.5558004255321,
+      "median_target": 39.5455,
+      "mean_upside": 16.70225290698531,
+      "positive_upside_pct": 81.70212765957446
+    },
+    "Real Estate": {
+      "count": 199,
+      "mean_target": 2042.6432035175878,
+      "median_target": 25.0,
+      "mean_upside": 27.49587829548383,
+      "positive_upside_pct": 86.93467336683418
+    }
+  },
+  "by_region": {},
+  "by_size_class": {
+    "Large Cap": {
+      "count": 1207,
+      "mean_upside": 12.637301278342717,
+      "median_upside": 11.306247250329953,
+      "positive_pct": 83.76139188069594
+    },
+    "Mid Cap": {
+      "count": 2495,
+      "mean_upside": 19.145832423578806,
+      "median_upside": 16.00291405385466,
+      "positive_pct": 87.61523046092185
+    },
+    "Small Cap": {
+      "count": 3255,
+      "mean_upside": 37.044083615738266,
+      "median_upside": 25.000000000000018,
+      "positive_pct": 87.46543778801843
+    }
+  },
+  "by_style_class": {
+    "Growth": {
+      "count": 553,
+      "mean_upside": 20.470459981858706,
+      "median_upside": 18.22434150772026,
+      "positive_pct": 90.05424954792043
+    },
+    "Core": {
+      "count": 4433,
+      "mean_upside": 25.74919691525447,
+      "median_upside": 17.57516129032259,
+      "positive_pct": 86.55538010376719
+    },
+    "Value": {
+      "count": 1971,
+      "mean_upside": 29.49478052446773,
+      "median_upside": 18.84057971014493,
+      "positive_pct": 86.70725520040588
+    }
+  },
+  "price_target_stats": {
+    "count": 6957,
+    "mean": 2790.9863433304586,
+    "median": 42.73795,
+    "std": 24145.8570335923,
+    "min": 0.036,
+    "max": 746755.25
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "phase": "9.3",
+  "data_source": "all_stocks_features DataFrame (ETL Data Explorer)",
+  "timestamp": "2025-12-04T05:23:32.634395",
+  "total_stocks": 6957,
+  "total_columns": 572,
+  "phase93_features_present": 182,
+  "phase93_features_expected": 196,
+  "coverage_percentage": 92.85714285714286,
+  "category_coverage": {
+    "Momentum & Technical": {
+      "present": 25,
+      "expected": 27,
+      "coverage_pct": 92.5925925925926
+    },
+    "Valuation Ratios": {
+      "present": 21,
+      "expected": 23,
+      "coverage_pct": 91.30434782608695
+    },
+    "Profitability": {
+      "present": 12,
+      "expected": 12,
+      "coverage_pct": 100.0
+    },
+    "Quality & Risk": {
+      "present": 18,
+      "expected": 18,
+      "coverage_pct": 100.0
+    },
+    "Cash Flow": {
+      "present": 5,
+      "expected": 5,
+      "coverage_pct": 100.0
+    },
+    "Capital Allocation": {
+      "present": 21,
+      "expected": 23,
+      "coverage_pct": 91.30434782608695
+    },
+    "Analyst Sentiment": {
+      "present": 10,
+      "expected": 10,
+      "coverage_pct": 100.0
+    },
+    "Market Sentiment": {
+      "present": 3,
+      "expected": 5,
+      "coverage_pct": 60.0
+    },
+    "Leverage & Liquidity": {
+      "present": 8,
+      "expected": 9,
+      "coverage_pct": 88.88888888888889
+    },
+    "Temporal Patterns": {
+      "present": 13,
+      "expected": 16,
+      "coverage_pct": 81.25
+    },
+    "Composite Scores": {
+      "present": 5,
+      "expected": 5,
+      "coverage_pct": 100.0
+    },
+    "Growth Metrics": {
+      "present": 6,
+      "expected": 6,
+      "coverage_pct": 100.0
+    },
+    "Efficiency Ratios": {
+      "present": 2,
+      "expected": 4,
+      "coverage_pct": 50.0
+    },
+    "Employee Productivity": {
+      "present": 16,
+      "expected": 16,
+      "coverage_pct": 100.0
+    },
+    "Balance Sheet Dynamics": {
+      "present": 8,
+      "expected": 8,
+      "coverage_pct": 100.0
+    },
+    "Revenue Forecasting": {
+      "present": 9,
+      "expected": 9,
+      "coverage_pct": 100.0
+    }
+  },
+  "categories_with_features": 16,
+  "feature_engineering_duration_sec": 0.8513143062591553
+}
