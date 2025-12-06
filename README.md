@@ -2,7 +2,7 @@
 
 **Version 0.9.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-11-30  
+> **Documentation Last Updated:** 2025-12-04  
 > **Latest Release**: v0.9.1 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
@@ -1432,5 +1432,5 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-11-30  
-**README Version**: 4.3 (aligned to v0.9.1; 128 test modules; code_guidelines.md v1.7; semantic column classification)
+**Last Updated**: 2025-12-04  
+**README Version**: 4.4 (aligned to v0.9.1; 128 test modules; code_guidelines.md v1.8; semantic column classification)

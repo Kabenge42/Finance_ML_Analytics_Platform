@@ -1,7 +1,7 @@
 ﻿# Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.8  
-**Last Updated:** 2025-11-26  
+**Version:** 1.9  
+**Last Updated:** 2025-12-05  
 **Package Version:** 0.9.1  
 **Model Version:** v9_9
 
@@ -9,7 +9,23 @@ These guidelines codify conventions for the Finance ML Analytics Platform, cover
 architecture, function signatures, column naming, and best practices. They align with the project's 8-phase ML
 workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 
-**Recent Updates (v1.8):**
+**Recent Updates (v1.9):**
+
+- **NEW:** Documentation alignment with implementation audit (2025-12-05)
+    - **Section 2.4**: Business-Driven Configuration Rationale — Links technical constants to business objectives
+    - **Section 4.4**: Deprecated Modules — Clear migration paths for legacy code
+    - **Section 7.5**: ETL Function Signatures — Complete signatures for `etl_with_financial_metrics()` and
+      `run_etl_pipeline()`
+    - **Section 8.6**: ETL Pipeline Best Practices — Unified entry point patterns and validation checkpoints
+    - **Section 9.3**: Phase 9.3 Feature Categories — Documentation of 196 features across 16 categories
+    - **Section 17.2**: Expanded Interactive Visualization Guidelines — Plotly configuration and required visualizations
+    - **Section 19**: Data Quality Validation Checkpoints — Post-ETL and post-feature-engineering assertions
+    - **Section 20**: Output Artifact Standards — Directory structure and required JSON artifacts
+    - **Updated Section 4.3**: Fixed imputation strategy references (4-step → 6-step), confirmed evaluation imports
+    - **Updated Section 13**: Added winsorization policy note reconciling 0.01/0.99 vs 0.10/0.90 approaches
+    - Business objective alignment throughout: Stock price target prediction for portfolio optimization
+
+**Previous Updates (v1.8):**
 
 - **NEW:** Added Section 18 Portfolio Optimization Workflow (2025-11-26)
     - **Section 18.1**: Workflow Overview — 7-phase architecture with module mapping
@@ -72,6 +88,8 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 16. [Model Optimization and Performance](#16-model-optimization-and-performance)
 17. [Styles Guides for Visual Elements](#17-styles-guides-for-visual-elements)
 18. [Portfolio Optimization Workflow](#18-portfolio-optimization-workflow)
+19. [Data Quality Validation Checkpoints](#19-data-quality-validation-checkpoints)
+20. [Output Artifact Standards](#20-output-artifact-standards)
 
 ---
 
@@ -240,6 +258,36 @@ def validate_configuration():
    return True
 ```
 
+### 2.4 Business-Driven Configuration Rationale
+
+All configuration constants are designed to support the **primary business objective** stated in `README.md`:
+
+> **Primary Goal**: Predict Stock Price Targets for all stocks in the portfolio to support investment decisions and
+> portfolio optimization.
+
+| Constant              | Value             | Business Rationale                                                                    |
+|-----------------------|-------------------|---------------------------------------------------------------------------------------|
+| `TARGET_COL`          | `'price_target'`  | Core prediction target for investment decisions; directly supports valuation analysis |
+| `TARGET_COL_FALLBACK` | `'last_price'`    | Ensures models can train even when analyst targets are unavailable                    |
+| `TEST_SIZE`           | `0.2`             | Balance between training data quality (80%) and robust validation (20%)               |
+| `CV_FOLDS`            | `5`               | Standard cross-validation setup providing reliable performance estimates              |
+| `QUANTILES`           | `[0.1, 0.5, 0.9]` | 80% prediction interval for risk assessment and portfolio construction                |
+| `MIN_SECTOR_SAMPLES`  | `20`              | Minimum sample size for statistically meaningful sector-specific models               |
+| `MAX_SECTOR_WEIGHT`   | `0.25`            | Portfolio diversification constraint to limit sector concentration risk               |
+| `MAX_SINGLE_POSITION` | `0.10`            | Position sizing limit to prevent overexposure to individual securities                |
+| `WINSORIZE_LOWER`     | `0.10`            | Conservative outlier handling preserving valid extreme values (high-growth stocks)    |
+| `WINSORIZE_UPPER`     | `0.90`            | Conservative outlier handling preserving valid extreme values (mega-cap companies)    |
+| `RANDOM_SEED`         | `42`              | Reproducibility for regulatory compliance and model governance                        |
+| `MODEL_VERSION`       | `v9_9`            | Version tracking for audit trails and model comparison                                |
+
+**Key Design Principles:**
+
+1. **Prediction Accuracy**: Constants optimize for reliable price target predictions
+2. **Risk Management**: Quantile predictions and portfolio constraints support risk-adjusted decision making
+3. **Statistical Validity**: Minimum sample sizes ensure sector models are statistically sound
+4. **Reproducibility**: Fixed random seeds enable consistent model evaluation and debugging
+5. **Regulatory Compliance**: Version tracking and audit trails support governance requirements
+
 ---
 
 ## 3. Main Scripts and Entry Points
@@ -406,9 +454,19 @@ Each subpackage maps directly to a business phase:
 **Recommended Pattern (Module-level imports):**
 
 ```python
-# Phase 9.1: Preprocessing
+# Phase 9.1: Preprocessing (6-Step Imputation Strategy)
+from finance_ml.ml_workflow.preprocessing.imputation import (
+    apply_enhanced_imputation_strategy_6step,  # STANDARD (use this)
+    validate_imputation_completeness,
+    apply_zero_imputation,
+    apply_knn_imputation_enhanced,
+    apply_price_imputation,
+    apply_median_imputation,
+    apply_categorical_imputation,
+    apply_datetime_imputation,
+)
+
 from finance_ml.ml_workflow.preprocessing import (
-    impute_missing_values,
     detect_outliers,
     winsorize_features,
     scale_features,
@@ -422,12 +480,22 @@ from finance_ml.ml_workflow.eda import (
     compute_correlation_matrix,
 )
 
+from finance_ml.ml_workflow.eda.phase93_categories import (
+    PHASE93_FEATURE_CATEGORIES,
+    categorize_dataframe_columns,
+    get_phase93_coverage_stats,
+)
+
 # Phase 9.3: Features
 from finance_ml.ml_workflow.features import (
     build_valuation_features,
     build_momentum_features,
     build_quality_features,
     select_features_rf,
+)
+
+from finance_ml.ml_workflow.features.api import (
+    build_features,  # Unified entry point
 )
 
 # Phase 9.4: Classification
@@ -444,12 +512,39 @@ from finance_ml.ml_workflow.regression import (
     apply_nonnegative_constraint,
 )
 
-# Phase 9.6: Evaluation
+# Phase 9.6: Evaluation (Complete Import List)
 from finance_ml.ml_workflow.evaluation import (
-    compute_regression_metrics,
+    # Metrics functions
+    comprehensive_regression_metrics,
+    compute_metrics_by_segment,
+    compute_sector_region_metrics,
+    # Analysis functions
+    residual_analysis,
+    error_analysis,
+    model_diagnostics,
+    prediction_intervals,
+    cross_validation_analysis,
+    # Phase 9.4 - Uncertainty Quantification
     build_quantile_diagnostics,
+    plot_interval_coverage,
+    plot_reliability_diagram,
+    # Phase 9.5 - Safety Rails
+    summarize_winsorization_effects,
     track_constraint_violations,
-    calibrate_sector_bias,
+    safety_rails_sensitivity_app,
+    # Phase 9.6 - Data Splits & Leakage
+    compute_fold_overlap,
+    summarize_grouped_cv_balance,
+    time_leakage_checks,
+    # Phase 9.7 - Sector Bias Calibration
+    estimate_sector_bias,
+    plot_metrics_by_sector_time,
+    create_sector_bias_dashboard,
+    # Phase 9.8 - Stacking & Governance
+    compute_stacking_contributions,
+    meta_error_maps,
+    generate_model_card,
+    build_lineage_json,
 )
 
 # Phase 9.7: Analytics
@@ -466,6 +561,9 @@ from finance_ml.ml_workflow.reporting import (
     create_quality_alerts,
 )
 ```
+
+> **Important**: Always use `apply_enhanced_imputation_strategy_6step` for imputation. The 4-step version is
+> deprecated (see Section 4.4).
 
 **Data Schema Access:**
 
@@ -487,6 +585,43 @@ from finance_ml.ml_workflow.config import (
    validate_config,
    )
 ```
+
+### 4.4 Deprecated Modules
+
+The following modules exist for backward compatibility but should **NOT** be used in new code. Use the recommended
+replacements instead.
+
+| Deprecated Import                               | Status        | Replacement                                | Notes                                          |
+|-------------------------------------------------|---------------|--------------------------------------------|------------------------------------------------|
+| `finance_ml.ml_workflow.advanced_preprocessing` | ⚠️ Legacy     | `finance_ml.ml_workflow.preprocessing`     | Consolidated into preprocessing module         |
+| `finance_ml.ml_workflow.advanced_features`      | ⚠️ Legacy     | `finance_ml.ml_workflow.features`          | Use `features.api.build_features()`            |
+| `finance_ml.ml_workflow.advanced_models`        | ⚠️ Legacy     | `finance_ml.ml_workflow.regression`        | Use regression module                          |
+| `finance_ml.ml_workflow.financial_metrics_etl`  | ⚠️ Legacy     | `finance_ml.ml_workflow.preprocessing.etl` | Use `etl_with_financial_metrics()`             |
+| `apply_enhanced_imputation_strategy_4step`      | ⚠️ Deprecated | `apply_enhanced_imputation_strategy_6step` | 4-step incomplete for categorical/date columns |
+
+**Migration Guide:**
+
+```python
+# OLD (deprecated):
+from finance_ml.ml_workflow.advanced_preprocessing import preprocess_data
+from finance_ml.ml_workflow.advanced_features import engineer_features
+from finance_ml.ml_workflow.advanced_models import train_model
+from finance_ml.ml_workflow.preprocessing.imputation import apply_enhanced_imputation_strategy_4step
+
+# NEW (recommended):
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
+from finance_ml.ml_workflow.features.api import build_features
+from finance_ml.ml_workflow.regression import train_sector_models
+from finance_ml.ml_workflow.preprocessing.imputation import apply_enhanced_imputation_strategy_6step
+```
+
+**Breaking Changes:**
+
+- **4-step → 6-step imputation**: The 6-step strategy adds Steps 5 (categorical imputation) and 6 (datetime imputation),
+  ensuring **zero missing values** across all data types. The 4-step version only handles numeric columns and is
+  incomplete.
+
+**Policy:** All new code must use 6-step imputation. The 4-step function will be removed in v0.10.0.
 
 ---
 
@@ -692,12 +827,18 @@ CI/CD enforces normalization consistency via:
 
 **Data Loading and Preprocessing:**
 
-- [ ] Data source clearly specified (CSV, PostgreSQL, SQLite)
-- [ ] Column names normalized using `normalize_column_name()`
-- [ ] Missing value handling uses 6-step imputation strategy
-- [ ] Outliers detected and handled (winsorization, clipping)
+- [ ] ETL pipeline used: `etl_with_financial_metrics()` (Section 8.6)
+- [ ] Data source clearly specified: `source='csv'`, `'db'`, or `'all_stocks'`
+- [ ] ETL configuration documented: `compute_all_metrics=True`, `output_dir` set
+- [ ] ETL metrics returned and validated: `return_metrics=True`
+- [ ] Post-ETL validation passed (Section 19.1):
+    - [ ] DataFrame not empty: `assert not df.empty`
+    - [ ] Critical columns present: `ticker`, `sector`, `last_price`, `price_target`
+    - [ ] No missing values after imputation: `df.isna().sum().sum() == 0`
+- [ ] 6-step imputation strategy applied via ETL pipeline
 - [ ] Data types validated against schema: `validate_dtypes_against_schema()`
-- [ ] Critical date columns included: `last_updated`, `income_statement_report_date`, `next_earnings`,
+- [ ] Outliers handled via ETL: winsorization (0.01/0.99), clipping, non-negativity enforced
+- [ ] Critical date columns validated: `last_updated`, `income_statement_report_date`, `next_earnings`,
   `dividend_record_*`
 
 **Feature Engineering:**
@@ -1048,6 +1189,170 @@ mispricing = calculate_mispricing_score(last_price, predicted_target)
 
 undervalued_df = rank_undervalued_stocks(df, mispricing_col='mispricing_score', top_n=20)
 # Returns: Top N undervalued stocks
+```
+
+### 7.5 ETL Pipeline Functions
+
+The ETL module provides unified entry points for complete Extract-Transform-Load workflows with financial metrics
+computation.
+
+**Primary Function: `etl_with_financial_metrics()`**
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
+
+def etl_with_financial_metrics(
+    source: Literal["csv", "db", "all_stocks"],
+    data_dir: Optional[Path | str] = None,
+    db_url: Optional[str] = None,
+    compute_all_metrics: bool = True,
+    output_dir: Optional[Path] = None,
+    return_metrics: bool = True,
+) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
+    """
+    Complete ETL pipeline with financial metrics computation.
+    
+    Unified entry point for: Extract → Transform (with 6-step imputation + 
+    scaling + financial metrics) → Load
+    
+    Args:
+        source: Data source type
+            - 'csv': Load from regional CSV files
+            - 'db': Load from PostgreSQL equities table
+            - 'all_stocks': Load from unified all_stocks table (recommended)
+        data_dir: Directory for CSV files (required if source='csv')
+        db_url: Database URL (required if source='db' or 'all_stocks')
+        compute_all_metrics: Enable all financial metrics computation (default: True)
+            When True, computes:
+            - Valuation metrics (P/E, P/S, EV/EBITDA, EV/Sales)
+            - Profitability metrics (margins, ROE, ROA)
+            - Growth metrics (revenue, EBITDA, earnings growth)
+            - Leverage metrics (debt ratios)
+            - Target vs price metrics
+            - Sector-specific ratios
+        output_dir: Optional directory for quality alerts and dashboard JSON files
+        return_metrics: Return ETLMetrics for monitoring (default: True)
+    
+    Returns:
+        (DataFrame, ETLMetrics) tuple if return_metrics=True
+        DataFrame only if return_metrics=False
+    """
+```
+
+**Usage Examples:**
+
+```python
+# Basic usage with all metrics
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
+
+df, metrics = etl_with_financial_metrics(
+    source='csv',
+    data_dir='data/',
+    compute_all_metrics=True,
+    output_dir='outputs/eda/financial_metrics',
+    return_metrics=True
+)
+
+print(metrics.summary())
+print(f"Valuation metrics added: {metrics.valuation_metrics_added}")
+
+# Database source
+df, metrics = etl_with_financial_metrics(
+    source='all_stocks',
+    db_url='postgresql+psycopg2://postgres:@localhost:5432/postgres',
+    compute_all_metrics=True,
+    return_metrics=True
+)
+```
+
+**Advanced Function: `run_etl_pipeline()`**
+
+For fine-grained control, use `run_etl_pipeline()` with `ETLConfig`:
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline, ETLConfig
+
+def run_etl_pipeline(
+    source: Literal["csv", "db", "all_stocks"],
+    data_dir: Optional[Path | str] = None,
+    db_url: Optional[str] = None,
+    config: Optional[ETLConfig] = None,
+    return_metrics: bool = False,
+) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
+    """
+    Run ETL pipeline with custom configuration.
+    
+    Args:
+        source: Data source type
+        data_dir: Directory for CSV files
+        db_url: Database connection URL
+        config: ETLConfig instance (uses defaults if None)
+        return_metrics: Return ETLMetrics object
+    
+    Returns:
+        DataFrame or (DataFrame, ETLMetrics) tuple
+    """
+
+# Selective metrics computation
+config = ETLConfig(
+    apply_imputation=True,
+    imputation_strategy="6step",
+    apply_scaling=False,
+    compute_valuation_metrics=True,
+    compute_profitability_metrics=True,
+    compute_growth_metrics=False,
+    compute_leverage_metrics=False,
+)
+
+df, metrics = run_etl_pipeline(
+    source='csv',
+    data_dir='data/',
+    config=config,
+    return_metrics=True
+)
+```
+
+**ETLConfig Dataclass:**
+
+```python
+@dataclass
+class ETLConfig:
+    # Standard ETL options
+    apply_imputation: bool = True
+    imputation_strategy: Literal["6step", "4step"] = "6step"  # Use 6step (standard)
+    apply_scaling: bool = False
+    scaler_type: str = "standard"
+    scale_by_sector: bool = False
+    
+    # Financial metrics options
+    compute_valuation_metrics: bool = True
+    compute_profitability_metrics: bool = True
+    compute_growth_metrics: bool = True
+    compute_leverage_metrics: bool = True
+    compute_target_vs_price: bool = True
+    handle_sector_specific_metrics: bool = True
+    
+    # Quality reporting options
+    generate_quality_alerts: bool = False
+    generate_metrics_dashboard: bool = False
+    output_subdir: str = "financial_metrics"
+```
+
+**Migration Note:**
+
+The two-step approach is deprecated:
+
+```python
+# OLD (deprecated):
+# df = run_etl_pipeline(source='csv', data_dir='data/')
+# df, metrics = run_financial_metrics_etl(df, output_dir=output_dir)
+
+# NEW (recommended):
+df, metrics = etl_with_financial_metrics(
+    source='csv',
+    data_dir='data/',
+    output_dir=output_dir
+)
 ```
 
 ---
@@ -1742,6 +2047,141 @@ Test coverage for log-transforms (`tests/test_log_transforms.py`, 9 tests):
 - Test suite: 36 tests passing (column_semantics, selective_winsorization, log_transforms, selective_scaling)
 - Improvement plan: `docs/improvement_plan/preprocessing_stages_4-8_improvement_plan.md`
 
+### 8.6 Unified ETL Pipeline Best Practices
+
+The ETL pipeline is the **primary entry point** for data processing. Use `etl_with_financial_metrics()` for complete
+preprocessing workflows.
+
+**Recommended Entry Point:**
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import (
+    etl_with_financial_metrics,
+    ETLConfig,
+    ETLMetrics,
+)
+
+# Complete ETL with financial metrics (RECOMMENDED)
+all_stocks_preprocessed, metrics = etl_with_financial_metrics(
+    source='csv',  # or 'db', 'all_stocks'
+    data_dir=Path("data"),
+    compute_all_metrics=True,
+    output_dir=Path("outputs/eda/financial_metrics"),
+    return_metrics=True
+)
+
+# Inspect ETL metrics
+print(f"Rows processed: {metrics.rows_after_etl}")
+print(f"Valuation metrics added: {metrics.valuation_metrics_added}")
+print(f"Missing values after imputation: {metrics.missing_after_imputation}")
+```
+
+**Validation Checkpoints (REQUIRED after ETL):**
+
+```python
+# Required assertions after ETL
+assert not all_stocks_preprocessed.empty, "Preprocessed data must not be empty"
+assert 'ticker' in all_stocks_preprocessed.columns, "ticker column required"
+assert 'sector' in all_stocks_preprocessed.columns, "sector column required"
+assert 'last_price' in all_stocks_preprocessed.columns, "last_price column required"
+
+# Validate no missing values after 6-step imputation
+missing_total = all_stocks_preprocessed.isna().sum().sum()
+assert missing_total == 0, f"No missing values allowed after 6-step imputation, found {missing_total}"
+
+# Validate data quality
+assert len(all_stocks_preprocessed) > 100, f"Insufficient data: {len(all_stocks_preprocessed)} rows"
+assert all_stocks_preprocessed['last_price'].min() > 0, "last_price must be positive"
+```
+
+**Configuration for Different Workflows:**
+
+```python
+# 1. Full ETL with all metrics (notebooks, production)
+df, metrics = etl_with_financial_metrics(
+    source='csv',
+    data_dir='data/',
+    compute_all_metrics=True,
+    output_dir='outputs/eda/financial_metrics'
+)
+
+# 2. Quick ETL without metrics (EDA, testing)
+from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline_quick
+
+df = run_etl_pipeline_quick(
+    source='csv',
+    data_dir='data/',
+    apply_scaling=False,
+    scaler_type='standard'
+)
+
+# 3. Custom configuration (advanced users)
+config = ETLConfig(
+    apply_imputation=True,
+    imputation_strategy="6step",
+    compute_valuation_metrics=True,
+    compute_profitability_metrics=True,
+    generate_quality_alerts=True
+)
+
+df, metrics = run_etl_pipeline(
+    source='csv',
+    data_dir='data/',
+    config=config,
+    return_metrics=True
+)
+```
+
+**Data Source Selection:**
+
+| Source         | Use Case                    | Requirements                       |
+|----------------|-----------------------------|------------------------------------|
+| `'csv'`        | Local development, testing  | `data_dir` pointing to CSV files   |
+| `'db'`         | Production, large datasets  | `db_url` for PostgreSQL connection |
+| `'all_stocks'` | Unified table (recommended) | `db_url` with all_stocks table     |
+
+**Output Artifacts:**
+
+When `output_dir` is specified, ETL generates:
+
+```
+outputs/eda/financial_metrics/
+├── data_quality_alerts.json       # Quality issues and warnings
+├── metrics_dashboard.json         # Summary statistics
+└── dtype_diagnostics.json         # Datatype casting report
+```
+
+**Best Practices:**
+
+1. **Always use 6-step imputation** (handles numeric, categorical, datetime)
+2. **Validate output immediately** with assertions
+3. **Inspect ETLMetrics** to understand data transformations
+4. **Use output_dir** to generate quality alerts for monitoring
+5. **Prefer `etl_with_financial_metrics()`** over manual two-step processes
+
+**Integration with Notebooks:**
+
+```python
+# Cell 1: Configuration
+from pathlib import Path
+DATA_DIR = Path("data")
+OUTPUT_DIR = Path("outputs/eda/financial_metrics")
+
+# Cell 2: ETL execution
+all_stocks_preprocessed, etl_metrics = etl_with_financial_metrics(
+    source='csv',
+    data_dir=DATA_DIR,
+    compute_all_metrics=True,
+    output_dir=OUTPUT_DIR,
+    return_metrics=True
+)
+
+# Cell 3: Validation (REQUIRED)
+assert not all_stocks_preprocessed.empty
+assert all_stocks_preprocessed.isna().sum().sum() == 0
+print(f"✓ ETL complete: {len(all_stocks_preprocessed)} rows, 0 missing values")
+```
+
 ---
 
 ## 9. Column Schema and DataFrame Conventions
@@ -1783,6 +2223,125 @@ Test coverage for log-transforms (`tests/test_log_transforms.py`, 9 tests):
 - Represented as `np.nan` or `pd.NA`
 - Never use 0, -1, or empty string for missing numeric values
 - Apply imputation before modeling
+
+### 9.3 Phase 9.3 Feature Categories (196 Features)
+
+The platform organizes engineered features into **16 semantic categories** for analysis, tracking, and model
+interpretation. All features are generated by `finance_ml.ml_workflow.features.api.build_features()` and cataloged in
+`finance_ml.ml_workflow.eda.phase93_categories.py`.
+
+**Category Overview:**
+
+| Category                   | Features | Description                                                    |
+|----------------------------|----------|----------------------------------------------------------------|
+| **Momentum & Technical**   | 27       | EMA crossovers, RSI, 52W High/Low position, price momentum     |
+| **Valuation Ratios**       | 23       | P/E, P/B, EV/EBITDA, EV/Sales, PEG ratio, valuation trends     |
+| **Profitability**          | 12       | Operating margin, net margin, ROE, ROA, ROIC, earnings quality |
+| **Quality & Risk**         | 18       | Altman Z-Score, Piotroski F-Score, accruals ratio, volatility  |
+| **Cash Flow**              | 5        | FCF yield, OCF/Sales, cash conversion                          |
+| **Capital Allocation**     | 23       | Buyback yield, dividend coverage, payout ratios                |
+| **Analyst Sentiment**      | 10       | Analyst rating changes, target revisions, consensus            |
+| **Market Sentiment**       | 5        | Relative strength, volume trends, market cap percentile        |
+| **Leverage & Liquidity**   | 9        | Debt ratios, current ratio, interest coverage                  |
+| **Temporal Patterns**      | 16       | Seasonality, day-of-week effects, quarter-end patterns         |
+| **Composite Scores**       | 5        | Combined quality, value, momentum scores                       |
+| **Growth Metrics**         | 6        | Revenue growth, EBITDA growth, earnings CAGR                   |
+| **Efficiency Ratios**      | 4        | Asset turnover, inventory turnover, receivables days           |
+| **Employee Productivity**  | 16       | Revenue per employee, productivity trends                      |
+| **Balance Sheet Dynamics** | 8        | Working capital trends, asset quality                          |
+| **Revenue Forecasting**    | 9        | Analyst estimate spreads, revision momentum                    |
+
+**Total: 196 features** registered in `PHASE93_FEATURE_CATEGORIES`
+
+**Usage:**
+
+```python
+from finance_ml.ml_workflow.features.api import build_features
+
+# Build all 196 features with 'comprehensive' preset
+all_stocks_features = build_features(
+    all_stocks_preprocessed,
+    preset='comprehensive',  # Enables all Phase 9.3 features
+    include_interactions=True,
+    include_relative=True,
+    sector_col='sector'
+)
+
+# Selective feature building
+momentum_features = build_features(
+    all_stocks_preprocessed,
+    preset='momentum',  # Only momentum & technical features
+    sector_col='sector'
+)
+```
+
+**Feature Coverage Validation:**
+
+```python
+from finance_ml.ml_workflow.eda.phase93_categories import (
+    PHASE93_FEATURE_CATEGORIES,
+    get_phase93_coverage_stats,
+    categorize_dataframe_columns,
+)
+
+# Validate feature coverage
+coverage = get_phase93_coverage_stats(all_stocks_features)
+total_features = sum(coverage.values())
+coverage_pct = (total_features / 196) * 100
+
+# Target: ≥90% coverage (182/196 features)
+assert coverage_pct >= 90, f"Phase 9.3 coverage must be ≥90%, got {coverage_pct:.1f}%"
+
+# Breakdown by category
+for category, count in coverage.items():
+    expected = len(PHASE93_FEATURE_CATEGORIES[category])
+    print(f"{category}: {count}/{expected} features ({count/expected*100:.1f}%)")
+```
+
+**Category-Specific Analysis:**
+
+```python
+# Categorize columns in your dataframe
+category_mapping = categorize_dataframe_columns(all_stocks_features)
+
+# Analyze specific category
+momentum_cols = [
+    col for col, cat in category_mapping.items() 
+    if cat == "Momentum & Technical"
+]
+
+print(f"Momentum features present: {len(momentum_cols)}/27")
+print(f"Columns: {momentum_cols[:5]}...")  # Show first 5
+```
+
+**Integration with Business Objective:**
+
+Phase 9.3 features directly support **stock price target prediction** by providing:
+
+1. **Valuation context**: P/E, EV/EBITDA ratios indicate over/undervaluation
+2. **Momentum signals**: Price trends and technical indicators predict short-term movements
+3. **Quality assessment**: Altman Z, Piotroski F identify financially healthy companies
+4. **Growth indicators**: Revenue/earnings growth rates justify valuation multiples
+5. **Risk metrics**: Volatility and leverage ratios inform prediction uncertainty
+
+**Output Artifacts:**
+
+Feature engineering generates validation artifacts:
+
+```
+outputs/eda/phase93_feature_categories/
+├── phase93_feature_viz_summary.json      # Feature coverage summary
+├── phase93_coverage_stats.json           # Coverage by category
+└── phase93_category_analysis_report.xlsx # Detailed Excel report
+```
+
+**Best Practices:**
+
+1. **Use 'comprehensive' preset** for production models to access all 196 features
+2. **Validate ≥90% coverage** after feature engineering (182/196 features minimum)
+3. **Monitor coverage trends** across data snapshots
+4. **Use category grouping** for feature importance analysis and interpretation
+5. **Document missing features** when coverage < 90% (e.g., due to missing source columns)
 
 ---
 
@@ -1941,14 +2500,52 @@ Sector metrics must be persisted to `outputs/regression/regression_metrics_by_se
 
 ### 13.1 Winsorization
 
-Apply winsorization to extreme values before modeling:
+Apply winsorization to extreme values before modeling. The platform supports two winsorization strategies:
+
+**Aggressive Winsorization (0.01/0.99 - Default for Notebooks):**
 
 ```python
 from scipy.stats.mstats import winsorize
 
 df['market_cap_winsorized'] = winsorize(df['market_cap'], limits=[0.01, 0.01])
-# Clips values at 1st and 99th percentiles
+# Clips values at 1st and 99th percentiles (aggressive)
 ```
+
+**Conservative Winsorization (0.10/0.90 - Default for Package):**
+
+```python
+from finance_ml.ml_workflow.preprocessing.outliers import winsorize_by_sector
+
+df_winsorized = winsorize_by_sector(
+    df,
+    columns=['market_cap', 'ev', 'total_assets'],
+    lower=0.10,  # 10th percentile
+    upper=0.90,  # 90th percentile
+    sector_col='sector'
+)
+# Less aggressive, preserves more extreme values
+```
+
+**Policy Decision - When to Use Each:**
+
+| Approach         | Bounds    | Use Case                                         | Rationale                                                                                                 |
+|------------------|-----------|--------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| **Aggressive**   | 0.01/0.99 | Notebooks, exploratory analysis, high-noise data | Removes more outliers; reduces impact of data quality issues                                              |
+| **Conservative** | 0.10/0.90 | Production models, financial data, mega-caps     | Preserves valid extreme values (e.g., Apple, Nvidia market caps); maintains business-critical information |
+
+**Recommended: Conservative (0.10/0.90)** for production models to avoid corrupting valuation metrics for legitimate
+high-growth stocks and mega-cap companies.
+
+> **Note**: The notebooks (`ml_finance_model_main2_0.ipynb`) use aggressive bounds (0.01/0.99) for data exploration,
+> while the package defaults to conservative bounds (0.10/0.90) as defined in Section 2.1. This is intentional -
+> notebooks
+> prioritize noise reduction for exploration, while production code prioritizes preserving valid extreme values for
+> accurate predictions.
+
+**Price Column Protection:**
+
+Per Section 8.5.2, price columns (`last_price`, `price_target`, etc.) must **never** be winsorized to preserve the core
+valuation metric: `(Predicted_Target - Last_Price) / Last_Price`.
 
 ### 13.2 Robust Loss Functions
 
@@ -2241,19 +2838,122 @@ Standardize all visualizations (Plotly, Matplotlib, Seaborn) to ensure consisten
 - Always include value annotations (`text_auto=True` or formatted text) for readability.
 - Ensure sufficient contrast between text and background.
 
-### 17.2 Dashboard Layout and Structure
+### 17.2 Interactive Plotly Visualizations
+
+The platform uses Plotly extensively for interactive visualizations in notebooks and dashboards. Follow these standards
+for consistency.
+
+**Standard Plotly Configuration:**
+
+```python
+import plotly.express as px
+import plotly.graph_objects as go
+
+# Template selection
+PLOTLY_TEMPLATE = 'plotly_dark'  # or 'seaborn' for light mode
+
+# Standard color palette (aligned with Section 17.1)
+COLOR_PALETTE = {
+    'primary': '#375a7f',
+    'secondary': '#6c757d',
+    'success': '#00bc8c',
+    'warning': '#f39c12',
+    'danger': '#e74c3c',
+    'info': '#3498db',
+    'neutral': '#adb5bd',
+}
+
+# Apply template to all Plotly figures
+px.defaults.template = PLOTLY_TEMPLATE
+```
+
+**Required Visualizations by Phase:**
+
+| Phase              | Visualization            | Function/Module                                                | Purpose                          |
+|--------------------|--------------------------|----------------------------------------------------------------|----------------------------------|
+| **9.2 EDA**        | Correlation Heatmap      | `finance_ml.ml_workflow.eda.correlation_analysis()`            | Identify multicollinearity       |
+| **9.2 EDA**        | Distribution Plots       | `px.histogram()`, `px.box()`                                   | Assess feature distributions     |
+| **9.3 Features**   | Feature Category Treemap | Custom Plotly treemap                                          | Visualize Phase 9.3 coverage     |
+| **9.5 Regression** | Residual Analysis        | `finance_ml.ml_workflow.evaluation.plot_residual_analysis()`   | Check model assumptions          |
+| **9.6 Evaluation** | Reliability Diagram      | `finance_ml.ml_workflow.evaluation.plot_reliability_diagram()` | Validate uncertainty calibration |
+| **9.6 Evaluation** | Interval Coverage        | `finance_ml.ml_workflow.evaluation.plot_interval_coverage()`   | Assess prediction intervals      |
+| **9.7 Analytics**  | Stock Rankings           | `finance_ml.ml_workflow.analytics.plot_rankings_interactive()` | Identify under/overvalued stocks |
+| **9.7 Portfolio**  | Efficient Frontier       | `finance_ml.ml_workflow.analytics.plot_efficient_frontier()`   | Portfolio optimization results   |
+
+**Standard Plot Configuration:**
+
+```python
+# Scatter plot example with standard configuration
+fig = px.scatter(
+    df,
+    x='last_price',
+    y='price_target',
+    color='sector',
+    hover_data=['ticker', 'isin', 'region'],
+    template=PLOTLY_TEMPLATE,
+    title='Price Target vs Last Price',
+    labels={'last_price': 'Last Price ($)', 'price_target': 'Price Target ($)'}
+)
+
+# Update layout for consistency
+fig.update_layout(
+    font=dict(family='Arial, sans-serif', size=14),
+    title_font_size=20,
+    showlegend=True,
+    legend=dict(orientation='v', yanchor='top', xanchor='right', x=1.02, y=1),
+    hovermode='closest',
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+)
+
+# Save as HTML for sharing
+fig.write_html('outputs/plots/prediction_scatter_interactive.html')
+```
+
+**Heatmap Configuration:**
+
+```python
+# Correlation heatmap with consistent styling
+fig = px.imshow(
+    correlation_matrix,
+    template=PLOTLY_TEMPLATE,
+    color_continuous_scale='RdBu_r',  # Diverging scale centered at 0
+    zmin=-1, zmax=1,
+    text_auto='.2f',
+    labels=dict(color='Correlation'),
+    title='Feature Correlation Matrix'
+)
+
+fig.update_layout(
+    width=1000,
+    height=800,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+)
+```
+
+**Best Practices:**
+
+1. **Always set template**: Use `PLOTLY_TEMPLATE` for consistency
+2. **Include hover data**: Add `ticker`, `sector`, `region` for context
+3. **Label axes with units**: e.g., "Price ($)", "Market Cap (Billion $)"
+4. **Save interactive plots**: Use `fig.write_html()` for sharing and archiving
+5. **Use color semantics**: Green for positive, red for negative, blue for neutral
+6. **Enable zoom and pan**: Default Plotly interactions support exploration
+
+**Dashboard Layout and Structure:**
 
 **Dashboards (Streamlit & Dash):**
 
-- **Header:** Clear application title and status indicators.
-- **Navigation:** Logical tab-based structure grouped by business function (Overview, Analysis, Governance, Portfolio).
+- **Header:** Clear application title and status indicators
+- **Navigation:** Logical tab-based structure grouped by business function (Overview, Analysis, Governance, Portfolio)
 - **Filters:**
-    - Use a dedicated sidebar or top filter bar.
-    - Use distinct styles for active vs. inactive filters.
-    - Enable multi-select for categorical fields (Sector, Region).
-    - Implement "Dark Mode" styling for dropdowns and inputs (`custom.css` for Dash).
-- **KPI Cards:** Use summary cards at the top for high-level metrics.
-- **Responsiveness:** Ensure plots resize dynamically (`width='stretch'` in Streamlit, Flexbox in Dash).
+    - Use a dedicated sidebar or top filter bar
+    - Use distinct styles for active vs. inactive filters
+    - Enable multi-select for categorical fields (Sector, Region)
+    - Implement "Dark Mode" styling for dropdowns and inputs (`custom.css` for Dash)
+- **KPI Cards:** Use summary cards at the top for high-level metrics
+- **Responsiveness:** Ensure plots resize dynamically (`width='stretch'` in Streamlit, Flexbox in Dash)
 
 ### 17.3 Table Structure
 
@@ -2536,6 +3236,311 @@ tests/
 - **Fast Tests** (<1s): Return bounds, configuration constants, function existence
 - **Medium Tests** (1-10s): Ensemble training, covariance estimation
 - **Slow Tests** (>10s): DNN training (skip if TensorFlow unavailable)
+
+---
+
+## 19. Data Quality Validation Checkpoints
+
+All data transformations must be validated at critical checkpoints to ensure pipeline integrity. These assertions serve
+as guardrails against data quality issues and transformation errors.
+
+### 19.1 Post-ETL Validation (REQUIRED)
+
+After running `etl_with_financial_metrics()` or `run_etl_pipeline()`, validate the output immediately:
+
+```python
+# Required assertions after ETL
+assert not df.empty, "DataFrame must not be empty"
+assert 'ticker' in df.columns, "ticker column required"
+assert 'sector' in df.columns, "sector column required"
+assert 'last_price' in df.columns, "last_price column required"
+
+# Validate target columns
+target_cols = ['price_target', 'price_target_median', 'last_price']
+has_target = any(col in df.columns for col in target_cols)
+assert has_target, f"At least one target column required: {target_cols}"
+
+# Quality metrics
+missing_pct = df.isna().sum().sum() / df.size * 100
+assert missing_pct == 0, f"No missing values allowed after 6-step imputation, found {missing_pct:.2f}%"
+
+# Data sufficiency
+assert len(df) > 100, f"Insufficient data: {len(df)} rows (minimum 100)"
+assert df['last_price'].min() > 0, "last_price must be positive"
+
+print(f"✓ ETL validation passed: {len(df)} rows, 0 missing values")
+```
+
+### 19.2 Post-Feature Engineering Validation
+
+After building Phase 9.3 features, validate coverage:
+
+```python
+from finance_ml.ml_workflow.eda.phase93_categories import get_phase93_coverage_stats
+
+# Phase 9.3 coverage target: ≥90% (182/196 features)
+coverage_stats = get_phase93_coverage_stats(df)
+total_features = sum(coverage_stats.values())
+coverage_pct = (total_features / 196) * 100
+
+assert coverage_pct >= 90, f"Phase 9.3 coverage must be ≥90%, got {coverage_pct:.1f}%"
+
+print(f"✓ Feature engineering validation passed: {coverage_pct:.1f}% coverage ({total_features}/196 features)")
+
+# Breakdown by category
+for category, count in coverage_stats.items():
+    expected = len(PHASE93_FEATURE_CATEGORIES[category])
+    print(f"  {category}: {count}/{expected} features")
+```
+
+### 19.3 Pre-Modeling Validation
+
+Before training models, validate data types and schema:
+
+```python
+# Validate data types
+numeric_cols = df.select_dtypes(include=[np.number]).columns
+assert len(numeric_cols) > 50, f"Insufficient numeric features: {len(numeric_cols)}"
+
+# Check for infinity values (should not exist after imputation)
+inf_count = np.isinf(df.select_dtypes(include=[np.number])).sum().sum()
+assert inf_count == 0, f"Infinity values detected: {inf_count}"
+
+# Validate target variable distribution
+target_col = 'price_target' if 'price_target' in df.columns else 'last_price'
+assert df[target_col].notna().all(), f"Target column {target_col} contains NaN"
+assert df[target_col].min() > 0, f"Target column {target_col} must be positive"
+
+print(f"✓ Pre-modeling validation passed: {len(numeric_cols)} numeric features, no NaN/Inf")
+```
+
+### 19.4 Post-Prediction Validation
+
+After generating predictions, validate schema and invariants:
+
+```python
+# Required columns (Section 11)
+required_cols = ['ticker', 'sector', 'y_true', 'y_pred']
+missing_cols = [col for col in required_cols if col not in predictions_df.columns]
+assert not missing_cols, f"Missing required columns: {missing_cols}"
+
+# Non-negativity constraint (prices must be ≥ 0)
+price_cols = ['y_pred', 'pred_p10', 'pred_p50', 'pred_p90']
+for col in price_cols:
+    if col in predictions_df.columns:
+        assert predictions_df[col].min() >= 0, f"{col} contains negative values"
+
+# Monotonicity constraint (quantile predictions)
+if all(col in predictions_df.columns for col in ['pred_p10', 'pred_p50', 'pred_p90']):
+    violations = (
+        (predictions_df['pred_p10'] > predictions_df['pred_p50']) |
+        (predictions_df['pred_p50'] > predictions_df['pred_p90'])
+    ).sum()
+    assert violations == 0, f"Quantile monotonicity violated in {violations} rows"
+
+print(f"✓ Post-prediction validation passed: {len(predictions_df)} predictions, all constraints satisfied")
+```
+
+### 19.5 Validation Utilities
+
+Use built-in validation utilities for consistency:
+
+```python
+# ETL validation
+from finance_ml.ml_workflow.preprocessing.imputation import validate_imputation_completeness
+
+result = validate_imputation_completeness(df)
+assert result['is_complete'], f"Imputation incomplete: {result['missing_total']} missing values"
+
+# Schema validation
+from finance_ml.ml_workflow.preprocessing.data import validate_schema
+
+schema_issues = validate_schema(df, required_cols=['ticker', 'sector', 'last_price'])
+assert not schema_issues, f"Schema validation failed: {schema_issues}"
+
+# Predictions schema validation
+from finance_ml.ml_workflow.regression.io import validate_predictions_schema
+
+validate_predictions_schema(predictions_df)  # Raises if invalid
+```
+
+**Best Practices:**
+
+1. **Fail fast**: Place assertions immediately after transformations
+2. **Descriptive messages**: Include actual values and thresholds in error messages
+3. **Log successes**: Print confirmation messages for passed validations
+4. **Use utilities**: Prefer built-in validation functions over manual checks
+5. **Document exceptions**: If skipping a validation, document why with a comment
+
+---
+
+## 20. Output Artifact Standards
+
+The platform generates structured output artifacts for monitoring, governance, and reproducibility. All outputs follow
+standardized directory structure and naming conventions.
+
+### 20.1 Required Output Directories
+
+```
+outputs/
+├── eda/                          # Phase 9.2 EDA outputs
+│   ├── financial_metrics/        # Quality alerts, dashboards (Section 8.6)
+│   └── phase93_feature_categories/  # Feature visualizations (Section 9.3)
+├── preprocessing/                # Phase 9.1 preprocessing artifacts
+│   ├── etl_metrics.json          # ETL pipeline metrics
+│   ├── dtype_diagnostics.json    # Datatype casting report
+│   └── imputation_summary.json   # Imputation statistics
+├── regression/                   # Phase 9.5 trained models
+│   ├── sector_models/            # Per-sector model files
+│   ├── quantile_q1_phase95.joblib
+│   ├── quantile_q5_phase95.joblib
+│   ├── quantile_q9_phase95.joblib
+│   └── stacking_ensemble_phase95.joblib
+├── evaluation/                   # Phase 9.6 metrics, calibration
+│   ├── regression_metrics_by_sector.csv  # Sector-level metrics
+│   ├── quantile_diagnostics.csv          # Uncertainty quantification
+│   └── calibration_report.json           # Sector bias calibration
+├── analytics/                    # Phase 9.7 rankings, portfolio
+│   ├── mispricing_scores.csv     # Stock rankings
+│   ├── portfolio_weights.csv     # Optimized portfolio
+│   └── risk_metrics.json         # Risk analysis
+├── reporting/                    # Phase 9.8 final reports
+│   ├── model_card.json           # Model governance
+│   ├── lineage.json              # Data provenance
+│   └── executive_summary.xlsx    # Business report
+├── plots/                        # Visualizations
+│   ├── prediction_scatter_interactive.html
+│   ├── residual_analysis_interactive.png
+│   └── correlation_heatmap.html
+└── governance/                   # Model governance artifacts
+    ├── model_card.json
+    ├── lineage.json
+    └── audit_trail.log
+```
+
+### 20.2 Required JSON Artifacts
+
+**ETL Metrics (`outputs/preprocessing/etl_metrics.json`):**
+
+```json
+{
+  "rows_initial": 5234,
+  "rows_after_etl": 5234,
+  "missing_before_imputation": 12045,
+  "missing_after_imputation": 0,
+  "valuation_metrics_added": 24,
+  "profitability_metrics_added": 18,
+  "timestamp": "2025-12-05T15:30:00",
+  "model_version": "v9_9"
+}
+```
+
+**EDA Summary (`outputs/eda/eda_summary.json`):**
+
+```json
+{
+  "total_rows": 5234,
+  "total_columns": 318,
+  "sectors": ["Technology", "Healthcare", "Financials", "..."],
+  "sector_counts": {"Technology": 1245, "Healthcare": 892, "..."},
+  "phase93_coverage": {"total": 182, "percentage": 92.8},
+  "timestamp": "2025-12-05T15:35:00"
+}
+```
+
+**Phase 9.3 Benchmarking (`outputs/eda/phase93_benchmarking.json`):**
+
+```json
+{
+  "coverage_by_category": {
+    "Momentum & Technical": 27,
+    "Valuation Ratios": 23,
+    "Profitability": 12,
+    "...": "..."
+  },
+  "total_coverage": 182,
+  "target_coverage": 196,
+  "coverage_percentage": 92.8,
+  "missing_features": ["feature1", "feature2", "..."]
+}
+```
+
+**Model Card (`outputs/governance/model_card.json`):**
+
+```json
+{
+  "model_version": "v9_9",
+  "model_type": "Stacking Ensemble (RF + GB + XGB)",
+  "training_date": "2025-12-05",
+  "metrics": {
+    "overall": {"mae": 8.45, "rmse": 12.32, "r2": 0.78},
+    "by_sector": {"Technology": {"mae": 7.21, "r2": 0.82}, "...": "..."}
+  },
+  "features_used": 318,
+  "phase93_coverage": 92.8,
+  "data_source": "csv",
+  "imputation_strategy": "6step"
+}
+```
+
+### 20.3 CSV Output Standards
+
+**Predictions (`outputs/regression/regression_predictions_detailed.csv`):**
+
+Required columns (Section 11):
+
+- ticker, isin, sector, region
+- last_price, y_true, y_pred, y_pred_calibrated
+- pred_p10, pred_p50, pred_p90, interval_width
+- abs_error, pct_error
+- model_version, snapshot_date
+
+**Sector Metrics (`outputs/regression/regression_metrics_by_sector.csv`):**
+
+Required columns (Section 12):
+
+- sector, mae, rmse, r2, mape, bias, count
+- model_version, timestamp
+
+### 20.4 Artifact Generation Functions
+
+```python
+# Generate ETL metrics
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
+
+df, etl_metrics = etl_with_financial_metrics(
+    source='csv',
+    data_dir='data/',
+    output_dir='outputs/eda/financial_metrics',  # Auto-generates artifacts
+    return_metrics=True
+)
+
+# Save predictions
+from finance_ml.ml_workflow.regression.io import save_predictions
+
+save_predictions(
+    predictions_df,
+    output_path='outputs/regression/regression_predictions_detailed.csv',
+    schema='standardized'  # Enforces Section 11 schema
+)
+
+# Generate model card
+from finance_ml.ml_workflow.evaluation import generate_model_card
+
+model_card = generate_model_card(
+    model=stacking_model,
+    metrics=metrics_dict,
+    output_path='outputs/governance/model_card.json'
+)
+```
+
+**Best Practices:**
+
+1. **Use standard paths**: Follow the directory structure exactly
+2. **Include timestamps**: Add ISO 8601 timestamps to all JSON artifacts
+3. **Version everything**: Include `model_version` in all outputs
+4. **Validate before saving**: Use schema validation functions
+5. **Generate automatically**: Use provided generation functions rather than manual file writes
 
 <!-- v1.4.1 (2025-11-27) Regression Workflow Integration Updates -->
 

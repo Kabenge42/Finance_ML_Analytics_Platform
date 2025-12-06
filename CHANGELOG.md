@@ -1,8 +1,15 @@
 ## [0.9.2] - 2025-12-04
 
+> **Commits:** [`adebeac`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/adebeac), [
+`d5aa4a0`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d5aa4a0), [
+`6ef79cc`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/6ef79cc), [
+`6150740`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/6150740), [
+`69c85d9`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/69c85d9)
+
 ### Added
 
-- **ETL Consolidation: Unified Financial Metrics Pipeline**
+- **ETL Consolidation: Unified Financial Metrics Pipeline** ([
+  `d5aa4a0`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d5aa4a0))
     - Consolidated `financial_metrics_etl.py` into unified `etl.py` pipeline
     - Single entry point: `run_etl_pipeline()` now handles all preprocessing + financial metrics
     - New convenience function: `etl_with_financial_metrics()` for one-call complete ETL
@@ -20,6 +27,30 @@
         - `leverage_metrics_added`, `target_vs_price_metrics_added`, `sector_specific_metrics_added`
     - **Backward Compatibility**: Deprecated `financial_metrics_etl.py` with wrapper functions
     - **Test Coverage**: 34 new tests in `test_etl_consolidation.py`, all passing
+  - **ETL Pipeline Internal Stages** (handled automatically by `run_etl_pipeline()`):
+      - Stage 1: Column normalization (lowercase, underscores)
+      - Stage 2: Schema validation
+      - Stage 3: Drop invalid rows (missing ticker, sector, last_price)
+      - Stage 4: Data sanitization (inf, nan, extremes)
+      - Stage 5: Imputation (6-step: zero, sector-KNN, price, median, categorical, datetime)
+      - Stage 6: Log transforms (optional)
+      - Stage 7: Feature scaling (optional, excludes price columns)
+
+- **Regression Workflow Components** ([
+  `69c85d9`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/69c85d9))
+    - **`cv.py`**: Added regression-aware cross-validation splitters (`KFold`, `GroupKFold`, `TimeSeriesSplit`) with
+      unified interface for policy-driven selection
+    - **`features.py`**: Introduced deterministic interaction generators (`build_prob_valuation_interactions()`) for
+      classification probabilities and valuation metrics
+    - Integrated naming conventions and feature construction based on `docs/code_guidelines.md v1.4`
+    - **New Test Modules** (7 modules):
+        - `test_clone_check.py`: Clone validation for wrapped regressors
+        - `test_finance_ml_features_interactions.py`: Naming/count validations for interaction generators
+        - `test_predictions_schema_regression_phase95.py`: Schema checks for regression predictions
+        - `test_quantile_monotonicity.py`: Enforced monotonicity/non-negativity in quantile predictions
+        - `test_regression_p0_features.py`: Comprehensive regression feature tests (CV, quantiles, schema)
+        - `test_regression_time_series_cv_policy.py`: Time consistency in time-series splits
+        - `test_stacking_phase95_with_meta_features.py`: Validated stacking meta-learners with interactions
 
 - **Enhanced Price Target Analytics & Visualizations (Cell 10.5)**
     - **Price Target Scatter Plot**: Last Price vs Price Target with sector coloring
@@ -46,17 +77,35 @@
         - Replaced deprecated `financial_metrics_etl` imports with unified ETL
         - Added 4 new interactive Plotly visualizations
         - Enhanced markdown documentation
+  - New documentation: `RELAXED_UPPER_BOUND_CLIPPING.md` for clipping changes
 
 ### Changed
 
 - **ETL Pipeline Stage Naming**: `all_stocks_preprocessed` now optionally includes computed financial metrics
 - **Notebook Integration**: Cell 10.5 uses unified ETL functions instead of separate financial_metrics_etl calls
+- **Relaxed Upper Bound Clipping for Price Target Predictions** ([
+  `6150740`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/6150740))
+    - Updated `finance_ml/ml_workflow/regression/robust.py` to increase upper bound multiplier from 1.5× to 3.0×
+    - Reduces over-aggressive clipping of legitimate high-value targets in financial datasets
+    - Added test coverage in `test_relaxed_clipping.py` ensuring zero-prediction prevention, high-value preservation,
+      and outlier handling
+- **Refactored `dataset.py`**: Delegated interaction construction to new feature utility while ensuring alignment with
+  column naming standards
 
 ### Deprecated
 
 - `finance_ml.ml_workflow.preprocessing.financial_metrics_etl` module
     - Use `etl_with_financial_metrics()` from `finance_ml.ml_workflow.preprocessing.etl` instead
     - Deprecation warnings added; module will be removed in v2.0
+- **Deprecated ML Workflow Modules Migrated** ([
+  `6ef79cc`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/6ef79cc))
+    - Review and migration of deprecated ML workflow modules completed
+
+### Fixed
+
+- **Restored `etl_data_explorer.ipynb`** ([
+  `adebeac`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/adebeac))
+    - Work-in-progress restoration of the ETL data explorer notebook
 
 ---
 
