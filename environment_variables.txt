@@ -27,10 +27,10 @@ OUTPUT_DIR=outputs
 # Format: postgresql+psycopg2://user:password@host:port/database
 # Example (PostgreSQL): postgresql+psycopg2://postgres:your_password@localhost:5432/postgres
 # Example (SQLite): sqlite:///equities.sqlite
-# DB_URL=postgresql+psycopg2://postgres:your_password_here@localhost:5432/postgres
+# DB_URL=postgresql+psycopg2://postgres:@localhost:5432/postgres
 # Optional: Database schema and table to read from
-DB_SCHEMA=public
-DB_TABLE=equities
+#DB_SCHEMA=public
+#DB_TABLE=equities
 
 # -----------------------------------------------------------------------------
 # External API Keys

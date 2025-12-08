@@ -165,6 +165,30 @@ from finance_ml.ml_workflow.analytics.risk import (
     calculate_portfolio_risk_metrics,
 )
 
+# ============================================================================
+# Aliases for code_guidelines.md v1.10 API compliance
+# ============================================================================
+
+# Alias: calculate_mispricing_scores -> calculate_mispricing_score
+calculate_mispricing_scores = calculate_mispricing_score
+
+# Alias: rank_stocks -> rank_stocks_by_sector
+rank_stocks = rank_stocks_by_sector
+
+# Alias: optimize_portfolio -> optimize_portfolio_max_sharpe
+optimize_portfolio = optimize_portfolio_max_sharpe
+
+# Alias: compute_risk_metrics -> calculate_portfolio_risk_metrics
+compute_risk_metrics = calculate_portfolio_risk_metrics
+
+# ============================================================================
+# Prefixed aliases for notebook compatibility (analytics_* pattern)
+# ============================================================================
+analytics_calculate_mispricing = calculate_mispricing_score
+analytics_rank_by_sector = rank_stocks_by_sector
+analytics_rank_undervalued = rank_undervalued_stocks
+analytics_rank_overvalued = rank_overvalued_stocks
+
 # Import ML returns functions (Portfolio Phase 2)
 from finance_ml.ml_workflow.analytics.ml_returns import (
     create_ml_return_features,
@@ -216,6 +240,11 @@ __all__ = [
     "rank_undervalued_stocks",
     "rank_overvalued_stocks",
     "rank_stocks_by_sector",
+    # Aliases for code_guidelines.md v1.10 API
+    "calculate_mispricing_scores",
+    "rank_stocks",
+    "optimize_portfolio",
+    "compute_risk_metrics",
     # Analyst comparison (Phase 9.7)
     "PredictionAnalystAnalytics",
     # Portfolio optimization (Phase 9.7)
@@ -352,4 +381,9 @@ __all__ = [
     "QUALITY_THRESHOLD_DEFAULT",
     "RISK_ZSCORE_THRESHOLD",
     "DISTRESS_SCORE_THRESHOLD",
+    # Prefixed aliases for notebook compatibility
+    "analytics_calculate_mispricing",
+    "analytics_rank_by_sector",
+    "analytics_rank_undervalued",
+    "analytics_rank_overvalued",
 ]

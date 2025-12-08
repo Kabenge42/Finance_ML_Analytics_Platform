@@ -72,6 +72,7 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
     apply_enhanced_imputation_strategy_4step,
     apply_enhanced_imputation_strategy_6step,
     fillna_by_dtype,
+    validate_imputation_completeness,
 )
 from finance_ml.ml_workflow.preprocessing.outliers import (
     detect_outliers_iqr,
@@ -91,6 +92,33 @@ from finance_ml.ml_workflow.preprocessing.quality import (
 from finance_ml.ml_workflow.preprocessing.scaling import (
     create_scaler_pipeline,
     scale_features,
+)
+
+# ETL Pipeline classes and functions
+from finance_ml.ml_workflow.preprocessing.etl import (
+    ETLConfig,
+    ETLMetrics,
+    ETLPipeline,
+    run_etl_pipeline,
+    etl_from_csv,
+    etl_from_database,
+    etl_with_imputation,
+    etl_with_imputation_and_scaling,
+    etl_with_financial_metrics,
+    etl_with_features,
+)
+
+# Column semantics for semantic-aware transformations
+from finance_ml.ml_workflow.preprocessing.column_semantics import (
+    classify_columns,
+    get_winsorizable_columns,
+    get_log_transform_columns,
+    get_scalable_columns,
+    PRICE_COLUMNS,
+    MARKET_VALUE_COLUMNS,
+    RATIO_COLUMNS,
+    PERCENTAGE_COLUMNS,
+    COUNT_COLUMNS,
 )
 
 __all__ = [
@@ -133,6 +161,7 @@ __all__ = [
     "apply_enhanced_imputation_strategy_4step",
     "apply_enhanced_imputation_strategy_6step",
     "fillna_by_dtype",
+    "validate_imputation_completeness",
     # Outlier detection
     "detect_outliers_iqr",
     "detect_outliers_zscore",
@@ -152,4 +181,25 @@ __all__ = [
     "detect_and_cast_dtypes",
     "to_jsonable",
     "validate_dtypes_against_schema",
+    # ETL Pipeline (unified)
+    "ETLConfig",
+    "ETLMetrics",
+    "ETLPipeline",
+    "run_etl_pipeline",
+    "etl_from_csv",
+    "etl_from_database",
+    "etl_with_imputation",
+    "etl_with_imputation_and_scaling",
+    "etl_with_financial_metrics",
+    "etl_with_features",
+    # Column semantics (semantic-aware transformations)
+    "classify_columns",
+    "get_winsorizable_columns",
+    "get_log_transform_columns",
+    "get_scalable_columns",
+    "PRICE_COLUMNS",
+    "MARKET_VALUE_COLUMNS",
+    "RATIO_COLUMNS",
+    "PERCENTAGE_COLUMNS",
+    "COUNT_COLUMNS",
 ]

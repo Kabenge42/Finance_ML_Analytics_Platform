@@ -39,6 +39,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple, List, Literal
 
+import numpy as np
 import pandas as pd
 
 # Import from existing modules (no code duplication)
@@ -76,7 +77,14 @@ from finance_ml.ml_workflow.preprocessing.scaling import (
 
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
     get_scalable_columns,
+    get_winsorizable_columns,
+    get_log_transform_columns,
+    classify_columns,
     PRICE_COLUMNS,
+    MARKET_VALUE_COLUMNS,
+    RATIO_COLUMNS,
+    PERCENTAGE_COLUMNS,
+    COUNT_COLUMNS,
 )
 
 from finance_ml.ml_workflow.preprocessing.dtypes import (
@@ -99,6 +107,9 @@ from finance_ml.ml_workflow.preprocessing.financial_metrics_etl import (
     generate_data_quality_alerts,
     generate_metrics_dashboard,
 )
+
+# Import feature engineering API (Section 9.3)
+from finance_ml.ml_workflow.features.api import build_features
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +180,19 @@ class ETLConfig:
     generate_metrics_dashboard: bool = False
     output_subdir: str = "financial_metrics"
 
+    # Semantic-aware transformation flags (Section 8.5)
+    use_semantic_column_classification: bool = True
+    preserve_price_columns: bool = True  # Never transform price columns
+    log_transform_market_values: bool = True  # Apply log-transforms to skewed columns
+    exclude_ratios_from_winsorization: bool = True  # Ratios are pre-normalized
+    exclude_percentages_from_winsorization: bool = True  # Percentages are bounded
+    exclude_counts_from_scaling: bool = False  # Optionally exclude discrete counts
+
+    # Feature engineering integration (Section 9.3)
+    apply_feature_engineering: bool = False  # Default OFF for backward compatibility
+    feature_preset: str = "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
+    feature_categories: Optional[List[str]] = None  # Specific categories to engineer
+
 
 @dataclass
 class ETLMetrics:
@@ -234,6 +258,21 @@ class ETLMetrics:
     target_vs_price_metrics_added: int = 0
     sector_specific_metrics_added: int = 0
 
+    # Semantic transformation metrics (Section 8.5)
+    semantic_classification_applied: bool = False
+    price_columns_count: int = 0
+    market_value_columns_count: int = 0
+    ratio_columns_count: int = 0
+    percentage_columns_count: int = 0
+    count_columns_count: int = 0
+    log_transformed_columns: int = 0
+
+    # Feature engineering metrics (Section 9.3)
+    feature_engineering_applied: bool = True
+    feature_preset_used: str = ""
+    features_added: int = 0
+    feature_categories_applied: List[str] = field(default_factory=list)
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert metrics to dictionary."""
         return {
@@ -279,6 +318,21 @@ class ETLMetrics:
                 "leverage_added": self.leverage_metrics_added,
                 "target_vs_price_added": self.target_vs_price_metrics_added,
                 "sector_specific_added": self.sector_specific_metrics_added,
+            },
+            "semantic_transformations": {
+                "applied": self.semantic_classification_applied,
+                "price_columns": self.price_columns_count,
+                "market_value_columns": self.market_value_columns_count,
+                "ratio_columns": self.ratio_columns_count,
+                "percentage_columns": self.percentage_columns_count,
+                "count_columns": self.count_columns_count,
+                "log_transformed": self.log_transformed_columns,
+            },
+            "feature_engineering": {
+                "applied": self.feature_engineering_applied,
+                "preset": self.feature_preset_used,
+                "features_added": self.features_added,
+                "categories_applied": self.feature_categories_applied,
             },
             "stages_executed": self.stages_executed,
             "warnings": self.warnings,
@@ -334,6 +388,25 @@ class ETLMetrics:
                 f"leverage: {self.leverage_metrics_added})"
             )
 
+        # Semantic transformation info
+        semantic_info = ""
+        if self.semantic_classification_applied:
+            semantic_info = (
+                f"\n  Semantic Classification: ✓ "
+                f"(Price Columns: {self.price_columns_count}, "
+                f"Market Value: {self.market_value_columns_count}, "
+                f"Ratios: {self.ratio_columns_count}, "
+                f"Log-Transformed: {self.log_transformed_columns})"
+            )
+
+        # Feature engineering info
+        feature_engineering_info = ""
+        if self.feature_engineering_applied:
+            feature_engineering_info = (
+                f"\n  Feature Engineering: {self.feature_preset_used} "
+                f"({self.features_added} features added)"
+            )
+
         return (
             f"ETL Pipeline Summary:\n"
             f"  Source: {self.source_type}\n"
@@ -346,7 +419,9 @@ class ETLMetrics:
             f"{dtype_info}"
             f"{imputation_info}"
             f"{scaling_info}"
-            f"{financial_metrics_info}\n"
+            f"{financial_metrics_info}"
+            f"{semantic_info}"
+            f"{feature_engineering_info}\n"
             f"  Quality: {self.quality_score:.3f}, "
             f"Validation: {self.validation_score:.3f}\n"
             f"  Stages: {', '.join(self.stages_executed)}\n"
@@ -539,6 +614,13 @@ class ETLPipeline:
                     self.metrics.errors.append(error_msg)
                 # Don't raise - allow pipeline to continue without dtype casting
                 logger.warning("Pipeline continuing without dtype casting")
+
+        # Stage 1.6: Apply semantic column classification (Section 8.5)
+        if self.config.use_semantic_column_classification:
+            logger.info("Stage 1.6: Applying semantic column classification")
+            result = self._apply_semantic_transformations(result)
+            if self.metrics:
+                self.metrics.stages_executed.append("semantic_classification")
 
         # Stage 2: Validate schema
         if self.config.validate_schema:
@@ -807,6 +889,13 @@ class ETLPipeline:
         except Exception as e:
             logger.warning(f"Post-metrics imputation step skipped due to error: {e}")
 
+        # Stage 9: Apply feature engineering (Section 9.3)
+        if self.config.apply_feature_engineering:
+            logger.info("Stage 9: Applying feature engineering")
+            result = self._apply_feature_engineering(result)
+            if self.metrics:
+                self.metrics.stages_executed.append("feature_engineering")
+
         logger.info(f"Transformation complete: {len(result)} rows, {len(result.columns)} columns")
         return result
 
@@ -834,6 +923,146 @@ class ETLPipeline:
             quality_metrics["pipeline_validation"] = pipeline_metrics
 
         return quality_metrics
+
+    def _apply_semantic_transformations(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply column-semantics-aware transformations (Section 8.5).
+
+        Transformation strategies by semantic category:
+        - Price columns: NEVER transform (preserve original units)
+        - Market value columns: Log-transform to handle skewness
+        - Ratio columns: Skip winsorization (already normalized)
+        - Percentage columns: Skip winsorization (bounded [0, 100])
+        - Count columns: Optional discrete handling
+
+        Args:
+            df: DataFrame with normalized column names
+
+        Returns:
+            DataFrame with semantic-aware transformations applied
+        """
+        if not self.config.use_semantic_column_classification:
+            logger.info("Semantic column classification disabled, skipping")
+            return df
+
+        # Classify columns by semantic type
+        classification = classify_columns(list(df.columns))
+
+        logger.info(
+            f"Column classification: "
+            f"price={len(classification['price'])}, "
+            f"market_value={len(classification['market_value'])}, "
+            f"ratio={len(classification['ratio'])}, "
+            f"percentage={len(classification['percentage'])}, "
+            f"count={len(classification['count'])}, "
+            f"other={len(classification['other'])}"
+        )
+
+        # Update metrics with classification counts
+        if self.metrics:
+            self.metrics.semantic_classification_applied = True
+            self.metrics.price_columns_count = len(classification["price"])
+            self.metrics.market_value_columns_count = len(classification["market_value"])
+            self.metrics.ratio_columns_count = len(classification["ratio"])
+            self.metrics.percentage_columns_count = len(classification["percentage"])
+            self.metrics.count_columns_count = len(classification["count"])
+
+        # Apply log-transforms to market value columns (high skewness)
+        if self.config.log_transform_market_values:
+            log_cols = get_log_transform_columns(list(df.columns))
+            log_count = 0
+            for col in log_cols:
+                if col in df.columns:
+                    # Create log-transformed version, handle zeros/negatives
+                    df[f"log_{col}"] = np.log1p(df[col].clip(lower=0))
+                    log_count += 1
+            logger.info(f"Applied log-transforms to {log_count} market value columns")
+            if self.metrics:
+                self.metrics.log_transformed_columns = log_count
+
+        return df
+
+    def _get_winsorization_columns(self, df: pd.DataFrame) -> List[str]:
+        """
+        Get columns safe for winsorization based on semantic classification.
+
+        Excludes:
+        - Price columns (must preserve original units for business metric)
+        - Ratio columns (already normalized)
+        - Percentage columns (already bounded)
+        - Count columns (discrete)
+
+        Returns:
+            List of column names safe for winsorization
+        """
+        if not self.config.use_semantic_column_classification:
+            # Fallback: all numeric columns except explicit exclusions
+            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+            return [c for c in numeric_cols if c.lower() not in PRICE_COLUMNS]
+
+        return get_winsorizable_columns(list(df.columns))
+
+    def _get_scaling_columns(self, df: pd.DataFrame) -> List[str]:
+        """
+        Get columns safe for scaling based on semantic classification.
+
+        Excludes price columns to preserve business metric integrity.
+
+        Returns:
+            List of column names safe for scaling
+        """
+        if not self.config.use_semantic_column_classification:
+            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+            return [c for c in numeric_cols if c.lower() not in PRICE_COLUMNS]
+
+        return get_scalable_columns(list(df.columns))
+
+    def _apply_feature_engineering(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply feature engineering using the features.api module (Section 9.3).
+
+        Integrates with build_features() for:
+        - Valuation ratios (p_e_ratio, ev_ebitda_ratio, etc.)
+        - Profitability metrics (roe, roa, margins)
+        - Growth indicators (revenue_growth, earnings_growth)
+        - Momentum features (price_momentum_1m, rsi_14d)
+        - Quality scores (piotroski_f_score, altman_z_score)
+
+        Args:
+            df: Preprocessed DataFrame (post-imputation, pre-scaling)
+
+        Returns:
+            DataFrame with engineered features added
+        """
+        if not self.config.apply_feature_engineering:
+            return df
+
+        logger.info(f"Applying feature engineering with preset: {self.config.feature_preset}")
+
+        try:
+            original_cols = set(df.columns)
+
+            # Use the unified build_features API
+            df_with_features = build_features(
+                df,
+                preset=self.config.feature_preset,
+            )
+
+            new_cols = set(df_with_features.columns) - original_cols
+            logger.info(f"Added {len(new_cols)} engineered features")
+
+            # Update metrics
+            if self.metrics:
+                self.metrics.feature_engineering_applied = True
+                self.metrics.feature_preset_used = self.config.feature_preset
+                self.metrics.features_added = len(new_cols)
+                self.metrics.columns_output = len(df_with_features.columns)
+
+            return df_with_features
+
+        except Exception as e:
+            logger.warning(f"Feature engineering failed: {e}, returning original DataFrame")
+            return df
 
     def load(self, df: pd.DataFrame, validate: bool = True) -> pd.DataFrame:
         """
@@ -1358,6 +1587,80 @@ def etl_with_financial_metrics(
         generate_metrics_dashboard=True if output_dir else False,
         output_subdir=str(output_dir) if output_dir else "financial_metrics",
     )
+
+    return run_etl_pipeline(
+        source=source,
+        data_dir=data_dir,
+        db_url=db_url,
+        config=config,
+        return_metrics=return_metrics,
+    )
+
+
+def etl_with_features(
+    source: Literal["csv", "db", "all_stocks"],
+    data_dir: Optional[Path | str] = None,
+    db_url: Optional[str] = None,
+    feature_preset: str = "comprehensive",
+    feature_categories: Optional[List[str]] = None,
+    config: Optional[ETLConfig] = None,
+    return_metrics: bool = True,
+) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
+    """
+    Complete ETL pipeline with integrated feature engineering.
+
+    Consolidates schema.py, column_semantics.py, and api.py functionality
+    into a single entry point (Section 8.6, Section 9.3).
+
+    Pipeline:
+    1. Extract from source (CSV or database)
+    2. Transform with semantic-aware strategies
+    3. Apply feature engineering (Phase 9.3 features)
+    4. Compute financial metrics
+    5. Validate quality
+
+    Args:
+        source: Data source ('csv', 'db', 'all_stocks')
+        data_dir: Directory for CSV files
+        db_url: Database connection URL
+        feature_preset: Feature engineering preset ('basic', 'momentum', 'quality',
+            'standard', 'comprehensive')
+        feature_categories: Specific feature categories to engineer
+        config: Optional ETLConfig override
+        return_metrics: Whether to return ETLMetrics
+
+    Returns:
+        DataFrame with all features, optionally with ETLMetrics
+
+    Example:
+        >>> df, metrics = etl_with_features(
+        ...     source='csv',
+        ...     data_dir=Path('data'),
+        ...     feature_preset='comprehensive',
+        ...     return_metrics=True
+        ... )
+        >>> print(f"Shape: {df.shape}, Quality: {metrics.quality_score:.3f}")
+    """
+    # Build config with feature engineering enabled
+    if config is None:
+        config = ETLConfig()
+
+    # Enable semantic-aware transformations
+    config.use_semantic_column_classification = True
+    config.preserve_price_columns = True
+    config.log_transform_market_values = True
+
+    # Enable feature engineering
+    config.apply_feature_engineering = True
+    config.feature_preset = feature_preset
+    config.feature_categories = feature_categories
+
+    # Enable financial metrics
+    config.compute_valuation_metrics = True
+    config.compute_profitability_metrics = True
+    config.compute_growth_metrics = True
+    config.compute_leverage_metrics = True
+    config.compute_target_vs_price = True
 
     return run_etl_pipeline(
         source=source,

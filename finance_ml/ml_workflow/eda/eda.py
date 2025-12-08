@@ -305,3 +305,74 @@ def analyze_phase93_by_sector(
         sector_analysis[sector] = sector_summary
 
     return sector_analysis
+
+
+# ============================================================================
+# Aliases for code_guidelines.md v1.10 API compliance
+# ============================================================================
+
+
+# Alias: compute_descriptive_stats -> eda_summary
+def compute_descriptive_stats(
+    df: pd.DataFrame,
+    sector_column: str = "sector",
+    include_correlations: bool = False,
+) -> Dict[str, Any]:
+    """
+    Compute descriptive statistics for the DataFrame.
+
+    Alias for eda_summary() to match code_guidelines.md v1.10 API.
+
+    Args:
+        df: Input dataframe
+        sector_column: Name of sector column for sector-specific analysis
+        include_correlations: Whether to include correlation matrix
+
+    Returns:
+        Dictionary with descriptive statistics
+    """
+    return eda_summary(df, sector_column, include_correlations)
+
+
+# Alias: plot_distributions -> distribution_summary (returns data for plotting)
+def plot_distributions(
+    df: pd.DataFrame,
+    column: str,
+    bins: int = 10,
+) -> Dict[str, Any]:
+    """
+    Generate distribution summary data for plotting.
+
+    Alias for distribution_summary() to match code_guidelines.md v1.10 API.
+
+    Args:
+        df: Input dataframe
+        column: Column to analyze
+        bins: Number of histogram bins
+
+    Returns:
+        Dictionary with distribution data suitable for plotting
+    """
+    return distribution_summary(df, column, bins)
+
+
+# Alias: compute_correlation_matrix -> correlation_analysis
+def compute_correlation_matrix(
+    df: pd.DataFrame,
+    method: str = "pearson",
+    min_periods: int = 1,
+) -> pd.DataFrame:
+    """
+    Compute correlation matrix for numeric columns.
+
+    Alias for correlation_analysis() to match code_guidelines.md v1.10 API.
+
+    Args:
+        df: Input dataframe
+        method: Correlation method ('pearson', 'spearman', 'kendall')
+        min_periods: Minimum observations required per pair
+
+    Returns:
+        Correlation matrix as DataFrame
+    """
+    return correlation_analysis(df, method, min_periods)

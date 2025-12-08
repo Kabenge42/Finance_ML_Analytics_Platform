@@ -45,10 +45,9 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "country": {"dtype": "category", "role": "categorical"},
     "trading_country": {"dtype": "category", "role": "categorical"},
     "exchange": {"dtype": "category", "role": "categorical"},
-    "unit": {"dtype": "string", "role": "auxiliary"},
+    "unit": {"dtype": "string", "role": "categorical"},
     "style_class": {"dtype": "category", "role": "categorical"},
     "size_class": {"dtype": "category", "role": "categorical"},
-    "flag": {"dtype": "string", "role": "auxiliary"},
     "next_earnings_status": {"dtype": "category", "role": "categorical"},
     # Date columns
     "last_updated": {"dtype": "datetime64[ns]", "role": "date"},
@@ -65,7 +64,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "price_target_low": {"dtype": "float", "role": "target_fallback"},
     "price_target_median": {"dtype": "float", "role": "target_fallback"},
     "price_target_high": {"dtype": "float", "role": "target_fallback"},
-    "price_target_num": {"dtype": "float", "role": "auxiliary"},
+    "price_target_num": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias - use price_target_count
     # Valuation metrics
     "market_cap": {"dtype": "float", "role": "feature"},
     "enterprise_value": {"dtype": "float", "role": "feature"},
@@ -129,7 +131,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "tot_return_pct_cagr_10y": {"dtype": "float", "role": "feature"},
     "price_chg_pct_1m": {"dtype": "float", "role": "feature"},
     "price_chg_pct_3m": {"dtype": "float", "role": "feature"},
-    "1_day_pct": {"dtype": "float", "role": "feature"},
+    "1_day_pct": {"dtype": "float", "role": "auxiliary"},  # Legacy alias - use one_day_pct
     "price_5d_ago": {"dtype": "float", "role": "feature"},
     "price_1w_ago": {"dtype": "float", "role": "feature"},
     "price_1m_ago": {"dtype": "float", "role": "feature"},
@@ -154,7 +156,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # Volume & Trading
     "volume_shrs": {"dtype": "float", "role": "feature"},
     "rel_volume": {"dtype": "float", "role": "feature"},
-    "shrs_out": {"dtype": "float", "role": "feature"},
+    "shrs_out": {"dtype": "float", "role": "auxiliary"},  # Legacy alias - use shares_outstanding
     "shrs_out_1fy": {"dtype": "float", "role": "feature"},
     # Revenues & Growth
     "total_revenues_fy": {"dtype": "float", "role": "feature"},
@@ -321,18 +323,36 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "cost_of_revenues_ltm": {"dtype": "float", "role": "feature"},
     "r_d_expenses": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
     "r_d_expenses_ltm": {"dtype": "float", "role": "feature"},
-    "selling_general_admin_expenses_total_fq": {"dtype": "float", "role": "feature"},
-    "selling_general_admin_expenses_total_fy": {"dtype": "float", "role": "feature"},
-    "selling_general_admin_expenses_total_1fy": {"dtype": "float", "role": "feature"},
-    "selling_general_admin_expenses_total_5yavgfq": {"dtype": "float", "role": "feature"},
+    "selling_general_admin_expenses_total_fq": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy - use sga_expenses_fq
+    "selling_general_admin_expenses_total_fy": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy - use sga_expenses_fy
+    "selling_general_admin_expenses_total_1fy": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy - use sga_expenses_1fy
+    "selling_general_admin_expenses_total_5yavgfq": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy
     # SG&A with "and" (correct normalization from "Selling General & Admin Expenses/Total")
     "selling_general_and_admin_expenses_total_fq": {"dtype": "float", "role": "feature"},
     "selling_general_and_admin_expenses_total_fy": {"dtype": "float", "role": "feature"},
     "selling_general_and_admin_expenses_total_1fy": {"dtype": "float", "role": "feature"},
     "selling_general_and_admin_expenses_total_5yavgfq": {"dtype": "float", "role": "feature"},
-    "accounts_receivable_total_fy": {"dtype": "float", "role": "feature"},
-    "accounts_receivable_total_1fy": {"dtype": "float", "role": "feature"},
-    "accounts_receivable_total_5yavgfq": {"dtype": "float", "role": "feature"},
+    "accounts_receivable_total_fy": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy - use accounts_receivable_fy
+    "accounts_receivable_total_1fy": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy - use accounts_receivable_1fy
+    "accounts_receivable_total_5yavgfq": {"dtype": "float", "role": "auxiliary"},  # Legacy
     "marketing_expenses": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
     "marketing_expenses_fq": {"dtype": "float", "role": "feature"},
     "marketing_expenses_fy": {"dtype": "float", "role": "feature"},
@@ -377,19 +397,19 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # Added to resolve unknown column warnings from dtype_diagnostics.json
     # These columns exist in the data pipeline but use different naming conventions
     # ==================================================================================
-    # Analyst Ratings (normalized names without "num_" prefix)
+    # Analyst Ratings (normalized names without "num_" prefix) - Legacy aliases
     "price_target_count": {"dtype": "float", "role": "auxiliary"},  # Alias for price_target_num
     "strong_sell_ratings": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for num_strong_sell_ratings
+        "role": "auxiliary",
+    },  # Legacy alias for num_strong_sell_ratings
     "strong_buys_ratings": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for num_strong_buys_ratings
-    "hold_ratings": {"dtype": "float", "role": "feature"},  # Alias for num_hold_ratings
-    "buys_ratings": {"dtype": "float", "role": "feature"},  # Alias for num_buys_ratings
-    "sell_ratings": {"dtype": "float", "role": "feature"},  # Alias for num_sell_ratings
+        "role": "auxiliary",
+    },  # Legacy alias for num_strong_buys_ratings
+    "hold_ratings": {"dtype": "float", "role": "auxiliary"},  # Legacy alias for num_hold_ratings
+    "buys_ratings": {"dtype": "float", "role": "auxiliary"},  # Legacy alias for num_buys_ratings
+    "sell_ratings": {"dtype": "float", "role": "auxiliary"},  # Legacy alias for num_sell_ratings
     # Simplified Base Columns (without time suffixes - used as generic references)
     "p_e": {"dtype": "float", "role": "feature"},  # Generic P/E ratio
     "p_b": {"dtype": "float", "role": "feature"},  # Generic P/B ratio
@@ -407,6 +427,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "capex": {"dtype": "float", "role": "feature"},  # Generic capital expenditure
     "cash_and_equivalents": {"dtype": "float", "role": "feature"},  # Generic cash
     "current_assets": {"dtype": "float", "role": "feature"},  # Generic current assets
+    "accounts_receivable": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias - use accounts_receivable_fy
     "current_liabilities": {"dtype": "float", "role": "feature"},  # Generic current liabilities
     "working_capital": {"dtype": "float", "role": "feature"},  # Generic working capital
     "retained_earnings": {"dtype": "float", "role": "feature"},  # Generic retained earnings
@@ -428,42 +452,89 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "one_day_pct": {"dtype": "float", "role": "feature"},  # Alias for 1_day_pct
     "shares_outstanding": {"dtype": "float", "role": "feature"},  # Alias for shrs_out
     "p_e_5yavgltm": {"dtype": "float", "role": "feature"},  # 5-year average P/E LTM
-    # SG&A Expenses (normalized naming)
-    "sga_expenses": {"dtype": "float", "role": "feature"},  # Generic SG&A
+    # SG&A Expenses (normalized naming) - Legacy aliases
+    "sga_expenses": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias - use selling_general_and_admin_expenses_*
     "sga_expenses_fq": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for selling_general_admin_expenses_total_fq
+        "role": "auxiliary",
+    },  # Legacy alias for selling_general_and_admin_expenses_total_fq
     "sga_expenses_fy": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for selling_general_admin_expenses_total_fy
+        "role": "auxiliary",
+    },  # Legacy alias for selling_general_and_admin_expenses_total_fy
     "sga_expenses_1fy": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for selling_general_admin_expenses_total_1fy
+        "role": "auxiliary",
+    },  # Legacy alias for selling_general_and_admin_expenses_total_1fy
     "sga_expenses_5yavgfq": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for selling_general_admin_expenses_total_5yavgfq
-    # Accounts Receivable (normalized naming)
+        "role": "auxiliary",
+    },  # Legacy alias for selling_general_and_admin_expenses_total_5yavgfq
+    # Accounts Receivable (normalized naming) - Legacy aliases
     "accounts_receivable_fy": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for accounts_receivable_total_fy
+        "role": "auxiliary",
+    },  # Legacy alias for accounts_receivable_total_fy
     "accounts_receivable_1fy": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for accounts_receivable_total_1fy
+        "role": "auxiliary",
+    },  # Legacy alias for accounts_receivable_total_1fy
     "accounts_receivable_5yavgfq": {
         "dtype": "float",
-        "role": "feature",
-    },  # Alias for accounts_receivable_total_5yavgfq
+        "role": "auxiliary",
+    },  # Legacy alias for accounts_receivable_total_5yavgfq
     # ==================================================================================
     # DERIVED & COMPUTED COLUMNS (Created during preprocessing/feature engineering)
     # ==================================================================================
     # Volatility percentage variants
     "volatility_1y_pct": {"dtype": "float", "role": "feature"},  # 1-year volatility as percentage
+    # --------------------------------------------------------------------------
+    # Log-transformed semantic metrics (created by ETL semantic transforms)
+    # These are log1p transforms of market values for better ML distribution
+    # --------------------------------------------------------------------------
+    "log_operating_income": {"dtype": "float", "role": "feature"},
+    "log_ebitda": {"dtype": "float", "role": "feature"},
+    "log_net_income": {"dtype": "float", "role": "feature"},
+    "log_capex": {"dtype": "float", "role": "feature"},
+    "log_operating_cash_flow": {"dtype": "float", "role": "feature"},
+    "log_total_equity": {"dtype": "float", "role": "feature"},
+    "log_market_cap": {"dtype": "float", "role": "feature"},
+    "log_total_assets": {"dtype": "float", "role": "feature"},
+    "log_gross_profit": {"dtype": "float", "role": "feature"},
+    "log_cash_and_equivalents": {"dtype": "float", "role": "feature"},
+    "log_total_debt": {"dtype": "float", "role": "feature"},
+    "log_revenue": {"dtype": "float", "role": "feature"},
+    "log_enterprise_value": {"dtype": "float", "role": "feature"},
+    # --------------------------------------------------------------------------
+    # Valuation / profitability / leverage ratios (Phase 9.3 semantic metrics)
+    # Created during ETL semantic transformation stage
+    # --------------------------------------------------------------------------
+    "p_e_ratio": {"dtype": "float", "role": "feature"},  # Price-to-Earnings ratio
+    "p_s_ratio": {"dtype": "float", "role": "feature"},  # Price-to-Sales ratio
+    "ev_ebitda_ratio": {"dtype": "float", "role": "feature"},  # EV/EBITDA ratio
+    "ev_sales_ratio": {"dtype": "float", "role": "feature"},  # EV/Sales ratio
+    "gross_margin_pct": {"dtype": "float", "role": "feature"},  # Gross margin percentage
+    "operating_margin_pct": {"dtype": "float", "role": "feature"},  # Operating margin percentage
+    "net_margin_pct": {"dtype": "float", "role": "feature"},  # Net margin percentage
+    "roe": {"dtype": "float", "role": "feature"},  # Return on Equity
+    "roa": {"dtype": "float", "role": "feature"},  # Return on Assets
+    "revenue_growth": {"dtype": "float", "role": "feature"},  # Revenue growth rate
+    "ebitda_growth": {"dtype": "float", "role": "feature"},  # EBITDA growth rate
+    "earnings_growth": {"dtype": "float", "role": "feature"},  # Earnings growth rate
+    "debt_to_equity": {"dtype": "float", "role": "feature"},  # Debt-to-Equity ratio
+    "debt_to_assets": {"dtype": "float", "role": "feature"},  # Debt-to-Assets ratio
+    "target_vs_price": {"dtype": "float", "role": "feature"},  # Price target vs last price ratio
+    "target_vs_price_median": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Median price target vs last price
+    "peg_ratio": {"dtype": "float", "role": "feature"},  # Price/Earnings-to-Growth ratio
+    "dividend_yield": {"dtype": "float", "role": "feature"},  # Dividend yield percentage
+    "roic": {"dtype": "float", "role": "feature"},  # Return on Invested Capital
+    # --------------------------------------------------------------------------
     # Year-over-Year (YoY) comparison columns (_previous_year suffix)
     "revenue_previous_year": {"dtype": "float", "role": "feature"},  # Revenue from previous year
     "ebitda_previous_year": {"dtype": "float", "role": "feature"},  # EBITDA from previous year
@@ -503,6 +574,48 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # Fiscal year variants (alternative naming)
     "revenue_fy": {"dtype": "float", "role": "feature"},  # Alias for total_revenues_fy
     "working_capital_1fy": {"dtype": "float", "role": "feature"},  # Working capital 1 fiscal year
+    # ==================================================================================
+    # CONDITIONAL METRICS (Only valid for specific business conditions)
+    # ==================================================================================
+    # Cash burn rate - only valid for companies with negative CFO (burning cash)
+    "cash_burn_rate": {"dtype": "float", "role": "feature"},
+    "cash_burn_rate_applicable": {
+        "dtype": "bool",
+        "role": "auxiliary",
+    },  # True if company has negative CFO
+    # Employee productivity metrics - only valid when employee data is available
+    "revenue_per_employee": {"dtype": "float", "role": "feature"},
+    "revenue_per_employee_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "revenue_per_employee_ltm": {"dtype": "float", "role": "feature"},
+    "revenue_per_employee_ltm_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "revenue_per_employee_fy": {"dtype": "float", "role": "feature"},
+    "revenue_per_employee_fy_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "revenue_per_employee_trend": {"dtype": "float", "role": "feature"},
+    "revenue_per_employee_trend_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "revenue_per_employee_vs_5y_pct": {"dtype": "float", "role": "feature"},
+    "revenue_per_employee_vs_5y_pct_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "assets_per_employee": {"dtype": "float", "role": "feature"},
+    "assets_per_employee_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "ebitda_per_employee": {"dtype": "float", "role": "feature"},
+    "ebitda_per_employee_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "operating_income_per_employee": {"dtype": "float", "role": "feature"},
+    "operating_income_per_employee_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "profit_per_employee": {"dtype": "float", "role": "feature"},
+    "profit_per_employee_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "employee_growth_yoy": {"dtype": "float", "role": "feature"},
+    "employee_growth_yoy_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "employee_growth_yoy_pct": {"dtype": "float", "role": "feature"},
+    "employee_growth_yoy_pct_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "employee_growth_qoq": {"dtype": "float", "role": "feature"},
+    "employee_growth_qoq_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "employee_growth_cagr_5y": {"dtype": "float", "role": "feature"},
+    "employee_growth_cagr_5y_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "employee_growth_acceleration": {"dtype": "float", "role": "feature"},
+    "employee_growth_acceleration_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "workforce_volatility": {"dtype": "float", "role": "feature"},
+    "workforce_volatility_applicable": {"dtype": "bool", "role": "auxiliary"},
+    "hiring_intensity_score": {"dtype": "float", "role": "feature"},
+    "hiring_intensity_score_applicable": {"dtype": "bool", "role": "auxiliary"},
 }
 
 
@@ -592,6 +705,18 @@ PHASE93_FEATURE_INPUTS: Dict[str, List[str]] = {
         "fcf_ltm",
         "cfi_ltm",
         "cff_ltm",
+        "cff_fy",
+        "cff_1fy",
+        "cfi_fy",
+        "cfi_1fy",
+        "cfo_fy",
+        "cfo_1fy",
+        "cff_fq",
+        "cfi_fq",
+        "cfo_fq",
+        "fcf_fq",
+        "fcf_fy",
+        "fcf_5yavgfq",
         "capital_expenditure_ltm",
     ],
     "growth": [
@@ -600,6 +725,42 @@ PHASE93_FEATURE_INPUTS: Dict[str, List[str]] = {
         "tot_return_pct_cagr_3y",
         "total_revenues_ltm",
         "total_revenues_fy",
+    ],
+    "technical": [
+        "ema_20d",
+        "ema_50d",
+        "ema_100d",
+        "ema_250d",
+        "52w_high_adj",
+        "52w_low_adj",
+        "rel_volume",
+    ],
+    "employment": [
+        "avg_employees_ltm",
+        "avg_employees_fy",
+        "avg_employees_5yavgfy",
+        "total_employees_fy",
+        "total_employees_fq",
+    ],
+    "dividends": [
+        "dividend_streak",
+        "dividend_record_amount",
+        "dividend_record_frequency",
+        "dividend_per_share_ltm",
+        "common_dividends_paid_ltm",
+        "div_yield_ltm",
+        "div_yield_ntm",
+        "div_yield_ttm",
+    ],
+    "forecasts": [
+        "revenues_est_avg_ntm",
+        "revenues_est_med_ntm",
+        "revenues_est_avg_fy1e",
+        "revenues_est_med_fy1e",
+        "eps_norm_est_avg_ntm",
+        "eps_norm_est_avg_fy1e",
+        "ebit_est_med_ntm",
+        "ebit_est_med_fy1e",
     ],
 }
 
@@ -731,3 +892,90 @@ def normalize_column_name(column: str) -> str:
         normalized = normalized.replace("__", "_")
     # Remove leading/trailing underscores
     return normalized.strip("_")
+
+
+def list_required_schema_columns_for_etl(
+    include_extended_financials: bool = False,
+) -> List[str]:
+    """
+    List the canonical set of *required* raw columns for the unified ETL pipeline.
+
+    This function centralizes the minimum schema that must be present in the
+    source extract (CSV / DB) for Phase 9.1–9.3 ETL to run correctly and for
+    downstream quality checks to be meaningful.
+
+    It is intended for use in:
+        - validate_schema(..., required_columns=list_required_schema_columns_for_etl())
+        - interpreting dtype diagnostics "missing_expected_columns"
+        - notebook/script post-ETL assertions
+
+    The list focuses on:
+        - Identifiers and group keys (ticker, sector, region, country, trading_country, isin)
+        - Core business-critical price/target columns
+        - Core market value columns needed for valuation metrics
+
+    Args:
+        include_extended_financials:
+            When True, include a small set of additional raw financial
+            columns that are highly recommended for modeling but not strictly
+            mandatory for a minimal ETL run (e.g. EBITDA LTM, total_assets_ltm).
+
+    Returns:
+        Ordered list of normalized column names that must be present in
+        the *raw* dataset before ETL.
+
+    Notes:
+        - All returned names are guaranteed to exist in COLUMN_SCHEMA; an
+          AssertionError is raised during development if the schema drifts.
+        - Derived / engineered columns (e.g. log_* metrics, ratios constructed
+          in ETL, Phase 9.3 features) are *not* included here, as they are
+          created by the pipeline, not required from the source.
+
+    Example:
+        >>> required = list_required_schema_columns_for_etl()
+        >>> assert "ticker" in required
+        >>> assert "last_price" in required
+        >>> # Use with validate_schema
+        >>> from finance_ml.ml_workflow.validation.validators import validate_schema
+        >>> result = validate_schema(df, required_columns=required)
+    """
+    required: List[str] = [
+        # Identifiers / group keys
+        "ticker",
+        "isin",
+        "sector",
+        "region",
+        "country",
+        "trading_country",
+        # Core business-critical price & targets
+        "last_price",
+        "price_target",
+        "price_target_median",
+        "price_target_ytd_ago",
+        # Core market value columns used across ETL & features
+        "market_cap",
+        "enterprise_value",
+    ]
+
+    if include_extended_financials:
+        extended = [
+            # High-importance financials commonly used by ETL/feature presets
+            "total_revenues_ltm",
+            "ebitda_ltm",
+            "net_income_is_ltm",
+            "total_assets_ltm",
+            "total_debt_ltm",
+            "total_equity_ltm",
+        ]
+        for col in extended:
+            if col not in required:
+                required.append(col)
+
+    # Defensive check: ensure all required columns are present in COLUMN_SCHEMA
+    missing_from_schema = [col for col in required if col not in COLUMN_SCHEMA]
+    if missing_from_schema:
+        raise AssertionError(
+            f"Required ETL columns not found in COLUMN_SCHEMA: {missing_from_schema}"
+        )
+
+    return required

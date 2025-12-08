@@ -61,6 +61,8 @@ from finance_ml.ml_workflow.classification.evaluation import (
     analyze_feature_importance_by_groups,
     analyze_feature_importance_by_sector,
     analyze_shap_by_feature_groups,
+    # Phase 9.4 - Probability export for regression integration
+    export_classification_probabilities,
 )
 
 # Import from new submodules
@@ -97,9 +99,26 @@ from finance_ml.ml_workflow.classification.tuning import (
     cross_validate_with_sector_stratification,
 )
 
+# ============================================================================
+# Aliases for code_guidelines.md v1.10 API compliance
+# ============================================================================
+
+# Alias: create_event_labels -> create_enhanced_event_labels
+create_event_labels = create_enhanced_event_labels
+
+# Alias: train_event_classifier -> fit_classifier
+train_event_classifier = fit_classifier
+
+# Alias: tune_classifier_hyperparameters -> optimize_classifier_hyperparameters
+tune_classifier_hyperparameters = optimize_classifier_hyperparameters
+
 __all__ = [
     # Labels
     "create_enhanced_event_labels",
+    # Aliases for code_guidelines.md v1.10 API
+    "create_event_labels",
+    "train_event_classifier",
+    "tune_classifier_hyperparameters",
     # Tuning
     "optimize_classifier_hyperparameters",
     "cross_validate_with_sector_stratification",
@@ -145,4 +164,6 @@ __all__ = [
     "analyze_feature_importance_by_groups",
     "analyze_feature_importance_by_sector",
     "analyze_shap_by_feature_groups",
+    # Phase 9.4 - Probability export for regression integration
+    "export_classification_probabilities",
 ]

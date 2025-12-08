@@ -21,9 +21,18 @@ from finance_ml.ml_workflow.eda.eda import (
     sector_distribution_summary,
     correlation_analysis,
     distribution_summary,
+    # Aliases for code_guidelines.md v1.10 API
+    compute_descriptive_stats,
+    plot_distributions,
+    compute_correlation_matrix,
 )
 from finance_ml.ml_workflow.eda.reports import (
     generate_eda_report,
+)
+
+# Phase 9.2: Hypothesis Testing (re-exported from evaluation for convenience)
+from finance_ml.ml_workflow.evaluation.hypothesis import (
+    perform_comprehensive_hypothesis_tests,
 )
 
 __all__ = [
@@ -39,6 +48,12 @@ __all__ = [
     "sector_distribution_summary",
     "correlation_analysis",
     "distribution_summary",
+    # Aliases for code_guidelines.md v1.10 API
+    "compute_descriptive_stats",
+    "plot_distributions",
+    "compute_correlation_matrix",
     # Report functions
     "generate_eda_report",
+    # Phase 9.2: Hypothesis Testing
+    "perform_comprehensive_hypothesis_tests",
 ]

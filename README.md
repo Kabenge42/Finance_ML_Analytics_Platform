@@ -1,9 +1,9 @@
 # Finance ML Analytics Platform
 
-**Version 0.9.1** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.9.2** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-12-04  
-> **Latest Release**: v0.9.1 (see CHANGELOG.md)  
+> **Documentation Last Updated:** 2025-12-08  
+> **Latest Release**: v0.9.2 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
 > applicable.
@@ -51,7 +51,10 @@ portfolio optimization.
 
 The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8) aligned with industry best practices:
 
-1. **Phase 9.1**: Loading and preprocessing with 6-step imputation strategy
+1. **Phase 9.1**: Unified ETL pipeline with semantic transformations and 6-step imputation
+    - Single entry point: `etl_with_features()` for complete ETL + feature engineering
+    - Semantic-aware transformations (price column preservation, log-transforms for market values)
+    - See `docs/code_guidelines.md` v1.10 for details
 2. **Phase 9.2**: Enhanced exploratory data analysis with statistical testing and benchmarking
 3. **Phase 9.3**: Advanced feature engineering with sector-specific optimizations
 4. **Phase 9.4**: Multi-class event classification using neural networks and ensembles
@@ -1020,7 +1023,39 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.8.3 (Current Release - 2025-11-22)
+### Version 0.9.2 (Current Release - 2025-12-08)
+
+**Unified ETL Pipeline with Semantic Transformations**:
+
+- **Single Entry Point**: `etl_with_features()` consolidates schema.py, column_semantics.py, and features/api.py into
+  one unified call for complete ETL + feature engineering
+- **Semantic-Aware Transformations**:
+    - Price column preservation (21 columns protected from transformation)
+    - Log-transforms for skewed market value columns (19 columns)
+    - Ratio/percentage column exclusion from winsorization
+- **ETLConfig Semantic Attributes**: `use_semantic_column_classification`, `preserve_price_columns`,
+  `log_transform_market_values`, `apply_feature_engineering`, `feature_preset`
+- **ETLMetrics Tracking**: `semantic_classification_applied`, `price_columns_count`, `log_transformed_columns`,
+  `features_added`, `feature_preset_used`
+- **Feature Engineering Presets**: basic, momentum, quality, standard, comprehensive (196 features)
+- **Test Coverage**: 63 new tests in `test_etl_unified_pipeline.py`
+- **Documentation**: `docs/code_guidelines.md` v1.10 with STANDARD/OPTIONAL import patterns
+
+**Usage Example**:
+
+```python
+from finance_ml.ml_workflow.preprocessing import etl_with_features
+
+all_stocks, metrics = etl_with_features(
+    source='csv',
+    data_dir='data/',
+    feature_preset='comprehensive',
+    return_metrics=True,
+)
+print(metrics.summary())
+```
+
+### Version 0.8.3 (Previous Release - 2025-11-22)
 
 - Packaging: pyproject.toml bumped to 0.8.3; CLI entry points unchanged (finance-ml, finance-ml-analyze,
   finance-ml-validate)

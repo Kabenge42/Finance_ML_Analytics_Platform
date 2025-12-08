@@ -37,12 +37,35 @@ from finance_ml.ml_workflow.classification.models import (  # noqa: E402,F401
     fit_classifier,
 )
 
+# Import from archive for backward compatibility
+from finance_ml.ml_workflow.archive.models import (  # noqa: E402,F401
+    train_and_evaluate_regression_by_sector,
+    build_regression_pipeline,
+    train_and_evaluate_regression,
+    train_quantile_regression,
+    predict_quantile_regression,
+    train_quantile_regression_by_sector,
+    train_stacking_ensemble,
+    train_stacking_ensemble_by_sector,
+    monitor_ensemble_training,
+)
+
 __all__ = [
     "train_stacking_regressor",
     "train_quantile_regressor",
     "NonNegativeRegressionWrapper",
     "compare_classifiers",
     "fit_classifier",
+    # Archive re-exports for backward compatibility
+    "train_and_evaluate_regression_by_sector",
+    "build_regression_pipeline",
+    "train_and_evaluate_regression",
+    "train_quantile_regression",
+    "predict_quantile_regression",
+    "train_quantile_regression_by_sector",
+    "train_stacking_ensemble",
+    "train_stacking_ensemble_by_sector",
+    "monitor_ensemble_training",
 ]
 
 

@@ -269,3 +269,31 @@ def calculate_feature_importance_rfe(
 
     logger.info(f"RFE selected {len(selected_features)} features from {len(X.columns)}")
     return selected_features
+
+
+# ============================================================================
+# Aliases for code_guidelines.md v1.10 API compliance
+# ============================================================================
+
+
+def select_features_rf(
+    X: pd.DataFrame,
+    y: pd.Series,
+    top_k: Optional[int] = None,
+    n_estimators: int = 100,
+) -> pd.DataFrame:
+    """
+    Select features using Random Forest importance.
+
+    Alias for calculate_feature_importance_rf() to match code_guidelines.md v1.10 API.
+
+    Args:
+        X: Feature DataFrame
+        y: Target variable
+        top_k: Return only top k features (default: all)
+        n_estimators: Number of trees in the forest
+
+    Returns:
+        DataFrame with features and importance scores, sorted by importance
+    """
+    return calculate_feature_importance_rf(X, y, top_k, n_estimators)

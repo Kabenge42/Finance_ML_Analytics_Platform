@@ -176,7 +176,6 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "beta_stability",
         "momentum_20d",
         "price_range_pct",
-        "short_interest_ratio",
         "systematic_risk_trend",
     ],
     "Leverage & Liquidity": [
@@ -186,12 +185,10 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "debt_to_equity",
         "equity_ratio",
         "interest_coverage",
-        "net_debt_to_ebitda",
         "quick_ratio",
         "working_capital_to_sales",
     ],
     "Temporal Patterns": [
-        "days_since_reference",
         "days_to_earnings",
         "earnings_report_recency",
         "ebitda_5yavgfq",

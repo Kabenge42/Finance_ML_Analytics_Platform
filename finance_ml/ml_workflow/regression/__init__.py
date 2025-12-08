@@ -56,6 +56,27 @@ from finance_ml.ml_workflow.regression.io import (
     load_regression_model,
 )
 
+# ============================================================================
+# Aliases for code_guidelines.md v1.10 API compliance
+# ============================================================================
+
+# Alias: train_sector_models -> compare_regressors (trains and compares sector models)
+train_sector_models = compare_regressors
+
+# Alias: apply_nonnegative_constraint -> enforce_non_negative
+apply_nonnegative_constraint = enforce_non_negative
+
+# ============================================================================
+# Prefixed aliases for notebook compatibility (regression_* pattern)
+# ============================================================================
+regression_prepare_data = prepare_regression_data
+regression_compare_regressors = compare_regressors
+regression_train_stacking = train_stacking_regressor
+regression_train_quantile = train_quantile_regressor
+regression_save_model = save_regression_model
+regression_load_model = load_regression_model
+regression_create_classification_interactions = integrate_classification_features
+
 __all__ = [
     # Dataset
     "prepare_regression_data",
@@ -66,6 +87,9 @@ __all__ = [
     "train_catboost_regressor",
     "train_stacking_regressor",
     "compare_regressors",
+    # Aliases for code_guidelines.md v1.10 API
+    "train_sector_models",
+    "apply_nonnegative_constraint",
     # Quantile
     "train_quantile_regressor",
     # Constraints
@@ -78,4 +102,12 @@ __all__ = [
     # I/O
     "save_regression_model",
     "load_regression_model",
+    # Prefixed aliases for notebook compatibility
+    "regression_prepare_data",
+    "regression_compare_regressors",
+    "regression_train_stacking",
+    "regression_train_quantile",
+    "regression_save_model",
+    "regression_load_model",
+    "regression_create_classification_interactions",
 ]

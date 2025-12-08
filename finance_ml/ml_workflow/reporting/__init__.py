@@ -32,11 +32,33 @@ from finance_ml.ml_workflow.reporting.export import (
     create_summary_report,
 )
 
+# ============================================================================
+# Aliases for code_guidelines.md v1.10 API compliance
+# ============================================================================
+
+# Alias: generate_dashboard_data -> prepare_plotly_dashboard_data
+generate_dashboard_data = prepare_plotly_dashboard_data
+
+# Alias: create_quality_alerts -> generate_data_quality_alerts
+create_quality_alerts = generate_data_quality_alerts
+
+# ============================================================================
+# Prefixed aliases for notebook compatibility (reporting_* pattern)
+# ============================================================================
+reporting_financial_metrics = calculate_financial_metrics_dashboard
+reporting_quality_alerts = generate_data_quality_alerts
+
 __all__ = [
     # Dashboard functions
     "calculate_financial_metrics_dashboard",
     "generate_data_quality_alerts",
     "prepare_plotly_dashboard_data",
+    # Aliases for code_guidelines.md v1.10 API
+    "generate_dashboard_data",
+    "create_quality_alerts",
+    # Prefixed aliases for notebook compatibility
+    "reporting_financial_metrics",
+    "reporting_quality_alerts",
     # Export functions (Phase 9.8)
     "export_predictions",
     "export_model_results",
