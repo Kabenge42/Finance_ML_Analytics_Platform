@@ -128,6 +128,78 @@ warnings.filterwarnings("ignore")
 
 
 # ==============================================================================
+# Helper Functions for Feature Cleaning
+# ==============================================================================
+
+
+def _clean_regression_features(X: pd.DataFrame, *, drop_zero_variance: bool = True) -> pd.DataFrame:
+    """
+    Ensure regression feature matrix is free of NaN/inf and zero-variance columns.
+
+    This is a defensive safety-rail for Phase 9.5:
+    - Replaces +/-inf with NaN
+    - Median-imputes remaining NaN per column
+    - Optionally drops zero-variance columns
+    - Returns float64 DataFrame
+
+    Args:
+        X: Feature matrix
+        drop_zero_variance: If True, drop constant columns
+
+    Returns:
+        Cleaned feature matrix as float64 DataFrame.
+    """
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    X_clean = X.copy()
+
+    # Replace infinities with NaN
+    inf_mask = ~np.isfinite(X_clean.to_numpy(dtype=np.float64))
+    if inf_mask.any():
+        n_inf = int(inf_mask.sum())
+        logger.warning(
+            f"Cleaning regression features: found {n_inf} inf/-inf values; replacing with NaN."
+        )
+        X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
+
+    # Median imputation per column
+    nan_counts = X_clean.isna().sum()
+    total_nan = int(nan_counts.sum())
+    if total_nan > 0:
+        logger.warning(
+            f"Cleaning regression features: found {total_nan} NaN values; applying median imputation."
+        )
+        medians = X_clean.median(numeric_only=True)
+        for col in X_clean.columns:
+            if col in medians.index:
+                if pd.isna(medians[col]):
+                    # Fall back to zero if column is entirely NaN
+                    X_clean[col] = X_clean[col].fillna(0.0)
+                else:
+                    X_clean[col] = X_clean[col].fillna(medians[col])
+            else:
+                # Non-numeric or unexpected types: coerce to 0 for safety
+                X_clean[col] = pd.to_numeric(X_clean[col], errors="coerce").fillna(0.0)
+
+    # Optional: drop zero-variance columns
+    if drop_zero_variance:
+        std = X_clean.std(numeric_only=True)
+        zero_var_cols = std[std == 0].index.tolist()
+        if zero_var_cols:
+            display_cols = zero_var_cols[:10] + (["..."] if len(zero_var_cols) > 10 else [])
+            logger.warning(
+                f"Dropping {len(zero_var_cols)} zero-variance feature(s) before regression: {display_cols}"
+            )
+            X_clean = X_clean.drop(columns=zero_var_cols, errors="ignore")
+
+    # Ensure float64 dtypes
+    X_clean = X_clean.astype(np.float64)
+
+    return X_clean
+
+
+# ==============================================================================
 # Category 1: Linear Models
 # ==============================================================================
 
@@ -968,6 +1040,11 @@ def train_stacking_regressor(
     base_model = StackingRegressor(
         estimators=estimators, final_estimator=meta_model, cv=splitter, n_jobs=-1, passthrough=False
     )
+
+    # Defensive cleaning to prevent NaN/inf from reaching tree estimators (Phase 9.5 safety rail)
+    # This handles inf values introduced by interaction features, ratios, or log transforms
+    X_train = _clean_regression_features(X_train)
+
     base_model.fit(X_train, y)
 
     # Wrap with NonNegativeRegressionWrapper if requested
@@ -1094,20 +1171,38 @@ def compare_regressors(
             if validation_result["inf_features"] > 0:
                 logger.warning(f"  Inf in features: {validation_result['inf_features']}")
 
-            # Apply emergency imputation
-            logger.info("Applying emergency median imputation to X_train and X_test...")
-            imputer = SimpleImputer(strategy="median")
-            X_train = pd.DataFrame(
-                imputer.fit_transform(X_train), columns=X_train.columns, index=X_train.index
-            )
-            X_test = pd.DataFrame(
-                imputer.transform(X_test), columns=X_test.columns, index=X_test.index
-            )
-            logger.info("Emergency imputation completed")
+            # Use _clean_regression_features helper for consistent data sanitization
+            # This handles: inf→NaN, median imputation, zero-variance column removal
+            logger.info("Applying _clean_regression_features to sanitize X_train and X_test...")
+            X_train = _clean_regression_features(X_train, drop_zero_variance=True)
+            X_test = _clean_regression_features(X_test, drop_zero_variance=True)
+
+            # Ensure X_test has same columns as X_train after cleaning
+            # (some columns may be dropped from X_train but not X_test or vice versa)
+            common_cols = X_train.columns.intersection(X_test.columns)
+            if len(common_cols) < len(X_train.columns):
+                logger.warning(f"Aligning columns: keeping {len(common_cols)} common features")
+                X_train = X_train[common_cols]
+                X_test = X_test[common_cols]
+
+            # Final verification - ensure no NaN/Inf remain
+            remaining_nan = X_train.isna().sum().sum() + X_test.isna().sum().sum()
+            remaining_inf = np.isinf(X_train.values).sum() + np.isinf(X_test.values).sum()
+            if remaining_nan > 0 or remaining_inf > 0:
+                logger.error(
+                    f"Data quality issues remain after sanitization: NaN={remaining_nan}, Inf={remaining_inf}"
+                )
+            else:
+                logger.info("Emergency data sanitization completed successfully")
     except Exception as e:
         logger.error(f"Validation check failed: {e}")
-        # Continue anyway but log the issue
-        pass
+        # Apply defensive cleaning even if validation fails
+        logger.info("Applying defensive _clean_regression_features due to validation failure...")
+        X_train = _clean_regression_features(X_train, drop_zero_variance=True)
+        X_test = _clean_regression_features(X_test, drop_zero_variance=True)
+        common_cols = X_train.columns.intersection(X_test.columns)
+        X_train = X_train[common_cols]
+        X_test = X_test[common_cols]
 
     results = {}
 

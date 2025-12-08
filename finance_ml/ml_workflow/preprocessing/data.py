@@ -640,7 +640,7 @@ def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
     table_ref = f"{schema}.{table}"
 
     logging.info("Loading from PostgreSQL: %s (table: %s)", db_url, table_ref)
-    engine = create_engine
+    engine = create_engine(db_url)
 
     base_query = f"SELECT * FROM {table_ref} WHERE \"Region\" IN ('US','EU','APAC','ROTW')"
     query = base_query if limit is None else f"SELECT * FROM ( {base_query} ) q LIMIT {int(limit)}"

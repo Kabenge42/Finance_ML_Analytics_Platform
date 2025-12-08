@@ -74,6 +74,30 @@ def _safe_div(numer: pd.Series | float | int, denom: pd.Series) -> pd.Series:
     return result
 
 
+def _ensure_float_column(df: pd.DataFrame, col_name: str) -> pd.DataFrame:
+    """Ensure a column exists and is float64 dtype to prevent TypeError on masked assignment.
+
+    This helper prevents TypeError when assigning float values to StringDtype or other incompatible
+    columns during sector-specific feature engineering with boolean masks.
+
+    Args:
+        df: DataFrame to modify
+        col_name: Column name to ensure as float64
+
+    Returns:
+        Modified DataFrame with column guaranteed to be float64
+
+    Example:
+        >>> df = _ensure_float_column(df, "efficiency_ratio")
+        >>> df.loc[mask, "efficiency_ratio"] = values.loc[mask]  # No TypeError
+    """
+    if col_name not in df.columns:
+        df[col_name] = pd.Series(np.nan, index=df.index, dtype="float64")
+    else:
+        df[col_name] = pd.to_numeric(df[col_name], errors="coerce")
+    return df
+
+
 def engineer_valuation_ratios(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer comprehensive valuation ratios.
 
@@ -376,172 +400,208 @@ def engineer_growth_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "sector") -> pd.DataFrame:
-    """Engineer sector-specific features based on industry best practices.
+    """
+    Add sector-specific engineered features.
 
-    Args:
-        df: Input DataFrame
-        sector_col: Name of sector column
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe with normalized columns.
+    sector_col : str, default "sector"
+        Column name indicating sector classification.
 
-    Returns:
-        DataFrame with sector-specific features added
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with additional sector-specific features.
     """
     result = df.copy()
 
-    if sector_col not in df.columns:
-        logger.warning(f"Sector column '{sector_col}' not found, skipping sector-specific features")
-        return result
+    # Basic sector masks
+    financials_mask = result[sector_col] == "Financials"
+    # Energy/Materials sector features
+    energy_mask = result[sector_col].str.contains("Energy|Materials", case=False, na=False)
+    # Technology sector features
+    tech_mask = result[sector_col].str.contains("Technology|Information", case=False, na=False)
+    # Healthcare sector features
+    health_mask = result[sector_col].str.contains("Health", case=False, na=False)
+    # Consumer sector features (Consumer Discretionary, Consumer Staples)
+    consumer_mask = result[sector_col].str.contains("Consumer", case=False, na=False)
+    # Industrials sector features
+    industrials_mask = result[sector_col].str.contains("Industrial", case=False, na=False)
+    # Utilities sector features
+    utilities_mask = result[sector_col].str.contains("Utilities", case=False, na=False)
 
-    # Financials sector features
-    financials_mask = df[sector_col].str.contains("Financial", case=False, na=False)
     if financials_mask.any():
         # Add Tangible Book Value features if applicable
         if "total_equity" in df.columns and "intangible_assets" in df.columns:
-            result.loc[financials_mask, "tangible_book_value"] = df.loc[
-                financials_mask, "total_equity"
-            ] - df.loc[financials_mask, "intangible_assets"].fillna(0)
+            # Ensure numeric source columns (protect against unexpected dtypes)
+            total_equity = pd.to_numeric(df["total_equity"], errors="coerce")
+            intangible_assets = pd.to_numeric(df["intangible_assets"], errors="coerce").fillna(0)
 
-            # Price to Tangible Book Value ratio
-            if "last_price" in df.columns and "shares_outstanding" in df.columns:
-                tbv_per_share = (
-                    result.loc[financials_mask, "tangible_book_value"]
-                    / df.loc[financials_mask, "shares_outstanding"]
+            tangible_book_value = total_equity - intangible_assets
+
+            # Ensure the target column is a floating dtype, not StringDtype
+            if "tangible_book_value" in result.columns:
+                result["tangible_book_value"] = pd.to_numeric(
+                    result["tangible_book_value"], errors="coerce"
                 )
-                result.loc[financials_mask, "p_tbv_ratio"] = _safe_div(
-                    df.loc[financials_mask, "last_price"], tbv_per_share
+            else:
+                # Create an all-NaN float column if it doesn't exist yet
+                result["tangible_book_value"] = pd.Series(
+                    np.nan, index=result.index, dtype="float64"
                 )
+
+            # Now safe to assign numeric values into this column
+            result.loc[financials_mask, "tangible_book_value"] = tangible_book_value.loc[
+                financials_mask
+            ]
+
+        # Price to Tangible Book Value ratio
+        if (
+            "last_price" in df.columns
+            and "shares_outstanding" in df.columns
+            and "tangible_book_value" in result.columns
+        ):
+            # Ensure numeric types for ratio calculation
+            last_price = pd.to_numeric(df["last_price"], errors="coerce")
+            shares_outstanding = pd.to_numeric(df["shares_outstanding"], errors="coerce")
+            tbv = pd.to_numeric(result["tangible_book_value"], errors="coerce")
+
+            market_cap_tbv = last_price * shares_outstanding
+
+            # Create / ensure numeric ratio column
+            if "p_tbv_ratio" in result.columns:
+                result["p_tbv_ratio"] = pd.to_numeric(result["p_tbv_ratio"], errors="coerce")
+            else:
+                result["p_tbv_ratio"] = pd.Series(np.nan, index=result.index, dtype="float64")
+
+            with np.errstate(divide="ignore", invalid="ignore"):
+                ratio = market_cap_tbv / tbv.replace(0, np.nan)
+
+            result.loc[financials_mask, "p_tbv_ratio"] = ratio.loc[financials_mask]
 
         # Net Interest Margin
         if all(
             col in df.columns for col in ["interest_income", "interest_expense", "earning_assets"]
         ):
-            net_interest_income = (
-                df.loc[financials_mask, "interest_income"]
-                - df.loc[financials_mask, "interest_expense"]
-            )
+            result = _ensure_float_column(result, "net_interest_margin")
+            net_interest_income = df["interest_income"] - df["interest_expense"]
             result.loc[financials_mask, "net_interest_margin"] = (
-                _safe_div(net_interest_income, df.loc[financials_mask, "earning_assets"]) * 100
-            )
+                _safe_div(net_interest_income, df["earning_assets"]) * 100
+            ).loc[financials_mask]
 
         # Efficiency Ratio
         if "operating_expenses" in df.columns and "revenue" in df.columns:
+            result = _ensure_float_column(result, "efficiency_ratio")
             result.loc[financials_mask, "efficiency_ratio"] = (
-                _safe_div(
-                    df.loc[financials_mask, "operating_expenses"],
-                    df.loc[financials_mask, "revenue"],
-                )
-                * 100
-            )
+                _safe_div(df["operating_expenses"], df["revenue"]) * 100
+            ).loc[financials_mask]
 
     # Energy/Materials sector features
-    energy_mask = df[sector_col].str.contains("Energy|Materials", case=False, na=False)
     if energy_mask.any():
         # CAPEX Intensity
         if "capex" in df.columns and "revenue" in df.columns:
+            result = _ensure_float_column(result, "capex_intensity")
             result.loc[energy_mask, "capex_intensity"] = (
-                _safe_div(df.loc[energy_mask, "capex"], df.loc[energy_mask, "revenue"]) * 100
-            )
+                _safe_div(df["capex"], df["revenue"]) * 100
+            ).loc[energy_mask]
 
         # Asset Turnover
         if "revenue" in df.columns and "total_assets" in df.columns:
+            result = _ensure_float_column(result, "asset_turnover")
             result.loc[energy_mask, "asset_turnover"] = _safe_div(
-                df.loc[energy_mask, "revenue"], df.loc[energy_mask, "total_assets"]
-            )
+                df["revenue"], df["total_assets"]
+            ).loc[energy_mask]
 
     # Technology sector features
-    tech_mask = df[sector_col].str.contains("Technology|Information", case=False, na=False)
     if tech_mask.any():
         # R&D Intensity
         if "r_d_expenses" in df.columns and "revenue" in df.columns:
+            result = _ensure_float_column(result, "r_d_intensity")
             result.loc[tech_mask, "r_d_intensity"] = (
-                _safe_div(df.loc[tech_mask, "r_d_expenses"], df.loc[tech_mask, "revenue"]) * 100
-            )
+                _safe_div(df["r_d_expenses"], df["revenue"]) * 100
+            ).loc[tech_mask]
 
         # SG&A Efficiency
         if "sga_expenses" in df.columns and "revenue" in df.columns:
+            result = _ensure_float_column(result, "sga_efficiency")
             result.loc[tech_mask, "sga_efficiency"] = (
-                _safe_div(df.loc[tech_mask, "sga_expenses"], df.loc[tech_mask, "revenue"]) * 100
-            )
+                _safe_div(df["sga_expenses"], df["revenue"]) * 100
+            ).loc[tech_mask]
 
         # Rule of 40 (Growth + Margin)
         if "revenue_growth_yoy" in df.columns and "operating_margin_pct" in df.columns:
+            result = _ensure_float_column(result, "rule_of_40")
             result.loc[tech_mask, "rule_of_40"] = (
-                df.loc[tech_mask, "revenue_growth_yoy"] + df.loc[tech_mask, "operating_margin_pct"]
-            )
+                df["revenue_growth_yoy"] + df["operating_margin_pct"]
+            ).loc[tech_mask]
 
         # Cash Burn Rate
         if "operating_cash_flow" in df.columns and "capex" in df.columns:
-            result.loc[tech_mask, "cash_burn_rate"] = (
-                df.loc[tech_mask, "operating_cash_flow"] - df.loc[tech_mask, "capex"]
-            )
+            result = _ensure_float_column(result, "cash_burn_rate")
+            result.loc[tech_mask, "cash_burn_rate"] = (df["operating_cash_flow"] - df["capex"]).loc[
+                tech_mask
+            ]
 
     # Healthcare sector features
-    health_mask = df[sector_col].str.contains("Health", case=False, na=False)
     if health_mask.any():
         # R&D intensity for healthcare
         if "r_d_expenses" in df.columns and "revenue" in df.columns:
+            result = _ensure_float_column(result, "r_d_intensity")
             result.loc[health_mask, "r_d_intensity"] = (
-                _safe_div(df.loc[health_mask, "r_d_expenses"], df.loc[health_mask, "revenue"]) * 100
-            )
+                _safe_div(df["r_d_expenses"], df["revenue"]) * 100
+            ).loc[health_mask]
 
     # Consumer sector features (Consumer Discretionary, Consumer Staples)
-    consumer_mask = df[sector_col].str.contains("Consumer", case=False, na=False)
     if consumer_mask.any():
         # Inventory Days
         if "inventory" in df.columns and "cost_of_goods_sold" in df.columns:
+            result = _ensure_float_column(result, "inventory_days")
             result.loc[consumer_mask, "inventory_days"] = (
-                _safe_div(
-                    df.loc[consumer_mask, "inventory"], df.loc[consumer_mask, "cost_of_goods_sold"]
-                )
-                * 365
-            )
+                _safe_div(df["inventory"], df["cost_of_goods_sold"]) * 365
+            ).loc[consumer_mask]
 
         # Marketing Efficiency
         if "marketing_expenses" in df.columns and "revenue" in df.columns:
+            result = _ensure_float_column(result, "marketing_efficiency")
             result.loc[consumer_mask, "marketing_efficiency"] = (
-                _safe_div(
-                    df.loc[consumer_mask, "marketing_expenses"], df.loc[consumer_mask, "revenue"]
-                )
-                * 100
-            )
+                _safe_div(df["marketing_expenses"], df["revenue"]) * 100
+            ).loc[consumer_mask]
 
     # Industrials sector features
-    industrials_mask = df[sector_col].str.contains("Industrial", case=False, na=False)
     if industrials_mask.any():
         # CAPEX Intensity
         if "capex" in df.columns and "revenue" in df.columns:
+            result = _ensure_float_column(result, "capex_intensity")
             result.loc[industrials_mask, "capex_intensity"] = (
-                _safe_div(df.loc[industrials_mask, "capex"], df.loc[industrials_mask, "revenue"])
-                * 100
-            )
+                _safe_div(df["capex"], df["revenue"]) * 100
+            ).loc[industrials_mask]
 
         # CAPEX to Depreciation ratio
         if "capex" in df.columns and "depreciation_amortization" in df.columns:
+            result = _ensure_float_column(result, "capex_to_depreciation")
             result.loc[industrials_mask, "capex_to_depreciation"] = _safe_div(
-                df.loc[industrials_mask, "capex"],
-                df.loc[industrials_mask, "depreciation_amortization"],
-            )
+                df["capex"],
+                df["depreciation_amortization"],
+            ).loc[industrials_mask]
 
         # Working Capital Efficiency
         if all(col in df.columns for col in ["current_assets", "current_liabilities", "revenue"]):
-            working_capital = (
-                df.loc[industrials_mask, "current_assets"]
-                - df.loc[industrials_mask, "current_liabilities"]
-            )
+            result = _ensure_float_column(result, "working_capital_efficiency")
+            working_capital = df["current_assets"] - df["current_liabilities"]
             result.loc[industrials_mask, "working_capital_efficiency"] = (
-                _safe_div(working_capital, df.loc[industrials_mask, "revenue"]) * 100
-            )
+                _safe_div(working_capital, df["revenue"]) * 100
+            ).loc[industrials_mask]
 
     # Utilities sector features
-    utilities_mask = df[sector_col].str.contains("Utilities", case=False, na=False)
     if utilities_mask.any():
         # Dividend Payout Ratio
         if "dividends_paid" in df.columns and "net_income" in df.columns:
+            result = _ensure_float_column(result, "dividend_payout_ratio")
             result.loc[utilities_mask, "dividend_payout_ratio"] = (
-                _safe_div(
-                    df.loc[utilities_mask, "dividends_paid"], df.loc[utilities_mask, "net_income"]
-                )
-                * 100
-            )
+                _safe_div(df["dividends_paid"], df["net_income"]) * 100
+            ).loc[utilities_mask]
 
     logger.info(f"Engineered sector-specific features")
     return result
