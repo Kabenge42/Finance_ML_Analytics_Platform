@@ -85,6 +85,7 @@ from finance_ml.ml_workflow.analytics.eval import (
     create_sector_heatmap,
     create_interactive_prediction_plot,
     create_region_sector_heatmap,
+    create_valuation_scatter_plot,
     # Advanced EDA functions (correlations)
     calculate_correlation_matrix,
     find_top_correlations,
@@ -307,6 +308,7 @@ __all__ = [
     "create_sector_heatmap",
     "create_interactive_prediction_plot",
     "create_region_sector_heatmap",
+    "create_valuation_scatter_plot",
     # Advanced EDA
     "calculate_correlation_matrix",
     "find_top_correlations",
