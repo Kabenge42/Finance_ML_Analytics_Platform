@@ -97,6 +97,13 @@ from finance_ml.ml_workflow.regression.stacking import (
     build_lineage_json,
 )
 
+# ============================================================================
+# Prefixed aliases for notebook compatibility (evaluation_* pattern)
+# ============================================================================
+evaluation_comprehensive_metrics = comprehensive_regression_metrics
+evaluation_metrics_by_segment = compute_metrics_by_segment
+calibrate_predictions_by_sector = estimate_sector_bias
+
 __all__ = [
     # Metrics functions
     "comprehensive_regression_metrics",
@@ -129,4 +136,8 @@ __all__ = [
     "meta_error_maps",
     "generate_model_card",
     "build_lineage_json",
+    # Prefixed aliases for notebook compatibility
+    "evaluation_comprehensive_metrics",
+    "evaluation_metrics_by_segment",
+    "calibrate_predictions_by_sector",
 ]

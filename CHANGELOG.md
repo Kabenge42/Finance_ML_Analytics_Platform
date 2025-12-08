@@ -1,3 +1,76 @@
+## [0.9.3] - 2025-12-08
+
+### Added
+
+- **Unified ETL Pipeline with Semantic Transformations and Feature Engineering**
+    - **New Entry Point**: `etl_with_features()` — Single function consolidating schema.py, column_semantics.py, and
+      features/api.py functionality into complete ETL + feature engineering pipeline
+    - **ETLConfig Semantic Attributes** (Section 8.5 compliance):
+        - `use_semantic_column_classification`: Enable semantic column classification (default: True)
+        - `preserve_price_columns`: Never transform price columns (default: True)
+        - `log_transform_market_values`: Apply log-transforms to skewed market value columns (default: True)
+        - `exclude_ratios_from_winsorization`: Ratios are pre-normalized (default: True)
+        - `exclude_percentages_from_winsorization`: Percentages are bounded (default: True)
+        - `apply_feature_engineering`: Enable Phase 9.3 feature engineering (default: False)
+        - `feature_preset`: Options: "basic", "momentum", "quality", "standard", "comprehensive"
+    - **ETLMetrics Semantic Tracking**:
+        - `semantic_classification_applied`, `price_columns_count`, `market_value_columns_count`
+        - `ratio_columns_count`, `percentage_columns_count`, `count_columns_count`, `log_transformed_columns`
+        - `feature_engineering_applied`, `feature_preset_used`, `features_added`
+    - **Pipeline Stages** (9-stage unified pipeline):
+        1. Extract from source (CSV or database)
+        2. Column normalization
+        3. Dtype casting (schema-aware)
+        4. Semantic column classification
+        5. 6-step imputation strategy
+        6. Semantic-aware transformations (log-transforms)
+        7. Winsorization (excluding price/ratio/percentage columns)
+        8. Feature engineering (Phase 9.3 features)
+        9. Quality validation
+    - **Test Coverage**: 63 new tests in `test_etl_unified_pipeline.py` (all passing)
+    - **Business Impact**: Simplified notebook workflow while preserving price column integrity for valuation metrics
+
+- **Schema and DTtype Alignment for Unified ETL Pipeline**
+    - **New Helper Function**: `list_required_schema_columns_for_etl()` in `schema.py`
+        - Returns canonical list of 12 core required columns for ETL pipeline
+        - Optional `include_extended_financials` flag adds 6 additional financial columns
+        - Defensive assertion ensures all required columns exist in COLUMN_SCHEMA
+    - **New Derived Columns in COLUMN_SCHEMA** (30 columns):
+        - Log-transformed market values (13 columns): `log_market_cap`, `log_enterprise_value`, `log_revenue`, etc.
+        - Valuation/profitability ratios (17 columns): `p_e_ratio`, `p_s_ratio`, `roe`, `roa`, `debt_to_equity`, etc.
+    - **Legacy Alias Demotion**: Changed 21+ column entries from `role: "feature"` to `role: "auxiliary"`:
+        - `price_target_num`, `1_day_pct`, `shrs_out` (legacy identifier aliases)
+        - `selling_general_admin_expenses_total_*` (4 columns)
+        - `accounts_receivable_total_*` (3 columns)
+        - Analyst ratings without `num_` prefix: `strong_sell_ratings`, `buys_ratings`, etc. (5 columns)
+        - `sga_expenses*` and `accounts_receivable*` aliases (8 columns)
+    - **New DTtype Helper**: `get_critical_missing_columns()` in `dtypes.py`
+        - Filters `missing_expected_columns` against ETL-required columns
+        - Distinguishes hard errors (truly missing) from soft warnings (optional features)
+    - **Enhanced Docstrings**: Updated `detect_and_cast_dtypes()` with Notes section explaining:
+        - Unified ETL behavior with unknown columns
+        - Legacy alias demotion rationale
+        - Integration with `list_required_schema_columns_for_etl()`
+
+- **Documentation Updates**
+    - **code_guidelines.md v1.10**: Added Section 7.5 `etl_with_features()` documentation, STANDARD/OPTIONAL import
+      patterns in Section 4.3, updated Phase 9.1 entry point references
+    - **code_guidelines.md Section 5.3**: Updated Schema Registry with new functions and column count (350+)
+    - **code_guidelines.md Section 5.3.1-5.3.3**: New subsections documenting ETL-required columns, column roles,
+      and derived ETL columns
+    - **promt_rules.md v0.9.2**: Updated Phase 9.1 description, code_guidelines.md v1.10 reference, version history
+    - **guidelines.md**: Added unified ETL pipeline section with usage examples, updated test suite count to 86 modules
+    - **README.md**: Updated to v0.9.2, added v0.9.2 to Recent Updates with usage example
+    - **NOTEBOOK_UPDATE_PLAN.md**: Comprehensive guide for updating notebooks to unified ETL pipeline
+    - **NOTEBOOK_UPDATE_SUMMARY.md**: Implementation summary and checklist
+
+### Changed
+
+- **Import Patterns**: Section 4.3 now distinguishes STANDARD (unified ETL) vs OPTIONAL (module-level) imports
+- **Phase 9.1 Documentation**: Updated across all documentation to reference `etl.py` as the unified entry point
+
+---
+
 ## [0.9.2] - 2025-12-04
 
 > **Commits:** [`adebeac`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/adebeac), [

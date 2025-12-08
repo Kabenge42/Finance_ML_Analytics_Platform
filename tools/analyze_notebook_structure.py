@@ -1,90 +1,52 @@
-#!/usr/bin/env python3
-"""
-Analyze ml_finance_model_main.ipynb structure to identify phase organization and gaps.
-"""
+"""Analyze notebook structure for refactoring."""
+
 import json
-from pathlib import Path
 
+with open("ml_finance_model_main.ipynb", "r", encoding="utf-8") as f:
+    nb = json.load(f)
 
-def analyze_notebook():
-    nb_path = Path("../ml_finance_model_main.ipynb")
+cells = nb["cells"]
+print(f"Total cells: {len(cells)}")
 
-    with open(nb_path, "r", encoding="utf-8") as f:
-        nb = json.load(f)
+code_cells = [(i, c) for i, c in enumerate(cells) if c["cell_type"] == "code"]
+markdown_cells = [(i, c) for i, c in enumerate(cells) if c["cell_type"] == "markdown"]
 
-    cells = nb["cells"]
-    print(f"Total cells: {len(cells)}")
-    print(f"\n{'='*80}")
-    print("NOTEBOOK STRUCTURE ANALYSIS")
-    print(f"{'='*80}\n")
+print(f"Code cells: {len(code_cells)}")
+print(f"Markdown cells: {len(markdown_cells)}")
 
-    # Track phases
-    current_phase = None
-    phase_sections = []
+print("\n=== First 30 Code Cells Overview ===")
+for idx, (cell_idx, cell) in enumerate(code_cells[:30]):
+    source = "".join(cell["source"])
+    first_line = source.split("\n")[0][:80] if source else "(empty)"
+    print(f"Cell {cell_idx}: {first_line}")
 
-    for i, cell in enumerate(cells):
-        cell_type = cell["cell_type"]
-        source = "".join(cell.get("source", []))
+print("\n=== Looking for issues in code cells ===")
+issues = {
+    "broad_exception": [],
+    "missing_type_hints": [],
+    "unused_imports_candidates": [],
+    "deprecated_4step": [],
+}
 
-        # Look for phase markers
-        if "##" in source or "###" in source or "Phase 9." in source:
-            # Extract header
-            lines = source.split("\n")
-            for line in lines:
-                if line.strip().startswith("#"):
-                    header = line.strip()
-                    # Check for phase markers
-                    if "Phase 9." in header or "PHASE 9." in header.upper():
-                        if "Phase 9.1" in header or "PHASE 9.1" in header.upper():
-                            current_phase = "9.1"
-                        elif "Phase 9.2" in header or "PHASE 9.2" in header.upper():
-                            current_phase = "9.2"
-                        elif "Phase 9.3" in header or "PHASE 9.3" in header.upper():
-                            current_phase = "9.3"
-                        elif "Phase 9.4" in header or "PHASE 9.4" in header.upper():
-                            current_phase = "9.4"
-                        elif "Phase 9.5" in header or "PHASE 9.5" in header.upper():
-                            current_phase = "9.5"
-                        elif "Phase 9.6" in header or "PHASE 9.6" in header.upper():
-                            current_phase = "9.6"
-                        elif "Phase 9.7" in header or "PHASE 9.7" in header.upper():
-                            current_phase = "9.7"
-                        elif "Phase 9.8" in header or "PHASE 9.8" in header.upper():
-                            current_phase = "9.8"
+for cell_idx, cell in code_cells:
+    source = "".join(cell["source"])
 
-                        phase_sections.append({"cell": i, "phase": current_phase, "header": header})
-                        print(f"Cell {i:4d} | Phase {current_phase} | {header[:70]}")
-                    elif line.strip().startswith("##"):
-                        # Major section marker
-                        print(f"Cell {i:4d} | Section   | {header[:70]}")
+    # Check for broad exception
+    if "except Exception" in source or "except:" in source:
+        issues["broad_exception"].append(cell_idx)
 
-    # Summary
-    print(f"\n{'='*80}")
-    print("PHASE SUMMARY")
-    print(f"{'='*80}\n")
+    # Check for deprecated 4-step imputation
+    if "4step" in source.lower() or "four_step" in source.lower():
+        issues["deprecated_4step"].append(cell_idx)
 
-    phases_found = set(s["phase"] for s in phase_sections if s["phase"])
-    phases_expected = ["9.1", "9.2", "9.3", "9.4", "9.5", "9.6", "9.7", "9.8"]
+    # Check for functions without type hints (simple heuristic)
+    if "def " in source:
+        lines = source.split("\n")
+        for line in lines:
+            if line.strip().startswith("def ") and "->" not in line:
+                issues["missing_type_hints"].append(cell_idx)
+                break
 
-    print(f"Phases found: {sorted(phases_found)}")
-    print(f"Phases expected: {phases_expected}")
-
-    missing_phases = set(phases_expected) - phases_found
-    if missing_phases:
-        print(f"\n⚠️  Missing phases: {sorted(missing_phases)}")
-    else:
-        print(f"\n✅ All 8 phases are present")
-
-    # Count sections per phase
-    print(f"\n{'='*80}")
-    print("SECTIONS PER PHASE")
-    print(f"{'='*80}\n")
-
-    for phase in phases_expected:
-        count = sum(1 for s in phase_sections if s["phase"] == phase)
-        status = "✓" if count > 0 else "✗"
-        print(f"{status} Phase {phase}: {count} section(s)")
-
-
-if __name__ == "__main__":
-    analyze_notebook()
+print(f"\nBroad exception cells: {issues['broad_exception']}")
+print(f"Missing type hints cells: {issues['missing_type_hints']}")
+print(f"Deprecated 4step cells: {issues['deprecated_4step']}")

@@ -1,7 +1,7 @@
 ﻿# Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.9  
-**Last Updated:** 2025-12-05  
+**Version:** 1.10  
+**Last Updated:** 2025-12-08  
 **Package Version:** 0.9.1  
 **Model Version:** v9_9
 
@@ -9,7 +9,23 @@ These guidelines codify conventions for the Finance ML Analytics Platform, cover
 architecture, function signatures, column naming, and best practices. They align with the project's 8-phase ML
 workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 
-**Recent Updates (v1.9):**
+**Recent Updates (v1.10):**
+
+- **NEW:** Unified ETL Pipeline with Semantic Transformations and Feature Engineering (2025-12-08)
+    - **Section 7.5**: Added `etl_with_features()` — Single entry point consolidating schema.py, column_semantics.py,
+      and features/api.py functionality
+    - **ETLConfig**: New semantic-aware attributes (`use_semantic_column_classification`, `preserve_price_columns`,
+      `log_transform_market_values`, `apply_feature_engineering`, `feature_preset`)
+    - **ETLMetrics**: New tracking attributes for semantic classification and feature engineering
+      (`semantic_classification_applied`, `price_columns_count`, `log_transformed_columns`, `features_added`)
+    - **Pipeline Stages**: 9-stage unified pipeline (Extract → Normalize → Dtype Cast → Semantic Classification →
+      Imputation → Semantic Transforms → Winsorization → Feature Engineering → Quality Validation)
+    - **Migration Guide**: From 7-10 scattered preprocessing cells to single `etl_with_features()` call
+    - **Feature Presets**: basic, momentum, quality, standard, comprehensive (196 features)
+    - **Test Coverage**: 51 tests in test_etl_unified_pipeline.py validating all new functionality
+    - **Business Impact**: Simplified notebook workflow while preserving price column integrity for valuation metrics
+
+**Previous Updates (v1.9):**
 
 - **NEW:** Documentation alignment with implementation audit (2025-12-05)
     - **Section 2.4**: Business-Driven Configuration Rationale — Links technical constants to business objectives
@@ -438,25 +454,59 @@ finance_ml/
 
 Each subpackage maps directly to a business phase:
 
-| Phase | Subpackage        | Description                                           |
-|-------|-------------------|-------------------------------------------------------|
-| 9.1   | `preprocessing/`  | Data loading, imputation, scaling, outlier handling   |
-| 9.2   | `eda/`            | Exploratory analysis, benchmarking, statistical tests |
-| 9.3   | `features/`       | Feature engineering (318 columns, Schema v1.3)        |
-| 9.4   | `classification/` | Event classification (13 label methods)               |
-| 9.5   | `regression/`     | Regression models, quantile, stacking                 |
-| 9.6   | `evaluation/`     | Metrics, uncertainty, calibration, safety rails       |
-| 9.7   | `analytics/`      | Mispricing, portfolio optimization, risk metrics      |
-| 9.8   | `reporting/`      | Dashboard data, quality alerts, reporting             |
+| Phase | Subpackage        | Entry Point | Description                                           |
+|-------|-------------------|-------------|-------------------------------------------------------|
+| 9.1   | `preprocessing/`  | `etl.py`    | Unified ETL: loading, imputation, scaling, outliers   |
+| 9.2   | `eda/`            | —           | Exploratory analysis, benchmarking, statistical tests |
+| 9.3   | `features/`       | `api.py`    | Feature engineering (318 columns, Schema v1.3)        |
+| 9.4   | `classification/` | —           | Event classification (13 label methods)               |
+| 9.5   | `regression/`     | —           | Regression models, quantile, stacking                 |
+| 9.6   | `evaluation/`     | —           | Metrics, uncertainty, calibration, safety rails       |
+| 9.7   | `analytics/`      | —           | Mispricing, portfolio optimization, risk metrics      |
+| 9.8   | `reporting/`      | —           | Dashboard data, quality alerts, reporting             |
+
+> **Note:** Phase 9.1 uses `etl.py` as the unified entry point that consolidates data loading,
+> imputation, scaling, semantic transformations, and feature engineering into a single pipeline.
+> See Section 7.5 for detailed API documentation.
 
 ### 4.3 Import Patterns
 
-**Recommended Pattern (Module-level imports):**
+**STANDARD Pattern (Unified ETL Pipeline):**
+
+Use the unified ETL pipeline as the recommended entry point for Phase 9.1-9.3:
 
 ```python
-# Phase 9.1: Preprocessing (6-Step Imputation Strategy)
+# Phase 9.1-9.3: Unified ETL Pipeline (STANDARD - Use This)
+from finance_ml.ml_workflow.preprocessing import (
+    # Primary entry points
+    etl_with_features,  # Complete ETL + feature engineering (recommended)
+    etl_with_financial_metrics,  # ETL + financial metrics (for analysis workflows)
+    run_etl_pipeline,  # Low-level ETL with custom config
+    # Configuration classes
+    ETLConfig,  # Pipeline configuration
+    ETLMetrics,  # Pipeline metrics tracking
+    )
+
+# Example usage:
+from pathlib import Path
+
+df, metrics = etl_with_features(
+        source='csv',
+        data_dir=Path('data'),
+        feature_preset='comprehensive',
+        return_metrics=True,
+        )
+print(metrics.summary())
+```
+
+**OPTIONAL Pattern (Module-level imports for fine-grained control):**
+
+Use these imports when you need direct access to individual functions:
+
+```python
+# Phase 9.1: Preprocessing - Imputation (OPTIONAL)
 from finance_ml.ml_workflow.preprocessing.imputation import (
-    apply_enhanced_imputation_strategy_6step,  # STANDARD (use this)
+    apply_enhanced_imputation_strategy_6step,
     validate_imputation_completeness,
     apply_zero_imputation,
     apply_knn_imputation_enhanced,
@@ -466,6 +516,7 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
     apply_datetime_imputation,
 )
 
+# Phase 9.1: Preprocessing - Other utilities (OPTIONAL)
 from finance_ml.ml_workflow.preprocessing import (
     detect_outliers,
     winsorize_features,
@@ -480,13 +531,14 @@ from finance_ml.ml_workflow.eda import (
     compute_correlation_matrix,
 )
 
+# Phase 9.2: EDA - Phase 9.3 Categories (OPTIONAL)
 from finance_ml.ml_workflow.eda.phase93_categories import (
     PHASE93_FEATURE_CATEGORIES,
     categorize_dataframe_columns,
     get_phase93_coverage_stats,
 )
 
-# Phase 9.3: Features
+# Phase 9.3: Features - Individual builders (OPTIONAL)
 from finance_ml.ml_workflow.features import (
     build_valuation_features,
     build_momentum_features,
@@ -494,6 +546,7 @@ from finance_ml.ml_workflow.features import (
     select_features_rf,
 )
 
+# Phase 9.3: Features - Unified API (OPTIONAL when using etl_with_features)
 from finance_ml.ml_workflow.features.api import (
     build_features,  # Unified entry point
 )
@@ -692,20 +745,92 @@ The authoritative column schema is defined in `finance_ml/ml_workflow/data/schem
 
 ```python
 from finance_ml.ml_workflow.data.schema import (
-   COLUMN_SCHEMA,  # Dict[str, Dict[str, str]] - 318 columns
+   COLUMN_SCHEMA,  # Dict[str, Dict[str, str]] - 350+ columns (includes derived ETL columns)
    get_expected_dtype,  # Get dtype for a column
    get_column_role,  # Get role for a column
    list_numeric_feature_cols,  # List all numeric features
    list_categorical_cols,  # List all categorical columns
    list_date_cols,  # List all date columns
    normalize_column_name,  # Normalize a column name
+   list_required_schema_columns_for_etl,  # Get canonical ETL-required columns (v0.9.3+)
    )
 
 # Example usage
 dtype = get_expected_dtype('last_price')  # Returns 'float'
 role = get_column_role('sector')  # Returns 'categorical'
 numeric_cols = list_numeric_feature_cols()  # Returns list of numeric feature columns
+
+# ETL-required columns validation (v0.9.3+)
+required = list_required_schema_columns_for_etl()  # Core columns: ticker, sector, region, last_price, etc.
+required_ext = list_required_schema_columns_for_etl(include_extended_financials=True)  # + ebitda_ltm, etc.
 ```
+
+#### 5.3.1 ETL-Required Columns (v0.9.3+)
+
+The `list_required_schema_columns_for_etl()` function provides a canonical list of columns required for the unified ETL
+pipeline:
+
+**Core Required Columns (12 columns):**
+
+- **Identifiers**: `ticker`, `isin`
+- **Group Keys**: `sector`, `region`, `country`, `trading_country`
+- **Price/Targets**: `last_price`, `price_target`, `price_target_median`, `price_target_ytd_ago`
+- **Market Values**: `market_cap`, `enterprise_value`
+
+**Extended Financials (optional, 6 additional columns):**
+
+- `total_revenues_ltm`, `ebitda_ltm`, `net_income_is_ltm`, `total_assets_ltm`, `total_debt_ltm`, `total_equity_ltm`
+
+**Usage with dtype diagnostics:**
+
+```python
+from finance_ml.ml_workflow.preprocessing.dtypes import (
+    detect_and_cast_dtypes,
+    get_critical_missing_columns,
+)
+
+df_cast, diagnostics = detect_and_cast_dtypes(df)
+# Check for truly critical missing columns (not just optional features)
+critical = get_critical_missing_columns(diagnostics)
+if critical:
+    raise ValueError(f"Missing required ETL columns: {critical}")
+```
+
+#### 5.3.2 Schema Column Roles
+
+Columns in `COLUMN_SCHEMA` are assigned roles that determine their treatment:
+
+| Role              | Description                      | Included in `missing_expected_columns` |
+|-------------------|----------------------------------|----------------------------------------|
+| `feature`         | ML features used in modeling     | Yes                                    |
+| `target`          | Target variables for prediction  | Yes                                    |
+| `target_fallback` | Alternative targets              | Yes                                    |
+| `id`              | Identifier columns               | Yes                                    |
+| `date`            | Date/timestamp columns           | Yes                                    |
+| `categorical`     | Categorical grouping columns     | Yes                                    |
+| `auxiliary`       | Legacy aliases, optional columns | **No**                                 |
+
+**Note:** Legacy/alias column names (e.g., `price_target_num`, `1_day_pct`, `shrs_out`, `sga_expenses_*`) have been
+demoted to `role: "auxiliary"` so they no longer appear in `missing_expected_columns` diagnostics. This keeps
+diagnostics focused on truly required columns.
+
+#### 5.3.3 Derived ETL Columns
+
+The schema includes columns created by the ETL semantic transformation stage:
+
+**Log-Transformed Market Values (13 columns):**
+
+- `log_market_cap`, `log_enterprise_value`, `log_revenue`, `log_ebitda`, `log_net_income`
+- `log_total_assets`, `log_total_equity`, `log_total_debt`, `log_gross_profit`
+- `log_operating_income`, `log_operating_cash_flow`, `log_capex`, `log_cash_and_equivalents`
+
+**Valuation/Profitability Ratios (17 columns):**
+
+- `p_e_ratio`, `p_s_ratio`, `ev_ebitda_ratio`, `ev_sales_ratio`
+- `gross_margin_pct`, `operating_margin_pct`, `net_margin_pct`
+- `roe`, `roa`, `roic`, `debt_to_equity`, `debt_to_assets`
+- `revenue_growth`, `ebitda_growth`, `earnings_growth`
+- `target_vs_price`, `target_vs_price_median`, `peg_ratio`, `dividend_yield`
 
 ### 5.4 Phase 9.3 Feature Categories
 
@@ -1353,6 +1478,177 @@ df, metrics = etl_with_financial_metrics(
     data_dir='data/',
     output_dir=output_dir
 )
+```
+
+**Unified ETL with Feature Engineering: `etl_with_features()`** *(NEW in v1.10)*
+
+The `etl_with_features()` function provides a single entry point that consolidates schema.py, column_semantics.py,
+and features/api.py functionality into one unified call. This is the **recommended entry point** for complete
+ETL with semantic-aware transformations and Phase 9.3 feature engineering.
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_features, ETLConfig
+
+
+def etl_with_features(
+        source: Literal["csv", "db", "all_stocks"],
+        data_dir: Optional[Path | str] = None,
+        db_url: Optional[str] = None,
+        feature_preset: str = "standard",
+        feature_categories: Optional[List[str]] = None,
+        config: Optional[ETLConfig] = None,
+        return_metrics: bool = True,
+        ) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
+    """
+    Complete ETL pipeline with integrated feature engineering.
+    
+    Consolidates schema.py, column_semantics.py, and api.py functionality
+    into a single entry point (Section 8.6, Section 9.3).
+    
+    Pipeline Stages:
+    1. Extract from source (CSV or database)
+    2. Column normalization and dtype casting
+    3. Semantic column classification (price, market_value, ratio, percentage, count)
+    4. 6-step imputation strategy
+    5. Semantic-aware transformations (log-transforms for market values)
+    6. Winsorization (excluding price/ratio/percentage columns)
+    7. Feature engineering (Phase 9.3 features via build_features API)
+    8. Financial metrics computation
+    9. Quality validation
+    
+    Args:
+        source: Data source ('csv', 'db', 'all_stocks')
+        data_dir: Directory for CSV files
+        db_url: Database connection URL
+        feature_preset: Feature engineering preset
+            - 'basic': Core ratios, margins, volatility, revenue CAGR
+            - 'momentum': Momentum & technical indicators only
+            - 'quality': Accounting quality and financial distress signals
+            - 'standard': Balanced feature set (default)
+            - 'comprehensive': Full advanced feature set (196 features)
+        feature_categories: Specific feature categories to engineer (optional)
+        config: Optional ETLConfig override
+        return_metrics: Whether to return ETLMetrics
+    
+    Returns:
+        DataFrame with all features, optionally with ETLMetrics
+    """
+```
+
+**Usage Examples:**
+
+```python
+# Recommended: Complete ETL with comprehensive features
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_features
+
+df, metrics = etl_with_features(
+        source='csv',
+        data_dir='data/',
+        feature_preset='comprehensive',
+        return_metrics=True
+        )
+
+print(metrics.summary())
+# ETL Pipeline Summary:
+#   Source: csv
+#   Duration: 2.34s
+#   Semantic Classification: ✓ (Price Columns: 21, Market Value: 19, Log-Transformed: 19)
+#   Feature Engineering: comprehensive (196 features added)
+
+# With custom ETLConfig for fine-grained control
+from finance_ml.ml_workflow.preprocessing.etl import etl_with_features, ETLConfig
+
+config = ETLConfig(
+        use_semantic_column_classification=True,
+        preserve_price_columns=True,  # CRITICAL: Never transform price columns
+        log_transform_market_values=True,
+        apply_feature_engineering=True,
+        feature_preset="comprehensive",
+        )
+
+df, metrics = etl_with_features(
+        source='csv',
+        data_dir='data/',
+        config=config,
+        return_metrics=True
+        )
+
+# Verify price columns were protected
+assert metrics.price_columns_count > 0, "Price columns should be detected"
+assert 'last_price' in df.columns, "last_price must be preserved"
+```
+
+**ETLConfig Semantic Attributes** *(NEW in v1.10)*:
+
+```python
+@dataclass
+class ETLConfig:
+    # ... existing attributes ...
+
+    # Semantic-aware transformation flags (Section 8.5)
+    use_semantic_column_classification: bool = True  # Enable semantic classification
+    preserve_price_columns: bool = True  # CRITICAL: Never transform price columns
+    log_transform_market_values: bool = True  # Apply log-transforms to skewed columns
+    exclude_ratios_from_winsorization: bool = True  # Ratios are pre-normalized
+    exclude_percentages_from_winsorization: bool = True  # Percentages are bounded
+    exclude_counts_from_scaling: bool = False  # Optionally exclude discrete counts
+
+    # Feature engineering integration (Section 9.3)
+    apply_feature_engineering: bool = False  # Default OFF for backward compatibility
+    feature_preset: str = "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
+    feature_categories: Optional[List[str]] = None  # Specific categories to engineer
+```
+
+**ETLMetrics Semantic Tracking** *(NEW in v1.10)*:
+
+```python
+@dataclass
+class ETLMetrics:
+    # ... existing attributes ...
+    
+    # Semantic transformation metrics
+    semantic_classification_applied: bool = False
+    price_columns_count: int = 0  # Number of protected price columns (21 total)
+    market_value_columns_count: int = 0  # Market value columns (19 total)
+    ratio_columns_count: int = 0  # Pre-normalized ratio columns
+    percentage_columns_count: int = 0  # Bounded percentage columns
+    count_columns_count: int = 0  # Discrete count columns
+    log_transformed_columns: int = 0  # Columns with log-transforms applied
+    
+    # Feature engineering metrics
+    feature_engineering_applied: bool = False
+    feature_preset_used: str = ""
+    features_added: int = 0
+    feature_categories_applied: List[str] = field(default_factory=list)
+```
+
+**Migration from Multiple Cells to Single Entry Point:**
+
+```python
+# OLD (7-10 cells):
+all_stocks = load_from_csv(data_dir)
+all_stocks.columns = normalize_columns(all_stocks.columns)
+all_stocks = detect_and_cast_dtypes(all_stocks)
+all_stocks = apply_enhanced_imputation_strategy_6step(all_stocks)
+all_stocks = winsorize_by_sector(all_stocks)
+all_stocks = scale_features(all_stocks)
+all_stocks = build_features(all_stocks, preset='comprehensive')
+# ... more steps ...
+
+# NEW (1 cell - recommended):
+from finance_ml.ml_workflow.preprocessing import etl_with_features
+
+df, metrics = etl_with_features(
+        source='csv',
+        data_dir='data/',
+        feature_preset='comprehensive',
+        return_metrics=True
+        )
+
+# Verify pipeline completed successfully
+assert metrics.semantic_classification_applied, "Semantic classification should be applied"
+assert metrics.feature_engineering_applied, "Feature engineering should be applied"
+assert metrics.price_columns_count >= 21, "All 21 price columns should be protected"
 ```
 
 ---
@@ -2049,10 +2345,44 @@ Test coverage for log-transforms (`tests/test_log_transforms.py`, 9 tests):
 
 ### 8.6 Unified ETL Pipeline Best Practices
 
-The ETL pipeline is the **primary entry point** for data processing. Use `etl_with_financial_metrics()` for complete
-preprocessing workflows.
+The ETL pipeline is the **primary entry point** for data processing. Choose the appropriate entry point based on your
+workflow needs:
 
-**Recommended Entry Point:**
+| Function                       | Use Case                                | Features                                 |
+|--------------------------------|-----------------------------------------|------------------------------------------|
+| `etl_with_features()`          | **ML modeling workflows** (RECOMMENDED) | Semantic transforms + Phase 9.3 features |
+| `etl_with_financial_metrics()` | Financial metrics analysis              | Financial ratios + quality alerts        |
+| `run_etl_pipeline()`           | Custom configurations                   | Fine-grained control via ETLConfig       |
+
+**Recommended Entry Point for ML Workflows** *(NEW in v1.10)*:
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import (
+    etl_with_features,
+    ETLConfig,
+    ETLMetrics,
+    )
+
+# Complete ETL with semantic transforms + feature engineering (RECOMMENDED)
+all_stocks_preprocessed, metrics = etl_with_features(
+        source='csv',  # or 'db', 'all_stocks'
+        data_dir=Path("data"),
+        feature_preset='comprehensive',  # 196 Phase 9.3 features
+        return_metrics=True
+        )
+
+# Inspect ETL metrics
+print(metrics.summary())
+print(f"Price columns protected: {metrics.price_columns_count}")
+print(f"Features added: {metrics.features_added}")
+print(f"Log-transformed columns: {metrics.log_transformed_columns}")
+
+# Verify semantic transformations applied
+assert metrics.semantic_classification_applied, "Semantic classification should be applied"
+assert metrics.price_columns_count >= 21, "All 21 price columns should be protected"
+```
+
+**Alternative: Financial Metrics Only:**
 
 ```python
 from finance_ml.ml_workflow.preprocessing.etl import (
@@ -2061,7 +2391,7 @@ from finance_ml.ml_workflow.preprocessing.etl import (
     ETLMetrics,
 )
 
-# Complete ETL with financial metrics (RECOMMENDED)
+# Complete ETL with financial metrics (for analysis workflows)
 all_stocks_preprocessed, metrics = etl_with_financial_metrics(
     source='csv',  # or 'db', 'all_stocks'
     data_dir=Path("data"),
@@ -2071,9 +2401,9 @@ all_stocks_preprocessed, metrics = etl_with_financial_metrics(
 )
 
 # Inspect ETL metrics
-print(f"Rows processed: {metrics.rows_after_etl}")
+print(f"Rows processed: {metrics.rows_output}")
 print(f"Valuation metrics added: {metrics.valuation_metrics_added}")
-print(f"Missing values after imputation: {metrics.missing_after_imputation}")
+print(f"Missing values after imputation: {metrics.missing_values_after_imputation}")
 ```
 
 **Validation Checkpoints (REQUIRED after ETL):**

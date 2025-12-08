@@ -29,6 +29,12 @@ from finance_ml.ml_workflow.features.advanced import (
     engineer_accounting_quality_features,
     engineer_employee_productivity_features,
     build_comprehensive_features,
+    # Phase 9.3 Schema 1.3 feature engineering functions
+    engineer_technical_analysis_features,
+    engineer_valuation_timeseries_features,
+    engineer_revenue_forecast_features,
+    engineer_dividend_reliability_features,
+    engineer_employment_dynamics_features,
 )
 
 # Core features
@@ -40,6 +46,10 @@ from finance_ml.ml_workflow.features.core import (
     engineer_volatility_features,
     engineer_revenue_cagr,
     build_features_and_target,
+    # Aliases for code_guidelines.md v1.10 API
+    build_valuation_features,
+    build_momentum_features,
+    build_quality_features,
 )
 
 # Feature selection
@@ -48,6 +58,8 @@ from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_rf,
     calculate_feature_importance_shap,
     calculate_feature_importance_rfe,
+    # Alias for code_guidelines.md v1.10 API
+    select_features_rf,
 )
 
 # Phase 9.3 — Feature validation and pruning utilities
@@ -56,6 +68,11 @@ from finance_ml.ml_workflow.features.validation import (
     prune_low_importance_features,
     save_feature_list,
 )
+
+# ============================================================================
+# Prefixed aliases for notebook compatibility
+# ============================================================================
+features_importance_rf = calculate_feature_importance_rf
 
 __all__ = [
     # Core features (from core.py)
@@ -66,6 +83,10 @@ __all__ = [
     "engineer_volatility_features",
     "engineer_revenue_cagr",
     "build_features_and_target",
+    # Aliases for code_guidelines.md v1.10 API (from core.py)
+    "build_valuation_features",
+    "build_momentum_features",
+    "build_quality_features",
     # Advanced features (from advanced.py)
     "engineer_valuation_ratios",
     "engineer_profitability_ratios",
@@ -83,11 +104,21 @@ __all__ = [
     "engineer_accounting_quality_features",
     "engineer_employee_productivity_features",
     "build_comprehensive_features",
+    # Phase 9.3 Schema 1.3 feature engineering functions
+    "engineer_technical_analysis_features",
+    "engineer_valuation_timeseries_features",
+    "engineer_revenue_forecast_features",
+    "engineer_dividend_reliability_features",
+    "engineer_employment_dynamics_features",
     # Feature selection (from selection.py)
     "calculate_feature_importance_mutual_info",
     "calculate_feature_importance_rf",
     "calculate_feature_importance_shap",
     "calculate_feature_importance_rfe",
+    # Alias for code_guidelines.md v1.10 API (from selection.py)
+    "select_features_rf",
+    # Prefixed alias for notebook compatibility
+    "features_importance_rf",
     # Feature validation/pruning (from validation.py)
     "validate_feature_coverage",
     "prune_low_importance_features",

@@ -36,9 +36,10 @@ def get_file_age(filepath: Path) -> str:
         return f"Updated {age.days} days ago"
     return "Not generated"
 
-def get_artifact_path(category: str, filename: str) -> str:
+
+def get_artifact_path(category: str, filename: str) -> str | None:
     """Resolve artifact path and check existence.
-    
+
     Returns the source URL path (/app_assets/category/filename) if the file exists in outputs.
     """
     # Check if source exists in outputs
@@ -47,22 +48,23 @@ def get_artifact_path(category: str, filename: str) -> str:
         return f"/app_assets/{category}/{filename}"
     return None
 
+
 def render_artifact_or_placeholder(category: str, key: str, height: int = 550):
     """Render artifact HTML or show placeholder with instructions."""
     if category not in ARTIFACTS or key not in ARTIFACTS[category]:
         return html.Div(f"Configuration missing for {category}/{key}", style={"color": "red"})
-        
+
     item = ARTIFACTS[category][key]
     filename = item["file"]
     title = item["title"]
     section = item["section"]
-    
+
     src = get_artifact_path(category, filename)
     file_path = PROJECT_ROOT / "outputs" / category / filename
-    
+
     content = []
     content.append(html.H3(title, style={"textAlign": "center"}))
-    
+
     if src:
         age = get_file_age(file_path)
         content.append(html.Div(f"🕒 {age}", style={"textAlign": "right", "fontSize": "0.8em", "color": "#888", "marginBottom": "5px"}))
@@ -71,12 +73,22 @@ def render_artifact_or_placeholder(category: str, key: str, height: int = 550):
             style={"width": "100%", "height": f"{height}px", "border": "1px solid #ddd"}
         ))
     else:
-        content.append(html.Div([
-            html.P(f"⚠️ Artifact '{filename}' not available", style={"textAlign": "center", "color": "orange"}),
-            html.P(f"Run notebook Section {section} to generate", 
-                   style={"textAlign": "center", "fontStyle": "italic", "color": "#666"})
-        ], style={"padding": "50px", "border": "1px dashed #ccc", "margin": "10px"}))
-        
+        content.append(
+            html.Div(
+                [
+                    html.P(
+                        f"⚠️ Artifact '{filename}' not available",
+                        style={"textAlign": "center", "color": "orange"},
+                    ),
+                    html.P(
+                        f"Run notebook Section {section} to generate",
+                        style={"textAlign": "center", "fontStyle": "italic", "color": "#666"},
+                    ),
+                ],
+                style={"padding": "50px", "border": "1px dashed #ccc", "margin": "10px"},
+            )
+        )
+
     return html.Div(content, style={"padding": "20px"})
 
 def render_model_card():
@@ -93,7 +105,7 @@ def render_model_card():
                 html.H3("Model Card", style={"textAlign": "center"}),
                 dcc.Markdown(content, style={"padding": "20px", "border": "1px solid #ddd", "backgroundColor": "#f9f9f9", "overflowY": "auto", "maxHeight": "600px"})
             ], style={"padding": "20px"})
-            
+
     return html.Div([
         html.P("⚠️ Model Card not available", style={"textAlign": "center", "color": "orange"}),
         html.P("Run notebook Section 9.8 to generate", style={"textAlign": "center", "fontStyle": "italic", "color": "#666"})
@@ -104,16 +116,26 @@ def get_status_indicators():
     uncertainty_exists = (PROJECT_ROOT / "outputs" / "uncertainty" / "interval_width_by_bucket.html").exists()
     governance_exists = (PROJECT_ROOT / "outputs" / "governance" / "meta_error_map.html").exists()
     portfolio_exists = (PROJECT_ROOT / "outputs" / "portfolio" / "efficient_frontier.html").exists()
-    
-    return html.Div(id="status-indicators", children=[
-        html.Span("✅ Basic Analysis", style={"margin": "0 10px", "color": "green"}),
-        html.Span("✅ Portfolio Optimization" if portfolio_exists else "⚠️ Portfolio Optimization", 
-                  style={"margin": "0 10px", "color": "green" if portfolio_exists else "orange"}),
-        html.Span("✅ Uncertainty Analysis" if uncertainty_exists else "⚠️ Uncertainty Analysis",
-                  style={"margin": "0 10px", "color": "green" if uncertainty_exists else "orange"}),
-        html.Span("✅ Governance" if governance_exists else "⚠️ Governance",
-                  style={"margin": "0 10px", "color": "green" if governance_exists else "orange"})
-    ], style={"textAlign": "center", "padding": "10px"})
+
+    return html.Div(
+        id="status-indicators",
+        children=[
+            html.Span("✅ Basic Analysis", style={"margin": "0 10px", "color": "green"}),
+            html.Span(
+                "✅ Portfolio Optimization" if portfolio_exists else "⚠️ Portfolio Optimization",
+                style={"margin": "0 10px", "color": "green" if portfolio_exists else "orange"},
+            ),
+            html.Span(
+                "✅ Uncertainty Analysis" if uncertainty_exists else "⚠️ Uncertainty Analysis",
+                style={"margin": "0 10px", "color": "green" if uncertainty_exists else "orange"},
+            ),
+            html.Span(
+                "✅ Governance" if governance_exists else "⚠️ Governance",
+                style={"margin": "0 10px", "color": "green" if governance_exists else "orange"},
+            ),
+        ],
+        style={"textAlign": "center", "padding": "10px"},
+    )
 
 
 # Sample data loading (replace with actual data source)
@@ -200,60 +222,219 @@ app.layout = html.Div(
         html.Div(
             [
                 html.H4("Filters", style={"marginBottom": "10px", "color": "white"}),
-                html.Div([
-                    # Row 1
-                    html.Div([
-                        html.Label("Sector", className="filter-label"),
-                        dcc.Dropdown(id="sector-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['sector'].dropna().unique())] if 'sector' in df.columns else [])
-                    ], className="filter-item"),
-                    html.Div([
-                        html.Label("Region", className="filter-label"),
-                        dcc.Dropdown(id="region-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['region'].dropna().unique())] if 'region' in df.columns else [])
-                    ], className="filter-item"),
-                    html.Div([
-                        html.Label("Country", className="filter-label"),
-                        dcc.Dropdown(id="country-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['country'].dropna().unique())] if 'country' in df.columns else [])
-                    ], className="filter-item"),
-                    html.Div([
-                        html.Label("Trading Country", className="filter-label"),
-                        dcc.Dropdown(id="trading-country-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['trading_country'].dropna().unique())] if 'trading_country' in df.columns else [])
-                    ], className="filter-item"),
-                ], className="filter-row"),
-                html.Div([
-                    # Row 2
-                    html.Div([
-                        html.Label("Industry", className="filter-label"),
-                        dcc.Dropdown(id="industry-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['industry'].dropna().unique())] if 'industry' in df.columns else [])
-                    ], className="filter-item"),
-                    html.Div([
-                        html.Label("Style Class", className="filter-label"),
-                        dcc.Dropdown(id="style-class-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['style_class'].dropna().unique())] if 'style_class' in df.columns else [])
-                    ], className="filter-item"),
-                    html.Div([
-                        html.Label("Size Class", className="filter-label"),
-                        dcc.Dropdown(id="size-class-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['size_class'].dropna().unique())] if 'size_class' in df.columns else [])
-                    ], className="filter-item"),
-                    html.Div([
-                        html.Label("Next Earnings", className="filter-label"),
-                        dcc.Dropdown(id="earnings-status-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['next_earnings_status'].dropna().unique())] if 'next_earnings_status' in df.columns else [])
-                    ], className="filter-item"),
-                ], className="filter-row"),
-                 html.Div([
-                    # Row 3
-                    html.Div([
-                        html.Label("Exchange", className="filter-label"),
-                        dcc.Dropdown(id="exchange-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['exchange'].dropna().unique())] if 'exchange' in df.columns else [])
-                    ], className="filter-item"),
-                    html.Div([
-                        html.Label("Unit", className="filter-label"),
-                        dcc.Dropdown(id="unit-dropdown", multi=True, options=[{'label': i, 'value': i} for i in sorted(df['unit'].dropna().unique())] if 'unit' in df.columns else [])
-                    ], className="filter-item"),
-                     html.Div([
-                        html.Label("Model Version", className="filter-label"),
-                        dcc.Dropdown(id="model-version-dropdown", options=[{'label': 'v9_9', 'value': 'v9_9'}], value='v9_9')
-                    ], className="filter-item"),
-                ], className="filter-row"),
-            ], className="filter-container"
+                html.Div(
+                    [
+                        # Row 1
+                        html.Div(
+                            [
+                                html.Label("Sector", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="sector-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["sector"].dropna().unique())
+                                        ]
+                                        if "sector" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Region", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="region-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["region"].dropna().unique())
+                                        ]
+                                        if "region" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Country", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="country-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["country"].dropna().unique())
+                                        ]
+                                        if "country" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Trading Country", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="trading-country-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["trading_country"].dropna().unique())
+                                        ]
+                                        if "trading_country" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                    ],
+                    className="filter-row",
+                ),
+                html.Div(
+                    [
+                        # Row 2
+                        html.Div(
+                            [
+                                html.Label("Industry", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="industry-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["industry"].dropna().unique())
+                                        ]
+                                        if "industry" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Style Class", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="style-class-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["style_class"].dropna().unique())
+                                        ]
+                                        if "style_class" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Size Class", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="size-class-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["size_class"].dropna().unique())
+                                        ]
+                                        if "size_class" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Next Earnings", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="earnings-status-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(
+                                                df["next_earnings_status"].dropna().unique()
+                                            )
+                                        ]
+                                        if "next_earnings_status" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                    ],
+                    className="filter-row",
+                ),
+                html.Div(
+                    [
+                        # Row 3
+                        html.Div(
+                            [
+                                html.Label("Exchange", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="exchange-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["exchange"].dropna().unique())
+                                        ]
+                                        if "exchange" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Unit", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="unit-dropdown",
+                                    multi=True,
+                                    options=(
+                                        [
+                                            {"label": i, "value": i}
+                                            for i in sorted(df["unit"].dropna().unique())
+                                        ]
+                                        if "unit" in df.columns
+                                        else []
+                                    ),
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Model Version", className="filter-label"),
+                                dcc.Dropdown(
+                                    id="model-version-dropdown",
+                                    options=[{"label": "v9_9", "value": "v9_9"}],
+                                    value="v9_9",
+                                ),
+                            ],
+                            className="filter-item",
+                        ),
+                    ],
+                    className="filter-row",
+                ),
+            ],
+            className="filter-container",
         ),
         # Tabs for different views
         dcc.Tabs(
@@ -294,26 +475,26 @@ app.layout = html.Div(
                                     [
                                         html.H3("Top Undervalued Stocks"),
                                         dash_table.DataTable(
-                                            id="undervalued-table", 
+                                            id="undervalued-table",
                                             page_size=10,
-                                            style_table={'overflowX': 'auto'},
+                                            style_table={"overflowX": "auto"},
                                             style_header={
-                                                'backgroundColor': 'rgb(30, 30, 30)',
-                                                'color': 'white',
-                                                'fontWeight': 'bold',
-                                                'border': '1px solid #444'
+                                                "backgroundColor": "rgb(30, 30, 30)",
+                                                "color": "white",
+                                                "fontWeight": "bold",
+                                                "border": "1px solid #444",
                                             },
                                             style_data={
-                                                'backgroundColor': 'rgb(50, 50, 50)',
-                                                'color': 'white',
-                                                'border': '1px solid #444'
+                                                "backgroundColor": "rgb(50, 50, 50)",
+                                                "color": "white",
+                                                "border": "1px solid #444",
                                             },
                                             style_data_conditional=[
                                                 {
-                                                    'if': {'row_index': 'odd'},
-                                                    'backgroundColor': 'rgb(40, 40, 40)'
+                                                    "if": {"row_index": "odd"},
+                                                    "backgroundColor": "rgb(40, 40, 40)",
                                                 }
-                                            ]
+                                            ],
                                         ),
                                     ],
                                     style={
@@ -326,26 +507,26 @@ app.layout = html.Div(
                                     [
                                         html.H3("Top Overvalued Stocks"),
                                         dash_table.DataTable(
-                                            id="overvalued-table", 
+                                            id="overvalued-table",
                                             page_size=10,
-                                            style_table={'overflowX': 'auto'},
+                                            style_table={"overflowX": "auto"},
                                             style_header={
-                                                'backgroundColor': 'rgb(30, 30, 30)',
-                                                'color': 'white',
-                                                'fontWeight': 'bold',
-                                                'border': '1px solid #444'
+                                                "backgroundColor": "rgb(30, 30, 30)",
+                                                "color": "white",
+                                                "fontWeight": "bold",
+                                                "border": "1px solid #444",
                                             },
                                             style_data={
-                                                'backgroundColor': 'rgb(50, 50, 50)',
-                                                'color': 'white',
-                                                'border': '1px solid #444'
+                                                "backgroundColor": "rgb(50, 50, 50)",
+                                                "color": "white",
+                                                "border": "1px solid #444",
                                             },
                                             style_data_conditional=[
                                                 {
-                                                    'if': {'row_index': 'odd'},
-                                                    'backgroundColor': 'rgb(40, 40, 40)'
+                                                    "if": {"row_index": "odd"},
+                                                    "backgroundColor": "rgb(40, 40, 40)",
                                                 }
-                                            ]
+                                            ],
                                         ),
                                     ],
                                     style={
@@ -362,39 +543,56 @@ app.layout = html.Div(
                 dcc.Tab(
                     label="🔬 Uncertainty & Calibration",
                     children=[
-                        html.Div([
-                            html.H2("Uncertainty Quantification & Conformal Calibration", style={"textAlign": "center", "padding": "20px"}),
-                            render_artifact_or_placeholder("uncertainty", "interval_width"),
-                            render_artifact_or_placeholder("uncertainty", "coverage_heatmap"),
-                            render_artifact_or_placeholder("uncertainty", "reliability_diagram"),
-                            html.Hr(),
-                            render_artifact_or_placeholder("calibration", "sector_bias"),
-                        ])
-                    ]
+                        html.Div(
+                            [
+                                html.H2(
+                                    "Uncertainty Quantification & Conformal Calibration",
+                                    style={"textAlign": "center", "padding": "20px"},
+                                ),
+                                render_artifact_or_placeholder("uncertainty", "interval_width"),
+                                render_artifact_or_placeholder("uncertainty", "coverage_heatmap"),
+                                render_artifact_or_placeholder(
+                                    "uncertainty", "reliability_diagram"
+                                ),
+                                html.Hr(),
+                                render_artifact_or_placeholder("calibration", "sector_bias"),
+                            ]
+                        )
+                    ],
                 ),
                 dcc.Tab(
                     label="🛡️ Safety Rails & Data Quality",
                     children=[
-                        html.Div([
-                            html.H2("Safety Rails & Data Quality Monitoring", style={"textAlign": "center", "padding": "20px"}),
-                            render_artifact_or_placeholder("safety_rails", "winsorization"),
-                            render_artifact_or_placeholder("safety_rails", "violations"),
-                            render_artifact_or_placeholder("safety_rails", "sensitivity"),
-                            html.Hr(),
-                            render_artifact_or_placeholder("eda", "data_quality"),
-                            render_artifact_or_placeholder("eda", "outliers"),
-                        ])
-                    ]
+                        html.Div(
+                            [
+                                html.H2(
+                                    "Safety Rails & Data Quality Monitoring",
+                                    style={"textAlign": "center", "padding": "20px"},
+                                ),
+                                render_artifact_or_placeholder("safety_rails", "winsorization"),
+                                render_artifact_or_placeholder("safety_rails", "violations"),
+                                render_artifact_or_placeholder("safety_rails", "sensitivity"),
+                                html.Hr(),
+                                render_artifact_or_placeholder("eda", "data_quality"),
+                                render_artifact_or_placeholder("eda", "outliers"),
+                            ]
+                        )
+                    ],
                 ),
                 dcc.Tab(
                     label="🏛️ Model Governance",
                     children=[
-                        html.Div([
-                            html.H2("Model Governance & Lineage", style={"textAlign": "center", "padding": "20px"}),
-                            render_artifact_or_placeholder("governance", "error_map"),
-                            render_model_card(),
-                        ])
-                    ]
+                        html.Div(
+                            [
+                                html.H2(
+                                    "Model Governance & Lineage",
+                                    style={"textAlign": "center", "padding": "20px"},
+                                ),
+                                render_artifact_or_placeholder("governance", "error_map"),
+                                render_model_card(),
+                            ]
+                        )
+                    ],
                 ),
                 dcc.Tab(
                     label="💼 Portfolio & Risk Metrics",
@@ -730,7 +928,7 @@ app.layout = html.Div(
         Output("overvalued-table", "data"),
     ],
     [
-        Input("sector-dropdown", "value"), 
+        Input("sector-dropdown", "value"),
         Input("region-dropdown", "value"),
         Input("country-dropdown", "value"),
         Input("trading-country-dropdown", "value"),

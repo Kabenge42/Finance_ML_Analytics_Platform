@@ -582,6 +582,57 @@ def build_features_and_target(
     return X, y, numeric_features, categorical_features
 
 
+# ============================================================================
+# Aliases for code_guidelines.md v1.10 API compliance
+# ============================================================================
+
+
+def build_valuation_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build valuation-related features (P/E, P/B, EV/EBITDA ratios).
+
+    Alias for engineer_basic_ratios() to match code_guidelines.md v1.10 API.
+
+    Args:
+        df: Input DataFrame with financial data
+
+    Returns:
+        DataFrame with valuation features added
+    """
+    return engineer_basic_ratios(df)
+
+
+def build_momentum_features(df: pd.DataFrame, window: int = 30) -> pd.DataFrame:
+    """
+    Build momentum/volatility features.
+
+    Alias for engineer_volatility_features() to match code_guidelines.md v1.10 API.
+
+    Args:
+        df: Input DataFrame with price data
+        window: Rolling window for volatility calculation
+
+    Returns:
+        DataFrame with momentum features added
+    """
+    return engineer_volatility_features(df, window)
+
+
+def build_quality_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build quality/profitability features (margins, ROE, ROA).
+
+    Alias for engineer_margin_features() to match code_guidelines.md v1.10 API.
+
+    Args:
+        df: Input DataFrame with financial data
+
+    Returns:
+        DataFrame with quality features added
+    """
+    return engineer_margin_features(df)
+
+
 __all__ = [
     "_safe_div",
     "engineer_basic_ratios",
@@ -589,4 +640,8 @@ __all__ = [
     "engineer_volatility_features",
     "engineer_revenue_cagr",
     "build_features_and_target",
+    # Aliases for code_guidelines.md v1.10 API
+    "build_valuation_features",
+    "build_momentum_features",
+    "build_quality_features",
 ]

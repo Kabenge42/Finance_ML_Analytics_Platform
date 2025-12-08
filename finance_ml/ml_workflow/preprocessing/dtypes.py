@@ -14,6 +14,7 @@ import pandas as pd
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA,
     normalize_column_name,
+    list_required_schema_columns_for_etl,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,11 +44,31 @@ def detect_and_cast_dtypes(
             - unknown_columns: list[str] - Columns not in schema
             - missing_expected_columns: list[str] - Schema columns not in df
 
+    Notes:
+        - In the unified ETL pipeline, some columns (e.g. Phase 9.3 engineered
+          features) are intentionally not listed in COLUMN_SCHEMA. Those will
+          appear under ``diagnostics['unknown_columns']`` but are still cast
+          using heuristic inference via ``_infer_and_cast_unknown_column()``.
+        - Derived metrics that should be schema-aware (e.g. log-transforms and
+          valuation ratios used downstream) are registered in COLUMN_SCHEMA
+          so they no longer appear as unknown and can participate in role-based
+          validation.
+        - Legacy/alias column names have been demoted to ``role: "auxiliary"``
+          so they no longer appear in ``missing_expected_columns``. This keeps
+          the diagnostics focused on truly required columns.
+        - To distinguish hard errors (truly required missing columns) from soft
+          warnings (optional features), compare ``missing_expected_columns``
+          against ``list_required_schema_columns_for_etl()``.
+
     Example:
         >>> df = pd.DataFrame({'last_price': ['100.5', 'N/A', '200.0']})
         >>> df_cast, diag = detect_and_cast_dtypes(df)
         >>> df_cast['last_price'].dtype  # float64
         >>> diag['coercion_warnings']['last_price']  # 1 (for 'N/A')
+
+        >>> # Check for truly required missing columns (ETL-specific)
+        >>> required = list_required_schema_columns_for_etl()
+        >>> critical_missing = [c for c in diag['missing_expected_columns'] if c in required]
     """
     if schema is None:
         schema = COLUMN_SCHEMA
@@ -394,3 +415,60 @@ def to_jsonable(obj):
 
     # Fallback: string representation for unknown types
     return str(obj)
+
+
+def get_critical_missing_columns(
+    diagnostics: Dict,
+    include_extended_financials: bool = False,
+) -> List[str]:
+    """
+    Filter missing_expected_columns to identify truly critical missing columns.
+
+    This helper function compares the ``missing_expected_columns`` from dtype
+    diagnostics against the canonical ETL-required columns to distinguish
+    hard errors (truly required missing columns) from soft warnings (optional
+    features that the ETL can proceed without).
+
+    Args:
+        diagnostics: The diagnostics dict returned by ``detect_and_cast_dtypes()``.
+                    Must contain 'missing_expected_columns' key.
+        include_extended_financials: When True, also check for extended financial
+                                     columns (e.g. ebitda_ltm, total_assets_ltm).
+                                     See ``list_required_schema_columns_for_etl()``.
+
+    Returns:
+        List of column names that are both:
+        1. Missing from the DataFrame (in missing_expected_columns)
+        2. Required by the ETL pipeline (in list_required_schema_columns_for_etl())
+
+    Example:
+        >>> df_cast, diag = detect_and_cast_dtypes(df)
+        >>> critical = get_critical_missing_columns(diag)
+        >>> if critical:
+        ...     raise ValueError(f"Missing required columns: {critical}")
+
+    Notes:
+        - If ``critical_missing`` is empty, the ETL can proceed safely even if
+          ``missing_expected_columns`` is not empty (those are optional features).
+        - Use ``include_extended_financials=True`` for stricter validation in
+          production pipelines that rely on core financial metrics.
+
+    See Also:
+        - ``detect_and_cast_dtypes()``: Main function that produces diagnostics
+        - ``list_required_schema_columns_for_etl()``: Canonical required columns
+    """
+    missing_expected = diagnostics.get("missing_expected_columns", [])
+    required_columns = list_required_schema_columns_for_etl(
+        include_extended_financials=include_extended_financials
+    )
+
+    # Find intersection: columns that are both missing and required
+    critical_missing = [col for col in missing_expected if col in required_columns]
+
+    if critical_missing:
+        logger.warning(
+            f"Critical columns missing for ETL: {critical_missing}. "
+            f"ETL may fail or produce incomplete results."
+        )
+
+    return critical_missing

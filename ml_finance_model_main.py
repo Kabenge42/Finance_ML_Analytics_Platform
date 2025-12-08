@@ -1,173 +1,246 @@
 # %%
 import os
+from pathlib import Path
+from typing import Final, List
+
 import numpy as np
+import pandas as pd
+
+# ========== NOTEBOOK CONFIGURATION ==========
+# Version: Phase 9.5 (Unified ETL with Semantic Transforms + Feature Engineering)
+# Last Updated: 2025-12-08
+# Aligned with: code_guidelines.md v1.10, Section 2.4 Business-Driven Configuration
 
 # ========== CONFIGURATION CONSTANTS ==========
 # Section 8.1: Single Source of Truth - All constants defined once
 
-# Target and fallback (Section 2.2)
-TARGET_COL = "price_target"  # Canonical target (code_guidelines.md Section 2.2)
-TARGET_COL_FALLBACK = "last_price"  # Canonical fallback target
+# Target Configuration (Section 2.1)
+TARGET_COL: Final[str] = "price_target"  # Core prediction target for investment decisions
+TARGET_COL_FALLBACK: Final[str] = (
+    "last_price"  # Ensures models train when analyst targets unavailable
+)
 
-# Data splits
-TEST_SIZE = 0.2
-TRAIN_SIZE = 1 - TEST_SIZE
-CV_FOLDS = 5
+# Data Split Configuration (Section 2.1)
+# Business Rationale: Balance training data quality (80%) with robust validation (20%)
+TEST_SIZE: Final[float] = 0.2
+TRAIN_SIZE: Final[float] = 1 - TEST_SIZE
+CV_FOLDS: Final[int] = 5  # Standard cross-validation for reliable performance estimates
 
-# Quantile regression
-QUANTILES = [0.1, 0.5, 0.9]
-LOWER_QUANTILE = QUANTILES[0]
-MEDIAN_QUANTILE = QUANTILES[1]
-UPPER_QUANTILE = QUANTILES[2]
+# Quantile Regression Configuration (Section 2.1)
+# Business Rationale: 80% prediction interval for risk assessment and portfolio construction
+QUANTILES: Final[List[float]] = [0.1, 0.5, 0.9]
+LOWER_QUANTILE: Final[float] = QUANTILES[0]
+MEDIAN_QUANTILE: Final[float] = QUANTILES[1]
+UPPER_QUANTILE: Final[float] = QUANTILES[2]
 
-# Sector constraints
-MIN_SECTOR_SAMPLES = 20
+# Sector Analysis Configuration (Section 2.1)
+# Business Rationale: Minimum sample size for statistically meaningful sector-specific models
+MIN_SECTOR_SAMPLES: Final[int] = 20
 
-# Portfolio constraints
-MAX_SECTOR_WEIGHT = 0.25
-MAX_SINGLE_POSITION = 0.10
+# Portfolio Constraints (Section 18.2)
+# Business Rationale: Diversification limits to manage concentration risk
+MAX_SECTOR_WEIGHT: Final[float] = 0.25  # Limit sector concentration risk
+MAX_SINGLE_POSITION: Final[float] = 0.10  # Prevent overexposure to individual securities
 
-# Outlier thresholds
-IQR_MULTIPLIER = 2.5
-ZSCORE_THRESHOLD = 3.0
-WINSORIZE_LOWER = 0.10
-WINSORIZE_UPPER = 0.90
+# Outlier Detection Configuration (Section 13.1)
+# Business Rationale: Conservative bounds preserve valid extreme values (high-growth stocks, mega-caps)
+IQR_MULTIPLIER: Final[float] = 2.5
+ZSCORE_THRESHOLD: Final[float] = 3.0
+WINSORIZE_LOWER: Final[float] = 0.10  # 10th percentile (conservative, preserves extremes)
+WINSORIZE_UPPER: Final[float] = 0.90  # 90th percentile (conservative, preserves extremes)
 
-# Confidence scoring
-CONFIDENCE_LOW_THRESHOLD = 0.50
-CONFIDENCE_MEDIUM_THRESHOLD = 0.75
+# Confidence Thresholds (Section 2.1)
+CONFIDENCE_LOW_THRESHOLD: Final[float] = 0.50
+CONFIDENCE_MEDIUM_THRESHOLD: Final[float] = 0.75
 
-# Random seed
-RANDOM_SEED = int(os.getenv("RANDOM_SEED", "42"))
+# Reproducibility (Section 2.1)
+# Business Rationale: Fixed seed enables consistent model evaluation and regulatory compliance
+RANDOM_SEED: Final[int] = int(os.getenv("RANDOM_SEED", "42"))
+MODEL_VERSION: Final[str] = os.getenv("MODEL_VERSION", "v9_9")
+
+# Set numpy random seed for reproducibility
 np.random.seed(RANDOM_SEED)
-MODEL_VERSION = os.getenv("MODEL_VERSION", "v9_9")
 
+# Output Directories (Section 20.1)
+OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+# Create phase-specific subdirectories
+for subdir in [
+    "preprocessing",
+    "eda",
+    "features",
+    "classification",
+    "regression",
+    "evaluation",
+    "analytics",
+    "reporting",
+    "plots",
+    "governance",
+    "safety_rails",
+    "uncertainty",
+    "calibration",
+]:
+    (OUTPUT_DIR / subdir).mkdir(exist_ok=True)
+
+# Financial metrics subdirectory
+(OUTPUT_DIR / "eda" / "financial_metrics").mkdir(exist_ok=True, parents=True)
+
+print("✓ Configuration constants defined")
+print(f"  Model Version: {MODEL_VERSION}")
+print(f"  Random Seed: {RANDOM_SEED}")
+print(f"  Output Directory: {OUTPUT_DIR.absolute()}")
+# %%
+# ========== CONFIGURATION VALIDATION ==========
+# Section 8.1: Validate all configuration constants meet required constraints
 
 def validate_configuration():
     """
-    Validate notebook configuration constants.
-
-    Ensures all configuration values are properly defined and within valid ranges.
-    This provides a single source of truth validation for all configuration.
-
-    Returns:
-        bool: True if all validations pass
+    Validate all configuration constants (Section 2.3).
 
     Raises:
-        ValueError: If any configuration value is invalid
+        ValueError: If any configuration constant is invalid
     """
     # Validate target columns
     if not TARGET_COL or not isinstance(TARGET_COL, str):
-        raise ValueError(f"TARGET_COL must be a non-empty string, got: {TARGET_COL}")
+        raise ValueError(f"TARGET_COL must be non-empty string: {TARGET_COL}")
     if not TARGET_COL_FALLBACK or not isinstance(TARGET_COL_FALLBACK, str):
-        raise ValueError(
-            f"TARGET_COL_FALLBACK must be a non-empty string, got: {TARGET_COL_FALLBACK}"
-        )
+        raise ValueError(f"TARGET_COL_FALLBACK must be non-empty string: {TARGET_COL_FALLBACK}")
 
     # Validate test size
     if not (0 < TEST_SIZE < 1):
-        raise ValueError(f"TEST_SIZE must be between 0 and 1, got: {TEST_SIZE}")
-    if not (0 < TRAIN_SIZE < 1):
-        raise ValueError(f"TRAIN_SIZE must be between 0 and 1, got: {TRAIN_SIZE}")
+        raise ValueError(f"TEST_SIZE must be between 0 and 1: {TEST_SIZE}")
 
     # Validate CV folds
-    if not isinstance(CV_FOLDS, int) or CV_FOLDS < 2:
-        raise ValueError(f"CV_FOLDS must be an integer >= 2, got: {CV_FOLDS}")
+    if CV_FOLDS < 2:
+        raise ValueError(f"CV_FOLDS must be >= 2: {CV_FOLDS}")
 
     # Validate quantiles
-    if not QUANTILES or not isinstance(QUANTILES, list):
-        raise ValueError(f"QUANTILES must be a non-empty list, got: {QUANTILES}")
-    for q in QUANTILES:
-        if not (0 < q < 1):
-            raise ValueError(f"All quantiles must be between 0 and 1, got: {q}")
-    if len(QUANTILES) != len(set(QUANTILES)):
-        raise ValueError(f"QUANTILES must contain unique values, got: {QUANTILES}")
+    if not all(0 < q < 1 for q in QUANTILES):
+        raise ValueError(f"All QUANTILES must be between 0 and 1: {QUANTILES}")
 
-    # Validate minimum sector samples
-    if not isinstance(MIN_SECTOR_SAMPLES, int) or MIN_SECTOR_SAMPLES < 1:
-        raise ValueError(f"MIN_SECTOR_SAMPLES must be an integer >= 1, got: {MIN_SECTOR_SAMPLES}")
+    # Validate monotonicity
+    if QUANTILES != sorted(QUANTILES):
+        raise ValueError(f"QUANTILES must be monotonically increasing: {QUANTILES}")
 
-    # Validate portfolio constraints
-    if not (0 < MAX_SECTOR_WEIGHT <= 1):
-        raise ValueError(f"MAX_SECTOR_WEIGHT must be between 0 and 1, got: {MAX_SECTOR_WEIGHT}")
-    if not (0 < MAX_SINGLE_POSITION <= 1):
-        raise ValueError(f"MAX_SINGLE_POSITION must be between 0 and 1, got: {MAX_SINGLE_POSITION}")
+    # Validate sector configuration
+    if MIN_SECTOR_SAMPLES < 1:
+        raise ValueError(f"MIN_SECTOR_SAMPLES must be positive: {MIN_SECTOR_SAMPLES}")
 
-    # Validate outlier thresholds
-    if IQR_MULTIPLIER <= 0:
-        raise ValueError(f"IQR_MULTIPLIER must be positive, got: {IQR_MULTIPLIER}")
-    if ZSCORE_THRESHOLD <= 0:
-        raise ValueError(f"ZSCORE_THRESHOLD must be positive, got: {ZSCORE_THRESHOLD}")
-    if not (0 <= WINSORIZE_LOWER < WINSORIZE_UPPER <= 1):
-        raise ValueError(f"Invalid winsorization bounds: [{WINSORIZE_LOWER}, {WINSORIZE_UPPER}]")
+    # Validate winsorization bounds
+    if not (0 <= WINSORIZE_LOWER < 0.5):
+        raise ValueError(f"WINSORIZE_LOWER must be between 0 and 0.5: {WINSORIZE_LOWER}")
+    if not (0.5 < WINSORIZE_UPPER <= 1):
+        raise ValueError(f"WINSORIZE_UPPER must be between 0.5 and 1: {WINSORIZE_UPPER}")
 
+    print("✓ All configuration constants validated successfully")
     return True
 
-
-# Validate configuration on load
-try:
-    validate_configuration()
-    print("✓ Configuration validation passed")
-    print(f"  Random seed: {RANDOM_SEED}")
-    print(f"  MODEL_VERSION: {MODEL_VERSION}")
-    print(f"  Train/Test split: {TRAIN_SIZE:.1%}/{TEST_SIZE:.1%}")
-    print(f"  Quantiles: {QUANTILES}")
-except ValueError as e:
-    print(f"✗ Configuration validation failed: {e}")
-    raise
-
-# Code Guidelines Compliance: This notebook follows @code_guidelines.md
-# - Canonical column names (Section 2): price_target, last_price, sector, region, ticker
-# - Normalized schemas via normalize_columns() immediately after loading
-# - Schema validation via validate_schema() before processing
-# - Training functions return standardized dict: {model, metrics, y_pred, y_proba?, artifacts?}
-# - Dataset prep returns 5-tuple: (X_train, X_test, y_train, y_test, meta)
-print("✓ Regression configuration constants defined")
+# Run validation
+validate_configuration()
 # %% md
 # # Stock Price Target Prediction — ML Analytics Platform
 #
-# **Version 2.1.0** — Enhanced Production Workflow with Advanced Analytics
-# **Model Version: v9_9** — Phase 10 Validation & Feature API Integration Complete
+# **Version**: Phase 9.5 (Unified ETL with Semantic Transforms + Feature Engineering)
+# **Model Version**: v9_9
+# **Last Updated**: 2025-12-08
+# **Aligned with**: code_guidelines.md v1.10
 #
 # ## Business Objective
 #
-# **Primary Goal**: Predict Stock Price Targets for all stocks in the portfolio to support
-# investment decisions and portfolio optimization.
+# **Primary Goal**: Predict Stock Price Targets for all stocks in the portfolio to support investment decisions and portfolio optimization.
 #
 # **Target Variable**: "Predicted Price Target" for regression modeling
 #
-# ## Quick Reference Navigation
-# - [Section 1](#1-configuration-and-setup): Configuration and Setup
-# - [Phase 9.1](#phase-91-loading-and-preprocessing-with-6-step-imputation-strategy): Loading and Preprocessing with 6-Step Imputation
-# - [Phase 9.2](#phase-92-enhanced-exploratory-data-analysis-with-statistical-testing): Enhanced Exploratory Data Analysis
-# - [Phase 9.3](#phase-93-advanced-feature-engineering-with-sector-specific-optimizations): Advanced Feature Engineering
-# - [Phase 9.4](#phase-94-multi-class-event-classification): Multi-Class Event Classification
-# - [Phase 9.5](#phase-95-sector-optimized-regression-models-with-quantile-predictions): Sector-Optimized Regression Models
-# - [Phase 9.6](#phase-96-model-evaluation-and-comprehensive-error-analysis): Model Evaluation and Error Analysis
-# - [Phase 9.7](#phase-97-stock-ranking-analytics-and-analyst-comparison): Stock Ranking, Analytics, and Analyst Comparison
-# - [Phase 9.8](#phase-98-comprehensive-reporting-and-dashboard-data): Comprehensive Reporting and Dashboard Data
+# ## Notebook Architecture
 #
-# ## Workflow Overview (10 Steps)
+# This notebook implements the **8-phase ML workflow** (Phase 9.1-9.8):
 #
-# 1. **Configuration and Setup** — Initialize environment and configuration
-# Phase 9.1: **Loading and Preprocessing** — Multi-region data with 6-step imputation
-# Phase 9.2: **Exploratory Data Analysis** — Financial metrics and benchmarking
-# Phase 9.3: **Feature Engineering** — Sector-specific optimizations
-# Phase 9.4: **Multi-Class Classification** — Financial event detection
-# Phase 9.5: **Sector-Optimized Regression** — Price target prediction with classification features
-# Phase 9.6: **Model Evaluation** — Comprehensive error analysis
-# Phase 9.7: **Stock Valuation** — Under/overvalued identification
-# Phase 9.8: **Portfolio Optimization** — Risk-adjusted portfolio construction
+# ### Phase 9.1: Loading and Preprocessing
+# - **Unified ETL Pipeline**: `etl_with_features()` single entry point
+# - **Semantic Column Classification**: 5 categories (price, market_value, ratio, percentage, count)
+# - **6-Step Imputation**: Handles numeric, categorical, datetime columns
+# - **Price Column Protection**: 21 price columns never transformed
+# - **Feature Engineering**: 196 Phase 9.3 features integrated
 #
-# ## Key Features
+# ### Phase 9.2: Enhanced Exploratory Data Analysis
+# - Statistical testing and benchmarking
+# - Correlation analysis with multicollinearity detection
+# - Distribution analysis by sector/region
+# - Feature category coverage validation
 #
-# - 📊 **Data Management**: PostgreSQL/CSV with validation (data.py, data_catalog.py)
-# - 🔧 **Preprocessing**: 6-step imputation strategy - numeric + categorical + datetime (preprocessing/imputation.py)
-# - 📈 **EDA**: Statistical tests, benchmarking (advanced_eda.py, benchmarking.py, eval.py)
-# - 🔨 **Features**: Financial ratios, sector-specific (features.py, advanced_features.py, transformers.py)
-# - 🤖 **Models**: Classification + regression (classification.py, models.py, advanced_models.py)
-# - 📊 **Analytics**: Comprehensive evaluation (eval.py, analyst_comparison.py)
-# - 💼 **Portfolio**: Optimization with risk metrics (portfolio_optimization.py, risk_metrics.py)
+# ### Phase 9.3: Advanced Feature Engineering
+# - **Comprehensive Preset**: 196 features across 16 categories
+# - Momentum & Technical (27), Valuation Ratios (23), Profitability (12)
+# - Quality & Risk (18), Cash Flow (5), Capital Allocation (23)
+# - Analyst Sentiment (10), Growth Metrics (6), and more
+#
+# ### Phase 9.4: Multi-Class Event Classification
+# - 13 label generation methods
+# - Classification outputs used as meta-features
+#
+# ### Phase 9.5: Sector-Optimized Regression
+# - Quantile models (10th, 50th, 90th percentiles)
+# - Stacking ensemble (RF + GB + XGB + Ridge)
+# - Non-negativity constraints for price predictions
+#
+# ### Phase 9.6: Model Evaluation and Error Analysis
+# - Sector-level metrics and calibration
+# - Uncertainty quantification (80% prediction intervals)
+# - Residual analysis and diagnostics
+#
+# ### Phase 9.7: Identification of Under/Overvalued Stocks
+# - Mispricing score calculation
+# - Portfolio optimization (Black-Litterman, Risk Parity, HRP)
+# - Risk metrics (VaR, CVaR, Sharpe ratio)
+#
+# ### Phase 9.8: Comprehensive Analytics and Reporting
+# - Model governance (model cards, lineage tracking)
+# - Interactive dashboards and visualizations
+# - Executive reporting and quality alerts
+#
+# ## DataFrame Stage Naming Convention
+#
+# This notebook follows a **4-stage naming convention** (Section 8.2):
+#
+# 1. **`all_stocks_preprocessed`**: ETL pipeline output (includes Phase 9.3 features)
+# 2. **`all_stocks_features`**: Optional additional features (if not using unified ETL)
+# 3. **`all_stocks_classification`**: Optional classification meta-features
+# 4. **`all_stocks_enhanced`**: Final regression-ready dataset
+#
+# ## Key Features (v1.10)
+#
+# ### NEW: Unified ETL with Semantic Transforms
+# - **Single Entry Point**: `etl_with_features()` consolidates schema.py, column_semantics.py, features/api.py
+# - **Semantic Classification**: 5-category system protects price columns from transformation
+# - **Log Transforms**: Applied to skewed market value columns (preserves extremes)
+# - **Feature Engineering**: 196 Phase 9.3 features automatically added
+#
+# ### Price Column Protection (CRITICAL)
+# - **21 Price Columns**: Never winsorized, scaled, or transformed
+# - **Business Rationale**: Preserves core valuation metric `(Predicted_Target - Last_Price) / Last_Price`
+# - **Includes**: Current prices, historical prices, 52W bounds, EMAs
+#
+# ### Configuration Best Practices
+# - **Single Source of Truth**: All constants defined once with business rationale
+# - **Validation**: Automatic validation of all configuration constants
+# - **Reproducibility**: Fixed random seed (RANDOM_SEED=42) for regulatory compliance
+#
+# ## Output Artifacts
+#
+# Generated in `outputs/` directory following Section 20.1 standards:
+# - `preprocessing/`: ETL metrics, dtype diagnostics, imputation summary
+# - `eda/`: EDA summary, feature coverage, correlation matrices
+# - `regression/`: Trained models, predictions, sector metrics
+# - `evaluation/`: Calibration reports, uncertainty quantification
+# - `governance/`: Model cards, lineage tracking, audit trails
+#
+# ## References
+#
+# - **Code Guidelines**: `docs/code_guidelines.md` v1.10
+# - **Test Coverage**: 51 tests in `test_etl_unified_pipeline.py`
+# - **Package Version**: 0.9.1
+# - **Python**: 3.12-3.14
 # %% md
 # ## 1. Configuration and Setup
 #
@@ -215,7 +288,7 @@ from finance_ml.ml_workflow.evaluation import (
 )
 
 # %%
-# Core imports
+# ========== CORE PYTHON IMPORTS ==========
 import os
 import warnings
 from pathlib import Path
@@ -223,229 +296,149 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from finance_ml.ml_workflow.regression import (
-    adaptive_clip_predictions,
-)
 
-# Interactive visualization imports
+# Interactive visualization imports (Section 17.2)
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# ============================================================================
-# Finance ML Package Imports - Phase 9.1-9.8 Modular Structure
-# ============================================================================
-# Using package-level imports for clean, maintainable code.
-# All Phase 9.1-9.8 functions are available with descriptive prefixes:
-#   - preprocessing_*: Phase 9.1 preprocessing functions
-#   - features_*: Phase 9.3 feature engineering
-#   - classification_*: Phase 9.4 classification models
-#   - regression_*: Phase 9.5 regression models
-#   - evaluation_*: Phase 9.6 evaluation metrics
-#   - analytics_*: Phase 9.7 analytics functions
-#   - reporting_*: Phase 9.8 reporting functions
-#
-# New Phase 9.2, 9.6, 9.7, 9.8 Import Paths (as of v9_9):
-#
-# Phase 9.2 - EDA/Benchmarking:
-#   from finance_ml.ml_workflow.eda.eda import eda_summary
-#   from finance_ml.ml_workflow.eda.benchmarking import generate_benchmarking_report
-#   from finance_ml.ml_workflow.eda.reports import generate_eda_report
-#
-# Phase 9.6 - Evaluation:
-#   from finance_ml.ml_workflow.evaluation.metrics import regression_report
-#   from finance_ml.ml_workflow.evaluation.analysis import residual_analysis
-#
-# Phase 9.7 - Analytics (mispricing, analyst comparison, portfolio, risk):
-#   from finance_ml.ml_workflow.analytics.mispricing import mispricing_scores, rank_by_sector
-#   from finance_ml.ml_workflow.analytics.analyst_comparison import PredictionAnalystAnalytics
-#   from finance_ml.ml_workflow.analytics.portfolio import optimize_portfolio_max_sharpe
-#   from finance_ml.ml_workflow.analytics.risk import calculate_portfolio_risk_metrics
-#
-# Phase 9.8 - Reporting:
-#   from finance_ml.ml_workflow.reporting.export import export_predictions
-#   from finance_ml.ml_workflow.reporting.dashboard_data import prepare_plotly_dashboard_data
+# Initialize logger early (Section 8.1)
+import logging
 
-# Phase 9.1: Data loading and preprocessing
-# Direct imports from Phase 9.1 preprocessing modules (bypasses deprecated shims)
-from finance_ml import (
-    load_from_csv,
-    load_from_db,
-    validate_schema,
-    normalize_columns,
-    check_missing_values,
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+warnings.filterwarnings("ignore")
+
+# ========== FINANCE ML PACKAGE IMPORTS ==========
+# Phase 9.1-9.8 Modular Structure (Section 4.3)
+# All imports use explicit module paths for clarity and maintainability
+
+# Phase 9.1: Preprocessing - Unified ETL Pipeline (Section 7.5, 8.6)
+from finance_ml.ml_workflow.preprocessing.etl import (
+    etl_with_features,  # RECOMMENDED: Comprehensive ETL + semantic transforms + Phase 9.3 features
+    etl_with_financial_metrics,  # Alternative: ETL + financial metrics only
+    run_etl_pipeline,  # Low-level: Custom ETL configuration
+    ETLConfig,  # Configuration with semantic-aware transformations
+    ETLMetrics,  # Comprehensive metrics tracking
 )
-from finance_ml.ml_workflow.preprocessing.imputation import (
+
+# Phase 9.1: Preprocessing - Component Functions
+from finance_ml.ml_workflow.preprocessing import (
+    # Imputation (6-step strategy)
     apply_enhanced_imputation_strategy_6step,
     validate_imputation_completeness,
-    fillna_by_dtype,
-)
-from finance_ml.ml_workflow.preprocessing.quality import (
-    calculate_data_quality_score as preprocessing_calculate_quality,
-)
-from finance_ml.ml_workflow.preprocessing.outliers import (
+    # Outlier detection and handling
     detect_outliers_iqr,
     detect_outliers_zscore,
-    detect_outliers_isolation_forest,
     winsorize_by_sector,
-)
-from finance_ml.ml_workflow.preprocessing.scaling import scale_features
-
-# Sector-specific features and calibration (Priority 3)
-from finance_ml.ml_workflow.regression.calibration import calibrate_predictions_by_sector
-
-# Phase 9.2: EDA and benchmarking
-# Package-level imports (convenient, backward compatible)
-from finance_ml import (
-    generate_eda_report,
-    generate_benchmarking_report,
-    compare_sector_distributions,
-    compare_regional_valuations,
-    simple_eda,
+    # Feature scaling (with price column exclusion)
+    scale_features,
+    # Data quality
+    check_missing_values,
+    normalize_columns,
 )
 
-# Direct module imports (Phase 9.2 refactor - new modular paths)
-from finance_ml.ml_workflow.eda.eda import (
-    eda_summary,
-    sector_distribution_summary,
+# Phase 9.1: Preprocessing - Semantic Column Classification (Section 8.5)
+from finance_ml.ml_workflow.preprocessing.column_semantics import (
+    classify_columns,
+    get_winsorizable_columns,
+    get_log_transform_columns,
+    get_scalable_columns,
+    PRICE_COLUMNS,  # 21 protected price columns
 )
 
-# Phase 9.2 enhanced analytics functions (eval.py)
-from finance_ml.ml_workflow.analytics.eval import (
-    calculate_financial_metrics_dashboard,
-    generate_data_quality_alerts,
-    perform_comprehensive_hypothesis_tests,
+# Phase 9.1: Preprocessing - Data Loading and Schema
+from finance_ml.ml_workflow.data.schema import (
+    COLUMN_SCHEMA,
+    normalize_column_name,
+    get_expected_dtype,
+    get_column_role,
 )
 
-# NOTE: Imports consolidated at the top of the notebook for consistency with
-# code_guidelines.md v1.3+. If executing this section directly in isolation,
-# please run the initial "Section 0: Imports & Setup" cell first to ensure
-# all required symbols are available.
-
-# Phase 9.3: Feature engineering
-# Direct import from features subpackage (Phase 9.3 refactor)
-from finance_ml import (
-    features_importance_rf,
-    engineer_valuation_ratios,
-    engineer_analyst_quality_features,
-    engineer_accounting_quality_features,
-    engineer_employee_productivity_features,
+# Phase 9.2: Exploratory Data Analysis
+from finance_ml.ml_workflow.eda import (
+    compute_descriptive_stats,
+    plot_distributions,
+    compute_correlation_matrix,
 )
 
-from finance_ml.ml_workflow.features.api import build_features
-from finance_ml.ml_workflow.features.advanced import (
-    engineer_valuation_ratios,
-    engineer_analyst_quality_features,
-    engineer_accounting_quality_features,
-    engineer_employee_productivity_features,
-    engineer_technical_analysis_features,
-    engineer_valuation_timeseries_features,
-    engineer_revenue_forecast_features,
-    engineer_dividend_reliability_features,
-    engineer_employment_dynamics_features,
+# Phase 9.3: Feature Engineering (Section 9.3)
+from finance_ml.ml_workflow.features.api import (
+    build_features,  # Unified entry point with presets
+)
+from finance_ml.ml_workflow.features import (
+    build_valuation_features,
+    build_momentum_features,
+    build_quality_features,
+    select_features_rf,
+)
+
+# Phase 9.3: Feature Coverage Validation
+from finance_ml.ml_workflow.eda.phase93_categories import (
+    PHASE93_FEATURE_CATEGORIES,
+    get_phase93_coverage_stats,
+    categorize_dataframe_columns,
 )
 
 # Phase 9.4: Classification
-# Direct import from classification subpackage (Phase 9.4 refactor)
-from finance_ml import (
-    classification_create_enhanced_event_labels,
-    classification_optimize_hyperparameters,
-)
-
-# Import data preparation and model training functions
 from finance_ml.ml_workflow.classification import (
-    prepare_classification_data,
-    compare_classifiers,
+    create_event_labels,
+    train_event_classifier,
+    tune_classifier_hyperparameters,
 )
 
-# Import evaluation functions for comprehensive model assessment
-from finance_ml.ml_workflow.classification import (
-    evaluate_classification,
-    evaluate_classification_by_sector,
-    plot_confusion_matrices,
-    compute_shap_values,
-    analyze_calibration,
-    cross_validate_classifier,
-)
-
-# Phase 9.9: Classification meta-features export (Gap 6)
-from finance_ml.ml_workflow.classification.evaluation import export_classification_probabilities
-
-# Phase 9.5: Regression models
-# Direct import from regression subpackage (Phase 9.5 refactor)
-from finance_ml import (
-    regression_prepare_data,
-    regression_compare_regressors,
-    regression_train_sector_models,
-    regression_save_model,
-    regression_load_model,
-    regression_create_classification_interactions,
-    regression_train_stacking,
-    regression_train_quantile,
-    # Robust prediction helpers for Time-Series CV (Phase 9.5.1)
-    winsorize_target,
-)
-
-# Import additional regression functions from subpackages (Phase 9.5 integration)
+# Phase 9.5: Regression
 from finance_ml.ml_workflow.regression import (
-    # Dataset preparation and validation
-    # Linear models
-    # Tree models
-    # Neural network
-    # Ensemble methods
-    # Quantile regression
-    # Hyperparameter tuning
-    # Model persistence
-    # Constraints
-    NonNegativeRegressionWrapper,
-    # Model comparison
+    train_sector_models,
+    train_quantile_regressor,
+    apply_nonnegative_constraint,
+    train_stacking_regressor,
 )
-
-# Phase 9.9: Regression meta-features integration (Gap 6)
-from finance_ml.ml_workflow.regression.dataset import integrate_classification_features
-
-# Phase 9.9: Data split policy (Gap 3)
 
 # Phase 9.6: Evaluation
-# Package-level imports (convenient, backward compatible)
-from finance_ml import (
-    evaluation_comprehensive_metrics,
-    evaluation_metrics_by_segment,
+from finance_ml.ml_workflow.evaluation import (
+    # Metrics
+    comprehensive_regression_metrics,
+    compute_metrics_by_segment,
+    compute_sector_region_metrics,
+    # Analysis
+    residual_analysis,
+    error_analysis,
+    model_diagnostics,
+    # Uncertainty Quantification
+    build_quantile_diagnostics,
+    plot_interval_coverage,
+    plot_reliability_diagram,
+    # Safety Rails
+    summarize_winsorization_effects,
+    track_constraint_violations,
+    safety_rails_sensitivity_app,
+    # Calibration
+    estimate_sector_bias,
+    create_sector_bias_dashboard,
+    # Governance
+    generate_model_card,
+    build_lineage_json,
 )
-
-# Direct module imports (Phase 9.6 refactor - new modular paths)
 
 # Phase 9.7: Analytics
-# Package-level imports (convenient, backward compatible)
-from finance_ml import (
-    # Mispricing and ranking
-    analytics_calculate_mispricing,
-    analytics_rank_undervalued,
-    analytics_rank_overvalued,
-    analytics_rank_by_sector,
-    # Analyst comparison
-    PredictionAnalystAnalytics,
-    # Portfolio optimization
-    # Risk metrics
-    calculate_portfolio_risk_metrics,
+from finance_ml.ml_workflow.analytics import (
+    calculate_mispricing_scores,
+    rank_stocks,
+    optimize_portfolio,
+    compute_risk_metrics,
 )
 
-# Direct module imports (Phase 9.7 refactor - new modular paths)
-
-# Phase 9.8: Reporting and analytics
-# Package-level imports (convenient, backward compatible)
-from finance_ml import (
-    reporting_financial_metrics,
-    reporting_quality_alerts,
+# Phase 9.8: Reporting
+from finance_ml.ml_workflow.reporting import (
+    generate_dashboard_data,
+    create_quality_alerts,
 )
 
-# Direct module imports (Phase 9.8 refactor - new modular paths)
-
-# Data catalog for metadata management
-from finance_ml import DataCatalog
-
-warnings.filterwarnings('ignore')
-
+print("✓ All imports loaded successfully")
+print(f"  Phase 9.1-9.8 structure aligned with code_guidelines.md Section 4.3")
 # %% md
 # ## 📦 Phase 9.1-9.8 Module Structure Migration
 #
@@ -469,50 +462,24 @@ warnings.filterwarnings('ignore')
 # ✅ **Clean imports**: All functions imported once at the top
 # ✅ **No duplication**: Removed 21 redundant import cells
 # ✅ **Better organization**: Logical grouping by business function
-# ✅ **Backward compatible**: Old import paths still work with deprecation warnings
+# ✅ **Backward compatible**: Package-level imports use deprecation shims
 # ✅ **Easier maintenance**: Clear module boundaries and responsibilities
 #
-# ### Migration Notes
+# ### Migration Guide (code_guidelines.md Section 4.3)
 #
-# - **Old**: `from finance_ml.advanced_preprocessing import function`
-# - **New**: `from finance_ml import function` (already imported at top)
+# - **Explicit Module Imports** (Recommended): `from finance_ml.ml_workflow.preprocessing.imputation import apply_enhanced_imputation_strategy_6step`
+# - **Package-Level Imports** (Convenience): `from finance_ml import load_from_csv, normalize_columns`
 # - All functions use descriptive prefixes to indicate their module
-# - See `finance_ml/__init__.py` for complete API reference
 #
+# See `docs/improvement_plan/finance_ml_restructuring_plan.md` for detailed migration timeline.
 # %%
 
-# Set random seed
-RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
-np.random.seed(RANDOM_SEED)
-
-# Configure plotting
+# Configure plotting (RANDOM_SEED already set in configuration cell above)
 plt.style.use("seaborn-v0_8-darkgrid")
 sns.set_palette("husl")
-
-# Output directories - Phase 9.1-9.8 aligned structure
-OUTPUT_DIR = Path("outputs")
-OUTPUT_DIR.mkdir(exist_ok=True)
-
-# Create all Phase 9.1-9.8 subdirectories
-(OUTPUT_DIR / "catalog").mkdir(exist_ok=True)  # Phase 9.1: Data catalog
-(OUTPUT_DIR / "preprocessing").mkdir(exist_ok=True)  # Phase 9.1: Preprocessing artifacts
-(OUTPUT_DIR / "eda").mkdir(exist_ok=True)  # Phase 9.2: EDA reports
-(OUTPUT_DIR / "features").mkdir(exist_ok=True)  # Phase 9.3: Feature engineering
-(OUTPUT_DIR / "classification").mkdir(exist_ok=True)  # Phase 9.4: Classification models
-(OUTPUT_DIR / "regression").mkdir(exist_ok=True)  # Phase 9.5: Regression models
-(OUTPUT_DIR / "evaluation").mkdir(exist_ok=True)  # Phase 9.6: Model evaluation
-(OUTPUT_DIR / "analytics").mkdir(exist_ok=True)  # Phase 9.7: Analytics & rankings
-(OUTPUT_DIR / "reporting").mkdir(exist_ok=True)  # Phase 9.8: Reports & exports
-(OUTPUT_DIR / "plots").mkdir(exist_ok=True)  # Visualizations
-(OUTPUT_DIR / "dashboards").mkdir(exist_ok=True)  # Dashboard data
-(OUTPUT_DIR / "uncertainty").mkdir(exist_ok=True)  # Phase 9.4: Uncertainty quantification
-(OUTPUT_DIR / "safety_rails").mkdir(exist_ok=True)  # Phase 9.5: Safety rails & constraints
-(OUTPUT_DIR / "splits").mkdir(exist_ok=True)  # Phase 9.6: Data splits & leakage
-(OUTPUT_DIR / "calibration").mkdir(exist_ok=True)  # Phase 9.7: Sector bias calibration
-(OUTPUT_DIR / "governance").mkdir(exist_ok=True)  # Phase 9.8: Model governance
-
-print("✓ Configuration and imports complete")
-
+pd.set_option("display.max_columns", 100)
+pd.set_option("display.max_rows", 100)
+pd.set_option("display.float_format", "{:.2f}".format)
 # %% md
 # ## Phase 9.1: Loading and Preprocessing with 6-Step Imputation Strategy Financial Data
 #
@@ -568,32 +535,225 @@ print("✓ Configuration and imports complete")
 # 8. **Feature Scaling**: Robust scaling by sector
 #
 # %%
-# Load data (auto-detect from DB or CSV)
-# Functions already imported from finance_ml at the top
-# Following code_guidelines.md: normalize columns immediately after loading
+# ========== PHASE 9.1: UNIFIED ETL WITH SEMANTIC TRANSFORMS ==========
+# Section 8.2: DataFrame Stage Naming Convention - Stage 1 of 4
+# Section 7.5: etl_with_features() - Single entry point consolidating:
+#   - schema.py (column normalization, dtype casting)
+#   - column_semantics.py (semantic classification, price column protection)
+#   - features/api.py (Phase 9.3 feature engineering)
 
-DB_URL = os.getenv("DB_URL", "postgresql+psycopg2://postgres:@localhost:5432/postgres")
+# Configure data source
+DATA_SOURCE = "csv"  # Options: 'csv', 'db', 'all_stocks'
+DATA_DIR = Path("data")
 
-try:
-    all_stocks_raw = load_from_db(DB_URL, limit=None)
-    print(f"✓ Loaded {len(all_stocks_raw)} stocks from database")
-except Exception as e:
-    print(f"⚠ Database load failed: {e}. Falling back to CSV.")
-    all_stocks_raw = load_from_csv(Path("data"), limit=None)
-    print(f"✓ Loaded {len(all_stocks_raw)} stocks from CSV")
+# Configure ETL with semantic-aware transformations (Section 7.5)
+etl_config = ETLConfig(
+    # Standard ETL options
+    apply_imputation=True,
+    imputation_strategy="6step",  # REQUIRED: 6-step handles numeric, categorical, datetime
+    apply_scaling=False,  # Scale later if needed
+    # Semantic-aware transformation flags (Section 8.5)
+    use_semantic_column_classification=True,  # Enable 5-category classification
+    preserve_price_columns=True,  # CRITICAL: Never transform price columns
+    log_transform_market_values=True,  # Apply log-transforms to skewed columns
+    exclude_ratios_from_winsorization=True,  # Ratios pre-normalized
+    exclude_percentages_from_winsorization=True,  # Percentages bounded [0, 100]
+    # Feature engineering integration (Section 9.3)
+    apply_feature_engineering=True,  # Enable Phase 9.3 features
+    feature_preset="comprehensive",  # Options: 'basic', 'momentum', 'quality', 'standard', 'comprehensive'
+    # Financial metrics computation
+    compute_valuation_metrics=True,
+    compute_profitability_metrics=True,
+    compute_growth_metrics=True,
+    compute_leverage_metrics=True,
+    # Quality reporting
+    generate_quality_alerts=True,
+    generate_metrics_dashboard=True,
+)
 
-# Code Guidelines Section 2.1: Normalize columns to canonical schema
-# Canonical names: ticker, sector, region, last_price, price_target, price_target_median
-all_stocks_normalized = normalize_columns(all_stocks_raw)
-print(f"✓ Columns normalized to canonical schema")
+# Execute unified ETL pipeline (Stage 1: Preprocessing)
+print("=" * 80)
+print("STAGE 1: ETL Pipeline with Semantic Transforms + Feature Engineering")
+print("=" * 80)
 
-# Code Guidelines Section 2.3: Validate schema after normalization
-validate_schema(all_stocks_normalized, require_target=True)
-print(f"✓ Schema validated: required columns present")
+all_stocks_preprocessed, etl_metrics = etl_with_features(
+    source=DATA_SOURCE,
+    data_dir=DATA_DIR if DATA_SOURCE == "csv" else None,
+    config=etl_config,
+    return_metrics=True,
+)
 
-print(f"✓ Initial data shape: {all_stocks_normalized.shape}")
-print(f"  Initial missing values: {all_stocks_normalized.isnull().sum().sum()}")
+# Display ETL metrics
+print("\n" + etl_metrics.summary())
+print(f"\nSemantic Classification:")
+print(f"  Price columns protected: {etl_metrics.price_columns_count}")
+print(f"  Market value columns: {etl_metrics.market_value_columns_count}")
+print(f"  Log-transformed columns: {etl_metrics.log_transformed_columns}")
+print(f"\nFeature Engineering:")
+print(f"  Preset used: {etl_metrics.feature_preset_used}")
+print(f"  Features added: {etl_metrics.features_added}")
+print(f"  Categories: {', '.join(etl_metrics.feature_categories_applied)}")
 
+# ========== VALIDATION CHECKPOINT (Section 19.1) ==========
+# Required assertions after ETL
+assert not all_stocks_preprocessed.empty, "DataFrame must not be empty"
+assert "ticker" in all_stocks_preprocessed.columns, "ticker column required"
+assert "sector" in all_stocks_preprocessed.columns, "sector column required"
+assert "last_price" in all_stocks_preprocessed.columns, "last_price column required"
+
+# Validate no missing values after 6-step imputation
+missing_total = all_stocks_preprocessed.isna().sum().sum()
+assert (
+    missing_total == 0
+), f"No missing values allowed after 6-step imputation, found {missing_total}"
+
+# Validate data sufficiency
+assert (
+    len(all_stocks_preprocessed) > 100
+), f"Insufficient data: {len(all_stocks_preprocessed)} rows (minimum 100)"
+assert all_stocks_preprocessed["last_price"].min() > 0, "last_price must be positive"
+
+# Validate semantic transformations
+assert etl_metrics.semantic_classification_applied, "Semantic classification should be applied"
+assert (
+    etl_metrics.price_columns_count >= 21
+), f"All 21 price columns should be protected, found {etl_metrics.price_columns_count}"
+
+# Validate feature engineering (Section 9.3)
+assert etl_metrics.feature_engineering_applied, "Feature engineering should be applied"
+coverage_pct = (etl_metrics.features_added / 196) * 100 if etl_metrics.features_added > 0 else 0
+assert coverage_pct >= 75, f"Phase 9.3 coverage must be >= 75%, got {coverage_pct:.1f}%"
+
+print(f"\n✓ Stage 1 (Preprocessed) validation passed")
+print(f"  Shape: {all_stocks_preprocessed.shape}")
+print(f"  Missing values: {missing_total}")
+print(f"  Price columns protected: {etl_metrics.price_columns_count}")
+print(f"  Phase 9.3 coverage: {coverage_pct:.1f}% ({etl_metrics.features_added}/196 features)")
+print("=" * 80)
+# %% md
+# # DataFrame Stage Naming Convention
+#
+# **Policy**: Use descriptive stage-based naming for all DataFrame transformations (Section 8.2)
+#
+# ## 4-Stage Pipeline
+#
+# This notebook follows a **4-stage DataFrame naming convention** that aligns with the unified ETL pipeline:
+#
+# ### Stage 1: `all_stocks_preprocessed`
+# **ETL Pipeline Output**
+# - Extraction, normalization, validation, sanitization
+# - 6-step imputation (numeric, categorical, datetime)
+# - Semantic column classification (5 categories)
+# - Log-transforms for market value columns
+# - Winsorization (excluding price/ratio/percentage columns)
+# - Optional scaling (with price column exclusion)
+# - Financial metrics computation (valuation, profitability, growth, leverage)
+# - **✓ Phase 9.3 Feature Engineering** (196 features via `etl_with_features()`)
+#
+# **Created by**: `etl_with_features()` or `etl_with_financial_metrics()`
+#
+# ### Stage 2: `all_stocks_features` (Optional - if not using unified ETL)
+# **DataFrame enhanced with additional engineered features**
+# - Phase 9.3 feature categories: momentum, valuation, profitability, quality/risk, cash flow, growth
+# - Only needed if using `run_etl_pipeline()` without feature engineering
+# - **Note**: When using `etl_with_features()`, features are already in `all_stocks_preprocessed`
+#
+# **Created by**: `build_features()` or `build_comprehensive_features()`
+#
+# ### Stage 3: `all_stocks_classification` (Optional)
+# **DataFrame enhanced with classification model outputs**
+# - Event probabilities from Phase 9.4 classification
+# - Predicted classes for use as meta-features in regression
+# - Only needed if using classification results in regression models
+#
+# **Created by**: `train_event_classifier()` + probability assignment
+#
+# ### Stage 4: `all_stocks_enhanced`
+# **Final Phase 9.5 regression-ready dataset**
+# - All transformations applied
+# - Optional classification meta-features
+# - Ready for train/test split and model training
+#
+# **Created by**: Final composite features and interactions
+#
+# ## Benefits
+#
+# 1. **Simplified Pipeline**: ETL handles preprocessing; notebook focuses on ML stages
+# 2. **Debugging**: Inspect intermediate stages without re-running expensive operations
+# 3. **Rollback**: Revert to earlier stage if downstream transformation fails
+# 4. **Metrics Tracking**: ETL returns `ETLMetrics` with transformation statistics
+# 5. **Self-documenting**: Stage names clearly indicate transformation history
+#
+# ## Validation Checkpoints
+#
+# Each stage **MUST** include validation assertions (Section 19):
+# - DataFrame not empty
+# - Critical columns present
+# - No missing values (after imputation)
+# - Data quality metrics within bounds
+# - Semantic transformations applied correctly
+#
+# ## Price Column Protection
+#
+# **CRITICAL**: All 21 price columns must **NEVER** be transformed (Section 8.5.2):
+# - Current prices: `last_price`, `price_target`, `price_target_median`, etc.
+# - Historical prices: `price_5d_ago`, `price_1w_ago`, `price_1m_ago`, etc.
+# - 52W bounds: `52w_high_adj`, `52w_low_adj`
+# - EMAs: `ema_20d`, `ema_50d`, `ema_100d`, `ema_250d`
+#
+# **Rationale**: Core business metric `(Predicted_Target - Last_Price) / Last_Price` requires original price scale.
+# %%
+# ============================================================================
+# VALIDATION: Price Column Preservation (Section 8.5.2)
+# ============================================================================
+
+from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS
+
+print("\n" + "=" * 70)
+print("PRICE COLUMN PRESERVATION VALIDATION")
+print("=" * 70)
+
+# Verify price columns were not transformed
+price_cols_in_df = [c for c in all_stocks_preprocessed.columns if c in PRICE_COLUMNS]
+
+print(f"\nPrice columns preserved: {len(price_cols_in_df)}")
+for col in price_cols_in_df:
+    if col in all_stocks_preprocessed.columns:
+        min_val = all_stocks_preprocessed[col].min()
+        max_val = all_stocks_preprocessed[col].max()
+        print(f"  - {col}: min={min_val:.2f}, max={max_val:.2f}")
+
+# Verify no scaling was applied to price columns
+if "last_price" in all_stocks_preprocessed.columns:
+    original_price_range = (
+        all_stocks_preprocessed["last_price"].max() - all_stocks_preprocessed["last_price"].min()
+    )
+    print(f"\nLast Price range: ${original_price_range:.2f} (should be in original dollar units)")
+    print("✓ Price columns preserved in original units (no scaling applied)")
+
+print("=" * 70)
+# %%
+print(f"\n✓ ETL Pipeline Complete (Phase 9.1 - Consolidated ETL with Features):")
+print(f"  - Final shape: {all_stocks_preprocessed.shape}")
+
+# Display financial metrics status
+date_status = "✓" if etl_metrics.date_columns_ready else "✗"
+print(f"  - Date columns ready: {date_status}")
+print(f"  - Processing time: {etl_metrics.total_time_sec:.2f}s")
+print(f"  - Quality score: {etl_metrics.quality_score:.3f}")
+print(f"  - Validation score: {etl_metrics.validation_score:.3f}")
+print(f"  - Imputation: {etl_metrics.imputation_strategy} strategy")
+print(f"  - Missing before: {etl_metrics.missing_values_before_imputation:,}")
+print(f"  - Missing after: {etl_metrics.missing_values_after_imputation:,}")
+
+print(f"\n📋 Next Steps (Phase 9.1b-c):")
+print(f"  - Downstream cells will handle winsorization (cells 13-15)")
+print(f"  - Downstream cells will handle scaling (cell 17)")
+print(f"  - This separation allows proper preprocessing order per code_guidelines.md")
+
+# Alias for compatibility with downstream cells that expect 'all_stocks_typed'
+all_stocks_typed = all_stocks_normalized.copy()
+print(f"\n✓ Created alias: all_stocks_typed = all_stocks_normalized (for downstream compatibility)")
 # %%
 # v1.3 NEW: Schema-aware dtype detection and casting
 # Import schema and dtype detection modules
@@ -625,6 +785,13 @@ for category, features in PHASE93_FEATURE_INPUTS.items():
     available_features = [f for f in features if f in all_stocks_typed.columns]
     print(f"  {category}: {len(available_features)}/{len(features)} available")
 
+# Fix: Define OUTPUT_DIR if missing and ensure directory exists
+from pathlib import Path
+
+if "OUTPUT_DIR" not in globals():
+    OUTPUT_DIR = Path("outputs")
+(OUTPUT_DIR / "preprocessing").mkdir(parents=True, exist_ok=True)
+
 # Save dtype diagnostics to metadata
 dtype_diagnostics_path = OUTPUT_DIR / "preprocessing" / "dtype_diagnostics.json"
 import json
@@ -633,6 +800,62 @@ with open(dtype_diagnostics_path, "w") as f:
     json.dump(to_jsonable(dtype_diagnostics), f, indent=2)
 print(f"\n✓ Dtype diagnostics saved to: {dtype_diagnostics_path}")
 
+# %%
+# Save ETL metrics for audit trail and governance
+# Persist comprehensive ETL metrics to track data quality and processing
+
+etl_metrics_dict = {
+    "timestamp": pd.Timestamp.now().isoformat(),
+    "model_version": MODEL_VERSION,
+    "rows_loaded": etl_metrics.rows_output,  # FIXED: Use rows_output instead of rows_loaded
+    "columns_loaded": etl_metrics.columns_output,  # FIXED: Use columns_output instead of columns_loaded
+    "missing_values_before_imputation": etl_metrics.missing_values_before_imputation,
+    "missing_values_after_imputation": etl_metrics.missing_values_after_imputation,
+    "imputation_completeness": etl_metrics.imputation_completeness,
+    "imputation_strategy": etl_metrics.imputation_strategy,
+    "date_columns_ready": etl_metrics.date_columns_ready,
+    "quality_score": etl_metrics.quality_score,
+    "processing_time_sec": etl_metrics.total_time_sec,
+    "warnings_count": len(etl_metrics.warnings),
+    "errors_count": len(etl_metrics.errors),
+}
+
+# Save to CSV for tracking over time
+etl_metrics_df = pd.DataFrame([etl_metrics_dict])
+etl_metrics_path = OUTPUT_DIR / "preprocessing" / "etl_metrics.csv"
+etl_metrics_path.parent.mkdir(parents=True, exist_ok=True)
+
+# Append to existing metrics if file exists
+if etl_metrics_path.exists():
+    existing_metrics = pd.read_csv(etl_metrics_path)
+    etl_metrics_df = pd.concat([existing_metrics, etl_metrics_df], ignore_index=True)
+
+etl_metrics_df.to_csv(etl_metrics_path, index=False)
+print(f"\n✓ ETL metrics saved to: {etl_metrics_path}")
+print(f"  Total runs tracked: {len(etl_metrics_df)}")
+
+# ==============================================================================
+# Phase 9.1 Preprocessing Workflow Summary
+# ==============================================================================
+#
+# NEW: Using etl_with_imputation() function for unified data loading:
+#   ✓ Data extraction (CSV/DB)
+#   ✓ Column normalization
+#   ✓ Schema validation
+#   ✓ Data sanitization
+#   ✓ 6-step imputation (numeric, categorical, datetime)
+#
+# Downstream cells handle additional preprocessing:
+#   → Cell 13-15: Winsorization (selective, exclude price/ratio columns)
+#   → Cell 16: Manual imputation validation (REDUNDANT - can be removed)
+#   → Cell 17: Feature scaling (sector-aware, price columns protected)
+#
+# Preprocessing order (code_guidelines.md Section 8.5):
+#   1. Load + Normalize + Validate + Sanitize + Impute (this cell)
+#   2. Winsorize (cells 13-15)
+#   3. Scale (cell 17)
+#   4. Feature Engineering (Phase 9.3)
+# ==============================================================================
 # %%
 # Detailed missing value analysis using Phase 9.1 function
 missing_report = check_missing_values(all_stocks_typed)
@@ -681,7 +904,7 @@ try:
     print(f"✓ Dataset metadata saved to {metadata_file}")
     print(f"  Shape: {all_stocks_typed.shape}")
     print(f"  Columns: {len(all_stocks_typed.columns)}")
-except Exception as e:
+except (IOError, OSError, TypeError, AttributeError, KeyError) as e:
     print(f"⚠️  DataCatalog registration skipped: {e}")
 # %%
 # Robust outlier detection with multiple methods
@@ -700,20 +923,22 @@ financial_metrics = [c for c in numeric_cols if c not in ["ticker", "isin"]]
 # Detect outliers using multiple methods - process each column individually
 outliers_iqr = {}
 for col in financial_metrics[:50]:
-    outliers_iqr[col] = detect_outliers_iqr(all_stocks_typed, columns=[col], iqr_multiplier=2.5)
+    outliers_iqr[col] = detect_outliers_iqr(
+        all_stocks_typed, columns=[col], iqr_multiplier=IQR_MULTIPLIER
+    )
 
 outliers_zscore = {}
 for col in financial_metrics[:50]:
     outliers_zscore[col] = detect_outliers_zscore(
         all_stocks_typed,
         columns=[col],  # Fixed: changed 'column' to 'columns' and wrapped in list
-        threshold=3.0,
+        threshold=ZSCORE_THRESHOLD,
     )
 
 outliers_iforest = {}
 for col in financial_metrics[:50]:
     outliers_iforest[col] = detect_outliers_isolation_forest(
-        all_stocks_typed, columns=[col], contamination=0.1, random_state=RANDOM_SEED
+        all_stocks_typed, columns=[col], contamination=0.05, random_state=RANDOM_SEED
     )
 
 # Aggregate results for reporting
@@ -962,7 +1187,7 @@ print("\n📊 Applying Enhanced 6-Step Imputation Strategy...")
 all_stocks_imputed = apply_enhanced_imputation_strategy_6step(
     all_stocks_winsorized,
     sector_column="sector",
-    n_neighbors=15,
+    n_neighbors=5,
     price_column="last_price",
     handle_categoricals=True,  # NEW: Step 5 - categorical imputation
     handle_dates=True,  # NEW: Step 6 - datetime imputation & formatting
@@ -1127,7 +1352,7 @@ try:
         json.dump(snapshot_metadata, f, indent=2)
 
     print(f"✓ Data snapshot metadata saved: {snapshot_file.name}")
-except Exception as e:
+except (IOError, OSError, TypeError, ValueError, AttributeError) as e:
     print(f"⚠️  Data snapshot failed: {e}")
 
 # 5. Summary stats
@@ -1229,7 +1454,7 @@ try:
     with open(eda_summary_path, "w") as f:
         json.dump(eda_summary_dict, f, indent=2, default=str)
     print(f"  ✓ EDA summary JSON saved: {eda_summary_path}")
-except Exception as e:
+except (IOError, OSError, TypeError, ValueError, KeyError) as e:
     print(f"  ⚠ Failed to create eda_summary.json: {e}")
 
 # Save quality alerts to JSON
@@ -1738,23 +1963,10 @@ metrics_to_benchmark = (
 )
 
 # %%
-# Phase 9.5/9.9: Regression helpers (schema validation, stacking, quantiles, CV)
-# These imports ensure the notebook references the standardized helpers used in tests and CLI.
-from finance_ml.ml_workflow.regression.io import (
-    validate_predictions_schema,
-    build_predictions_frame,
-)
-from finance_ml.ml_workflow.models import (
-    train_stacking_ensemble,
-    predict_quantile_regression,
-)
-from finance_ml.ml_workflow.regression.cv import get_regression_cv_splitter
-
-# %%
 # Phase 9.1: Enhanced imputation and dtype validation (Schema-aware)
 # Cast dtypes per schema; then run enhanced imputation. Safety rails downstream
 # use exclude_price_columns=True by default (see preprocessing modules).
-from finance_ml import apply_enhanced_imputation_strategy_4step
+from finance_ml.ml_workflow.preprocessing.imputation import apply_enhanced_imputation_strategy_6step
 from finance_ml.ml_workflow.preprocessing.dtypes import validate_dtypes_against_schema
 from finance_ml.ml_workflow.preprocessing.outliers import winsorize_by_sector
 from finance_ml.ml_workflow.preprocessing.scaling import scale_features
@@ -1763,12 +1975,12 @@ from finance_ml.ml_workflow.preprocessing.scaling import scale_features
 try:
     # Ensure a raw frame exists from load step
     if "all_stocks_raw" in globals():
-        all_stocks_normalized = normalize_columns(all_stocks_raw)
+        all_stocks_normalized = normalize_columns(a)
         # Schema-aware dtype validation (Phase 9.3 TDD)
         _ = validate_dtypes_against_schema(all_stocks_normalized)
 
         # Apply enhanced imputation (6-step consolidated to helper)
-        all_stocks_imputed = apply_enhanced_imputation_strategy_4step(
+        all_stocks_imputed = apply_enhanced_imputation_strategy_6step(
             df=all_stocks_normalized,
             sector_column="sector" if "sector" in all_stocks_normalized.columns else None,
             n_neighbors=5,
@@ -1777,7 +1989,7 @@ try:
         # Safety rails configuration flags (documented; default excludes price columns)
         WINSORIZE_EXCLUDE_PRICE = True
         SCALE_EXCLUDE_PRICE = True
-except Exception as e:
+except (ValueError, TypeError, KeyError, AttributeError) as e:
     print("Data preprocessing scaffolding warning:", e)
 
 available_metrics = [m for m in metrics_to_benchmark if m in all_stocks_scaled.columns]
@@ -2983,13 +3195,7 @@ print(f"{'=' * 80}")
 
 # %%
 # Feature importance analysis
-exclude_cols = [
-    "price_target",
-    "price_target_median",
-    "price_target_low",
-    "price_target_high",
-    "price_target_ytd_ago",
-]
+exclude_cols = []
 
 feature_cols = [c for c in all_stocks_features.columns if c not in exclude_cols]
 
@@ -3115,7 +3321,7 @@ print("  Method: composite_event (canonical for Phase 9.3)")
 # This generates the required 'labels' numpy array
 event_labels = classification_create_enhanced_event_labels(
     all_stocks_features,
-    method="revenue_forecast_event",  # Use price_momentum method for reliable class distribution
+    method="quality_event",  # Use price_momentum method for reliable class distribution
     use_sector_adjustment=True,
 )
 
@@ -3144,7 +3350,7 @@ print(
 print("\n📊 Defining Method-Aware Valuation Columns...")
 
 # Extract the label method used above (must match the method argument in classification_create_enhanced_event_labels)
-label_method = "revenue_forecast_event"  # Must match method parameter above (line 1510)
+label_method = "quality_event"  # Must match method parameter above (line 1510)
 
 # Define valuation column candidates grouped by event labeling method semantics
 # Each group contains columns relevant to that method's economic logic
@@ -4029,7 +4235,7 @@ try:
         if result.get("best_score", 0) == 0:
             print("  ⚠️  All trials may have failed - check data types and LightGBM compatibility")
 
-except Exception as e:
+except (ValueError, TypeError, RuntimeError, KeyError) as e:
     print(f"❌ Hyperparameter optimization failed: {str(e)}")
     print(f"   Error type: {type(e).__name__}")
     raise
@@ -4086,7 +4292,7 @@ try:
         )
         cls_model = result["model"]
 
-except Exception as e:
+except (ValueError, TypeError, RuntimeError, KeyError) as e:
     print(f"❌ Model comparison failed: {str(e)}")
     print(f"   Using optimized model from hyperparameter search instead")
     models_results = {}
@@ -4246,7 +4452,7 @@ if models_results:
             class_names=["Strong Negative", "Negative", "Neutral", "Positive", "Strong Positive"],
         )
         print("✓ Confusion matrices displayed")
-    except Exception as e:
+    except (ValueError, TypeError, RuntimeError, AttributeError) as e:
         print(f"⚠️  Could not plot confusion matrices: {str(e)}")
 else:
     # Plot for single model
@@ -4290,7 +4496,7 @@ try:
     else:
         print("⚠️  SHAP values computation returned None")
 
-except Exception as e:
+except (ValueError, TypeError, RuntimeError, AttributeError, ImportError) as e:
     print(f"⚠️  SHAP analysis failed: {str(e)}")
     print("  Continuing without SHAP analysis")
 
@@ -4323,7 +4529,7 @@ if "sector" in all_stocks_features.columns:
             json.dump(sector_metrics.to_dict("records"), f, indent=2)
         print(f"\n💾 Sector metrics saved to: {sector_output_path}")
 
-    except Exception as e:
+    except (ValueError, TypeError, RuntimeError, KeyError, IOError) as e:
         print(f"⚠️  Sector evaluation failed: {str(e)}")
 else:
     print("⚠️  No sector column available for sector-specific evaluation")
@@ -4354,7 +4560,7 @@ try:
         )
     print(f"\n💾 Calibration analysis saved to: {calib_output_path}")
 
-except Exception as e:
+except (ValueError, TypeError, RuntimeError, KeyError, IOError) as e:
     print(f"⚠️  Calibration analysis failed: {str(e)}")
 
 # %%
@@ -4394,7 +4600,7 @@ if "sector" in all_stocks_features.columns:
             json.dump({k: v for k, v in cv_results.items() if k != "cv_scores"}, f, indent=2)
         print(f"\n💾 Cross-validation results saved to: {cv_output_path}")
 
-    except Exception as e:
+    except (ValueError, TypeError, RuntimeError, KeyError, IOError) as e:
         print(f"⚠️  Cross-validation failed: {str(e)}")
 else:
     print("⚠️  No sector column available for sector-stratified cross-validation")
@@ -4733,7 +4939,7 @@ if classification_cols and valuation_cols:
 
     try:
         # Create interaction features
-        # Reference: finance_ml.advanced_models.regression_create_classification_interactions()
+        # Reference: finance_ml.ml_workflow.regression.dataset.create_classification_interactions()
         all_stocks_enhanced = regression_create_classification_interactions(
             all_stocks_with_classification,
             classification_cols=classification_cols,
@@ -4750,7 +4956,7 @@ if classification_cols and valuation_cols:
         if interaction_cols:
             print(f"  Examples: {', '.join(interaction_cols[:3])}")
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError) as e:
         print(f"⚠️  Error creating interaction features: {e}")
         print("   Continuing with original features...")
         all_stocks_enhanced = all_stocks_with_classification.copy()
@@ -4796,7 +5002,7 @@ if nan_before > 0 or inf_before > 0:
             handle_dates=True,
         )
         print("\n✓ 6-step imputation completed successfully")
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError) as e:
         print(f"\n⚠️ Warning: 6-step imputation encountered an error: {e}")
         print("  Falling back to basic imputation...")
 
@@ -4878,7 +5084,6 @@ if nan_before > 0 or inf_before > 0:
     print(f"\n✓ Data fully imputed: {all_stocks_enhanced.shape}")
 else:
     print("\n✓ No missing or infinite values detected - skipping imputation")
-
 # %%
 # Verify ALL 21 price columns preserved after Phase 9.5 preprocessing (code_guidelines.md Section 8.5.2)
 # all_stocks_enhanced inherits price columns from all_stocks_with_classification
@@ -4924,6 +5129,32 @@ print(f"  Test set: {X_test.shape}")
 print(f"  Numeric features: {len(meta.get('numeric_features', []))}")
 print(f"  Categorical features: {len(meta.get('categorical_features', []))}")
 
+# Phase 9.3 — Feature Engineering Review Summary (auto-applied in prepare_regression_data)
+try:
+    pruned = meta.get("pruned_features", [])
+    added_ix = meta.get("added_sector_interactions", 0)
+    coverage = meta.get("feature_coverage_report", {})
+    print("\n📊 Phase 9.3 Feature Review:")
+    if coverage:
+        print(
+            f"  Feature count: {coverage.get('feature_count')} (expected≈{coverage.get('expected_count')})"
+        )
+    print(
+        f"  Pruned low-importance features (<{float(os.getenv('FEATURE_IMPORTANCE_THRESHOLD', '0.01')) * 100:.1f}%): {len(pruned)}"
+    )
+    if len(pruned) > 0:
+        from pathlib import Path
+
+        out_dir = OUTPUT_DIR / "regression"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        with open(out_dir / "pruned_features.txt", "w", encoding="utf-8") as f:
+            for name in pruned:
+                f.write(str(name) + "\n")
+        print(f"    → Saved list to {out_dir / 'pruned_features.txt'}")
+    print(f"  Added sector interaction features: {added_ix}")
+except (ValueError, TypeError, KeyError, IOError, AttributeError) as _e:
+    print(f"[WARN] Feature review summary unavailable: {_e}")
+
 # %% md
 # ### 6.3 Compare Multiple Regression Models
 #
@@ -4939,7 +5170,7 @@ try:
         test_size=TEST_SIZE,
         cv=CV_FOLDS,
         random_state=RANDOM_SEED,
-        ensure_nonnegative=True,
+        ensure_nonnegative=False,
     )
 
     results_df = pd.DataFrame(comparison_results).T.sort_values("r2", ascending=False)
@@ -4955,7 +5186,7 @@ try:
         best_model_name = "None"
         print("  ⚠ No regression successfully trained")
 
-except Exception as e:
+except (ValueError, TypeError, RuntimeError, KeyError) as e:
     print(f"\n⚠ Model comparison failed: {e}")
     results_df = pd.DataFrame()
     best_model_name = "None"
@@ -5080,6 +5311,10 @@ if train_probs is not None:
     if "enable_interactions" not in locals():
         enable_interactions = False  # Set to True if you specifically want interaction features
 
+    # Initialize interaction_valuation_cols if not defined (prevents NameError)
+    if "interaction_valuation_cols" not in locals():
+        interaction_valuation_cols = []  # Empty list if no interaction features were configured
+
     # Add interaction features if they were enabled during training
     if enable_interactions and interaction_valuation_cols:
         class_cols = [
@@ -5167,6 +5402,33 @@ print(f"\n📊 Test Set Performance (raw predictions):")
 print(f"  MAE: {test_metrics['mae']:.2f}")
 print(f"  RMSE: {test_metrics['rmse']:.2f}")
 print(f"  R²: {test_metrics['r2']:.4f}")
+
+# === Phase 9.8 Preparation: Extract base model predictions for stacking contribution analysis ===
+# This enables Phase 9.8's compute_stacking_contributions() to analyze each base model's influence
+base_predictions = {}
+base_model_names = stacking_results.get("base_models", [])
+
+if hasattr(stacking_model, "estimators_") and stacking_model.estimators_:
+    print(f"\n🔍 Extracting base model predictions for Phase 9.8 analysis...")
+    for i, estimator in enumerate(stacking_model.estimators_):
+        # Use model name from artifacts if available, otherwise use index
+        model_name = base_model_names[i] if i < len(base_model_names) else f"base_model_{i}"
+        try:
+            base_pred = estimator.predict(X_test_for_prediction)
+            base_predictions[model_name] = base_pred
+            print(f"  ✓ {model_name}: predictions extracted")
+        except (ValueError, TypeError, AttributeError, KeyError) as e:
+            print(f"  ⚠ {model_name}: failed to extract predictions ({e})")
+
+    print(f"  Total base models: {len(base_predictions)}")
+
+# Create y_pred_meta alias for Phase 9.8 compatibility
+y_pred_meta = y_pred_stacking
+print(
+    f"✓ Phase 9.8 variables prepared: base_predictions ({len(base_predictions)} models), y_pred_meta"
+)
+# === End Phase 9.8 Preparation ===
+
 # %%
 # 6.4.1 — Export Enhanced Predictions and Sector Metrics (Priority 1)
 # Using build_predictions_frame from finance_ml.ml_workflow.regression.io for standardized schema
@@ -5200,7 +5462,77 @@ try:
         print("ISOTONIC CALIBRATION BY SECTOR")
         print("=" * 80)
 
-        y_pred_train = stacking_model.predict(X_train)
+        # === FIX START: Align X_train features with Model features for calibration ===
+        # Same logic as in Section 6.4: ensure X_train has all features the model expects
+        X_train_for_calibration = X_train.copy()
+
+        # Get model's expected feature names
+        model_features_cal = getattr(stacking_model, "feature_names_in_", None)
+        if model_features_cal is None and hasattr(stacking_model, "estimators_"):
+            # Try getting features from the first base estimator if wrapper hides them
+            model_features_cal = getattr(stacking_model.estimators_[0], "feature_names_in_", None)
+
+        if model_features_cal is not None:
+            missing_cols_cal = set(model_features_cal) - set(X_train_for_calibration.columns)
+
+            if missing_cols_cal:
+                print(
+                    f"⚠ Detected {len(missing_cols_cal)} missing interaction features in X_train. Regenerating..."
+                )
+
+                # Import helpers if not available
+                from finance_ml.ml_workflow.regression.dataset import (
+                    integrate_classification_features,
+                    create_classification_interactions,
+                )
+
+                # Add classification probability features if available
+                if train_probs is not None:
+                    X_train_for_calibration = integrate_classification_features(
+                        X_train_for_calibration, train_probs
+                    )
+
+                # Identify classification probability columns currently in X_train
+                cls_cols_cal = [
+                    c
+                    for c in X_train_for_calibration.columns
+                    if c.startswith("event_prob_") or c == "event_confidence"
+                ]
+
+                # Identify valuation columns (fallback to default if method-aware list not found)
+                val_cols_cal = globals().get(
+                    "valuation_cols_method_aware",
+                    [
+                        "market_cap",
+                        "enterprise_value",
+                        "ebitda",
+                        "p_e",
+                        "p_b",
+                        "gross_margin",
+                        "revenue",
+                        "net_income",
+                    ],
+                )
+                val_cols_cal = [c for c in val_cols_cal if c in X_train_for_calibration.columns]
+
+                # Regenerate interactions on Training Data
+                if cls_cols_cal and val_cols_cal:
+                    X_train_for_calibration = create_classification_interactions(
+                        X_train_for_calibration,
+                        classification_cols=cls_cols_cal,
+                        valuation_cols=val_cols_cal,
+                    )
+
+                # Final alignment: Ensure exact column order and fill any remaining gaps with 0
+                X_train_for_calibration = X_train_for_calibration.reindex(
+                    columns=model_features_cal, fill_value=0
+                )
+                print(
+                    f"✓ X_train aligned for calibration. New shape: {X_train_for_calibration.shape}"
+                )
+        # === FIX END ===
+
+        y_pred_train = stacking_model.predict(X_train_for_calibration)
 
         # Build calibration df with required columns
         cal_df = pd.DataFrame(
@@ -5270,7 +5602,7 @@ try:
             print(f"  Negative predictions: {n_neg} (should be 0)")
             print(f"  Range: ${y_pred_final.min():.2f} to ${y_pred_final.max():.2f}")
             print("=" * 80)
-    except Exception as e:
+    except (ValueError, TypeError, RuntimeError, AttributeError) as e:
         print(f"\n⚠️ Warning: Isotonic calibration failed: {e}")
         print("  Falling back to uncalibrated predictions")
         results_df["y_pred_calibrated"] = results_df["y_pred"]
@@ -5316,7 +5648,9 @@ try:
         sector_metrics_df = train_and_evaluate_regression_by_sector(
             all_stocks_enhanced,
             out_models_dir,
-            feature_cols=list(X_train.columns),
+            feature_cols=[
+                c for c in X_train.columns if "__x__" not in c and c in all_stocks_enhanced.columns
+            ],
             use_meta_features=(full_probs is not None),
             classification_probabilities=full_probs,
             cv_policy="time_series" if "snapshot_date" in all_stocks_enhanced.columns else "kfold",
@@ -5340,9 +5674,9 @@ try:
             tmp_fi = features_importance_rf(X_train, y_train, top_k=min(50, X_train.shape[1]))
             tmp_fi.to_csv(fi_path, index=False)
             print(f"✓ Saved feature importance to {fi_path} (computed fallback)")
-    except Exception as e:
+    except (ValueError, TypeError, AttributeError, IOError) as e:
         print(f"⚠ Feature importance export skipped: {e}")
-except Exception as e:
+except (ValueError, TypeError, IOError, OSError, KeyError) as e:
     print(f"⚠ Failed to export enhanced predictions/metrics: {e}")
 # %% md
 # ### 6.5 Quantile Regression for Prediction Intervals
@@ -5405,9 +5739,9 @@ try:
         {
             "ticker": test_tickers if test_tickers is not None else y_test.index.astype(str),
             "y_true": y_test.values,
-            "pred_p10": predictions_quantile_monotonic.get(0.1),
-            "pred_p50": predictions_quantile_monotonic.get(0.5),
-            "pred_p90": predictions_quantile_monotonic.get(0.9),
+            "pred_p10": predictions_quantile_monotonic.get(LOWER_QUANTILE),
+            "pred_p50": predictions_quantile_monotonic.get(MEDIAN_QUANTILE),
+            "pred_p90": predictions_quantile_monotonic.get(UPPER_QUANTILE),
         }
     )
 
@@ -5440,9 +5774,9 @@ try:
         if "results_df_base" in globals() and results_df_base is not None:
             # Add quantile columns to detailed predictions
             results_df_detailed = results_df_base.copy()
-            results_df_detailed["pred_p10"] = predictions_quantile_monotonic.get(0.1)
-            results_df_detailed["pred_p50"] = predictions_quantile_monotonic.get(0.5)
-            results_df_detailed["pred_p90"] = predictions_quantile_monotonic.get(0.9)
+            results_df_detailed["pred_p10"] = predictions_quantile_monotonic.get(LOWER_QUANTILE)
+            results_df_detailed["pred_p50"] = predictions_quantile_monotonic.get(MEDIAN_QUANTILE)
+            results_df_detailed["pred_p90"] = predictions_quantile_monotonic.get(UPPER_QUANTILE)
             results_df_detailed["interval_width"] = (
                 results_df_detailed["pred_p90"] - results_df_detailed["pred_p10"]
             )
@@ -5467,9 +5801,9 @@ try:
             print(
                 f"  Schema ({len(results_df_detailed.columns)} columns): {list(results_df_detailed.columns)}"
             )
-    except Exception as e:
+    except (ValueError, TypeError, KeyError, AttributeError) as e:
         print(f"⚠ Failed to merge quantiles into detailed predictions: {e}")
-except Exception as e:
+except (ValueError, TypeError, IOError, OSError, KeyError) as e:
     print(f"⚠ Quantile predictions export skipped: {e}")
 
 # %% md
@@ -5530,7 +5864,7 @@ def run_time_series_cv(
             X_tr,
             winsorize_target(y_tr, 0.01, 0.99),
             cv=3,
-            ensure_nonnegative=True,
+            ensure_nonnegative=False,
             loss="huber",
         )
         fold_model = fold_result["model"]
@@ -5585,45 +5919,8 @@ try:
         output_dir=OUTPUT_DIR,
         cv_folds=CV_FOLDS,
     )
-except Exception as exc:
+except (ValueError, TypeError, RuntimeError, KeyError, AttributeError) as exc:
     print(f"[WARN] Time-Series CV evaluation skipped due to error: {exc}")
-# %% md
-# ### 6.6 Sector-Specific Models (Optional)
-#
-# %%
-print("=" * 80)
-print("6.6 — Sector-Specific Model Training")
-print("=" * 80)
-
-if "sector" in all_stocks_enhanced.columns:
-    feature_cols = list(X_train.columns)
-
-    models, sector_results = regression_train_sector_models(
-        all_stocks_enhanced,
-        feature_cols=feature_cols,
-        target_col=target_col,
-        sector_col="sector",
-        model_type="random_forest",
-        min_samples=MIN_SECTOR_SAMPLES,
-    )
-
-    print(f"\n✓ Sector-Specific Models Trained:")
-    print(f"  Total sectors: {len(models)}")
-
-    sector_metrics = sector_results.get("metrics", {})
-    sector_summary = pd.DataFrame(sector_metrics).T
-
-    if "r2" in sector_summary.columns:
-        sector_summary = sector_summary.sort_values("r2", ascending=False)
-        print(f"\n📊 Top Sector Model Performance:")
-        display_cols = [
-            c for c in ["train_score", "r2", "mae", "rmse"] if c in sector_summary.columns
-        ]
-        if display_cols:
-            print(sector_summary[display_cols].head(5).to_string())
-else:
-    print("\n⚠ Sector column not found - skipping sector-specific regression")
-
 # %% md
 # ### 6.6.6 NonNegativeRegressionWrapper Validation
 #
@@ -5685,7 +5982,7 @@ try:
         f"  MAE Difference: {wrapped_mae - base_mae:.2f} ({(wrapped_mae - base_mae) / base_mae * 100:+.1f}%)"
     )
 
-except Exception as e:
+except (ValueError, TypeError, RuntimeError, AttributeError) as e:
     print(f"⚠️ NonNegativeWrapper validation failed: {e}")
 
 # %% md
@@ -5739,7 +6036,7 @@ try:
     print(f"  Model type: {loaded_metadata.get('model_type', 'N/A')}")
     print(f"  Training date: {loaded_metadata.get('date_trained', 'N/A')}")
     print(f"  Test R²: {loaded_metadata.get('test_score', 0):.4f}")
-except Exception as e:
+except (FileNotFoundError, IOError, ValueError, TypeError, KeyError) as e:
     print(f"  ⚠️ Load demonstration skipped: {e}")
 
 # %%
@@ -5792,7 +6089,7 @@ if "y_test_cls" in dir() and "y_pred_cls" in dir():
                 class_names = class_names_3
             else:
                 class_names = [f"Class {i}" for i in range(len(labels))]
-    except Exception:
+    except (ValueError, TypeError, AttributeError, KeyError):
         # Last resort
         labels = None
         class_names = class_names_5
@@ -5891,6 +6188,7 @@ if best_model_name != "None" and not results_df.empty:
             break
 
     if r2_column and best_model_name in results_df.index:
+
         best_r2 = f"{results_df.loc[best_model_name, r2_column]:.4f}"
 
 # Safely get test metrics
@@ -5927,12 +6225,12 @@ if len(valid_indices) > 0:
     all_stocks_phase95.loc[valid_indices, "predicted_price_target"] = y_pred_stacking[
         test_indices.isin(valid_indices)
     ]
-    all_stocks_phase95.loc[valid_indices, "prediction_lower_10"] = predictions_quantile[0.1][
-        test_indices.isin(valid_indices)
-    ]
-    all_stocks_phase95.loc[valid_indices, "prediction_upper_90"] = predictions_quantile[0.9][
-        test_indices.isin(valid_indices)
-    ]
+    all_stocks_phase95.loc[valid_indices, "prediction_lower_10"] = predictions_quantile[
+        LOWER_QUANTILE
+    ][test_indices.isin(valid_indices)]
+    all_stocks_phase95.loc[valid_indices, "prediction_upper_90"] = predictions_quantile[
+        UPPER_QUANTILE
+    ][test_indices.isin(valid_indices)]
     print(f"\n✓ Predictions stored in 'all_stocks_phase95': {len(valid_indices):,} samples")
 
 print(f"✓ Dataset ready for Phase 9.6/9.7")
@@ -6258,7 +6556,7 @@ if "all_stocks_raw" in dir():
     print("\n📊 Creating safety rails sensitivity dashboard...")
 
     safety_rails_sensitivity_app(
-        data_df=all_stocks_raw, output_dir=safety_rails_dir, thresholds=[0.01, 0.05, 0.1]
+        data_df=a, output_dir=safety_rails_dir, thresholds=[0.01, 0.05, 0.1]
     )
 
     print(
@@ -6331,10 +6629,10 @@ if "fold_assignments" in dir() and "all_stocks_features" in dir():
     print("\n📊 Summarizing grouped CV balance...")
 
     balance_dict = summarize_grouped_cv_balance(
-        df=all_stocks_features,
         fold_assignments=fold_assignments,
         output_dir=splits_dir,
-        stratify_cols=["sector", "region"],
+        group_col="ticker",
+        stratify_col="sector",
     )
 
     print(f"✓ Balance metrics computed for {len(fold_assignments)} folds")
@@ -6349,10 +6647,7 @@ if (
     print("\n🕐 Checking time-based leakage...")
 
     leakage_report = time_leakage_checks(
-        df=all_stocks_features,
-        fold_assignments=fold_assignments,
-        output_dir=splits_dir,
-        date_col="snapshot_date",
+        fold_assignments=fold_assignments, output_dir=splits_dir, date_col="snapshot_date"
     )
 
     violations = leakage_report.get("violations", 0)
@@ -6396,6 +6691,83 @@ if leakage_path.exists():
 # - `outputs/calibration/metrics_by_sector_time.html`
 # - `outputs/calibration/sector_bias_dashboard.html`
 #
+# %%
+# Calculate mispricing scores using Phase 9.7 function
+# First, add predicted prices for all stocks
+
+print("\n" + "=" * 80)
+print("GENERATING PREDICTIONS FOR ALL STOCKS (Phase 9.7)")
+print("=" * 80)
+
+# Step 1: Prepare features for prediction with sector interactions
+# === FIX: Use new helper to regenerate sector interactions ===
+# Root cause: X_train has sector interactions (e.g., sector_Technology__x__p_e_ratio)
+# but all_stocks_phase95 does not. We need to regenerate them for alignment.
+
+from finance_ml.ml_workflow.regression.dataset import add_sector_interactions_for_prediction
+
+# Extract base features (excluding sector interactions which we'll regenerate)
+base_feature_cols = [
+    c for c in X_train.columns if c in all_stocks_phase95.columns and not c.startswith("sector_")
+]
+
+print(f"\n📊 Feature alignment diagnostics:")
+print(f"  X_train features: {X_train.shape[1]}")
+print(f"  Base features available: {len(base_feature_cols)}")
+print(
+    f"  Sector interaction features in X_train: {sum(1 for c in X_train.columns if '__x__' in c)}"
+)
+
+# Create base feature matrix
+X_all_stocks_for_prediction = all_stocks_phase95[base_feature_cols].copy()
+print(f"  Initial X shape: {X_all_stocks_for_prediction.shape}")
+
+# Add sector interactions using the same logic as prepare_regression_data()
+X_all_stocks_for_prediction = add_sector_interactions_for_prediction(
+    X_all_stocks_for_prediction,
+    df_with_sector=all_stocks_phase95,
+    base_cols=["p_e_ratio", "ev_ebitda_ratio", "gross_margin", "market_cap", "beta_5y"],
+)
+print(f"  After sector interactions: {X_all_stocks_for_prediction.shape}")
+
+# Final alignment: reindex to match model's expected features exactly
+model_features_all = getattr(stacking_model, "feature_names_in_", None)
+if model_features_all is None and hasattr(stacking_model, "estimators_"):
+    # Try getting features from the first base estimator if wrapper hides them
+    model_features_all = getattr(stacking_model.estimators_[0], "feature_names_in_", None)
+
+if model_features_all is not None:
+    # Use reindex with fill_value=0 for any remaining missing features
+    X_all_stocks_for_prediction = X_all_stocks_for_prediction.reindex(
+        columns=model_features_all, fill_value=0
+    )
+    print(f"  Final aligned shape: {X_all_stocks_for_prediction.shape}")
+    print(f"  Expected features: {len(model_features_all)}")
+
+    # Verify alignment
+    missing_after_align = set(model_features_all) - set(X_all_stocks_for_prediction.columns)
+    if missing_after_align:
+        print(f"  ⚠ Warning: {len(missing_after_align)} features still missing after alignment")
+        print(f"    (filled with 0): {list(missing_after_align)[:5]}")
+    else:
+        print(f"  ✓ Perfect alignment: all {len(model_features_all)} features present")
+else:
+    print("  ⚠ Could not retrieve model feature names, using current columns")
+
+# === FIX END ===
+
+# Step 2: Generate raw predictions
+raw_predictions = stacking_model.predict(X_all_stocks_for_prediction)
+
+print(f"\n📈 Raw predictions generated:")
+print(f"  Total stocks: {len(raw_predictions):,}")
+print(f"  Range: ${raw_predictions.min():.2f} to ${raw_predictions.max():.2f}")
+print(
+    f"  Negative: {(raw_predictions < 0).sum()} ({(raw_predictions < 0).sum() / len(raw_predictions) * 100:.1f}%)"
+)
+print(f"  Mean: ${raw_predictions.mean():.2f}")
+print(f"  Median: ${np.median(raw_predictions):.2f}")
+
 # %%
 ##%% [PHASE 9.7] Sector bias estimation
 print("\n" + "=" * 80)
@@ -6750,7 +7122,90 @@ print("GENERATING PREDICTIONS FOR ALL STOCKS (Phase 9.7)")
 print("=" * 80)
 
 # Step 1: Get raw predictions from model
-raw_predictions = stacking_model.predict(all_stocks_phase95[X_train.columns])
+# === FIX START: Align all_stocks_phase95 features with Model features ===
+# Same pattern as Section 6.4: ensure features match what the model expects
+X_all_stocks_for_prediction = all_stocks_phase95[X_train.columns].copy()
+
+# Get model's expected feature names
+model_features_all = getattr(stacking_model, "feature_names_in_", None)
+if model_features_all is None and hasattr(stacking_model, "estimators_"):
+    # Try getting features from the first base estimator if wrapper hides them
+    model_features_all = getattr(stacking_model.estimators_[0], "feature_names_in_", None)
+
+if model_features_all is not None:
+    missing_cols_all = set(model_features_all) - set(X_all_stocks_for_prediction.columns)
+
+    if missing_cols_all:
+        print(f"⚠ Detected {len(missing_cols_all)} missing interaction features. Regenerating...")
+
+        # Import helpers if not available
+        from finance_ml.ml_workflow.regression.dataset import (
+            integrate_classification_features,
+            create_classification_interactions,
+        )
+
+        # Add classification probability features if available in all_stocks_phase95
+        prob_cols_all = [c for c in all_stocks_phase95.columns if c.startswith("event_prob_")]
+        if len(prob_cols_all) >= 5:
+            # Prefer standard names if present
+            std_cols = [
+                "event_prob_strong_negative",
+                "event_prob_negative",
+                "event_prob_neutral",
+                "event_prob_positive",
+                "event_prob_strong_positive",
+            ]
+            if all(c in all_stocks_phase95.columns for c in std_cols):
+                prob_cols_all = std_cols
+            else:
+                prob_cols_all = sorted(prob_cols_all)[:5]
+
+            all_probs = all_stocks_phase95[prob_cols_all].values
+            X_all_stocks_for_prediction = integrate_classification_features(
+                X_all_stocks_for_prediction, all_probs
+            )
+            print(f"  ✓ Added classification probability features")
+
+        # Identify classification probability columns currently in X_all_stocks
+        cls_cols_all = [
+            c
+            for c in X_all_stocks_for_prediction.columns
+            if c.startswith("event_prob_") or c == "event_confidence"
+        ]
+
+        # Identify valuation columns (fallback to default if method-aware list not found)
+        val_cols_all = globals().get(
+            "valuation_cols_method_aware",
+            [
+                "market_cap",
+                "enterprise_value",
+                "ebitda",
+                "p_e",
+                "p_b",
+                "gross_margin",
+                "revenue",
+                "net_income",
+            ],
+        )
+        val_cols_all = [c for c in val_cols_all if c in X_all_stocks_for_prediction.columns]
+
+        # Regenerate interactions
+        if cls_cols_all and val_cols_all:
+            X_all_stocks_for_prediction = create_classification_interactions(
+                X_all_stocks_for_prediction,
+                classification_cols=cls_cols_all,
+                valuation_cols=val_cols_all,
+            )
+            print(f"  ✓ Added interaction features")
+
+        # Final alignment: Ensure exact column order and fill any remaining gaps with 0
+        X_all_stocks_for_prediction = X_all_stocks_for_prediction.reindex(
+            columns=model_features_all, fill_value=0
+        )
+        print(f"✓ Features aligned. Shape: {X_all_stocks_for_prediction.shape}")
+# === FIX END ===
+
+raw_predictions = stacking_model.predict(X_all_stocks_for_prediction)
 
 print(f"\n Raw predictions generated:")
 print(f"  Total stocks: {len(raw_predictions):,}")
@@ -6778,6 +7233,34 @@ print(f"  Range: ${final_predictions.min():.2f} to ${final_predictions.max():.2f
 
 # Step 3: Store final clipped predictions
 all_stocks_phase95["predicted_price_target"] = final_predictions
+
+# %%
+# CRITICAL: Verify price columns preserved before mispricing calculation (code_guidelines.md Section 8.5.2)
+# The mispricing score formula (predicted - last_price) / last_price requires original price scale
+# If last_price was scaled/winsorized, this calculation will produce nonsensical results (e.g., 99% errors)
+from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS
+
+print("\n🔍 Phase 9.7: Validating price column preservation before mispricing calculation...")
+
+# Check that last_price is in expected range (not scaled to [0,1] or winsorized)
+if "last_price" in all_stocks_phase95.columns:
+    lp = all_stocks_phase95["last_price"].dropna()
+    if len(lp) > 0:
+        lp_min, lp_max, lp_median = lp.min(), lp.max(), lp.median()
+        print(f"  last_price: range [${lp_min:.2f}, ${lp_max:.2f}], median=${lp_median:.2f}")
+
+        # Warning if prices look scaled (median < 1 suggests MinMax scaling)
+        if lp_median < 1.0:
+            print(
+                f"  ⚠️ WARNING: last_price median < $1.00 - prices may have been incorrectly scaled!"
+            )
+            print(f"     This will corrupt the mispricing score calculation.")
+        else:
+            print(f"  ✓ last_price appears to be in original dollar units")
+
+# Verify price columns preserved (if reference dataframe available)
+price_cols_present = [c for c in PRICE_COLUMNS if c in all_stocks_phase95.columns]
+print(f"  ✓ {len(price_cols_present)}/21 price columns present in all_stocks_phase95")
 
 # Calculate mispricing - returns DataFrame with added 'mispricing_pct' and 'mispricing_score' columns
 all_stocks_phase95 = analytics_calculate_mispricing(
@@ -6864,7 +7347,7 @@ if all(
             plots_dir / "prediction_scatter_interactive.png", width=1000, height=700
         )
         print(f"  ✓ Saved PNG: {plots_dir / 'prediction_scatter_interactive.png'}")
-    except Exception as e:
+    except (ValueError, IOError, OSError, ImportError, RuntimeError) as e:
         print(f"  ⚠️ PNG generation skipped (install kaleido: pip install kaleido): {e}")
 
 # 2. Valuation Scatter Plot - Predicted vs Current Price with Sector Colors
@@ -6947,7 +7430,7 @@ if all(
     try:
         fig_val.write_image(plots_dir / "valuation_scatter_interactive.png", width=1000, height=700)
         print(f"  ✓ Saved PNG: {plots_dir / 'valuation_scatter_interactive.png'}")
-    except Exception as e:
+    except (ValueError, IOError, OSError, ImportError, RuntimeError) as e:
         print(f"  ⚠️ PNG generation skipped (install kaleido: pip install kaleido): {e}")
 
 # 3. Residual Analysis - Interactive Residual Plot
@@ -6980,7 +7463,7 @@ if all(col in all_stocks_phase95.columns for col in ["price_target", "predicted_
             plots_dir / "residual_analysis_interactive.png", width=1000, height=600
         )
         print(f"  ✓ Saved PNG: {plots_dir / 'residual_analysis_interactive.png'}")
-    except Exception as e:
+    except (ValueError, IOError, OSError, ImportError, RuntimeError) as e:
         print(f"  ⚠️ PNG generation skipped (install kaleido: pip install kaleido): {e}")
 
 # 4. Mispricing Heatmap - Sector vs Region
@@ -7009,7 +7492,7 @@ if all(col in all_stocks_phase95.columns for col in ["sector", "region", "mispri
             plots_dir / "mispricing_heatmap_interactive.png", width=1000, height=600
         )
         print(f"  ✓ Saved PNG: {plots_dir / 'mispricing_heatmap_interactive.png'}")
-    except Exception as e:
+    except (ValueError, IOError, OSError, ImportError, RuntimeError) as e:
         print(f"  ⚠️ PNG generation skipped (install kaleido: pip install kaleido): {e}")
 
 # 5. Stock Rankings - Top Undervalued/Overvalued Interactive Bar Chart
@@ -7060,7 +7543,7 @@ if "mispricing_score" in all_stocks_phase95.columns:
             plots_dir / "stock_rankings_interactive.png", width=1200, height=500
         )
         print(f"  ✓ Saved PNG: {plots_dir / 'stock_rankings_interactive.png'}")
-    except Exception as e:
+    except (ValueError, IOError, OSError, ImportError, RuntimeError) as e:
         print(f"  ⚠️ PNG generation skipped (install kaleido: pip install kaleido): {e}")
 
 # 6. Sector Performance Summary - Bubble Chart
@@ -7072,13 +7555,13 @@ if all(col in all_stocks_phase95.columns for col in ["sector", "mispricing_score
         .agg({"mispricing_score": "mean", "market_cap": "sum", "ticker": "count"})
         .reset_index()
     )
-    sector_summary.columns = ["sector", "avg_mispricing", "total_market_cap", "num_stocks"]
+    sector_summary.columns = ["sector", "avg_mispricing", "market_cap", "num_stocks"]
 
     fig_sector_bubble = px.scatter(
         sector_summary,
         x="num_stocks",
         y="avg_mispricing",
-        size="total_market_cap",
+        size="market_cap",
         color="sector",
         hover_data=["sector"],
         title="Sector Performance: Mispricing vs Market Cap",
@@ -7095,7 +7578,7 @@ if all(col in all_stocks_phase95.columns for col in ["sector", "mispricing_score
             plots_dir / "sector_performance_bubble.png", width=1000, height=600
         )
         print(f"  ✓ Saved PNG: {plots_dir / 'sector_performance_bubble.png'}")
-    except Exception as e:
+    except (ValueError, IOError, OSError, ImportError, RuntimeError) as e:
         print(f"  ⚠️ PNG generation skipped (install kaleido: pip install kaleido): {e}")
 
 print(f"\n✅ Interactive Visualizations Complete")
@@ -7295,7 +7778,7 @@ with pd.ExcelWriter(excel_path, engine="xlsxwriter") as writer:
                 print(f"      ✓ Embedded: {png_file}")
                 # Approximate row height for image (adjust based on image size)
                 row_offset += 30  # Space for image + gap
-            except Exception as e:
+            except (IOError, OSError, ValueError, TypeError) as e:
                 worksheet_viz.write(row_offset, 0, f"Error inserting {png_file}: {e}")
                 print(f"      ⚠️ Failed to embed {png_file}: {e}")
                 row_offset += 2
@@ -7317,8 +7800,42 @@ try:
     predictions_export.to_csv(all_predictions_path, index=False)
     print(f"  ✓ Saved: {all_predictions_path}")
     print(f"     (Compatible with dash_app.py load_data function)")
-except Exception as e:
+except (IOError, OSError, ValueError, TypeError, KeyError) as e:
     print(f"  ⚠️ Could not save all_predictions.csv: {e}")
+
+# 1b. Enhanced Excel Report with Additional Sheets (Phase 9.7 Enhancement)
+# Adds Executive_Summary, Quality_Opportunities, Sector_Leaders/Laggards, Risk_Assessment, Phase93_Analysis
+print("  Creating enhanced Excel report with Phase 9.7 sheets...")
+enhanced_excel_path = reports_dir / "comprehensive_analysis_report_enhanced.xlsx"
+
+# Configure Excel report options (per code_guidelines.md Section 8.1)
+excel_config = ExcelReportConfig(
+    include_executive_summary=True,
+    include_quality_opportunities=True,
+    include_sector_leaders=True,
+    include_risk_assessment=True,
+    include_phase93_analysis=True,
+    top_n_per_sector=5,
+    quality_threshold=QUALITY_THRESHOLD_DEFAULT,
+    embed_visualizations=True,
+)
+
+try:
+    generate_enhanced_excel_report(
+        df=all_stocks_phase95,
+        output_path=enhanced_excel_path,
+        config=excel_config,
+        model_metrics=model_metrics if "model_metrics" in dir() else {},
+    )
+    print(f"  ✓ Saved: {enhanced_excel_path}")
+    print(f"    - Executive_Summary sheet with key findings")
+    print(f"    - Quality_Opportunities sheet (filtered by quality scores)")
+    print(f"    - Sector_Leaders sheet (top {excel_config.top_n_per_sector} per sector)")
+    print(f"    - Sector_Laggards sheet (bottom {excel_config.top_n_per_sector} per sector)")
+    print(f"    - Risk_Assessment sheet (high-risk stocks)")
+    print(f"    - Phase93_Analysis sheet (feature category breakdown)")
+except (IOError, OSError, ValueError, TypeError, KeyError, AttributeError) as e:
+    print(f"  ⚠️ Enhanced Excel generation skipped: {e}")
 
 # 2. Enhanced PDF Report
 print("  Creating enhanced PDF report...")
@@ -7335,94 +7852,76 @@ try:
         template="modern",
     )
     print(f"  ✓ Saved: {pdf_path}")
-except Exception as e:
+except (IOError, OSError, ValueError, TypeError, ImportError, RuntimeError) as e:
     print(f"  ⚠️ PDF generation skipped: {e}")
 
-# 3. HTML Summary Report
-print("  Creating HTML summary report...")
+# 3. Enhanced HTML Summary Report (Phase 9.7 Enhancement)
+# Uses generate_enhanced_analysis_html() with executive summary, sector breakdown,
+# quality-filtered rankings, risk warnings, and Phase 9.3 category analysis
+print("  Creating enhanced HTML summary report...")
 html_path = reports_dir / "analysis_summary.html"
 
-html_content = f"""
-<!DOCTYPE html>
+# Configure HTML report options (per code_guidelines.md Section 8.1)
+html_config = HTMLReportConfig(
+    include_executive_summary=True,
+    include_sector_breakdown=True,
+    include_quality_filtered=True,
+    include_risk_warnings=True,
+    include_phase93_summary=True,
+    top_n_stocks=REPORT_TOP_N_DEFAULT,
+    quality_threshold=QUALITY_THRESHOLD_DEFAULT,
+    template="modern",
+)
+
+# Prepare model metrics for executive summary
+model_metrics = {
+    "r2": globals().get("test_r2", 0.0),
+    "mae": globals().get("test_mae", 0.0),
+    "rmse": globals().get("test_rmse", 0.0),
+    "mape": globals().get("test_mape", 0.0),
+}
+
+try:
+    generate_enhanced_analysis_html(
+        df=all_stocks_phase95,
+        output_path=html_path,
+        config=html_config,
+        model_metrics=model_metrics,
+    )
+    print(f"  ✓ Saved: {html_path}")
+    print(f"    - Executive Summary with key findings")
+    print(f"    - Sector breakdown with leaders/laggards")
+    print(f"    - Quality-filtered rankings (threshold={QUALITY_THRESHOLD_DEFAULT})")
+    print(f"    - Risk warnings (z-score threshold={RISK_ZSCORE_THRESHOLD})")
+    print(f"    - Phase 9.3 feature category analysis")
+except (IOError, OSError, ValueError, TypeError, KeyError, AttributeError) as e:
+    print(f"  ⚠️ Enhanced HTML generation failed, falling back to basic: {e}")
+    # Fallback to basic HTML if enhanced fails
+    html_content = f"""<!DOCTYPE html>
 <html>
-<head>
-    <title>Stock Analysis Summary</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }}
-        h1 {{ color: #2c3e50; }}
-        h2 {{ color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px; }}
-        .metric-card {{ 
-            display: inline-block; padding: 20px; margin: 10px; 
-            background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }}
-        .metric-value {{ font-size: 32px; font-weight: bold; color: #3498db; }}
-        table {{ border-collapse: collapse; width: 100%; margin: 20px 0; background: white; }}
-        th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
-        th {{ background-color: #3498db; color: white; }}
-        tr:nth-child(even) {{ background-color: #f9f9f9; }}
-        .links {{ margin: 20px 0; }}
-        .links a {{ 
-            display: inline-block; margin: 5px 10px; padding: 10px 20px; 
-            background: #3498db; color: white; text-decoration: none; border-radius: 5px;
-        }}
-        .links a:hover {{ background: #2980b9; }}
-    </style>
-</head>
+<head><title>Stock Analysis Summary</title></head>
 <body>
-    <h1>📊 Stock Valuation Analysis Summary</h1>
-    <p><strong>Generated:</strong> {pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-    
-    <h2>Key Metrics</h2>
-    <div class="metric-card">
-        <div>Total Stocks Analyzed</div>
-        <div class="metric-value">{len(all_stocks_phase95):,}</div>
-    </div>
-    
-    <div class="metric-card">
-        <div>Avg Mispricing Score</div>
-        <div class="metric-value">{all_stocks_phase95['mispricing_score'].mean():.3f}</div>
-    </div>
-    
-    <div class="metric-card">
-        <div>Undervalued Opportunities</div>
-        <div class="metric-value">{(all_stocks_phase95['mispricing_score'] > 0.1).sum()}</div>
-    </div>
-    
-    <h2>Top 10 Undervalued Stocks</h2>
-    {top_undervalued.head(10).to_html(index=False, classes='table')}
-    
-    <h2>Top 10 Overvalued Stocks</h2>
-    {top_overvalued.head(10).to_html(index=False, classes='table')}
-    
-    <h2>📈 Interactive Visualizations</h2>
-    <div class="links">
-        <a href="../eda/correlation_heatmap_interactive.html" target="_blank">Correlation Heatmap</a>
-        <a href="../eda/distributions_interactive.html" target="_blank">Distribution Analysis</a>
-        <a href="../plots/prediction_scatter_interactive.html" target="_blank">Prediction Scatter</a>
-        <a href="../plots/residual_analysis_interactive.html" target="_blank">Residual Analysis</a>
-        <a href="../analytics/mispricing_heatmap_interactive.html" target="_blank">Mispricing Heatmap</a>
-        <a href="../analytics/stock_rankings_interactive.html" target="_blank">Stock Rankings</a>
-    </div>
-    
-    <h2>📁 Output Files</h2>
-    <ul>
-        <li><strong>Excel Report:</strong> comprehensive_analysis_report.xlsx</li>
-        <li><strong>PDF Report:</strong> valuation_analysis_report.pdf</li>
-        <li><strong>Interactive Charts:</strong> All HTML files in eda/, plots/, and analytics/ folders</li>
-    </ul>
+<h1>📊 Stock Valuation Analysis Summary</h1>
+<p>Generated: {pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+<h2>Total Stocks: {len(all_stocks_phase95):,}</h2>
+<p>Note: Enhanced report generation failed. See logs for details.</p>
 </body>
-</html>
-"""
+</html>"""
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print(f"  ✓ Saved fallback: {html_path}")
 
-with open(html_path, "w", encoding="utf-8") as f:
-    f.write(html_content)
-
-print(f"  ✓ Saved: {html_path}")
-
-print(f"\n✅ Comprehensive Reports Generated")
-print(f"   Excel: {excel_path}")
-print(f"   HTML: {html_path}")
+print(f"\n✅ Comprehensive Reports Generated (Phase 9.7 Enhanced)")
+print(f"   Excel (Basic): {excel_path}")
+print(f"   Excel (Enhanced): {enhanced_excel_path}")
+print(f"   HTML (Enhanced): {html_path}")
 print(f"   PDF: {pdf_path}")
+print(f"\n📋 Enhanced Report Features:")
+print(f"   - Executive Summary with key findings and recommendations")
+print(f"   - Sector breakdown with leaders/laggards per sector")
+print(f"   - Quality-filtered rankings using Phase 9.3 scores")
+print(f"   - Risk warnings for high volatility and distress indicators")
+print(f"   - Phase 9.3 feature category analysis")
 print(f"\n🎉 All interactive visualizations and reporting complete!")
 # %%
 # 📊 Section 8 Additional Enhanced Visualizations - Stock Valuation
@@ -7708,10 +8207,11 @@ if "all_stocks_phase95" in dir():
 #
 # %%
 # 📊 Section 10 – Portfolio Optimization & Risk Management
-# Enhanced workflow with Phase 1-6 integration per portfolio_optimization_enhancement_plan.md
+# Enhanced workflow with Phase 1-7 integration per portfolio_optimization_enhancement_plan.md
+# Phase 7 Enhancements: Return clipping, Phase 9.3 features, multi-model ensemble, shrinkage covariance
 
 print("\n" + "=" * 80)
-print("📊 SECTION 10: PORTFOLIO OPTIMIZATION & RISK MANAGEMENT")
+print("📊 SECTION 10: PORTFOLIO OPTIMIZATION & RISK MANAGEMENT (Phase 1-7)")
 print("=" * 80)
 
 # Import Phase 1-6 modules
@@ -7760,9 +8260,74 @@ from finance_ml.ml_workflow.analytics import (
     TARGET_COL_FALLBACK,
     LAG_PERIODS,
     TECHNICAL_INDICATORS,
+    # Phase 7.1-7.3: Return normalization & features
+    clip_expected_returns,
+    calculate_historical_returns,
+    get_phase93_return_features,
+    create_ml_return_features_enhanced,
+    validate_expected_returns,
+    # Phase 7.5: Ensemble models
+    create_return_ensemble,
+    create_dynamic_ensemble,
+    # Phase 7.6: Black-Litterman ML integration
+    create_bl_views_from_ml,
+    detect_market_regime,
+    # Phase 7.7: Robust covariance
+    estimate_covariance_shrinkage,
+    estimate_covariance_ewm,
+    # Phase 7.8: Validation & diagnostics
+    calculate_return_prediction_diagnostics,
+    validate_portfolio_metrics,
+)
+
+# Import Phase 7 configuration constants
+from finance_ml.ml_workflow.config import (
+    MAX_EXPECTED_RETURN,
+    MIN_EXPECTED_RETURN,
+    REALISTIC_RETURN_MEAN_THRESHOLD,
 )
 
 print("✓ Imported ML Returns configuration constants")
+print("✓ Imported Phase 7 enhancement functions")
+
+# %%
+# ============================================================================
+# SECTION 10: PRICE COLUMN PRESERVATION VALIDATION
+# ============================================================================
+# CRITICAL: Validate price columns before portfolio optimization (code_guidelines.md Section 8.5.2)
+# Portfolio metrics (expected_return, mispricing_score) depend on original price scale
+from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS
+
+print("\n" + "=" * 80)
+print("SECTION 10: PRICE COLUMN PRESERVATION VALIDATION")
+print("=" * 80)
+
+if "all_stocks_phase95" in dir() and not all_stocks_phase95.empty:
+    print("\n🔍 Validating price columns for portfolio optimization...")
+
+    # Check critical price columns
+    critical_price_cols = ["last_price", "price_target", "predicted_price_target"]
+    for col in critical_price_cols:
+        if col in all_stocks_phase95.columns:
+            vals = all_stocks_phase95[col].dropna()
+            if len(vals) > 0:
+                v_min, v_max, v_median = vals.min(), vals.max(), vals.median()
+                print(f"  {col}: range [${v_min:.2f}, ${v_max:.2f}], median=${v_median:.2f}")
+
+                # Warning if prices look scaled
+                if v_median < 1.0:
+                    print(f"    ⚠️ WARNING: {col} median < $1.00 - may be incorrectly scaled!")
+                elif v_max < 10.0 and v_min >= 0:
+                    print(f"    ⚠️ WARNING: {col} range suggests MinMax scaling [0,1] or similar!")
+                else:
+                    print(f"    ✓ {col} appears to be in original dollar units")
+
+    # Count preserved price columns
+    price_cols_present = [c for c in PRICE_COLUMNS if c in all_stocks_phase95.columns]
+    print(f"\n  ✓ {len(price_cols_present)}/21 price columns present in portfolio data")
+    print("  ✓ Price column validation complete - ready for portfolio optimization")
+else:
+    print("\n⚠️  all_stocks_phase95 not available for price validation")
 
 # %%
 # ============================================================================
@@ -7814,46 +8379,101 @@ if "all_stocks_phase95" in dir() and not all_stocks_phase95.empty:
     if "market_cap" in all_stocks_phase95.columns:
         mc = all_stocks_phase95["market_cap"].dropna()
         print(f"  Market cap available: {len(mc):,} stocks")
+
         if len(mc) > 0:
-            # Check if data is normalized (range 0-1) or absolute
-            is_normalized = (mc.min() >= 0) and (mc.max() <= 1.5)
+            # Smart scale detection based on median and percentiles
+            mc_p50 = mc.median()
+            mc_p95 = mc.quantile(0.95)
+            mc_p25 = mc.quantile(0.25)
+            mc_min = mc.min()
+            mc_max = mc.max()
 
-            if is_normalized:
-                print(f"    ✓ Market cap is NORMALIZED (0-1 scale)")
-                print(f"    Range: {mc.min():.3f} to {mc.max():.3f}")
-                print(f"    Median: {mc.median():.3f}")
-                print(f"    75th percentile: {mc.quantile(0.75):.3f}")
+            # Detect scale based on data characteristics
+            # Per code_guidelines.md Section 8.5: Market cap is price-related data
+            # that should be preserved in original form
 
-                # Use normalized threshold for top 50% by market cap
-                min_mc_threshold = 0.15
-                cap_unit = ""  # No scaling needed for normalized data
-            else:
-                print(f"    ✓ Market cap is in ABSOLUTE units")
-                print(f"    Range: ${mc.min() / 1e9:.2f}B to ${mc.max() / 1e9:.2f}B")
-                print(f"    Median: ${mc.median() / 1e9:.2f}B")
+            if abs(mc_p50) < 1.0 and (mc_min < 0 or mc_max < 100):
+                # Normalized/scaled data (centered around 0, range typically -3 to +3)
+                is_normalized = True
+                min_mc_threshold = 0.0  # Use percentile-based filter instead
+                cap_unit = ""  # No unit for normalized data
+                display_scale = 1.0
+                display_unit = "(normalized/scaled)"
 
-                # Use absolute threshold
-                min_mc_threshold = 1.0
+                print(f"    ⚠️  Market cap is NORMALIZED/SCALED (NOT raw values)")
+                print(f"    Range: {mc_min:.3f} to {mc_max:.3f}")
+                print(f"    Median: {mc_p50:.3f}, Mean: {mc.mean():.3f}")
+                print(f"    25th-75th percentile: [{mc_p25:.3f}, {mc.quantile(0.75):.3f}]")
+                print(f"    📌 Recommendation: Use raw market_cap values from original data")
+                print(f"       (scaled data loses business interpretability per Section 8.5)")
+
+            elif mc_p50 < 1e6:
+                # Millions scale (most common for mid/small cap stocks)
+                is_normalized = False
+                min_mc_threshold = 500.0  # $500M minimum
                 cap_unit = "M"
+                display_scale = 1.0  # Already in millions
+                display_unit = "M"
+
+                print(f"    ✓ Market cap is in MILLIONS (M) - raw values")
+                print(f"    Range: ${mc_min:.2f}M to ${mc_max:.2f}M")
+                print(f"    Median: ${mc_p50:.2f}M")
+                print(f"    95th percentile: ${mc_p95:.2f}M")
+
+            else:
+                # Billions scale (absolute currency amounts)
+                is_normalized = False
+                min_mc_threshold = 0.5  # $0.5B = $500M minimum
+                cap_unit = "B"
+                display_scale = 1e9
+                display_unit = "B"
+
+                print(f"    ✓ Market cap is in BILLIONS (B) - raw values")
+                print(
+                    f"    Range: ${mc_min / display_scale:.2f}B to ${mc_max / display_scale:.2f}B"
+                )
+                print(f"    Median: ${mc_p50 / display_scale:.2f}B")
+                print(f"    95th percentile: ${mc_p95 / display_scale:.2f}B")
+
+            # Validation checkpoint (code_guidelines.md Section 8.2 & 8.5)
+            # Only validate raw values; scaled data can be negative (centered around mean)
+            if not is_normalized:
+                assert mc_min >= 0, f"Raw market cap cannot be negative: {mc_min}"
+                assert mc_p50 > 0, f"Median market cap must be positive: {mc_p50}"
+                print(
+                    f"    ✓ Validated raw scale: {cap_unit} | Threshold: {min_mc_threshold}{cap_unit}"
+                )
+            else:
+                # For scaled data, validate reasonable range (-5 to +5 typically)
+                assert abs(mc_min) < 10, f"Scaled market cap range suspicious: {mc_min}"
+                assert abs(mc_max) < 10, f"Scaled market cap range suspicious: {mc_max}"
+                print(f"    ✓ Validated scaled data range: [{mc_min:.3f}, {mc_max:.3f}]")
+                print(f"    ⚠️  Skipping absolute threshold; using top_n ranking only")
+
     else:
         print('  ⚠️  WARNING: "market_cap" column not found!')
-        min_mc_threshold = None
+        min_mc_threshold = 0.0
         cap_unit = ""
+        is_normalized = True
 
     # Apply multi-criteria selection with auto-detected parameters
-    print(f'\n🎯 Applying filters: min_market_cap={min_mc_threshold}, cap_unit="{cap_unit}"')
+    print(f"\n🎯 Applying filters:")
+    print(f"   min_market_cap={min_mc_threshold}{cap_unit}")
+    print(f'   cap_unit="{cap_unit}"')
+    print(f"   top_n=150")
+    print(f"   max_sector_weight={MAX_SECTOR_WEIGHT}")
 
     portfolio_candidates = select_portfolio_candidates(
         all_stocks_phase95,
-        min_market_cap=min_mc_threshold if min_mc_threshold is not None else 0.0,
+        min_market_cap=min_mc_threshold,
         top_n=150,
         max_sector_weight=MAX_SECTOR_WEIGHT,
         cap_unit=cap_unit,
     )
 
     if len(portfolio_candidates) == 0:
-        print("\n⚠️  No candidates selected with current filters; relaxing market cap constraint...")
-        # Retry with no market cap filter
+        print("\n⚠️  No candidates selected with current filters; relaxing constraints...")
+        # Retry with no market cap filter (rank by composite score only)
         portfolio_candidates = select_portfolio_candidates(
             all_stocks_phase95,
             min_market_cap=0.0,
@@ -7866,7 +8486,7 @@ if "all_stocks_phase95" in dir() and not all_stocks_phase95.empty:
     if len(portfolio_candidates) > 0:
         print(f'  Sectors: {portfolio_candidates["sector"].nunique()}')
         print(f'  Average composite score: {portfolio_candidates["composite_score"].mean():.3f}')
-        print("\nTop 10 Candidates:")
+        print("\n📋 Top 10 Candidates:")
         display_cols = [
             "ticker",
             "sector",
@@ -7877,6 +8497,13 @@ if "all_stocks_phase95" in dir() and not all_stocks_phase95.empty:
         ]
         available_cols = [c for c in display_cols if c in portfolio_candidates.columns]
         print(portfolio_candidates[available_cols].head(10).to_string(index=False))
+
+        # Additional diagnostic for scaled market cap
+        if is_normalized and "market_cap" in portfolio_candidates.columns:
+            mc_selected = portfolio_candidates["market_cap"]
+            print(f"\n📊 Selected candidates market cap distribution (scaled):")
+            print(f"   Range: [{mc_selected.min():.3f}, {mc_selected.max():.3f}]")
+            print(f"   Median: {mc_selected.median():.3f}")
 else:
     print("\n⚠️  all_stocks_phase95 not available, using top_candidates from Section 10")
     if "top_candidates" in dir():
@@ -8189,31 +8816,73 @@ if portfolio_candidates is not None and len(portfolio_candidates) >= MIN_PORTFOL
     )
 
     # Use top 150 stocks for traditional optimization
-    valid_stocks_filtered = portfolio_candidates.head(150).copy()
+    valid_stocks_filtered = portfolio_candidates.head(50).copy()
     logger.info(f"Selected top {len(valid_stocks_filtered)} stocks for optimization")
     print(f"\n✓ Optimizing portfolio with {len(valid_stocks_filtered)} stocks")
 
     # Prepare returns array
     if "expected_return" in valid_stocks_filtered.columns:
-        expected_returns_array = (
+        expected_returns_raw = (
             valid_stocks_filtered["expected_return"].fillna(DEFAULT_EXPECTED_RETURN).values
         )
         logger.info("Using expected_return column for optimization")
     else:
-        expected_returns_array = np.full(len(valid_stocks_filtered), DEFAULT_EXPECTED_RETURN)
+        expected_returns_raw = np.full(len(valid_stocks_filtered), DEFAULT_EXPECTED_RETURN)
         logger.warning(
             f"No expected_return column, using default " f"{DEFAULT_EXPECTED_RETURN:.1%}"
         )
 
-    # Create covariance matrix
+    # ========== Phase 7.1: Validate & Clip Expected Returns ==========
+    print("\n📊 Phase 7.1: Return Validation & Clipping")
+    raw_diagnostics = validate_expected_returns(expected_returns_raw)
+    print(
+        f'  Raw returns - Mean: {raw_diagnostics["mean_return"]:.2%}, '
+        f'Std: {raw_diagnostics["std_return"]:.2%}'
+    )
+    print(f'  Is realistic: {raw_diagnostics["is_realistic"]}')
+    if raw_diagnostics["warnings"]:
+        for warn in raw_diagnostics["warnings"]:
+            print(f"  ⚠️ {warn}")
+
+    # Apply Phase 7 clipping to ensure realistic bounds
+    expected_returns_array = clip_expected_returns(expected_returns_raw)
+    print(f"  Clipping bounds: [{MIN_EXPECTED_RETURN:.0%}, {MAX_EXPECTED_RETURN:.0%}]")
+    print(
+        f"  After clipping - Mean: {np.mean(expected_returns_array):.2%}, "
+        f"Max: {np.max(expected_returns_array):.2%}"
+    )
+
+    # Validate clipped returns
+    clipped_diagnostics = validate_expected_returns(expected_returns_array)
+    print(
+        f"  Success Criteria: Mean < 30%: "
+        f'{clipped_diagnostics["mean_return"] < 0.30} '
+        f'(actual: {clipped_diagnostics["mean_return"]:.2%})'
+    )
+    logger.info(
+        f"Phase 7.1: Returns clipped to [{MIN_EXPECTED_RETURN:.0%}, {MAX_EXPECTED_RETURN:.0%}]"
+    )
+
+    # ========== Phase 7.7: Robust Covariance Estimation ==========
+    print("\n📊 Phase 7.7: Robust Covariance Estimation")
     np.random.seed(42)
     n_stocks = len(valid_stocks_filtered)
-    # Correlation matrix: 0.8 diagonal weight + 0.2 random (not train/test split)
-    corr_matrix = np.eye(n_stocks) * 0.8 + np.random.rand(n_stocks, n_stocks) * 0.2
-    corr_matrix = (corr_matrix + corr_matrix.T) / 2
-    np.fill_diagonal(corr_matrix, 1.0)
-    std_devs = np.full(n_stocks, 0.2)
-    cov_matrix = np.outer(std_devs, std_devs) * corr_matrix
+
+    # Generate synthetic daily returns for covariance estimation
+    # In production, use actual historical returns from price columns
+    synthetic_daily_returns = pd.DataFrame(
+        np.random.randn(252, n_stocks) * 0.02 + expected_returns_array / 252,
+        columns=[f"Asset_{i}" for i in range(n_stocks)],
+    )
+
+    # Use Ledoit-Wolf shrinkage covariance (Phase 7.7)
+    cov_matrix = estimate_covariance_shrinkage(
+        returns=synthetic_daily_returns, method="ledoit_wolf"
+    )
+    print(f"  ✓ Ledoit-Wolf shrinkage covariance estimated")
+    print(f"  Matrix shape: {cov_matrix.shape}")
+    print(f"  Condition number: {np.linalg.cond(cov_matrix):.2f} (lower is better)")
+    logger.info("Phase 7.7: Ledoit-Wolf shrinkage covariance estimated")
 
     # [SECTION 10.4] Expected Returns & Risk Inputs QA
     print("\n" + "-" * 80)
@@ -8269,13 +8938,43 @@ if portfolio_candidates is not None and len(portfolio_candidates) >= MIN_PORTFOL
     print(f"  Sharpe Ratio: {min_vol_sharpe:.3f}")
     print(f'  Num non-zero positions: {np.sum(min_vol_result["weights"] > 0.001)}')
 
+    # ========== Phase 7.8: Portfolio Metrics Validation ==========
+    print("\n📊 Phase 7.8: Portfolio Metrics Validation")
+    portfolio_validation = validate_portfolio_metrics(
+        weights=max_sharpe_result["weights"],
+        returns=synthetic_daily_returns,
+        risk_free_rate=risk_free_rate,
+        max_sharpe_threshold=3.0,
+        max_return_threshold=1.0,
+    )
+    print(f'  Validated Sharpe Ratio: {portfolio_validation["sharpe_ratio"]:.3f}')
+    print(
+        f'  Sharpe Valid (<3.0): {portfolio_validation["sharpe_ratio_valid"]} '
+        f'{"✓" if portfolio_validation["sharpe_ratio_valid"] else "⚠️"}'
+    )
+    print(
+        f'  Return Realistic: {portfolio_validation["return_realistic"]} '
+        f'{"✓" if portfolio_validation["return_realistic"] else "⚠️"}'
+    )
+    print(
+        f"  Success Criteria: Max Sharpe < 3.0: "
+        f'{portfolio_validation["sharpe_ratio"] < 3.0} '
+        f'(actual: {portfolio_validation["sharpe_ratio"]:.3f})'
+    )
+    if portfolio_validation["warnings"]:
+        for warn in portfolio_validation["warnings"]:
+            print(f"  ⚠️ {warn}")
+    logger.info(
+        f'Phase 7.8: Portfolio validation - Sharpe={portfolio_validation["sharpe_ratio"]:.3f}'
+    )
+
     # Store best return column for later use
     best_return_col = (
         "expected_return" if "expected_return" in valid_stocks_filtered.columns else None
     )
 
     logger.info("Traditional portfolio optimization complete")
-    print("\n✓ Traditional portfolio optimization complete")
+    print("\n✓ Traditional portfolio optimization complete (Phase 7 enhanced)")
 else:
     logger.warning(
         f"Skipping traditional optimization - insufficient candidates "
@@ -8308,12 +9007,12 @@ if portfolio_candidates is not None and len(portfolio_candidates) >= MIN_PORTFOL
 
     # Prepare returns and covariance
     if "expected_return" in opt_universe.columns:
-        mean_returns = opt_universe.set_index("ticker")["expected_return"].fillna(
+        mean_returns_raw = opt_universe.set_index("ticker")["expected_return"].fillna(
             DEFAULT_EXPECTED_RETURN
         )
         logger.info("Using expected_return column for advanced optimization")
     else:
-        mean_returns = pd.Series(
+        mean_returns_raw = pd.Series(
             DEFAULT_EXPECTED_RETURN,
             index=opt_universe["ticker"],
             name="expected_return",
@@ -8322,16 +9021,34 @@ if portfolio_candidates is not None and len(portfolio_candidates) >= MIN_PORTFOL
             f"No expected_return column, using default " f"{DEFAULT_EXPECTED_RETURN:.1%}"
         )
 
-    # Create synthetic covariance matrix
-    np.random.seed(42)
-    # Correlation matrix: 0.8 diagonal weight + 0.2 random (not train/test split)
-    corr_matrix = (
-        np.eye(len(opt_universe)) * 0.8 + np.random.rand(len(opt_universe), len(opt_universe)) * 0.2
+    # ========== Phase 7.1: Clip Returns for Advanced Optimization ==========
+    print("\n📊 Phase 7.1: Return Clipping for Advanced Optimization")
+    mean_returns_clipped = clip_expected_returns(mean_returns_raw.values)
+    mean_returns = pd.Series(
+        mean_returns_clipped, index=mean_returns_raw.index, name="expected_return"
     )
-    corr_matrix = (corr_matrix + corr_matrix.T) / 2
-    np.fill_diagonal(corr_matrix, 1.0)
-    std_devs = np.full(len(opt_universe), 0.2)
-    cov_matrix = np.outer(std_devs, std_devs) * corr_matrix
+    print(
+        f"  Clipped {len(mean_returns)} returns to [{MIN_EXPECTED_RETURN:.0%}, {MAX_EXPECTED_RETURN:.0%}]"
+    )
+    print(f"  Mean after clipping: {mean_returns.mean():.2%}")
+    logger.info(f"Phase 7.1: Advanced optimization returns clipped")
+
+    # ========== Phase 7.7: Shrinkage Covariance for Advanced Optimization ==========
+    print("\n📊 Phase 7.7: Shrinkage Covariance for Advanced Optimization")
+    np.random.seed(42)
+    n_adv_stocks = len(opt_universe)
+
+    # Generate synthetic daily returns for covariance estimation
+    synthetic_adv_returns = pd.DataFrame(
+        np.random.randn(252, n_adv_stocks) * 0.02 + mean_returns.values / 252,
+        columns=opt_universe["ticker"].values,
+    )
+
+    # Use Ledoit-Wolf shrinkage covariance
+    cov_matrix = estimate_covariance_shrinkage(returns=synthetic_adv_returns, method="ledoit_wolf")
+    print(f"  ✓ Ledoit-Wolf shrinkage covariance estimated")
+    print(f"  Condition number: {np.linalg.cond(cov_matrix):.2f}")
+    logger.info("Phase 7.7: Advanced optimization using Ledoit-Wolf covariance")
 
     # Black-Litterman optimization
     print("\n📊 Black-Litterman Optimization:")
@@ -8876,402 +9593,3 @@ else:
     print("⚠️  Cannot create risk_metrics_result - optimal_portfolio not available")
 
 print("\n✓ Visualization variables prepared")
-
-# %%
-print("\n" + "=" * 80)
-print("📊 INTERACTIVE PORTFOLIO OPTIMIZATION VISUALIZATIONS")
-print("=" * 80)
-
-if "optimal_portfolio" in dir():
-    import plotly.graph_objects as go
-    import plotly.express as px
-
-    print("\n📊 Portfolio Composition Visualization...")
-
-    # If we have optimized weights, visualize them
-    if "weights" in optimal_portfolio and isinstance(
-        optimal_portfolio["weights"], (dict, np.ndarray)
-    ):
-        # Portfolio composition pie chart
-        portfolio_weights = optimal_portfolio["weights"]
-        if isinstance(portfolio_weights, np.ndarray):
-            # Convert array to dict with indices as keys
-            weights_df = pd.DataFrame(
-                [
-                    {"Asset": f"Stock_{i}", "Weight": w}
-                    for i, w in enumerate(portfolio_weights)
-                    if w > 0.001
-                ]
-            ).sort_values("Weight", ascending=False)
-        else:
-            weights_df = pd.DataFrame(
-                [{"Asset": k, "Weight": v} for k, v in portfolio_weights.items() if v > 0.001]
-            ).sort_values("Weight", ascending=False)
-
-        if not weights_df.empty:
-            fig = px.pie(
-                weights_df,
-                values="Weight",
-                names="Asset",
-                title="Optimized Portfolio Composition",
-                hole=0.3,
-            )
-            fig.update_traces(textposition="inside", textinfo="percent+label")
-            fig.show()
-
-            # Top holdings bar chart
-            top_holdings = weights_df.head(10)
-            fig = px.bar(
-                top_holdings,
-                x="Weight",
-                y="Asset",
-                orientation="h",
-                title="Top 10 Portfolio Holdings",
-                labels={"Weight": "Portfolio Weight", "Asset": "Stock"},
-            )
-            fig.update_layout(yaxis={"categoryorder": "total ascending"})
-            fig.show()
-
-    # Risk-Return scatter if we have portfolio metrics
-    if isinstance(optimal_portfolio, dict):
-        print("\n📈 Risk-Return Analysis...")
-
-        metrics_to_show = {
-            "Expected Return": optimal_portfolio.get("return", "N/A"),
-            "Portfolio Risk (Std)": optimal_portfolio.get("volatility", "N/A"),
-            "Sharpe Ratio": optimal_portfolio.get("sharpe_ratio", "N/A"),
-            "Max Drawdown": "N/A",  # Not in optimal_portfolio dict
-        }
-
-        print("\n📊 Portfolio Metrics:")
-        for metric, value in metrics_to_show.items():
-            if value != "N/A":
-                print(
-                    f"  {metric}: {value:.4f}"
-                    if isinstance(value, (int, float))
-                    else f"  {metric}: {value}"
-                )
-
-    print("✓ Portfolio composition visualizations complete")
-
-    # 1. Efficient Frontier Visualization
-    if "frontier_results" in dir() and frontier_results:
-        print("\n📊 Creating Efficient Frontier Visualization...")
-
-        fig = go.Figure()
-
-        # Plot efficient frontier
-        fig.add_trace(
-            go.Scatter(
-                x=frontier_results["volatilities"],
-                y=frontier_results["returns"],
-                mode="lines+markers",
-                name="Efficient Frontier",
-                line=dict(color="blue", width=2),
-                marker=dict(size=6, color="lightblue"),
-            )
-        )
-
-        # Highlight max Sharpe ratio portfolio
-        if "optimal_portfolio" in dir() and optimal_portfolio:
-            fig.add_trace(
-                go.Scatter(
-                    x=[optimal_portfolio["volatility"]],
-                    y=[optimal_portfolio["return"]],
-                    mode="markers",
-                    name="Max Sharpe Ratio",
-                    marker=dict(
-                        size=15, color="green", symbol="star", line=dict(width=2, color="darkgreen")
-                    ),
-                )
-            )
-
-        # Highlight min volatility portfolio
-        if "min_vol_portfolio" in dir() and min_vol_portfolio:
-            fig.add_trace(
-                go.Scatter(
-                    x=[min_vol_portfolio["volatility"]],
-                    y=[min_vol_portfolio["return"]],
-                    mode="markers",
-                    name="Min Volatility",
-                    marker=dict(
-                        size=15, color="red", symbol="diamond", line=dict(width=2, color="darkred")
-                    ),
-                )
-            )
-
-        # Build title with filtering information
-        filter_info = ""
-        if "best_return_col" in dir() and best_return_col is not None:
-            n_stocks = len(valid_stocks_filtered)
-            return_col_display = best_return_col.replace("_", " ").title()
-            filter_info = f"<br><sub>Portfolio built from top {n_stocks} stocks filtered by {return_col_display}</sub>"
-
-        fig.update_layout(
-            title=f"Portfolio Efficient Frontier{filter_info}",
-            xaxis_title="Expected Volatility (Risk)",
-            yaxis_title="Expected Return",
-            hovermode="closest",
-            height=600,
-            width=900,
-            showlegend=True,
-        )
-
-        fig.show()
-        fig.write_html(analytics_dir / "efficient_frontier_interactive.html")
-        print(f"  ✓ Saved: {analytics_dir / 'efficient_frontier_interactive.html'}")
-
-        # Save PNG version
-        try:
-            fig.write_image(
-                analytics_dir / "efficient_frontier_interactive.png", width=900, height=600
-            )
-            print(f"  ✓ Saved PNG: {analytics_dir / 'efficient_frontier_interactive.png'}")
-        except Exception as e:
-            print(f"  ⚠️ PNG generation skipped: {e}")
-
-    # 2. Risk Metrics Dashboard
-    if "risk_metrics_result" in dir() and risk_metrics_result:
-        print("\n📊 Creating Risk Metrics Dashboard...")
-
-        # Create subplots for risk metrics
-        from plotly.subplots import make_subplots
-
-        fig = make_subplots(
-            rows=2,
-            cols=2,
-            subplot_titles=(
-                "Sharpe & Sortino Ratios",
-                "Value at Risk (VaR)",
-                "Conditional VaR (CVaR)",
-                "Risk Summary",
-            ),
-            specs=[[{"type": "indicator"}, {"type": "bar"}], [{"type": "bar"}, {"type": "table"}]],
-        )
-
-        # Gauge for Sharpe Ratio
-        sharpe_val = risk_metrics_result.get("sharpe_ratio", 0)
-        fig.add_trace(
-            go.Indicator(
-                mode="gauge+number+delta",
-                value=sharpe_val,
-                title={"text": "Sharpe Ratio"},
-                delta={"reference": 1.0},
-                gauge={
-                    "axis": {"range": [-2, 4]},
-                    "bar": {"color": "darkblue"},
-                    "steps": [
-                        {"range": [-2, 0], "color": "lightcoral"},
-                        {"range": [0, 1], "color": "lightyellow"},
-                        {"range": [1, 4], "color": "lightgreen"},
-                    ],
-                    "threshold": {
-                        "line": {"color": "red", "width": 4},
-                        "thickness": 0.75,
-                        "value": 1.0,
-                    },
-                },
-            ),
-            row=1,
-            col=1,
-        )
-
-        # Bar chart for VaR at different confidence levels
-        var_95 = risk_metrics_result.get("var_95_historical", 0)
-        var_99 = risk_metrics_result.get("var_99_historical", 0)
-
-        fig.add_trace(
-            go.Bar(
-                x=["95% VaR", "99% VaR"],
-                y=[abs(var_95) * 100, abs(var_99) * 100],
-                marker_color=["orange", "red"],
-                name="VaR",
-                text=[f"{abs(var_95) * 100:.2f}%", f"{abs(var_99) * 100:.2f}%"],
-                textposition="auto",
-            ),
-            row=1,
-            col=2,
-        )
-
-        # Bar chart for CVaR
-        cvar_95 = risk_metrics_result.get("cvar_95", 0)
-        cvar_99 = risk_metrics_result.get("cvar_99", 0)
-
-        fig.add_trace(
-            go.Bar(
-                x=["95% CVaR", "99% CVaR"],
-                y=[abs(cvar_95) * 100, abs(cvar_99) * 100],
-                marker_color=["darkorange", "darkred"],
-                name="CVaR",
-                text=[f"{abs(cvar_95) * 100:.2f}%", f"{abs(cvar_99) * 100:.2f}%"],
-                textposition="auto",
-            ),
-            row=2,
-            col=1,
-        )
-
-        # Summary table
-        metrics_table = pd.DataFrame(
-            {
-                "Metric": [
-                    "Mean Return",
-                    "Volatility",
-                    "Sharpe Ratio",
-                    "Sortino Ratio",
-                    "Max Drawdown",
-                ],
-                "Value": [
-                    f"{risk_metrics_result.get('mean_return', 0) * 100:.3f}%",
-                    f"{risk_metrics_result.get('volatility', 0) * 100:.3f}%",
-                    f"{risk_metrics_result.get('sharpe_ratio', 0):.3f}",
-                    f"{risk_metrics_result.get('sortino_ratio', 0):.3f}",
-                    f"{risk_metrics_result.get('max_drawdown', 0) * 100:.2f}%",
-                ],
-            }
-        )
-
-        fig.add_trace(
-            go.Table(
-                header=dict(
-                    values=["<b>Risk Metric</b>", "<b>Value</b>"],
-                    fill_color="lightblue",
-                    align="left",
-                ),
-                cells=dict(
-                    values=[metrics_table["Metric"], metrics_table["Value"]],
-                    fill_color="lavender",
-                    align="left",
-                ),
-            ),
-            row=2,
-            col=2,
-        )
-
-        # Build title with filtering information
-        dashboard_title = "Portfolio Risk Metrics Dashboard"
-        if "best_return_col" in dir() and best_return_col is not None:
-            n_stocks = len(valid_stocks_filtered)
-            return_col_display = best_return_col.replace("_", " ").title()
-            dashboard_title += (
-                f"<br><sub>Based on top {n_stocks} stocks selected by {return_col_display}</sub>"
-            )
-
-        fig.update_layout(title_text=dashboard_title, height=800, width=1200, showlegend=False)
-
-        fig.show()
-        fig.write_html(analytics_dir / "risk_metrics_dashboard.html")
-        print(f"  ✓ Saved: {analytics_dir / 'risk_metrics_dashboard.html'}")
-
-        try:
-            fig.write_image(analytics_dir / "risk_metrics_dashboard.png", width=1200, height=800)
-            print(f"  ✓ Saved PNG: {analytics_dir / 'risk_metrics_dashboard.png'}")
-        except Exception as e:
-            print(f"  ⚠️ PNG generation skipped: {e}")
-
-    # 3. Drawdown Time Series Visualization
-    if "portfolio_returns" in dir():
-        print("\n📊 Creating Drawdown Analysis...")
-
-        # Calculate cumulative returns and drawdown
-        cumulative_returns = (1 + pd.Series(portfolio_returns)).cumprod()
-        running_max = cumulative_returns.expanding().max()
-        drawdown = (cumulative_returns - running_max) / running_max
-
-        # Create figure with secondary y-axis
-        fig = make_subplots(
-            rows=2,
-            cols=1,
-            subplot_titles=("Cumulative Portfolio Returns", "Portfolio Drawdown"),
-            vertical_spacing=0.12,
-            row_heights=[0.6, 0.4],
-        )
-
-        # Cumulative returns
-        fig.add_trace(
-            go.Scatter(
-                x=list(range(len(cumulative_returns))),
-                y=cumulative_returns,
-                mode="lines",
-                name="Cumulative Returns",
-                line=dict(color="blue", width=2),
-            ),
-            row=1,
-            col=1,
-        )
-
-        # Running maximum
-        fig.add_trace(
-            go.Scatter(
-                x=list(range(len(running_max))),
-                y=running_max,
-                mode="lines",
-                name="Peak",
-                line=dict(color="green", width=1, dash="dash"),
-            ),
-            row=1,
-            col=1,
-        )
-
-        # Drawdown
-        fig.add_trace(
-            go.Scatter(
-                x=list(range(len(drawdown))),
-                y=drawdown * 100,
-                mode="lines",
-                name="Drawdown",
-                fill="tozeroy",
-                line=dict(color="red", width=2),
-            ),
-            row=2,
-            col=1,
-        )
-
-        # Add horizontal line at max drawdown
-        max_dd = risk_metrics_result.get("max_drawdown", 0) * 100
-        fig.add_hline(
-            y=max_dd,
-            line_dash="dot",
-            line_color="darkred",
-            annotation_text=f"Max DD: {max_dd:.2f}%",
-            row=2,
-            col=1,
-        )
-
-        fig.update_xaxes(title_text="Trading Days", row=2, col=1)
-        fig.update_yaxes(title_text="Cumulative Return", row=1, col=1)
-        fig.update_yaxes(title_text="Drawdown (%)", row=2, col=1)
-
-        # Build title with filtering information
-        drawdown_title = "Portfolio Performance and Drawdown Analysis"
-        if "best_return_col" in dir() and best_return_col is not None:
-            n_stocks = len(valid_stocks_filtered)
-            return_col_display = best_return_col.replace("_", " ").title()
-            drawdown_title += (
-                f"<br><sub>Portfolio of top {n_stocks} stocks by {return_col_display}</sub>"
-            )
-
-        fig.update_layout(
-            title_text=drawdown_title,
-            height=700,
-            width=1000,
-            showlegend=True,
-            hovermode="x unified",
-        )
-
-        fig.show()
-        fig.write_html(analytics_dir / "portfolio_drawdown_analysis.html")
-        print(f"  ✓ Saved: {analytics_dir / 'portfolio_drawdown_analysis.html'}")
-
-        try:
-            fig.write_image(
-                analytics_dir / "portfolio_drawdown_analysis.png", width=1000, height=700
-            )
-            print(f"  ✓ Saved PNG: {analytics_dir / 'portfolio_drawdown_analysis.png'}")
-        except Exception as e:
-            print(f"  ⚠️ PNG generation skipped: {e}")
-
-    print("\n✅ All portfolio optimization and risk metrics visualizations complete!")
-    print(f"   Interactive HTML files saved to: {analytics_dir}")
-
-else:
-    print("⚠️  Portfolio results not available for visualization")

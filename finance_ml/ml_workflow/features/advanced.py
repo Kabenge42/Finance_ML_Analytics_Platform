@@ -120,8 +120,8 @@ def engineer_valuation_ratios(df: pd.DataFrame) -> pd.DataFrame:
         result["ev_sales_ratio"] = _safe_div(df["enterprise_value"], df["revenue"])
 
     # PEG ratio (P/E to Growth)
-    if "p_e_ratio" in result.columns and "earnings_growth_pct" in df.columns:
-        result["peg_ratio"] = _safe_div(result["p_e_ratio"], df["earnings_growth_pct"])
+    if "p_e" in result.columns and "earnings_growth" in df.columns:
+        result["peg_ratio"] = _safe_div(result["p_e"], df["earnings_growth"])
 
     # Dividend Yield
     if "dividend_per_share" in df.columns and "last_price" in df.columns:
@@ -178,11 +178,31 @@ def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
 
     # Adjustment ratios (adj/LTM) as robustness/quality proxies
     if "ebitda_adj_ltm" in df.columns and "ebitda_ltm" in df.columns:
-        result["ebitda_adjustment_ratio"] = _safe_div(
+        result["ebitda_adjustment_ratio_ltm"] = _safe_div(
             df["ebitda_adj_ltm"].abs(), df["ebitda_ltm"].abs()
         )
     if "ebit_adj_ltm" in df.columns and "ebit_ltm" in df.columns:
-        result["ebit_adjustment_ratio"] = _safe_div(df["ebit_adj_ltm"].abs(), df["ebit_ltm"].abs())
+        result["ebitda_adjustment_ratio_ltm"] = _safe_div(
+            df["ebit_adj_ltm"].abs(), df["ebit_ltm"].abs()
+        )
+
+    if "ebit_adj_fy" in df.columns and "ebit_fy" in df.columns:
+        result["ebit_adjustment_ratio_fy"] = _safe_div(df["ebit_adj_fy"].abs(), df["ebit_fy"].abs())
+
+    if "net_income_adj_ltm" in df.columns and "net_income_is_ltm" in df.columns:
+        result["net_income_adjustment_ratio_ltm"] = _safe_div(
+            df["net_income_adj_ltm"].abs(), df["net_income_is_ltm"].abs()
+        )
+
+    if "net_income_adj_fy" in df.columns and "net_income_is_fy" in df.columns:
+        result["net_income_adjustment_ratio_fy"] = _safe_div(
+            df["net_income_adj_fy"].abs(), df["net_income_is_fy"].abs()
+        )
+
+    if "net_income_adj_1fy" in df.columns and "net_income_is_1fy" in df.columns:
+        result["net_income_adjustment_ratio_fy"] = _safe_div(
+            df["net_income_adj_fy"].abs(), df["net_income_is_1fy"].abs()
+        )
 
     logger.info("Engineered profitability ratios")
     return result
@@ -528,7 +548,7 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
 
 
 def engineer_temporal_features(
-    df: pd.DataFrame, date_col: str = "next_earnings", reference_date: Optional[pd.Timestamp] = None
+    df: pd.DataFrame, date_col: str = "last_updated", reference_date: Optional[pd.Timestamp] = None
 ) -> pd.DataFrame:
     """Engineer temporal and seasonality features.
 
@@ -569,22 +589,19 @@ def engineer_temporal_features(
     # Extract year
     result["year"] = result[date_col].dt.year
 
-    # Days since reference date
-    if reference_date is not None:
-        result["days_since_reference"] = (result[date_col] - reference_date).dt.days
-
     # Additional earnings/reporting timing features
     if "next_earnings" in result.columns and "last_updated" in result.columns:
         ne = pd.to_datetime(result["next_earnings"], errors="coerce")
         lu = pd.to_datetime(result["last_updated"], errors="coerce")
         result["days_to_earnings"] = (ne - lu).dt.days
-    if reference_date is not None and "last_updated" in result.columns:
-        lu = pd.to_datetime(result["last_updated"], errors="coerce")
-        result["earnings_report_recency"] = (reference_date - lu).dt.days
-    if "income_statement_report_date" in result.columns and "last_updated" in result.columns:
+    if "last_updated" in result.columns and "income_statement_report_date" in result.columns:
         isrd = pd.to_datetime(result["income_statement_report_date"], errors="coerce")
         lu = pd.to_datetime(result["last_updated"], errors="coerce")
-        result["reporting_lag"] = (lu - isrd).dt.days
+        result["earnings_report_recency"] = (lu - isrd).dt.days
+    if "income_statement_report_date" in result.columns and "next_earnings" in result.columns:
+        isrd = pd.to_datetime(result["income_statement_report_date"], errors="coerce")
+        ne = pd.to_datetime(result["next_earnings"], errors="coerce")
+        result["reporting_lag"] = (ne - isrd).dt.days
 
     # Seasonality vs 5Y averages
     rev_5y_cols = [
@@ -603,7 +620,7 @@ def engineer_temporal_features(
         result["fq_vs_5yavg_ebitda"] = _safe_div(result["ebitda_fq"].astype(float) - base, base)
 
     # Quarterly volatility score (across available quarterly EBITDA columns)
-    quarterly_cols = [c for c in result.columns if c.startswith("ebitda_fq_q")]
+    quarterly_cols = [c for c in result.columns if c.startswith("ebitda_fq")]
     if quarterly_cols:
         qmat = pd.concat([result[c].astype(float) for c in quarterly_cols], axis=1)
         mean = qmat.mean(axis=1)
@@ -743,8 +760,8 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
 def engineer_market_microstructure_features(
     df: pd.DataFrame,
     price_col: str = "last_price",
-    high_col: str = "high_price",
-    low_col: str = "low_price",
+    high_col: str = "52w_high_adj",
+    low_col: str = "52w_low_adj",
     group_col: Optional[str] = None,
 ) -> pd.DataFrame:
     """Engineer market microstructure features (volatility, momentum, moving averages).
@@ -1614,7 +1631,15 @@ def build_comprehensive_features(
 
     # Temporal features (if any date column exists)
     # Try multiple date columns in priority order
-    date_col_candidates = ["next_earnings", "last_updated", "income_statement_report_date"]
+    date_col_candidates = [
+        "next_earnings",
+        "last_updated",
+        "income_statement_report_date",
+        "dividend_record_announce_date",
+        "dividend_record_ex_date",
+        "dividend_record_payable_date",
+        "dividend_record_record_date",
+    ]
     date_col = next((c for c in date_col_candidates if c in result.columns), None)
     if date_col:
         result = engineer_temporal_features(result, date_col=date_col)
@@ -1652,7 +1677,7 @@ def engineer_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer market sentiment features from short interest and betas.
 
     Features computed (when inputs exist):
-    - short_interest_ratio: Pass-through of short_int_pct (already percent units)
+    - one_day_chg: Pass-through of short_int_pct (already percent units)
     - beta_stability: Population variance (ddof=0) across available betas (beta_1y, beta_2y, beta_5y)
     - systematic_risk_trend: beta_1y - beta_5y (risk profile change)
 
@@ -1664,9 +1689,9 @@ def engineer_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     result = df.copy()
 
-    # Short interest (percent already)
-    if "short_int_pct" in df.columns:
-        result["short_interest_ratio"] = df["short_int_pct"].astype(float)
+    # One-day price change (percent already)
+    if "one_day_pct" in df.columns:
+        result["one_day_chg"] = df["one_day_pct"].astype(float)
 
     # Beta metrics
     beta_cols = [c for c in ("beta_1y", "beta_2y", "beta_5y") if c in df.columns]
@@ -2499,10 +2524,10 @@ def engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame:
         result["employee_base_scale_flag"] = (df["total_employees_fy"] > 10000).astype(int)
 
     # Workforce volatility (std dev of employee counts)
-    if "total_employees_fq" in df.columns and "avg_employees_ltm" in df.columns:
+    if "total_employees_fq" in df.columns and "total_employees_fy" in df.columns:
         # Approximate volatility using difference between FQ and LTM avg
         result["workforce_volatility"] = (
-            (df["total_employees_fq"] - df["avg_employees_ltm"]).abs() / df["avg_employees_ltm"]
+            (df["total_employees_fq"] - df["total_employees_fy"]).abs() / df["total_employees_fy"]
         ).fillna(0)
 
     # Hiring intensity score (employee growth relative to sector)
