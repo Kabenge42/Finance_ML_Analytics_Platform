@@ -1,2 +1,0 @@
-Line 71:     q_df['snapshot_date'] = pd.Timestamp.now().strftime('%Y-%m-%d')
-Line 91:             #                   abs_error, pct_error, model_version, snapshot_date

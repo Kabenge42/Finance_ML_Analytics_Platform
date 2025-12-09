@@ -111,6 +111,9 @@ from finance_ml.ml_workflow.preprocessing.financial_metrics_etl import (
 # Import feature engineering API (Section 9.3)
 from finance_ml.ml_workflow.features.api import build_features
 
+# Import feature selection API (Section 9.3 Task 1)
+from finance_ml.ml_workflow.features.selection import select_features_auto
+
 logger = logging.getLogger(__name__)
 
 
@@ -193,6 +196,13 @@ class ETLConfig:
     feature_preset: str = "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
     feature_categories: Optional[List[str]] = None  # Specific categories to engineer
 
+    # Feature selection integration (Section 9.3 Task 1)
+    apply_feature_selection: bool = False  # Default OFF for backward compatibility
+    feature_selection_method: Literal["mutual_info", "correlation", "both"] = "mutual_info"
+    importance_threshold: float = 0.01  # Min importance score to keep feature
+    correlation_threshold: float = 0.95  # Max correlation before deduplication
+    feature_selection_categories: Optional[List[str]] = None  # Category-based selection
+
 
 @dataclass
 class ETLMetrics:
@@ -273,6 +283,12 @@ class ETLMetrics:
     features_added: int = 0
     feature_categories_applied: List[str] = field(default_factory=list)
 
+    # Feature selection metrics (Section 9.3 Task 1)
+    feature_selection_applied: bool = False
+    features_before_selection: int = 0
+    features_after_selection: int = 0
+    features_removed_by_selection: int = 0
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert metrics to dictionary."""
         return {
@@ -333,6 +349,12 @@ class ETLMetrics:
                 "preset": self.feature_preset_used,
                 "features_added": self.features_added,
                 "categories_applied": self.feature_categories_applied,
+            },
+            "feature_selection": {
+                "applied": self.feature_selection_applied,
+                "features_before": self.features_before_selection,
+                "features_after": self.features_after_selection,
+                "features_removed": self.features_removed_by_selection,
             },
             "stages_executed": self.stages_executed,
             "warnings": self.warnings,
@@ -407,6 +429,20 @@ class ETLMetrics:
                 f"({self.features_added} features added)"
             )
 
+        # Feature selection info
+        feature_selection_info = ""
+        if self.feature_selection_applied:
+            reduction_pct = (
+                100 * self.features_removed_by_selection / self.features_before_selection
+                if self.features_before_selection > 0
+                else 0
+            )
+            feature_selection_info = (
+                f"\n  Feature Selection: {self.features_before_selection} → "
+                f"{self.features_after_selection} features "
+                f"(removed {self.features_removed_by_selection}, {reduction_pct:.1f}% reduction)"
+            )
+
         return (
             f"ETL Pipeline Summary:\n"
             f"  Source: {self.source_type}\n"
@@ -421,7 +457,8 @@ class ETLMetrics:
             f"{scaling_info}"
             f"{financial_metrics_info}"
             f"{semantic_info}"
-            f"{feature_engineering_info}\n"
+            f"{feature_engineering_info}"
+            f"{feature_selection_info}\n"
             f"  Quality: {self.quality_score:.3f}, "
             f"Validation: {self.validation_score:.3f}\n"
             f"  Stages: {', '.join(self.stages_executed)}\n"
@@ -895,6 +932,69 @@ class ETLPipeline:
             result = self._apply_feature_engineering(result)
             if self.metrics:
                 self.metrics.stages_executed.append("feature_engineering")
+
+        # Stage 10: Apply automated feature selection (Section 9.3 Task 1)
+        if self.config.apply_feature_selection:
+            logger.info("Stage 10: Applying automated feature selection")
+            features_before = len(result.columns)
+
+            # Need target column for feature selection
+            target_col = None
+            for col in ["price_target", "price_target_median"]:
+                if col in result.columns:
+                    target_col = col
+                    break
+
+            if target_col is not None:
+                try:
+                    # Separate features and target
+                    y = result[target_col]
+                    X = result.drop(columns=[target_col])
+
+                    # Apply feature selection
+                    X_selected = select_features_auto(
+                        X,
+                        y,
+                        importance_threshold=self.config.importance_threshold,
+                        correlation_threshold=self.config.correlation_threshold,
+                        method=self.config.feature_selection_method,
+                    )
+
+                    # Reconstruct dataframe with selected features + target
+                    result = X_selected.copy()
+                    result[target_col] = y
+
+                    features_after = len(result.columns) - 1  # Exclude target
+                    features_removed = (
+                        features_before - features_after - 1
+                    )  # Exclude target from before count
+
+                    if self.metrics:
+                        self.metrics.feature_selection_applied = True
+                        self.metrics.features_before_selection = features_before
+                        self.metrics.features_after_selection = features_after
+                        self.metrics.features_removed_by_selection = features_removed
+                        self.metrics.stages_executed.append("feature_selection")
+
+                    logger.info(
+                        f"Feature selection complete: {features_before} -> {features_after} features "
+                        f"(removed {features_removed}, reduction: {100*features_removed/features_before:.1f}%)"
+                    )
+                except Exception as e:
+                    error_msg = f"Feature selection failed: {e}"
+                    logger.error(error_msg)
+                    if self.metrics:
+                        self.metrics.errors.append(error_msg)
+                        self.metrics.warnings.append("Feature selection skipped due to error")
+                    logger.warning("Pipeline continuing without feature selection")
+            else:
+                logger.warning(
+                    "Feature selection skipped: no target column (price_target or price_target_median) found"
+                )
+                if self.metrics:
+                    self.metrics.warnings.append(
+                        "Feature selection skipped: no target column found"
+                    )
 
         logger.info(f"Transformation complete: {len(result)} rows, {len(result.columns)} columns")
         return result
@@ -1603,6 +1703,9 @@ def etl_with_features(
     db_url: Optional[str] = None,
     feature_preset: str = "comprehensive",
     feature_categories: Optional[List[str]] = None,
+    auto_feature_selection: bool = False,
+    importance_threshold: float = 0.01,
+    correlation_threshold: float = 0.95,
     config: Optional[ETLConfig] = None,
     return_metrics: bool = True,
 ) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
@@ -1616,8 +1719,9 @@ def etl_with_features(
     1. Extract from source (CSV or database)
     2. Transform with semantic-aware strategies
     3. Apply feature engineering (Phase 9.3 features)
-    4. Compute financial metrics
-    5. Validate quality
+    4. Apply automated feature selection (optional, Task 1)
+    5. Compute financial metrics
+    6. Validate quality
 
     Args:
         source: Data source ('csv', 'db', 'all_stocks')
@@ -1626,6 +1730,9 @@ def etl_with_features(
         feature_preset: Feature engineering preset ('basic', 'momentum', 'quality',
             'standard', 'comprehensive')
         feature_categories: Specific feature categories to engineer
+        auto_feature_selection: Enable automated feature selection (default: False)
+        importance_threshold: Min importance score to keep feature (default: 0.01)
+        correlation_threshold: Max correlation before deduplication (default: 0.95)
         config: Optional ETLConfig override
         return_metrics: Whether to return ETLMetrics
 
@@ -1633,6 +1740,7 @@ def etl_with_features(
         DataFrame with all features, optionally with ETLMetrics
 
     Example:
+        >>> # Basic usage with feature engineering
         >>> df, metrics = etl_with_features(
         ...     source='csv',
         ...     data_dir=Path('data'),
@@ -1640,6 +1748,17 @@ def etl_with_features(
         ...     return_metrics=True
         ... )
         >>> print(f"Shape: {df.shape}, Quality: {metrics.quality_score:.3f}")
+
+        >>> # With automated feature selection (Phase 9.3 Task 1)
+        >>> df, metrics = etl_with_features(
+        ...     source='csv',
+        ...     data_dir=Path('data'),
+        ...     feature_preset='comprehensive',
+        ...     auto_feature_selection=True,
+        ...     importance_threshold=0.05,
+        ...     correlation_threshold=0.95,
+        ...     return_metrics=True
+        ... )
     """
     # Build config with feature engineering enabled
     if config is None:
@@ -1654,6 +1773,11 @@ def etl_with_features(
     config.apply_feature_engineering = True
     config.feature_preset = feature_preset
     config.feature_categories = feature_categories
+
+    # Enable feature selection (Phase 9.3 Task 1)
+    config.apply_feature_selection = auto_feature_selection
+    config.importance_threshold = importance_threshold
+    config.correlation_threshold = correlation_threshold
 
     # Enable financial metrics
     config.compute_valuation_metrics = True

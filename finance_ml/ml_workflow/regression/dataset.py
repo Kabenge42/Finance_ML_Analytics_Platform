@@ -1182,3 +1182,153 @@ def train_sector_specific_models(
     }
 
     return sector_models, results
+
+
+# ============================================================================
+# Phase 9.5 Task 7: Unified Test Data Alignment
+# ============================================================================
+
+
+def align_features_to_model(
+    X_test: pd.DataFrame,
+    model: Any,
+    fill_value: float = 0.0,
+    warn_missing: bool = True,
+    warn_extra: bool = True,
+) -> pd.DataFrame:
+    """
+    Align test features to match trained model's expected features.
+
+    This function ensures X_test has exactly the features the model expects,
+    in the correct order, preventing prediction-time errors. Implements
+    code_guidelines.md Section 7.5 feature alignment policy.
+
+    Parameters
+    ----------
+    X_test : pd.DataFrame
+        Test features to align
+    model : sklearn estimator or compatible
+        Trained model with feature_names_in_ attribute
+    fill_value : float, default=0.0
+        Value to fill missing features
+    warn_missing : bool, default=True
+        Log warning for missing features
+    warn_extra : bool, default=True
+        Log warning for extra features
+
+    Returns
+    -------
+    pd.DataFrame
+        Aligned test features matching model's feature order
+
+    Examples
+    --------
+    >>> from sklearn.linear_model import LinearRegression
+    >>> X_train = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+    >>> y_train = [5, 6]
+    >>> model = LinearRegression().fit(X_train, y_train)
+    >>> X_test = pd.DataFrame({'a': [1.5], 'c': [2.5]})  # Missing 'b', extra 'c'
+    >>> X_aligned = align_features_to_model(X_test, model)
+    >>> list(X_aligned.columns)
+    ['a', 'b']
+    >>> X_aligned['b'].iloc[0]
+    0.0
+
+    Notes
+    -----
+    - Missing features are filled with fill_value (default 0.0)
+    - Extra features not expected by model are removed
+    - Column order matches model.feature_names_in_
+    - Supports sklearn, XGBoost, LightGBM, CatBoost models
+    """
+    # Get expected features from model
+    if hasattr(model, "feature_names_in_"):
+        expected_features = list(model.feature_names_in_)
+    elif hasattr(model, "feature_name_"):  # LightGBM
+        expected_features = list(model.feature_name_)
+    elif hasattr(model, "get_booster"):  # XGBoost
+        expected_features = model.get_booster().feature_names
+    else:
+        logger.warning("Model does not expose feature names; returning X_test unchanged")
+        return X_test
+
+    # Identify missing and extra features
+    test_features = set(X_test.columns)
+    expected_features_set = set(expected_features)
+
+    missing_features = expected_features_set - test_features
+    extra_features = test_features - expected_features_set
+
+    # Log warnings
+    if missing_features and warn_missing:
+        logger.warning(
+            f"X_test missing {len(missing_features)} features expected by model. "
+            f"Filling with {fill_value}. Missing: {sorted(missing_features)[:5]}..."
+        )
+
+    if extra_features and warn_extra:
+        logger.warning(
+            f"X_test has {len(extra_features)} extra features not in model. "
+            f"Removing. Extra: {sorted(extra_features)[:5]}..."
+        )
+
+    # Create aligned dataframe
+    X_aligned = X_test.copy()
+
+    # Add missing features with fill_value
+    for feature in missing_features:
+        X_aligned[feature] = fill_value
+
+    # Select only expected features in correct order
+    X_aligned = X_aligned[expected_features]
+
+    return X_aligned
+
+
+def predict_with_model(
+    model: Any, X_test: pd.DataFrame, auto_align: bool = True, **kwargs
+) -> np.ndarray:
+    """
+    Predict with automatic feature alignment.
+
+    Wrapper around model.predict() that automatically aligns test features
+    to the model's expected feature set, eliminating prediction-time errors
+    from feature mismatches.
+
+    Parameters
+    ----------
+    model : sklearn estimator
+        Trained model
+    X_test : pd.DataFrame
+        Test features
+    auto_align : bool, default=True
+        Automatically align features to model
+    **kwargs
+        Additional arguments passed to model.predict()
+
+    Returns
+    -------
+    np.ndarray
+        Predictions
+
+    Examples
+    --------
+    >>> from sklearn.linear_model import Ridge
+    >>> X_train = pd.DataFrame({'x1': [1, 2, 3], 'x2': [4, 5, 6]})
+    >>> y_train = [10, 20, 30]
+    >>> model = Ridge().fit(X_train, y_train)
+    >>> X_test = pd.DataFrame({'x1': [1.5], 'x3': [7.0]})  # Mismatched features
+    >>> preds = predict_with_model(model, X_test)  # Works without error
+    >>> len(preds)
+    1
+
+    Notes
+    -----
+    - Set auto_align=False to disable automatic alignment
+    - Compatible with sklearn, XGBoost, LightGBM, CatBoost models
+    - Reduces notebook boilerplate by ~50 lines per prediction cell
+    """
+    if auto_align:
+        X_test = align_features_to_model(X_test, model)
+
+    return model.predict(X_test, **kwargs)

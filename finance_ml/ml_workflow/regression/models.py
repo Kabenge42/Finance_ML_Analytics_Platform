@@ -1319,3 +1319,305 @@ def compare_regressors(
         logger.info(f"✓ All {len(models)} models trained successfully")
 
     return results
+
+
+# ============================================================================
+# Phase 9.5 Task 6: Stacking Ensemble Hyperparameter Tuning
+# ============================================================================
+
+# Import Optuna for hyperparameter optimization
+try:
+    import optuna
+    from optuna.samplers import TPESampler
+
+    HAS_OPTUNA = True
+except ImportError:
+    optuna = None  # type: ignore
+    HAS_OPTUNA = False
+    logger.debug("Optuna not available. Install with: pip install optuna")
+
+
+def tune_stacking_hyperparameters(
+    X: pd.DataFrame,
+    y: pd.Series,
+    model_type: str = "xgboost",
+    n_trials: int = 50,
+    timeout: Optional[int] = 300,
+    cv: int = 3,
+    random_state: int = 42,
+    verbose: bool = False,
+) -> Tuple[Dict[str, Any], float]:
+    """
+    Tune hyperparameters for stacking base models using Optuna.
+
+    Uses Bayesian optimization (TPE sampler) to find optimal hyperparameters
+    for gradient boosting base models within a time budget. Implements
+    code_guidelines.md Section 16 hyperparameter tuning policy.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Training features
+    y : pd.Series
+        Training target
+    model_type : str, default='xgboost'
+        'xgboost', 'lightgbm', 'catboost'
+    n_trials : int, default=50
+        Number of Optuna trials
+    timeout : int, optional, default=300
+        Time budget in seconds (None for unlimited)
+    cv : int, default=3
+        Cross-validation folds
+    random_state : int, default=42
+        Random seed
+    verbose : bool, default=False
+        Print trial progress
+
+    Returns
+    -------
+    tuple
+        (best_params, best_score) where best_score is negative MAE
+
+    Examples
+    --------
+    >>> X = pd.DataFrame({'f1': np.random.randn(200), 'f2': np.random.randn(200)})
+    >>> y = X['f1'] * 2 + np.random.randn(200) * 0.1
+    >>> params, score = tune_stacking_hyperparameters(X, y, model_type='xgboost', n_trials=10)
+    >>> 'learning_rate' in params
+    True
+    >>> score > 0  # Positive MAE
+    True
+
+    Notes
+    -----
+    - Minimizes negative MAE (cross-validated)
+    - Timeout protection prevents indefinite runs
+    - TPE sampler for efficient Bayesian optimization
+    - Search space optimized for stacking base models
+    """
+    if not HAS_OPTUNA:
+        raise ImportError("Optuna required for hyperparameter tuning. Install: pip install optuna")
+
+    from sklearn.metrics import make_scorer
+
+    def objective(trial):
+        """Optuna objective function."""
+        if model_type == "xgboost":
+            if not HAS_XGBOOST:
+                raise ImportError("XGBoost required. Install: pip install xgboost")
+
+            params = {
+                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+                "max_depth": trial.suggest_int("max_depth", 3, 10),
+                "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
+                "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+                "gamma": trial.suggest_float("gamma", 0, 5),
+                "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 10.0, log=True),
+                "reg_lambda": trial.suggest_float("reg_lambda", 1e-8, 10.0, log=True),
+                "n_estimators": 100,
+                "random_state": random_state,
+                "verbosity": 0,
+            }
+            model = xgb.XGBRegressor(**params)
+
+        elif model_type == "lightgbm":
+            if not HAS_LIGHTGBM:
+                raise ImportError("LightGBM required. Install: pip install lightgbm")
+
+            params = {
+                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+                "num_leaves": trial.suggest_int("num_leaves", 20, 100),
+                "max_depth": trial.suggest_int("max_depth", 3, 10),
+                "min_child_samples": trial.suggest_int("min_child_samples", 5, 50),
+                "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+                "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 10.0, log=True),
+                "reg_lambda": trial.suggest_float("reg_lambda", 1e-8, 10.0, log=True),
+                "n_estimators": 100,
+                "random_state": random_state,
+                "verbose": -1,
+            }
+            model = lgb.LGBMRegressor(**params)
+
+        elif model_type == "catboost":
+            if not HAS_CATBOOST:
+                raise ImportError("CatBoost required. Install: pip install catboost")
+
+            params = {
+                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+                "depth": trial.suggest_int("depth", 3, 10),
+                "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1e-8, 10.0, log=True),
+                "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+                "iterations": 100,
+                "random_state": random_state,
+                "verbose": False,
+            }
+            model = CatBoostRegressor(**params)
+
+        else:
+            raise ValueError(f"Unsupported model_type: {model_type}")
+
+        # Cross-validate (negative MAE)
+        scorer = make_scorer(mean_absolute_error, greater_is_better=False)
+        scores = cross_val_score(model, X, y, cv=cv, scoring=scorer, n_jobs=-1)
+        return -scores.mean()  # Optuna minimizes, return positive MAE
+
+    # Run optimization
+    sampler = TPESampler(seed=random_state)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    # Suppress Optuna logging unless verbose
+    optuna.logging.set_verbosity(optuna.logging.INFO if verbose else optuna.logging.WARNING)
+
+    study.optimize(objective, n_trials=n_trials, timeout=timeout, show_progress_bar=verbose)
+
+    logger.info(
+        f"Optuna optimization complete: {len(study.trials)} trials, "
+        f"best MAE: {study.best_value:.4f}"
+    )
+
+    return study.best_params, study.best_value
+
+
+def select_stacking_base_models(
+    comparison_results: Dict[str, Dict[str, float]], metric: str = "r2", top_k: int = 3
+) -> List[str]:
+    """
+    Select top base models for stacking ensemble.
+
+    Ranks models by specified metric and returns the top-k performers
+    for use as stacking base models.
+
+    Parameters
+    ----------
+    comparison_results : dict
+        Results from compare_regressors(), format:
+        {'model_name': {'mae': float, 'rmse': float, 'r2': float}}
+    metric : str, default='r2'
+        Metric to rank by ('mae', 'rmse', 'r2')
+    top_k : int, default=3
+        Number of base models to select
+
+    Returns
+    -------
+    list
+        Names of selected models
+
+    Examples
+    --------
+    >>> results = {
+    ...     'xgboost': {'mae': 10.5, 'rmse': 15.2, 'r2': 0.85},
+    ...     'lightgbm': {'mae': 10.2, 'rmse': 14.8, 'r2': 0.87},
+    ...     'ridge': {'mae': 12.0, 'rmse': 17.0, 'r2': 0.75}
+    ... }
+    >>> selected = select_stacking_base_models(results, metric='r2', top_k=2)
+    >>> selected
+    ['lightgbm', 'xgboost']
+
+    Notes
+    -----
+    - For 'mae', 'rmse', 'mape': lower is better (ascending sort)
+    - For 'r2': higher is better (descending sort)
+    - Filters out failed models (NaN metrics)
+    """
+    # Filter out failed models
+    valid_results = {
+        name: metrics
+        for name, metrics in comparison_results.items()
+        if not np.isnan(metrics.get(metric, np.nan))
+    }
+
+    if len(valid_results) == 0:
+        raise ValueError(f"No valid models found with metric '{metric}'")
+
+    # Sort by metric (descending for r2, ascending for mae/rmse)
+    ascending = metric in ["mae", "rmse", "mape"]
+
+    sorted_models = sorted(valid_results.items(), key=lambda x: x[1][metric], reverse=not ascending)
+
+    selected = [model_name for model_name, _ in sorted_models[:top_k]]
+
+    logger.info(f"Selected {len(selected)} base models by {metric}: {selected}")
+    return selected
+
+
+def select_meta_learner(
+    X_base: pd.DataFrame,
+    y: pd.Series,
+    candidates: List[str] = None,
+    cv: int = 5,
+    random_state: int = 42,
+) -> Tuple[str, Dict[str, float]]:
+    """
+    Select best meta-learner via cross-validation.
+
+    Evaluates multiple meta-learner candidates on base model predictions
+    and selects the one with highest cross-validated R².
+
+    Parameters
+    ----------
+    X_base : pd.DataFrame
+        Base model predictions (meta-features)
+    y : pd.Series
+        Target
+    candidates : list, optional, default=['ridge', 'lasso', 'huber']
+        Meta-learner candidates
+    cv : int, default=5
+        Cross-validation folds
+    random_state : int, default=42
+        Random seed
+
+    Returns
+    -------
+    tuple
+        (best_meta_learner_name, cv_scores_dict)
+
+    Examples
+    --------
+    >>> X_base = pd.DataFrame({
+    ...     'pred_xgb': np.random.uniform(50, 150, 100),
+    ...     'pred_lgb': np.random.uniform(50, 150, 100)
+    ... })
+    >>> y = np.random.uniform(50, 150, 100)
+    >>> best, scores = select_meta_learner(X_base, y, cv=3)
+    >>> best in ['ridge', 'lasso', 'huber']
+    True
+    >>> len(scores) == 3
+    True
+
+    Notes
+    -----
+    - Uses R² as scoring metric
+    - Huber regression for outlier robustness
+    - Ridge/Lasso for regularization
+    """
+    from sklearn.linear_model import HuberRegressor
+
+    if candidates is None:
+        candidates = ["ridge", "lasso", "huber"]
+
+    meta_learners = {
+        "ridge": Ridge(random_state=random_state),
+        "lasso": Lasso(random_state=random_state),
+        "huber": HuberRegressor(),
+    }
+
+    cv_scores = {}
+    for name in candidates:
+        if name not in meta_learners:
+            logger.warning(f"Unknown meta-learner: {name}. Skipping.")
+            continue
+
+        model = meta_learners[name]
+        scores = cross_val_score(model, X_base, y, cv=cv, scoring="r2", n_jobs=-1)
+        cv_scores[name] = scores.mean()
+        logger.info(f"Meta-learner {name}: R² = {scores.mean():.4f} (+/- {scores.std():.4f})")
+
+    if len(cv_scores) == 0:
+        raise ValueError(f"No valid meta-learner candidates found from: {candidates}")
+
+    best_meta = max(cv_scores, key=cv_scores.get)
+    logger.info(f"Selected meta-learner: {best_meta} (R² = {cv_scores[best_meta]:.4f})")
+
+    return best_meta, cv_scores

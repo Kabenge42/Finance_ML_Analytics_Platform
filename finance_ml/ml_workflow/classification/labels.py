@@ -7,7 +7,7 @@ ALL 19 METHODS NOW USE COMPLETE PHASE 9.3 FEATURE SETS (196 features total):
 
 Original methods (enhanced with all Phase 9.3 features):
 - price_momentum: 27 Momentum & Technical features
-- valuation: 23 Valuation Ratios features  
+- valuation: 23 Valuation Ratios features
 - fundamental: 12 Profitability features
 - volatility: Stability and volatility features
 - analyst_rating: 10 Analyst Sentiment features
@@ -50,6 +50,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "create_enhanced_event_labels",
+    "create_multilabel_event_labels",
 ]
 
 
@@ -83,6 +84,8 @@ def create_enhanced_event_labels(
     threshold_positive: float = 10.0,
     threshold_negative: float = -10.0,
     use_sector_adjustment: bool = False,
+    auto_adjust_thresholds: bool = False,
+    fallback_method: Optional[str] = None,
 ) -> np.ndarray:
     """Create sophisticated event classification labels using Phase 9.3 features.
 
@@ -148,8 +151,12 @@ def create_enhanced_event_labels(
             signal_count += 1
 
         # Price momentum features (1m, 3m, 6m, 1y)
-        for col, weight in [("price_momentum_1m", 1.0), ("price_momentum_3m", 0.8), 
-                           ("price_momentum_6m", 0.6), ("price_momentum_1y", 0.4)]:
+        for col, weight in [
+            ("price_momentum_1m", 1.0),
+            ("price_momentum_3m", 0.8),
+            ("price_momentum_6m", 0.6),
+            ("price_momentum_1y", 0.4),
+        ]:
             mom = _get_column(df, col)
             if mom is not None:
                 momentum_score += (mom / 10.0) * weight
@@ -158,7 +165,7 @@ def create_enhanced_event_labels(
         # Price acceleration
         accel = _get_column(df, "price_acceleration_3m")
         if accel is not None:
-            momentum_score += (accel / 20.0)
+            momentum_score += accel / 20.0
             signal_count += 1
 
         # RSI indicators (14d, 30d)
@@ -313,8 +320,15 @@ def create_enhanced_event_labels(
         signal_count = 0
 
         # Core valuation ratios (lower is better)
-        for col in ["p_e_ratio", "p_b_ratio", "p_s_ratio", "ev_ebitda_ratio", "ev_sales_ratio", 
-                   "peg_ratio", "dividend_yield"]:
+        for col in [
+            "p_e_ratio",
+            "p_b_ratio",
+            "p_s_ratio",
+            "ev_ebitda_ratio",
+            "ev_sales_ratio",
+            "peg_ratio",
+            "dividend_yield",
+        ]:
             metric = _get_column(df, col, col.replace("_ratio", ""))
             if metric is not None:
                 # Calculate percentile ranking within sector if available
@@ -330,7 +344,11 @@ def create_enhanced_event_labels(
                 signal_count += 1
 
         # EV/EBITDA momentum and trends (negative momentum = multiple decreasing = improving valuation)
-        for col in ["ev_ebitda_momentum", "ev_ebitda_vs_3y_avg", "ev_ebitda_forward_discount"]:
+        for col in [
+            "ev_ebitda_momentum",
+            "ev_ebitda_vs_3y_avg",
+            "ev_ebitda_forward_discount",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 # Negative values = improving (multiple dropping), positive = worsening
@@ -338,8 +356,12 @@ def create_enhanced_event_labels(
                 signal_count += 1
 
         # EV/Sales trends
-        for col in ["ev_sales_trend_1y", "ev_sales_trend_3y", "ev_sales_vs_3y_avg", 
-                   "ev_sales_forward_discount"]:
+        for col in [
+            "ev_sales_trend_1y",
+            "ev_sales_trend_3y",
+            "ev_sales_vs_3y_avg",
+            "ev_sales_forward_discount",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 valuation_score += -metric.clip(-2, 2)
@@ -353,7 +375,12 @@ def create_enhanced_event_labels(
             signal_count += 1
 
         # P/E momentum and trends
-        for col in ["p_e_momentum_yoy", "p_e_momentum_qoq", "p_e_vs_3y_avg", "p_e_forward_discount"]:
+        for col in [
+            "p_e_momentum_yoy",
+            "p_e_momentum_qoq",
+            "p_e_vs_3y_avg",
+            "p_e_forward_discount",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 valuation_score += -metric.clip(-2, 2)
@@ -548,9 +575,14 @@ def create_enhanced_event_labels(
             signal_count += 1
         elif "analyst_rating" in df.columns:
             rating_map = {
-                "Strong Buy": 2.0, "Buy": 1.0, "Outperform": 1.0,
-                "Hold": 0.0, "Neutral": 0.0,
-                "Sell": -1.0, "Strong Sell": -2.0, "Underperform": -1.0,
+                "Strong Buy": 2.0,
+                "Buy": 1.0,
+                "Outperform": 1.0,
+                "Hold": 0.0,
+                "Neutral": 0.0,
+                "Sell": -1.0,
+                "Strong Sell": -2.0,
+                "Underperform": -1.0,
             }
             analyst_score += df["analyst_rating"].map(rating_map).fillna(0)
             signal_count += 1
@@ -944,7 +976,12 @@ def create_enhanced_event_labels(
         signal_count = 0
 
         # Turnover ratios (higher is better)
-        for col in ["asset_turnover", "inventory_turnover", "receivables_turnover", "revenue_per_employee"]:
+        for col in [
+            "asset_turnover",
+            "inventory_turnover",
+            "receivables_turnover",
+            "revenue_per_employee",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 percentile = metric.rank(pct=True)
@@ -979,8 +1016,14 @@ def create_enhanced_event_labels(
         signal_count = 0
 
         # Growth metrics (higher is better)
-        for col in ["revenue_growth", "earnings_growth", "ebitda_growth", 
-                   "revenue_growth_yoy", "ebitda_growth_yoy", "eps_growth_yoy"]:
+        for col in [
+            "revenue_growth",
+            "earnings_growth",
+            "ebitda_growth",
+            "revenue_growth_yoy",
+            "ebitda_growth_yoy",
+            "eps_growth_yoy",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 growth_score += metric / 10.0  # Normalize
@@ -1055,8 +1098,12 @@ def create_enhanced_event_labels(
             signal_count += 1
 
         # Exceptional items (lower is better)
-        for col in ["exceptional_items_to_ebitda", "exceptional_items_to_ni_pct", 
-                   "exceptional_items_trend", "total_exceptional_items_ltm"]:
+        for col in [
+            "exceptional_items_to_ebitda",
+            "exceptional_items_to_ni_pct",
+            "exceptional_items_trend",
+            "total_exceptional_items_ltm",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 percentile = metric.abs().rank(pct=True)
@@ -1064,8 +1111,12 @@ def create_enhanced_event_labels(
                 signal_count += 1
 
         # Goodwill and intangible metrics (lower intensity = higher quality)
-        for col in ["goodwill_to_assets", "goodwill_to_assets_pct", "intangible_intensity", 
-                   "intangibles_to_assets_pct"]:
+        for col in [
+            "goodwill_to_assets",
+            "goodwill_to_assets_pct",
+            "intangible_intensity",
+            "intangibles_to_assets_pct",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 percentile = metric.rank(pct=True)
@@ -1084,11 +1135,17 @@ def create_enhanced_event_labels(
         # Previous -0.5 penalty still caused 63.4% class 0 imbalance (expected: 15% per quantile design)
         # Root cause: Most stocks have ≥1 red flag; even -0.5 penalty per flag creates strong negative bias
         # New -0.2 penalty preserves signal while allowing quantile thresholds to work as designed
-        for flag in ["goodwill_impairment_flag", "has_goodwill_impairment", 
-                    "has_asset_writedown", "has_restructuring"]:
+        for flag in [
+            "goodwill_impairment_flag",
+            "has_goodwill_impairment",
+            "has_asset_writedown",
+            "has_restructuring",
+        ]:
             metric = _get_column(df, flag)
             if metric is not None:
-                quality_score += -metric * 0.2  # Penalty for flags (reduced from -0.5, originally -2.0)
+                quality_score += (
+                    -metric * 0.2
+                )  # Penalty for flags (reduced from -0.5, originally -2.0)
                 signal_count += 1
 
         # Restructuring intensity (lower is better)
@@ -1099,8 +1156,21 @@ def create_enhanced_event_labels(
             signal_count += 1
 
         if signal_count == 0:
-            logger.warning("No quality metrics available, returning all neutral")
-            return labels
+            logger.warning("No quality metrics available")
+            if fallback_method and fallback_method != method:
+                logger.warning(f"Attempting fallback to '{fallback_method}'")
+                return create_enhanced_event_labels(
+                    df,
+                    method=fallback_method,
+                    threshold_positive=threshold_positive,
+                    threshold_negative=threshold_negative,
+                    use_sector_adjustment=use_sector_adjustment,
+                    auto_adjust_thresholds=auto_adjust_thresholds,
+                    fallback_method=None,  # Prevent infinite recursion
+                )
+            else:
+                logger.warning("No fallback method specified, returning all neutral")
+                return labels
 
         quality_score /= signal_count
 
@@ -1243,15 +1313,24 @@ def create_enhanced_event_labels(
         signal_count = 0
 
         # Dividend metrics (higher dividend safety/growth = positive)
-        for col in ["dividend_safety_score", "dividend_consistency_score", "dividend_growth_trend",
-                   "dividend_aristocrat_flag", "income_stock_flag"]:
+        for col in [
+            "dividend_safety_score",
+            "dividend_consistency_score",
+            "dividend_growth_trend",
+            "dividend_aristocrat_flag",
+            "income_stock_flag",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 capital_score += metric.clip(-2, 2)
                 signal_count += 1
 
         # Dividend coverage and yield (higher is better)
-        for col in ["fcf_dividend_coverage", "dividend_yield_vs_sector", "div_yield_ltm"]:
+        for col in [
+            "fcf_dividend_coverage",
+            "dividend_yield_vs_sector",
+            "div_yield_ltm",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 percentile = metric.rank(pct=True)
@@ -1320,7 +1399,11 @@ def create_enhanced_event_labels(
             signal_count += 1
 
         # Dividend timing/frequency signals
-        for col in ["days_since_ex_date", "dividend_frequency_encoded", "dividend_streak_years"]:
+        for col in [
+            "days_since_ex_date",
+            "dividend_frequency_encoded",
+            "dividend_streak_years",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 if "days" in col:
@@ -1373,8 +1456,14 @@ def create_enhanced_event_labels(
         signal_count = 0
 
         # Revenue/profit per employee (higher is better)
-        for col in ["revenue_per_employee_fy", "revenue_per_employee_ltm", "profit_per_employee",
-                   "ebitda_per_employee", "operating_income_per_employee", "assets_per_employee"]:
+        for col in [
+            "revenue_per_employee_fy",
+            "revenue_per_employee_ltm",
+            "profit_per_employee",
+            "ebitda_per_employee",
+            "operating_income_per_employee",
+            "assets_per_employee",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 percentile = metric.rank(pct=True)
@@ -1389,8 +1478,12 @@ def create_enhanced_event_labels(
                 signal_count += 1
 
         # Employee growth metrics (moderate positive growth is good)
-        for col in ["employee_growth_yoy", "employee_growth_yoy_pct", "employee_growth_qoq",
-                   "employee_growth_cagr_5y"]:
+        for col in [
+            "employee_growth_yoy",
+            "employee_growth_yoy_pct",
+            "employee_growth_qoq",
+            "employee_growth_cagr_5y",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 # Moderate growth 0-10% is optimal
@@ -1453,7 +1546,11 @@ def create_enhanced_event_labels(
         signal_count = 0
 
         # Growth rates (positive growth is generally good)
-        for col in ["asset_growth_rate", "equity_growth_rate", "balance_sheet_expansion"]:
+        for col in [
+            "asset_growth_rate",
+            "equity_growth_rate",
+            "balance_sheet_expansion",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 balance_score += metric.clip(-20, 20) / 20.0
@@ -1529,8 +1626,11 @@ def create_enhanced_event_labels(
             signal_count += 1
 
         # Estimate spreads and uncertainty (lower spread = more confidence = better)
-        for col in ["revenue_estimate_spread_fy1e", "revenue_estimate_spread_ntm",
-                   "revenue_consensus_uncertainty_score"]:
+        for col in [
+            "revenue_estimate_spread_fy1e",
+            "revenue_estimate_spread_ntm",
+            "revenue_consensus_uncertainty_score",
+        ]:
             metric = _get_column(df, col)
             if metric is not None:
                 percentile = metric.rank(pct=True)
@@ -1579,6 +1679,55 @@ def create_enhanced_event_labels(
 
     else:
         logger.error(f"Unknown method: {method}")
+        # Check if fallback method specified
+        if fallback_method and fallback_method != method:
+            logger.warning(
+                f"Method '{method}' failed or unknown, attempting fallback to '{fallback_method}'"
+            )
+            try:
+                return create_enhanced_event_labels(
+                    df,
+                    method=fallback_method,
+                    threshold_positive=threshold_positive,
+                    threshold_negative=threshold_negative,
+                    use_sector_adjustment=use_sector_adjustment,
+                    auto_adjust_thresholds=auto_adjust_thresholds,
+                    fallback_method=None,  # Prevent infinite recursion
+                )
+            except Exception as e:
+                logger.error(f"Fallback method '{fallback_method}' also failed: {e}")
+
+    # Phase 9.4 Task 5: Adaptive threshold adjustment when classes are missing
+    if auto_adjust_thresholds:
+        unique_classes = np.unique(labels)
+        if len(unique_classes) < 3:  # Less than 3 classes detected
+            logger.warning(
+                f"Only {len(unique_classes)} classes detected, applying adaptive threshold adjustment"
+            )
+            # Redistribute labels using more aggressive quantile splits
+            # Use 10%, 30%, 50%, 70%, 90% quantiles instead of default
+            try:
+                # Create a temporary score by adding small random noise to break ties
+                temp_score = labels.astype(float) + np.random.randn(len(labels)) * 0.01
+                labels[temp_score <= np.percentile(temp_score, 10)] = 0
+                labels[
+                    (temp_score > np.percentile(temp_score, 10))
+                    & (temp_score <= np.percentile(temp_score, 30))
+                ] = 1
+                labels[
+                    (temp_score > np.percentile(temp_score, 30))
+                    & (temp_score <= np.percentile(temp_score, 70))
+                ] = 2
+                labels[
+                    (temp_score > np.percentile(temp_score, 70))
+                    & (temp_score <= np.percentile(temp_score, 90))
+                ] = 3
+                labels[temp_score > np.percentile(temp_score, 90)] = 4
+                logger.info(
+                    f"Adaptive adjustment applied: now {len(np.unique(labels))} unique classes"
+                )
+            except Exception as e:
+                logger.warning(f"Adaptive threshold adjustment failed: {e}")
 
     logger.info(
         f"Created labels with method={method}: "
@@ -1590,3 +1739,144 @@ def create_enhanced_event_labels(
     )
 
     return labels
+
+
+def create_multilabel_event_labels(
+    df: pd.DataFrame,
+    label_mode: str = "multilabel",
+    categories: Optional[list] = None,
+    sector_adjusted: bool = False,
+    threshold_percentile: float = 0.6,
+) -> pd.DataFrame:
+    """
+    Create multi-label classification labels for Phase 9.3 feature categories.
+
+    Implements Phase 9.4 Task 2: Multi-Label Classification Support.
+    Aligned with phase_9.4_implementation_plan.md and code_guidelines.md v1.10.
+
+    Each category produces an independent binary label (0/1) based on feature
+    values and thresholds. This enables simultaneous signal detection across
+    multiple dimensions for granular sector-specific strategies.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Stock data with features
+    label_mode : str, default='multilabel'
+        Labeling mode ('multilabel' for independent binary labels)
+    categories : list, optional
+        Categories to create labels for (e.g., ['valuation', 'momentum', 'quality'])
+        If None, uses all available categories
+    sector_adjusted : bool, default=False
+        If True, adjust thresholds per sector based on sector distributions
+    threshold_percentile : float, default=0.6
+        Percentile threshold for positive signal (0.6 = top 40% gets label=1)
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with binary label columns: label_<category> for each category
+
+    Notes
+    -----
+    - Each category label is independent (stocks can have multiple positive signals)
+    - Sector-adjusted mode uses within-sector percentiles for threshold
+    - Missing features result in NaN labels (not 0)
+
+    Examples
+    --------
+    >>> labels = create_multilabel_event_labels(
+    ...     df,
+    ...     label_mode='multilabel',
+    ...     categories=['valuation', 'momentum', 'quality']
+    ... )
+    >>> labels.columns
+    Index(['label_valuation', 'label_momentum', 'label_quality'], dtype='object')
+    """
+    from typing import List
+
+    if label_mode != "multilabel":
+        raise ValueError(f"Only 'multilabel' mode supported, got: {label_mode}")
+
+    # Define category-to-feature mappings (Phase 9.3 categories)
+    CATEGORY_FEATURE_MAPPING = {
+        "valuation": ["price_target", "last_price", "p_e_ltm", "ev_ebitda", "p_b_ltm"],
+        "momentum": ["momentum_rsi", "price_change_1m", "price_momentum_1m", "ema_20d"],
+        "quality": ["quality_altman_z", "roe_ltm", "quality_score"],
+        "profitability": [
+            "net_margin_ltm",
+            "operating_margin_ltm",
+            "gross_margin_ltm",
+            "roe_ltm",
+        ],
+        "growth": ["revenue_growth_yoy", "earnings_growth_yoy", "revenue_growth_3y_cagr"],
+        "leverage": ["debt_to_equity", "net_debt_ebitda", "current_ratio"],
+        "efficiency": ["asset_turnover", "inventory_turnover"],
+        "cash_flow": ["fcf_margin", "operating_cash_flow"],
+    }
+
+    # Use all categories if none specified
+    if categories is None:
+        categories = list(CATEGORY_FEATURE_MAPPING.keys())
+
+    # Initialize result DataFrame
+    result = pd.DataFrame(index=df.index)
+
+    for category in categories:
+        if category not in CATEGORY_FEATURE_MAPPING:
+            logger.warning(f"Unknown category: {category}, skipping")
+            continue
+
+        feature_cols = CATEGORY_FEATURE_MAPPING[category]
+
+        # Calculate category score from available features
+        category_score = pd.Series(0.0, index=df.index)
+        feature_count = 0
+
+        for feature in feature_cols:
+            if feature in df.columns:
+                # Special handling for valuation (price target vs last price)
+                if feature == "price_target" and "last_price" in df.columns:
+                    # Positive if target > price
+                    score = (df["price_target"] - df["last_price"]) / df["last_price"]
+                    category_score += score.fillna(0)
+                    feature_count += 1
+                elif feature != "last_price":  # Skip last_price (already used above)
+                    # Normalize feature to [0, 1] range using rank percentile
+                    feature_values = df[feature].dropna()
+                    if len(feature_values) > 0:
+                        percentile = df[feature].rank(pct=True)
+                        category_score += percentile.fillna(0.5)
+                        feature_count += 1
+
+        if feature_count == 0:
+            # No features available for this category
+            result[f"label_{category}"] = np.nan
+            logger.warning(f"No features available for category: {category}")
+            continue
+
+        # Average score across features
+        category_score /= feature_count
+
+        # Apply threshold (sector-adjusted or global)
+        if sector_adjusted and "sector" in df.columns:
+            # Sector-specific thresholds
+            labels = pd.Series(0, index=df.index)
+            for sector in df["sector"].unique():
+                sector_mask = df["sector"] == sector
+                sector_scores = category_score[sector_mask]
+                if len(sector_scores) > 0:
+                    threshold = sector_scores.quantile(threshold_percentile)
+                    labels[sector_mask] = (sector_scores >= threshold).astype(int)
+        else:
+            # Global threshold
+            threshold = category_score.quantile(threshold_percentile)
+            labels = (category_score >= threshold).astype(int)
+
+        result[f"label_{category}"] = labels
+
+    logger.info(
+        f"Created multi-label classification for {len(categories)} categories: {categories}"
+    )
+
+    return result
