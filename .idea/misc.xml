@@ -2,17 +2,30 @@
 <project version="4">
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
-    <option name="pathToExecutable" value="C:\Users\markm\anaconda3\Scripts\black.exe" />
+    <option name="pathToExecutable" value="C:\Users\markm\AppData\Local\Programs\Python\Python313\Scripts\black.exe" />
     <option name="sdkName" value="Python 3.13" />
   </component>
   <component name="ProjectResources">
     <xml-schema-version>XMLSchema_1_1</xml-schema-version>
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.14 virtualenv at C:\Users\markm\.virtualenvs\Finance_ML_Analytics_Platform-O-ow2JSe" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13" project-jdk-type="Python SDK" />
   <component name="PyCharmDSProjectLayout">
     <option name="id" value="JupyterRightHiddenStructureLayout" />
   </component>
+  <component name="PyreflyConfiguration">
+    <option name="enabled" value="true" />
+    <option name="inlayHints" value="false" />
+  </component>
+  <component name="PyrightConfiguration">
+    <option name="enabled" value="true" />
+    <option name="inspections" value="false" />
+  </component>
   <component name="PythonCompatibilityInspectionAdvertiser">
     <option name="version" value="3" />
+  </component>
+  <component name="RuffConfiguration">
+    <option name="enabled" value="true" />
+    <option name="formatting" value="false" />
+    <option name="sortImports" value="false" />
   </component>
 </project>

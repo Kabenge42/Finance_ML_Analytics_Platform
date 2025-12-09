@@ -1,5 +1,0 @@
-93:         results_df["y_pred_calibrated"] = results_df["y_pred"]
-94: 
-95:     # Add model_version and snapshot_date for standardized schema
-96:     model_version = os.environ.get('MODEL_VERSION', 'v9_9')
-97:     results_df['model_version'] = model_version

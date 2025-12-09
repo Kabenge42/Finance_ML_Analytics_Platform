@@ -18,19 +18,19 @@ Version: 9.4.2
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.metrics import (
     accuracy_score,
-    precision_recall_fscore_support,
+    brier_score_loss,
     classification_report,
     confusion_matrix,
-    roc_auc_score,
-    brier_score_loss,
     log_loss,
+    precision_recall_fscore_support,
+    roc_auc_score,
 )
 from sklearn.model_selection import StratifiedKFold
 
@@ -626,7 +626,11 @@ def plot_learning_curves(
                     color="g",
                 )
                 plt.plot(
-                    train_sizes_abs, train_scores_mean, "o-", color="r", label="Training score"
+                    train_sizes_abs,
+                    train_scores_mean,
+                    "o-",
+                    color="r",
+                    label="Training score",
                 )
                 plt.plot(
                     train_sizes_abs,

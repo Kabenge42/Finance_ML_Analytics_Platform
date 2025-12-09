@@ -1,2 +1,0 @@
-Line 95:     # Add model_version and snapshot_date for standardized schema
-Line 98:     results_df['snapshot_date'] = pd.Timestamp.now().strftime('%Y-%m-%d')

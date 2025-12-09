@@ -12,13 +12,13 @@ Phase 9.4 refactor: Extracted from classification_enhanced.py for better modular
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, Literal
+from typing import Any, Dict, Literal
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import f1_score, accuracy_score
-from sklearn.model_selection import cross_val_score, StratifiedKFold
+from sklearn.metrics import accuracy_score, f1_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 # Optional imports with fallback handling
 try:

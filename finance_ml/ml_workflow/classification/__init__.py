@@ -68,6 +68,7 @@ from finance_ml.ml_workflow.classification.evaluation import (
 # Import from new submodules
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels,
+    create_multilabel_event_labels,
 )
 from finance_ml.ml_workflow.classification.models import (
     # Data preparation
@@ -93,6 +94,9 @@ from finance_ml.ml_workflow.classification.models import (
     # Comparison and orchestration
     compare_classifiers,
     fit_classifier,
+    # Phase 9.4 enhancements
+    determine_cv_strategy,
+    balance_classes,
 )
 from finance_ml.ml_workflow.classification.tuning import (
     optimize_classifier_hyperparameters,
@@ -115,6 +119,7 @@ tune_classifier_hyperparameters = optimize_classifier_hyperparameters
 __all__ = [
     # Labels
     "create_enhanced_event_labels",
+    "create_multilabel_event_labels",
     # Aliases for code_guidelines.md v1.10 API
     "create_event_labels",
     "train_event_classifier",
@@ -145,6 +150,9 @@ __all__ = [
     # Comparison and orchestration
     "compare_classifiers",
     "fit_classifier",
+    # Phase 9.4 enhancements
+    "determine_cv_strategy",
+    "balance_classes",
     # Evaluation - Metrics
     "evaluate_classification",
     "evaluate_classification_by_sector",

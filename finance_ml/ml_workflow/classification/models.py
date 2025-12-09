@@ -20,7 +20,7 @@ Version: Phase 9.4.1
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Tuple, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -57,9 +57,9 @@ except ImportError:
     HAVE_CATBOOST = False
 
 try:
-    from imblearn.over_sampling import SMOTE, ADASYN
-    from imblearn.under_sampling import RandomUnderSampler
+    from imblearn.over_sampling import ADASYN, SMOTE
     from imblearn.pipeline import Pipeline as ImbPipeline
+    from imblearn.under_sampling import RandomUnderSampler
 
     HAVE_IMBLEARN = True
 except ImportError:
@@ -220,7 +220,14 @@ def prepare_classification_data(
         Tuple of (X_train, X_test, y_train, y_test, numeric_cols, categorical_cols)
     """
     # Drop non-feature columns
-    drop_cols = ["ticker", "isin", "name", "description", "price_target", "last_updated"]
+    drop_cols = [
+        "ticker",
+        "isin",
+        "name",
+        "description",
+        "price_target",
+        "last_updated",
+    ]
     drop_cols = [c for c in drop_cols if c in df.columns]
     X = df.drop(columns=drop_cols)
 
@@ -752,6 +759,277 @@ def apply_combined_sampling(
         return X_train[numeric_cols], y_train
 
 
+def balance_classes(
+    X: pd.DataFrame,
+    y: pd.Series,
+    method: str = "auto",
+    imbalance_threshold: float = 10.0,
+    sampling_strategy: str = "auto",
+    random_state: int = 42,
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Automatically remediate class imbalance through resampling.
+
+    Implements Phase 9.4 Task 5: Classification Class Balance Auto-Remediation.
+    Aligned with phase_9.4_implementation_plan.md and code_guidelines.md v1.10.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Feature matrix
+    y : pd.Series
+        Target labels
+    method : str, default='auto'
+        Resampling method:
+        - 'auto': Automatically select based on imbalance severity
+        - 'smote': SMOTE oversampling
+        - 'adasyn': ADASYN oversampling
+        - 'undersample': Random undersampling
+        - 'combined': Combined over+undersampling
+        - 'none': No resampling (passthrough)
+    imbalance_threshold : float, default=10.0
+        Imbalance ratio threshold to trigger auto-remediation
+        (majority_class_count / minority_class_count)
+    sampling_strategy : str, default='auto'
+        Sampling strategy for imblearn
+    random_state : int, default=42
+        Random seed for reproducibility
+
+    Returns
+    -------
+    X_balanced : pd.DataFrame
+        Resampled feature matrix
+    y_balanced : pd.Series
+        Resampled target labels
+
+    Notes
+    -----
+    - Auto method selects SMOTE for moderate imbalance (10:1 to 20:1)
+    - Auto method selects combined sampling for severe imbalance (>20:1)
+    - Only numeric columns are used for resampling
+    - Original indices are not preserved (new integer index assigned)
+
+    Examples
+    --------
+    >>> X_balanced, y_balanced = balance_classes(
+    ...     X, y,
+    ...     method='auto',
+    ...     imbalance_threshold=10
+    ... )
+    """
+    # Calculate class distribution
+    class_counts = y.value_counts()
+    if len(class_counts) < 2:
+        logger.warning("Only one class present, skipping balancing")
+        return X, y
+
+    majority_count = class_counts.max()
+    minority_count = class_counts.min()
+    imbalance_ratio = majority_count / minority_count
+
+    logger.info(
+        f"Class balance analysis: {len(class_counts)} classes, "
+        f"imbalance ratio: {imbalance_ratio:.2f}:1"
+    )
+
+    # Check if balancing is needed
+    if imbalance_ratio < imbalance_threshold:
+        logger.info(
+            f"Imbalance ratio {imbalance_ratio:.2f} below threshold {imbalance_threshold}, "
+            f"skipping balancing"
+        )
+        return X, y
+
+    # Select only numeric columns for resampling
+    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    if not numeric_cols:
+        logger.warning("No numeric columns found for resampling, returning original data")
+        return X, y
+
+    # Auto-select method based on imbalance severity
+    if method == "auto":
+        if imbalance_ratio < 20:
+            method = "smote"
+            logger.info(f"Auto-selected SMOTE for moderate imbalance ({imbalance_ratio:.2f}:1)")
+        else:
+            method = "combined"
+            logger.info(
+                f"Auto-selected combined sampling for severe imbalance ({imbalance_ratio:.2f}:1)"
+            )
+
+    # Apply selected resampling method
+    try:
+        if method == "smote":
+            X_balanced, y_balanced = apply_smote(
+                X,
+                y,
+                numeric_cols,
+                sampling_strategy=sampling_strategy,
+                random_state=random_state,
+            )
+        elif method == "adasyn":
+            X_balanced, y_balanced = apply_adasyn(
+                X,
+                y,
+                numeric_cols,
+                sampling_strategy=sampling_strategy,
+                random_state=random_state,
+            )
+        elif method == "undersample":
+            X_balanced, y_balanced = apply_undersampling(
+                X,
+                y,
+                numeric_cols,
+                sampling_strategy=sampling_strategy,
+                random_state=random_state,
+            )
+        elif method == "combined":
+            X_balanced, y_balanced = apply_combined_sampling(
+                X,
+                y,
+                numeric_cols,
+                over_strategy="smote",
+                under_strategy="random",
+                random_state=random_state,
+            )
+        elif method == "none":
+            logger.info("Method='none', skipping balancing")
+            return X, y
+        else:
+            logger.warning(f"Unknown method '{method}', skipping balancing")
+            return X, y
+
+        # Convert to Series if numpy array returned
+        if isinstance(y_balanced, np.ndarray):
+            y_balanced = pd.Series(y_balanced, name=y.name if hasattr(y, "name") else "target")
+
+        logger.info(
+            f"Class balancing complete: {len(y)} -> {len(y_balanced)} samples, "
+            f"new ratio: {y_balanced.value_counts().max() / y_balanced.value_counts().min():.2f}:1"
+        )
+
+        return X_balanced, y_balanced
+
+    except Exception as e:
+        logger.error(f"Class balancing failed: {e}, returning original data")
+        return X, y
+
+
+def determine_cv_strategy(
+    df: pd.DataFrame,
+    target: Optional[pd.Series] = None,
+    n_splits: int = 5,
+    date_column: str = "snapshot_date",
+    group_column: str = "ticker",
+    random_state: int = 42,
+) -> Tuple[str, Any]:
+    """
+    Determine appropriate CV strategy based on data characteristics.
+
+    Implements Phase 9.4 Task 4: Cross-Validation Policy Enforcement.
+    Aligned with phase_9.4_implementation_plan.md and code_guidelines.md v1.10.
+
+    Hierarchy:
+    1. time_series: if date_column exists → TimeSeriesSplit
+    2. grouped: if group_column exists → GroupKFold
+    3. stratified: if target is categorical → StratifiedKFold
+    4. kfold: fallback → KFold
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Data with potential date/group columns
+    target : pd.Series, optional
+        Target variable for stratification
+    n_splits : int, default=5
+        Number of CV splits
+    date_column : str, default='snapshot_date'
+        Column name for time-series ordering
+    group_column : str, default='ticker'
+        Column name for group-based splitting
+    random_state : int, default=42
+        Random seed for reproducibility
+
+    Returns
+    -------
+    cv_strategy : str
+        Selected strategy name ('time_series', 'grouped', 'stratified', 'kfold')
+    cv_object : sklearn CV splitter
+        Configured cross-validator object
+
+    Notes
+    -----
+    - Prevents look-ahead bias in backtesting
+    - Grouped CV prevents data leakage across same entity (e.g., ticker)
+    - Falls back gracefully if preferred strategy unavailable
+
+    Examples
+    --------
+    >>> cv_strategy, cv_obj = determine_cv_strategy(
+    ...     df,
+    ...     n_splits=5
+    ... )
+    >>> for train_idx, test_idx in cv_obj.split(df):
+    ...     # Train/test split without leakage
+    ...     pass
+    """
+    from sklearn.model_selection import (
+        GroupKFold,
+        KFold,
+        StratifiedKFold,
+        TimeSeriesSplit,
+    )
+
+    # Priority 1: Time-series split if date column exists
+    if date_column in df.columns:
+        logger.info(
+            f"CV Strategy: time_series (detected '{date_column}' column for temporal ordering)"
+        )
+        return "time_series", TimeSeriesSplit(n_splits=n_splits)
+
+    # Priority 2: Grouped split if group column exists (prevents ticker leakage)
+    if group_column in df.columns:
+        unique_groups = df[group_column].nunique()
+        if unique_groups >= n_splits:
+            logger.info(
+                f"CV Strategy: grouped (detected '{group_column}' column with "
+                f"{unique_groups} unique groups, preventing entity leakage)"
+            )
+            return "grouped", GroupKFold(n_splits=n_splits)
+        else:
+            logger.warning(
+                f"Only {unique_groups} unique groups in '{group_column}', "
+                f"cannot create {n_splits} splits. Falling back."
+            )
+
+    # Priority 3: Stratified split if target is categorical
+    if target is not None:
+        try:
+            # Check if target is categorical (discrete classes)
+            unique_classes = target.nunique()
+            if unique_classes < len(target) / 2:  # Heuristic: likely categorical
+                min_class_count = target.value_counts().min()
+                if min_class_count >= n_splits:
+                    logger.info(
+                        f"CV Strategy: stratified (detected {unique_classes} classes, "
+                        f"maintaining class balance)"
+                    )
+                    return "stratified", StratifiedKFold(
+                        n_splits=n_splits, shuffle=True, random_state=random_state
+                    )
+                else:
+                    logger.warning(
+                        f"Smallest class has only {min_class_count} samples, "
+                        f"cannot stratify with {n_splits} splits. Falling back to KFold."
+                    )
+        except Exception as e:
+            logger.warning(f"Stratification check failed: {e}. Falling back to KFold.")
+
+    # Priority 4: Simple KFold fallback
+    logger.info("CV Strategy: kfold (fallback, no date/group/stratification available)")
+    return "kfold", KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+
+
 # ============================================================================
 # Model Training Functions
 # ============================================================================
@@ -816,10 +1094,14 @@ def train_xgboost_classifier(
     # Scale numeric features
     scaler = StandardScaler()
     X_train_proc = pd.DataFrame(
-        scaler.fit_transform(X_train_proc), columns=X_train_proc.columns, index=X_train_proc.index
+        scaler.fit_transform(X_train_proc),
+        columns=X_train_proc.columns,
+        index=X_train_proc.index,
     )
     X_test_proc = pd.DataFrame(
-        scaler.transform(X_test_proc), columns=X_test_proc.columns, index=X_test_proc.index
+        scaler.transform(X_test_proc),
+        columns=X_test_proc.columns,
+        index=X_test_proc.index,
     )
 
     # Train model
@@ -917,10 +1199,14 @@ def train_lightgbm_classifier(
     # Scale numeric features
     scaler = StandardScaler()
     X_train_proc = pd.DataFrame(
-        scaler.fit_transform(X_train_proc), columns=X_train_proc.columns, index=X_train_proc.index
+        scaler.fit_transform(X_train_proc),
+        columns=X_train_proc.columns,
+        index=X_train_proc.index,
     )
     X_test_proc = pd.DataFrame(
-        scaler.transform(X_test_proc), columns=X_test_proc.columns, index=X_test_proc.index
+        scaler.transform(X_test_proc),
+        columns=X_test_proc.columns,
+        index=X_test_proc.index,
     )
 
     # Train model
@@ -1014,10 +1300,14 @@ def train_catboost_classifier(
     # Scale numeric features
     scaler = StandardScaler()
     X_train_proc = pd.DataFrame(
-        scaler.fit_transform(X_train_proc), columns=X_train_proc.columns, index=X_train_proc.index
+        scaler.fit_transform(X_train_proc),
+        columns=X_train_proc.columns,
+        index=X_train_proc.index,
     )
     X_test_proc = pd.DataFrame(
-        scaler.transform(X_test_proc), columns=X_test_proc.columns, index=X_test_proc.index
+        scaler.transform(X_test_proc),
+        columns=X_test_proc.columns,
+        index=X_test_proc.index,
     )
 
     # Train model
@@ -1080,8 +1370,8 @@ def train_svm_classifier(
     Returns:
         Dictionary with model, predictions, and metrics
     """
-    from sklearn.svm import SVC
     from sklearn.preprocessing import StandardScaler
+    from sklearn.svm import SVC
 
     # Prepare data
     X_train_proc, X_test_proc = _prepare_categorical_features(X_train, X_test, categorical_cols)
@@ -1114,7 +1404,12 @@ def train_svm_classifier(
         "scaler": scaler,
         "y_pred": y_pred,
         "y_proba": y_proba,
-        "metrics": {"accuracy": accuracy, "precision": precision, "recall": recall, "f1_score": f1},
+        "metrics": {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
+        },
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
@@ -1207,7 +1502,14 @@ def train_neural_network_classifier(
         ]
     )
     model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-    model.fit(X_train_scaled, y_train, epochs=30, batch_size=32, verbose=0, validation_split=0.2)
+    model.fit(
+        X_train_scaled,
+        y_train,
+        epochs=30,
+        batch_size=32,
+        verbose=0,
+        validation_split=0.2,
+    )
 
     y_proba = model.predict(X_test_scaled, verbose=0)
     y_pred = np.argmax(y_proba, axis=1)
@@ -1224,7 +1526,12 @@ def train_neural_network_classifier(
         "scaler": scaler,
         "y_pred": y_pred,
         "y_proba": y_proba,
-        "metrics": {"accuracy": accuracy, "precision": precision, "recall": recall, "f1_score": f1},
+        "metrics": {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
+        },
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
@@ -1297,7 +1604,12 @@ def train_voting_classifier(
         "scaler": scaler,
         "y_pred": y_pred,
         "y_proba": y_proba,
-        "metrics": {"accuracy": accuracy, "precision": precision, "recall": recall, "f1_score": f1},
+        "metrics": {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
+        },
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
@@ -1372,7 +1684,12 @@ def train_stacking_classifier(
         "scaler": scaler,
         "y_pred": y_pred,
         "y_proba": y_proba,
-        "metrics": {"accuracy": accuracy, "precision": precision, "recall": recall, "f1_score": f1},
+        "metrics": {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
+        },
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
@@ -1507,27 +1824,42 @@ def fit_classifier(
             X_full = X_train
             y_full = y_train
 
-        X_train_prep, X_test_prep, y_train_prep, y_test_prep, numeric_cols, categorical_cols = (
-            prepare_classification_data(
-                X_full,
-                y_full,
-                test_size=0.2 if X_test is None else len(X_test) / len(X_full),
-                random_state=42,
-                feature_groups=feature_groups,
-            )
+        (
+            X_train_prep,
+            X_test_prep,
+            y_train_prep,
+            y_test_prep,
+            numeric_cols,
+            categorical_cols,
+        ) = prepare_classification_data(
+            X_full,
+            y_full,
+            test_size=0.2 if X_test is None else len(X_test) / len(X_full),
+            random_state=42,
+            feature_groups=feature_groups,
         )
     else:
         # Standard preparation
         if X_test is None or y_test is None:
             # Need to split
-            X_train_prep, X_test_prep, y_train_prep, y_test_prep, numeric_cols, categorical_cols = (
-                prepare_classification_data(X_train, y_train, test_size=0.2, random_state=42)
-            )
+            (
+                X_train_prep,
+                X_test_prep,
+                y_train_prep,
+                y_test_prep,
+                numeric_cols,
+                categorical_cols,
+            ) = prepare_classification_data(X_train, y_train, test_size=0.2, random_state=42)
         else:
             # Already split
             numeric_cols = [c for c in X_train.columns if X_train[c].dtype != "object"]
             categorical_cols = [c for c in X_train.columns if X_train[c].dtype == "object"]
-            X_train_prep, X_test_prep, y_train_prep, y_test_prep = X_train, X_test, y_train, y_test
+            X_train_prep, X_test_prep, y_train_prep, y_test_prep = (
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+            )
 
     # Handle class weighting
     if class_weighting == "balanced":
@@ -1546,7 +1878,9 @@ def fit_classifier(
     tuning_result = None
     tuned_model = None
     if tuning is not None:
-        from finance_ml.ml_workflow.classification.tuning import optimize_classifier_hyperparameters
+        from finance_ml.ml_workflow.classification.tuning import (
+            optimize_classifier_hyperparameters,
+        )
 
         tuning_result = optimize_classifier_hyperparameters(
             X_train_prep,
@@ -1591,7 +1925,12 @@ def fit_classifier(
     # Model comparison mode
     if compare and isinstance(model, list):
         comparison = compare_classifiers(
-            X_train_prep, y_train_prep, X_test_prep, y_test_prep, numeric_cols, categorical_cols
+            X_train_prep,
+            y_train_prep,
+            X_test_prep,
+            y_test_prep,
+            numeric_cols,
+            categorical_cols,
         )
         # Return best model
         best_name = max(comparison.keys(), key=lambda k: comparison[k]["metrics"]["f1_score"])
@@ -1644,7 +1983,12 @@ def fit_classifier(
         )
     elif model_str == "svm":
         result = train_svm_classifier(
-            X_train_prep, y_train_prep, X_test_prep, y_test_prep, numeric_cols, categorical_cols
+            X_train_prep,
+            y_train_prep,
+            X_test_prep,
+            y_test_prep,
+            numeric_cols,
+            categorical_cols,
         )
     elif model_str == "neural_network":
         result = train_neural_network_classifier(
@@ -1688,6 +2032,9 @@ __all__ = [
     "apply_adasyn",
     "apply_undersampling",
     "apply_combined_sampling",
+    "balance_classes",
+    # Cross-validation
+    "determine_cv_strategy",
     # Model training
     "train_xgboost_classifier",
     "train_lightgbm_classifier",
