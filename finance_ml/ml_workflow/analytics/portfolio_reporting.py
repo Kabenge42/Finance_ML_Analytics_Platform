@@ -727,7 +727,40 @@ def portfolio_summary(kpis: Mapping[str, float], out_dir: Path | str) -> Dict[st
     summary_json = out / "portfolio_summary.json"
     multi_html = out / "portfolio_multi_period_comparison.html"
 
-    payload = {"kpis": dict(kpis), "notes": "Auto-generated summary placeholder"}
+    # Convert numpy types to native Python types and validate JSON serialization
+    kpis_serializable = {}
+    for k, v in dict(kpis).items():
+        # Check for callable objects (functions, methods, lambdas)
+        if callable(v):
+            func_name = getattr(v, "__name__", repr(v))
+            raise ValueError(
+                f"KPI '{k}' is a function ({func_name}), not a value. "
+                f"Did you forget to call it or compute the actual value?"
+            )
+
+        # Convert numpy scalars to Python natives
+        if hasattr(v, "item"):
+            kpis_serializable[k] = float(v)
+        elif isinstance(v, (int, float, str, bool, type(None))):
+            kpis_serializable[k] = v
+        elif isinstance(v, (list, dict)):
+            # Validate nested structures are serializable
+            try:
+                json.dumps(v)
+                kpis_serializable[k] = v
+            except (TypeError, ValueError) as e:
+                raise ValueError(f"KPI '{k}' contains non-serializable data: {e}")
+        else:
+            # Fallback: try to convert to float
+            try:
+                kpis_serializable[k] = float(v)
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f"KPI '{k}' has unsupported type {type(v).__name__} "
+                    f"and cannot be serialized to JSON"
+                )
+
+    payload = {"kpis": kpis_serializable, "notes": "Auto-generated summary placeholder"}
     summary_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     _write_html(multi_html, "Portfolio Multi-Period Comparison", "Link-out placeholder")
 

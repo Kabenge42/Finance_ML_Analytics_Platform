@@ -1700,6 +1700,38 @@ types, class imbalance handling, comprehensive evaluation, and SHAP interpretati
   - [x] **Module**: `finance_ml/advanced_models.py` with comprehensive regression utilities
   - [x] **Notebook Integration**: Section 9.5 with 8 subsections demonstrating full workflow
 
+**Phase 9.5 TDD Implementation (December 2025)** ✓
+
+Following strict Test-Driven Development methodology per `phase_9.5_implementation_plan.md`:
+
+- [x] **Task 7: Feature Alignment (High Priority)** - Complete
+    - [x] Test module: `tests/test_feature_alignment.py` (4 tests, 100% pass)
+    - [x] Implementation: `finance_ml/ml_workflow/regression/dataset.py`
+        - [x] `align_features_to_model()`: Aligns test features to trained model's expected features
+        - [x] `predict_with_model()`: Wrapper for safe prediction with automatic alignment
+    - [x] Coverage: 94.0% for new functions (50 statements, 47 executed)
+    - [x] Documentation: Section 7.3 and 10.4 in `code_guidelines.md` v1.10+
+
+- [x] **Task 6: Stacking Hyperparameter Tuning (Low Priority)** - Complete
+    - [x] Test module: `tests/test_stacking_hyperparameter.py` (3 tests, 100% pass)
+    - [x] Implementation: `finance_ml/ml_workflow/regression/models.py`
+        - [x] `tune_stacking_hyperparameters()`: Optuna-based Bayesian optimization (n_trials=50, timeout=1800s)
+        - [x] `select_stacking_base_models()`: Optimizes XGBoost, LightGBM, Ridge, Lasso parameters
+        - [x] `select_meta_learner()`: Optimizes Ridge or HuberRegressor meta-learner
+    - [x] Dependency: optuna>=4.6.0 (already installed)
+    - [x] Coverage: 84.5% for new functions (71 statements, 60 executed)
+    - [x] Documentation: Section 7.3 in `code_guidelines.md` v1.10+
+
+- [x] **Documentation Updates**:
+    - [x] `code_guidelines.md` v1.10+: Added 5 function signatures to Section 7.3 (Phase 9.5)
+    - [x] `code_guidelines.md` Section 10.4: New "Feature Alignment Policy" with best practices
+    - [x] Overall new functions coverage: 87.6% (121 statements, 106 executed)
+
+- [x] **Test Suite Validation**:
+    - [x] 7 new tests added (4 feature alignment + 3 hyperparameter tuning)
+    - [x] All 7 tests pass with no regressions
+    - [x] Total test count: 1815 tests (includes 7 new Phase 9.5 TDD tests)
+
 **Key Features Implemented**:
 
 1. **Model Training & Comparison** (6 models):

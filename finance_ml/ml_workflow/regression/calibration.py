@@ -693,3 +693,119 @@ def export_bias_correction_metrics(
 
     logger.info(f"Exported bias correction metrics to {output_path}")
     logger.info(f"Overall bias reduction: {metrics_df['bias_reduction_pct'].mean():.1f}%")
+
+
+def apply_sector_calibration(
+    predictions_df: pd.DataFrame,
+    calibration_dict: Dict[str, any],
+    model_version: str,
+    sector_col: str = "sector",
+    pred_col: str = "y_pred",
+    output_col: str = "y_pred_calibrated",
+    min_improvement_threshold: float = 0.5,
+) -> pd.DataFrame:
+    """
+    Apply sector-specific bias correction with validation.
+
+    Only applies calibration if it improves ≥50% of sectors (controlled by
+    min_improvement_threshold). This prevents applying calibration when the
+    underlying model has systematic issues (e.g., feature leakage).
+
+    Priority 3 - Task 3.1: Fix Sector Calibration Logic
+
+    Args:
+        predictions_df: DataFrame with predictions to calibrate
+        calibration_dict: Dictionary containing sector calibration info with structure:
+            {
+                'sectors': {
+                    'sector_name': {
+                        'bias_raw': float,
+                        'mae_improvement_pct': float,
+                        ...
+                    },
+                    ...
+                },
+                'model_version': str,
+                ...
+            }
+        model_version: Model version identifier for logging
+        sector_col: Column name for sector identifier
+        pred_col: Column with base predictions
+        output_col: Column name for calibrated predictions
+        min_improvement_threshold: Minimum fraction of sectors that must improve
+            for calibration to be applied (default: 0.5 = 50%)
+
+    Returns:
+        DataFrame with calibrated predictions in output_col. If calibration is
+        skipped (due to quality check), output_col will be a copy of pred_col.
+
+    Example:
+        >>> # Calibration improves 4 of 5 sectors → applied
+        >>> result = apply_sector_calibration(preds, good_calibration, 'v9_9')
+        >>>
+        >>> # Calibration degrades 3 of 5 sectors → skipped
+        >>> result = apply_sector_calibration(preds, bad_calibration, 'v9_9')
+        >>> assert (result['y_pred_calibrated'] == result['y_pred']).all()
+
+    See Also:
+        - calibrate_predictions_by_sector: Lower-level function that performs calibration
+        - estimate_sector_bias: Function to compute sector bias metrics
+    """
+    # Pre-check: only apply if improves ≥min_improvement_threshold of sectors
+    if calibration_dict and "sectors" in calibration_dict:
+        improved_sectors = sum(
+            1
+            for s, metrics in calibration_dict["sectors"].items()
+            if metrics.get("mae_improvement_pct", 0) > 0
+        )
+        total_sectors = len(calibration_dict["sectors"])
+
+        if total_sectors > 0:
+            improvement_fraction = improved_sectors / total_sectors
+
+            if improvement_fraction < min_improvement_threshold:
+                logger.warning(
+                    f"⚠️ Calibration improves only {improved_sectors}/{total_sectors} "
+                    f"sectors ({improvement_fraction:.1%}). Skipping (threshold: {min_improvement_threshold:.1%})."
+                )
+                logger.warning(
+                    f"   Root cause likely: underlying model has systematic bias "
+                    f"(check for feature leakage, data quality issues)"
+                )
+                predictions_df[output_col] = predictions_df[pred_col].copy()
+                return predictions_df
+            else:
+                logger.info(
+                    f"✓ Calibration improves {improved_sectors}/{total_sectors} sectors "
+                    f"({improvement_fraction:.1%}), applying calibration"
+                )
+        else:
+            logger.warning("No sector calibration data available, skipping calibration")
+            predictions_df[output_col] = predictions_df[pred_col].copy()
+            return predictions_df
+    else:
+        logger.warning("Invalid or missing calibration_dict, skipping calibration")
+        predictions_df[output_col] = predictions_df[pred_col].copy()
+        return predictions_df
+
+    # Apply calibration using sector bias
+    sector_bias = {
+        sector: metrics.get("bias_raw", 0.0)
+        for sector, metrics in calibration_dict["sectors"].items()
+    }
+
+    calibrated_df = calibrate_predictions_by_sector(
+        preds_df=predictions_df,
+        sector_bias=sector_bias,
+        sector_col=sector_col,
+        pred_col=pred_col,
+        output_col=output_col,
+        method="additive",
+    )
+
+    logger.info(
+        f"Applied sector calibration for model {model_version}: "
+        f"{improved_sectors}/{total_sectors} sectors improved"
+    )
+
+    return calibrated_df

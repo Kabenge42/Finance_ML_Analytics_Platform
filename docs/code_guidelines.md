@@ -1,8 +1,8 @@
 ﻿# Finance ML Analytics Platform — Code Guidelines
 
 **Version:** 1.10  
-**Last Updated:** 2025-12-08  
-**Package Version:** 0.9.1  
+**Last Updated:** 2025-12-10  
+**Package Version:** 0.9.4  
 **Model Version:** v9_9
 
 These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
@@ -1284,6 +1284,57 @@ quantile_result = train_quantile_regressor(
         quantiles: List[float] = [0.1, 0.5, 0.9]
 )
 # Returns: {"model", "metrics", "quantile_predictions": {q: pred_array}}
+
+# Phase 9.5 Feature Alignment (Task 7 - High Priority)
+from finance_ml.ml_workflow.regression.dataset import (
+    align_features_to_model,
+    predict_with_model
+)
+
+X_test_aligned = align_features_to_model(
+    X_test: pd.DataFrame,
+    model: Any,
+    fill_value: float = 0.0
+)
+# Returns: DataFrame with columns aligned to model.feature_names_in_
+# Adds missing features (filled with fill_value), drops extra features
+# Preserves original column order where possible
+
+predictions = predict_with_model(
+    model: Any,
+    X_test: pd.DataFrame,
+    fill_missing: float = 0.0
+)
+# Returns: np.ndarray of predictions
+# Wraps align_features_to_model + model.predict for safe inference
+
+# Phase 9.5 Stacking Hyperparameter Tuning (Task 6 - Low Priority)
+from finance_ml.ml_workflow.regression.models import (
+    tune_stacking_hyperparameters,
+    select_stacking_base_models,
+    select_meta_learner
+)
+
+best_config = tune_stacking_hyperparameters(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    n_trials: int = 50,
+    timeout: Optional[int] = 1800,
+    cv_folds: int = 3,
+    random_state: int = 42
+)
+# Returns: dict with "base_models", "meta_learner", "best_score", "study"
+# Uses Optuna for Bayesian hyperparameter optimization
+
+base_models = select_stacking_base_models(trial: optuna.Trial)
+# Returns: list of (name, estimator) tuples for StackingRegressor
+# Optimizes: XGBoost (n_estimators, max_depth, learning_rate, subsample),
+#            LightGBM (n_estimators, num_leaves, learning_rate),
+#            Ridge (alpha), Lasso (alpha)
+
+meta_learner = select_meta_learner(trial: optuna.Trial)
+# Returns: meta-learner estimator (Ridge or HuberRegressor)
+# Optimizes: Ridge (alpha) or Huber (epsilon, alpha)
 ```
 
 **Phase 9.6 — Evaluation**
@@ -3016,6 +3067,62 @@ scores = cross_val_score(model, X, y, cv=cv_obj, scoring='f1_weighted')
 - **No target leakage**: Features cannot be derived from target variable
 - **No data from test set**: Scalers, encoders, imputers fit only on train set
 - **No group mixing**: Same ticker should not appear in both train and validation in CV
+
+### 10.4 Feature Alignment Policy
+
+**Problem**: Train/test feature misalignment causes prediction errors when:
+
+- Features are added/removed between training and inference
+- Feature engineering is regenerated with different parameters
+- Interaction features change due to categorical encoding differences
+
+**Solution**: Use `align_features_to_model()` before prediction (Phase 9.5 Task 7):
+
+```python
+from finance_ml.ml_workflow.regression.dataset import align_features_to_model, predict_with_model
+
+# Option 1: Explicit alignment
+X_test_aligned = align_features_to_model(X_test, model, fill_value=0.0)
+predictions = model.predict(X_test_aligned)
+
+# Option 2: Wrapper function (recommended)
+predictions = predict_with_model(model, X_test, fill_missing=0.0)
+```
+
+**Alignment Strategy**:
+
+1. **Missing features**: Added and filled with `fill_value` (default: 0.0)
+    - Rationale: Zero is safe default for standardized features
+    - Alternative: Use median from training set for critical features
+
+2. **Extra features**: Dropped silently
+    - Rationale: Model was not trained on these features
+
+3. **Column order**: Reordered to match `model.feature_names_in_`
+    - Rationale: Some models (neural nets) are order-sensitive
+
+**Best Practices**:
+
+- **Always align before prediction**: Use `predict_with_model()` wrapper in production
+- **Log alignment statistics**: Track missing/extra features for monitoring
+- **Validate alignment in tests**: Assert `X_test_aligned.columns.tolist() == model.feature_names_in_.tolist()`
+- **Preserve feature engineering**: Save feature engineering parameters with model artifacts
+
+**Integration with Notebook Workflow**:
+
+```python
+# Section 6.4: Prediction on Test Set
+from finance_ml.ml_workflow.regression.dataset import predict_with_model
+
+# Safe prediction with automatic alignment
+y_pred_test = predict_with_model(stacking_model, X_test_scaled, fill_missing=0.0)
+
+# Log alignment info
+aligned_features = align_features_to_model(X_test_scaled, stacking_model)
+logger.info(f"Features aligned: {X_test_scaled.shape[1]} → {aligned_features.shape[1]}")
+```
+
+**Test Coverage**: 100% (4 tests in `test_feature_alignment.py`)
 
 ---
 

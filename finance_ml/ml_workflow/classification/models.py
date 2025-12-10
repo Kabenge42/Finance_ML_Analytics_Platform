@@ -817,6 +817,10 @@ def balance_classes(
     ...     imbalance_threshold=10
     ... )
     """
+    # Ensure y is a pandas Series (handle numpy array input)
+    if isinstance(y, np.ndarray):
+        y = pd.Series(y, name="target")
+
     # Calculate class distribution
     class_counts = y.value_counts()
     if len(class_counts) < 2:

@@ -332,8 +332,8 @@ def select_features_rf(
 def select_features_auto(
     X: pd.DataFrame,
     y: pd.Series,
-    importance_threshold: float = 0.01,
-    correlation_threshold: float = 0.95,
+    importance_threshold: float = 0.10,
+    correlation_threshold: float = 0.85,
     method: str = "combined",
     preserve_columns: Optional[List[str]] = None,
     return_scores: bool = False,
@@ -469,20 +469,28 @@ def select_features_auto(
         return X_selected
 
 
-def select_features_by_category(X: pd.DataFrame, categories: List[str]) -> pd.DataFrame:
+def select_features_by_category(
+    X: pd.DataFrame,
+    categories: List[str],
+    allow_missing: bool = False,
+) -> pd.DataFrame:
     """
-    Select features by semantic category.
+    Select features by semantic category using Phase 9.3 feature engineering standards.
 
-    Implements Phase 9.3 Task 1: Category-based feature selection.
-    Supports Phase 9.3 feature categories: momentum, valuation, quality,
-    profitability, cash_flow, growth.
+    Implements Phase 9.3 category-based feature selection aligned with
+    PHASE93_FEATURE_CATEGORIES from phase93_categories.py. Supports all 16
+    engineered feature categories (196 total features).
 
     Parameters
     ----------
     X : pd.DataFrame
-        Feature matrix
+        Feature matrix with Phase 9.3 engineered features
     categories : list of str
-        Categories to include (e.g., ['momentum', 'valuation'])
+        Categories to include. Supports both full names (e.g., 'Momentum & Technical')
+        and short names (e.g., 'momentum'). See Notes for available categories.
+    allow_missing : bool, default=False
+        If True, silently skip categories not found in PHASE93_FEATURE_CATEGORIES.
+        If False, log warnings for invalid categories.
 
     Returns
     -------
@@ -491,31 +499,178 @@ def select_features_by_category(X: pd.DataFrame, categories: List[str]) -> pd.Da
 
     Notes
     -----
-    - Categories are inferred from feature name prefixes (e.g., 'momentum_rsi')
-    - Features without category prefix are excluded
+    **Available Categories (16 total, 196 features):**
+
+    1. **momentum** / 'Momentum & Technical' (27 features)
+       - Price momentum, RSI, EMA signals, 52W position, volume trends
+    2. **valuation** / 'Valuation Ratios' (23 features)
+       - P/E, P/B, EV/EBITDA, EV/Sales, valuation trends and stability
+    3. **profitability** / 'Profitability' (12 features)
+       - Operating margin, net margin, ROE, ROA, ROIC, earnings quality
+    4. **quality** / 'Quality & Risk' (18 features)
+       - Altman Z-Score, accounting quality, distress indicators
+    5. **cash_flow** / 'Cash Flow' (5 features)
+       - FCF yield, CFO metrics, cash conversion quality
+    6. **capital_allocation** / 'Capital Allocation' (23 features)
+       - Dividends, CAPEX, reinvestment, M&A intensity
+    7. **analyst_sentiment** / 'Analyst Sentiment' (10 features)
+       - Analyst ratings, target revisions, consensus strength
+    8. **market_sentiment** / 'Market Sentiment' (4 features)
+       - Beta stability, momentum, price range patterns
+    9. **leverage** / 'Leverage & Liquidity' (9 features)
+       - Debt ratios, current ratio, interest coverage
+    10. **temporal_patterns** / 'Temporal Patterns' (15 features)
+        - Seasonality, reporting dates, quarterly volatility
+    11. **composite_scores** / 'Composite Scores' (5 features)
+        - Piotroski F-Score, Altman Z, Beneish M-Score
+    12. **growth** / 'Growth Metrics' (6 features)
+        - Revenue, earnings, EBITDA growth (YoY and CAGR)
+    13. **efficiency** / 'Efficiency Ratios' (4 features)
+        - Asset turnover, inventory turnover, revenue per employee
+    14. **employee_productivity** / 'Employee Productivity' (16 features)
+        - Workforce metrics, revenue/profit per employee
+    15. **balance_sheet** / 'Balance Sheet Dynamics' (8 features)
+        - Asset/equity growth, working capital trends
+    16. **revenue_forecast** / 'Revenue Forecasting' (9 features)
+        - Analyst estimates, consensus uncertainty, implied growth
+
+    **Alignment:**
+    - Aligned with PHASE93_FEATURE_CATEGORIES (phase93_categories.py)
+    - Aligned with PHASE93_FEATURE_INPUTS (schema.py) via feature engineering
+    - Follows code_guidelines.md section 9.2 DataFrame Conventions
+
+    Examples
+    --------
+    >>> # Select momentum features
+    >>> X_momentum = select_features_by_category(X, ['momentum'])
+    >>>
+    >>> # Select multiple categories
+    >>> X_fundamental = select_features_by_category(
+    ...     X, ['valuation', 'profitability', 'quality']
+    ... )
+    >>>
+    >>> # Use full category names
+    >>> X_tech = select_features_by_category(X, ['Momentum & Technical'])
+
+    See Also
+    --------
+    finance_ml.ml_workflow.eda.phase93_categories.PHASE93_FEATURE_CATEGORIES : Full feature catalog
+    finance_ml.ml_workflow.data.schema.PHASE93_FEATURE_INPUTS : Input requirements
+    finance_ml.ml_workflow.classification.labels.CATEGORY_FEATURE_MAPPING : Classification features
     """
-    # Category prefix patterns
-    category_patterns = {
-        "momentum": "momentum_",
-        "valuation": "valuation_",
-        "quality": "quality_",
-        "profitability": "profitability_",
-        "cash_flow": "cash_flow_",
-        "growth": "growth_",
+    # Import Phase 9.3 feature categories
+    try:
+        from finance_ml.ml_workflow.eda.phase93_categories import PHASE93_FEATURE_CATEGORIES
+    except ImportError:
+        logger.error(
+            "Cannot import PHASE93_FEATURE_CATEGORIES. "
+            "Ensure finance_ml.ml_workflow.eda.phase93_categories is available."
+        )
+        return pd.DataFrame()
+
+    # Mapping between full category names and short names
+    # Supports both naming conventions for backward compatibility
+    CATEGORY_NAME_MAPPING = {
+        # Full name -> short name
+        "Momentum & Technical": "momentum",
+        "Valuation Ratios": "valuation",
+        "Profitability": "profitability",
+        "Quality & Risk": "quality",
+        "Cash Flow": "cash_flow",
+        "Capital Allocation": "capital_allocation",
+        "Analyst Sentiment": "analyst_sentiment",
+        "Market Sentiment": "market_sentiment",
+        "Leverage & Liquidity": "leverage",
+        "Temporal Patterns": "temporal_patterns",
+        "Composite Scores": "composite_scores",
+        "Growth Metrics": "growth",
+        "Efficiency Ratios": "efficiency",
+        "Employee Productivity": "employee_productivity",
+        "Balance Sheet Dynamics": "balance_sheet",
+        "Revenue Forecasting": "revenue_forecast",
+        # Short name -> short name (identity mapping for convenience)
+        "momentum": "momentum",
+        "valuation": "valuation",
+        "profitability": "profitability",
+        "quality": "quality",
+        "cash_flow": "cash_flow",
+        "capital_allocation": "capital_allocation",
+        "analyst_sentiment": "analyst_sentiment",
+        "market_sentiment": "market_sentiment",
+        "leverage": "leverage",
+        "temporal_patterns": "temporal_patterns",
+        "composite_scores": "composite_scores",
+        "growth": "growth",
+        "efficiency": "efficiency",
+        "employee_productivity": "employee_productivity",
+        "balance_sheet": "balance_sheet",
+        "revenue_forecast": "revenue_forecast",
     }
 
-    # Build list of selected columns
-    selected_columns = []
-    for col in X.columns:
-        col_lower = col.lower()
-        for category in categories:
-            pattern = category_patterns.get(category, f"{category}_")
-            if col_lower.startswith(pattern):
-                selected_columns.append(col)
-                break
+    # Normalize category names to short names
+    normalized_categories = []
+    invalid_categories = []
+    for cat in categories:
+        if cat in CATEGORY_NAME_MAPPING:
+            normalized_categories.append(CATEGORY_NAME_MAPPING[cat])
+        else:
+            invalid_categories.append(cat)
 
+    # Validation: warn about invalid categories
+    if invalid_categories and not allow_missing:
+        logger.warning(
+            f"Invalid categories requested: {invalid_categories}. "
+            f"Available categories: {list(set(CATEGORY_NAME_MAPPING.keys()))}"
+        )
+
+    if not normalized_categories:
+        logger.warning("No valid categories provided. Returning empty DataFrame.")
+        return pd.DataFrame()
+
+    # Build mapping from short names to full names for lookup
+    SHORT_TO_FULL = {
+        "momentum": "Momentum & Technical",
+        "valuation": "Valuation Ratios",
+        "profitability": "Profitability",
+        "quality": "Quality & Risk",
+        "cash_flow": "Cash Flow",
+        "capital_allocation": "Capital Allocation",
+        "analyst_sentiment": "Analyst Sentiment",
+        "market_sentiment": "Market Sentiment",
+        "leverage": "Leverage & Liquidity",
+        "temporal_patterns": "Temporal Patterns",
+        "composite_scores": "Composite Scores",
+        "growth": "Growth Metrics",
+        "efficiency": "Efficiency Ratios",
+        "employee_productivity": "Employee Productivity",
+        "balance_sheet": "Balance Sheet Dynamics",
+        "revenue_forecast": "Revenue Forecasting",
+    }
+
+    # Collect features from PHASE93_FEATURE_CATEGORIES
+    selected_features = set()
+    features_by_category = {}
+
+    for short_name in normalized_categories:
+        full_name = SHORT_TO_FULL.get(short_name)
+        if full_name and full_name in PHASE93_FEATURE_CATEGORIES:
+            category_features = PHASE93_FEATURE_CATEGORIES[full_name]
+            # Only include features that exist in the DataFrame
+            available_features = [f for f in category_features if f in X.columns]
+            selected_features.update(available_features)
+            features_by_category[short_name] = len(available_features)
+        else:
+            logger.warning(f"Category '{short_name}' not found in PHASE93_FEATURE_CATEGORIES")
+
+    # Convert to list and select columns
+    selected_columns = sorted(selected_features)
+
+    # Logging: report selection statistics
     logger.info(
-        f"Category selection: selected {len(selected_columns)} features from categories {categories}"
+        f"Category selection: selected {len(selected_columns)} features from "
+        f"{len(normalized_categories)} categories: {normalized_categories}"
     )
+    if features_by_category:
+        logger.debug(f"Features by category: {features_by_category}")
 
-    return X[selected_columns]
+    return X[selected_columns] if selected_columns else pd.DataFrame()
