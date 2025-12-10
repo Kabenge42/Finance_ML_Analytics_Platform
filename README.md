@@ -1,9 +1,9 @@
 # Finance ML Analytics Platform
 
-**Version 0.9.2** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.9.4** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-12-08  
-> **Latest Release**: v0.9.2 (see CHANGELOG.md)  
+> **Documentation Last Updated:** 2025-12-10  
+> **Latest Release**: v0.9.4 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
 > applicable.
@@ -1023,7 +1023,20 @@ Finance_ML_Analytics_Platform/
 
 ## Recent Updates
 
-### Version 0.9.2 (Current Release - 2025-12-08)
+### Version 0.9.4 (Current Release - 2025-12-10)
+
+**Phase 9.5 Notebook Integration and ETL Pipeline Test Coverage**:
+
+- **Phase 9.5 Notebook Integration Guides**: Comprehensive guides for automated stacking hyperparameter tuning and
+  feature alignment validation
+- **ETL Unified Pipeline Test Coverage**: New `test_etl_unified_pipeline.py` with 63 comprehensive tests validating
+  ETLConfig, ETLMetrics, ETLPipeline, and semantic transformations
+- **Documentation**: New guides in `docs/guides/` and completion summaries for Priority 1-3 tasks
+- **Type Hints and Code Quality**: Enhanced type safety with Literal type hints and improved import organization
+
+See [CHANGELOG.md](CHANGELOG.md) for complete details.
+
+### Version 0.9.3 (Previous Release - 2025-12-08)
 
 **Unified ETL Pipeline with Semantic Transformations**:
 
@@ -1443,15 +1456,15 @@ without TensorFlow.
 
 ### Version Synchronization
 
-**Current Status** (as of 2025-11-30):
+**Current Status** (as of 2025-12-10):
 
-- **pyproject.toml**: Version = "0.9.1" ✓
-- **README.md**: Updated to 0.9.1 ✓
+- **pyproject.toml**: Version = "0.9.4" ✓
+- **README.md**: Updated to 0.9.4 ✓
 - **CHANGELOG.md**: See CHANGELOG.md for version history
-- **environment_variables.txt**: Version = 0.9.1, MODEL_VERSION=v9_9 ✓
+- **environment_variables.txt**: Version = 0.9.4, MODEL_VERSION=v9_9 ✓
 - **finance_ml/config.py**: MODEL_VERSION v9_9 ✓
 
-**Status**: ✓ Aligned — all version references synchronized at 0.9.1 with MODEL_VERSION v9_9
+**Status**: ✓ Aligned — all version references synchronized at 0.9.4 with MODEL_VERSION v9_9
 
 ### Future Enhancements
 
@@ -1467,5 +1480,5 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-12-04  
-**README Version**: 4.4 (aligned to v0.9.1; 128 test modules; code_guidelines.md v1.8; semantic column classification)
+**Last Updated**: 2025-12-10  
+**README Version**: 4.5 (aligned to v0.9.4; 128 test modules; code_guidelines.md v1.10; unified ETL pipeline)

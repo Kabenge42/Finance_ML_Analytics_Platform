@@ -297,7 +297,9 @@ def prepare_regression_data(
         X_train, X_test, y_train, y_test, feature_info
     """
     if exclude_cols is None:
-        exclude_cols = [target_col, "last_price"]
+        # Exclude target, price columns, and market_cap to prevent feature leakage
+        # market_cap causes predictions on wrong scale (market_cap scale vs price scale)
+        exclude_cols = [target_col, "last_price", "market_cap"]
 
     # Identify feature types
     classification_features = [
@@ -324,6 +326,28 @@ def prepare_regression_data(
     # Prepare X and y (only numeric features for now)
     X = df[numeric_features].copy()
     y = df[target_col].copy()
+
+    # ------------------------------------------------------------------
+    # Priority 1 Fix: Remove market_cap leakage columns (Critical)
+    # market_cap is derived from price (market_cap = price × shares_outstanding),
+    # so including it or its derivatives causes feature leakage and predictions
+    # on the wrong scale (~880K market_cap scale instead of ~736K price scale).
+    # Remove all market_cap-related columns that may have been created during
+    # earlier feature engineering (e.g., log_market_cap, market_cap_x_*, etc.)
+    # ------------------------------------------------------------------
+    leakage_cols = [col for col in X.columns if "market_cap" in col.lower()]
+
+    if leakage_cols:
+        logger.info(
+            f"🔧 Removing {len(leakage_cols)} market_cap columns to prevent feature leakage"
+        )
+        logger.debug(
+            f"   Leakage columns: {leakage_cols[:5]}{'...' if len(leakage_cols) > 5 else ''}"
+        )
+        X = X.drop(columns=leakage_cols, errors="ignore")
+        logger.info(f"✓ Feature matrix shape after leakage removal: {X.shape}")
+    else:
+        logger.debug("✓ No market_cap leakage columns detected")
 
     # ------------------------------------------------------------------
     # Split data using the shared Phase 9.9 split policy helper where
@@ -422,11 +446,12 @@ def prepare_regression_data(
     #    Controlled by env FEATURE_SECTOR_INTERACTIONS (default: 1/True)
     def _add_sector_interactions(X_in: pd.DataFrame, idx_like) -> pd.DataFrame:
         # Craft a curated list of base columns; only include if present in X
+        # NOTE: market_cap excluded to prevent feature leakage (causes predictions on market_cap scale)
         base_cols = [
             "p_e_ratio",
             "ev_ebitda_ratio",
             "gross_margin",
-            "market_cap",
+            "debt_to_equity",  # Fundamental risk metric (replaces market_cap)
             "beta_5y",
         ]
         existing = [c for c in base_cols if c in X_in.columns]
@@ -499,7 +524,8 @@ def add_sector_interactions_for_prediction(
         X: Feature matrix (numeric features only, same index as df_with_sector)
         df_with_sector: Original DataFrame with 'sector' column aligned to X
         base_cols: Base columns for interactions. Defaults to:
-            ['p_e_ratio', 'ev_ebitda_ratio', 'gross_margin', 'market_cap', 'beta_5y']
+            ['p_e_ratio', 'ev_ebitda_ratio', 'gross_margin', 'debt_to_equity', 'beta_5y']
+            (market_cap excluded to prevent feature leakage)
 
     Returns:
         X with sector interaction features appended (column order: original + interactions)
@@ -534,7 +560,8 @@ def add_sector_interactions_for_prediction(
         - docs/code_guidelines.md Section 16.5: Sector interaction feature policy
     """
     if base_cols is None:
-        base_cols = ["p_e_ratio", "ev_ebitda_ratio", "gross_margin", "market_cap", "beta_5y"]
+        # NOTE: market_cap excluded to prevent feature leakage (causes predictions on market_cap scale)
+        base_cols = ["p_e_ratio", "ev_ebitda_ratio", "gross_margin", "debt_to_equity", "beta_5y"]
 
     # Validate inputs
     if len(X) != len(df_with_sector):

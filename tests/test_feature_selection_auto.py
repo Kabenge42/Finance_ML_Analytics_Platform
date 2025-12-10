@@ -83,14 +83,22 @@ class TestFeatureSelectionAuto(unittest.TestCase):
             self.assertIn(col, selected.columns)
 
     def test_select_features_by_category(self):
-        """Category-based selection should respect semantic groups."""
-        # Given: Features from different Phase 9.3 categories
+        """Category-based selection should respect semantic groups using Phase 9.3 feature names."""
+        # Given: Features from different Phase 9.3 categories using actual feature names
+        # from PHASE93_FEATURE_CATEGORIES (phase93_categories.py)
+        # Note: altman_z_score and piotroski_f_score are in "Composite Scores", not "Quality & Risk"
         X = pd.DataFrame(
             {
-                "momentum_rsi": np.random.randn(100),
-                "momentum_macd": np.random.randn(100),
-                "valuation_pe": np.random.randn(100),
-                "quality_altman_z": np.random.randn(100),
+                # Momentum & Technical features (actual Phase 9.3 names)
+                "rsi_14d": np.random.randn(100),
+                "price_momentum_1m": np.random.randn(100),
+                "ema_crossover_20_50": np.random.randn(100),
+                # Valuation Ratios features (actual Phase 9.3 names)
+                "p_e_ratio": np.random.randn(100),
+                "ev_ebitda_ratio": np.random.randn(100),
+                # Quality & Risk features (actual Phase 9.3 names from PHASE93_FEATURE_CATEGORIES)
+                "accounting_quality_score": np.random.randn(100),
+                "distress_risk_score": np.random.randn(100),
             }
         )
         y = np.random.randn(100)
@@ -99,9 +107,23 @@ class TestFeatureSelectionAuto(unittest.TestCase):
         selected = select_features_by_category(X, categories=["momentum"])
 
         # Then: Only momentum features included
-        self.assertIn("momentum_rsi", selected.columns)
-        self.assertIn("momentum_macd", selected.columns)
-        self.assertNotIn("valuation_pe", selected.columns)
+        self.assertIn("rsi_14d", selected.columns)
+        self.assertIn("price_momentum_1m", selected.columns)
+        self.assertIn("ema_crossover_20_50", selected.columns)
+        self.assertNotIn("p_e_ratio", selected.columns)
+        self.assertNotIn("accounting_quality_score", selected.columns)
+        self.assertEqual(len(selected.columns), 3)  # Only 3 momentum features
+
+        # When: Select multiple categories
+        selected_multi = select_features_by_category(X, categories=["valuation", "quality"])
+
+        # Then: Features from both categories included
+        self.assertIn("p_e_ratio", selected_multi.columns)
+        self.assertIn("ev_ebitda_ratio", selected_multi.columns)
+        self.assertIn("accounting_quality_score", selected_multi.columns)
+        self.assertIn("distress_risk_score", selected_multi.columns)
+        self.assertNotIn("rsi_14d", selected_multi.columns)
+        self.assertEqual(len(selected_multi.columns), 4)  # 2 valuation + 2 quality
 
 
 if __name__ == "__main__":

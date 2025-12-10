@@ -58,6 +58,8 @@ PRICE_COLUMNS: Set[str] = {
     "ema_50d",  # 50-day EMA
     "ema_100d",  # 100-day EMA
     "ema_250d",  # 250-day EMA (1-year trend proxy)
+    "ma_20d_simple",  # 20-day simple MA
+    "ma_50d_simple",  # 50-day simple MA
 }
 
 

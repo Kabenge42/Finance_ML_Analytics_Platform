@@ -1,3 +1,55 @@
+## [0.9.4] - 2025-12-10
+
+> **Commits:** [`247cb29`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/247cb29), [
+`ff10ce7`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/ff10ce7), [
+`1fea719`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/1fea719), [
+`54ca301`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/54ca301), [
+`b3fd32e`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/b3fd32e)
+
+### Added
+
+- **Phase 9.5 Notebook Integration Guides** ([
+  `247cb29`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/247cb29))
+    - Added comprehensive notebook integration guides for automated stacking hyperparameter tuning
+    - Added feature alignment validation documentation
+    - Includes implementation examples and validation steps
+    - New documentation files:
+        - `docs/guides/PHASE_9.5_NOTEBOOK_INTEGRATION_GUIDE.md`
+        - `docs/summaries/PRIORITY_1_COMPLETION_SUMMARY.md` - Market cap feature leakage fix
+        - `docs/summaries/PRIORITY_2_COMPLETION_SUMMARY.md` - Stacking configuration defaults
+        - `docs/summaries/ATTRIBUTEERROR_AND_PRIORITY3_COMPLETION_SUMMARY.md` - AttributeError fixes
+        - `docs/plans/finance_ml_workflow_implementation_plan.md` - Implementation tracking
+
+- **ETL Unified Pipeline Test Coverage** ([
+  `54ca301`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/54ca301))
+    - Added `test_etl_unified_pipeline.py` with comprehensive test coverage
+    - Includes unit and integration tests for `ETLConfig`, `ETLMetrics`, `ETLPipeline`
+    - Validates semantic transformations and feature engineering in unified ETL pipeline
+    - Tests for `etl_with_features()` functionality
+
+### Changed
+
+- **Phase 9.3, 9.4, and 9.5 Implementation Progress** ([
+  `ff10ce7`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/ff10ce7))
+    - Phase 9.3 implementation: COMPLETE
+    - Phase 9.4 implementation: COMPLETE
+    - Phase 9.5 implementation: ONGOING
+
+- **Type Hints and Import Organization** ([
+  `1fea719`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/1fea719))
+    - Added `Literal` type hints in `ml_finance_model_main.ipynb`
+    - Reordered imports for improved clarity and consistency
+    - Enhanced code quality and IDE support
+
+### Fixed
+
+- **Code Quality Improvements**
+    - Improved type safety with explicit type hints
+    - Enhanced notebook code organization
+    - Better documentation structure and completeness
+
+---
+
 ## [0.9.3] - 2025-12-08
 
 ### Added

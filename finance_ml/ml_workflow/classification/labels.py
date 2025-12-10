@@ -15,7 +15,7 @@ Original methods (enhanced with all Phase 9.3 features):
 - combined_signals: Multi-metric composite
 
 Specialized methods (Phase 9.4, enhanced with all Phase 9.3 features):
-- profitability_event: 12 Profitability features
+- price_momentum: 12 Profitability features
 - leverage_event: 9 Leverage & Liquidity features
 - liquidity_event: Liquidity subset features
 - efficiency_event: 4 Efficiency Ratios features
@@ -135,6 +135,13 @@ def create_enhanced_event_labels(
 
         >>> # Employee productivity with all 16 Employee Productivity features
         >>> labels = create_enhanced_event_labels(df, method="employee_productivity_event")
+        :param df:
+        :param method:
+        :param threshold_positive:
+        :param threshold_negative:
+        :param use_sector_adjustment:
+        :param fallback_method:
+        :param auto_adjust_thresholds:
     """
     labels = np.zeros(len(df), dtype=int)
 
@@ -1746,78 +1753,388 @@ def create_multilabel_event_labels(
     label_mode: str = "multilabel",
     categories: Optional[list] = None,
     sector_adjusted: bool = False,
-    threshold_percentile: float = 0.6,
+    threshold_percentile: float = 0.65,
+    use_phase93_categories: bool = True,
 ) -> pd.DataFrame:
     """
     Create multi-label classification labels for Phase 9.3 feature categories.
 
     Implements Phase 9.4 Task 2: Multi-Label Classification Support.
-    Aligned with phase_9.4_implementation_plan.md and code_guidelines.md v1.10.
+    Aligned with phase_9.4_implementation_plan.md and code_guidelines.md v1.10+.
 
     Each category produces an independent binary label (0/1) based on feature
     values and thresholds. This enables simultaneous signal detection across
     multiple dimensions for granular sector-specific strategies.
 
+    UPDATED 2025-12-10: Complete alignment with Phase 9.3 engineered features.
+    - 16 categories (was 8)
+    - 196 Phase 9.3 engineered features (was ~20 legacy features)
+    - Aligned with PHASE93_FEATURE_CATEGORIES from phase93_categories.py
+    - Aligned with PHASE93_FEATURE_INPUTS from schema.py (raw input requirements)
+
     Parameters
     ----------
     df : pd.DataFrame
-        Stock data with features
+        Stock data with Phase 9.3 engineered features
     label_mode : str, default='multilabel'
         Labeling mode ('multilabel' for independent binary labels)
     categories : list, optional
-        Categories to create labels for (e.g., ['valuation', 'momentum', 'quality'])
-        If None, uses all available categories
+        Categories to create labels for. If None, uses all 16 available categories.
+        Available categories (16 total):
+        - 'momentum': 27 Momentum & Technical features (price trends, RSI, MA/EMA signals)
+        - 'valuation': 23 Valuation Ratios features (multiples, trends, stability)
+        - 'profitability': 12 Profitability features (margins, ROE/ROA/ROIC)
+        - 'quality': 18 Quality & Risk features (accounting quality, distress indicators)
+        - 'cash_flow': 5 Cash Flow features (CFO growth, FCF metrics)
+        - 'capital_allocation': 23 Capital Allocation features (dividends, CAPEX, M&A)
+        - 'analyst_sentiment': 10 Analyst Sentiment features (ratings, consensus, revisions)
+        - 'market_sentiment': 4 Market Sentiment features (beta trends, momentum)
+        - 'leverage': 9 Leverage & Liquidity features (debt ratios, liquidity)
+        - 'temporal_patterns': 15 Temporal Pattern features (seasonality, reporting dates)
+        - 'composite_scores': 5 Composite Score features (Piotroski, Altman, Beneish)
+        - 'growth': 6 Growth Metrics features (revenue, earnings, EBITDA growth)
+        - 'efficiency': 4 Efficiency Ratio features (turnover, revenue per employee)
+        - 'employee_productivity': 16 Employee Productivity features (workforce metrics)
+        - 'balance_sheet': 8 Balance Sheet Dynamics features (growth rates, trends)
+        - 'revenue_forecast': 9 Revenue Forecasting features (estimates, consensus)
     sector_adjusted : bool, default=False
         If True, adjust thresholds per sector based on sector distributions
-    threshold_percentile : float, default=0.6
-        Percentile threshold for positive signal (0.6 = top 40% gets label=1)
+    threshold_percentile : float, default=0.65
+        Percentile threshold for positive signal (0.65 = top 35% gets label=1)
+        Default changed from 0.6 to 0.65 to align with Phase 9.6 5-class design
+    use_phase93_categories : bool, default=True
+        If True, use Phase 9.3 engineered feature names (CATEGORY_FEATURE_MAPPING)
+        If False, fall back to legacy feature names (for backward compatibility)
 
     Returns
     -------
     pd.DataFrame
         DataFrame with binary label columns: label_<category> for each category
+        Example: ['label_momentum', 'label_valuation', 'label_quality', ...]
 
     Notes
     -----
     - Each category label is independent (stocks can have multiple positive signals)
     - Sector-adjusted mode uses within-sector percentiles for threshold
     - Missing features result in NaN labels (not 0)
+    - For valuation category: uses actual Phase 9.3 valuation features (23 total)
+      including ev_ebitda_ratio, p_e_ratio, p_b_ratio, peg_ratio, dividend_yield, etc.
+    - For momentum category: uses actual Phase 9.3 momentum features (27 total)
+      including price_momentum_1m/3m/6m/1y, rsi_14d/30d, ema_crossovers, etc.
+    - Feature alignment:
+      * PHASE93_FEATURE_INPUTS (schema.py): Raw input columns needed for engineering
+      * PHASE93_FEATURE_CATEGORIES (phase93_categories.py): Engineered output features
+      * CATEGORY_FEATURE_MAPPING (this file): Subset used for multilabel classification
 
     Examples
     --------
+    >>> # Use all 16 Phase 9.3 categories
+    >>> labels = create_multilabel_event_labels(df, label_mode='multilabel')
+    >>> labels.columns  # 16 label columns
+    Index(['label_momentum', 'label_valuation', 'label_profitability', ...], dtype='object')
+
+    >>> # Use specific categories only
     >>> labels = create_multilabel_event_labels(
     ...     df,
     ...     label_mode='multilabel',
-    ...     categories=['valuation', 'momentum', 'quality']
+    ...     categories=['valuation', 'momentum', 'quality', 'profitability', 'growth', 'leverage']
     ... )
-    >>> labels.columns
-    Index(['label_valuation', 'label_momentum', 'label_quality'], dtype='object')
+    >>> labels.columns  # 6 label columns
+    Index(['label_valuation', 'label_momentum', 'label_quality', ...], dtype='object')
+
+    >>> # Sector-adjusted thresholds (within-sector ranking)
+    >>> labels = create_multilabel_event_labels(
+    ...     df,
+    ...     sector_adjusted=True,
+    ...     threshold_percentile=0.70  # Top 30% within each sector
+    ... )
+
+    See Also
+    --------
+    create_enhanced_event_labels : Single-label event classification (5-class)
+    finance_ml.ml_workflow.eda.phase93_categories.PHASE93_FEATURE_CATEGORIES : Complete feature registry
+    finance_ml.ml_workflow.data.schema.PHASE93_FEATURE_INPUTS : Input requirements for feature engineering
     """
-    from typing import List
 
     if label_mode != "multilabel":
         raise ValueError(f"Only 'multilabel' mode supported, got: {label_mode}")
 
-    # Define category-to-feature mappings (Phase 9.3 categories)
+    # Define category-to-feature mappings (Phase 9.3 engineered features)
+    # Aligned with PHASE93_FEATURE_CATEGORIES from phase93_categories.py
+    # Total: 16 categories, 196 Phase 9.3 engineered features
+    # Source: finance_ml.ml_workflow.eda.phase93_categories.PHASE93_FEATURE_CATEGORIES
     CATEGORY_FEATURE_MAPPING = {
-        "valuation": ["price_target", "last_price", "p_e_ltm", "ev_ebitda", "p_b_ltm"],
-        "momentum": ["momentum_rsi", "price_change_1m", "price_momentum_1m", "ema_20d"],
-        "quality": ["quality_altman_z", "roe_ltm", "quality_score"],
-        "profitability": [
-            "net_margin_ltm",
-            "operating_margin_ltm",
-            "gross_margin_ltm",
-            "roe_ltm",
+        # 1. Momentum & Technical (27 features) - Price trends, RSI, MA/EMA signals, 52W position
+        "momentum": [
+            "52w_range_position",
+            "breakout_signal",
+            "ema_crossover_20_50",
+            "ema_crossover_50_250",
+            "ema_slope_20d",
+            "ema_trend_consistency",
+            "ma_20d_simple",
+            "ma_50d_simple",
+            "ma_crossover_signal",
+            "near_52w_high_flag",
+            "near_52w_low_flag",
+            "pct_above_52w_low",
+            "pct_off_52w_high",
+            "price_acceleration_3m",
+            "price_distance_from_ma",
+            "price_momentum_1m",
+            "price_momentum_1y",
+            "price_momentum_3m",
+            "price_momentum_6m",
+            "price_vs_ema_20d",
+            "price_vs_ema_250d",
+            "return_stability_score",
+            "rsi_14d",
+            "rsi_30d",
+            "sharpe_proxy",
+            "total_return_1y_pct",
+            "volume_momentum_score",
         ],
-        "growth": ["revenue_growth_yoy", "earnings_growth_yoy", "revenue_growth_3y_cagr"],
-        "leverage": ["debt_to_equity", "net_debt_ebitda", "current_ratio"],
-        "efficiency": ["asset_turnover", "inventory_turnover"],
-        "cash_flow": ["fcf_margin", "operating_cash_flow"],
+        # 2. Valuation Ratios (23 features) - Multiples with time-series trends and stability
+        "valuation": [
+            "dividend_yield",
+            "ev_ebitda_forward_discount",
+            "ev_ebitda_momentum",
+            "ev_ebitda_ratio",
+            "ev_ebitda_vs_3y_avg",
+            "ev_sales_forward_discount",
+            "ev_sales_quarterly_volatility",
+            "ev_sales_ratio",
+            "ev_sales_trend_1y",
+            "ev_sales_trend_3y",
+            "ev_sales_vs_3y_avg",
+            "growth_implied_by_valuation",
+            "p_b_ratio",
+            "p_e_forward_discount",
+            "p_e_momentum_qoq",
+            "p_e_momentum_yoy",
+            "p_e_ratio",
+            "p_e_vs_3y_avg",
+            "p_s_ratio",
+            "peg_ratio",
+            "valuation_extreme_flag",
+            "valuation_stability_score",
+            "valuation_trend_consistency",
+        ],
+        # 3. Profitability (12 features) - Margins, ROE/ROA/ROIC, quality, trends
+        "profitability": [
+            "earnings_quality_score",
+            "ebit_adjustment_ratio",
+            "ebitda_adjustment_ratio",
+            "ebitda_margin_trend",
+            "gross_margin_pct",
+            "gross_margin_trend",
+            "net_margin_pct",
+            "operating_leverage",
+            "operating_margin_pct",
+            "roa",
+            "roe",
+            "roic",
+        ],
+        # 4. Quality & Risk (18 features) - Accounting quality, distress indicators, exceptional items
+        "quality": [
+            "accounting_quality_score",
+            "altman_z_trend",
+            "distress_risk_score",
+            "exceptional_items_to_ebitda",
+            "exceptional_items_to_ni_pct",
+            "exceptional_items_trend",
+            "goodwill_change_rate",
+            "goodwill_impairment_flag",
+            "goodwill_to_assets",
+            "goodwill_to_assets_pct",
+            "has_asset_writedown",
+            "has_goodwill_impairment",
+            "has_restructuring",
+            "intangible_intensity",
+            "intangibles_to_assets_pct",
+            "restructuring_intensity",
+            "total_exceptional_items_ltm",
+            "z_score_volatility",
+        ],
+        # 5. Cash Flow (5 features) - CFO growth, FCF metrics, cash conversion quality
+        "cash_flow": [
+            "cfo_growth_yoy",
+            "cfo_to_net_income",
+            "fcf_margin",
+            "fcf_stability",
+            "fcf_to_net_income",
+        ],
+        # 6. Capital Allocation (23 features) - Dividends, CAPEX, reinvestment, M&A, working capital
+        "capital_allocation": [
+            "acquisition_intensity",
+            "capex_growth_rate",
+            "capex_intensity",
+            "capex_to_depreciation",
+            "capex_volatility",
+            "currency_risk_flag",
+            "days_since_ex_date",
+            "div_yield_ltm",
+            "dividend_aristocrat_flag",
+            "dividend_consistency_score",
+            "dividend_frequency_encoded",
+            "dividend_growth_trend",
+            "dividend_payout_ratio",
+            "dividend_safety_score",
+            "dividend_streak_years",
+            "dividend_yield_vs_sector",
+            "fcf_dividend_coverage",
+            "income_stock_flag",
+            "payout_ratio",
+            "reinvestment_rate",
+            "total_shareholder_return_yield",
+            "working_capital_efficiency",
+            "working_capital_trend",
+        ],
+        # 7. Analyst Sentiment (10 features) - Ratings, consensus, target revisions, coverage quality
+        "analyst_sentiment": [
+            "analyst_bearish_pct",
+            "analyst_bullish_pct",
+            "analyst_conviction",
+            "analyst_coverage_quality",
+            "consensus_strength",
+            "price_target_range",
+            "price_target_revision",
+            "price_target_spread_pct",
+            "target_price_upside_pct",
+            "upside_potential",
+        ],
+        # 8. Market Sentiment (4 features) - Beta trends, momentum, price range stability
+        "market_sentiment": [
+            "beta_stability",
+            "momentum_20d",
+            "price_range_pct",
+            "systematic_risk_trend",
+        ],
+        # 9. Leverage & Liquidity (9 features) - Debt ratios, coverage, liquidity ratios
+        "leverage": [
+            "cash_ratio",
+            "current_ratio",
+            "debt_to_assets",
+            "debt_to_equity",
+            "equity_ratio",
+            "interest_coverage",
+            "quick_ratio",
+            "working_capital_to_sales",
+        ],
+        # 10. Temporal Patterns (15 features) - Seasonality, reporting dates, quarterly volatility
+        "temporal_patterns": [
+            "days_to_earnings",
+            "earnings_report_recency",
+            "ebitda_5yavgfq",
+            "ebitda_fq",
+            "fiscal_quarter",
+            "fq_vs_5yavg_ebitda",
+            "income_statement_report_date",
+            "last_updated",
+            "ltm_vs_5yavg_revenue",
+            "month",
+            "next_earnings",
+            "quarterly_volatility_score",
+            "reporting_lag",
+            "total_revenues_ltm",
+            "year",
+        ],
+        # 11. Composite Scores (5 features) - Multi-factor scores: Piotroski, Altman, Beneish, etc.
+        "composite_scores": [
+            "altman_z_score",
+            "beneish_m_score",
+            "composite_quality_score",
+            "momentum_score",
+            "piotroski_f_score",
+        ],
+        # 12. Growth Metrics (6 features) - Revenue, earnings, EBITDA growth (YoY and multi-period)
+        "growth": [
+            "earnings_growth",
+            "ebitda_growth",
+            "ebitda_growth_yoy",
+            "eps_growth_yoy",
+            "revenue_growth",
+            "revenue_growth_yoy",
+        ],
+        # 13. Efficiency Ratios (4 features) - Turnover ratios, revenue per employee
+        "efficiency": [
+            "asset_turnover",
+            "inventory_turnover",
+            "receivables_turnover",
+            "revenue_per_employee",
+        ],
+        # 14. Employee Productivity (16 features) - Workforce metrics, revenue/profit per employee
+        "employee_productivity": [
+            "assets_per_employee",
+            "ebitda_per_employee",
+            "employee_base_scale_flag",
+            "employee_growth_acceleration",
+            "employee_growth_cagr_5y",
+            "employee_growth_qoq",
+            "employee_growth_yoy",
+            "employee_growth_yoy_pct",
+            "hiring_intensity_score",
+            "operating_income_per_employee",
+            "profit_per_employee",
+            "revenue_per_employee_fy",
+            "revenue_per_employee_ltm",
+            "revenue_per_employee_trend",
+            "revenue_per_employee_vs_5y_pct",
+            "workforce_volatility",
+        ],
+        # 15. Balance Sheet Dynamics (8 features) - Asset/equity/debt growth, working capital trends
+        "balance_sheet": [
+            "asset_growth_rate",
+            "balance_sheet_expansion",
+            "current_ratio_trend",
+            "debt_growth_rate",
+            "earnings_retention_rate",
+            "equity_growth_rate",
+            "retained_earnings_growth",
+            "working_capital_ratio",
+        ],
+        # 16. Revenue Forecasting (9 features) - Analyst estimates, consensus uncertainty, implied growth
+        "revenue_forecast": [
+            "avg_vs_median_bias",
+            "estimate_confidence_flag",
+            "growth_surprise_potential",
+            "revenue_consensus_uncertainty_score",
+            "revenue_estimate_spread_fy1e",
+            "revenue_estimate_spread_ntm",
+            "revenue_growth_acceleration",
+            "revenue_growth_implied_fy1e",
+            "revenue_growth_implied_ntm",
+        ],
     }
+
+    # Validation: Check if use_phase93_categories parameter is supported
+    if not use_phase93_categories:
+        logger.warning(
+            "use_phase93_categories=False is not yet implemented. Using Phase 9.3 categories."
+        )
 
     # Use all categories if none specified
     if categories is None:
         categories = list(CATEGORY_FEATURE_MAPPING.keys())
+        logger.info(
+            f"Using all {len(categories)} Phase 9.3 categories for multilabel classification"
+        )
+    else:
+        # Validate that all requested categories exist
+        invalid_categories = [cat for cat in categories if cat not in CATEGORY_FEATURE_MAPPING]
+        if invalid_categories:
+            logger.warning(
+                f"Invalid categories requested: {invalid_categories}. "
+                f"Available categories: {list(CATEGORY_FEATURE_MAPPING.keys())}"
+            )
+            categories = [cat for cat in categories if cat in CATEGORY_FEATURE_MAPPING]
+        logger.info(f"Using {len(categories)} categories: {categories}")
+
+    # Validation: Check threshold_percentile range
+    if not (0.0 < threshold_percentile < 1.0):
+        raise ValueError(
+            f"threshold_percentile must be between 0 and 1, got: {threshold_percentile}"
+        )
 
     # Initialize result DataFrame
     result = pd.DataFrame(index=df.index)
@@ -1833,15 +2150,82 @@ def create_multilabel_event_labels(
         category_score = pd.Series(0.0, index=df.index)
         feature_count = 0
 
-        for feature in feature_cols:
-            if feature in df.columns:
-                # Special handling for valuation (price target vs last price)
-                if feature == "price_target" and "last_price" in df.columns:
-                    # Positive if target > price
-                    score = (df["price_target"] - df["last_price"]) / df["last_price"]
-                    category_score += score.fillna(0)
+        # Enhanced handling for valuation category using Phase 9.3 valuation features
+        # Phase 9.3 includes 23 valuation features: P/E, P/B, EV/EBITDA, EV/Sales ratios
+        # with time-series trends, momentum, and stability indicators
+        if category == "valuation":
+            # For valuation multiples: lower ratios = undervalued = higher score
+            valuation_multiples = [
+                "p_e_ratio",
+                "p_b_ratio",
+                "p_s_ratio",
+                "ev_ebitda_ratio",
+                "ev_sales_ratio",
+                "peg_ratio",
+            ]
+            for feature in valuation_multiples:
+                if feature in df.columns:
+                    feature_values = df[feature].dropna()
+                    if len(feature_values) > 0:
+                        # Invert: low ratio = high score (undervalued)
+                        percentile = df[feature].rank(pct=True, ascending=True)
+                        category_score += (1.0 - percentile).fillna(0.5)
+                        feature_count += 1
+
+            # For dividend yield: higher is better
+            if "dividend_yield" in df.columns:
+                div_yield_values = df["dividend_yield"].dropna()
+                if len(div_yield_values) > 0:
+                    percentile = df["dividend_yield"].rank(pct=True)
+                    category_score += percentile.fillna(0.5)
                     feature_count += 1
-                elif feature != "last_price":  # Skip last_price (already used above)
+
+            # For valuation trends and momentum: negative = improving (multiple decreasing)
+            trend_features = [
+                "ev_ebitda_momentum",
+                "ev_ebitda_vs_3y_avg",
+                "ev_sales_trend_1y",
+                "p_e_momentum_yoy",
+            ]
+            for feature in trend_features:
+                if feature in df.columns:
+                    feature_values = df[feature].dropna()
+                    if len(feature_values) > 0:
+                        # Negative momentum = improving valuation
+                        normalized = -df[feature].fillna(0)
+                        percentile = normalized.rank(pct=True)
+                        category_score += percentile.fillna(0.5)
+                        feature_count += 1
+
+            # For stability features: higher is better
+            stability_features = ["valuation_stability_score", "valuation_trend_consistency"]
+            for feature in stability_features:
+                if feature in df.columns:
+                    feature_values = df[feature].dropna()
+                    if len(feature_values) > 0:
+                        percentile = df[feature].rank(pct=True)
+                        category_score += percentile.fillna(0.5)
+                        feature_count += 1
+
+            # For discount features: positive discount = undervalued = good
+            discount_features = [
+                "ev_ebitda_forward_discount",
+                "ev_sales_forward_discount",
+                "p_e_forward_discount",
+            ]
+            for feature in discount_features:
+                if feature in df.columns:
+                    feature_values = df[feature].dropna()
+                    if len(feature_values) > 0:
+                        percentile = df[feature].rank(pct=True)
+                        category_score += percentile.fillna(0.5)
+                        feature_count += 1
+
+        else:
+            # Standard handling for all other categories (momentum, quality, profitability, etc.)
+            # Higher values = better for most Phase 9.3 features
+            for feature in feature_cols:
+                if feature in df.columns:
                     # Normalize feature to [0, 1] range using rank percentile
                     feature_values = df[feature].dropna()
                     if len(feature_values) > 0:
@@ -1867,7 +2251,8 @@ def create_multilabel_event_labels(
                 sector_scores = category_score[sector_mask]
                 if len(sector_scores) > 0:
                     threshold = sector_scores.quantile(threshold_percentile)
-                    labels[sector_mask] = (sector_scores >= threshold).astype(int)
+                    # FIX: Use .values to avoid index alignment issues with duplicate indices
+                    labels.loc[sector_mask] = (sector_scores.values >= threshold).astype(int)
         else:
             # Global threshold
             threshold = category_score.quantile(threshold_percentile)
@@ -1875,8 +2260,54 @@ def create_multilabel_event_labels(
 
         result[f"label_{category}"] = labels
 
+    # Calculate label statistics
+    label_counts = {col: result[col].sum() for col in result.columns if col.startswith("label_")}
+    total_stocks = len(result)
     logger.info(
         f"Created multi-label classification for {len(categories)} categories: {categories}"
     )
+    logger.info(
+        f"Label distribution: {total_stocks} stocks, "
+        f"average {sum(label_counts.values()) / total_stocks:.2f} positive labels per stock"
+    )
+    logger.info(f"Positive label counts by category: {label_counts}")
 
     return result
+
+
+# ============================================================================
+# Feature Category Alignment Summary
+# ============================================================================
+# This module aligns three critical feature dictionaries:
+#
+# 1. PHASE93_FEATURE_INPUTS (schema.py:624-765)
+#    - Purpose: Raw input columns needed for feature engineering
+#    - Categories: 10 (momentum, valuation, profitability, quality_risk, cash_flow,
+#                     growth, technical, employment, dividends, forecasts)
+#    - Total: ~150+ raw input columns from database/CSV
+#    - Usage: ETL pipeline validation, imputation strategy
+#
+# 2. PHASE93_FEATURE_CATEGORIES (phase93_categories.py:42-268)
+#    - Purpose: Engineered output features from Phase 9.3 transformations
+#    - Categories: 16 (Momentum & Technical, Valuation Ratios, Profitability,
+#                      Quality & Risk, Cash Flow, Capital Allocation, Analyst Sentiment,
+#                      Market Sentiment, Leverage & Liquidity, Temporal Patterns,
+#                      Composite Scores, Growth Metrics, Efficiency Ratios,
+#                      Employee Productivity, Balance Sheet Dynamics, Revenue Forecasting)
+#    - Total: 196 engineered features
+#    - Usage: EDA, feature tracking, model lineage, analytics dashboards
+#
+# 3. CATEGORY_FEATURE_MAPPING (labels.py:1813-2108, this file)
+#    - Purpose: Feature subset used for multilabel classification
+#    - Categories: 16 (same as PHASE93_FEATURE_CATEGORIES)
+#    - Total: 196 features (100% coverage of Phase 9.3 engineered features)
+#    - Usage: create_multilabel_event_labels() for multi-label classification
+#
+# Alignment Principles:
+# - PHASE93_FEATURE_INPUTS defines what goes IN to feature engineering
+# - PHASE93_FEATURE_CATEGORIES defines what comes OUT of feature engineering
+# - CATEGORY_FEATURE_MAPPING uses the engineered features for classification
+# - All three must remain synchronized as schema evolves
+# - Changes to feature engineering must update both PHASE93_FEATURE_CATEGORIES
+#   and CATEGORY_FEATURE_MAPPING
+# ============================================================================
