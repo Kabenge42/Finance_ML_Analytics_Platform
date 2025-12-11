@@ -194,6 +194,10 @@ def integrate_classification_features_into_dataframe(
     # Concatenate horizontally
     result = pd.concat([df_reset, features_reset], axis=1)
 
+    # Normalize all column names to Python str (not numpy.str_)
+    # This prevents scikit-learn TypeError about mixed column name types
+    result.columns = result.columns.astype(str)
+
     logger.debug(f"Integration complete: {len(result)} rows, {len(result.columns)} total columns")
 
     return result
@@ -1309,6 +1313,10 @@ def align_features_to_model(
     # Select only expected features in correct order
     X_aligned = X_aligned[expected_features]
 
+    # Normalize all column names to Python str (not numpy.str_)
+    # This prevents scikit-learn TypeError about mixed column name types
+    X_aligned.columns = X_aligned.columns.astype(str)
+
     return X_aligned
 
 
@@ -1355,6 +1363,12 @@ def predict_with_model(
     - Compatible with sklearn, XGBoost, LightGBM, CatBoost models
     - Reduces notebook boilerplate by ~50 lines per prediction cell
     """
+    # Normalize all column names to Python str (not numpy.str_)
+    # This prevents scikit-learn TypeError about mixed column name types
+    if hasattr(X_test, "columns"):
+        X_test = X_test.copy()
+        X_test.columns = X_test.columns.astype(str)
+
     if auto_align:
         X_test = align_features_to_model(X_test, model)
 

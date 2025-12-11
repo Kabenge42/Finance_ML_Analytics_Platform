@@ -4,6 +4,9 @@ import plotly.graph_objects as go
 from typing import Optional, List
 from datetime import timedelta
 
+# Schema-driven Phase 9.3 feature categorization (code_guidelines.md §9.3)
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
+
 
 def create_earnings_calendar_dashboard(
     df: pd.DataFrame,
@@ -14,6 +17,12 @@ def create_earnings_calendar_dashboard(
     """
     Creates a dashboard (styled DataFrame) for Earnings and Dividend Analytics.
     Filters for companies with upcoming or recent earnings (t +/- 10 days).
+
+    **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
+    Uses PHASE93_FEATURE_INPUTS categories for metric selection:
+    - Earnings metrics: profitability + growth + momentum categories
+    - Dividend metrics: cash_flow category (dividend sustainability)
+    - Additional domain-specific metrics supplementing Phase 9.3 categories
 
     Args:
         df: Input DataFrame containing stock data.
@@ -61,41 +70,42 @@ def create_earnings_calendar_dashboard(
     if mcap_col:
         display_cols.append(mcap_col)
 
-    # Earnings Metrics
-    earnings_candidates = [
-        "net_income_adj_1fy",
-        "ebitda_adj_ltm",
-        "ebitda_adj_fy",
-        "ebitda_adj_1fy",
-        "ebit_adj_1fy",
-        "ebit_adj_fy",
-        "ebit_adj_ltm",
-        "net_income_adj_fy",
-        "net_income_adj_ltm",
-        "net_income_adj_fq",
-        "net_income_adj_5yavgfq",
-        "eps_adj_1fy",
-        "eps_adj_fy",
-        "eps_adj_ltm",
-        "ebit_est_med_fy1e",
-        "ebit_est_med_ntm",
-        "eps_norm_est_avg_ntm",
-        "eps_norm_est_avg_fy1e",
-        "revenues_est_yoy_pct_fy1e",
-        "revenues_est_avg_ntm",
-        "revenues_est_avg_fy1e",
-        "revenues_est_med_ntm",
-        "revenues_est_med_fy1e",
-        "ev_sales_est_fy1",
-        "ev_ebitda_est_fy1",
-        "p_e_est_fy1",
-        "one_day_pct",
-        "price_chg_pct_1m",
-        "price_chg_pct_3m",
-    ]
+    # Earnings Metrics (Schema-driven from Phase 9.3 categories - code_guidelines.md §9.3)
+    # Combine profitability, valuation, growth, and momentum categories for earnings context
+    earnings_candidates = (
+        PHASE93_FEATURE_INPUTS.get("profitability", [])  # Margins, EBITDA, EBIT, net income
+        + PHASE93_FEATURE_INPUTS.get("growth", [])  # Revenue CAGR, growth estimates
+        + PHASE93_FEATURE_INPUTS.get("momentum", [])  # Price changes, returns
+        + [
+            # Additional earnings-specific metrics not in Phase 9.3 categories
+            "net_income_adj_1fy",
+            "ebitda_adj_fy",
+            "ebitda_adj_1fy",
+            "ebit_adj_1fy",
+            "ebit_adj_fy",
+            "net_income_adj_fy",
+            "net_income_adj_fq",
+            "net_income_adj_5yavgfq",
+            "eps_adj_1fy",
+            "eps_adj_fy",
+            "eps_adj_ltm",
+            "ebit_est_med_fy1e",
+            "ebit_est_med_ntm",
+            "eps_norm_est_avg_ntm",
+            "eps_norm_est_avg_fy1e",
+            "revenues_est_avg_ntm",
+            "revenues_est_avg_fy1e",
+            "revenues_est_med_ntm",
+            "revenues_est_med_fy1e",
+        ]
+    )
 
-    # Dividend Metrics
-    dividend_candidates = [
+    # Dividend Metrics (Schema-driven from Phase 9.3 categories - code_guidelines.md §9.3)
+    # Include cash_flow category (dividend payment capacity) plus dividend-specific metrics
+    dividend_candidates = PHASE93_FEATURE_INPUTS.get(
+        "cash_flow", []
+    ) + [  # CFO, FCF (dividend sustainability)
+        # Dividend-specific metrics not in Phase 9.3 categories
         "dividend_record_announce_date",
         "dividend_record_ex_date",
         "dividend_record_payable_date",

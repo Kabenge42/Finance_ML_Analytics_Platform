@@ -108,7 +108,31 @@ G. Accessing the database from Python (optional)
    The notebook (ml_finance_model_main.ipynb) implements the pipeline below. Use all_stocks as the single, unified
    dataframe sourced from PostgreSQL across regions.
 
-   Notebook Best Practices (docs/code_guidelines.md §8, v1.4):
+   **Unified ETL Pipeline (RECOMMENDED - code_guidelines.md v1.10):**
+
+   Use the unified ETL pipeline as the single entry point for data loading and preprocessing:
+
+   ```python
+   from finance_ml.ml_workflow.preprocessing import etl_with_features, ETLConfig
+   
+   # Complete ETL with semantic transformations + feature engineering (RECOMMENDED)
+   all_stocks, metrics = etl_with_features(
+       source='csv',           # or 'db', 'all_stocks'
+       data_dir='data/',
+       feature_preset='comprehensive',  # Options: basic, momentum, quality, comprehensive
+       return_metrics=True,
+   )
+   
+   print(metrics.summary())
+   # Shows: semantic classification, price columns protected, features added, etc.
+   ```
+
+   **ETL Entry Points:**
+    - `etl_with_features()`: Complete ETL + Phase 9.3 feature engineering (recommended for ML workflows)
+    - `etl_with_financial_metrics()`: ETL + financial metrics computation (for analysis workflows)
+    - `run_etl_pipeline()`: Low-level control with custom ETLConfig
+
+   Notebook Best Practices (docs/code_guidelines.md §8, v1.10):
 
 - Centralized Configuration Constants: define all constants once (TARGET_COL, TARGET_COL_FALLBACK, TEST_SIZE,
   TRAIN_SIZE, CV_FOLDS, QUANTILES, MIN_SECTOR_SAMPLES, MAX_SECTOR_WEIGHT, MAX_SINGLE_POSITION, IQR_MULTIPLIER,
@@ -235,6 +259,7 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_data_types_detection.py — Schema-aware datatype detection and Phase 9.3 validation (9 tests, TDD v0.8.2)
 - tests/test_eda.py — Exploratory data analysis utilities
 - tests/test_enhanced_imputation.py — Phase 9.1 6-step imputation strategy tests (21 tests)
+- tests/test_etl_unified_pipeline.py — Unified ETL pipeline with semantic transformations (63 tests, v0.9.2)
 - tests/test_enhanced_imputation_phase93.py — Phase 9.3 enhanced imputation with schema alignment (8 tests, TDD v0.8.2)
 - tests/test_features.py — Feature engineering functions
 - tests/test_finance_ml_config.py — Configuration management tests
@@ -278,11 +303,24 @@ The project includes a comprehensive test suite with the following test modules 
 - tests/test_validation_regex.py — Regex validation and pattern matching tests
 - tests/test_visualizations.py — Visualization functions tests
 
-Note: The test suite has grown to 85 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization + 2 advanced
-evaluation reporting).
+Note: The test suite has grown to 86 modules (74 original + 4 TDD v0.8.2 + 5 Portfolio Optimization + 2 advanced
+evaluation reporting + 1 unified ETL pipeline).
 See section 3D below for selective execution strategies.
 
-**Recent Additions (v0.8.2, 2025-11-19):**
+**Recent Additions (v0.9.4, 2025-12-10):**
+
+- **Phase 9.5 Notebook Integration Guides:** Comprehensive guides for automated stacking hyperparameter tuning and
+  feature alignment validation
+- **ETL Unified Pipeline Test Coverage:** New test_etl_unified_pipeline.py with 63 comprehensive tests validating
+  ETLConfig, ETLMetrics, ETLPipeline, and semantic transformations
+- **Type Hints and Code Quality:** Enhanced type safety with Literal type hints and improved import organization
+
+**Previous Additions (v0.9.3, 2025-12-08):**
+
+- **Unified ETL Pipeline (1 module, 63 tests):** Semantic transformations, feature engineering integration, ETLConfig
+  semantic attributes, ETLMetrics tracking, price column preservation, log-transforms for market values
+
+**Previous Additions (v0.8.2, 2025-11-19):**
 
 - **TDD Implementation (4 modules, 24 tests):** Schema-aware datatype detection, Phase 9.3 enhanced imputation,
   metadata catalog validation, StringDtype compatibility

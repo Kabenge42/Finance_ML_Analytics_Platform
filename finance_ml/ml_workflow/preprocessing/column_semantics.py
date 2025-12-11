@@ -29,6 +29,27 @@ from typing import Dict, List, Set
 
 logger = logging.getLogger(__name__)
 
+# Explicit exports for public API
+__all__ = [
+    # Column sets
+    "PRICE_COLUMNS",
+    "MARKET_VALUE_COLUMNS",
+    "RATIO_COLUMNS",
+    "PERCENTAGE_COLUMNS",
+    "COUNT_COLUMNS",
+    # Main classification function
+    "classify_columns",
+    # Helper functions for specific column categories
+    "get_winsorizable_columns",
+    "get_log_transform_columns",
+    "get_scalable_columns",
+    # Pattern-based classification (advanced use)
+    "classify_columns_with_patterns",
+    "classify_columns_with_schema_fallback",
+    # Suffix patterns (advanced use)
+    "SUFFIX_PATTERNS",
+]
+
 
 # Price Columns - NEVER transform (critical for business metric)
 # These columns must remain in original dollar units for valuation analysis

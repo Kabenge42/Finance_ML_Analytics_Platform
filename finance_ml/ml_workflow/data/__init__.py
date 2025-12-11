@@ -15,6 +15,8 @@ from finance_ml.ml_workflow.data.schema import (
     list_numeric_feature_cols,
     list_categorical_cols,
     list_date_cols,
+    normalize_column_name,
+    list_required_schema_columns_for_etl,
 )
 
 __all__ = [
@@ -25,4 +27,6 @@ __all__ = [
     "list_numeric_feature_cols",
     "list_categorical_cols",
     "list_date_cols",
+    "normalize_column_name",
+    "list_required_schema_columns_for_etl",
 ]
