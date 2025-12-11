@@ -1,11 +1,11 @@
 ---
-apply: always
+apply: off
 ---
 
 # Finance ML Analytics Platform — Project Rules
 
-**Version**: 0.9.1  
-**Last Updated**: 2025-12-04
+**Version**: 0.9.4  
+**Last Updated**: 2025-12-10
 
 ## Project Overview
 
@@ -19,13 +19,13 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Comprehensive unit tests with good coverage (≈128 test modules, ≥80% target)
 - Configuration management via environment variables, JSON, or YAML
 
-### Module Architecture (v9_8 - Phase 9.1-9.8)
+### Module Architecture (v9_9 - Phase 9.1-9.8)
 
 The platform follows a **phase-aligned architecture** with dedicated subpackages:
 
 ```
 finance_ml/ml_workflow/
-├── preprocessing/      # Phase 9.1: 6-step imputation, outliers, scaling, quality
+├── preprocessing/      # Phase 9.1: Unified ETL (etl.py), 6-step imputation, semantic transforms
 ├── eda/               # Phase 9.2: EDA, benchmarking, reports
 ├── features/          # Phase 9.3: Core, advanced, selection, API
 ├── classification/    # Phase 9.4: Labels, tuning, models, evaluation
@@ -37,7 +37,10 @@ finance_ml/ml_workflow/
 
 **8-Phase ML Workflow:**
 
-1. **Phase 9.1**: Loading and preprocessing with 6-step imputation strategy
+1. **Phase 9.1**: Unified ETL pipeline with semantic transformations and 6-step imputation
+    - Primary entry point: `etl_with_features()` for complete ETL + feature engineering
+    - Alternative: `etl_with_financial_metrics()` for financial metrics analysis
+    - Low-level: `run_etl_pipeline()` with custom ETLConfig
 2. **Phase 9.2**: Enhanced EDA with statistical testing and benchmarking
 3. **Phase 9.3**: Advanced feature engineering with sector-specific optimizations
 4. **Phase 9.4**: Multi-class event classification using neural networks and ensembles
@@ -715,18 +718,25 @@ See `.junie/guidelines.md` for comprehensive development guidelines covering:
 - Code style and quality standards
 - Troubleshooting tips
 
-See `docs/code_guidelines.md` v1.8 (updated 2025-11-26) for detailed coding standards:
+See `docs/code_guidelines.md` v1.10 (updated 2025-12-08) for detailed coding standards:
 
 - Standardized function signatures and return types
 - Column naming schema and dataframe conventions
 - Highlights:
+    - **NEW in v1.10: Unified ETL Pipeline with Semantic Transformations**
+        - Single entry point: `etl_with_features()` consolidates schema.py, column_semantics.py, and features/api.py
+        - Semantic-aware transformations (price column preservation, log-transforms for market values)
+        - Feature engineering integration (Phase 9.3 features via presets: basic, momentum, quality, comprehensive)
+        - ETLConfig semantic attributes: `use_semantic_column_classification`, `preserve_price_columns`,
+          `log_transform_market_values`
+        - ETLMetrics tracking: `semantic_classification_applied`, `price_columns_count`, `features_added`
   - Uncertainty and Prediction Intervals (quantile regression + conformal calibration)
   - Outlier Safety Rails Policy (winsorization, robust loss, clipping, non-negativity)
   - Data Split and Leakage Policy (time-series → grouped → stratified)
   - Standardized Predictions Schema (required columns and invariants)
   - Sector Metrics and Calibration (persistence contract, bias correction)
   - TDD Conventions and Selective Test Execution
-  - NEW in v1.4: Notebook Best Practices and TDD Conventions (Section 8)
+      - Notebook Best Practices and TDD Conventions (Section 8)
     - Centralized Configuration Constants (single source of truth)
     - DataFrame Stage Naming (8-stage pipeline):
       all_stocks_raw → all_stocks_normalized → all_stocks_typed → all_stocks_winsorized →
@@ -788,7 +798,11 @@ See `IMPROVEMENT_PLAN.md` for phased development roadmap (8 phases):
 
 ## Version History
 
-- **v0.9.1** (Current, 2025-12-04) — Package version 0.9.1, code_guidelines.md v1.8 with Portfolio Optimization Workflow
+- **v0.9.2** (Current, 2025-12-08) — Unified ETL pipeline with semantic transformations (`etl_with_features()`),
+  code_guidelines.md v1.10 with STANDARD/OPTIONAL import patterns, Phase 9.1 entry points consolidated, ETLConfig
+  semantic attributes, ETLMetrics semantic tracking, 63 unified pipeline tests; documentation updated across
+  README.md, code_guidelines.md, guidelines.md, and promt_rules.md.
+- **v0.9.1** (2025-12-04) — Package version 0.9.1, code_guidelines.md v1.8 with Portfolio Optimization Workflow
   (Section 18), semantic column classification, price column preservation policy; 128 test modules; documentation
   synchronized across README.md, code_guidelines.md, and promt_rules.md.
 - **v0.8.3** (2025-11-23) — Section 8 Notebook Best Practices added to code_guidelines.md v1.4 (centralized

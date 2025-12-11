@@ -305,3 +305,5 @@ comment on table equities is 'Equities screening data with financial metrics and
 alter table equities
     owner to postgres;
 
+grant delete, insert, references, select, trigger, truncate, update on equities to public;
+

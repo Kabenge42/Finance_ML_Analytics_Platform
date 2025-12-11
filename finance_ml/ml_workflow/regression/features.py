@@ -109,4 +109,8 @@ def build_prob_valuation_interactions(
             # Create interaction feature
             out[name] = v_values * p_values
 
+    # Normalize all column names to Python str (not numpy.str_)
+    # This prevents scikit-learn TypeError about mixed column name types
+    out.columns = out.columns.astype(str)
+
     return out
