@@ -37,6 +37,37 @@ def compute_shap_values(model, X, model_type="auto", n_samples=100):
     if not isinstance(X, pd.DataFrame):
         X = pd.DataFrame(X)
 
+    # Fix Float64 dtype incompatibility with SHAP (Phase 9.5 audit fix)
+    # SHAP uses numpy's isfinite which doesn't work with pandas nullable Float64 dtype
+    # Convert all numeric columns to standard numpy float64
+    feature_names = list(X.columns)
+    X_converted = X.copy()
+    for col in X_converted.columns:
+        # Check for nullable Float64 or other extension dtypes
+        if hasattr(X_converted[col].dtype, "numpy_dtype") or str(
+            X_converted[col].dtype
+        ) in [
+            "Float64",
+            "Int64",
+        ]:
+            X_converted[col] = X_converted[col].astype("float64")
+        elif X_converted[col].dtype == "object":
+            # Try to convert object columns to numeric
+            X_converted[col] = pd.to_numeric(X_converted[col], errors="coerce").astype(
+                "float64"
+            )
+
+    # Ensure all columns are float64 for SHAP compatibility
+    try:
+        X_converted = X_converted.astype(np.float64)
+    except (ValueError, TypeError):
+        # If conversion fails, handle NaN/inf values first
+        X_converted = X_converted.replace([np.inf, -np.inf], np.nan)
+        X_converted = X_converted.fillna(0.0)
+        X_converted = X_converted.astype(np.float64)
+
+    X = X_converted
+
     # Get base model if this is a stacking ensemble
     base_model = getattr(model, "final_estimator_", model)
 
@@ -69,7 +100,9 @@ def compute_shap_values(model, X, model_type="auto", n_samples=100):
                     explainer = shap.LinearExplainer(base_model, X)
                     shap_values = explainer.shap_values(X)
             else:
-                print("Model doesn't have coef_ attribute. Using KernelExplainer instead.")
+                print(
+                    "Model doesn't have coef_ attribute. Using KernelExplainer instead."
+                )
                 model_type = "kernel"
         except Exception as e:
             print(f"LinearExplainer failed: {e}. Falling back to KernelExplainer.")
@@ -118,7 +151,9 @@ def _detect_model_type(model):
     return "kernel"
 
 
-def create_shap_summary_plot(model, X, output_path=None, model_type="auto", n_samples=100):
+def create_shap_summary_plot(
+    model, X, output_path=None, model_type="auto", n_samples=100
+):
     """
     Create SHAP summary plot showing feature importance.
 
@@ -338,12 +373,16 @@ def explain_with_lime(model, X, sample_idx=0, output_path=None, n_features=10):
     return {
         "feature_weights": feature_weights,
         "prediction": float(model.predict(X.iloc[[sample_idx]])[0]),
-        "intercept": explanation.intercept[0] if hasattr(explanation, "intercept") else 0.0,
+        "intercept": explanation.intercept[0]
+        if hasattr(explanation, "intercept")
+        else 0.0,
         "score": explanation.score if hasattr(explanation, "score") else None,
     }
 
 
-def compare_lime_shap_consistency(model, X, sample_idx=0, model_type="tree", n_features=10):
+def compare_lime_shap_consistency(
+    model, X, sample_idx=0, model_type="tree", n_features=10
+):
     """
     Compare LIME and SHAP explanations for consistency.
 
@@ -361,17 +400,23 @@ def compare_lime_shap_consistency(model, X, sample_idx=0, model_type="tree", n_f
         X = pd.DataFrame(X)
 
     # Get LIME explanation
-    lime_result = explain_with_lime(model, X, sample_idx=sample_idx, n_features=n_features)
+    lime_result = explain_with_lime(
+        model, X, sample_idx=sample_idx, n_features=n_features
+    )
     lime_weights = lime_result["feature_weights"]
 
     # Get SHAP explanation
-    shap_result = compute_shap_values(model, X.iloc[[sample_idx]], model_type=model_type)
+    shap_result = compute_shap_values(
+        model, X.iloc[[sample_idx]], model_type=model_type
+    )
     shap_values = shap_result["shap_values"]
 
     if isinstance(shap_values, list):
         shap_values = shap_values[0]
 
-    shap_dict = dict(zip(X.columns, shap_values[0] if len(shap_values.shape) > 1 else shap_values))
+    shap_dict = dict(
+        zip(X.columns, shap_values[0] if len(shap_values.shape) > 1 else shap_values)
+    )
 
     # Compare feature importances
     common_features = set(lime_weights.keys()) & set(shap_dict.keys())

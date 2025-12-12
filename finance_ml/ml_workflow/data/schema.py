@@ -5,13 +5,21 @@ This module defines the authoritative COLUMN_SCHEMA derived from
 create_equities_schema.sql, providing centralized datatype and role
 information for all preprocessing, feature engineering, and modeling.
 
-Schema: 318 columns total (262 original + 48 Phase 9.3 additions)
+Schema Structure:
+- Source columns from CSV/SQL: 299 (matching create_equities_schema.sql)
+- Total COLUMN_SCHEMA entries: 447
+  - 299 source columns (from CSV/SQL schema)
+  - 44 derived/computed columns (log_, ratios, etc.)
+  - 43 legacy aliases (role=auxiliary, for backward compatibility)
+  - 36 generic base columns (no time suffix)
+  - 34 conditional metrics (with _applicable flags)
+  - Additional feature engineering outputs
 
 Database Tables:
 - equities: Original table with per-region data loading
 - all_stocks: Unified table combining four regional screening tables
   (screening_us, screening_eu, screening_apac, screening_rotw)
-  Created by: all_stocks/all_stocks.sql
+  Created by: equities/import_equities_data.sql
   Primary key: (Ticker, Region)
   Indexes: ticker, region, sector, industry, country, last_price, market_cap, sector_region
 
@@ -27,7 +35,9 @@ from typing import Dict, List, Optional, Literal
 
 # Type aliases for clarity
 DType = Literal["float", "int", "string", "category", "datetime64[ns]", "bool"]
-Role = Literal["id", "feature", "target", "target_fallback", "date", "auxiliary", "categorical"]
+Role = Literal[
+    "id", "feature", "target", "target_fallback", "date", "auxiliary", "categorical"
+]
 
 
 # Central column schema registry
@@ -58,7 +68,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "dividend_record_payable_date": {"dtype": "datetime64[ns]", "role": "date"},
     "dividend_record_record_date": {"dtype": "datetime64[ns]", "role": "date"},
     # Target columns
-    "last_price": {"dtype": "float", "role": "feature"},  # Also used as basis for targets
+    "last_price": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Also used as basis for targets
     "price_target": {"dtype": "float", "role": "target"},
     "price_target_ytd_ago": {"dtype": "float", "role": "target_fallback"},
     "price_target_low": {"dtype": "float", "role": "target_fallback"},
@@ -131,7 +144,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "tot_return_pct_cagr_10y": {"dtype": "float", "role": "feature"},
     "price_chg_pct_1m": {"dtype": "float", "role": "feature"},
     "price_chg_pct_3m": {"dtype": "float", "role": "feature"},
-    "1_day_pct": {"dtype": "float", "role": "auxiliary"},  # Legacy alias - use one_day_pct
+    "1_day_pct": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias - use one_day_pct
     "price_5d_ago": {"dtype": "float", "role": "feature"},
     "price_1w_ago": {"dtype": "float", "role": "feature"},
     "price_1m_ago": {"dtype": "float", "role": "feature"},
@@ -156,7 +172,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # Volume & Trading
     "volume_shrs": {"dtype": "float", "role": "feature"},
     "rel_volume": {"dtype": "float", "role": "feature"},
-    "shrs_out": {"dtype": "float", "role": "auxiliary"},  # Legacy alias - use shares_outstanding
+    "shrs_out": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias - use shares_outstanding
     "shrs_out_1fy": {"dtype": "float", "role": "feature"},
     # Revenues & Growth
     "total_revenues_fy": {"dtype": "float", "role": "feature"},
@@ -280,7 +299,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "goodwill_fy": {"dtype": "float", "role": "feature"},
     "goodwill_1fy": {"dtype": "float", "role": "feature"},
     "goodwill_5yavgfq": {"dtype": "float", "role": "feature"},
-    "intangible_assets": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
+    "intangible_assets": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Base column (no time suffix)
     "gross_intangible_assets_ltm": {"dtype": "float", "role": "feature"},
     "gross_intangible_assets_fy": {"dtype": "float", "role": "feature"},
     "gross_intangible_assets_5yavgfq": {"dtype": "float", "role": "feature"},
@@ -313,16 +335,31 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "restructuring_charges_1fy": {"dtype": "float", "role": "feature"},
     "restructuring_charges_fy": {"dtype": "float", "role": "feature"},
     "restructuring_charges_5yavgfq": {"dtype": "float", "role": "feature"},
-    "merger_restructuring_charges_ltm": {"dtype": "float", "role": "feature"},
-    "merger_restructuring_charges_fq": {"dtype": "float", "role": "feature"},
-    "merger_restructuring_charges_fy": {"dtype": "float", "role": "feature"},
-    "merger_restructuring_charges_5yavgfq": {"dtype": "float", "role": "feature"},
+    # Merger & Restructuring Charges - correct normalization with "and" (from CSV "Merger & Restructuring Charges")
+    "merger_and_restructuring_charges_ltm": {"dtype": "float", "role": "feature"},
+    "merger_and_restructuring_charges_fq": {"dtype": "float", "role": "feature"},
+    "merger_and_restructuring_charges_fy": {"dtype": "float", "role": "feature"},
+    "merger_and_restructuring_charges_5yavgfq": {"dtype": "float", "role": "feature"},
+    # Legacy aliases (without "and") - kept for backward compatibility
+    "merger_restructuring_charges_ltm": {"dtype": "float", "role": "auxiliary"},
+    "merger_restructuring_charges_fq": {"dtype": "float", "role": "auxiliary"},
+    "merger_restructuring_charges_fy": {"dtype": "float", "role": "auxiliary"},
+    "merger_restructuring_charges_5yavgfq": {"dtype": "float", "role": "auxiliary"},
     "other_unusual_items_total_ltm": {"dtype": "float", "role": "feature"},
     "gain_loss_on_sale_of_assets_ltm": {"dtype": "float", "role": "feature"},
     # Operating Expenses
     "cost_of_revenues_ltm": {"dtype": "float", "role": "feature"},
-    "r_d_expenses": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
-    "r_d_expenses_ltm": {"dtype": "float", "role": "feature"},
+    # R&D Expenses - correct normalization (from CSV "R&D Expenses (LTM)" where & becomes "and")
+    "randd_expenses_ltm": {"dtype": "float", "role": "feature"},
+    # R&D generic base column and legacy alias
+    "r_d_expenses": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Generic base column (no time suffix)
+    "r_d_expenses_ltm": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias for randd_expenses_ltm
     "selling_general_admin_expenses_total_fq": {
         "dtype": "float",
         "role": "auxiliary",
@@ -340,10 +377,22 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "role": "auxiliary",
     },  # Legacy
     # SG&A with "and" (correct normalization from "Selling General & Admin Expenses/Total")
-    "selling_general_and_admin_expenses_total_fq": {"dtype": "float", "role": "feature"},
-    "selling_general_and_admin_expenses_total_fy": {"dtype": "float", "role": "feature"},
-    "selling_general_and_admin_expenses_total_1fy": {"dtype": "float", "role": "feature"},
-    "selling_general_and_admin_expenses_total_5yavgfq": {"dtype": "float", "role": "feature"},
+    "selling_general_and_admin_expenses_total_fq": {
+        "dtype": "float",
+        "role": "feature",
+    },
+    "selling_general_and_admin_expenses_total_fy": {
+        "dtype": "float",
+        "role": "feature",
+    },
+    "selling_general_and_admin_expenses_total_1fy": {
+        "dtype": "float",
+        "role": "feature",
+    },
+    "selling_general_and_admin_expenses_total_5yavgfq": {
+        "dtype": "float",
+        "role": "feature",
+    },
     "accounts_receivable_total_fy": {
         "dtype": "float",
         "role": "auxiliary",
@@ -352,8 +401,14 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "dtype": "float",
         "role": "auxiliary",
     },  # Legacy - use accounts_receivable_1fy
-    "accounts_receivable_total_5yavgfq": {"dtype": "float", "role": "auxiliary"},  # Legacy
-    "marketing_expenses": {"dtype": "float", "role": "feature"},  # Base column (no time suffix)
+    "accounts_receivable_total_5yavgfq": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy
+    "marketing_expenses": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Base column (no time suffix)
     "marketing_expenses_fq": {"dtype": "float", "role": "feature"},
     "marketing_expenses_fy": {"dtype": "float", "role": "feature"},
     "marketing_expenses_1fy": {"dtype": "float", "role": "feature"},
@@ -364,7 +419,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "eps_adj_ltm": {"dtype": "float", "role": "feature"},
     "eps_norm_est_avg_ntm": {"dtype": "float", "role": "feature"},
     "eps_norm_est_avg_fy1e": {"dtype": "float", "role": "feature"},
-    "eps_previous_year": {"dtype": "float", "role": "feature"},  # Base column for YoY calculations
+    "eps_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Base column for YoY calculations
     # Dividends
     "dividend_per_share_ltm": {"dtype": "float", "role": "feature"},
     "div_yield_ind": {"dtype": "float", "role": "feature"},
@@ -384,12 +442,35 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "interest_expense_total_ltm": {"dtype": "float", "role": "feature"},
     "interest_income_on_investments_ltm": {"dtype": "float", "role": "feature"},
     # Employees
-    "employees": {"dtype": "int", "role": "feature"},  # Base column (current employee count)
+    "employees": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Base column (current employee count) - float for NULL handling
     "avg_employees_ltm": {"dtype": "float", "role": "feature"},
     "avg_employees_fy": {"dtype": "float", "role": "feature"},
     "avg_employees_5yavgfy": {"dtype": "float", "role": "feature"},
     "total_employees_fy": {"dtype": "float", "role": "feature"},
     "total_employees_fq": {"dtype": "float", "role": "feature"},
+    "full_time_employees_fq": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Full time employees (Fiscal Quarter) - float for NULL handling
+    "full_time_employees_fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Full time employees (Fiscal Year) - float for NULL handling
+    "full_time_employees_1fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Full time employees (Previous FY) - float for NULL handling
+    "full_time_employees_2fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Full time employees (2 Years Ago) - float for NULL handling
+    "full_time_employees_3fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Full time employees (3 Years Ago) - float for NULL handling
     # Country-specific
     "market_cap_country_r": {"dtype": "float", "role": "feature"},
     # ==================================================================================
@@ -398,7 +479,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # These columns exist in the data pipeline but use different naming conventions
     # ==================================================================================
     # Analyst Ratings (normalized names without "num_" prefix) - Legacy aliases
-    "price_target_count": {"dtype": "float", "role": "auxiliary"},  # Alias for price_target_num
+    "price_target_count": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Alias for price_target_num
     "strong_sell_ratings": {
         "dtype": "float",
         "role": "auxiliary",
@@ -407,9 +491,18 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "dtype": "float",
         "role": "auxiliary",
     },  # Legacy alias for num_strong_buys_ratings
-    "hold_ratings": {"dtype": "float", "role": "auxiliary"},  # Legacy alias for num_hold_ratings
-    "buys_ratings": {"dtype": "float", "role": "auxiliary"},  # Legacy alias for num_buys_ratings
-    "sell_ratings": {"dtype": "float", "role": "auxiliary"},  # Legacy alias for num_sell_ratings
+    "hold_ratings": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias for num_hold_ratings
+    "buys_ratings": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias for num_buys_ratings
+    "sell_ratings": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Legacy alias for num_sell_ratings
     # Simplified Base Columns (without time suffixes - used as generic references)
     "p_e": {"dtype": "float", "role": "feature"},  # Generic P/E ratio
     "p_b": {"dtype": "float", "role": "feature"},  # Generic P/B ratio
@@ -417,7 +510,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "ebitda": {"dtype": "float", "role": "feature"},  # Generic EBITDA
     "ebit": {"dtype": "float", "role": "feature"},  # Generic EBIT
     "net_income": {"dtype": "float", "role": "feature"},  # Generic net income
-    "net_income_ltm": {"dtype": "float", "role": "feature"},  # Duplicate of net_income_is_ltm
+    "net_income_ltm": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Duplicate of net_income_is_ltm
     "gross_margin": {"dtype": "float", "role": "feature"},  # Generic gross margin
     "eps": {"dtype": "float", "role": "feature"},  # Generic EPS
     "total_equity": {"dtype": "float", "role": "feature"},  # Generic total equity
@@ -431,24 +527,45 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "dtype": "float",
         "role": "auxiliary",
     },  # Legacy alias - use accounts_receivable_fy
-    "current_liabilities": {"dtype": "float", "role": "feature"},  # Generic current liabilities
+    "current_liabilities": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Generic current liabilities
     "working_capital": {"dtype": "float", "role": "feature"},  # Generic working capital
-    "retained_earnings": {"dtype": "float", "role": "feature"},  # Generic retained earnings
+    "retained_earnings": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Generic retained earnings
     "cfo": {"dtype": "float", "role": "feature"},  # Generic cash flow from operations
     "cfi": {"dtype": "float", "role": "feature"},  # Generic cash flow from investing
     "cff": {"dtype": "float", "role": "feature"},  # Generic cash flow from financing
     "fcf": {"dtype": "float", "role": "feature"},  # Generic free cash flow
     "gross_profit": {"dtype": "float", "role": "feature"},  # Generic gross profit
-    "operating_income": {"dtype": "float", "role": "feature"},  # Generic operating income
-    "interest_expense": {"dtype": "float", "role": "feature"},  # Generic interest expense
+    "operating_income": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Generic operating income
+    "interest_expense": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Generic interest expense
     "goodwill": {"dtype": "float", "role": "feature"},  # Generic goodwill
-    "dividend_per_share": {"dtype": "float", "role": "feature"},  # Generic dividend per share
-    "operating_expenses": {"dtype": "float", "role": "feature"},  # Generic operating expenses
+    "dividend_per_share": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Generic dividend per share
+    "operating_expenses": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Generic operating expenses
     "operating_cash_flow": {"dtype": "float", "role": "feature"},  # Alias for cfo
     "dividends_paid": {"dtype": "float", "role": "feature"},  # Generic dividends paid
     "dividends_paid_ltm": {"dtype": "float", "role": "feature"},  # Dividends paid LTM
     # Additional normalized names
-    "price_target_number": {"dtype": "float", "role": "auxiliary"},  # Alias for price_target_num
+    "price_target_number": {
+        "dtype": "float",
+        "role": "auxiliary",
+    },  # Alias for price_target_num
     "one_day_pct": {"dtype": "float", "role": "feature"},  # Alias for 1_day_pct
     "shares_outstanding": {"dtype": "float", "role": "feature"},  # Alias for shrs_out
     "p_e_5yavgltm": {"dtype": "float", "role": "feature"},  # 5-year average P/E LTM
@@ -490,7 +607,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # DERIVED & COMPUTED COLUMNS (Created during preprocessing/feature engineering)
     # ==================================================================================
     # Volatility percentage variants
-    "volatility_1y_pct": {"dtype": "float", "role": "feature"},  # 1-year volatility as percentage
+    "volatility_1y_pct": {
+        "dtype": "float",
+        "role": "feature",
+    },  # 1-year volatility as percentage
     # --------------------------------------------------------------------------
     # Log-transformed semantic metrics (created by ETL semantic transforms)
     # These are log1p transforms of market values for better ML distribution
@@ -516,8 +636,14 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "p_s_ratio": {"dtype": "float", "role": "feature"},  # Price-to-Sales ratio
     "ev_ebitda_ratio": {"dtype": "float", "role": "feature"},  # EV/EBITDA ratio
     "ev_sales_ratio": {"dtype": "float", "role": "feature"},  # EV/Sales ratio
-    "gross_margin_pct": {"dtype": "float", "role": "feature"},  # Gross margin percentage
-    "operating_margin_pct": {"dtype": "float", "role": "feature"},  # Operating margin percentage
+    "gross_margin_pct": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Gross margin percentage
+    "operating_margin_pct": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Operating margin percentage
     "net_margin_pct": {"dtype": "float", "role": "feature"},  # Net margin percentage
     "roe": {"dtype": "float", "role": "feature"},  # Return on Equity
     "roa": {"dtype": "float", "role": "feature"},  # Return on Assets
@@ -526,18 +652,33 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "earnings_growth": {"dtype": "float", "role": "feature"},  # Earnings growth rate
     "debt_to_equity": {"dtype": "float", "role": "feature"},  # Debt-to-Equity ratio
     "debt_to_assets": {"dtype": "float", "role": "feature"},  # Debt-to-Assets ratio
-    "target_vs_price": {"dtype": "float", "role": "feature"},  # Price target vs last price ratio
+    "target_vs_price": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Price target vs last price ratio
     "target_vs_price_median": {
         "dtype": "float",
         "role": "feature",
     },  # Median price target vs last price
-    "peg_ratio": {"dtype": "float", "role": "feature"},  # Price/Earnings-to-Growth ratio
-    "dividend_yield": {"dtype": "float", "role": "feature"},  # Dividend yield percentage
+    "peg_ratio": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Price/Earnings-to-Growth ratio
+    "dividend_yield": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Dividend yield percentage
     "roic": {"dtype": "float", "role": "feature"},  # Return on Invested Capital
     # --------------------------------------------------------------------------
     # Year-over-Year (YoY) comparison columns (_previous_year suffix)
-    "revenue_previous_year": {"dtype": "float", "role": "feature"},  # Revenue from previous year
-    "ebitda_previous_year": {"dtype": "float", "role": "feature"},  # EBITDA from previous year
+    "revenue_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Revenue from previous year
+    "ebitda_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # EBITDA from previous year
     "total_equity_previous_year": {
         "dtype": "float",
         "role": "feature",
@@ -554,7 +695,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "dtype": "float",
         "role": "feature",
     },  # AR from previous year
-    "roa_previous_year": {"dtype": "float", "role": "feature"},  # ROA from previous year
+    "roa_previous_year": {
+        "dtype": "float",
+        "role": "feature",
+    },  # ROA from previous year
     "current_ratio_previous_year": {
         "dtype": "float",
         "role": "feature",
@@ -573,7 +717,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     },  # Asset turnover from previous year
     # Fiscal year variants (alternative naming)
     "revenue_fy": {"dtype": "float", "role": "feature"},  # Alias for total_revenues_fy
-    "working_capital_1fy": {"dtype": "float", "role": "feature"},  # Working capital 1 fiscal year
+    "working_capital_1fy": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Working capital 1 fiscal year
     # ==================================================================================
     # CONDITIONAL METRICS (Only valid for specific business conditions)
     # ==================================================================================
@@ -741,6 +888,11 @@ PHASE93_FEATURE_INPUTS: Dict[str, List[str]] = {
         "avg_employees_5yavgfy",
         "total_employees_fy",
         "total_employees_fq",
+        "full_time_employees_fq",
+        "full_time_employees_fy",
+        "full_time_employees_1fy",
+        "full_time_employees_2fy",
+        "full_time_employees_3fy",
     ],
     "dividends": [
         "dividend_streak",

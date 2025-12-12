@@ -22,7 +22,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 
 from finance_ml.ml_workflow.validation.splits import create_train_test_split
 from .io import build_predictions_frame, validate_predictions_schema
-from .safety_rails import clip_predictions, enforce_non_negative
+from .robust import clip_predictions, enforce_non_negative
 
 
 def run_default_regression_pipeline(

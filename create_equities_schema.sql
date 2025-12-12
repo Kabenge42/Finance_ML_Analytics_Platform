@@ -317,9 +317,6 @@ CREATE TABLE equities
     "Inventory (FY)"                           NUMERIC,
     "Goodwill (5YAVGFQ)"                       NUMERIC,
     "Inventory (5YAVGFQ)"                      NUMERIC,
-    "Avg Employees (LTM)"                      NUMERIC,
-    "Avg Employees (FY)"                       NUMERIC,
-    "Avg Employees (5YAVGFY)"                  NUMERIC,
     "Retained Earnings (FQ)"                   NUMERIC,
     "Retained Earnings (FY)"                   NUMERIC,
     "Retained Earnings (5YAVGFQ)"              NUMERIC,
@@ -397,9 +394,13 @@ CREATE TABLE equities
     "EV/Sales (-2FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (2 FQ ago LTM)
     "EV/Sales (-3FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (3 FQ ago LTM)
     "EV/Sales (-4FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (4 FQ ago LTM)
-    -- Category 3: Employment Metrics (2 columns)
-    "Total Employees (FY)"                     NUMERIC, -- COUNT: Total employees (Fiscal Year)
-    "Total Employees (FQ)"                     NUMERIC, -- COUNT: Total employees (Fiscal Quarter)
+    -- Category 3: Employment Metrics (7 columns)
+    "Full Time Employees (FQ)"   NUMERIC,               -- COUNT: Full time employees (Fiscal Quarter)
+    "Full Time Employees (FY)"   NUMERIC,               -- COUNT: Full time employees (Fiscal Year)
+    "Full Time Employees (-1FY)" NUMERIC,               -- COUNT: Full time employees (Previous Fiscal Year)
+    "Full Time Employees (-2FY)" NUMERIC,               -- COUNT: Full time employees (2 Years Ago)
+    "Full Time Employees (-3FY)" NUMERIC,               -- COUNT: Full time employees (3 Years Ago)
+    "Avg Employees (5YAVGFY)"    NUMERIC,               -- COUNT: Average employees (5-year average Fiscal Year)
     -- Category 4: Technical Indicators (6 columns)
     -- PRICE: 52-Week Bounds (for relative positioning)
     "52W High/Adj"                             NUMERIC, -- PRICE: 52-week adjusted high

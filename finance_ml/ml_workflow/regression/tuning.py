@@ -134,10 +134,10 @@ def optimize_hyperparameters_optuna(
 
     Hyperparameter Search Spaces:
         random_forest:
-        - n_estimators: 50-200 (integer)
-        - max_depth: 3-15 (integer)
-        - min_samples_split: 2-20 (integer)
-        - min_samples_leaf: 1-10 (integer)
+        - n_estimators: 50-100 (integer, capped to prevent overfitting)
+        - max_depth: 3-10 (integer, limited to prevent overfitting)
+        - min_samples_split: 5-30 (integer, higher minimum for regularization)
+        - min_samples_leaf: 5-50 (integer, higher values prevent overfitting)
 
     Example:
         >>> import pandas as pd
@@ -194,12 +194,16 @@ def optimize_hyperparameters_optuna(
             Mean cross-validation R² score (float)
         """
         if model_type == "random_forest":
-            # Suggest hyperparameters
+            # Suggest hyperparameters with conservative ranges to prevent overfitting
+            # - Lower n_estimators cap (50-100) for faster training
+            # - Limited max_depth (3-10) to prevent memorizing training data
+            # - Higher min_samples_split (5-30) for better generalization
+            # - Higher min_samples_leaf (5-50) as key regularization parameter
             params = {
-                "n_estimators": trial.suggest_int("n_estimators", 50, 200),
-                "max_depth": trial.suggest_int("max_depth", 3, 15),
-                "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+                "n_estimators": trial.suggest_int("n_estimators", 50, 100),
+                "max_depth": trial.suggest_int("max_depth", 3, 10),
+                "min_samples_split": trial.suggest_int("min_samples_split", 5, 30),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 5, 50),
             }
             model = RandomForestRegressor(**params, random_state=random_state, n_jobs=-1)
         else:

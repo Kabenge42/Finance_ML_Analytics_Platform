@@ -198,12 +198,16 @@ def integrate_classification_features_into_dataframe(
     # This prevents scikit-learn TypeError about mixed column name types
     result.columns = result.columns.astype(str)
 
-    logger.debug(f"Integration complete: {len(result)} rows, {len(result.columns)} total columns")
+    logger.debug(
+        f"Integration complete: {len(result)} rows, {len(result.columns)} total columns"
+    )
 
     return result
 
 
-def integrate_classification_features(df: pd.DataFrame, probabilities: np.ndarray) -> pd.DataFrame:
+def integrate_classification_features(
+    df: pd.DataFrame, probabilities: np.ndarray
+) -> pd.DataFrame:
     """Convenience wrapper to integrate classifier probabilities into ``df``.
 
     This helper mirrors the Phase 9.9 plan API by taking the raw
@@ -266,7 +270,9 @@ def create_classification_interactions(
     Returns:
         DataFrame with additional interaction features
     """
-    from finance_ml.ml_workflow.regression.features import build_prob_valuation_interactions
+    from finance_ml.ml_workflow.regression.features import (
+        build_prob_valuation_interactions,
+    )
 
     # Note: build_prob_valuation_interactions naming convention is {val}_x_{prob}
     # The original implementation here was {class}_x_{val}.
@@ -309,7 +315,8 @@ def prepare_regression_data(
     classification_features = [
         col
         for col in df.columns
-        if col.startswith("event_prob_") or col in ["event_class_predicted", "event_confidence"]
+        if col.startswith("event_prob_")
+        or col in ["event_class_predicted", "event_confidence"]
     ]
 
     # Get all feature columns
@@ -434,7 +441,9 @@ def prepare_regression_data(
             fi_df = pd.read_csv(fi_path)
             # Preserve classification probability features and confidence
             keep_cols = [
-                c for c in X_train.columns if c.startswith("event_prob_") or c == "event_confidence"
+                c
+                for c in X_train.columns
+                if c.startswith("event_prob_") or c == "event_confidence"
             ]
             X_train, X_test, kept_imp = prune_low_importance_features(
                 X_train, X_test, fi_df, threshold=threshold, keep_cols=keep_cols
@@ -478,7 +487,9 @@ def prepare_regression_data(
             for bcol in existing:
                 inter_name = f"{dcol}__x__{bcol}"
                 # Multiply safely; cast to float
-                new_cols[inter_name] = d.values.astype(float) * X_in[bcol].values.astype(float)
+                new_cols[inter_name] = d.values.astype(float) * X_in[
+                    bcol
+                ].values.astype(float)
         if new_cols:
             interactions_df = pd.DataFrame(new_cols, index=X_in.index)
             X_out = pd.concat([X_in, interactions_df], axis=1)
@@ -565,7 +576,13 @@ def add_sector_interactions_for_prediction(
     """
     if base_cols is None:
         # NOTE: market_cap excluded to prevent feature leakage (causes predictions on market_cap scale)
-        base_cols = ["p_e_ratio", "ev_ebitda_ratio", "gross_margin", "debt_to_equity", "beta_5y"]
+        base_cols = [
+            "p_e_ratio",
+            "ev_ebitda_ratio",
+            "gross_margin",
+            "debt_to_equity",
+            "beta_5y",
+        ]
 
     # Validate inputs
     if len(X) != len(df_with_sector):
@@ -575,7 +592,9 @@ def add_sector_interactions_for_prediction(
 
     # Check if sector column exists
     if "sector" not in df_with_sector.columns:
-        logger.warning("No 'sector' column in df_with_sector; skipping sector interactions")
+        logger.warning(
+            "No 'sector' column in df_with_sector; skipping sector interactions"
+        )
         return X
 
     # Filter base_cols to only those present in X
@@ -616,7 +635,9 @@ def add_sector_interactions_for_prediction(
         )
         return X_out
 
-    logger.warning("No sector interactions generated (empty dummies or existing features)")
+    logger.warning(
+        "No sector interactions generated (empty dummies or existing features)"
+    )
     return X
 
 
@@ -625,7 +646,9 @@ def add_sector_interactions_for_prediction(
 # ==============================================================================
 
 
-def validate_training_data(X: pd.DataFrame, y: pd.Series, strict: bool = True) -> Dict[str, Any]:
+def validate_training_data(
+    X: pd.DataFrame, y: pd.Series, strict: bool = True
+) -> Dict[str, Any]:
     """
     Validate training data before model fitting.
 
@@ -771,7 +794,9 @@ def prepare_features_for_training(
 
                 apply_imputation_func = apply_enhanced_imputation_strategy_6step
             except ImportError:
-                logger.warning("Could not import imputation function, skipping imputation")
+                logger.warning(
+                    "Could not import imputation function, skipping imputation"
+                )
                 apply_imputation = False
 
     # Extract target BEFORE imputation to preserve NaN for removal
@@ -815,7 +840,9 @@ def prepare_features_for_training(
         y = y.fillna(y.median() if pd.notna(y.median()) else 0)
         logger.warning("Applied emergency fillna(0) to ensure training can proceed")
 
-    logger.info(f"✓ Features prepared: {X.shape}, target: {y.shape}, zero NaN confirmed")
+    logger.info(
+        f"✓ Features prepared: {X.shape}, target: {y.shape}, zero NaN confirmed"
+    )
 
     return X, y
 
@@ -901,7 +928,9 @@ def extract_numeric_feature_columns(
     # Get all numeric columns
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
-    logger.info(f"DataFrame analysis: {len(df.columns)} total columns, {len(numeric_cols)} numeric")
+    logger.info(
+        f"DataFrame analysis: {len(df.columns)} total columns, {len(numeric_cols)} numeric"
+    )
 
     # Filter out excluded columns and patterns
     feature_cols = []
@@ -926,7 +955,11 @@ def extract_numeric_feature_columns(
     else:
         logger.debug(
             f"Feature columns: {feature_cols[:10]}"
-            + (f" ... and {len(feature_cols) - 10} more" if len(feature_cols) > 10 else "")
+            + (
+                f" ... and {len(feature_cols) - 10} more"
+                if len(feature_cols) > 10
+                else ""
+            )
         )
 
     return feature_cols
@@ -1012,7 +1045,9 @@ def train_sector_specific_models(
 
     if sector_col in df.columns:
         n_sectors = df[sector_col].nunique()
-        logger.info(f"  ✓ Sector column '{sector_col}' present ({n_sectors} unique sectors)")
+        logger.info(
+            f"  ✓ Sector column '{sector_col}' present ({n_sectors} unique sectors)"
+        )
     else:
         logger.warning(f"  ⚠ Sector column '{sector_col}' NOT FOUND")
 
@@ -1025,15 +1060,23 @@ def train_sector_specific_models(
         all_key = feature_cols.get("all_features")
         if all_key:
             actual_feature_cols = list(all_key)
-            logger.info(f"  Using 'all_features' key: {len(actual_feature_cols)} features")
+            logger.info(
+                f"  Using 'all_features' key: {len(actual_feature_cols)} features"
+            )
         else:
             combined: List[str] = []
-            for key in ["numeric_features", "categorical_features", "classification_features"]:
+            for key in [
+                "numeric_features",
+                "categorical_features",
+                "classification_features",
+            ]:
                 vals = feature_cols.get(key, [])
                 if vals:
                     combined.extend(list(vals))
             actual_feature_cols = combined
-            logger.info(f"  Combined feature types: {len(actual_feature_cols)} features")
+            logger.info(
+                f"  Combined feature types: {len(actual_feature_cols)} features"
+            )
         # Deduplicate while preserving order
         before = len(actual_feature_cols)
         actual_feature_cols = list(dict.fromkeys(actual_feature_cols))
@@ -1041,7 +1084,9 @@ def train_sector_specific_models(
             logger.info(f"  After deduplication: {len(actual_feature_cols)} features")
     elif isinstance(feature_cols, list):
         actual_feature_cols = feature_cols
-        logger.info(f"feature_cols is already a list: {len(actual_feature_cols)} features")
+        logger.info(
+            f"feature_cols is already a list: {len(actual_feature_cols)} features"
+        )
     else:
         # Attempt a graceful conversion (e.g., pandas Index or numpy array)
         try:
@@ -1077,7 +1122,9 @@ def train_sector_specific_models(
     if len(actual_feature_cols) == 0:
         # Try auto-extraction fallback if enabled
         if auto_extract_fallback:
-            logger.warning("No valid features from input, attempting auto-extraction...")
+            logger.warning(
+                "No valid features from input, attempting auto-extraction..."
+            )
             actual_feature_cols = extract_numeric_feature_columns(
                 df, exclude_cols=[target_col, sector_col]
             )
@@ -1114,7 +1161,9 @@ def train_sector_specific_models(
             )
             raise ValueError(error_msg)
 
-    logger.info(f"✓ Final feature count for sector regression: {len(actual_feature_cols)}")
+    logger.info(
+        f"✓ Final feature count for sector regression: {len(actual_feature_cols)}"
+    )
 
     # ============================================================================
     # VALIDATE AND CLEAN TARGET COLUMN
@@ -1202,7 +1251,9 @@ def train_sector_specific_models(
 
     # Summary
     logger.info("=" * 60)
-    logger.info(f"✓ Sector-specific training complete: {len(sector_models)}/{len(sectors)} sectors")
+    logger.info(
+        f"✓ Sector-specific training complete: {len(sector_models)}/{len(sectors)} sectors"
+    )
     logger.info("=" * 60)
 
     results = {
@@ -1273,15 +1324,29 @@ def align_features_to_model(
     - Supports sklearn, XGBoost, LightGBM, CatBoost models
     """
     # Get expected features from model
+    # IMPORTANT: Normalize feature names to Python str to prevent sklearn TypeError
+    # about mixed column name types ('str' vs 'str_' from numpy/pandas StringDtype)
     if hasattr(model, "feature_names_in_"):
-        expected_features = list(model.feature_names_in_)
+        expected_features = [str(f) for f in model.feature_names_in_]
     elif hasattr(model, "feature_name_"):  # LightGBM
-        expected_features = list(model.feature_name_)
+        expected_features = [str(f) for f in model.feature_name_]
     elif hasattr(model, "get_booster"):  # XGBoost
-        expected_features = model.get_booster().feature_names
+        booster_names = model.get_booster().feature_names
+        expected_features = [str(f) for f in booster_names] if booster_names else None
+        if expected_features is None:
+            logger.warning(
+                "XGBoost model has no feature names; returning X_test unchanged"
+            )
+            return X_test
     else:
-        logger.warning("Model does not expose feature names; returning X_test unchanged")
+        logger.warning(
+            "Model does not expose feature names; returning X_test unchanged"
+        )
         return X_test
+
+    # Normalize X_test column names to Python str for consistent comparison
+    X_test = X_test.copy()
+    X_test.columns = [str(c) for c in X_test.columns]
 
     # Identify missing and extra features
     test_features = set(X_test.columns)
@@ -1320,15 +1385,84 @@ def align_features_to_model(
     return X_aligned
 
 
+def _sanitize_features_for_sklearn_predict(
+    X: pd.DataFrame,
+    *,
+    fill_missing: Optional[float] = 0.0,
+    clip_to_float32: bool = True,
+) -> pd.DataFrame:
+    """
+    Make X safe for sklearn estimators that validate/cast to float32.
+
+    sklearn's tree-based models (RandomForest, GradientBoosting, etc.) internally
+    cast inputs to float32 and will raise ValueError if any value is:
+    - +inf / -inf
+    - Outside float32 representable range (roughly ±3.4e38)
+    - NaN (for some estimators)
+
+    This function ensures all values are finite and within float32 range.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Input features (may contain inf, extreme values, or non-numeric columns)
+    fill_missing : float or None, default=0.0
+        Value to fill NaNs with. If None, uses column medians.
+    clip_to_float32 : bool, default=True
+        If True, clips values to 99% of float32 max to prevent overflow
+
+    Returns
+    -------
+    pd.DataFrame
+        Sanitized features safe for sklearn prediction
+
+    Notes
+    -----
+    - Coerces non-numeric columns to numeric (with coercion to NaN)
+    - Converts +/-inf to NaN first, then fills
+    - Clips to float32-safe range to prevent "value too large for dtype('float32')"
+    """
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+
+    X = X.copy()
+
+    # Coerce any non-numeric columns to numeric (prevents 'object' columns sneaking through)
+    for col in X.columns:
+        if not pd.api.types.is_numeric_dtype(X[col]):
+            X[col] = pd.to_numeric(X[col], errors="coerce")
+
+    # Replace infinities with NaN (will be filled below)
+    X.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+    # Clip to float32-safe finite range to prevent overflow errors
+    # Stay a bit inside the limit to avoid edge-case casting/operations
+    if clip_to_float32:
+        max_f32 = np.finfo(np.float32).max
+        limit = max_f32 * 0.99
+        X = X.clip(lower=-limit, upper=limit)
+
+    # Fill missing values
+    if fill_missing is None:
+        # Use column medians for a more robust fill
+        X = X.fillna(X.median(numeric_only=True))
+        # If median is NaN (all-NaN column), fill with 0
+        X = X.fillna(0.0)
+    else:
+        X = X.fillna(float(fill_missing))
+
+    return X
+
+
 def predict_with_model(
     model: Any, X_test: pd.DataFrame, auto_align: bool = True, **kwargs
 ) -> np.ndarray:
     """
-    Predict with automatic feature alignment.
+    Predict with automatic feature alignment and input sanitization.
 
     Wrapper around model.predict() that automatically aligns test features
-    to the model's expected feature set, eliminating prediction-time errors
-    from feature mismatches.
+    to the model's expected feature set and sanitizes inputs to prevent
+    sklearn validation errors from infinities or extreme values.
 
     Parameters
     ----------
@@ -1339,7 +1473,9 @@ def predict_with_model(
     auto_align : bool, default=True
         Automatically align features to model
     **kwargs
-        Additional arguments passed to model.predict()
+        Additional arguments. Recognized kwargs:
+        - fill_missing : float, default=0.0 - value to fill NaN/inf with
+        Other kwargs are passed to model.predict()
 
     Returns
     -------
@@ -1362,7 +1498,11 @@ def predict_with_model(
     - Set auto_align=False to disable automatic alignment
     - Compatible with sklearn, XGBoost, LightGBM, CatBoost models
     - Reduces notebook boilerplate by ~50 lines per prediction cell
+    - Automatically sanitizes inf/NaN/extreme values for sklearn compatibility
     """
+    # Extract fill_missing from kwargs (don't pass it to model.predict)
+    fill_missing = kwargs.pop("fill_missing", 0.0)
+
     # Normalize all column names to Python str (not numpy.str_)
     # This prevents scikit-learn TypeError about mixed column name types
     if hasattr(X_test, "columns"):
@@ -1371,5 +1511,13 @@ def predict_with_model(
 
     if auto_align:
         X_test = align_features_to_model(X_test, model)
+
+    # Sanitize features: handle inf, extreme values, and NaN
+    # This prevents "Input X contains infinity or a value too large for dtype('float32')"
+    X_test = _sanitize_features_for_sklearn_predict(
+        X_test,
+        fill_missing=fill_missing,
+        clip_to_float32=True,
+    )
 
     return model.predict(X_test, **kwargs)

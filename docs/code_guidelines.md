@@ -1858,37 +1858,67 @@ TEST_SIZE = 0.25  # ❌ Redefining constant creates confusion
 **Policy**: Use descriptive stage-based naming instead of in-place mutations. Each transformation stage produces a new
 DataFrame with a descriptive suffix indicating the preprocessing stage.
 
-**Required Stage Names** (4-stage pipeline):
+**Required Stage Names** (6-stage ML pipeline):
 
-The pipeline is organized into four high-level stages that align with the unified ETL pipeline
-(`finance_ml.ml_workflow.preprocessing.etl`):
+The pipeline is organized into six stages for the complete ML workflow, with four core stages and two optional
+ML-specific stages. This aligns with the unified ETL pipeline (`finance_ml.ml_workflow.preprocessing.etl`):
+
+#### Core Pipeline Stages (Required)
 
 1. **`all_stocks_preprocessed`** — ETL pipeline output: extraction, normalization, validation, sanitization,
    imputation (6-step), optional scaling, and optional financial metrics computation. This consolidates all
-   preprocessing steps into a single ETL call using `run_etl_pipeline()`, `etl_with_imputation()`, or
-   `etl_with_financial_metrics()` for comprehensive preprocessing with valuation/profitability/growth/leverage metrics.
+   preprocessing steps into a single ETL call using `run_etl_pipeline()`, `etl_with_features()`, or
+   `etl_with_financial_metrics()`. Shape: ~(N, 655) columns after ETL.
 
 2. **`all_stocks_features`** — DataFrame enhanced with engineered features (Phase 9.3 feature categories:
-   momentum, valuation, profitability, quality/risk, cash flow, growth).
+   momentum, valuation, profitability, quality/risk, cash flow, growth). Shape: ~(N, 656) columns.
 
 3. **`all_stocks_classification`** — DataFrame enhanced with classification model outputs (event probabilities,
-   predicted classes) for use as meta-features in regression.
+   predicted classes) for use as meta-features in regression. Shape: ~(N, 663) columns.
 
 4. **`all_stocks_enhanced`** — Final Phase 9.5 regression-ready dataset with all transformations including
-   classification meta-features.
+   classification meta-features and interaction terms. Shape: ~(N, 928) columns.
+
+#### Optional ML-Specific Stages
+
+5. **`all_stocks_selected`** — DataFrame after feature selection (importance/correlation filtering).
+   Use when reducing dimensionality for model training. Shape: ~(N, 392) columns (selected features only).
+
+6. **`all_stocks_balanced`** — SMOTE-balanced DataFrame for classification training. Only used for
+   class-imbalanced event classification, not for regression. Shape varies based on balancing strategy.
+
+#### Auxiliary DataFrames (Not Pipeline Stages)
+
+These are supporting DataFrames that store specific outputs, not pipeline stages:
+
+- **`all_stocks_multilabel`** — Multi-label target matrix (8 label columns only: label_momentum,
+  label_valuation, label_quality, label_profitability, label_growth, label_efficiency, label_cash_flow,
+  label_leverage). Used for multi-label classification experiments.
+
+#### Deprecated Stage Names (Do Not Use)
+
+The following stage names were used in legacy implementations but are now handled internally by the ETL pipeline.
+**Do not create these as separate DataFrames**:
+
+- ~~`all_stocks_typed`~~ → Handled by ETL Stage 1 (column normalization)
+- ~~`all_stocks_winsorized`~~ → Handled by ETL Stage 4 (sanitization) with `apply_winsorization=True`
+- ~~`all_stocks_imputed`~~ → Handled by ETL Stage 5 (imputation)
+- ~~`all_stocks_scaled`~~ → Handled by ETL Stage 7 (scaling) with `apply_scaling=True`
+- ~~`all_stocks_normalized`~~ → Consolidated into `all_stocks_preprocessed`
+- ~~`all_stocks_with_classification`~~ → Renamed to `all_stocks_classification` for consistency
 
 **ETL Pipeline Internal Stages** (handled automatically by `run_etl_pipeline()`):
 
 The ETL pipeline internally handles these preprocessing steps in sequence:
 
-- Stage 1: Column normalization (lowercase, underscores)
-- Stage 2: Schema validation
-- Stage 3: Drop invalid rows (missing ticker, sector, last_price)
-- Stage 4: Data sanitization (inf, nan, extremes)
-- Stage 5: Imputation (6-step: zero, sector-KNN, price, median, categorical, datetime)
-- Stage 6: Log transforms (optional)
-- Stage 7: Feature scaling (optional, excludes price columns)
-- Stage 8: Financial metrics computation (optional, via `etl_with_financial_metrics()` or ETLConfig flags):
+- Internal Stage 1: Column normalization (lowercase, underscores)
+- Internal Stage 2: Schema validation
+- Internal Stage 3: Drop invalid rows (missing ticker, sector, last_price)
+- Internal Stage 4: Data sanitization (inf, nan, extremes, winsorization)
+- Internal Stage 5: Imputation (6-step: zero, sector-KNN, price, median, categorical, datetime)
+- Internal Stage 6: Log transforms (optional, for skewed market values)
+- Internal Stage 7: Feature scaling (optional, excludes price columns)
+- Internal Stage 8: Financial metrics computation (optional, via `etl_with_financial_metrics()` or ETLConfig flags):
     - Valuation metrics: P/E, P/S, EV/EBITDA, EV/Sales ratios
     - Profitability metrics: gross/operating/net margins, ROE, ROA
     - Growth metrics: revenue, EBITDA, earnings YoY growth
@@ -1903,6 +1933,32 @@ The ETL pipeline internally handles these preprocessing steps in sequence:
 - **Rollback**: Revert to earlier stage if downstream transformation fails
 - **Metrics Tracking**: ETL returns `ETLMetrics` with imputation/scaling statistics
 - **Self-documenting**: Stage names clearly indicate transformation history
+- **Reduced Memory**: Fewer intermediate DataFrames means lower memory footprint
+
+#### TDD Improvement Tasks
+
+The following tasks should be implemented with Test-Driven Development:
+
+**Task 1: Deprecation Warnings for Legacy Stage Names**
+
+- Add `DeprecationWarning` when `all_stocks_typed`, `all_stocks_winsorized`, `all_stocks_imputed`,
+  `all_stocks_scaled`, or `all_stocks_with_classification` are created
+- Test: `test_deprecated_stage_names.py` — verify warnings are raised
+
+**Task 2: Pipeline Stage Validator**
+
+- Create `validate_pipeline_stages(globals_dict)` function to check stage naming compliance
+- Test: `test_pipeline_stage_validator.py` — verify correct/incorrect stage detection
+
+**Task 3: ETL Metrics for All Internal Stages**
+
+- Extend `ETLMetrics` to track row counts at each internal stage
+- Test: `test_etl_internal_stage_metrics.py` — verify metrics accuracy
+
+**Task 4: Notebook Refactoring Validation**
+
+- Create notebook cell that validates all DataFrame stages follow convention
+- Test: `test_notebook_stage_compliance.py` — validate notebook follows guidelines
 
 **Implementation Pattern**:
 
@@ -2190,6 +2246,8 @@ via `tests/test_column_semantics.py`, `tests/test_selective_winsorization.py`, `
 
 5. **Count Columns** (`COUNT_COLUMNS`): Discrete integers, inappropriate for continuous scaling
     - `num_analysts`, `num_employees`, `num_strong_buy_ratings`, `num_buy_ratings`, `num_hold_ratings`
+   - `full_time_employees_fq`, `full_time_employees_fy`, `full_time_employees_1fy`, `full_time_employees_2fy`,
+     `full_time_employees_3fy`
 
 **Helper Functions**:
 

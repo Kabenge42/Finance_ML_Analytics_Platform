@@ -1,0 +1,115 @@
+================================================================================
+SQL-PYTHON SCHEMA ALIGNMENT VALIDATION REPORT
+================================================================================
+
+SQL Schema Columns: 299
+Python Source Columns: 382
+Matched Columns: 267
+
+================================================================================
+ALIGNMENT SUMMARY
+================================================================================
+
+[WARNING] Alignment issues detected:
+  - 31 columns missing in Python schema
+  - 5 dtype mismatches
+
+================================================================================
+COLUMNS MISSING IN PYTHON SCHEMA
+================================================================================
+
+The following SQL columns are not present in Python COLUMN_SCHEMA:
+
+  "1-Day %" -> 1_day (NUMERIC)
+  "Accounts Receivable/Total (-1FY)" -> accounts_receivable_total_1fy (NUMERIC)
+  "Accounts Receivable/Total (5YAVGFQ)" -> accounts_receivable_total_5yavgfq (NUMERIC)
+  "Accounts Receivable/Total (FY)" -> accounts_receivable_total_fy (NUMERIC)
+  "Description" -> description (TEXT)
+  "Dividend Record (Currency)" -> dividend_record_currency (TEXT)
+  "Dividend Record (Frequency)" -> dividend_record_frequency (TEXT)
+  "Gross Profit Margin % (FY)" -> gross_profit_margin_fy (NUMERIC)
+  "Gross Profit Margin % (LTM)" -> gross_profit_margin_ltm (NUMERIC)
+  "Merger & Restructuring Charges (5YAVGFQ)" -> merger_restructuring_charges_5yavgfq (NUMERIC)
+  "Merger & Restructuring Charges (FQ)" -> merger_restructuring_charges_fq (NUMERIC)
+  "Merger & Restructuring Charges (FY)" -> merger_restructuring_charges_fy (NUMERIC)
+  "Merger & Restructuring Charges (LTM)" -> merger_restructuring_charges_ltm (NUMERIC)
+  "Name" -> name (TEXT)
+  "Net Income Margin % (FY)" -> net_income_margin_fy (NUMERIC)
+  "Net Income Margin % (LTM)" -> net_income_margin_ltm (NUMERIC)
+  "Price Chg. % (1M)" -> price_chg_1m (NUMERIC)
+  "Price Chg. % (3M)" -> price_chg_3m (NUMERIC)
+  "R&D Expenses (LTM)" -> r_d_expenses_ltm (NUMERIC)
+  "Return on Assets (ROA) % (FY)" -> return_on_assets_roa_fy (NUMERIC)
+  "Return on Assets (ROA) % (LTM)" -> return_on_assets_roa_ltm (NUMERIC)
+  "Return On Equity % (FY)" -> return_on_equity_fy (NUMERIC)
+  "Return On Equity % (LTM)" -> return_on_equity_ltm (NUMERIC)
+  "Revenues - Est YoY % (FY1E)" -> revenues_est_yoy_fy1e (NUMERIC)
+  "Selling General & Admin Expenses/Total (-1FY)" -> selling_general_admin_expenses_total_1fy (NUMERIC)
+  "Selling General & Admin Expenses/Total (5YAVGFQ)" -> selling_general_admin_expenses_total_5yavgfq (NUMERIC)
+  "Selling General & Admin Expenses/Total (FQ)" -> selling_general_admin_expenses_total_fq (NUMERIC)
+  "Selling General & Admin Expenses/Total (FY)" -> selling_general_admin_expenses_total_fy (NUMERIC)
+  "Shrs Out" -> shrs_out (NUMERIC)
+  "Tot. Return %/CAGR (10Y)" -> tot_return_cagr_10y (NUMERIC)
+  "Tot. Return %/CAGR (3Y)" -> tot_return_cagr_3y (NUMERIC)
+
+================================================================================
+DATA TYPE MISMATCHES
+================================================================================
+
+Column: full_time_employees_fq
+  SQL Type: NUMERIC
+  Expected Python: float
+  Actual Python: int
+
+Column: full_time_employees_fy
+  SQL Type: NUMERIC
+  Expected Python: float
+  Actual Python: int
+
+Column: full_time_employees_2fy
+  SQL Type: NUMERIC
+  Expected Python: float
+  Actual Python: int
+
+Column: full_time_employees_1fy
+  SQL Type: NUMERIC
+  Expected Python: float
+  Actual Python: int
+
+Column: full_time_employees_3fy
+  SQL Type: NUMERIC
+  Expected Python: float
+  Actual Python: int
+
+================================================================================
+PYTHON-ONLY COLUMNS (informational)
+================================================================================
+
+These columns exist in Python schema but not in SQL:
+(This is normal for computed/derived features)
+
+  accounts_receivable_previous_year
+  asset_turnover_previous_year
+  assets_per_employee
+  avg_employees_fy
+  avg_employees_ltm
+  capex
+  cash_and_equivalents
+  cash_burn_rate
+  cff
+  cfi
+  cfo
+  current_assets
+  current_liabilities
+  current_ratio_previous_year
+  debt_to_assets
+  debt_to_equity
+  dividend_per_share
+  dividend_yield
+  dividends_paid
+  dividends_paid_ltm
+  ... and 95 more
+
+================================================================================
+END OF REPORT
+================================================================================

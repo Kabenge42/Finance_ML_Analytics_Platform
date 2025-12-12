@@ -280,14 +280,15 @@ class TestSchemaHelpers(unittest.TestCase):
         Act: Check if each column exists in COLUMN_SCHEMA.
         Assert:
             - All 5 columns are in COLUMN_SCHEMA
-            - Each has expected dtype (float for most, int for employees)
+            - Each has expected dtype (float for all - employees uses float for NULL handling)
             - Each has role='feature'
         """
         # Arrange: The 5 columns that were causing WARNING: NaN values still present
+        # Note: employees is float (not int) to support NULL values from CSV/PostgreSQL
         missing_columns = [
             ("r_d_expenses", "float"),
             ("intangible_assets", "float"),
-            ("employees", "int"),
+            ("employees", "float"),  # float for NULL handling per SCHEMA_ALIGNMENT_SUMMARY.md
             ("marketing_expenses", "float"),
             ("eps_previous_year", "float"),
         ]

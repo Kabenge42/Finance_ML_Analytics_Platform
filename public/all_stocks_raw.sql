@@ -1,6 +1,6 @@
-create table equities
+create table all_stocks_raw
 (
-    "Ticker"                                           text,
+    "Ticker"                                           text not null,
     "ISIN"                                             text,
     "Name"                                             text,
     "Description"                                      text,
@@ -14,7 +14,7 @@ create table equities
     "Style Class"                                      text,
     "Next Earnings (Status)"                           text,
     "Size Class"                                       text,
-    "Region"                                           text,
+    "Region"                                           text not null,
     "Country"                                          text,
     "Trading Country"                                  text,
     "Market Cap"                                       numeric,
@@ -191,6 +191,9 @@ create table equities
     "Inventory (FY)"                                   numeric,
     "Goodwill (5YAVGFQ)"                               numeric,
     "Inventory (5YAVGFQ)"                              numeric,
+    "Avg Employees (LTM)"                              numeric,
+    "Avg Employees (FY)"                               numeric,
+    "Avg Employees (5YAVGFY)"                          numeric,
     "Retained Earnings (FQ)"                           numeric,
     "Retained Earnings (FY)"                           numeric,
     "Retained Earnings (5YAVGFQ)"                      numeric,
@@ -262,12 +265,8 @@ create table equities
     "EV/Sales (-2FQLTM)"                               numeric,
     "EV/Sales (-3FQLTM)"                               numeric,
     "EV/Sales (-4FQLTM)"                               numeric,
-    "Full Time Employees (FQ)"   numeric,
-    "Full Time Employees (FY)"   numeric,
-    "Full Time Employees (-1FY)" numeric,
-    "Full Time Employees (-2FY)" numeric,
-    "Full Time Employees (-3FY)" numeric,
-    "Avg Employees (5YAVGFY)"    numeric,
+    "Total Employees (FY)"                             numeric,
+    "Total Employees (FQ)"                             numeric,
     "52W High/Adj"                                     numeric,
     "52W Low/Adj"                                      numeric,
     "EMA (20D)"                                        numeric,
@@ -298,11 +297,13 @@ create table equities
     "Dividend Record (Frequency)"                      text,
     "Dividend Record (Currency)"                       text,
     "Dividend Record (Amount)"                         numeric,
-    "Dividend Streak"                                  numeric
+    "Dividend Streak"                                  numeric,
+    constraint all_stocks_pkey
+        primary key ("Ticker", "Region")
 );
 
-comment on table equities is 'Equities screening data with financial metrics and company information';
-
-alter table equities
+alter table all_stocks_raw
     owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on all_stocks_raw to public;
 

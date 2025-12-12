@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="load_all_stocks.sql" type="DatabaseScript" editBeforeRun="true">
+        <script-file value="$PROJECT_DIR$/create_equities_schema.sql"/>
+        <script-file value="$PROJECT_DIR$/import_equities_data.sql"/>
+        <script-mode>FILE</script-mode>
+        <data-source id="3091f81a-c800-413c-b86b-f760950418f7"
+                     namespace="database/&quot;postgres&quot;/schema/&quot;public&quot;"/>
+        <method v="2"/>
+    </configuration>
+</component>

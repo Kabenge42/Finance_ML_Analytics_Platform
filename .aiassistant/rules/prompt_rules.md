@@ -1,5 +1,5 @@
 ---
-apply: off
+apply: by file patterns
 ---
 
 # Finance ML Analytics Platform — Project Rules

@@ -1441,7 +1441,9 @@ def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
     - Profit per employee
     - Assets per employee
     - EBITDA per employee
-    - Employee growth trends
+    - Employee growth trends (1Y, 2Y, 3Y using Full Time Employees data)
+    - Workforce volatility metrics
+    - Employee CAGR (compound annual growth rate)
 
     Args:
         df: Input DataFrame
@@ -1451,9 +1453,15 @@ def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     result = df.copy()
 
-    # Check for employee data
+    # Check for employee data - prefer full_time_employees, fallback to avg_employees
     employee_col = None
-    for col in ["avg_employees_ltm", "avg_employees_fy", "employees"]:
+    for col in [
+        "full_time_employees_fy",
+        "full_time_employees_fq",
+        "avg_employees_ltm",
+        "avg_employees_fy",
+        "employees",
+    ]:
         if col in df.columns:
             employee_col = col
             break
@@ -1484,6 +1492,92 @@ def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
     if "operating_income_ltm" in df.columns:
         result["operating_income_per_employee"] = _safe_div(df["operating_income_ltm"], employees)
 
+    # =========================================================================
+    # Full Time Employees Growth Trends (using historical FY data)
+    # =========================================================================
+
+    # 1-Year employee growth using Full Time Employees
+    if "full_time_employees_fy" in df.columns and "full_time_employees_1fy" in df.columns:
+        result["fte_growth_1y_pct"] = (
+            _safe_div(
+                (df["full_time_employees_fy"] - df["full_time_employees_1fy"]),
+                df["full_time_employees_1fy"],
+            )
+            * 100
+        )
+
+    # 2-Year employee growth using Full Time Employees
+    if "full_time_employees_fy" in df.columns and "full_time_employees_2fy" in df.columns:
+        result["fte_growth_2y_pct"] = (
+            _safe_div(
+                (df["full_time_employees_fy"] - df["full_time_employees_2fy"]),
+                df["full_time_employees_2fy"],
+            )
+            * 100
+        )
+
+    # 3-Year employee growth using Full Time Employees
+    if "full_time_employees_fy" in df.columns and "full_time_employees_3fy" in df.columns:
+        result["fte_growth_3y_pct"] = (
+            _safe_div(
+                (df["full_time_employees_fy"] - df["full_time_employees_3fy"]),
+                df["full_time_employees_3fy"],
+            )
+            * 100
+        )
+
+    # 3-Year employee CAGR (Compound Annual Growth Rate)
+    if "full_time_employees_fy" in df.columns and "full_time_employees_3fy" in df.columns:
+        # CAGR = (end/start)^(1/n) - 1
+        fte_fy = df["full_time_employees_fy"].astype(float)
+        fte_3fy = df["full_time_employees_3fy"].astype(float)
+        # Only compute where both values are positive
+        valid_mask = (fte_fy > 0) & (fte_3fy > 0)
+        cagr = pd.Series(np.nan, index=df.index)
+        cagr[valid_mask] = (np.power(fte_fy[valid_mask] / fte_3fy[valid_mask], 1 / 3) - 1) * 100
+        result["fte_cagr_3y_pct"] = cagr
+
+    # =========================================================================
+    # Workforce Volatility Metrics
+    # =========================================================================
+
+    # Workforce volatility (std dev of year-over-year changes)
+    fte_cols = [
+        "full_time_employees_fy",
+        "full_time_employees_1fy",
+        "full_time_employees_2fy",
+        "full_time_employees_3fy",
+    ]
+    available_fte_cols = [c for c in fte_cols if c in df.columns]
+
+    if len(available_fte_cols) >= 3:
+        # Compute YoY changes
+        fte_data = df[available_fte_cols].astype(float)
+        yoy_changes = []
+        for i in range(len(available_fte_cols) - 1):
+            curr_col = available_fte_cols[i]
+            prev_col = available_fte_cols[i + 1]
+            yoy_pct = _safe_div((fte_data[curr_col] - fte_data[prev_col]), fte_data[prev_col]) * 100
+            yoy_changes.append(yoy_pct)
+
+        if yoy_changes:
+            yoy_df = pd.concat(yoy_changes, axis=1)
+            result["fte_volatility"] = yoy_df.std(axis=1, skipna=True)
+
+    # Quarterly vs Annual employee comparison (hiring momentum)
+    if "full_time_employees_fq" in df.columns and "full_time_employees_fy" in df.columns:
+        result["fte_quarterly_momentum"] = (
+            _safe_div(
+                (df["full_time_employees_fq"] - df["full_time_employees_fy"]),
+                df["full_time_employees_fy"],
+            )
+            * 100
+        )
+
+    # =========================================================================
+    # Legacy employee growth (using avg_employees for backward compatibility)
+    # =========================================================================
+
     # Employee growth (if historical data available)
     if "avg_employees_ltm" in df.columns and "avg_employees_fy" in df.columns:
         result["employee_growth_yoy_pct"] = (
@@ -1503,7 +1597,7 @@ def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
             * 100
         )
 
-    logger.info("Engineered employee productivity features")
+    logger.info("Engineered employee productivity features (including FTE growth trends)")
     return result
 
 

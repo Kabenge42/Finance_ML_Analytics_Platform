@@ -6,7 +6,7 @@ functionality aligned with code_guidelines.md v1.3+ requirements.
 """
 
 import logging
-from typing import Dict, Tuple, List, Optional
+from typing import Any, Dict, Tuple, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -78,6 +78,7 @@ def detect_and_cast_dtypes(
         "inferred_dtypes": {},
         "cast_applied": {},
         "coercion_warnings": {},
+        "coercion_details": {},  # Detailed info about coerced values per column
         "unknown_columns": [],
         "missing_expected_columns": [],
     }
@@ -100,11 +101,20 @@ def detect_and_cast_dtypes(
         normalized = col_name_mapping[col]
         if normalized not in schema:
             diagnostics["unknown_columns"].append(col)
-            logger.warning(f"Column '{col}' (normalized: '{normalized}') not found in schema")
+            logger.warning(
+                f"Column '{col}' (normalized: '{normalized}') not found in schema"
+            )
 
     # Identify missing expected columns (in schema but not in df)
     # Only report columns with role 'feature', 'target', 'id', or 'date'
-    important_roles = {"feature", "target", "target_fallback", "id", "date", "categorical"}
+    important_roles = {
+        "feature",
+        "target",
+        "target_fallback",
+        "id",
+        "date",
+        "categorical",
+    }
     for schema_col, meta in schema.items():
         if meta["role"] in important_roles:
             # Check if any column in df normalizes to this schema column
@@ -117,19 +127,22 @@ def detect_and_cast_dtypes(
 
         if normalized not in schema:
             # Unknown column - try to infer type intelligently
-            df_cast[col] = _infer_and_cast_unknown_column(df_cast[col], col, diagnostics)
+            df_cast[col] = _infer_and_cast_unknown_column(
+                df_cast[col], col, diagnostics
+            )
             continue
 
         target_dtype = schema[normalized]["dtype"]
 
         try:
             if target_dtype in ["float", "int"]:
-                df_cast[col], coercion_count = _cast_to_numeric(df_cast[col], target_dtype)
+                df_cast[col], coercion_count, coercion_info = _cast_to_numeric(
+                    df_cast[col], target_dtype, col_name=col
+                )
                 if coercion_count > 0:
                     diagnostics["coercion_warnings"][col] = coercion_count
-                    logger.info(
-                        f"Column '{col}': {coercion_count} value(s) coerced to NaN during numeric casting"
-                    )
+                    diagnostics["coercion_details"][col] = coercion_info
+                    # Logging is now handled inside _cast_to_numeric with detailed info
 
             elif target_dtype == "datetime64[ns]":
                 df_cast[col], coercion_count = _cast_to_datetime(df_cast[col])
@@ -164,18 +177,67 @@ def detect_and_cast_dtypes(
     return df_cast, diagnostics
 
 
-def _cast_to_numeric(series: pd.Series, target_dtype: str) -> Tuple[pd.Series, int]:
+def _cast_to_numeric(
+    series: pd.Series, target_dtype: str, col_name: str = ""
+) -> Tuple[pd.Series, int, Dict[str, Any]]:
     """
-    Cast a series to numeric dtype with coercion tracking.
+    Cast a series to numeric dtype with coercion tracking and detailed diagnostics.
+
+    Provides pre-validation for common non-numeric patterns and fallback handling
+    for values that cannot be converted. Logs detailed diagnostics about what
+    values were coerced to help identify data quality issues.
 
     Args:
         series: Input series
         target_dtype: 'float' or 'int'
+        col_name: Column name for logging (optional)
 
     Returns:
-        Tuple of (casted_series, coercion_count)
+        Tuple of (casted_series, coercion_count, coercion_details) where
+        coercion_details contains:
+            - sample_coerced_values: List of up to 5 example values that were coerced
+            - coercion_patterns: Dict of common patterns found (e.g., "N/A", "-", "")
     """
     original_valid_count = series.notna().sum()
+    coercion_details: Dict[str, Any] = {
+        "sample_coerced_values": [],
+        "coercion_patterns": {},
+    }
+
+    # Pre-validation: Identify common non-numeric patterns before casting
+    # This helps with debugging data quality issues
+    if series.dtype == "object" or str(series.dtype) == "string":
+        # Define common non-numeric patterns to detect
+        common_patterns = [
+            "N/A",
+            "n/a",
+            "NA",
+            "na",
+            "-",
+            "--",
+            "",
+            " ",
+            "null",
+            "NULL",
+            "None",
+        ]
+
+        for pattern in common_patterns:
+            if pattern == "":
+                # Count empty strings
+                count = (series == "").sum() if series.dtype == "object" else 0
+            else:
+                count = (series == pattern).sum()
+            if count > 0:
+                coercion_details["coercion_patterns"][pattern] = int(count)
+
+        # Log warning if significant non-numeric patterns found
+        total_patterns = sum(coercion_details["coercion_patterns"].values())
+        if total_patterns > 0 and col_name:
+            logger.debug(
+                f"Column '{col_name}': Pre-validation found {total_patterns} values "
+                f"matching non-numeric patterns: {coercion_details['coercion_patterns']}"
+            )
 
     # Use pd.to_numeric with errors='coerce' to handle invalid values
     if target_dtype == "int":
@@ -184,13 +246,30 @@ def _cast_to_numeric(series: pd.Series, target_dtype: str) -> Tuple[pd.Series, i
         # Convert to nullable integer type to preserve NaNs
         casted_series = numeric_series.astype("Int64")
     else:
-        # For float
-        casted_series = pd.to_numeric(series, errors="coerce")
+        # For float - use downcast for memory optimization
+        casted_series = pd.to_numeric(series, errors="coerce", downcast="float")
 
     new_valid_count = casted_series.notna().sum()
-    coercion_count = original_valid_count - new_valid_count
+    coercion_count = int(original_valid_count - new_valid_count)
 
-    return casted_series, coercion_count
+    # Collect sample coerced values for diagnostics
+    if coercion_count > 0:
+        # Find indices where original was valid but result is NaN
+        was_valid = series.notna()
+        now_nan = casted_series.isna()
+        coerced_mask = was_valid & now_nan
+
+        # Get sample of coerced values (up to 5)
+        coerced_values = series[coerced_mask].head(5).tolist()
+        coercion_details["sample_coerced_values"] = [str(v) for v in coerced_values]
+
+        if col_name:
+            logger.info(
+                f"Column '{col_name}': {coercion_count} value(s) coerced to NaN. "
+                f"Sample values: {coercion_details['sample_coerced_values']}"
+            )
+
+    return casted_series, coercion_count, coercion_details
 
 
 def _cast_to_datetime(series: pd.Series) -> Tuple[pd.Series, int]:
@@ -256,7 +335,9 @@ def _infer_and_cast_unknown_column(
     # Check if low cardinality -> category
     nunique = series.nunique()
     if nunique < len(series) * 0.05:  # <5% unique values
-        logger.info(f"Unknown column '{col_name}' inferred as category (low cardinality)")
+        logger.info(
+            f"Unknown column '{col_name}' inferred as category (low cardinality)"
+        )
         diagnostics["cast_applied"][col_name] = "category"
         return series.astype("category")
 
@@ -310,9 +391,9 @@ def validate_dtypes_against_schema(
                 df[col]
             ) or pd.api.types.is_object_dtype(df[col])
         elif expected_dtype == "string":
-            is_compatible = pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(
+            is_compatible = pd.api.types.is_string_dtype(
                 df[col]
-            )
+            ) or pd.api.types.is_object_dtype(df[col])
         elif expected_dtype == "bool":
             is_compatible = pd.api.types.is_bool_dtype(df[col])
 

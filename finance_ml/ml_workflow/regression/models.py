@@ -132,69 +132,178 @@ warnings.filterwarnings("ignore")
 # ==============================================================================
 
 
-def _clean_regression_features(X: pd.DataFrame, *, drop_zero_variance: bool = True) -> pd.DataFrame:
+def _clean_regression_features(
+    X: pd.DataFrame,
+    *,
+    drop_zero_variance: bool = True,
+    inf_replacement: str = "bound",
+    posinf_bound: float = 1e10,
+    neginf_bound: float = -1e10,
+    validate_output: bool = True,
+) -> pd.DataFrame:
     """
     Ensure regression feature matrix is free of NaN/inf and zero-variance columns.
 
     This is a defensive safety-rail for Phase 9.5:
-    - Replaces +/-inf with NaN
+    - Handles +/-inf with configurable replacement strategy
     - Median-imputes remaining NaN per column
     - Optionally drops zero-variance columns
+    - Validates output before returning
     - Returns float64 DataFrame
 
     Args:
         X: Feature matrix
         drop_zero_variance: If True, drop constant columns
+        inf_replacement: Strategy for inf handling:
+            - "bound": Replace with configurable bounds (default)
+            - "nan": Replace with NaN then impute
+            - "clip": Clip to data range per column
+        posinf_bound: Upper bound for positive infinity replacement (default: 1e10)
+        neginf_bound: Lower bound for negative infinity replacement (default: -1e10)
+        validate_output: If True, validate no NaN/inf remain after cleaning
 
     Returns:
         Cleaned feature matrix as float64 DataFrame.
+
+    Raises:
+        ValueError: If validate_output=True and cleaning failed to remove all NaN/inf
     """
     if not isinstance(X, pd.DataFrame):
         X = pd.DataFrame(X)
 
     X_clean = X.copy()
+    cleaning_report = {
+        "initial_shape": X_clean.shape,
+        "inf_count": 0,
+        "nan_count_before": 0,
+        "nan_count_after": 0,
+        "columns_with_inf": [],
+        "columns_with_nan": [],
+        "zero_variance_dropped": [],
+    }
 
-    # Replace infinities with NaN
-    inf_mask = ~np.isfinite(X_clean.to_numpy(dtype=np.float64))
-    if inf_mask.any():
-        n_inf = int(inf_mask.sum())
-        logger.warning(
-            f"Cleaning regression features: found {n_inf} inf/-inf values; replacing with NaN."
+    # Count initial NaN values
+    initial_nan = X_clean.isna().sum()
+    cleaning_report["nan_count_before"] = int(initial_nan.sum())
+    if cleaning_report["nan_count_before"] > 0:
+        cols_with_nan = initial_nan[initial_nan > 0].index.tolist()
+        cleaning_report["columns_with_nan"] = cols_with_nan[:20]  # Limit to 20
+        logger.info(
+            f"Feature cleaning: {cleaning_report['nan_count_before']} NaN values in "
+            f"{len(cols_with_nan)} columns"
         )
-        X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
+
+    # Handle infinities with configurable strategy
+    try:
+        numeric_arr = X_clean.to_numpy(dtype=np.float64)
+    except (ValueError, TypeError):
+        # Some columns may not be numeric - handle gracefully
+        numeric_cols = X_clean.select_dtypes(include=[np.number]).columns
+        non_numeric_cols = X_clean.columns.difference(numeric_cols)
+        if len(non_numeric_cols) > 0:
+            logger.warning(
+                f"Found {len(non_numeric_cols)} non-numeric columns; coercing to numeric"
+            )
+            for col in non_numeric_cols:
+                X_clean[col] = pd.to_numeric(X_clean[col], errors="coerce")
+        numeric_arr = X_clean.to_numpy(dtype=np.float64)
+
+    posinf_mask = np.isposinf(numeric_arr)
+    neginf_mask = np.isneginf(numeric_arr)
+    inf_mask = posinf_mask | neginf_mask
+
+    if inf_mask.any():
+        n_posinf = int(posinf_mask.sum())
+        n_neginf = int(neginf_mask.sum())
+        cleaning_report["inf_count"] = n_posinf + n_neginf
+
+        # Identify columns with infinities
+        inf_cols_mask = inf_mask.any(axis=0)
+        inf_col_names = X_clean.columns[inf_cols_mask].tolist()
+        cleaning_report["columns_with_inf"] = inf_col_names[:20]
+
+        logger.warning(
+            f"Feature cleaning: found {n_posinf} +inf and {n_neginf} -inf values "
+            f"in {len(inf_col_names)} columns: {inf_col_names[:5]}{'...' if len(inf_col_names) > 5 else ''}"
+        )
+
+        if inf_replacement == "bound":
+            # Use np.nan_to_num with configurable bounds
+            numeric_arr = np.nan_to_num(
+                numeric_arr,
+                nan=np.nan,  # Keep NaN for later imputation
+                posinf=posinf_bound,
+                neginf=neginf_bound,
+            )
+            X_clean = pd.DataFrame(numeric_arr, columns=X_clean.columns, index=X_clean.index)
+            logger.info(f"Replaced +inf with {posinf_bound}, -inf with {neginf_bound}")
+        elif inf_replacement == "clip":
+            # Clip to column-wise finite min/max
+            for col_idx, col in enumerate(X_clean.columns):
+                col_data = numeric_arr[:, col_idx]
+                finite_mask = np.isfinite(col_data)
+                if finite_mask.any():
+                    col_min = col_data[finite_mask].min()
+                    col_max = col_data[finite_mask].max()
+                    col_data = np.clip(col_data, col_min, col_max)
+                    X_clean.iloc[:, col_idx] = col_data
+            logger.info("Clipped infinities to column-wise finite range")
+        else:  # "nan"
+            X_clean = X_clean.replace([np.inf, -np.inf], np.nan)
+            logger.info("Replaced infinities with NaN for imputation")
 
     # Median imputation per column
     nan_counts = X_clean.isna().sum()
     total_nan = int(nan_counts.sum())
     if total_nan > 0:
-        logger.warning(
-            f"Cleaning regression features: found {total_nan} NaN values; applying median imputation."
-        )
+        logger.info(f"Feature cleaning: imputing {total_nan} NaN values with column medians")
         medians = X_clean.median(numeric_only=True)
         for col in X_clean.columns:
             if col in medians.index:
                 if pd.isna(medians[col]):
                     # Fall back to zero if column is entirely NaN
                     X_clean[col] = X_clean[col].fillna(0.0)
+                    logger.debug(f"Column '{col}': entirely NaN, filled with 0.0")
                 else:
                     X_clean[col] = X_clean[col].fillna(medians[col])
             else:
                 # Non-numeric or unexpected types: coerce to 0 for safety
                 X_clean[col] = pd.to_numeric(X_clean[col], errors="coerce").fillna(0.0)
 
+    cleaning_report["nan_count_after"] = int(X_clean.isna().sum().sum())
+
     # Optional: drop zero-variance columns
     if drop_zero_variance:
         std = X_clean.std(numeric_only=True)
         zero_var_cols = std[std == 0].index.tolist()
         if zero_var_cols:
+            cleaning_report["zero_variance_dropped"] = zero_var_cols[:20]
             display_cols = zero_var_cols[:10] + (["..."] if len(zero_var_cols) > 10 else [])
             logger.warning(
-                f"Dropping {len(zero_var_cols)} zero-variance feature(s) before regression: {display_cols}"
+                f"Dropping {len(zero_var_cols)} zero-variance feature(s): {display_cols}"
             )
             X_clean = X_clean.drop(columns=zero_var_cols, errors="ignore")
 
     # Ensure float64 dtypes
     X_clean = X_clean.astype(np.float64)
+
+    # Validation: ensure no NaN/inf remain
+    if validate_output:
+        final_nan = X_clean.isna().sum().sum()
+        final_inf = np.isinf(X_clean.to_numpy()).sum()
+        if final_nan > 0 or final_inf > 0:
+            error_msg = (
+                f"Feature cleaning validation failed: {final_nan} NaN and {final_inf} inf "
+                f"values remain after cleaning"
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    cleaning_report["final_shape"] = X_clean.shape
+    logger.info(
+        f"Feature cleaning complete: {cleaning_report['initial_shape']} -> {cleaning_report['final_shape']}, "
+        f"handled {cleaning_report['inf_count']} inf, {cleaning_report['nan_count_before']} NaN"
+    )
 
     return X_clean
 
@@ -978,14 +1087,19 @@ def train_stacking_regressor(
                 splitter = cv
 
     # Define base regression with robust loss support
-    # Optimized hyperparameters for Section 16.4 Performance Thresholds (R² > 0.7, MAE < 40%)
+    # Conservative hyperparameters to prevent overfitting (Phase 9.5 audit fix)
+    # - Reduced n_estimators (100 vs 200) for faster training and less overfitting
+    # - Limited max_depth (8-10 vs 15) to prevent memorizing training data
+    # - Increased min_samples_split (10 vs 5) for better generalization
+    # - Increased min_samples_leaf (5+) as key regularization parameter
     estimators = [
         (
             "rf",
             RandomForestRegressor(
-                n_estimators=200,
-                max_depth=15,
-                min_samples_split=5,
+                n_estimators=100,
+                max_depth=10,
+                min_samples_split=10,
+                min_samples_leaf=5,
                 max_features="sqrt",
                 random_state=random_state,
                 n_jobs=-1,
@@ -994,9 +1108,10 @@ def train_stacking_regressor(
         (
             "et",
             ExtraTreesRegressor(
-                n_estimators=200,
-                max_depth=15,
-                min_samples_split=5,
+                n_estimators=100,
+                max_depth=10,
+                min_samples_split=10,
+                min_samples_leaf=5,
                 random_state=random_state,
                 n_jobs=-1,
             ),
@@ -1006,26 +1121,32 @@ def train_stacking_regressor(
             GradientBoostingRegressor(
                 loss=loss,
                 alpha=0.9 if loss == "huber" else 0.9,  # Quantile for Huber transition
-                n_estimators=150,
+                n_estimators=100,
                 max_depth=6,
                 learning_rate=0.05,
                 subsample=0.8,
+                min_samples_split=10,
+                min_samples_leaf=5,
                 random_state=random_state,
             ),
         ),
     ]
 
     # Add XGBoost if available (better performance than linear models)
+    # Conservative hyperparameters with early stopping support
     if HAS_XGBOOST:
         estimators.append(
             (
                 "xgb",
                 xgb.XGBRegressor(
-                    n_estimators=150,
+                    n_estimators=100,
                     max_depth=6,
                     learning_rate=0.05,
                     subsample=0.8,
                     colsample_bytree=0.8,
+                    min_child_weight=5,  # Regularization: minimum sum of instance weight in child
+                    reg_alpha=0.1,  # L1 regularization
+                    reg_lambda=1.0,  # L2 regularization
                     random_state=random_state,
                     n_jobs=-1,
                     verbosity=0,

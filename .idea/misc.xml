@@ -17,9 +17,7 @@
     <option name="inlayHints" value="false" />
   </component>
   <component name="PyrightConfiguration">
-    <option name="completions" value="false" />
-    <option name="enabled" value="true" />
-    <option name="inspections" value="false" />
+    <option name="inlayHints" value="false" />
   </component>
   <component name="PythonCompatibilityInspectionAdvertiser">
     <option name="version" value="3" />
