@@ -63,303 +63,303 @@ CREATE TABLE equities
     -- ====================
     -- IDENTIFIER COLUMNS
     -- ====================
-    "Ticker"                                   TEXT,
-    "ISIN"                                     TEXT,
-    "Name"                                     TEXT,
-    "Description"                              TEXT,
+    "Ticker"                                           TEXT,
+    "ISIN"                                             TEXT,
+    "Name"                                             TEXT,
+    "Description"                                      TEXT,
     -- CATEGORICAL: Exchange where stock trades
-    "Exchange"                                 TEXT,
-    "Unit"                                     TEXT,
+    "Exchange"                                         TEXT,
+    "Unit"                                             TEXT,
     -- CATEGORICAL: GICS Sector classification
-    "Sector"                                   TEXT,
+    "Sector"                                           TEXT,
     -- CATEGORICAL: GICS Industry classification
-    "Industry"                                 TEXT,
-    "Last Updated"                             DATE,
-    "Income Statement Report Date"             DATE,
-    "Next Earnings"                            DATE,
+    "Industry"                                         TEXT,
+    "Last Updated"                                     DATE,
+    "Income Statement Report Date"                     DATE,
+    "Next Earnings"                                    DATE,
     -- CATEGORICAL: Investment style (Value, Growth, Blend)
-    "Style Class"                              TEXT,
+    "Style Class"                                      TEXT,
     -- CATEGORICAL: Earnings announcement status
-    "Next Earnings (Status)"                   TEXT,
+    "Next Earnings (Status)"                           TEXT,
     -- CATEGORICAL: Market cap size (Small, Mid, Large)
-    "Size Class"                               TEXT,
+    "Size Class"                                       TEXT,
     -- CATEGORICAL: Geographic region
-    "Region"                                   TEXT,
+    "Region"                                           TEXT,
     -- CATEGORICAL: Country of incorporation
-    "Country"                                  TEXT,
+    "Country"                                          TEXT,
     -- CATEGORICAL: Country where stock trades
-    "Trading Country"                          TEXT,
+    "Trading Country"                                  TEXT,
 
     -- ====================
     -- MARKET VALUE COLUMNS - Log-transform recommended
     -- ====================
-    "Market Cap"                               NUMERIC, -- MARKET_VALUE: Market capitalization
-    "Enterprise Value"                         NUMERIC, -- MARKET_VALUE: Enterprise value
+    "Market Cap"                                       NUMERIC, -- MARKET_VALUE: Market capitalization
+    "Enterprise Value"                                 NUMERIC, -- MARKET_VALUE: Enterprise value
 
     -- ====================
     -- PRICE COLUMNS - NEVER transform (preserve original dollar units)
     -- ====================
-    "Last Price"                               NUMERIC, -- PRICE: Current market price (critical for valuation)
-    "Price Target (YTD Ago)"                   NUMERIC, -- PRICE: Historical price target (YTD)
-    "Total Return (YTD)"                       NUMERIC, -- PERCENTAGE: YTD return percentage
-    "Price Target"                             NUMERIC, -- PRICE: Analyst consensus target price
-    "Price Target - Low"                       NUMERIC, -- PRICE: Low analyst price target
-    "Price Target - Median"                    NUMERIC, -- PRICE: Median analyst price target
-    "Price Target - High"                      NUMERIC, -- PRICE: High analyst price target
-    "Price Target - #"                         NUMERIC, -- COUNT: Number of price targets
+    "Last Price"                                       NUMERIC, -- PRICE: Current market price (critical for valuation)
+    "Price Target (YTD Ago)"                           NUMERIC, -- PRICE: Historical price target (YTD)
+    "Total Return (YTD)"                               NUMERIC, -- PERCENTAGE: YTD return percentage
+    "Price Target"                                     NUMERIC, -- PRICE: Analyst consensus target price
+    "Price Target - Low"                               NUMERIC, -- PRICE: Low analyst price target
+    "Price Target - Median"                            NUMERIC, -- PRICE: Median analyst price target
+    "Price Target - High"                              NUMERIC, -- PRICE: High analyst price target
+    "Price Target - #"                                 NUMERIC, -- COUNT: Number of price targets
 
     -- ====================
     -- RATIO COLUMNS - Pre-normalized financial ratios
     -- ====================
-    "P/E (NTM)"                                NUMERIC, -- RATIO: Price-to-Earnings (Next Twelve Months)
-    "P/E (LTM)"                                NUMERIC, -- RATIO: Price-to-Earnings (Last Twelve Months)
-    "Altman Z-Score (FY)"                      NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Year)
-    "Altman Z-Score (FQ)"                      NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Quarter)
-    "Altman Z-Score (LTM)"                     NUMERIC, -- RATIO: Bankruptcy prediction score (LTM)
+    "P/E (NTM)"                                        NUMERIC, -- RATIO: Price-to-Earnings (Next Twelve Months)
+    "P/E (LTM)"                                        NUMERIC, -- RATIO: Price-to-Earnings (Last Twelve Months)
+    "Altman Z-Score (FY)"                              NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Year)
+    "Altman Z-Score (FQ)"                              NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Quarter)
+    "Altman Z-Score (LTM)"                             NUMERIC, -- RATIO: Bankruptcy prediction score (LTM)
 
     -- ====================
     -- PERCENTAGE COLUMNS - Volatility & Risk Metrics
     -- ====================
-    "Beta (1Y)"                                NUMERIC, -- PERCENTAGE: 1-year beta
-    "Beta (2Y)"                                NUMERIC, -- PERCENTAGE: 2-year beta
-    "Beta (5Y)"                                NUMERIC, -- PERCENTAGE: 5-year beta
+    "Beta (1Y)"                                        NUMERIC, -- PERCENTAGE: 1-year beta
+    "Beta (2Y)"                                        NUMERIC, -- PERCENTAGE: 2-year beta
+    "Beta (5Y)"                                        NUMERIC, -- PERCENTAGE: 5-year beta
 
     -- ====================
     -- COUNT COLUMNS - Analyst Coverage
     -- ====================
-    "Analyst Rating"                           NUMERIC, -- COUNT: Consensus analyst rating
-    "# Strong Sell Ratings"                    NUMERIC, -- COUNT: Number of strong sell ratings
-    "# Strong Buys Ratings"                    NUMERIC, -- COUNT: Number of strong buy ratings
-    "# Hold Ratings"                           NUMERIC, -- COUNT: Number of hold ratings
-    "# Buys Ratings"                           NUMERIC, -- COUNT: Number of buy ratings
-    "# Sell Ratings"                           NUMERIC, -- COUNT: Number of sell ratings
+    "Analyst Rating"                                   NUMERIC, -- COUNT: Consensus analyst rating
+    "# Strong Sell Ratings"                            NUMERIC, -- COUNT: Number of strong sell ratings
+    "# Strong Buys Ratings"                            NUMERIC, -- COUNT: Number of strong buy ratings
+    "# Hold Ratings"                                   NUMERIC, -- COUNT: Number of hold ratings
+    "# Buys Ratings"                                   NUMERIC, -- COUNT: Number of buy ratings
+    "# Sell Ratings"                                   NUMERIC, -- COUNT: Number of sell ratings
 
     -- ====================
     -- PERCENTAGE/MARKET_VALUE - Growth & Revenue Metrics
     -- ====================
-    "Total Revenues/CAGR (5Y FY)"              NUMERIC, -- PERCENTAGE: 5-year revenue CAGR
-    "Total Revenues (FQ)"                      NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Quarter)
-    "Total Revenues (-1FY)"                    NUMERIC, -- MARKET_VALUE: Total revenues (Previous Fiscal Year)
-    "Total Revenues (FY)"                      NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Year)
-    "Total Revenues (LTM)"                     NUMERIC, -- MARKET_VALUE: Total revenues (Last Twelve Months)
-    "Total Operating Expenses (LTM)"           NUMERIC, -- MARKET_VALUE: Operating expenses (LTM)
+    "Total Revenues/CAGR (5Y FY)"                      NUMERIC, -- PERCENTAGE: 5-year revenue CAGR
+    "Total Revenues (FQ)"                              NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Quarter)
+    "Total Revenues (-1FY)"                            NUMERIC, -- MARKET_VALUE: Total revenues (Previous Fiscal Year)
+    "Total Revenues (FY)"                              NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Year)
+    "Total Revenues (LTM)"                             NUMERIC, -- MARKET_VALUE: Total revenues (Last Twelve Months)
+    "Total Operating Expenses (LTM)"                   NUMERIC, -- MARKET_VALUE: Operating expenses (LTM)
 
     -- RATIO: Tangible Book Value Metrics
-    "P/TBV (LTM)"                              NUMERIC, -- RATIO: Price-to-Tangible Book Value (LTM)
-    "TBV (FY)"                                 NUMERIC, -- MARKET_VALUE: Tangible book value (FY)
-    "TBV (LTM)"                                NUMERIC, -- MARKET_VALUE: Tangible book value (LTM)
-    "Market Cap (Country R)"                   NUMERIC, -- MARKET_VALUE: Market cap country ranking
+    "P/TBV (LTM)"                                      NUMERIC, -- RATIO: Price-to-Tangible Book Value (LTM)
+    "TBV (FY)"                                         NUMERIC, -- MARKET_VALUE: Tangible book value (FY)
+    "TBV (LTM)"                                        NUMERIC, -- MARKET_VALUE: Tangible book value (LTM)
+    "Market Cap (Country R)"                           NUMERIC, -- MARKET_VALUE: Market cap country ranking
 
     -- PERCENTAGE: Total Return Metrics
-    "Tot. Return %/CAGR (3Y)"                  NUMERIC, -- PERCENTAGE: 3-year total return CAGR
-    "Tot. Return %/CAGR (10Y)"                 NUMERIC, -- PERCENTAGE: 10-year total return CAGR
-    "Total Return (5Y)"                        NUMERIC, -- PERCENTAGE: 5-year total return
-    "Total Return (10Y)"                       NUMERIC, -- PERCENTAGE: 10-year total return
+    "Tot. Return %/CAGR (3Y)"                          NUMERIC, -- PERCENTAGE: 3-year total return CAGR
+    "Tot. Return %/CAGR (10Y)"                         NUMERIC, -- PERCENTAGE: 10-year total return CAGR
+    "Total Return (5Y)"                                NUMERIC, -- PERCENTAGE: 5-year total return
+    "Total Return (10Y)"                               NUMERIC, -- PERCENTAGE: 10-year total return
 
     -- MARKET_VALUE: Net Income & Cash Flow Metrics
-    "Net Income/Adj. (-1FY)"                   NUMERIC, -- MARKET_VALUE: Adjusted net income (Previous FY)
-    "CFF (LTM)"                                NUMERIC, -- MARKET_VALUE: Cash from financing (LTM)
-    "CFI (LTM)"                                NUMERIC, -- MARKET_VALUE: Cash from investing (LTM)
-    "FCF (LTM)"                                NUMERIC, -- MARKET_VALUE: Free cash flow (LTM)
-    "CFO (LTM)"                                NUMERIC, -- MARKET_VALUE: Cash from operations (LTM)
+    "Net Income/Adj. (-1FY)"                           NUMERIC, -- MARKET_VALUE: Adjusted net income (Previous FY)
+    "CFF (LTM)"                                        NUMERIC, -- MARKET_VALUE: Cash from financing (LTM)
+    "CFI (LTM)"                                        NUMERIC, -- MARKET_VALUE: Cash from investing (LTM)
+    "FCF (LTM)"                                        NUMERIC, -- MARKET_VALUE: Free cash flow (LTM)
+    "CFO (LTM)"                                        NUMERIC, -- MARKET_VALUE: Cash from operations (LTM)
 
     -- MARKET_VALUE: EBITDA Metrics
-    "EBITDA (FQ)"                              NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Quarter)
-    "EBITDA (LTM)"                             NUMERIC, -- MARKET_VALUE: EBITDA (Last Twelve Months)
-    "EBITDA (FY)"                              NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Year)
-    "EBITDA (-1FY)"                            NUMERIC, -- MARKET_VALUE: EBITDA (Previous Fiscal Year)
-    "EBITDA/Adj. (LTM)"                        NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (LTM)
-    "EBITDA/Adj. (FY)"                         NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (FY)
-    "EBITDA/Adj. (-1FY)"                       NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (Previous FY)
+    "EBITDA (FQ)"                                      NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Quarter)
+    "EBITDA (LTM)"                                     NUMERIC, -- MARKET_VALUE: EBITDA (Last Twelve Months)
+    "EBITDA (FY)"                                      NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Year)
+    "EBITDA (-1FY)"                                    NUMERIC, -- MARKET_VALUE: EBITDA (Previous Fiscal Year)
+    "EBITDA/Adj. (LTM)"                                NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (LTM)
+    "EBITDA/Adj. (FY)"                                 NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (FY)
+    "EBITDA/Adj. (-1FY)"                               NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (Previous FY)
 
     -- MARKET_VALUE: EBIT Metrics
-    "EBIT (FQ)"                                NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Quarter)
-    "EBIT (LTM)"                               NUMERIC, -- MARKET_VALUE: EBIT (Last Twelve Months)
-    "EBIT (FY)"                                NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Year)
-    "EBIT (-1FY)"                              NUMERIC, -- MARKET_VALUE: EBIT (Previous Fiscal Year)
-    "EBIT/Adj. (-1FY)"                         NUMERIC, -- MARKET_VALUE: Adjusted EBIT (Previous FY)
-    "EBIT/Adj. (FY)"                           NUMERIC, -- MARKET_VALUE: Adjusted EBIT (FY)
-    "EBIT/Adj. (LTM)"                          NUMERIC, -- MARKET_VALUE: Adjusted EBIT (LTM)
-    "EBIT - Est Med (FY1E)"                    NUMERIC, -- MARKET_VALUE: EBIT estimate median (FY1E)
-    "EBIT - Est Med (NTM)"                     NUMERIC, -- MARKET_VALUE: EBIT estimate median (NTM)
+    "EBIT (FQ)"                                        NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Quarter)
+    "EBIT (LTM)"                                       NUMERIC, -- MARKET_VALUE: EBIT (Last Twelve Months)
+    "EBIT (FY)"                                        NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Year)
+    "EBIT (-1FY)"                                      NUMERIC, -- MARKET_VALUE: EBIT (Previous Fiscal Year)
+    "EBIT/Adj. (-1FY)"                                 NUMERIC, -- MARKET_VALUE: Adjusted EBIT (Previous FY)
+    "EBIT/Adj. (FY)"                                   NUMERIC, -- MARKET_VALUE: Adjusted EBIT (FY)
+    "EBIT/Adj. (LTM)"                                  NUMERIC, -- MARKET_VALUE: Adjusted EBIT (LTM)
+    "EBIT - Est Med (FY1E)"                            NUMERIC, -- MARKET_VALUE: EBIT estimate median (FY1E)
+    "EBIT - Est Med (NTM)"                             NUMERIC, -- MARKET_VALUE: EBIT estimate median (NTM)
 
     -- RATIO: Profitability Metrics
-    "Return On Equity % (LTM)"                 NUMERIC, -- RATIO: ROE percentage (LTM)
-    "Return On Equity % (FY)"                  NUMERIC, -- RATIO: ROE percentage (FY)
+    "Return On Equity % (LTM)"                         NUMERIC, -- RATIO: ROE percentage (LTM)
+    "Return On Equity % (FY)"                          NUMERIC, -- RATIO: ROE percentage (FY)
 
     -- MARKET_VALUE: Net Income Metrics
-    "Net Income - (IS) (FY)"                   NUMERIC, -- MARKET_VALUE: Net income from income statement (FY)
-    "Net Income - (IS) (LTM)"                  NUMERIC, -- MARKET_VALUE: Net income from income statement (LTM)
-    "Normalized Net Income (FY)"               NUMERIC, -- MARKET_VALUE: Normalized net income (FY)
-    "Normalized Net Income (LTM)"              NUMERIC, -- MARKET_VALUE: Normalized net income (LTM)
-    "Net Income/Adj. (FY)"                     NUMERIC, -- MARKET_VALUE: Adjusted net income (FY)
-    "Net Income/Adj. (LTM)"                    NUMERIC, -- MARKET_VALUE: Adjusted net income (LTM)
+    "Net Income - (IS) (FY)"                           NUMERIC, -- MARKET_VALUE: Net income from income statement (FY)
+    "Net Income - (IS) (LTM)"                          NUMERIC, -- MARKET_VALUE: Net income from income statement (LTM)
+    "Normalized Net Income (FY)"                       NUMERIC, -- MARKET_VALUE: Normalized net income (FY)
+    "Normalized Net Income (LTM)"                      NUMERIC, -- MARKET_VALUE: Normalized net income (LTM)
+    "Net Income/Adj. (FY)"                             NUMERIC, -- MARKET_VALUE: Adjusted net income (FY)
+    "Net Income/Adj. (LTM)"                            NUMERIC, -- MARKET_VALUE: Adjusted net income (LTM)
 
     -- PERCENTAGE: Margin Metrics
-    "Net Income Margin % (FY)"                 NUMERIC, -- PERCENTAGE: Net income margin (FY)
-    "Net Income Margin % (LTM)"                NUMERIC, -- PERCENTAGE: Net income margin (LTM)
+    "Net Income Margin % (FY)"                         NUMERIC, -- PERCENTAGE: Net income margin (FY)
+    "Net Income Margin % (LTM)"                        NUMERIC, -- PERCENTAGE: Net income margin (LTM)
 
     -- PERCENTAGE: Volatility Metrics
-    "Volatility (1M)"                          NUMERIC, -- PERCENTAGE: 1-month volatility
-    "Volatility (3M)"                          NUMERIC, -- PERCENTAGE: 3-month volatility
-    "Volatility (6M)"                          NUMERIC, -- PERCENTAGE: 6-month volatility
-    "Volatility (1Y)"                          NUMERIC, -- PERCENTAGE: 1-year volatility
+    "Volatility (1M)"                                  NUMERIC, -- PERCENTAGE: 1-month volatility
+    "Volatility (3M)"                                  NUMERIC, -- PERCENTAGE: 3-month volatility
+    "Volatility (6M)"                                  NUMERIC, -- PERCENTAGE: 6-month volatility
+    "Volatility (1Y)"                                  NUMERIC, -- PERCENTAGE: 1-year volatility
 
     -- OTHER: Volume & Dividend Metrics
-    "Volume (Shrs)"                            NUMERIC, -- OTHER: Trading volume in shares
-    "Dividend Per Share (LTM)"                 NUMERIC, -- PRICE: Dividend per share (LTM)
-    "Div Yield (Ind)"                          NUMERIC, -- PERCENTAGE: Dividend yield (Indicated)
-    "Div Yield (LTM)"                          NUMERIC, -- PERCENTAGE: Dividend yield (LTM)
+    "Volume (Shrs)"                                    NUMERIC, -- OTHER: Trading volume in shares
+    "Dividend Per Share (LTM)"                         NUMERIC, -- PRICE: Dividend per share (LTM)
+    "Div Yield (Ind)"                                  NUMERIC, -- PERCENTAGE: Dividend yield (Indicated)
+    "Div Yield (LTM)"                                  NUMERIC, -- PERCENTAGE: Dividend yield (LTM)
 
     -- MARKET_VALUE: Balance Sheet Metrics
-    "Total Debt (FY)"                          NUMERIC, -- MARKET_VALUE: Total debt (FY)
-    "Total Equity (FY)"                        NUMERIC, -- MARKET_VALUE: Total equity (FY)
-    "Total Equity (LTM)"                       NUMERIC, -- MARKET_VALUE: Total equity (LTM)
-    "Total Debt (LTM)"                         NUMERIC, -- MARKET_VALUE: Total debt (LTM)
-    "Total Assets (LTM)"                       NUMERIC, -- MARKET_VALUE: Total assets (LTM)
-    "Total Assets (FY)"                        NUMERIC, -- MARKET_VALUE: Total assets (FY)
+    "Total Debt (FY)"                                  NUMERIC, -- MARKET_VALUE: Total debt (FY)
+    "Total Equity (FY)"                                NUMERIC, -- MARKET_VALUE: Total equity (FY)
+    "Total Equity (LTM)"                               NUMERIC, -- MARKET_VALUE: Total equity (LTM)
+    "Total Debt (LTM)"                                 NUMERIC, -- MARKET_VALUE: Total debt (LTM)
+    "Total Assets (LTM)"                               NUMERIC, -- MARKET_VALUE: Total assets (LTM)
+    "Total Assets (FY)"                                NUMERIC, -- MARKET_VALUE: Total assets (FY)
 
     -- RATIO: Liquidity & Efficiency Ratios
-    "Current Ratio (FY)"                       NUMERIC, -- RATIO: Current ratio (FY)
-    "Current Ratio (LTM)"                      NUMERIC, -- RATIO: Current ratio (LTM)
+    "Current Ratio (FY)"                               NUMERIC, -- RATIO: Current ratio (FY)
+    "Current Ratio (LTM)"                              NUMERIC, -- RATIO: Current ratio (LTM)
 
     -- PERCENTAGE: Margin Ratios
-    "Gross Profit Margin % (FY)"               NUMERIC, -- PERCENTAGE: Gross profit margin (FY)
-    "Gross Profit Margin % (LTM)"              NUMERIC, -- PERCENTAGE: Gross profit margin (LTM)
+    "Gross Profit Margin % (FY)"                       NUMERIC, -- PERCENTAGE: Gross profit margin (FY)
+    "Gross Profit Margin % (LTM)"                      NUMERIC, -- PERCENTAGE: Gross profit margin (LTM)
 
     -- RATIO: Efficiency Metrics
-    "Asset Turnover (FY)"                      NUMERIC, -- RATIO: Asset turnover (FY)
-    "Asset Turnover (LTM)"                     NUMERIC, -- RATIO: Asset turnover (LTM)
+    "Asset Turnover (FY)"                              NUMERIC, -- RATIO: Asset turnover (FY)
+    "Asset Turnover (LTM)"                             NUMERIC, -- RATIO: Asset turnover (LTM)
 
     -- MARKET_VALUE: Gross Profit
-    "Gross Profit (LTM)"                       NUMERIC, -- MARKET_VALUE: Gross profit (LTM)
-    "Gross Profit (FY)"                        NUMERIC, -- MARKET_VALUE: Gross profit (FY)
-    "EPS Norm - Est Avg (NTM)"                 NUMERIC,
-    "EPS/Adj. (-1FY)"                          NUMERIC,
-    "EPS/Adj. (FY)"                            NUMERIC,
-    "EPS/Adj. (LTM)"                           NUMERIC,
-    "EPS Norm - Est Avg (FY1E)"                NUMERIC,
-    "Gain (Loss) On Sale Of Assets (LTM)"      NUMERIC,
-    "Cost Of Revenues (LTM)"                   NUMERIC,
-    "Cash Acquisitions (LTM)"                  NUMERIC,
-    "Cash Acquisitions (FY)"                   NUMERIC,
-    "Cash Acquisitions (-1FY)"                 NUMERIC,
-    "Inventory (LTM)"                          NUMERIC,
-    "Goodwill (FQ)"                            NUMERIC,
-    "Goodwill (LTM)"                           NUMERIC,
-    "Goodwill (FY)"                            NUMERIC,
-    "Goodwill (-1FY)"                          NUMERIC,
-    "Impairment of Goodwill (FQ)"              NUMERIC,
-    "Impairment of Goodwill (LTM)"             NUMERIC,
-    "Impairment of Goodwill (-1FY)"            NUMERIC,
-    "Impairment of Goodwill (FY)"              NUMERIC,
-    "Operating Income (LTM)"                   NUMERIC,
-    "Asset Writedown (LTM)"                    NUMERIC,
-    "Asset Writedown (FY)"                     NUMERIC,
-    "Asset Writedown (-1FY)"                   NUMERIC,
-    "Operating Income (FY)"                    NUMERIC,
-    "Capital Expenditure (LTM)"                NUMERIC,
-    "Capital Expenditure (-1FY)"               NUMERIC,
-    "Capital Expenditure (FY)"                 NUMERIC,
-    "Retained Earnings (LTM)"                  NUMERIC,
-    "Total Current Assets (LTM)"               NUMERIC,
-    "Total Current Liabilities (LTM)"          NUMERIC,
-    "R&D Expenses (LTM)"                       NUMERIC,
-    "Restructuring Charges (LTM)"              NUMERIC,
-    "Restructuring Charges (FQ)"               NUMERIC,
-    "Restructuring Charges (-1FY)"             NUMERIC,
-    "Restructuring Charges (FY)"               NUMERIC,
-    "Interest Expense/Total (LTM)"             NUMERIC,
-    "Merger & Restructuring Charges (LTM)"     NUMERIC,
-    "Working Capital (LTM)"                    NUMERIC,
-    "Other Unusual Items/Total (LTM)"          NUMERIC,
-    "Interest Income On Investments (LTM)"     NUMERIC,
-    "Buyback Yield (LTM)"                      NUMERIC,
-    "Return on Assets (ROA) % (LTM)"           NUMERIC,
-    "Return on Assets (ROA) % (FY)"            NUMERIC,
-    "Net Income - (IS) (-1FY)"                 NUMERIC,
-    "Normalized Net Income (-1FY)"             NUMERIC,
-    "P/E (-1FYLTM)"                            NUMERIC,
-    "CFF (FY)"                                 NUMERIC,
-    "CFF (-1FY)"                               NUMERIC,
-    "CFI (FY)"                                 NUMERIC,
-    "CFI (-1FY)"                               NUMERIC,
-    "CFO (FY)"                                 NUMERIC,
-    "CFO (-1FY)"                               NUMERIC,
-    "Div Yield (-1FYInd)"                      NUMERIC,
-    "FCF (FY)"                                 NUMERIC,
-    "Capital Expenditure (FQ)"                 NUMERIC,
-    "Capital Expenditure (5YAVGFQ)"            NUMERIC,
-    "CFF (FQ)"                                 NUMERIC,
-    "CFI (FQ)"                                 NUMERIC,
-    "CFO (FQ)"                                 NUMERIC,
-    "FCF (FQ)"                                 NUMERIC,
-    "Total Revenues (5YAVGFQ)"                 NUMERIC,
-    "EBITDA (5YAVGFQ)"                         NUMERIC,
-    "EBIT (5YAVGFQ)"                           NUMERIC,
-    "P/E (5YAVGLTM)"                           NUMERIC,
-    "FCF (5YAVGFQ)"                            NUMERIC,
-    "Cash Acquisitions (FQ)"                   NUMERIC,
-    "Cash Acquisitions (5YAVGFQ)"              NUMERIC,
-    "Asset Writedown (FQ)"                     NUMERIC,
-    "Asset Writedown (5YAVGFQ)"                NUMERIC,
-    "Impairment of Goodwill (5YAVGFQ)"         NUMERIC,
-    "Operating Income (FQ)"                    NUMERIC,
-    "Operating Income (5YAVGFQ)"               NUMERIC,
-    "P/B (LTM)"                                NUMERIC,
-    "P/B (-1FY)"                               NUMERIC,
-    "P/B (5YAVG)"                              NUMERIC,
-    "Cash And Equivalents (LTM)"               NUMERIC,
-    "Cash And Equivalents (FQ)"                NUMERIC,
-    "Cash And Equivalents (FY)"                NUMERIC,
-    "Cash And Equivalents (5YAVGFQ)"           NUMERIC,
-    "Inventory (FQ)"                           NUMERIC,
-    "Inventory (FY)"                           NUMERIC,
-    "Goodwill (5YAVGFQ)"                       NUMERIC,
-    "Inventory (5YAVGFQ)"                      NUMERIC,
-    "Retained Earnings (FQ)"                   NUMERIC,
-    "Retained Earnings (FY)"                   NUMERIC,
-    "Retained Earnings (5YAVGFQ)"              NUMERIC,
-    "Working Capital (FQ)"                     NUMERIC,
-    "Working Capital (FY)"                     NUMERIC,
-    "Working Capital (5YAVGFY)"                NUMERIC,
-    "Div Yield (TTM)"                          NUMERIC,
-    "Div Yield (NTM)"                          NUMERIC,
-    "Div Yield (5YAVGLTM)"                     NUMERIC,
-    "Gross Intangible Assets (LTM)"            NUMERIC,
-    "Gross Intangible Assets (FY)"             NUMERIC,
-    "Gross Intangible Assets (5YAVGFQ)"        NUMERIC,
-    "Restructuring Charges (5YAVGFQ)"          NUMERIC,
-    "Merger & Restructuring Charges (FQ)"      NUMERIC,
-    "Merger & Restructuring Charges (FY)"      NUMERIC,
-    "Merger & Restructuring Charges (5YAVGFQ)" NUMERIC,
-    "Normalized Net Income (FQ)"               NUMERIC,
-    "Normalized Net Income (5YAVGFQ)"          NUMERIC,
-    "Net Income/Adj. (FQ)"                     NUMERIC,
-    "Net Income/Adj. (5YAVGFQ)"                NUMERIC,
-    "Net Income - (IS) (FQ)"                   NUMERIC,
-    "Net Income - (IS) (5YAVGFQ)"              NUMERIC,
-    "Net Income - (IS) (5YAVGLTM)"             NUMERIC,
-    "Normalized Net Income (5YAVGLTM)"         NUMERIC,
-    "EBITDA (5YAVGLTM)"                        NUMERIC,
-    "EBIT (5YAVGLTM)"                          NUMERIC,
-    "Total Revenues (5YAVGLTM)"                NUMERIC,
+    "Gross Profit (LTM)"                               NUMERIC, -- MARKET_VALUE: Gross profit (LTM)
+    "Gross Profit (FY)"                                NUMERIC, -- MARKET_VALUE: Gross profit (FY)
+    "EPS Norm - Est Avg (NTM)"                         NUMERIC,
+    "EPS/Adj. (-1FY)"                                  NUMERIC,
+    "EPS/Adj. (FY)"                                    NUMERIC,
+    "EPS/Adj. (LTM)"                                   NUMERIC,
+    "EPS Norm - Est Avg (FY1E)"                        NUMERIC,
+    "Gain (Loss) On Sale Of Assets (LTM)"              NUMERIC,
+    "Cost Of Revenues (LTM)"                           NUMERIC,
+    "Cash Acquisitions (LTM)"                          NUMERIC,
+    "Cash Acquisitions (FY)"                           NUMERIC,
+    "Cash Acquisitions (-1FY)"                         NUMERIC,
+    "Inventory (LTM)"                                  NUMERIC,
+    "Goodwill (FQ)"                                    NUMERIC,
+    "Goodwill (LTM)"                                   NUMERIC,
+    "Goodwill (FY)"                                    NUMERIC,
+    "Goodwill (-1FY)"                                  NUMERIC,
+    "Impairment of Goodwill (FQ)"                      NUMERIC,
+    "Impairment of Goodwill (LTM)"                     NUMERIC,
+    "Impairment of Goodwill (-1FY)"                    NUMERIC,
+    "Impairment of Goodwill (FY)"                      NUMERIC,
+    "Operating Income (LTM)"                           NUMERIC,
+    "Asset Writedown (LTM)"                            NUMERIC,
+    "Asset Writedown (FY)"                             NUMERIC,
+    "Asset Writedown (-1FY)"                           NUMERIC,
+    "Operating Income (FY)"                            NUMERIC,
+    "Capital Expenditure (LTM)"                        NUMERIC,
+    "Capital Expenditure (-1FY)"                       NUMERIC,
+    "Capital Expenditure (FY)"                         NUMERIC,
+    "Retained Earnings (LTM)"                          NUMERIC,
+    "Total Current Assets (LTM)"                       NUMERIC,
+    "Total Current Liabilities (LTM)"                  NUMERIC,
+    "R&D Expenses (LTM)"                               NUMERIC,
+    "Restructuring Charges (LTM)"                      NUMERIC,
+    "Restructuring Charges (FQ)"                       NUMERIC,
+    "Restructuring Charges (-1FY)"                     NUMERIC,
+    "Restructuring Charges (FY)"                       NUMERIC,
+    "Interest Expense/Total (LTM)"                     NUMERIC,
+    "Merger & Restructuring Charges (LTM)"             NUMERIC,
+    "Working Capital (LTM)"                            NUMERIC,
+    "Other Unusual Items/Total (LTM)"                  NUMERIC,
+    "Interest Income On Investments (LTM)"             NUMERIC,
+    "Buyback Yield (LTM)"                              NUMERIC,
+    "Return on Assets (ROA) % (LTM)"                   NUMERIC,
+    "Return on Assets (ROA) % (FY)"                    NUMERIC,
+    "Net Income - (IS) (-1FY)"                         NUMERIC,
+    "Normalized Net Income (-1FY)"                     NUMERIC,
+    "P/E (-1FYLTM)"                                    NUMERIC,
+    "CFF (FY)"                                         NUMERIC,
+    "CFF (-1FY)"                                       NUMERIC,
+    "CFI (FY)"                                         NUMERIC,
+    "CFI (-1FY)"                                       NUMERIC,
+    "CFO (FY)"                                         NUMERIC,
+    "CFO (-1FY)"                                       NUMERIC,
+    "Div Yield (-1FYInd)"                              NUMERIC,
+    "FCF (FY)"                                         NUMERIC,
+    "Capital Expenditure (FQ)"                         NUMERIC,
+    "Capital Expenditure (5YAVGFQ)"                    NUMERIC,
+    "CFF (FQ)"                                         NUMERIC,
+    "CFI (FQ)"                                         NUMERIC,
+    "CFO (FQ)"                                         NUMERIC,
+    "FCF (FQ)"                                         NUMERIC,
+    "Total Revenues (5YAVGFQ)"                         NUMERIC,
+    "EBITDA (5YAVGFQ)"                                 NUMERIC,
+    "EBIT (5YAVGFQ)"                                   NUMERIC,
+    "P/E (5YAVGLTM)"                                   NUMERIC,
+    "FCF (5YAVGFQ)"                                    NUMERIC,
+    "Cash Acquisitions (FQ)"                           NUMERIC,
+    "Cash Acquisitions (5YAVGFQ)"                      NUMERIC,
+    "Asset Writedown (FQ)"                             NUMERIC,
+    "Asset Writedown (5YAVGFQ)"                        NUMERIC,
+    "Impairment of Goodwill (5YAVGFQ)"                 NUMERIC,
+    "Operating Income (FQ)"                            NUMERIC,
+    "Operating Income (5YAVGFQ)"                       NUMERIC,
+    "P/B (LTM)"                                        NUMERIC,
+    "P/B (-1FY)"                                       NUMERIC,
+    "P/B (5YAVG)"                                      NUMERIC,
+    "Cash And Equivalents (LTM)"                       NUMERIC,
+    "Cash And Equivalents (FQ)"                        NUMERIC,
+    "Cash And Equivalents (FY)"                        NUMERIC,
+    "Cash And Equivalents (5YAVGFQ)"                   NUMERIC,
+    "Inventory (FQ)"                                   NUMERIC,
+    "Inventory (FY)"                                   NUMERIC,
+    "Goodwill (5YAVGFQ)"                               NUMERIC,
+    "Inventory (5YAVGFQ)"                              NUMERIC,
+    "Retained Earnings (FQ)"                           NUMERIC,
+    "Retained Earnings (FY)"                           NUMERIC,
+    "Retained Earnings (5YAVGFQ)"                      NUMERIC,
+    "Working Capital (FQ)"                             NUMERIC,
+    "Working Capital (FY)"                             NUMERIC,
+    "Working Capital (5YAVGFY)"                        NUMERIC,
+    "Div Yield (TTM)"                                  NUMERIC,
+    "Div Yield (NTM)"                                  NUMERIC,
+    "Div Yield (5YAVGLTM)"                             NUMERIC,
+    "Gross Intangible Assets (LTM)"                    NUMERIC,
+    "Gross Intangible Assets (FY)"                     NUMERIC,
+    "Gross Intangible Assets (5YAVGFQ)"                NUMERIC,
+    "Restructuring Charges (5YAVGFQ)"                  NUMERIC,
+    "Merger & Restructuring Charges (FQ)"              NUMERIC,
+    "Merger & Restructuring Charges (FY)"              NUMERIC,
+    "Merger & Restructuring Charges (5YAVGFQ)"         NUMERIC,
+    "Normalized Net Income (FQ)"                       NUMERIC,
+    "Normalized Net Income (5YAVGFQ)"                  NUMERIC,
+    "Net Income/Adj. (FQ)"                             NUMERIC,
+    "Net Income/Adj. (5YAVGFQ)"                        NUMERIC,
+    "Net Income - (IS) (FQ)"                           NUMERIC,
+    "Net Income - (IS) (5YAVGFQ)"                      NUMERIC,
+    "Net Income - (IS) (5YAVGLTM)"                     NUMERIC,
+    "Normalized Net Income (5YAVGLTM)"                 NUMERIC,
+    "EBITDA (5YAVGLTM)"                                NUMERIC,
+    "EBIT (5YAVGLTM)"                                  NUMERIC,
+    "Total Revenues (5YAVGLTM)"                        NUMERIC,
     "Revenues - Est YoY % (FY1E)"                      NUMERIC,
     -- PERCENTAGE: Price Change Metrics
-    "Price Chg. % (1M)"                        NUMERIC, -- PERCENTAGE: 1-month price change
-    "Price Chg. % (3M)"                        NUMERIC, -- PERCENTAGE: 3-month price change
-    "1-Day %"                                  NUMERIC, -- PERCENTAGE: 1-day price change
+    "Price Chg. % (1M)"                                NUMERIC, -- PERCENTAGE: 1-month price change
+    "Price Chg. % (3M)"                                NUMERIC, -- PERCENTAGE: 3-month price change
+    "1-Day %"                                          NUMERIC, -- PERCENTAGE: 1-day price change
 
     -- PRICE: Historical Prices (for momentum calculations)
-    "Price (5D Ago)"                           NUMERIC, -- PRICE: Price 5 days ago
-    "Price (1W Ago)"                           NUMERIC, -- PRICE: Price 1 week ago
-    "Price (1M Ago)"                           NUMERIC, -- PRICE: Price 1 month ago
-    "Price (3M Ago)"                           NUMERIC, -- PRICE: Price 3 months ago
-    "Price (6M Ago)"                           NUMERIC, -- PRICE: Price 6 months ago
-    "Price (1Y Ago)"                           NUMERIC, -- PRICE: Price 1 year ago
-    "Price (3Y Ago)"                           NUMERIC, -- PRICE: Price 3 years ago
-    "Price (5Y Ago)"                           NUMERIC, -- PRICE: Price 5 years ago
-    "Price (QTD Ago)"                          NUMERIC, -- PRICE: Price quarter-to-date ago
+    "Price (5D Ago)"                                   NUMERIC, -- PRICE: Price 5 days ago
+    "Price (1W Ago)"                                   NUMERIC, -- PRICE: Price 1 week ago
+    "Price (1M Ago)"                                   NUMERIC, -- PRICE: Price 1 month ago
+    "Price (3M Ago)"                                   NUMERIC, -- PRICE: Price 3 months ago
+    "Price (6M Ago)"                                   NUMERIC, -- PRICE: Price 6 months ago
+    "Price (1Y Ago)"                                   NUMERIC, -- PRICE: Price 1 year ago
+    "Price (3Y Ago)"                                   NUMERIC, -- PRICE: Price 3 years ago
+    "Price (5Y Ago)"                                   NUMERIC, -- PRICE: Price 5 years ago
+    "Price (QTD Ago)"                                  NUMERIC, -- PRICE: Price quarter-to-date ago
     "Rel. Volume"                                      NUMERIC,
     "Shrs Out"                                         NUMERIC,
     "Shrs Out (-1FY)"                                  NUMERIC,
@@ -375,69 +375,69 @@ CREATE TABLE equities
     "Marketing Expenses (FQ)"                          NUMERIC,
     "Marketing Expenses (FY)"                          NUMERIC,
     "Marketing Expenses (-1FY)"                        NUMERIC,
-    "Marketing Expenses (5YAVGLTM)"            NUMERIC,
+    "Marketing Expenses (5YAVGLTM)"                    NUMERIC,
     -- Phase 9.3 Schema Version 1.3 additions: 48 new columns
     -- Category 1: Revenue Forecasting Estimates (4 columns)
-    "Revenues - Est Avg (NTM)"                 NUMERIC, -- MARKET_VALUE: Revenue estimate average (NTM)
-    "Revenues - Est Avg (FY1E)"                NUMERIC, -- MARKET_VALUE: Revenue estimate average (FY1E)
-    "Revenues - Est Med (NTM)"                 NUMERIC, -- MARKET_VALUE: Revenue estimate median (NTM)
-    "Revenues - Est Med (FY1E)"                NUMERIC, -- MARKET_VALUE: Revenue estimate median (FY1E)
+    "Revenues - Est Avg (NTM)"                         NUMERIC, -- MARKET_VALUE: Revenue estimate average (NTM)
+    "Revenues - Est Avg (FY1E)"                        NUMERIC, -- MARKET_VALUE: Revenue estimate average (FY1E)
+    "Revenues - Est Med (NTM)"                         NUMERIC, -- MARKET_VALUE: Revenue estimate median (NTM)
+    "Revenues - Est Med (FY1E)"                        NUMERIC, -- MARKET_VALUE: Revenue estimate median (FY1E)
     -- Category 2: EV/Sales Time-Series (11 columns)
-    "EV/Sales (EST FY1)"                       NUMERIC, -- RATIO: EV/Sales (Estimate FY1)
-    "EV/Sales (LTM)"                           NUMERIC, -- RATIO: EV/Sales (Last Twelve Months)
-    "EV/Sales (NTM)"                           NUMERIC, -- RATIO: EV/Sales (Next Twelve Months)
-    "EV/Sales (-1FYLTM)"                       NUMERIC, -- RATIO: EV/Sales (1 FY ago LTM)
-    "EV/Sales (-2FYLTM)"                       NUMERIC, -- RATIO: EV/Sales (2 FY ago LTM)
-    "EV/Sales (-3FYLTM)"                       NUMERIC, -- RATIO: EV/Sales (3 FY ago LTM)
-    "EV/Sales (3YAVGLTM)"                      NUMERIC, -- RATIO: EV/Sales (3-year average LTM)
-    "EV/Sales (-1FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (1 FQ ago LTM)
-    "EV/Sales (-2FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (2 FQ ago LTM)
-    "EV/Sales (-3FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (3 FQ ago LTM)
-    "EV/Sales (-4FQLTM)"                       NUMERIC, -- RATIO: EV/Sales (4 FQ ago LTM)
+    "EV/Sales (EST FY1)"                               NUMERIC, -- RATIO: EV/Sales (Estimate FY1)
+    "EV/Sales (LTM)"                                   NUMERIC, -- RATIO: EV/Sales (Last Twelve Months)
+    "EV/Sales (NTM)"                                   NUMERIC, -- RATIO: EV/Sales (Next Twelve Months)
+    "EV/Sales (-1FYLTM)"                               NUMERIC, -- RATIO: EV/Sales (1 FY ago LTM)
+    "EV/Sales (-2FYLTM)"                               NUMERIC, -- RATIO: EV/Sales (2 FY ago LTM)
+    "EV/Sales (-3FYLTM)"                               NUMERIC, -- RATIO: EV/Sales (3 FY ago LTM)
+    "EV/Sales (3YAVGLTM)"                              NUMERIC, -- RATIO: EV/Sales (3-year average LTM)
+    "EV/Sales (-1FQLTM)"                               NUMERIC, -- RATIO: EV/Sales (1 FQ ago LTM)
+    "EV/Sales (-2FQLTM)"                               NUMERIC, -- RATIO: EV/Sales (2 FQ ago LTM)
+    "EV/Sales (-3FQLTM)"                               NUMERIC, -- RATIO: EV/Sales (3 FQ ago LTM)
+    "EV/Sales (-4FQLTM)"                               NUMERIC, -- RATIO: EV/Sales (4 FQ ago LTM)
     -- Category 3: Employment Metrics (7 columns)
-    "Full Time Employees (FQ)"   NUMERIC,               -- COUNT: Full time employees (Fiscal Quarter)
-    "Full Time Employees (FY)"   NUMERIC,               -- COUNT: Full time employees (Fiscal Year)
-    "Full Time Employees (-1FY)" NUMERIC,               -- COUNT: Full time employees (Previous Fiscal Year)
-    "Full Time Employees (-2FY)" NUMERIC,               -- COUNT: Full time employees (2 Years Ago)
-    "Full Time Employees (-3FY)" NUMERIC,               -- COUNT: Full time employees (3 Years Ago)
-    "Avg Employees (5YAVGFY)"    NUMERIC,               -- COUNT: Average employees (5-year average Fiscal Year)
+    "Full Time Employees (FQ)"                         NUMERIC, -- COUNT: Full time employees (Fiscal Quarter)
+    "Full Time Employees (FY)"                         NUMERIC, -- COUNT: Full time employees (Fiscal Year)
+    "Full Time Employees (-1FY)"                       NUMERIC, -- COUNT: Full time employees (Previous Fiscal Year)
+    "Full Time Employees (-2FY)"                       NUMERIC, -- COUNT: Full time employees (2 Years Ago)
+    "Full Time Employees (-3FY)"                       NUMERIC, -- COUNT: Full time employees (3 Years Ago)
+    "Avg Employees (5YAVGFY)"                          NUMERIC, -- COUNT: Average employees (5-year average Fiscal Year)
     -- Category 4: Technical Indicators (6 columns)
     -- PRICE: 52-Week Bounds (for relative positioning)
-    "52W High/Adj"                             NUMERIC, -- PRICE: 52-week adjusted high
-    "52W Low/Adj"                              NUMERIC, -- PRICE: 52-week adjusted low
+    "52W High/Adj"                                     NUMERIC, -- PRICE: 52-week adjusted high
+    "52W Low/Adj"                                      NUMERIC, -- PRICE: 52-week adjusted low
     -- PRICE: Exponential Moving Averages (technical indicators)
-    "EMA (20D)"                                NUMERIC, -- PRICE: 20-day EMA
-    "EMA (50D)"                                NUMERIC, -- PRICE: 50-day EMA
-    "EMA (100D)"                               NUMERIC, -- PRICE: 100-day EMA
-    "EMA (250D)"                               NUMERIC, -- PRICE: 250-day EMA (1-year trend proxy)
+    "EMA (20D)"                                        NUMERIC, -- PRICE: 20-day EMA
+    "EMA (50D)"                                        NUMERIC, -- PRICE: 50-day EMA
+    "EMA (100D)"                                       NUMERIC, -- PRICE: 100-day EMA
+    "EMA (250D)"                                       NUMERIC, -- PRICE: 250-day EMA (1-year trend proxy)
     -- Category 5: EV/EBITDA Extended Time-Series (6 columns)
-    "EV/EBITDA (LTM)"                          NUMERIC, -- RATIO: EV/EBITDA (Last Twelve Months)
-    "EV/EBITDA (NTM)"                          NUMERIC, -- RATIO: EV/EBITDA (Next Twelve Months)
-    "EV/EBITDA (-1FYLTM)"                      NUMERIC, -- RATIO: EV/EBITDA (1 FY ago LTM)
-    "EV/EBITDA (-1FQLTM)"                      NUMERIC, -- RATIO: EV/EBITDA (1 FQ ago LTM)
-    "EV/EBITDA (3YAVGLTM)"                     NUMERIC, -- RATIO: EV/EBITDA (3-year average LTM)
-    "EV/EBITDA (EST FY1)"                      NUMERIC, -- RATIO: EV/EBITDA (Estimate FY1)
+    "EV/EBITDA (LTM)"                                  NUMERIC, -- RATIO: EV/EBITDA (Last Twelve Months)
+    "EV/EBITDA (NTM)"                                  NUMERIC, -- RATIO: EV/EBITDA (Next Twelve Months)
+    "EV/EBITDA (-1FYLTM)"                              NUMERIC, -- RATIO: EV/EBITDA (1 FY ago LTM)
+    "EV/EBITDA (-1FQLTM)"                              NUMERIC, -- RATIO: EV/EBITDA (1 FQ ago LTM)
+    "EV/EBITDA (3YAVGLTM)"                             NUMERIC, -- RATIO: EV/EBITDA (3-year average LTM)
+    "EV/EBITDA (EST FY1)"                              NUMERIC, -- RATIO: EV/EBITDA (Estimate FY1)
     -- Category 6: P/E Extended Time-Series (11 columns)
-    "P/E (EST FY1)"                            NUMERIC, -- RATIO: P/E (Estimate FY1)
-    "P/E (-2FYLTM)"                            NUMERIC, -- RATIO: P/E (2 FY ago LTM)
-    "P/E (-3FYLTM)"                            NUMERIC, -- RATIO: P/E (3 FY ago LTM)
-    "P/E (3YAVGLTM)"                           NUMERIC, -- RATIO: P/E (3-year average LTM)
-    "P/E (-1FQLTM)"                            NUMERIC, -- RATIO: P/E (1 FQ ago LTM)
-    "P/E (-2FQLTM)"                            NUMERIC, -- RATIO: P/E (2 FQ ago LTM)
-    "P/E (-3FQLTM)"                            NUMERIC, -- RATIO: P/E (3 FQ ago LTM)
-    "P/E (-0FQQoQLTM)"                         NUMERIC, -- RATIO: P/E (Quarter-over-Quarter LTM)
-    "P/E (-0FYYoYLTM)"                         NUMERIC, -- RATIO: P/E (Year-over-Year LTM)
-    "P/E (-1FYYoYLTM)"                         NUMERIC, -- RATIO: P/E (1 FY YoY LTM)
-    "P/E (-0FQYoYLTM)"                         NUMERIC, -- RATIO: P/E (Quarter YoY LTM)
+    "P/E (EST FY1)"                                    NUMERIC, -- RATIO: P/E (Estimate FY1)
+    "P/E (-2FYLTM)"                                    NUMERIC, -- RATIO: P/E (2 FY ago LTM)
+    "P/E (-3FYLTM)"                                    NUMERIC, -- RATIO: P/E (3 FY ago LTM)
+    "P/E (3YAVGLTM)"                                   NUMERIC, -- RATIO: P/E (3-year average LTM)
+    "P/E (-1FQLTM)"                                    NUMERIC, -- RATIO: P/E (1 FQ ago LTM)
+    "P/E (-2FQLTM)"                                    NUMERIC, -- RATIO: P/E (2 FQ ago LTM)
+    "P/E (-3FQLTM)"                                    NUMERIC, -- RATIO: P/E (3 FQ ago LTM)
+    "P/E (-0FQQoQLTM)"                                 NUMERIC, -- RATIO: P/E (Quarter-over-Quarter LTM)
+    "P/E (-0FYYoYLTM)"                                 NUMERIC, -- RATIO: P/E (Year-over-Year LTM)
+    "P/E (-1FYYoYLTM)"                                 NUMERIC, -- RATIO: P/E (1 FY YoY LTM)
+    "P/E (-0FQYoYLTM)"                                 NUMERIC, -- RATIO: P/E (Quarter YoY LTM)
     -- Category 7: Dividend Record Information (8 columns)
-    "Dividend Record (Announce Date)"          DATE,    -- Date: Dividend announcement date
-    "Dividend Record (Ex Date)"                DATE,    -- Date: Dividend ex-date
-    "Dividend Record (Payable Date)"           DATE,    -- Date: Dividend payable date
-    "Dividend Record (Record Date)"            DATE,    -- Date: Dividend record date
-    "Dividend Record (Frequency)"              TEXT,    -- CATEGORICAL: Dividend frequency (Quarterly, Annual, etc.)
-    "Dividend Record (Currency)"               TEXT,    -- CATEGORICAL: Dividend currency
-    "Dividend Record (Amount)"                 NUMERIC, -- PRICE: Dividend amount
-    "Dividend Streak"                          NUMERIC  -- COUNT: Consecutive years of dividend payments
+    "Dividend Record (Announce Date)"                  DATE,    -- Date: Dividend announcement date
+    "Dividend Record (Ex Date)"                        DATE,    -- Date: Dividend ex-date
+    "Dividend Record (Payable Date)"                   DATE,    -- Date: Dividend payable date
+    "Dividend Record (Record Date)"                    DATE,    -- Date: Dividend record date
+    "Dividend Record (Frequency)"                      TEXT,    -- CATEGORICAL: Dividend frequency (Quarterly, Annual, etc.)
+    "Dividend Record (Currency)"                       TEXT,    -- CATEGORICAL: Dividend currency
+    "Dividend Record (Amount)"                         NUMERIC, -- PRICE: Dividend amount
+    "Dividend Streak"                                  NUMERIC  -- COUNT: Consecutive years of dividend payments
 ) TABLESPACE pg_default;
 
 -- Set table ownership

@@ -53,7 +53,7 @@ def fix_kaztransoil_record(csv_path: Path, output_path: Path):
 def main():
     base_dir = Path(__file__).parent.parent
     csv_path = base_dir / "data" / "screening_apac.csv"
-    output_path = base_dir / "data" / "screening_apac_fixed.csv"
+    output_path = base_dir / "data" / "screening_apac.csv"
 
     print("Fixing CSV escaping issues in screening_apac.csv...")
     fixed = fix_kaztransoil_record(csv_path, output_path)
@@ -64,9 +64,7 @@ def main():
         print(
             f"  1. Backup original: copy data\\screening_apac.csv data\\screening_apac_backup.csv"
         )
-        print(
-            f"  2. Replace original: copy data\\screening_apac_fixed.csv data\\screening_apac.csv"
-        )
+        print(f"  2. Replace original: copy data\\screening_apac.csv data\\screening_apac.csv")
     else:
         print(f"\nNo changes needed or fix could not be applied")
 

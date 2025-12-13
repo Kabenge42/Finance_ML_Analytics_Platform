@@ -20,30 +20,30 @@ Typical usage
 
 Data loading and preprocessing::
 
-    from finance_ml.api import load_from_csv, load_from_db, prepare_phase91_data
+    From finance_ml.api import load_from_csv, load_from_db, prepare_phase91_data
 
-    df = load_from_csv("data/screening_us.csv")
+    Df = load_from_csv("data/screening_us.csv")
     df_prepared = prepare_phase91_data(df)
 
 Feature engineering::
 
-    from finance_ml.api import build_features, PresetName
+    From finance_ml.api import build_features, PresetName
 
-    features = build_features(df_prepared, preset="comprehensive")
+    Features = build_features(df_prepared, preset="comprehensive")
 
 Classification and regression::
 
-    from finance_ml.api import (
+    From finance_ml.api import (
         create_enhanced_event_labels,
         train_event_classifier,
         train_sector_specific_models,
         train_quantile_regressor,
     )
 
-    labels = create_enhanced_event_labels(features)
+    Labels = create_enhanced_event_labels(features)
     clf_result = train_event_classifier(features, labels)
 
-    sector_models, sector_results = train_sector_specific_models(
+    Sector_models, sector_results = train_sector_specific_models(
         df=features,
         feature_cols=[c for c in features.columns if c not in {"sector", "target"}],
         target_col="target",
@@ -52,16 +52,16 @@ Classification and regression::
 
 Analytics and reporting::
 
-    from finance_ml.api import (
+    From finance_ml.api import (
         calculate_mispricing_score,
         rank_undervalued_stocks,
         calculate_financial_metrics_dashboard,
     )
 
-    mispriced = calculate_mispricing_score(features)
+    Mispriced = calculate_mispricing_score(features)
     top_ideas = rank_undervalued_stocks(mispriced, top_n=20)
 
-    dashboard = calculate_financial_metrics_dashboard(mispriced)
+    Dashboard = calculate_financial_metrics_dashboard(mispriced)
 
 The exact argument signatures and behaviors of the underlying functions
 are documented in their respective modules; this facade simply provides
