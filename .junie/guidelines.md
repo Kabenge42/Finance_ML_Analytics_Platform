@@ -108,6 +108,11 @@ G. Accessing the database from Python (optional)
    The notebook (ml_finance_model_main.ipynb) implements the pipeline below. Use all_stocks as the single, unified
    dataframe sourced from PostgreSQL across regions.
 
+   **Related Documentation:**
+    - See `docs/ml_workflow_guidelines.md` for comprehensive ML workflow guidelines including acceptance criteria,
+      success metrics, and validation checkpoints for each phase (9.1-9.8).
+    - See `docs/code_guidelines.md` v1.10 for detailed code conventions and standards.
+
    **Unified ETL Pipeline (RECOMMENDED - code_guidelines.md v1.10):**
 
    Use the unified ETL pipeline as the single entry point for data loading and preprocessing:

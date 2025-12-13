@@ -9,6 +9,12 @@ These guidelines codify conventions for the Finance ML Analytics Platform, cover
 architecture, function signatures, column naming, and best practices. They align with the project's 8-phase ML
 workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 
+**Related Documentation:**
+
+- **[ML Workflow Guidelines](ml_workflow_guidelines.md)**: Comprehensive guidelines for the 8-phase ML workflow with
+  acceptance criteria, success metrics, and validation checkpoints for each phase. Includes critical issues analysis
+  and recommended fixes.
+
 **Recent Updates (v1.10):**
 
 - **NEW:** Unified ETL Pipeline with Semantic Transformations and Feature Engineering (2025-12-08)

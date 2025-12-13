@@ -99,7 +99,11 @@ def calculate_feature_importance_mutual_info(
 
 
 def calculate_feature_importance_rf(
-    X: pd.DataFrame, y: pd.Series, top_k: Optional[int] = None, n_estimators: int = 100
+    X: pd.DataFrame,
+    y: pd.Series,
+    top_k: Optional[int] = None,
+    n_estimators: int = 100,
+    random_state: int = 42,
 ) -> pd.DataFrame:
     """Calculate feature importance using Random Forest.
 
@@ -113,6 +117,8 @@ def calculate_feature_importance_rf(
         Number of top features to return. If None, returns all features.
     n_estimators : int, default=100
         Number of trees in the random forest
+    random_state : int, default=42
+        Random seed for reproducibility
 
     Returns
     -------
@@ -174,7 +180,9 @@ def calculate_feature_importance_rf(
         return pd.DataFrame({"feature": [], "importance": []})
 
     # Train Random Forest
-    rf = RandomForestRegressor(n_estimators=n_estimators, random_state=42, n_jobs=-1, max_depth=10)
+    rf = RandomForestRegressor(
+        n_estimators=n_estimators, random_state=random_state, n_jobs=-1, max_depth=10
+    )
     rf.fit(X_clean, y_clean)
 
     # Get feature importance
@@ -332,12 +340,16 @@ def select_features_rf(
 def select_features_auto(
     X: pd.DataFrame,
     y: pd.Series,
-    importance_threshold: float = 0.10,
-    correlation_threshold: float = 0.85,
+    importance_threshold: float = 0.01,
+    correlation_threshold: float = 0.95,
     method: str = "combined",
     preserve_columns: Optional[List[str]] = None,
+    exclude_cols: Optional[List[str]] = None,
+    max_features: Optional[int] = None,
     return_scores: bool = False,
-) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict[str, float]]]:
+    return_report: bool = False,
+    random_state: int = 42,
+) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict[str, float]], Tuple[pd.DataFrame, Dict]]:
     """
     Automated feature selection combining multiple methods.
 
@@ -347,24 +359,39 @@ def select_features_auto(
     Parameters
     ----------
     X : pd.DataFrame
-        Feature matrix
+        Feature matrix (or full DataFrame with identifier columns)
     y : pd.Series
         Target variable
     importance_threshold : float, default=0.01
-        Minimum importance score to retain feature
+        Minimum importance score to retain feature (features below this are removed)
     correlation_threshold : float, default=0.95
-        Maximum correlation to consider features redundant
+        Maximum correlation to consider features redundant (features above this are deduplicated)
     method : str, default='combined'
         Selection method: 'mutual_info', 'rf_importance', 'correlation', 'combined'
     preserve_columns : list, optional
         Columns to always preserve (defaults to PRICE_COLUMNS)
+    exclude_cols : list, optional
+        Columns to exclude from feature selection (e.g., identifiers, target)
+        These columns will be removed before selection and NOT included in output
+    max_features : int, optional
+        Maximum number of features to retain (selected by importance ranking)
     return_scores : bool, default=False
-        Whether to return importance scores
+        Whether to return importance scores dict (legacy option)
+    return_report : bool, default=False
+        Whether to return detailed selection report dict with metadata
+    random_state : int, default=42
+        Random seed for reproducibility in RF importance calculation
 
     Returns
     -------
-    pd.DataFrame or (pd.DataFrame, dict)
-        Selected features, optionally with importance scores
+    pd.DataFrame
+        Selected features DataFrame (if return_scores=False and return_report=False)
+    (pd.DataFrame, dict)
+        Selected features and importance scores (if return_scores=True)
+    (pd.DataFrame, dict)
+        Selected features and selection report (if return_report=True)
+        Report contains: corr_removed, importance_removed, features_before,
+        features_after, selected_features, removed_features
 
     Notes
     -----
@@ -372,12 +399,25 @@ def select_features_auto(
     - Correlation-based deduplication keeps the feature with higher importance
     - Combined method applies both importance and correlation filtering
     - Only numeric columns are used for importance calculations
+    - exclude_cols are removed before selection (useful for ticker, sector, etc.)
+    - max_features limits output to top N features by importance
     """
     from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS
 
     # Default preserve columns to PRICE_COLUMNS
     if preserve_columns is None:
         preserve_columns = list(PRICE_COLUMNS)
+
+    # Initialize report tracking
+    features_before = len(X.columns)
+    corr_removed = 0
+    importance_removed = 0
+
+    # Step 0: Exclude specified columns (identifiers, target, etc.)
+    if exclude_cols:
+        cols_to_keep = [c for c in X.columns if c not in exclude_cols]
+        X = X[cols_to_keep].copy()
+        logger.info(f"Excluded {len(exclude_cols)} columns from selection")
 
     # Filter to only numeric columns for feature selection
     # Non-numeric columns (object, string, datetime) cannot be used in ML models
@@ -386,6 +426,16 @@ def select_features_auto(
 
     if len(X_numeric.columns) == 0:
         logger.warning("No numeric columns found in feature matrix, returning empty selection")
+        empty_report = {
+            "corr_removed": 0,
+            "importance_removed": 0,
+            "features_before": features_before,
+            "features_after": 0,
+            "selected_features": [],
+            "removed_features": list(X.columns),
+        }
+        if return_report:
+            return pd.DataFrame(), empty_report
         return pd.DataFrame()
 
     # Initialize selection mask (all numeric features selected initially)
@@ -399,7 +449,7 @@ def select_features_auto(
             importance_df = calculate_feature_importance_mutual_info(X_numeric, y)
         else:
             # Calculate Random Forest importance (on numeric columns only)
-            importance_df = calculate_feature_importance_rf(X_numeric, y)
+            importance_df = calculate_feature_importance_rf(X_numeric, y, random_state=random_state)
 
         # Store scores
         importance_scores = dict(zip(importance_df["feature"], importance_df["importance"]))
@@ -413,8 +463,9 @@ def select_features_auto(
                     features_to_remove.add(feature)
 
         selected_features -= features_to_remove
+        importance_removed = len(features_to_remove)
         logger.info(
-            f"Importance filtering: removed {len(features_to_remove)} features below threshold {importance_threshold}"
+            f"Importance filtering: removed {importance_removed} features below threshold {importance_threshold}"
         )
 
     # Step 2: Correlation-based deduplication
@@ -447,8 +498,9 @@ def select_features_auto(
                             redundant_features.add(feature_to_remove)
 
             selected_features -= redundant_features
+            corr_removed = len(redundant_features)
             logger.info(
-                f"Correlation filtering: removed {len(redundant_features)} redundant features above threshold {correlation_threshold}"
+                f"Correlation filtering: removed {corr_removed} redundant features above threshold {correlation_threshold}"
             )
 
     # Step 3: Always preserve protected columns (that are also numeric)
@@ -456,14 +508,65 @@ def select_features_auto(
         if col in X_numeric.columns:
             selected_features.add(col)
 
+    # Step 4: Limit to max_features if specified (by importance ranking)
+    max_features_removed = 0
+    if max_features is not None and len(selected_features) > max_features:
+        if importance_scores:
+            # Sort features by importance and keep top max_features
+            sorted_features = sorted(
+                selected_features, key=lambda f: importance_scores.get(f, 0.0), reverse=True
+            )
+            # Always keep preserved columns
+            preserved_in_selection = [f for f in sorted_features if f in preserve_columns]
+            non_preserved = [f for f in sorted_features if f not in preserve_columns]
+
+            # Calculate how many non-preserved features to keep
+            n_preserved = len(preserved_in_selection)
+            n_non_preserved_to_keep = max(0, max_features - n_preserved)
+
+            # Select top features plus preserved
+            top_features = non_preserved[:n_non_preserved_to_keep] + preserved_in_selection
+            max_features_removed = len(selected_features) - len(top_features)
+            selected_features = set(top_features)
+
+            logger.info(
+                f"Max features limiting: kept top {max_features} features, removed {max_features_removed}"
+            )
+        else:
+            logger.warning(
+                "max_features specified but no importance scores available, skipping limiting"
+            )
+
     # Return selected DataFrame (from numeric columns only)
-    X_selected = X_numeric[list(selected_features)]
+    selected_features_list = sorted(selected_features)  # Sort for consistent ordering
+    X_selected = X_numeric[selected_features_list]
+
+    # Calculate removed features
+    all_original_features = set(X_numeric.columns)
+    removed_features = sorted(all_original_features - selected_features)
 
     logger.info(
         f"Feature selection complete: {len(X_numeric.columns)} -> {len(X_selected.columns)} numeric features"
     )
 
-    if return_scores:
+    # Build selection report
+    selection_report = {
+        "corr_removed": corr_removed,
+        "importance_removed": importance_removed,
+        "max_features_removed": max_features_removed,
+        "features_before": features_before,
+        "features_after": len(X_selected.columns),
+        "selected_features": selected_features_list,
+        "removed_features": removed_features,
+        "correlation_threshold": correlation_threshold,
+        "importance_threshold": importance_threshold,
+        "method": method,
+    }
+
+    # Return based on options (return_report takes precedence)
+    if return_report:
+        return X_selected, selection_report
+    elif return_scores:
         return X_selected, importance_scores
     else:
         return X_selected

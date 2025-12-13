@@ -246,6 +246,146 @@ class TestClassificationBalance(unittest.TestCase):
             f"All classes should be preserved: {unique_classes_input} vs {unique_classes_output}",
         )
 
+    @unittest.skipIf(balance_classes is None, "balance_classes not available")
+    def test_balance_classes_preserves_categorical_columns(self):
+        """
+        Verify balance_classes properly handles categorical columns.
+
+        Regression test for ValueError: Cannot cast object dtype to int64
+        This error occurred when trying to convert string categorical values
+        like 'Communication Services' to int after SMOTE.
+
+        The fix ensures:
+        1. Categorical columns are encoded before SMOTE
+        2. Categorical columns are restored after SMOTE with original string values
+        3. Categorical dtype is object/string (not numeric)
+        4. All categorical values are valid (from original set)
+        """
+        # Create imbalanced data with categorical columns
+        X, y = create_imbalanced_classification_data(n_samples=500, n_features=10)
+
+        # Add categorical columns simulating real financial data
+        np.random.seed(42)
+        sectors = ["Technology", "Healthcare", "Financials", "Energy", "Communication Services"]
+        regions = ["US", "EU", "APAC", "ROTW"]
+        exchanges = ["NYSE", "NASDAQ", "LSE", "TSE"]
+
+        X["sector"] = np.random.choice(sectors, size=len(X))
+        X["region"] = np.random.choice(regions, size=len(X))
+        X["exchange"] = np.random.choice(exchanges, size=len(X))
+
+        # Store original categorical values
+        original_sectors = set(X["sector"].unique())
+        original_regions = set(X["region"].unique())
+        original_exchanges = set(X["exchange"].unique())
+
+        # Verify categorical columns are object dtype before balancing
+        self.assertEqual(
+            X["sector"].dtype, "object", "sector should be object dtype before balancing"
+        )
+        self.assertEqual(
+            X["region"].dtype, "object", "region should be object dtype before balancing"
+        )
+        self.assertEqual(
+            X["exchange"].dtype, "object", "exchange should be object dtype before balancing"
+        )
+
+        # Apply balancing - this should NOT raise ValueError
+        try:
+            X_bal, y_bal = balance_classes(X, y, method="smote", random_state=42)
+        except ValueError as e:
+            if "Cannot cast object dtype to int" in str(e):
+                self.fail(
+                    f"balance_classes raised ValueError when handling categorical columns: {e}\n"
+                    "This indicates the categorical encoding/decoding fix is not working."
+                )
+            raise
+
+        # Verify categorical columns are preserved
+        self.assertIn("sector", X_bal.columns, "sector column should be preserved")
+        self.assertIn("region", X_bal.columns, "region column should be preserved")
+        self.assertIn("exchange", X_bal.columns, "exchange column should be preserved")
+
+        # Verify categorical columns have object/string dtype (not numeric)
+        self.assertTrue(
+            X_bal["sector"].dtype == "object" or str(X_bal["sector"].dtype).startswith("str"),
+            f"sector should be object/string dtype after balancing, got {X_bal['sector'].dtype}",
+        )
+        self.assertTrue(
+            X_bal["region"].dtype == "object" or str(X_bal["region"].dtype).startswith("str"),
+            f"region should be object/string dtype after balancing, got {X_bal['region'].dtype}",
+        )
+        self.assertTrue(
+            X_bal["exchange"].dtype == "object" or str(X_bal["exchange"].dtype).startswith("str"),
+            f"exchange should be object/string dtype after balancing, got {X_bal['exchange'].dtype}",
+        )
+
+        # Verify all categorical values are valid (from original set)
+        balanced_sectors = set(X_bal["sector"].unique())
+        balanced_regions = set(X_bal["region"].unique())
+        balanced_exchanges = set(X_bal["exchange"].unique())
+
+        self.assertTrue(
+            balanced_sectors.issubset(original_sectors),
+            f"All sector values should be from original set: {balanced_sectors} not subset of {original_sectors}",
+        )
+        self.assertTrue(
+            balanced_regions.issubset(original_regions),
+            f"All region values should be from original set: {balanced_regions} not subset of {original_regions}",
+        )
+        self.assertTrue(
+            balanced_exchanges.issubset(original_exchanges),
+            f"All exchange values should be from original set: {balanced_exchanges} not subset of {original_exchanges}",
+        )
+
+        # Verify numeric columns are still numeric
+        numeric_cols = [col for col in X_bal.columns if col.startswith("feature_")]
+        for col in numeric_cols:
+            self.assertTrue(
+                np.issubdtype(X_bal[col].dtype, np.number),
+                f"Numeric column {col} should remain numeric, got {X_bal[col].dtype}",
+            )
+
+        # Verify sample count increased (SMOTE creates synthetic samples)
+        self.assertGreater(
+            len(X_bal),
+            len(X),
+            f"Balanced dataset should have more samples: {len(X)} → {len(X_bal)}",
+        )
+
+    @unittest.skipIf(balance_classes is None, "balance_classes not available")
+    def test_balance_classes_categorical_with_no_resampling(self):
+        """
+        Verify categorical columns are preserved when imbalance threshold is not met.
+
+        When imbalance ratio is below threshold, balance_classes returns original data.
+        Categorical columns should remain unchanged.
+        """
+        # Create balanced data (low imbalance ratio)
+        np.random.seed(42)
+        n_samples = 200
+        X = pd.DataFrame(np.random.randn(n_samples, 5), columns=[f"feature_{i}" for i in range(5)])
+        y = pd.Series(np.random.choice([0, 1, 2], size=n_samples))  # Roughly balanced
+
+        # Add categorical column
+        X["sector"] = np.random.choice(["Tech", "Health", "Finance"], size=n_samples)
+
+        # Apply balancing with high threshold (should skip resampling)
+        X_bal, y_bal = balance_classes(
+            X, y, method="auto", imbalance_threshold=100.0, random_state=42
+        )
+
+        # Verify data unchanged (no resampling applied)
+        self.assertEqual(len(X_bal), len(X), "Data should be unchanged when below threshold")
+
+        # Verify categorical column preserved
+        self.assertIn("sector", X_bal.columns, "sector column should be preserved")
+        self.assertEqual(
+            X_bal["sector"].dtype,
+            "object",
+            f"sector should remain object dtype, got {X_bal['sector'].dtype}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

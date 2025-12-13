@@ -54,7 +54,8 @@ The platform implements a sophisticated **8-phase ML workflow** (Phase 9.1 - 9.8
 1. **Phase 9.1**: Unified ETL pipeline with semantic transformations and 6-step imputation
     - Single entry point: `etl_with_features()` for complete ETL + feature engineering
     - Semantic-aware transformations (price column preservation, log-transforms for market values)
-    - See `docs/code_guidelines.md` v1.10 for details
+   - See `docs/code_guidelines.md` v1.10 for code conventions
+   - See `docs/ml_workflow_guidelines.md` for detailed acceptance criteria, success metrics, and validation checkpoints
 2. **Phase 9.2**: Enhanced exploratory data analysis with statistical testing and benchmarking
 3. **Phase 9.3**: Advanced feature engineering with sector-specific optimizations
 4. **Phase 9.4**: Multi-class event classification using neural networks and ensembles

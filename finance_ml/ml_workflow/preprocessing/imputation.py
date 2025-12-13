@@ -142,6 +142,49 @@ def get_categorical_imputation_config() -> dict:
     }
 
 
+def _get_schema_aligned_fallback(col: str) -> str:
+    """Get schema-aligned fallback value for categorical column.
+
+    Uses domain knowledge from create_equities_schema.sql to provide
+    semantically appropriate fallback values.
+
+    Args:
+        col: Column name (normalized)
+
+    Returns:
+        Appropriate fallback value for the column
+    """
+    # Schema-aware fallback values based on create_equities_schema.sql
+    fallback_map = {
+        # CATEGORICAL: GICS classification
+        "sector": "Other",
+        "industry": "Other",
+        # CATEGORICAL: Geographic classification
+        "region": "Other",
+        "country": "Unknown",
+        "trading_country": "Unknown",
+        # CATEGORICAL: Exchange
+        "exchange": "OTC",  # Over-the-counter as fallback
+        # CATEGORICAL: Investment style
+        "style_class": "Blend",  # Neutral between Value/Growth
+        "size_class": "Mid",  # Mid-cap as neutral
+        # CATEGORICAL: Status fields
+        "next_earnings_status": "Unknown",
+        # CATEGORICAL: Dividend record
+        "dividend_record_frequency": "None",
+        "dividend_record_currency": "USD",  # Default to USD
+        # Identifier columns
+        "ticker": "N/A",
+        "isin": "N/A",
+        "name": "Unknown",
+        "description": "No description available",
+        "unit": "N/A",
+    }
+
+    # Return schema-aligned value or generic fallback
+    return fallback_map.get(col, "Unknown")
+
+
 def apply_categorical_imputation(
     df: pd.DataFrame,
     columns: Optional[List[str]] = None,
@@ -199,22 +242,42 @@ def apply_categorical_imputation(
 
     for col in columns_to_impute:
         n_missing = result[col].isna().sum()
+        is_categorical = isinstance(result[col].dtype, pd.CategoricalDtype)
 
         if strategy == "most_frequent":
             # Use mode (most common value)
             mode_value = result[col].mode()
             if len(mode_value) > 0:
-                result[col] = result[col].fillna(mode_value[0])
-                logger.debug(f"Imputed {n_missing} values in '{col}' with mode: {mode_value[0]}")
+                fill_val = mode_value[0]
+
+                # For categorical columns, ensure fill value is in categories
+                if is_categorical and fill_val not in result[col].cat.categories:
+                    result[col] = result[col].cat.add_categories([fill_val])
+
+                result[col] = result[col].fillna(fill_val)
+                logger.debug(f"Imputed {n_missing} values in '{col}' with mode: {fill_val}")
             else:
                 # Fallback to constant if no mode exists
-                result[col] = result[col].fillna("Unknown")
+                fallback_value = _get_schema_aligned_fallback(col)
+
+                # For categorical columns, add fallback value to categories
+                if is_categorical:
+                    if fallback_value not in result[col].cat.categories:
+                        result[col] = result[col].cat.add_categories([fallback_value])
+
+                result[col] = result[col].fillna(fallback_value)
                 logger.debug(
-                    f"Imputed {n_missing} values in '{col}' with 'Unknown' (no mode found)"
+                    f"Imputed {n_missing} values in '{col}' with '{fallback_value}' (no mode found)"
                 )
 
         elif strategy == "constant":
-            fill = fill_value if fill_value is not None else "Unknown"
+            fill = fill_value if fill_value is not None else _get_schema_aligned_fallback(col)
+
+            # For categorical columns, ensure fill value is in categories
+            if is_categorical:
+                if fill not in result[col].cat.categories:
+                    result[col] = result[col].cat.add_categories([fill])
+
             result[col] = result[col].fillna(fill)
             logger.debug(f"Imputed {n_missing} values in '{col}' with constant: {fill}")
 
@@ -917,7 +980,11 @@ def validate_imputation_completeness(
                 "ready": is_datetime and not has_missing,
             }
         else:
-            datetime_status[col] = {"is_datetime": False, "has_missing": True, "ready": False}
+            datetime_status[col] = {
+                "is_datetime": False,
+                "has_missing": True,
+                "ready": False,
+            }
 
     # Ready for temporal features if all EXISTING critical date columns are properly formatted
     # (missing columns are acceptable - they just won't have temporal features)

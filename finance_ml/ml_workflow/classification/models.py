@@ -798,7 +798,7 @@ def balance_classes(
     Returns
     -------
     X_balanced : pd.DataFrame
-        Resampled feature matrix
+        Resampled feature matrix with all original columns (numeric and categorical)
     y_balanced : pd.Series
         Resampled target labels
 
@@ -806,7 +806,7 @@ def balance_classes(
     -----
     - Auto method selects SMOTE for moderate imbalance (10:1 to 20:1)
     - Auto method selects combined sampling for severe imbalance (>20:1)
-    - Only numeric columns are used for resampling
+    - Categorical columns are encoded before resampling and restored after
     - Original indices are not preserved (new integer index assigned)
 
     Examples
@@ -844,8 +844,33 @@ def balance_classes(
         )
         return X, y
 
-    # Select only numeric columns for resampling
-    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    # Identify categorical columns (object, string, category dtypes)
+    categorical_cols = X.select_dtypes(include=["object", "string", "category"]).columns.tolist()
+
+    # Store original column order for reconstruction
+    original_columns = X.columns.tolist()
+
+    # Encode categorical columns before resampling
+    # Store mappings for restoration after SMOTE
+    categorical_encodings: Dict[str, pd.Index] = {}
+    X_encoded = X.copy()
+
+    for col in categorical_cols:
+        # Use pd.factorize to convert strings to integers
+        # Returns (codes, uniques) where codes are integer indices
+        codes, uniques = pd.factorize(X_encoded[col], sort=False)
+        X_encoded[col] = codes
+        categorical_encodings[col] = uniques
+        logger.debug(f"Encoded categorical column '{col}': {len(uniques)} unique values")
+
+    if categorical_encodings:
+        logger.info(
+            f"Encoded {len(categorical_encodings)} categorical columns for resampling: "
+            f"{list(categorical_encodings.keys())}"
+        )
+
+    # Select all numeric columns (including newly encoded categoricals)
+    numeric_cols = X_encoded.select_dtypes(include=[np.number]).columns.tolist()
     if not numeric_cols:
         logger.warning("No numeric columns found for resampling, returning original data")
         return X, y
@@ -865,7 +890,7 @@ def balance_classes(
     try:
         if method == "smote":
             X_balanced, y_balanced = apply_smote(
-                X,
+                X_encoded,
                 y,
                 numeric_cols,
                 sampling_strategy=sampling_strategy,
@@ -873,7 +898,7 @@ def balance_classes(
             )
         elif method == "adasyn":
             X_balanced, y_balanced = apply_adasyn(
-                X,
+                X_encoded,
                 y,
                 numeric_cols,
                 sampling_strategy=sampling_strategy,
@@ -881,7 +906,7 @@ def balance_classes(
             )
         elif method == "undersample":
             X_balanced, y_balanced = apply_undersampling(
-                X,
+                X_encoded,
                 y,
                 numeric_cols,
                 sampling_strategy=sampling_strategy,
@@ -889,7 +914,7 @@ def balance_classes(
             )
         elif method == "combined":
             X_balanced, y_balanced = apply_combined_sampling(
-                X,
+                X_encoded,
                 y,
                 numeric_cols,
                 over_strategy="smote",
@@ -902,6 +927,26 @@ def balance_classes(
         else:
             logger.warning(f"Unknown method '{method}', skipping balancing")
             return X, y
+
+        # Restore categorical columns from encoded values
+        # SMOTE may produce fractional values, so round to nearest integer index
+        for col, uniques in categorical_encodings.items():
+            if col in X_balanced.columns:
+                # Round to nearest integer and clip to valid range
+                encoded_values = X_balanced[col].values
+                rounded_indices = np.clip(np.round(encoded_values).astype(int), 0, len(uniques) - 1)
+                # Map back to original string values
+                X_balanced[col] = uniques[rounded_indices]
+                logger.debug(f"Restored categorical column '{col}' to string dtype")
+
+        if categorical_encodings:
+            logger.info(
+                f"Restored {len(categorical_encodings)} categorical columns to original dtypes"
+            )
+
+        # Ensure column order matches original (only include columns that exist)
+        final_columns = [col for col in original_columns if col in X_balanced.columns]
+        X_balanced = X_balanced[final_columns]
 
         # Convert to Series if numpy array returned
         if isinstance(y_balanced, np.ndarray):
