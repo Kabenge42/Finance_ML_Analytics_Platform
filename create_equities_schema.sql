@@ -434,7 +434,7 @@ CREATE TABLE equities
     "Dividend Record (Ex Date)"                        DATE,    -- Date: Dividend ex-date
     "Dividend Record (Payable Date)"                   DATE,    -- Date: Dividend payable date
     "Dividend Record (Record Date)"                    DATE,    -- Date: Dividend record date
-    "Dividend Record (Frequency)"                      TEXT,    -- CATEGORICAL: Dividend frequency (Quarterly, Annual, etc.)
+    "Dividend Record (Frequency)"                      TEXT,    -- CATEGORICAL: Dividend frequency (FQ,FY,etc.)
     "Dividend Record (Currency)"                       TEXT,    -- CATEGORICAL: Dividend currency
     "Dividend Record (Amount)"                         NUMERIC, -- PRICE: Dividend amount
     "Dividend Streak"                                  NUMERIC  -- COUNT: Consecutive years of dividend payments

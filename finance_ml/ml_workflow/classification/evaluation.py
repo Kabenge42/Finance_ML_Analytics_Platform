@@ -343,8 +343,9 @@ def cross_validate_classifier(
     model: ClassifierMixin,
     X: pd.DataFrame,
     y: np.ndarray,
-    cv: int = 5,
+    cv: Union[int, Any] = 5,
     stratify_by: Optional[str] = None,
+    groups: Optional[np.ndarray] = None,
 ) -> Dict[str, Union[float, np.ndarray, Dict[str, np.ndarray]]]:
     """Perform stratified cross-validation for classifier.
 
@@ -352,16 +353,37 @@ def cross_validate_classifier(
         model: Classifier to evaluate
         X: Feature data
         y: Labels
-        cv: Number of folds
+        cv: Number of folds (int) or a CV splitter object (e.g., GroupKFold, StratifiedKFold)
         stratify_by: Column to stratify by (e.g., 'sector')
+        groups: Group labels for GroupKFold-based CV strategies
 
     Returns:
         Dictionary with cross-validation results
+
+    Note:
+        When passing a CV splitter object that requires groups (e.g., GroupKFold),
+        you must also provide the groups parameter. If cv is a splitter object,
+        it will be used directly; otherwise, a StratifiedKFold is created.
     """
-    from sklearn.model_selection import cross_validate
+    from sklearn.model_selection import cross_validate, BaseCrossValidator
 
     # Setup cross-validation strategy
-    cv_strategy = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
+    # Accept either an integer (create StratifiedKFold) or a CV splitter object
+    if isinstance(cv, int):
+        cv_strategy = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
+    elif hasattr(cv, "split"):
+        # cv is already a CV splitter object (e.g., GroupKFold, StratifiedGroupKFold)
+        cv_strategy = cv
+    else:
+        # Fallback: try to use as integer
+        try:
+            n_splits = int(cv)
+            cv_strategy = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+        except (TypeError, ValueError):
+            logger.warning(
+                f"Invalid cv parameter type: {type(cv)}. Using default 5-fold StratifiedKFold."
+            )
+            cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     # Remove stratify_by column if present (it's not a feature)
     X_for_cv = X.copy()
@@ -376,15 +398,37 @@ def cross_validate_classifier(
         "f1": "f1_macro",
     }
 
-    cv_results = cross_validate(
-        model,
-        X_for_cv,
-        y,
-        cv=cv_strategy,
-        scoring=scoring,
-        return_train_score=True,
-        n_jobs=-1,
-    )
+    # Extract groups from stratify_by column if not explicitly provided
+    cv_groups = groups
+    if cv_groups is None and stratify_by and stratify_by in X.columns:
+        cv_groups = X[stratify_by].values
+
+    try:
+        cv_results = cross_validate(
+            model,
+            X_for_cv,
+            y,
+            cv=cv_strategy,
+            scoring=scoring,
+            return_train_score=True,
+            n_jobs=-1,
+            groups=cv_groups,
+        )
+    except TypeError as e:
+        # Some CV strategies don't accept groups parameter
+        if "groups" in str(e):
+            logger.warning("CV strategy doesn't support groups parameter, retrying without groups")
+            cv_results = cross_validate(
+                model,
+                X_for_cv,
+                y,
+                cv=cv_strategy,
+                scoring=scoring,
+                return_train_score=True,
+                n_jobs=-1,
+            )
+        else:
+            raise
 
     # Aggregate results
     results = {
@@ -400,8 +444,10 @@ def cross_validate_classifier(
         "cv_scores": cv_results,
     }
 
+    # Determine number of folds for logging
+    n_folds = cv if isinstance(cv, int) else getattr(cv_strategy, "n_splits", "N/A")
     logger.info(
-        f"Cross-validation ({cv} folds): Accuracy={results['test_accuracy']:.4f}±{results['test_accuracy_std']:.4f}, "
+        f"Cross-validation ({n_folds} folds): Accuracy={results['test_accuracy']:.4f}±{results['test_accuracy_std']:.4f}, "
         f"F1={results['test_f1']:.4f}±{results['test_f1_std']:.4f}"
     )
 

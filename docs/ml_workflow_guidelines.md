@@ -1,14 +1,17 @@
 # ML Workflow Guidelines
 
-**Version**: 1.0  
-**Last Updated**: 2025-12-13  
-**Aligned with**: code_guidelines.md v1.10, ml-project-checklist.md
+**Version**: 1.1  
+**Last Updated**: 2025-12-14  
+**Aligned with**: code_guidelines.md v1.11, ml-project-checklist.md
 
 ## Overview
 
 This document provides comprehensive guidelines for the Finance ML Analytics Platform's 8-phase ML workflow (Phase
 9.1-9.8) and 7-phase Portfolio Optimization workflow. It is based on analysis of the `ml_finance_model_main.ipynb`
 workflow, outputs, and inspection results.
+
+**Compliance Monitoring**: See `outputs/governance/ml_workflow_log.json` for runtime compliance tracking and issue
+logging.
 
 ---
 
@@ -34,6 +37,36 @@ workflow, outputs, and inspection results.
 1. **Phase 9.5 → 9.6 Transition**: Model evaluation doesn't validate prediction distributions
 2. **Quantile Monotonicity**: Some predictions may violate `pred_p10 < pred_p50 < pred_p90`
 3. **Sector Bias**: Large cap stocks (BRKA) show extreme errors, suggesting sector-specific calibration needed
+
+### New Issues Identified (2025-12-14)
+
+1. **Cross-Validation GroupKFold Error** (Phase 9.4): Cross-validation fails with error "The number of folds must be of
+   Integral type. GroupKFold(...) was passed." Root cause: `cross_validate_with_sector_stratification` passes GroupKFold
+   object directly to `cross_val_score` instead of using `GroupKFold.split()` method.
+
+2. **Perfect Model Scores Indicate Data Leakage** (Phase 9.5): Ridge model achieves R²=1.0 and MAE=0.0, which is
+   impossible for real financial prediction. This strongly suggests target leakage in the feature engineering pipeline.
+
+3. **Classification Overfitting** (Phase 9.4): LightGBM achieves F1=1.0000 during hyperparameter optimization, which is
+   unrealistic for financial event classification. Requires validation on held-out test set.
+
+### Overfitting Warning Signs
+
+⚠️ **CRITICAL**: The following metrics indicate potential overfitting or data leakage:
+
+| Metric      | Observed Value | Expected Range | Status      |
+|-------------|----------------|----------------|-------------|
+| Ridge R²    | 1.0000         | 0.60-0.85      | 🔴 CRITICAL |
+| Ridge MAE   | 0.00           | >100           | 🔴 CRITICAL |
+| LightGBM F1 | 1.0000         | 0.60-0.85      | 🟡 WARNING  |
+| Lasso R²    | 1.0000         | 0.60-0.85      | 🔴 CRITICAL |
+
+**Recommended Actions**:
+
+1. Audit feature engineering pipeline for target leakage
+2. Ensure temporal separation in train/test split
+3. Validate on truly held-out test set
+4. Review if `price_target` or related columns are included in features
 
 ---
 
@@ -146,14 +179,42 @@ assert sum(coverage_stats.values()) / 196 >= 0.90
 - ✅ All 5 probability columns generated
 - ✅ Probabilities sum to 1.0 per row
 - ✅ Classification model accuracy >60%
+- ⚠️ Cross-validation must complete without errors
 
 **Success Metrics:**
 
-| Metric        | Target        | Validation         |
-|---------------|---------------|--------------------|
-| Accuracy      | >60%          | Cross-validation   |
-| F1 Score      | >0.55         | Macro average      |
-| Class Balance | No class <10% | Distribution check |
+| Metric        | Target        | Validation                                      |
+|---------------|---------------|-------------------------------------------------|
+| Accuracy      | >60%          | Cross-validation                                |
+| F1 Score      | 0.55-0.90     | Macro average (⚠️ F1=1.0 indicates overfitting) |
+| Class Balance | No class <10% | Distribution check                              |
+
+**Known Issues (2025-12-14):**
+
+⚠️ **GroupKFold Cross-Validation Error**: The `cross_validate_with_sector_stratification` function fails with:
+
+```
+TypeError: The number of folds must be of Integral type. GroupKFold(n_splits=5, ...) was passed.
+```
+
+**Fix Required**: Use `GroupKFold.split(X, y, groups)` method instead of passing GroupKFold object to `cross_val_score`:
+
+```python
+# INCORRECT (current):
+cv_results = cross_val_score(model, X, y, cv=GroupKFold(n_splits=5))
+
+# CORRECT (fix):
+gkf = GroupKFold(n_splits=5)
+cv_results = cross_val_score(model, X, y, cv=gkf.split(X, y, groups=sector_groups))
+```
+
+⚠️ **Overfitting Warning**: LightGBM achieved F1=1.0000 during hyperparameter optimization. Perfect scores are
+unrealistic
+for financial event classification and indicate:
+
+- Possible data leakage from target-related features
+- Insufficient regularization (max_depth=12 may be too deep)
+- Need for held-out test set validation
 
 **Validation Checkpoint:**
 
@@ -162,6 +223,8 @@ prob_cols = ['event_prob_strong_negative', 'event_prob_negative',
              'event_prob_neutral', 'event_prob_positive', 'event_prob_strong_positive']
 assert all(col in df.columns for col in prob_cols)
 assert np.allclose(df[prob_cols].sum(axis=1), 1.0, atol=0.01)
+# NEW: Overfitting check
+assert f1_score < 0.95, "F1 >= 0.95 suggests overfitting - validate on held-out set"
 ```
 
 ---
@@ -179,14 +242,44 @@ assert np.allclose(df[prob_cols].sum(axis=1), 1.0, atol=0.01)
 - ✅ Non-negative predictions enforced (prices ≥ 0)
 - ✅ Quantile monotonicity: `pred_p10 ≤ pred_p50 ≤ pred_p90`
 - ✅ **CRITICAL**: No zero predictions for valid stocks
+- ⚠️ R² must be realistic (0.60-0.90 range for financial data)
 
 **Success Metrics:**
 
-| Metric           | Target       | Validation                 |
-|------------------|--------------|----------------------------|
-| R²               | >0.70        | Test set                   |
-| MAE              | <15% of mean | Per sector                 |
-| Zero Predictions | 0            | `(y_pred == 0).sum() == 0` |
+| Metric           | Target           | Validation                             |
+|------------------|------------------|----------------------------------------|
+| R²               | 0.60-0.90        | Test set (⚠️ R²=1.0 indicates leakage) |
+| MAE              | >0, <15% of mean | Per sector (⚠️ MAE=0 is impossible)    |
+| Zero Predictions | 0                | `(y_pred == 0).sum() == 0`             |
+
+**Known Issues (2025-12-14):**
+
+🔴 **CRITICAL - Data Leakage Detected**: Model comparison results show impossible metrics:
+
+| Model                | MAE     | RMSE     | R²   | Status      |
+|----------------------|---------|----------|------|-------------|
+| Ridge                | 0.00    | 0.00     | 1.00 | 🔴 LEAKAGE  |
+| Lasso                | 189.16  | 1469.69  | 1.00 | 🔴 LEAKAGE  |
+| ExtraTrees           | 1190.29 | 31807.30 | 0.83 | ✅ Realistic |
+| GradientBoosting     | 1260.77 | 37370.82 | 0.77 | ✅ Realistic |
+| RandomForest         | 1738.64 | 42769.25 | 0.70 | ✅ Realistic |
+| HistGradientBoosting | 2485.57 | 53915.17 | 0.52 | ✅ Realistic |
+
+**Root Cause Analysis**:
+
+- Ridge/Lasso achieving R²=1.0 with MAE=0.0 is mathematically impossible for real financial prediction
+- Linear models are likely fitting on features that directly encode the target variable
+- Possible culprits: `price_target`, `price_target_median`, or derived columns included in features
+
+**Recommended Fix**:
+
+```python
+# Add target leakage check before model training
+target_related_cols = ['price_target', 'price_target_median', 'price_target_high', 
+                       'price_target_low', 'y_true', 'target']
+leaky_features = [c for c in X_train.columns if any(t in c.lower() for t in target_related_cols)]
+assert len(leaky_features) == 0, f"Target leakage detected: {leaky_features}"
+```
 
 **Validation Checkpoint:**
 
@@ -194,6 +287,9 @@ assert np.allclose(df[prob_cols].sum(axis=1), 1.0, atol=0.01)
 assert (y_pred >= 0).all(), "Non-negativity constraint violated"
 assert (y_pred > 0).sum() == len(y_pred), "Zero predictions detected"
 assert (pred_p10 <= pred_p50).all() and (pred_p50 <= pred_p90).all()
+# NEW: Leakage detection
+assert r2_score < 0.95, "R² >= 0.95 suggests data leakage - audit features"
+assert mae > 0, "MAE = 0 is impossible - check for target in features"
 ```
 
 ---

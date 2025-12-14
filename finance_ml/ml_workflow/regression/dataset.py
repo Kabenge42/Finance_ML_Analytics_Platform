@@ -645,9 +645,56 @@ def add_sector_interactions_for_prediction(
 # Data Validation and Preprocessing
 # ==============================================================================
 
+# Import validation utilities
+from finance_ml.ml_workflow.regression.validation import (
+    detect_target_leakage_in_features,
+    TARGET_LEAKAGE_PATTERNS,
+)
+
+
+def detect_target_leakage(
+    X: pd.DataFrame,
+    target_col: str = "price_target",
+    additional_patterns: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """
+    Detect potential target leakage in feature columns.
+
+    Checks if any feature columns contain patterns that suggest they
+    are derived from or related to the target variable. This is critical
+    for preventing data leakage that leads to unrealistic model performance
+    (e.g., R²=1.0, MAE=0.0).
+
+    Args:
+        X: Feature matrix (DataFrame)
+        target_col: Name of the target column
+        additional_patterns: Additional patterns to check for leakage
+
+    Returns:
+        Dictionary with detection results:
+        - has_leakage: bool indicating if leakage detected
+        - leaky_columns: list of column names with potential leakage
+        - patterns_matched: dict mapping columns to matched patterns
+
+    Example:
+        >>> X = pd.DataFrame({"p_e_ratio": [10], "price_target_median": [100]})
+        >>> result = detect_target_leakage(X, target_col="price_target")
+        >>> print(result["has_leakage"])  # True
+        >>> print(result["leaky_columns"])  # ["price_target_median"]
+    """
+    return detect_target_leakage_in_features(
+        feature_columns=X.columns.tolist(),
+        target_col=target_col,
+        additional_patterns=additional_patterns,
+    )
+
 
 def validate_training_data(
-    X: pd.DataFrame, y: pd.Series, strict: bool = True
+    X: pd.DataFrame,
+    y: pd.Series,
+    strict: bool = True,
+    check_leakage: bool = False,
+    target_col: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Validate training data before model fitting.
@@ -655,10 +702,17 @@ def validate_training_data(
     This function implements Priority 1 from ML Workflow Improvement Plan:
     comprehensive validation gates to prevent NaN/Inf values from reaching model training.
 
+    Enhanced with target leakage detection (ml_workflow_guidelines.md v1.1):
+    When check_leakage=True, validates that feature columns don't contain
+    target-related columns (price_target, price_target_median, etc.) that
+    would cause unrealistic model performance (R²=1.0, MAE=0.0).
+
     Args:
         X: Feature matrix
         y: Target vector
         strict: If True, raise exceptions on validation failures
+        check_leakage: If True, check for target column leakage in features
+        target_col: Name of target column for leakage detection (e.g., "price_target")
 
     Returns:
         Dictionary with validation results:
@@ -669,6 +723,8 @@ def validate_training_data(
         - inf_target: count of infinite values in target
         - zero_var_columns: list of zero-variance column names
         - issues: list of issue descriptions
+        - leakage_detected: bool (if check_leakage=True)
+        - leaky_columns: list of leaky column names (if check_leakage=True)
 
     Raises:
         ValueError: If validation fails and strict=True
@@ -678,8 +734,15 @@ def validate_training_data(
         >>> y_train = pd.Series([10, 20, 30])
         >>> result = validate_training_data(X_train, y_train, strict=True)
         >>> assert result['valid'] == True
+
+        >>> # With leakage detection
+        >>> X_leaky = pd.DataFrame({'p_e_ratio': [10], 'price_target_median': [100]})
+        >>> result = validate_training_data(X_leaky, y_train, check_leakage=True,
+        ...                                  target_col="price_target", strict=False)
+        >>> assert result['leakage_detected'] == True
     """
     issues = []
+    leakage_result = {"has_leakage": False, "leaky_columns": []}
 
     # Check for empty data
     if len(X) == 0 or len(y) == 0:
@@ -729,14 +792,35 @@ def validate_training_data(
         msg = f"Feature matrix X contains {len(zero_var_cols)} zero-variance columns: {zero_var_cols[:5]}"
         issues.append(msg)
 
+    # Check for target leakage (ml_workflow_guidelines.md v1.1 Critical Issue)
+    if check_leakage:
+        leakage_result = detect_target_leakage(X, target_col=target_col or "price_target")
+        if leakage_result["has_leakage"]:
+            leaky_cols = leakage_result["leaky_columns"]
+            msg = f"TARGET LEAKAGE DETECTED: {len(leaky_cols)} columns may leak target information: {leaky_cols}"
+            if strict:
+                raise ValueError(f"{msg}. Remove these columns before training.")
+            issues.append(msg)
+            logger.warning(msg)
+
+    # Determine overall validity
+    # Valid if no issues, or only zero-variance warning (not a blocker)
+    has_blocking_issues = any(
+        "NaN" in issue or "infinite" in issue or "empty" in issue or "LEAKAGE" in issue
+        for issue in issues
+    )
+    is_valid = not has_blocking_issues
+
     return {
-        "valid": len(issues) == 0 or (len(issues) == 1 and len(zero_var_cols) > 0),
+        "valid": is_valid,
         "nan_features": nan_count_X,
         "nan_target": nan_count_y,
         "inf_features": inf_count_X,
         "inf_target": inf_count_y,
         "zero_var_columns": zero_var_cols,
         "issues": issues,
+        "leakage_detected": leakage_result["has_leakage"],
+        "leaky_columns": leakage_result["leaky_columns"],
     }
 
 

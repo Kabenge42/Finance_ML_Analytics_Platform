@@ -139,9 +139,7 @@ class ETLConfig:
 
     normalize_columns: bool = True
     apply_dtype_casting: bool = True  # Apply schema-aware dtype casting (default: True)
-    track_dtype_diagnostics: bool = (
-        True  # Track dtype coercion diagnostics (default: True)
-    )
+    track_dtype_diagnostics: bool = True  # Track dtype coercion diagnostics (default: True)
     validate_schema: bool = True
     require_target: bool = False
     sanitize_data: bool = True
@@ -195,16 +193,12 @@ class ETLConfig:
 
     # Feature engineering integration (Section 9.3)
     apply_feature_engineering: bool = False  # Default OFF for backward compatibility
-    feature_preset: str = (
-        "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
-    )
+    feature_preset: str = "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
     feature_categories: Optional[List[str]] = None  # Specific categories to engineer
 
     # Feature selection integration (Section 9.3 Task 1)
     apply_feature_selection: bool = False  # Default OFF for backward compatibility
-    feature_selection_method: Literal["mutual_info", "correlation", "both"] = (
-        "mutual_info"
-    )
+    feature_selection_method: Literal["mutual_info", "correlation", "both"] = "mutual_info"
     importance_threshold: float = 0.01  # Min importance score to keep feature
     correlation_threshold: float = 0.95  # Max correlation before deduplication
     feature_selection_categories: Optional[List[str]] = None  # Category-based selection
@@ -284,7 +278,7 @@ class ETLMetrics:
     log_transformed_columns: int = 0
 
     # Feature engineering metrics (Section 9.3)
-    feature_engineering_applied: bool = True
+    feature_engineering_applied: bool = False
     feature_preset_used: str = ""
     features_added: int = 0
     feature_categories_applied: List[str] = field(default_factory=list)
@@ -294,6 +288,10 @@ class ETLMetrics:
     features_before_selection: int = 0
     features_after_selection: int = 0
     features_removed_by_selection: int = 0
+
+    # Business rule validation metrics (Priority 1)
+    business_rule_violations: int = 0  # Negative values in non-negative columns
+    log_transforms_skipped: int = 0  # Log transforms skipped due to negative values
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert metrics to dictionary."""
@@ -361,6 +359,10 @@ class ETLMetrics:
                 "features_before": self.features_before_selection,
                 "features_after": self.features_after_selection,
                 "features_removed": self.features_removed_by_selection,
+            },
+            "business_rules": {
+                "violations": self.business_rule_violations,
+                "log_transforms_skipped": self.log_transforms_skipped,
             },
             "stages_executed": self.stages_executed,
             "warnings": self.warnings,
@@ -439,9 +441,7 @@ class ETLMetrics:
         feature_selection_info = ""
         if self.feature_selection_applied:
             reduction_pct = (
-                100
-                * self.features_removed_by_selection
-                / self.features_before_selection
+                100 * self.features_removed_by_selection / self.features_before_selection
                 if self.features_before_selection > 0
                 else 0
             )
@@ -449,6 +449,16 @@ class ETLMetrics:
                 f"\n  Feature Selection: {self.features_before_selection} → "
                 f"{self.features_after_selection} features "
                 f"(removed {self.features_removed_by_selection}, {reduction_pct:.1f}% reduction)"
+            )
+
+        # Business rule validation info (Priority 1 Fix)
+        business_rules_info = ""
+        if self.business_rule_violations > 0 or self.log_transforms_skipped > 0:
+            status_icon = "⚠" if self.business_rule_violations > 0 else "✓"
+            business_rules_info = (
+                f"\n  Business Rules: {status_icon} "
+                f"({self.business_rule_violations} negative value violations sanitized, "
+                f"{self.log_transforms_skipped} log-transforms skipped)"
             )
 
         return (
@@ -466,7 +476,8 @@ class ETLMetrics:
             f"{financial_metrics_info}"
             f"{semantic_info}"
             f"{feature_engineering_info}"
-            f"{feature_selection_info}\n"
+            f"{feature_selection_info}"
+            f"{business_rules_info}\n"
             f"  Quality: {self.quality_score:.3f}, "
             f"Validation: {self.validation_score:.3f}\n"
             f"  Stages: {', '.join(self.stages_executed)}\n"
@@ -541,18 +552,14 @@ def validate_etl_output(
         if df.shape[1] >= expected_min_cols:
             report["passed"].append(f"column_count >= {expected_min_cols}")
         else:
-            report["failed"].append(
-                f"column_count: {df.shape[1]} < expected {expected_min_cols}"
-            )
+            report["failed"].append(f"column_count: {df.shape[1]} < expected {expected_min_cols}")
 
     # Check minimum rows
     if expected_min_rows > 0:
         if df.shape[0] >= expected_min_rows:
             report["passed"].append(f"row_count >= {expected_min_rows}")
         else:
-            report["failed"].append(
-                f"row_count: {df.shape[0]} < expected {expected_min_rows}"
-            )
+            report["failed"].append(f"row_count: {df.shape[0]} < expected {expected_min_rows}")
 
     # Check critical columns
     if critical_columns:
@@ -572,9 +579,7 @@ def validate_etl_output(
             cols_with_nan = nan_counts[nan_counts > 0].index.tolist()
             report["columns_with_nan"] = cols_with_nan[:20]  # Limit to 20
             # Warning but not failure - NaN is often expected
-            logger.debug(
-                f"{phase}: {total_nan} NaN values in {len(cols_with_nan)} columns"
-            )
+            logger.debug(f"{phase}: {total_nan} NaN values in {len(cols_with_nan)} columns")
         report["passed"].append("nan_check_completed")
 
     # Check infinite values
@@ -764,9 +769,7 @@ class ETLPipeline:
         logger.info(f"Extracting data from all_stocks table: {db_url}")
         limit = limit or self.config.limit
         df = load_from_all_stocks(db_url, limit=limit)
-        logger.info(
-            f"Extracted {len(df)} rows, {len(df.columns)} columns from all_stocks"
-        )
+        logger.info(f"Extracted {len(df)} rows, {len(df.columns)} columns from all_stocks")
         return df
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -805,9 +808,7 @@ class ETLPipeline:
         if self.config.apply_dtype_casting:
             logger.info("Stage 1.5: Applying schema-aware dtype casting")
             try:
-                result, dtype_diagnostics = detect_and_cast_dtypes(
-                    result, schema=COLUMN_SCHEMA
-                )
+                result, dtype_diagnostics = detect_and_cast_dtypes(result, schema=COLUMN_SCHEMA)
 
                 # Track metrics
                 if self.metrics:
@@ -862,9 +863,7 @@ class ETLPipeline:
         # Stage 2: Validate schema
         if self.config.validate_schema:
             logger.info("Stage 2: Validating schema")
-            is_valid, errors = validate_schema(
-                result, require_target=self.config.require_target
-            )
+            is_valid, errors = validate_schema(result, require_target=self.config.require_target)
             if not is_valid:
                 error_msg = f"Schema validation failed: {', '.join(errors)}"
                 logger.error(error_msg)
@@ -888,13 +887,22 @@ class ETLPipeline:
         # Stage 4: Sanitize data
         if self.config.sanitize_data:
             logger.info("Stage 4: Sanitizing data (inf, nan, extremes)")
-            result = sanitize_dataframe_with_logging(result)
+            result, sanitize_stats = sanitize_dataframe_with_logging(result, return_stats=True)
+
+            # Track business rule violations in metrics (Priority 1 Fix)
+            if self.metrics and sanitize_stats:
+                self.metrics.business_rule_violations = sanitize_stats.get(
+                    "business_rule_violations", 0
+                )
+                if self.metrics.business_rule_violations > 0:
+                    self.metrics.warnings.append(
+                        f"Business rules: {self.metrics.business_rule_violations} negative values "
+                        f"sanitized in non-negative columns (converted to NaN for imputation)"
+                    )
 
         # Stage 5: Apply imputation strategy
         if self.config.apply_imputation:
-            logger.info(
-                f"Stage 5: Applying {self.config.imputation_strategy} imputation strategy"
-            )
+            logger.info(f"Stage 5: Applying {self.config.imputation_strategy} imputation strategy")
 
             # Track missing values before imputation
             missing_before = result.isna().sum().sum()
@@ -932,9 +940,7 @@ class ETLPipeline:
             if self.metrics:
                 self.metrics.missing_values_after_imputation = int(missing_after)
                 self.metrics.imputation_completeness = validation["is_complete"]
-                self.metrics.date_columns_ready = validation[
-                    "ready_for_temporal_features"
-                ]
+                self.metrics.date_columns_ready = validation["ready_for_temporal_features"]
                 self.metrics.quality_score = min(
                     self.metrics.quality_score,
                     1.0 if validation["is_complete"] else 0.8,
@@ -988,9 +994,7 @@ class ETLPipeline:
                         f"{price_cols_to_remove[:3]}{'...' if len(price_cols_to_remove) > 3 else ''}"
                     )
                     columns_to_scale = [
-                        col
-                        for col in columns_to_scale
-                        if col.lower() not in PRICE_COLUMNS
+                        col for col in columns_to_scale if col.lower() not in PRICE_COLUMNS
                     ]
                     if self.metrics:
                         self.metrics.warnings.append(
@@ -1033,9 +1037,7 @@ class ETLPipeline:
             else:
                 logger.warning("No columns to scale after applying exclusions")
                 if self.metrics:
-                    self.metrics.warnings.append(
-                        "Scaling skipped: no valid columns found"
-                    )
+                    self.metrics.warnings.append("Scaling skipped: no valid columns found")
 
         # Stage 8: Compute financial metrics (optional)
         initial_cols = set(result.columns)
@@ -1144,6 +1146,32 @@ class ETLPipeline:
             if self.metrics:
                 self.metrics.stages_executed.append("feature_engineering")
 
+            # Stage 9b: Post-feature-engineering imputation sweep (Priority 1 Fix)
+            # Rationale: Phase 9.3 features may depend on columns that were imputed or have edge cases
+            missing_after_features = int(result.isna().sum().sum())
+            if missing_after_features > 0:
+                logger.info(
+                    f"Stage 9b: Post-feature-engineering imputation sweep (missing={missing_after_features})"
+                )
+
+                # Apply simple median imputation to engineered features
+                # (more sophisticated than zero-fill, preserves statistical properties)
+                result = apply_median_imputation(result)
+
+                missing_after_sweep = int(result.isna().sum().sum())
+                if self.metrics:
+                    self.metrics.stages_executed.append("post_feature_imputation")
+                    self.metrics.missing_values_after_imputation = missing_after_sweep
+                    self.metrics.imputation_completeness = missing_after_sweep == 0
+                    if not self.metrics.imputation_completeness:
+                        self.metrics.warnings.append(
+                            f"Post-feature-engineering imputation incomplete: {missing_after_sweep} NaNs remain"
+                        )
+
+                logger.info(
+                    f"Post-feature-engineering imputation complete: {missing_after_features} → {missing_after_sweep} missing"
+                )
+
         # Stage 10: Apply automated feature selection (Section 9.3 Task 1)
         if self.config.apply_feature_selection:
             logger.info("Stage 10: Applying automated feature selection")
@@ -1196,9 +1224,7 @@ class ETLPipeline:
                     logger.error(error_msg)
                     if self.metrics:
                         self.metrics.errors.append(error_msg)
-                        self.metrics.warnings.append(
-                            "Feature selection skipped due to error"
-                        )
+                        self.metrics.warnings.append("Feature selection skipped due to error")
                     logger.warning("Pipeline continuing without feature selection")
             else:
                 logger.warning(
@@ -1209,9 +1235,7 @@ class ETLPipeline:
                         "Feature selection skipped: no target column found"
                     )
 
-        logger.info(
-            f"Transformation complete: {len(result)} rows, {len(result.columns)} columns"
-        )
+        logger.info(f"Transformation complete: {len(result)} rows, {len(result.columns)} columns")
         return result
 
     def validate_quality(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -1277,9 +1301,7 @@ class ETLPipeline:
         if self.metrics:
             self.metrics.semantic_classification_applied = True
             self.metrics.price_columns_count = len(classification["price"])
-            self.metrics.market_value_columns_count = len(
-                classification["market_value"]
-            )
+            self.metrics.market_value_columns_count = len(classification["market_value"])
             self.metrics.ratio_columns_count = len(classification["ratio"])
             self.metrics.percentage_columns_count = len(classification["percentage"])
             self.metrics.count_columns_count = len(classification["count"])
@@ -1288,14 +1310,34 @@ class ETLPipeline:
         if self.config.log_transform_market_values:
             log_cols = get_log_transform_columns(list(df.columns))
             log_count = 0
+            log_skipped = 0
             for col in log_cols:
                 if col in df.columns:
-                    # Create log-transformed version, handle zeros/negatives
-                    df[f"log_{col}"] = np.log1p(df[col].clip(lower=0))
-                    log_count += 1
-            logger.info(f"Applied log-transforms to {log_count} market value columns")
+                    # Check for negative values before log-transform (Priority 1 Fix)
+                    negative_count = (df[col] < 0).sum()
+                    if negative_count > 0:
+                        # Skip log-transform for columns with negative values
+                        # Add applicability flag for conditional metrics
+                        df[f"log_{col}_applicable"] = df[col] >= 0
+                        logger.warning(
+                            f"Skipped log-transform for '{col}': {negative_count} negative values present "
+                            f"(added applicability flag)"
+                        )
+                        log_skipped += 1
+                        if self.metrics:
+                            self.metrics.warnings.append(
+                                f"Log-transform skipped for '{col}': {negative_count} negative values"
+                            )
+                    else:
+                        # Safe to apply log-transform (all values >= 0)
+                        df[f"log_{col}"] = np.log1p(df[col].clip(lower=0))
+                        log_count += 1
+            logger.info(
+                f"Applied log-transforms to {log_count} market value columns ({log_skipped} skipped due to negative values)"
+            )
             if self.metrics:
                 self.metrics.log_transformed_columns = log_count
+                self.metrics.log_transforms_skipped = log_skipped
 
         return df
 
@@ -1354,9 +1396,7 @@ class ETLPipeline:
         if not self.config.apply_feature_engineering:
             return df
 
-        logger.info(
-            f"Applying feature engineering with preset: {self.config.feature_preset}"
-        )
+        logger.info(f"Applying feature engineering with preset: {self.config.feature_preset}")
 
         try:
             original_cols = set(df.columns)
@@ -1380,9 +1420,7 @@ class ETLPipeline:
             return df_with_features
 
         except Exception as e:
-            logger.warning(
-                f"Feature engineering failed: {e}, returning original DataFrame"
-            )
+            logger.warning(f"Feature engineering failed: {e}, returning original DataFrame")
             return df
 
     def load(self, df: pd.DataFrame, validate: bool = True) -> pd.DataFrame:
@@ -1401,13 +1439,11 @@ class ETLPipeline:
         if validate and self.config.validate_quality:
             quality_metrics = self.validate_quality(df)
             if self.metrics:
-                self.metrics.quality_score = quality_metrics.get(
-                    "data_quality_score", 1.0
-                )
+                self.metrics.quality_score = quality_metrics.get("data_quality_score", 1.0)
                 if "pipeline_validation" in quality_metrics:
-                    self.metrics.validation_score = quality_metrics[
-                        "pipeline_validation"
-                    ].get("validation_score", 1.0)
+                    self.metrics.validation_score = quality_metrics["pipeline_validation"].get(
+                        "validation_score", 1.0
+                    )
                     self.metrics.warnings.extend(
                         quality_metrics["pipeline_validation"].get("warnings", [])
                     )

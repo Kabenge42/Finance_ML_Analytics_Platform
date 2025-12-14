@@ -1,7 +1,7 @@
 ﻿# Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.10  
-**Last Updated:** 2025-12-10  
+**Version:** 1.11  
+**Last Updated:** 2025-12-14  
 **Package Version:** 0.9.4  
 **Model Version:** v9_9
 
@@ -15,7 +15,17 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
   acceptance criteria, success metrics, and validation checkpoints for each phase. Includes critical issues analysis
   and recommended fixes.
 
-**Recent Updates (v1.10):**
+**Recent Updates (v1.11):**
+
+- **Alignment with ml_workflow_guidelines.md v1.1** (2025-12-14)
+    - **Section 6**: Fixed section cross-references (Data Split Policy → Section 10, Predictions Schema → Section 11)
+    - **Section 8.2**: DataFrame Stage Naming now aligned with ml_workflow_guidelines.md Appendix (6-stage pipeline)
+    - **Section 16**: Removed outdated footer with stale version information
+    - **Configuration Constants**: Verified alignment with ml_workflow_guidelines.md "Single Source of Truth" section
+    - **Test Coverage**: Updated test module references to match ml_workflow_guidelines.md requirements table
+    - **Document Cleanup**: Consolidated redundant version metadata, removed conflicting information
+
+**Previous Updates (v1.10):**
 
 - **NEW:** Unified ETL Pipeline with Semantic Transformations and Feature Engineering (2025-12-08)
     - **Section 7.5**: Added `etl_with_features()` — Single entry point consolidating schema.py, column_semantics.py,
@@ -981,14 +991,14 @@ CI/CD enforces normalization consistency via:
 
 **Model Training:**
 
-- [ ] Train/test split follows Data Split Policy (Section 9)
+- [ ] Train/test split follows Data Split Policy (Section 10)
 - [ ] Cross-validation uses grouped or stratified strategy (no leakage)
 - [ ] Hyperparameters documented and versioned
 - [ ] Model artifacts saved with version: `MODEL_VERSION`
 
 **Evaluation and Outputs:**
 
-- [ ] Predictions follow Standardized Predictions Schema (Section 10)
+- [ ] Predictions follow Standardized Predictions Schema (Section 11)
 - [ ] Quantile predictions satisfy monotonicity: `pred_p10 ≤ pred_p50 ≤ pred_p90`
 - [ ] Non-negativity enforced for price predictions
 - [ ] Sector metrics calculated and persisted
@@ -3588,14 +3598,6 @@ stacking_model.fit(X_train, y_train)
 - **Technology, Healthcare**: MAE < 40%
 - **Financials, Industrials**: MAE < 50%
 - **Real Estate, Energy**: MAE < 60% (higher volatility sectors)
-
----
-
-**Document Version:** 1.7  
-**Last Updated:** 2025-11-26  
-**Package Version:** 0.8.3  
-**Model Version:** v9_9  
-**Synchronized with:** README.md v0.8.3, CHANGELOG.md v0.8.3, pyproject.toml v0.8.3
 
 ---
 

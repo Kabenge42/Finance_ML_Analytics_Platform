@@ -375,7 +375,10 @@ def build_predictions_frame(
     return result
 
 
-def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
+def validate_predictions_schema(
+    df: "pd.DataFrame",
+    reject_zero_predictions: bool = False,
+) -> "pd.DataFrame":
     """Validate standardized regression predictions schema.
 
     This lightweight helper enforces the core schema contract described in
@@ -403,16 +406,29 @@ def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
        non-negative; otherwise a :class:`ValueError` is raised.
        Any negative ``y_pred`` values raise a :class:`ValueError` (Phase 9.5 P0.4).
 
+    4. (Optional) Zero predictions rejection (ml_workflow_guidelines.md v1.1):
+       When ``reject_zero_predictions=True``, raises :class:`ValueError` if any
+       ``y_pred`` values are exactly zero, as this indicates model prediction
+       failures (e.g., PLTR, BAC, UBER, HD with y_pred=0.0).
+
     Parameters
     ----------
     df : pandas.DataFrame
         Predictions dataframe to validate.
+    reject_zero_predictions : bool, default False
+        If True, raise ValueError when any y_pred values are zero.
+        Zero predictions indicate model failures and should be investigated.
 
     Returns
     -------
     pandas.DataFrame
         The validated dataframe. A shallow copy is returned if modifications
         are needed (though strict mode prefers raising errors).
+
+    Raises
+    ------
+    ValueError
+        If validation fails (missing columns, negative values, zero predictions, etc.)
     """
 
     import numpy as np
@@ -474,6 +490,23 @@ def validate_predictions_schema(df: "pd.DataFrame") -> "pd.DataFrame":
             raise ValueError(
                 f"Predictions schema validation failed: y_pred contains {neg_pred} negative values. "
                 "Models must enforce non-negativity before validation."
+            )
+
+    # 4. Zero predictions check (ml_workflow_guidelines.md v1.1 Critical Issue)
+    # Zero predictions indicate model failures (e.g., PLTR, BAC, UBER, HD with y_pred=0.0)
+    if reject_zero_predictions and "y_pred" in df.columns:
+        zero_pred = (result["y_pred"] == 0).sum(skipna=True)
+        if zero_pred > 0:
+            # Find tickers with zero predictions for better error message
+            zero_tickers = []
+            if "ticker" in result.columns:
+                zero_mask = result["y_pred"] == 0
+                zero_tickers = result.loc[zero_mask, "ticker"].tolist()[:5]
+            ticker_info = f" (tickers: {zero_tickers})" if zero_tickers else ""
+            raise ValueError(
+                f"Predictions schema validation failed: y_pred contains {zero_pred} zero values{ticker_info}. "
+                "Zero predictions indicate model failures and should be investigated. "
+                "Consider applying fallback predictions or reviewing model training."
             )
 
     # 3. Non-negative last_price invariant (if column exists)

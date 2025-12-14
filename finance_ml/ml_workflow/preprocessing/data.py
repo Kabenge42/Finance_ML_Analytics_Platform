@@ -1022,14 +1022,23 @@ def validate_financial_data_quality(df: pd.DataFrame, region: str) -> dict:
     return results
 
 
-def sanitize_dataframe_with_logging(df: pd.DataFrame) -> pd.DataFrame:
+def sanitize_dataframe_with_logging(
+    df: pd.DataFrame, apply_business_rules: bool = True, return_stats: bool = False
+) -> pd.DataFrame | tuple[pd.DataFrame, dict]:
     """Sanitize DataFrame with comprehensive logging.
 
     Args:
         df: Input DataFrame
+        apply_business_rules: Apply business rule validation for negative market values (default: True)
+        return_stats: If True, return tuple of (DataFrame, stats_dict) instead of just DataFrame
 
     Returns:
-        Sanitized DataFrame with infinity and NaN values handled
+        If return_stats=False: Sanitized DataFrame with infinity, NaN, and negative market values handled
+        If return_stats=True: Tuple of (sanitized DataFrame, sanitization stats dict)
+
+    Business Rules (when apply_business_rules=True):
+        - market_cap, revenue, total_assets, total_equity, ebitda must be >= 0
+        - Negative values converted to NaN for imputation (preserves row, allows statistical imputation)
     """
     df = df.copy()
     numeric_cols = df.select_dtypes(include=[np.number]).columns
@@ -1038,6 +1047,35 @@ def sanitize_dataframe_with_logging(df: pd.DataFrame) -> pd.DataFrame:
     inf_replaced = 0
     nan_filled = 0
     extreme_capped = 0
+    business_rule_violations = 0
+
+    # Business rule validation: columns that must be non-negative
+    if apply_business_rules:
+        non_negative_cols = {
+            "market_cap",
+            "revenue",
+            "total_revenues_ltm",
+            "total_assets",
+            "total_assets_ltm",
+            "total_equity",
+            "total_equity_ltm",
+            "ebitda",
+            "ebitda_ltm",
+            "enterprise_value",
+        }
+        for col in non_negative_cols:
+            if col in df.columns and col in numeric_cols:
+                negative_mask = df[col] < 0
+                negative_count = int(negative_mask.sum())
+                if negative_count > 0:
+                    # Convert to NaN for imputation (preserves row, enables statistical imputation)
+                    df.loc[negative_mask, col] = np.nan
+                    business_rule_violations += negative_count
+                    logging.warning(
+                        "Business rule: Converted %d negative values to NaN in '%s' (must be >= 0)",
+                        negative_count,
+                        col,
+                    )
 
     for col in numeric_cols:
         # Replace infinity with NaN
@@ -1087,12 +1125,21 @@ def sanitize_dataframe_with_logging(df: pd.DataFrame) -> pd.DataFrame:
                 )
 
     logging.info(
-        "Sanitization complete: %d infinity replaced, %d NaN filled, %d extreme values capped",
+        "Sanitization complete: %d infinity replaced, %d NaN filled, %d extreme values capped, %d business rule violations",
         inf_replaced,
         nan_filled,
         extreme_capped,
+        business_rule_violations,
     )
 
+    if return_stats:
+        stats = {
+            "inf_replaced": inf_replaced,
+            "nan_filled": nan_filled,
+            "extreme_capped": extreme_capped,
+            "business_rule_violations": business_rule_violations,
+        }
+        return df, stats
     return df
 
 

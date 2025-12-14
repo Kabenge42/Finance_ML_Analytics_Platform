@@ -119,8 +119,8 @@ class TestRegressionP0Features(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_predictions_schema(df_neg)
 
-        # Fail: missing column
-        df_missing = df.drop(columns=["interval_width"])
+        # Fail: missing required column (y_pred is required, interval_width is auto-created)
+        df_missing = df.drop(columns=["y_pred"])
         with self.assertRaises(ValueError):
             validate_predictions_schema(df_missing)
 
