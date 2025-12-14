@@ -96,8 +96,14 @@ def calculate_data_quality_score(df: pd.DataFrame) -> DataQualityReport:
             else:
                 consistency_passes += 1
 
-            # Check for negative values in typically positive columns
-            if any(x in col.lower() for x in ["market_cap", "price", "revenue", "assets"]):
+            # Check for negative values in typically positive columns using semantic classification
+            from finance_ml.ml_workflow.preprocessing.column_semantics import (
+                PRICE_COLUMNS,
+                MARKET_VALUE_COLUMNS,
+            )
+
+            col_lower = col.lower()
+            if col_lower in PRICE_COLUMNS or col_lower in MARKET_VALUE_COLUMNS:
                 if (df[col] < 0).any():
                     issues.append(f"Column '{col}' contains unexpected negative values")
 
@@ -109,8 +115,10 @@ def calculate_data_quality_score(df: pd.DataFrame) -> DataQualityReport:
     validity_checks = 0
     validity_passes = 0
 
-    # Check if expected columns exist
-    expected_cols = ["ticker", "sector", "region"]
+    # Check if expected columns exist using schema registry
+    from finance_ml.ml_workflow.data.schema import list_required_schema_columns_for_etl
+
+    expected_cols = list_required_schema_columns_for_etl(include_extended_financials=False)
     for col in expected_cols:
         validity_checks += 1
         if col in df.columns:

@@ -77,22 +77,32 @@ logging.
 **Process Definition:**
 
 - Single entry point: `etl_with_features(source, data_dir, feature_preset, return_metrics)`
+- 11-stage pipeline: Extract → Normalize → Dtype Cast → Semantic Classification → Imputation → Semantic Transforms →
+  Winsorization → Scaling → Feature Engineering → Post-Feature Imputation → **Schema Validation**
 - 6-step imputation: Zero-fill → KNN → Price-based → Median → Categorical → Datetime
 - Semantic column classification: 5 categories (price, market_value, ratio, percentage, count)
+- **NEW (v1.11)**: Automated schema alignment validation (Stage 11)
 
 **Acceptance Criteria:**
 
 - ✅ Zero missing values after imputation
 - ✅ 21 price columns preserved (never transformed)
 - ✅ ETLMetrics returned with all tracking attributes
+- ✅ Schema alignment score ≥ 95% (503 columns in COLUMN_SCHEMA)
+- ✅ Unknown columns count ≤ 10
+- ✅ No critical missing columns (ticker, sector, last_price, price_target)
 
 **Success Metrics:**
 
-| Metric         | Target       | Validation                         |
-|----------------|--------------|------------------------------------|
-| Missing Values | 0            | `df.isna().sum().sum() == 0`       |
-| Price Columns  | 21 preserved | `assert_price_columns_preserved()` |
-| Row Count      | >6,000       | `len(df) > 6000`                   |
+| Metric                 | Target       | Validation                               |
+|------------------------|--------------|------------------------------------------|
+| Missing Values         | 0            | `df.isna().sum().sum() == 0`             |
+| Price Columns          | 21 preserved | `assert_price_columns_preserved()`       |
+| Row Count              | >6,000       | `len(df) > 6000`                         |
+| Schema Alignment Score | ≥ 0.95       | `metrics.schema_alignment_score >= 0.95` |
+| Unknown Columns        | ≤ 10         | `metrics.unknown_columns_count <= 10`    |
+| Missing Expected       | ≤ 5          | `metrics.missing_expected_columns_count` |
+| Dtype Mismatches       | 0            | `metrics.dtype_mismatches_count == 0`    |
 
 **Validation Checkpoint:**
 
@@ -100,6 +110,12 @@ logging.
 assert not df.empty, "DataFrame must not be empty"
 assert df.isna().sum().sum() == 0, "No missing values allowed"
 assert 'ticker' in df.columns and 'sector' in df.columns
+
+# NEW: Schema alignment validation (v1.11)
+assert metrics.schema_alignment_score >= 0.95, \
+    f"Schema alignment below 95%: {metrics.schema_alignment_score:.2%}"
+assert metrics.unknown_columns_count <= 10, \
+    f"Too many unknown columns: {metrics.unknown_columns_count}"
 ```
 
 ---

@@ -17,6 +17,22 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 
 **Recent Updates (v1.11):**
 
+- **Schema Alignment Validation Enhancement** (2025-12-14)
+    - **Section 5.3**: Updated COLUMN_SCHEMA to 503 columns (up from 447)
+        - Added 48 log-transformed columns (log_gross_profit_previous_year, log_operating_income_fq, etc.)
+        - Added 4 Phase 9.3 composite scores (altman_z_score, beneish_m_score, composite_quality_score, momentum_score)
+        - Updated schema structure breakdown with detailed categorization
+    - **Section 5.3.4**: NEW Schema Alignment Validation subsection
+        - Automated validation in ETL Stage 11 (when validate_quality=True)
+        - Four validation checks: unknown columns, missing expected columns, dtype mismatches, alignment score
+        - ETLMetrics enhancements: schema_alignment_score, unknown_columns_count, missing_expected_columns_count,
+          dtype_mismatches_count
+        - Warning triggers: alignment < 95% or unknown columns > 10
+        - Integration with dtype_diagnostics.json for comprehensive schema monitoring
+    - **normalize_column_name()**: Enhanced with special R&D handling (R&D → randd, not r_and_d)
+    - **ETL Pipeline**: Added _validate_schema_alignment() method in etl.py
+    - **Business Impact**: Real-time schema drift detection and data quality monitoring
+
 - **Alignment with ml_workflow_guidelines.md v1.1** (2025-12-14)
     - **Section 6**: Fixed section cross-references (Data Split Policy → Section 10, Predictions Schema → Section 11)
     - **Section 8.2**: DataFrame Stage Naming now aligned with ml_workflow_guidelines.md Appendix (6-stage pipeline)
@@ -757,17 +773,30 @@ def normalize_column_name(col: str) -> str:
 
 ### 5.3 Schema Registry
 
+**Version:** 1.11 (Updated 2025-12-14)  
+**Total Columns:** 503 (up from 447)
+
 The authoritative column schema is defined in `finance_ml/ml_workflow/data/schema.py`:
+
+**Schema Structure (v1.11):**
+
+- 299 source columns (from CSV/SQL schema)
+- 61 log-transformed columns (ETL-generated, log1p of market values)
+- 43 legacy aliases (role=auxiliary, for backward compatibility)
+- 36 generic base columns (no time suffix)
+- 34 conditional metrics (with _applicable flags)
+- 26 derived ratios and percentage metrics (ETL semantic transforms)
+- 4 Phase 9.3 composite quality scores (altman_z_score, beneish_m_score, composite_quality_score, momentum_score)
 
 ```python
 from finance_ml.ml_workflow.data.schema import (
-   COLUMN_SCHEMA,  # Dict[str, Dict[str, str]] - 350+ columns (includes derived ETL columns)
+   COLUMN_SCHEMA,  # Dict[str, Dict[str, str]] - 503 columns (includes derived ETL columns)
    get_expected_dtype,  # Get dtype for a column
    get_column_role,  # Get role for a column
    list_numeric_feature_cols,  # List all numeric features
    list_categorical_cols,  # List all categorical columns
    list_date_cols,  # List all date columns
-   normalize_column_name,  # Normalize a column name
+   normalize_column_name,  # Normalize a column name (handles R&D → randd special case)
    list_required_schema_columns_for_etl,  # Get canonical ETL-required columns (v0.9.3+)
    )
 
@@ -847,6 +876,88 @@ The schema includes columns created by the ETL semantic transformation stage:
 - `roe`, `roa`, `roic`, `debt_to_equity`, `debt_to_assets`
 - `revenue_growth`, `ebitda_growth`, `earnings_growth`
 - `target_vs_price`, `target_vs_price_median`, `peg_ratio`, `dividend_yield`
+
+#### 5.3.4 Schema Alignment Validation (v1.11)
+
+**Added:** 2025-12-14
+
+The ETL pipeline now includes automated schema alignment validation to ensure DataFrame columns match the COLUMN_SCHEMA
+registry. This validation runs as Stage 11 in the unified ETL pipeline when `validate_quality=True`.
+
+**Validation Method:**
+
+```python
+from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline
+
+# Schema validation runs automatically in Stage 11
+pipeline = ETLPipeline(config=ETLConfig(validate_quality=True))
+df_transformed = pipeline.transform(df_extracted)
+
+# Access validation metrics
+print(f"Schema alignment: {pipeline.metrics.schema_alignment_score:.2%}")
+print(f"Unknown columns: {pipeline.metrics.unknown_columns_count}")
+print(f"Missing expected: {pipeline.metrics.missing_expected_columns_count}")
+print(f"Dtype mismatches: {pipeline.metrics.dtype_mismatches_count}")
+```
+
+**Validation Checks:**
+
+1. **Unknown Columns**: Columns present in DataFrame but not in COLUMN_SCHEMA
+    - Excludes auxiliary/legacy columns (role="auxiliary")
+    - Logged as warnings if count > 10
+
+2. **Missing Expected Columns**: Columns in COLUMN_SCHEMA but not in DataFrame
+    - Only includes columns with roles: feature, target, target_fallback, id, date, categorical
+    - Excludes auxiliary columns to reduce false positives
+
+3. **Dtype Mismatches**: Columns with dtype different from COLUMN_SCHEMA expectation
+    - Compares actual dtype against expected dtype from schema
+    - Logged with details for manual review
+
+4. **Alignment Score**: Overall schema quality metric [0.0-1.0]
+    - Formula: `1.0 - (unknown_count + missing_count + mismatch_count) / total_expected_columns`
+    - Warning threshold: < 0.95 (95% alignment)
+
+**ETLMetrics Schema Validation Fields:**
+
+```python
+@dataclass
+class ETLMetrics:
+    # ... existing fields ...
+    
+    # Schema validation metrics (v1.11)
+    schema_alignment_score: float = 1.0  # Schema alignment quality [0.0-1.0]
+    unknown_columns_count: int = 0  # Columns in df but not in COLUMN_SCHEMA
+    missing_expected_columns_count: int = 0  # Expected columns not in df
+    dtype_mismatches_count: int = 0  # Columns with dtype mismatches
+```
+
+**Validation Output Example:**
+
+```
+Stage 11: Validating schema alignment
+Schema Validation: ✓ (alignment: 98.50%, unknown: 3, missing: 2, dtype mismatches: 0)
+```
+
+**Warning Triggers:**
+
+- Alignment score < 95%: `"Schema alignment below 95%: 92.3%"`
+- Unknown columns > 10: `"Found 15 unknown columns"`
+
+**Integration with dtype_diagnostics.json:**
+
+The schema validation complements dtype diagnostics by providing:
+
+- Real-time validation during ETL execution
+- Alignment score for quality monitoring
+- Separation of critical vs. auxiliary column gaps
+
+**Best Practices:**
+
+1. **Review unknown columns**: May indicate new data sources or schema drift
+2. **Investigate missing expected columns**: May require schema updates or data source fixes
+3. **Monitor alignment score trends**: Declining scores indicate schema/data misalignment
+4. **Update COLUMN_SCHEMA**: Add new columns with appropriate roles when data sources expand
 
 ### 5.4 Phase 9.3 Feature Categories
 

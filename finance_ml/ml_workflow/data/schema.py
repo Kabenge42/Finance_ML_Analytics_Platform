@@ -5,15 +5,16 @@ This module defines the authoritative COLUMN_SCHEMA derived from
 create_equities_schema.sql, providing centralized datatype and role
 information for all preprocessing, feature engineering, and modeling.
 
-Schema Structure:
+Schema Structure (v1.11 - Updated 2025-12-14):
 - Source columns from CSV/SQL: 299 (matching create_equities_schema.sql)
-- Total COLUMN_SCHEMA entries: 447
+- Total COLUMN_SCHEMA entries: 503
   - 299 source columns (from CSV/SQL schema)
-  - 44 derived/computed columns (log_, ratios, etc.)
+  - 61 log-transformed columns (ETL-generated, log1p of market values)
   - 43 legacy aliases (role=auxiliary, for backward compatibility)
   - 36 generic base columns (no time suffix)
   - 34 conditional metrics (with _applicable flags)
-  - Additional feature engineering outputs
+  - 26 derived ratios and percentage metrics (ETL semantic transforms)
+  - 4 Phase 9.3 composite quality scores (altman_z_score, beneish_m_score, etc.)
 
 Database Tables:
 - equities: Original table with per-region data loading
@@ -28,15 +29,42 @@ Data Loading:
 - load_from_db(): Load from equities table with Region filter
 - load_from_all_stocks(): Load from unified all_stocks table (recommended)
 
-Aligned with code_guidelines.md v1.3+ Schema and Datatype Management.
+Aligned with code_guidelines.md v1.11+ Schema and Datatype Management.
 """
 
 from typing import Dict, List, Optional, Literal
 
-# Type aliases for clarity
-DType = Literal["float", "int", "string", "category", "datetime64[ns]", "bool"]
+# =============================================================================
+# Type Aliases for Schema Definition (Aligned with code_guidelines.md v1.11)
+# =============================================================================
+
+# DType: Maps to pandas/numpy dtype strings for ETL casting
+DType = Literal[
+    "float",  # float64 - default for numeric financial data
+    "int",  # int64 - discrete counts, integer IDs
+    "string",  # object/string - text data
+    "category",  # pandas Categorical - low-cardinality (sector, region)
+    "datetime64[ns]",  # datetime columns
+    "bool",  # boolean flags
+]
+
+# Role: Semantic role determining preprocessing and pipeline treatment
 Role = Literal[
-    "id", "feature", "target", "target_fallback", "date", "auxiliary", "categorical"
+    # === Pipeline Stage Roles ===
+    "id",  # Identifier columns (ticker, isin) - never used as features
+    "target",  # Primary prediction target (price_target)
+    "target_fallback",  # Alternative targets (price_target_median, last_price)
+    "date",  # Temporal columns for time-series features
+    "categorical",  # Grouping columns (sector, region, industry)
+    "auxiliary",  # Legacy aliases, optional - excluded from diagnostics
+    "feature",  # General ML features not in other categories
+    # === Semantic Classification Roles (code_guidelines.md v1.11, Section 8.5) ===
+    "price",  # Price columns - NEVER transform (21 columns)
+    "market_value",  # Market cap, revenue, assets - log-transform recommended
+    "ratio",  # Pre-normalized ratios - skip winsorization
+    "percentage",  # Bounded [0,100] metrics - margins, growth rates
+    "count",  # Discrete integers - analyst ratings, employees
+    "label",  # Classification targets (multi-label)
 ]
 
 
@@ -67,226 +95,252 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "dividend_record_ex_date": {"dtype": "datetime64[ns]", "role": "date"},
     "dividend_record_payable_date": {"dtype": "datetime64[ns]", "role": "date"},
     "dividend_record_record_date": {"dtype": "datetime64[ns]", "role": "date"},
-    # Target columns
-    "last_price": {
-        "dtype": "float",
-        "role": "feature",
-    },  # Also used as basis for targets
+    # ====================
+    # PRICE COLUMNS - NEVER transform (preserve original dollar units)
+    # ====================
+    "last_price": {"dtype": "float", "role": "price"},
     "price_target": {"dtype": "float", "role": "target"},
-    "price_target_ytd_ago": {"dtype": "float", "role": "target_fallback"},
-    "price_target_low": {"dtype": "float", "role": "target_fallback"},
+    "price_target_ytd_ago": {"dtype": "float", "role": "price"},
+    "price_target_low": {"dtype": "float", "role": "price"},
     "price_target_median": {"dtype": "float", "role": "target_fallback"},
-    "price_target_high": {"dtype": "float", "role": "target_fallback"},
-    "price_target_num": {
-        "dtype": "float",
-        "role": "auxiliary",
-    },  # Legacy alias - use price_target_count
-    # Valuation metrics
-    "market_cap": {"dtype": "float", "role": "feature"},
-    "enterprise_value": {"dtype": "float", "role": "feature"},
-    "p_e_ntm": {"dtype": "float", "role": "feature"},
-    "p_e_ltm": {"dtype": "float", "role": "feature"},
-    "p_e_1fyltm": {"dtype": "float", "role": "feature"},
-    "p_b_ltm": {"dtype": "float", "role": "feature"},
-    "p_b_1fy": {"dtype": "float", "role": "feature"},
-    "p_b_5yavg": {"dtype": "float", "role": "feature"},
-    "p_tbv_ltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_ltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_ntm": {"dtype": "float", "role": "feature"},
-    "ev_sales_est_fy1": {"dtype": "float", "role": "feature"},
-    "ev_ebitda_ltm": {"dtype": "float", "role": "feature"},
-    "ev_ebitda_ntm": {"dtype": "float", "role": "feature"},
-    "ev_ebitda_est_fy1": {"dtype": "float", "role": "feature"},
-    "p_e_est_fy1": {"dtype": "float", "role": "feature"},
-    # Phase 9.3 Schema 1.3: EV/Sales historical time-series
-    "ev_sales_1fyltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_2fyltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_3fyltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_3yavgltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_1fqltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_2fqltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_3fqltm": {"dtype": "float", "role": "feature"},
-    "ev_sales_4fqltm": {"dtype": "float", "role": "feature"},
-    # Phase 9.3 Schema 1.3: EV/EBITDA historical time-series
-    "ev_ebitda_1fyltm": {"dtype": "float", "role": "feature"},
-    "ev_ebitda_1fqltm": {"dtype": "float", "role": "feature"},
-    "ev_ebitda_3yavgltm": {"dtype": "float", "role": "feature"},
-    # Phase 9.3 Schema 1.3: P/E extended time-series
-    "p_e_2fyltm": {"dtype": "float", "role": "feature"},
-    "p_e_3fyltm": {"dtype": "float", "role": "feature"},
-    "p_e_3yavgltm": {"dtype": "float", "role": "feature"},
-    "p_e_1fqltm": {"dtype": "float", "role": "feature"},
-    "p_e_2fqltm": {"dtype": "float", "role": "feature"},
-    "p_e_3fqltm": {"dtype": "float", "role": "feature"},
-    "p_e_0fqqoqltm": {"dtype": "float", "role": "feature"},
-    "p_e_0fyyoyltm": {"dtype": "float", "role": "feature"},
-    "p_e_1fyyoyltm": {"dtype": "float", "role": "feature"},
-    "p_e_0fqyoyltm": {"dtype": "float", "role": "feature"},
-    # Risk & Quality
-    "altman_z_score_fy": {"dtype": "float", "role": "feature"},
-    "altman_z_score_fq": {"dtype": "float", "role": "feature"},
-    "altman_z_score_ltm": {"dtype": "float", "role": "feature"},
-    "beta_1y": {"dtype": "float", "role": "feature"},
-    "beta_2y": {"dtype": "float", "role": "feature"},
-    "beta_5y": {"dtype": "float", "role": "feature"},
-    # Analyst metrics
-    "analyst_rating": {"dtype": "float", "role": "feature"},
-    "num_strong_sell_ratings": {"dtype": "float", "role": "feature"},
-    "num_strong_buys_ratings": {"dtype": "float", "role": "feature"},
-    "num_hold_ratings": {"dtype": "float", "role": "feature"},
-    "num_buys_ratings": {"dtype": "float", "role": "feature"},
-    "num_sell_ratings": {"dtype": "float", "role": "feature"},
-    # Returns & Momentum
-    "total_return_ytd": {"dtype": "float", "role": "feature"},
-    "total_return_5y": {"dtype": "float", "role": "feature"},
-    "total_return_10y": {"dtype": "float", "role": "feature"},
-    "tot_return_pct_cagr_3y": {"dtype": "float", "role": "feature"},
-    "tot_return_pct_cagr_10y": {"dtype": "float", "role": "feature"},
-    "price_chg_pct_1m": {"dtype": "float", "role": "feature"},
-    "price_chg_pct_3m": {"dtype": "float", "role": "feature"},
-    "1_day_pct": {
-        "dtype": "float",
-        "role": "auxiliary",
-    },  # Legacy alias - use one_day_pct
-    "price_5d_ago": {"dtype": "float", "role": "feature"},
-    "price_1w_ago": {"dtype": "float", "role": "feature"},
-    "price_1m_ago": {"dtype": "float", "role": "feature"},
-    "price_3m_ago": {"dtype": "float", "role": "feature"},
-    "price_6m_ago": {"dtype": "float", "role": "feature"},
-    "price_1y_ago": {"dtype": "float", "role": "feature"},
-    "price_3y_ago": {"dtype": "float", "role": "feature"},
-    "price_5y_ago": {"dtype": "float", "role": "feature"},
-    "price_qtd_ago": {"dtype": "float", "role": "feature"},
-    # Technical indicators
-    "ema_20d": {"dtype": "float", "role": "feature"},
-    "ema_50d": {"dtype": "float", "role": "feature"},
-    "ema_100d": {"dtype": "float", "role": "feature"},
-    "ema_250d": {"dtype": "float", "role": "feature"},
-    "52w_high_adj": {"dtype": "float", "role": "feature"},
-    "52w_low_adj": {"dtype": "float", "role": "feature"},
-    # Volatility
-    "volatility_1m": {"dtype": "float", "role": "feature"},
-    "volatility_3m": {"dtype": "float", "role": "feature"},
-    "volatility_6m": {"dtype": "float", "role": "feature"},
-    "volatility_1y": {"dtype": "float", "role": "feature"},
-    # Volume & Trading
-    "volume_shrs": {"dtype": "float", "role": "feature"},
-    "rel_volume": {"dtype": "float", "role": "feature"},
-    "shrs_out": {
-        "dtype": "float",
-        "role": "auxiliary",
-    },  # Legacy alias - use shares_outstanding
-    "shrs_out_1fy": {"dtype": "float", "role": "feature"},
-    # Revenues & Growth
-    "total_revenues_fy": {"dtype": "float", "role": "feature"},
-    "total_revenues_ltm": {"dtype": "float", "role": "feature"},
-    "total_revenues_fq": {"dtype": "float", "role": "feature"},
-    "total_revenues_1fy": {"dtype": "float", "role": "feature"},
-    "total_revenues_cagr_5y_fy": {"dtype": "float", "role": "feature"},
-    "total_revenues_5yavgfq": {"dtype": "float", "role": "feature"},
-    "total_revenues_5yavgltm": {"dtype": "float", "role": "feature"},
-    "revenues_est_avg_ntm": {"dtype": "float", "role": "feature"},
-    "revenues_est_avg_fy1e": {"dtype": "float", "role": "feature"},
-    "revenues_est_med_ntm": {"dtype": "float", "role": "feature"},
-    "revenues_est_med_fy1e": {"dtype": "float", "role": "feature"},
-    "revenues_est_yoy_pct_fy1e": {"dtype": "float", "role": "feature"},
-    "total_operating_expenses_ltm": {"dtype": "float", "role": "feature"},
-    # Profitability - EBITDA
-    "ebitda_fy": {"dtype": "float", "role": "feature"},
-    "ebitda_ltm": {"dtype": "float", "role": "feature"},
-    "ebitda_fq": {"dtype": "float", "role": "feature"},
-    "ebitda_1fy": {"dtype": "float", "role": "feature"},
-    "ebitda_adj_ltm": {"dtype": "float", "role": "feature"},
-    "ebitda_adj_fy": {"dtype": "float", "role": "feature"},
-    "ebitda_adj_1fy": {"dtype": "float", "role": "feature"},
-    "ebitda_5yavgfq": {"dtype": "float", "role": "feature"},
-    "ebitda_5yavgltm": {"dtype": "float", "role": "feature"},
-    # Profitability - EBIT
-    "ebit_fy": {"dtype": "float", "role": "feature"},
-    "ebit_ltm": {"dtype": "float", "role": "feature"},
-    "ebit_fq": {"dtype": "float", "role": "feature"},
-    "ebit_1fy": {"dtype": "float", "role": "feature"},
-    "ebit_adj_ltm": {"dtype": "float", "role": "feature"},
-    "ebit_adj_fy": {"dtype": "float", "role": "feature"},
-    "ebit_adj_1fy": {"dtype": "float", "role": "feature"},
-    "ebit_est_med_fy1e": {"dtype": "float", "role": "feature"},
-    "ebit_est_med_ntm": {"dtype": "float", "role": "feature"},
-    "ebit_5yavgfq": {"dtype": "float", "role": "feature"},
-    "ebit_5yavgltm": {"dtype": "float", "role": "feature"},
-    # Profitability - Net Income
-    "net_income_is_fy": {"dtype": "float", "role": "feature"},
-    "net_income_is_ltm": {"dtype": "float", "role": "feature"},
-    "net_income_is_fq": {"dtype": "float", "role": "feature"},
-    "net_income_is_1fy": {"dtype": "float", "role": "feature"},
-    "net_income_is_5yavgfq": {"dtype": "float", "role": "feature"},
-    "net_income_is_5yavgltm": {"dtype": "float", "role": "feature"},
-    "normalized_net_income_fy": {"dtype": "float", "role": "feature"},
-    "normalized_net_income_ltm": {"dtype": "float", "role": "feature"},
-    "normalized_net_income_fq": {"dtype": "float", "role": "feature"},
-    "normalized_net_income_1fy": {"dtype": "float", "role": "feature"},
-    "normalized_net_income_5yavgfq": {"dtype": "float", "role": "feature"},
-    "normalized_net_income_5yavgltm": {"dtype": "float", "role": "feature"},
-    "net_income_adj_fy": {"dtype": "float", "role": "feature"},
-    "net_income_adj_ltm": {"dtype": "float", "role": "feature"},
-    "net_income_adj_fq": {"dtype": "float", "role": "feature"},
-    "net_income_adj_1fy": {"dtype": "float", "role": "feature"},
-    "net_income_adj_5yavgfq": {"dtype": "float", "role": "feature"},
-    "operating_income_ltm": {"dtype": "float", "role": "feature"},
-    "operating_income_fy": {"dtype": "float", "role": "feature"},
-    "operating_income_fq": {"dtype": "float", "role": "feature"},
-    "operating_income_5yavgfq": {"dtype": "float", "role": "feature"},
-    # Margins
-    "net_income_margin_pct_fy": {"dtype": "float", "role": "feature"},
-    "net_income_margin_pct_ltm": {"dtype": "float", "role": "feature"},
-    "gross_profit_margin_pct_fy": {"dtype": "float", "role": "feature"},
-    "gross_profit_margin_pct_ltm": {"dtype": "float", "role": "feature"},
-    "gross_profit_ltm": {"dtype": "float", "role": "feature"},
-    "gross_profit_fy": {"dtype": "float", "role": "feature"},
-    # Returns on Capital
-    "return_on_equity_pct_ltm": {"dtype": "float", "role": "feature"},
-    "return_on_equity_pct_fy": {"dtype": "float", "role": "feature"},
-    "return_on_assets_roa_pct_ltm": {"dtype": "float", "role": "feature"},
-    "return_on_assets_roa_pct_fy": {"dtype": "float", "role": "feature"},
-    # Cash Flow
-    "cfo_ltm": {"dtype": "float", "role": "feature"},
-    "cfo_fy": {"dtype": "float", "role": "feature"},
-    "cfo_fq": {"dtype": "float", "role": "feature"},
-    "cfo_1fy": {"dtype": "float", "role": "feature"},
-    "fcf_ltm": {"dtype": "float", "role": "feature"},
-    "fcf_fy": {"dtype": "float", "role": "feature"},
-    "fcf_fq": {"dtype": "float", "role": "feature"},
-    "fcf_5yavgfq": {"dtype": "float", "role": "feature"},
-    "cfi_ltm": {"dtype": "float", "role": "feature"},
-    "cfi_fy": {"dtype": "float", "role": "feature"},
-    "cfi_fq": {"dtype": "float", "role": "feature"},
-    "cfi_1fy": {"dtype": "float", "role": "feature"},
-    "cff_ltm": {"dtype": "float", "role": "feature"},
-    "cff_fy": {"dtype": "float", "role": "feature"},
-    "cff_fq": {"dtype": "float", "role": "feature"},
-    "cff_1fy": {"dtype": "float", "role": "feature"},
-    # Balance Sheet
-    "total_assets_ltm": {"dtype": "float", "role": "feature"},
-    "total_assets_fy": {"dtype": "float", "role": "feature"},
-    "total_equity_fy": {"dtype": "float", "role": "feature"},
-    "total_equity_ltm": {"dtype": "float", "role": "feature"},
-    "total_debt_fy": {"dtype": "float", "role": "feature"},
-    "total_debt_ltm": {"dtype": "float", "role": "feature"},
-    "total_current_assets_ltm": {"dtype": "float", "role": "feature"},
-    "total_current_liabilities_ltm": {"dtype": "float", "role": "feature"},
-    "current_ratio_fy": {"dtype": "float", "role": "feature"},
-    "current_ratio_ltm": {"dtype": "float", "role": "feature"},
-    "working_capital_ltm": {"dtype": "float", "role": "feature"},
-    "working_capital_fq": {"dtype": "float", "role": "feature"},
-    "working_capital_fy": {"dtype": "float", "role": "feature"},
-    "working_capital_5yavgfy": {"dtype": "float", "role": "feature"},
-    "tbv_fy": {"dtype": "float", "role": "feature"},
-    "tbv_ltm": {"dtype": "float", "role": "feature"},
-    "cash_and_equivalents_ltm": {"dtype": "float", "role": "feature"},
-    "cash_and_equivalents_fq": {"dtype": "float", "role": "feature"},
-    "cash_and_equivalents_fy": {"dtype": "float", "role": "feature"},
-    "cash_and_equivalents_5yavgfq": {"dtype": "float", "role": "feature"},
-    "retained_earnings_ltm": {"dtype": "float", "role": "feature"},
-    "retained_earnings_fq": {"dtype": "float", "role": "feature"},
+    "price_target_high": {"dtype": "float", "role": "price"},
+    "price_target_num": {"dtype": "float", "role": "auxiliary"},  # Legacy alias
+    "price_target_count": {"dtype": "float", "role": "count"},
+    "price_5d_ago": {"dtype": "float", "role": "price"},
+    "price_1w_ago": {"dtype": "float", "role": "price"},
+    "price_1m_ago": {"dtype": "float", "role": "price"},
+    "price_3m_ago": {"dtype": "float", "role": "price"},
+    "price_6m_ago": {"dtype": "float", "role": "price"},
+    "price_1y_ago": {"dtype": "float", "role": "price"},
+    "price_3y_ago": {"dtype": "float", "role": "price"},
+    "price_5y_ago": {"dtype": "float", "role": "price"},
+    "price_qtd_ago": {"dtype": "float", "role": "price"},
+    # ====================
+    # MARKET VALUE COLUMNS - Log-transform recommended
+    # ====================
+    "market_cap": {"dtype": "float", "role": "market_value"},
+    "enterprise_value": {"dtype": "float", "role": "market_value"},
+    "market_cap_country_r": {"dtype": "float", "role": "market_value"},
+    # ====================
+    # RATIO COLUMNS - Pre-normalized financial ratios
+    # ====================
+    "p_e_ntm": {"dtype": "float", "role": "ratio"},
+    "p_e_ltm": {"dtype": "float", "role": "ratio"},
+    "p_e_1fyltm": {"dtype": "float", "role": "ratio"},
+    "p_b_ltm": {"dtype": "float", "role": "ratio"},
+    "p_b_1fy": {"dtype": "float", "role": "ratio"},
+    "p_b_5yavg": {"dtype": "float", "role": "ratio"},
+    "p_tbv_ltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_ltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_ntm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_est_fy1": {"dtype": "float", "role": "ratio"},
+    "ev_ebitda_ltm": {"dtype": "float", "role": "ratio"},
+    "ev_ebitda_ntm": {"dtype": "float", "role": "ratio"},
+    "ev_ebitda_est_fy1": {"dtype": "float", "role": "ratio"},
+    "p_e_est_fy1": {"dtype": "float", "role": "ratio"},
+    # Phase 9.3 Schema 1.3: EV/Sales historical time-series (ratio)
+    "ev_sales_1fyltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_2fyltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_3fyltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_3yavgltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_1fqltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_2fqltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_3fqltm": {"dtype": "float", "role": "ratio"},
+    "ev_sales_4fqltm": {"dtype": "float", "role": "ratio"},
+    # Phase 9.3 Schema 1.3: EV/EBITDA historical time-series (ratio)
+    "ev_ebitda_1fyltm": {"dtype": "float", "role": "ratio"},
+    "ev_ebitda_1fqltm": {"dtype": "float", "role": "ratio"},
+    "ev_ebitda_3yavgltm": {"dtype": "float", "role": "ratio"},
+    # Phase 9.3 Schema 1.3: P/E extended time-series (ratio)
+    "p_e_2fyltm": {"dtype": "float", "role": "ratio"},
+    "p_e_3fyltm": {"dtype": "float", "role": "ratio"},
+    "p_e_3yavgltm": {"dtype": "float", "role": "ratio"},
+    "p_e_1fqltm": {"dtype": "float", "role": "ratio"},
+    "p_e_2fqltm": {"dtype": "float", "role": "ratio"},
+    "p_e_3fqltm": {"dtype": "float", "role": "ratio"},
+    "p_e_5yavgltm": {"dtype": "float", "role": "ratio"},
+    "p_e_0fqqoqltm": {"dtype": "float", "role": "ratio"},
+    "p_e_0fyyoyltm": {"dtype": "float", "role": "ratio"},
+    "p_e_1fyyoyltm": {"dtype": "float", "role": "ratio"},
+    "p_e_0fqyoyltm": {"dtype": "float", "role": "ratio"},
+    # Risk & Quality (ratio)
+    "altman_z_score_fy": {"dtype": "float", "role": "ratio"},
+    "altman_z_score_fq": {"dtype": "float", "role": "ratio"},
+    "altman_z_score_ltm": {"dtype": "float", "role": "ratio"},
+    # ====================
+    # PERCENTAGE COLUMNS - Bounded metrics
+    # ====================
+    "beta_1y": {"dtype": "float", "role": "percentage"},
+    "beta_2y": {"dtype": "float", "role": "percentage"},
+    "beta_5y": {"dtype": "float", "role": "percentage"},
+    "total_return_ytd": {"dtype": "float", "role": "percentage"},
+    "total_return_5y": {"dtype": "float", "role": "percentage"},
+    "total_return_10y": {"dtype": "float", "role": "percentage"},
+    "tot_return_pct_cagr_3y": {"dtype": "float", "role": "percentage"},
+    "tot_return_pct_cagr_10y": {"dtype": "float", "role": "percentage"},
+    "price_chg_pct_1m": {"dtype": "float", "role": "percentage"},
+    "price_chg_pct_3m": {"dtype": "float", "role": "percentage"},
+    "1_day_pct": {"dtype": "float", "role": "auxiliary"},  # Legacy alias
+    "one_day_pct": {"dtype": "float", "role": "percentage"},
+    # ====================
+    # COUNT COLUMNS - Discrete integers
+    # ====================
+    "analyst_rating": {"dtype": "float", "role": "count"},
+    "num_strong_sell_ratings": {"dtype": "float", "role": "count"},
+    "num_strong_buys_ratings": {"dtype": "float", "role": "count"},
+    "num_hold_ratings": {"dtype": "float", "role": "count"},
+    "num_buys_ratings": {"dtype": "float", "role": "count"},
+    "num_sell_ratings": {"dtype": "float", "role": "count"},
+    # ====================
+    # TECHNICAL INDICATORS - Price-based (role: price)
+    # ====================
+    "ema_20d": {"dtype": "float", "role": "price"},
+    "ema_50d": {"dtype": "float", "role": "price"},
+    "ema_100d": {"dtype": "float", "role": "price"},
+    "ema_250d": {"dtype": "float", "role": "price"},
+    "52w_high_adj": {"dtype": "float", "role": "price"},
+    "52w_low_adj": {"dtype": "float", "role": "price"},
+    # ====================
+    # VOLATILITY - Percentage metrics
+    # ====================
+    "volatility_1m": {"dtype": "float", "role": "percentage"},
+    "volatility_3m": {"dtype": "float", "role": "percentage"},
+    "volatility_6m": {"dtype": "float", "role": "percentage"},
+    "volatility_1y": {"dtype": "float", "role": "percentage"},
+    # ====================
+    # VOLUME & TRADING - Market value/count
+    # ====================
+    "volume_shrs": {"dtype": "float", "role": "market_value"},
+    "rel_volume": {"dtype": "float", "role": "ratio"},
+    "shrs_out": {"dtype": "float", "role": "auxiliary"},  # Legacy alias
+    "shares_outstanding": {"dtype": "float", "role": "count"},
+    "shrs_out_1fy": {"dtype": "float", "role": "count"},
+    # ====================
+    # REVENUES & GROWTH - Market value columns
+    # ====================
+    "total_revenues_fy": {"dtype": "float", "role": "market_value"},
+    "total_revenues_ltm": {"dtype": "float", "role": "market_value"},
+    "total_revenues_fq": {"dtype": "float", "role": "market_value"},
+    "total_revenues_1fy": {"dtype": "float", "role": "market_value"},
+    "total_revenues_cagr_5y_fy": {"dtype": "float", "role": "percentage"},
+    "total_revenues_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "total_revenues_5yavgltm": {"dtype": "float", "role": "market_value"},
+    "revenues_est_avg_ntm": {"dtype": "float", "role": "market_value"},
+    "revenues_est_avg_fy1e": {"dtype": "float", "role": "market_value"},
+    "revenues_est_med_ntm": {"dtype": "float", "role": "market_value"},
+    "revenues_est_med_fy1e": {"dtype": "float", "role": "market_value"},
+    "revenues_est_yoy_pct_fy1e": {"dtype": "float", "role": "percentage"},
+    "total_operating_expenses_ltm": {"dtype": "float", "role": "market_value"},
+    # ====================
+    # PROFITABILITY - EBITDA (market_value)
+    # ====================
+    "ebitda_fy": {"dtype": "float", "role": "market_value"},
+    "ebitda_ltm": {"dtype": "float", "role": "market_value"},
+    "ebitda_fq": {"dtype": "float", "role": "market_value"},
+    "ebitda_1fy": {"dtype": "float", "role": "market_value"},
+    "ebitda_adj_ltm": {"dtype": "float", "role": "market_value"},
+    "ebitda_adj_fy": {"dtype": "float", "role": "market_value"},
+    "ebitda_adj_1fy": {"dtype": "float", "role": "market_value"},
+    "ebitda_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "ebitda_5yavgltm": {"dtype": "float", "role": "market_value"},
+    # ====================
+    # PROFITABILITY - EBIT (market_value)
+    # ====================
+    "ebit_fy": {"dtype": "float", "role": "market_value"},
+    "ebit_ltm": {"dtype": "float", "role": "market_value"},
+    "ebit_fq": {"dtype": "float", "role": "market_value"},
+    "ebit_1fy": {"dtype": "float", "role": "market_value"},
+    "ebit_adj_ltm": {"dtype": "float", "role": "market_value"},
+    "ebit_adj_fy": {"dtype": "float", "role": "market_value"},
+    "ebit_adj_1fy": {"dtype": "float", "role": "market_value"},
+    "ebit_est_med_fy1e": {"dtype": "float", "role": "market_value"},
+    "ebit_est_med_ntm": {"dtype": "float", "role": "market_value"},
+    "ebit_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "ebit_5yavgltm": {"dtype": "float", "role": "market_value"},
+    # ====================
+    # PROFITABILITY - Net Income (market_value)
+    # ====================
+    "net_income_is_fy": {"dtype": "float", "role": "market_value"},
+    "net_income_is_ltm": {"dtype": "float", "role": "market_value"},
+    "net_income_is_fq": {"dtype": "float", "role": "market_value"},
+    "net_income_is_1fy": {"dtype": "float", "role": "market_value"},
+    "net_income_is_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "net_income_is_5yavgltm": {"dtype": "float", "role": "market_value"},
+    "normalized_net_income_fy": {"dtype": "float", "role": "market_value"},
+    "normalized_net_income_ltm": {"dtype": "float", "role": "market_value"},
+    "normalized_net_income_fq": {"dtype": "float", "role": "market_value"},
+    "normalized_net_income_1fy": {"dtype": "float", "role": "market_value"},
+    "normalized_net_income_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "normalized_net_income_5yavgltm": {"dtype": "float", "role": "market_value"},
+    "net_income_adj_fy": {"dtype": "float", "role": "market_value"},
+    "net_income_adj_ltm": {"dtype": "float", "role": "market_value"},
+    "net_income_adj_fq": {"dtype": "float", "role": "market_value"},
+    "net_income_adj_1fy": {"dtype": "float", "role": "market_value"},
+    "net_income_adj_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "operating_income_ltm": {"dtype": "float", "role": "market_value"},
+    "operating_income_fy": {"dtype": "float", "role": "market_value"},
+    "operating_income_fq": {"dtype": "float", "role": "market_value"},
+    "operating_income_5yavgfq": {"dtype": "float", "role": "market_value"},
+    # ====================
+    # MARGINS - Percentage metrics
+    # ====================
+    "net_income_margin_pct_fy": {"dtype": "float", "role": "percentage"},
+    "net_income_margin_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "gross_profit_margin_pct_fy": {"dtype": "float", "role": "percentage"},
+    "gross_profit_margin_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "gross_profit_ltm": {"dtype": "float", "role": "market_value"},
+    "gross_profit_fy": {"dtype": "float", "role": "market_value"},
+    # ====================
+    # RETURNS ON CAPITAL - Percentage metrics
+    # ====================
+    "return_on_equity_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "return_on_equity_pct_fy": {"dtype": "float", "role": "percentage"},
+    "return_on_assets_roa_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "return_on_assets_roa_pct_fy": {"dtype": "float", "role": "percentage"},
+    # ====================
+    # CASH FLOW - Market value columns
+    # ====================
+    "cfo_ltm": {"dtype": "float", "role": "market_value"},
+    "cfo_fy": {"dtype": "float", "role": "market_value"},
+    "cfo_fq": {"dtype": "float", "role": "market_value"},
+    "cfo_1fy": {"dtype": "float", "role": "market_value"},
+    "fcf_ltm": {"dtype": "float", "role": "market_value"},
+    "fcf_fy": {"dtype": "float", "role": "market_value"},
+    "fcf_fq": {"dtype": "float", "role": "market_value"},
+    "fcf_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "cfi_ltm": {"dtype": "float", "role": "market_value"},
+    "cfi_fy": {"dtype": "float", "role": "market_value"},
+    "cfi_fq": {"dtype": "float", "role": "market_value"},
+    "cfi_1fy": {"dtype": "float", "role": "market_value"},
+    "cff_ltm": {"dtype": "float", "role": "market_value"},
+    "cff_fy": {"dtype": "float", "role": "market_value"},
+    "cff_fq": {"dtype": "float", "role": "market_value"},
+    "cff_1fy": {"dtype": "float", "role": "market_value"},
+    # ====================
+    # BALANCE SHEET - Market value columns
+    # ====================
+    "total_assets_ltm": {"dtype": "float", "role": "market_value"},
+    "total_assets_fy": {"dtype": "float", "role": "market_value"},
+    "total_equity_fy": {"dtype": "float", "role": "market_value"},
+    "total_equity_ltm": {"dtype": "float", "role": "market_value"},
+    "total_debt_fy": {"dtype": "float", "role": "market_value"},
+    "total_debt_ltm": {"dtype": "float", "role": "market_value"},
+    "total_current_assets_ltm": {"dtype": "float", "role": "market_value"},
+    "total_current_liabilities_ltm": {"dtype": "float", "role": "market_value"},
+    "current_ratio_fy": {"dtype": "float", "role": "ratio"},
+    "current_ratio_ltm": {"dtype": "float", "role": "ratio"},
+    "working_capital_ltm": {"dtype": "float", "role": "market_value"},
+    "working_capital_fq": {"dtype": "float", "role": "market_value"},
+    "working_capital_fy": {"dtype": "float", "role": "market_value"},
+    "working_capital_5yavgfy": {"dtype": "float", "role": "market_value"},
+    "tbv_fy": {"dtype": "float", "role": "market_value"},
+    "tbv_ltm": {"dtype": "float", "role": "market_value"},
+    "cash_and_equivalents_ltm": {"dtype": "float", "role": "market_value"},
+    "cash_and_equivalents_fq": {"dtype": "float", "role": "market_value"},
+    "cash_and_equivalents_fy": {"dtype": "float", "role": "market_value"},
+    "cash_and_equivalents_5yavgfq": {"dtype": "float", "role": "market_value"},
+    "retained_earnings_ltm": {"dtype": "float", "role": "market_value"},
+    "retained_earnings_fq": {"dtype": "float", "role": "market_value"},
     "retained_earnings_fy": {"dtype": "float", "role": "feature"},
     "retained_earnings_5yavgfq": {"dtype": "float", "role": "feature"},
     # Asset Details
@@ -444,13 +498,13 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # Employees
     "employees": {
         "dtype": "float",
-        "role": "feature",
+        "role": "count",
     },  # Base column (current employee count) - float for NULL handling
-    "avg_employees_ltm": {"dtype": "float", "role": "feature"},
-    "avg_employees_fy": {"dtype": "float", "role": "feature"},
-    "avg_employees_5yavgfy": {"dtype": "float", "role": "feature"},
-    "total_employees_fy": {"dtype": "float", "role": "feature"},
-    "total_employees_fq": {"dtype": "float", "role": "feature"},
+    "avg_employees_ltm": {"dtype": "float", "role": "count"},
+    "avg_employees_fy": {"dtype": "float", "role": "count"},
+    "avg_employees_5yavgfy": {"dtype": "float", "role": "count"},
+    "total_employees_fy": {"dtype": "float", "role": "count"},
+    "total_employees_fq": {"dtype": "float", "role": "count"},
     "full_time_employees_fq": {
         "dtype": "float",
         "role": "feature",
@@ -628,6 +682,57 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "log_total_debt": {"dtype": "float", "role": "feature"},
     "log_revenue": {"dtype": "float", "role": "feature"},
     "log_enterprise_value": {"dtype": "float", "role": "feature"},
+    # Additional log-transformed columns (time-series variants)
+    "log_gross_profit_previous_year": {"dtype": "float", "role": "feature"},
+    "log_operating_income_fq": {"dtype": "float", "role": "feature"},
+    "log_ebitda_ltm": {"dtype": "float", "role": "feature"},
+    "log_total_revenues_5yavgfq": {"dtype": "float", "role": "feature"},
+    "log_cash_acquisitions_fq": {"dtype": "float", "role": "feature"},
+    "log_total_revenues_5yavgltm": {"dtype": "float", "role": "feature"},
+    "log_ebitda_fy": {"dtype": "float", "role": "feature"},
+    "log_total_assets_ltm": {"dtype": "float", "role": "feature"},
+    "log_ebitda_previous_year": {"dtype": "float", "role": "feature"},
+    "log_operating_income_fy": {"dtype": "float", "role": "feature"},
+    "log_cash_acquisitions_ltm": {"dtype": "float", "role": "feature"},
+    "log_revenues_est_avg_ntm": {"dtype": "float", "role": "feature"},
+    "log_total_revenues_fy": {"dtype": "float", "role": "feature"},
+    "log_net_income_is_1fy": {"dtype": "float", "role": "feature"},
+    "log_fcf_fq": {"dtype": "float", "role": "feature"},
+    "log_total_equity_ltm": {"dtype": "float", "role": "feature"},
+    "log_total_revenues_ltm": {"dtype": "float", "role": "feature"},
+    "log_net_income_adj_1fy": {"dtype": "float", "role": "feature"},
+    "log_total_equity_fy": {"dtype": "float", "role": "feature"},
+    "log_total_debt_fy": {"dtype": "float", "role": "feature"},
+    "log_revenue_previous_year": {"dtype": "float", "role": "feature"},
+    "log_revenue_fy": {"dtype": "float", "role": "feature"},
+    "log_cash_acquisitions_5yavgfq": {"dtype": "float", "role": "feature"},
+    "log_net_income_is_5yavgltm": {"dtype": "float", "role": "feature"},
+    "log_cash_acquisitions_fy": {"dtype": "float", "role": "feature"},
+    "log_total_assets_fy": {"dtype": "float", "role": "feature"},
+    "log_net_income_adj_fy": {"dtype": "float", "role": "feature"},
+    "log_ebitda_5yavgltm": {"dtype": "float", "role": "feature"},
+    "log_revenues_est_avg_fy1e": {"dtype": "float", "role": "feature"},
+    "log_ebitda_fq": {"dtype": "float", "role": "feature"},
+    "log_ebitda_1fy": {"dtype": "float", "role": "feature"},
+    "log_revenues_est_med_ntm": {"dtype": "float", "role": "feature"},
+    "log_cash_and_equivalents_fy": {"dtype": "float", "role": "feature"},
+    "log_net_income_is_5yavgfq": {"dtype": "float", "role": "feature"},
+    "log_cash_and_equivalents_5yavgfq": {"dtype": "float", "role": "feature"},
+    "log_fcf_ltm": {"dtype": "float", "role": "feature"},
+    "log_total_debt_ltm": {"dtype": "float", "role": "feature"},
+    "log_fcf": {"dtype": "float", "role": "feature"},
+    "log_gross_profit_fy": {"dtype": "float", "role": "feature"},
+    "log_market_cap_country_r": {"dtype": "float", "role": "feature"},
+    "log_cash_and_equivalents_ltm": {"dtype": "float", "role": "feature"},
+    "log_fcf_5yavgfq": {"dtype": "float", "role": "feature"},
+    "log_ebitda_5yavgfq": {"dtype": "float", "role": "feature"},
+    "log_fcf_fy": {"dtype": "float", "role": "feature"},
+    "log_revenues_est_med_fy1e": {"dtype": "float", "role": "feature"},
+    "log_total_assets_previous_year": {"dtype": "float", "role": "feature"},
+    "log_operating_income_ltm": {"dtype": "float", "role": "feature"},
+    "log_net_income_is_fq": {"dtype": "float", "role": "feature"},
+    "log_ebitda_adj_ltm": {"dtype": "float", "role": "feature"},
+    "log_gross_profit_ltm": {"dtype": "float", "role": "feature"},
     # --------------------------------------------------------------------------
     # Valuation / profitability / leverage ratios (Phase 9.3 semantic metrics)
     # Created during ETL semantic transformation stage
@@ -763,6 +868,19 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "workforce_volatility_applicable": {"dtype": "bool", "role": "auxiliary"},
     "hiring_intensity_score": {"dtype": "float", "role": "feature"},
     "hiring_intensity_score_applicable": {"dtype": "bool", "role": "auxiliary"},
+    # ==================================================================================
+    # PHASE 9.3 COMPOSITE QUALITY SCORES (Advanced feature engineering)
+    # ==================================================================================
+    "altman_z_score": {"dtype": "float", "role": "feature"},  # Composite bankruptcy risk score
+    "beneish_m_score": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Earnings manipulation detection score
+    "composite_quality_score": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Multi-factor quality composite
+    "momentum_score": {"dtype": "float", "role": "feature"},  # Technical momentum composite
 }
 
 
@@ -1021,12 +1139,22 @@ def normalize_column_name(column: str) -> str:
 
     Converts to lowercase, replaces spaces/special chars with underscores.
 
+    Special handling:
+    - "R&D" -> "randd" (not "r_and_d")
+    - "Merger & Restructuring" -> "merger_and_restructuring"
+    - "Selling General & Admin" -> "selling_general_and_admin"
+
     Args:
         column: Original column name (e.g., "Last Price" or "P/E (LTM)")
 
     Returns:
         Normalized column name (e.g., "last_price" or "p_e_ltm")
     """
+    # Special case: R&D should become randd (not r_and_d)
+    # Must be done before general & -> and replacement
+    if "R&D" in column or "r&d" in column.lower():
+        column = column.replace("R&D", "RandD").replace("r&d", "randd")
+
     normalized = (
         column.lower()
         .replace(" ", "_")

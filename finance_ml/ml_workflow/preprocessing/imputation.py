@@ -58,11 +58,11 @@ def get_zero_imputation_columns() -> List[str]:
         "asset_writedown_fy",
         "asset_writedown_1fy",
         "asset_writedown_5yavgfq",
-        # Merger & restructuring charges (5 columns)
-        "merger_restructuring_charges_fq",
-        "merger_restructuring_charges_fy",
-        "merger_restructuring_charges_ltm",
-        "merger_restructuring_charges_5yavgfq",
+        # Merger & restructuring charges (5 columns) - schema v1.11 naming
+        "merger_and_restructuring_charges_fq",
+        "merger_and_restructuring_charges_fy",
+        "merger_and_restructuring_charges_ltm",
+        "merger_and_restructuring_charges_5yavgfq",
         "interest_expense_total_ltm",
         # Restructuring charges (5 columns)
         "restructuring_charges_ltm",
@@ -90,7 +90,7 @@ def get_zero_imputation_columns() -> List[str]:
         "short_int",
         "gain_loss_on_sale_of_assets_ltm",
         # Additional exceptional events (4 columns) - to reach 48 total
-        "merger_restructuring_charges_1fy",
+        "merger_and_restructuring_charges_1fy",
         "r_d_expenses_fy",
         "r_d_expenses_fq",
         "r_d_expenses_5yavgfq",

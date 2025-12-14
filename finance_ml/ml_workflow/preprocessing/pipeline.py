@@ -103,12 +103,15 @@ def prepare_phase91_data(
     # Step 2: Optional outlier detection
     if apply_outlier_detection:
         logger.info("Detecting outliers...")
-        numeric_cols = df_imputed.select_dtypes(include=["number"]).columns.tolist()
-        financial_cols = [
-            c for c in numeric_cols if c not in ["ticker", "isin"] and not c.endswith("_outlier")
-        ][
+        from finance_ml.ml_workflow.preprocessing.column_semantics import (
+            get_winsorizable_columns,
+        )
+
+        # Use semantic classification to identify columns for outlier detection
+        # Excludes price, ratio, percentage, and count columns automatically
+        financial_cols = get_winsorizable_columns(df_imputed.columns.tolist())[
             :20
-        ]  # Limit to first 20 financial metrics
+        ]  # Limit to first 20
 
         outliers_iqr = detect_outliers_iqr(
             df_imputed, columns=financial_cols, by_sector=True, iqr_multiplier=1.5
@@ -146,10 +149,13 @@ def prepare_phase91_data(
     # Step 3: Optional winsorization
     if apply_winsorization:
         logger.info("Applying sector-specific winsorization...")
-        numeric_cols = df_imputed.select_dtypes(include=["number"]).columns.tolist()
-        financial_cols = [
-            c for c in numeric_cols if c not in ["ticker", "isin"] and not c.endswith("_outlier")
-        ][:20]
+        from finance_ml.ml_workflow.preprocessing.column_semantics import (
+            get_winsorizable_columns,
+        )
+
+        # Use semantic classification to identify winsorizable columns
+        # Automatically excludes price, ratio, percentage, and count columns
+        financial_cols = get_winsorizable_columns(df_imputed.columns.tolist())[:20]
 
         df_imputed = winsorize_by_sector(
             df_imputed,
@@ -157,22 +163,30 @@ def prepare_phase91_data(
             lower_percentile=0.01,
             upper_percentile=0.99,
             by_sector=True,
+            exclude_price_columns=True,  # Redundant but explicit
+            exclude_ratio_columns=True,
         )
         logger.info("Winsorization complete")
 
     # Step 4: Optional scaling
     if apply_scaling:
         logger.info(f"Applying feature scaling ({scaler_type})...")
-        numeric_cols = df_imputed.select_dtypes(include=["number"]).columns.tolist()
-        scaling_cols = [
-            c
-            for c in numeric_cols
-            if c not in ["ticker", "isin", "price_target", "price_target_median", "last_price"]
-            and not c.endswith("_outlier")
-        ][:30]
+        from finance_ml.ml_workflow.preprocessing.column_semantics import (
+            get_scalable_columns,
+        )
+
+        # Use semantic classification to identify scalable columns
+        # Automatically excludes price columns (critical for business metrics)
+        scaling_cols = get_scalable_columns(df_imputed.columns.tolist())
+        # Filter out outlier indicator columns
+        scaling_cols = [c for c in scaling_cols if not c.endswith("_outlier")][:30]
 
         df_imputed = scale_features(
-            df_imputed, columns=scaling_cols, scaler_type=scaler_type, by_sector=True
+            df_imputed,
+            columns=scaling_cols,
+            scaler_type=scaler_type,
+            by_sector=True,
+            exclude_price_columns=True,  # Redundant but explicit
         )
         logger.info("Scaling complete")
 

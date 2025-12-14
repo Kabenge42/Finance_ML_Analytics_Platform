@@ -94,8 +94,10 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
     ],
     "Profitability": [
         "earnings_quality_score",
-        "ebit_adjustment_ratio",
-        "ebitda_adjustment_ratio",
+        "ebit_adjustment_ratio_ltm",
+        "ebit_adjustment_ratio_fy",
+        "ebitda_adjustment_ratio_fy",
+        "ebitda_adjustment_ratio_ltm",
         "ebitda_margin_trend",
         "gross_margin_pct",
         "gross_margin_trend",

@@ -429,11 +429,7 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
 
         # For any unmapped columns, apply the normalization
         df.columns = [
-            (
-                col
-                if col in schema_mapping.values()
-                else normalize_column_name(str(col))
-            )
+            (col if col in schema_mapping.values() else normalize_column_name(str(col)))
             for col in df.columns
         ]
 
@@ -514,6 +510,7 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
     else:
         # Use canonical normalization from schema module
         from finance_ml.ml_workflow.data.schema import normalize_column_name
+
         df.columns = [normalize_column_name(col) for col in df.columns]
 
     return df
@@ -757,7 +754,10 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def validate_schema(df: pd.DataFrame, require_target: bool = False) -> tuple[bool, List[str]]:
-    """Validate presence of critical columns.
+    """Validate presence of critical columns using schema registry.
+
+    Uses list_required_schema_columns_for_etl() from schema.py to ensure
+    consistency with schema v1.11 (503 columns).
 
     Args:
         df: DataFrame to validate
@@ -767,12 +767,19 @@ def validate_schema(df: pd.DataFrame, require_target: bool = False) -> tuple[boo
         Tuple of (is_valid, error_messages):
             - is_valid: True if validation passes, False otherwise
             - error_messages: List of error strings (empty if valid)
+
+    Notes:
+        - Uses canonical ETL-required columns from schema registry
+        - Aligned with code_guidelines.md v1.11 Section 5.3.1
     """
+    from finance_ml.ml_workflow.data.schema import list_required_schema_columns_for_etl
+
     cols = set(df.columns)
     errors = []
 
-    # Always validate core columns
-    missing = [c for c in ["ticker", "sector", "last_price"] if c not in cols]
+    # Get required columns from schema registry (includes ticker, sector, last_price, etc.)
+    required_cols = list_required_schema_columns_for_etl(include_extended_financials=False)
+    missing = [c for c in required_cols if c not in cols]
 
     if require_target:
         # Additionally require a target column
@@ -848,9 +855,10 @@ def detect_outliers_iqr(df: pd.DataFrame, column: str, multiplier: float = 1.5) 
 
 
 def validate_numeric_ranges(df: pd.DataFrame) -> dict:
-    """Validate numeric columns for invalid ranges.
+    """Validate numeric columns for invalid ranges using semantic classification.
 
-    Checks for negative values in price and market cap columns.
+    Uses PRICE_COLUMNS and MARKET_VALUE_COLUMNS from column_semantics.py
+    to identify columns that should be positive. Aligned with schema v1.11.
 
     Args:
         df: DataFrame to validate
@@ -858,16 +866,22 @@ def validate_numeric_ranges(df: pd.DataFrame) -> dict:
     Returns:
         Dictionary with column names as keys and list of invalid indices as values
         Only includes columns that have validation issues
+
+    Notes:
+        - Uses semantic column classification from column_semantics.py
+        - Aligned with code_guidelines.md v1.11 Section 8.5
     """
+    from finance_ml.ml_workflow.preprocessing.column_semantics import (
+        PRICE_COLUMNS,
+        MARKET_VALUE_COLUMNS,
+    )
+
     issues = {}
 
-    # Check absolute price columns (should be positive). Exclude percent-change fields.
-    price_cols = [c for c in df.columns if "price" in c.lower()]
+    # Check price columns (should be positive) using semantic classification
+    # PRICE_COLUMNS already excludes percentage/change columns
+    price_cols = [c for c in df.columns if c.lower() in PRICE_COLUMNS]
     for col in price_cols:
-        col_lower = col.lower()
-        # Skip percent/change columns (e.g., price_chg_pct_1m) which can be negative
-        if any(k in col_lower for k in ("chg", "change", "pct", "percent")):
-            continue
         if col in df.columns:
             series = pd.to_numeric(df[col], errors="coerce")
             invalid_mask = series < 0
@@ -875,9 +889,9 @@ def validate_numeric_ranges(df: pd.DataFrame) -> dict:
             if invalid_indices:
                 issues[col] = invalid_indices
 
-    # Check market cap columns (should be positive)
-    cap_cols = [c for c in df.columns if "market_cap" in c.lower() or "marketcap" in c.lower()]
-    for col in cap_cols:
+    # Check market value columns (should be positive) using semantic classification
+    market_value_cols = [c for c in df.columns if c.lower() in MARKET_VALUE_COLUMNS]
+    for col in market_value_cols:
         if col in df.columns:
             series = pd.to_numeric(df[col], errors="coerce")
             invalid_mask = series < 0
@@ -1121,7 +1135,10 @@ def sanitize_dataframe_with_logging(
                 df[col] = df[col].fillna(fill_val)
                 nan_filled += nan_count
                 logging.debug(
-                    "Filled %d NaN values in column '%s' with %s", nan_count, col, fill_val
+                    "Filled %d NaN values in column '%s' with %s",
+                    nan_count,
+                    col,
+                    fill_val,
                 )
 
     logging.info(
@@ -1217,7 +1234,8 @@ def perform_early_pipeline_validation(df: pd.DataFrame) -> dict:
     # Check 6: Future earnings dates
     results["total_checks"] += 1
     earnings_col = next(
-        (c for c in df.columns if "next_earnings" in c.lower() and "days" in c.lower()), None
+        (c for c in df.columns if "next_earnings" in c.lower() and "days" in c.lower()),
+        None,
     )
     if earnings_col:
         past_earnings = (df[earnings_col] < 0).sum()
@@ -1318,7 +1336,10 @@ def detect_outliers_iqr_advanced(
 
 
 def detect_outliers_by_sector(
-    df: pd.DataFrame, columns: List[str], sector_column: str = "sector", multiplier: float = 1.5
+    df: pd.DataFrame,
+    columns: List[str],
+    sector_column: str = "sector",
+    multiplier: float = 1.5,
 ) -> pd.DataFrame:
     """Detect outliers using sector-specific IQR thresholds.
 
@@ -1457,7 +1478,11 @@ def winsorize_by_sector(
         raise ImportError("preprocessing.outliers module not available")
     # The new function has different signature: lower_percentile, upper_percentile instead of lower, upper
     return _new_winsorize_by_sector(
-        df, columns=columns, lower_percentile=lower, upper_percentile=upper, by_sector=True
+        df,
+        columns=columns,
+        lower_percentile=lower,
+        upper_percentile=upper,
+        by_sector=True,
     )
 
 

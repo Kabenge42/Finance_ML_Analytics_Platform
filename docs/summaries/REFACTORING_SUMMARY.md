@@ -1,151 +1,186 @@
-# Notebook Refactoring Summary
+# Phase 9.3 Category Selection Refactoring Summary
 
-**Notebook:** ml_finance_model_main2_0.ipynb
-**Date:** 2025-12-01
-**Status:** ✅ Implementation Complete
+## Issue Description
 
-## Quick Summary
+Refine and align semantic `category_patterns` in `select_features_by_category` with:
 
-### Phase 9.1-9.3 Cell Replacement (2025-12-01)
+- `PHASE93_FEATURE_CATEGORIES` in `phase93_categories.py`
+- `PHASE93_FEATURE_INPUTS` in `schema.py`
+- Reference implementation in `labels.py` (CATEGORY_FEATURE_MAPPING)
+- Section 9.2 DataFrame Conventions in `code_guidelines.md`
 
-Replaced Phase 9.1-9.3 cells in `ml_finance_model_main2_0.ipynb` with the corresponding ETL pipeline, EDA, and feature
-engineering sections from `etl_data_explorer.ipynb`, as per the
-`ml_finance_model_main_notebook_v2_implementation guide.md`.
+## Changes Implemented
 
-**Changes Made:**
+### 1. Refactored `finance_ml/ml_workflow/features/selection.py`
 
-- **Removed:** 44 cells (original Phase 9.1-9.3 implementation, cells 7-50)
-- **Added:** 13 cells from `etl_data_explorer.ipynb` (cells 0-12)
-- **Net change:** -31 cells (from 152 to 121 total cells)
+**select_features_by_category() Function (lines 472-677)**
 
-**New Structure:**
+#### Key Improvements:
 
-- Cells 0-6: Original setup/configuration (preserved)
-- Cell 7: ETL Data Explorer header
-- Cells 8-19: Consolidated ETL Pipeline, EDA, Feature Engineering from etl_data_explorer.ipynb
-- Cell 20+: Phase 9.4 onwards (preserved from original)
+- **Expanded Category Support**: 6 → 16 categories (196 total features)
+- **Exact Feature Matching**: Uses actual feature names from PHASE93_FEATURE_CATEGORIES instead of prefix patterns
+- **Dual Naming Support**: Accepts both full names ('Momentum & Technical') and short names ('momentum')
+- **Dynamic Import**: Imports PHASE93_FEATURE_CATEGORIES at runtime for up-to-date feature catalog
+- **Enhanced Validation**: Validates category names and provides informative error messages
+- **Comprehensive Logging**: Reports selection statistics with debug-level breakdowns
+- **Flexible Parameters**: Added `allow_missing` parameter for error handling control
 
-**Benefits:**
+#### Category Mappings Added:
 
-- Unified 10-stage ETL Pipeline architecture
-- Cleaner, more modular Phase 9.1-9.3 implementation
-- Aligned with code_guidelines.md v1.7 Section 8.5
-- Semantic column protection (price columns preserved)
+```python
+CATEGORY_NAME_MAPPING = {
+    "Momentum & Technical": "momentum",      # 27 features
+    "Valuation Ratios": "valuation",         # 23 features
+    "Profitability": "profitability",        # 12 features
+    "Quality & Risk": "quality",             # 18 features
+    "Cash Flow": "cash_flow",                # 5 features
+    "Capital Allocation": "capital_allocation", # 23 features
+    "Analyst Sentiment": "analyst_sentiment",   # 10 features
+    "Market Sentiment": "market_sentiment",     # 4 features
+    "Leverage & Liquidity": "leverage",         # 9 features
+    "Temporal Patterns": "temporal_patterns",   # 15 features
+    "Composite Scores": "composite_scores",     # 5 features
+    "Growth Metrics": "growth",                 # 6 features
+    "Efficiency Ratios": "efficiency",          # 4 features
+    "Employee Productivity": "employee_productivity", # 16 features
+    "Balance Sheet Dynamics": "balance_sheet",  # 8 features
+    "Revenue Forecasting": "revenue_forecast",  # 9 features
+}
+```
 
-**Backup:** `backups/ml_finance_model_main2_0_backup_20251201.ipynb`
+#### Updated Docstring:
 
----
+- Comprehensive documentation of all 16 categories with feature counts
+- Usage examples for single and multi-category selection
+- Cross-references to related modules (phase93_categories.py, schema.py, labels.py)
+- Alignment notes with code_guidelines.md section 9.2
 
-### Unresolved References Fix (2025-12-01)
+### 2. Updated `ml_finance_model_main.ipynb`
 
-Fixed 7 semantic errors (unresolved references) caused by the Phase 9.1-9.3 cell replacement. The old DataFrame naming
-convention (all_stocks_raw, all_stocks_typed, all_stocks_winsorized) was replaced with the new ETL pipeline naming.
+**Section: Phase 9.3 TDD: Category-Based Feature Selection (lines 3346-3441)**
 
-**Issues Fixed:**
+#### Enhancements:
 
-- **Cell 45:** Fixed `importance_df` reference pattern
-    - Changed from: `if 'importance_df' in globals() and isinstance(importance_df, ...)`
-    - Changed to: `_importance_df = globals().get('importance_df')` pattern
-- **Cell 66:** Updated DataFrame references in Phase 9.5 Safety Rails section
-    - `all_stocks_typed` → `all_stocks_preprocessed`
-    - `all_stocks_winsorized` → `all_stocks_enhanced`
-- **Cell 68:** Updated DataFrame references
-    - `all_stocks_raw` → `all_stocks_preprocessed`
+- **Category Overview**: Lists all 16 categories with feature counts and descriptions
+- **Three Usage Examples**:
+    1. Fundamental Analysis (valuation + profitability + quality)
+    2. Technical Analysis (momentum + market_sentiment)
+    3. Comprehensive Model (8 key categories, 106 features)
+- **Actual Feature Breakdown**: Uses PHASE93_FEATURE_CATEGORIES to show available vs expected features
+- **SHORT_TO_FULL Mapping**: Demonstrates category name resolution
+- **Validation Logic**: Shows expected feature counts for validation
 
-**Variable Mapping:**
-| Old Name | New Name | Purpose |
-|----------|----------|---------|
-| `all_stocks_raw` | `all_stocks_preprocessed` | Raw data after ETL loading |
-| `all_stocks_typed` | `all_stocks_preprocessed` | Data after type casting |
-| `all_stocks_winsorized` | `all_stocks_enhanced` | Data after all transformations |
+### 3. Updated `tests/test_feature_selection_auto.py`
 
-**Verification:**
+**test_select_features_by_category() (lines 85-127)**
 
-- ✅ Notebook JSON valid (121 cells, format 4.5)
-- ✅ All 7 semantic errors resolved
-- ✅ Quick demo tests pass (2 tests OK)
+#### Improvements:
 
----
+- **Real Feature Names**: Uses actual Phase 9.3 features (rsi_14d, p_e_ratio, accounting_quality_score)
+- **Correct Category Membership**: Fixed features to match actual PHASE93_FEATURE_CATEGORIES
+- **Multi-Category Testing**: Added test for selecting multiple categories simultaneously
+- **Feature Count Validation**: Asserts exact feature counts to prevent regressions
+- **Documentation**: Added clarifying comments about category membership
 
-### Previous Refactoring (Code Quality Fixes)
+#### Test Coverage:
 
-Analyzed PyCharm inspection results for `ml_finance_model_main2_0.ipynb` and identified issues across 4 categories.
-After detailed investigation, most issues were **false positives** from the static analyzer. Only 1 real fix was
-required.
+✓ Single category selection (momentum)
+✓ Multi-category selection (valuation + quality)
+✓ Exclusion validation (features from other categories not included)
+✓ Feature count accuracy
 
-## Issues Found and Resolution
+## Alignment Verification
 
-### ✅ Resolved: Package Requirements
+### ✅ Aligned with PHASE93_FEATURE_CATEGORIES (phase93_categories.py)
 
-- **Issue:** Missing `shap` package
-- **Status:** Already in requirements.txt (line 42: `shap==0.50.0`)
-- **Action:** None required
+- All 16 categories supported
+- Uses exact feature names from the catalog
+- Dynamic import ensures up-to-date feature lists
 
-### ✅ Resolved: Type Hints (4 cells) - FALSE POSITIVES
+### ✅ Aligned with PHASE93_FEATURE_INPUTS (schema.py)
 
-- **Cell 29** (line 1662): `corr_pairs[:3]` - Slice operation, not type hint
-- **Cell 35** (line 2016): `corr_pairs[:5]` - Slice operation, not type hint
-- **Cell 52** (line 2821): `representative_features[:30]` - Slice operation, not type hint
-- **Cell 114** (lines 5302, 7803, 8648-8690): Dictionary/list indexing operations
-    - `class_names[i]` - List indexing
-    - `ml_features_df[feature_cols]` - DataFrame column access
-    - `optimal_portfolio['return']`, `['volatility']`, `['sharpe_ratio']` - Dictionary key access
-- **Status:** No fix needed - static analyzer incorrectly flagged standard Python operations as type hint issues
+- Understands relationship between input columns and engineered features
+- PHASE93_FEATURE_INPUTS (6 categories, ~94 raw columns) → feature engineering → PHASE93_FEATURE_CATEGORIES (16
+  categories, 196 features)
 
-### ✅ Resolved: Missing Docstrings (1 cell) - FALSE POSITIVES
+### ✅ Aligned with labels.py Reference Implementation
 
-- **Cell 47** (lines 2277, 2325): These are markdown cells with code examples in fenced code blocks, not actual function
-  definitions
-- **Status:** No fix needed - static analyzer incorrectly parsed markdown code blocks
+- Uses same simplified category names (momentum, valuation, etc.)
+- Implements same validation logic
+- Similar logging and error handling patterns
+- Matches CATEGORY_FEATURE_MAPPING structure
 
-### ✅ Fixed: Redundant Defaults (1 cell)
+### ✅ Aligned with code_guidelines.md Section 9.2
 
-- **Cell 0** (line 187): `configure_logging(level=logging.INFO, console=True)`
-- **Fix Applied:** Changed to `configure_logging()` (removed redundant default arguments)
-- **Status:** ✅ Fixed
+- Uses normalized column names (lowercase, underscores)
+- Returns DataFrames with proper column ordering
+- Handles missing values correctly (returns empty DataFrame)
+- Supports category-specific analysis workflows
+- Follows DataFrame conventions for index and column order
 
-## Implementation Summary
+## Test Results
 
-### Fixes Applied
+```
+tests/test_feature_selection_auto.py::TestFeatureSelectionAuto::test_select_features_by_importance_threshold PASSED
+tests/test_feature_selection_auto.py::TestFeatureSelectionAuto::test_select_features_removes_correlated_redundancy PASSED
+tests/test_feature_selection_auto.py::TestFeatureSelectionAuto::test_select_features_preserves_price_columns PASSED
+tests/test_feature_selection_auto.py::TestFeatureSelectionAuto::test_select_features_by_category PASSED
 
-1. **Line 187:** Removed redundant default arguments from `configure_logging()` call
+4 passed, 2 warnings in 2.78s ✓
+```
 
-### False Positives Identified
+## Files Modified
 
-The static analyzer incorrectly flagged the following as type hint issues:
+1. `finance_ml/ml_workflow/features/selection.py` (155 lines changed)
+2. `ml_finance_model_main.ipynb` (95 lines changed)
+3. `tests/test_feature_selection_auto.py` (42 lines changed)
 
-- **Slice operations:** `[:3]`, `[:5]`, `[:30]` on lists
-- **List indexing:** `list[i]` patterns
-- **DataFrame column access:** `df[column_list]` patterns
-- **Dictionary key access:** `dict['key']` patterns
-- **Markdown code blocks:** Code examples in markdown cells
+## Migration Guide
 
-## Verification
+### Old Usage (Prefix-based):
 
-- ✅ Notebook JSON validated successfully (152 cells, format 4.5)
-- ✅ All `configure_logging()` calls verified clean
+```python
+# Old implementation (6 categories, prefix matching)
+X_momentum = select_features_by_category(X, ['momentum'])
+# Only matched columns starting with "momentum_"
+```
 
-## Code Guidelines Alignment
+### New Usage (Exact matching):
 
-Fix aligns with `docs/code_guidelines.md` v1.8:
+```python
+# New implementation (16 categories, exact feature names)
+X_momentum = select_features_by_category(X, ['momentum'])
+# Matches 27 exact features from PHASE93_FEATURE_CATEGORIES['Momentum & Technical']
 
-- **Section 6.2:** Code review checklist - clean code, no redundant arguments
+# Also supports full category names
+X_momentum = select_features_by_category(X, ['Momentum & Technical'])
 
-## Detailed Plan
+# Multi-category selection
+X_fundamental = select_features_by_category(
+    X, ['valuation', 'profitability', 'quality']
+)
+```
 
-See complete analysis in:
-**`docs/summaries/NOTEBOOK_REFACTORING_PLAN_ml_finance_model_main2_0.md`**
+## Benefits
 
----
+1. **Semantic Consistency**: All category selection uses the same authoritative source (PHASE93_FEATURE_CATEGORIES)
+2. **Comprehensive Coverage**: 6 → 16 categories, 196 total features
+3. **Better Validation**: Exact feature matching prevents accidental inclusions
+4. **Flexible Naming**: Supports both short and full category names
+5. **Enhanced Debugging**: Detailed logging for troubleshooting
+6. **Production-Ready**: Tests validate actual Phase 9.3 feature names
+7. **Maintainability**: Single source of truth for feature categorization
 
-**Files:**
+## Version Compatibility
 
-- `docs/summaries/NOTEBOOK_REFACTORING_PLAN_ml_finance_model_main2_0.md` (comprehensive plan)
-- `analyze_notebook_issues.py` (analysis script)
-- `find_issue_cells.py` (cell locator script)
+- Model Version: v9_9
+- Code Guidelines: v1.10
+- Phase 9.3 Schema: v1.3 (310 columns, 196 engineered features)
+- Backward Compatible: Old category names still work ('momentum', 'valuation', etc.)
 
-**References:**
+## Future Work
 
-- Inspection Results: `inspection results/*.xml`
-- Code Guidelines: `docs/code_guidelines.md` v1.8
-- Notebook: `ml_finance_model_main2_0.ipynb` (152 cells, 123 code cells)
+- Consider adding category aliases for common use cases
+- Add feature importance-weighted category selection
+- Implement category-level feature engineering presets
+- Add category coverage validation utilities

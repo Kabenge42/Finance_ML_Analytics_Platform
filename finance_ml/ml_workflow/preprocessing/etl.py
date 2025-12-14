@@ -37,75 +37,15 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple, List, Literal
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-# Import from existing modules (no code duplication)
-from finance_ml.ml_workflow.preprocessing.data import (
-    load_from_csv,
-    load_from_db,
-    load_from_all_stocks,
-    normalize_columns,
-    validate_schema,
-    sanitize_dataframe_with_logging,
-    validate_financial_data_quality,
-    perform_early_pipeline_validation,
-)
-
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA,
-    list_numeric_feature_cols,
     list_categorical_cols,
-)
-
-from finance_ml.ml_workflow.preprocessing.transforms import (
-    apply_log_transforms,
-    get_skewness,
-)
-
-from finance_ml.ml_workflow.preprocessing.imputation import (
-    apply_enhanced_imputation_strategy_6step,
-    validate_imputation_completeness,
-    apply_median_imputation,
-)
-
-from finance_ml.ml_workflow.preprocessing.scaling import (
-    scale_features,
-)
-
-from finance_ml.ml_workflow.preprocessing.column_semantics import (
-    get_scalable_columns,
-    get_winsorizable_columns,
-    get_log_transform_columns,
-    classify_columns,
-    PRICE_COLUMNS,
-    MARKET_VALUE_COLUMNS,
-    RATIO_COLUMNS,
-    PERCENTAGE_COLUMNS,
-    COUNT_COLUMNS,
-)
-
-from finance_ml.ml_workflow.preprocessing.dtypes import (
-    detect_and_cast_dtypes,
-    to_jsonable,
-)
-
-# Import financial metrics functions for unified ETL API
-from finance_ml.ml_workflow.preprocessing.financial_metrics_etl import (
-    compute_valuation_metrics,
-    compute_profitability_metrics,
-    compute_growth_metrics,
-    compute_leverage_metrics,
-    compute_target_vs_price_metrics,
-    handle_sector_specific_metrics,
-    compute_sector_specific_ratios,
-    # Post-metrics imputation utilities (schema-aware, sector-aware)
-    impute_computed_metrics,
-    CONDITIONAL_METRICS,
-    generate_data_quality_alerts,
-    generate_metrics_dashboard,
+    list_numeric_feature_cols,
 )
 
 # Import feature engineering API (Section 9.3)
@@ -113,6 +53,61 @@ from finance_ml.ml_workflow.features.api import build_features
 
 # Import feature selection API (Section 9.3 Task 1)
 from finance_ml.ml_workflow.features.selection import select_features_auto
+from finance_ml.ml_workflow.preprocessing.column_semantics import (
+    COUNT_COLUMNS,
+    MARKET_VALUE_COLUMNS,
+    PERCENTAGE_COLUMNS,
+    PRICE_COLUMNS,
+    RATIO_COLUMNS,
+    classify_columns,
+    get_log_transform_columns,
+    get_scalable_columns,
+    get_winsorizable_columns,
+)
+
+# Import from existing modules (no code duplication)
+from finance_ml.ml_workflow.preprocessing.data import (
+    load_from_all_stocks,
+    load_from_csv,
+    load_from_db,
+    normalize_columns,
+    perform_early_pipeline_validation,
+    sanitize_dataframe_with_logging,
+    validate_financial_data_quality,
+    validate_schema,
+)
+from finance_ml.ml_workflow.preprocessing.dtypes import (
+    detect_and_cast_dtypes,
+    to_jsonable,
+)
+
+# Import financial metrics functions for unified ETL API
+from finance_ml.ml_workflow.preprocessing.financial_metrics_etl import (
+    CONDITIONAL_METRICS,
+    compute_growth_metrics,
+    compute_leverage_metrics,
+    compute_profitability_metrics,
+    compute_sector_specific_ratios,
+    compute_target_vs_price_metrics,
+    compute_valuation_metrics,
+    generate_data_quality_alerts,
+    generate_metrics_dashboard,
+    handle_sector_specific_metrics,
+    # Post-metrics imputation utilities (schema-aware, sector-aware)
+    impute_computed_metrics,
+)
+from finance_ml.ml_workflow.preprocessing.imputation import (
+    apply_enhanced_imputation_strategy_6step,
+    apply_median_imputation,
+    validate_imputation_completeness,
+)
+from finance_ml.ml_workflow.preprocessing.scaling import (
+    scale_features,
+)
+from finance_ml.ml_workflow.preprocessing.transforms import (
+    apply_log_transforms,
+    get_skewness,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +134,9 @@ class ETLConfig:
 
     normalize_columns: bool = True
     apply_dtype_casting: bool = True  # Apply schema-aware dtype casting (default: True)
-    track_dtype_diagnostics: bool = True  # Track dtype coercion diagnostics (default: True)
+    track_dtype_diagnostics: bool = (
+        True  # Track dtype coercion diagnostics (default: True)
+    )
     validate_schema: bool = True
     require_target: bool = False
     sanitize_data: bool = True
@@ -193,12 +190,16 @@ class ETLConfig:
 
     # Feature engineering integration (Section 9.3)
     apply_feature_engineering: bool = False  # Default OFF for backward compatibility
-    feature_preset: str = "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
+    feature_preset: str = (
+        "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
+    )
     feature_categories: Optional[List[str]] = None  # Specific categories to engineer
 
     # Feature selection integration (Section 9.3 Task 1)
     apply_feature_selection: bool = False  # Default OFF for backward compatibility
-    feature_selection_method: Literal["mutual_info", "correlation", "both"] = "mutual_info"
+    feature_selection_method: Literal["mutual_info", "correlation", "both"] = (
+        "mutual_info"
+    )
     importance_threshold: float = 0.01  # Min importance score to keep feature
     correlation_threshold: float = 0.95  # Max correlation before deduplication
     feature_selection_categories: Optional[List[str]] = None  # Category-based selection
@@ -293,6 +294,12 @@ class ETLMetrics:
     business_rule_violations: int = 0  # Negative values in non-negative columns
     log_transforms_skipped: int = 0  # Log transforms skipped due to negative values
 
+    # Schema validation metrics (code_guidelines.md v1.11)
+    schema_alignment_score: float = 1.0  # Schema alignment quality [0.0-1.0]
+    unknown_columns_count: int = 0  # Columns in df but not in COLUMN_SCHEMA
+    missing_expected_columns_count: int = 0  # Expected columns not in df
+    dtype_mismatches_count: int = 0  # Columns with dtype mismatches
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert metrics to dictionary."""
         return {
@@ -363,6 +370,12 @@ class ETLMetrics:
             "business_rules": {
                 "violations": self.business_rule_violations,
                 "log_transforms_skipped": self.log_transforms_skipped,
+            },
+            "schema_validation": {
+                "alignment_score": self.schema_alignment_score,
+                "unknown_columns": self.unknown_columns_count,
+                "missing_expected_columns": self.missing_expected_columns_count,
+                "dtype_mismatches": self.dtype_mismatches_count,
             },
             "stages_executed": self.stages_executed,
             "warnings": self.warnings,
@@ -441,7 +454,9 @@ class ETLMetrics:
         feature_selection_info = ""
         if self.feature_selection_applied:
             reduction_pct = (
-                100 * self.features_removed_by_selection / self.features_before_selection
+                100
+                * self.features_removed_by_selection
+                / self.features_before_selection
                 if self.features_before_selection > 0
                 else 0
             )
@@ -461,6 +476,22 @@ class ETLMetrics:
                 f"{self.log_transforms_skipped} log-transforms skipped)"
             )
 
+        # Schema validation info (code_guidelines.md v1.11)
+        schema_validation_info = ""
+        if (
+            self.schema_alignment_score < 1.0
+            or self.unknown_columns_count > 0
+            or self.missing_expected_columns_count > 0
+        ):
+            status_icon = "✓" if self.schema_alignment_score >= 0.95 else "⚠"
+            schema_validation_info = (
+                f"\n  Schema Validation: {status_icon} "
+                f"(alignment: {self.schema_alignment_score:.2%}, "
+                f"unknown: {self.unknown_columns_count}, "
+                f"missing: {self.missing_expected_columns_count}, "
+                f"dtype mismatches: {self.dtype_mismatches_count})"
+            )
+
         return (
             f"ETL Pipeline Summary:\n"
             f"  Source: {self.source_type}\n"
@@ -477,7 +508,8 @@ class ETLMetrics:
             f"{semantic_info}"
             f"{feature_engineering_info}"
             f"{feature_selection_info}"
-            f"{business_rules_info}\n"
+            f"{business_rules_info}"
+            f"{schema_validation_info}\n"
             f"  Quality: {self.quality_score:.3f}, "
             f"Validation: {self.validation_score:.3f}\n"
             f"  Stages: {', '.join(self.stages_executed)}\n"
@@ -552,14 +584,18 @@ def validate_etl_output(
         if df.shape[1] >= expected_min_cols:
             report["passed"].append(f"column_count >= {expected_min_cols}")
         else:
-            report["failed"].append(f"column_count: {df.shape[1]} < expected {expected_min_cols}")
+            report["failed"].append(
+                f"column_count: {df.shape[1]} < expected {expected_min_cols}"
+            )
 
     # Check minimum rows
     if expected_min_rows > 0:
         if df.shape[0] >= expected_min_rows:
             report["passed"].append(f"row_count >= {expected_min_rows}")
         else:
-            report["failed"].append(f"row_count: {df.shape[0]} < expected {expected_min_rows}")
+            report["failed"].append(
+                f"row_count: {df.shape[0]} < expected {expected_min_rows}"
+            )
 
     # Check critical columns
     if critical_columns:
@@ -579,7 +615,9 @@ def validate_etl_output(
             cols_with_nan = nan_counts[nan_counts > 0].index.tolist()
             report["columns_with_nan"] = cols_with_nan[:20]  # Limit to 20
             # Warning but not failure - NaN is often expected
-            logger.debug(f"{phase}: {total_nan} NaN values in {len(cols_with_nan)} columns")
+            logger.debug(
+                f"{phase}: {total_nan} NaN values in {len(cols_with_nan)} columns"
+            )
         report["passed"].append("nan_check_completed")
 
     # Check infinite values
@@ -769,7 +807,9 @@ class ETLPipeline:
         logger.info(f"Extracting data from all_stocks table: {db_url}")
         limit = limit or self.config.limit
         df = load_from_all_stocks(db_url, limit=limit)
-        logger.info(f"Extracted {len(df)} rows, {len(df.columns)} columns from all_stocks")
+        logger.info(
+            f"Extracted {len(df)} rows, {len(df.columns)} columns from all_stocks"
+        )
         return df
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -808,7 +848,9 @@ class ETLPipeline:
         if self.config.apply_dtype_casting:
             logger.info("Stage 1.5: Applying schema-aware dtype casting")
             try:
-                result, dtype_diagnostics = detect_and_cast_dtypes(result, schema=COLUMN_SCHEMA)
+                result, dtype_diagnostics = detect_and_cast_dtypes(
+                    result, schema=COLUMN_SCHEMA
+                )
 
                 # Track metrics
                 if self.metrics:
@@ -863,7 +905,9 @@ class ETLPipeline:
         # Stage 2: Validate schema
         if self.config.validate_schema:
             logger.info("Stage 2: Validating schema")
-            is_valid, errors = validate_schema(result, require_target=self.config.require_target)
+            is_valid, errors = validate_schema(
+                result, require_target=self.config.require_target
+            )
             if not is_valid:
                 error_msg = f"Schema validation failed: {', '.join(errors)}"
                 logger.error(error_msg)
@@ -887,7 +931,9 @@ class ETLPipeline:
         # Stage 4: Sanitize data
         if self.config.sanitize_data:
             logger.info("Stage 4: Sanitizing data (inf, nan, extremes)")
-            result, sanitize_stats = sanitize_dataframe_with_logging(result, return_stats=True)
+            result, sanitize_stats = sanitize_dataframe_with_logging(
+                result, return_stats=True
+            )
 
             # Track business rule violations in metrics (Priority 1 Fix)
             if self.metrics and sanitize_stats:
@@ -902,7 +948,9 @@ class ETLPipeline:
 
         # Stage 5: Apply imputation strategy
         if self.config.apply_imputation:
-            logger.info(f"Stage 5: Applying {self.config.imputation_strategy} imputation strategy")
+            logger.info(
+                f"Stage 5: Applying {self.config.imputation_strategy} imputation strategy"
+            )
 
             # Track missing values before imputation
             missing_before = result.isna().sum().sum()
@@ -940,7 +988,9 @@ class ETLPipeline:
             if self.metrics:
                 self.metrics.missing_values_after_imputation = int(missing_after)
                 self.metrics.imputation_completeness = validation["is_complete"]
-                self.metrics.date_columns_ready = validation["ready_for_temporal_features"]
+                self.metrics.date_columns_ready = validation[
+                    "ready_for_temporal_features"
+                ]
                 self.metrics.quality_score = min(
                     self.metrics.quality_score,
                     1.0 if validation["is_complete"] else 0.8,
@@ -994,7 +1044,9 @@ class ETLPipeline:
                         f"{price_cols_to_remove[:3]}{'...' if len(price_cols_to_remove) > 3 else ''}"
                     )
                     columns_to_scale = [
-                        col for col in columns_to_scale if col.lower() not in PRICE_COLUMNS
+                        col
+                        for col in columns_to_scale
+                        if col.lower() not in PRICE_COLUMNS
                     ]
                     if self.metrics:
                         self.metrics.warnings.append(
@@ -1037,7 +1089,9 @@ class ETLPipeline:
             else:
                 logger.warning("No columns to scale after applying exclusions")
                 if self.metrics:
-                    self.metrics.warnings.append("Scaling skipped: no valid columns found")
+                    self.metrics.warnings.append(
+                        "Scaling skipped: no valid columns found"
+                    )
 
         # Stage 8: Compute financial metrics (optional)
         initial_cols = set(result.columns)
@@ -1146,21 +1200,104 @@ class ETLPipeline:
             if self.metrics:
                 self.metrics.stages_executed.append("feature_engineering")
 
-            # Stage 9b: Post-feature-engineering imputation sweep (Priority 1 Fix)
-            # Rationale: Phase 9.3 features may depend on columns that were imputed or have edge cases
+            # Stage 9b: Post-feature-engineering imputation sweep (GUIDELINES: must restore 0-missing invariant)
+            # Rationale:
+            # - Feature engineering can create NaNs (ratios, divide-by-zero, missing inputs).
+            # - Median-only imputation is insufficient when:
+            #   (a) engineered columns are all-NaN (median is NaN),
+            #   (b) missingness exists in non-numeric columns.
+            # Reference: code_guidelines.md Section 19.1, ml_workflow_guidelines.md Phase 9.1
             missing_after_features = int(result.isna().sum().sum())
             if missing_after_features > 0:
                 logger.info(
                     f"Stage 9b: Post-feature-engineering imputation sweep (missing={missing_after_features})"
                 )
 
-                # Apply simple median imputation to engineered features
-                # (more sophisticated than zero-fill, preserves statistical properties)
-                result = apply_median_imputation(result)
+                # Treat infinities as missing before imputation (common after ratio math)
+                result = result.replace([np.inf, -np.inf], np.nan)
+
+                # Re-run the full 6-step strategy to restore completeness post-feature engineering
+                try:
+                    result = apply_enhanced_imputation_strategy_6step(
+                        result,
+                        sector_column=self.config.imputation_sector_column,
+                        n_neighbors=self.config.knn_neighbors,
+                        price_column=self.config.imputation_price_column,
+                        handle_categoricals=self.config.handle_categorical_imputation,
+                        handle_dates=self.config.handle_datetime_imputation,
+                    )
+                    if self.metrics:
+                        self.metrics.stages_executed.append(
+                            "post_feature_imputation_6step"
+                        )
+                except Exception as e:
+                    logger.warning(
+                        f"Post-feature 6-step imputation failed ({e}); falling back to median imputation"
+                    )
+                    result = apply_median_imputation(result)
+                    if self.metrics:
+                        self.metrics.stages_executed.append(
+                            "post_feature_imputation_median_fallback"
+                        )
+
+                # Final deterministic completeness pass for pathological columns (e.g., all-NaN columns)
+                # This ensures the Section 19.1 invariant (0 missing) is always satisfied.
+                remaining_missing = int(result.isna().sum().sum())
+                if remaining_missing > 0:
+                    logger.info(
+                        f"Stage 9b-final: Deterministic completeness pass (remaining={remaining_missing})"
+                    )
+
+                    # Replace inf again just in case downstream steps reintroduced them
+                    result = result.replace([np.inf, -np.inf], np.nan)
+
+                    # Handle numeric columns: median then zero-fill for all-NaN columns
+                    numeric_cols = result.select_dtypes(include=[np.number]).columns
+                    if len(numeric_cols) > 0:
+                        medians = result[numeric_cols].median(numeric_only=True)
+                        result[numeric_cols] = result[numeric_cols].fillna(medians)
+                        result[numeric_cols] = result[numeric_cols].fillna(0)
+
+                    # Handle boolean columns
+                    bool_cols = result.select_dtypes(include=["bool"]).columns
+                    if len(bool_cols) > 0:
+                        result[bool_cols] = result[bool_cols].fillna(False)
+
+                    # Handle datetime columns
+                    dt_cols = result.select_dtypes(
+                        include=["datetime64[ns]", "datetimetz"]
+                    ).columns
+                    if len(dt_cols) > 0:
+                        result[dt_cols] = result[dt_cols].fillna(
+                            pd.Timestamp("1970-01-01")
+                        )
+
+                    # Handle object/string/category columns (FIX: categorical-aware)
+                    obj_cols = result.select_dtypes(
+                        include=["object", "string", "category"]
+                    ).columns
+                    if len(obj_cols) > 0:
+                        # Iterate through each column to handle categorical dtypes correctly
+                        for col in obj_cols:
+                            if result[col].dtype.name == "category":
+                                # Add 'UNKNOWN' to categories first if not already present
+                                if "UNKNOWN" not in result[col].cat.categories:
+                                    result[col] = result[col].cat.add_categories(
+                                        ["UNKNOWN"]
+                                    )
+                                # Now safely fill NaN with 'UNKNOWN'
+                                result[col] = result[col].fillna("UNKNOWN")
+                            else:
+                                # For object/string columns, direct fillna works
+                                result[col] = result[col].fillna("UNKNOWN")
+
+                    if self.metrics:
+                        self.metrics.stages_executed.append(
+                            "post_feature_imputation_final_pass"
+                        )
 
                 missing_after_sweep = int(result.isna().sum().sum())
                 if self.metrics:
-                    self.metrics.stages_executed.append("post_feature_imputation")
                     self.metrics.missing_values_after_imputation = missing_after_sweep
                     self.metrics.imputation_completeness = missing_after_sweep == 0
                     if not self.metrics.imputation_completeness:
@@ -1169,7 +1306,8 @@ class ETLPipeline:
                         )
 
                 logger.info(
-                    f"Post-feature-engineering imputation complete: {missing_after_features} → {missing_after_sweep} missing"
+                    f"Post-feature-engineering imputation complete: "
+                    f"{missing_after_features} → {missing_after_sweep} missing"
                 )
 
         # Stage 10: Apply automated feature selection (Section 9.3 Task 1)
@@ -1224,7 +1362,9 @@ class ETLPipeline:
                     logger.error(error_msg)
                     if self.metrics:
                         self.metrics.errors.append(error_msg)
-                        self.metrics.warnings.append("Feature selection skipped due to error")
+                        self.metrics.warnings.append(
+                            "Feature selection skipped due to error"
+                        )
                     logger.warning("Pipeline continuing without feature selection")
             else:
                 logger.warning(
@@ -1235,7 +1375,39 @@ class ETLPipeline:
                         "Feature selection skipped: no target column found"
                     )
 
-        logger.info(f"Transformation complete: {len(result)} rows, {len(result.columns)} columns")
+        # Stage 11: Validate schema alignment (code_guidelines.md v1.11)
+        if self.config.validate_quality:
+            logger.info("Stage 11: Validating schema alignment")
+            schema_validation = self._validate_schema_alignment(result)
+
+            if self.metrics:
+                self.metrics.schema_alignment_score = schema_validation.get(
+                    "alignment_score", 1.0
+                )
+                self.metrics.unknown_columns_count = len(
+                    schema_validation.get("unknown_columns", [])
+                )
+                self.metrics.missing_expected_columns_count = len(
+                    schema_validation.get("missing_expected_columns", [])
+                )
+                self.metrics.dtype_mismatches_count = len(
+                    schema_validation.get("dtype_mismatches", {})
+                )
+                self.metrics.stages_executed.append("schema_validation")
+
+                # Add warnings for significant schema issues
+                if schema_validation.get("alignment_score", 1.0) < 0.95:
+                    self.metrics.warnings.append(
+                        f"Schema alignment below 95%: {schema_validation.get('alignment_score', 1.0):.2%}"
+                    )
+                if len(schema_validation.get("unknown_columns", [])) > 10:
+                    self.metrics.warnings.append(
+                        f"Found {len(schema_validation.get('unknown_columns', []))} unknown columns"
+                    )
+
+        logger.info(
+            f"Transformation complete: {len(result)} rows, {len(result.columns)} columns"
+        )
         return result
 
     def validate_quality(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -1301,7 +1473,9 @@ class ETLPipeline:
         if self.metrics:
             self.metrics.semantic_classification_applied = True
             self.metrics.price_columns_count = len(classification["price"])
-            self.metrics.market_value_columns_count = len(classification["market_value"])
+            self.metrics.market_value_columns_count = len(
+                classification["market_value"]
+            )
             self.metrics.ratio_columns_count = len(classification["ratio"])
             self.metrics.percentage_columns_count = len(classification["percentage"])
             self.metrics.count_columns_count = len(classification["count"])
@@ -1396,7 +1570,9 @@ class ETLPipeline:
         if not self.config.apply_feature_engineering:
             return df
 
-        logger.info(f"Applying feature engineering with preset: {self.config.feature_preset}")
+        logger.info(
+            f"Applying feature engineering with preset: {self.config.feature_preset}"
+        )
 
         try:
             original_cols = set(df.columns)
@@ -1420,8 +1596,118 @@ class ETLPipeline:
             return df_with_features
 
         except Exception as e:
-            logger.warning(f"Feature engineering failed: {e}, returning original DataFrame")
+            logger.warning(
+                f"Feature engineering failed: {e}, returning original DataFrame"
+            )
             return df
+
+    def _validate_schema_alignment(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Validate DataFrame columns against COLUMN_SCHEMA registry.
+
+        Checks for:
+        - Unknown columns (present in df but not in COLUMN_SCHEMA)
+        - Missing expected columns (in COLUMN_SCHEMA but not in df)
+        - Dtype mismatches between actual and expected
+
+        Args:
+            df: DataFrame to validate
+
+        Returns:
+            Dictionary with validation results:
+            - unknown_columns: List of columns not in COLUMN_SCHEMA
+            - missing_expected_columns: List of expected columns not in df
+            - dtype_mismatches: Dict of columns with dtype mismatches
+            - alignment_score: Float [0.0-1.0] indicating schema alignment quality
+        """
+        from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA, get_expected_dtype
+
+        df_cols = set(df.columns)
+        schema_cols = set(COLUMN_SCHEMA.keys())
+
+        # Identify unknown columns (in df but not in schema)
+        unknown_cols = sorted(df_cols - schema_cols)
+
+        # Identify missing expected columns (in schema but not in df)
+        # Only check for non-auxiliary columns that should be present
+        expected_cols = {
+            col
+            for col, meta in COLUMN_SCHEMA.items()
+            if meta.get("role") not in ["auxiliary", "label"]
+        }
+        missing_cols = sorted(expected_cols - df_cols)
+
+        # Check dtype mismatches for columns present in both
+        dtype_mismatches = {}
+        common_cols = df_cols & schema_cols
+        for col in common_cols:
+            expected_dtype = get_expected_dtype(col)
+            actual_dtype = str(df[col].dtype)
+
+            # Normalize dtype comparison (float64/float32 -> float, int64/int32 -> int)
+            expected_normalized = expected_dtype
+            actual_normalized = actual_dtype
+
+            if "float" in actual_dtype:
+                actual_normalized = "float"
+            elif "int" in actual_dtype:
+                actual_normalized = "int"
+            elif "object" in actual_dtype or "string" in actual_dtype:
+                actual_normalized = "string"
+            elif "category" in actual_dtype:
+                actual_normalized = "category"
+            elif "datetime" in actual_dtype:
+                actual_normalized = "datetime64[ns]"
+            elif "bool" in actual_dtype:
+                actual_normalized = "bool"
+
+            if expected_normalized != actual_normalized:
+                dtype_mismatches[col] = {
+                    "expected": expected_dtype,
+                    "actual": actual_dtype,
+                }
+
+        # Calculate alignment score
+        total_expected = len(expected_cols)
+        total_present = len(common_cols & expected_cols)
+        alignment_score = total_present / total_expected if total_expected > 0 else 1.0
+
+        validation_result = {
+            "unknown_columns": unknown_cols,
+            "missing_expected_columns": missing_cols,
+            "dtype_mismatches": dtype_mismatches,
+            "alignment_score": alignment_score,
+            "total_columns": len(df_cols),
+            "schema_columns": len(schema_cols),
+            "common_columns": len(common_cols),
+        }
+
+        # Log validation results
+        if unknown_cols:
+            logger.warning(
+                f"Found {len(unknown_cols)} unknown columns not in COLUMN_SCHEMA"
+            )
+            if len(unknown_cols) <= 10:
+                logger.warning(f"Unknown columns: {unknown_cols}")
+
+        if missing_cols:
+            logger.info(
+                f"Missing {len(missing_cols)} expected columns from COLUMN_SCHEMA"
+            )
+            if len(missing_cols) <= 10:
+                logger.info(f"Missing columns: {missing_cols}")
+
+        if dtype_mismatches:
+            logger.warning(f"Found {len(dtype_mismatches)} dtype mismatches")
+            if len(dtype_mismatches) <= 5:
+                for col, mismatch in list(dtype_mismatches.items())[:5]:
+                    logger.warning(
+                        f"  {col}: expected {mismatch['expected']}, got {mismatch['actual']}"
+                    )
+
+        logger.info(f"Schema alignment score: {alignment_score:.2%}")
+
+        return validation_result
 
     def load(self, df: pd.DataFrame, validate: bool = True) -> pd.DataFrame:
         """
@@ -1439,11 +1725,13 @@ class ETLPipeline:
         if validate and self.config.validate_quality:
             quality_metrics = self.validate_quality(df)
             if self.metrics:
-                self.metrics.quality_score = quality_metrics.get("data_quality_score", 1.0)
+                self.metrics.quality_score = quality_metrics.get(
+                    "data_quality_score", 1.0
+                )
                 if "pipeline_validation" in quality_metrics:
-                    self.metrics.validation_score = quality_metrics["pipeline_validation"].get(
-                        "validation_score", 1.0
-                    )
+                    self.metrics.validation_score = quality_metrics[
+                        "pipeline_validation"
+                    ].get("validation_score", 1.0)
                     self.metrics.warnings.extend(
                         quality_metrics["pipeline_validation"].get("warnings", [])
                     )

@@ -17,8 +17,4 @@ __pycache__/
 Thumbs.db
 
 # Project artifacts
-!/.venv/
-!/anaconda_projects/
-!/reference material/
-!/backups/
-!/archive/
+

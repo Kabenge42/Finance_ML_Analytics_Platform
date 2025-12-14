@@ -75,6 +75,7 @@ def scale_features(
     """
     from finance_ml.ml_workflow.preprocessing.column_semantics import (
         PRICE_COLUMNS,
+        get_scalable_columns,
     )
 
     result = df.copy()
@@ -82,15 +83,18 @@ def scale_features(
     if columns is None:
         columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
-    # Apply semantic filtering
+    # Apply semantic filtering using helper function for comprehensive exclusion
     if exclude_price_columns:
-        excluded = [c for c in columns if c.lower() in PRICE_COLUMNS and c in df.columns]
-        scalable = [c for c in columns if c.lower() not in PRICE_COLUMNS and c in df.columns]
+        # Use get_scalable_columns() for comprehensive semantic filtering
+        # This automatically excludes price columns while including market_value, ratio, percentage, count, and other
+        scalable = get_scalable_columns(columns)
+        scalable = [c for c in scalable if c in df.columns]
+        excluded_count = len(columns) - len(scalable)
         logger.info(
-            f"Scaling {len(scalable)} columns, excluding {len(excluded)} price columns"
+            f"Scaling {len(scalable)} columns, excluding {excluded_count} price columns (using semantic classification)"
         )
         columns = scalable
-    
+
     # If no columns to scale after filtering, return original
     if not columns:
         logger.warning("No columns to scale after applying exclusions")
