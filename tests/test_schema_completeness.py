@@ -178,7 +178,20 @@ class TestSchemaIntegrity(unittest.TestCase):
 
     def test_dtype_values_are_valid(self):
         """Test dtype values are one of expected types."""
-        valid_dtypes = {'float', 'int', 'str', 'string', 'datetime', 'datetime64[ns]', 'object', 'category'}
+        # NOTE: The schema registry supports semantic flags (e.g. `_applicable`) and
+        # uses boolean dtypes for those columns.
+        valid_dtypes = {
+            "float",
+            "int",
+            "str",
+            "string",
+            "bool",
+            "boolean",
+            "datetime",
+            "datetime64[ns]",
+            "object",
+            "category",
+        }
         invalid = []
         for key, value in COLUMN_SCHEMA.items():
             if isinstance(value, dict) and 'dtype' in value:
@@ -194,7 +207,26 @@ class TestSchemaIntegrity(unittest.TestCase):
 
     def test_role_values_are_valid(self):
         """Test role values are one of expected roles."""
-        valid_roles = {'feature', 'identifier', 'id', 'target', 'target_fallback', 'metadata', 'auxiliary', 'datetime', 'date', 'categorical'}
+        # NOTE: The schema uses semantic roles (e.g. `price`, `ratio`) to support
+        # scope-aware transformations and validation.
+        valid_roles = {
+            "feature",
+            "identifier",
+            "id",
+            "target",
+            "target_fallback",
+            "metadata",
+            "auxiliary",
+            "datetime",
+            "date",
+            "categorical",
+            # Semantic roles
+            "price",
+            "market_value",
+            "ratio",
+            "percentage",
+            "count",
+        }
         invalid = []
         for key, value in COLUMN_SCHEMA.items():
             if isinstance(value, dict) and 'role' in value:
@@ -251,8 +283,8 @@ class TestSchemaHelperFunctions(unittest.TestCase):
                 dtype = get_expected_dtype(col)
                 self.assertIn(
                     dtype,
-                    ['str', 'category', 'object'],
-                    f"Categorical column '{col}' has inappropriate dtype: {dtype}"
+                    ["str", "string", "category", "object"],
+                    f"Categorical column '{col}' has inappropriate dtype: {dtype}",
                 )
 
 

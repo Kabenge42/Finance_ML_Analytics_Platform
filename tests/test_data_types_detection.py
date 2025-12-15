@@ -232,9 +232,9 @@ class TestSchemaHelpers(unittest.TestCase):
         role = get_column_role("ticker")
         self.assertEqual(role, "id")
 
-        # Test feature column
+        # Test semantic role for a price column
         role = get_column_role("last_price")
-        self.assertEqual(role, "feature")
+        self.assertEqual(role, "price")
 
         # Test target column
         role = get_column_role("price_target")
@@ -285,16 +285,17 @@ class TestSchemaHelpers(unittest.TestCase):
         """
         # Arrange: The 5 columns that were causing WARNING: NaN values still present
         # Note: employees is float (not int) to support NULL values from CSV/PostgreSQL
+        # NOTE: Roles are semantic (code_guidelines.md v1.11): counts/price/etc.
         missing_columns = [
-            ("r_d_expenses", "float"),
-            ("intangible_assets", "float"),
-            ("employees", "float"),  # float for NULL handling per SCHEMA_ALIGNMENT_SUMMARY.md
-            ("marketing_expenses", "float"),
-            ("eps_previous_year", "float"),
+            ("r_d_expenses", "float", "feature"),
+            ("intangible_assets", "float", "feature"),
+            ("employees", "float", "count"),  # float for NULL handling, semantic count role
+            ("marketing_expenses", "float", "feature"),
+            ("eps_previous_year", "float", "feature"),
         ]
 
         # Act & Assert: Check each column is now in schema
-        for col_name, expected_dtype in missing_columns:
+        for col_name, expected_dtype, expected_role in missing_columns:
             with self.subTest(column=col_name):
                 # Column should be in schema
                 self.assertIn(
@@ -311,12 +312,12 @@ class TestSchemaHelpers(unittest.TestCase):
                     f"Column '{col_name}' should have dtype='{expected_dtype}', got '{actual_dtype}'",
                 )
 
-                # Check role is 'feature'
+                # Check role matches expected semantic role
                 actual_role = COLUMN_SCHEMA[col_name]["role"]
                 self.assertEqual(
                     actual_role,
-                    "feature",
-                    f"Column '{col_name}' should have role='feature', got '{actual_role}'",
+                    expected_role,
+                    f"Column '{col_name}' should have role='{expected_role}', got '{actual_role}'",
                 )
 
         # Additional assertion: Schema should now have 283 columns (278 + 5 new)

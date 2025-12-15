@@ -526,17 +526,13 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "role": "feature",
     },  # Full time employees (3 Years Ago) - float for NULL handling
     # Country-specific
-    "market_cap_country_r": {"dtype": "float", "role": "feature"},
     # ==================================================================================
     # NORMALIZATION VARIANTS & SIMPLIFIED ALIASES
     # Added to resolve unknown column warnings from dtype_diagnostics.json
     # These columns exist in the data pipeline but use different naming conventions
     # ==================================================================================
     # Analyst Ratings (normalized names without "num_" prefix) - Legacy aliases
-    "price_target_count": {
-        "dtype": "float",
-        "role": "auxiliary",
-    },  # Alias for price_target_num
+    # Alias for price_target_num
     "strong_sell_ratings": {
         "dtype": "float",
         "role": "auxiliary",
@@ -871,7 +867,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     # ==================================================================================
     # PHASE 9.3 COMPOSITE QUALITY SCORES (Advanced feature engineering)
     # ==================================================================================
-    "altman_z_score": {"dtype": "float", "role": "feature"},  # Composite bankruptcy risk score
+    "altman_z_score": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Composite bankruptcy risk score
     "beneish_m_score": {
         "dtype": "float",
         "role": "feature",
@@ -880,7 +879,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "dtype": "float",
         "role": "feature",
     },  # Multi-factor quality composite
-    "momentum_score": {"dtype": "float", "role": "feature"},  # Technical momentum composite
+    "momentum_score": {
+        "dtype": "float",
+        "role": "feature",
+    },  # Technical momentum composite
 }
 
 
@@ -1172,6 +1174,34 @@ def normalize_column_name(column: str) -> str:
         normalized = normalized.replace("__", "_")
     # Remove leading/trailing underscores
     return normalized.strip("_")
+
+
+def list_etl_generated_column_patterns() -> List[str]:
+    """List regex patterns for columns legitimately generated during ETL.
+
+    These patterns are used by schema alignment validation and diagnostics to
+    distinguish between truly unknown columns (data quality / upstream drift)
+    and expected outputs created by the ETL / feature engineering workflow.
+
+    Returns:
+        List of regex pattern strings.
+
+    Example:
+        >>> import re
+        >>> patterns = list_etl_generated_column_patterns()
+        >>> any(re.match(p, "log_market_cap") for p in patterns)
+        True
+    """
+
+    # NOTE: Keep these patterns conservative. Where possible, the ETL validator
+    # also checks that the underlying base column exists in `COLUMN_SCHEMA`.
+    return [
+        r"^log_[0-9a-z_]+$",  # Log-transformed columns
+        r"^.*_applicable$",  # Conditional metric applicability flags
+        r"^event_prob_.*$",  # Classification probabilities
+        r"^sector_[0-9a-z]+_x_[0-9a-z_]+$",  # Sector interactions
+        r"^.*_(ratio|pct|margin|growth|yoy)$",  # Common semantic/derived suffixes
+    ]
 
 
 def list_required_schema_columns_for_etl(

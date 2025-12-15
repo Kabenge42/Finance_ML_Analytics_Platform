@@ -67,6 +67,7 @@ def load_from_csv(
     region: Optional[str] = None,
     normalize_columns: bool = True,
     encoding: str = "utf-8",
+    validate_schema: bool = False,
 ) -> pd.DataFrame:
     """Load financial data from a CSV file.
 
@@ -75,6 +76,7 @@ def load_from_csv(
         region: Region code to assign (if None, inferred from filename)
         normalize_columns: Whether to normalize column names
         encoding: File encoding
+        validate_schema: Whether to validate columns against COLUMN_SCHEMA
 
     Returns:
         DataFrame with loaded data
@@ -83,6 +85,7 @@ def load_from_csv(
         >>> df = load_from_csv("data/screening_us.csv")
         >>> df.columns
         Index(['ticker', 'sector', 'last_price', ...])
+        >>> df = load_from_csv("data/screening_us.csv", validate_schema=True)
     """
     filepath = Path(filepath)
 
@@ -114,6 +117,17 @@ def load_from_csv(
     if normalize_columns:
         df = _normalize_column_names(df)
 
+    # Optional schema validation
+    if validate_schema:
+        from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
+
+        unknown_cols = [col for col in df.columns if col not in COLUMN_SCHEMA]
+        if unknown_cols:
+            logger.warning(
+                f"Found {len(unknown_cols)} columns not in COLUMN_SCHEMA: "
+                f"{unknown_cols[:5]}{'...' if len(unknown_cols) > 5 else ''}"
+            )
+
     return df
 
 
@@ -122,6 +136,7 @@ def load_from_db(
     table_name: str = "equities",
     query: Optional[str] = None,
     regions: Optional[List[str]] = None,
+    validate_schema: bool = False,
 ) -> pd.DataFrame:
     """Load financial data from PostgreSQL database.
 
@@ -130,12 +145,14 @@ def load_from_db(
         table_name: Table name to query
         query: Custom SQL query (overrides table_name)
         regions: List of regions to filter
+        validate_schema: Whether to validate columns against COLUMN_SCHEMA
 
     Returns:
         DataFrame with loaded data
 
     Example:
         >>> df = load_from_db(regions=["US", "EU"])
+        >>> df = load_from_db(regions=["US"], validate_schema=True)
     """
     import os
 
@@ -169,6 +186,17 @@ def load_from_db(
 
     # Normalize column names
     df = _normalize_column_names(df)
+
+    # Optional schema validation
+    if validate_schema:
+        from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
+
+        unknown_cols = [col for col in df.columns if col not in COLUMN_SCHEMA]
+        if unknown_cols:
+            logger.warning(
+                f"Found {len(unknown_cols)} columns not in COLUMN_SCHEMA: "
+                f"{unknown_cols[:5]}{'...' if len(unknown_cols) > 5 else ''}"
+            )
 
     return df
 
@@ -249,14 +277,21 @@ def load_multiple_csvs(
 def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize column names to lowercase with underscores.
 
+    Uses canonical normalization from schema.py to ensure consistency
+    with COLUMN_SCHEMA keys. This handles special cases like:
+    - R&D -> randd (not r_and_d)
+    - # -> num (e.g., "# Strong Sell Ratings" -> "num_strong_sell_ratings")
+    - % -> pct (e.g., "Price Chg. % (1M)" -> "price_chg_pct_1m")
+    - & -> and (e.g., "Selling General & Admin" -> "selling_general_and_admin")
+
     Args:
         df: Input DataFrame
 
     Returns:
         DataFrame with normalized column names
     """
-    # Replace spaces and special chars with underscores, lowercase
-    df.columns = (
-        df.columns.str.replace(r"[^0-9a-zA-Z]+", "_", regex=True).str.strip("_").str.lower()
-    )
+    from finance_ml.ml_workflow.data.schema import normalize_column_name
+
+    # Use canonical normalization function for consistency with COLUMN_SCHEMA
+    df.columns = [normalize_column_name(col) for col in df.columns]
     return df

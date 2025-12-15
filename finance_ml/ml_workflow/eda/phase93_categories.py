@@ -252,6 +252,7 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "equity_growth_rate",
         "retained_earnings_growth",
         "working_capital_ratio",
+        "book_value_per_share",
     ],
     "Revenue Forecasting": [
         "avg_vs_median_bias",

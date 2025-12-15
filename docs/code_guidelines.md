@@ -1340,11 +1340,11 @@ class DatasetSplit:
 from finance_ml.ml_workflow.preprocessing.pipeline import prepare_phase91_data
 
 prepared_df, quality_stats = prepare_phase91_data(
-        df: pd.DataFrame,
-sector_column: str = "sector",
-price_column: str = "last_price",
-n_neighbors: int = 5,
-return_stats: bool = True
+        df,
+        sector_column="sector",
+        price_column="last_price",
+        n_neighbors=5,
+        return_stats=True,
 )
 # Returns: (preprocessed_df, quality_statistics_dict)
 
@@ -1357,10 +1357,10 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
    )
 
 df_imputed = apply_enhanced_imputation_strategy_6step(
-        df: pd.DataFrame,
-zero_fill_columns: Optional[List[str]] = None,
-knn_neighbors: int = 5,
-price_columns: Optional[List[str]] = None
+        df,
+        zero_fill_columns=None,
+        knn_neighbors=5,
+        price_columns=None,
 )
 # Returns: DataFrame with all missing values imputed
 ```
@@ -1371,8 +1371,8 @@ price_columns: Optional[List[str]] = None
 from finance_ml.ml_workflow.features.api import build_features
 
 features_df = build_features(
-        df: pd.DataFrame,
-preset: str = "comprehensive"
+        df,
+        preset="comprehensive",
 )
 # Presets: "basic", "momentum", "quality", "comprehensive"
 
@@ -1389,8 +1389,8 @@ from finance_ml.ml_workflow.features.advanced import (
 from finance_ml.ml_workflow.classification.labels import create_event_labels
 
 labels = create_event_labels(
-        df: pd.DataFrame,
-method: str = "price_momentum"
+        df,
+        method="price_momentum",
 )
 # Methods: price_momentum, valuation, fundamental, volatility, analyst_rating, market_events
 # Returns: array of labels (0-4 scale)
@@ -1407,8 +1407,11 @@ from finance_ml.ml_workflow.regression.models import (
 from finance_ml.ml_workflow.regression.quantile import train_quantile_regressor
 
 quantile_result = train_quantile_regressor(
-        X_train, y_train, X_test, y_test,
-        quantiles: List[float] = [0.1, 0.5, 0.9]
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        quantiles=[0.1, 0.5, 0.9],
 )
 # Returns: {"model", "metrics", "quantile_predictions": {q: pred_array}}
 
@@ -1419,18 +1422,18 @@ from finance_ml.ml_workflow.regression.dataset import (
 )
 
 X_test_aligned = align_features_to_model(
-    X_test: pd.DataFrame,
-    model: Any,
-    fill_value: float = 0.0
+    X_test,
+    model,
+    fill_value=0.0,
 )
 # Returns: DataFrame with columns aligned to model.feature_names_in_
 # Adds missing features (filled with fill_value), drops extra features
 # Preserves original column order where possible
 
 predictions = predict_with_model(
-    model: Any,
-    X_test: pd.DataFrame,
-    fill_missing: float = 0.0
+    model,
+    X_test,
+    fill_missing=0.0,
 )
 # Returns: np.ndarray of predictions
 # Wraps align_features_to_model + model.predict for safe inference
@@ -1570,76 +1573,106 @@ df, metrics = etl_with_financial_metrics(
 
 **Advanced Function: `run_etl_pipeline()`**
 
-For fine-grained control, use `run_etl_pipeline()` with `ETLConfig`:
+The ETL pipeline now uses stage-aligned configuration dataclasses to match the 11-stage workflow (Extract → Normalize →
+Dtype Cast → Semantic Classification → Imputation → Semantic Transforms → Winsorization → Scaling → Feature
+Engineering → Post-Feature Imputation → Schema Validation).
 
 ```python
-from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline, ETLConfig
-
-def run_etl_pipeline(
-    source: Literal["csv", "db", "all_stocks"],
-    data_dir: Optional[Path | str] = None,
-    db_url: Optional[str] = None,
-    config: Optional[ETLConfig] = None,
-    return_metrics: bool = False,
-) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
-    """
-    Run ETL pipeline with custom configuration.
-    
-    Args:
-        source: Data source type
-        data_dir: Directory for CSV files
-        db_url: Database connection URL
-        config: ETLConfig instance (uses defaults if None)
-        return_metrics: Return ETLMetrics object
-    
-    Returns:
-        DataFrame or (DataFrame, ETLMetrics) tuple
-    """
-
-# Selective metrics computation
-config = ETLConfig(
-    apply_imputation=True,
-    imputation_strategy="6step",
-    apply_scaling=False,
-    compute_valuation_metrics=True,
-    compute_profitability_metrics=True,
-    compute_growth_metrics=False,
-    compute_leverage_metrics=False,
+from finance_ml.ml_workflow.preprocessing.etl import (
+    DataExtractionConfig,
+    DataSanitizationConfig,
+    DtypeCastingConfig,
+    ETLConfig,
+    FeatureEngineeringConfig,
+    FeatureSelectionConfig,
+    FinancialMetricsConfig,
+    ImputationConfig,
+    ScalingConfig,
+    SchemaValidationConfig,
+    SemanticClassificationConfig,
+    SemanticTransformConfig,
+    etl_with_features,
 )
 
-df, metrics = run_etl_pipeline(
-    source='csv',
-    data_dir='data/',
-    config=config,
-    return_metrics=True
+etl_config = ETLConfig(
+    extraction=DataExtractionConfig(normalize_column_names=True),
+    validation=SchemaValidationConfig(
+        validate_schema=True,
+        require_target_column=False,
+        drop_rows_with_missing_critical_fields=True,
+        validate_schema_alignment=True,
+        schema_alignment_threshold=0.95,
+    ),
+    dtype_casting=DtypeCastingConfig(apply_dtype_casting=True, track_diagnostics=True),
+    semantic_classification=SemanticClassificationConfig(enabled=True, preserve_price_columns=True),
+    imputation=ImputationConfig(
+        apply_imputation=True,
+        strategy="6step",
+        knn_neighbors=5,
+        sector_column="sector",
+        reference_price_column="last_price",
+        impute_categorical_columns=True,
+        impute_datetime_columns=True,
+    ),
+    semantic_transform=SemanticTransformConfig(
+        apply_log_transforms=True,
+        log_transform_method="log1p",
+        log_transform_market_values=True,
+        exclude_ratios_from_winsorization=True,
+        exclude_percentages_from_winsorization=True,
+        exclude_counts_from_scaling=False,
+    ),
+    sanitization=DataSanitizationConfig(
+        sanitize_data=True,
+        apply_winsorization=False,
+        winsorize_lower_percentile=0.10,
+        winsorize_upper_percentile=0.90,
+    ),
+    scaling=ScalingConfig(
+        enabled=False,
+        scaler_type="robust",
+        scale_by_sector=True,
+        exclude_price_columns=True,
+    ),
+    feature_engineering=FeatureEngineeringConfig(enabled=True, preset="comprehensive"),
+    feature_selection=FeatureSelectionConfig(
+        enabled=False,
+        method="mutual_info",
+        min_importance_threshold=0.01,
+        max_correlation_threshold=0.95,
+    ),
+    financial_metrics=FinancialMetricsConfig(
+        compute_valuation_metrics=True,
+        compute_profitability_metrics=True,
+        compute_growth_metrics=True,
+        compute_leverage_metrics=True,
+        compute_target_vs_price_metrics=True,
+        compute_sector_specific_metrics=False,
+    ),
+)
+
+df, metrics = etl_with_features(
+    source="csv",
+    data_dir="data/",
+    feature_preset="comprehensive",
+    config=etl_config,
+    return_metrics=True,
 )
 ```
 
-**ETLConfig Dataclass:**
+**ETLConfig Stage Components (v1.11):**
 
-```python
-@dataclass
-class ETLConfig:
-    # Standard ETL options
-    apply_imputation: bool = True
-    imputation_strategy: Literal["6step", "4step"] = "6step"  # Use 6step (standard)
-    apply_scaling: bool = False
-    scaler_type: str = "standard"
-    scale_by_sector: bool = False
-    
-    # Financial metrics options
-    compute_valuation_metrics: bool = True
-    compute_profitability_metrics: bool = True
-    compute_growth_metrics: bool = True
-    compute_leverage_metrics: bool = True
-    compute_target_vs_price: bool = True
-    handle_sector_specific_metrics: bool = True
-    
-    # Quality reporting options
-    generate_quality_alerts: bool = False
-    generate_metrics_dashboard: bool = False
-    output_subdir: str = "financial_metrics"
-```
+- `DataExtractionConfig`: column normalization, row limits
+- `SchemaValidationConfig`: schema/critical column checks, alignment threshold
+- `DtypeCastingConfig`: schema-aware dtype casting and diagnostics
+- `SemanticClassificationConfig`: price preservation and column categories
+- `ImputationConfig`: 6-step imputation (sector-aware KNN, price-based, categorical, datetime)
+- `SemanticTransformConfig`: log transforms and semantic exclusions for winsorization/scaling
+- `DataSanitizationConfig`: sanitization and optional winsorization bounds
+- `ScalingConfig`: scaler selection, sector-aware scaling, price exclusion
+- `FeatureEngineeringConfig`: Phase 9.3 presets/categories
+- `FeatureSelectionConfig`: mutual information/correlation thresholds
+- `FinancialMetricsConfig`: valuation/profitability/growth/leverage/target-vs-price metrics
 
 **Migration Note:**
 
