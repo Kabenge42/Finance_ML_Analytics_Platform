@@ -1,4 +1,8 @@
-﻿# Finance ML Analytics Platform — Code Guidelines
+---
+apply: always
+---
+
+# Finance ML Analytics Platform — Code Guidelines
 
 **Version:** 1.11  
 **Last Updated:** 2025-12-14  
@@ -282,28 +286,28 @@ All configurations should be validated at initialization:
 
 ```python
 def validate_configuration():
-   """Validate notebook/script configuration constants."""
-   # Validate target columns
-   if not TARGET_COL or not isinstance(TARGET_COL, str):
-      raise ValueError(f"TARGET_COL must be non-empty string: {TARGET_COL}")
+    """Validate notebook/script configuration constants."""
+    # Validate target columns
+    if not TARGET_COL or not isinstance(TARGET_COL, str):
+        raise ValueError(f"TARGET_COL must be non-empty string: {TARGET_COL}")
 
-   # Validate test size
-   if not (0 < TEST_SIZE < 1):
-      raise ValueError(f"TEST_SIZE must be between 0 and 1: {TEST_SIZE}")
+    # Validate test size
+    if not (0 < TEST_SIZE < 1):
+        raise ValueError(f"TEST_SIZE must be between 0 and 1: {TEST_SIZE}")
 
-   # Validate CV folds
-   if CV_FOLDS < 2:
-      raise ValueError(f"CV_FOLDS must be >= 2: {CV_FOLDS}")
+    # Validate CV folds
+    if CV_FOLDS < 2:
+        raise ValueError(f"CV_FOLDS must be >= 2: {CV_FOLDS}")
 
-   # Validate quantiles
-   if not all(0 < q < 1 for q in QUANTILES):
-      raise ValueError(f"All QUANTILES must be between 0 and 1: {QUANTILES}")
+    # Validate quantiles
+    if not all(0 < q < 1 for q in QUANTILES):
+        raise ValueError(f"All QUANTILES must be between 0 and 1: {QUANTILES}")
 
-   # Validate monotonicity
-   if QUANTILES != sorted(QUANTILES):
-      raise ValueError(f"QUANTILES must be monotonically increasing: {QUANTILES}")
+    # Validate monotonicity
+    if QUANTILES != sorted(QUANTILES):
+        raise ValueError(f"QUANTILES must be monotonically increasing: {QUANTILES}")
 
-   return True
+    return True
 ```
 
 ### 2.4 Business-Driven Configuration Rationale
@@ -546,7 +550,7 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
     apply_median_imputation,
     apply_categorical_imputation,
     apply_datetime_imputation,
-)
+    )
 
 # Phase 9.1: Preprocessing - Other utilities (OPTIONAL)
 from finance_ml.ml_workflow.preprocessing import (
@@ -554,21 +558,21 @@ from finance_ml.ml_workflow.preprocessing import (
     winsorize_features,
     scale_features,
     detect_and_cast_dtypes,
-)
+    )
 
 # Phase 9.2: EDA
 from finance_ml.ml_workflow.eda import (
     compute_descriptive_stats,
     plot_distributions,
     compute_correlation_matrix,
-)
+    )
 
 # Phase 9.2: EDA - Phase 9.3 Categories (OPTIONAL)
 from finance_ml.ml_workflow.eda.phase93_categories import (
     PHASE93_FEATURE_CATEGORIES,
     categorize_dataframe_columns,
     get_phase93_coverage_stats,
-)
+    )
 
 # Phase 9.3: Features - Individual builders (OPTIONAL)
 from finance_ml.ml_workflow.features import (
@@ -576,26 +580,26 @@ from finance_ml.ml_workflow.features import (
     build_momentum_features,
     build_quality_features,
     select_features_rf,
-)
+    )
 
 # Phase 9.3: Features - Unified API (OPTIONAL when using etl_with_features)
 from finance_ml.ml_workflow.features.api import (
     build_features,  # Unified entry point
-)
+    )
 
 # Phase 9.4: Classification
 from finance_ml.ml_workflow.classification import (
     create_event_labels,
     train_event_classifier,
     tune_classifier_hyperparameters,
-)
+    )
 
 # Phase 9.5: Regression
 from finance_ml.ml_workflow.regression import (
     train_sector_models,
     train_quantile_regressor,
     apply_nonnegative_constraint,
-)
+    )
 
 # Phase 9.6: Evaluation (Complete Import List)
 from finance_ml.ml_workflow.evaluation import (
@@ -630,7 +634,7 @@ from finance_ml.ml_workflow.evaluation import (
     meta_error_maps,
     generate_model_card,
     build_lineage_json,
-)
+    )
 
 # Phase 9.7: Analytics
 from finance_ml.ml_workflow.analytics import (
@@ -638,13 +642,13 @@ from finance_ml.ml_workflow.analytics import (
     rank_stocks,
     optimize_portfolio,
     compute_risk_metrics,
-)
+    )
 
 # Phase 9.8: Reporting
 from finance_ml.ml_workflow.reporting import (
     generate_dashboard_data,
     create_quality_alerts,
-)
+    )
 ```
 
 > **Important**: Always use `apply_enhanced_imputation_strategy_6step` for imputation. The 4-step version is
@@ -654,21 +658,21 @@ from finance_ml.ml_workflow.reporting import (
 
 ```python
 from finance_ml.ml_workflow.data.schema import (
-   COLUMN_SCHEMA,
-   PHASE93_FEATURE_INPUTS,
-   get_expected_dtype,
-   get_column_role,
-   normalize_column_name,
-   )
+    COLUMN_SCHEMA,
+    PHASE93_FEATURE_INPUTS,
+    get_expected_dtype,
+    get_column_role,
+    normalize_column_name,
+    )
 ```
 
 **Configuration:**
 
 ```python
 from finance_ml.ml_workflow.config import (
-   get_default_config,
-   validate_config,
-   )
+    get_default_config,
+    validate_config,
+    )
 ```
 
 ### 4.4 Deprecated Modules
@@ -721,11 +725,11 @@ SQL columns (mixed-case with spaces) are normalized to Python (lowercase with un
 ```python
 # Normalization function
 def normalize_column_name(col: str) -> str:
-   """Normalize column name: lowercase, replace non-alphanumeric with underscore."""
-   import re
-   normalized = re.sub(r'[^0-9a-zA-Z]+', '_', col)
-   normalized = normalized.strip('_').lower()
-   return normalized
+    """Normalize column name: lowercase, replace non-alphanumeric with underscore."""
+    import re
+    normalized = re.sub(r'[^0-9a-zA-Z]+', '_', col)
+    normalized = normalized.strip('_').lower()
+    return normalized
 ```
 
 ### 5.2 Common Column Mappings
@@ -790,15 +794,15 @@ The authoritative column schema is defined in `finance_ml/ml_workflow/data/schem
 
 ```python
 from finance_ml.ml_workflow.data.schema import (
-   COLUMN_SCHEMA,  # Dict[str, Dict[str, str]] - 503 columns (includes derived ETL columns)
-   get_expected_dtype,  # Get dtype for a column
-   get_column_role,  # Get role for a column
-   list_numeric_feature_cols,  # List all numeric features
-   list_categorical_cols,  # List all categorical columns
-   list_date_cols,  # List all date columns
-   normalize_column_name,  # Normalize a column name (handles R&D → randd special case)
-   list_required_schema_columns_for_etl,  # Get canonical ETL-required columns (v0.9.3+)
-   )
+    COLUMN_SCHEMA,  # Dict[str, Dict[str, str]] - 503 columns (includes derived ETL columns)
+    get_expected_dtype,  # Get dtype for a column
+    get_column_role,  # Get role for a column
+    list_numeric_feature_cols,  # List all numeric features
+    list_categorical_cols,  # List all categorical columns
+    list_date_cols,  # List all date columns
+    normalize_column_name,  # Normalize a column name (handles R&D → randd special case)
+    list_required_schema_columns_for_etl,  # Get canonical ETL-required columns (v0.9.3+)
+    )
 
 # Example usage
 dtype = get_expected_dtype('last_price')  # Returns 'float'
@@ -832,7 +836,7 @@ pipeline:
 from finance_ml.ml_workflow.preprocessing.dtypes import (
     detect_and_cast_dtypes,
     get_critical_missing_columns,
-)
+    )
 
 df_cast, diagnostics = detect_and_cast_dtypes(df)
 # Check for truly critical missing columns (not just optional features)
@@ -924,7 +928,7 @@ print(f"Dtype mismatches: {pipeline.metrics.dtype_mismatches_count}")
 @dataclass
 class ETLMetrics:
     # ... existing fields ...
-    
+
     # Schema validation metrics (v1.11)
     schema_alignment_score: float = 1.0  # Schema alignment quality [0.0-1.0]
     unknown_columns_count: int = 0  # Columns in df but not in COLUMN_SCHEMA
@@ -988,7 +992,8 @@ from finance_ml.ml_workflow.data.schema import normalize_column_name
 
 # Correct usage
 normalized = normalize_column_name("# Strong Sell Ratings")  # → "num_strong_sell_ratings"
-normalized = normalize_column_name("Selling General & Admin Expenses/Total (FQ)")  # → "selling_general_and_admin_expenses_total_fq"
+normalized = normalize_column_name(
+    "Selling General & Admin Expenses/Total (FQ)")  # → "selling_general_and_admin_expenses_total_fq"
 normalized = normalize_column_name("1-Day %")  # → "1_day_pct"
 ```
 
@@ -1020,6 +1025,7 @@ The canonical function applies these transformations in order:
 ```python
 # ✅ CORRECT: Use canonical function
 from finance_ml.ml_workflow.data.schema import normalize_column_name
+
 df.columns = [normalize_column_name(col) for col in df.columns]
 
 # ❌ INCORRECT: Custom regex normalization
@@ -1198,55 +1204,55 @@ To prevent parameter mismatch TypeErrors and maintain consistency across the cod
 ```python
 # ✅ CORRECT
 safety_rails_sensitivity_app(
-    data_df=all_stocks_preprocessed,
-    output_dir=safety_rails_dir,
-    thresholds=[0.01, 0.05, 0.1]
-)
+        data_df=all_stocks_preprocessed,
+        output_dir=safety_rails_dir,
+        thresholds=[0.01, 0.05, 0.1]
+        )
 
 estimate_sector_bias(
-    predictions_df=predictions_df,
-    output_dir=calibration_dir,
-    model_version=MODEL_VERSION
-)
+        predictions_df=predictions_df,
+        output_dir=calibration_dir,
+        model_version=MODEL_VERSION
+        )
 
 plot_metrics_by_sector_time(
-    predictions_df=metrics_history_df,
-    output_dir=calibration_dir,
-    date_col="snapshot_date"
-)
+        predictions_df=metrics_history_df,
+        output_dir=calibration_dir,
+        date_col="snapshot_date"
+        )
 
 build_lineage_json(
-    model_info={
-        'datasets': datasets,
-        'features': features,
-        'models': models
-    },
-    output_dir=governance_dir,
-    model_version=MODEL_VERSION
-)
+        model_info={
+            'datasets': datasets,
+            'features': features,
+            'models': models
+            },
+        output_dir=governance_dir,
+        model_version=MODEL_VERSION
+        )
 
 # ❌ INCORRECT
 safety_rails_sensitivity_app(
-    df_raw=all_stocks_preprocessed,  # Wrong: should be data_df
-    out_dir=safety_rails_dir  # Wrong: should be output_dir
-)
+        df_raw=all_stocks_preprocessed,  # Wrong: should be data_df
+        out_dir=safety_rails_dir  # Wrong: should be output_dir
+        )
 
 estimate_sector_bias(
-    predictions_df=predictions_df,
-    y_true_col="y_true",  # Wrong: function uses hardcoded column names
-    sector_col="sector"
-)
+        predictions_df=predictions_df,
+        y_true_col="y_true",  # Wrong: function uses hardcoded column names
+        sector_col="sector"
+        )
 
 plot_metrics_by_sector_time(
-    metrics_history=df,  # Wrong: should be predictions_df
-    snapshot_date_col="date"  # Wrong: should be date_col
-)
+        metrics_history=df,  # Wrong: should be predictions_df
+        snapshot_date_col="date"  # Wrong: should be date_col
+        )
 
 build_lineage_json(
-    datasets=datasets,  # Wrong: should be in model_info dict
-    features=features,
-    models=models
-)
+        datasets=datasets,  # Wrong: should be in model_info dict
+        features=features,
+        models=models
+        )
 ```
 
 **Validation:**
@@ -1273,12 +1279,12 @@ Run `tests/test_evaluation_function_signatures.py` to validate evaluation module
 
 ```python
 {
-   "model": fitted_estimator_or_pipeline,
-   "metrics": Dict[str, float],  # e.g., accuracy, f1_macro, mae, rmse, r2
-   "y_pred": array_like,  # Predictions aligned to input indices
-   "y_proba": Optional[array_like],  # Class probabilities (classification only)
-   "artifacts": Optional[Dict[str, Any]]  # feature_importance, confusion_matrix, etc.
-   }
+    "model": fitted_estimator_or_pipeline,
+    "metrics": Dict[str, float],  # e.g., accuracy, f1_macro, mae, rmse, r2
+    "y_pred": array_like,  # Predictions aligned to input indices
+    "y_proba": Optional[array_like],  # Class probabilities (classification only)
+    "artifacts": Optional[Dict[str, Any]]  # feature_importance, confusion_matrix, etc.
+    }
 ```
 
 **Examples:**
@@ -1325,11 +1331,11 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class DatasetSplit:
-   X_train: Any
-   X_test: Any
-   y_train: Any
-   y_test: Any
-   meta: Dict[str, Any]
+    X_train: Any
+    X_test: Any
+    y_train: Any
+    y_test: Any
+    meta: Dict[str, Any]
 ```
 
 ### 7.3 Comprehensive Function Signatures by Phase
@@ -1345,23 +1351,23 @@ prepared_df, quality_stats = prepare_phase91_data(
         price_column="last_price",
         n_neighbors=5,
         return_stats=True,
-)
+        )
 # Returns: (preprocessed_df, quality_statistics_dict)
 
 from finance_ml.ml_workflow.preprocessing.imputation import (
-   apply_enhanced_imputation_strategy_6step,  # Current 6-step imputation (recommended)
-   apply_zero_imputation,
-   apply_knn_imputation_enhanced,
-   apply_price_imputation,
-   apply_median_imputation
-   )
+    apply_enhanced_imputation_strategy_6step,  # Current 6-step imputation (recommended)
+    apply_zero_imputation,
+    apply_knn_imputation_enhanced,
+    apply_price_imputation,
+    apply_median_imputation
+    )
 
 df_imputed = apply_enhanced_imputation_strategy_6step(
         df,
         zero_fill_columns=None,
         knn_neighbors=5,
         price_columns=None,
-)
+        )
 # Returns: DataFrame with all missing values imputed
 ```
 
@@ -1373,14 +1379,14 @@ from finance_ml.ml_workflow.features.api import build_features
 features_df = build_features(
         df,
         preset="comprehensive",
-)
+        )
 # Presets: "basic", "momentum", "quality", "comprehensive"
 
 from finance_ml.ml_workflow.features.advanced import (
-   engineer_valuation_ratios,
-   engineer_momentum_features,
-   build_comprehensive_features
-   )
+    engineer_valuation_ratios,
+    engineer_momentum_features,
+    build_comprehensive_features
+    )
 ```
 
 **Phase 9.4 — Classification**
@@ -1391,7 +1397,7 @@ from finance_ml.ml_workflow.classification.labels import create_event_labels
 labels = create_event_labels(
         df,
         method="price_momentum",
-)
+        )
 # Methods: price_momentum, valuation, fundamental, volatility, analyst_rating, market_events
 # Returns: array of labels (0-4 scale)
 ```
@@ -1400,9 +1406,9 @@ labels = create_event_labels(
 
 ```python
 from finance_ml.ml_workflow.regression.models import (
-   train_xgboost_regressor,
-   train_sector_optimized_regressors
-   )
+    train_xgboost_regressor,
+    train_sector_optimized_regressors
+    )
 
 from finance_ml.ml_workflow.regression.quantile import train_quantile_regressor
 
@@ -1412,29 +1418,29 @@ quantile_result = train_quantile_regressor(
         X_test,
         y_test,
         quantiles=[0.1, 0.5, 0.9],
-)
+        )
 # Returns: {"model", "metrics", "quantile_predictions": {q: pred_array}}
 
 # Phase 9.5 Feature Alignment (Task 7 - High Priority)
 from finance_ml.ml_workflow.regression.dataset import (
     align_features_to_model,
     predict_with_model
-)
+    )
 
 X_test_aligned = align_features_to_model(
-    X_test,
-    model,
-    fill_value=0.0,
-)
+        X_test,
+        model,
+        fill_value=0.0,
+        )
 # Returns: DataFrame with columns aligned to model.feature_names_in_
 # Adds missing features (filled with fill_value), drops extra features
 # Preserves original column order where possible
 
 predictions = predict_with_model(
-    model,
-    X_test,
-    fill_missing=0.0,
-)
+        model,
+        X_test,
+        fill_missing=0.0,
+        )
 # Returns: np.ndarray of predictions
 # Wraps align_features_to_model + model.predict for safe inference
 
@@ -1443,15 +1449,15 @@ from finance_ml.ml_workflow.regression.models import (
     tune_stacking_hyperparameters,
     select_stacking_base_models,
     select_meta_learner
-)
+    )
 
 best_config = tune_stacking_hyperparameters(
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-    n_trials: int = 50,
-    timeout: Optional[int] = 1800,
-    cv_folds: int = 3,
-    random_state: int = 42
+        X_train: pd.DataFrame,
+y_train: pd.Series,
+n_trials: int = 50,
+timeout: Optional[int] = 1800,
+cv_folds: int = 3,
+random_state: int = 42
 )
 # Returns: dict with "base_models", "meta_learner", "best_score", "study"
 # Uses Optuna for Bayesian hyperparameter optimization
@@ -1471,9 +1477,9 @@ meta_learner = select_meta_learner(trial: optuna.Trial)
 
 ```python
 from finance_ml.ml_workflow.evaluation.metrics import (
-   calculate_regression_metrics,
-   calculate_sector_metrics
-   )
+    calculate_regression_metrics,
+    calculate_sector_metrics
+    )
 
 metrics = calculate_regression_metrics(y_true, y_pred, include_mape=True)
 # Returns: {"mae", "rmse", "r2", "mape"}
@@ -1486,9 +1492,9 @@ sector_metrics_df = calculate_sector_metrics(df, y_true_col, y_pred_col, sector_
 
 ```python
 from finance_ml.ml_workflow.analytics import (
-   calculate_mispricing_score,
-   rank_undervalued_stocks
-   )
+    calculate_mispricing_score,
+    rank_undervalued_stocks
+    )
 
 mispricing = calculate_mispricing_score(last_price, predicted_target)
 # Returns: (predicted_target - last_price) / last_price
@@ -1507,14 +1513,15 @@ computation.
 ```python
 from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
 
+
 def etl_with_financial_metrics(
-    source: Literal["csv", "db", "all_stocks"],
-    data_dir: Optional[Path | str] = None,
-    db_url: Optional[str] = None,
-    compute_all_metrics: bool = True,
-    output_dir: Optional[Path] = None,
-    return_metrics: bool = True,
-) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
+        source: Literal["csv", "db", "all_stocks"],
+        data_dir: Optional[Path | str] = None,
+        db_url: Optional[str] = None,
+        compute_all_metrics: bool = True,
+        output_dir: Optional[Path] = None,
+        return_metrics: bool = True,
+        ) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
     """
     Complete ETL pipeline with financial metrics computation.
     
@@ -1552,23 +1559,23 @@ def etl_with_financial_metrics(
 from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
 
 df, metrics = etl_with_financial_metrics(
-    source='csv',
-    data_dir='data/',
-    compute_all_metrics=True,
-    output_dir='outputs/eda/financial_metrics',
-    return_metrics=True
-)
+        source='csv',
+        data_dir='data/',
+        compute_all_metrics=True,
+        output_dir='outputs/eda/financial_metrics',
+        return_metrics=True
+        )
 
 print(metrics.summary())
 print(f"Valuation metrics added: {metrics.valuation_metrics_added}")
 
 # Database source
 df, metrics = etl_with_financial_metrics(
-    source='all_stocks',
-    db_url='postgresql+psycopg2://postgres:@localhost:5432/postgres',
-    compute_all_metrics=True,
-    return_metrics=True
-)
+        source='all_stocks',
+        db_url='postgresql+psycopg2://postgres:@localhost:5432/postgres',
+        compute_all_metrics=True,
+        return_metrics=True
+        )
 ```
 
 **Advanced Function: `run_etl_pipeline()`**
@@ -1592,72 +1599,72 @@ from finance_ml.ml_workflow.preprocessing.etl import (
     SemanticClassificationConfig,
     SemanticTransformConfig,
     etl_with_features,
-)
+    )
 
 etl_config = ETLConfig(
-    extraction=DataExtractionConfig(normalize_column_names=True),
-    validation=SchemaValidationConfig(
-        validate_schema=True,
-        require_target_column=False,
-        drop_rows_with_missing_critical_fields=True,
-        validate_schema_alignment=True,
-        schema_alignment_threshold=0.95,
-    ),
-    dtype_casting=DtypeCastingConfig(apply_dtype_casting=True, track_diagnostics=True),
-    semantic_classification=SemanticClassificationConfig(enabled=True, preserve_price_columns=True),
-    imputation=ImputationConfig(
-        apply_imputation=True,
-        strategy="6step",
-        knn_neighbors=5,
-        sector_column="sector",
-        reference_price_column="last_price",
-        impute_categorical_columns=True,
-        impute_datetime_columns=True,
-    ),
-    semantic_transform=SemanticTransformConfig(
-        apply_log_transforms=True,
-        log_transform_method="log1p",
-        log_transform_market_values=True,
-        exclude_ratios_from_winsorization=True,
-        exclude_percentages_from_winsorization=True,
-        exclude_counts_from_scaling=False,
-    ),
-    sanitization=DataSanitizationConfig(
-        sanitize_data=True,
-        apply_winsorization=False,
-        winsorize_lower_percentile=0.10,
-        winsorize_upper_percentile=0.90,
-    ),
-    scaling=ScalingConfig(
-        enabled=False,
-        scaler_type="robust",
-        scale_by_sector=True,
-        exclude_price_columns=True,
-    ),
-    feature_engineering=FeatureEngineeringConfig(enabled=True, preset="comprehensive"),
-    feature_selection=FeatureSelectionConfig(
-        enabled=False,
-        method="mutual_info",
-        min_importance_threshold=0.01,
-        max_correlation_threshold=0.95,
-    ),
-    financial_metrics=FinancialMetricsConfig(
-        compute_valuation_metrics=True,
-        compute_profitability_metrics=True,
-        compute_growth_metrics=True,
-        compute_leverage_metrics=True,
-        compute_target_vs_price_metrics=True,
-        compute_sector_specific_metrics=False,
-    ),
-)
+        extraction=DataExtractionConfig(normalize_column_names=True),
+        validation=SchemaValidationConfig(
+                validate_schema=True,
+                require_target_column=False,
+                drop_rows_with_missing_critical_fields=True,
+                validate_schema_alignment=True,
+                schema_alignment_threshold=0.95,
+                ),
+        dtype_casting=DtypeCastingConfig(apply_dtype_casting=True, track_diagnostics=True),
+        semantic_classification=SemanticClassificationConfig(enabled=True, preserve_price_columns=True),
+        imputation=ImputationConfig(
+                apply_imputation=True,
+                strategy="6step",
+                knn_neighbors=5,
+                sector_column="sector",
+                reference_price_column="last_price",
+                impute_categorical_columns=True,
+                impute_datetime_columns=True,
+                ),
+        semantic_transform=SemanticTransformConfig(
+                apply_log_transforms=True,
+                log_transform_method="log1p",
+                log_transform_market_values=True,
+                exclude_ratios_from_winsorization=True,
+                exclude_percentages_from_winsorization=True,
+                exclude_counts_from_scaling=False,
+                ),
+        sanitization=DataSanitizationConfig(
+                sanitize_data=True,
+                apply_winsorization=False,
+                winsorize_lower_percentile=0.10,
+                winsorize_upper_percentile=0.90,
+                ),
+        scaling=ScalingConfig(
+                enabled=False,
+                scaler_type="robust",
+                scale_by_sector=True,
+                exclude_price_columns=True,
+                ),
+        feature_engineering=FeatureEngineeringConfig(enabled=True, preset="comprehensive"),
+        feature_selection=FeatureSelectionConfig(
+                enabled=False,
+                method="mutual_info",
+                min_importance_threshold=0.01,
+                max_correlation_threshold=0.95,
+                ),
+        financial_metrics=FinancialMetricsConfig(
+                compute_valuation_metrics=True,
+                compute_profitability_metrics=True,
+                compute_growth_metrics=True,
+                compute_leverage_metrics=True,
+                compute_target_vs_price_metrics=True,
+                compute_sector_specific_metrics=False,
+                ),
+        )
 
 df, metrics = etl_with_features(
-    source="csv",
-    data_dir="data/",
-    feature_preset="comprehensive",
-    config=etl_config,
-    return_metrics=True,
-)
+        source="csv",
+        data_dir="data/",
+        feature_preset="comprehensive",
+        config=etl_config,
+        return_metrics=True,
+        )
 ```
 
 **ETLConfig Stage Components (v1.11):**
@@ -1685,10 +1692,10 @@ The two-step approach is deprecated:
 
 # NEW (recommended):
 df, metrics = etl_with_financial_metrics(
-    source='csv',
-    data_dir='data/',
-    output_dir=output_dir
-)
+        source='csv',
+        data_dir='data/',
+        output_dir=output_dir
+        )
 ```
 
 **Unified ETL with Feature Engineering: `etl_with_features()`** *(NEW in v1.10)*
@@ -1816,7 +1823,7 @@ class ETLConfig:
 @dataclass
 class ETLMetrics:
     # ... existing attributes ...
-    
+
     # Semantic transformation metrics
     semantic_classification_applied: bool = False
     price_columns_count: int = 0  # Number of protected price columns (21 total)
@@ -1825,7 +1832,7 @@ class ETLMetrics:
     percentage_columns_count: int = 0  # Bounded percentage columns
     count_columns_count: int = 0  # Discrete count columns
     log_transformed_columns: int = 0  # Columns with log-transforms applied
-    
+
     # Feature engineering metrics
     feature_engineering_applied: bool = False
     feature_preset_used: str = ""
@@ -1919,64 +1926,64 @@ Every notebook should include a `validate_configuration()` function to enforce i
 
 ```python
 def validate_configuration():
-   """
-   Validate all configuration constants meet required constraints.
-   
-   Raises:
-       ValueError: If any configuration constant is invalid
-   """
-   # Validate target columns
-   if not TARGET_COL or not isinstance(TARGET_COL, str):
-      raise ValueError(f"TARGET_COL must be a non-empty string, got: {TARGET_COL}")
-   if not TARGET_COL_FALLBACK or not isinstance(TARGET_COL_FALLBACK, str):
-      raise ValueError(f"TARGET_COL_FALLBACK must be a non-empty string, got: {TARGET_COL_FALLBACK}")
+    """
+    Validate all configuration constants meet required constraints.
+    
+    Raises:
+        ValueError: If any configuration constant is invalid
+    """
+    # Validate target columns
+    if not TARGET_COL or not isinstance(TARGET_COL, str):
+        raise ValueError(f"TARGET_COL must be a non-empty string, got: {TARGET_COL}")
+    if not TARGET_COL_FALLBACK or not isinstance(TARGET_COL_FALLBACK, str):
+        raise ValueError(f"TARGET_COL_FALLBACK must be a non-empty string, got: {TARGET_COL_FALLBACK}")
 
-   # Validate split configuration
-   if not (0 < TEST_SIZE < 1):
-      raise ValueError(f"TEST_SIZE must be between 0 and 1, got: {TEST_SIZE}")
-   if not (0 < TRAIN_SIZE < 1):
-      raise ValueError(f"TRAIN_SIZE must be between 0 and 1, got: {TRAIN_SIZE}")
-   if not abs((TRAIN_SIZE + TEST_SIZE) - 1.0) < 0.01:
-      raise ValueError(f"TRAIN_SIZE + TEST_SIZE must equal 1.0, got: {TRAIN_SIZE + TEST_SIZE}")
+    # Validate split configuration
+    if not (0 < TEST_SIZE < 1):
+        raise ValueError(f"TEST_SIZE must be between 0 and 1, got: {TEST_SIZE}")
+    if not (0 < TRAIN_SIZE < 1):
+        raise ValueError(f"TRAIN_SIZE must be between 0 and 1, got: {TRAIN_SIZE}")
+    if not abs((TRAIN_SIZE + TEST_SIZE) - 1.0) < 0.01:
+        raise ValueError(f"TRAIN_SIZE + TEST_SIZE must equal 1.0, got: {TRAIN_SIZE + TEST_SIZE}")
 
-   # Validate CV folds
-   if not isinstance(CV_FOLDS, int) or CV_FOLDS < 2:
-      raise ValueError(f"CV_FOLDS must be an integer >= 2, got: {CV_FOLDS}")
+    # Validate CV folds
+    if not isinstance(CV_FOLDS, int) or CV_FOLDS < 2:
+        raise ValueError(f"CV_FOLDS must be an integer >= 2, got: {CV_FOLDS}")
 
-   # Validate quantiles
-   if not QUANTILES or not isinstance(QUANTILES, list):
-      raise ValueError(f"QUANTILES must be a non-empty list, got: {QUANTILES}")
-   for q in QUANTILES:
-      if not (0 <= q <= 1):
-         raise ValueError(f"All quantiles must be between 0 and 1, got: {q}")
-   if len(QUANTILES) != len(set(QUANTILES)):
-      raise ValueError(f"QUANTILES must not contain duplicates, got: {QUANTILES}")
+    # Validate quantiles
+    if not QUANTILES or not isinstance(QUANTILES, list):
+        raise ValueError(f"QUANTILES must be a non-empty list, got: {QUANTILES}")
+    for q in QUANTILES:
+        if not (0 <= q <= 1):
+            raise ValueError(f"All quantiles must be between 0 and 1, got: {q}")
+    if len(QUANTILES) != len(set(QUANTILES)):
+        raise ValueError(f"QUANTILES must not contain duplicates, got: {QUANTILES}")
 
-   # Validate sector configuration
-   if not isinstance(MIN_SECTOR_SAMPLES, int) or MIN_SECTOR_SAMPLES < 1:
-      raise ValueError(f"MIN_SECTOR_SAMPLES must be a positive integer, got: {MIN_SECTOR_SAMPLES}")
-   if not (0 < MAX_SECTOR_WEIGHT <= 1):
-      raise ValueError(f"MAX_SECTOR_WEIGHT must be between 0 and 1, got: {MAX_SECTOR_WEIGHT}")
-   if not (0 < MAX_SINGLE_POSITION <= 1):
-      raise ValueError(f"MAX_SINGLE_POSITION must be between 0 and 1, got: {MAX_SINGLE_POSITION}")
+    # Validate sector configuration
+    if not isinstance(MIN_SECTOR_SAMPLES, int) or MIN_SECTOR_SAMPLES < 1:
+        raise ValueError(f"MIN_SECTOR_SAMPLES must be a positive integer, got: {MIN_SECTOR_SAMPLES}")
+    if not (0 < MAX_SECTOR_WEIGHT <= 1):
+        raise ValueError(f"MAX_SECTOR_WEIGHT must be between 0 and 1, got: {MAX_SECTOR_WEIGHT}")
+    if not (0 < MAX_SINGLE_POSITION <= 1):
+        raise ValueError(f"MAX_SINGLE_POSITION must be between 0 and 1, got: {MAX_SINGLE_POSITION}")
 
-   # Validate outlier detection
-   if IQR_MULTIPLIER <= 0:
-      raise ValueError(f"IQR_MULTIPLIER must be positive, got: {IQR_MULTIPLIER}")
-   if ZSCORE_THRESHOLD <= 0:
-      raise ValueError(f"ZSCORE_THRESHOLD must be positive, got: {ZSCORE_THRESHOLD}")
-   if not (0 <= WINSORIZE_LOWER < 0.5):
-      raise ValueError(f"WINSORIZE_LOWER must be between 0 and 0.5, got: {WINSORIZE_LOWER}")
-   if not (0.5 < WINSORIZE_UPPER <= 1):
-      raise ValueError(f"WINSORIZE_UPPER must be between 0.5 and 1, got: {WINSORIZE_UPPER}")
+    # Validate outlier detection
+    if IQR_MULTIPLIER <= 0:
+        raise ValueError(f"IQR_MULTIPLIER must be positive, got: {IQR_MULTIPLIER}")
+    if ZSCORE_THRESHOLD <= 0:
+        raise ValueError(f"ZSCORE_THRESHOLD must be positive, got: {ZSCORE_THRESHOLD}")
+    if not (0 <= WINSORIZE_LOWER < 0.5):
+        raise ValueError(f"WINSORIZE_LOWER must be between 0 and 0.5, got: {WINSORIZE_LOWER}")
+    if not (0.5 < WINSORIZE_UPPER <= 1):
+        raise ValueError(f"WINSORIZE_UPPER must be between 0.5 and 1, got: {WINSORIZE_UPPER}")
 
-   # Validate confidence configuration
-   if not (0 < CONFIDENCE_LEVEL < 1):
-      raise ValueError(f"CONFIDENCE_LEVEL must be between 0 and 1, got: {CONFIDENCE_LEVEL}")
-   if not abs(ALPHA - (1 - CONFIDENCE_LEVEL)) < 0.01:
-      raise ValueError(f"ALPHA must equal (1 - CONFIDENCE_LEVEL), got: {ALPHA}")
+    # Validate confidence configuration
+    if not (0 < CONFIDENCE_LEVEL < 1):
+        raise ValueError(f"CONFIDENCE_LEVEL must be between 0 and 1, got: {CONFIDENCE_LEVEL}")
+    if not abs(ALPHA - (1 - CONFIDENCE_LEVEL)) < 0.01:
+        raise ValueError(f"ALPHA must equal (1 - CONFIDENCE_LEVEL), got: {ALPHA}")
 
-   print("✓ All configuration constants validated successfully")
+    print("✓ All configuration constants validated successfully")
 
 
 # Run validation immediately after defining constants
@@ -2127,17 +2134,17 @@ from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline, ETLConfig
 
 # Stage 1: ETL Pipeline (preprocessing)
 config = ETLConfig(
-    apply_imputation=True,
-    imputation_strategy='6step',
-    apply_scaling=False,  # Scale later if needed
-    validate_quality=True,
-)
+        apply_imputation=True,
+        imputation_strategy='6step',
+        apply_scaling=False,  # Scale later if needed
+        validate_quality=True,
+        )
 all_stocks_preprocessed, etl_metrics = run_etl_pipeline(
-    source='csv',  # or 'db', 'all_stocks'
-    data_dir='data/',
-    config=config,
-    return_metrics=True,
-)
+        source='csv',  # or 'db', 'all_stocks'
+        data_dir='data/',
+        config=config,
+        return_metrics=True,
+        )
 print(f"✓ Stage 1 (preprocessed): {all_stocks_preprocessed.shape}")
 print(f"  Imputation: {etl_metrics.missing_values_before_imputation} → "
       f"{etl_metrics.missing_values_after_imputation} missing values")
@@ -2150,9 +2157,9 @@ assert etl_metrics.imputation_completeness, "Imputation must be complete"
 from finance_ml.ml_workflow.features.advanced import build_comprehensive_features
 
 all_stocks_features = build_comprehensive_features(
-    all_stocks_preprocessed,
-    phase93_categories=['momentum', 'valuation', 'profitability', 'quality_risk', 'cash_flow', 'growth']
-)
+        all_stocks_preprocessed,
+        phase93_categories=['momentum', 'valuation', 'profitability', 'quality_risk', 'cash_flow', 'growth']
+        )
 print(f"✓ Stage 2 (features): {all_stocks_features.shape}")
 
 # Validation checkpoint
@@ -2215,12 +2222,12 @@ from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
 
 # Stage 1: Complete ETL + financial metrics in one call
 all_stocks_preprocessed, etl_metrics = etl_with_financial_metrics(
-    source='csv',
-    data_dir='data/',
-    compute_all_metrics=True,  # Valuation, profitability, growth, leverage
-    output_dir='outputs/financial_metrics',  # Optional: saves quality alerts and dashboard
-    return_metrics=True,
-)
+        source='csv',
+        data_dir='data/',
+        compute_all_metrics=True,  # Valuation, profitability, growth, leverage
+        output_dir='outputs/financial_metrics',  # Optional: saves quality alerts and dashboard
+        return_metrics=True,
+        )
 print(f"✓ Preprocessed with financial metrics: {all_stocks_preprocessed.shape}")
 print(f"  Valuation metrics added: {etl_metrics.valuation_metrics_added}")
 print(f"  Profitability metrics added: {etl_metrics.profitability_metrics_added}")
@@ -2238,21 +2245,21 @@ from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline, ETLConfig
 
 # Selective financial metrics computation
 config = ETLConfig(
-    apply_imputation=True,
-    imputation_strategy='6step',
-    # Financial metrics flags (new in v1.5)
-    compute_valuation_metrics=True,
-    compute_profitability_metrics=True,
-    compute_growth_metrics=False,  # Skip growth metrics
-    compute_leverage_metrics=True,
-    compute_target_vs_price=True,
-    handle_sector_specific_metrics=True,  # P/TBV, R&D intensity, etc.
-    generate_quality_alerts=True,
-    generate_metrics_dashboard=True,
-)
+        apply_imputation=True,
+        imputation_strategy='6step',
+        # Financial metrics flags (new in v1.5)
+        compute_valuation_metrics=True,
+        compute_profitability_metrics=True,
+        compute_growth_metrics=False,  # Skip growth metrics
+        compute_leverage_metrics=True,
+        compute_target_vs_price=True,
+        handle_sector_specific_metrics=True,  # P/TBV, R&D intensity, etc.
+        generate_quality_alerts=True,
+        generate_metrics_dashboard=True,
+        )
 all_stocks_preprocessed, etl_metrics = run_etl_pipeline(
-    source='csv', data_dir='data/', config=config, return_metrics=True
-)
+        source='csv', data_dir='data/', config=config, return_metrics=True
+        )
 ```
 
 ❌ **Violation** (In-place mutation):
@@ -2334,20 +2341,20 @@ MIN_WEIGHT = 0.01
 
 # Usage
 constraints = [
-   {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},  # ✅ Universal constant (sum to 1)
-   {'type': 'ineq', 'fun': lambda w: MAX_SECTOR_WEIGHT - sector_exposure(w)},
-   {'type': 'ineq', 'fun': lambda w: w - MIN_WEIGHT}  # No position below 1%
-   ]
+    {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},  # ✅ Universal constant (sum to 1)
+    {'type': 'ineq', 'fun': lambda w: MAX_SECTOR_WEIGHT - sector_exposure(w)},
+    {'type': 'ineq', 'fun': lambda w: w - MIN_WEIGHT}  # No position below 1%
+    ]
 ```
 
 ❌ **Violation** (Portfolio optimization with magic numbers):
 
 ```python
 constraints = [
-   {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},  # ✅ OK
-   {'type': 'ineq', 'fun': lambda w: 0.25 - sector_exposure(w)},  # ❌ What is 0.25?
-   {'type': 'ineq', 'fun': lambda w: w - 0.01}  # ❌ What is 0.01?
-   ]
+    {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},  # ✅ OK
+    {'type': 'ineq', 'fun': lambda w: 0.25 - sector_exposure(w)},  # ❌ What is 0.25?
+    {'type': 'ineq', 'fun': lambda w: w - 0.01}  # ❌ What is 0.01?
+    ]
 ```
 
 ✅ **Correct Usage** (Percentage calculations):
@@ -2406,18 +2413,18 @@ via `tests/test_column_semantics.py`, `tests/test_selective_winsorization.py`, `
 
 5. **Count Columns** (`COUNT_COLUMNS`): Discrete integers, inappropriate for continuous scaling
     - `num_analysts`, `num_employees`, `num_strong_buy_ratings`, `num_buy_ratings`, `num_hold_ratings`
-   - `full_time_employees_fq`, `full_time_employees_fy`, `full_time_employees_1fy`, `full_time_employees_2fy`,
-     `full_time_employees_3fy`
+    - `full_time_employees_fq`, `full_time_employees_fy`, `full_time_employees_1fy`, `full_time_employees_2fy`,
+      `full_time_employees_3fy`
 
 **Helper Functions**:
 
 ```python
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
-    classify_columns,           # Classify all columns by semantic type
-    get_winsorizable_columns,   # Get columns safe for winsorization
+    classify_columns,  # Classify all columns by semantic type
+    get_winsorizable_columns,  # Get columns safe for winsorization
     get_log_transform_columns,  # Get columns requiring log-transform
-    get_scalable_columns,       # Get columns safe for scaling
-)
+    get_scalable_columns,  # Get columns safe for scaling
+    )
 
 # Example: Semantic-aware preprocessing
 winsorizable = get_winsorizable_columns(df.columns.tolist())
@@ -2452,21 +2459,21 @@ All preprocessing functions default to `exclude_price_columns=True`:
 ```python
 # ✅ CORRECT: Price columns excluded by default
 df_winsorized = winsorize_by_sector(
-    df,
-    columns=numeric_cols,
-    exclude_price_columns=True,  # Default: True
-    exclude_ratio_columns=True    # Default: True
-)
+        df,
+        columns=numeric_cols,
+        exclude_price_columns=True,  # Default: True
+        exclude_ratio_columns=True  # Default: True
+        )
 
 df_scaled = scale_features(
-    df,
-    scaler_type='robust',
-    exclude_price_columns=True    # Default: True
-)
+        df,
+        scaler_type='robust',
+        exclude_price_columns=True  # Default: True
+        )
 
 # ❌ INCORRECT: Treating all numeric columns uniformly
 df_corrupted = winsorize_by_sector(df)  # Corrupts price columns if not excluded!
-df_corrupted = scale_features(df)        # Destroys price interpretability!
+df_corrupted = scale_features(df)  # Destroys price interpretability!
 ```
 
 **Validation**:
@@ -2563,21 +2570,21 @@ from finance_ml.ml_workflow.preprocessing.transforms import apply_log_transforms
 from finance_ml.ml_workflow.preprocessing.column_semantics import get_winsorizable_columns
 
 all_stocks_log_transformed = apply_log_transforms(
-    all_stocks_preprocessed,  # Output from ETL pipeline
-    method='signed_log'  # Handles negative values (debt, income)
-)
+        all_stocks_preprocessed,  # Output from ETL pipeline
+        method='signed_log'  # Handles negative values (debt, income)
+        )
 
 # Step 2: Selective winsorization (excludes prices, ratios, percentages)
 winsorizable_cols = get_winsorizable_columns(all_stocks_log_transformed.columns.tolist())
 all_stocks_winsorized = winsorize_by_sector(
-    all_stocks_log_transformed,
-    columns=winsorizable_cols,
-    lower_percentile=WINSORIZE_LOWER,
-    upper_percentile=WINSORIZE_UPPER,
-    by_sector=True,
-    exclude_price_columns=True,
-    exclude_ratio_columns=True
-)
+        all_stocks_log_transformed,
+        columns=winsorizable_cols,
+        lower_percentile=WINSORIZE_LOWER,
+        upper_percentile=WINSORIZE_UPPER,
+        by_sector=True,
+        exclude_price_columns=True,
+        exclude_ratio_columns=True
+        )
 
 print(f"✓ Log-transformed {len([c for c in all_stocks_winsorized.columns if c.startswith('log_')])} columns")
 print(f"✓ Winsorized {len(winsorizable_cols)} columns (excluded price/ratio columns)")
@@ -2647,7 +2654,7 @@ SUFFIX_PATTERNS = {
     'PERCENTAGE': ['_margin', '_growth', '_return', '_pct', 'volatility_'],
     'MARKET_VALUE': ['_ltm', '_fy', '_fq', 'revenue_', 'income_', 'ebitda_'],
     'COUNT': ['num_', '_count', '_employees']
-}
+    }
 
 # Example classifications:
 # 'debt_to_equity_ltm' → RATIO (matches '_ltm' pattern)
@@ -2734,16 +2741,16 @@ from finance_ml.ml_workflow.preprocessing.etl import (
     etl_with_financial_metrics,
     ETLConfig,
     ETLMetrics,
-)
+    )
 
 # Complete ETL with financial metrics (for analysis workflows)
 all_stocks_preprocessed, metrics = etl_with_financial_metrics(
-    source='csv',  # or 'db', 'all_stocks'
-    data_dir=Path("data"),
-    compute_all_metrics=True,
-    output_dir=Path("outputs/eda/financial_metrics"),
-    return_metrics=True
-)
+        source='csv',  # or 'db', 'all_stocks'
+        data_dir=Path("data"),
+        compute_all_metrics=True,
+        output_dir=Path("outputs/eda/financial_metrics"),
+        return_metrics=True
+        )
 
 # Inspect ETL metrics
 print(f"Rows processed: {metrics.rows_output}")
@@ -2774,37 +2781,37 @@ assert all_stocks_preprocessed['last_price'].min() > 0, "last_price must be posi
 ```python
 # 1. Full ETL with all metrics (notebooks, production)
 df, metrics = etl_with_financial_metrics(
-    source='csv',
-    data_dir='data/',
-    compute_all_metrics=True,
-    output_dir='outputs/eda/financial_metrics'
-)
+        source='csv',
+        data_dir='data/',
+        compute_all_metrics=True,
+        output_dir='outputs/eda/financial_metrics'
+        )
 
 # 2. Quick ETL without metrics (EDA, testing)
 from finance_ml.ml_workflow.preprocessing.etl import run_etl_pipeline_quick
 
 df = run_etl_pipeline_quick(
-    source='csv',
-    data_dir='data/',
-    apply_scaling=False,
-    scaler_type='standard'
-)
+        source='csv',
+        data_dir='data/',
+        apply_scaling=False,
+        scaler_type='standard'
+        )
 
 # 3. Custom configuration (advanced users)
 config = ETLConfig(
-    apply_imputation=True,
-    imputation_strategy="6step",
-    compute_valuation_metrics=True,
-    compute_profitability_metrics=True,
-    generate_quality_alerts=True
-)
+        apply_imputation=True,
+        imputation_strategy="6step",
+        compute_valuation_metrics=True,
+        compute_profitability_metrics=True,
+        generate_quality_alerts=True
+        )
 
 df, metrics = run_etl_pipeline(
-    source='csv',
-    data_dir='data/',
-    config=config,
-    return_metrics=True
-)
+        source='csv',
+        data_dir='data/',
+        config=config,
+        return_metrics=True
+        )
 ```
 
 **Data Source Selection:**
@@ -2839,17 +2846,18 @@ outputs/eda/financial_metrics/
 ```python
 # Cell 1: Configuration
 from pathlib import Path
+
 DATA_DIR = Path("data")
 OUTPUT_DIR = Path("outputs/eda/financial_metrics")
 
 # Cell 2: ETL execution
 all_stocks_preprocessed, etl_metrics = etl_with_financial_metrics(
-    source='csv',
-    data_dir=DATA_DIR,
-    compute_all_metrics=True,
-    output_dir=OUTPUT_DIR,
-    return_metrics=True
-)
+        source='csv',
+        data_dir=DATA_DIR,
+        compute_all_metrics=True,
+        output_dir=OUTPUT_DIR,
+        return_metrics=True
+        )
 
 # Cell 3: Validation (REQUIRED)
 assert not all_stocks_preprocessed.empty
@@ -2935,19 +2943,19 @@ from finance_ml.ml_workflow.features.api import build_features
 
 # Build all 196 features with 'comprehensive' preset
 all_stocks_features = build_features(
-    all_stocks_preprocessed,
-    preset='comprehensive',  # Enables all Phase 9.3 features
-    include_interactions=True,
-    include_relative=True,
-    sector_col='sector'
-)
+        all_stocks_preprocessed,
+        preset='comprehensive',  # Enables all Phase 9.3 features
+        include_interactions=True,
+        include_relative=True,
+        sector_col='sector'
+        )
 
 # Selective feature building
 momentum_features = build_features(
-    all_stocks_preprocessed,
-    preset='momentum',  # Only momentum & technical features
-    sector_col='sector'
-)
+        all_stocks_preprocessed,
+        preset='momentum',  # Only momentum & technical features
+        sector_col='sector'
+        )
 ```
 
 **Feature Coverage Validation:**
@@ -2957,7 +2965,7 @@ from finance_ml.ml_workflow.eda.phase93_categories import (
     PHASE93_FEATURE_CATEGORIES,
     get_phase93_coverage_stats,
     categorize_dataframe_columns,
-)
+    )
 
 # Validate feature coverage
 coverage = get_phase93_coverage_stats(all_stocks_features)
@@ -2970,7 +2978,7 @@ assert coverage_pct >= 90, f"Phase 9.3 coverage must be ≥90%, got {coverage_pc
 # Breakdown by category
 for category, count in coverage.items():
     expected = len(PHASE93_FEATURE_CATEGORIES[category])
-    print(f"{category}: {count}/{expected} features ({count/expected*100:.1f}%)")
+    print(f"{category}: {count}/{expected} features ({count / expected * 100:.1f}%)")
 ```
 
 **Category-Specific Analysis:**
@@ -2981,9 +2989,9 @@ category_mapping = categorize_dataframe_columns(all_stocks_features)
 
 # Analyze specific category
 momentum_cols = [
-    col for col, cat in category_mapping.items() 
+    col for col, cat in category_mapping.items()
     if cat == "Momentum & Technical"
-]
+    ]
 
 print(f"Momentum features present: {len(momentum_cols)}/27")
 print(f"Columns: {momentum_cols[:5]}...")  # Show first 5
@@ -3031,21 +3039,21 @@ PRICE_COLUMNS and model interpretability. Integrated into `etl_with_features()` 
 from finance_ml.ml_workflow.features.selection import (
     select_features_auto,
     select_features_by_category
-)
+    )
 
 # Importance-based selection
 X_selected = select_features_auto(
-    X, y,
-    importance_threshold=0.01,      # Min mutual information score
-    correlation_threshold=0.95,      # Max correlation before deduplication
-    method='mutual_info'             # or 'correlation', 'both'
-)
+        X, y,
+        importance_threshold=0.01,  # Min mutual information score
+        correlation_threshold=0.95,  # Max correlation before deduplication
+        method='mutual_info'  # or 'correlation', 'both'
+        )
 
 # Category-based selection
 X_momentum = select_features_by_category(
-    X,
-    categories=['momentum', 'technical']  # Select specific Phase 9.3 categories
-)
+        X,
+        categories=['momentum', 'technical']  # Select specific Phase 9.3 categories
+        )
 ```
 
 **ETL Integration:**
@@ -3055,22 +3063,22 @@ from finance_ml.ml_workflow.preprocessing import etl_with_features
 
 # Basic usage (no feature selection)
 df, metrics = etl_with_features(
-    source='csv',
-    data_dir='data/',
-    feature_preset='comprehensive',
-    return_metrics=True
-)
+        source='csv',
+        data_dir='data/',
+        feature_preset='comprehensive',
+        return_metrics=True
+        )
 
 # With automated feature selection (optional)
 df_selected, metrics = etl_with_features(
-    source='csv',
-    data_dir='data/',
-    feature_preset='comprehensive',
-    auto_feature_selection=True,        # Enable Stage 10
-    importance_threshold=0.05,          # Stricter threshold
-    correlation_threshold=0.95,
-    return_metrics=True
-)
+        source='csv',
+        data_dir='data/',
+        feature_preset='comprehensive',
+        auto_feature_selection=True,  # Enable Stage 10
+        importance_threshold=0.05,  # Stricter threshold
+        correlation_threshold=0.95,
+        return_metrics=True
+        )
 
 # Metrics tracking
 print(f"Features: {metrics.features_before_selection} → {metrics.features_after_selection}")
@@ -3083,12 +3091,12 @@ print(f"Removed: {metrics.features_removed_by_selection} ({reduction_pct:.1f}%)"
 from finance_ml.ml_workflow.preprocessing.etl import ETLConfig
 
 config = ETLConfig(
-    apply_feature_selection=True,                        # Enable feature selection
-    feature_selection_method='mutual_info',              # or 'correlation', 'both'
-    importance_threshold=0.01,                           # Min importance score
-    correlation_threshold=0.95,                          # Max correlation
-    feature_selection_categories=['momentum', 'quality'] # Category filter (optional)
-)
+        apply_feature_selection=True,  # Enable feature selection
+        feature_selection_method='mutual_info',  # or 'correlation', 'both'
+        importance_threshold=0.01,  # Min importance score
+        correlation_threshold=0.95,  # Max correlation
+        feature_selection_categories=['momentum', 'quality']  # Category filter (optional)
+        )
 ```
 
 **Preservation Policy:**
@@ -3225,13 +3233,13 @@ from finance_ml.ml_workflow.classification.models import determine_cv_strategy
 
 # Automatically select best CV strategy based on data characteristics
 cv_strategy, cv_object = determine_cv_strategy(
-    df,
-    target=y,
-    n_splits=5,
-    date_column='snapshot_date',  # default
-    group_column='ticker',         # default
-    random_state=42
-)
+        df,
+        target=y,
+        n_splits=5,
+        date_column='snapshot_date',  # default
+        group_column='ticker',  # default
+        random_state=42
+        )
 
 # Use the returned CV object directly
 for train_idx, val_idx in cv_object.split(df, y, groups=df.get('ticker')):
@@ -3255,7 +3263,7 @@ from sklearn.model_selection import GroupKFold
 
 gkf = GroupKFold(n_splits=5)
 for train_idx, val_idx in gkf.split(X, y, groups=df['ticker']):
-    # Training fold...
+# Training fold...
 ```
 
 **Stratified CV** (when grouped not feasible):
@@ -3352,12 +3360,12 @@ All prediction outputs must include these columns:
 
 ```python
 REQUIRED_COLUMNS = [
-   'ticker', 'isin', 'sector', 'region',
-   'last_price', 'y_true', 'y_pred', 'y_pred_calibrated',
-   'pred_p10', 'pred_p50', 'pred_p90',
-   'interval_width', 'abs_error', 'pct_error',
-   'model_version', 'snapshot_date'
-   ]
+    'ticker', 'isin', 'sector', 'region',
+    'last_price', 'y_true', 'y_pred', 'y_pred_calibrated',
+    'pred_p10', 'pred_p50', 'pred_p90',
+    'interval_width', 'abs_error', 'pct_error',
+    'model_version', 'snapshot_date'
+    ]
 ```
 
 ### 11.2 Column Definitions
@@ -3392,13 +3400,13 @@ REQUIRED_COLUMNS = [
 
 ```python
 sector_metrics = df.groupby('sector').apply(lambda g: pd.Series({
-   'mae': (g['y_pred'] - g['y_true']).abs().mean(),
-   'rmse': np.sqrt(((g['y_pred'] - g['y_true']) ** 2).mean()),
-   'r2': r2_score(g['y_true'], g['y_pred']),
-   'mape': 100 * (g['y_pred'] - g['y_true']).abs().div(g['y_true']).mean(),
-   'bias': (g['y_pred'] - g['y_true']).mean(),
-   'count': len(g)
-   }))
+    'mae': (g['y_pred'] - g['y_true']).abs().mean(),
+    'rmse': np.sqrt(((g['y_pred'] - g['y_true']) ** 2).mean()),
+    'r2': r2_score(g['y_true'], g['y_pred']),
+    'mape': 100 * (g['y_pred'] - g['y_true']).abs().div(g['y_true']).mean(),
+    'bias': (g['y_pred'] - g['y_true']).mean(),
+    'count': len(g)
+    }))
 ```
 
 ### 12.2 Sector Bias Calibration
@@ -3422,10 +3430,10 @@ from sklearn.isotonic import IsotonicRegression
 
 isotonic_models = {}
 for sector in sectors:
-   sector_data = val_df[val_df['sector'] == sector]
-   iso = IsotonicRegression(out_of_bounds='clip')
-   iso.fit(sector_data['y_pred'], sector_data['y_true'])
-   isotonic_models[sector] = iso
+    sector_data = val_df[val_df['sector'] == sector]
+    iso = IsotonicRegression(out_of_bounds='clip')
+    iso.fit(sector_data['y_pred'], sector_data['y_true'])
+    isotonic_models[sector] = iso
 
 df['y_pred_calibrated'] = df.apply(
         lambda row: isotonic_models[row['sector']].transform([row['y_pred']])[0],
@@ -3462,12 +3470,12 @@ df['market_cap_winsorized'] = winsorize(df['market_cap'], limits=[0.01, 0.01])
 from finance_ml.ml_workflow.preprocessing.outliers import winsorize_by_sector
 
 df_winsorized = winsorize_by_sector(
-    df,
-    columns=['market_cap', 'ev', 'total_assets'],
-    lower=0.10,  # 10th percentile
-    upper=0.90,  # 90th percentile
-    sector_col='sector'
-)
+        df,
+        columns=['market_cap', 'ev', 'total_assets'],
+        lower=0.10,  # 10th percentile
+        upper=0.90,  # 90th percentile
+        sector_col='sector'
+        )
 # Less aggressive, preserves more extreme values
 ```
 
@@ -3534,9 +3542,9 @@ from sklearn.ensemble import GradientBoostingRegressor
 
 quantile_models = {}
 for q in [0.1, 0.5, 0.9]:
-   model = GradientBoostingRegressor(loss='quantile', alpha=q)
-   model.fit(X_train, y_train)
-   quantile_models[q] = model
+    model = GradientBoostingRegressor(loss='quantile', alpha=q)
+    model.fit(X_train, y_train)
+    quantile_models[q] = model
 
 df['pred_p10'] = quantile_models[0.1].predict(X)
 df['pred_p50'] = quantile_models[0.5].predict(X)
@@ -3571,10 +3579,10 @@ Calculate uncertainty metrics by sector:
 
 ```python
 sector_uncertainty = df.groupby('sector').agg({
-   'interval_width': 'mean',
-   'abs_error': 'mean',
-   'pct_error': lambda x: x.abs().mean()
-   })
+    'interval_width': 'mean',
+    'abs_error': 'mean',
+    'pct_error': lambda x: x.abs().mean()
+    })
 ```
 
 ---
@@ -3630,7 +3638,7 @@ np.random.seed(RANDOM_SEED)
 OUTPUT_DIR = Path('outputs')
 OUTPUT_DIR.mkdir(exist_ok=True)
 for subdir in ['eda', 'features', 'classification', 'regression', 'analytics', 'plots']:
-   (OUTPUT_DIR / subdir).mkdir(exist_ok=True)
+    (OUTPUT_DIR / subdir).mkdir(exist_ok=True)
 
 # Validate configuration
 validate_configuration()  # From Section 2.3
@@ -3678,16 +3686,16 @@ import optuna
 
 
 def objective(trial):
-   params = {
-      'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
-      'max_depth': trial.suggest_int('max_depth', 3, 10),
-      'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
-      'subsample': trial.suggest_float('subsample', 0.6, 1.0),
-      }
-   model = XGBRegressor(**params, random_state=RANDOM_SEED)
-   model.fit(X_train, y_train)
-   y_pred = model.predict(X_val)
-   return mean_absolute_error(y_val, y_pred)
+    params = {
+        'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
+        'max_depth': trial.suggest_int('max_depth', 3, 10),
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
+        'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+        }
+    model = XGBRegressor(**params, random_state=RANDOM_SEED)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_val)
+    return mean_absolute_error(y_val, y_pred)
 
 
 study = optuna.create_study(direction='minimize')
@@ -3715,10 +3723,10 @@ Combine multiple models for better predictions:
 from sklearn.ensemble import StackingRegressor
 
 base_models = [
-   ('xgb', XGBRegressor(n_estimators=500)),
-   ('lgb', LGBMRegressor(n_estimators=500)),
-   ('cat', CatBoostRegressor(n_estimators=500, verbose=0))
-   ]
+    ('xgb', XGBRegressor(n_estimators=500)),
+    ('lgb', LGBMRegressor(n_estimators=500)),
+    ('cat', CatBoostRegressor(n_estimators=500, verbose=0))
+    ]
 
 stacking_model = StackingRegressor(
         estimators=base_models,
@@ -3798,7 +3806,7 @@ COLOR_PALETTE = {
     'danger': '#e74c3c',
     'info': '#3498db',
     'neutral': '#adb5bd',
-}
+    }
 
 # Apply template to all Plotly figures
 px.defaults.template = PLOTLY_TEMPLATE
@@ -3822,26 +3830,26 @@ px.defaults.template = PLOTLY_TEMPLATE
 ```python
 # Scatter plot example with standard configuration
 fig = px.scatter(
-    df,
-    x='last_price',
-    y='price_target',
-    color='sector',
-    hover_data=['ticker','isin','name','sector','exchange', 'region'],
-    template=PLOTLY_TEMPLATE,
-    title='Price Target vs Last Price',
-    labels={'last_price': 'Last Price ($)', 'price_target': 'Price Target ($)'}
-)
+        df,
+        x='last_price',
+        y='price_target',
+        color='sector',
+        hover_data=['ticker', 'isin', 'region'],
+        template=PLOTLY_TEMPLATE,
+        title='Price Target vs Last Price',
+        labels={'last_price': 'Last Price ($)', 'price_target': 'Price Target ($)'}
+        )
 
 # Update layout for consistency
 fig.update_layout(
-    font=dict(family='Arial, sans-serif', size=14),
-    title_font_size=20,
-    showlegend=True,
-    legend=dict(orientation='v', yanchor='top', xanchor='right', x=1.02, y=1),
-    hovermode='closest',
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
-)
+        font=dict(family='Arial, sans-serif', size=14),
+        title_font_size=20,
+        showlegend=True,
+        legend=dict(orientation='v', yanchor='top', xanchor='right', x=1.02, y=1),
+        hovermode='closest',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        )
 
 # Save as HTML for sharing
 fig.write_html('outputs/plots/prediction_scatter_interactive.html')
@@ -3852,21 +3860,21 @@ fig.write_html('outputs/plots/prediction_scatter_interactive.html')
 ```python
 # Correlation heatmap with consistent styling
 fig = px.imshow(
-    correlation_matrix,
-    template=PLOTLY_TEMPLATE,
-    color_continuous_scale='RdBu_r',  # Diverging scale centered at 0
-    zmin=-1, zmax=1,
-    text_auto='.2f',
-    labels=dict(color='Correlation'),
-    title='Feature Correlation Matrix'
-)
+        correlation_matrix,
+        template=PLOTLY_TEMPLATE,
+        color_continuous_scale='RdBu_r',  # Diverging scale centered at 0
+        zmin=-1, zmax=1,
+        text_auto='.2f',
+        labels=dict(color='Correlation'),
+        title='Feature Correlation Matrix'
+        )
 
 fig.update_layout(
-    width=1000,
-    height=800,
-    xaxis_showgrid=False,
-    yaxis_showgrid=False,
-)
+        width=1000,
+        height=800,
+        xaxis_showgrid=False,
+        yaxis_showgrid=False,
+        )
 ```
 
 **Best Practices:**
@@ -3950,7 +3958,7 @@ from finance_ml.ml_workflow.config import (
     MAX_EXPECTED_RETURN,  # 0.29 (29% annual cap)
     MIN_EXPECTED_RETURN,  # -0.50 (-50% annual floor)
     REALISTIC_RETURN_MEAN_THRESHOLD,  # 0.30 (30% mean threshold)
-)
+    )
 
 # Always clip returns before portfolio optimization
 from finance_ml.ml_workflow.analytics import clip_expected_returns
@@ -3989,7 +3997,7 @@ PRICE_COLUMNS = {
     'historical': ['price_5d_ago', 'price_1w_ago', 'price_1m_ago', 'price_3m_ago', 'price_6m_ago', 'price_1y_ago', ...],
     '52w_bounds': ['52w_high_adj', '52w_low_adj', ...],
     'emas': ['ema_20d', 'ema_50d', 'ema_100d', 'ema_250d'],
-}
+    }
 
 # Calculate historical returns from price columns
 from finance_ml.ml_workflow.analytics import calculate_historical_returns
@@ -4006,7 +4014,7 @@ Leverage 196 Phase 9.3 engineered features for enhanced return prediction:
 from finance_ml.ml_workflow.analytics import (
     get_phase93_return_features,
     create_ml_return_features_enhanced,
-)
+    )
 
 # Get high-relevance feature categories
 categories = get_phase93_return_features()
@@ -4015,10 +4023,10 @@ categories = get_phase93_return_features()
 
 # Create enhanced features
 enhanced_df = create_ml_return_features_enhanced(
-    df,
-    include_phase93=True,
-    include_historical_returns=True,
-)
+        df,
+        include_phase93=True,
+        include_historical_returns=True,
+        )
 ```
 
 ### 18.5 Ensemble Model Best Practices
@@ -4047,11 +4055,11 @@ from finance_ml.ml_workflow.analytics import create_dynamic_ensemble
 
 # Weights based on validation performance
 ensemble = create_dynamic_ensemble(
-    X_train, y_train,
-    models=['ridge', 'random_forest', 'gradient_boosting'],
-    weighting_method='inverse_mse',  # Options: 'inverse_mse', 'softmax', 'equal'
-    validation_data=(X_val, y_val),
-)
+        X_train, y_train,
+        models=['ridge', 'random_forest', 'gradient_boosting'],
+        weighting_method='inverse_mse',  # Options: 'inverse_mse', 'softmax', 'equal'
+        validation_data=(X_val, y_val),
+        )
 ```
 
 ### 18.6 Black-Litterman ML Integration
@@ -4063,16 +4071,16 @@ from finance_ml.ml_workflow.analytics import (
     create_bl_views_from_ml,
     detect_market_regime,
     optimize_black_litterman,
-)
+    )
 
 # Create views from ML predictions
 views, confidences = create_bl_views_from_ml(
-    ml_predictions,
-    tickers=ticker_list,
-    confidence_method='prediction_interval',  # or 'uniform'
-    min_confidence=0.3,
-    max_confidence=0.9,
-)
+        ml_predictions,
+        tickers=ticker_list,
+        confidence_method='prediction_interval',  # or 'uniform'
+        min_confidence=0.3,
+        max_confidence=0.9,
+        )
 
 # Detect market regime for parameter adjustment
 regime = detect_market_regime(returns, method='volatility')
@@ -4080,12 +4088,12 @@ regime = detect_market_regime(returns, method='volatility')
 
 # Optimize with ML-derived views
 result = optimize_black_litterman(
-    returns=expected_returns,
-    cov_matrix=cov_matrix,
-    market_weights=market_weights,
-    views=views,
-    view_confidences=confidences,
-)
+        returns=expected_returns,
+        cov_matrix=cov_matrix,
+        market_weights=market_weights,
+        views=views,
+        view_confidences=confidences,
+        )
 ```
 
 ### 18.7 Robust Covariance Estimation
@@ -4096,7 +4104,7 @@ Use shrinkage methods for ill-conditioned covariance matrices:
 from finance_ml.ml_workflow.analytics import (
     estimate_covariance_shrinkage,
     estimate_covariance_ewm,
-)
+    )
 
 # Ledoit-Wolf shrinkage (recommended for n_assets > n_observations)
 cov_shrunk = estimate_covariance_shrinkage(returns, method='ledoit_wolf')
@@ -4118,10 +4126,10 @@ assert condition_number < 1e6, "Covariance matrix ill-conditioned"
 from finance_ml.ml_workflow.analytics import calculate_return_prediction_diagnostics
 
 diagnostics = calculate_return_prediction_diagnostics(
-    y_true, y_pred,
-    include_distribution_tests=True,
-    include_autocorrelation=True,
-)
+        y_true, y_pred,
+        include_distribution_tests=True,
+        include_autocorrelation=True,
+        )
 # Returns: mse, mae, r2, ic, residual_normality_pvalue, residual_skewness, residual_acf_lag1
 ```
 
@@ -4131,12 +4139,12 @@ diagnostics = calculate_return_prediction_diagnostics(
 from finance_ml.ml_workflow.analytics import validate_portfolio_metrics
 
 validation = validate_portfolio_metrics(
-    weights=portfolio_weights,
-    returns=historical_returns,
-    risk_free_rate=0.03,
-    max_sharpe_threshold=3.0,  # Flag if Sharpe > 3.0
-    max_return_threshold=1.0,  # Flag if return > 100%
-)
+        weights=portfolio_weights,
+        returns=historical_returns,
+        risk_free_rate=0.03,
+        max_sharpe_threshold=3.0,  # Flag if Sharpe > 3.0
+        max_return_threshold=1.0,  # Flag if return > 100%
+        )
 
 if not validation['sharpe_ratio_valid']:
     logger.warning(f"Unrealistic Sharpe: {validation['sharpe_ratio']:.2f}")
@@ -4270,8 +4278,8 @@ for col in price_cols:
 # Monotonicity constraint (quantile predictions)
 if all(col in predictions_df.columns for col in ['pred_p10', 'pred_p50', 'pred_p90']):
     violations = (
-        (predictions_df['pred_p10'] > predictions_df['pred_p50']) |
-        (predictions_df['pred_p50'] > predictions_df['pred_p90'])
+            (predictions_df['pred_p10'] > predictions_df['pred_p50']) |
+            (predictions_df['pred_p50'] > predictions_df['pred_p90'])
     ).sum()
     assert violations == 0, f"Quantile monotonicity violated in {violations} rows"
 
@@ -4378,9 +4386,21 @@ outputs/
 {
   "total_rows": 5234,
   "total_columns": 318,
-  "sectors": ["Technology", "Healthcare", "Financials", "..."],
-  "sector_counts": {"Technology": 1245, "Healthcare": 892, "..."},
-  "phase93_coverage": {"total": 182, "percentage": 92.8},
+  "sectors": [
+    "Technology",
+    "Healthcare",
+    "Financials",
+    "..."
+  ],
+  "sector_counts": {
+    "Technology": 1245,
+    "Healthcare": 892,
+    "..."
+  },
+  "phase93_coverage": {
+    "total": 182,
+    "percentage": 92.8
+  },
   "timestamp": "2025-12-05T15:35:00"
 }
 ```
@@ -4398,7 +4418,11 @@ outputs/
   "total_coverage": 182,
   "target_coverage": 196,
   "coverage_percentage": 92.8,
-  "missing_features": ["feature1", "feature2", "..."]
+  "missing_features": [
+    "feature1",
+    "feature2",
+    "..."
+  ]
 }
 ```
 
@@ -4410,8 +4434,18 @@ outputs/
   "model_type": "Stacking Ensemble (RF + GB + XGB)",
   "training_date": "2025-12-05",
   "metrics": {
-    "overall": {"mae": 8.45, "rmse": 12.32, "r2": 0.78},
-    "by_sector": {"Technology": {"mae": 7.21, "r2": 0.82}, "...": "..."}
+    "overall": {
+      "mae": 8.45,
+      "rmse": 12.32,
+      "r2": 0.78
+    },
+    "by_sector": {
+      "Technology": {
+        "mae": 7.21,
+        "r2": 0.82
+      },
+      "...": "..."
+    }
   },
   "features_used": 318,
   "phase93_coverage": 92.8,
@@ -4446,29 +4480,29 @@ Required columns (Section 12):
 from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
 
 df, etl_metrics = etl_with_financial_metrics(
-    source='csv',
-    data_dir='data/',
-    output_dir='outputs/eda/financial_metrics',  # Auto-generates artifacts
-    return_metrics=True
-)
+        source='csv',
+        data_dir='data/',
+        output_dir='outputs/eda/financial_metrics',  # Auto-generates artifacts
+        return_metrics=True
+        )
 
 # Save predictions
 from finance_ml.ml_workflow.regression.io import save_predictions
 
 save_predictions(
-    predictions_df,
-    output_path='outputs/regression/regression_predictions_detailed.csv',
-    schema='standardized'  # Enforces Section 11 schema
-)
+        predictions_df,
+        output_path='outputs/regression/regression_predictions_detailed.csv',
+        schema='standardized'  # Enforces Section 11 schema
+        )
 
 # Generate model card
 from finance_ml.ml_workflow.evaluation import generate_model_card
 
 model_card = generate_model_card(
-    model=stacking_model,
-    metrics=metrics_dict,
-    output_path='outputs/governance/model_card.json'
-)
+        model=stacking_model,
+        metrics=metrics_dict,
+        output_path='outputs/governance/model_card.json'
+        )
 ```
 
 **Best Practices:**

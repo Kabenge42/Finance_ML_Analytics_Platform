@@ -2,7 +2,7 @@
 
 **Version 0.9.4** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-12-10  
+> **Documentation Last Updated:** 2025-12-15  
 > **Latest Release**: v0.9.4 (see CHANGELOG.md)  
 > **Model Version**: v9_9  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
@@ -370,8 +370,8 @@ pip install -r requirements.txt
 
 # 4. Set up database (PostgreSQL or SQLite)
 # PostgreSQL:
-psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/create_equities_schema.sql
-psql -h localhost -p 5432 -U postgres -d postgres -f pipeline/import_equities_data.sql
+psql -h localhost -p 5432 -U postgres -d postgres -f create_equities_schema.sql
+psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
 
 # PostgreSQL - Create unified all_stocks table (RECOMMENDED):
 psql -h localhost -p 5432 -U postgres -d postgres -f all_stocks/all_stocks.sql
@@ -618,9 +618,11 @@ Note on Notebook Best Practices (see docs/code_guidelines.md §8):
 
 **Other Notebooks**:
 
-- `ml_finance_model_main_v10.ipynb` — Alternative notebook version
-- `equities_data_explorer.ipynb` — Data exploration and analysis
-- `ml_stock_prediction_model.ipynb` — Legacy prediction notebook
+- `etl_data_explorer.ipynb` — ETL pipeline exploration and data analysis
+- `stock_analytics.ipynb` — Stock analytics and visualization
+- `portfolio_optimization_risk_management.ipynb` — Portfolio optimization and risk management
+- `stock_price_target_prediction.ipynb` — Stock price target prediction workflow
+- `ml_finance_model_main2_0.ipynb` — Alternative notebook version
 
 ### Python Script
 
@@ -967,15 +969,17 @@ Finance_ML_Analytics_Platform/
 │   ├── improvement_plan/         # Development roadmap and phase documentation
 │   └── summaries/                # Implementation summaries
 ├── ml_finance_model_main.ipynb   # Main notebook (Phase 9.1-9.8)
-├── ml_finance_model_main_v10.ipynb # Alternative notebook version
+├── ml_finance_model_main2_0.ipynb # Alternative notebook version
 ├── ml_finance_model_main.py      # Python script version
-├── equities_data_explorer.ipynb  # Data exploration notebook
-├── ml_stock_prediction_model.ipynb # Legacy prediction notebook
-├── pipeline/
-│   ├── create_equities_schema.sql    # PostgreSQL schema
-│   └── import_equities_data.sql      # PostgreSQL data import (staging + validation)
+├── etl_data_explorer.ipynb       # ETL pipeline exploration and data analysis
+├── stock_analytics.ipynb         # Stock analytics and visualization
+├── portfolio_optimization_risk_management.ipynb # Portfolio optimization
+├── stock_price_target_prediction.ipynb # Price target prediction workflow
+├── create_equities_schema.sql        # PostgreSQL schema
+├── import_equities_data.sql          # PostgreSQL data import (staging + validation)
 ├── create_equities_schema_sqlite.sql # SQLite schema
 ├── import_equities_data_sqlite.sql   # SQLite data import
+├── pipeline/                          # Pipeline data directory
 ├── requirements.txt              # Python dependencies
 ├── pyproject.toml                # Package metadata and build config
 ├── environment_variables.txt     # Environment configuration reference
@@ -1002,14 +1006,26 @@ Finance_ML_Analytics_Platform/
 
 ### Utility Scripts (tools/)
 
-| Script                   | Description                                      |
-|--------------------------|--------------------------------------------------|
-| `import_sqlite.py`       | Import CSVs into SQLite with chunked processing  |
-| `validate_csv_import.py` | Validate CSV data quality before import          |
-| `analyze_notebook.py`    | Analyze notebook structure and cells             |
-| `analyze_predictions.py` | Analyze model prediction outputs                 |
-| `run_fast_tests.py`      | Run fast helper unit tests (no heavy training)   |
-| `verify_outputs.py`      | Verify expected output files exist and non-empty |
+| Script                    | Description                                       |
+|---------------------------|---------------------------------------------------|
+| `import_sqlite.py`        | Import CSVs into SQLite with chunked processing   |
+| `validate_csv_import.py`  | Validate CSV data quality before import           |
+| `run_earnings_monitor.py` | Generate earnings dashboards + alerts (scheduled) |
+| `analyze_notebook.py`     | Analyze notebook structure and cells              |
+| `analyze_predictions.py`  | Analyze model prediction outputs                  |
+| `run_fast_tests.py`       | Run fast helper unit tests (no heavy training)    |
+| `verify_outputs.py`       | Verify expected output files exist and non-empty  |
+
+#### Scheduled Earnings Monitoring (Windows Task Scheduler)
+
+You can run earnings monitoring on a daily/weekly schedule without opening notebooks:
+
+```powershell
+python tools\run_earnings_monitor.py --data-source auto --out-dir outputs\eda\earnings_analytics
+```
+
+- `--data-source auto` uses DB when `DB_URL` (or `--db-url`) is provided, otherwise falls back to CSV.
+- Thresholds are configurable via CLI flags (e.g. `--eps-miss-threshold-pct 25`, `--target-spread-threshold-pct 40`).
 
 ### Database Scripts
 
@@ -1481,5 +1497,6 @@ See `docs/improvement_plan/finance_ml_improvement_plan.md` for detailed developm
 
 ---
 
-**Last Updated**: 2025-12-10  
-**README Version**: 4.5 (aligned to v0.9.4; 128 test modules; code_guidelines.md v1.10; unified ETL pipeline)
+**Last Updated**: 2025-12-15  
+**README Version**: 4.6 (aligned to v0.9.4; 128 test modules; code_guidelines.md v1.10; unified ETL pipeline; corrected
+notebook/script paths)

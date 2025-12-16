@@ -4,16 +4,14 @@
     <data-source source="LOCAL" name="postgres@localhost" uuid="3091f81a-c800-413c-b86b-f760950418f7">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
-      <schema-control>AUTOMATIC</schema-control>
+      <rewrite-bounds>false</rewrite-bounds>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
       <jdbc-additional-properties>
-        <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="JdbcLog.Enabled" value="true" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
         <property name="JdbcLog.Config" value="handlers=java.util.logging.ConsoleHandler&#10;java.util.logging.ConsoleHandler.level=ALL" />
         <property name="JdbcLog.DebugSSL" value="all" />
-        <property name="com.intellij.clouds.kubernetes.db.container.port" />
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
       <keep-alive enable="true" />

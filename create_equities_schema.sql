@@ -279,7 +279,6 @@ CREATE TABLE equities
     "Return on Assets (ROA) % (FY)"                    NUMERIC,
     "Net Income - (IS) (-1FY)"                         NUMERIC,
     "Normalized Net Income (-1FY)"                     NUMERIC,
-    "P/E (-1FYLTM)"                                    NUMERIC,
     "CFF (FY)"                                         NUMERIC,
     "CFF (-1FY)"                                       NUMERIC,
     "CFI (FY)"                                         NUMERIC,
@@ -297,7 +296,6 @@ CREATE TABLE equities
     "Total Revenues (5YAVGFQ)"                         NUMERIC,
     "EBITDA (5YAVGFQ)"                                 NUMERIC,
     "EBIT (5YAVGFQ)"                                   NUMERIC,
-    "P/E (5YAVGLTM)"                                   NUMERIC,
     "FCF (5YAVGFQ)"                                    NUMERIC,
     "Cash Acquisitions (FQ)"                           NUMERIC,
     "Cash Acquisitions (5YAVGFQ)"                      NUMERIC,
@@ -417,14 +415,16 @@ CREATE TABLE equities
     "EV/EBITDA (-1FQLTM)"                              NUMERIC, -- RATIO: EV/EBITDA (1 FQ ago LTM)
     "EV/EBITDA (3YAVGLTM)"                             NUMERIC, -- RATIO: EV/EBITDA (3-year average LTM)
     "EV/EBITDA (EST FY1)"                              NUMERIC, -- RATIO: EV/EBITDA (Estimate FY1)
-    -- Category 6: P/E Extended Time-Series (11 columns)
+    -- Category 6: P/E Extended Time-Series (14 columns)
     "P/E (EST FY1)"                                    NUMERIC, -- RATIO: P/E (Estimate FY1)
+    "P/E (-1FYLTM)"                                    NUMERIC, -- RATIO: P/E (1 FY ago LTM)
     "P/E (-2FYLTM)"                                    NUMERIC, -- RATIO: P/E (2 FY ago LTM)
     "P/E (-3FYLTM)"                                    NUMERIC, -- RATIO: P/E (3 FY ago LTM)
     "P/E (3YAVGLTM)"                                   NUMERIC, -- RATIO: P/E (3-year average LTM)
     "P/E (-1FQLTM)"                                    NUMERIC, -- RATIO: P/E (1 FQ ago LTM)
     "P/E (-2FQLTM)"                                    NUMERIC, -- RATIO: P/E (2 FQ ago LTM)
     "P/E (-3FQLTM)"                                    NUMERIC, -- RATIO: P/E (3 FQ ago LTM)
+    "P/E (5YAVGLTM)"                                   NUMERIC, -- RATIO: P/E (5-year average LTM)
     "P/E (-0FQQoQLTM)"                                 NUMERIC, -- RATIO: P/E (Quarter-over-Quarter LTM)
     "P/E (-0FYYoYLTM)"                                 NUMERIC, -- RATIO: P/E (Year-over-Year LTM)
     "P/E (-1FYYoYLTM)"                                 NUMERIC, -- RATIO: P/E (1 FY YoY LTM)

@@ -1,90 +1,117 @@
 <problems>
 <problem>
     <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>1029</line>
-  <module>Finance_ML_Analytics_Platform</module>
+    <line>5031</line>
+    <module>Finance_ML_Analytics_Platform</module>
     <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-  <description>Unresolved attribute reference 'sum' for class 'bool'</description>
-  <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-    <offset>40</offset>
-  <length>3</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>1029</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
-    <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-    <offset>63</offset>
-    <length>3</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>1030</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
-        Unresolved references
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
     </problem_class>
-    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
-    <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-    <offset>41</offset>
-    <length>3</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>1030</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
-    <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-    <offset>64</offset>
-    <length>3</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>1031</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
-    <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-    <offset>41</offset>
-    <length>3</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>1031</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-  <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unresolved references</problem_class>
-    <description>Unresolved attribute reference 'sum' for class 'bool'</description>
-    <highlighted_element>sum</highlighted_element>
-  <language>Python</language>
-    <offset>64</offset>
-    <length>3</length>
+    <description>Cannot find reference 'copy' in 'Never'</description>
+    <highlighted_element>copy</highlighted_element>
+    <language>Python</language>
+    <offset>36</offset>
+    <length>4</length>
 </problem>
     <problem>
         <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>2050</line>
-        <module>Finance_ML_Analytics_Platform</module>
+        <line>5032</line>
+  <module>Finance_ML_Analytics_Platform</module>
         <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
             Unresolved references
         </problem_class>
-        <description>Unresolved attribute reference 'strftime' for class 'None'</description>
-        <highlighted_element>strftime</highlighted_element>
+        <description>Cannot find reference 'index' in 'Never'</description>
+        <highlighted_element>index</highlighted_element>
+  <language>Python</language>
+        <offset>70</offset>
+        <length>5</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>7025</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Unresolved attribute reference 'nunique' for class 'None'</description>
+    <highlighted_element>nunique</highlighted_element>
+  <language>Python</language>
+    <offset>69</offset>
+    <length>7</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>8930</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Unresolved attribute reference 'head' for class 'None'</description>
+    <highlighted_element>head</highlighted_element>
+  <language>Python</language>
+    <offset>46</offset>
+    <length>4</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>9165</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Unresolved attribute reference 'fillna' for class 'None'</description>
+    <highlighted_element>fillna</highlighted_element>
+  <language>Python</language>
+    <offset>45</offset>
+    <length>6</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>9785</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Class 'type' does not define '__truediv__', so the '/' operator cannot be used on its instances
+    </description>
+    <highlighted_element>/</highlighted_element>
+  <language>Python</language>
+    <offset>67</offset>
+    <length>1</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+    <line>9831</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Class 'type' does not define '__truediv__', so the '/' operator cannot be used on its instances
+    </description>
+    <highlighted_element>/</highlighted_element>
+  <language>Python</language>
+    <offset>48</offset>
+    <length>1</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>10054</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Class 'type' does not define '__truediv__', so the '/' operator cannot be used on its instances
+        </description>
+        <highlighted_element>/</highlighted_element>
         <language>Python</language>
-        <offset>55</offset>
-        <length>8</length>
+        <offset>48</offset>
+        <length>1</length>
 </problem>
 </problems>

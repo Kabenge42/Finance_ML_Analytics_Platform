@@ -5,16 +5,24 @@ This module defines the authoritative COLUMN_SCHEMA derived from
 create_equities_schema.sql, providing centralized datatype and role
 information for all preprocessing, feature engineering, and modeling.
 
-Schema Structure (v1.11 - Updated 2025-12-14):
-- Source columns from CSV/SQL: 299 (matching create_equities_schema.sql)
-- Total COLUMN_SCHEMA entries: 503
-  - 299 source columns (from CSV/SQL schema)
+Schema Structure (v1.12 - Updated 2025-12-15):
+- Source columns from CSV/SQL: 328 (matching create_equities_schema.sql + forward estimates)
+- Total COLUMN_SCHEMA entries: 532
+  - 328 source columns (from CSV/SQL schema + forward estimates)
   - 61 log-transformed columns (ETL-generated, log1p of market values)
   - 43 legacy aliases (role=auxiliary, for backward compatibility)
   - 36 generic base columns (no time suffix)
   - 34 conditional metrics (with _applicable flags)
   - 26 derived ratios and percentage metrics (ETL semantic transforms)
   - 4 Phase 9.3 composite quality scores (altman_z_score, beneish_m_score, etc.)
+
+New in v1.12:
+  - 4 dividend yield forward estimates (2fy, 3fy, 4fy, 5fy)
+  - 2 EBITDA forward estimates (avg_fy1e, avg_ntm)
+  - 6 EPS normalized estimate revisions (1w, 1m, 3m, 6m, 1y, analyst count)
+  - 6 EPS GAAP estimates & revisions (fy1e, ntm, 1m, 3m, 6m, 1y)
+  - 6 basic EPS historical metrics (ltm, fq, fy, 1fqfq, 2fqfq, 3fqfq)
+  - Total: 29 new raw source columns
 
 Database Tables:
 - equities: Original table with per-region data loading
@@ -29,7 +37,7 @@ Data Loading:
 - load_from_db(): Load from equities table with Region filter
 - load_from_all_stocks(): Load from unified all_stocks table (recommended)
 
-Aligned with code_guidelines.md v1.11+ Schema and Datatype Management.
+Aligned with code_guidelines.md v1.12+ Schema and Datatype Management.
 """
 
 from typing import Dict, List, Optional, Literal
@@ -243,6 +251,9 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "ebitda_adj_1fy": {"dtype": "float", "role": "market_value"},
     "ebitda_5yavgfq": {"dtype": "float", "role": "market_value"},
     "ebitda_5yavgltm": {"dtype": "float", "role": "market_value"},
+    # Forward estimates
+    "ebitda_est_avg_fy1e": {"dtype": "float", "role": "market_value"},
+    "ebitda_est_avg_ntm": {"dtype": "float", "role": "market_value"},
     # ====================
     # PROFITABILITY - EBIT (market_value)
     # ====================
@@ -471,8 +482,30 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "eps_adj_1fy": {"dtype": "float", "role": "feature"},
     "eps_adj_fy": {"dtype": "float", "role": "feature"},
     "eps_adj_ltm": {"dtype": "float", "role": "feature"},
+    # Basic EPS Historical (GAAP-based)
+    "net_eps_basic_ltm": {"dtype": "float", "role": "feature"},
+    "net_eps_basic_fq": {"dtype": "float", "role": "feature"},
+    "net_eps_basic_fy": {"dtype": "float", "role": "feature"},
+    "net_eps_basic_1fqfq": {"dtype": "float", "role": "feature"},  # 1 quarter ago
+    "net_eps_basic_2fqfq": {"dtype": "float", "role": "feature"},  # 2 quarters ago
+    "net_eps_basic_3fqfq": {"dtype": "float", "role": "feature"},  # 3 quarters ago
+    # Forward EPS Estimates
     "eps_norm_est_avg_ntm": {"dtype": "float", "role": "feature"},
     "eps_norm_est_avg_fy1e": {"dtype": "float", "role": "feature"},
+    "eps_norm_est_num_fy1e": {"dtype": "float", "role": "count"},  # Number of analysts
+    # EPS Normalized Estimate Revisions (percentage changes over time periods)
+    "eps_est_avg_rev_pct_fy1e_1w": {"dtype": "float", "role": "percentage"},
+    "eps_est_avg_rev_pct_fy1e_1m": {"dtype": "float", "role": "percentage"},
+    "eps_est_avg_rev_pct_fy1e_3m": {"dtype": "float", "role": "percentage"},
+    "eps_est_avg_rev_pct_fy1e_6m": {"dtype": "float", "role": "percentage"},
+    "eps_est_avg_rev_pct_fy1e_1y": {"dtype": "float", "role": "percentage"},
+    # EPS GAAP Estimates & Revisions
+    "eps_gaap_est_avg_fy1e": {"dtype": "float", "role": "feature"},
+    "eps_gaap_est_avg_ntm": {"dtype": "float", "role": "feature"},
+    "eps_gaap_est_avg_rev_pct_fy1e_1m": {"dtype": "float", "role": "percentage"},
+    "eps_gaap_est_avg_rev_pct_fy1e_3m": {"dtype": "float", "role": "percentage"},
+    "eps_gaap_est_avg_rev_pct_fy1e_6m": {"dtype": "float", "role": "percentage"},
+    "eps_gaap_est_avg_rev_pct_fy1e_1y": {"dtype": "float", "role": "percentage"},
     "eps_previous_year": {
         "dtype": "float",
         "role": "feature",
@@ -484,6 +517,10 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "div_yield_ttm": {"dtype": "float", "role": "feature"},
     "div_yield_ntm": {"dtype": "float", "role": "feature"},
     "div_yield_1fyind": {"dtype": "float", "role": "feature"},
+    "div_yield_2fyind": {"dtype": "float", "role": "feature"},
+    "div_yield_3fyind": {"dtype": "float", "role": "feature"},
+    "div_yield_4fyind": {"dtype": "float", "role": "feature"},
+    "div_yield_5fyind": {"dtype": "float", "role": "feature"},
     "div_yield_5yavgltm": {"dtype": "float", "role": "feature"},
     "common_dividends_paid_ltm": {"dtype": "float", "role": "feature"},
     "common_dividends_paid_fy": {"dtype": "float", "role": "feature"},

@@ -1,44 +1,222 @@
 <problems>
     <problem>
         <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>344</line>
+        <line>2212</line>
         <module>Finance_ML_Analytics_Platform</module>
         <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
         <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
             type
         </problem_class>
-        <description>Expected type 'Path', got 'str' instead</description>
-        <highlighted_element>catalog_dir=str(CATALOG_DIR)</highlighted_element>
+        <description>Expected type 'timedelta', got 'float' instead</description>
+        <highlighted_element>0.7</highlighted_element>
         <language>Python</language>
-        <offset>26</offset>
-        <length>28</length>
+        <offset>31</offset>
+        <length>3</length>
     </problem>
     <problem>
         <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>1753</line>
+        <line>3233</line>
         <module>Finance_ML_Analytics_Platform</module>
         <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
         <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
             type
         </problem_class>
-        <description>Expected type 'dict', got 'str' instead</description>
-        <highlighted_element>marker_color='green'</highlighted_element>
+        <description>Unexpected type(s): (str) Possible type(s): (SupportsIndex | slice[Any, Any, Any]) (SupportsIndex |
+            slice[Any, Any, Any])
+        </description>
+        <highlighted_element>'mean'</highlighted_element>
         <language>Python</language>
-        <offset>19</offset>
+        <offset>43</offset>
+        <length>6</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>3233</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Unexpected type(s): (str) Possible type(s): (SupportsIndex | slice[Any, Any, Any]) (SupportsIndex |
+            slice[Any, Any, Any])
+        </description>
+        <highlighted_element>'std'</highlighted_element>
+        <language>Python</language>
+        <offset>69</offset>
+        <length>5</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>3234</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Unexpected type(s): (str) Possible type(s): (SupportsIndex | slice[Any, Any, Any]) (SupportsIndex |
+            slice[Any, Any, Any])
+        </description>
+        <highlighted_element>'50%'</highlighted_element>
+        <language>Python</language>
+        <offset>39</offset>
+        <length>5</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>3234</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Unexpected type(s): (str) Possible type(s): (SupportsIndex | slice[Any, Any, Any]) (SupportsIndex |
+            slice[Any, Any, Any])
+        </description>
+        <highlighted_element>'missing_pct'</highlighted_element>
+        <language>Python</language>
+        <offset>68</offset>
+        <length>13</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>3282</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'dict', got 'Series' instead</description>
+        <highlighted_element>marker_color=coverage_df[&quot;Coverage %&quot;].apply( lambda x: 'green' if x &gt; 90 else
+            'oran...
+        </highlighted_element>
+        <language>Python</language>
+        <offset>8</offset>
+        <length>142</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>4285</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'Series[Any]', got 'ndarray[tuple[Any, ...], dtype[Any]]' instead</description>
+        <highlighted_element>y_train_cls</highlighted_element>
+        <language>Python</language>
+        <offset>8</offset>
+        <length>11</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>4718</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'ndarray[tuple[Any, ...], dtype[Any]]', got 'Series[Any]' instead</description>
+        <highlighted_element>y_train_cls_balanced</highlighted_element>
+        <language>Python</language>
+        <offset>31</offset>
         <length>20</length>
     </problem>
     <problem>
         <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>1759</line>
+        <line>6248</line>
         <module>Finance_ML_Analytics_Platform</module>
         <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
         <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
             type
         </problem_class>
-        <description>Expected type 'dict', got 'str' instead</description>
-        <highlighted_element>marker_color='red'</highlighted_element>
+        <description>Expected type 'Series[Any]', got 'ndarray[tuple[Any, ...], dtype[Any]]' instead</description>
+        <highlighted_element>winsorize_target(y_tr, 0.01, 0.99)</highlighted_element>
+        <language>Python</language>
+        <offset>16</offset>
+        <length>34</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>8929</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'Sized', got 'None' instead</description>
+        <highlighted_element>top_candidates</highlighted_element>
+        <language>Python</language>
+        <offset>42</offset>
+        <length>14</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>9524</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'ndarray[tuple[Any, ...], dtype[Any]]', got 'Series' instead</description>
+        <highlighted_element>returns=mean_returns</highlighted_element>
+        <language>Python</language>
+        <offset>12</offset>
+        <length>20</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>9830</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'int', got 'type[None[Any]]' instead</description>
+        <highlighted_element>max_sharpe_result['return']</highlighted_element>
         <language>Python</language>
         <offset>19</offset>
-        <length>18</length>
+        <length>27</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>9875</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'Sized', got 'type[None[Any]]' instead</description>
+        <highlighted_element>max_sharpe_result['weights']</highlighted_element>
+        <language>Python</language>
+        <offset>19</offset>
+        <length>28</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>9944</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'Sized', got 'type[None[Any]]' instead</description>
+        <highlighted_element>max_sharpe_result['weights']</highlighted_element>
+        <language>Python</language>
+        <offset>19</offset>
+        <length>28</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
+        <line>10053</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <problem_class id="PyTypeCheckerInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Incorrect
+            type
+        </problem_class>
+        <description>Expected type 'int', got 'type[None[Any]]' instead</description>
+        <highlighted_element>optimal_portfolio['return']</highlighted_element>
+        <language>Python</language>
+        <offset>19</offset>
+        <length>27</length>
     </problem>
 </problems>

@@ -8,13 +8,17 @@ technical analysis domains.
 Aligned with code_guidelines.md v1.4 Section 17 (Style Guides for Visual Elements).
 """
 
+import json
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Dict, List, Literal, Optional, Union
+
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from typing import Optional, List, Dict, Literal, Union
-from datetime import timedelta
-from pathlib import Path
 
 # Schema-driven Phase 9.3 feature categorization (code_guidelines.md §9.3)
 from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
@@ -747,3 +751,924 @@ def create_category_comparison_chart(
         fig.write_html(str(output_path))
 
     return fig
+
+
+def create_earnings_surprise_dashboard(
+    df: pd.DataFrame,
+    reference_date: Optional[pd.Timestamp] = None,
+    top_n: int = 50,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create an interactive dashboard for earnings surprise analysis.
+
+    Business objective: monitor expected vs actual earnings performance to
+    identify forecast reliability and potential market reaction patterns.
+
+    Args:
+        df: DataFrame with earnings estimates and actuals.
+        reference_date: Analysis date (defaults to now).
+        top_n: Number of rows to analyze (prefers market cap ordering when available).
+        output_path: Optional path to save an HTML dashboard.
+
+    Returns:
+        go.Figure: Plotly figure.
+    """
+    if reference_date is None:
+        reference_date = pd.Timestamp.now()
+
+    df_local = df.copy()
+
+    # Prefer analyzing the most liquid/large names when possible.
+    mcap_col = None
+    for col in ["market_cap", "market_cap_usd", "market_cap_curr"]:
+        if col in df_local.columns:
+            mcap_col = col
+            break
+    if mcap_col is not None:
+        df_local[mcap_col] = pd.to_numeric(df_local[mcap_col], errors="coerce")
+        df_local = df_local.sort_values(by=mcap_col, ascending=False)
+    df_local = df_local.head(int(top_n))
+
+    surprise_cols: Dict[str, Dict[str, str]] = {
+        "Revenue": {"actual": "total_revenues_ltm", "estimate": "revenues_est_avg_ntm"},
+        "EBITDA": {"actual": "ebitda_ltm", "estimate": "ebitda_est_avg_fy1e"},
+        "EBIT": {"actual": "ebit_ltm", "estimate": "ebit_est_med_ntm"},
+        "Net Income": {"actual": "net_income_is_ltm", "estimate": "net_income_adj_1fy"},
+        "EPS": {"actual": "eps_adj_ltm", "estimate": "eps_norm_est_avg_ntm"},
+    }
+
+    surprise_data: List[Dict[str, float]] = []
+    all_surprises: List[float] = []
+
+    for metric_name, cols in surprise_cols.items():
+        actual_col = cols["actual"]
+        est_col = cols["estimate"]
+
+        if actual_col not in df_local.columns or est_col not in df_local.columns:
+            continue
+
+        actual = pd.to_numeric(df_local[actual_col], errors="coerce")
+        estimate = pd.to_numeric(df_local[est_col], errors="coerce")
+        valid_mask = actual.notna() & estimate.notna() & (estimate.abs() > 0)
+
+        if valid_mask.sum() == 0:
+            continue
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            surprise_pct = (
+                (actual[valid_mask] - estimate[valid_mask]) / estimate[valid_mask].abs()
+            ) * 100
+        surprise_pct = surprise_pct.replace([np.inf, -np.inf], np.nan).dropna()
+
+        if len(surprise_pct) == 0:
+            continue
+
+        surprise_data.append(
+            {
+                "metric": metric_name,
+                "mean_surprise": float(surprise_pct.mean()),
+                "median_surprise": float(surprise_pct.median()),
+                "beat_pct": float((surprise_pct > 0).sum() / len(surprise_pct) * 100),
+                "miss_pct": float((surprise_pct < 0).sum() / len(surprise_pct) * 100),
+                "count": float(len(surprise_pct)),
+            }
+        )
+
+        all_surprises.extend(surprise_pct.clip(-100, 100).tolist())
+
+    if not surprise_data:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient data for earnings surprise analysis",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    surprise_df = pd.DataFrame(surprise_data)
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Mean Surprise by Metric (%)",
+            "Beat/Miss Rates (%)",
+            "Surprise Distribution (All Metrics)",
+            "Forecast Accuracy Score",
+        ],
+        specs=[
+            [{"type": "bar"}, {"type": "bar"}],
+            [{"type": "histogram"}, {"type": "indicator"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.15,
+    )
+
+    colors = [
+        COLOR_PALETTE["success"] if x > 0 else COLOR_PALETTE["danger"]
+        for x in surprise_df["mean_surprise"]
+    ]
+    fig.add_trace(
+        go.Bar(
+            x=surprise_df["metric"],
+            y=surprise_df["mean_surprise"],
+            marker_color=colors,
+            name="Mean Surprise",
+            hovertemplate="<b>%{x}</b><br>Surprise: %{y:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_hline(y=0, line_dash="dash", line_color="white", row=1, col=1)
+
+    fig.add_trace(
+        go.Bar(
+            x=surprise_df["metric"],
+            y=surprise_df["beat_pct"],
+            name="Beat Rate",
+            marker_color=COLOR_PALETTE["success"],
+            hovertemplate="<b>%{x}</b><br>Beat: %{y:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=surprise_df["metric"],
+            y=surprise_df["miss_pct"],
+            name="Miss Rate",
+            marker_color=COLOR_PALETTE["danger"],
+            hovertemplate="<b>%{x}</b><br>Miss: %{y:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+
+    if all_surprises:
+        fig.add_trace(
+            go.Histogram(
+                x=all_surprises,
+                nbinsx=50,
+                marker_color=COLOR_PALETTE["info"],
+                name="Surprise Distribution",
+                hovertemplate="Surprise: %{x:.1f}%<br>Count: %{y}<extra></extra>",
+            ),
+            row=2,
+            col=1,
+        )
+        fig.add_vline(x=0, line_dash="dash", line_color="white", row=2, col=1)
+
+    overall_beat_rate = float(surprise_df["beat_pct"].mean())
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=overall_beat_rate,
+            title={"text": "Forecast Accuracy", "font": {"size": 16}},
+            delta={"reference": 50, "suffix": "%"},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": COLOR_PALETTE["primary"]},
+                "steps": [
+                    {"range": [0, 40], "color": COLOR_PALETTE["danger"]},
+                    {"range": [40, 60], "color": COLOR_PALETTE["neutral"]},
+                    {"range": [60, 100], "color": COLOR_PALETTE["success"]},
+                ],
+                "threshold": {
+                    "line": {"color": "white", "width": 4},
+                    "thickness": 0.75,
+                    "value": 50,
+                },
+            },
+        ),
+        row=2,
+        col=2,
+    )
+
+    fig.update_layout(
+        title="<b>Earnings Surprise Analysis Dashboard</b><br><sup>Expected vs Actual Performance Monitoring</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=800,
+        showlegend=True,
+        legend=dict(
+            orientation="h", yanchor="bottom", y=-0.12, xanchor="center", x=0.5
+        ),
+        font=dict(family="Arial, sans-serif", size=12),
+        title_font_size=20,
+    )
+
+    fig.update_xaxes(title_text="Metric", row=1, col=1)
+    fig.update_yaxes(title_text="Surprise (%)", row=1, col=1)
+    fig.update_xaxes(title_text="Metric", row=1, col=2)
+    fig.update_yaxes(title_text="Rate (%)", row=1, col=2)
+    fig.update_xaxes(title_text="Surprise (%)", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_html(str(output_path))
+
+    return fig
+
+
+def create_analyst_recommendation_heatmap(
+    df: pd.DataFrame,
+    top_n_sectors: int = 12,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create a heatmap of analyst recommendations by sector.
+
+    Args:
+        df: DataFrame containing analyst rating count columns.
+        top_n_sectors: Number of sectors to display.
+        output_path: Optional path to save HTML.
+
+    Returns:
+        go.Figure: Plotly figure.
+    """
+    rating_cols = {
+        "Strong Buy": "num_strong_buys_ratings",
+        "Buy": "num_buys_ratings",
+        "Hold": "num_hold_ratings",
+        "Sell": "num_sell_ratings",
+        "Strong Sell": "num_strong_sell_ratings",
+    }
+
+    available_ratings = {k: v for k, v in rating_cols.items() if v in df.columns}
+    if not available_ratings or "sector" not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Required analyst rating columns not found",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    df_local = df.copy()
+    top_sectors = df_local["sector"].value_counts().head(int(top_n_sectors)).index
+
+    heatmap_data: List[Dict[str, float]] = []
+    for sector in top_sectors:
+        sector_df = df_local[df_local["sector"] == sector]
+        row: Dict[str, float] = {"Sector": str(sector)[:25]}
+        for rating_name, col in available_ratings.items():
+            row[rating_name] = float(
+                pd.to_numeric(sector_df[col], errors="coerce").sum()
+            )
+        heatmap_data.append(row)
+
+    heatmap_df = pd.DataFrame(heatmap_data).set_index("Sector")
+    row_sums = heatmap_df.sum(axis=1).replace(0, np.nan)
+    heatmap_normalized = heatmap_df.div(row_sums, axis=0) * 100
+    heatmap_normalized = heatmap_normalized.fillna(0)
+
+    fig = px.imshow(
+        heatmap_normalized,
+        labels=dict(x="Rating Type", y="Sector", color="% of Ratings"),
+        x=list(available_ratings.keys()),
+        y=heatmap_normalized.index.tolist(),
+        color_continuous_scale="RdYlGn",
+        color_continuous_midpoint=20,
+        aspect="auto",
+        text_auto=".1f",
+        title="<b>Analyst Recommendation Distribution by Sector</b><br><sup>Percentage of Total Ratings per Sector</sup>",
+    )
+
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        font=dict(family="Arial, sans-serif", size=12),
+        title_font_size=20,
+        xaxis_title="Rating Type",
+        yaxis_title="Sector",
+    )
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_html(str(output_path))
+
+    return fig
+
+
+def create_market_movers_dashboard(
+    df: pd.DataFrame,
+    reference_date: Optional[pd.Timestamp] = None,
+    lookback_days: int = 7,
+    top_n: int = 20,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Identify and visualize market movers around earnings events.
+
+    Uses a composite mover score derived from z-scored momentum/volatility/volume
+    signals when columns are available.
+
+    Args:
+        df: DataFrame with at least ticker/sector/last_price/next_earnings.
+        reference_date: Analysis date.
+        lookback_days: Event window around earnings.
+        top_n: Number of movers to display.
+        output_path: Optional path to save HTML.
+
+    Returns:
+        go.Figure: Plotly figure.
+    """
+    if reference_date is None:
+        reference_date = pd.Timestamp.now()
+
+    required_cols = ["ticker", "sector", "last_price", "next_earnings"]
+    if not all(c in df.columns for c in required_cols):
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Required columns not found for market movers analysis",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    df_local = df.copy()
+    df_local["next_earnings"] = pd.to_datetime(
+        df_local["next_earnings"], errors="coerce"
+    )
+    df_local["days_to_earnings"] = (df_local["next_earnings"] - reference_date).dt.days
+
+    mask = df_local["days_to_earnings"].abs() <= int(lookback_days)
+    movers_df = df_local[mask].copy()
+
+    if movers_df.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"No earnings events within {lookback_days} days",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    momentum_cols = ["price_momentum_1m", "volatility_1m", "rel_volume"]
+    movers_df["mover_score"] = 0.0
+
+    for col in momentum_cols:
+        if col not in movers_df.columns:
+            continue
+        data = pd.to_numeric(movers_df[col], errors="coerce")
+        if data.notna().sum() == 0:
+            continue
+        std = float(data.std())
+        if std == 0 or np.isnan(std):
+            continue
+        z_score = (data - float(data.mean())) / std
+        movers_df["mover_score"] += z_score.abs().fillna(0.0)
+
+    top_movers = movers_df.sort_values(by="mover_score", ascending=False).head(
+        int(top_n)
+    )
+    if top_movers.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient momentum/volatility data to compute mover scores",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    fig = go.Figure()
+
+    pre_earnings = top_movers[top_movers["days_to_earnings"] > 0]
+    post_earnings = top_movers[top_movers["days_to_earnings"] <= 0]
+
+    if not pre_earnings.empty:
+        fig.add_trace(
+            go.Scatter(
+                x=pre_earnings["days_to_earnings"],
+                y=pre_earnings["mover_score"],
+                mode="markers+text",
+                marker=dict(
+                    size=15,
+                    color=COLOR_PALETTE["warning"],
+                    line=dict(width=2, color="white"),
+                ),
+                text=pre_earnings["ticker"],
+                textposition="top center",
+                textfont=dict(size=10),
+                name="Pre-Earnings",
+                hovertemplate=(
+                    "<b>%{text}</b><br>Days to Earnings: %{x}<br>Mover Score: %{y:.2f}<extra></extra>"
+                ),
+            )
+        )
+
+    if not post_earnings.empty:
+        fig.add_trace(
+            go.Scatter(
+                x=post_earnings["days_to_earnings"],
+                y=post_earnings["mover_score"],
+                mode="markers+text",
+                marker=dict(
+                    size=15,
+                    color=COLOR_PALETTE["success"],
+                    line=dict(width=2, color="white"),
+                ),
+                text=post_earnings["ticker"],
+                textposition="top center",
+                textfont=dict(size=10),
+                name="Post-Earnings",
+                hovertemplate=(
+                    "<b>%{text}</b><br>Days Since Earnings: %{x}<br>Mover Score: %{y:.2f}<extra></extra>"
+                ),
+            )
+        )
+
+    fig.add_vline(
+        x=0,
+        line_dash="dash",
+        line_color="white",
+        annotation_text="Earnings Date",
+        annotation_position="top",
+    )
+
+    fig.update_layout(
+        title="<b>Market Movers: Earnings Event Window Analysis</b><br><sup>Top Stocks by Volatility/Momentum Score</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        xaxis_title="Days Relative to Earnings",
+        yaxis_title="Mover Score (Composite)",
+        font=dict(family="Arial, sans-serif", size=12),
+        title_font_size=20,
+        showlegend=True,
+        hovermode="closest",
+    )
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_html(str(output_path))
+
+    return fig
+
+
+def create_price_target_analytics(
+    df: pd.DataFrame,
+    top_n_sectors: int = 12,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create price target analytics with confidence bands and spread analysis."""
+    required_cols = ["ticker", "sector", "last_price", "price_target"]
+    if not all(c in df.columns for c in required_cols):
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Required price target columns not found",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    df_local = df.copy()
+
+    for col in [
+        "last_price",
+        "price_target",
+        "price_target_high",
+        "price_target_low",
+        "target_vs_price",
+    ]:
+        if col in df_local.columns:
+            df_local[col] = pd.to_numeric(df_local[col], errors="coerce")
+
+    if (
+        "price_target_high" in df_local.columns
+        and "price_target_low" in df_local.columns
+    ):
+        with np.errstate(divide="ignore", invalid="ignore"):
+            df_local["target_spread"] = (
+                (df_local["price_target_high"] - df_local["price_target_low"])
+                / df_local["last_price"]
+            ) * 100
+        df_local["target_spread"] = df_local["target_spread"].replace(
+            [np.inf, -np.inf], np.nan
+        )
+
+    top_sectors = df_local["sector"].value_counts().head(int(top_n_sectors)).index
+    sector_stats: List[Dict[str, float]] = []
+
+    for sector in top_sectors:
+        sector_df = df_local[df_local["sector"] == sector]
+
+        if "target_vs_price" in sector_df.columns:
+            upside = (
+                sector_df["target_vs_price"].replace([np.inf, -np.inf], np.nan).dropna()
+            )
+        else:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                upside = (
+                    (sector_df["price_target"] - sector_df["last_price"])
+                    / sector_df["last_price"]
+                ) * 100
+            upside = upside.replace([np.inf, -np.inf], np.nan).dropna()
+
+        if len(upside) < 5:
+            continue
+
+        sector_stats.append(
+            {
+                "sector": str(sector)[:20],
+                "mean_upside": float(upside.mean()),
+                "median_upside": float(upside.median()),
+                "q25_upside": float(upside.quantile(0.25)),
+                "q75_upside": float(upside.quantile(0.75)),
+                "count": float(len(upside)),
+                "mean_spread": (
+                    float(sector_df["target_spread"].mean())
+                    if "target_spread" in sector_df.columns
+                    else np.nan
+                ),
+            }
+        )
+
+    if not sector_stats:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient data for price target analytics",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    stats_df = pd.DataFrame(sector_stats).sort_values("mean_upside", ascending=True)
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Mean Target Upside by Sector (%)",
+            "Target Spread (High-Low) by Sector",
+            "Upside Distribution (All Stocks)",
+            "Consensus Confidence Score",
+        ],
+        specs=[
+            [{"type": "bar"}, {"type": "bar"}],
+            [{"type": "histogram"}, {"type": "bar"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.15,
+    )
+
+    colors = [
+        COLOR_PALETTE["success"] if x > 0 else COLOR_PALETTE["danger"]
+        for x in stats_df["mean_upside"]
+    ]
+    fig.add_trace(
+        go.Bar(
+            x=stats_df["mean_upside"],
+            y=stats_df["sector"],
+            orientation="h",
+            marker_color=colors,
+            error_x=dict(
+                type="data",
+                symmetric=False,
+                array=(stats_df["q75_upside"] - stats_df["mean_upside"]).clip(lower=0),
+                arrayminus=(stats_df["mean_upside"] - stats_df["q25_upside"]).clip(
+                    lower=0
+                ),
+                color="rgba(255,255,255,0.3)",
+            ),
+            name="Mean Upside",
+            hovertemplate=(
+                "<b>%{y}</b><br>Mean: %{x:.1f}%<br>Q25-Q75: %{customdata[0]:.1f}% - %{customdata[1]:.1f}%<extra></extra>"
+            ),
+            customdata=stats_df[["q25_upside", "q75_upside"]].values,
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_vline(x=0, line_dash="dash", line_color="white", row=1, col=1)
+
+    if not stats_df["mean_spread"].isna().all():
+        spread_colors = [
+            COLOR_PALETTE["success"] if x < 20 else COLOR_PALETTE["warning"]
+            for x in stats_df["mean_spread"].fillna(0)
+        ]
+        fig.add_trace(
+            go.Bar(
+                x=stats_df["mean_spread"],
+                y=stats_df["sector"],
+                orientation="h",
+                marker_color=spread_colors,
+                name="Target Spread",
+                hovertemplate="<b>%{y}</b><br>Spread: %{x:.1f}%<extra></extra>",
+            ),
+            row=1,
+            col=2,
+        )
+
+    if "target_vs_price" in df_local.columns:
+        all_upside = (
+            df_local["target_vs_price"].replace([np.inf, -np.inf], np.nan).dropna()
+        )
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            all_upside = (
+                (df_local["price_target"] - df_local["last_price"])
+                / df_local["last_price"]
+            ) * 100
+        all_upside = all_upside.replace([np.inf, -np.inf], np.nan).dropna()
+
+    if len(all_upside) > 0:
+        fig.add_trace(
+            go.Histogram(
+                x=all_upside.clip(-50, 100),
+                nbinsx=50,
+                marker_color=COLOR_PALETTE["info"],
+                name="Upside Distribution",
+            ),
+            row=2,
+            col=1,
+        )
+        fig.add_vline(x=0, line_dash="dash", line_color="white", row=2, col=1)
+
+    if not stats_df["mean_spread"].isna().all():
+        stats_df["confidence_score"] = 100 / (1 + stats_df["mean_spread"].fillna(50))
+        top_confidence = stats_df.nlargest(10, "confidence_score")
+        fig.add_trace(
+            go.Bar(
+                x=top_confidence["confidence_score"],
+                y=top_confidence["sector"],
+                orientation="h",
+                marker_color=COLOR_PALETTE["success"],
+                name="Confidence Score",
+                hovertemplate="<b>%{y}</b><br>Score: %{x:.1f}<extra></extra>",
+            ),
+            row=2,
+            col=2,
+        )
+
+    fig.update_layout(
+        title="<b>Price Target Analytics Dashboard</b><br><sup>Analyst Consensus & Confidence Analysis</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=800,
+        showlegend=False,
+        font=dict(family="Arial, sans-serif", size=12),
+        title_font_size=20,
+    )
+
+    fig.update_xaxes(title_text="Upside (%)", row=1, col=1)
+    fig.update_xaxes(title_text="Spread (%)", row=1, col=2)
+    fig.update_xaxes(title_text="Upside (%)", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
+    fig.update_xaxes(title_text="Confidence Score", row=2, col=2)
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_html(str(output_path))
+
+    return fig
+
+
+@dataclass(frozen=True)
+class EarningsAlertConfig:
+    """Configuration for rule-based earnings monitoring alerts."""
+
+    # Alert 1: EPS surprise miss threshold (negative surprise beyond this magnitude)
+    eps_surprise_miss_threshold_pct: float = 20.0
+
+    # Alert 2: Analyst downgrade momentum thresholds
+    analyst_downgrade_threshold_pct: float = 5.0
+    analyst_downgrade_min_periods: int = 2
+
+    # Alert 3: Price target uncertainty via spread (high-low) relative to price
+    target_spread_threshold_pct: float = 30.0
+
+    # Alert 4: Pre-earnings elevated volatility
+    pre_earnings_window_days: int = 7
+    pre_earnings_volatility_quantile: float = 0.75
+
+    # Output controls
+    max_tickers_per_alert: int = 10
+
+
+def generate_earnings_quality_alerts(
+    df: pd.DataFrame,
+    config: Optional[EarningsAlertConfig] = None,
+    reference_date: Optional[pd.Timestamp] = None,
+    output_path: Optional[Union[str, Path]] = None,
+) -> Dict[str, object]:
+    """Generate rule-based earnings quality alerts from an enriched dataset.
+
+    Designed for notebook + scheduled monitoring runs.
+
+    Args:
+        df: Enriched stocks DataFrame.
+        config: Threshold configuration.
+        reference_date: Reference timestamp for earnings window logic (defaults to now).
+        output_path: Optional JSON path to write the alert payload.
+
+    Returns:
+        Dict payload with metadata + a list of alerts.
+    """
+    if config is None:
+        config = EarningsAlertConfig()
+
+    if reference_date is None:
+        reference_date = pd.Timestamp.now()
+
+    alerts: List[Dict[str, object]] = []
+
+    payload: Dict[str, object] = {
+        "timestamp": datetime.now().isoformat(),
+        "reference_date": str(reference_date),
+        "total_stocks_monitored": int(len(df)),
+        "alerts": alerts,
+        "thresholds": {
+            "eps_surprise_miss_threshold_pct": config.eps_surprise_miss_threshold_pct,
+            "analyst_downgrade_threshold_pct": config.analyst_downgrade_threshold_pct,
+            "analyst_downgrade_min_periods": config.analyst_downgrade_min_periods,
+            "target_spread_threshold_pct": config.target_spread_threshold_pct,
+            "pre_earnings_window_days": config.pre_earnings_window_days,
+            "pre_earnings_volatility_quantile": config.pre_earnings_volatility_quantile,
+        },
+    }
+
+    ticker_col = "ticker" if "ticker" in df.columns else None
+
+    # ---------------------------------------------------------------------
+    # Alert 1: EPS surprise misses
+    # ---------------------------------------------------------------------
+    eps_actual_col = "eps_adj_ltm"
+    eps_est_col = "eps_norm_est_avg_ntm"
+    if eps_actual_col in df.columns and eps_est_col in df.columns:
+        eps_actual = pd.to_numeric(df[eps_actual_col], errors="coerce")
+        eps_est = pd.to_numeric(df[eps_est_col], errors="coerce")
+        valid = eps_actual.notna() & eps_est.notna() & (eps_est.abs() > 0)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            surprise = (
+                (eps_actual[valid] - eps_est[valid]) / eps_est[valid].abs()
+            ) * 100
+        surprise = surprise.replace([np.inf, -np.inf], np.nan).dropna()
+
+        misses = surprise[surprise < -float(config.eps_surprise_miss_threshold_pct)]
+        if len(misses) > 0:
+            alerts.append(
+                {
+                    "alert_type": "large_earnings_miss",
+                    "severity": "high",
+                    "count": int(len(misses)),
+                    "description": (
+                        f"{len(misses)} stocks with EPS surprise < -{config.eps_surprise_miss_threshold_pct:.0f}%"
+                    ),
+                    "tickers": (
+                        df.loc[misses.index, ticker_col]
+                        .astype(str)
+                        .tolist()[: int(config.max_tickers_per_alert)]
+                        if ticker_col is not None
+                        else []
+                    ),
+                }
+            )
+
+    # ---------------------------------------------------------------------
+    # Alert 2: Analyst downgrade momentum (negative revisions across periods)
+    # ---------------------------------------------------------------------
+    default_rev_cols = [
+        "eps_est_avg_rev_pct_fy1e_1m",
+        "eps_est_avg_rev_pct_fy1e_3m",
+        "eps_est_avg_rev_pct_fy1e_6m",
+    ]
+    available_rev_cols = [c for c in default_rev_cols if c in df.columns]
+    if len(available_rev_cols) >= int(config.analyst_downgrade_min_periods):
+        downgrade_mask = pd.Series(True, index=df.index)
+        for col in available_rev_cols:
+            downgrade_mask &= pd.to_numeric(df[col], errors="coerce") < -float(
+                config.analyst_downgrade_threshold_pct
+            )
+        downgrades = df[downgrade_mask]
+        if len(downgrades) > 0:
+            alerts.append(
+                {
+                    "alert_type": "analyst_downgrade_momentum",
+                    "severity": "medium",
+                    "count": int(len(downgrades)),
+                    "description": (
+                        f"{len(downgrades)} stocks with analyst EPS revisions < -{config.analyst_downgrade_threshold_pct:.0f}%"
+                        f" across {len(available_rev_cols)} periods"
+                    ),
+                    "tickers": (
+                        downgrades[ticker_col]
+                        .astype(str)
+                        .tolist()[: int(config.max_tickers_per_alert)]
+                        if ticker_col is not None
+                        else []
+                    ),
+                }
+            )
+
+    # ---------------------------------------------------------------------
+    # Alert 3: High target spread uncertainty
+    # ---------------------------------------------------------------------
+    if (
+        "price_target_high" in df.columns
+        and "price_target_low" in df.columns
+        and "last_price" in df.columns
+    ):
+        high = pd.to_numeric(df["price_target_high"], errors="coerce")
+        low = pd.to_numeric(df["price_target_low"], errors="coerce")
+        last_price = pd.to_numeric(df["last_price"], errors="coerce").replace(0, np.nan)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            spread_pct = ((high - low) / last_price) * 100
+        spread_pct = spread_pct.replace([np.inf, -np.inf], np.nan).dropna()
+
+        high_spread = spread_pct[spread_pct > float(config.target_spread_threshold_pct)]
+        if len(high_spread) > 0:
+            alerts.append(
+                {
+                    "alert_type": "high_target_uncertainty",
+                    "severity": "low",
+                    "count": int(len(high_spread)),
+                    "description": (
+                        f"{len(high_spread)} stocks with price target spread > {config.target_spread_threshold_pct:.0f}%"
+                    ),
+                    "tickers": (
+                        df.loc[high_spread.index, ticker_col]
+                        .astype(str)
+                        .tolist()[: int(config.max_tickers_per_alert)]
+                        if ticker_col is not None
+                        else []
+                    ),
+                }
+            )
+
+    # ---------------------------------------------------------------------
+    # Alert 4: Upcoming earnings with high volatility
+    # ---------------------------------------------------------------------
+    if "next_earnings" in df.columns and "volatility_1m" in df.columns:
+        next_earnings = pd.to_datetime(df["next_earnings"], errors="coerce")
+        days_to_earnings = (next_earnings - reference_date).dt.days
+        vol = pd.to_numeric(df["volatility_1m"], errors="coerce")
+        vol_threshold = float(
+            vol.quantile(float(config.pre_earnings_volatility_quantile))
+        )
+
+        high_vol = df[
+            (days_to_earnings >= 0)
+            & (days_to_earnings <= int(config.pre_earnings_window_days))
+            & (vol > vol_threshold)
+        ]
+
+        if len(high_vol) > 0:
+            alerts.append(
+                {
+                    "alert_type": "high_volatility_pre_earnings",
+                    "severity": "medium",
+                    "count": int(len(high_vol)),
+                    "description": (
+                        f"{len(high_vol)} stocks with elevated volatility (> q{config.pre_earnings_volatility_quantile:.2f})"
+                        f" within {config.pre_earnings_window_days} days of earnings"
+                    ),
+                    "tickers": (
+                        high_vol[ticker_col]
+                        .astype(str)
+                        .tolist()[: int(config.max_tickers_per_alert)]
+                        if ticker_col is not None
+                        else []
+                    ),
+                }
+            )
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, default=str)
+
+    return payload
