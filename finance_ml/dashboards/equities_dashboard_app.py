@@ -28,6 +28,7 @@ from finance_ml.dashboards.earnings_widgets import (
     EarningsAlertConfig,
     create_analyst_recommendation_heatmap,
     create_category_comparison_chart,
+    create_earnings_calendar_dashboard,
     create_earnings_metrics_chart,
     create_earnings_surprise_dashboard,
     create_market_movers_dashboard,
@@ -40,6 +41,43 @@ from finance_ml.ml_workflow.preprocessing.etl import etl_with_features
 
 DataSource = Literal["auto", "csv", "db"]
 
+# Standard color palette (aligned with code_guidelines.md Section 17.1)
+COLOR_PALETTE = {
+    "primary": "#375a7f",
+    "secondary": "#6c757d",
+    "success": "#00bc8c",
+    "warning": "#f39c12",
+    "danger": "#e74c3c",
+    "info": "#3498db",
+    "neutral": "#adb5bd",
+}
+
+# Plotly template (aligned with code_guidelines.md Section 17.2)
+PLOTLY_TEMPLATE = "plotly_dark"
+
+# Earnings calendar mode options
+EARNINGS_MODE_OPTIONS = [
+    {"label": "All Categories", "value": "all"},
+    {"label": "Earnings Focus", "value": "earnings"},
+    {"label": "Dividends Focus", "value": "dividends"},
+    {"label": "Valuation", "value": "valuation"},
+    {"label": "Profitability", "value": "profitability"},
+    {"label": "Growth", "value": "growth"},
+    {"label": "Momentum", "value": "momentum"},
+    {"label": "Quality & Risk", "value": "quality_risk"},
+]
+
+# Default columns for the Data Explorer tab - always included in initial view
+# (code_guidelines.md Section 8.1: Single Source of Truth for configuration constants)
+DEFAULT_EXPLORER_COLUMNS = [
+    "ticker",
+    "name",
+    "sector",
+    "region",
+    "last_price",
+    "price_target",
+    "market_cap",
+]
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DASHBOARD_ROOT = PROJECT_ROOT / "outputs" / "dashboards" / "equities_dashboard"
@@ -55,6 +93,194 @@ DEFAULT_ALERTS_PATH = (
     / "earnings_analytics"
     / "earnings_quality_alerts.json"
 )
+
+# Logging setup
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _validate_explorer_columns(df: pd.DataFrame, source_label: str) -> None:
+    """Log warnings for missing DEFAULT_EXPLORER_COLUMNS in loaded data.
+
+    Args:
+        df: Loaded DataFrame to validate
+        source_label: Data source label for logging context
+    """
+    if df is None or df.empty:
+        return
+
+    missing_cols = [c for c in DEFAULT_EXPLORER_COLUMNS if c not in df.columns]
+    if missing_cols:
+        logger.warning(
+            f"Data source '{source_label}' is missing explorer columns: {missing_cols}. "
+            "Some Data Explorer features may be limited."
+        )
+    # Specifically warn about 'name' column as it's important for display
+    if "name" not in df.columns:
+        logger.warning(
+            f"Data source '{source_label}' is missing 'name' column. "
+            "Stock names will not be displayed in the Data Explorer."
+        )
+
+
+def load_data_csv_first(
+    *,
+    data_dir: Optional[Path] = None,
+    db_url: Optional[str] = None,
+    feature_preset: str = "comprehensive",
+    force_etl: bool = False,
+) -> Tuple[pd.DataFrame, str]:
+    """Load data preferring CSV export, falling back to ETL.
+
+    Returns:
+        Tuple of (DataFrame, source_label) where source_label is one of:
+        'csv_export', 'etl_csv', 'etl_db'
+    """
+    resolved_data_dir = data_dir or DEFAULT_DATA_DIR
+    resolved_db_url = db_url or os.getenv("DB_URL")
+
+    # Fast path: load from exported CSV if it exists and is recent
+    if not force_etl and DEFAULT_CSV_EXPORT_PATH.exists():
+        try:
+            df = pd.read_csv(DEFAULT_CSV_EXPORT_PATH)
+            _validate_explorer_columns(df, "csv_export")
+            return df, "csv_export"
+        except Exception as e:
+            logger.warning(f"Failed to load CSV export: {e}, falling back to ETL")
+
+    # Slow path: run ETL pipeline
+    try:
+        source: Literal["csv", "db"] = "db" if resolved_db_url else "csv"
+        df = etl_with_features(
+            source=source,
+            data_dir=resolved_data_dir,
+            db_url=resolved_db_url,
+            feature_preset=feature_preset,
+            return_metrics=False,
+        )
+
+        # Export to CSV for next time
+        if not df.empty:
+            try:
+                export_equities_data(df)
+            except Exception:
+                pass  # Non-critical
+
+        source_label = f"etl_{source}"
+        _validate_explorer_columns(df, source_label)
+        return df, source_label
+    except Exception:
+        return pd.DataFrame(), "failed"
+
+
+def validate_required_columns(
+    df: pd.DataFrame,
+    required_cols: List[str],
+    context_name: str,
+) -> Tuple[List[str], List[str]]:
+    """Validate required columns exist in DataFrame.
+
+    Args:
+        df: DataFrame to check
+        required_cols: List of required column names
+        context_name: Name of the context (for logging)
+
+    Returns:
+        Tuple of (present_cols, missing_cols)
+    """
+    if df is None or df.empty:
+        return [], required_cols
+
+    present = [c for c in required_cols if c in df.columns]
+    missing = [c for c in required_cols if c not in df.columns]
+
+    return present, missing
+
+
+def create_missing_columns_warning(
+    missing_cols: List[str],
+    context_name: str,
+) -> html.Div:
+    """Create a warning panel for missing columns."""
+    if not missing_cols:
+        return html.Div()
+
+    return html.Div(
+        [
+            html.H5(f"⚠️ Missing Columns for {context_name}", className="text-warning"),
+            html.P(
+                f"The following columns are unavailable: {', '.join(missing_cols[:10])}"
+            ),
+            html.P(
+                "Some charts may be limited or unavailable.", className="text-muted"
+            ),
+        ],
+        style={
+            "padding": "10px",
+            "backgroundColor": "#2d2d2d",
+            "borderRadius": "5px",
+            "marginBottom": "10px",
+        },
+    )
+
+
+def compute_surprise(
+    actual: pd.Series,
+    estimate: pd.Series,
+    mode: Literal["pct", "abs"] = "pct",
+    clip_bounds: Tuple[float, float] = (-100, 100),
+) -> pd.Series:
+    """Compute earnings surprise with safe handling.
+
+    Args:
+        actual: Actual values
+        estimate: Estimated values
+        mode: 'pct' for percentage, 'abs' for absolute
+        clip_bounds: Bounds to clip extreme values
+
+    Returns:
+        Series of surprise values
+    """
+    actual_num = pd.to_numeric(actual, errors="coerce")
+    estimate_num = pd.to_numeric(estimate, errors="coerce")
+
+    if mode == "pct":
+        # Use absolute estimate as denominator to avoid sign issues
+        denom = estimate_num.abs().replace(0, np.nan)
+        surprise = ((actual_num - estimate_num) / denom) * 100
+    else:
+        surprise = actual_num - estimate_num
+
+    # Replace inf with NaN and clip
+    surprise = surprise.replace([np.inf, -np.inf], np.nan)
+    if clip_bounds:
+        surprise = surprise.clip(lower=clip_bounds[0], upper=clip_bounds[1])
+
+    return surprise
+
+
+# Metric mappings for Est vs Actual tab
+EST_ACTUAL_METRICS = {
+    "EPS": {
+        "actual": "eps_adj_ltm",
+        "estimate": "eps_norm_est_avg_ntm",
+        "adjusted": "eps_adj_ltm",
+        "gaap": "net_eps_basic_ltm",
+    },
+    "Revenue": {
+        "actual": "total_revenues_ltm",
+        "estimate": "revenues_est_avg_ntm",
+        "adjusted": None,
+        "gaap": "total_revenues_ltm",
+    },
+    "EBITDA": {
+        "actual": "ebitda_ltm",
+        "estimate": "ebitda_est_avg_ntm",
+        "adjusted": "ebitda_adj_ltm",
+        "gaap": "ebitda_ltm",
+    },
+}
 
 
 def _coerce_list(value: Any) -> List[str]:
@@ -367,6 +593,77 @@ def _severity_style(severity: str) -> Dict[str, str]:
     return {}
 
 
+def _monitoring_kpi_cards(df: pd.DataFrame) -> List[Any]:
+    """Generate monitoring KPI cards."""
+    cards = []
+
+    def card(title: str, value: str, color: str = "primary") -> dbc.Card:
+        return dbc.Card(
+            dbc.CardBody(
+                [
+                    html.Div(title, className="kpi-title", style={"fontSize": "12px"}),
+                    html.Div(
+                        value,
+                        className="kpi-value",
+                        style={"fontSize": "18px", "fontWeight": "bold"},
+                    ),
+                ]
+            ),
+            color=color,
+            inverse=True,
+            className="kpi-card",
+            style={"minWidth": "150px"},
+        )
+
+    # 1. % Positive Revenue Growth
+    if "total_revenues_cagr_5y_fy" in df.columns:
+        growth = pd.to_numeric(df["total_revenues_cagr_5y_fy"], errors="coerce")
+        pct_positive = (growth > 0).sum() / len(growth) * 100 if len(growth) > 0 else 0
+        cards.append(
+            card(
+                "% Positive Rev Growth",
+                f"{pct_positive:.1f}%",
+                "success" if pct_positive > 50 else "warning",
+            )
+        )
+
+    # 2. Median Net Margin
+    if "net_income_margin_pct_ltm" in df.columns:
+        margin = pd.to_numeric(df["net_income_margin_pct_ltm"], errors="coerce")
+        median_margin = margin.median() if margin.notna().any() else 0
+        cards.append(card("Median Net Margin", f"{median_margin:.1f}%", "info"))
+
+    # 3. % Flagged by Alerts
+    payload = load_alerts_payload(DEFAULT_ALERTS_PATH)
+    alert_tickers = set()
+    for a in payload.get("alerts", []):
+        alert_tickers.update(a.get("tickers", []))
+    if "ticker" in df.columns and len(df) > 0:
+        pct_flagged = len(alert_tickers & set(df["ticker"])) / len(df) * 100
+        cards.append(
+            card(
+                "% With Alerts",
+                f"{pct_flagged:.1f}%",
+                "danger" if pct_flagged > 20 else "secondary",
+            )
+        )
+
+    # 4. Median EPS Revision (if available)
+    rev_cols = [c for c in df.columns if "eps_est_avg_rev_pct" in c.lower()]
+    if rev_cols:
+        rev = pd.to_numeric(df[rev_cols[0]], errors="coerce")
+        median_rev = rev.median() if rev.notna().any() else 0
+        cards.append(
+            card(
+                "Median EPS Revision",
+                f"{median_rev:+.1f}%",
+                "success" if median_rev > 0 else "danger",
+            )
+        )
+
+    return cards
+
+
 def _safe_options(df: pd.DataFrame, col: str) -> List[Dict[str, str]]:
     if df is None or df.empty or col not in df.columns:
         return []
@@ -541,8 +838,9 @@ def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
     Returns:
         Plotly figure
     """
-    import plotly.graph_objects as go
     from datetime import datetime, timedelta
+
+    import plotly.graph_objects as go
 
     if df is None or df.empty or "next_earnings" not in df.columns:
         fig = go.Figure()
@@ -898,11 +1196,247 @@ def create_app(
                         ],
                     ),
                     dcc.Tab(
-                        label="📅 Earnings Analytics",
+                        label="📅 Earnings Analytics Dashboard",
                         value="earnings",
                         children=[
                             html.Div(
                                 [
+                                    # Alert summary panel (Task 3)
+                                    html.Div(id="earnings-alert-summary"),
+                                    # Alert filter dropdown (Task 4)
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Filter by alerts:",
+                                                className="filter-label",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="earnings-alert-filter-dropdown",
+                                                options=[
+                                                    {
+                                                        "label": "All tickers",
+                                                        "value": "all",
+                                                    },
+                                                    {
+                                                        "label": "Only tickers with alerts",
+                                                        "value": "alerts_only",
+                                                    },
+                                                ],
+                                                value="all",
+                                                clearable=False,
+                                                style={"width": "250px"},
+                                            ),
+                                        ],
+                                        style={
+                                            "display": "flex",
+                                            "alignItems": "center",
+                                            "gap": "10px",
+                                            "marginBottom": "10px",
+                                        },
+                                    ),
+                                    # Generate artifacts button (Task 5)
+                                    html.Div(
+                                        [
+                                            dbc.Button(
+                                                "Generate Earnings Analytics Artifacts",
+                                                id="generate-earnings-artifacts-btn",
+                                                color="info",
+                                            ),
+                                            html.Span(
+                                                id="earnings-artifacts-status",
+                                                style={
+                                                    "marginLeft": "10px",
+                                                    "color": "#aaa",
+                                                },
+                                            ),
+                                        ],
+                                        style={"marginBottom": "15px"},
+                                    ),
+                                    # Interactive Earnings Calendar Dashboard
+                                    html.Div(
+                                        [
+                                            html.H5(
+                                                "📅 Interactive Earnings Calendar",
+                                                style={
+                                                    "marginBottom": "10px",
+                                                    "color": COLOR_PALETTE["info"],
+                                                },
+                                            ),
+                                            # Calendar controls row
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            html.Label(
+                                                                "Calendar Mode:",
+                                                                className="filter-label",
+                                                            ),
+                                                            dcc.Dropdown(
+                                                                id="earnings-calendar-mode",
+                                                                options=EARNINGS_MODE_OPTIONS,
+                                                                value="all",
+                                                                clearable=False,
+                                                                style={
+                                                                    "width": "180px"
+                                                                },
+                                                            ),
+                                                        ],
+                                                        className="filter-item",
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Label(
+                                                                "Days Window (±):",
+                                                                className="filter-label",
+                                                            ),
+                                                            dcc.Slider(
+                                                                id="earnings-calendar-days",
+                                                                min=3,
+                                                                max=30,
+                                                                step=1,
+                                                                value=10,
+                                                                marks={
+                                                                    3: "3",
+                                                                    7: "7",
+                                                                    10: "10",
+                                                                    14: "14",
+                                                                    21: "21",
+                                                                    30: "30",
+                                                                },
+                                                                tooltip={
+                                                                    "placement": "bottom",
+                                                                    "always_visible": False,
+                                                                },
+                                                            ),
+                                                        ],
+                                                        style={
+                                                            "width": "200px",
+                                                            "marginLeft": "20px",
+                                                        },
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Label(
+                                                                "Top N:",
+                                                                className="filter-label",
+                                                            ),
+                                                            dcc.Input(
+                                                                id="earnings-calendar-top-n",
+                                                                type="number",
+                                                                value=50,
+                                                                min=10,
+                                                                max=200,
+                                                                step=10,
+                                                                style={"width": "80px"},
+                                                            ),
+                                                        ],
+                                                        style={"marginLeft": "20px"},
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            dbc.Checkbox(
+                                                                id="earnings-calendar-apply-filters",
+                                                                label="Apply Global Filters",
+                                                                value=True,
+                                                            ),
+                                                        ],
+                                                        style={
+                                                            "marginLeft": "20px",
+                                                            "display": "flex",
+                                                            "alignItems": "center",
+                                                        },
+                                                    ),
+                                                ],
+                                                className="filter-row",
+                                                style={"marginBottom": "10px"},
+                                            ),
+                                            # Calendar status
+                                            html.Div(
+                                                id="earnings-calendar-status",
+                                                style={
+                                                    "color": COLOR_PALETTE["neutral"],
+                                                    "fontSize": "12px",
+                                                    "marginBottom": "5px",
+                                                },
+                                            ),
+                                            # Earnings Calendar DataTable
+                                            dash_table.DataTable(
+                                                id="earnings-calendar-table",
+                                                data=[],
+                                                columns=[],
+                                                style_table={
+                                                    "overflowX": "auto",
+                                                    "maxHeight": "400px",
+                                                    "overflowY": "auto",
+                                                },
+                                                style_cell={
+                                                    "backgroundColor": "#111",
+                                                    "color": "white",
+                                                    "border": f"1px solid {COLOR_PALETTE['secondary']}",
+                                                    "fontFamily": "Segoe UI, Roboto, Arial",
+                                                    "fontSize": "13px",
+                                                    "padding": "6px",
+                                                    "whiteSpace": "normal",
+                                                    "height": "auto",
+                                                    "minWidth": "80px",
+                                                },
+                                                style_header={
+                                                    "backgroundColor": COLOR_PALETTE[
+                                                        "primary"
+                                                    ],
+                                                    "fontWeight": "bold",
+                                                    "color": "white",
+                                                },
+                                                style_data_conditional=[
+                                                    # Past earnings (red)
+                                                    {
+                                                        "if": {
+                                                            "filter_query": "{days_to_earnings} < 0",
+                                                            "column_id": "days_to_earnings",
+                                                        },
+                                                        "color": COLOR_PALETTE[
+                                                            "danger"
+                                                        ],
+                                                    },
+                                                    # Today (yellow background)
+                                                    {
+                                                        "if": {
+                                                            "filter_query": "{days_to_earnings} = 0",
+                                                            "column_id": "days_to_earnings",
+                                                        },
+                                                        "backgroundColor": COLOR_PALETTE[
+                                                            "warning"
+                                                        ],
+                                                        "color": "black",
+                                                    },
+                                                    # Future earnings (green)
+                                                    {
+                                                        "if": {
+                                                            "filter_query": "{days_to_earnings} > 0",
+                                                            "column_id": "days_to_earnings",
+                                                        },
+                                                        "color": COLOR_PALETTE[
+                                                            "success"
+                                                        ],
+                                                    },
+                                                ],
+                                                sort_action="native",
+                                                filter_action="native",
+                                                page_action="native",
+                                                page_size=15,
+                                                row_selectable="multi",
+                                                selected_rows=[],
+                                            ),
+                                        ],
+                                        style={
+                                            "padding": "15px",
+                                            "backgroundColor": "#1a1a1a",
+                                            "borderRadius": "8px",
+                                            "marginBottom": "20px",
+                                            "border": f"1px solid {COLOR_PALETTE['secondary']}",
+                                        },
+                                    ),
+                                    # Existing charts
                                     dcc.Graph(id="earnings-events-timeline"),
                                     dcc.Graph(id="earnings-surprise-fig"),
                                     dcc.Graph(id="analyst-heatmap-fig"),
@@ -1162,6 +1696,229 @@ def create_app(
                             )
                         ],
                     ),
+                    # Task 6-7: Est. vs Actual vs Adjusted Tab
+                    dcc.Tab(
+                        label="📊 Est. vs Actual vs Adjusted",
+                        value="est-actual",
+                        children=[
+                            html.Div(
+                                [
+                                    # Missing columns warning
+                                    html.Div(id="est-actual-missing-cols-warning"),
+                                    # Controls row
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Label(
+                                                        "Metric",
+                                                        className="filter-label",
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="est-actual-metric-selector",
+                                                        options=[
+                                                            {"label": k, "value": k}
+                                                            for k in EST_ACTUAL_METRICS.keys()
+                                                        ],
+                                                        value="EPS",
+                                                        clearable=False,
+                                                    ),
+                                                ],
+                                                className="filter-item",
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Label(
+                                                        "Surprise Calculation",
+                                                        className="filter-label",
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="est-actual-surprise-method",
+                                                        options=[
+                                                            {
+                                                                "label": "Percentage",
+                                                                "value": "pct",
+                                                            },
+                                                            {
+                                                                "label": "Absolute",
+                                                                "value": "abs",
+                                                            },
+                                                        ],
+                                                        value="pct",
+                                                        clearable=False,
+                                                    ),
+                                                ],
+                                                className="filter-item",
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Label(
+                                                        "Segment By",
+                                                        className="filter-label",
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="est-actual-segment-by",
+                                                        options=[
+                                                            {
+                                                                "label": "Sector",
+                                                                "value": "sector",
+                                                            },
+                                                            {
+                                                                "label": "Region",
+                                                                "value": "region",
+                                                            },
+                                                            {
+                                                                "label": "Size Class",
+                                                                "value": "size_class",
+                                                            },
+                                                            {
+                                                                "label": "Style Class",
+                                                                "value": "style_class",
+                                                            },
+                                                            {
+                                                                "label": "Industry",
+                                                                "value": "industry",
+                                                            },
+                                                            {
+                                                                "label": "Trading Country",
+                                                                "value": "trading_country",
+                                                            },
+                                                            {
+                                                                "label": "Exchange",
+                                                                "value": "exchange",
+                                                            },
+                                                        ],
+                                                        value="sector",
+                                                        clearable=False,
+                                                    ),
+                                                ],
+                                                className="filter-item",
+                                            ),
+                                        ],
+                                        className="filter-row",
+                                    ),
+                                    # Charts
+                                    html.Div(
+                                        [
+                                            dcc.Graph(
+                                                id="est-actual-scatter-fig",
+                                                style={"height": "400px"},
+                                            ),
+                                            dcc.Graph(
+                                                id="est-actual-distribution-fig",
+                                                style={"height": "400px"},
+                                            ),
+                                        ],
+                                        style={
+                                            "display": "grid",
+                                            "gridTemplateColumns": "1fr 1fr",
+                                            "gap": "10px",
+                                        },
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(
+                                                id="est-actual-adjusted-fig",
+                                                style={"height": "400px"},
+                                            ),
+                                            dcc.Graph(
+                                                id="est-actual-revision-fig",
+                                                style={"height": "400px"},
+                                            ),
+                                        ],
+                                        style={
+                                            "display": "grid",
+                                            "gridTemplateColumns": "1fr 1fr",
+                                            "gap": "10px",
+                                        },
+                                    ),
+                                ],
+                                style={"padding": "10px"},
+                            )
+                        ],
+                    ),
+                    # Task 8: Earnings Monitoring Tab
+                    dcc.Tab(
+                        label="📈 Earnings Monitoring",
+                        value="monitoring",
+                        children=[
+                            html.Div(
+                                [
+                                    # KPI cards row
+                                    html.Div(
+                                        id="monitoring-kpi-row", className="kpi-row"
+                                    ),
+                                    # Controls
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Label(
+                                                        "Segment By",
+                                                        className="filter-label",
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="monitoring-segment-by",
+                                                        options=[
+                                                            {
+                                                                "label": "Sector",
+                                                                "value": "sector",
+                                                            },
+                                                            {
+                                                                "label": "Region",
+                                                                "value": "region",
+                                                            },
+                                                            {
+                                                                "label": "Size Class",
+                                                                "value": "size_class",
+                                                            },
+                                                        ],
+                                                        value="sector",
+                                                        clearable=False,
+                                                        style={"width": "200px"},
+                                                    ),
+                                                ],
+                                                style={"marginRight": "20px"},
+                                            ),
+                                            dbc.Button(
+                                                "Generate Monitoring Report",
+                                                id="generate-monitoring-report-btn",
+                                                color="success",
+                                            ),
+                                            html.Span(
+                                                id="monitoring-report-status",
+                                                style={
+                                                    "marginLeft": "10px",
+                                                    "color": "#aaa",
+                                                },
+                                            ),
+                                        ],
+                                        style={
+                                            "display": "flex",
+                                            "alignItems": "center",
+                                            "marginBottom": "15px",
+                                        },
+                                    ),
+                                    # Charts
+                                    dcc.Graph(id="monitoring-growth-fig"),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(
+                                                id="monitoring-margin-fig",
+                                                style={"flex": "1"},
+                                            ),
+                                            dcc.Graph(
+                                                id="monitoring-quality-fig",
+                                                style={"flex": "1"},
+                                            ),
+                                        ],
+                                        style={"display": "flex", "gap": "10px"},
+                                    ),
+                                ],
+                                style={"padding": "10px"},
+                            )
+                        ],
+                    ),
                 ],
             ),
         ]
@@ -1176,15 +1933,13 @@ def create_app(
         prevent_initial_call=not load_on_start,
     )
     def _refresh_data(_n_clicks):
-        df = load_data(data_source=data_source, data_dir=data_dir, db_url=db_url)
+        df, source_label = load_data_csv_first(
+            data_dir=data_dir,
+            db_url=db_url,
+        )
 
         if not df.empty:
-            # Export to CSV
-            try:
-                export_equities_data(df)
-                status = f"Loaded {len(df):,} rows | CSV exported"
-            except Exception as e:
-                status = f"Loaded {len(df):,} rows | Export failed: {e}"
+            status = f"Loaded {len(df):,} rows | source={source_label}"
         else:
             status = "No data loaded"
 
@@ -1238,6 +1993,49 @@ def create_app(
             _market_cap_distribution(filtered),
         )
 
+    # Task 3: Alert summary callback
+    @app.callback(
+        Output("earnings-alert-summary", "children"),
+        Input("equities-data-store", "data"),
+    )
+    def _update_alert_summary(data_json):
+        """Render compact alert summary panel."""
+        payload = load_alerts_payload(DEFAULT_ALERTS_PATH)
+        alerts = payload.get("alerts", [])
+
+        if not alerts:
+            return html.Div(
+                "No alerts available. Click 'Generate Alerts' in the Alerts tab.",
+                style={"color": "#aaa", "padding": "10px"},
+            )
+
+        # Build summary cards
+        severity_counts = {"high": 0, "medium": 0, "low": 0}
+        for a in alerts:
+            sev = a.get("severity", "low").lower()
+            severity_counts[sev] = severity_counts.get(sev, 0) + 1
+
+        cards = []
+        for sev, count in severity_counts.items():
+            if count > 0:
+                color = {"high": "danger", "medium": "warning", "low": "info"}.get(
+                    sev, "secondary"
+                )
+                cards.append(
+                    dbc.Badge(f"{sev.upper()}: {count}", color=color, className="me-2")
+                )
+
+        return html.Div(
+            [html.Span("Alerts: ", style={"fontWeight": "bold"})] + cards,
+            style={
+                "padding": "10px",
+                "backgroundColor": "#1a1a1a",
+                "borderRadius": "5px",
+                "marginBottom": "10px",
+            },
+        )
+
+    # Task 4: Updated earnings figures callback with alert filter and global filter integration
     @app.callback(
         Output("earnings-events-timeline", "figure"),
         Output("earnings-surprise-fig", "figure"),
@@ -1245,8 +2043,28 @@ def create_app(
         Output("market-movers-fig", "figure"),
         Output("price-target-analytics-fig", "figure"),
         Input("equities-data-store", "data"),
+        Input("earnings-alert-filter-dropdown", "value"),
+        Input("sector-dropdown", "value"),
+        Input("region-dropdown", "value"),
+        Input("country-dropdown", "value"),
+        Input("trading-country-dropdown", "value"),
+        Input("industry-dropdown", "value"),
+        Input("exchange-dropdown", "value"),
+        Input("style-class-dropdown", "value"),
+        Input("size-class-dropdown", "value"),
     )
-    def _update_earnings_figs(data_json):
+    def _update_earnings_figs(
+        data_json,
+        alert_filter,
+        sectors,
+        regions,
+        countries,
+        trading_countries,
+        industries,
+        exchanges,
+        style_classes,
+        size_classes,
+    ):
         try:
             df = pd.read_json(data_json, orient="split") if data_json else initial_df
         except Exception:
@@ -1256,6 +2074,35 @@ def create_app(
             empty = px.scatter(title="No data")
             return empty, empty, empty, empty, empty
 
+        # Apply global filters for cross-tab synchronization
+        df = apply_filters(
+            df,
+            sectors=_coerce_list(sectors),
+            regions=_coerce_list(regions),
+            countries=_coerce_list(countries),
+            trading_countries=_coerce_list(trading_countries),
+            industries=_coerce_list(industries),
+            exchanges=_coerce_list(exchanges),
+            style_classes=_coerce_list(style_classes),
+            size_classes=_coerce_list(size_classes),
+        )
+
+        if df.empty:
+            empty = px.scatter(title="No data after filtering")
+            return empty, empty, empty, empty, empty
+
+        # Apply alert filter (Task 4)
+        if alert_filter == "alerts_only":
+            payload = load_alerts_payload(DEFAULT_ALERTS_PATH)
+            alert_tickers = set()
+            for a in payload.get("alerts", []):
+                alert_tickers.update(a.get("tickers", []))
+            if alert_tickers and "ticker" in df.columns:
+                df = df[df["ticker"].isin(alert_tickers)]
+                if df.empty:
+                    empty = px.scatter(title="No tickers with alerts")
+                    return empty, empty, empty, empty, empty
+
         # These functions are designed to be robust to missing columns.
         return (
             create_earnings_events_chart(df),
@@ -1264,6 +2111,184 @@ def create_app(
             create_market_movers_dashboard(df),
             create_price_target_analytics(df),
         )
+
+    # Task 5: Generate earnings artifacts callback
+    @app.callback(
+        Output("earnings-artifacts-status", "children"),
+        Input("generate-earnings-artifacts-btn", "n_clicks"),
+        State("equities-data-store", "data"),
+        prevent_initial_call=True,
+    )
+    def _generate_earnings_artifacts(_n, data_json):
+        """Generate earnings analytics artifacts (Task 5)."""
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        if df is None or df.empty:
+            return "No data available"
+
+        try:
+            # Generate the 4 main earnings artifacts
+            artifacts_generated = []
+
+            for name, func in [
+                (
+                    "earnings_surprise_dashboard.html",
+                    create_earnings_surprise_dashboard,
+                ),
+                (
+                    "analyst_recommendation_heatmap.html",
+                    create_analyst_recommendation_heatmap,
+                ),
+                ("market_movers_dashboard.html", create_market_movers_dashboard),
+                ("price_target_analytics.html", create_price_target_analytics),
+            ]:
+                output_path = ARTIFACTS_DIR / name
+                func(df, output_path=output_path)
+                artifacts_generated.append(name)
+
+            return f"✓ Generated {len(artifacts_generated)} artifacts"
+        except Exception as e:
+            return f"Error: {e}"
+
+    # Interactive Earnings Calendar callback with global filter integration
+    @app.callback(
+        Output("earnings-calendar-table", "columns"),
+        Output("earnings-calendar-table", "data"),
+        Output("earnings-calendar-status", "children"),
+        Input("equities-data-store", "data"),
+        Input("earnings-calendar-mode", "value"),
+        Input("earnings-calendar-days", "value"),
+        Input("earnings-calendar-top-n", "value"),
+        Input("earnings-calendar-apply-filters", "value"),
+        Input("sector-dropdown", "value"),
+        Input("region-dropdown", "value"),
+        Input("country-dropdown", "value"),
+        Input("trading-country-dropdown", "value"),
+        Input("industry-dropdown", "value"),
+        Input("exchange-dropdown", "value"),
+        Input("style-class-dropdown", "value"),
+        Input("size-class-dropdown", "value"),
+    )
+    def _update_earnings_calendar(
+        data_json,
+        mode,
+        days_window,
+        top_n,
+        should_apply_filters,
+        sectors,
+        regions,
+        countries,
+        trading_countries,
+        industries,
+        exchanges,
+        style_classes,
+        size_classes,
+    ):
+        """Update the interactive earnings calendar DataTable."""
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        if df is None or df.empty:
+            return [], [], "No data available"
+
+        # Apply global filters if checkbox is checked
+        if should_apply_filters:
+            df = apply_filters(
+                df,
+                sectors=_coerce_list(sectors),
+                regions=_coerce_list(regions),
+                countries=_coerce_list(countries),
+                trading_countries=_coerce_list(trading_countries),
+                industries=_coerce_list(industries),
+                exchanges=_coerce_list(exchanges),
+                style_classes=_coerce_list(style_classes),
+                size_classes=_coerce_list(size_classes),
+            )
+
+        if df.empty:
+            return [], [], "No data after applying filters"
+
+        # Ensure next_earnings column exists
+        if "next_earnings" not in df.columns:
+            return [], [], "No earnings date column available"
+
+        # Parse dates and calculate days to earnings
+        reference_date = pd.Timestamp.now()
+        df = df.copy()
+        df["next_earnings"] = pd.to_datetime(df["next_earnings"], errors="coerce")
+
+        # Filter by days window
+        days_window = int(days_window) if days_window else 10
+        df["days_to_earnings"] = (df["next_earnings"] - reference_date).dt.days
+        mask = df["days_to_earnings"].notna() & (
+            df["days_to_earnings"].abs() <= days_window
+        )
+        filtered_df = df[mask].copy()
+
+        if filtered_df.empty:
+            return [], [], f"No earnings within ±{days_window} days"
+
+        # Use create_earnings_calendar_dashboard for consistent column selection
+        try:
+            calendar_df = create_earnings_calendar_dashboard(
+                filtered_df,
+                reference_date=reference_date,
+                top_n=int(top_n) if top_n else 50,
+                mode=mode or "all",
+            )
+        except Exception as e:
+            logger.warning(f"Calendar dashboard creation failed: {e}")
+            # Fallback to basic columns
+            basic_cols = [
+                "ticker",
+                "sector",
+                "region",
+                "next_earnings",
+                "days_to_earnings",
+            ]
+            available_cols = [c for c in basic_cols if c in filtered_df.columns]
+            if "market_cap" in filtered_df.columns:
+                available_cols.append("market_cap")
+            calendar_df = filtered_df[available_cols].head(int(top_n) if top_n else 50)
+
+        if calendar_df.empty:
+            return [], [], "No data to display"
+
+        # Ensure days_to_earnings is in the output
+        if (
+            "days_to_earnings" not in calendar_df.columns
+            and "next_earnings" in calendar_df.columns
+        ):
+            calendar_df["days_to_earnings"] = (
+                pd.to_datetime(calendar_df["next_earnings"], errors="coerce")
+                - reference_date
+            ).dt.days
+
+        # Format columns for DataTable
+        columns = [
+            {"name": col.replace("_", " ").title(), "id": col}
+            for col in calendar_df.columns
+        ]
+
+        # Convert to records, handling dates
+        for col in calendar_df.columns:
+            if pd.api.types.is_datetime64_any_dtype(calendar_df[col]):
+                calendar_df[col] = calendar_df[col].dt.strftime("%Y-%m-%d")
+
+        data = calendar_df.to_dict("records")
+
+        # Status message
+        mode_display = (mode or "all").replace("_", " ").title()
+        status = f"Showing {len(data)} companies | Mode: {mode_display} | Window: ±{days_window} days"
+        if should_apply_filters:
+            status += " | Global filters applied"
+
+        return columns, data, status
 
     @app.callback(
         Output("alerts-table", "data"),
@@ -1346,6 +2371,12 @@ def create_app(
         Input("equities-data-store", "data"),
     )
     def _update_explorer_columns(categories, data_json):
+        """Update explorer column options based on selected categories.
+
+        Uses DEFAULT_EXPLORER_COLUMNS as base selection, then adds category-specific
+        columns up to 10 total. Ensures 'name' and other key columns are always
+        included when available.
+        """
         categories_list = _coerce_list(categories)
         metrics = get_category_metrics(categories_list)
         cols = sorted({c for values in metrics.values() for c in values})
@@ -1354,9 +2385,19 @@ def create_app(
             df = pd.read_json(data_json, orient="split") if data_json else initial_df
         except Exception:
             df = initial_df
+
         if df is not None and not df.empty:
             cols = [c for c in cols if c in df.columns]
-        default = cols[:10]
+            # Use DEFAULT_EXPLORER_COLUMNS as base, filtering to available columns
+            default = [c for c in DEFAULT_EXPLORER_COLUMNS if c in df.columns]
+        else:
+            default = []
+
+        # Add additional columns from category selection up to 10 total
+        for c in cols:
+            if c not in default and len(default) < 10:
+                default.append(c)
+
         return ([{"label": c, "value": c} for c in cols], default)
 
     @app.callback(
@@ -1436,6 +2477,303 @@ def create_app(
             return f"Generated {total_artifacts} artifacts in {ARTIFACTS_DIR.name}"
         except Exception as e:
             return f"Artifact generation failed: {e}"
+
+    # Task 6-7: Est vs Actual tab callback
+    @app.callback(
+        Output("est-actual-missing-cols-warning", "children"),
+        Output("est-actual-scatter-fig", "figure"),
+        Output("est-actual-distribution-fig", "figure"),
+        Output("est-actual-adjusted-fig", "figure"),
+        Output("est-actual-revision-fig", "figure"),
+        Input("equities-data-store", "data"),
+        Input("est-actual-metric-selector", "value"),
+        Input("est-actual-surprise-method", "value"),
+        Input("est-actual-segment-by", "value"),
+    )
+    def _update_est_actual_tab(data_json, metric, surprise_method, segment_by):
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        empty_fig = go.Figure()
+        empty_fig.update_layout(template="plotly_dark")
+
+        if df is None or df.empty:
+            return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig
+
+        # Get metric columns
+        metric_config = EST_ACTUAL_METRICS.get(metric, EST_ACTUAL_METRICS["EPS"])
+        actual_col = metric_config["actual"]
+        estimate_col = metric_config["estimate"]
+        adjusted_col = metric_config.get("adjusted")
+        gaap_col = metric_config.get("gaap")
+
+        # Check for missing columns
+        required = [actual_col, estimate_col]
+        _, missing = validate_required_columns(df, required, f"{metric} Analysis")
+        warning = create_missing_columns_warning(missing, f"{metric} Analysis")
+
+        # 1. Scatter: Estimated vs Actual
+        scatter_fig = empty_fig
+        if actual_col in df.columns and estimate_col in df.columns:
+            plot_df = df[[actual_col, estimate_col]].dropna()
+            if segment_by in df.columns:
+                plot_df[segment_by] = df.loc[plot_df.index, segment_by]
+
+            if not plot_df.empty:
+                scatter_fig = px.scatter(
+                    plot_df,
+                    x=estimate_col,
+                    y=actual_col,
+                    color=segment_by if segment_by in plot_df.columns else None,
+                    title=f"{metric}: Estimated vs Actual",
+                    template="plotly_dark",
+                    hover_data=[segment_by] if segment_by in plot_df.columns else None,
+                )
+                # Add diagonal line
+                min_val = min(plot_df[estimate_col].min(), plot_df[actual_col].min())
+                max_val = max(plot_df[estimate_col].max(), plot_df[actual_col].max())
+                scatter_fig.add_scatter(
+                    x=[min_val, max_val],
+                    y=[min_val, max_val],
+                    mode="lines",
+                    line=dict(dash="dash", color="white"),
+                    name="Perfect Forecast",
+                    showlegend=True,
+                )
+
+        # 2. Distribution: Surprise histogram
+        dist_fig = empty_fig
+        if actual_col in df.columns and estimate_col in df.columns:
+            surprise = compute_surprise(
+                df[actual_col], df[estimate_col], mode=surprise_method
+            )
+            surprise_df = pd.DataFrame({"surprise": surprise})
+            if segment_by in df.columns:
+                surprise_df[segment_by] = df[segment_by]
+            surprise_df = surprise_df.dropna(subset=["surprise"])
+
+            if not surprise_df.empty:
+                dist_fig = px.histogram(
+                    surprise_df,
+                    x="surprise",
+                    color=segment_by if segment_by in surprise_df.columns else None,
+                    nbins=50,
+                    title=f"{metric} Surprise Distribution ({'%' if surprise_method == 'pct' else 'Absolute'})",
+                    template="plotly_dark",
+                )
+                dist_fig.add_vline(x=0, line_dash="dash", line_color="white")
+
+        # 3. Adjusted vs GAAP delta
+        adjusted_fig = empty_fig
+        if (
+            adjusted_col
+            and gaap_col
+            and adjusted_col in df.columns
+            and gaap_col in df.columns
+        ):
+            adj_num = pd.to_numeric(df[adjusted_col], errors="coerce")
+            gaap_num = pd.to_numeric(df[gaap_col], errors="coerce")
+            delta = adj_num - gaap_num
+            delta_df = pd.DataFrame({"delta": delta})
+            if segment_by in df.columns:
+                delta_df[segment_by] = df[segment_by]
+            delta_df = delta_df.dropna(subset=["delta"])
+
+            if not delta_df.empty:
+                adjusted_fig = px.box(
+                    delta_df,
+                    x=segment_by if segment_by in delta_df.columns else None,
+                    y="delta",
+                    title=f"{metric}: Adjusted vs GAAP Delta by {segment_by.replace('_', ' ').title()}",
+                    template="plotly_dark",
+                )
+        else:
+            adjusted_fig.add_annotation(
+                text="Adjusted vs GAAP comparison not available for this metric",
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+            )
+
+        # 4. Revision trend (if revision columns exist)
+        revision_fig = empty_fig
+        revision_cols = [c for c in df.columns if "rev_pct" in c.lower()]
+        if revision_cols:
+            # Use first available revision column
+            rev_col = revision_cols[0]
+            rev_df = pd.DataFrame(
+                {rev_col: pd.to_numeric(df[rev_col], errors="coerce")}
+            )
+            if segment_by in df.columns:
+                rev_df[segment_by] = df[segment_by]
+            rev_df = rev_df.dropna(subset=[rev_col])
+
+            if not rev_df.empty:
+                revision_fig = px.box(
+                    rev_df,
+                    x=segment_by if segment_by in rev_df.columns else None,
+                    y=rev_col,
+                    title=f"Estimate Revision Trend ({rev_col})",
+                    template="plotly_dark",
+                )
+        else:
+            revision_fig.add_annotation(
+                text="Revision trend data not available",
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+            )
+
+        return warning, scatter_fig, dist_fig, adjusted_fig, revision_fig
+
+    # Task 8: Monitoring tab callback
+    @app.callback(
+        Output("monitoring-kpi-row", "children"),
+        Output("monitoring-growth-fig", "figure"),
+        Output("monitoring-margin-fig", "figure"),
+        Output("monitoring-quality-fig", "figure"),
+        Input("equities-data-store", "data"),
+        Input("monitoring-segment-by", "value"),
+    )
+    def _update_monitoring_tab(data_json, segment_by):
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        empty_fig = go.Figure()
+        empty_fig.update_layout(template="plotly_dark")
+
+        if df is None or df.empty:
+            return [], empty_fig, empty_fig, empty_fig
+
+        # KPI cards
+        kpi_cards = _monitoring_kpi_cards(df)
+
+        # 1. Growth trends by segment
+        growth_fig = empty_fig
+        growth_cols = ["total_revenues_cagr_5y_fy", "revenues_est_yoy_pct_fy1e"]
+        available_growth = [c for c in growth_cols if c in df.columns]
+        if available_growth and segment_by in df.columns:
+            growth_col = available_growth[0]
+            growth_df = df[[segment_by, growth_col]].copy()
+            growth_df[growth_col] = pd.to_numeric(
+                growth_df[growth_col], errors="coerce"
+            )
+            growth_df = growth_df.dropna()
+
+            if not growth_df.empty:
+                growth_fig = px.box(
+                    growth_df,
+                    x=segment_by,
+                    y=growth_col,
+                    title=f"Revenue Growth by {segment_by.replace('_', ' ').title()}",
+                    template="plotly_dark",
+                )
+
+        # 2. Margin distribution
+        margin_fig = empty_fig
+        margin_cols = ["gross_profit_margin_pct_ltm", "net_income_margin_pct_ltm"]
+        available_margin = [c for c in margin_cols if c in df.columns]
+        if available_margin and segment_by in df.columns:
+            margin_col = available_margin[0]
+            margin_df = df[[segment_by, margin_col]].copy()
+            margin_df[margin_col] = pd.to_numeric(
+                margin_df[margin_col], errors="coerce"
+            )
+            margin_df = margin_df.dropna()
+
+            if not margin_df.empty:
+                margin_fig = px.box(
+                    margin_df,
+                    x=segment_by,
+                    y=margin_col,
+                    title=f"Margin Distribution by {segment_by.replace('_', ' ').title()}",
+                    template="plotly_dark",
+                )
+
+        # 3. Quality metrics (ROE, Altman Z, etc.)
+        quality_fig = empty_fig
+        quality_cols = [
+            "return_on_equity_pct_ltm",
+            "altman_z_score_ltm",
+            "return_on_assets_roa_pct_ltm",
+        ]
+        available_quality = [c for c in quality_cols if c in df.columns]
+        if available_quality and segment_by in df.columns:
+            quality_col = available_quality[0]
+            quality_df = df[[segment_by, quality_col]].copy()
+            quality_df[quality_col] = pd.to_numeric(
+                quality_df[quality_col], errors="coerce"
+            )
+            quality_df = quality_df.dropna()
+
+            if not quality_df.empty:
+                quality_fig = px.box(
+                    quality_df,
+                    x=segment_by,
+                    y=quality_col,
+                    title=f"Quality Metrics ({quality_col.replace('_', ' ').title()}) by {segment_by.replace('_', ' ').title()}",
+                    template="plotly_dark",
+                )
+
+        return kpi_cards, growth_fig, margin_fig, quality_fig
+
+    # Task 8: Generate monitoring report callback
+    @app.callback(
+        Output("monitoring-report-status", "children"),
+        Input("generate-monitoring-report-btn", "n_clicks"),
+        State("equities-data-store", "data"),
+        prevent_initial_call=True,
+    )
+    def _generate_monitoring_report(_n, data_json):
+        """Generate monitoring JSON report."""
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        if df is None or df.empty:
+            return "No data available"
+
+        try:
+            report = {
+                "timestamp": pd.Timestamp.now().isoformat(),
+                "total_stocks": len(df),
+                "kpis": {},
+            }
+
+            # Collect KPI values
+            if "total_revenues_cagr_5y_fy" in df.columns:
+                growth = pd.to_numeric(df["total_revenues_cagr_5y_fy"], errors="coerce")
+                report["kpis"]["pct_positive_revenue_growth"] = float(
+                    (growth > 0).mean() * 100
+                )
+                report["kpis"]["median_revenue_growth"] = float(growth.median())
+
+            if "net_income_margin_pct_ltm" in df.columns:
+                margin = pd.to_numeric(df["net_income_margin_pct_ltm"], errors="coerce")
+                report["kpis"]["median_net_margin"] = float(margin.median())
+
+            if "return_on_equity_pct_ltm" in df.columns:
+                roe = pd.to_numeric(df["return_on_equity_pct_ltm"], errors="coerce")
+                report["kpis"]["median_roe"] = float(roe.median())
+
+            # Save report
+            output_path = ARTIFACTS_DIR / "monitoring_report.json"
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=2)
+
+            return f"✓ Report saved to {output_path.name}"
+        except Exception as e:
+            return f"Error: {e}"
 
     return app
 
