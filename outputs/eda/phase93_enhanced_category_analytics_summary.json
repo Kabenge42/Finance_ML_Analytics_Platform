@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-12-16T15:09:58.769170",
+  "total_stocks": 6940,
+  "categories_analyzed": 7,
+  "visualizations_generated": [
+    "phase93_regional_radar_charts.html",
+    "phase93_category_distributions_boxplots.html",
+    "phase93_value_quality_bubble_chart.html"
+  ],
+  "output_directory": "C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda"
+}

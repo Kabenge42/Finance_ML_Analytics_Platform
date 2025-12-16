@@ -17,14 +17,18 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 
 import dash
 import dash_bootstrap_components as dbc
+import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from dash import Input, Output, State, dash_table, dcc, html
 from flask import send_from_directory
 
 from finance_ml.dashboards.earnings_widgets import (
     EarningsAlertConfig,
     create_analyst_recommendation_heatmap,
+    create_category_comparison_chart,
+    create_earnings_metrics_chart,
     create_earnings_surprise_dashboard,
     create_market_movers_dashboard,
     create_price_target_analytics,
@@ -38,7 +42,12 @@ DataSource = Literal["auto", "csv", "db"]
 
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
+DASHBOARD_ROOT = PROJECT_ROOT / "outputs" / "dashboards" / "equities_dashboard"
 DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
+DEFAULT_CSV_EXPORT_PATH = DASHBOARD_ROOT / "equities_dash_df.csv"
+DEFAULT_METADATA_PATH = DASHBOARD_ROOT / "metadata.json"
+ARTIFACTS_DIR = DASHBOARD_ROOT / "artifacts"
+ARTIFACTS_METADATA_PATH = DASHBOARD_ROOT / "artifacts_metadata.json"
 DEFAULT_ALERTS_PATH = (
     PROJECT_ROOT
     / "outputs"
@@ -54,6 +63,171 @@ def _coerce_list(value: Any) -> List[str]:
     if isinstance(value, list):
         return [str(v) for v in value if v is not None]
     return [str(value)]
+
+
+def export_equities_data(
+    df: pd.DataFrame,
+    output_path: Optional[Path] = None,
+    metadata_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Export equities data to CSV with metadata.
+
+    Args:
+        df: DataFrame to export
+        output_path: Path for CSV file (defaults to DEFAULT_CSV_EXPORT_PATH)
+        metadata_path: Path for metadata JSON (defaults to DEFAULT_METADATA_PATH)
+
+    Returns:
+        Dict with export metadata
+    """
+    if output_path is None:
+        output_path = DEFAULT_CSV_EXPORT_PATH
+    if metadata_path is None:
+        metadata_path = DEFAULT_METADATA_PATH
+
+    # Ensure directories exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Export CSV
+    df.to_csv(output_path, index=False)
+
+    # Generate metadata
+    metadata = {
+        "timestamp": pd.Timestamp.now().isoformat(),
+        "row_count": len(df),
+        "column_count": len(df.columns),
+        "columns": list(df.columns),
+        "file_path": str(output_path),
+        "file_size_mb": output_path.stat().st_size / (1024 * 1024)
+        if output_path.exists()
+        else 0,
+    }
+
+    # Save metadata
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    return metadata
+
+
+def generate_dashboard_artifacts(
+    df: pd.DataFrame,
+    output_dir: Optional[Path] = None,
+    metadata_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Generate all dashboard artifacts using earnings_widgets.
+
+    Args:
+        df: Source DataFrame (equities_dash_df)
+        output_dir: Directory for artifacts (defaults to ARTIFACTS_DIR)
+        metadata_path: Path for artifacts metadata JSON
+
+    Returns:
+        Dict with artifact generation metadata
+    """
+    if output_dir is None:
+        output_dir = ARTIFACTS_DIR
+    if metadata_path is None:
+        metadata_path = ARTIFACTS_METADATA_PATH
+
+    # Ensure directories exist
+    output_dir.mkdir(parents=True, exist_ok=True)
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    artifacts = {}
+    timestamp = pd.Timestamp.now().isoformat()
+
+    try:
+        # Generate main dashboard widgets
+        artifacts["earnings_surprise"] = {
+            "file": "earnings_surprise_dashboard.html",
+            "title": "Earnings Surprise Analysis",
+            "section": "earnings",
+        }
+        create_earnings_surprise_dashboard(
+            df, output_path=output_dir / artifacts["earnings_surprise"]["file"]
+        )
+
+        artifacts["analyst_heatmap"] = {
+            "file": "analyst_recommendation_heatmap.html",
+            "title": "Analyst Recommendations by Sector",
+            "section": "earnings",
+        }
+        create_analyst_recommendation_heatmap(
+            df, output_path=output_dir / artifacts["analyst_heatmap"]["file"]
+        )
+
+        artifacts["market_movers"] = {
+            "file": "market_movers_dashboard.html",
+            "title": "Market Movers Around Earnings",
+            "section": "earnings",
+        }
+        create_market_movers_dashboard(
+            df, output_path=output_dir / artifacts["market_movers"]["file"]
+        )
+
+        artifacts["price_target_analytics"] = {
+            "file": "price_target_analytics.html",
+            "title": "Price Target Analytics",
+            "section": "analytics",
+        }
+        create_price_target_analytics(
+            df, output_path=output_dir / artifacts["price_target_analytics"]["file"]
+        )
+
+        # Generate Phase 9.3 category charts
+        phase93_categories = [
+            "profitability",
+            "valuation",
+            "growth",
+            "momentum",
+            "quality_risk",
+            "cash_flow",
+            "dividends",
+            "forecasts",
+        ]
+
+        for category in phase93_categories:
+            key = f"earnings_metrics_{category}"
+            artifacts[key] = {
+                "file": f"earnings_metrics_{category}.html",
+                "title": f"Earnings Metrics: {category.replace('_', ' ').title()}",
+                "section": "phase93",
+            }
+            create_earnings_metrics_chart(
+                df,
+                metric_category=category,
+                output_path=output_dir / artifacts[key]["file"],
+            )
+
+        # Generate category comparison chart
+        artifacts["category_comparison"] = {
+            "file": "phase93_category_comparison.html",
+            "title": "Phase 9.3 Category Comparison",
+            "section": "phase93",
+        }
+        create_category_comparison_chart(
+            df, output_path=output_dir / artifacts["category_comparison"]["file"]
+        )
+
+    except Exception as e:
+        print(f"Warning: Error generating some artifacts: {e}")
+
+    # Create metadata
+    metadata = {
+        "timestamp": timestamp,
+        "total_stocks": len(df),
+        "artifacts_dir": str(output_dir),
+        "artifacts": artifacts,
+        "generation_status": "completed",
+    }
+
+    # Save metadata
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    return metadata
 
 
 def load_data(
@@ -238,12 +412,24 @@ def _kpi_cards(df: pd.DataFrame) -> List[Any]:
     return cards
 
 
-def _target_vs_price_scatter(df: pd.DataFrame):
+def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
+    """Create scatter plot of price target vs last price with optional log scale."""
     if df is None or df.empty:
         return px.scatter(title="Target vs Price (no data)")
 
     if "last_price" not in df.columns or "price_target" not in df.columns:
         return px.scatter(title="Target vs Price (missing columns)")
+
+    # Filter valid data
+    plot_df = df[
+        (df["last_price"].notna())
+        & (df["price_target"].notna())
+        & (df["last_price"] > 0)
+        & (df["price_target"] > 0)
+    ].copy()
+
+    if plot_df.empty:
+        return px.scatter(title="Target vs Price (no valid data)")
 
     hover_cols = [
         c
@@ -256,30 +442,209 @@ def _target_vs_price_scatter(df: pd.DataFrame):
             "exchange",
             "market_cap",
         ]
-        if c in df.columns
+        if c in plot_df.columns
     ]
+
+    # Use log scale for better visibility across price ranges
+    title = "Price Target vs Last Price" + (" (Log Scale)" if use_log_scale else "")
+
     fig = px.scatter(
-        df,
+        plot_df,
         x="last_price",
         y="price_target",
-        color="sector" if "sector" in df.columns else None,
+        color="sector" if "sector" in plot_df.columns else None,
         hover_data=hover_cols,
-        title="Price Target vs Last Price",
+        title=title,
         template="plotly_dark",
+        log_x=use_log_scale,
+        log_y=use_log_scale,
     )
-    fig.update_layout(xaxis_title="Last Price", yaxis_title="Price Target")
+
+    # Add diagonal reference line (y=x)
+    if use_log_scale:
+        import numpy as np
+
+        min_val = min(plot_df["last_price"].min(), plot_df["price_target"].min())
+        max_val = max(plot_df["last_price"].max(), plot_df["price_target"].max())
+        fig.add_scatter(
+            x=[min_val, max_val],
+            y=[min_val, max_val],
+            mode="lines",
+            line=dict(color="white", dash="dash", width=1),
+            name="Current Price",
+            showlegend=True,
+        )
+
+    fig.update_layout(
+        xaxis_title="Last Price ($)" + (" - Log Scale" if use_log_scale else ""),
+        yaxis_title="Price Target ($)" + (" - Log Scale" if use_log_scale else ""),
+    )
+    return fig
+
+
+def _market_cap_distribution(df: pd.DataFrame):
+    """Create market cap distribution with log scale."""
+    import plotly.graph_objects as go
+
+    if df is None or df.empty or "market_cap" not in df.columns:
+        return go.Figure().add_annotation(
+            text="Market Cap data not available",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+
+    valid_df = df[df["market_cap"].notna() & (df["market_cap"] > 0)].copy()
+
+    if valid_df.empty:
+        return go.Figure().add_annotation(
+            text="No valid market cap data",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+
+    # Use log10 for market cap
+    import numpy as np
+
+    valid_df["log_market_cap"] = np.log10(valid_df["market_cap"])
+
+    fig = px.histogram(
+        valid_df,
+        x="log_market_cap",
+        nbins=50,
+        title="Market Cap Distribution (Log Scale)",
+        template="plotly_dark",
+        color="sector" if "sector" in valid_df.columns else None,
+    )
+
+    fig.update_layout(
+        xaxis_title="Market Cap (Log10 $)",
+        yaxis_title="Count",
+        showlegend=True if "sector" in valid_df.columns else False,
+    )
+
+    return fig
+
+
+def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
+    """Create dynamic earnings events timeline chart.
+
+    Args:
+        df: DataFrame with next_earnings column
+        days_window: Number of days before/after today to include
+
+    Returns:
+        Plotly figure
+    """
+    import plotly.graph_objects as go
+    from datetime import datetime, timedelta
+
+    if df is None or df.empty or "next_earnings" not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Earnings data not available",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template="plotly_dark", title="Earnings Events Timeline")
+        return fig
+
+    # Filter data
+    ref_date = pd.Timestamp.now()
+    df_work = df.copy()
+    df_work["next_earnings"] = pd.to_datetime(df_work["next_earnings"], errors="coerce")
+    df_work["days_to_earnings"] = (df_work["next_earnings"] - ref_date).dt.days
+
+    # Filter to window
+    mask = df_work["days_to_earnings"].notna() & (
+        df_work["days_to_earnings"].abs() <= days_window
+    )
+    events_df = df_work[mask].copy()
+
+    if events_df.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"No earnings events within {days_window} days",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template="plotly_dark", title="Earnings Events Timeline")
+        return fig
+
+    # Create timeline chart
+    events_df = events_df.sort_values("days_to_earnings")
+
+    # Color by sector if available
+    if "sector" in events_df.columns:
+        color = events_df["sector"]
+    else:
+        color = None
+
+    fig = px.scatter(
+        events_df,
+        x="days_to_earnings",
+        y="ticker" if "ticker" in events_df.columns else events_df.index,
+        color=color,
+        hover_data=[
+            c
+            for c in ["ticker", "name", "sector", "next_earnings"]
+            if c in events_df.columns
+        ],
+        title=f"Earnings Events Timeline (±{days_window} days)",
+        template="plotly_dark",
+        height=max(400, len(events_df) * 15),
+    )
+
+    # Add vertical line at today
+    fig.add_vline(
+        x=0,
+        line_dash="dash",
+        line_color="white",
+        annotation_text="Today",
+        annotation_position="top",
+    )
+
+    fig.update_layout(
+        xaxis_title="Days to Earnings (negative = past)",
+        yaxis_title="Ticker",
+        showlegend=True,
+    )
+
     return fig
 
 
 def _list_artifacts() -> List[Dict[str, str]]:
-    base = PROJECT_ROOT / "outputs" / "eda" / "earnings_analytics"
-    if not base.exists():
-        return []
+    """List all available artifacts from earnings_analytics and dashboard artifacts dirs."""
     items: List[Dict[str, str]] = []
-    for p in sorted(base.glob("*")):
-        if p.suffix.lower() not in {".html", ".json"}:
-            continue
-        items.append({"label": p.name, "value": str(p)})
+
+    # Include artifacts from earnings_analytics directory
+    base1 = PROJECT_ROOT / "outputs" / "eda" / "earnings_analytics"
+    if base1.exists():
+        for p in sorted(base1.glob("*")):
+            if p.suffix.lower() not in {".html", ".json"}:
+                continue
+            items.append({"label": f"[Earnings] {p.name}", "value": str(p)})
+
+    # Include artifacts from dashboard artifacts directory
+    if ARTIFACTS_DIR.exists():
+        for p in sorted(ARTIFACTS_DIR.glob("*")):
+            if p.suffix.lower() not in {".html", ".json"}:
+                continue
+            items.append({"label": f"[Dashboard] {p.name}", "value": str(p)})
+
     return items
 
 
@@ -492,6 +857,18 @@ def create_app(
                                 "Load / Refresh Data",
                                 id="refresh-data-btn",
                                 color="primary",
+                                style={"marginRight": "10px"},
+                            ),
+                            dbc.Button(
+                                "Reset Filters",
+                                id="reset-filters-btn",
+                                color="secondary",
+                                style={"marginRight": "10px"},
+                            ),
+                            dbc.Button(
+                                "Generate Artifacts",
+                                id="generate-artifacts-btn",
+                                color="success",
                             ),
                             html.Span(
                                 id="data-status",
@@ -511,17 +888,29 @@ def create_app(
                         label="📋 Overview",
                         value="overview",
                         children=[
-                            dcc.Graph(id="target-vs-price-scatter"),
+                            html.Div(
+                                [
+                                    dcc.Graph(id="target-vs-price-scatter"),
+                                    dcc.Graph(id="market-cap-distribution"),
+                                ],
+                                style={"padding": "10px"},
+                            )
                         ],
                     ),
                     dcc.Tab(
                         label="📅 Earnings Analytics",
                         value="earnings",
                         children=[
-                            dcc.Graph(id="earnings-surprise-fig"),
-                            dcc.Graph(id="analyst-heatmap-fig"),
-                            dcc.Graph(id="market-movers-fig"),
-                            dcc.Graph(id="price-target-analytics-fig"),
+                            html.Div(
+                                [
+                                    dcc.Graph(id="earnings-events-timeline"),
+                                    dcc.Graph(id="earnings-surprise-fig"),
+                                    dcc.Graph(id="analyst-heatmap-fig"),
+                                    dcc.Graph(id="market-movers-fig"),
+                                    dcc.Graph(id="price-target-analytics-fig"),
+                                ],
+                                style={"padding": "10px"},
+                            )
                         ],
                     ),
                     dcc.Tab(
@@ -788,12 +1177,23 @@ def create_app(
     )
     def _refresh_data(_n_clicks):
         df = load_data(data_source=data_source, data_dir=data_dir, db_url=db_url)
-        status = f"Loaded {len(df):,} rows" if not df.empty else "No data loaded"
+
+        if not df.empty:
+            # Export to CSV
+            try:
+                export_equities_data(df)
+                status = f"Loaded {len(df):,} rows | CSV exported"
+            except Exception as e:
+                status = f"Loaded {len(df):,} rows | Export failed: {e}"
+        else:
+            status = "No data loaded"
+
         return df.to_json(orient="split"), status
 
     @app.callback(
         Output("kpi-cards", "children"),
         Output("target-vs-price-scatter", "figure"),
+        Output("market-cap-distribution", "figure"),
         Input("equities-data-store", "data"),
         Input("sector-dropdown", "value"),
         Input("region-dropdown", "value"),
@@ -832,9 +1232,14 @@ def create_app(
             size_classes=_coerce_list(size_classes),
         )
 
-        return _kpi_cards(filtered), _target_vs_price_scatter(filtered)
+        return (
+            _kpi_cards(filtered),
+            _target_vs_price_scatter(filtered, use_log_scale=True),
+            _market_cap_distribution(filtered),
+        )
 
     @app.callback(
+        Output("earnings-events-timeline", "figure"),
         Output("earnings-surprise-fig", "figure"),
         Output("analyst-heatmap-fig", "figure"),
         Output("market-movers-fig", "figure"),
@@ -849,10 +1254,11 @@ def create_app(
 
         if df is None or df.empty:
             empty = px.scatter(title="No data")
-            return empty, empty, empty, empty
+            return empty, empty, empty, empty, empty
 
         # These functions are designed to be robust to missing columns.
         return (
+            create_earnings_events_chart(df),
             create_earnings_surprise_dashboard(df),
             create_analyst_recommendation_heatmap(df),
             create_market_movers_dashboard(df),
@@ -991,6 +1397,45 @@ def create_app(
     )
     def _show_artifact(path_str):
         return _render_artifact(path_str or "")
+
+    @app.callback(
+        Output("sector-dropdown", "value"),
+        Output("region-dropdown", "value"),
+        Output("country-dropdown", "value"),
+        Output("trading-country-dropdown", "value"),
+        Output("industry-dropdown", "value"),
+        Output("exchange-dropdown", "value"),
+        Output("style-class-dropdown", "value"),
+        Output("size-class-dropdown", "value"),
+        Input("reset-filters-btn", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def _reset_filters(_n):
+        """Reset all filter dropdowns to empty."""
+        return None, None, None, None, None, None, None, None
+
+    @app.callback(
+        Output("data-status", "children", allow_duplicate=True),
+        Input("generate-artifacts-btn", "n_clicks"),
+        State("equities-data-store", "data"),
+        prevent_initial_call=True,
+    )
+    def _generate_artifacts(_n, data_json):
+        """Generate dashboard artifacts from current data."""
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        if df is None or df.empty:
+            return "No data available for artifact generation"
+
+        try:
+            metadata = generate_dashboard_artifacts(df)
+            total_artifacts = len(metadata.get("artifacts", {}))
+            return f"Generated {total_artifacts} artifacts in {ARTIFACTS_DIR.name}"
+        except Exception as e:
+            return f"Artifact generation failed: {e}"
 
     return app
 

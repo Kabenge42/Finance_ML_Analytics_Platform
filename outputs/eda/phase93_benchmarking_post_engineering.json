@@ -1,0 +1,94 @@
+{
+  "phase": "9.3",
+  "data_source": "all_stocks_features DataFrame (post-feature-engineering)",
+  "timestamp": "2025-12-14T01:48:52.858487",
+  "total_stocks": 6972,
+  "total_columns": 664,
+  "phase93_features_present": 185,
+  "phase93_features_expected": 190,
+  "coverage_percentage": 97.36842105263158,
+  "category_coverage": {
+    "Momentum & Technical": {
+      "present": 25,
+      "expected": 25,
+      "coverage_pct": 100.0
+    },
+    "Valuation Ratios": {
+      "present": 22,
+      "expected": 23,
+      "coverage_pct": 95.65217391304348
+    },
+    "Profitability": {
+      "present": 10,
+      "expected": 12,
+      "coverage_pct": 83.33333333333334
+    },
+    "Quality & Risk": {
+      "present": 18,
+      "expected": 18,
+      "coverage_pct": 100.0
+    },
+    "Cash Flow": {
+      "present": 5,
+      "expected": 5,
+      "coverage_pct": 100.0
+    },
+    "Capital Allocation": {
+      "present": 21,
+      "expected": 23,
+      "coverage_pct": 91.30434782608695
+    },
+    "Analyst Sentiment": {
+      "present": 10,
+      "expected": 10,
+      "coverage_pct": 100.0
+    },
+    "Market Sentiment": {
+      "present": 4,
+      "expected": 4,
+      "coverage_pct": 100.0
+    },
+    "Leverage & Liquidity": {
+      "present": 8,
+      "expected": 8,
+      "coverage_pct": 100.0
+    },
+    "Temporal Patterns": {
+      "present": 15,
+      "expected": 15,
+      "coverage_pct": 100.0
+    },
+    "Composite Scores": {
+      "present": 5,
+      "expected": 5,
+      "coverage_pct": 100.0
+    },
+    "Growth Metrics": {
+      "present": 6,
+      "expected": 6,
+      "coverage_pct": 100.0
+    },
+    "Efficiency Ratios": {
+      "present": 4,
+      "expected": 4,
+      "coverage_pct": 100.0
+    },
+    "Employee Productivity": {
+      "present": 15,
+      "expected": 15,
+      "coverage_pct": 100.0
+    },
+    "Balance Sheet Dynamics": {
+      "present": 8,
+      "expected": 8,
+      "coverage_pct": 100.0
+    },
+    "Revenue Forecasting": {
+      "present": 9,
+      "expected": 9,
+      "coverage_pct": 100.0
+    }
+  },
+  "categories_with_features": 16,
+  "note": "Analysis performed on engineered features DataFrame after Phase 9.3 completion"
+}

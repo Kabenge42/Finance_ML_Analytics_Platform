@@ -1,57 +1,57 @@
 {
   "Financials": {
-    "coverage_rate": 0.8110599078341014,
-    "count": 217,
-    "mean_interval_width": 325.7680080701088
-  },
-  "Energy": {
-    "coverage_rate": 0.7571428571428571,
-    "count": 70,
-    "mean_interval_width": 130.97105466060773
+    "coverage_rate": 0.8563829787234043,
+    "count": 188,
+    "mean_interval_width": 5812.839610902003
   },
   "Health Care": {
-    "coverage_rate": 0.841726618705036,
-    "count": 139,
-    "mean_interval_width": 131.40758786202412
-  },
-  "Communication Services": {
-    "coverage_rate": 0.7936507936507936,
-    "count": 63,
-    "mean_interval_width": 202.50609232781736
-  },
-  "Consumer Staples": {
-    "coverage_rate": 0.7815126050420168,
-    "count": 119,
-    "mean_interval_width": 278.4967553480457
-  },
-  "Consumer Discretionary": {
-    "coverage_rate": 0.8375,
-    "count": 160,
-    "mean_interval_width": 304.9317186405691
+    "coverage_rate": 0.8104575163398693,
+    "count": 153,
+    "mean_interval_width": 7203.460362180516
   },
   "Information Technology": {
-    "coverage_rate": 0.8121212121212121,
-    "count": 165,
-    "mean_interval_width": 378.4594967101945
+    "coverage_rate": 0.8311688311688312,
+    "count": 154,
+    "mean_interval_width": 4233.8054218739735
+  },
+  "Consumer Discretionary": {
+    "coverage_rate": 0.8071428571428572,
+    "count": 140,
+    "mean_interval_width": 3130.9839655348424
   },
   "Industrials": {
-    "coverage_rate": 0.8174603174603174,
-    "count": 252,
-    "mean_interval_width": 601.771786391556
+    "coverage_rate": 0.8188405797101449,
+    "count": 276,
+    "mean_interval_width": 8284.942945961853
+  },
+  "Communication Services": {
+    "coverage_rate": 0.8507462686567164,
+    "count": 67,
+    "mean_interval_width": 2202.1097931344766
+  },
+  "Consumer Staples": {
+    "coverage_rate": 0.82,
+    "count": 100,
+    "mean_interval_width": 10890.130797984146
   },
   "Materials": {
-    "coverage_rate": 0.8064516129032258,
-    "count": 124,
-    "mean_interval_width": 303.0825307596589
+    "coverage_rate": 0.7551020408163265,
+    "count": 147,
+    "mean_interval_width": 13239.993173218143
+  },
+  "Energy": {
+    "coverage_rate": 0.84375,
+    "count": 64,
+    "mean_interval_width": 324.5258258889809
   },
   "Utilities": {
-    "coverage_rate": 0.6851851851851852,
-    "count": 54,
-    "mean_interval_width": 157.13505273424775
+    "coverage_rate": 0.9365079365079365,
+    "count": 63,
+    "mean_interval_width": 197.99249599372052
   },
   "Real Estate": {
-    "coverage_rate": 0.8409090909090909,
-    "count": 44,
-    "mean_interval_width": 248.65531027489388
+    "coverage_rate": 0.8780487804878049,
+    "count": 41,
+    "mean_interval_width": 86.75447492246126
   }
 }

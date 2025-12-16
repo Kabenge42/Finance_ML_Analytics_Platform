@@ -1,0 +1,306 @@
+{
+  "Momentum & Technical": {
+    "count": 25,
+    "expected": 25,
+    "coverage_pct": 100.0,
+    "description": "Price momentum, technical indicators, EMA signals, volume patterns",
+    "statistics": {
+      "volume_momentum_score": {
+        "count": 6972,
+        "mean": -0.011013748253373657,
+        "std": 1.0240850605809564,
+        "min": -29.899706634327927,
+        "25%": -0.11313175593593869,
+        "50%": 0.0013408891912220472,
+        "75%": 0.11015698083165315,
+        "max": 28.82548772718548,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Valuation Ratios": {
+    "count": 22,
+    "expected": 23,
+    "coverage_pct": 95.65217391304348,
+    "description": "EV/EBITDA, P/E, P/B, and other valuation multiples with time-series trends",
+    "statistics": {
+      "valuation_trend_consistency": {
+        "count": 6972,
+        "mean": 0.09265633964429146,
+        "std": 0.4754998735696038,
+        "min": -1.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 0.0,
+        "max": 1.0,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Profitability": {
+    "count": 10,
+    "expected": 12,
+    "coverage_pct": 83.33333333333334,
+    "description": "ROE, ROA, profit margins, and profitability trends",
+    "statistics": {
+      "roic": {
+        "count": 6972,
+        "mean": 45.72204686403278,
+        "std": 1245.9675631729947,
+        "min": -85342.11598413138,
+        "25%": 28.90658132313386,
+        "50%": 42.05281652459885,
+        "75%": 58.0326760805714,
+        "max": 35291.10871019204,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Quality & Risk": {
+    "count": 18,
+    "expected": 18,
+    "coverage_pct": 100.0,
+    "description": "Accounting quality, earnings quality, distress indicators, Altman Z-Score",
+    "statistics": {
+      "z_score_volatility": {
+        "count": 5985,
+        "mean": 0.11692025490661055,
+        "std": 0.33069939768289786,
+        "min": 0.001260478270022675,
+        "25%": 0.02310587689465462,
+        "50%": 0.04291558356375014,
+        "75%": 0.09678517368107599,
+        "max": 13.312257369012443,
+        "missing_pct": 14.156626506024098
+      }
+    }
+  },
+  "Cash Flow": {
+    "count": 5,
+    "expected": 5,
+    "coverage_pct": 100.0,
+    "description": "Operating cash flow, FCF metrics, cash conversion, and quality indicators",
+    "statistics": {
+      "fcf_to_net_income": {
+        "count": 6972,
+        "mean": 0.7379740671825477,
+        "std": 12.120684774641468,
+        "min": -329.3815650156164,
+        "25%": 0.2759066900579525,
+        "50%": 0.9510678308824949,
+        "75%": 1.2108124507046907,
+        "max": 735.9965918129199,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Capital Allocation": {
+    "count": 21,
+    "expected": 23,
+    "coverage_pct": 91.30434782608695,
+    "description": "Dividends, buybacks, reinvestment, M&A intensity, dividend reliability",
+    "statistics": {
+      "working_capital_trend": {
+        "count": 6972,
+        "mean": -0.2147768731038563,
+        "std": 17.03255408686685,
+        "min": -1364.590660054797,
+        "25%": -0.05816727813953205,
+        "50%": -0.003680277586208124,
+        "75%": 0.053511263688259876,
+        "max": 241.7372298093386,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Analyst Sentiment": {
+    "count": 10,
+    "expected": 10,
+    "coverage_pct": 100.0,
+    "description": "Analyst ratings, consensus strength, target revisions",
+    "statistics": {
+      "upside_potential": {
+        "count": 6972,
+        "mean": 26.674681806485555,
+        "std": 276.41949954012006,
+        "min": -100.0,
+        "25%": 5.690698032946512,
+        "50%": 16.737494812518587,
+        "75%": 31.956265682392065,
+        "max": 22524.43468508275,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Market Sentiment": {
+    "count": 4,
+    "expected": 4,
+    "coverage_pct": 100.0,
+    "description": "Market microstructure, liquidity, short interest, sentiment indicators",
+    "statistics": {
+      "systematic_risk_trend": {
+        "count": 6972,
+        "mean": -2.4459302435803794e-17,
+        "std": 1.0528811512255782,
+        "min": -10.64713043293305,
+        "25%": -0.5413856395205947,
+        "50%": -0.03903254096674219,
+        "75%": 0.520052284741885,
+        "max": 20.345949812217714,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Leverage & Liquidity": {
+    "count": 8,
+    "expected": 8,
+    "coverage_pct": 100.0,
+    "description": "Debt ratios, coverage ratios, liquidity metrics, financial flexibility",
+    "statistics": {
+      "working_capital_to_sales": {
+        "count": 6972,
+        "mean": 0.4293295517786748,
+        "std": 33.02893733906466,
+        "min": -1288.5507381433463,
+        "25%": -0.13486192668844077,
+        "50%": 0.17461128830288786,
+        "75%": 0.6568315626538249,
+        "max": 1985.3208965123085,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Temporal Patterns": {
+    "count": 15,
+    "expected": 15,
+    "coverage_pct": 100.0,
+    "description": "Seasonality, trend consistency, cyclicality indicators, reporting dates",
+    "statistics": {
+      "year": {
+        "count": 6972,
+        "mean": 2025.9502294893862,
+        "std": 0.21814466318911305,
+        "min": 2024.0,
+        "25%": 2026.0,
+        "50%": 2026.0,
+        "75%": 2026.0,
+        "max": 2026.0,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Composite Scores": {
+    "count": 5,
+    "expected": 5,
+    "coverage_pct": 100.0,
+    "description": "Multi-factor composite scores combining quality, growth, value, momentum",
+    "statistics": {
+      "piotroski_f_score": {
+        "count": 6972,
+        "mean": 6.779833620195066,
+        "std": 1.3541588451962188,
+        "min": 1.0,
+        "25%": 6.0,
+        "50%": 7.0,
+        "75%": 8.0,
+        "max": 9.0,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Growth Metrics": {
+    "count": 6,
+    "expected": 6,
+    "coverage_pct": 100.0,
+    "description": "Revenue, earnings, and EBITDA growth rates (YoY and multi-period)",
+    "statistics": {
+      "revenue_growth_yoy": {
+        "count": 6972,
+        "mean": -6.52990638299538,
+        "std": 835.3818445611091,
+        "min": -68269.59345882111,
+        "25%": -3.396392398485118,
+        "50%": 0.6253531190136244,
+        "75%": 4.872587488339006,
+        "max": 4094.6052475303695,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Efficiency Ratios": {
+    "count": 4,
+    "expected": 4,
+    "coverage_pct": 100.0,
+    "description": "Asset turnover, inventory turnover, receivables efficiency, revenue per employee",
+    "statistics": {
+      "revenue_per_employee": {
+        "count": 6972,
+        "mean": -2.8948181210207213,
+        "std": 356.58086571575006,
+        "min": -29039.772171675428,
+        "25%": 0.8177470761468915,
+        "50%": 1.1574570712690517,
+        "75%": 1.4778005061504258,
+        "max": 3880.165090430893,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Employee Productivity": {
+    "count": 15,
+    "expected": 15,
+    "coverage_pct": 100.0,
+    "description": "Workforce metrics, employee growth, revenue/profit per employee, hiring intensity",
+    "statistics": {
+      "workforce_volatility": {
+        "count": 6972,
+        "mean": -1.7999869368737105,
+        "std": 137.88436522948697,
+        "min": -7050.021731695185,
+        "25%": -0.5058261409103039,
+        "50%": -0.3533550826007418,
+        "75%": -0.060369209120396505,
+        "max": 5055.73435824933,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Balance Sheet Dynamics": {
+    "count": 8,
+    "expected": 8,
+    "coverage_pct": 100.0,
+    "description": "Asset/equity/debt growth rates, balance sheet expansion, retained earnings trends",
+    "statistics": {
+      "working_capital_ratio": {
+        "count": 6972,
+        "mean": -0.3869451184240939,
+        "std": 101.61982015230988,
+        "min": -8210.731600397776,
+        "25%": -0.20908177985207696,
+        "50%": 0.16520680551781075,
+        "75%": 0.6754126067733238,
+        "max": 1370.07690308723,
+        "missing_pct": 0.0
+      }
+    }
+  },
+  "Revenue Forecasting": {
+    "count": 9,
+    "expected": 9,
+    "coverage_pct": 100.0,
+    "description": "Analyst estimate spreads, consensus uncertainty, implied growth, forecast reliability",
+    "statistics": {
+      "revenue_growth_implied_ntm": {
+        "count": 6972,
+        "mean": -0.12343444480704201,
+        "std": 10.116246857146104,
+        "min": -817.9920206942826,
+        "25%": -0.07356228941681348,
+        "50%": -0.0024678402095899667,
+        "75%": 0.06150615072495306,
+        "max": 96.4198707657331,
+        "missing_pct": 0.0
+      }
+    }
+  }
+}

@@ -2,116 +2,116 @@
   "model_version": "v9_9",
   "sectors": {
     "Financials": {
-      "bias_raw": 1.1808676190374507,
-      "mae_raw": 16.84739246762418,
-      "mse_raw": 4512.876375989761,
-      "bias_calibrated": 2.6995290910948255,
-      "mae_calibrated": 11.924386595169214,
-      "mse_calibrated": 1105.9224155824852,
-      "mae_improvement_pct": 29.221174029842068,
-      "n_samples": 217
-    },
-    "Energy": {
-      "bias_raw": -7.296443099277058,
-      "mae_raw": 10.350082550918417,
-      "mse_raw": 872.1124019904962,
-      "bias_calibrated": -6.49794953275439,
-      "mae_calibrated": 8.230412105117702,
-      "mse_calibrated": 641.8609403436116,
-      "mae_improvement_pct": 20.479744343803567,
-      "n_samples": 70
+      "bias_raw": 4692.5061816152465,
+      "mae_raw": 4750.97367623192,
+      "mse_raw": 1783075763.7387624,
+      "bias_calibrated": 4831.412812894415,
+      "mae_calibrated": 5168.200057575421,
+      "mse_calibrated": 2028062726.4493642,
+      "mae_improvement_pct": -8.781913135633507,
+      "n_samples": 188
     },
     "Health Care": {
-      "bias_raw": -1.7458098919098919,
-      "mae_raw": 9.527599192454506,
-      "mse_raw": 390.4288143735165,
-      "bias_calibrated": -3.537014327199925,
-      "mae_calibrated": 9.013253542214457,
-      "mse_calibrated": 399.19071545438663,
-      "mae_improvement_pct": 5.398481189756503,
-      "n_samples": 139
-    },
-    "Communication Services": {
-      "bias_raw": 11.469825087391124,
-      "mae_raw": 18.796520070312315,
-      "mse_raw": 3639.4829737354876,
-      "bias_calibrated": 10.025971590797878,
-      "mae_calibrated": 17.402303683368018,
-      "mse_calibrated": 3486.118596796985,
-      "mae_improvement_pct": 7.417417595006624,
-      "n_samples": 63
-    },
-    "Consumer Staples": {
-      "bias_raw": 26.70401363506357,
-      "mae_raw": 29.402339725861875,
-      "mse_raw": 9160.416933103605,
-      "bias_calibrated": 24.028630445964232,
-      "mae_calibrated": 27.933262355530957,
-      "mse_calibrated": 8743.3734553076,
-      "mae_improvement_pct": 4.9964641726751395,
-      "n_samples": 119
-    },
-    "Consumer Discretionary": {
-      "bias_raw": -9.076017949405205,
-      "mae_raw": 22.934798920154737,
-      "mse_raw": 5686.8269143868665,
-      "bias_calibrated": -11.147903121794533,
-      "mae_calibrated": 22.018992468279478,
-      "mse_calibrated": 5799.241974645853,
-      "mae_improvement_pct": 3.9930869028481553,
-      "n_samples": 160
+      "bias_raw": 9131.868371909948,
+      "mae_raw": 9187.941017796524,
+      "mse_raw": 8855205251.175858,
+      "bias_calibrated": 13265.57390950004,
+      "mae_calibrated": 13565.727999077277,
+      "mse_calibrated": 20922480163.47845,
+      "mae_improvement_pct": -47.64709495632619,
+      "n_samples": 153
     },
     "Information Technology": {
-      "bias_raw": 7.647034537120799,
-      "mae_raw": 21.84871145001194,
-      "mse_raw": 4646.548789489361,
-      "bias_calibrated": 4.682394855360796,
-      "mae_calibrated": 20.844995584471107,
-      "mse_calibrated": 4546.831600373853,
-      "mae_improvement_pct": 4.593936204600682,
-      "n_samples": 165
+      "bias_raw": 2250.102743995754,
+      "mae_raw": 2306.2211112474893,
+      "mse_raw": 151200862.7529287,
+      "bias_calibrated": 2261.18064560495,
+      "mae_calibrated": 2531.362144664106,
+      "mse_calibrated": 168882835.69552493,
+      "mae_improvement_pct": -9.762335116897468,
+      "n_samples": 154
+    },
+    "Consumer Discretionary": {
+      "bias_raw": 1924.0730587200228,
+      "mae_raw": 1933.755792121843,
+      "mse_raw": 95106282.80614531,
+      "bias_calibrated": 1865.9741479816103,
+      "mae_calibrated": 2195.323904448561,
+      "mse_calibrated": 105779770.86683987,
+      "mae_improvement_pct": -13.526429417424438,
+      "n_samples": 140
     },
     "Industrials": {
-      "bias_raw": 9.964925686829725,
-      "mae_raw": 24.128872329862574,
-      "mse_raw": 4185.619702802866,
-      "bias_calibrated": 7.74354594180121,
-      "mae_calibrated": 22.649868909817787,
-      "mse_calibrated": 4022.438664448583,
-      "mae_improvement_pct": 6.129600255766328,
-      "n_samples": 252
+      "bias_raw": 7662.801712269429,
+      "mae_raw": 7741.118040530518,
+      "mse_raw": 5079171333.500089,
+      "bias_calibrated": 6870.8216909909615,
+      "mae_calibrated": 7229.285576711502,
+      "mse_calibrated": 4119899618.5075703,
+      "mae_improvement_pct": 6.611867447818157,
+      "n_samples": 276
+    },
+    "Communication Services": {
+      "bias_raw": 1659.2222422482218,
+      "mae_raw": 1734.4236932644635,
+      "mse_raw": 89548791.411427,
+      "bias_calibrated": 1528.999043855445,
+      "mae_calibrated": 1939.039355467731,
+      "mse_calibrated": 91669897.50194405,
+      "mae_improvement_pct": -11.797328588042289,
+      "n_samples": 67
+    },
+    "Consumer Staples": {
+      "bias_raw": 7321.932831206742,
+      "mae_raw": 7337.591156668262,
+      "mse_raw": 1244120503.682997,
+      "bias_calibrated": 7664.575442758955,
+      "mae_calibrated": 7945.848817331691,
+      "mse_calibrated": 1408448040.6950805,
+      "mae_improvement_pct": -8.289609596340844,
+      "n_samples": 100
     },
     "Materials": {
-      "bias_raw": -7.018585585606425,
-      "mae_raw": 25.7798887180993,
-      "mse_raw": 23355.914815490163,
-      "bias_calibrated": -9.541220814204296,
-      "mae_calibrated": 24.523952445117597,
-      "mse_calibrated": 23309.150868959656,
-      "mae_improvement_pct": 4.871767627530321,
-      "n_samples": 124
+      "bias_raw": 9304.21484314203,
+      "mae_raw": 9314.437907442792,
+      "mse_raw": 3460439834.0052896,
+      "bias_calibrated": 9335.888754541664,
+      "mae_calibrated": 9636.119410664112,
+      "mse_calibrated": 3528111478.3679156,
+      "mae_improvement_pct": -3.453579340136855,
+      "n_samples": 147
+    },
+    "Energy": {
+      "bias_raw": 158.1008131599669,
+      "mae_raw": 166.24516007625203,
+      "mse_raw": 782806.3474212623,
+      "bias_calibrated": -30.71538266950781,
+      "mae_calibrated": 361.2180840938663,
+      "mse_calibrated": 963764.5184289096,
+      "mae_improvement_pct": -117.28036108130043,
+      "n_samples": 64
     },
     "Utilities": {
-      "bias_raw": -30.215247165641617,
-      "mae_raw": 32.14049621819577,
-      "mse_raw": 25734.049336562937,
-      "bias_calibrated": -10.029062511135187,
-      "mae_calibrated": 10.949544073449013,
-      "mse_calibrated": 666.4442603437494,
-      "mae_improvement_pct": 65.93224946150606,
-      "n_samples": 54
+      "bias_raw": 57.55531585140874,
+      "mae_raw": 74.69688654306391,
+      "mse_raw": 129008.13350412651,
+      "bias_calibrated": -84.70124549559289,
+      "mae_calibrated": 247.1718150109572,
+      "mse_calibrated": 150254.45146948317,
+      "mae_improvement_pct": -230.89975559886128,
+      "n_samples": 63
     },
     "Real Estate": {
-      "bias_raw": -28.766076412282327,
-      "mae_raw": 32.199823942900736,
-      "mse_raw": 5727.6963330011195,
-      "bias_calibrated": -9.127924606952252,
-      "mae_calibrated": 11.021155795402874,
-      "mse_calibrated": 952.4433351037769,
-      "mae_improvement_pct": 65.77262094679008,
-      "n_samples": 44
+      "bias_raw": 22.00672272671723,
+      "mae_raw": 22.56769784335392,
+      "mse_raw": 6748.046207513706,
+      "bias_calibrated": -128.4325157068254,
+      "mae_calibrated": 208.2119555927036,
+      "mse_calibrated": 68655.33234968637,
+      "mae_improvement_pct": -822.610525176014,
+      "n_samples": 41
     }
   },
   "n_sectors": 11,
-  "total_samples": 1407
+  "total_samples": 1393
 }

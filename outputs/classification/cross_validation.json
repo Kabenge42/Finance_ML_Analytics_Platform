@@ -1,11 +1,11 @@
 {
-  "test_accuracy": 0.988061619661433,
-  "test_accuracy_std": 0.0018187179342750368,
-  "test_precision": 0.9893076224104608,
-  "test_precision_std": 0.0013964286651810098,
-  "test_recall": 0.9884372313524169,
-  "test_recall_std": 0.002180643530396747,
-  "test_f1": 0.9888484427263524,
-  "test_f1_std": 0.001711093676721516,
+  "test_accuracy": 0.8613875910198908,
+  "test_accuracy_std": 0.005087905119044098,
+  "test_precision": 0.8618043131625734,
+  "test_precision_std": 0.005866543483019886,
+  "test_recall": 0.8572137948058677,
+  "test_recall_std": 0.005714118282520534,
+  "test_f1": 0.8588586281775568,
+  "test_f1_std": 0.005325270714514824,
   "train_accuracy": 1.0
 }

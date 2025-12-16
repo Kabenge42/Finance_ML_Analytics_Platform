@@ -1,11 +1,13 @@
 {
   "kpis": {
-    "max_sharpe_return": 2.7298712928578537,
-    "max_sharpe_volatility": 0.0855446926213208,
-    "max_sharpe_ratio": 31.91163834023143,
+    "max_sharpe_return": 0.29000000000000004,
+    "max_sharpe_volatility": 0.002816732090362434,
+    "max_sharpe_ratio": 102.95618848247837,
     "backtest_sharpe": 0.3791206337523907,
     "backtest_max_drawdown": -0.24138986415504396,
-    "backtest_turnover": 4.749999999965857
+    "backtest_turnover": 4.749999999965857,
+    "expected_shortfall_95": -0.0022507231719947605,
+    "expected_shortfall_99": -0.003099848105266165
   },
   "notes": "Auto-generated summary placeholder"
 }

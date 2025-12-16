@@ -1,90 +1,90 @@
 [
   {
+    "Sector": "Health Care",
+    "Samples": 143,
+    "Accuracy": 0.26573426573426573,
+    "Precision": 0.07102803738317756,
+    "Recall": 0.2,
+    "F1-Score": 0.10482758620689656
+  },
+  {
     "Sector": "Real Estate",
     "Samples": 43,
-    "Accuracy": 0.5348837209302325,
-    "Precision": 0.23642533936651586,
-    "Recall": 0.46739130434782605,
-    "F1-Score": 0.27908163265306124
-  },
-  {
-    "Sector": "Consumer Discretionary",
-    "Samples": 163,
-    "Accuracy": 0.37423312883435583,
-    "Precision": 0.3521821631878558,
-    "Recall": 0.3832358674463937,
-    "F1-Score": 0.23834092387768377
-  },
-  {
-    "Sector": "Energy",
-    "Samples": 64,
-    "Accuracy": 0.421875,
-    "Precision": 0.175,
-    "Recall": 0.37142857142857144,
-    "F1-Score": 0.2354066985645933
-  },
-  {
-    "Sector": "Financials",
-    "Samples": 226,
-    "Accuracy": 0.3672566371681416,
-    "Precision": 0.35503246753246753,
-    "Recall": 0.36953846153846154,
-    "F1-Score": 0.2303382018825057
-  },
-  {
-    "Sector": "Information Technology",
-    "Samples": 169,
-    "Accuracy": 0.35502958579881655,
-    "Precision": 0.34514780100937276,
-    "Recall": 0.37369565217391304,
-    "F1-Score": 0.21943123918184257
-  },
-  {
-    "Sector": "Consumer Staples",
-    "Samples": 98,
-    "Accuracy": 0.3469387755102041,
-    "Precision": 0.14095238095238094,
-    "Recall": 0.38571428571428573,
-    "F1-Score": 0.20612244897959187
-  },
-  {
-    "Sector": "Materials",
-    "Samples": 128,
-    "Accuracy": 0.3671875,
-    "Precision": 0.14783882783882785,
-    "Recall": 0.3736842105263158,
-    "F1-Score": 0.20157914525629778
-  },
-  {
-    "Sector": "Utilities",
-    "Samples": 55,
-    "Accuracy": 0.34545454545454546,
-    "Precision": 0.1578804347826087,
-    "Recall": 0.4,
-    "F1-Score": 0.19838827838827838
-  },
-  {
-    "Sector": "Industrials",
-    "Samples": 257,
-    "Accuracy": 0.2840466926070039,
-    "Precision": 0.11644135915235661,
-    "Recall": 0.37037037037037035,
-    "F1-Score": 0.1718129269574356
-  },
-  {
-    "Sector": "Health Care",
-    "Samples": 136,
-    "Accuracy": 0.22794117647058823,
-    "Precision": 0.08842105263157896,
-    "Recall": 0.3230769230769231,
-    "F1-Score": 0.1383434601854813
+    "Accuracy": 0.18604651162790697,
+    "Precision": 0.06956521739130435,
+    "Recall": 0.2,
+    "F1-Score": 0.1032258064516129
   },
   {
     "Sector": "Communication Services",
     "Samples": 69,
-    "Accuracy": 0.15942028985507245,
-    "Precision": 0.26041666666666663,
-    "Recall": 0.3253623188405797,
-    "F1-Score": 0.11107226107226106
+    "Accuracy": 0.2318840579710145,
+    "Precision": 0.06956521739130435,
+    "Recall": 0.2,
+    "F1-Score": 0.1032258064516129
+  },
+  {
+    "Sector": "Information Technology",
+    "Samples": 169,
+    "Accuracy": 0.2485207100591716,
+    "Precision": 0.06829268292682927,
+    "Recall": 0.2,
+    "F1-Score": 0.10181818181818181
+  },
+  {
+    "Sector": "Utilities",
+    "Samples": 49,
+    "Accuracy": 0.12244897959183673,
+    "Precision": 0.05,
+    "Recall": 0.2,
+    "F1-Score": 0.08
+  },
+  {
+    "Sector": "Materials",
+    "Samples": 133,
+    "Accuracy": 0.12030075187969924,
+    "Precision": 0.03950617283950617,
+    "Recall": 0.2,
+    "F1-Score": 0.06597938144329897
+  },
+  {
+    "Sector": "Consumer Staples",
+    "Samples": 102,
+    "Accuracy": 0.13725490196078433,
+    "Precision": 0.03888888888888889,
+    "Recall": 0.2,
+    "F1-Score": 0.06511627906976744
+  },
+  {
+    "Sector": "Financials",
+    "Samples": 198,
+    "Accuracy": 0.09595959595959595,
+    "Precision": 0.036538461538461534,
+    "Recall": 0.2,
+    "F1-Score": 0.061788617886178863
+  },
+  {
+    "Sector": "Industrials",
+    "Samples": 272,
+    "Accuracy": 0.125,
+    "Precision": 0.03636363636363636,
+    "Recall": 0.2,
+    "F1-Score": 0.06153846153846154
+  },
+  {
+    "Sector": "Consumer Discretionary",
+    "Samples": 160,
+    "Accuracy": 0.10625,
+    "Precision": 0.030909090909090907,
+    "Recall": 0.2,
+    "F1-Score": 0.05354330708661418
+  },
+  {
+    "Sector": "Energy",
+    "Samples": 57,
+    "Accuracy": 0.05263157894736842,
+    "Precision": 0.023076923076923078,
+    "Recall": 0.2,
+    "F1-Score": 0.041379310344827586
   }
 ]

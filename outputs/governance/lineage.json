@@ -1,6 +1,6 @@
 {
   "model_version": "v9_9",
-  "created_at": "2025-11-24T04:03:21.006573",
+  "created_at": "2025-12-14T01:04:58.002464",
   "datasets": {
     "train": "equities_table_2025",
     "validation": "hold_out_2025"
@@ -62,6 +62,6 @@
   "governance": {
     "approval_status": "Development",
     "owner": "ML Team",
-    "review_date": "2025-11-24"
+    "review_date": "2025-12-14"
   }
 }

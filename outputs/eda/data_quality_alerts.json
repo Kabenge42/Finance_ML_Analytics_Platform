@@ -1,0 +1,3860 @@
+[
+  {
+    "severity": "medium",
+    "message": "Column 'market_cap' has 352 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "market_cap",
+    "count": 352
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'enterprise_value' has 370 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "enterprise_value",
+    "count": 370
+  },
+  {
+    "severity": "low",
+    "message": "Column 'last_price' has 96 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "last_price",
+    "count": 96
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_target_ytd_ago' has 114 outliers (1.6%) beyond 1.5 standard deviations",
+    "column": "price_target_ytd_ago",
+    "count": 114
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_return_ytd' has 434 outliers (6.2%) beyond 1.5 standard deviations",
+    "column": "total_return_ytd",
+    "count": 434
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_target' has 97 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "price_target",
+    "count": 97
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_target_low' has 106 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "price_target_low",
+    "count": 106
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_target_median' has 93 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "price_target_median",
+    "count": 93
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_target_high' has 97 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "price_target_high",
+    "count": 97
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_target_count' has 626 outliers (9.0%) beyond 1.5 standard deviations",
+    "column": "price_target_count",
+    "count": 626
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ntm' has 277 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "p_e_ntm",
+    "count": 277
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ltm' has 316 outliers (4.5%) beyond 1.5 standard deviations",
+    "column": "p_e_ltm",
+    "count": 316
+  },
+  {
+    "severity": "low",
+    "message": "Column 'altman_z_score_fy' has 294 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "altman_z_score_fy",
+    "count": 294
+  },
+  {
+    "severity": "low",
+    "message": "Column 'altman_z_score_fq' has 291 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "altman_z_score_fq",
+    "count": 291
+  },
+  {
+    "severity": "low",
+    "message": "Column 'altman_z_score_ltm' has 263 outliers (3.8%) beyond 1.5 standard deviations",
+    "column": "altman_z_score_ltm",
+    "count": 263
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'beta_1y' has 645 outliers (9.3%) beyond 1.5 standard deviations",
+    "column": "beta_1y",
+    "count": 645
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'beta_2y' has 640 outliers (9.2%) beyond 1.5 standard deviations",
+    "column": "beta_2y",
+    "count": 640
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'beta_5y' has 624 outliers (9.0%) beyond 1.5 standard deviations",
+    "column": "beta_5y",
+    "count": 624
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'analyst_rating' has 537 outliers (7.7%) beyond 1.5 standard deviations",
+    "column": "analyst_rating",
+    "count": 537
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'num_strong_sell_ratings' has 359 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "num_strong_sell_ratings",
+    "count": 359
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'num_strong_buys_ratings' has 661 outliers (9.5%) beyond 1.5 standard deviations",
+    "column": "num_strong_buys_ratings",
+    "count": 661
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'num_hold_ratings' has 601 outliers (8.6%) beyond 1.5 standard deviations",
+    "column": "num_hold_ratings",
+    "count": 601
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'num_buys_ratings' has 558 outliers (8.0%) beyond 1.5 standard deviations",
+    "column": "num_buys_ratings",
+    "count": 558
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'num_sell_ratings' has 420 outliers (6.0%) beyond 1.5 standard deviations",
+    "column": "num_sell_ratings",
+    "count": 420
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_revenues_cagr_5y_fy' has 403 outliers (5.8%) beyond 1.5 standard deviations",
+    "column": "total_revenues_cagr_5y_fy",
+    "count": 403
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_revenues_fq' has 370 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "total_revenues_fq",
+    "count": 370
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_revenues_1fy' has 356 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "total_revenues_1fy",
+    "count": 356
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_revenues_fy' has 368 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "total_revenues_fy",
+    "count": 368
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_revenues_ltm' has 361 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_revenues_ltm",
+    "count": 361
+  },
+  {
+    "severity": "low",
+    "message": "Column 'total_operating_expenses_ltm' has 249 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "total_operating_expenses_ltm",
+    "count": 249
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_tbv_ltm' has 188 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "p_tbv_ltm",
+    "count": 188
+  },
+  {
+    "severity": "low",
+    "message": "Column 'tbv_fy' has 258 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "tbv_fy",
+    "count": 258
+  },
+  {
+    "severity": "low",
+    "message": "Column 'tbv_ltm' has 269 outliers (3.9%) beyond 1.5 standard deviations",
+    "column": "tbv_ltm",
+    "count": 269
+  },
+  {
+    "severity": "high",
+    "message": "Column 'market_cap_country_r' has 711 outliers (10.2%) beyond 1.5 standard deviations",
+    "column": "market_cap_country_r",
+    "count": 711
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'tot_return_pct_cagr_3y' has 594 outliers (8.5%) beyond 1.5 standard deviations",
+    "column": "tot_return_pct_cagr_3y",
+    "count": 594
+  },
+  {
+    "severity": "high",
+    "message": "Column 'tot_return_pct_cagr_10y' has 746 outliers (10.7%) beyond 1.5 standard deviations",
+    "column": "tot_return_pct_cagr_10y",
+    "count": 746
+  },
+  {
+    "severity": "low",
+    "message": "Column 'total_return_5y' has 266 outliers (3.8%) beyond 1.5 standard deviations",
+    "column": "total_return_5y",
+    "count": 266
+  },
+  {
+    "severity": "low",
+    "message": "Column 'total_return_10y' has 186 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "total_return_10y",
+    "count": 186
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_adj_1fy' has 330 outliers (4.7%) beyond 1.5 standard deviations",
+    "column": "net_income_adj_1fy",
+    "count": 330
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cff_ltm' has 307 outliers (4.4%) beyond 1.5 standard deviations",
+    "column": "cff_ltm",
+    "count": 307
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfi_ltm' has 202 outliers (2.9%) beyond 1.5 standard deviations",
+    "column": "cfi_ltm",
+    "count": 202
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf_ltm' has 411 outliers (5.9%) beyond 1.5 standard deviations",
+    "column": "fcf_ltm",
+    "count": 411
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfo_ltm' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "cfo_ltm",
+    "count": 260
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_fq' has 367 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "ebitda_fq",
+    "count": 367
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_ltm' has 378 outliers (5.4%) beyond 1.5 standard deviations",
+    "column": "ebitda_ltm",
+    "count": 378
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_fy' has 373 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "ebitda_fy",
+    "count": 373
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_1fy' has 376 outliers (5.4%) beyond 1.5 standard deviations",
+    "column": "ebitda_1fy",
+    "count": 376
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebitda_adj_ltm' has 324 outliers (4.6%) beyond 1.5 standard deviations",
+    "column": "ebitda_adj_ltm",
+    "count": 324
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_adj_fy' has 355 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "ebitda_adj_fy",
+    "count": 355
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebitda_adj_1fy' has 314 outliers (4.5%) beyond 1.5 standard deviations",
+    "column": "ebitda_adj_1fy",
+    "count": 314
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_fq' has 219 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "ebit_fq",
+    "count": 219
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_ltm' has 234 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "ebit_ltm",
+    "count": 234
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_fy' has 228 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "ebit_fy",
+    "count": 228
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_1fy' has 218 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "ebit_1fy",
+    "count": 218
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_adj_1fy' has 263 outliers (3.8%) beyond 1.5 standard deviations",
+    "column": "ebit_adj_1fy",
+    "count": 263
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_adj_fy' has 256 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "ebit_adj_fy",
+    "count": 256
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_adj_ltm' has 244 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "ebit_adj_ltm",
+    "count": 244
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_est_med_fy1e' has 256 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "ebit_est_med_fy1e",
+    "count": 256
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_est_med_ntm' has 256 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "ebit_est_med_ntm",
+    "count": 256
+  },
+  {
+    "severity": "low",
+    "message": "Column 'return_on_equity_pct_ltm' has 241 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "return_on_equity_pct_ltm",
+    "count": 241
+  },
+  {
+    "severity": "low",
+    "message": "Column 'return_on_equity_pct_fy' has 275 outliers (3.9%) beyond 1.5 standard deviations",
+    "column": "return_on_equity_pct_fy",
+    "count": 275
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'net_income_is_fy' has 375 outliers (5.4%) beyond 1.5 standard deviations",
+    "column": "net_income_is_fy",
+    "count": 375
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'net_income_is_ltm' has 369 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "net_income_is_ltm",
+    "count": 369
+  },
+  {
+    "severity": "low",
+    "message": "Column 'normalized_net_income_fy' has 251 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "normalized_net_income_fy",
+    "count": 251
+  },
+  {
+    "severity": "low",
+    "message": "Column 'normalized_net_income_ltm' has 252 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "normalized_net_income_ltm",
+    "count": 252
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'net_income_adj_fy' has 351 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "net_income_adj_fy",
+    "count": 351
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_adj_ltm' has 336 outliers (4.8%) beyond 1.5 standard deviations",
+    "column": "net_income_adj_ltm",
+    "count": 336
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_margin_pct_fy' has 158 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "net_income_margin_pct_fy",
+    "count": 158
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_margin_pct_ltm' has 169 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "net_income_margin_pct_ltm",
+    "count": 169
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'volatility_1m' has 498 outliers (7.1%) beyond 1.5 standard deviations",
+    "column": "volatility_1m",
+    "count": 498
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'volatility_3m' has 504 outliers (7.2%) beyond 1.5 standard deviations",
+    "column": "volatility_3m",
+    "count": 504
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'volatility_6m' has 428 outliers (6.1%) beyond 1.5 standard deviations",
+    "column": "volatility_6m",
+    "count": 428
+  },
+  {
+    "severity": "low",
+    "message": "Column 'volatility_1y' has 346 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "volatility_1y",
+    "count": 346
+  },
+  {
+    "severity": "low",
+    "message": "Column 'volume_shrs' has 148 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "volume_shrs",
+    "count": 148
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividend_per_share_ltm' has 221 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "dividend_per_share_ltm",
+    "count": 221
+  },
+  {
+    "severity": "low",
+    "message": "Column 'div_yield_ind' has 257 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "div_yield_ind",
+    "count": 257
+  },
+  {
+    "severity": "low",
+    "message": "Column 'div_yield_ltm' has 293 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "div_yield_ltm",
+    "count": 293
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_debt_fy' has 373 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "total_debt_fy",
+    "count": 373
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_equity_fy' has 364 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_equity_fy",
+    "count": 364
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_equity_ltm' has 366 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_equity_ltm",
+    "count": 366
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_debt_ltm' has 361 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_debt_ltm",
+    "count": 361
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_assets_ltm' has 361 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_assets_ltm",
+    "count": 361
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_assets_fy' has 365 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_assets_fy",
+    "count": 365
+  },
+  {
+    "severity": "low",
+    "message": "Column 'current_ratio_fy' has 233 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "current_ratio_fy",
+    "count": 233
+  },
+  {
+    "severity": "low",
+    "message": "Column 'current_ratio_ltm' has 181 outliers (2.6%) beyond 1.5 standard deviations",
+    "column": "current_ratio_ltm",
+    "count": 181
+  },
+  {
+    "severity": "high",
+    "message": "Column 'gross_profit_margin_pct_fy' has 739 outliers (10.6%) beyond 1.5 standard deviations",
+    "column": "gross_profit_margin_pct_fy",
+    "count": 739
+  },
+  {
+    "severity": "high",
+    "message": "Column 'gross_profit_margin_pct_ltm' has 704 outliers (10.1%) beyond 1.5 standard deviations",
+    "column": "gross_profit_margin_pct_ltm",
+    "count": 704
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'asset_turnover_fy' has 393 outliers (5.6%) beyond 1.5 standard deviations",
+    "column": "asset_turnover_fy",
+    "count": 393
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'asset_turnover_ltm' has 388 outliers (5.6%) beyond 1.5 standard deviations",
+    "column": "asset_turnover_ltm",
+    "count": 388
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'gross_profit_ltm' has 384 outliers (5.5%) beyond 1.5 standard deviations",
+    "column": "gross_profit_ltm",
+    "count": 384
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'gross_profit_fy' has 384 outliers (5.5%) beyond 1.5 standard deviations",
+    "column": "gross_profit_fy",
+    "count": 384
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps_norm_est_avg_ntm' has 178 outliers (2.6%) beyond 1.5 standard deviations",
+    "column": "eps_norm_est_avg_ntm",
+    "count": 178
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps_adj_1fy' has 271 outliers (3.9%) beyond 1.5 standard deviations",
+    "column": "eps_adj_1fy",
+    "count": 271
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps_adj_fy' has 200 outliers (2.9%) beyond 1.5 standard deviations",
+    "column": "eps_adj_fy",
+    "count": 200
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps_adj_ltm' has 277 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "eps_adj_ltm",
+    "count": 277
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps_norm_est_avg_fy1e' has 201 outliers (2.9%) beyond 1.5 standard deviations",
+    "column": "eps_norm_est_avg_fy1e",
+    "count": 201
+  },
+  {
+    "severity": "low",
+    "message": "Column 'gain_loss_on_sale_of_assets_ltm' has 140 outliers (2.0%) beyond 1.5 standard deviations",
+    "column": "gain_loss_on_sale_of_assets_ltm",
+    "count": 140
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cost_of_revenues_ltm' has 216 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "cost_of_revenues_ltm",
+    "count": 216
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cash_acquisitions_ltm' has 286 outliers (4.1%) beyond 1.5 standard deviations",
+    "column": "cash_acquisitions_ltm",
+    "count": 286
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cash_acquisitions_fy' has 278 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "cash_acquisitions_fy",
+    "count": 278
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cash_acquisitions_1fy' has 278 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "cash_acquisitions_1fy",
+    "count": 278
+  },
+  {
+    "severity": "low",
+    "message": "Column 'inventory_ltm' has 232 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "inventory_ltm",
+    "count": 232
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_fq' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "goodwill_fq",
+    "count": 260
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_ltm' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "goodwill_ltm",
+    "count": 260
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_fy' has 266 outliers (3.8%) beyond 1.5 standard deviations",
+    "column": "goodwill_fy",
+    "count": 266
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_1fy' has 265 outliers (3.8%) beyond 1.5 standard deviations",
+    "column": "goodwill_1fy",
+    "count": 265
+  },
+  {
+    "severity": "low",
+    "message": "Column 'impairment_of_goodwill_fq' has 39 outliers (0.6%) beyond 1.5 standard deviations",
+    "column": "impairment_of_goodwill_fq",
+    "count": 39
+  },
+  {
+    "severity": "low",
+    "message": "Column 'impairment_of_goodwill_ltm' has 90 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "impairment_of_goodwill_ltm",
+    "count": 90
+  },
+  {
+    "severity": "low",
+    "message": "Column 'impairment_of_goodwill_1fy' has 90 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "impairment_of_goodwill_1fy",
+    "count": 90
+  },
+  {
+    "severity": "low",
+    "message": "Column 'impairment_of_goodwill_fy' has 83 outliers (1.2%) beyond 1.5 standard deviations",
+    "column": "impairment_of_goodwill_fy",
+    "count": 83
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'operating_income_ltm' has 351 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "operating_income_ltm",
+    "count": 351
+  },
+  {
+    "severity": "low",
+    "message": "Column 'asset_writedown_ltm' has 144 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "asset_writedown_ltm",
+    "count": 144
+  },
+  {
+    "severity": "low",
+    "message": "Column 'asset_writedown_fy' has 164 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "asset_writedown_fy",
+    "count": 164
+  },
+  {
+    "severity": "low",
+    "message": "Column 'asset_writedown_1fy' has 145 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "asset_writedown_1fy",
+    "count": 145
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'operating_income_fy' has 355 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "operating_income_fy",
+    "count": 355
+  },
+  {
+    "severity": "low",
+    "message": "Column 'capital_expenditure_ltm' has 220 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "capital_expenditure_ltm",
+    "count": 220
+  },
+  {
+    "severity": "low",
+    "message": "Column 'capital_expenditure_1fy' has 227 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "capital_expenditure_1fy",
+    "count": 227
+  },
+  {
+    "severity": "low",
+    "message": "Column 'capital_expenditure_fy' has 224 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "capital_expenditure_fy",
+    "count": 224
+  },
+  {
+    "severity": "low",
+    "message": "Column 'retained_earnings_ltm' has 236 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "retained_earnings_ltm",
+    "count": 236
+  },
+  {
+    "severity": "low",
+    "message": "Column 'total_current_assets_ltm' has 208 outliers (3.0%) beyond 1.5 standard deviations",
+    "column": "total_current_assets_ltm",
+    "count": 208
+  },
+  {
+    "severity": "low",
+    "message": "Column 'total_current_liabilities_ltm' has 233 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "total_current_liabilities_ltm",
+    "count": 233
+  },
+  {
+    "severity": "low",
+    "message": "Column 'r_d_expenses_ltm' has 146 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "r_d_expenses_ltm",
+    "count": 146
+  },
+  {
+    "severity": "low",
+    "message": "Column 'restructuring_charges_ltm' has 191 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "restructuring_charges_ltm",
+    "count": 191
+  },
+  {
+    "severity": "low",
+    "message": "Column 'restructuring_charges_fq' has 127 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "restructuring_charges_fq",
+    "count": 127
+  },
+  {
+    "severity": "low",
+    "message": "Column 'restructuring_charges_1fy' has 187 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "restructuring_charges_1fy",
+    "count": 187
+  },
+  {
+    "severity": "low",
+    "message": "Column 'restructuring_charges_fy' has 164 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "restructuring_charges_fy",
+    "count": 164
+  },
+  {
+    "severity": "low",
+    "message": "Column 'interest_expense_total_ltm' has 233 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "interest_expense_total_ltm",
+    "count": 233
+  },
+  {
+    "severity": "low",
+    "message": "Column 'merger_restructuring_charges_ltm' has 202 outliers (2.9%) beyond 1.5 standard deviations",
+    "column": "merger_restructuring_charges_ltm",
+    "count": 202
+  },
+  {
+    "severity": "low",
+    "message": "Column 'working_capital_ltm' has 248 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "working_capital_ltm",
+    "count": 248
+  },
+  {
+    "severity": "low",
+    "message": "Column 'other_unusual_items_total_ltm' has 179 outliers (2.6%) beyond 1.5 standard deviations",
+    "column": "other_unusual_items_total_ltm",
+    "count": 179
+  },
+  {
+    "severity": "low",
+    "message": "Column 'interest_income_on_investments_ltm' has 37 outliers (0.5%) beyond 1.5 standard deviations",
+    "column": "interest_income_on_investments_ltm",
+    "count": 37
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'buyback_yield_ltm' has 446 outliers (6.4%) beyond 1.5 standard deviations",
+    "column": "buyback_yield_ltm",
+    "count": 446
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'return_on_assets_roa_pct_ltm' has 504 outliers (7.2%) beyond 1.5 standard deviations",
+    "column": "return_on_assets_roa_pct_ltm",
+    "count": 504
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'return_on_assets_roa_pct_fy' has 535 outliers (7.7%) beyond 1.5 standard deviations",
+    "column": "return_on_assets_roa_pct_fy",
+    "count": 535
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'net_income_is_1fy' has 386 outliers (5.5%) beyond 1.5 standard deviations",
+    "column": "net_income_is_1fy",
+    "count": 386
+  },
+  {
+    "severity": "low",
+    "message": "Column 'normalized_net_income_1fy' has 250 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "normalized_net_income_1fy",
+    "count": 250
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cff_fy' has 293 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "cff_fy",
+    "count": 293
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cff_1fy' has 271 outliers (3.9%) beyond 1.5 standard deviations",
+    "column": "cff_1fy",
+    "count": 271
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfi_fy' has 245 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "cfi_fy",
+    "count": 245
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfi_1fy' has 281 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "cfi_1fy",
+    "count": 281
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfo_fy' has 290 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "cfo_fy",
+    "count": 290
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfo_1fy' has 264 outliers (3.8%) beyond 1.5 standard deviations",
+    "column": "cfo_1fy",
+    "count": 264
+  },
+  {
+    "severity": "low",
+    "message": "Column 'div_yield_1fyind' has 348 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "div_yield_1fyind",
+    "count": 348
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf_fy' has 433 outliers (6.2%) beyond 1.5 standard deviations",
+    "column": "fcf_fy",
+    "count": 433
+  },
+  {
+    "severity": "low",
+    "message": "Column 'capital_expenditure_fq' has 223 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "capital_expenditure_fq",
+    "count": 223
+  },
+  {
+    "severity": "low",
+    "message": "Column 'capital_expenditure_5yavgfq' has 237 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "capital_expenditure_5yavgfq",
+    "count": 237
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cff_fq' has 279 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "cff_fq",
+    "count": 279
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfi_fq' has 191 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "cfi_fq",
+    "count": 191
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfo_fq' has 210 outliers (3.0%) beyond 1.5 standard deviations",
+    "column": "cfo_fq",
+    "count": 210
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf_fq' has 433 outliers (6.2%) beyond 1.5 standard deviations",
+    "column": "fcf_fq",
+    "count": 433
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_revenues_5yavgfq' has 354 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "total_revenues_5yavgfq",
+    "count": 354
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_5yavgfq' has 353 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "ebitda_5yavgfq",
+    "count": 353
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_5yavgfq' has 222 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "ebit_5yavgfq",
+    "count": 222
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf_5yavgfq' has 397 outliers (5.7%) beyond 1.5 standard deviations",
+    "column": "fcf_5yavgfq",
+    "count": 397
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cash_acquisitions_fq' has 229 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "cash_acquisitions_fq",
+    "count": 229
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'cash_acquisitions_5yavgfq' has 356 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "cash_acquisitions_5yavgfq",
+    "count": 356
+  },
+  {
+    "severity": "low",
+    "message": "Column 'asset_writedown_fq' has 146 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "asset_writedown_fq",
+    "count": 146
+  },
+  {
+    "severity": "low",
+    "message": "Column 'asset_writedown_5yavgfq' has 171 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "asset_writedown_5yavgfq",
+    "count": 171
+  },
+  {
+    "severity": "low",
+    "message": "Column 'impairment_of_goodwill_5yavgfq' has 154 outliers (2.2%) beyond 1.5 standard deviations",
+    "column": "impairment_of_goodwill_5yavgfq",
+    "count": 154
+  },
+  {
+    "severity": "low",
+    "message": "Column 'operating_income_fq' has 345 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "operating_income_fq",
+    "count": 345
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'operating_income_5yavgfq' has 354 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "operating_income_5yavgfq",
+    "count": 354
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_b_ltm' has 241 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "p_b_ltm",
+    "count": 241
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_b_1fy' has 153 outliers (2.2%) beyond 1.5 standard deviations",
+    "column": "p_b_1fy",
+    "count": 153
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_b_5yavg' has 218 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "p_b_5yavg",
+    "count": 218
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'cash_and_equivalents_ltm' has 354 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "cash_and_equivalents_ltm",
+    "count": 354
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'cash_and_equivalents_fq' has 354 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "cash_and_equivalents_fq",
+    "count": 354
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'cash_and_equivalents_fy' has 354 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "cash_and_equivalents_fy",
+    "count": 354
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cash_and_equivalents_5yavgfq' has 334 outliers (4.8%) beyond 1.5 standard deviations",
+    "column": "cash_and_equivalents_5yavgfq",
+    "count": 334
+  },
+  {
+    "severity": "low",
+    "message": "Column 'inventory_fq' has 232 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "inventory_fq",
+    "count": 232
+  },
+  {
+    "severity": "low",
+    "message": "Column 'inventory_fy' has 240 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "inventory_fy",
+    "count": 240
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_5yavgfq' has 261 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "goodwill_5yavgfq",
+    "count": 261
+  },
+  {
+    "severity": "low",
+    "message": "Column 'inventory_5yavgfq' has 235 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "inventory_5yavgfq",
+    "count": 235
+  },
+  {
+    "severity": "low",
+    "message": "Column 'retained_earnings_fq' has 236 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "retained_earnings_fq",
+    "count": 236
+  },
+  {
+    "severity": "low",
+    "message": "Column 'retained_earnings_fy' has 244 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "retained_earnings_fy",
+    "count": 244
+  },
+  {
+    "severity": "low",
+    "message": "Column 'retained_earnings_5yavgfq' has 239 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "retained_earnings_5yavgfq",
+    "count": 239
+  },
+  {
+    "severity": "low",
+    "message": "Column 'working_capital_fq' has 248 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "working_capital_fq",
+    "count": 248
+  },
+  {
+    "severity": "low",
+    "message": "Column 'working_capital_fy' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "working_capital_fy",
+    "count": 260
+  },
+  {
+    "severity": "low",
+    "message": "Column 'working_capital_5yavgfy' has 254 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "working_capital_5yavgfy",
+    "count": 254
+  },
+  {
+    "severity": "low",
+    "message": "Column 'div_yield_ttm' has 162 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "div_yield_ttm",
+    "count": 162
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'div_yield_ntm' has 438 outliers (6.3%) beyond 1.5 standard deviations",
+    "column": "div_yield_ntm",
+    "count": 438
+  },
+  {
+    "severity": "low",
+    "message": "Column 'div_yield_5yavgltm' has 278 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "div_yield_5yavgltm",
+    "count": 278
+  },
+  {
+    "severity": "low",
+    "message": "Column 'gross_intangible_assets_ltm' has 159 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "gross_intangible_assets_ltm",
+    "count": 159
+  },
+  {
+    "severity": "low",
+    "message": "Column 'gross_intangible_assets_fy' has 232 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "gross_intangible_assets_fy",
+    "count": 232
+  },
+  {
+    "severity": "low",
+    "message": "Column 'gross_intangible_assets_5yavgfq' has 231 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "gross_intangible_assets_5yavgfq",
+    "count": 231
+  },
+  {
+    "severity": "low",
+    "message": "Column 'restructuring_charges_5yavgfq' has 171 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "restructuring_charges_5yavgfq",
+    "count": 171
+  },
+  {
+    "severity": "low",
+    "message": "Column 'merger_restructuring_charges_fq' has 140 outliers (2.0%) beyond 1.5 standard deviations",
+    "column": "merger_restructuring_charges_fq",
+    "count": 140
+  },
+  {
+    "severity": "low",
+    "message": "Column 'merger_restructuring_charges_fy' has 173 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "merger_restructuring_charges_fy",
+    "count": 173
+  },
+  {
+    "severity": "low",
+    "message": "Column 'merger_restructuring_charges_5yavgfq' has 188 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "merger_restructuring_charges_5yavgfq",
+    "count": 188
+  },
+  {
+    "severity": "low",
+    "message": "Column 'normalized_net_income_fq' has 240 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "normalized_net_income_fq",
+    "count": 240
+  },
+  {
+    "severity": "low",
+    "message": "Column 'normalized_net_income_5yavgfq' has 253 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "normalized_net_income_5yavgfq",
+    "count": 253
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_adj_fq' has 324 outliers (4.6%) beyond 1.5 standard deviations",
+    "column": "net_income_adj_fq",
+    "count": 324
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_adj_5yavgfq' has 342 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "net_income_adj_5yavgfq",
+    "count": 342
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_is_fq' has 342 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "net_income_is_fq",
+    "count": 342
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_is_5yavgfq' has 343 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "net_income_is_5yavgfq",
+    "count": 343
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_is_5yavgltm' has 342 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "net_income_is_5yavgltm",
+    "count": 342
+  },
+  {
+    "severity": "low",
+    "message": "Column 'normalized_net_income_5yavgltm' has 255 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "normalized_net_income_5yavgltm",
+    "count": 255
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_5yavgltm' has 355 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "ebitda_5yavgltm",
+    "count": 355
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_5yavgltm' has 219 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "ebit_5yavgltm",
+    "count": 219
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_revenues_5yavgltm' has 349 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "total_revenues_5yavgltm",
+    "count": 349
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenues_est_yoy_pct_fy1e' has 162 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "revenues_est_yoy_pct_fy1e",
+    "count": 162
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_chg_pct_1m' has 676 outliers (9.7%) beyond 1.5 standard deviations",
+    "column": "price_chg_pct_1m",
+    "count": 676
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_chg_pct_3m' has 505 outliers (7.2%) beyond 1.5 standard deviations",
+    "column": "price_chg_pct_3m",
+    "count": 505
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'one_day_pct' has 613 outliers (8.8%) beyond 1.5 standard deviations",
+    "column": "one_day_pct",
+    "count": 613
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_5d_ago' has 100 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "price_5d_ago",
+    "count": 100
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_1w_ago' has 100 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "price_1w_ago",
+    "count": 100
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_1m_ago' has 100 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "price_1m_ago",
+    "count": 100
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_3m_ago' has 103 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "price_3m_ago",
+    "count": 103
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_6m_ago' has 103 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "price_6m_ago",
+    "count": 103
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_1y_ago' has 100 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "price_1y_ago",
+    "count": 100
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_3y_ago' has 110 outliers (1.6%) beyond 1.5 standard deviations",
+    "column": "price_3y_ago",
+    "count": 110
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_5y_ago' has 87 outliers (1.2%) beyond 1.5 standard deviations",
+    "column": "price_5y_ago",
+    "count": 87
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_qtd_ago' has 103 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "price_qtd_ago",
+    "count": 103
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'rel_volume' has 363 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "rel_volume",
+    "count": 363
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'shares_outstanding' has 468 outliers (6.7%) beyond 1.5 standard deviations",
+    "column": "shares_outstanding",
+    "count": 468
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'shrs_out_1fy' has 467 outliers (6.7%) beyond 1.5 standard deviations",
+    "column": "shrs_out_1fy",
+    "count": 467
+  },
+  {
+    "severity": "low",
+    "message": "Column 'common_dividends_paid_ltm' has 251 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "common_dividends_paid_ltm",
+    "count": 251
+  },
+  {
+    "severity": "low",
+    "message": "Column 'common_dividends_paid_fy' has 248 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "common_dividends_paid_fy",
+    "count": 248
+  },
+  {
+    "severity": "low",
+    "message": "Column 'selling_general_and_admin_expenses_total_fq' has 224 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "selling_general_and_admin_expenses_total_fq",
+    "count": 224
+  },
+  {
+    "severity": "low",
+    "message": "Column 'selling_general_and_admin_expenses_total_fy' has 252 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "selling_general_and_admin_expenses_total_fy",
+    "count": 252
+  },
+  {
+    "severity": "low",
+    "message": "Column 'selling_general_and_admin_expenses_total_1fy' has 255 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "selling_general_and_admin_expenses_total_1fy",
+    "count": 255
+  },
+  {
+    "severity": "low",
+    "message": "Column 'selling_general_and_admin_expenses_total_5yavgfq' has 236 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "selling_general_and_admin_expenses_total_5yavgfq",
+    "count": 236
+  },
+  {
+    "severity": "low",
+    "message": "Column 'accounts_receivable_fy' has 237 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "accounts_receivable_fy",
+    "count": 237
+  },
+  {
+    "severity": "low",
+    "message": "Column 'accounts_receivable_1fy' has 245 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "accounts_receivable_1fy",
+    "count": 245
+  },
+  {
+    "severity": "low",
+    "message": "Column 'accounts_receivable_5yavgfq' has 254 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "accounts_receivable_5yavgfq",
+    "count": 254
+  },
+  {
+    "severity": "low",
+    "message": "Column 'marketing_expenses_fq' has 73 outliers (1.0%) beyond 1.5 standard deviations",
+    "column": "marketing_expenses_fq",
+    "count": 73
+  },
+  {
+    "severity": "low",
+    "message": "Column 'marketing_expenses_fy' has 91 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "marketing_expenses_fy",
+    "count": 91
+  },
+  {
+    "severity": "low",
+    "message": "Column 'marketing_expenses_1fy' has 93 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "marketing_expenses_1fy",
+    "count": 93
+  },
+  {
+    "severity": "low",
+    "message": "Column 'marketing_expenses_5yavgltm' has 104 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "marketing_expenses_5yavgltm",
+    "count": 104
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenues_est_avg_ntm' has 368 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "revenues_est_avg_ntm",
+    "count": 368
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenues_est_avg_fy1e' has 368 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "revenues_est_avg_fy1e",
+    "count": 368
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenues_est_med_ntm' has 368 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "revenues_est_med_ntm",
+    "count": 368
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenues_est_med_fy1e' has 365 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "revenues_est_med_fy1e",
+    "count": 365
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_est_fy1' has 176 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "ev_sales_est_fy1",
+    "count": 176
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_ltm' has 156 outliers (2.2%) beyond 1.5 standard deviations",
+    "column": "ev_sales_ltm",
+    "count": 156
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_ntm' has 195 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "ev_sales_ntm",
+    "count": 195
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_1fyltm' has 181 outliers (2.6%) beyond 1.5 standard deviations",
+    "column": "ev_sales_1fyltm",
+    "count": 181
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_2fyltm' has 194 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "ev_sales_2fyltm",
+    "count": 194
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_3fyltm' has 183 outliers (2.6%) beyond 1.5 standard deviations",
+    "column": "ev_sales_3fyltm",
+    "count": 183
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_3yavgltm' has 199 outliers (2.9%) beyond 1.5 standard deviations",
+    "column": "ev_sales_3yavgltm",
+    "count": 199
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_1fqltm' has 147 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "ev_sales_1fqltm",
+    "count": 147
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_2fqltm' has 137 outliers (2.0%) beyond 1.5 standard deviations",
+    "column": "ev_sales_2fqltm",
+    "count": 137
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_3fqltm' has 132 outliers (1.9%) beyond 1.5 standard deviations",
+    "column": "ev_sales_3fqltm",
+    "count": 132
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_4fqltm' has 168 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "ev_sales_4fqltm",
+    "count": 168
+  },
+  {
+    "severity": "low",
+    "message": "Column '52w_high_adj' has 102 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "52w_high_adj",
+    "count": 102
+  },
+  {
+    "severity": "low",
+    "message": "Column '52w_low_adj' has 109 outliers (1.6%) beyond 1.5 standard deviations",
+    "column": "52w_low_adj",
+    "count": 109
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ema_20d' has 98 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ema_20d",
+    "count": 98
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ema_50d' has 98 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ema_50d",
+    "count": 98
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ema_100d' has 102 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "ema_100d",
+    "count": 102
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ema_250d' has 105 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "ema_250d",
+    "count": 105
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_ltm' has 274 outliers (3.9%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_ltm",
+    "count": 274
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_ntm' has 228 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_ntm",
+    "count": 228
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_1fyltm' has 245 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_1fyltm",
+    "count": 245
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_1fqltm' has 244 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_1fqltm",
+    "count": 244
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_3yavgltm' has 340 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_3yavgltm",
+    "count": 340
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_est_fy1' has 247 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_est_fy1",
+    "count": 247
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_est_fy1' has 303 outliers (4.3%) beyond 1.5 standard deviations",
+    "column": "p_e_est_fy1",
+    "count": 303
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_1fyltm' has 331 outliers (4.7%) beyond 1.5 standard deviations",
+    "column": "p_e_1fyltm",
+    "count": 331
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_2fyltm' has 325 outliers (4.7%) beyond 1.5 standard deviations",
+    "column": "p_e_2fyltm",
+    "count": 325
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'p_e_3fyltm' has 356 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "p_e_3fyltm",
+    "count": 356
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'p_e_3yavgltm' has 426 outliers (6.1%) beyond 1.5 standard deviations",
+    "column": "p_e_3yavgltm",
+    "count": 426
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'p_e_1fqltm' has 372 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "p_e_1fqltm",
+    "count": 372
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'p_e_2fqltm' has 355 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "p_e_2fqltm",
+    "count": 355
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'p_e_3fqltm' has 362 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "p_e_3fqltm",
+    "count": 362
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'p_e_5yavgltm' has 420 outliers (6.0%) beyond 1.5 standard deviations",
+    "column": "p_e_5yavgltm",
+    "count": 420
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_0fqqoqltm' has 162 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "p_e_0fqqoqltm",
+    "count": 162
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_0fyyoyltm' has 175 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "p_e_0fyyoyltm",
+    "count": 175
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_1fyyoyltm' has 125 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "p_e_1fyyoyltm",
+    "count": 125
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_0fqyoyltm' has 195 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "p_e_0fqyoyltm",
+    "count": 195
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividend_record_amount' has 131 outliers (1.9%) beyond 1.5 standard deviations",
+    "column": "dividend_record_amount",
+    "count": 131
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'dividend_streak' has 377 outliers (5.4%) beyond 1.5 standard deviations",
+    "column": "dividend_streak",
+    "count": 377
+  },
+  {
+    "severity": "low",
+    "message": "Column 'full_time_employees_fq' has 209 outliers (3.0%) beyond 1.5 standard deviations",
+    "column": "full_time_employees_fq",
+    "count": 209
+  },
+  {
+    "severity": "low",
+    "message": "Column 'full_time_employees_fy' has 300 outliers (4.3%) beyond 1.5 standard deviations",
+    "column": "full_time_employees_fy",
+    "count": 300
+  },
+  {
+    "severity": "low",
+    "message": "Column 'full_time_employees_1fy' has 300 outliers (4.3%) beyond 1.5 standard deviations",
+    "column": "full_time_employees_1fy",
+    "count": 300
+  },
+  {
+    "severity": "low",
+    "message": "Column 'full_time_employees_2fy' has 307 outliers (4.4%) beyond 1.5 standard deviations",
+    "column": "full_time_employees_2fy",
+    "count": 307
+  },
+  {
+    "severity": "low",
+    "message": "Column 'full_time_employees_3fy' has 288 outliers (4.1%) beyond 1.5 standard deviations",
+    "column": "full_time_employees_3fy",
+    "count": 288
+  },
+  {
+    "severity": "low",
+    "message": "Column 'avg_employees_5yavgfy' has 195 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "avg_employees_5yavgfy",
+    "count": 195
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e' has 316 outliers (4.5%) beyond 1.5 standard deviations",
+    "column": "p_e",
+    "count": 316
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenue' has 361 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "revenue",
+    "count": 361
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda' has 378 outliers (5.4%) beyond 1.5 standard deviations",
+    "column": "ebitda",
+    "count": 378
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'net_income' has 369 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "net_income",
+    "count": 369
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_b' has 241 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "p_b",
+    "count": 241
+  },
+  {
+    "severity": "high",
+    "message": "Column 'gross_margin' has 704 outliers (10.1%) beyond 1.5 standard deviations",
+    "column": "gross_margin",
+    "count": 704
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps' has 277 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "eps",
+    "count": 277
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_equity' has 366 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_equity",
+    "count": 366
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_assets' has 361 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_assets",
+    "count": 361
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_debt' has 361 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_debt",
+    "count": 361
+  },
+  {
+    "severity": "low",
+    "message": "Column 'inventory' has 232 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "inventory",
+    "count": 232
+  },
+  {
+    "severity": "low",
+    "message": "Column 'capex' has 334 outliers (4.8%) beyond 1.5 standard deviations",
+    "column": "capex",
+    "count": 334
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'cash_and_equivalents' has 354 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "cash_and_equivalents",
+    "count": 354
+  },
+  {
+    "severity": "low",
+    "message": "Column 'current_assets' has 208 outliers (3.0%) beyond 1.5 standard deviations",
+    "column": "current_assets",
+    "count": 208
+  },
+  {
+    "severity": "low",
+    "message": "Column 'current_liabilities' has 233 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "current_liabilities",
+    "count": 233
+  },
+  {
+    "severity": "low",
+    "message": "Column 'working_capital' has 248 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "working_capital",
+    "count": 248
+  },
+  {
+    "severity": "low",
+    "message": "Column 'retained_earnings' has 236 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "retained_earnings",
+    "count": 236
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfo' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "cfo",
+    "count": 260
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfi' has 202 outliers (2.9%) beyond 1.5 standard deviations",
+    "column": "cfi",
+    "count": 202
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cff' has 307 outliers (4.4%) beyond 1.5 standard deviations",
+    "column": "cff",
+    "count": 307
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf' has 411 outliers (5.9%) beyond 1.5 standard deviations",
+    "column": "fcf",
+    "count": 411
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit' has 234 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "ebit",
+    "count": 234
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'gross_profit' has 384 outliers (5.5%) beyond 1.5 standard deviations",
+    "column": "gross_profit",
+    "count": 384
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'operating_income' has 351 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "operating_income",
+    "count": 351
+  },
+  {
+    "severity": "low",
+    "message": "Column 'interest_expense' has 233 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "interest_expense",
+    "count": 233
+  },
+  {
+    "severity": "low",
+    "message": "Column 'r_d_expenses' has 146 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "r_d_expenses",
+    "count": 146
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "goodwill",
+    "count": 260
+  },
+  {
+    "severity": "low",
+    "message": "Column 'intangible_assets' has 159 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "intangible_assets",
+    "count": 159
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividend_per_share' has 221 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "dividend_per_share",
+    "count": 221
+  },
+  {
+    "severity": "low",
+    "message": "Column 'operating_expenses' has 249 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "operating_expenses",
+    "count": 249
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'operating_cash_flow' has 386 outliers (5.5%) beyond 1.5 standard deviations",
+    "column": "operating_cash_flow",
+    "count": 386
+  },
+  {
+    "severity": "low",
+    "message": "Column 'marketing_expenses' has 104 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "marketing_expenses",
+    "count": 104
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividends_paid' has 248 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "dividends_paid",
+    "count": 248
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividends_paid_ltm' has 251 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "dividends_paid_ltm",
+    "count": 251
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_target_number' has 626 outliers (9.0%) beyond 1.5 standard deviations",
+    "column": "price_target_number",
+    "count": 626
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'net_income_ltm' has 369 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "net_income_ltm",
+    "count": 369
+  },
+  {
+    "severity": "low",
+    "message": "Column 'volatility_1y_pct' has 346 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "volatility_1y_pct",
+    "count": 346
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenue_previous_year' has 356 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "revenue_previous_year",
+    "count": 356
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps_previous_year' has 271 outliers (3.9%) beyond 1.5 standard deviations",
+    "column": "eps_previous_year",
+    "count": 271
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_previous_year' has 376 outliers (5.4%) beyond 1.5 standard deviations",
+    "column": "ebitda_previous_year",
+    "count": 376
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_equity_previous_year' has 364 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_equity_previous_year",
+    "count": 364
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_assets_previous_year' has 365 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "total_assets_previous_year",
+    "count": 365
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'gross_profit_previous_year' has 384 outliers (5.5%) beyond 1.5 standard deviations",
+    "column": "gross_profit_previous_year",
+    "count": 384
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenue_fy' has 368 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "revenue_fy",
+    "count": 368
+  },
+  {
+    "severity": "low",
+    "message": "Column 'working_capital_1fy' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "working_capital_1fy",
+    "count": 260
+  },
+  {
+    "severity": "low",
+    "message": "Column 'accounts_receivable_previous_year' has 245 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "accounts_receivable_previous_year",
+    "count": 245
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'roa_previous_year' has 535 outliers (7.7%) beyond 1.5 standard deviations",
+    "column": "roa_previous_year",
+    "count": 535
+  },
+  {
+    "severity": "low",
+    "message": "Column 'current_ratio_previous_year' has 233 outliers (3.3%) beyond 1.5 standard deviations",
+    "column": "current_ratio_previous_year",
+    "count": 233
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'shares_outstanding_previous_year' has 467 outliers (6.7%) beyond 1.5 standard deviations",
+    "column": "shares_outstanding_previous_year",
+    "count": 467
+  },
+  {
+    "severity": "high",
+    "message": "Column 'gross_margin_pct_previous_year' has 739 outliers (10.6%) beyond 1.5 standard deviations",
+    "column": "gross_margin_pct_previous_year",
+    "count": 739
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'asset_turnover_previous_year' has 393 outliers (5.6%) beyond 1.5 standard deviations",
+    "column": "asset_turnover_previous_year",
+    "count": 393
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_gross_profit_previous_year' has 899 outliers (12.9%) beyond 1.5 standard deviations",
+    "column": "log_gross_profit_previous_year",
+    "count": 899
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_operating_income_fq' has 993 outliers (14.2%) beyond 1.5 standard deviations",
+    "column": "log_operating_income_fq",
+    "count": 993
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_ltm' has 851 outliers (12.2%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_ltm",
+    "count": 851
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_revenues_5yavgfq' has 957 outliers (13.7%) beyond 1.5 standard deviations",
+    "column": "log_total_revenues_5yavgfq",
+    "count": 957
+  },
+  {
+    "severity": "low",
+    "message": "Column 'log_cash_acquisitions_fq' has 120 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "log_cash_acquisitions_fq",
+    "count": 120
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_revenues_5yavgltm' has 932 outliers (13.4%) beyond 1.5 standard deviations",
+    "column": "log_total_revenues_5yavgltm",
+    "count": 932
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_fy' has 879 outliers (12.6%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_fy",
+    "count": 879
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income' has 1132 outliers (16.2%) beyond 1.5 standard deviations",
+    "column": "log_net_income",
+    "count": 1132
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_assets_ltm' has 945 outliers (13.6%) beyond 1.5 standard deviations",
+    "column": "log_total_assets_ltm",
+    "count": 945
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_previous_year' has 898 outliers (12.9%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_previous_year",
+    "count": 898
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_gross_profit' has 862 outliers (12.4%) beyond 1.5 standard deviations",
+    "column": "log_gross_profit",
+    "count": 862
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_market_cap' has 1062 outliers (15.2%) beyond 1.5 standard deviations",
+    "column": "log_market_cap",
+    "count": 1062
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_operating_income_fy' has 855 outliers (12.3%) beyond 1.5 standard deviations",
+    "column": "log_operating_income_fy",
+    "count": 855
+  },
+  {
+    "severity": "low",
+    "message": "Column 'log_cash_acquisitions_ltm' has 217 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "log_cash_acquisitions_ltm",
+    "count": 217
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_cash_and_equivalents' has 1005 outliers (14.4%) beyond 1.5 standard deviations",
+    "column": "log_cash_and_equivalents",
+    "count": 1005
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_revenues_est_avg_ntm' has 861 outliers (12.3%) beyond 1.5 standard deviations",
+    "column": "log_revenues_est_avg_ntm",
+    "count": 861
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_revenues_fy' has 867 outliers (12.4%) beyond 1.5 standard deviations",
+    "column": "log_total_revenues_fy",
+    "count": 867
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_is_1fy' has 1044 outliers (15.0%) beyond 1.5 standard deviations",
+    "column": "log_net_income_is_1fy",
+    "count": 1044
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'log_fcf_fq' has 537 outliers (7.7%) beyond 1.5 standard deviations",
+    "column": "log_fcf_fq",
+    "count": 537
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_equity_ltm' has 798 outliers (11.4%) beyond 1.5 standard deviations",
+    "column": "log_total_equity_ltm",
+    "count": 798
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_revenues_ltm' has 855 outliers (12.3%) beyond 1.5 standard deviations",
+    "column": "log_total_revenues_ltm",
+    "count": 855
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_adj_1fy' has 873 outliers (12.5%) beyond 1.5 standard deviations",
+    "column": "log_net_income_adj_1fy",
+    "count": 873
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_operating_income' has 1001 outliers (14.4%) beyond 1.5 standard deviations",
+    "column": "log_operating_income",
+    "count": 1001
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_equity_fy' has 802 outliers (11.5%) beyond 1.5 standard deviations",
+    "column": "log_total_equity_fy",
+    "count": 802
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_debt_fy' has 980 outliers (14.1%) beyond 1.5 standard deviations",
+    "column": "log_total_debt_fy",
+    "count": 980
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_revenue_previous_year' has 930 outliers (13.3%) beyond 1.5 standard deviations",
+    "column": "log_revenue_previous_year",
+    "count": 930
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_revenue_fy' has 867 outliers (12.4%) beyond 1.5 standard deviations",
+    "column": "log_revenue_fy",
+    "count": 867
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'log_cash_acquisitions_5yavgfq' has 353 outliers (5.1%) beyond 1.5 standard deviations",
+    "column": "log_cash_acquisitions_5yavgfq",
+    "count": 353
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_is_5yavgltm' has 1159 outliers (16.6%) beyond 1.5 standard deviations",
+    "column": "log_net_income_is_5yavgltm",
+    "count": 1159
+  },
+  {
+    "severity": "low",
+    "message": "Column 'log_cash_acquisitions_fy' has 170 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "log_cash_acquisitions_fy",
+    "count": 170
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_debt' has 988 outliers (14.2%) beyond 1.5 standard deviations",
+    "column": "log_total_debt",
+    "count": 988
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_assets_fy' has 936 outliers (13.4%) beyond 1.5 standard deviations",
+    "column": "log_total_assets_fy",
+    "count": 936
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_adj_fy' has 965 outliers (13.8%) beyond 1.5 standard deviations",
+    "column": "log_net_income_adj_fy",
+    "count": 965
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_5yavgltm' has 877 outliers (12.6%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_5yavgltm",
+    "count": 877
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_revenues_est_avg_fy1e' has 931 outliers (13.4%) beyond 1.5 standard deviations",
+    "column": "log_revenues_est_avg_fy1e",
+    "count": 931
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_fq' has 928 outliers (13.3%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_fq",
+    "count": 928
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_1fy' has 898 outliers (12.9%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_1fy",
+    "count": 898
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_revenues_est_med_ntm' has 864 outliers (12.4%) beyond 1.5 standard deviations",
+    "column": "log_revenues_est_med_ntm",
+    "count": 864
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_cash_and_equivalents_fy' has 978 outliers (14.0%) beyond 1.5 standard deviations",
+    "column": "log_cash_and_equivalents_fy",
+    "count": 978
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_equity' has 835 outliers (12.0%) beyond 1.5 standard deviations",
+    "column": "log_total_equity",
+    "count": 835
+  },
+  {
+    "severity": "low",
+    "message": "Column 'log_capex' has 24 outliers (0.3%) beyond 1.5 standard deviations",
+    "column": "log_capex",
+    "count": 24
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_is_5yavgfq' has 1042 outliers (14.9%) beyond 1.5 standard deviations",
+    "column": "log_net_income_is_5yavgfq",
+    "count": 1042
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_cash_and_equivalents_5yavgfq' has 1019 outliers (14.6%) beyond 1.5 standard deviations",
+    "column": "log_cash_and_equivalents_5yavgfq",
+    "count": 1019
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_fcf_ltm' has 946 outliers (13.6%) beyond 1.5 standard deviations",
+    "column": "log_fcf_ltm",
+    "count": 946
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_debt_ltm' has 973 outliers (14.0%) beyond 1.5 standard deviations",
+    "column": "log_total_debt_ltm",
+    "count": 973
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_fcf' has 953 outliers (13.7%) beyond 1.5 standard deviations",
+    "column": "log_fcf",
+    "count": 953
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_gross_profit_fy' has 861 outliers (12.3%) beyond 1.5 standard deviations",
+    "column": "log_gross_profit_fy",
+    "count": 861
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'log_market_cap_country_r' has 636 outliers (9.1%) beyond 1.5 standard deviations",
+    "column": "log_market_cap_country_r",
+    "count": 636
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_cash_and_equivalents_ltm' has 977 outliers (14.0%) beyond 1.5 standard deviations",
+    "column": "log_cash_and_equivalents_ltm",
+    "count": 977
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_fcf_5yavgfq' has 1045 outliers (15.0%) beyond 1.5 standard deviations",
+    "column": "log_fcf_5yavgfq",
+    "count": 1045
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_5yavgfq' has 962 outliers (13.8%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_5yavgfq",
+    "count": 962
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_fcf_fy' has 979 outliers (14.0%) beyond 1.5 standard deviations",
+    "column": "log_fcf_fy",
+    "count": 979
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_revenues_est_med_fy1e' has 927 outliers (13.3%) beyond 1.5 standard deviations",
+    "column": "log_revenues_est_med_fy1e",
+    "count": 927
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_assets_previous_year' has 986 outliers (14.1%) beyond 1.5 standard deviations",
+    "column": "log_total_assets_previous_year",
+    "count": 986
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_assets' has 984 outliers (14.1%) beyond 1.5 standard deviations",
+    "column": "log_total_assets",
+    "count": 984
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_operating_income_ltm' has 992 outliers (14.2%) beyond 1.5 standard deviations",
+    "column": "log_operating_income_ltm",
+    "count": 992
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_is_fq' has 1015 outliers (14.6%) beyond 1.5 standard deviations",
+    "column": "log_net_income_is_fq",
+    "count": 1015
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_operating_cash_flow' has 834 outliers (12.0%) beyond 1.5 standard deviations",
+    "column": "log_operating_cash_flow",
+    "count": 834
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_adj_ltm' has 836 outliers (12.0%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_adj_ltm",
+    "count": 836
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_gross_profit_ltm' has 840 outliers (12.0%) beyond 1.5 standard deviations",
+    "column": "log_gross_profit_ltm",
+    "count": 840
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_adj_ltm' has 962 outliers (13.8%) beyond 1.5 standard deviations",
+    "column": "log_net_income_adj_ltm",
+    "count": 962
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_adj_1fy' has 807 outliers (11.6%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_adj_1fy",
+    "count": 807
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_revenue' has 929 outliers (13.3%) beyond 1.5 standard deviations",
+    "column": "log_revenue",
+    "count": 929
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_operating_income_5yavgfq' has 1055 outliers (15.1%) beyond 1.5 standard deviations",
+    "column": "log_operating_income_5yavgfq",
+    "count": 1055
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda' has 863 outliers (12.4%) beyond 1.5 standard deviations",
+    "column": "log_ebitda",
+    "count": 863
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_is_ltm' has 1123 outliers (16.1%) beyond 1.5 standard deviations",
+    "column": "log_net_income_is_ltm",
+    "count": 1123
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_cash_and_equivalents_fq' has 974 outliers (14.0%) beyond 1.5 standard deviations",
+    "column": "log_cash_and_equivalents_fq",
+    "count": 974
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_revenues_1fy' has 930 outliers (13.3%) beyond 1.5 standard deviations",
+    "column": "log_total_revenues_1fy",
+    "count": 930
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_adj_fq' has 1001 outliers (14.4%) beyond 1.5 standard deviations",
+    "column": "log_net_income_adj_fq",
+    "count": 1001
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_ltm' has 1123 outliers (16.1%) beyond 1.5 standard deviations",
+    "column": "log_net_income_ltm",
+    "count": 1123
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_enterprise_value' has 1018 outliers (14.6%) beyond 1.5 standard deviations",
+    "column": "log_enterprise_value",
+    "count": 1018
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_revenues_fq' has 879 outliers (12.6%) beyond 1.5 standard deviations",
+    "column": "log_total_revenues_fq",
+    "count": 879
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_total_equity_previous_year' has 834 outliers (12.0%) beyond 1.5 standard deviations",
+    "column": "log_total_equity_previous_year",
+    "count": 834
+  },
+  {
+    "severity": "low",
+    "message": "Column 'log_cash_acquisitions_1fy' has 172 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "log_cash_acquisitions_1fy",
+    "count": 172
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_adj_5yavgfq' has 1055 outliers (15.1%) beyond 1.5 standard deviations",
+    "column": "log_net_income_adj_5yavgfq",
+    "count": 1055
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_net_income_is_fy' has 1006 outliers (14.4%) beyond 1.5 standard deviations",
+    "column": "log_net_income_is_fy",
+    "count": 1006
+  },
+  {
+    "severity": "high",
+    "message": "Column 'log_ebitda_adj_fy' has 928 outliers (13.3%) beyond 1.5 standard deviations",
+    "column": "log_ebitda_adj_fy",
+    "count": 928
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio' has 119 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio",
+    "count": 119
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_s_ratio' has 65 outliers (0.9%) beyond 1.5 standard deviations",
+    "column": "p_s_ratio",
+    "count": 65
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_ratio' has 99 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_ratio",
+    "count": 99
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_ratio' has 53 outliers (0.8%) beyond 1.5 standard deviations",
+    "column": "ev_sales_ratio",
+    "count": 53
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'gross_margin_pct' has 434 outliers (6.2%) beyond 1.5 standard deviations",
+    "column": "gross_margin_pct",
+    "count": 434
+  },
+  {
+    "severity": "low",
+    "message": "Column 'operating_margin_pct' has 87 outliers (1.2%) beyond 1.5 standard deviations",
+    "column": "operating_margin_pct",
+    "count": 87
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_margin_pct' has 45 outliers (0.6%) beyond 1.5 standard deviations",
+    "column": "net_margin_pct",
+    "count": 45
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roe' has 197 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "roe",
+    "count": 197
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'roa' has 383 outliers (5.5%) beyond 1.5 standard deviations",
+    "column": "roa",
+    "count": 383
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenue_growth' has 595 outliers (8.5%) beyond 1.5 standard deviations",
+    "column": "revenue_growth",
+    "count": 595
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_growth' has 457 outliers (6.6%) beyond 1.5 standard deviations",
+    "column": "ebitda_growth",
+    "count": 457
+  },
+  {
+    "severity": "low",
+    "message": "Column 'earnings_growth' has 160 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "earnings_growth",
+    "count": 160
+  },
+  {
+    "severity": "low",
+    "message": "Column 'debt_to_equity' has 175 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "debt_to_equity",
+    "count": 175
+  },
+  {
+    "severity": "low",
+    "message": "Column 'debt_to_assets' has 330 outliers (4.7%) beyond 1.5 standard deviations",
+    "column": "debt_to_assets",
+    "count": 330
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'target_vs_price' has 366 outliers (5.2%) beyond 1.5 standard deviations",
+    "column": "target_vs_price",
+    "count": 366
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'target_vs_price_median' has 349 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "target_vs_price_median",
+    "count": 349
+  },
+  {
+    "severity": "low",
+    "message": "Column 'peg_ratio' has 114 outliers (1.6%) beyond 1.5 standard deviations",
+    "column": "peg_ratio",
+    "count": 114
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividend_yield' has 107 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "dividend_yield",
+    "count": 107
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roic' has 343 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "roic",
+    "count": 343
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebitda_adjustment_ratio_ltm' has 307 outliers (4.4%) beyond 1.5 standard deviations",
+    "column": "ebitda_adjustment_ratio_ltm",
+    "count": 307
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebitda_adjustment_ratio_fy' has 244 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "ebitda_adjustment_ratio_fy",
+    "count": 244
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_adjustment_ratio_ltm' has 165 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "ebit_adjustment_ratio_ltm",
+    "count": 165
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebit_adjustment_ratio_fy' has 111 outliers (1.6%) beyond 1.5 standard deviations",
+    "column": "ebit_adjustment_ratio_fy",
+    "count": 111
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_adjustment_ratio_ltm' has 289 outliers (4.1%) beyond 1.5 standard deviations",
+    "column": "net_income_adjustment_ratio_ltm",
+    "count": 289
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_income_adjustment_ratio_fy' has 299 outliers (4.3%) beyond 1.5 standard deviations",
+    "column": "net_income_adjustment_ratio_fy",
+    "count": 299
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebitda_margin_trend' has 107 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "ebitda_margin_trend",
+    "count": 107
+  },
+  {
+    "severity": "low",
+    "message": "Column 'gross_margin_trend' has 85 outliers (1.2%) beyond 1.5 standard deviations",
+    "column": "gross_margin_trend",
+    "count": 85
+  },
+  {
+    "severity": "high",
+    "message": "Column 'earnings_quality_score' has 763 outliers (10.9%) beyond 1.5 standard deviations",
+    "column": "earnings_quality_score",
+    "count": 763
+  },
+  {
+    "severity": "low",
+    "message": "Column 'interest_coverage' has 119 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "interest_coverage",
+    "count": 119
+  },
+  {
+    "severity": "high",
+    "message": "Column 'equity_ratio' has 889 outliers (12.8%) beyond 1.5 standard deviations",
+    "column": "equity_ratio",
+    "count": 889
+  },
+  {
+    "severity": "low",
+    "message": "Column 'current_ratio' has 182 outliers (2.6%) beyond 1.5 standard deviations",
+    "column": "current_ratio",
+    "count": 182
+  },
+  {
+    "severity": "low",
+    "message": "Column 'quick_ratio' has 148 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "quick_ratio",
+    "count": 148
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cash_ratio' has 143 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "cash_ratio",
+    "count": 143
+  },
+  {
+    "severity": "low",
+    "message": "Column 'working_capital_to_sales' has 89 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "working_capital_to_sales",
+    "count": 89
+  },
+  {
+    "severity": "low",
+    "message": "Column 'asset_turnover' has 268 outliers (3.8%) beyond 1.5 standard deviations",
+    "column": "asset_turnover",
+    "count": 268
+  },
+  {
+    "severity": "low",
+    "message": "Column 'inventory_turnover' has 107 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "inventory_turnover",
+    "count": 107
+  },
+  {
+    "severity": "low",
+    "message": "Column 'receivables_turnover' has 125 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "receivables_turnover",
+    "count": 125
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_per_employee' has 290 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "revenue_per_employee",
+    "count": 290
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_growth_yoy' has 100 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "revenue_growth_yoy",
+    "count": 100
+  },
+  {
+    "severity": "low",
+    "message": "Column 'eps_growth_yoy' has 160 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "eps_growth_yoy",
+    "count": 160
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ebitda_growth_yoy' has 94 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "ebitda_growth_yoy",
+    "count": 94
+  },
+  {
+    "severity": "high",
+    "message": "Column 'price_momentum_1m' has 806 outliers (11.6%) beyond 1.5 standard deviations",
+    "column": "price_momentum_1m",
+    "count": 806
+  },
+  {
+    "severity": "high",
+    "message": "Column 'price_momentum_3m' has 721 outliers (10.3%) beyond 1.5 standard deviations",
+    "column": "price_momentum_3m",
+    "count": 721
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_momentum_6m' has 595 outliers (8.5%) beyond 1.5 standard deviations",
+    "column": "price_momentum_6m",
+    "count": 595
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_momentum_1y' has 514 outliers (7.4%) beyond 1.5 standard deviations",
+    "column": "price_momentum_1y",
+    "count": 514
+  },
+  {
+    "severity": "high",
+    "message": "Column 'price_acceleration_3m' has 717 outliers (10.3%) beyond 1.5 standard deviations",
+    "column": "price_acceleration_3m",
+    "count": 717
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ma_20d_simple' has 98 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ma_20d_simple",
+    "count": 98
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ma_50d_simple' has 98 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ma_50d_simple",
+    "count": 98
+  },
+  {
+    "severity": "high",
+    "message": "Column 'price_distance_from_ma' has 825 outliers (11.8%) beyond 1.5 standard deviations",
+    "column": "price_distance_from_ma",
+    "count": 825
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ma_crossover_signal' has 250 outliers (3.6%) beyond 1.5 standard deviations",
+    "column": "ma_crossover_signal",
+    "count": 250
+  },
+  {
+    "severity": "low",
+    "message": "Column 'total_return_1y_pct' has 93 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "total_return_1y_pct",
+    "count": 93
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'return_stability_score' has 688 outliers (9.9%) beyond 1.5 standard deviations",
+    "column": "return_stability_score",
+    "count": 688
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'sharpe_proxy' has 688 outliers (9.9%) beyond 1.5 standard deviations",
+    "column": "sharpe_proxy",
+    "count": 688
+  },
+  {
+    "severity": "low",
+    "message": "Column 'tangible_book_value' has 105 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "tangible_book_value",
+    "count": 105
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_tbv_ratio' has 28 outliers (0.4%) beyond 1.5 standard deviations",
+    "column": "p_tbv_ratio",
+    "count": 28
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'efficiency_ratio' has 541 outliers (7.8%) beyond 1.5 standard deviations",
+    "column": "efficiency_ratio",
+    "count": 541
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'capex_intensity' has 351 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "capex_intensity",
+    "count": 351
+  },
+  {
+    "severity": "low",
+    "message": "Column 'r_d_intensity' has 97 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "r_d_intensity",
+    "count": 97
+  },
+  {
+    "severity": "low",
+    "message": "Column 'rule_of_40' has 316 outliers (4.5%) beyond 1.5 standard deviations",
+    "column": "rule_of_40",
+    "count": 316
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cash_burn_rate' has 60 outliers (0.9%) beyond 1.5 standard deviations",
+    "column": "cash_burn_rate",
+    "count": 60
+  },
+  {
+    "severity": "low",
+    "message": "Column 'marketing_efficiency' has 157 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "marketing_efficiency",
+    "count": 157
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'working_capital_efficiency' has 438 outliers (6.3%) beyond 1.5 standard deviations",
+    "column": "working_capital_efficiency",
+    "count": 438
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividend_payout_ratio' has 185 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "dividend_payout_ratio",
+    "count": 185
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_target_spread_pct' has 402 outliers (5.8%) beyond 1.5 standard deviations",
+    "column": "price_target_spread_pct",
+    "count": 402
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'price_target_range' has 543 outliers (7.8%) beyond 1.5 standard deviations",
+    "column": "price_target_range",
+    "count": 543
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'consensus_strength' has 626 outliers (9.0%) beyond 1.5 standard deviations",
+    "column": "consensus_strength",
+    "count": 626
+  },
+  {
+    "severity": "high",
+    "message": "Column 'analyst_bullish_pct' has 736 outliers (10.6%) beyond 1.5 standard deviations",
+    "column": "analyst_bullish_pct",
+    "count": 736
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'analyst_bearish_pct' has 421 outliers (6.0%) beyond 1.5 standard deviations",
+    "column": "analyst_bearish_pct",
+    "count": 421
+  },
+  {
+    "severity": "high",
+    "message": "Column 'analyst_conviction' has 787 outliers (11.3%) beyond 1.5 standard deviations",
+    "column": "analyst_conviction",
+    "count": 787
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'upside_potential' has 651 outliers (9.3%) beyond 1.5 standard deviations",
+    "column": "upside_potential",
+    "count": 651
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'target_price_upside_pct' has 349 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "target_price_upside_pct",
+    "count": 349
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_target_revision' has 338 outliers (4.8%) beyond 1.5 standard deviations",
+    "column": "price_target_revision",
+    "count": 338
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'analyst_coverage_quality' has 581 outliers (8.3%) beyond 1.5 standard deviations",
+    "column": "analyst_coverage_quality",
+    "count": 581
+  },
+  {
+    "severity": "high",
+    "message": "Column 'one_day_chg' has 845 outliers (12.1%) beyond 1.5 standard deviations",
+    "column": "one_day_chg",
+    "count": 845
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'beta_stability' has 468 outliers (6.7%) beyond 1.5 standard deviations",
+    "column": "beta_stability",
+    "count": 468
+  },
+  {
+    "severity": "high",
+    "message": "Column 'systematic_risk_trend' has 898 outliers (12.9%) beyond 1.5 standard deviations",
+    "column": "systematic_risk_trend",
+    "count": 898
+  },
+  {
+    "severity": "low",
+    "message": "Column 'price_range_pct' has 276 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "price_range_pct",
+    "count": 276
+  },
+  {
+    "severity": "low",
+    "message": "Column 'volatility_30d' has 336 outliers (4.8%) beyond 1.5 standard deviations",
+    "column": "volatility_30d",
+    "count": 336
+  },
+  {
+    "severity": "low",
+    "message": "Column 'volatility_60d' has 212 outliers (3.0%) beyond 1.5 standard deviations",
+    "column": "volatility_60d",
+    "count": 212
+  },
+  {
+    "severity": "low",
+    "message": "Column 'volatility_90d' has 260 outliers (3.7%) beyond 1.5 standard deviations",
+    "column": "volatility_90d",
+    "count": 260
+  },
+  {
+    "severity": "low",
+    "message": "Column 'momentum_20d' has 172 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "momentum_20d",
+    "count": 172
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ma_20d' has 431 outliers (6.2%) beyond 1.5 standard deviations",
+    "column": "ma_20d",
+    "count": 431
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ma_50d' has 423 outliers (6.1%) beyond 1.5 standard deviations",
+    "column": "ma_50d",
+    "count": 423
+  },
+  {
+    "severity": "low",
+    "message": "Column 'has_goodwill_impairment' has 11 outliers (0.2%) beyond 1.5 standard deviations",
+    "column": "has_goodwill_impairment",
+    "count": 11
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_impairment_flag' has 11 outliers (0.2%) beyond 1.5 standard deviations",
+    "column": "goodwill_impairment_flag",
+    "count": 11
+  },
+  {
+    "severity": "low",
+    "message": "Column 'has_asset_writedown' has 78 outliers (1.1%) beyond 1.5 standard deviations",
+    "column": "has_asset_writedown",
+    "count": 78
+  },
+  {
+    "severity": "low",
+    "message": "Column 'has_restructuring' has 10 outliers (0.1%) beyond 1.5 standard deviations",
+    "column": "has_restructuring",
+    "count": 10
+  },
+  {
+    "severity": "low",
+    "message": "Column 'total_exceptional_items_ltm' has 201 outliers (2.9%) beyond 1.5 standard deviations",
+    "column": "total_exceptional_items_ltm",
+    "count": 201
+  },
+  {
+    "severity": "low",
+    "message": "Column 'exceptional_items_to_ebitda' has 122 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "exceptional_items_to_ebitda",
+    "count": 122
+  },
+  {
+    "severity": "low",
+    "message": "Column 'exceptional_items_to_ni_pct' has 104 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "exceptional_items_to_ni_pct",
+    "count": 104
+  },
+  {
+    "severity": "low",
+    "message": "Column 'exceptional_items_trend' has 311 outliers (4.5%) beyond 1.5 standard deviations",
+    "column": "exceptional_items_trend",
+    "count": 311
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_to_assets_pct' has 139 outliers (2.0%) beyond 1.5 standard deviations",
+    "column": "goodwill_to_assets_pct",
+    "count": 139
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_to_assets' has 139 outliers (2.0%) beyond 1.5 standard deviations",
+    "column": "goodwill_to_assets",
+    "count": 139
+  },
+  {
+    "severity": "low",
+    "message": "Column 'intangibles_to_assets_pct' has 168 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "intangibles_to_assets_pct",
+    "count": 168
+  },
+  {
+    "severity": "low",
+    "message": "Column 'intangible_intensity' has 344 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "intangible_intensity",
+    "count": 344
+  },
+  {
+    "severity": "low",
+    "message": "Column 'goodwill_change_rate' has 176 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "goodwill_change_rate",
+    "count": 176
+  },
+  {
+    "severity": "low",
+    "message": "Column 'restructuring_intensity' has 343 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "restructuring_intensity",
+    "count": 343
+  },
+  {
+    "severity": "high",
+    "message": "Column 'accounting_quality_score' has 876 outliers (12.6%) beyond 1.5 standard deviations",
+    "column": "accounting_quality_score",
+    "count": 876
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'altman_z_trend' has 497 outliers (7.1%) beyond 1.5 standard deviations",
+    "column": "altman_z_trend",
+    "count": 497
+  },
+  {
+    "severity": "low",
+    "message": "Column 'z_score_volatility' has 342 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "z_score_volatility",
+    "count": 342
+  },
+  {
+    "severity": "high",
+    "message": "Column 'distress_risk_score' has 1066 outliers (15.3%) beyond 1.5 standard deviations",
+    "column": "distress_risk_score",
+    "count": 1066
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfo_to_net_income' has 104 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "cfo_to_net_income",
+    "count": 104
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf_to_net_income' has 487 outliers (7.0%) beyond 1.5 standard deviations",
+    "column": "fcf_to_net_income",
+    "count": 487
+  },
+  {
+    "severity": "low",
+    "message": "Column 'fcf_margin' has 61 outliers (0.9%) beyond 1.5 standard deviations",
+    "column": "fcf_margin",
+    "count": 61
+  },
+  {
+    "severity": "low",
+    "message": "Column 'cfo_growth_yoy' has 80 outliers (1.1%) beyond 1.5 standard deviations",
+    "column": "cfo_growth_yoy",
+    "count": 80
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf_stability' has 371 outliers (5.3%) beyond 1.5 standard deviations",
+    "column": "fcf_stability",
+    "count": 371
+  },
+  {
+    "severity": "low",
+    "message": "Column 'capex_growth_rate' has 104 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "capex_growth_rate",
+    "count": 104
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'capex_volatility' has 582 outliers (8.3%) beyond 1.5 standard deviations",
+    "column": "capex_volatility",
+    "count": 582
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'total_shareholder_return_yield' has 435 outliers (6.2%) beyond 1.5 standard deviations",
+    "column": "total_shareholder_return_yield",
+    "count": 435
+  },
+  {
+    "severity": "low",
+    "message": "Column 'reinvestment_rate' has 323 outliers (4.6%) beyond 1.5 standard deviations",
+    "column": "reinvestment_rate",
+    "count": 323
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'acquisition_intensity' has 403 outliers (5.8%) beyond 1.5 standard deviations",
+    "column": "acquisition_intensity",
+    "count": 403
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'working_capital_trend' has 462 outliers (6.6%) beyond 1.5 standard deviations",
+    "column": "working_capital_trend",
+    "count": 462
+  },
+  {
+    "severity": "low",
+    "message": "Column 'profit_per_employee' has 127 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "profit_per_employee",
+    "count": 127
+  },
+  {
+    "severity": "low",
+    "message": "Column 'assets_per_employee' has 99 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "assets_per_employee",
+    "count": 99
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ebitda_per_employee' has 425 outliers (6.1%) beyond 1.5 standard deviations",
+    "column": "ebitda_per_employee",
+    "count": 425
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'operating_income_per_employee' has 491 outliers (7.0%) beyond 1.5 standard deviations",
+    "column": "operating_income_per_employee",
+    "count": 491
+  },
+  {
+    "severity": "low",
+    "message": "Column 'fte_growth_1y_pct' has 105 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "fte_growth_1y_pct",
+    "count": 105
+  },
+  {
+    "severity": "low",
+    "message": "Column 'fte_growth_2y_pct' has 112 outliers (1.6%) beyond 1.5 standard deviations",
+    "column": "fte_growth_2y_pct",
+    "count": 112
+  },
+  {
+    "severity": "low",
+    "message": "Column 'fte_growth_3y_pct' has 100 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "fte_growth_3y_pct",
+    "count": 100
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fte_cagr_3y_pct' has 456 outliers (6.5%) beyond 1.5 standard deviations",
+    "column": "fte_cagr_3y_pct",
+    "count": 456
+  },
+  {
+    "severity": "low",
+    "message": "Column 'fte_volatility' has 245 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "fte_volatility",
+    "count": 245
+  },
+  {
+    "severity": "low",
+    "message": "Column 'fte_quarterly_momentum' has 318 outliers (4.6%) beyond 1.5 standard deviations",
+    "column": "fte_quarterly_momentum",
+    "count": 318
+  },
+  {
+    "severity": "low",
+    "message": "Column 'employee_growth_yoy_pct' has 98 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "employee_growth_yoy_pct",
+    "count": 98
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_per_employee_vs_5y_pct' has 44 outliers (0.6%) beyond 1.5 standard deviations",
+    "column": "revenue_per_employee_vs_5y_pct",
+    "count": 44
+  },
+  {
+    "severity": "low",
+    "message": "Column 'debt_growth_rate' has 59 outliers (0.8%) beyond 1.5 standard deviations",
+    "column": "debt_growth_rate",
+    "count": 59
+  },
+  {
+    "severity": "low",
+    "message": "Column 'equity_growth_rate' has 126 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "equity_growth_rate",
+    "count": 126
+  },
+  {
+    "severity": "low",
+    "message": "Column 'asset_growth_rate' has 142 outliers (2.0%) beyond 1.5 standard deviations",
+    "column": "asset_growth_rate",
+    "count": 142
+  },
+  {
+    "severity": "low",
+    "message": "Column 'balance_sheet_expansion' has 319 outliers (4.6%) beyond 1.5 standard deviations",
+    "column": "balance_sheet_expansion",
+    "count": 319
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'current_ratio_trend' has 558 outliers (8.0%) beyond 1.5 standard deviations",
+    "column": "current_ratio_trend",
+    "count": 558
+  },
+  {
+    "severity": "high",
+    "message": "Column 'working_capital_ratio' has 825 outliers (11.8%) beyond 1.5 standard deviations",
+    "column": "working_capital_ratio",
+    "count": 825
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'retained_earnings_growth' has 480 outliers (6.9%) beyond 1.5 standard deviations",
+    "column": "retained_earnings_growth",
+    "count": 480
+  },
+  {
+    "severity": "low",
+    "message": "Column 'earnings_retention_rate' has 103 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "earnings_retention_rate",
+    "count": 103
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ema_crossover_50_250' has 328 outliers (4.7%) beyond 1.5 standard deviations",
+    "column": "ema_crossover_50_250",
+    "count": 328
+  },
+  {
+    "severity": "high",
+    "message": "Column 'price_vs_ema_20d' has 825 outliers (11.8%) beyond 1.5 standard deviations",
+    "column": "price_vs_ema_20d",
+    "count": 825
+  },
+  {
+    "severity": "high",
+    "message": "Column 'price_vs_ema_250d' has 729 outliers (10.5%) beyond 1.5 standard deviations",
+    "column": "price_vs_ema_250d",
+    "count": 729
+  },
+  {
+    "severity": "high",
+    "message": "Column 'ema_slope_20d' has 868 outliers (12.4%) beyond 1.5 standard deviations",
+    "column": "ema_slope_20d",
+    "count": 868
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ema_trend_consistency' has 239 outliers (3.4%) beyond 1.5 standard deviations",
+    "column": "ema_trend_consistency",
+    "count": 239
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'pct_off_52w_high' has 625 outliers (9.0%) beyond 1.5 standard deviations",
+    "column": "pct_off_52w_high",
+    "count": 625
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'pct_above_52w_low' has 488 outliers (7.0%) beyond 1.5 standard deviations",
+    "column": "pct_above_52w_low",
+    "count": 488
+  },
+  {
+    "severity": "high",
+    "message": "Column '52w_range_position' has 754 outliers (10.8%) beyond 1.5 standard deviations",
+    "column": "52w_range_position",
+    "count": 754
+  },
+  {
+    "severity": "high",
+    "message": "Column 'near_52w_high_flag' has 1045 outliers (15.0%) beyond 1.5 standard deviations",
+    "column": "near_52w_high_flag",
+    "count": 1045
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'near_52w_low_flag' has 458 outliers (6.6%) beyond 1.5 standard deviations",
+    "column": "near_52w_low_flag",
+    "count": 458
+  },
+  {
+    "severity": "high",
+    "message": "Column 'volume_momentum_score' has 763 outliers (10.9%) beyond 1.5 standard deviations",
+    "column": "volume_momentum_score",
+    "count": 763
+  },
+  {
+    "severity": "high",
+    "message": "Column 'breakout_signal' has 1017 outliers (14.6%) beyond 1.5 standard deviations",
+    "column": "breakout_signal",
+    "count": 1017
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_trend_1y' has 157 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "ev_sales_trend_1y",
+    "count": 157
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_trend_3y' has 98 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ev_sales_trend_3y",
+    "count": 98
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_momentum' has 116 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_momentum",
+    "count": 116
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_momentum_yoy' has 247 outliers (3.5%) beyond 1.5 standard deviations",
+    "column": "p_e_momentum_yoy",
+    "count": 247
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_momentum_qoq' has 172 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "p_e_momentum_qoq",
+    "count": 172
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_vs_3y_avg' has 161 outliers (2.3%) beyond 1.5 standard deviations",
+    "column": "ev_sales_vs_3y_avg",
+    "count": 161
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_vs_3y_avg' has 218 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_vs_3y_avg",
+    "count": 218
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_vs_3y_avg' has 282 outliers (4.0%) beyond 1.5 standard deviations",
+    "column": "p_e_vs_3y_avg",
+    "count": 282
+  },
+  {
+    "severity": "low",
+    "message": "Column 'valuation_extreme_flag' has 185 outliers (2.7%) beyond 1.5 standard deviations",
+    "column": "valuation_extreme_flag",
+    "count": 185
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_forward_discount' has 127 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "ev_sales_forward_discount",
+    "count": 127
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_forward_discount' has 166 outliers (2.4%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_forward_discount",
+    "count": 166
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_forward_discount' has 223 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "p_e_forward_discount",
+    "count": 223
+  },
+  {
+    "severity": "low",
+    "message": "Column 'growth_implied_by_valuation' has 127 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "growth_implied_by_valuation",
+    "count": 127
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_sales_quarterly_volatility' has 114 outliers (1.6%) beyond 1.5 standard deviations",
+    "column": "ev_sales_quarterly_volatility",
+    "count": 114
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'valuation_stability_score' has 349 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "valuation_stability_score",
+    "count": 349
+  },
+  {
+    "severity": "high",
+    "message": "Column 'valuation_trend_consistency' has 1220 outliers (17.5%) beyond 1.5 standard deviations",
+    "column": "valuation_trend_consistency",
+    "count": 1220
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenue_estimate_spread_ntm' has 550 outliers (7.9%) beyond 1.5 standard deviations",
+    "column": "revenue_estimate_spread_ntm",
+    "count": 550
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'revenue_estimate_spread_fy1e' has 571 outliers (8.2%) beyond 1.5 standard deviations",
+    "column": "revenue_estimate_spread_fy1e",
+    "count": 571
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_consensus_uncertainty_score' has 344 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "revenue_consensus_uncertainty_score",
+    "count": 344
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_growth_implied_ntm' has 88 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "revenue_growth_implied_ntm",
+    "count": 88
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_growth_implied_fy1e' has 86 outliers (1.2%) beyond 1.5 standard deviations",
+    "column": "revenue_growth_implied_fy1e",
+    "count": 86
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_growth_acceleration' has 86 outliers (1.2%) beyond 1.5 standard deviations",
+    "column": "revenue_growth_acceleration",
+    "count": 86
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'avg_vs_median_bias' has 550 outliers (7.9%) beyond 1.5 standard deviations",
+    "column": "avg_vs_median_bias",
+    "count": 550
+  },
+  {
+    "severity": "low",
+    "message": "Column 'estimate_confidence_flag' has 226 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "estimate_confidence_flag",
+    "count": 226
+  },
+  {
+    "severity": "low",
+    "message": "Column 'growth_surprise_potential' has 77 outliers (1.1%) beyond 1.5 standard deviations",
+    "column": "growth_surprise_potential",
+    "count": 77
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'dividend_streak_years' has 454 outliers (6.5%) beyond 1.5 standard deviations",
+    "column": "dividend_streak_years",
+    "count": 454
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'dividend_consistency_score' has 632 outliers (9.1%) beyond 1.5 standard deviations",
+    "column": "dividend_consistency_score",
+    "count": 632
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'income_stock_flag' has 556 outliers (8.0%) beyond 1.5 standard deviations",
+    "column": "income_stock_flag",
+    "count": 556
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fcf_dividend_coverage' has 426 outliers (6.1%) beyond 1.5 standard deviations",
+    "column": "fcf_dividend_coverage",
+    "count": 426
+  },
+  {
+    "severity": "high",
+    "message": "Column 'dividend_safety_score' has 1770 outliers (25.4%) beyond 1.5 standard deviations",
+    "column": "dividend_safety_score",
+    "count": 1770
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividend_yield_vs_sector' has 293 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "dividend_yield_vs_sector",
+    "count": 293
+  },
+  {
+    "severity": "low",
+    "message": "Column 'dividend_aristocrat_flag' has 72 outliers (1.0%) beyond 1.5 standard deviations",
+    "column": "dividend_aristocrat_flag",
+    "count": 72
+  },
+  {
+    "severity": "high",
+    "message": "Column 'days_since_ex_date' has 733 outliers (10.5%) beyond 1.5 standard deviations",
+    "column": "days_since_ex_date",
+    "count": 733
+  },
+  {
+    "severity": "low",
+    "message": "Column 'currency_risk_flag' has 155 outliers (2.2%) beyond 1.5 standard deviations",
+    "column": "currency_risk_flag",
+    "count": 155
+  },
+  {
+    "severity": "low",
+    "message": "Column 'employee_growth_yoy' has 105 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "employee_growth_yoy",
+    "count": 105
+  },
+  {
+    "severity": "high",
+    "message": "Column 'employee_growth_cagr_5y' has 776 outliers (11.1%) beyond 1.5 standard deviations",
+    "column": "employee_growth_cagr_5y",
+    "count": 776
+  },
+  {
+    "severity": "low",
+    "message": "Column 'employee_growth_acceleration' has 123 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "employee_growth_acceleration",
+    "count": 123
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_per_employee_fy' has 304 outliers (4.4%) beyond 1.5 standard deviations",
+    "column": "revenue_per_employee_fy",
+    "count": 304
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_per_employee_1fy' has 295 outliers (4.2%) beyond 1.5 standard deviations",
+    "column": "revenue_per_employee_1fy",
+    "count": 295
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_per_employee_trend' has 213 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "revenue_per_employee_trend",
+    "count": 213
+  },
+  {
+    "severity": "high",
+    "message": "Column 'employee_base_scale_flag' has 834 outliers (12.0%) beyond 1.5 standard deviations",
+    "column": "employee_base_scale_flag",
+    "count": 834
+  },
+  {
+    "severity": "low",
+    "message": "Column 'workforce_volatility' has 94 outliers (1.3%) beyond 1.5 standard deviations",
+    "column": "workforce_volatility",
+    "count": 94
+  },
+  {
+    "severity": "low",
+    "message": "Column 'hiring_intensity_score' has 105 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "hiring_intensity_score",
+    "count": 105
+  },
+  {
+    "severity": "low",
+    "message": "Column 'fiscal_quarter' has 345 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "fiscal_quarter",
+    "count": 345
+  },
+  {
+    "severity": "low",
+    "message": "Column 'month' has 347 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "month",
+    "count": 347
+  },
+  {
+    "severity": "low",
+    "message": "Column 'year' has 346 outliers (5.0%) beyond 1.5 standard deviations",
+    "column": "year",
+    "count": 346
+  },
+  {
+    "severity": "high",
+    "message": "Column 'days_to_earnings' has 999 outliers (14.3%) beyond 1.5 standard deviations",
+    "column": "days_to_earnings",
+    "count": 999
+  },
+  {
+    "severity": "high",
+    "message": "Column 'earnings_report_recency' has 1184 outliers (17.0%) beyond 1.5 standard deviations",
+    "column": "earnings_report_recency",
+    "count": 1184
+  },
+  {
+    "severity": "high",
+    "message": "Column 'reporting_lag' has 815 outliers (11.7%) beyond 1.5 standard deviations",
+    "column": "reporting_lag",
+    "count": 815
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'ltm_vs_5yavg_revenue' has 619 outliers (8.9%) beyond 1.5 standard deviations",
+    "column": "ltm_vs_5yavg_revenue",
+    "count": 619
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'fq_vs_5yavg_ebitda' has 499 outliers (7.2%) beyond 1.5 standard deviations",
+    "column": "fq_vs_5yavg_ebitda",
+    "count": 499
+  },
+  {
+    "severity": "low",
+    "message": "Column 'market_cap_x_p_e_ratio' has 218 outliers (3.1%) beyond 1.5 standard deviations",
+    "column": "market_cap_x_p_e_ratio",
+    "count": 218
+  },
+  {
+    "severity": "low",
+    "message": "Column 'market_cap_x_roe' has 334 outliers (4.8%) beyond 1.5 standard deviations",
+    "column": "market_cap_x_roe",
+    "count": 334
+  },
+  {
+    "severity": "low",
+    "message": "Column 'market_cap_x_debt_to_equity' has 345 outliers (4.9%) beyond 1.5 standard deviations",
+    "column": "market_cap_x_debt_to_equity",
+    "count": 345
+  },
+  {
+    "severity": "low",
+    "message": "Column 'market_cap_x_revenue_growth_yoy' has 106 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "market_cap_x_revenue_growth_yoy",
+    "count": 106
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio_x_roe' has 103 outliers (1.5%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_x_roe",
+    "count": 103
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio_x_debt_to_equity' has 75 outliers (1.1%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_x_debt_to_equity",
+    "count": 75
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio_x_revenue_growth_yoy' has 66 outliers (0.9%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_x_revenue_growth_yoy",
+    "count": 66
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roe_x_debt_to_equity' has 56 outliers (0.8%) beyond 1.5 standard deviations",
+    "column": "roe_x_debt_to_equity",
+    "count": 56
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roe_x_revenue_growth_yoy' has 144 outliers (2.1%) beyond 1.5 standard deviations",
+    "column": "roe_x_revenue_growth_yoy",
+    "count": 144
+  },
+  {
+    "severity": "low",
+    "message": "Column 'debt_to_equity_x_revenue_growth_yoy' has 124 outliers (1.8%) beyond 1.5 standard deviations",
+    "column": "debt_to_equity_x_revenue_growth_yoy",
+    "count": 124
+  },
+  {
+    "severity": "low",
+    "message": "Column 'market_cap_squared' has 223 outliers (3.2%) beyond 1.5 standard deviations",
+    "column": "market_cap_squared",
+    "count": 223
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio_squared' has 47 outliers (0.7%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_squared",
+    "count": 47
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roe_squared' has 46 outliers (0.7%) beyond 1.5 standard deviations",
+    "column": "roe_squared",
+    "count": 46
+  },
+  {
+    "severity": "low",
+    "message": "Column 'debt_to_equity_squared' has 49 outliers (0.7%) beyond 1.5 standard deviations",
+    "column": "debt_to_equity_squared",
+    "count": 49
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue_growth_yoy_squared' has 26 outliers (0.4%) beyond 1.5 standard deviations",
+    "column": "revenue_growth_yoy_squared",
+    "count": 26
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio_vs_sector_median' has 119 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_vs_sector_median",
+    "count": 119
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio_sector_zscore' has 119 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_sector_zscore",
+    "count": 119
+  },
+  {
+    "severity": "high",
+    "message": "Column 'p_e_ratio_sector_percentile' has 944 outliers (13.5%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_sector_percentile",
+    "count": 944
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roe_vs_sector_median' has 197 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "roe_vs_sector_median",
+    "count": 197
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roe_sector_zscore' has 197 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "roe_sector_zscore",
+    "count": 197
+  },
+  {
+    "severity": "high",
+    "message": "Column 'roe_sector_percentile' has 932 outliers (13.4%) beyond 1.5 standard deviations",
+    "column": "roe_sector_percentile",
+    "count": 932
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_margin_pct_vs_sector_median' has 45 outliers (0.6%) beyond 1.5 standard deviations",
+    "column": "net_margin_pct_vs_sector_median",
+    "count": 45
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_margin_pct_sector_zscore' has 45 outliers (0.6%) beyond 1.5 standard deviations",
+    "column": "net_margin_pct_sector_zscore",
+    "count": 45
+  },
+  {
+    "severity": "high",
+    "message": "Column 'net_margin_pct_sector_percentile' has 932 outliers (13.4%) beyond 1.5 standard deviations",
+    "column": "net_margin_pct_sector_percentile",
+    "count": 932
+  },
+  {
+    "severity": "low",
+    "message": "Column 'debt_to_equity_vs_sector_median' has 175 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "debt_to_equity_vs_sector_median",
+    "count": 175
+  },
+  {
+    "severity": "low",
+    "message": "Column 'debt_to_equity_sector_zscore' has 175 outliers (2.5%) beyond 1.5 standard deviations",
+    "column": "debt_to_equity_sector_zscore",
+    "count": 175
+  },
+  {
+    "severity": "high",
+    "message": "Column 'debt_to_equity_sector_percentile' has 935 outliers (13.4%) beyond 1.5 standard deviations",
+    "column": "debt_to_equity_sector_percentile",
+    "count": 935
+  },
+  {
+    "severity": "low",
+    "message": "Column 'p_e_ratio_vs_sector_top_quartile' has 119 outliers (1.7%) beyond 1.5 standard deviations",
+    "column": "p_e_ratio_vs_sector_top_quartile",
+    "count": 119
+  },
+  {
+    "severity": "low",
+    "message": "Column 'roe_vs_sector_top_quartile' has 197 outliers (2.8%) beyond 1.5 standard deviations",
+    "column": "roe_vs_sector_top_quartile",
+    "count": 197
+  },
+  {
+    "severity": "low",
+    "message": "Column 'net_margin_pct_vs_sector_top_quartile' has 45 outliers (0.6%) beyond 1.5 standard deviations",
+    "column": "net_margin_pct_vs_sector_top_quartile",
+    "count": 45
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_ratio_vs_sector_median' has 99 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_ratio_vs_sector_median",
+    "count": 99
+  },
+  {
+    "severity": "low",
+    "message": "Column 'ev_ebitda_ratio_vs_sector_top_quartile' has 99 outliers (1.4%) beyond 1.5 standard deviations",
+    "column": "ev_ebitda_ratio_vs_sector_top_quartile",
+    "count": 99
+  },
+  {
+    "severity": "high",
+    "message": "Column 'piotroski_f_score' has 932 outliers (13.4%) beyond 1.5 standard deviations",
+    "column": "piotroski_f_score",
+    "count": 932
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'altman_z_score' has 606 outliers (8.7%) beyond 1.5 standard deviations",
+    "column": "altman_z_score",
+    "count": 606
+  },
+  {
+    "severity": "medium",
+    "message": "Column 'beneish_m_score' has 597 outliers (8.6%) beyond 1.5 standard deviations",
+    "column": "beneish_m_score",
+    "count": 597
+  },
+  {
+    "severity": "high",
+    "message": "Column 'composite_quality_score' has 700 outliers (10.0%) beyond 1.5 standard deviations",
+    "column": "composite_quality_score",
+    "count": 700
+  },
+  {
+    "severity": "high",
+    "message": "Column 'momentum_score' has 839 outliers (12.0%) beyond 1.5 standard deviations",
+    "column": "momentum_score",
+    "count": 839
+  },
+  {
+    "severity": "high",
+    "message": "Column 'market_cap' has 5612 negative values (should be positive)",
+    "column": "market_cap",
+    "count": 5612
+  },
+  {
+    "severity": "high",
+    "message": "Column 'revenue' has 5503 negative values (should be positive)",
+    "column": "revenue",
+    "count": 5503
+  },
+  {
+    "severity": "high",
+    "message": "Column 'total_assets' has 5576 negative values (should be positive)",
+    "column": "total_assets",
+    "count": 5576
+  },
+  {
+    "severity": "high",
+    "message": "Column 'total_equity' has 5479 negative values (should be positive)",
+    "column": "total_equity",
+    "count": 5479
+  },
+  {
+    "severity": "high",
+    "message": "Column 'ebitda' has 5553 negative values (should be positive)",
+    "column": "ebitda",
+    "count": 5553
+  },
+  {
+    "severity": "low",
+    "message": "Column 'market_cap' has 25 near-zero values (< 0.01)",
+    "column": "market_cap",
+    "count": 25
+  },
+  {
+    "severity": "low",
+    "message": "Column 'revenue' has 24 near-zero values (< 0.01)",
+    "column": "revenue",
+    "count": 24
+  }
+]

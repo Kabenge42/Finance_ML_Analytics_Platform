@@ -5,10 +5,10 @@ This module defines the authoritative COLUMN_SCHEMA derived from
 create_equities_schema.sql, providing centralized datatype and role
 information for all preprocessing, feature engineering, and modeling.
 
-Schema Structure (v1.12 - Updated 2025-12-15):
-- Source columns from CSV/SQL: 328 (matching create_equities_schema.sql + forward estimates)
-- Total COLUMN_SCHEMA entries: 532
-  - 328 source columns (from CSV/SQL schema + forward estimates)
+Schema Structure (v1.12 - Updated 2025-12-16):
+- Source columns from CSV/SQL: 334 (matching create_equities_schema.sql + forward estimates)
+- Total COLUMN_SCHEMA entries: 538
+  - 334 source columns (from CSV/SQL schema + forward estimates)
   - 61 log-transformed columns (ETL-generated, log1p of market values)
   - 43 legacy aliases (role=auxiliary, for backward compatibility)
   - 36 generic base columns (no time suffix)
@@ -21,8 +21,8 @@ New in v1.12:
   - 2 EBITDA forward estimates (avg_fy1e, avg_ntm)
   - 6 EPS normalized estimate revisions (1w, 1m, 3m, 6m, 1y, analyst count)
   - 6 EPS GAAP estimates & revisions (fy1e, ntm, 1m, 3m, 6m, 1y)
-  - 6 basic EPS historical metrics (ltm, fq, fy, 1fqfq, 2fqfq, 3fqfq)
-  - Total: 29 new raw source columns
+  - 12 basic EPS historical metrics (ltm, fq, fy, 1fqfq-4fqfq, 1fy-5fy)
+  - Total: 35 new raw source columns
 
 Database Tables:
 - equities: Original table with per-region data loading
@@ -489,6 +489,13 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "net_eps_basic_1fqfq": {"dtype": "float", "role": "feature"},  # 1 quarter ago
     "net_eps_basic_2fqfq": {"dtype": "float", "role": "feature"},  # 2 quarters ago
     "net_eps_basic_3fqfq": {"dtype": "float", "role": "feature"},  # 3 quarters ago
+    "net_eps_basic_4fqfq": {"dtype": "float", "role": "feature"},  # 4 quarters ago
+    # Forward fiscal year EPS
+    "net_eps_basic_1fy": {"dtype": "float", "role": "feature"},  # 1 fiscal year
+    "net_eps_basic_2fy": {"dtype": "float", "role": "feature"},  # 2 fiscal years
+    "net_eps_basic_3fy": {"dtype": "float", "role": "feature"},  # 3 fiscal years
+    "net_eps_basic_4fy": {"dtype": "float", "role": "feature"},  # 4 fiscal years
+    "net_eps_basic_5fy": {"dtype": "float", "role": "feature"},  # 5 fiscal years
     # Forward EPS Estimates
     "eps_norm_est_avg_ntm": {"dtype": "float", "role": "feature"},
     "eps_norm_est_avg_fy1e": {"dtype": "float", "role": "feature"},

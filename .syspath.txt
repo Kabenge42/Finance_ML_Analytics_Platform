@@ -1,0 +1,9 @@
+C:\Users\markm
+C:\Users\markm\AppData\Local\Programs\PyCharm\plugins\python-ce\helpers\coverage_runner
+C:\Users\markm\AppData\Local\Programs\PyCharm\plugins\python-ce\helpers\coverage_runner
+C:\Users\markm\AppData\Local\Programs\PyCharm\plugins\python-ce\helpers\coveragepy_new
+C:\Users\markm\AppData\Local\Programs\Python\Python313\python313.zip
+C:\Users\markm\AppData\Local\Programs\Python\Python313\DLLs
+C:\Users\markm\AppData\Local\Programs\Python\Python313\Lib
+C:\Users\markm\AppData\Local\Programs\Python\Python313
+C:\Users\markm\AppData\Local\Programs\Python\Python313\Lib\site-packages

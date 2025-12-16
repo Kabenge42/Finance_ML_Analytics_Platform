@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-12-16T16:13:39.571914",
+  "row_count": 100,
+  "column_count": 16,
+  "columns": [
+    "ticker",
+    "name",
+    "sector",
+    "region",
+    "country",
+    "trading_country",
+    "industry",
+    "exchange",
+    "style_class",
+    "size_class",
+    "last_price",
+    "price_target",
+    "market_cap",
+    "next_earnings",
+    "eps_adj_ltm",
+    "eps_norm_est_avg_ntm"
+  ],
+  "file_path": "outputs\\dashboards\\equities_dashboard\\test_export.csv",
+  "file_size_mb": 0.019562721252441406
+}

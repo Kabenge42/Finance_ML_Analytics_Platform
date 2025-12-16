@@ -1,17 +1,6 @@
 {
-  "total_violations": 15,
-  "total_predictions": 1407,
-  "violation_rate": 0.010660980810234541,
-  "violations_by_sector": {
-    "Financials": {
-      "count": 10,
-      "min_value": -0.4990502638471432,
-      "mean_value": -0.4380409120047844
-    },
-    "Energy": {
-      "count": 5,
-      "min_value": -0.800547886693874,
-      "mean_value": -0.6081650014332775
-    }
-  }
+  "total_violations": 0,
+  "total_predictions": 1393,
+  "violation_rate": 0.0,
+  "violations_by_sector": {}
 }

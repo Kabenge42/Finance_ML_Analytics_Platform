@@ -1,6 +1,6 @@
 # Model Card — v9_9
 
-**Generated:** 2025-11-24 04:03:20
+**Generated:** 2025-12-14 01:04:57
 
 ## Model Overview
 
@@ -63,7 +63,7 @@
 ## Governance & Compliance
 
 - **Model Owner:** ML Team / Data Science
-- **Review Date:** 2025-11-24
+- **Review Date:** 2025-12-14
 - **Approval Status:** Development
 - **Monitoring Plan:** Weekly performance tracking, monthly retraining cadence
 

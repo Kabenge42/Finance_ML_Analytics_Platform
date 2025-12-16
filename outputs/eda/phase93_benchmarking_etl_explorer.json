@@ -1,26 +1,26 @@
 {
   "phase": "9.3",
   "data_source": "all_stocks_features DataFrame (ETL Data Explorer)",
-  "timestamp": "2025-12-04T05:23:32.634395",
-  "total_stocks": 6957,
-  "total_columns": 572,
-  "phase93_features_present": 182,
-  "phase93_features_expected": 196,
-  "coverage_percentage": 92.85714285714286,
+  "timestamp": "2025-12-15T18:17:40.113982",
+  "total_stocks": 6666,
+  "total_columns": 699,
+  "phase93_features_present": 190,
+  "phase93_features_expected": 193,
+  "coverage_percentage": 98.44559585492227,
   "category_coverage": {
     "Momentum & Technical": {
       "present": 25,
-      "expected": 27,
-      "coverage_pct": 92.5925925925926
+      "expected": 25,
+      "coverage_pct": 100.0
     },
     "Valuation Ratios": {
-      "present": 21,
+      "present": 22,
       "expected": 23,
-      "coverage_pct": 91.30434782608695
+      "coverage_pct": 95.65217391304348
     },
     "Profitability": {
-      "present": 12,
-      "expected": 12,
+      "present": 14,
+      "expected": 14,
       "coverage_pct": 100.0
     },
     "Quality & Risk": {
@@ -44,19 +44,19 @@
       "coverage_pct": 100.0
     },
     "Market Sentiment": {
-      "present": 3,
-      "expected": 5,
-      "coverage_pct": 60.0
+      "present": 4,
+      "expected": 4,
+      "coverage_pct": 100.0
     },
     "Leverage & Liquidity": {
       "present": 8,
-      "expected": 9,
-      "coverage_pct": 88.88888888888889
+      "expected": 8,
+      "coverage_pct": 100.0
     },
     "Temporal Patterns": {
-      "present": 13,
-      "expected": 16,
-      "coverage_pct": 81.25
+      "present": 15,
+      "expected": 15,
+      "coverage_pct": 100.0
     },
     "Composite Scores": {
       "present": 5,
@@ -69,18 +69,18 @@
       "coverage_pct": 100.0
     },
     "Efficiency Ratios": {
-      "present": 2,
+      "present": 4,
       "expected": 4,
-      "coverage_pct": 50.0
+      "coverage_pct": 100.0
     },
     "Employee Productivity": {
-      "present": 16,
-      "expected": 16,
+      "present": 15,
+      "expected": 15,
       "coverage_pct": 100.0
     },
     "Balance Sheet Dynamics": {
-      "present": 8,
-      "expected": 8,
+      "present": 9,
+      "expected": 9,
       "coverage_pct": 100.0
     },
     "Revenue Forecasting": {
@@ -90,5 +90,5 @@
     }
   },
   "categories_with_features": 16,
-  "feature_engineering_duration_sec": 0.8513143062591553
+  "feature_engineering_duration_sec": 0.7721936702728271
 }

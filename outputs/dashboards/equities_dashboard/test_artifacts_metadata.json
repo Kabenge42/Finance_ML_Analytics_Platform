@@ -1,0 +1,73 @@
+{
+  "timestamp": "2025-12-16T16:13:39.966828",
+  "total_stocks": 100,
+  "artifacts_dir": "outputs\\dashboards\\equities_dashboard\\test_artifacts",
+  "artifacts": {
+    "earnings_surprise": {
+      "file": "earnings_surprise_dashboard.html",
+      "title": "Earnings Surprise Analysis",
+      "section": "earnings"
+    },
+    "analyst_heatmap": {
+      "file": "analyst_recommendation_heatmap.html",
+      "title": "Analyst Recommendations by Sector",
+      "section": "earnings"
+    },
+    "market_movers": {
+      "file": "market_movers_dashboard.html",
+      "title": "Market Movers Around Earnings",
+      "section": "earnings"
+    },
+    "price_target_analytics": {
+      "file": "price_target_analytics.html",
+      "title": "Price Target Analytics",
+      "section": "analytics"
+    },
+    "earnings_metrics_profitability": {
+      "file": "earnings_metrics_profitability.html",
+      "title": "Earnings Metrics: Profitability",
+      "section": "phase93"
+    },
+    "earnings_metrics_valuation": {
+      "file": "earnings_metrics_valuation.html",
+      "title": "Earnings Metrics: Valuation",
+      "section": "phase93"
+    },
+    "earnings_metrics_growth": {
+      "file": "earnings_metrics_growth.html",
+      "title": "Earnings Metrics: Growth",
+      "section": "phase93"
+    },
+    "earnings_metrics_momentum": {
+      "file": "earnings_metrics_momentum.html",
+      "title": "Earnings Metrics: Momentum",
+      "section": "phase93"
+    },
+    "earnings_metrics_quality_risk": {
+      "file": "earnings_metrics_quality_risk.html",
+      "title": "Earnings Metrics: Quality Risk",
+      "section": "phase93"
+    },
+    "earnings_metrics_cash_flow": {
+      "file": "earnings_metrics_cash_flow.html",
+      "title": "Earnings Metrics: Cash Flow",
+      "section": "phase93"
+    },
+    "earnings_metrics_dividends": {
+      "file": "earnings_metrics_dividends.html",
+      "title": "Earnings Metrics: Dividends",
+      "section": "phase93"
+    },
+    "earnings_metrics_forecasts": {
+      "file": "earnings_metrics_forecasts.html",
+      "title": "Earnings Metrics: Forecasts",
+      "section": "phase93"
+    },
+    "category_comparison": {
+      "file": "phase93_category_comparison.html",
+      "title": "Phase 9.3 Category Comparison",
+      "section": "phase93"
+    }
+  },
+  "generation_status": "completed"
+}

@@ -1,21 +1,21 @@
 {
-  "overall_coverage": 0.8081023454157783,
-  "mean_interval_width": 329.71856888246987,
+  "overall_coverage": 0.8262742282842785,
+  "mean_interval_width": 6311.245421012167,
   "target_coverage": 0.8,
   "tolerance": 0.1,
-  "sectors_under_covered": [
+  "sectors_under_covered": [],
+  "sectors_over_covered": [
     {
       "sector": "Utilities",
-      "coverage": 0.6851851851851852,
-      "delta": 0.11481481481481481
+      "coverage": 0.9365079365079365,
+      "delta": 0.13650793650793647
     }
   ],
-  "sectors_over_covered": [],
   "validation_status": "PASS",
   "within_tolerance": true,
-  "under_covered_sectors": [
+  "under_covered_sectors": [],
+  "over_covered_sectors": [
     "Utilities"
   ],
-  "over_covered_sectors": [],
-  "total_predictions": 1407
+  "total_predictions": 1393
 }

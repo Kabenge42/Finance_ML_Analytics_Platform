@@ -70,6 +70,21 @@ EarningsMode = Literal[
 ]
 
 
+def _write_html_artifact(fig: go.Figure, output_path: Optional[Union[str, Path]]) -> None:
+    """Write a Plotly figure to HTML when an output path is provided.
+
+    Several dashboard builders return early with an 'empty' figure (e.g., missing
+    columns or no events in window). For artifact generation workflows we still
+    want a deterministic HTML file to be produced.
+    """
+
+    if not output_path:
+        return
+    p = Path(output_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(str(p))
+
+
 def get_category_metrics(
     categories: List[str],
     include_supplemental: bool = True,
@@ -510,6 +525,7 @@ def create_earnings_metrics_chart(
             font=dict(size=16),
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     # Get metrics for the category
@@ -537,6 +553,7 @@ def create_earnings_metrics_chart(
             font=dict(size=16),
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     # Create subplots for multiple metrics
@@ -603,11 +620,7 @@ def create_earnings_metrics_chart(
         paper_bgcolor="rgba(0,0,0,0)",
     )
 
-    # Save if output path provided
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.write_html(str(output_path))
+    _write_html_artifact(fig, output_path)
 
     return fig
 
@@ -661,6 +674,7 @@ def create_category_comparison_chart(
             showarrow=False,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     # Calculate coverage statistics per category
@@ -745,10 +759,7 @@ def create_category_comparison_chart(
     fig.update_yaxes(title_text="Avg Non-Null Records", row=1, col=2)
     fig.update_xaxes(tickangle=45)
 
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.write_html(str(output_path))
+    _write_html_artifact(fig, output_path)
 
     return fig
 
@@ -848,6 +859,7 @@ def create_earnings_surprise_dashboard(
             font=dict(size=16),
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     surprise_df = pd.DataFrame(surprise_data)
@@ -968,10 +980,7 @@ def create_earnings_surprise_dashboard(
     fig.update_xaxes(title_text="Surprise (%)", row=2, col=1)
     fig.update_yaxes(title_text="Count", row=2, col=1)
 
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.write_html(str(output_path))
+    _write_html_artifact(fig, output_path)
 
     return fig
 
@@ -1098,6 +1107,7 @@ def create_market_movers_dashboard(
             showarrow=False,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     df_local = df.copy()
@@ -1120,6 +1130,7 @@ def create_market_movers_dashboard(
             showarrow=False,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     momentum_cols = ["price_momentum_1m", "volatility_1m", "rel_volume"]
@@ -1151,6 +1162,7 @@ def create_market_movers_dashboard(
             showarrow=False,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     fig = go.Figure()
@@ -1220,10 +1232,7 @@ def create_market_movers_dashboard(
         hovermode="closest",
     )
 
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.write_html(str(output_path))
+    _write_html_artifact(fig, output_path)
 
     return fig
 
@@ -1246,6 +1255,7 @@ def create_price_target_analytics(
             showarrow=False,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     df_local = df.copy()
@@ -1321,6 +1331,7 @@ def create_price_target_analytics(
             showarrow=False,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
         return fig
 
     stats_df = pd.DataFrame(sector_stats).sort_values("mean_upside", ascending=True)
@@ -1446,10 +1457,7 @@ def create_price_target_analytics(
     fig.update_yaxes(title_text="Count", row=2, col=1)
     fig.update_xaxes(title_text="Confidence Score", row=2, col=2)
 
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.write_html(str(output_path))
+    _write_html_artifact(fig, output_path)
 
     return fig
 
