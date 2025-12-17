@@ -1,3 +1,50 @@
+## [0.9.5] - 2025-12-16
+
+> **Commits:** [`8c3d23b`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/8c3d23b), [
+`cb9a925`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/cb9a925), [
+`2efa181`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2efa181), [
+`30a4f14`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/30a4f14), [
+`87a2331`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/87a2331)
+
+### Added
+
+- **Equities Dashboard Application** ([
+  `2efa181`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/2efa181))
+    - Implemented `equities_dashboard_app.py` with `create_app()` factory function
+    - Multi-tab interface: Overview, Earnings Analytics, Alerts, Data Explorer, Artifacts viewer
+    - Data loading with CSV-first fallback and ETL pipeline integration
+    - Unit tests with graceful error handling
+    - Filter controls for sectors, regions, countries, industries, exchanges, and style/size classes
+
+- **Dashboard Artifacts and Monitoring Reports** ([
+  `8c3d23b`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/8c3d23b))
+    - Generated `monitoring_report.json` for dashboard state tracking
+    - Improved visualizations for Market Movers and Earnings Metrics Cash Flow
+    - Enhanced artifact generation pipeline
+
+### Changed
+
+- **Enhanced Equities Dashboard Capabilities** ([
+  `cb9a925`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/cb9a925))
+    - Improved data management and visualization capabilities
+    - Better alignment with project code guidelines
+    - Enhanced export and artifact generation functions
+
+- **Phase 9.3 Feature Selection Refactor** ([
+  `87a2331`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/87a2331))
+    - Refactored `select_features_by_category` for schema-driven feature alignment
+    - Expanded category support from 6 to 16 categories
+    - Enhanced validation and logging
+    - Updated notebooks, tests, and added migration documentation
+
+### Removed
+
+- **Repository Cleanup** ([`30a4f14`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/30a4f14))
+    - Removed unused `.aiignore` file
+    - Removed obsolete `import_equities_data_fixed.sql` script
+
+---
+
 ## [0.9.4] - 2025-12-10
 
 > **Commits:** [`247cb29`](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/247cb29), [

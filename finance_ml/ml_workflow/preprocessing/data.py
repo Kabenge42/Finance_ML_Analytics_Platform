@@ -1067,14 +1067,6 @@ def sanitize_dataframe_with_logging(
     if apply_business_rules:
         non_negative_cols = {
             "market_cap",
-            "revenue",
-            "total_revenues_ltm",
-            "total_assets",
-            "total_assets_ltm",
-            "total_equity",
-            "total_equity_ltm",
-            "ebitda",
-            "ebitda_ltm",
             "enterprise_value",
         }
         for col in non_negative_cols:

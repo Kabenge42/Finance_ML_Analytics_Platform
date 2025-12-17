@@ -1,0 +1,68 @@
+{
+  "results": [
+    {
+      "region": "US",
+      "file": "data\\screening_us.csv",
+      "exists": false,
+      "row_count": 0,
+      "column_count": 0,
+      "schema_valid": false,
+      "warnings_count": 0,
+      "errors_count": 1,
+      "numeric_issues_count": 0,
+      "warnings": [],
+      "errors": [
+        "File not found: data\\screening_us.csv"
+      ],
+      "numeric_issues": []
+    },
+    {
+      "region": "EU",
+      "file": "data\\screening_eu.csv",
+      "exists": false,
+      "row_count": 0,
+      "column_count": 0,
+      "schema_valid": false,
+      "warnings_count": 0,
+      "errors_count": 1,
+      "numeric_issues_count": 0,
+      "warnings": [],
+      "errors": [
+        "File not found: data\\screening_eu.csv"
+      ],
+      "numeric_issues": []
+    },
+    {
+      "region": "APAC",
+      "file": "data\\screening_apac.csv",
+      "exists": false,
+      "row_count": 0,
+      "column_count": 0,
+      "schema_valid": false,
+      "warnings_count": 0,
+      "errors_count": 1,
+      "numeric_issues_count": 0,
+      "warnings": [],
+      "errors": [
+        "File not found: data\\screening_apac.csv"
+      ],
+      "numeric_issues": []
+    },
+    {
+      "region": "ROTW",
+      "file": "data\\screening_rotw.csv",
+      "exists": false,
+      "row_count": 0,
+      "column_count": 0,
+      "schema_valid": false,
+      "warnings_count": 0,
+      "errors_count": 1,
+      "numeric_issues_count": 0,
+      "warnings": [],
+      "errors": [
+        "File not found: data\\screening_rotw.csv"
+      ],
+      "numeric_issues": []
+    }
+  ]
+}

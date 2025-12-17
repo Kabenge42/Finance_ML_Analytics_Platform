@@ -19,6 +19,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.ipynb_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/queries" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/stylesheetLinters" />
+      <excludeFolder url="file://$MODULE_DIR$/finance_ml/ml_workflow/archive" />
     </content>
     <content url="file://$MODULE_DIR$/data" />
     <orderEntry type="jdk" jdkName="Python 3.13" jdkType="Python SDK" />

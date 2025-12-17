@@ -214,5 +214,99 @@ class TestTimeSeriesCrossValidation(unittest.TestCase):
             )
 
 
+class TestValidationHelpers(unittest.TestCase):
+    """Test validation helper functions (Phase 9.6 refactoring)."""
+
+    def test_validate_fold_assignments_valid(self):
+        """Test validate_fold_assignments with valid DataFrame."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_fold_assignments
+
+        valid_df = pd.DataFrame({"ticker": ["A", "B", "C"], "fold": [0, 1, 0]})
+        self.assertTrue(validate_fold_assignments(valid_df, ["ticker", "fold"]))
+
+    def test_validate_fold_assignments_none(self):
+        """Test validate_fold_assignments with None."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_fold_assignments
+
+        self.assertFalse(validate_fold_assignments(None))
+
+    def test_validate_fold_assignments_empty(self):
+        """Test validate_fold_assignments with empty DataFrame."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_fold_assignments
+
+        self.assertFalse(validate_fold_assignments(pd.DataFrame()))
+
+    def test_validate_fold_assignments_wrong_type(self):
+        """Test validate_fold_assignments with wrong type."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_fold_assignments
+
+        self.assertFalse(validate_fold_assignments("not_a_dataframe"))
+        self.assertFalse(validate_fold_assignments([1, 2, 3]))
+
+    def test_validate_fold_assignments_missing_columns(self):
+        """Test validate_fold_assignments with missing required columns."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_fold_assignments
+
+        df_missing_fold = pd.DataFrame({"ticker": ["A", "B"]})
+        self.assertFalse(validate_fold_assignments(df_missing_fold, ["ticker", "fold"]))
+
+    def test_validate_temporal_data_valid(self):
+        """Test validate_temporal_data with valid date column."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_temporal_data
+
+        valid_df = pd.DataFrame({"snapshot_date": pd.date_range("2024-01-01", periods=10)})
+        self.assertTrue(validate_temporal_data(valid_df, "snapshot_date"))
+
+    def test_validate_temporal_data_none(self):
+        """Test validate_temporal_data with None."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_temporal_data
+
+        self.assertFalse(validate_temporal_data(None, "snapshot_date"))
+
+    def test_validate_temporal_data_empty(self):
+        """Test validate_temporal_data with empty DataFrame."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_temporal_data
+
+        self.assertFalse(validate_temporal_data(pd.DataFrame(), "snapshot_date"))
+
+    def test_validate_temporal_data_missing_column(self):
+        """Test validate_temporal_data with missing date column."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_temporal_data
+
+        df = pd.DataFrame({"other_col": [1, 2, 3]})
+        self.assertFalse(validate_temporal_data(df, "snapshot_date"))
+
+    def test_validate_temporal_data_invalid_dates(self):
+        """Test validate_temporal_data with invalid date data."""
+        from finance_ml.ml_workflow.evaluation.splits import validate_temporal_data
+
+        df = pd.DataFrame({"snapshot_date": ["not", "valid", "dates"]})
+        # Should return False due to exception in pd.to_datetime
+        self.assertFalse(validate_temporal_data(df, "snapshot_date"))
+
+    def test_run_fold_overlap_analysis_valid(self):
+        """Test run_fold_overlap_analysis with valid data."""
+        from finance_ml.ml_workflow.evaluation.splits import run_fold_overlap_analysis
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            df = pd.DataFrame({"ticker": ["A", "B", "C", "D"], "fold": [0, 1, 0, 1]})
+            result = run_fold_overlap_analysis(df, tmpdir, group_col="ticker")
+
+            self.assertIn("n_folds", result)
+            self.assertFalse(result.get("skipped", False))
+
+    def test_run_fold_overlap_analysis_invalid(self):
+        """Test run_fold_overlap_analysis with invalid data."""
+        from finance_ml.ml_workflow.evaluation.splits import run_fold_overlap_analysis
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = run_fold_overlap_analysis(None, tmpdir, group_col="ticker")
+
+            self.assertTrue(result.get("skipped", False))
+            self.assertEqual(result.get("reason"), "invalid_fold_assignments")
+
+
 if __name__ == "__main__":
     unittest.main()

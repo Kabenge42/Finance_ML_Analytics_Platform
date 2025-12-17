@@ -55,6 +55,61 @@ COLOR_PALETTE = {
 # Plotly template (aligned with code_guidelines.md Section 17.2)
 PLOTLY_TEMPLATE = "plotly_dark"
 
+# Apply template globally to all Plotly figures
+px.defaults.template = PLOTLY_TEMPLATE
+
+# Font configuration (aligned with code_guidelines.md Section 17.4)
+FONT_FAMILY = "Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif"
+FONT_SIZES = {
+    "h1": 32,  # 2rem
+    "h2": 24,  # 1.5rem
+    "h3": 20,  # 1.25rem
+    "body": 16,  # 1rem
+    "caption": 14,  # 0.875rem
+}
+
+# Standard Plotly layout configuration
+PLOTLY_LAYOUT_DEFAULTS = {
+    "font": {"family": FONT_FAMILY, "size": FONT_SIZES["caption"]},
+    "title_font_size": FONT_SIZES["h3"],
+    "showlegend": True,
+    "legend": {
+        "orientation": "v",
+        "yanchor": "top",
+        "xanchor": "right",
+        "x": 1.02,
+        "y": 1,
+    },
+    "hovermode": "closest",
+    "plot_bgcolor": "rgba(0,0,0,0)",
+    "paper_bgcolor": "rgba(0,0,0,0)",
+}
+
+# Standard DataTable styles (aligned with code_guidelines.md Section 17.3)
+TABLE_STYLE_CELL = {
+    "backgroundColor": "#111",
+    "color": "#ffffff",
+    "border": f"1px solid {COLOR_PALETTE['secondary']}",
+    "fontFamily": FONT_FAMILY,
+    "fontSize": f"{FONT_SIZES['caption']}px",
+    "padding": "8px",
+    "whiteSpace": "normal",
+    "height": "auto",
+    "minWidth": "80px",
+}
+
+TABLE_STYLE_HEADER = {
+    "backgroundColor": COLOR_PALETTE["primary"],
+    "fontWeight": "bold",
+    "color": "#ffffff",
+}
+
+TABLE_STYLE_TABLE = {
+    "overflowX": "auto",
+    "maxHeight": "500px",
+    "overflowY": "auto",
+}
+
 # Earnings calendar mode options
 EARNINGS_MODE_OPTIONS = [
     {"label": "All Categories", "value": "all"},
@@ -583,29 +638,47 @@ def _alerts_to_rows(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def _severity_style(severity: str) -> Dict[str, str]:
+    """Return conditional style dict for alert severity.
+
+    Uses COLOR_PALETTE colors for consistency (code_guidelines.md Section 17.1).
+    """
     sev = str(severity).lower().strip()
     if sev == "high":
-        return {"backgroundColor": "#4d0000", "color": "white"}
+        return {"backgroundColor": COLOR_PALETTE["danger"], "color": "#ffffff"}
     if sev == "medium":
-        return {"backgroundColor": "#4d3300", "color": "white"}
+        return {"backgroundColor": COLOR_PALETTE["warning"], "color": "#000000"}
     if sev == "low":
-        return {"backgroundColor": "#00334d", "color": "white"}
+        return {"backgroundColor": COLOR_PALETTE["info"], "color": "#ffffff"}
     return {}
 
 
 def _monitoring_kpi_cards(df: pd.DataFrame) -> List[Any]:
-    """Generate monitoring KPI cards."""
+    """Generate monitoring KPI cards.
+
+    Styling aligned with code_guidelines.md Section 17.4.
+    """
     cards = []
 
     def card(title: str, value: str, color: str = "primary") -> dbc.Card:
         return dbc.Card(
             dbc.CardBody(
                 [
-                    html.Div(title, className="kpi-title", style={"fontSize": "12px"}),
+                    html.Div(
+                        title,
+                        className="kpi-title",
+                        style={
+                            "fontSize": f"{FONT_SIZES['caption']}px",
+                            "fontFamily": FONT_FAMILY,
+                        },
+                    ),
                     html.Div(
                         value,
                         className="kpi-value",
-                        style={"fontSize": "18px", "fontWeight": "bold"},
+                        style={
+                            "fontSize": f"{FONT_SIZES['h3']}px",
+                            "fontWeight": "bold",
+                            "fontFamily": FONT_FAMILY,
+                        },
                     ),
                 ]
             ),
@@ -672,6 +745,11 @@ def _safe_options(df: pd.DataFrame, col: str) -> List[Dict[str, str]]:
 
 
 def _kpi_cards(df: pd.DataFrame) -> List[Any]:
+    """Generate overview KPI cards.
+
+    Styling aligned with code_guidelines.md Section 17.4.
+    """
+
     def _num(series: pd.Series) -> float:
         return float(pd.to_numeric(series, errors="coerce").dropna().mean())
 
@@ -691,8 +769,23 @@ def _kpi_cards(df: pd.DataFrame) -> List[Any]:
         return dbc.Card(
             dbc.CardBody(
                 [
-                    html.Div(title, className="kpi-title"),
-                    html.Div(value, className="kpi-value"),
+                    html.Div(
+                        title,
+                        className="kpi-title",
+                        style={
+                            "fontSize": f"{FONT_SIZES['caption']}px",
+                            "fontFamily": FONT_FAMILY,
+                        },
+                    ),
+                    html.Div(
+                        value,
+                        className="kpi-value",
+                        style={
+                            "fontSize": f"{FONT_SIZES['h3']}px",
+                            "fontWeight": "bold",
+                            "fontFamily": FONT_FAMILY,
+                        },
+                    ),
                 ]
             ),
             className="kpi-card",
@@ -705,17 +798,24 @@ def _kpi_cards(df: pd.DataFrame) -> List[Any]:
     if mean_upside is not None:
         cards.append(card("Mean Upside", f"{mean_upside:,.1f}%"))
     if market_cap_mean is not None and market_cap_mean == market_cap_mean:
-        cards.append(card("Mean Market Cap", f"{market_cap_mean:,.0f}"))
+        cards.append(card("Mean Market Cap", f"${market_cap_mean:,.0f}"))
     return cards
 
 
 def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
-    """Create scatter plot of price target vs last price with optional log scale."""
+    """Create scatter plot of price target vs last price with optional log scale.
+
+    Styling aligned with code_guidelines.md Section 17.1-17.2.
+    """
     if df is None or df.empty:
-        return px.scatter(title="Target vs Price (no data)")
+        fig = px.scatter(title="Target vs Price (no data)")
+        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS)
+        return fig
 
     if "last_price" not in df.columns or "price_target" not in df.columns:
-        return px.scatter(title="Target vs Price (missing columns)")
+        fig = px.scatter(title="Target vs Price (missing columns)")
+        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS)
+        return fig
 
     # Filter valid data
     plot_df = df[
@@ -726,12 +826,16 @@ def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
     ].copy()
 
     if plot_df.empty:
-        return px.scatter(title="Target vs Price (no valid data)")
+        fig = px.scatter(title="Target vs Price (no valid data)")
+        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS)
+        return fig
 
+    # Include detailed hover information (code_guidelines.md Section 17.1)
     hover_cols = [
         c
         for c in [
             "ticker",
+            "name",
             "sector",
             "region",
             "country",
@@ -752,27 +856,32 @@ def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
         color="sector" if "sector" in plot_df.columns else None,
         hover_data=hover_cols,
         title=title,
-        template="plotly_dark",
+        template=PLOTLY_TEMPLATE,
         log_x=use_log_scale,
         log_y=use_log_scale,
+        labels={
+            "last_price": "Last Price ($)",
+            "price_target": "Price Target ($)",
+            "sector": "Sector",
+        },
     )
 
-    # Add diagonal reference line (y=x)
+    # Add diagonal reference line (y=x) using COLOR_PALETTE
     if use_log_scale:
-        import numpy as np
-
         min_val = min(plot_df["last_price"].min(), plot_df["price_target"].min())
         max_val = max(plot_df["last_price"].max(), plot_df["price_target"].max())
         fig.add_scatter(
             x=[min_val, max_val],
             y=[min_val, max_val],
             mode="lines",
-            line=dict(color="white", dash="dash", width=1),
+            line=dict(color=COLOR_PALETTE["neutral"], dash="dash", width=1),
             name="Current Price",
             showlegend=True,
         )
 
+    # Apply standard layout configuration
     fig.update_layout(
+        **PLOTLY_LAYOUT_DEFAULTS,
         xaxis_title="Last Price ($)" + (" - Log Scale" if use_log_scale else ""),
         yaxis_title="Price Target ($)" + (" - Log Scale" if use_log_scale else ""),
     )
@@ -780,34 +889,41 @@ def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
 
 
 def _market_cap_distribution(df: pd.DataFrame):
-    """Create market cap distribution with log scale."""
-    import plotly.graph_objects as go
+    """Create market cap distribution with log scale.
 
+    Styling aligned with code_guidelines.md Section 17.1-17.2.
+    """
     if df is None or df.empty or "market_cap" not in df.columns:
-        return go.Figure().add_annotation(
+        fig = go.Figure()
+        fig.add_annotation(
             text="Market Cap data not available",
             xref="paper",
             yref="paper",
             x=0.5,
             y=0.5,
             showarrow=False,
+            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
         )
+        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Market Cap Distribution")
+        return fig
 
     valid_df = df[df["market_cap"].notna() & (df["market_cap"] > 0)].copy()
 
     if valid_df.empty:
-        return go.Figure().add_annotation(
+        fig = go.Figure()
+        fig.add_annotation(
             text="No valid market cap data",
             xref="paper",
             yref="paper",
             x=0.5,
             y=0.5,
             showarrow=False,
+            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
         )
+        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Market Cap Distribution")
+        return fig
 
     # Use log10 for market cap
-    import numpy as np
-
     valid_df["log_market_cap"] = np.log10(valid_df["market_cap"])
 
     fig = px.histogram(
@@ -815,21 +931,30 @@ def _market_cap_distribution(df: pd.DataFrame):
         x="log_market_cap",
         nbins=50,
         title="Market Cap Distribution (Log Scale)",
-        template="plotly_dark",
+        template=PLOTLY_TEMPLATE,
         color="sector" if "sector" in valid_df.columns else None,
+        labels={
+            "log_market_cap": "Market Cap (Log₁₀ $)",
+            "sector": "Sector",
+        },
     )
 
-    fig.update_layout(
-        xaxis_title="Market Cap (Log10 $)",
-        yaxis_title="Count",
-        showlegend=True if "sector" in valid_df.columns else False,
-    )
+    # Apply standard layout configuration, merging defaults with custom values
+    layout_config = {
+        **PLOTLY_LAYOUT_DEFAULTS,
+        "xaxis_title": "Market Cap (Log₁₀ $)",
+        "yaxis_title": "Count",
+        "showlegend": "sector" in valid_df.columns,
+    }
+    fig.update_layout(**layout_config)
 
     return fig
 
 
 def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
     """Create dynamic earnings events timeline chart.
+
+    Styling aligned with code_guidelines.md Section 17.1-17.2.
 
     Args:
         df: DataFrame with next_earnings column
@@ -838,10 +963,6 @@ def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
     Returns:
         Plotly figure
     """
-    from datetime import datetime, timedelta
-
-    import plotly.graph_objects as go
-
     if df is None or df.empty or "next_earnings" not in df.columns:
         fig = go.Figure()
         fig.add_annotation(
@@ -851,9 +972,9 @@ def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
             x=0.5,
             y=0.5,
             showarrow=False,
-            font=dict(size=16),
+            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
         )
-        fig.update_layout(template="plotly_dark", title="Earnings Events Timeline")
+        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Earnings Events Timeline")
         return fig
 
     # Filter data
@@ -877,9 +998,9 @@ def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
             x=0.5,
             y=0.5,
             showarrow=False,
-            font=dict(size=16),
+            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
         )
-        fig.update_layout(template="plotly_dark", title="Earnings Events Timeline")
+        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Earnings Events Timeline")
         return fig
 
     # Create timeline chart
@@ -902,23 +1023,29 @@ def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
             if c in events_df.columns
         ],
         title=f"Earnings Events Timeline (±{days_window} days)",
-        template="plotly_dark",
+        template=PLOTLY_TEMPLATE,
         height=max(400, len(events_df) * 15),
+        labels={
+            "days_to_earnings": "Days to Earnings",
+            "ticker": "Ticker",
+            "sector": "Sector",
+        },
     )
 
-    # Add vertical line at today
+    # Add vertical line at today using COLOR_PALETTE
     fig.add_vline(
         x=0,
         line_dash="dash",
-        line_color="white",
+        line_color=COLOR_PALETTE["neutral"],
         annotation_text="Today",
         annotation_position="top",
     )
 
+    # Apply standard layout configuration
     fig.update_layout(
+        **PLOTLY_LAYOUT_DEFAULTS,
         xaxis_title="Days to Earnings (negative = past)",
         yaxis_title="Ticker",
-        showlegend=True,
     )
 
     return fig
@@ -947,15 +1074,21 @@ def _list_artifacts() -> List[Dict[str, str]]:
 
 
 def _render_artifact(path_str: str) -> Any:
+    """Render artifact content for the Artifacts tab.
+
+    Styling aligned with code_guidelines.md Section 17.
+    """
     if not path_str:
         return html.Div(
-            "Select an artifact", style={"padding": "10px", "color": "#aaa"}
+            "Select an artifact",
+            style={"padding": "10px", "color": COLOR_PALETTE["neutral"]},
         )
 
     p = Path(path_str)
     if not p.exists():
         return html.Div(
-            "Artifact not found", style={"padding": "10px", "color": "orange"}
+            "Artifact not found",
+            style={"padding": "10px", "color": COLOR_PALETTE["warning"]},
         )
 
     if p.suffix.lower() == ".html":
@@ -969,7 +1102,11 @@ def _render_artifact(path_str: str) -> Any:
             src = f"/app_assets/{rel.as_posix()}"
             return html.Iframe(
                 src=src,
-                style={"width": "100%", "height": "650px", "border": "1px solid #333"},
+                style={
+                    "width": "100%",
+                    "height": "650px",
+                    "border": f"1px solid {COLOR_PALETTE['secondary']}",
+                },
             )
         # Fallback: show simple message
         return html.Div(
@@ -989,7 +1126,9 @@ def _render_artifact(path_str: str) -> Any:
                 "maxHeight": "650px",
                 "overflowY": "auto",
                 "backgroundColor": "#111",
+                "color": "#ffffff",
                 "padding": "10px",
+                "fontFamily": FONT_FAMILY,
             },
         )
 
@@ -1170,7 +1309,11 @@ def create_app(
                             ),
                             html.Span(
                                 id="data-status",
-                                style={"marginLeft": "10px", "color": "#aaa"},
+                                style={
+                                    "marginLeft": "10px",
+                                    "color": COLOR_PALETTE["neutral"],
+                                    "fontFamily": FONT_FAMILY,
+                                },
                             ),
                         ],
                         style={"margin": "10px 0"},
@@ -1246,7 +1389,8 @@ def create_app(
                                                 id="earnings-artifacts-status",
                                                 style={
                                                     "marginLeft": "10px",
-                                                    "color": "#aaa",
+                                                    "color": COLOR_PALETTE["neutral"],
+                                                    "fontFamily": FONT_FAMILY,
                                                 },
                                             ),
                                         ],
@@ -1355,37 +1499,31 @@ def create_app(
                                                 id="earnings-calendar-status",
                                                 style={
                                                     "color": COLOR_PALETTE["neutral"],
-                                                    "fontSize": "12px",
+                                                    "fontSize": f"{FONT_SIZES['caption']}px",
+                                                    "fontFamily": FONT_FAMILY,
                                                     "marginBottom": "5px",
                                                 },
                                             ),
-                                            # Earnings Calendar DataTable
+                                            # Earnings Calendar DataTable (code_guidelines.md Section 17.3)
                                             dash_table.DataTable(
                                                 id="earnings-calendar-table",
                                                 data=[],
                                                 columns=[],
                                                 style_table={
-                                                    "overflowX": "auto",
+                                                    **TABLE_STYLE_TABLE,
                                                     "maxHeight": "400px",
-                                                    "overflowY": "auto",
+                                                    "minWidth": "100%",
                                                 },
                                                 style_cell={
-                                                    "backgroundColor": "#111",
-                                                    "color": "white",
-                                                    "border": f"1px solid {COLOR_PALETTE['secondary']}",
-                                                    "fontFamily": "Segoe UI, Roboto, Arial",
-                                                    "fontSize": "13px",
-                                                    "padding": "6px",
-                                                    "whiteSpace": "normal",
-                                                    "height": "auto",
-                                                    "minWidth": "80px",
+                                                    **TABLE_STYLE_CELL,
+                                                    "width": "auto",
+                                                    "maxWidth": "200px",
+                                                    "textOverflow": "ellipsis",
                                                 },
                                                 style_header={
-                                                    "backgroundColor": COLOR_PALETTE[
-                                                        "primary"
-                                                    ],
+                                                    **TABLE_STYLE_HEADER,
+                                                    "textTransform": "capitalize",
                                                     "fontWeight": "bold",
-                                                    "color": "white",
                                                 },
                                                 style_data_conditional=[
                                                     # Past earnings (red)
@@ -1398,7 +1536,7 @@ def create_app(
                                                             "danger"
                                                         ],
                                                     },
-                                                    # Today (yellow background)
+                                                    # Today (warning background)
                                                     {
                                                         "if": {
                                                             "filter_query": "{days_to_earnings} = 0",
@@ -1407,7 +1545,7 @@ def create_app(
                                                         "backgroundColor": COLOR_PALETTE[
                                                             "warning"
                                                         ],
-                                                        "color": "black",
+                                                        "color": "#000000",
                                                     },
                                                     # Future earnings (green)
                                                     {
@@ -1461,7 +1599,10 @@ def create_app(
                                             ),
                                             html.Div(
                                                 id="alerts-meta",
-                                                style={"color": "#aaa"},
+                                                style={
+                                                    "color": COLOR_PALETTE["neutral"],
+                                                    "fontFamily": FONT_FAMILY,
+                                                },
                                             ),
                                         ]
                                     ),
@@ -1545,15 +1686,17 @@ def create_app(
                                                 id="generate-alerts-status",
                                                 style={
                                                     "marginLeft": "10px",
-                                                    "color": "#aaa",
+                                                    "color": COLOR_PALETTE["neutral"],
+                                                    "fontFamily": FONT_FAMILY,
                                                 },
                                             ),
                                         ],
                                         style={
                                             "padding": "10px",
-                                            "border": "1px solid #333",
+                                            "border": f"1px solid {COLOR_PALETTE['secondary']}",
                                         },
                                     ),
+                                    # Alerts DataTable (code_guidelines.md Section 17.3)
                                     dash_table.DataTable(
                                         id="alerts-table",
                                         columns=[
@@ -1567,21 +1710,9 @@ def create_app(
                                             {"name": "Tickers", "id": "tickers"},
                                         ],
                                         data=[],
-                                        style_table={"overflowX": "auto"},
-                                        style_cell={
-                                            "backgroundColor": "#111",
-                                            "color": "white",
-                                            "border": "1px solid #333",
-                                            "fontFamily": "Segoe UI, Roboto, Arial",
-                                            "fontSize": "14px",
-                                            "padding": "6px",
-                                            "whiteSpace": "normal",
-                                            "height": "auto",
-                                        },
-                                        style_header={
-                                            "backgroundColor": "#222",
-                                            "fontWeight": "bold",
-                                        },
+                                        style_table=TABLE_STYLE_TABLE,
+                                        style_cell=TABLE_STYLE_CELL,
+                                        style_header=TABLE_STYLE_HEADER,
                                         sort_action="native",
                                         filter_action="native",
                                         page_action="native",
@@ -1654,25 +1785,19 @@ def create_app(
                                         style={"marginTop": "10px"},
                                     ),
                                 ],
-                                style={"padding": "10px", "border": "1px solid #333"},
+                                style={
+                                    "padding": "10px",
+                                    "border": f"1px solid {COLOR_PALETTE['secondary']}",
+                                },
                             ),
+                            # Data Explorer DataTable (code_guidelines.md Section 17.3)
                             dash_table.DataTable(
                                 id="explorer-table",
                                 data=[],
                                 columns=[],
-                                style_table={"overflowX": "auto"},
-                                style_cell={
-                                    "backgroundColor": "#111",
-                                    "color": "white",
-                                    "border": "1px solid #333",
-                                    "fontFamily": "Segoe UI, Roboto, Arial",
-                                    "fontSize": "14px",
-                                    "padding": "6px",
-                                },
-                                style_header={
-                                    "backgroundColor": "#222",
-                                    "fontWeight": "bold",
-                                },
+                                style_table=TABLE_STYLE_TABLE,
+                                style_cell=TABLE_STYLE_CELL,
+                                style_header=TABLE_STYLE_HEADER,
                                 sort_action="native",
                                 filter_action="native",
                                 page_action="native",
@@ -1889,7 +2014,8 @@ def create_app(
                                                 id="monitoring-report-status",
                                                 style={
                                                     "marginLeft": "10px",
-                                                    "color": "#aaa",
+                                                    "color": COLOR_PALETTE["neutral"],
+                                                    "fontFamily": FONT_FAMILY,
                                                 },
                                             ),
                                         ],
@@ -2006,7 +2132,11 @@ def create_app(
         if not alerts:
             return html.Div(
                 "No alerts available. Click 'Generate Alerts' in the Alerts tab.",
-                style={"color": "#aaa", "padding": "10px"},
+                style={
+                    "color": COLOR_PALETTE["neutral"],
+                    "padding": "10px",
+                    "fontFamily": FONT_FAMILY,
+                },
             )
 
         # Build summary cards
@@ -2269,18 +2399,49 @@ def create_app(
                 - reference_date
             ).dt.days
 
-        # Format columns for DataTable
-        columns = [
-            {"name": col.replace("_", " ").title(), "id": col}
-            for col in calendar_df.columns
-        ]
-
-        # Convert to records, handling dates
+        # Format columns for DataTable (code_guidelines.md Section 17.3)
+        columns = []
         for col in calendar_df.columns:
-            if pd.api.types.is_datetime64_any_dtype(calendar_df[col]):
-                calendar_df[col] = calendar_df[col].dt.strftime("%Y-%m-%d")
+            col_name = col.replace("_", " ").strip().capitalize()
+            # Headers: Bold, sentence case (handled via css/DataTable props)
+            col_def = {"name": col_name, "id": col, "selectable": True}
 
-        data = calendar_df.to_dict("records")
+            # Apply numeric formatting based on column role/type
+            if any(
+                x in col
+                for x in [
+                    "price",
+                    "market_cap",
+                    "enterprise_value",
+                    "ebitda",
+                    "ebit",
+                    "income",
+                    "revenue",
+                ]
+            ):
+                col_def.update({"type": "numeric", "format": {"specifier": "$,.2f"}})
+            elif "pct" in col or "margin" in col or "growth" in col or "yield" in col:
+                col_def.update({"type": "numeric", "format": {"specifier": ".2%"}})
+            elif col in calendar_df.columns and calendar_df[col].dtype in [
+                np.float64,
+                np.float32,
+            ]:
+                col_def.update({"type": "numeric", "format": {"specifier": ".2f"}})
+
+            columns.append(col_def)
+
+        # Convert to records, handling dates and rounding
+        display_df = calendar_df.copy()
+        for col in display_df.columns:
+            if pd.api.types.is_datetime64_any_dtype(display_df[col]):
+                display_df[col] = display_df[col].dt.strftime("%Y-%m-%d")
+            elif "days_to_earnings" in col:
+                # Special handling for days display as seen in images (+0, -1)
+                display_df[col] = display_df[col].apply(
+                    lambda x: f"{int(x):+d}" if pd.notnull(x) else ""
+                )
+
+        data = display_df.to_dict("records")
 
         # Status message
         mode_display = (mode or "all").replace("_", " ").title()

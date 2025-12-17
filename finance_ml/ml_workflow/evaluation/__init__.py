@@ -79,6 +79,10 @@ from finance_ml.ml_workflow.evaluation.splits import (
     compute_fold_overlap,
     summarize_grouped_cv_balance,
     time_leakage_checks,
+    # Validation helpers (NEW - v1.12)
+    validate_fold_assignments,
+    validate_temporal_data,
+    run_fold_overlap_analysis,
 )
 
 # Phase 9.7 - Sector Bias Calibration & Metrics Persistence
@@ -127,6 +131,9 @@ __all__ = [
     "compute_fold_overlap",
     "summarize_grouped_cv_balance",
     "time_leakage_checks",
+    "validate_fold_assignments",
+    "validate_temporal_data",
+    "run_fold_overlap_analysis",
     # Phase 9.7 - Sector Bias Calibration
     "estimate_sector_bias",
     "plot_metrics_by_sector_time",

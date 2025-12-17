@@ -1,0 +1,69 @@
+{
+  "results": [
+    {
+      "region": "US",
+      "file": "data\\screening_us.csv",
+      "exists": true,
+      "row_count": 2000,
+      "column_count": 329,
+      "schema_valid": true,
+      "warnings_count": 2,
+      "errors_count": 0,
+      "numeric_issues_count": 0,
+      "warnings": [
+        "Ticker: 1 missing/empty values",
+        "Found 12 duplicate tickers"
+      ],
+      "errors": [],
+      "numeric_issues": []
+    },
+    {
+      "region": "EU",
+      "file": "data\\screening_eu.csv",
+      "exists": true,
+      "row_count": 2000,
+      "column_count": 329,
+      "schema_valid": true,
+      "warnings_count": 1,
+      "errors_count": 0,
+      "numeric_issues_count": 0,
+      "warnings": [
+        "Found 47 duplicate tickers"
+      ],
+      "errors": [],
+      "numeric_issues": []
+    },
+    {
+      "region": "APAC",
+      "file": "data\\screening_apac.csv",
+      "exists": true,
+      "row_count": 2000,
+      "column_count": 329,
+      "schema_valid": true,
+      "warnings_count": 1,
+      "errors_count": 0,
+      "numeric_issues_count": 0,
+      "warnings": [
+        "Found 17 duplicate tickers"
+      ],
+      "errors": [],
+      "numeric_issues": []
+    },
+    {
+      "region": "ROTW",
+      "file": "data\\screening_rotw.csv",
+      "exists": true,
+      "row_count": 972,
+      "column_count": 329,
+      "schema_valid": true,
+      "warnings_count": 1,
+      "errors_count": 0,
+      "numeric_issues_count": 0,
+      "warnings": [
+        "Found 9 duplicate tickers"
+      ],
+      "errors": [],
+      "numeric_issues": []
+    }
+  ]
+}

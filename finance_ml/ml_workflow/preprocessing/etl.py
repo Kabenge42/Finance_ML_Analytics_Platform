@@ -156,7 +156,7 @@ class ImputationConfig:
 
     apply_imputation: bool = True
     strategy: Literal["6step", "4step", "median_only"] = "6step"
-    knn_neighbors: int = 5
+    knn_neighbors: int = 15
     sector_column: str = "sector"
     reference_price_column: str = "last_price"
     impute_categorical_columns: bool = True
@@ -169,18 +169,18 @@ class SemanticTransformConfig:
 
     apply_log_transforms: bool = False
     log_transform_method: Literal["log1p", "signed_log"] = "log1p"
-    log_transform_market_values: bool = True
+    log_transform_market_values: bool = False
     log_transform_target_columns: Optional[List[str]] = None
     exclude_ratios_from_winsorization: bool = True
     exclude_percentages_from_winsorization: bool = True
-    exclude_counts_from_scaling: bool = False
+    exclude_counts_from_scaling: bool = True
 
 
 @dataclass
 class DataSanitizationConfig:
     """Configuration for ETL Stage 8: Data Sanitization & Winsorization."""
 
-    sanitize_data: bool = True
+    sanitize_data: bool = False
     apply_winsorization: bool = False
     winsorize_lower_percentile: float = 0.10
     winsorize_upper_percentile: float = 0.90

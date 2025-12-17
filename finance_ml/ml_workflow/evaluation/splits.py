@@ -18,6 +18,145 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+# =============================================================================
+# Validation Helper Functions (Phase 9.6)
+# =============================================================================
+
+
+def validate_fold_assignments(
+    fold_assignments: Optional[pd.DataFrame],
+    required_columns: Optional[List[str]] = None,
+) -> bool:
+    """
+    Validate fold_assignments DataFrame structure.
+
+    Replaces unsafe 'fold_assignments' in dir() checks with explicit validation.
+
+    Parameters
+    ----------
+    fold_assignments : Optional[pd.DataFrame]
+        DataFrame to validate
+    required_columns : Optional[List[str]]
+        List of required column names (default: ['fold'])
+
+    Returns
+    -------
+    bool
+        True if valid, False otherwise
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({'ticker': ['A', 'B'], 'fold': [0, 1]})
+    >>> validate_fold_assignments(df, ['ticker', 'fold'])
+    True
+    >>> validate_fold_assignments(None)
+    False
+    """
+    if fold_assignments is None:
+        return False
+    if not isinstance(fold_assignments, pd.DataFrame):
+        return False
+    if fold_assignments.empty:
+        return False
+
+    required_columns = required_columns or ["fold"]
+    return all(col in fold_assignments.columns for col in required_columns)
+
+
+def validate_temporal_data(
+    df: Optional[pd.DataFrame],
+    date_col: str = "snapshot_date",
+) -> bool:
+    """
+    Validate temporal column availability for leakage checks.
+
+    Parameters
+    ----------
+    df : Optional[pd.DataFrame]
+        DataFrame to validate
+    date_col : str
+        Name of the date/timestamp column
+
+    Returns
+    -------
+    bool
+        True if date column exists and is valid, False otherwise
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({'snapshot_date': pd.date_range('2024-01-01', periods=10)})
+    >>> validate_temporal_data(df, 'snapshot_date')
+    True
+    >>> validate_temporal_data(None, 'snapshot_date')
+    False
+    """
+    if df is None or df.empty:
+        return False
+    if date_col not in df.columns:
+        return False
+
+    # Check if column has valid datetime-like values
+    try:
+        pd.to_datetime(df[date_col])
+        return True
+    except Exception:
+        return False
+
+
+def run_fold_overlap_analysis(
+    fold_assignments: Optional[pd.DataFrame],
+    output_dir: Union[str, Path],
+    group_col: str = "ticker",
+) -> Dict[str, Any]:
+    """
+    Wrapper function for fold overlap analysis with validation.
+
+    Encapsulates validation + compute_fold_overlap() to eliminate unsafe
+    dir() checks in notebook cells.
+
+    Parameters
+    ----------
+    fold_assignments : Optional[pd.DataFrame]
+        DataFrame with group_col and 'fold' columns
+    output_dir : Union[str, Path]
+        Directory to save artifacts
+    group_col : str
+        Column name for grouping (default: 'ticker')
+
+    Returns
+    -------
+    Dict[str, Any]
+        Overlap statistics or skip metadata
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({'ticker': ['A', 'B', 'C'], 'fold': [0, 1, 0]})
+    >>> result = run_fold_overlap_analysis(df, 'outputs/splits')
+    >>> 'n_folds' in result
+    True
+    """
+    if not validate_fold_assignments(fold_assignments, [group_col, "fold"]):
+        logger.warning("⚠️ fold_assignments validation failed. Skipping overlap analysis.")
+        return {"skipped": True, "reason": "invalid_fold_assignments"}
+
+    logger.info("\n🔍 Computing fold overlap...")
+    overlap_dict = compute_fold_overlap(
+        fold_assignments=fold_assignments,
+        output_dir=output_dir,
+        group_col=group_col,
+    )
+
+    logger.info("✓ Fold overlap analysis complete")
+    logger.info(f"  Zero overlap validated: {overlap_dict.get('zero_overlap_validated', False)}")
+
+    return overlap_dict
+
+
+# =============================================================================
+# Core Functions (Phase 9.6)
+# =============================================================================
+
+
 def compute_fold_overlap(
     fold_assignments: pd.DataFrame,
     output_dir: Union[str, Path],

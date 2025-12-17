@@ -236,6 +236,16 @@ def winsorize_by_sector(
     winsorizable = [c for c in columns if c.lower() not in excluded and c in df.columns]
     excluded_present = [c for c in columns if c.lower() in excluded and c in df.columns]
 
+    # CRITICAL FIX: Exclude boolean columns - quantile operations are not supported for bool dtype
+    # Boolean columns are discrete (True/False) and winsorization is meaningless for them
+    boolean_cols = df[winsorizable].select_dtypes(include=["bool"]).columns.tolist()
+    if boolean_cols:
+        logger.info(
+            f"Excluding {len(boolean_cols)} boolean columns from winsorization: "
+            f"{boolean_cols[:5]}{'...' if len(boolean_cols) > 5 else ''}"
+        )
+        winsorizable = [c for c in winsorizable if c not in boolean_cols]
+
     logger.info(
         f"Winsorizing {len(winsorizable)} columns, excluding {len(excluded_present)} semantic columns "
         f"(price={exclude_price_columns}, ratio={exclude_ratio_columns})"
