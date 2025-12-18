@@ -39,7 +39,7 @@ class TestVersionAlignment:
         import finance_ml
 
         version = finance_ml.__version__
-        # Accept formats: 0.8.3, v0.8.3, 0.8.3-beta, v9_9
+        # Accept formats: 0.8.3, v0.8.3, 0.8.3-beta, v9_10
         pattern = r"^v?\d+[._]\d+([._]\d+)?(-\w+)?$"
         assert re.match(pattern, version), f"Version '{version}' doesn't match expected pattern"
 

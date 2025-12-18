@@ -203,7 +203,7 @@ def generate_model_card(
     output_dir : Union[str, Path]
         Directory to save model card
     model_version : Optional[str]
-        Model version (default: from env or 'v9_9')
+        Model version (default: from env or 'v9_10')
 
     Returns
     -------
@@ -214,7 +214,7 @@ def generate_model_card(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if model_version is None:
-        model_version = os.environ.get("MODEL_VERSION", "v9_9")
+        model_version = os.environ.get("MODEL_VERSION", "v9_10")
 
     logger.info(f"Generating model card for {model_version}")
 
@@ -352,7 +352,7 @@ def build_lineage_json(
     output_dir : Union[str, Path]
         Directory to save lineage JSON
     model_version : Optional[str]
-        Model version (default: from env or 'v9_9')
+        Model version (default: from env or 'v9_10')
 
     Returns
     -------
@@ -363,7 +363,7 @@ def build_lineage_json(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if model_version is None:
-        model_version = os.environ.get("MODEL_VERSION", "v9_9")
+        model_version = os.environ.get("MODEL_VERSION", "v9_10")
 
     logger.info(f"Building lineage JSON for {model_version}")
 

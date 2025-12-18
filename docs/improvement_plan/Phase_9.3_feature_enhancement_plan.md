@@ -3,7 +3,7 @@
 **Date:** 2025-11-18  
 **Status:** ACTIVE  
 **Version:** 1.1  
-**Model Version Target:** v9_9  
+**Model Version Target:** v9_10  
 **Schema Version:** 1.3 (310 columns)
 
 **Implementation status (Phase 9.3, current repo snapshot):**
@@ -750,7 +750,7 @@ The following feature categories leverage the 48 new columns added in Schema Ver
 
 **10.3 Production Readiness**
 
-- Confirm `MODEL_VERSION` is set to v9_9 in config and notebooks.
+- Confirm `MODEL_VERSION` is set to v9_10 in config and notebooks.
 - Tag release in version control (out of scope for automated changes).
 
 ---

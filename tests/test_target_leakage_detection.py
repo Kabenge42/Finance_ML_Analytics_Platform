@@ -193,7 +193,7 @@ class TestZeroPredictionsValidation(unittest.TestCase):
                 "interval_width": [0.0, 0.0, 30.0],
                 "abs_error": [30.0, 40.0, 5.0],
                 "pct_error": [-1.0, -1.0, 0.03],
-                "model_version": ["v9_9", "v9_9", "v9_9"],
+                "model_version": ["v9_10", "v9_10", "v9_10"],
                 "snapshot_date": ["2024-01-01", "2024-01-01", "2024-01-01"],
             }
         )

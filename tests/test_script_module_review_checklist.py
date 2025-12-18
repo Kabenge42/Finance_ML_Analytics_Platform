@@ -49,7 +49,7 @@ class TestScriptModuleReviewChecklist(unittest.TestCase):
             logger = logging.getLogger(__name__)
 
             # Constants (allowed at module level)
-            MODEL_VERSION = "v9_9"
+            MODEL_VERSION = "v9_10"
 
             class DatasetSplit(tuple):
                 pass

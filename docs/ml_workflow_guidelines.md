@@ -377,7 +377,7 @@ assert 0.75 <= coverage <= 0.85, f"Coverage {coverage:.2%} outside bounds"
 
 - ✅ Standardized predictions schema (Section 11)
 - ✅ All required output artifacts generated
-- ✅ Model version tracked (`v9_9`)
+- ✅ Model version tracked (`v9_10`)
 
 **Required Output Columns:**
 
@@ -463,7 +463,7 @@ MIN_EXPECTED_RETURN = -0.50
 
 # Reproducibility
 RANDOM_SEED = 42
-MODEL_VERSION = 'v9_9'
+MODEL_VERSION = 'v9_10'
 ```
 
 ---

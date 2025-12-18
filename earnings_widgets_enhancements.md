@@ -17,7 +17,7 @@ truncated contents:
 **Version:** 1.11  
 **Last Updated:** 2025-12-14  
 **Package Version:** 0.9.4  
-**Model Version:** v9_9
+**Model Version:** v9_10
 
 These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
 architecture, function signatures, column naming, and best practices. They align with the project's 8-phase ML
@@ -261,7 +261,7 @@ CONFIDENCE_MEDIUM_THRESHOLD = 0.75
 
 # Random seed and versioning
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
-MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
+MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')
 ```
 
 > **Note:** The winsorization bounds (0.10/0.90) are intentionally less aggressive than traditional (0.01/0.99) to
@@ -340,7 +340,7 @@ All configuration constants are designed to support the **primary business objec
 | `WINSORIZE_LOWER`     | `0.10`            | Conservative outlier handling preserving valid extreme values (high-growth stocks)    |
 | `WINSORIZE_UPPER`     | `0.90`            | Conservative outlier handling preserving valid extreme values (mega-cap companies)    |
 | `RANDOM_SEED`         | `42`              | Reproducibility for regulatory compliance and model governance                        |
-| `MODEL_VERSION`       | `v9_9`            | Version tracking for audit trails and model comparison                                |
+| `MODEL_VERSION`       | `v9_10`           | Version tracking for audit trails and model comparison                                |
 
 **Key Design Principles:**
 
@@ -8182,7 +8182,7 @@ Attachments Text:
 
 This notebook explores the unified ETL (Extract, Transform, Load) Pipeline for stock data.
 
-**Version:** 1.1.0 | **Model Version:** v9_9 | **Updated:** 2025-12-11
+**Version:** 1.1.0 | **Model Version:** v9_10 | **Updated:** 2025-12-11
 
 ## Pipeline Stages
 1. **Extract** - Load from DB with CSV fallback
@@ -8349,7 +8349,7 @@ TOP_N_FEATURES = 10  # Number of features to display in detailed analysis
 
 # Reproducibility & versioning
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
-MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
+MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')
 np.random.seed(RANDOM_SEED)
 
 # Schema-Driven Column Selection

@@ -122,7 +122,7 @@ class TestPhase97SectorBias(unittest.TestCase):
         from finance_ml.ml_workflow.evaluation import estimate_sector_bias
 
         bias_dict = estimate_sector_bias(
-            predictions_df=self.predictions_df, output_dir=self.output_dir, model_version="v9_9"
+            predictions_df=self.predictions_df, output_dir=self.output_dir, model_version="v9_10"
         )
 
         self.assertIsInstance(bias_dict, dict)
@@ -241,7 +241,7 @@ class TestPhase98StackingGovernance(unittest.TestCase):
         from finance_ml.ml_workflow.evaluation import generate_model_card
 
         generate_model_card(
-            model_info=self.model_info, output_dir=self.output_dir, model_version="v9_9"
+            model_info=self.model_info, output_dir=self.output_dir, model_version="v9_10"
         )
 
         # Check markdown file created
@@ -253,7 +253,7 @@ class TestPhase98StackingGovernance(unittest.TestCase):
         from finance_ml.ml_workflow.evaluation import build_lineage_json
 
         lineage = build_lineage_json(
-            model_info=self.model_info, output_dir=self.output_dir, model_version="v9_9"
+            model_info=self.model_info, output_dir=self.output_dir, model_version="v9_10"
         )
 
         self.assertIsInstance(lineage, dict)
@@ -312,24 +312,24 @@ class TestFullIntegrationPhases96_98(unittest.TestCase):
         # Phase 9.7: Sector bias
         calibration_dir = self.base_output_dir / "calibration"
         bias_dict = estimate_sector_bias(
-            predictions_df=self.predictions_df, output_dir=calibration_dir, model_version="v9_9"
+            predictions_df=self.predictions_df, output_dir=calibration_dir, model_version="v9_10"
         )
         self.assertIsInstance(bias_dict, dict)
 
         # Phase 9.8: Governance
         governance_dir = self.base_output_dir / "governance"
 
-        model_info = {"task": "regression", "models": ["xgboost", "lightgbm"], "version": "v9_9"}
+        model_info = {"task": "regression", "models": ["xgboost", "lightgbm"], "version": "v9_10"}
 
-        generate_model_card(model_info=model_info, output_dir=governance_dir, model_version="v9_9")
+        generate_model_card(model_info=model_info, output_dir=governance_dir, model_version="v9_10")
 
         lineage = build_lineage_json(
-            model_info=model_info, output_dir=governance_dir, model_version="v9_9"
+            model_info=model_info, output_dir=governance_dir, model_version="v9_10"
         )
         self.assertIsInstance(lineage, dict)
 
         # Verify key outputs exist
-        self.assertTrue((calibration_dir / "sector_bias_calibration_v9_9.json").exists())
+        self.assertTrue((calibration_dir / "sector_bias_calibration_v9_10.json").exists())
         self.assertTrue((governance_dir / "lineage.json").exists())
         md_files = list(governance_dir.glob("*.md"))
         self.assertGreater(len(md_files), 0)

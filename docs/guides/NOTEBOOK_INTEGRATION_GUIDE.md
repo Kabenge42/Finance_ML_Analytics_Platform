@@ -685,8 +685,8 @@ models = {
 artifacts = [
     "regression_predictions_detailed.csv",
     "quantile_predictions_diagnostics.csv",
-    "sector_bias_calibration_v9_9.json",
-    "model_card_v9_9.md"
+    "sector_bias_calibration_v9_10.json",
+    "model_card_v9_10.md"
     ]
 
 metrics = {

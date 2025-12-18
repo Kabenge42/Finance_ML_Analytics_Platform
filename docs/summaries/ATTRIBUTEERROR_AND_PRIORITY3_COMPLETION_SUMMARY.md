@@ -251,10 +251,10 @@ def apply_sector_calibration(
     
     Example:
         >>> # Calibration improves 4 of 5 sectors → applied
-        >>> result = apply_sector_calibration(preds, good_calibration, 'v9_9')
+        >>> result = apply_sector_calibration(preds, good_calibration, 'v9_10')
         >>> 
         >>> # Calibration degrades 3 of 5 sectors → skipped
-        >>> result = apply_sector_calibration(preds, bad_calibration, 'v9_9')
+        >>> result = apply_sector_calibration(preds, bad_calibration, 'v9_10')
         >>> assert (result['y_pred_calibrated'] == result['y_pred']).all()
     """
     # Pre-check: only apply if improves ≥min_improvement_threshold of sectors

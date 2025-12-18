@@ -41,7 +41,7 @@ class TestBuildQuantileDiagnostics(unittest.TestCase):
                 "y_true": y_true_values,
                 "y_pred": y_true_values + np.random.normal(0, 10, n_samples),
                 "y_pred_calibrated": y_true_values + np.random.normal(0, 8, n_samples),
-                "model_version": "v9_9",
+                "model_version": "v9_10",
                 "snapshot_date": "2025-01-01",
             }
         )

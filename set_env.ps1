@@ -22,7 +22,7 @@ $env:CACHE_DIR = ".cache"
 $env:OUTPUT_DIR = "outputs"
 
 # Model configuration
-$env:MODEL_VERSION = "v9_9"
+$env:MODEL_VERSION = "v9_10"
 $env:RANDOM_SEED = "42"
 
 # Performance settings

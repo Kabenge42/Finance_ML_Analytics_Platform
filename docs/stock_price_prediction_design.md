@@ -26,7 +26,7 @@ Section 7: Phase 9.8 — Reporting
 # Stock Price Target Prediction — ML Analytics Platform
 
 **Version 3.0.0** — Unified ETL Pipeline with Phase 9.1-9.8 Workflow  
-**Model Version: v9_9**
+**Model Version: v9_10**
 
 ## Business Objective
 
@@ -136,7 +136,7 @@ ALPHA = 1 - CONFIDENCE_LEVEL
 # Reproducibility
 # -----------------------------------------------------------------------------
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
-MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
+MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')
 np.random.seed(RANDOM_SEED)
 
 # -----------------------------------------------------------------------------

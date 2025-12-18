@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 # ============================================================================
 [project]
 name = "finance-ml"
-version = "0.9.4"
+version = "0.9.5"
 description = "A lightweight, notebook-centric workflow for equity screening, feature engineering, and machine learning models across global regions"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
@@ -43,32 +43,34 @@ dependencies = [
     # NumPy: require 2.x on Python 3.14+ to ensure prebuilt wheels are available
     "numpy>=1.26.0,<2.0.0; python_version < '3.14'",
     "numpy>=2.0.0,<3.0.0; python_version >= '3.14'",
-    "pandas>=2.0.0,<3.0.0",
-    "scipy>=1.11.0,<2.0.0",
+    "pandas>=2.1.0,<3.0.0",
+    "scipy>=1.12.0,<2.0.0",
     "statsmodels>=0.14.0,<1.0.0",
     # Machine learning - core frameworks
-    "scikit-learn>=1.4.0,<2.0.0",
-    "imbalanced-learn>=0.11.0,<1.0.0",
+    "scikit-learn>=1.5.0,<2.0.0",
+    "imbalanced-learn>=0.12.0,<1.0.0",
     # Machine learning - gradient boosting
-    "xgboost>=2.0.3,<3.0.0",
-    "lightgbm>=4.0.0,<5.0.0",
-    # CatBoost: gate on Python 3.14 due to missing cp314 wheels (2025-11). Install on 3.13
-    # if needed, or wait for official 3.14 wheels.
-    "catboost>=1.2.0,<2.0.0; python_version < '3.14'",
+    "xgboost>=2.1.0,<4.0.0",
+    "lightgbm>=4.3.0,<5.0.0",
+    # CatBoost: gate on Python 3.14 due to missing cp314 wheels (2025-12).
+    # Install on Python 3.13 if needed, or wait for official 3.14 wheels.
+    "catboost>=1.2.5,<2.0.0; python_version < '3.14'",
     # Model interpretability and explainability
     # SHAP 0.50.0 provides enhanced explainability features with improved performance.
-    # SHAP depends on numba, which (as of 2025-11) does not support Python 3.14 yet.
+    # SHAP depends on numba, which (as of 2025-12) does not support Python 3.14 yet.
     # Gate SHAP on <3.14 to avoid installation failure on 3.14.
     "shap==0.50.0; python_version < '3.14'",
     # Data visualization
-    "matplotlib>=3.7.0,<4.0.0",
-    "seaborn>=0.12.0,<1.0.0",
-    "plotly>=5.14.0,<6.0.0",
+    "matplotlib>=3.8.0,<4.0.0",
+    "seaborn>=0.13.0,<1.0.0",
+    "plotly>=5.18.0,<7.0.0",
     # Utilities and performance
-    "tqdm>=4.65.0,<5.0.0",
+    "tqdm>=4.66.0,<5.0.0",
     "joblib>=1.3.0,<2.0.0",
-    "xlsxwriter>=3.1.0,<4.0.0",
-    "psutil>=5.9.0,<6.0.0",
+    "xlsxwriter>=3.2.0,<4.0.0",
+    "psutil>=5.9.0,<7.0.0",
+    # Hyperparameter optimization
+    "optuna>=4.0.0,<5.0.0",
 ]
 
 # ============================================================================
@@ -77,45 +79,53 @@ dependencies = [
 [project.optional-dependencies]
 # Development tools for testing, linting, and formatting
 dev = [
-    "pytest>=7.4.0,<8.0.0",
-    "pytest-cov>=4.1.0,<5.0.0",
-    "black>=23.0.0,<25.0.0",
-    "flake8>=6.0.0,<8.0.0",
-    "mypy>=1.5.0,<2.0.0",
-    "isort>=5.12.0,<6.0.0",
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-cov>=4.1.0,<6.0.0",
+    "black>=24.0.0,<25.0.0",
+    "flake8>=7.0.0,<8.0.0",
+    "mypy>=1.8.0,<2.0.0",
+    "isort>=5.13.0,<6.0.0",
+    "pip-tools>=7.3.0,<8.0.0",
 ]
 
 # Deep learning support with TensorFlow/Keras
 tensorflow = [
     # Note: Official TensorFlow wheels for Python 3.14 on Windows may lag behind.
     # Gate TF/Keras extras on <3.14 to avoid source builds and installation failures.
-    "tensorflow>=2.13.0,<3.0.0; python_version < '3.14'",
-    "scikeras>=0.12.0,<1.0.0; python_version < '3.14'",
+    "tensorflow>=2.15.0,<3.0.0; python_version < '3.14'",
+    "scikeras>=0.13.0,<1.0.0; python_version < '3.14'",
 ]
 
 # Database connectivity for PostgreSQL and SQL operations
 database = [
-    "psycopg2-binary>=2.9.0,<3.0.0",
-    "SQLAlchemy>=2.0.0,<3.0.0",
+    "psycopg2-binary>=2.9.9,<3.0.0",
+    "SQLAlchemy>=2.0.25,<3.0.0",
     "openpyxl>=3.1.0,<4.0.0",
 ]
 
 # Advanced feature selection and optimization
 advanced-features = [
     "boruta>=0.3.0,<1.0.0",
+]
 
+# Interactive dashboards
+dashboards = [
+    # Streamlit currently pulls pyarrow, which may not have cp314 wheels yet.
+    # Gate on <3.14 to avoid build failures.
+    "streamlit>=1.35.0,<2.0.0; python_version < '3.14'",
+    "dash>=2.17.0,<4.0.0",
 ]
 
 # Jupyter notebook support
 notebook = [
     "jupyter>=1.0.0,<2.0.0",
-    "notebook>=7.0.0,<8.0.0",
-    "ipykernel>=6.25.0,<7.0.0",
+    "notebook>=7.1.0,<8.0.0",
+    "ipykernel>=6.29.0,<7.0.0",
 ]
 
 # Complete installation with all optional features
 all = [
-    "finance-ml[dev,tensorflow,database,advanced-features,notebook]",
+    "finance-ml[dev,tensorflow,database,advanced-features,dashboards,notebook]",
 ]
 
 # ============================================================================
@@ -187,7 +197,7 @@ ignore_missing_imports = true
 
 # Pytest - Testing Framework
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "8.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
 python_files = ["test_*.py"]

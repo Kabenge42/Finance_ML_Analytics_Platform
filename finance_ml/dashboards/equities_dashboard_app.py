@@ -184,7 +184,7 @@ def load_data_csv_first(
     data_dir: Optional[Path] = None,
     db_url: Optional[str] = None,
     feature_preset: str = "comprehensive",
-    force_etl: bool = False,
+    force_etl: bool = True,
 ) -> Tuple[pd.DataFrame, str]:
     """Load data preferring CSV export, falling back to ETL.
 
@@ -316,6 +316,37 @@ def compute_surprise(
         surprise = surprise.clip(lower=clip_bounds[0], upper=clip_bounds[1])
 
     return surprise
+
+
+def create_empty_state_figure(
+    title: str,
+    message: str = "No data available",
+) -> go.Figure:
+    """Create standardized empty state figure per code_guidelines.md Section 17.2.
+
+    Args:
+        title: Figure title
+        message: Message to display in empty state
+
+    Returns:
+        Plotly Figure with empty state annotation
+    """
+    fig = go.Figure()
+    fig.add_annotation(
+        text=message,
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0.5,
+        showarrow=False,
+        font=dict(
+            family=FONT_FAMILY,
+            size=FONT_SIZES["body"],
+            color=COLOR_PALETTE["neutral"],
+        ),
+    )
+    fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title=title)
+    return fig
 
 
 # Metric mappings for Est vs Actual tab
@@ -812,14 +843,12 @@ def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
     Styling aligned with code_guidelines.md Section 17.1-17.2.
     """
     if df is None or df.empty:
-        fig = px.scatter(title="Target vs Price (no data)")
-        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS)
-        return fig
+        return create_empty_state_figure("Target vs Price", "No data available")
 
     if "last_price" not in df.columns or "price_target" not in df.columns:
-        fig = px.scatter(title="Target vs Price (missing columns)")
-        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS)
-        return fig
+        return create_empty_state_figure(
+            "Target vs Price", "Missing required columns: last_price, price_target"
+        )
 
     # Filter valid data
     plot_df = df[
@@ -830,9 +859,9 @@ def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
     ].copy()
 
     if plot_df.empty:
-        fig = px.scatter(title="Target vs Price (no valid data)")
-        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS)
-        return fig
+        return create_empty_state_figure(
+            "Target vs Price", "No valid price data after filtering"
+        )
 
     # Include detailed hover information (code_guidelines.md Section 17.1)
     hover_cols = [
@@ -898,34 +927,16 @@ def _market_cap_distribution(df: pd.DataFrame):
     Styling aligned with code_guidelines.md Section 17.1-17.2.
     """
     if df is None or df.empty or "market_cap" not in df.columns:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="Market Cap data not available",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
+        return create_empty_state_figure(
+            "Market Cap Distribution", "Market cap data not available"
         )
-        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Market Cap Distribution")
-        return fig
 
     valid_df = df[df["market_cap"].notna() & (df["market_cap"] > 0)].copy()
 
     if valid_df.empty:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No valid market cap data",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
+        return create_empty_state_figure(
+            "Market Cap Distribution", "No valid market cap data"
         )
-        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Market Cap Distribution")
-        return fig
 
     # Use log10 for market cap
     valid_df["log_market_cap"] = np.log10(valid_df["market_cap"])
@@ -968,18 +979,9 @@ def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
         Plotly figure
     """
     if df is None or df.empty or "next_earnings" not in df.columns:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="Earnings data not available",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
+        return create_empty_state_figure(
+            "Earnings Events Timeline", "Earnings data not available"
         )
-        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Earnings Events Timeline")
-        return fig
 
     # Filter data
     ref_date = pd.Timestamp.now()
@@ -994,18 +996,9 @@ def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
     events_df = df_work[mask].copy()
 
     if events_df.empty:
-        fig = go.Figure()
-        fig.add_annotation(
-            text=f"No earnings events within {days_window} days",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(family=FONT_FAMILY, size=FONT_SIZES["body"]),
+        return create_empty_state_figure(
+            "Earnings Events Timeline", f"No earnings events within ±{days_window} days"
         )
-        fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title="Earnings Events Timeline")
-        return fig
 
     # Create timeline chart
     events_df = events_df.sort_values("days_to_earnings")
@@ -1144,7 +1137,7 @@ def create_app(
     data_source: DataSource = "auto",
     data_dir: Optional[str | Path] = None,
     db_url: Optional[str] = None,
-    load_on_start: bool = False,
+    load_on_start: bool = True,
 ) -> dash.Dash:
     """Create Dash app instance.
 
@@ -1174,7 +1167,12 @@ def create_app(
     app.layout = html.Div(
         [
             html.H1("📈 Equities Analytics Dashboard", style={"textAlign": "center"}),
-            dcc.Store(id="equities-data-store"),
+            dcc.Store(
+                id="equities-data-store",
+                data=initial_df.to_json(orient="split")
+                if not initial_df.empty
+                else None,
+            ),
             html.Div(
                 id="kpi-cards",
                 style={
@@ -2059,6 +2057,14 @@ def create_app(
     @app.callback(
         Output("equities-data-store", "data"),
         Output("data-status", "children"),
+        Output("sector-dropdown", "options"),
+        Output("region-dropdown", "options"),
+        Output("country-dropdown", "options"),
+        Output("trading-country-dropdown", "options"),
+        Output("industry-dropdown", "options"),
+        Output("exchange-dropdown", "options"),
+        Output("style-class-dropdown", "options"),
+        Output("size-class-dropdown", "options"),
         Input("refresh-data-btn", "n_clicks"),
         prevent_initial_call=not load_on_start,
     )
@@ -2074,7 +2080,19 @@ def create_app(
         else:
             status = "No data loaded or ETL failed"
 
-        return df.to_json(orient="split"), status
+        # Update filter dropdown options with loaded data
+        return (
+            df.to_json(orient="split"),
+            status,
+            _safe_options(df, "sector"),
+            _safe_options(df, "region"),
+            _safe_options(df, "country"),
+            _safe_options(df, "trading_country"),
+            _safe_options(df, "industry"),
+            _safe_options(df, "exchange"),
+            _safe_options(df, "style_class"),
+            _safe_options(df, "size_class"),
+        )
 
     @app.callback(
         Output("kpi-cards", "children"),
@@ -2089,6 +2107,7 @@ def create_app(
         Input("exchange-dropdown", "value"),
         Input("style-class-dropdown", "value"),
         Input("size-class-dropdown", "value"),
+        prevent_initial_call=False,
     )
     def _update_overview(
         data_json,
@@ -2206,7 +2225,7 @@ def create_app(
             df = initial_df
 
         if df is None or df.empty:
-            empty = px.scatter(title="No data")
+            empty = create_empty_state_figure("Earnings Analytics", "No data loaded")
             return empty, empty, empty, empty, empty
 
         # Apply global filters for cross-tab synchronization
@@ -2223,7 +2242,9 @@ def create_app(
         )
 
         if df.empty:
-            empty = px.scatter(title="No data after filtering")
+            empty = create_empty_state_figure(
+                "Earnings Analytics", "No data matching filters"
+            )
             return empty, empty, empty, empty, empty
 
         # Apply alert filter (Task 4)
@@ -2235,7 +2256,9 @@ def create_app(
             if alert_tickers and "ticker" in df.columns:
                 df = df[df["ticker"].isin(alert_tickers)]
                 if df.empty:
-                    empty = px.scatter(title="No tickers with alerts")
+                    empty = create_empty_state_figure(
+                        "Earnings Analytics", "No tickers with active alerts"
+                    )
                     return empty, empty, empty, empty, empty
 
         # These functions are designed to be robust to missing columns.
@@ -2306,6 +2329,7 @@ def create_app(
         Input("exchange-dropdown", "value"),
         Input("style-class-dropdown", "value"),
         Input("size-class-dropdown", "value"),
+        prevent_initial_call=False,
     )
     def _update_earnings_calendar(
         data_json,
@@ -2348,13 +2372,18 @@ def create_app(
         if df.empty:
             return [], [], "No data after applying filters"
 
-        # Ensure next_earnings column exists
+        # Ensure next_earnings column exists (graceful fallback)
         if "next_earnings" not in df.columns:
-            return [], [], "No earnings date column available"
+            logger.warning(
+                "next_earnings column missing, creating empty column for calendar"
+            )
+            df = df.copy()
+            df["next_earnings"] = pd.NaT
+        else:
+            df = df.copy()
 
         # Parse dates and calculate days to earnings
         reference_date = pd.Timestamp.now()
-        df = df.copy()
         df["next_earnings"] = pd.to_datetime(df["next_earnings"], errors="coerce")
 
         # Filter by days window
@@ -2662,10 +2691,10 @@ def create_app(
         except Exception:
             df = initial_df
 
-        empty_fig = go.Figure()
-        empty_fig.update_layout(template="plotly_dark")
-
         if df is None or df.empty:
+            empty_fig = create_empty_state_figure(
+                "Estimated vs Actual", "No data available"
+            )
             return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig
 
         # Get metric columns
@@ -2681,7 +2710,9 @@ def create_app(
         warning = create_missing_columns_warning(missing, f"{metric} Analysis")
 
         # 1. Scatter: Estimated vs Actual
-        scatter_fig = empty_fig
+        scatter_fig = create_empty_state_figure(
+            f"{metric}: Estimated vs Actual", "Required columns not available"
+        )
         if actual_col in df.columns and estimate_col in df.columns:
             plot_df = df[[actual_col, estimate_col]].dropna()
             if segment_by in df.columns:
@@ -2710,7 +2741,9 @@ def create_app(
                 )
 
         # 2. Distribution: Surprise histogram
-        dist_fig = empty_fig
+        dist_fig = create_empty_state_figure(
+            f"{metric} Surprise Distribution", "Data not available"
+        )
         if actual_col in df.columns and estimate_col in df.columns:
             surprise = compute_surprise(
                 df[actual_col], df[estimate_col], mode=surprise_method
@@ -2732,7 +2765,9 @@ def create_app(
                 dist_fig.add_vline(x=0, line_dash="dash", line_color="white")
 
         # 3. Adjusted vs GAAP delta
-        adjusted_fig = empty_fig
+        adjusted_fig = create_empty_state_figure(
+            f"{metric}: Adjusted vs GAAP", "Data not available"
+        )
         if (
             adjusted_col
             and gaap_col
@@ -2766,7 +2801,9 @@ def create_app(
             )
 
         # 4. Revision trend (if revision columns exist)
-        revision_fig = empty_fig
+        revision_fig = create_empty_state_figure(
+            "Estimate Revision Trend", "Revision data not available"
+        )
         revision_cols = [c for c in df.columns if "rev_pct" in c.lower()]
         if revision_cols:
             # Use first available revision column
@@ -2786,15 +2823,6 @@ def create_app(
                     title=f"Estimate Revision Trend ({rev_col})",
                     template="plotly_dark",
                 )
-        else:
-            revision_fig.add_annotation(
-                text="Revision trend data not available",
-                xref="paper",
-                yref="paper",
-                x=0.5,
-                y=0.5,
-                showarrow=False,
-            )
 
         return warning, scatter_fig, dist_fig, adjusted_fig, revision_fig
 
@@ -2813,17 +2841,15 @@ def create_app(
         except Exception:
             df = initial_df
 
-        empty_fig = go.Figure()
-        empty_fig.update_layout(template="plotly_dark")
-
         if df is None or df.empty:
+            empty_fig = create_empty_state_figure("Monitoring", "No data available")
             return [], empty_fig, empty_fig, empty_fig
 
         # KPI cards
         kpi_cards = _monitoring_kpi_cards(df)
 
         # 1. Growth trends by segment
-        growth_fig = empty_fig
+        growth_fig = create_empty_state_figure("Revenue Growth", "Data not available")
         growth_cols = ["total_revenues_cagr_5y_fy", "revenues_est_yoy_pct_fy1e"]
         available_growth = [c for c in growth_cols if c in df.columns]
         if available_growth and segment_by in df.columns:
@@ -2844,7 +2870,7 @@ def create_app(
                 )
 
         # 2. Margin distribution
-        margin_fig = empty_fig
+        margin_fig = create_empty_state_figure("Margin Analysis", "Data not available")
         margin_cols = ["gross_profit_margin_pct_ltm", "net_income_margin_pct_ltm"]
         available_margin = [c for c in margin_cols if c in df.columns]
         if available_margin and segment_by in df.columns:
@@ -2865,7 +2891,7 @@ def create_app(
                 )
 
         # 3. Quality metrics (ROE, Altman Z, etc.)
-        quality_fig = empty_fig
+        quality_fig = create_empty_state_figure("Quality Metrics", "Data not available")
         quality_cols = [
             "return_on_equity_pct_ltm",
             "altman_z_score_ltm",

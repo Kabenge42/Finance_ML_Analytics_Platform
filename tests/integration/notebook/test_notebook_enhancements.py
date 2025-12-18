@@ -35,14 +35,14 @@ class TestNotebookEnhancements(unittest.TestCase):
         cls.nb_text = _read_notebook_text(NB_PATH)
         cls.enh_md = ENH_MD_PATH.read_text(encoding="utf-8", errors="ignore")
 
-    def test_enhancement_plan_mentions_v9_9(self):
-        # Sanity check that the enhancement doc targets v9_9
-        self.assertIn("v9_9", self.enh_md)
+    def test_enhancement_plan_mentions_v9_10(self):
+        # Sanity check that the enhancement doc targets v9_10
+        self.assertIn("v9_10", self.enh_md)
 
     def test_model_version_marker_present_in_notebook(self):
-        # Acceptance: The notebook must clearly mark the new model version v9_9
+        # Acceptance: The notebook must clearly mark the new model version v9_10
         self.assertIn(
-            "v9_9", self.nb_text, msg="Notebook should include a visible 'v9_9' version marker"
+            "v9_10", self.nb_text, msg="Notebook should include a visible 'v9_10' version marker"
         )
 
     def test_uses_finance_ml_package_functions(self):

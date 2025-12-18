@@ -315,7 +315,7 @@ def test_calibration_skipped_if_degrading_majority():
         }
     }
     
-    result = apply_sector_calibration(preds, bad_calibration, 'v9_9')
+    result = apply_sector_calibration(preds, bad_calibration, 'v9_10')
     
     # Should NOT apply calibration
     assert (result['y_pred_calibrated'] == result['y_pred']).all()
@@ -335,7 +335,7 @@ def test_calibration_applied_if_improving_majority():
         }
     }
     
-    result = apply_sector_calibration(preds, good_calibration, 'v9_9')
+    result = apply_sector_calibration(preds, good_calibration, 'v9_10')
     
     # Should apply calibration
     assert not (result['y_pred_calibrated'] == result['y_pred']).all()

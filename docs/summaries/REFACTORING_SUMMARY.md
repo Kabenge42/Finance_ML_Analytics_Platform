@@ -173,7 +173,7 @@ X_fundamental = select_features_by_category(
 
 ## Version Compatibility
 
-- Model Version: v9_9
+- Model Version: v9_10
 - Code Guidelines: v1.10
 - Phase 9.3 Schema: v1.3 (310 columns, 196 engineered features)
 - Backward Compatible: Old category names still work ('momentum', 'valuation', etc.)

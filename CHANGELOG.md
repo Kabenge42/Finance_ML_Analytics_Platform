@@ -1717,7 +1717,7 @@
   [8115173](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/811517397281b14db379d85a4808eb4afe6d3c8c))
   - Updated `README.md` for Version 0.7.0 with Phase 9.3 API details and portfolio visualization documentation
   - Added `docs/PORTFOLIO_VISUALIZATION_IMPLEMENTATION.md` (489 lines) detailing visualization architecture
-  - Synchronized `MODEL_VERSION` to `v9_9` across configuration files
+  - Synchronized `MODEL_VERSION` to `v9_10` across configuration files
   - Enhanced `ml_finance_model_main.ipynb` with improved modularity and module-level convenience APIs
 - **Feature Engineering API Integration**: Enhanced `finance_ml/ml_workflow/features/advanced.py` with preset support
   ([d53d803](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/d53d803c73e852b796615350536a199b121dd2af))
@@ -1849,12 +1849,12 @@
 
 ### Changed
 
-- **MODEL_VERSION bump to v9_9**: Updated across all configuration files and tests
-  - `finance_ml/config.py`: Default and from_env() method updated to "v9_9"
-  - `tests/test_finance_ml_config.py`: Test assertions updated to expect v9_9
-  - `tests/test_notebook_enhancements.py`: Notebook version marker check updated to v9_9
-  - `set_env.ps1`: Example MODEL_VERSION updated to v9_9
-  - `environment_variables.txt`: Commented example updated to v9_9
+- **MODEL_VERSION bump to v9_10**: Updated across all configuration files and tests
+    - `finance_ml/config.py`: Default and from_env() method updated to "v9_10"
+    - `tests/test_finance_ml_config.py`: Test assertions updated to expect v9_10
+    - `tests/test_notebook_enhancements.py`: Notebook version marker check updated to v9_10
+    - `set_env.ps1`: Example MODEL_VERSION updated to v9_10
+    - `environment_variables.txt`: Commented example updated to v9_10
 - **Phase 9.3 Feature Integration**: Enhanced `build_comprehensive_features()` in advanced.py with preset support
   - Added optional `preset` parameter for momentum/quality/comprehensive paths
   - Backward compatible: default behavior unchanged (comprehensive mode)
@@ -1871,7 +1871,7 @@
 
 - Phase 10: Validation (Week 10) completion
   - Cross-validation: Fast and medium test suites passing (138 tests)
-  - Production readiness: MODEL_VERSION v9_9 synchronized across codebase
+  - Production readiness: MODEL_VERSION v9_10 synchronized across codebase
   - Test coverage maintained at ≥85% for new code
 
 ## [0.6.1] - 2025-11-09

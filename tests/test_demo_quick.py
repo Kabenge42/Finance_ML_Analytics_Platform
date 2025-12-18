@@ -20,7 +20,7 @@ class TestDemoQuick(unittest.TestCase):
         import finance_ml
 
         self.assertTrue(hasattr(finance_ml, "__version__"))
-        # Accepts semantic-like versions such as 0.4.1 or v9_9
+        # Accepts semantic-like versions such as 0.4.1 or v9_10
         version = str(finance_ml.__version__)
         self.assertRegex(version, r"^(v?\d+[._]\d+(?:[._]\d+)?)$")
 

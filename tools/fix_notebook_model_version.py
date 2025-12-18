@@ -57,7 +57,7 @@ def main():
     print(f"Inserting MODEL_VERSION after line {insert_idx-1}: {source_lines[insert_idx-1].strip()}")
 
     # Create the new line
-    model_version_line = "MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')\n"
+    model_version_line = "MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')\n"
 
     # Insert the new line
     source_lines.insert(insert_idx, model_version_line)
@@ -88,7 +88,7 @@ def main():
 
     print("SUCCESS: Notebook updated successfully!")
     print("\nChanges made:")
-    print("1. Added MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9') after RANDOM_SEED")
+    print("1. Added MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10') after RANDOM_SEED")
     print("2. Added MODEL_VERSION to validation print output")
 
 if __name__ == '__main__':

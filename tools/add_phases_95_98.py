@@ -477,7 +477,9 @@ generate_model_card(
 print(f"✓ Model card created: {governance_dir / f'model_card_{MODEL_VERSION}.md'}")"""))
 
 # Cell 6: Lineage Tracking
-new_cells.append(create_code_cell("""#%% [PHASE 9.8] Build lineage JSON
+new_cells.append(
+    create_code_cell(
+        """#%% [PHASE 9.8] Build lineage JSON
 print("\\n🔗 Building model lineage...")
 
 datasets = {
@@ -500,8 +502,8 @@ models = {
 artifacts = [
     "regression_predictions_detailed.csv",
     "quantile_predictions_diagnostics.csv",
-    "sector_bias_calibration_v9_9.json",
-    "model_card_v9_9.md"
+    "sector_bias_calibration_v9_10.json",
+    "model_card_v9_10.md"
     ]
 
 metrics = {
@@ -520,7 +522,9 @@ lineage = build_lineage_json(
         )
 
 print(f"✓ Lineage JSON created: {governance_dir / 'lineage.json'}")
-print("\\n✅ Model governance documentation complete!")"""))
+print("\\n✅ Model governance documentation complete!")"""
+    )
+)
 
 # Insert all new cells at the insertion point
 for i, cell in enumerate(new_cells):

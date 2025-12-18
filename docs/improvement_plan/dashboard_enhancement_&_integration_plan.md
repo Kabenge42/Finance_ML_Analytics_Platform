@@ -343,8 +343,8 @@ Add a "Quick Access" section at the top with direct links to key reports:
 ```python
 # Streamlit
 st.sidebar.markdown("### 🔗 Quick Access")
-if Path("outputs/governance/model_card_v9_9.md").exists():
-    st.sidebar.markdown("📄 [Model Card](outputs/governance/model_card_v9_9.md)")
+if Path("outputs/governance/model_card_v9_10.md").exists():
+    st.sidebar.markdown("📄 [Model Card](outputs/governance/model_card_v9_10.md)")
 if Path("outputs/calibration/sector_bias_dashboard.html").exists():
     st.sidebar.markdown("⚖️ [Sector Bias Report](?tab=uncertainty)")
 st.sidebar.markdown("📊 [Portfolio Analytics](?tab=portfolio)")

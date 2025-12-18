@@ -260,7 +260,7 @@ CONFIDENCE_MEDIUM_THRESHOLD = 0.75
 
 # Random seed and versioning
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
-MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
+MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')
 ```
 
 > **Note:** The winsorization bounds (0.10/0.90) are intentionally less aggressive than traditional (0.01/0.99) to
@@ -339,7 +339,7 @@ All configuration constants are designed to support the **primary business objec
 | `WINSORIZE_LOWER`     | `0.10`            | Conservative outlier handling preserving valid extreme values (high-growth stocks)    |
 | `WINSORIZE_UPPER`     | `0.90`            | Conservative outlier handling preserving valid extreme values (mega-cap companies)    |
 | `RANDOM_SEED`         | `42`              | Reproducibility for regulatory compliance and model governance                        |
-| `MODEL_VERSION`       | `v9_9`            | Version tracking for audit trails and model comparison                                |
+| `MODEL_VERSION`       | `v9_10`           | Version tracking for audit trails and model comparison                                |
 
 **Key Design Principles:**
 
@@ -3448,7 +3448,7 @@ REQUIRED_COLUMNS = [
 - `interval_width`: pred_p90 - pred_p10
 - `abs_error`: abs(y_pred - y_true)
 - `pct_error`: 100 * (y_pred - y_true) / y_true
-- `model_version`: e.g., "v9_9"
+- `model_version`: e.g., "v9_10"
 - `snapshot_date`: Date of prediction run
 
 ### 11.3 Invariants
@@ -3701,7 +3701,7 @@ CV_FOLDS = 5
 QUANTILES = [0.1, 0.5, 0.9]
 MIN_SECTOR_SAMPLES = 20
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
-MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
+MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')
 
 np.random.seed(RANDOM_SEED)
 
@@ -4447,7 +4447,7 @@ outputs/
   "valuation_metrics_added": 24,
   "profitability_metrics_added": 18,
   "timestamp": "2025-12-05T15:30:00",
-  "model_version": "v9_9"
+  "model_version": "v9_10"
 }
 ```
 
@@ -4485,7 +4485,7 @@ outputs/
 
 ```json
 {
-  "model_version": "v9_9",
+  "model_version": "v9_10",
   "model_type": "Stacking Ensemble (RF + GB + XGB)",
   "training_date": "2025-12-05",
   "metrics": {

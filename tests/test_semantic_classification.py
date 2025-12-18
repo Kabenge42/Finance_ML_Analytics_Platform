@@ -12,7 +12,7 @@ Test Coverage:
 Business Objective: Reduce "OTHER" semantic category from 487 columns to <59
 by implementing pattern-based classification and schema lookup enhancements.
 
-Model Version: v9_9
+Model Version: v9_10
 Alignment: code_guidelines.md v1.10
 """
 

@@ -11,27 +11,27 @@ ARTIFACTS = {
             "file": "interval_width_by_bucket.html",
             "title": "Prediction Interval Width Distribution",
             "section": "9.4",
-            "description": "Distribution of prediction interval widths by price bucket"
+            "description": "Distribution of prediction interval widths by price bucket",
         },
         "coverage_heatmap": {
             "file": "coverage_heatmap_region_sector.html",
             "title": "Coverage by Region & Sector",
             "section": "9.4",
-            "description": "Coverage pivot table"
+            "description": "Coverage pivot table",
         },
         "reliability_diagram": {
             "file": "reliability_diagram_conformal.html",
             "title": "Calibration Reliability Diagram",
             "section": "9.4",
-            "description": "Calibration quality"
-        }
+            "description": "Calibration quality",
+        },
     },
     "calibration": {
         "sector_bias": {
             "file": "sector_bias_dashboard.html",
             "title": "Sector Bias Calibration Dashboard",
             "section": "9.7",
-            "description": "Interactive bias drill-down"
+            "description": "Interactive bias drill-down",
         }
     },
     "safety_rails": {
@@ -39,77 +39,77 @@ ARTIFACTS = {
             "file": "pre_post_winsorization_distributions.html",
             "title": "Pre/Post Winsorization Distributions",
             "section": "9.5",
-            "description": "Before/after winsorization"
+            "description": "Before/after winsorization",
         },
         "violations": {
             "file": "violation_heatmap_by_feature_sector.html",
             "title": "Constraint Violations by Sector",
             "section": "9.5",
-            "description": "Non-negative constraint violations"
+            "description": "Non-negative constraint violations",
         },
         "sensitivity": {
             "file": "safety_rails_sensitivity_dashboard.html",
             "title": "Safety Rails Sensitivity Dashboard",
             "section": "9.5",
-            "description": "Interactive threshold analysis"
-        }
+            "description": "Interactive threshold analysis",
+        },
     },
     "eda": {
         "correlation": {
             "file": "phase93_category_correlation_network.html",
             "title": "Feature Correlation Network",
             "section": "9.3",
-            "description": "Feature correlations"
+            "description": "Feature correlations",
         },
         "distributions": {
             "file": "phase93_category_distributions_boxplots.html",
             "title": "Category Distributions",
             "section": "9.3",
-            "description": "Distribution analysis"
+            "description": "Distribution analysis",
         },
         "sector_bubbles": {
             "file": "phase93_category_sector_bubble_chart.html",
             "title": "Sector Bubbles",
             "section": "9.3",
-            "description": "Sector bubbles"
+            "description": "Sector bubbles",
         },
         "sector_heatmap": {
             "file": "phase93_category_sector_heatmap.html",
             "title": "Category Sector Heatmap",
             "section": "9.3",
-            "description": "Sector heatmap"
+            "description": "Sector heatmap",
         },
         "regional_radar": {
             "file": "phase93_regional_radar_charts.html",
             "title": "Regional Radar Charts",
             "section": "9.3",
-            "description": "Regional comparison"
+            "description": "Regional comparison",
         },
         "data_quality": {
             "file": "data_quality_dashboard.html",
             "title": "Data Quality Dashboard",
             "section": "9.2",
-            "description": "Quality monitoring"
+            "description": "Quality monitoring",
         },
         "outliers": {
             "file": "outlier_detection_summary.html",
             "title": "Outlier Detection Summary",
             "section": "9.2",
-            "description": "Outlier analysis"
-        }
+            "description": "Outlier analysis",
+        },
     },
     "governance": {
         "error_map": {
             "file": "meta_error_map.html",
             "title": "Meta Error Map",
             "section": "9.8",
-            "description": "Error analysis by sector"
+            "description": "Error analysis by sector",
         },
         "model_card": {
-            "file": "model_card_v9_9.md", # Note: this is MD, not HTML, might need special handling
+            "file": "model_card_v9_10.md",  # Note: this is MD, not HTML, might need special handling
             "title": "Model Card",
             "section": "9.8",
-            "description": "Model documentation"
-        }
-    }
+            "description": "Model documentation",
+        },
+    },
 }

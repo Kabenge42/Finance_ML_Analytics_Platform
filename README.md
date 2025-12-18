@@ -791,7 +791,7 @@ DB_SCHEMA=public                 # Database schema
 DB_TABLE=equities                # Table name
 
 # Model Configuration
-MODEL_VERSION=v9_9               # Model version identifier (current: v9_9 as of v0.7.0)
+MODEL_VERSION=v9_10              # Model version identifier (current: v9_10 as of v0.9.5)
 # TODO: Keep MODEL_VERSION synchronized with releases (see CHANGELOG.md)
 RANDOM_SEED=42                   # Random seed for reproducibility
 
@@ -1191,7 +1191,7 @@ print(metrics.summary())
   - Employment metrics: FY/FQ employee counts (2 cols)
 - **Implementation Status**: All features wired into advanced pipeline, accessible via
   `finance_ml.ml_workflow.features.advanced.py`
-- **Model Version Target**: v9_9
+- **Model Version Target**: v9_10
 - **Documentation**: `docs/improvement_plan/Phase_9.3_feature_enhancement_plan.md` (Version 1.1)
 
 **Test Suite Expansion**:
@@ -1316,7 +1316,7 @@ print(metrics.summary())
 
 **Model Version & Configuration**:
 
-- MODEL_VERSION bump to v9_9 (synchronized across all configuration files)
+- MODEL_VERSION bump to v9_10 (synchronized across all configuration files)
 - Updated `finance_ml/config.py`, test assertions, and environment files
 - Production readiness: Cross-validation with 138+ tests passing (fast and medium test suites)
 
@@ -1487,9 +1487,9 @@ without TensorFlow.
 - **PATCH**: Bug fixes, documentation updates
 - Updated in: `pyproject.toml`, `README.md`, `CHANGELOG.md`, `environment_variables.txt`
 
-**Model Version** (e.g., `v9_9`):
+**Model Version** (e.g., `v9_10`):
 
-- Format: `v{PHASE}_{ITERATION}` (e.g., `v9_9` = Phase 9, Iteration 9)
+- Format: `v{PHASE}_{ITERATION}` (e.g., `v9_10` = Phase 9, Iteration 10)
 - **PHASE**: Major modeling phase (Phase 9 = modular refactor, Phase 10 = optimization)
 - **ITERATION**: Minor updates within phase (features, hyperparameters, calibration)
 - Updated in: `finance_ml/config.py`, `ml_finance_model_main.ipynb`, `README.md`
@@ -1498,13 +1498,13 @@ without TensorFlow.
 
 - **Notebook** (`ml_finance_model_main.ipynb`) and **Package** (`finance_ml/config.py`) MODEL_VERSION **must match**
 - Package version increments with each release; MODEL_VERSION increments with modeling changes
-- Example: Package v0.7.1 can have MODEL_VERSION v9_9 (no modeling changes from v0.7.0)
+- Example: Package v0.9.5 can have MODEL_VERSION v9_10 (no modeling changes from v0.9.4)
 
-**Current Versions** (as of 2025-11-26):
+**Current Versions** (as of 2025-12-18):
 
-- Package: `0.8.3`
-- Model: `v9_9`
-- Status: ✓ Aligned (notebook and package both use v9_9)
+- Package: `0.9.5`
+- Model: `v9_10`
+- Status: ✓ Aligned (notebook and package both use v9_10)
 
 **Version Update Checklist**:
 
@@ -1514,15 +1514,15 @@ without TensorFlow.
 
 ### Version Synchronization
 
-**Current Status** (as of 2025-12-10):
+**Current Status** (as of 2025-12-18):
 
-- **pyproject.toml**: Version = "0.9.4" ✓
-- **README.md**: Updated to 0.9.4 ✓
+- **pyproject.toml**: Version = "0.9.5" ✓
+- **README.md**: Updated to 0.9.5 ✓
 - **CHANGELOG.md**: See CHANGELOG.md for version history
-- **environment_variables.txt**: Version = 0.9.4, MODEL_VERSION=v9_9 ✓
-- **finance_ml/config.py**: MODEL_VERSION v9_9 ✓
+- **environment_variables.txt**: Version = 0.9.5, MODEL_VERSION=v9_10 ✓
+- **finance_ml/config.py**: MODEL_VERSION v9_10 ✓
 
-**Status**: ✓ Aligned — all version references synchronized at 0.9.4 with MODEL_VERSION v9_9
+**Status**: ✓ Aligned — all version references synchronized at 0.9.5 with MODEL_VERSION v9_10
 
 ### Future Enhancements
 

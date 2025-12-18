@@ -12,7 +12,7 @@ Test Coverage:
 Business Objective: Prevent look-ahead bias in backtesting by enforcing
 consistent CV strategy selection: time_series → grouped → stratified hierarchy.
 
-Model Version: v9_9
+Model Version: v9_10
 Alignment: code_guidelines.md v1.10
 """
 

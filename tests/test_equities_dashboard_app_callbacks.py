@@ -68,6 +68,19 @@ def _get_unwrapped_callback(app, output_key_substr: str):
 
 
 class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
+    def test_create_empty_state_figure(self):
+        """Test the standardized empty state figure factory."""
+        from finance_ml.dashboards.equities_dashboard_app import (
+            create_empty_state_figure,
+        )
+
+        fig = create_empty_state_figure("Test Title", "Test Message")
+        self.assertIsNotNone(fig)
+        self.assertEqual(fig.layout.title.text, "Test Title")
+        # Verify annotation exists
+        self.assertEqual(len(fig.layout.annotations), 1)
+        self.assertEqual(fig.layout.annotations[0].text, "Test Message")
+
     def test_helpers_and_artifact_rendering(self):
         from finance_ml.dashboards.equities_dashboard_app import (
             _coerce_list,
@@ -84,7 +97,11 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
         outputs = PROJECT_ROOT / "outputs"
         html_path = outputs / "eda" / "earnings_analytics" / "_tmp_test_artifact.html"
         json_path = (
-            outputs / "dashboards" / "equities_dashboard" / "artifacts" / "_tmp_test_artifact.json"
+            outputs
+            / "dashboards"
+            / "equities_dashboard"
+            / "artifacts"
+            / "_tmp_test_artifact.json"
         )
 
         try:
@@ -121,7 +138,9 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
             calls.append(source)
             return df
 
-        with patch.object(mod, "etl_with_features", side_effect=_fake_etl_with_features):
+        with patch.object(
+            mod, "etl_with_features", side_effect=_fake_etl_with_features
+        ):
             out = mod.load_data(data_source="csv", limit=2)
             self.assertEqual(len(out), 2)
             self.assertEqual(calls[-1], "csv")
@@ -134,6 +153,23 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
             # db without a URL should return empty
             out3 = mod.load_data(data_source="db", db_url=None)
             self.assertTrue(out3.empty)
+
+    def test_data_store_initialized_with_data(self):
+        """Test that dcc.Store is initialized with data when load_on_start=True."""
+        from finance_ml.dashboards import equities_dashboard_app as mod
+
+        df = _sample_df()
+        # Mock load_data to return sample data
+        with patch.object(mod, "load_data", return_value=df):
+            app = mod.create_app(load_on_start=True)
+            # Check that the store component has initial data
+            store = None
+            for component in app.layout.children:
+                if hasattr(component, "id") and component.id == "equities-data-store":
+                    store = component
+                    break
+            self.assertIsNotNone(store, "Store component not found")
+            self.assertIsNotNone(store.data, "Store should have initial data")
 
     def test_callbacks_can_be_invoked_directly_without_etl(self):
         from finance_ml.dashboards import equities_dashboard_app as mod
@@ -159,22 +195,43 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
         self.assertIsInstance(scatter, go.Figure)
         self.assertIsInstance(mcap, go.Figure)
 
-        # Earnings figs callback
+        # Earnings figs callback - now has additional filter inputs
         cb_earnings = _get_unwrapped_callback(app, "earnings-events-timeline.figure")
-        figs = cb_earnings(data_json)
+        figs = cb_earnings(
+            data_json,
+            None,  # alert_filter
+            None,  # sectors
+            None,  # regions
+            None,  # countries
+            None,  # trading_countries
+            None,  # industries
+            None,  # exchanges
+            None,  # style_classes
+            None,  # size_classes
+        )
         self.assertEqual(len(figs), 5)
         for fig in figs:
             self.assertIsInstance(fig, go.Figure)
 
-        # Refresh callback: patch load_data and export to avoid ETL and filesystem writes
+        # Refresh callback: patch load_data_csv_first and returns filter options now
         cb_refresh = _get_unwrapped_callback(app, "equities-data-store.data")
         with (
-            patch.object(mod, "load_data", return_value=df),
-            patch.object(mod, "export_equities_data", return_value={"row_count": len(df)}),
+            patch.object(
+                mod,
+                "load_data_csv_first",
+                return_value=(df, "ETL Status: 6 rows | test source"),
+            ),
         ):
-            stored_json, status = cb_refresh(1)
-            self.assertIn("Loaded", status)
+            result = cb_refresh(1)
+            # Now returns 10 values: data, status, + 8 dropdown options
+            self.assertEqual(len(result), 10)
+            stored_json, status = result[0], result[1]
+            self.assertIn("6", status)  # Row count in status
             self.assertIsInstance(stored_json, str)
+            # Verify filter options are returned
+            sector_options = result[2]
+            self.assertIsInstance(sector_options, list)
+            self.assertTrue(len(sector_options) > 0)  # Should have some options
 
     def test_additional_callbacks_cover_alerts_explorer_and_artifacts(self):
         from finance_ml.dashboards import equities_dashboard_app as mod
@@ -199,7 +256,9 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
                 }
             ],
         }
-        with patch.object(mod, "generate_earnings_quality_alerts", return_value=fake_payload):
+        with patch.object(
+            mod, "generate_earnings_quality_alerts", return_value=fake_payload
+        ):
             rows, meta, status = cb_alerts(
                 1,
                 data_json,
@@ -272,7 +331,9 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
 
         self.assertIsNotNone(cb_gen)
         with patch.object(
-            mod, "generate_dashboard_artifacts", return_value={"artifacts": {"a": {}, "b": {}}}
+            mod,
+            "generate_dashboard_artifacts",
+            return_value={"artifacts": {"a": {}, "b": {}}},
         ):
             msg = cb_gen(1, data_json)
             self.assertIn("Generated", msg)

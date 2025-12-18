@@ -18,6 +18,7 @@ try:
 except ImportError:
     # Fallback for when running as standalone
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     from finance_ml.dashboards.artifact_registry import ARTIFACTS
 
@@ -32,6 +33,7 @@ try:
 except ImportError:
     # Fallback for when running as standalone
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     from finance_ml.ml_workflow.analytics.eval import (
         prepare_plotly_dashboard_data,
@@ -40,6 +42,7 @@ except ImportError:
         calculate_financial_metrics_dashboard,
         generate_data_quality_alerts,
     )
+
 
 def get_file_age(filepath: Path) -> str:
     """Get formatted age of a file."""
@@ -51,12 +54,13 @@ def get_file_age(filepath: Path) -> str:
         return f"Updated {age.days} days ago"
     return "Not generated"
 
+
 def render_streamlit_artifact(category, key, height=600):
     """Render HTML artifact in Streamlit."""
     if category in ARTIFACTS and key in ARTIFACTS[category]:
         item = ARTIFACTS[category][key]
         st.subheader(item["title"])
-        
+
         # Resolve path
         path = Path(__file__).parent.parent.parent / "outputs" / category / item["file"]
         if path.exists():
@@ -70,6 +74,7 @@ def render_streamlit_artifact(category, key, height=600):
     else:
         st.error(f"Configuration missing for {category}/{key}")
 
+
 st.set_page_config(page_title="Finance ML Analytics", layout="wide", page_icon="📊")
 
 # Sidebar filters
@@ -77,7 +82,7 @@ st.sidebar.title("🔍 Filters")
 
 # Quick Access
 st.sidebar.markdown("### 🔗 Quick Access")
-if (Path(__file__).parent.parent.parent / "outputs/governance/model_card_v9_9.md").exists():
+if (Path(__file__).parent.parent.parent / "outputs/governance/model_card_v9_10.md").exists():
     st.sidebar.markdown("- 📄 [Model Card](?tab=governance)")
 st.sidebar.markdown("- 📊 [Portfolio Analytics](?tab=portfolio)")
 st.sidebar.markdown("- 🔬 [Uncertainty Analysis](?tab=uncertainty)")
@@ -113,7 +118,8 @@ if uploaded_file:
         "Country", sorted(df["country"].unique()) if "country" in df.columns else []
     )
     trading_countries = st.sidebar.multiselect(
-        "Trading Country", sorted(df["trading_country"].unique()) if "trading_country" in df.columns else []
+        "Trading Country",
+        sorted(df["trading_country"].unique()) if "trading_country" in df.columns else [],
     )
     industries = st.sidebar.multiselect(
         "Industry", sorted(df["industry"].unique()) if "industry" in df.columns else []
@@ -125,7 +131,8 @@ if uploaded_file:
         "Size Class", sorted(df["size_class"].unique()) if "size_class" in df.columns else []
     )
     earnings_statuses = st.sidebar.multiselect(
-        "Next Earnings", sorted(df["next_earnings_status"].unique()) if "next_earnings_status" in df.columns else []
+        "Next Earnings",
+        sorted(df["next_earnings_status"].unique()) if "next_earnings_status" in df.columns else [],
     )
     exchanges = st.sidebar.multiselect(
         "Exchange", sorted(df["exchange"].unique()) if "exchange" in df.columns else []
@@ -133,8 +140,8 @@ if uploaded_file:
     units = st.sidebar.multiselect(
         "Unit", sorted(df["unit"].unique()) if "unit" in df.columns else []
     )
-    
-    model_version = st.sidebar.selectbox("Model Version", ["v9_9"])
+
+    model_version = st.sidebar.selectbox("Model Version", ["v9_10"])
 
     # Market cap range slider
     if "market_cap" in df.columns:
@@ -191,8 +198,8 @@ if uploaded_file:
         col2.metric("Sectors", df["sector"].nunique() if "sector" in df.columns else 0)
         col3.metric("Regions", df["region"].nunique() if "region" in df.columns else 0)
         if "mispricing_score" in df.columns:
-             col4.metric("Avg Mispricing", f"{df['mispricing_score'].mean():.2%}")
-        
+            col4.metric("Avg Mispricing", f"{df['mispricing_score'].mean():.2%}")
+
         st.info("Use the tabs above to navigate through the comprehensive analytics platform.")
 
     with tab1:
@@ -220,8 +227,8 @@ if uploaded_file:
                         "bar": {"color": "#375a7f"},  # Primary
                         "steps": [
                             {"range": [-50, -10], "color": "#e74c3c"},  # Danger
-                            {"range": [-10, 10], "color": "#adb5bd"},    # Neutral
-                            {"range": [10, 50], "color": "#00bc8c"},     # Success
+                            {"range": [-10, 10], "color": "#adb5bd"},  # Neutral
+                            {"range": [10, 50], "color": "#00bc8c"},  # Success
                         ],
                         "threshold": {
                             "line": {"color": "#e74c3c", "width": 4},  # Danger
@@ -232,7 +239,7 @@ if uploaded_file:
                 )
             )
             fig_gauge.update_layout(height=300, template="plotly_dark", font_family="Arial")
-            st.plotly_chart(fig_gauge, width='stretch')
+            st.plotly_chart(fig_gauge, width="stretch")
 
         # Interactive scatter plot
         if "mispricing_score" in df.columns and "market_cap" in df.columns:
@@ -248,7 +255,7 @@ if uploaded_file:
                 template="plotly_dark",
             )
             fig.update_layout(font_family="Arial")
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, width="stretch")
 
     with tab2:
         st.title("🎯 Stock Rankings")
@@ -261,7 +268,7 @@ if uploaded_file:
                 undervalued = df.nlargest(10, "mispricing_score")[
                     ["ticker", "sector", "mispricing_score", "last_price"]
                 ]
-                st.dataframe(undervalued, width='stretch')
+                st.dataframe(undervalued, width="stretch")
 
         with col2:
             st.subheader("🔴 Most Overvalued")
@@ -269,7 +276,7 @@ if uploaded_file:
                 overvalued = df.nsmallest(10, "mispricing_score")[
                     ["ticker", "sector", "mispricing_score", "last_price"]
                 ]
-                st.dataframe(overvalued, width='stretch')
+                st.dataframe(overvalued, width="stretch")
 
         # Sector-specific rankings
         if "sector" in df.columns:
@@ -278,7 +285,7 @@ if uploaded_file:
             sector_df = df[df["sector"] == selected_sector]
             if "mispricing_score" in sector_df.columns:
                 top_sector = sector_df.nlargest(5, "mispricing_score")
-                st.dataframe(top_sector, width='stretch')
+                st.dataframe(top_sector, width="stretch")
 
     with tab3:
         st.title("📊 Sector Analysis")
@@ -290,7 +297,7 @@ if uploaded_file:
         if "valuation" in dashboard:
             st.subheader("💰 Valuation Metrics by Sector")
             val_df = pd.DataFrame(dashboard["valuation"]).T
-            st.dataframe(val_df, width='stretch')
+            st.dataframe(val_df, width="stretch")
 
         # Sector performance heatmap
         if "sector" in df.columns and "region" in df.columns and "mispricing_score" in df.columns:
@@ -307,7 +314,7 @@ if uploaded_file:
                 color_continuous_scale="RdYlGn",
             )
             fig.update_layout(font_family="Arial")
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, width="stretch")
 
         st.divider()
         st.subheader("📊 Phase 9.3: Advanced Feature Analysis")
@@ -316,7 +323,7 @@ if uploaded_file:
             render_streamlit_artifact("eda", "correlation", height=500)
         with col2:
             render_streamlit_artifact("eda", "distributions", height=500)
-        
+
         render_streamlit_artifact("eda", "sector_bubbles", height=600)
         render_streamlit_artifact("eda", "sector_heatmap", height=600)
         render_streamlit_artifact("eda", "regional_radar", height=600)
@@ -329,11 +336,11 @@ if uploaded_file:
             render_streamlit_artifact("uncertainty", "interval_width", height=500)
         with col2:
             render_streamlit_artifact("uncertainty", "coverage_heatmap", height=500)
-        
+
         st.divider()
         st.subheader("🎯 Calibration Quality")
         render_streamlit_artifact("uncertainty", "reliability_diagram", height=550)
-        
+
         st.divider()
         st.subheader("⚖️ Sector Bias Calibration")
         render_streamlit_artifact("calibration", "sector_bias", height=700)
@@ -377,7 +384,7 @@ if uploaded_file:
             color_discrete_sequence=["#375a7f"],  # Primary
         )
         fig.update_layout(font_family="Arial")
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, width="stretch")
 
         st.divider()
         st.subheader("Comprehensive Data Quality Dashboard")
@@ -408,14 +415,14 @@ if uploaded_file:
 
             # Error distribution
             fig = px.histogram(
-                pred_error, 
-                nbins=50, 
+                pred_error,
+                nbins=50,
                 title="Prediction Error Distribution",
                 template="plotly_dark",
                 color_discrete_sequence=["#375a7f"],  # Primary
             )
             fig.update_layout(font_family="Arial")
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, width="stretch")
 
             # Residual plot using graph_objects for more control
             residuals = df["predicted_price_target"] - df["price_target"]
@@ -436,7 +443,9 @@ if uploaded_file:
                     hovertemplate="<b>%{text}</b><br>Target: %{x}<br>Residual: %{y}<extra></extra>",
                 )
             )
-            fig.add_hline(y=0, line_dash="dash", line_color="#e74c3c", annotation_text="Zero Error")  # Danger
+            fig.add_hline(
+                y=0, line_dash="dash", line_color="#e74c3c", annotation_text="Zero Error"
+            )  # Danger
             fig.update_layout(
                 title="Residual Plot: Predicted vs Actual Target",
                 xaxis_title="Actual Target",
@@ -445,7 +454,7 @@ if uploaded_file:
                 template="plotly_dark",
                 font_family="Arial",
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, width="stretch")
 
             # Model vs Analyst disagreement analysis
             if "model_analyst_diff_pct" in df.columns:
@@ -462,9 +471,12 @@ if uploaded_file:
                 )
                 disagreement_fig.update_layout(font_family="Arial")
                 disagreement_fig.add_vline(
-                    x=0, line_dash="dash", line_color="#e74c3c", annotation_text="Perfect Agreement"  # Danger
+                    x=0,
+                    line_dash="dash",
+                    line_color="#e74c3c",
+                    annotation_text="Perfect Agreement",  # Danger
                 )
-                st.plotly_chart(disagreement_fig, width='stretch')
+                st.plotly_chart(disagreement_fig, width="stretch")
 
                 # High-conviction disagreements
                 high_disagreement = df[abs(df["model_analyst_diff_pct"]) > 10].nlargest(
@@ -483,7 +495,7 @@ if uploaded_file:
                         ]
                         if c in high_disagreement.columns
                     ]
-                    st.dataframe(high_disagreement[display_cols], width='stretch')
+                    st.dataframe(high_disagreement[display_cols], width="stretch")
 
             # Error by sector analysis
             if "prediction_error_pct" in df.columns and "sector" in df.columns:
@@ -505,9 +517,9 @@ if uploaded_file:
                     color_discrete_sequence=["#375a7f"],  # Primary
                 )
                 fig.update_layout(xaxis_tickangle=-45, font_family="Arial")
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, width="stretch")
 
-                st.dataframe(sector_errors, width='stretch')
+                st.dataframe(sector_errors, width="stretch")
 
             # Financial metrics display
             if any(col in df.columns for col in ["p_e", "p_b", "roe", "ev_ebitda"]):
@@ -528,12 +540,12 @@ if uploaded_file:
                     if c in df.columns
                 ]
                 if financial_cols:
-                    st.dataframe(df[financial_cols].head(20), width='stretch')
+                    st.dataframe(df[financial_cols].head(20), width="stretch")
 
     with tab_gov:
         st.title("🏛️ Model Governance & Lineage")
         render_streamlit_artifact("governance", "error_map")
-        
+
         # Model Card
         governance_dir = Path(__file__).parent.parent.parent / "outputs" / "governance"
         if governance_dir.exists():
@@ -543,18 +555,18 @@ if uploaded_file:
                 with open(latest_card, "r", encoding="utf-8") as f:
                     content = f.read()
                 st.markdown(content)
-                
+
                 # Download button
                 st.download_button(
                     label="Download Model Card",
                     data=content,
                     file_name=latest_card.name,
-                    mime="text/markdown"
+                    mime="text/markdown",
                 )
             else:
-                 st.info("⚠️ Model Card not available. Run Section 9.8.")
+                st.info("⚠️ Model Card not available. Run Section 9.8.")
         else:
-             st.info("⚠️ Model Governance outputs not available.")
+            st.info("⚠️ Model Governance outputs not available.")
 
     with tab6:
         st.title("💼 Portfolio Optimization & Risk Metrics")
@@ -570,7 +582,7 @@ if uploaded_file:
 
         # Portfolio artifacts path (Section 10 structure)
         portfolio_path = Path("outputs/portfolio")
-        
+
         # Section 10.2: Universe & Filters Diagnostics
         st.subheader("📊 Universe & Filters Diagnostics")
         universe_summary_file = portfolio_path / "portfolio_universe_summary.html"
@@ -582,14 +594,16 @@ if uploaded_file:
             except Exception as e:
                 st.warning(f"Could not load universe summary: {e}")
         else:
-            st.info("Run Section 10.2 of ml_finance_model_main.ipynb to generate universe diagnostics.")
+            st.info(
+                "Run Section 10.2 of ml_finance_model_main.ipynb to generate universe diagnostics."
+            )
 
         st.divider()
-        
+
         # Section 10.3: Expected Returns & Risk Inputs QA
         st.subheader("📈 Expected Returns & Risk Inputs")
         col1, col2 = st.columns(2)
-        
+
         with col1:
             returns_dist_file = portfolio_path / "expected_returns_distribution.html"
             if returns_dist_file.exists():
@@ -601,7 +615,7 @@ if uploaded_file:
                     st.warning(f"Could not load returns distribution: {e}")
             else:
                 st.info("Returns distribution not found (Section 10.3)")
-        
+
         with col2:
             corr_heatmap_file = portfolio_path / "risk_correlation_heatmap.html"
             if corr_heatmap_file.exists():
@@ -628,7 +642,9 @@ if uploaded_file:
                 st.warning(f"Could not load efficient frontier visualization: {e}")
         else:
             st.warning("⚠️ Efficient frontier visualization not found.")
-            st.info("Run Section 10.4 of ml_finance_model_main.ipynb to generate optimization visualizations.")
+            st.info(
+                "Run Section 10.4 of ml_finance_model_main.ipynb to generate optimization visualizations."
+            )
 
         st.divider()
 
@@ -644,7 +660,7 @@ if uploaded_file:
                 st.warning(f"Could not load risk decomposition: {e}")
         else:
             st.info("Risk decomposition not found. Run Section 10.5 to generate.")
-        
+
         # Stress tests
         stress_tests_file = portfolio_path / "stress_tests_dashboard.html"
         if stress_tests_file.exists():
@@ -670,7 +686,7 @@ if uploaded_file:
                 st.warning(f"Could not load backtest performance: {e}")
         else:
             st.info("Backtest performance not found. Run Section 10.6 to generate.")
-        
+
         # Attribution
         attribution_file = portfolio_path / "performance_attribution.html"
         if attribution_file.exists():
@@ -696,13 +712,15 @@ if uploaded_file:
                 st.warning(f"Could not load risk management dashboard: {e}")
         else:
             st.warning("⚠️ Risk management dashboard not found.")
-            st.info("Run Section 10.7 of ml_finance_model_main.ipynb to generate risk management visuals.")
+            st.info(
+                "Run Section 10.7 of ml_finance_model_main.ipynb to generate risk management visuals."
+            )
 
         st.divider()
 
         # Section 10.8: Multi-Period Comparison & Summary
         st.subheader("🧭 Portfolio Summary & Multi-Period Comparison")
-        
+
         # Multi-period comparison (now in portfolio/)
         multi_period_file = portfolio_path / "portfolio_multi_period_comparison.html"
         with st.expander("Multi-Period Performance Comparison", expanded=False):

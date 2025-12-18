@@ -153,7 +153,7 @@ obj.method()
                         "estimate_sector_bias(\n",
                         "    predictions_df=df,\n",
                         "    output_dir='outputs',\n",
-                        "    model_version='v9_9'\n",
+                        "    model_version='v9_10'\n",
                         ")\n",
                         "\n",
                         "# This should fail - wrong parameter name\n",

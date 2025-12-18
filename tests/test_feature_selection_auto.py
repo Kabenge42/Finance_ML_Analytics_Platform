@@ -10,7 +10,7 @@ Test Coverage:
 - Test 3: select_features_preserves_price_columns
 - Test 4: select_features_by_category
 
-Model Version: v9_9
+Model Version: v9_10
 Alignment: code_guidelines.md v1.10
 """
 

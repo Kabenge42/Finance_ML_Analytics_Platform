@@ -37,7 +37,7 @@ def estimate_sector_bias(
     output_dir : Union[str, Path]
         Directory to save artifacts
     model_version : Optional[str]
-        Model version string for file naming (default: from env or 'v9_9')
+        Model version string for file naming (default: from env or 'v9_10')
 
     Returns
     -------
@@ -49,7 +49,7 @@ def estimate_sector_bias(
 
     # Get model version from env or parameter
     if model_version is None:
-        model_version = os.environ.get("MODEL_VERSION", "v9_9")
+        model_version = os.environ.get("MODEL_VERSION", "v9_10")
 
     logger.info(f"Estimating sector bias for model {model_version}")
 

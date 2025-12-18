@@ -3,7 +3,7 @@
 **Date:** 2025-12-09  
 **Status:** ACTIVE  
 **Version:** 1.0  
-**Model Version Target:** v9_9  
+**Model Version Target:** v9_10  
 **Alignment:** code_guidelines.md v1.10
 
 ---

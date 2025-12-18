@@ -72,7 +72,7 @@ RUN_DEMO_SECTIONS: Final[bool] = bool(int(os.getenv("RUN_DEMO_SECTIONS", "0")))
 # Reproducibility (Section 2.1)
 # Business Rationale: Fixed seed enables consistent model evaluation and regulatory compliance
 RANDOM_SEED: Final[int] = int(os.getenv("RANDOM_SEED", "42"))
-MODEL_VERSION: Final[str] = os.getenv("MODEL_VERSION", "v9_9")
+MODEL_VERSION: Final[str] = os.getenv("MODEL_VERSION", "v9_10")
 
 # Set numpy random seed for reproducibility
 np.random.seed(RANDOM_SEED)
@@ -258,7 +258,7 @@ validate_configuration()
 # # Stock Price Target Prediction — ML Analytics Platform
 #
 # **Version**: Phase 9.5 (Unified ETL with Semantic Transforms + Feature Engineering)
-# **Model Version**: v9_9
+# **Model Version**: v9_10
 # **Last Updated**: 2025-12-08
 # **Aligned with**: code_guidelines.md v1.10
 #
@@ -6446,7 +6446,7 @@ try:
         results_df["y_pred_calibrated"] = results_df["y_pred"]
 
     # Add model_version and snapshot_date for standardized schema
-    model_version = os.environ.get("MODEL_VERSION", "v9_9")
+    model_version = os.environ.get("MODEL_VERSION", "v9_10")
     results_df["model_version"] = model_version
     results_df["snapshot_date"] = pd.Timestamp.now().strftime("%Y-%m-%d")
 
@@ -6601,7 +6601,7 @@ try:
         print(f"  Empirical coverage (10%-90%): {coverage:.1%} (target: 80%)")
 
     # Add metadata columns for standardized schema
-    q_df["model_version"] = os.environ.get("MODEL_VERSION", "v9_9")
+    q_df["model_version"] = os.environ.get("MODEL_VERSION", "v9_10")
     q_df["snapshot_date"] = pd.Timestamp.now().strftime("%Y-%m-%d")
 
     out_q_path = out_models_dir / "quantile_predictions.csv"
@@ -7934,8 +7934,8 @@ model_info = {
     "artifacts": [
         "regression_predictions_detailed.csv",
         "quantile_predictions_diagnostics.csv",
-        "sector_bias_calibration_v9_9.json",
-        "model_card_v9_9.md",
+        "sector_bias_calibration_v9_10.json",
+        "model_card_v9_10.md",
     ],
     "metrics": {"overall": {"MAE": 0.0, "RMSE": 0.0, "R2": 0.0}, "by_sector": {}},
 }

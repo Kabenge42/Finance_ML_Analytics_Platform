@@ -203,7 +203,7 @@ Goal: Provide transparency for stacked models and document model lineage.
 
 ```
 {
-  "model_version": "v9_9",
+  "model_version": "v9_10",
   "datasets": {"train": "...", "validation": "..."},
   "features": {"count": 310, "groups": ["momentum","valuation", ...]},
   "models": {"base": ["xgboost","lightgbm"], "meta": "linear"},

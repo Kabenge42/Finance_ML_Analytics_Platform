@@ -69,7 +69,7 @@ class TestCalibrationValidation(unittest.TestCase):
             }
         }
 
-        result = apply_sector_calibration(preds, bad_calibration, "v9_9")
+        result = apply_sector_calibration(preds, bad_calibration, "v9_10")
 
         # Should NOT apply calibration (only 2 of 5 sectors improve = 40% < 50%)
         self.assertTrue(
@@ -92,7 +92,7 @@ class TestCalibrationValidation(unittest.TestCase):
             }
         }
 
-        result = apply_sector_calibration(preds, good_calibration, "v9_9")
+        result = apply_sector_calibration(preds, good_calibration, "v9_10")
 
         # Should apply calibration (4 of 5 sectors improve = 80% > 50%)
         self.assertFalse(
@@ -114,7 +114,7 @@ class TestCalibrationValidation(unittest.TestCase):
             }
         }
 
-        result = apply_sector_calibration(preds, threshold_calibration, "v9_9")
+        result = apply_sector_calibration(preds, threshold_calibration, "v9_10")
 
         # Should NOT apply calibration (50% is not >= 50% due to strict inequality)
         # Note: The implementation uses < threshold, so exactly 50% should apply
@@ -128,9 +128,9 @@ class TestCalibrationValidation(unittest.TestCase):
         preds = create_sample_predictions_by_sector(n_samples=100, n_sectors=3)
 
         # Missing 'sectors' key
-        invalid_calibration = {"model_version": "v9_9", "other_data": "some_value"}
+        invalid_calibration = {"model_version": "v9_10", "other_data": "some_value"}
 
-        result = apply_sector_calibration(preds, invalid_calibration, "v9_9")
+        result = apply_sector_calibration(preds, invalid_calibration, "v9_10")
 
         # Should skip calibration and copy predictions
         self.assertTrue(
@@ -145,7 +145,7 @@ class TestCalibrationValidation(unittest.TestCase):
         # Empty sectors dict
         empty_calibration = {"sectors": {}}
 
-        result = apply_sector_calibration(preds, empty_calibration, "v9_9")
+        result = apply_sector_calibration(preds, empty_calibration, "v9_10")
 
         # Should skip calibration
         self.assertTrue(
@@ -170,7 +170,7 @@ class TestCalibrationValidation(unittest.TestCase):
 
         # With 70% threshold, should be skipped (60% < 70%)
         result_high_threshold = apply_sector_calibration(
-            preds, calibration, "v9_9", min_improvement_threshold=0.7
+            preds, calibration, "v9_10", min_improvement_threshold=0.7
         )
         self.assertTrue(
             (result_high_threshold["y_pred_calibrated"] == result_high_threshold["y_pred"]).all(),
@@ -179,7 +179,7 @@ class TestCalibrationValidation(unittest.TestCase):
 
         # With 50% threshold, should be applied (60% > 50%)
         result_low_threshold = apply_sector_calibration(
-            preds, calibration, "v9_9", min_improvement_threshold=0.5
+            preds, calibration, "v9_10", min_improvement_threshold=0.5
         )
         self.assertFalse(
             (result_low_threshold["y_pred_calibrated"] == result_low_threshold["y_pred"]).all(),
@@ -199,7 +199,7 @@ class TestCalibrationValidation(unittest.TestCase):
             }
         }
 
-        result = apply_sector_calibration(preds, calibration, "v9_9")
+        result = apply_sector_calibration(preds, calibration, "v9_10")
 
         # All original columns should be preserved
         for col in preds.columns:

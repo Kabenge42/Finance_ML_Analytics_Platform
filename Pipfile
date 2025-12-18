@@ -5,25 +5,29 @@ name = "pypi"
 
 [packages]
 # Core Data Science Libraries
-numpy = ">=1.26.0,<3.0.0"  # allows NumPy 2.x on Python 3.14+
-pandas = ">=2.0.0,<3.0.0"
-scipy = ">=1.11.0,<2.0.0"
+# NumPy: Use 1.26.x for Python <3.14 and 2.x for Python 3.14+
+numpy = { version = ">=1.26.0,<2.0.0", markers = "python_version < '3.14'" }
+pandas = ">=2.1.0,<3.0.0"
+scipy = ">=1.12.0,<2.0.0"
 statsmodels = ">=0.14.0,<1.0.0"
 
 # Machine Learning - Scikit-learn Ecosystem
-scikit-learn = ">=1.4.0,<2.0.0"
-imbalanced-learn = ">=0.11.0,<1.0.0"
+scikit-learn = ">=1.5.0,<2.0.0"
+imbalanced-learn = ">=0.12.0,<1.0.0"
 
 # Deep Learning Frameworks
 # Gate TensorFlow/Keras on <3.14 to avoid build issues on Python 3.14 (Windows)
-tensorflow = { version = ">=2.13.0,<3.0.0", markers = "python_version < '3.14'" }
-scikeras = { version = ">=0.12.0,<1.0.0", markers = "python_version < '3.14'" }
+tensorflow = { version = ">=2.15.0,<3.0.0", markers = "python_version < '3.14'" }
+scikeras = { version = ">=0.13.0,<1.0.0", markers = "python_version < '3.14'" }
 
 # Gradient Boosting Libraries
-xgboost = ">=2.0.3,<3.0.0"
-lightgbm = ">=4.0.0,<5.0.0"
-# Gate CatBoost on <3.14 due to missing cp314 wheels as of 2025-11
-catboost = { version = ">=1.2.0,<2.0.0", markers = "python_version < '3.14'" }
+xgboost = ">=2.1.0,<4.0.0"
+lightgbm = ">=4.3.0,<5.0.0"
+# Gate CatBoost on <3.14 due to missing cp314 wheels as of 2025-12
+catboost = { version = ">=1.2.5,<2.0.0", markers = "python_version < '3.14'" }
+
+# Hyperparameter Optimization
+optuna = ">=4.0.0,<5.0.0"
 
 # Feature Engineering & Selection
 boruta = ">=0.3.0,<1.0.0"
@@ -35,29 +39,47 @@ boruta = ">=0.3.0,<1.0.0"
 shap = { version = "==0.50.0", markers = "python_version < '3.14'" }
 
 # Visualization Libraries
-matplotlib = ">=3.7.0,<4.0.0"
-seaborn = ">=0.12.0,<1.0.0"
-plotly = ">=5.14.0,<6.0.0"
+matplotlib = ">=3.8.0,<4.0.0"
+seaborn = ">=0.13.0,<1.0.0"
+plotly = ">=5.18.0,<7.0.0"
+
+# Interactive Dashboards
+# Streamlit: gate on <3.14 due to pyarrow build issues
+streamlit = { version = ">=1.35.0,<2.0.0", markers = "python_version < '3.14'" }
+dash = ">=2.17.0,<4.0.0"
 
 # Development & Utility Tools
-tqdm = ">=4.65.0,<5.0.0"
+tqdm = ">=4.66.0,<5.0.0"
 joblib = ">=1.3.0,<2.0.0"
-#numba = ">=0.57.0,<1.0.0"
+numba = { version = ">=0.59.0,<1.0.0", markers = "python_version < '3.14'" }
 
 # Image & File Processing
-Pillow = ">=10.0.0,<12.0.0"
-xlsxwriter = ">=3.1.0,<4.0.0"
+Pillow = ">=10.2.0,<13.0.0"
+xlsxwriter = ">=3.2.0,<4.0.0"
+openpyxl = ">=3.1.0,<4.0.0"
 
 # System Monitoring
-psutil = ">=5.9.0,<6.0.0"
+psutil = ">=5.9.0,<7.0.0"
 
-# Optional Database Access (install separately if needed)
-# psycopg2-binary = ">=2.9.0,<3.0.0"
-# SQLAlchemy = ">=2.0.0,<3.0.0"
+# Database Connectivity
+psycopg2-binary = ">=2.9.9,<3.0.0"
+SQLAlchemy = ">=2.0.25,<3.0.0"
+
+# Jupyter Notebook Support
+jupyter = ">=1.0.0,<2.0.0"
+notebook = ">=7.1.0,<8.0.0"
+ipykernel = ">=6.29.0,<7.0.0"
 
 [dev-packages]
+pytest = ">=8.0.0,<9.0.0"
+pytest-cov = ">=4.1.0,<6.0.0"
+black = ">=24.0.0,<25.0.0"
+flake8 = ">=7.0.0,<8.0.0"
+mypy = ">=1.8.0,<2.0.0"
+isort = ">=5.13.0,<6.0.0"
+pip-tools = ">=7.3.0,<8.0.0"
 
 [requires]
 # Project supports Python 3.12, 3.13, or 3.14 (>=3.12,<3.15)
 # Pipfile requires exact version - set to 3.12, 3.13, or 3.14 based on your environment
-python_version = "3.14"
+python_version = "3.13"

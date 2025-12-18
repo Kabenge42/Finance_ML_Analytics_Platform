@@ -200,7 +200,7 @@ CV_FOLDS = 5
 QUANTILES = [0.1, 0.5, 0.9]
 MIN_SECTOR_SAMPLES = 20
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))
-MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
+MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')
 
 # Validate
 validate_configuration()

@@ -1,78 +1,84 @@
-catboost
-tensorflow
 # ============================================================================
 # Finance ML Analytics Platform - Complete Requirements
 # ============================================================================
 # Install with: pip install -r requirements.txt
 # Python version: >=3.12,<3.15
+# Last updated: 2025-12-18
 # This is a unified dependency file including all commonly used packages
 
 # Core Data Science Libraries
-# Numpy: many packages on Python 3.14 require NumPy 2.x. Use 1.26.x for <3.14 and 2.x for 3.14+.
-numpy>=2.0.0,<3.0.0
-pandas>=2.0.0,<3.0.0
-scipy>=1.11.0,<2.0.0
+# NumPy: Use 1.26.x for Python <3.14 and 2.x for Python 3.14+
+numpy>=1.26.0,<3.0.0; python_version < '3.14'
+pandas>=2.1.0,<3.0.0
+scipy>=1.12.0,<2.0.0
 statsmodels>=0.14.0,<1.0.0
 
 # Machine Learning - Scikit-learn Ecosystem
-scikit-learn>=1.4.0,<2.0.0
-imbalanced-learn>=0.11.0,<1.0.0
+scikit-learn>=1.5.0,<2.0.0
+imbalanced-learn>=0.12.0,<1.0.0
 
-# Deep Learning Frameworks (optional; you may comment these out if installation is problematic)
-#tensorflow>=2.13.0,<3.0.0
-#scikeras>=0.12.0,<1.0.0
+# Deep Learning Frameworks (optional; comment out if installation is problematic)
+# TensorFlow: gate on <3.14 pending official 3.14 wheel availability
+# tensorflow>=2.15.0,<3.0.0; python_version < '3.14'
+# scikeras>=0.13.0,<1.0.0; python_version < '3.14'
 
 # Gradient Boosting Libraries
-xgboost>=2.0.3,<4.0.0
-lightgbm>=4.0.0,<5.0.0
-# CatBoost does not provide cp314 wheels yet (2025-11). Building from source on Windows
-# requires full MSVC 2022 + CMake + Ninja. To ensure a smooth install on Python 3.14,
-# gate CatBoost for now. Use Python 3.13 if you need CatBoost, or install it later
-# once cp314 wheels are available.
-catboost>=1.2.0,<2.0.0; python_version < '3.14'
+xgboost>=2.1.0,<4.0.0
+lightgbm>=4.3.0,<5.0.0
+# CatBoost does not provide cp314 wheels yet (2025-12). Building from source on Windows
+# requires full MSVC 2022 + CMake + Ninja. Gate on <3.14 for smooth installation.
+catboost>=1.2.5,<2.0.0; python_version < '3.14'
 
 # Hyperparameter Optimization
-optuna>=4.6.0,<5.0.0
+optuna>=4.0.0,<5.0.0
 
 # Feature Engineering & Selection
 boruta>=0.3.0,<1.0.0
 
 # Model Interpretation & Explainability
 # SHAP 0.50.0 provides enhanced explainability features with improved performance.
-# SHAP pulls in numba which (as of 2025-11) does not support Python 3.14 yet.
-# Gate SHAP on <3.14 to avoid installation failure on 3.14. You can still
-# manually install SHAP later once numba publishes 3.14-compatible wheels.
+# SHAP depends on numba which (as of 2025-12) does not support Python 3.14 yet.
+# Gate SHAP on <3.14 to avoid installation failure on 3.14.
 shap==0.50.0; python_version < '3.14'
 
 # Visualization Libraries
-matplotlib>=3.7.0,<4.0.0
-seaborn>=0.12.0,<1.0.0
-plotly>=5.14.0,<7.0.0
+matplotlib>=3.8.0,<4.0.0
+seaborn>=0.13.0,<1.0.0
+plotly>=5.18.0,<7.0.0
 
-# Interactive Dashboards (Phase 1: Reporting & Visualization Improvements)
-# Streamlit currently pulls pyarrow, which may not have cp314 wheels yet and will try to
-# compile Arrow on Windows (requires CMake/VS toolchain). Gate on 3.14 to avoid build.
-streamlit>=1.30.0,<2.0.0; python_version < '3.14'
-dash>=2.14.0,<4.0.0
+# Interactive Dashboards
+# Streamlit currently pulls pyarrow, which may not have cp314 wheels yet.
+# Gate on <3.14 to avoid build failures on Windows.
+streamlit>=1.35.0,<2.0.0; python_version < '3.14'
+dash>=2.17.0,<4.0.0
 
 # Development & Utility Tools
-tqdm>=4.65.0,<5.0.0
+tqdm>=4.66.0,<5.0.0
 joblib>=1.3.0,<2.0.0
-numba>=0.57.0,<1.0.0
+# numba: gate on <3.14 due to missing 3.14 wheels
+numba>=0.59.0,<1.0.0; python_version < '3.14'
 
 # Image & File Processing
-Pillow>=10.0.0,<13.0.0
-xlsxwriter>=3.1.0,<4.0.0
+Pillow>=10.2.0,<13.0.0
+xlsxwriter>=3.2.0,<4.0.0
 openpyxl>=3.1.0,<4.0.0
 
 # System Monitoring
-psutil>=5.9.0,<8.0.0
+psutil>=5.9.0,<7.0.0
 
 # Database Connectivity (optional; needed for PostgreSQL integration)
-psycopg2-binary>=2.9.0,<3.0.0
-SQLAlchemy>=2.0.0,<3.0.0
+psycopg2-binary>=2.9.9,<3.0.0
+SQLAlchemy>=2.0.25,<3.0.0
 
 # Jupyter Notebook Support
 jupyter>=1.0.0,<2.0.0
-notebook>=7.0.0,<8.0.0
-ipykernel>=6.25.0,<7.0.0
+notebook>=7.1.0,<8.0.0
+ipykernel>=6.29.0,<7.0.0
+
+# Development Tools (optional; for testing and code quality)
+# pytest>=8.0.0,<9.0.0
+# pytest-cov>=4.1.0,<6.0.0
+# black>=24.0.0,<25.0.0
+# flake8>=7.0.0,<8.0.0
+# mypy>=1.8.0,<2.0.0
+# isort>=5.13.0,<6.0.0

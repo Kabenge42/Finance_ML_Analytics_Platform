@@ -5,7 +5,7 @@ Converted from ml_finance_model_main.ipynb with strict TDD.
 Implements 8-phase ML workflow (Phase 9.1-9.8) and Section 18 Portfolio Optimization.
 
 Version: 1.0.0
-Model Version: v9_9
+Model Version: v9_10
 """
 
 import os
@@ -76,7 +76,7 @@ CONFIDENCE_MEDIUM_THRESHOLD = 0.75
 # Random seed
 RANDOM_SEED = int(os.getenv("RANDOM_SEED", "42"))
 np.random.seed(RANDOM_SEED)
-MODEL_VERSION = os.getenv("MODEL_VERSION", "v9_9")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "v9_10")
 
 # Section 18.2: Return Calculation Best Practices - Expected Return Bounds
 MAX_EXPECTED_RETURN = 0.29  # 29% annual cap

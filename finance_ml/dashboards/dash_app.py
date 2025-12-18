@@ -20,11 +20,13 @@ try:
 except ImportError:
     # Fallback for when running as script
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     from finance_ml.dashboards.artifact_registry import ARTIFACTS
 
 # Project root path for consistent path resolution
 PROJECT_ROOT = Path(__file__).parent.parent.parent
+
 
 def get_file_age(filepath: Path) -> str:
     """Get formatted age of a file."""
@@ -67,11 +69,23 @@ def render_artifact_or_placeholder(category: str, key: str, height: int = 550):
 
     if src:
         age = get_file_age(file_path)
-        content.append(html.Div(f"🕒 {age}", style={"textAlign": "right", "fontSize": "0.8em", "color": "#888", "marginBottom": "5px"}))
-        content.append(html.Iframe(
-            src=src,
-            style={"width": "100%", "height": f"{height}px", "border": "1px solid #ddd"}
-        ))
+        content.append(
+            html.Div(
+                f"🕒 {age}",
+                style={
+                    "textAlign": "right",
+                    "fontSize": "0.8em",
+                    "color": "#888",
+                    "marginBottom": "5px",
+                },
+            )
+        )
+        content.append(
+            html.Iframe(
+                src=src,
+                style={"width": "100%", "height": f"{height}px", "border": "1px solid #ddd"},
+            )
+        )
     else:
         content.append(
             html.Div(
@@ -91,6 +105,7 @@ def render_artifact_or_placeholder(category: str, key: str, height: int = 550):
 
     return html.Div(content, style={"padding": "20px"})
 
+
 def render_model_card():
     """Render model card markdown."""
     governance_dir = PROJECT_ROOT / "outputs" / "governance"
@@ -101,19 +116,40 @@ def render_model_card():
             latest_card = sorted(model_cards)[-1]
             with open(latest_card, "r", encoding="utf-8") as f:
                 content = f.read()
-            return html.Div([
-                html.H3("Model Card", style={"textAlign": "center"}),
-                dcc.Markdown(content, style={"padding": "20px", "border": "1px solid #ddd", "backgroundColor": "#f9f9f9", "overflowY": "auto", "maxHeight": "600px"})
-            ], style={"padding": "20px"})
+            return html.Div(
+                [
+                    html.H3("Model Card", style={"textAlign": "center"}),
+                    dcc.Markdown(
+                        content,
+                        style={
+                            "padding": "20px",
+                            "border": "1px solid #ddd",
+                            "backgroundColor": "#f9f9f9",
+                            "overflowY": "auto",
+                            "maxHeight": "600px",
+                        },
+                    ),
+                ],
+                style={"padding": "20px"},
+            )
 
-    return html.Div([
-        html.P("⚠️ Model Card not available", style={"textAlign": "center", "color": "orange"}),
-        html.P("Run notebook Section 9.8 to generate", style={"textAlign": "center", "fontStyle": "italic", "color": "#666"})
-    ], style={"padding": "50px", "border": "1px dashed #ccc", "margin": "10px"})
+    return html.Div(
+        [
+            html.P("⚠️ Model Card not available", style={"textAlign": "center", "color": "orange"}),
+            html.P(
+                "Run notebook Section 9.8 to generate",
+                style={"textAlign": "center", "fontStyle": "italic", "color": "#666"},
+            ),
+        ],
+        style={"padding": "50px", "border": "1px dashed #ccc", "margin": "10px"},
+    )
+
 
 def get_status_indicators():
     """Generate status indicators for header."""
-    uncertainty_exists = (PROJECT_ROOT / "outputs" / "uncertainty" / "interval_width_by_bucket.html").exists()
+    uncertainty_exists = (
+        PROJECT_ROOT / "outputs" / "uncertainty" / "interval_width_by_bucket.html"
+    ).exists()
     governance_exists = (PROJECT_ROOT / "outputs" / "governance" / "meta_error_map.html").exists()
     portfolio_exists = (PROJECT_ROOT / "outputs" / "portfolio" / "efficient_frontier.html").exists()
 
@@ -205,9 +241,11 @@ df = load_data()
 app = dash.Dash(__name__, title="Finance ML Analytics", external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
-@server.route('/app_assets/<category>/<path:filename>')
+
+@server.route("/app_assets/<category>/<path:filename>")
 def serve_artifacts(category, filename):
     return send_from_directory(PROJECT_ROOT / "outputs" / category, filename)
+
 
 app.layout = html.Div(
     [
@@ -424,8 +462,8 @@ app.layout = html.Div(
                                 html.Label("Model Version", className="filter-label"),
                                 dcc.Dropdown(
                                     id="model-version-dropdown",
-                                    options=[{"label": "v9_9", "value": "v9_9"}],
-                                    value="v9_9",
+                                    options=[{"label": "v9_10", "value": "v9_10"}],
+                                    value="v9_10",
                                 ),
                             ],
                             className="filter-item",
@@ -940,7 +978,18 @@ app.layout = html.Div(
         Input("unit-dropdown", "value"),
     ],
 )
-def update_dashboard(sectors, regions, countries, trading_countries, industries, style_classes, size_classes, earnings_statuses, exchanges, units):
+def update_dashboard(
+    sectors,
+    regions,
+    countries,
+    trading_countries,
+    industries,
+    style_classes,
+    size_classes,
+    earnings_statuses,
+    exchanges,
+    units,
+):
     """Update dashboard visualizations based on selected filters."""
     filtered_df = df.copy()
 
@@ -980,7 +1029,10 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
         kpi_cards = [
             dbc.Card(
                 dbc.CardBody(
-                    [html.H4("Total Stocks", className="card-title"), html.H2(f"{total_stocks:,}", className="card-text")]
+                    [
+                        html.H4("Total Stocks", className="card-title"),
+                        html.H2(f"{total_stocks:,}", className="card-text"),
+                    ]
                 ),
                 color="primary",
                 inverse=True,
@@ -988,7 +1040,10 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             ),
             dbc.Card(
                 dbc.CardBody(
-                    [html.H4("Avg Mispricing", className="card-title"), html.H2(f"{avg_mispricing:.2%}", className="card-text")]
+                    [
+                        html.H4("Avg Mispricing", className="card-title"),
+                        html.H2(f"{avg_mispricing:.2%}", className="card-text"),
+                    ]
                 ),
                 color="success" if avg_mispricing > 0 else "danger",
                 inverse=True,
@@ -996,7 +1051,10 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             ),
             dbc.Card(
                 dbc.CardBody(
-                    [html.H4("Sectors", className="card-title"), html.H2(f"{sectors_count}", className="card-text")]
+                    [
+                        html.H4("Sectors", className="card-title"),
+                        html.H2(f"{sectors_count}", className="card-text"),
+                    ]
                 ),
                 color="info",
                 inverse=True,
@@ -1004,7 +1062,10 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             ),
             dbc.Card(
                 dbc.CardBody(
-                    [html.H4("Regions", className="card-title"), html.H2(f"{regions_count}", className="card-text")]
+                    [
+                        html.H4("Regions", className="card-title"),
+                        html.H2(f"{regions_count}", className="card-text"),
+                    ]
                 ),
                 color="info",
                 inverse=True,
@@ -1061,7 +1122,9 @@ def update_dashboard(sectors, regions, countries, trading_countries, industries,
             template="plotly_dark",
             color_discrete_sequence=["#375a7f"],  # Primary color
         )
-        error_fig.add_vline(x=0, line_dash="dash", line_color="#e74c3c", annotation_text="Zero Error")  # Danger color
+        error_fig.add_vline(
+            x=0, line_dash="dash", line_color="#e74c3c", annotation_text="Zero Error"
+        )  # Danger color
         error_fig.update_layout(font_family="Arial")
     else:
         error_fig = {}

@@ -13,7 +13,7 @@ Business Objective: Ensure all market conditions are represented in training dat
 by automatically remediating class imbalance through SMOTE resampling, class weight
 adjustment, or threshold tuning when imbalance >10:1 is detected.
 
-Model Version: v9_9
+Model Version: v9_10
 Alignment: code_guidelines.md v1.10
 """
 

@@ -90,8 +90,8 @@ class TestNotebookV2TDDCompliance(unittest.TestCase):
     def test_model_version_v9_or_higher(self):
         """Ensure MODEL_VERSION is v9 or higher for v2 notebook."""
         # Look for MODEL_VERSION definition - handles both direct assignment and os.getenv format
-        # Pattern 1: MODEL_VERSION = 'v9_9'
-        # Pattern 2: MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_9')
+        # Pattern 1: MODEL_VERSION = 'v9_10'
+        # Pattern 2: MODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')
         match = re.search(r"MODEL_VERSION.*['\"]v(\d+)", self.all_cells_text)
         self.assertIsNotNone(match, "MODEL_VERSION must be defined with version number")
         version = int(match.group(1))
