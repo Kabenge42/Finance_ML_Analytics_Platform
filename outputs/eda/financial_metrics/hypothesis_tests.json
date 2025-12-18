@@ -2,80 +2,80 @@
   "sector_tests": {
     "roe": {
       "anova": {
-        "statistic": 0.6581354322010118,
-        "p_value": 0.7642265819441236,
+        "statistic": 0.45292849465180346,
+        "p_value": 0.9202642658979753,
         "significant": "False",
-        "interpretation": "No significant difference in means (p=0.7642)"
+        "interpretation": "No significant difference in means (p=0.9203)"
       },
       "kruskal_wallis": {
-        "statistic": 198.2242991575489,
-        "p_value": 3.785643101421177e-37,
+        "statistic": 172.75260006195904,
+        "p_value": 7.463788699384966e-32,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 198.2242991575489,
-        "p_value": 3.785643101421177e-37,
+        "statistic": 172.75260006195904,
+        "p_value": 7.463788699384966e-32,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
     },
     "roa": {
       "anova": {
-        "statistic": 14.985840014036665,
-        "p_value": 8.156903550911212e-27,
+        "statistic": 13.543683867823214,
+        "p_value": 6.441372160000621e-24,
         "significant": "True",
         "interpretation": "Groups have significantly different means (p=0.0000)"
       },
       "kruskal_wallis": {
-        "statistic": 290.5853609671146,
-        "p_value": 1.5170245534089922e-56,
+        "statistic": 392.052271263896,
+        "p_value": 4.622561302048962e-78,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 290.5853609671146,
-        "p_value": 1.5170245534089922e-56,
+        "statistic": 392.052271263896,
+        "p_value": 4.622561302048962e-78,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
     },
     "p_e_ratio": {
       "anova": {
-        "statistic": 0.7897444966047948,
-        "p_value": 0.6388480749381646,
+        "statistic": 1.0832141581574581,
+        "p_value": 0.3709198134912278,
         "significant": "False",
-        "interpretation": "No significant difference in means (p=0.6388)"
+        "interpretation": "No significant difference in means (p=0.3709)"
       },
       "kruskal_wallis": {
-        "statistic": 293.9930930790688,
-        "p_value": 2.8915192956850184e-57,
+        "statistic": 352.5917259457965,
+        "p_value": 1.1229132607601938e-69,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 293.9930930790688,
-        "p_value": 2.8915192956850184e-57,
+        "statistic": 352.5917259457965,
+        "p_value": 1.1229132607601938e-69,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
     },
     "debt_to_equity": {
       "anova": {
-        "statistic": 2.4784337950571778,
-        "p_value": 0.005831004270728789,
+        "statistic": 2.7231533227914433,
+        "p_value": 0.00242640979760703,
         "significant": "True",
-        "interpretation": "Groups have significantly different means (p=0.0058)"
+        "interpretation": "Groups have significantly different means (p=0.0024)"
       },
       "kruskal_wallis": {
-        "statistic": 507.8810671811635,
-        "p_value": 9.132972519408195e-103,
+        "statistic": 480.65938938631285,
+        "p_value": 5.976082128544215e-97,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 507.8810671811635,
-        "p_value": 9.132972519408195e-103,
+        "statistic": 480.65938938631285,
+        "p_value": 5.976082128544215e-97,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
@@ -86,9 +86,9 @@
         "Information Technology",
         "Communication Services",
         "Consumer Discretionary",
-        "Financials",
         "Health Care",
         "Consumer Staples",
+        "Financials",
         "Energy",
         "Industrials",
         "Materials",

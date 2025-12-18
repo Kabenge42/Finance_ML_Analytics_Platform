@@ -927,6 +927,45 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
         "dtype": "float",
         "role": "feature",
     },  # Technical momentum composite
+    # ==================================================================================
+    # ESTIMATED VS. ACTUAL ANALYTICS (Phase 9.3 - Earnings Analytics Enhancement)
+    # ==================================================================================
+    "eps_surprise_pct": {"dtype": "float", "role": "percentage"},
+    "eps_surprise_magnitude": {"dtype": "category", "role": "categorical"},
+    "revenue_surprise_pct": {"dtype": "float", "role": "percentage"},
+    "revenue_beat_indicator": {"dtype": "bool", "role": "feature"},
+    "ebitda_surprise_pct": {"dtype": "float", "role": "percentage"},
+    "earnings_beat_indicator": {"dtype": "bool", "role": "feature"},
+    "surprise_momentum_score": {"dtype": "float", "role": "feature"},
+    "positive_revision_momentum": {"dtype": "bool", "role": "feature"},
+    "consensus_uncertainty_score": {"dtype": "float", "role": "feature"},
+    "estimate_revision_acceleration": {"dtype": "float", "role": "percentage"},
+    "accelerating_upgrades_flag": {"dtype": "bool", "role": "feature"},
+    # ==================================================================================
+    # GAAP VS. ADJUSTED ANALYTICS (Phase 9.3 - Earnings Quality)
+    # ==================================================================================
+    "eps_adjustment_spread_ltm": {"dtype": "float", "role": "feature"},
+    "eps_adjustment_ratio_ltm": {"dtype": "float", "role": "ratio"},
+    "eps_adjustment_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "eps_quality_flag_ltm": {"dtype": "bool", "role": "feature"},
+    "eps_adjustment_spread_fy": {"dtype": "float", "role": "feature"},
+    "eps_adjustment_ratio_fy": {"dtype": "float", "role": "ratio"},
+    "eps_adjustment_pct_fy": {"dtype": "float", "role": "percentage"},
+    "net_income_adjustment_spread_ltm": {"dtype": "float", "role": "market_value"},
+    "net_income_adjustment_ratio_ltm": {"dtype": "float", "role": "ratio"},
+    "net_income_adjustment_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "net_income_adjustment_spread_fy": {"dtype": "float", "role": "market_value"},
+    "net_income_adjustment_ratio_fy": {"dtype": "float", "role": "ratio"},
+    "ebitda_adjustment_spread_ltm": {"dtype": "float", "role": "market_value"},
+    "ebitda_adjustment_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "ebitda_adjustment_spread_fy": {"dtype": "float", "role": "market_value"},
+    "ebit_adjustment_spread_ltm": {"dtype": "float", "role": "market_value"},
+    "ebit_adjustment_pct_ltm": {"dtype": "float", "role": "percentage"},
+    "ebit_adjustment_spread_fy": {"dtype": "float", "role": "market_value"},
+    "adjustment_consistency_score": {"dtype": "float", "role": "feature"},
+    "earnings_quality_warning_flag": {"dtype": "bool", "role": "feature"},
+    "earnings_quality_score": {"dtype": "float", "role": "feature"},
+    "exceptional_items_impact_ratio": {"dtype": "float", "role": "ratio"},
 }
 
 
@@ -1077,6 +1116,44 @@ PHASE93_FEATURE_INPUTS: Dict[str, List[str]] = {
         "eps_norm_est_avg_fy1e",
         "ebit_est_med_ntm",
         "ebit_est_med_fy1e",
+    ],
+    "earnings_quality": [
+        # Estimated vs. Actual Analytics inputs
+        "eps_adj_ltm",
+        "net_eps_basic_ltm",
+        "total_revenues_ltm",
+        "ebitda_ltm",
+        "eps_norm_est_avg_ntm",
+        "eps_norm_est_avg_fy1e",
+        "revenues_est_avg_ntm",
+        "revenues_est_avg_fy1e",
+        "ebitda_est_avg_ntm",
+        "ebitda_est_avg_fy1e",
+        "eps_est_avg_rev_pct_fy1e_1m",
+        "eps_est_avg_rev_pct_fy1e_3m",
+        "eps_est_avg_rev_pct_fy1e_6m",
+        # GAAP vs. Adjusted Analytics inputs
+        "net_eps_basic_fy",
+        "eps_adj_fy",
+        "eps_adj_1fy",
+        "eps_gaap_est_avg_fy1e",
+        "eps_gaap_est_avg_ntm",
+        "net_income_is_ltm",
+        "net_income_is_fy",
+        "net_income_adj_ltm",
+        "net_income_adj_fy",
+        "ebitda_fy",
+        "ebitda_adj_ltm",
+        "ebitda_adj_fy",
+        "ebit_ltm",
+        "ebit_fy",
+        "ebit_adj_ltm",
+        "ebit_adj_fy",
+        # Exceptional items
+        "impairment_of_goodwill_ltm",
+        "asset_writedown_ltm",
+        "restructuring_charges_ltm",
+        "merger_and_restructuring_charges_ltm",
     ],
 }
 

@@ -1,12 +1,12 @@
 {
   "phase": "9.3",
   "data_source": "all_stocks_features DataFrame (ETL Data Explorer)",
-  "timestamp": "2025-12-15T18:17:40.113982",
-  "total_stocks": 6666,
-  "total_columns": 699,
-  "phase93_features_present": 190,
-  "phase93_features_expected": 193,
-  "coverage_percentage": 98.44559585492227,
+  "timestamp": "2025-12-18T11:53:25.646782",
+  "total_stocks": 6976,
+  "total_columns": 652,
+  "phase93_features_present": 222,
+  "phase93_features_expected": 223,
+  "coverage_percentage": 99.55156950672645,
   "category_coverage": {
     "Momentum & Technical": {
       "present": 25,
@@ -14,13 +14,13 @@
       "coverage_pct": 100.0
     },
     "Valuation Ratios": {
-      "present": 22,
+      "present": 23,
       "expected": 23,
-      "coverage_pct": 95.65217391304348
+      "coverage_pct": 100.0
     },
     "Profitability": {
-      "present": 14,
-      "expected": 14,
+      "present": 13,
+      "expected": 13,
       "coverage_pct": 100.0
     },
     "Quality & Risk": {
@@ -35,8 +35,8 @@
     },
     "Capital Allocation": {
       "present": 21,
-      "expected": 23,
-      "coverage_pct": 91.30434782608695
+      "expected": 21,
+      "coverage_pct": 100.0
     },
     "Analyst Sentiment": {
       "present": 10,
@@ -87,8 +87,13 @@
       "present": 9,
       "expected": 9,
       "coverage_pct": 100.0
+    },
+    "Earnings Quality": {
+      "present": 32,
+      "expected": 33,
+      "coverage_pct": 96.96969696969697
     }
   },
-  "categories_with_features": 16,
-  "feature_engineering_duration_sec": 0.7721936702728271
+  "categories_with_features": 17,
+  "feature_engineering_duration_sec": 0.8597221374511719
 }

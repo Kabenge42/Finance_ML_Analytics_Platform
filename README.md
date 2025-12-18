@@ -1,10 +1,10 @@
 # Finance ML Analytics Platform
 
-**Version 0.9.4** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
+**Version 0.9.5** — Comprehensive ML Platform for Equity Analysis and Price Target Prediction
 
-> **Documentation Last Updated:** 2025-12-15  
-> **Latest Release**: v0.9.4 (see CHANGELOG.md)  
-> **Model Version**: v9_9  
+> **Documentation Last Updated:** 2025-12-18  
+> **Latest Release**: v0.9.5 (see CHANGELOG.md)  
+> **Model Version**: v9_10  
 > **Note**: Package versions are synchronized across pyproject.toml, CHANGELOG.md, and environment_variables.txt where
 > applicable.
 
@@ -91,10 +91,11 @@ selective execution tips. TODO: Add containerization instructions (Docker) if/wh
   regional screening tables + CSV fallback for multi-region equity data (US, EU, APAC, ROTW)
 - 🧹 **Data Quality**: 6-step imputation pipeline (zero-fill, KNN, price-based, median) with validation; outlier safety
   rails (winsorization, robust loss, clipping); schema-aware datatype detection
-- 🔧 **Feature Engineering**: Phase 9.3 Schema Version 1.3 (310 columns, +48 new): Financial ratios, margins, volatility,
+- 🔧 **Feature Engineering**: Phase 9.3 Schema Version 1.4 (343 columns, +33 new): Financial ratios, margins, volatility,
   technical indicators (EMA 20D/50D/100D/250D, 52W High/Low), valuation time-series (EV/Sales, EV/EBITDA, P/E extended),
   revenue forecasts (NTM, FY1E), dividend reliability (frequency, streak, coverage), employment dynamics (FY/FQ
-  metrics), sector-specific features
+  metrics), sector-specific features, **NEW: Earnings Quality Analytics** (33 features for EPS/revenue surprise,
+  GAAP vs. Adjusted metrics, earnings quality scoring)
 - 🤖 **ML Models**: Event classification, sector-optimized regression, quantile models with conformal calibration,
   stacking ensembles
 - 📈 **Analytics**: Mispricing scores, stock ranking, analyst comparison, benchmarking, risk metrics
@@ -1040,7 +1041,47 @@ python tools\run_earnings_monitor.py --data-source auto --out-dir outputs\eda\ea
 
 ## Recent Updates
 
-### Version 0.9.4 (Current Release - 2025-12-10)
+### Version 0.9.5 (Current Release - 2025-12-18)
+
+**Feature Engineering Enhancements: Earnings Quality Analytics**:
+
+- **NEW: Earnings Quality Category** (33 features):
+    - `engineer_estimated_vs_actual_analytics()`: 11 features for EPS/revenue surprise analysis
+        - `eps_surprise_pct`, `eps_surprise_magnitude`, `revenue_surprise_pct`, `revenue_beat_indicator`
+        - `ebitda_surprise_pct`, `earnings_beat_indicator`, `surprise_momentum_score`
+        - `positive_revision_momentum`, `consensus_uncertainty_score`, `estimate_revision_acceleration`
+    - `engineer_gaap_vs_adjusted_analytics()`: 22 features for GAAP vs. Adjusted earnings comparison
+        - EPS/Net Income/EBITDA/EBIT adjustment metrics (spread, ratio, percentage)
+        - Quality flags: `eps_quality_flag_ltm`, `earnings_quality_warning_flag`
+        - Composite scores: `adjustment_consistency_score`, `earnings_quality_score` (0-100)
+- **ETL Integration**: New `engineer_earnings_analytics` flag in `FeatureEngineeringConfig`
+- **Schema Updates**: 33 new column definitions in `COLUMN_SCHEMA`, new `"earnings_quality"` category in
+  `PHASE93_FEATURE_INPUTS`
+- **Phase 9.3 Feature Categories**: Updated from 196 to **229 features** across **17 categories**
+- **Documentation**: `docs/code_guidelines.md` v1.12 with complete usage examples
+
+**Usage Example**:
+
+```python
+from finance_ml.ml_workflow.features.advanced import (
+    engineer_estimated_vs_actual_analytics,
+    engineer_gaap_vs_adjusted_analytics
+)
+
+# Apply earnings analytics
+df_earnings = engineer_estimated_vs_actual_analytics(all_stocks_features)
+df_earnings = engineer_gaap_vs_adjusted_analytics(df_earnings)
+
+# Filter for high-quality earnings beats
+quality_beats = df_earnings[
+    (df_earnings['earnings_beat_indicator'] == True) &
+    (df_earnings['earnings_quality_score'] > 80)
+]
+```
+
+See [CHANGELOG.md](CHANGELOG.md) for complete details.
+
+### Version 0.9.4 (Previous Release - 2025-12-10)
 
 **Phase 9.5 Notebook Integration and ETL Pipeline Test Coverage**:
 

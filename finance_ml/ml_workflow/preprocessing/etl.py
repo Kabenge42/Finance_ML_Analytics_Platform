@@ -156,7 +156,7 @@ class ImputationConfig:
 
     apply_imputation: bool = True
     strategy: Literal["6step", "4step", "median_only"] = "6step"
-    knn_neighbors: int = 15
+    knn_neighbors: int = 5
     sector_column: str = "sector"
     reference_price_column: str = "last_price"
     impute_categorical_columns: bool = True
@@ -180,7 +180,7 @@ class SemanticTransformConfig:
 class DataSanitizationConfig:
     """Configuration for ETL Stage 8: Data Sanitization & Winsorization."""
 
-    sanitize_data: bool = False
+    sanitize_data: bool = True
     apply_winsorization: bool = False
     winsorize_lower_percentile: float = 0.10
     winsorize_upper_percentile: float = 0.90
@@ -202,8 +202,11 @@ class FeatureEngineeringConfig:
     """Configuration for Feature Engineering (Phase 9.3)."""
 
     enabled: bool = False
-    preset: str = "standard"
+    preset: str = "comprehensive"
     categories: Optional[List[str]] = None
+    engineer_earnings_analytics: bool = (
+        True  # Enable Estimated vs. Actual and GAAP vs. Adjusted analytics
+    )
 
 
 @dataclass
@@ -2117,7 +2120,7 @@ class ETLPipeline:
 
         # Update metrics with classification counts
         if self.metrics:
-            self.metrics.semantic_classification_applied = True
+            self.metrics.semantic_classification_applied = False
             self.metrics.price_columns_count = len(classification["price"])
             self.metrics.market_value_columns_count = len(
                 classification["market_value"]
@@ -2265,6 +2268,19 @@ class ETLPipeline:
                 df,
                 preset=self.config.feature_engineering.preset,
             )
+
+            # Apply earnings analytics if enabled
+            if self.config.feature_engineering.engineer_earnings_analytics:
+                logger.info(
+                    "Applying earnings analytics features (Estimated vs. Actual and GAAP vs. Adjusted)"
+                )
+                from finance_ml.ml_workflow.features.advanced import (
+                    engineer_estimated_vs_actual_analytics,
+                    engineer_gaap_vs_adjusted_analytics,
+                )
+
+                df_with_features = engineer_estimated_vs_actual_analytics(df_with_features)
+                df_with_features = engineer_gaap_vs_adjusted_analytics(df_with_features)
 
             new_cols = set(df_with_features.columns) - original_cols
             logger.info(f"Added {len(new_cols)} engineered features")

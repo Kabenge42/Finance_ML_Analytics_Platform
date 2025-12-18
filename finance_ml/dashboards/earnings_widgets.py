@@ -51,6 +51,7 @@ CATEGORY_COLORS = {
     "employment": "#34495e",  # Dark gray
     "dividends": "#27ae60",  # Green
     "forecasts": "#2980b9",  # Blue
+    "earnings_quality": "#e67e22",  # Orange - GAAP vs Adjusted, surprise analytics
 }
 
 # Valid mode options
@@ -67,6 +68,7 @@ EarningsMode = Literal[
     "growth",
     "cash_flow",
     "employment",
+    "earnings_quality",
 ]
 
 
@@ -143,6 +145,34 @@ def get_category_metrics(
             ]
             result["dividends"].extend(supplemental_dividends)
 
+        # Earnings Quality supplemental metrics (Phase 9.3 output features)
+        if "earnings_quality" in result:
+            supplemental_earnings_quality = [
+                # Estimated vs. Actual analytics outputs
+                "eps_surprise_pct",
+                "earnings_beat_indicator",
+                "eps_surprise_magnitude",
+                "revenue_surprise_pct",
+                "revenue_beat_indicator",
+                "ebitda_surprise_pct",
+                "surprise_momentum_score",
+                "positive_revision_momentum",
+                "consensus_uncertainty_score",
+                "estimate_revision_acceleration",
+                "accelerating_upgrades_flag",
+                # GAAP vs. Adjusted analytics outputs
+                "eps_adjustment_ratio_ltm",
+                "eps_adjustment_pct_ltm",
+                "eps_quality_flag_ltm",
+                "net_income_adjustment_ratio_ltm",
+                "ebitda_adjustment_pct_ltm",
+                "adjustment_consistency_score",
+                "earnings_quality_warning_flag",
+                "earnings_quality_score",
+                "exceptional_items_impact_ratio",
+            ]
+            result["earnings_quality"].extend(supplemental_earnings_quality)
+
     return result
 
 
@@ -169,12 +199,15 @@ def create_earnings_calendar_dashboard(
     - **employment**: Workforce metrics (operational health)
     - **dividends**: Dividend yields, streaks, payments (income metrics)
     - **forecasts**: Analyst estimates (earnings expectations)
+    - **earnings_quality**: EPS/revenue surprises, GAAP vs. Adjusted analytics,
+      earnings quality scores, adjustment flags (earnings integrity assessment)
 
     Args:
         df: Input DataFrame containing stock data.
         reference_date: Date to compare next_earnings against. Defaults to today.
         top_n: Number of top companies (by Market Cap) to include.
-        mode: Display mode - 'all', 'earnings', 'dividends', or specific category name.
+        mode: Display mode - 'all', 'earnings', 'dividends', 'earnings_quality',
+            or specific category name.
         categories: Optional list of specific PHASE93 categories to include.
             Overrides mode if provided.
 
@@ -236,6 +269,7 @@ def create_earnings_calendar_dashboard(
             "cash_flow",
             "dividends",
             "forecasts",
+            "earnings_quality",
         ]
     elif mode == "earnings":
         # Earnings-focused categories
@@ -245,6 +279,7 @@ def create_earnings_calendar_dashboard(
             "growth",
             "momentum",
             "forecasts",
+            "earnings_quality",
         ]
     elif mode == "dividends":
         # Dividend-focused categories

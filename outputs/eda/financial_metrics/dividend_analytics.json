@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-12-16T15:09:53.746417",
-  "total_stocks_analyzed": 6940,
+  "timestamp": "2025-12-18T11:58:12.327316",
+  "total_stocks_analyzed": 6976,
   "phase93_dividends_metrics": [
     "dividend_streak",
     "dividend_record_amount",
@@ -40,1589 +40,1603 @@
   "phase93_category_analysis": {
     "dividends": {
       "dividend_streak": {
-        "count": 6940,
-        "mean": 2.341498613357544,
+        "count": 6976,
+        "mean": 2.3410263061523438,
         "median": 1.0,
-        "std": 5.513476371765137,
-        "non_zero_pct": 70.46109510086455
+        "std": 5.488100051879883,
+        "non_zero_pct": 69.50974770642202
       },
       "dividend_record_amount": {
-        "count": 6940,
-        "mean": 30.251527786254883,
+        "count": 6976,
+        "mean": 32.847511291503906,
         "median": 0.5,
-        "std": 424.27130126953125,
-        "non_zero_pct": 99.98559077809799
+        "std": 413.9376525878906,
+        "non_zero_pct": 99.98566513761467
       },
       "dividend_per_share_ltm": {
-        "count": 6940,
-        "mean": 1.1816902160644531,
-        "median": 0.3199999928474426,
-        "std": 22.972517013549805,
-        "non_zero_pct": 97.75216138328531
+        "count": 6976,
+        "mean": 1.2799038887023926,
+        "median": 0.3499999940395355,
+        "std": 23.166786193847656,
+        "non_zero_pct": 98.25114678899082
       },
       "common_dividends_paid_ltm": {
-        "count": 6940,
-        "mean": -288.14692363112385,
-        "median": -63.405,
-        "std": 1487.314276844636,
-        "non_zero_pct": 98.77521613832853
+        "count": 6976,
+        "mean": -345.2867158830275,
+        "median": -102.13499999999999,
+        "std": 1512.4313401583076,
+        "non_zero_pct": 99.01089449541286
       },
       "div_yield_ltm": {
-        "count": 6940,
-        "mean": 0.03180256485939026,
+        "count": 6976,
+        "mean": 0.0319870263338089,
         "median": 0.025200000032782555,
-        "std": 0.044514864683151245,
-        "non_zero_pct": 99.55331412103746
+        "std": 0.044666681438684464,
+        "non_zero_pct": 99.61295871559633
       },
       "div_yield_ntm": {
-        "count": 6940,
-        "mean": 0.02695426344871521,
-        "median": 0.021800000220537186,
-        "std": 0.03031007945537567,
-        "non_zero_pct": 83.32853025936599
+        "count": 6976,
+        "mean": 0.0273873433470726,
+        "median": 0.022099999710917473,
+        "std": 0.030648840591311455,
+        "non_zero_pct": 83.87327981651376
       },
       "div_yield_ttm": {
-        "count": 6940,
-        "mean": 0.03546684607863426,
-        "median": 0.026799999177455902,
-        "std": 0.08402625471353531,
+        "count": 6976,
+        "mean": 0.03422621637582779,
+        "median": 0.02669999934732914,
+        "std": 0.061527520418167114,
         "non_zero_pct": 100.0
       }
     }
   },
   "yield_analysis": {
     "column": "div_yield_ltm",
-    "total_stocks": 6940,
-    "dividend_payers": 6909,
-    "dividend_payer_pct": 99.55331412103746,
-    "mean_yield": 0.03194526210427284,
+    "total_stocks": 6976,
+    "dividend_payers": 6949,
+    "dividend_payer_pct": 99.61295871559633,
+    "mean_yield": 0.032111313194036484,
     "median_yield": 0.025200000032782555,
-    "std_yield": 0.04456351324915886,
+    "std_yield": 0.04470876604318619,
     "min_yield": 9.999999747378752e-05,
-    "max_yield": 1.8113000392913818,
-    "q25": 0.01730000041425228,
-    "q75": 0.0357000008225441
+    "max_yield": 1.832900047302246,
+    "q25": 0.016699999570846558,
+    "q75": 0.03610000014305115
   },
   "payout_analysis": {},
   "dividend_payers": {},
   "sustainability_analysis": {
     "cfo_ltm": {
-      "count": 6940,
-      "mean": 892.792,
-      "median": 176.91500000000002,
-      "positive_pct": 87.23342939481267
+      "count": 6976,
+      "mean": 916.8589148509175,
+      "median": 269.855,
+      "positive_pct": 87.65768348623854
     },
     "fcf_ltm": {
-      "count": 6940,
-      "mean": 400.25592939481265,
-      "median": 80.49,
-      "positive_pct": 76.41210374639769
+      "count": 6976,
+      "mean": 340.21031250000004,
+      "median": 130.23000000000002,
+      "positive_pct": 77.70928899082568
     },
     "cfi_ltm": {
-      "count": 6940,
-      "mean": -899.9796801152737,
-      "median": -93.265,
-      "positive_pct": 12.622478386167145
+      "count": 6976,
+      "mean": -1145.053949254587,
+      "median": -144.34,
+      "positive_pct": 12.170298165137615
     },
     "cff_ltm": {
-      "count": 6940,
-      "mean": -0.04538472622481338,
-      "median": -40.11,
-      "positive_pct": 30.7492795389049
+      "count": 6976,
+      "mean": 224.61382024082573,
+      "median": -62.14,
+      "positive_pct": 30.891628440366976
     },
     "cff_fy": {
-      "count": 6940,
-      "mean": -113.9977550432276,
-      "median": -39.06,
-      "positive_pct": 30.662824207492793
+      "count": 6976,
+      "mean": 53.41238675458713,
+      "median": -58.37,
+      "positive_pct": 30.805619266055047
     }
   },
   "by_sector": {
     "Information Technology": {
-      "total_stocks": 789,
-      "dividend_payers": 785,
-      "dividend_payer_pct": 99.49302915082383,
-      "mean_yield": 0.021447641775012016,
+      "total_stocks": 836,
+      "dividend_payers": 830,
+      "dividend_payer_pct": 99.28229665071771,
+      "mean_yield": 0.020546989515423775,
       "median_yield": 0.025200000032782555
     },
     "Communication Services": {
-      "total_stocks": 317,
-      "dividend_payers": 316,
-      "dividend_payer_pct": 99.6845425867508,
-      "mean_yield": 0.03497341647744179,
+      "total_stocks": 336,
+      "dividend_payers": 335,
+      "dividend_payer_pct": 99.70238095238095,
+      "mean_yield": 0.03495820611715317,
       "median_yield": 0.025200000032782555
     },
     "Consumer Discretionary": {
-      "total_stocks": 826,
-      "dividend_payers": 823,
-      "dividend_payer_pct": 99.63680387409201,
-      "mean_yield": 0.03456427529454231,
+      "total_stocks": 805,
+      "dividend_payers": 804,
+      "dividend_payer_pct": 99.87577639751552,
+      "mean_yield": 0.03325298801064491,
       "median_yield": 0.025200000032782555
     },
-    "Financials": {
-      "total_stocks": 977,
-      "dividend_payers": 974,
-      "dividend_payer_pct": 99.69293756397134,
-      "mean_yield": 0.03703223913908005,
-      "median_yield": 0.027300000190734863
-    },
     "Health Care": {
-      "total_stocks": 711,
-      "dividend_payers": 709,
-      "dividend_payer_pct": 99.71870604781998,
-      "mean_yield": 0.022705640643835068,
+      "total_stocks": 649,
+      "dividend_payers": 648,
+      "dividend_payer_pct": 99.84591679506933,
+      "mean_yield": 0.0226060189306736,
       "median_yield": 0.025200000032782555
     },
     "Consumer Staples": {
-      "total_stocks": 534,
-      "dividend_payers": 531,
-      "dividend_payer_pct": 99.43820224719101,
-      "mean_yield": 0.033181920647621155,
+      "total_stocks": 481,
+      "dividend_payers": 478,
+      "dividend_payer_pct": 99.37629937629939,
+      "mean_yield": 0.03307070955634117,
       "median_yield": 0.025200000032782555
     },
+    "Financials": {
+      "total_stocks": 1125,
+      "dividend_payers": 1121,
+      "dividend_payer_pct": 99.64444444444445,
+      "mean_yield": 0.03718492388725281,
+      "median_yield": 0.027699999511241913
+    },
     "Energy": {
-      "total_stocks": 297,
-      "dividend_payers": 293,
-      "dividend_payer_pct": 98.65319865319864,
-      "mean_yield": 0.05598669871687889,
-      "median_yield": 0.03319999948143959
+      "total_stocks": 312,
+      "dividend_payers": 309,
+      "dividend_payer_pct": 99.03846153846155,
+      "mean_yield": 0.05554886907339096,
+      "median_yield": 0.03519999980926514
     },
     "Industrials": {
-      "total_stocks": 1330,
-      "dividend_payers": 1324,
-      "dividend_payer_pct": 99.54887218045113,
-      "mean_yield": 0.028003472834825516,
+      "total_stocks": 1310,
+      "dividend_payers": 1307,
+      "dividend_payer_pct": 99.77099236641222,
+      "mean_yield": 0.02909441664814949,
       "median_yield": 0.025200000032782555
     },
     "Materials": {
-      "total_stocks": 707,
-      "dividend_payers": 703,
-      "dividend_payer_pct": 99.43422913719944,
-      "mean_yield": 0.03190440684556961,
+      "total_stocks": 643,
+      "dividend_payers": 639,
+      "dividend_payer_pct": 99.37791601866252,
+      "mean_yield": 0.03232816979289055,
       "median_yield": 0.025200000032782555
     },
     "Utilities": {
-      "total_stocks": 234,
-      "dividend_payers": 234,
+      "total_stocks": 264,
+      "dividend_payers": 264,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03998461365699768,
-      "median_yield": 0.034299999475479126
+      "mean_yield": 0.039940908551216125,
+      "median_yield": 0.032999999821186066
     },
     "Real Estate": {
-      "total_stocks": 218,
-      "dividend_payers": 217,
-      "dividend_payer_pct": 99.54128440366972,
-      "mean_yield": 0.04295944795012474,
+      "total_stocks": 215,
+      "dividend_payers": 214,
+      "dividend_payer_pct": 99.53488372093024,
+      "mean_yield": 0.0425570048391819,
       "median_yield": 0.025200000032782555
     }
   },
   "by_region": {
     "United States and Canada": {
-      "total_stocks": 1803,
-      "dividend_payers": 1798,
-      "dividend_payer_pct": 99.72268441486412,
-      "mean_yield": 0.02569727599620819,
+      "total_stocks": 1805,
+      "dividend_payers": 1801,
+      "dividend_payer_pct": 99.77839335180056,
+      "mean_yield": 0.02593342587351799,
       "median_yield": 0.025200000032782555
     },
     "Asia / Pacific": {
-      "total_stocks": 2055,
+      "total_stocks": 2054,
       "dividend_payers": 2046,
-      "dividend_payer_pct": 99.56204379562044,
-      "mean_yield": 0.028695212677121162,
+      "dividend_payer_pct": 99.61051606621227,
+      "mean_yield": 0.02833963744342327,
       "median_yield": 0.025200000032782555
     },
     "Europe": {
-      "total_stocks": 2056,
-      "dividend_payers": 2051,
-      "dividend_payer_pct": 99.7568093385214,
-      "mean_yield": 0.036182206124067307,
+      "total_stocks": 2053,
+      "dividend_payers": 2050,
+      "dividend_payer_pct": 99.85387238188017,
+      "mean_yield": 0.03630878031253815,
       "median_yield": 0.025200000032782555
     },
     "Latin America and Caribbean": {
-      "total_stocks": 349,
-      "dividend_payers": 345,
-      "dividend_payer_pct": 98.8538681948424,
-      "mean_yield": 0.04237738996744156,
-      "median_yield": 0.026799999177455902
+      "total_stocks": 353,
+      "dividend_payers": 349,
+      "dividend_payer_pct": 98.86685552407933,
+      "mean_yield": 0.04322464019060135,
+      "median_yield": 0.027400000020861626
     },
     "Africa / Middle East": {
-      "total_stocks": 677,
-      "dividend_payers": 669,
-      "dividend_payer_pct": 98.81831610044313,
-      "mean_yield": 0.040307626128196716,
-      "median_yield": 0.025699999183416367
+      "total_stocks": 711,
+      "dividend_payers": 703,
+      "dividend_payer_pct": 98.87482419127988,
+      "mean_yield": 0.0411580391228199,
+      "median_yield": 0.027799999341368675
     }
   },
   "by_size_class": {
     "Large Cap": {
-      "total_stocks": 1356,
-      "dividend_payers": 1351,
-      "dividend_payer_pct": 99.63126843657817,
-      "mean_yield": 0.027371874079108238,
+      "total_stocks": 2026,
+      "dividend_payers": 2020,
+      "dividend_payer_pct": 99.70384995064165,
+      "mean_yield": 0.027889009565114975,
       "median_yield": 0.025200000032782555
     },
     "Mid Cap": {
-      "total_stocks": 2879,
-      "dividend_payers": 2870,
-      "dividend_payer_pct": 99.68739145536645,
-      "mean_yield": 0.03085961379110813,
+      "total_stocks": 2962,
+      "dividend_payers": 2952,
+      "dividend_payer_pct": 99.66239027683997,
+      "mean_yield": 0.03052642196416855,
       "median_yield": 0.025200000032782555
     },
     "Small Cap": {
-      "total_stocks": 2705,
-      "dividend_payers": 2688,
-      "dividend_payer_pct": 99.37153419593345,
-      "mean_yield": 0.03540301322937012,
+      "total_stocks": 1988,
+      "dividend_payers": 1977,
+      "dividend_payer_pct": 99.44668008048289,
+      "mean_yield": 0.0387919545173645,
       "median_yield": 0.025200000032782555
     }
   },
   "by_style_class": {
     "Growth": {
-      "total_stocks": 595,
-      "dividend_payers": 592,
-      "dividend_payer_pct": 99.49579831932773,
-      "mean_yield": 0.015725336968898773,
-      "median_yield": 0.016249999403953552
+      "total_stocks": 693,
+      "dividend_payers": 692,
+      "dividend_payer_pct": 99.85569985569985,
+      "mean_yield": 0.014651155099272728,
+      "median_yield": 0.011649999767541885
     },
     "Core": {
-      "total_stocks": 4509,
-      "dividend_payers": 4494,
-      "dividend_payer_pct": 99.66733200266134,
-      "mean_yield": 0.026307720690965652,
+      "total_stocks": 4532,
+      "dividend_payers": 4516,
+      "dividend_payer_pct": 99.64695498676082,
+      "mean_yield": 0.026605935767292976,
       "median_yield": 0.025200000032782555
     },
     "Value": {
-      "total_stocks": 1836,
-      "dividend_payers": 1823,
-      "dividend_payer_pct": 99.29193899782135,
-      "mean_yield": 0.05110998451709747,
-      "median_yield": 0.0364999994635582
+      "total_stocks": 1751,
+      "dividend_payers": 1741,
+      "dividend_payer_pct": 99.42889777270132,
+      "mean_yield": 0.053331706672906876,
+      "median_yield": 0.038600001484155655
     }
   },
   "by_industry": {
     "Semiconductors and Semiconductor Equipment": {
-      "total_stocks": 171,
-      "dividend_payers": 170,
-      "dividend_payer_pct": 99.41520467836257,
-      "mean_yield": 0.018798822537064552,
-      "median_yield": 0.022700000554323196
+      "total_stocks": 190,
+      "dividend_payers": 186,
+      "dividend_payer_pct": 97.89473684210527,
+      "mean_yield": 0.016572581604123116,
+      "median_yield": 0.014100000262260437
     },
     "Technology Hardware Storage and Peripherals": {
-      "total_stocks": 51,
-      "dividend_payers": 50,
-      "dividend_payer_pct": 98.0392156862745,
-      "mean_yield": 0.026353999972343445,
+      "total_stocks": 57,
+      "dividend_payers": 57,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.026799999177455902,
       "median_yield": 0.025200000032782555
     },
     "Interactive Media and Services": {
-      "total_stocks": 45,
-      "dividend_payers": 44,
-      "dividend_payer_pct": 97.77777777777777,
-      "mean_yield": 0.02462727390229702,
+      "total_stocks": 49,
+      "dividend_payers": 48,
+      "dividend_payer_pct": 97.95918367346938,
+      "mean_yield": 0.02265624888241291,
       "median_yield": 0.025200000032782555
     },
     "Software": {
-      "total_stocks": 222,
-      "dividend_payers": 222,
+      "total_stocks": 220,
+      "dividend_payers": 220,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.022002700716257095,
+      "mean_yield": 0.021032270044088364,
       "median_yield": 0.025200000032782555
     },
     "Broadline Retail": {
-      "total_stocks": 54,
-      "dividend_payers": 54,
+      "total_stocks": 49,
+      "dividend_payers": 49,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.026516666635870934,
+      "mean_yield": 0.02371428720653057,
       "median_yield": 0.025200000032782555
     },
     "Automobiles": {
-      "total_stocks": 39,
-      "dividend_payers": 39,
+      "total_stocks": 64,
+      "dividend_payers": 64,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.0323692262172699,
-      "median_yield": 0.025200000032782555
-    },
-    "Financial Services": {
-      "total_stocks": 119,
-      "dividend_payers": 118,
-      "dividend_payer_pct": 99.15966386554622,
-      "mean_yield": 0.032833900302648544,
+      "mean_yield": 0.028815623372793198,
       "median_yield": 0.025200000032782555
     },
     "Pharmaceuticals": {
-      "total_stocks": 168,
-      "dividend_payers": 167,
-      "dividend_payer_pct": 99.40476190476191,
-      "mean_yield": 0.023371856659650803,
+      "total_stocks": 163,
+      "dividend_payers": 162,
+      "dividend_payer_pct": 99.38650306748467,
+      "mean_yield": 0.02363888919353485,
       "median_yield": 0.025200000032782555
     },
     "Consumer Staples Distribution and Retail": {
-      "total_stocks": 126,
-      "dividend_payers": 125,
-      "dividend_payer_pct": 99.20634920634922,
-      "mean_yield": 0.034143198281526566,
+      "total_stocks": 113,
+      "dividend_payers": 112,
+      "dividend_payer_pct": 99.11504424778761,
+      "mean_yield": 0.032494641840457916,
       "median_yield": 0.025200000032782555
     },
     "Banks": {
-      "total_stocks": 414,
-      "dividend_payers": 412,
-      "dividend_payer_pct": 99.51690821256038,
-      "mean_yield": 0.03908324986696243,
-      "median_yield": 0.029899999499320984
+      "total_stocks": 474,
+      "dividend_payers": 471,
+      "dividend_payer_pct": 99.36708860759494,
+      "mean_yield": 0.04004840925335884,
+      "median_yield": 0.031199999153614044
+    },
+    "Financial Services": {
+      "total_stocks": 135,
+      "dividend_payers": 134,
+      "dividend_payer_pct": 99.25925925925925,
+      "mean_yield": 0.032741792500019073,
+      "median_yield": 0.025200000032782555
     },
     "Oil Gas and Consumable Fuels": {
-      "total_stocks": 234,
-      "dividend_payers": 230,
-      "dividend_payer_pct": 98.29059829059828,
-      "mean_yield": 0.05598217621445656,
-      "median_yield": 0.0385500006377697
+      "total_stocks": 242,
+      "dividend_payers": 239,
+      "dividend_payer_pct": 98.7603305785124,
+      "mean_yield": 0.05621297284960747,
+      "median_yield": 0.04019999876618385
     },
     "Entertainment": {
-      "total_stocks": 85,
-      "dividend_payers": 85,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.026024701073765755,
-      "median_yield": 0.025200000032782555
-    },
-    "Biotechnology": {
-      "total_stocks": 198,
-      "dividend_payers": 198,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.023541411384940147,
-      "median_yield": 0.025200000032782555
-    },
-    "Specialty Retail": {
-      "total_stocks": 166,
-      "dividend_payers": 166,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03616565838456154,
-      "median_yield": 0.025200000032782555
-    },
-    "Household Products": {
-      "total_stocks": 23,
-      "dividend_payers": 23,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.0283565241843462,
-      "median_yield": 0.025200000032782555
-    },
-    "Aerospace and Defense": {
-      "total_stocks": 105,
-      "dividend_payers": 104,
-      "dividend_payer_pct": 99.04761904761905,
-      "mean_yield": 0.013833653181791306,
-      "median_yield": 0.01080000028014183
-    },
-    "Communications Equipment": {
-      "total_stocks": 40,
-      "dividend_payers": 40,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.022919999435544014,
-      "median_yield": 0.025200000032782555
-    },
-    "Health Care Providers and Services": {
-      "total_stocks": 127,
-      "dividend_payers": 126,
-      "dividend_payer_pct": 99.21259842519686,
-      "mean_yield": 0.02468809299170971,
-      "median_yield": 0.02459999918937683
-    },
-    "Beverages": {
-      "total_stocks": 85,
-      "dividend_payers": 85,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03230823576450348,
-      "median_yield": 0.031300000846385956
-    },
-    "IT Services": {
-      "total_stocks": 104,
-      "dividend_payers": 103,
-      "dividend_payer_pct": 99.03846153846155,
-      "mean_yield": 0.025126207619905472,
-      "median_yield": 0.025200000032782555
-    },
-    "Capital Markets": {
-      "total_stocks": 231,
-      "dividend_payers": 231,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03914112597703934,
-      "median_yield": 0.0272000003606081
-    },
-    "Machinery": {
-      "total_stocks": 272,
-      "dividend_payers": 270,
-      "dividend_payer_pct": 99.26470588235294,
-      "mean_yield": 0.021890370175242424,
-      "median_yield": 0.01940000057220459
-    },
-    "Consumer Finance": {
-      "total_stocks": 43,
-      "dividend_payers": 43,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.030406976118683815,
-      "median_yield": 0.025200000032782555
-    },
-    "Tobacco": {
-      "total_stocks": 10,
-      "dividend_payers": 10,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04510999843478203,
-      "median_yield": 0.0471000000834465
-    },
-    "Hotels Restaurants and Leisure": {
-      "total_stocks": 171,
-      "dividend_payers": 170,
-      "dividend_payer_pct": 99.41520467836257,
-      "mean_yield": 0.03977411612868309,
-      "median_yield": 0.025200000032782555
-    },
-    "Health Care Equipment and Supplies": {
-      "total_stocks": 138,
-      "dividend_payers": 138,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02213333360850811,
-      "median_yield": 0.025200000032782555
-    },
-    "Wireless Telecommunication Services": {
-      "total_stocks": 35,
-      "dividend_payers": 35,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05340856686234474,
-      "median_yield": 0.04390000179409981
-    },
-    "Life Sciences Tools and Services": {
-      "total_stocks": 61,
-      "dividend_payers": 61,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.016011476516723633,
-      "median_yield": 0.025200000032782555
-    },
-    "Chemicals": {
-      "total_stocks": 267,
-      "dividend_payers": 266,
-      "dividend_payer_pct": 99.625468164794,
-      "mean_yield": 0.03463496267795563,
-      "median_yield": 0.025200000032782555
-    },
-    "Electrical Equipment": {
-      "total_stocks": 172,
-      "dividend_payers": 171,
-      "dividend_payer_pct": 99.4186046511628,
-      "mean_yield": 0.019192980602383614,
-      "median_yield": 0.019999999552965164
-    },
-    "Diversified Telecommunication Services": {
-      "total_stocks": 76,
-      "dividend_payers": 76,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.039277635514736176,
-      "median_yield": 0.03739999979734421
-    },
-    "Ground Transportation": {
-      "total_stocks": 65,
-      "dividend_payers": 65,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03000769205391407,
-      "median_yield": 0.025200000032782555
-    },
-    "Electric Utilities": {
-      "total_stocks": 74,
-      "dividend_payers": 74,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.038014866411685944,
-      "median_yield": 0.032750003039836884
-    },
-    "Electronic Equipment Instruments and Components": {
-      "total_stocks": 201,
-      "dividend_payers": 200,
-      "dividend_payer_pct": 99.50248756218906,
-      "mean_yield": 0.019667498767375946,
-      "median_yield": 0.019049998372793198
-    },
-    "Insurance": {
-      "total_stocks": 170,
-      "dividend_payers": 170,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03378588333725929,
-      "median_yield": 0.02694999985396862
-    },
-    "Industrial Conglomerates": {
-      "total_stocks": 55,
-      "dividend_payers": 54,
-      "dividend_payer_pct": 98.18181818181819,
-      "mean_yield": 0.03508703410625458,
-      "median_yield": 0.025200000032782555
-    },
-    "Metals and Mining": {
-      "total_stocks": 278,
-      "dividend_payers": 277,
-      "dividend_payer_pct": 99.64028776978418,
-      "mean_yield": 0.026553066447377205,
-      "median_yield": 0.025200000032782555
-    },
-    "Professional Services": {
-      "total_stocks": 114,
-      "dividend_payers": 114,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.032365791499614716,
-      "median_yield": 0.025200000032782555
-    },
-    "Media": {
-      "total_stocks": 76,
-      "dividend_payers": 76,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03817763179540634,
-      "median_yield": 0.026000000536441803
-    },
-    "Textiles Apparel and Luxury Goods": {
-      "total_stocks": 90,
-      "dividend_payers": 90,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.030517777428030968,
-      "median_yield": 0.025200000032782555
-    },
-    "Commercial Services and Supplies": {
-      "total_stocks": 100,
-      "dividend_payers": 99,
-      "dividend_payer_pct": 99.0,
-      "mean_yield": 0.027591917663812637,
-      "median_yield": 0.025200000032782555
-    },
-    "Building Products": {
-      "total_stocks": 72,
-      "dividend_payers": 72,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.028013888746500015,
-      "median_yield": 0.02084999904036522
-    },
-    "Construction Materials": {
-      "total_stocks": 91,
-      "dividend_payers": 90,
-      "dividend_payer_pct": 98.9010989010989,
-      "mean_yield": 0.03586999699473381,
-      "median_yield": 0.0276000015437603
-    },
-    "Air Freight and Logistics": {
-      "total_stocks": 29,
-      "dividend_payers": 29,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05848275497555733,
-      "median_yield": 0.02930000051856041
-    },
-    "Food Products": {
-      "total_stocks": 237,
-      "dividend_payers": 235,
-      "dividend_payer_pct": 99.15611814345992,
-      "mean_yield": 0.03472638130187988,
-      "median_yield": 0.026499999687075615
-    },
-    "Construction and Engineering": {
-      "total_stocks": 150,
-      "dividend_payers": 150,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.027824001386761665,
-      "median_yield": 0.025200000032782555
-    },
-    "Energy Equipment and Services": {
-      "total_stocks": 63,
-      "dividend_payers": 63,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05600316822528839,
-      "median_yield": 0.025200000032782555
-    },
-    "Multi-Utilities": {
-      "total_stocks": 36,
-      "dividend_payers": 36,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03956666588783264,
-      "median_yield": 0.03604999929666519
-    },
-    "Independent Power and Renewable Electricity Producers": {
-      "total_stocks": 73,
-      "dividend_payers": 73,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04082328826189041,
-      "median_yield": 0.025200000032782555
-    },
-    "Trading Companies and Distributors": {
       "total_stocks": 79,
       "dividend_payers": 79,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.027630377560853958,
+      "mean_yield": 0.02373797446489334,
       "median_yield": 0.025200000032782555
     },
-    "Real Estate Management and Development": {
+    "Biotechnology": {
+      "total_stocks": 169,
+      "dividend_payers": 169,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.022968636825680733,
+      "median_yield": 0.025200000032782555
+    },
+    "Specialty Retail": {
+      "total_stocks": 158,
+      "dividend_payers": 158,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03679303824901581,
+      "median_yield": 0.025200000032782555
+    },
+    "Household Products": {
+      "total_stocks": 22,
+      "dividend_payers": 22,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03245000168681145,
+      "median_yield": 0.028549998998641968
+    },
+    "Aerospace and Defense": {
+      "total_stocks": 94,
+      "dividend_payers": 93,
+      "dividend_payer_pct": 98.93617021276596,
+      "mean_yield": 0.013192473910748959,
+      "median_yield": 0.010400000028312206
+    },
+    "Beverages": {
+      "total_stocks": 83,
+      "dividend_payers": 83,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03154096379876137,
+      "median_yield": 0.0284000001847744
+    },
+    "Health Care Providers and Services": {
+      "total_stocks": 128,
+      "dividend_payers": 128,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02478281408548355,
+      "median_yield": 0.02449999935925007
+    },
+    "Communications Equipment": {
+      "total_stocks": 49,
+      "dividend_payers": 49,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.018920408561825752,
+      "median_yield": 0.025200000032782555
+    },
+    "IT Services": {
+      "total_stocks": 114,
+      "dividend_payers": 113,
+      "dividend_payer_pct": 99.12280701754386,
+      "mean_yield": 0.0253327414393425,
+      "median_yield": 0.025200000032782555
+    },
+    "Capital Markets": {
+      "total_stocks": 270,
+      "dividend_payers": 270,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.0378200002014637,
+      "median_yield": 0.02735000103712082
+    },
+    "Machinery": {
+      "total_stocks": 265,
+      "dividend_payers": 265,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.021385660395026207,
+      "median_yield": 0.019500000402331352
+    },
+    "Consumer Finance": {
+      "total_stocks": 51,
+      "dividend_payers": 51,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02979215607047081,
+      "median_yield": 0.025200000032782555
+    },
+    "Tobacco": {
+      "total_stocks": 14,
+      "dividend_payers": 14,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.045092858374118805,
+      "median_yield": 0.03930000215768814
+    },
+    "Hotels Restaurants and Leisure": {
+      "total_stocks": 162,
+      "dividend_payers": 161,
+      "dividend_payer_pct": 99.38271604938271,
+      "mean_yield": 0.04031863436102867,
+      "median_yield": 0.025200000032782555
+    },
+    "Wireless Telecommunication Services": {
+      "total_stocks": 48,
+      "dividend_payers": 48,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.052166666835546494,
+      "median_yield": 0.04360000044107437
+    },
+    "Health Care Equipment and Supplies": {
+      "total_stocks": 115,
+      "dividend_payers": 115,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02163565345108509,
+      "median_yield": 0.025200000032782555
+    },
+    "Life Sciences Tools and Services": {
+      "total_stocks": 55,
+      "dividend_payers": 55,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.016100000590085983,
+      "median_yield": 0.024800000712275505
+    },
+    "Chemicals": {
+      "total_stocks": 226,
+      "dividend_payers": 225,
+      "dividend_payer_pct": 99.5575221238938,
+      "mean_yield": 0.037255555391311646,
+      "median_yield": 0.025200000032782555
+    },
+    "Diversified Telecommunication Services": {
+      "total_stocks": 85,
+      "dividend_payers": 85,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.04072941467165947,
+      "median_yield": 0.03999999910593033
+    },
+    "Electric Utilities": {
+      "total_stocks": 92,
+      "dividend_payers": 92,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.036232609301805496,
+      "median_yield": 0.030700000002980232
+    },
+    "Electrical Equipment": {
+      "total_stocks": 172,
+      "dividend_payers": 172,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.01756860502064228,
+      "median_yield": 0.01615000143647194
+    },
+    "Ground Transportation": {
+      "total_stocks": 68,
+      "dividend_payers": 68,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03071470558643341,
+      "median_yield": 0.025200000032782555
+    },
+    "Electronic Equipment Instruments and Components": {
+      "total_stocks": 206,
+      "dividend_payers": 205,
+      "dividend_payer_pct": 99.51456310679612,
+      "mean_yield": 0.019644388929009438,
+      "median_yield": 0.016300000250339508
+    },
+    "Insurance": {
+      "total_stocks": 195,
+      "dividend_payers": 195,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03437589481472969,
+      "median_yield": 0.026200000196695328
+    },
+    "Industrial Conglomerates": {
+      "total_stocks": 65,
+      "dividend_payers": 65,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.036035384982824326,
+      "median_yield": 0.025200000032782555
+    },
+    "Metals and Mining": {
+      "total_stocks": 280,
+      "dividend_payers": 279,
+      "dividend_payer_pct": 99.64285714285714,
+      "mean_yield": 0.02657920867204666,
+      "median_yield": 0.025200000032782555
+    },
+    "Media": {
+      "total_stocks": 75,
+      "dividend_payers": 75,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03709600120782852,
+      "median_yield": 0.025200000032782555
+    },
+    "Professional Services": {
+      "total_stocks": 98,
+      "dividend_payers": 98,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03142346814274788,
+      "median_yield": 0.025200000032782555
+    },
+    "Textiles Apparel and Luxury Goods": {
+      "total_stocks": 67,
+      "dividend_payers": 67,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.026176119223237038,
+      "median_yield": 0.025200000032782555
+    },
+    "Commercial Services and Supplies": {
+      "total_stocks": 89,
+      "dividend_payers": 88,
+      "dividend_payer_pct": 98.87640449438202,
+      "mean_yield": 0.02766704559326172,
+      "median_yield": 0.024900000542402267
+    },
+    "Air Freight and Logistics": {
+      "total_stocks": 40,
+      "dividend_payers": 39,
+      "dividend_payer_pct": 97.5,
+      "mean_yield": 0.04894359037280083,
+      "median_yield": 0.026200000196695328
+    },
+    "Building Products": {
+      "total_stocks": 78,
+      "dividend_payers": 78,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02654614858329296,
+      "median_yield": 0.01925000175833702
+    },
+    "Construction Materials": {
+      "total_stocks": 76,
+      "dividend_payers": 75,
+      "dividend_payer_pct": 98.68421052631578,
+      "mean_yield": 0.034282661974430084,
+      "median_yield": 0.025200000032782555
+    },
+    "Food Products": {
       "total_stocks": 208,
-      "dividend_payers": 207,
-      "dividend_payer_pct": 99.51923076923077,
-      "mean_yield": 0.039383091032505035,
+      "dividend_payers": 206,
+      "dividend_payer_pct": 99.03846153846155,
+      "mean_yield": 0.034918930381536484,
+      "median_yield": 0.025800000876188278
+    },
+    "Construction and Engineering": {
+      "total_stocks": 128,
+      "dividend_payers": 128,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.038520313799381256,
+      "median_yield": 0.025200000032782555
+    },
+    "Energy Equipment and Services": {
+      "total_stocks": 70,
+      "dividend_payers": 70,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.05328142270445824,
+      "median_yield": 0.025200000032782555
+    },
+    "Multi-Utilities": {
+      "total_stocks": 37,
+      "dividend_payers": 37,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03901621699333191,
+      "median_yield": 0.03629999980330467
+    },
+    "Independent Power and Renewable Electricity Producers": {
+      "total_stocks": 82,
+      "dividend_payers": 82,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.04297073185443878,
+      "median_yield": 0.026750000193715096
+    },
+    "Trading Companies and Distributors": {
+      "total_stocks": 80,
+      "dividend_payers": 80,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.029691249132156372,
+      "median_yield": 0.024650000035762787
+    },
+    "Real Estate Management and Development": {
+      "total_stocks": 204,
+      "dividend_payers": 203,
+      "dividend_payer_pct": 99.50980392156863,
+      "mean_yield": 0.03855270519852638,
       "median_yield": 0.025200000032782555
     },
     "Passenger Airlines": {
-      "total_stocks": 43,
-      "dividend_payers": 43,
+      "total_stocks": 45,
+      "dividend_payers": 45,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03193953260779381,
+      "mean_yield": 0.031700000166893005,
       "median_yield": 0.025200000032782555
     },
     "Household Durables": {
-      "total_stocks": 116,
-      "dividend_payers": 115,
-      "dividend_payer_pct": 99.13793103448276,
-      "mean_yield": 0.03419477865099907,
+      "total_stocks": 112,
+      "dividend_payers": 112,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03387143090367317,
       "median_yield": 0.025200000032782555
     },
     "Personal Care Products": {
-      "total_stocks": 53,
-      "dividend_payers": 53,
+      "total_stocks": 41,
+      "dividend_payers": 41,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.025311321020126343,
-      "median_yield": 0.025200000032782555
+      "mean_yield": 0.024682926014065742,
+      "median_yield": 0.024299999698996544
     },
     "Health Care Technology": {
       "total_stocks": 19,
       "dividend_payers": 19,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.020642105489969254,
+      "mean_yield": 0.02061578817665577,
       "median_yield": 0.025200000032782555
     },
     "Gas Utilities": {
-      "total_stocks": 26,
-      "dividend_payers": 26,
+      "total_stocks": 33,
+      "dividend_payers": 33,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04149999842047691,
-      "median_yield": 0.03894999995827675
+      "mean_yield": 0.040381815284490585,
+      "median_yield": 0.039000000804662704
     },
     "Water Utilities": {
-      "total_stocks": 25,
-      "dividend_payers": 25,
+      "total_stocks": 20,
+      "dividend_payers": 20,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.042392000555992126,
-      "median_yield": 0.03750000149011612
+      "mean_yield": 0.045559998601675034,
+      "median_yield": 0.04100000113248825
     },
     "Containers and Packaging": {
-      "total_stocks": 44,
-      "dividend_payers": 43,
-      "dividend_payer_pct": 97.72727272727273,
-      "mean_yield": 0.036793023347854614,
-      "median_yield": 0.027899999171495438
+      "total_stocks": 36,
+      "dividend_payers": 35,
+      "dividend_payer_pct": 97.22222222222221,
+      "mean_yield": 0.040794286876916885,
+      "median_yield": 0.038600001484155655
     },
     "Distributors": {
-      "total_stocks": 19,
-      "dividend_payers": 19,
+      "total_stocks": 15,
+      "dividend_payers": 15,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.055021047592163086,
+      "mean_yield": 0.05845332890748978,
       "median_yield": 0.025200000032782555
     },
     "Automobile Components": {
-      "total_stocks": 97,
-      "dividend_payers": 97,
+      "total_stocks": 110,
+      "dividend_payers": 110,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.031391751021146774,
+      "mean_yield": 0.026973631232976913,
       "median_yield": 0.025200000032782555
     },
     "Mortgage Real Estate Investment Trusts (REITs)": {
-      "total_stocks": 10,
-      "dividend_payers": 10,
+      "total_stocks": 11,
+      "dividend_payers": 11,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.11698999255895615,
-      "median_yield": 0.10864999890327454
+      "mean_yield": 0.11645454913377762,
+      "median_yield": 0.10859999805688858
     },
     "Leisure Products": {
-      "total_stocks": 32,
-      "dividend_payers": 31,
-      "dividend_payer_pct": 96.875,
-      "mean_yield": 0.033467743545770645,
+      "total_stocks": 29,
+      "dividend_payers": 29,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03229310363531113,
       "median_yield": 0.025200000032782555
     },
     "Diversified Consumer Services": {
-      "total_stocks": 42,
-      "dividend_payers": 42,
+      "total_stocks": 39,
+      "dividend_payers": 39,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.028097618371248245,
+      "mean_yield": 0.028123077005147934,
       "median_yield": 0.025200000032782555
     },
     "Marine Transportation": {
-      "total_stocks": 31,
-      "dividend_payers": 31,
+      "total_stocks": 36,
+      "dividend_payers": 36,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.09012579172849655,
-      "median_yield": 0.046799998730421066
+      "mean_yield": 0.09338054060935974,
+      "median_yield": 0.06745000183582306
     },
     "Paper and Forest Products": {
-      "total_stocks": 27,
-      "dividend_payers": 27,
+      "total_stocks": 25,
+      "dividend_payers": 25,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03889999911189079,
+      "mean_yield": 0.03442399948835373,
       "median_yield": 0.025200000032782555
     },
     "Transportation Infrastructure": {
-      "total_stocks": 43,
-      "dividend_payers": 43,
+      "total_stocks": 52,
+      "dividend_payers": 52,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04516976699233055,
-      "median_yield": 0.029899999499320984
+      "mean_yield": 0.04022884741425514,
+      "median_yield": 0.029750000685453415
     }
   },
   "by_trading_country": {
     "US": {
-      "total_stocks": 1823,
-      "dividend_payers": 1817,
-      "dividend_payer_pct": 99.67087218869995,
-      "mean_yield": 0.025915520265698433,
+      "total_stocks": 1816,
+      "dividend_payers": 1811,
+      "dividend_payer_pct": 99.72466960352423,
+      "mean_yield": 0.0260356143116951,
       "median_yield": 0.025200000032782555
     },
     "CA": {
-      "total_stocks": 176,
-      "dividend_payers": 175,
-      "dividend_payer_pct": 99.43181818181817,
-      "mean_yield": 0.027649709954857826,
+      "total_stocks": 183,
+      "dividend_payers": 182,
+      "dividend_payer_pct": 99.4535519125683,
+      "mean_yield": 0.028146155178546906,
       "median_yield": 0.025200000032782555
     },
     "NL": {
-      "total_stocks": 66,
-      "dividend_payers": 66,
+      "total_stocks": 70,
+      "dividend_payers": 70,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05519696697592735,
-      "median_yield": 0.025550000369548798
+      "mean_yield": 0.05327141657471657,
+      "median_yield": 0.025200000032782555
     },
     "FR": {
-      "total_stocks": 214,
-      "dividend_payers": 214,
+      "total_stocks": 194,
+      "dividend_payers": 194,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.032810747623443604,
+      "mean_yield": 0.03382783755660057,
       "median_yield": 0.025200000032782555
     },
     "CH": {
-      "total_stocks": 139,
-      "dividend_payers": 139,
+      "total_stocks": 141,
+      "dividend_payers": 141,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.029689205810427666,
+      "mean_yield": 0.02971985749900341,
       "median_yield": 0.025200000032782555
     },
     "DE": {
-      "total_stocks": 208,
-      "dividend_payers": 207,
-      "dividend_payer_pct": 99.51923076923077,
-      "mean_yield": 0.025892267003655434,
+      "total_stocks": 218,
+      "dividend_payers": 218,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02666284330189228,
       "median_yield": 0.025200000032782555
     },
     "GB": {
-      "total_stocks": 375,
-      "dividend_payers": 374,
-      "dividend_payer_pct": 99.73333333333333,
-      "mean_yield": 0.042332086712121964,
+      "total_stocks": 403,
+      "dividend_payers": 402,
+      "dividend_payer_pct": 99.75186104218362,
+      "mean_yield": 0.04165447875857353,
       "median_yield": 0.025200000032782555
     },
     "DK": {
-      "total_stocks": 47,
-      "dividend_payers": 47,
+      "total_stocks": 48,
+      "dividend_payers": 48,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02977234311401844,
+      "mean_yield": 0.029077082872390747,
       "median_yield": 0.025200000032782555
     },
     "ES": {
-      "total_stocks": 77,
-      "dividend_payers": 77,
+      "total_stocks": 75,
+      "dividend_payers": 75,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03644804656505585,
+      "mean_yield": 0.039698660373687744,
       "median_yield": 0.025200000032782555
     },
     "IT": {
-      "total_stocks": 145,
-      "dividend_payers": 145,
+      "total_stocks": 135,
+      "dividend_payers": 135,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03164413943886757,
+      "mean_yield": 0.03248518332839012,
       "median_yield": 0.025200000032782555
     },
     "BE": {
-      "total_stocks": 56,
-      "dividend_payers": 56,
+      "total_stocks": 53,
+      "dividend_payers": 53,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.038703568279743195,
+      "mean_yield": 0.040598101913928986,
       "median_yield": 0.025200000032782555
     },
     "SE": {
-      "total_stocks": 248,
-      "dividend_payers": 247,
-      "dividend_payer_pct": 99.59677419354838,
-      "mean_yield": 0.025454657152295113,
+      "total_stocks": 236,
+      "dividend_payers": 235,
+      "dividend_payer_pct": 99.57627118644068,
+      "mean_yield": 0.02445574477314949,
       "median_yield": 0.025200000032782555
     },
     "FI": {
-      "total_stocks": 92,
-      "dividend_payers": 92,
+      "total_stocks": 79,
+      "dividend_payers": 79,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04470434412360191,
-      "median_yield": 0.033900000154972076
+      "mean_yield": 0.044788606464862823,
+      "median_yield": 0.031099999323487282
     },
     "NO": {
-      "total_stocks": 115,
-      "dividend_payers": 115,
+      "total_stocks": 123,
+      "dividend_payers": 123,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.06611565500497818,
-      "median_yield": 0.033399999141693115
+      "mean_yield": 0.06173902750015259,
+      "median_yield": 0.029600000008940697
     },
     "AT": {
-      "total_stocks": 29,
-      "dividend_payers": 29,
+      "total_stocks": 31,
+      "dividend_payers": 31,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03306207060813904,
-      "median_yield": 0.03180000185966492
+      "mean_yield": 0.03500000014901161,
+      "median_yield": 0.031199999153614044
     },
     "IE": {
       "total_stocks": 11,
       "dividend_payers": 11,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02964545413851738,
-      "median_yield": 0.02710000053048134
+      "mean_yield": 0.029390908777713776,
+      "median_yield": 0.0272000003606081
+    },
+    "CZ": {
+      "total_stocks": 8,
+      "dividend_payers": 8,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03166250139474869,
+      "median_yield": 0.025200000032782555
     },
     "PL": {
-      "total_stocks": 95,
-      "dividend_payers": 93,
-      "dividend_payer_pct": 97.89473684210527,
-      "mean_yield": 0.0422806441783905,
+      "total_stocks": 85,
+      "dividend_payers": 84,
+      "dividend_payer_pct": 98.82352941176471,
+      "mean_yield": 0.039870232343673706,
       "median_yield": 0.025200000032782555
     },
     "HU": {
-      "total_stocks": 5,
-      "dividend_payers": 5,
+      "total_stocks": 6,
+      "dividend_payers": 6,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05464000627398491,
-      "median_yield": 0.06210000067949295
+      "mean_yield": 0.06080000102519989,
+      "median_yield": 0.057099997997283936
     },
     "PT": {
-      "total_stocks": 13,
-      "dividend_payers": 13,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05228462070226669,
-      "median_yield": 0.05270000174641609
-    },
-    "GR": {
-      "total_stocks": 31,
-      "dividend_payers": 31,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.030561290681362152,
-      "median_yield": 0.025200000032782555
-    },
-    "RO": {
       "total_stocks": 15,
       "dividend_payers": 15,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02322000078856945,
+      "mean_yield": 0.057386670261621475,
+      "median_yield": 0.052000001072883606
+    },
+    "RO": {
+      "total_stocks": 19,
+      "dividend_payers": 19,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.031736839562654495,
+      "median_yield": 0.025200000032782555
+    },
+    "GR": {
+      "total_stocks": 29,
+      "dividend_payers": 29,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.032051727175712585,
       "median_yield": 0.025200000032782555
     },
     "SI": {
       "total_stocks": 6,
       "dividend_payers": 6,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04388333484530449,
-      "median_yield": 0.041850000619888306
+      "mean_yield": 0.03868332877755165,
+      "median_yield": 0.03590000048279762
     },
     "HR": {
-      "total_stocks": 6,
-      "dividend_payers": 6,
+      "total_stocks": 7,
+      "dividend_payers": 7,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.029066666960716248,
-      "median_yield": 0.02329999953508377
+      "mean_yield": 0.032171428203582764,
+      "median_yield": 0.033799998462200165
     },
     "TW": {
-      "total_stocks": 120,
-      "dividend_payers": 120,
+      "total_stocks": 107,
+      "dividend_payers": 107,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.0383608341217041,
-      "median_yield": 0.032499998807907104
+      "mean_yield": 0.03527850657701492,
+      "median_yield": 0.03150000050663948
     },
     "HK": {
-      "total_stocks": 197,
-      "dividend_payers": 197,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03693248704075813,
+      "total_stocks": 239,
+      "dividend_payers": 238,
+      "dividend_payer_pct": 99.581589958159,
+      "mean_yield": 0.03876470401883125,
       "median_yield": 0.025200000032782555
     },
     "KR": {
-      "total_stocks": 113,
-      "dividend_payers": 111,
-      "dividend_payer_pct": 98.23008849557522,
-      "mean_yield": 0.025063063949346542,
-      "median_yield": 0.02329999953508377
+      "total_stocks": 103,
+      "dividend_payers": 102,
+      "dividend_payer_pct": 99.02912621359224,
+      "mean_yield": 0.02569999359548092,
+      "median_yield": 0.025200000032782555
     },
     "JP": {
-      "total_stocks": 338,
-      "dividend_payers": 336,
-      "dividend_payer_pct": 99.40828402366864,
-      "mean_yield": 0.025925597175955772,
+      "total_stocks": 351,
+      "dividend_payers": 350,
+      "dividend_payer_pct": 99.71509971509973,
+      "mean_yield": 0.023846857249736786,
       "median_yield": 0.025200000032782555
     },
     "CN": {
-      "total_stocks": 787,
-      "dividend_payers": 784,
-      "dividend_payer_pct": 99.61880559085134,
-      "mean_yield": 0.02556811273097992,
-      "median_yield": 0.01640000008046627
+      "total_stocks": 699,
+      "dividend_payers": 695,
+      "dividend_payer_pct": 99.4277539341917,
+      "mean_yield": 0.027727337554097176,
+      "median_yield": 0.01759999990463257
+    },
+    "IN": {
+      "total_stocks": 239,
+      "dividend_payers": 239,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.014629706740379333,
+      "median_yield": 0.009600000455975533
     },
     "AU": {
-      "total_stocks": 82,
-      "dividend_payers": 82,
+      "total_stocks": 85,
+      "dividend_payers": 85,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.029052438214421272,
-      "median_yield": 0.025200000032782555
-    },
-    "TH": {
-      "total_stocks": 48,
-      "dividend_payers": 48,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04739999771118164,
-      "median_yield": 0.04270000010728836
-    },
-    "ID": {
-      "total_stocks": 58,
-      "dividend_payers": 57,
-      "dividend_payer_pct": 98.27586206896551,
-      "mean_yield": 0.05299298092722893,
+      "mean_yield": 0.029597647488117218,
       "median_yield": 0.025200000032782555
     },
     "SG": {
-      "total_stocks": 16,
-      "dividend_payers": 16,
+      "total_stocks": 25,
+      "dividend_payers": 25,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05380000174045563,
-      "median_yield": 0.03994999825954437
+      "mean_yield": 0.034780003130435944,
+      "median_yield": 0.03310000151395798
     },
-    "IN": {
-      "total_stocks": 153,
-      "dividend_payers": 152,
-      "dividend_payer_pct": 99.34640522875817,
-      "mean_yield": 0.013597369194030762,
-      "median_yield": 0.008950000628829002
-    },
-    "PH": {
-      "total_stocks": 24,
-      "dividend_payers": 24,
+    "TH": {
+      "total_stocks": 28,
+      "dividend_payers": 28,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04126666858792305,
-      "median_yield": 0.043049998581409454
+      "mean_yield": 0.04280000180006027,
+      "median_yield": 0.03724999725818634
     },
-    "MY": {
+    "ID": {
       "total_stocks": 39,
       "dividend_payers": 39,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.030282050371170044,
-      "median_yield": 0.026599999517202377
+      "mean_yield": 0.058743588626384735,
+      "median_yield": 0.026100000366568565
     },
     "VN": {
-      "total_stocks": 15,
-      "dividend_payers": 15,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02945333532989025,
+      "total_stocks": 20,
+      "dividend_payers": 19,
+      "dividend_payer_pct": 95.0,
+      "mean_yield": 0.025115791708230972,
       "median_yield": 0.025200000032782555
     },
-    "NZ": {
-      "total_stocks": 5,
-      "dividend_payers": 5,
+    "MY": {
+      "total_stocks": 33,
+      "dividend_payers": 33,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03620000183582306,
-      "median_yield": 0.03449999913573265
+      "mean_yield": 0.033478789031505585,
+      "median_yield": 0.03709999844431877
+    },
+    "PH": {
+      "total_stocks": 16,
+      "dividend_payers": 16,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.040712498128414154,
+      "median_yield": 0.03440000116825104
+    },
+    "NZ": {
+      "total_stocks": 9,
+      "dividend_payers": 9,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.021166667342185974,
+      "median_yield": 0.022700000554323196
     },
     "SA": {
-      "total_stocks": 141,
-      "dividend_payers": 137,
-      "dividend_payer_pct": 97.16312056737588,
-      "mean_yield": 0.035222627222537994,
+      "total_stocks": 143,
+      "dividend_payers": 139,
+      "dividend_payer_pct": 97.2027972027972,
+      "mean_yield": 0.03577122092247009,
       "median_yield": 0.025200000032782555
     },
     "AE": {
-      "total_stocks": 64,
-      "dividend_payers": 63,
-      "dividend_payer_pct": 98.4375,
-      "mean_yield": 0.04432697594165802,
-      "median_yield": 0.04749999940395355
+      "total_stocks": 62,
+      "dividend_payers": 61,
+      "dividend_payer_pct": 98.38709677419355,
+      "mean_yield": 0.04512622952461243,
+      "median_yield": 0.047200001776218414
     },
     "MX": {
-      "total_stocks": 61,
-      "dividend_payers": 61,
+      "total_stocks": 64,
+      "dividend_payers": 64,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.032859016209840775,
+      "mean_yield": 0.03291093558073044,
       "median_yield": 0.025200000032782555
     },
     "BR": {
-      "total_stocks": 158,
-      "dividend_payers": 157,
-      "dividend_payer_pct": 99.36708860759494,
-      "mean_yield": 0.04810764268040657,
-      "median_yield": 0.03150000050663948
+      "total_stocks": 157,
+      "dividend_payers": 156,
+      "dividend_payer_pct": 99.36305732484077,
+      "mean_yield": 0.05071922764182091,
+      "median_yield": 0.03400000184774399
     },
     "ZA": {
       "total_stocks": 78,
       "dividend_payers": 77,
       "dividend_payer_pct": 98.71794871794873,
-      "mean_yield": 0.060075320303440094,
-      "median_yield": 0.03849999979138374
+      "mean_yield": 0.05966103449463844,
+      "median_yield": 0.03830000013113022
     },
     "QA": {
-      "total_stocks": 25,
-      "dividend_payers": 25,
+      "total_stocks": 26,
+      "dividend_payers": 26,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04630399867892265,
-      "median_yield": 0.04910000041127205
+      "mean_yield": 0.044757697731256485,
+      "median_yield": 0.04749999940395355
     },
     "KW": {
       "total_stocks": 21,
       "dividend_payers": 21,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04602856934070587,
-      "median_yield": 0.03779999911785126
+      "mean_yield": 0.04631904885172844,
+      "median_yield": 0.037700001150369644
     },
     "IL": {
       "total_stocks": 32,
       "dividend_payers": 32,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03008124977350235,
-      "median_yield": 0.027849998325109482
+      "mean_yield": 0.030009374022483826,
+      "median_yield": 0.02825000137090683
     },
     "TR": {
-      "total_stocks": 97,
-      "dividend_payers": 96,
-      "dividend_payer_pct": 98.96907216494846,
-      "mean_yield": 0.0277437511831522,
+      "total_stocks": 98,
+      "dividend_payers": 97,
+      "dividend_payer_pct": 98.9795918367347,
+      "mean_yield": 0.02824845351278782,
       "median_yield": 0.025200000032782555
     },
     "CO": {
-      "total_stocks": 12,
-      "dividend_payers": 11,
-      "dividend_payer_pct": 91.66666666666666,
-      "mean_yield": 0.06072726473212242,
-      "median_yield": 0.05590000003576279
+      "total_stocks": 13,
+      "dividend_payers": 12,
+      "dividend_payer_pct": 92.3076923076923,
+      "mean_yield": 0.06052500009536743,
+      "median_yield": 0.052299998700618744
     },
     "CL": {
-      "total_stocks": 36,
-      "dividend_payers": 36,
+      "total_stocks": 35,
+      "dividend_payers": 35,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.0445166639983654,
-      "median_yield": 0.03545000031590462
+      "mean_yield": 0.04547428712248802,
+      "median_yield": 0.03579999879002571
+    },
+    "MA": {
+      "total_stocks": 32,
+      "dividend_payers": 32,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02853437513113022,
+      "median_yield": 0.025200000032782555
     },
     "PE": {
       "total_stocks": 7,
       "dividend_payers": 7,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.06771428883075714,
-      "median_yield": 0.05730000138282776
-    },
-    "MA": {
-      "total_stocks": 33,
-      "dividend_payers": 33,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02876363694667816,
-      "median_yield": 0.025200000032782555
+      "mean_yield": 0.06291428953409195,
+      "median_yield": 0.05700000002980232
     },
     "AR": {
       "total_stocks": 11,
       "dividend_payers": 11,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02823636494576931,
+      "mean_yield": 0.028463637456297874,
       "median_yield": 0.025200000032782555
     },
     "KE": {
       "total_stocks": 10,
       "dividend_payers": 10,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03408000245690346,
+      "mean_yield": 0.03379000350832939,
       "median_yield": 0.025200000032782555
     },
     "NG": {
       "total_stocks": 45,
       "dividend_payers": 44,
       "dividend_payer_pct": 97.77777777777777,
-      "mean_yield": 0.03725000098347664,
-      "median_yield": 0.02694999985396862
+      "mean_yield": 0.03688181936740875,
+      "median_yield": 0.026149999350309372
+    },
+    "OM": {
+      "total_stocks": 31,
+      "dividend_payers": 31,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.050999995321035385,
+      "median_yield": 0.05000000074505806
     },
     "EG": {
       "total_stocks": 56,
       "dividend_payers": 56,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05142321437597275,
-      "median_yield": 0.02905000001192093
+      "mean_yield": 0.05157499760389328,
+      "median_yield": 0.02955000102519989
     },
     "GH": {
       "total_stocks": 12,
       "dividend_payers": 12,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.035725001245737076,
+      "mean_yield": 0.03544166311621666,
       "median_yield": 0.026599999517202377
     },
     "TN": {
-      "total_stocks": 34,
-      "dividend_payers": 34,
+      "total_stocks": 33,
+      "dividend_payers": 33,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04254705831408501,
-      "median_yield": 0.0377499982714653
+      "mean_yield": 0.04363939166069031,
+      "median_yield": 0.03889999911189079
     }
   },
   "by_exchange": {
     "Semiconductors and Semiconductor Equipment": {
-      "total_stocks": 171,
-      "dividend_payers": 170,
-      "dividend_payer_pct": 99.41520467836257,
-      "mean_yield": 0.018798822537064552,
-      "median_yield": 0.022700000554323196
+      "total_stocks": 190,
+      "dividend_payers": 186,
+      "dividend_payer_pct": 97.89473684210527,
+      "mean_yield": 0.016572581604123116,
+      "median_yield": 0.014100000262260437
     },
     "Technology Hardware Storage and Peripherals": {
-      "total_stocks": 51,
-      "dividend_payers": 50,
-      "dividend_payer_pct": 98.0392156862745,
-      "mean_yield": 0.026353999972343445,
+      "total_stocks": 57,
+      "dividend_payers": 57,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.026799999177455902,
       "median_yield": 0.025200000032782555
     },
     "Interactive Media and Services": {
-      "total_stocks": 45,
-      "dividend_payers": 44,
-      "dividend_payer_pct": 97.77777777777777,
-      "mean_yield": 0.02462727390229702,
+      "total_stocks": 49,
+      "dividend_payers": 48,
+      "dividend_payer_pct": 97.95918367346938,
+      "mean_yield": 0.02265624888241291,
       "median_yield": 0.025200000032782555
     },
     "Software": {
-      "total_stocks": 222,
-      "dividend_payers": 222,
+      "total_stocks": 220,
+      "dividend_payers": 220,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.022002700716257095,
+      "mean_yield": 0.021032270044088364,
       "median_yield": 0.025200000032782555
     },
     "Broadline Retail": {
-      "total_stocks": 54,
-      "dividend_payers": 54,
+      "total_stocks": 49,
+      "dividend_payers": 49,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.026516666635870934,
+      "mean_yield": 0.02371428720653057,
       "median_yield": 0.025200000032782555
     },
     "Automobiles": {
-      "total_stocks": 39,
-      "dividend_payers": 39,
+      "total_stocks": 64,
+      "dividend_payers": 64,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.0323692262172699,
-      "median_yield": 0.025200000032782555
-    },
-    "Financial Services": {
-      "total_stocks": 119,
-      "dividend_payers": 118,
-      "dividend_payer_pct": 99.15966386554622,
-      "mean_yield": 0.032833900302648544,
+      "mean_yield": 0.028815623372793198,
       "median_yield": 0.025200000032782555
     },
     "Pharmaceuticals": {
-      "total_stocks": 168,
-      "dividend_payers": 167,
-      "dividend_payer_pct": 99.40476190476191,
-      "mean_yield": 0.023371856659650803,
+      "total_stocks": 163,
+      "dividend_payers": 162,
+      "dividend_payer_pct": 99.38650306748467,
+      "mean_yield": 0.02363888919353485,
       "median_yield": 0.025200000032782555
     },
     "Consumer Staples Distribution and Retail": {
-      "total_stocks": 126,
-      "dividend_payers": 125,
-      "dividend_payer_pct": 99.20634920634922,
-      "mean_yield": 0.034143198281526566,
+      "total_stocks": 113,
+      "dividend_payers": 112,
+      "dividend_payer_pct": 99.11504424778761,
+      "mean_yield": 0.032494641840457916,
       "median_yield": 0.025200000032782555
     },
     "Banks": {
-      "total_stocks": 414,
-      "dividend_payers": 412,
-      "dividend_payer_pct": 99.51690821256038,
-      "mean_yield": 0.03908324986696243,
-      "median_yield": 0.029899999499320984
+      "total_stocks": 474,
+      "dividend_payers": 471,
+      "dividend_payer_pct": 99.36708860759494,
+      "mean_yield": 0.04004840925335884,
+      "median_yield": 0.031199999153614044
+    },
+    "Financial Services": {
+      "total_stocks": 135,
+      "dividend_payers": 134,
+      "dividend_payer_pct": 99.25925925925925,
+      "mean_yield": 0.032741792500019073,
+      "median_yield": 0.025200000032782555
     },
     "Oil Gas and Consumable Fuels": {
-      "total_stocks": 234,
-      "dividend_payers": 230,
-      "dividend_payer_pct": 98.29059829059828,
-      "mean_yield": 0.05598217621445656,
-      "median_yield": 0.0385500006377697
+      "total_stocks": 242,
+      "dividend_payers": 239,
+      "dividend_payer_pct": 98.7603305785124,
+      "mean_yield": 0.05621297284960747,
+      "median_yield": 0.04019999876618385
     },
     "Entertainment": {
-      "total_stocks": 85,
-      "dividend_payers": 85,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.026024701073765755,
-      "median_yield": 0.025200000032782555
-    },
-    "Biotechnology": {
-      "total_stocks": 198,
-      "dividend_payers": 198,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.023541411384940147,
-      "median_yield": 0.025200000032782555
-    },
-    "Specialty Retail": {
-      "total_stocks": 166,
-      "dividend_payers": 166,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03616565838456154,
-      "median_yield": 0.025200000032782555
-    },
-    "Household Products": {
-      "total_stocks": 23,
-      "dividend_payers": 23,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.0283565241843462,
-      "median_yield": 0.025200000032782555
-    },
-    "Aerospace and Defense": {
-      "total_stocks": 105,
-      "dividend_payers": 104,
-      "dividend_payer_pct": 99.04761904761905,
-      "mean_yield": 0.013833653181791306,
-      "median_yield": 0.01080000028014183
-    },
-    "Communications Equipment": {
-      "total_stocks": 40,
-      "dividend_payers": 40,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.022919999435544014,
-      "median_yield": 0.025200000032782555
-    },
-    "Health Care Providers and Services": {
-      "total_stocks": 127,
-      "dividend_payers": 126,
-      "dividend_payer_pct": 99.21259842519686,
-      "mean_yield": 0.02468809299170971,
-      "median_yield": 0.02459999918937683
-    },
-    "Beverages": {
-      "total_stocks": 85,
-      "dividend_payers": 85,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03230823576450348,
-      "median_yield": 0.031300000846385956
-    },
-    "IT Services": {
-      "total_stocks": 104,
-      "dividend_payers": 103,
-      "dividend_payer_pct": 99.03846153846155,
-      "mean_yield": 0.025126207619905472,
-      "median_yield": 0.025200000032782555
-    },
-    "Capital Markets": {
-      "total_stocks": 231,
-      "dividend_payers": 231,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03914112597703934,
-      "median_yield": 0.0272000003606081
-    },
-    "Machinery": {
-      "total_stocks": 272,
-      "dividend_payers": 270,
-      "dividend_payer_pct": 99.26470588235294,
-      "mean_yield": 0.021890370175242424,
-      "median_yield": 0.01940000057220459
-    },
-    "Consumer Finance": {
-      "total_stocks": 43,
-      "dividend_payers": 43,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.030406976118683815,
-      "median_yield": 0.025200000032782555
-    },
-    "Tobacco": {
-      "total_stocks": 10,
-      "dividend_payers": 10,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04510999843478203,
-      "median_yield": 0.0471000000834465
-    },
-    "Hotels Restaurants and Leisure": {
-      "total_stocks": 171,
-      "dividend_payers": 170,
-      "dividend_payer_pct": 99.41520467836257,
-      "mean_yield": 0.03977411612868309,
-      "median_yield": 0.025200000032782555
-    },
-    "Health Care Equipment and Supplies": {
-      "total_stocks": 138,
-      "dividend_payers": 138,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.02213333360850811,
-      "median_yield": 0.025200000032782555
-    },
-    "Wireless Telecommunication Services": {
-      "total_stocks": 35,
-      "dividend_payers": 35,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05340856686234474,
-      "median_yield": 0.04390000179409981
-    },
-    "Life Sciences Tools and Services": {
-      "total_stocks": 61,
-      "dividend_payers": 61,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.016011476516723633,
-      "median_yield": 0.025200000032782555
-    },
-    "Chemicals": {
-      "total_stocks": 267,
-      "dividend_payers": 266,
-      "dividend_payer_pct": 99.625468164794,
-      "mean_yield": 0.03463496267795563,
-      "median_yield": 0.025200000032782555
-    },
-    "Electrical Equipment": {
-      "total_stocks": 172,
-      "dividend_payers": 171,
-      "dividend_payer_pct": 99.4186046511628,
-      "mean_yield": 0.019192980602383614,
-      "median_yield": 0.019999999552965164
-    },
-    "Diversified Telecommunication Services": {
-      "total_stocks": 76,
-      "dividend_payers": 76,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.039277635514736176,
-      "median_yield": 0.03739999979734421
-    },
-    "Ground Transportation": {
-      "total_stocks": 65,
-      "dividend_payers": 65,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03000769205391407,
-      "median_yield": 0.025200000032782555
-    },
-    "Electric Utilities": {
-      "total_stocks": 74,
-      "dividend_payers": 74,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.038014866411685944,
-      "median_yield": 0.032750003039836884
-    },
-    "Electronic Equipment Instruments and Components": {
-      "total_stocks": 201,
-      "dividend_payers": 200,
-      "dividend_payer_pct": 99.50248756218906,
-      "mean_yield": 0.019667498767375946,
-      "median_yield": 0.019049998372793198
-    },
-    "Insurance": {
-      "total_stocks": 170,
-      "dividend_payers": 170,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03378588333725929,
-      "median_yield": 0.02694999985396862
-    },
-    "Industrial Conglomerates": {
-      "total_stocks": 55,
-      "dividend_payers": 54,
-      "dividend_payer_pct": 98.18181818181819,
-      "mean_yield": 0.03508703410625458,
-      "median_yield": 0.025200000032782555
-    },
-    "Metals and Mining": {
-      "total_stocks": 278,
-      "dividend_payers": 277,
-      "dividend_payer_pct": 99.64028776978418,
-      "mean_yield": 0.026553066447377205,
-      "median_yield": 0.025200000032782555
-    },
-    "Professional Services": {
-      "total_stocks": 114,
-      "dividend_payers": 114,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.032365791499614716,
-      "median_yield": 0.025200000032782555
-    },
-    "Media": {
-      "total_stocks": 76,
-      "dividend_payers": 76,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03817763179540634,
-      "median_yield": 0.026000000536441803
-    },
-    "Textiles Apparel and Luxury Goods": {
-      "total_stocks": 90,
-      "dividend_payers": 90,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.030517777428030968,
-      "median_yield": 0.025200000032782555
-    },
-    "Commercial Services and Supplies": {
-      "total_stocks": 100,
-      "dividend_payers": 99,
-      "dividend_payer_pct": 99.0,
-      "mean_yield": 0.027591917663812637,
-      "median_yield": 0.025200000032782555
-    },
-    "Building Products": {
-      "total_stocks": 72,
-      "dividend_payers": 72,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.028013888746500015,
-      "median_yield": 0.02084999904036522
-    },
-    "Construction Materials": {
-      "total_stocks": 91,
-      "dividend_payers": 90,
-      "dividend_payer_pct": 98.9010989010989,
-      "mean_yield": 0.03586999699473381,
-      "median_yield": 0.0276000015437603
-    },
-    "Air Freight and Logistics": {
-      "total_stocks": 29,
-      "dividend_payers": 29,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05848275497555733,
-      "median_yield": 0.02930000051856041
-    },
-    "Food Products": {
-      "total_stocks": 237,
-      "dividend_payers": 235,
-      "dividend_payer_pct": 99.15611814345992,
-      "mean_yield": 0.03472638130187988,
-      "median_yield": 0.026499999687075615
-    },
-    "Construction and Engineering": {
-      "total_stocks": 150,
-      "dividend_payers": 150,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.027824001386761665,
-      "median_yield": 0.025200000032782555
-    },
-    "Energy Equipment and Services": {
-      "total_stocks": 63,
-      "dividend_payers": 63,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.05600316822528839,
-      "median_yield": 0.025200000032782555
-    },
-    "Multi-Utilities": {
-      "total_stocks": 36,
-      "dividend_payers": 36,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03956666588783264,
-      "median_yield": 0.03604999929666519
-    },
-    "Independent Power and Renewable Electricity Producers": {
-      "total_stocks": 73,
-      "dividend_payers": 73,
-      "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04082328826189041,
-      "median_yield": 0.025200000032782555
-    },
-    "Trading Companies and Distributors": {
       "total_stocks": 79,
       "dividend_payers": 79,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.027630377560853958,
+      "mean_yield": 0.02373797446489334,
       "median_yield": 0.025200000032782555
     },
-    "Real Estate Management and Development": {
+    "Biotechnology": {
+      "total_stocks": 169,
+      "dividend_payers": 169,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.022968636825680733,
+      "median_yield": 0.025200000032782555
+    },
+    "Specialty Retail": {
+      "total_stocks": 158,
+      "dividend_payers": 158,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03679303824901581,
+      "median_yield": 0.025200000032782555
+    },
+    "Household Products": {
+      "total_stocks": 22,
+      "dividend_payers": 22,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03245000168681145,
+      "median_yield": 0.028549998998641968
+    },
+    "Aerospace and Defense": {
+      "total_stocks": 94,
+      "dividend_payers": 93,
+      "dividend_payer_pct": 98.93617021276596,
+      "mean_yield": 0.013192473910748959,
+      "median_yield": 0.010400000028312206
+    },
+    "Beverages": {
+      "total_stocks": 83,
+      "dividend_payers": 83,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03154096379876137,
+      "median_yield": 0.0284000001847744
+    },
+    "Health Care Providers and Services": {
+      "total_stocks": 128,
+      "dividend_payers": 128,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02478281408548355,
+      "median_yield": 0.02449999935925007
+    },
+    "Communications Equipment": {
+      "total_stocks": 49,
+      "dividend_payers": 49,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.018920408561825752,
+      "median_yield": 0.025200000032782555
+    },
+    "IT Services": {
+      "total_stocks": 114,
+      "dividend_payers": 113,
+      "dividend_payer_pct": 99.12280701754386,
+      "mean_yield": 0.0253327414393425,
+      "median_yield": 0.025200000032782555
+    },
+    "Capital Markets": {
+      "total_stocks": 270,
+      "dividend_payers": 270,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.0378200002014637,
+      "median_yield": 0.02735000103712082
+    },
+    "Machinery": {
+      "total_stocks": 265,
+      "dividend_payers": 265,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.021385660395026207,
+      "median_yield": 0.019500000402331352
+    },
+    "Consumer Finance": {
+      "total_stocks": 51,
+      "dividend_payers": 51,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02979215607047081,
+      "median_yield": 0.025200000032782555
+    },
+    "Tobacco": {
+      "total_stocks": 14,
+      "dividend_payers": 14,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.045092858374118805,
+      "median_yield": 0.03930000215768814
+    },
+    "Hotels Restaurants and Leisure": {
+      "total_stocks": 162,
+      "dividend_payers": 161,
+      "dividend_payer_pct": 99.38271604938271,
+      "mean_yield": 0.04031863436102867,
+      "median_yield": 0.025200000032782555
+    },
+    "Wireless Telecommunication Services": {
+      "total_stocks": 48,
+      "dividend_payers": 48,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.052166666835546494,
+      "median_yield": 0.04360000044107437
+    },
+    "Health Care Equipment and Supplies": {
+      "total_stocks": 115,
+      "dividend_payers": 115,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02163565345108509,
+      "median_yield": 0.025200000032782555
+    },
+    "Life Sciences Tools and Services": {
+      "total_stocks": 55,
+      "dividend_payers": 55,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.016100000590085983,
+      "median_yield": 0.024800000712275505
+    },
+    "Chemicals": {
+      "total_stocks": 226,
+      "dividend_payers": 225,
+      "dividend_payer_pct": 99.5575221238938,
+      "mean_yield": 0.037255555391311646,
+      "median_yield": 0.025200000032782555
+    },
+    "Diversified Telecommunication Services": {
+      "total_stocks": 85,
+      "dividend_payers": 85,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.04072941467165947,
+      "median_yield": 0.03999999910593033
+    },
+    "Electric Utilities": {
+      "total_stocks": 92,
+      "dividend_payers": 92,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.036232609301805496,
+      "median_yield": 0.030700000002980232
+    },
+    "Electrical Equipment": {
+      "total_stocks": 172,
+      "dividend_payers": 172,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.01756860502064228,
+      "median_yield": 0.01615000143647194
+    },
+    "Ground Transportation": {
+      "total_stocks": 68,
+      "dividend_payers": 68,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03071470558643341,
+      "median_yield": 0.025200000032782555
+    },
+    "Electronic Equipment Instruments and Components": {
+      "total_stocks": 206,
+      "dividend_payers": 205,
+      "dividend_payer_pct": 99.51456310679612,
+      "mean_yield": 0.019644388929009438,
+      "median_yield": 0.016300000250339508
+    },
+    "Insurance": {
+      "total_stocks": 195,
+      "dividend_payers": 195,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03437589481472969,
+      "median_yield": 0.026200000196695328
+    },
+    "Industrial Conglomerates": {
+      "total_stocks": 65,
+      "dividend_payers": 65,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.036035384982824326,
+      "median_yield": 0.025200000032782555
+    },
+    "Metals and Mining": {
+      "total_stocks": 280,
+      "dividend_payers": 279,
+      "dividend_payer_pct": 99.64285714285714,
+      "mean_yield": 0.02657920867204666,
+      "median_yield": 0.025200000032782555
+    },
+    "Media": {
+      "total_stocks": 75,
+      "dividend_payers": 75,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03709600120782852,
+      "median_yield": 0.025200000032782555
+    },
+    "Professional Services": {
+      "total_stocks": 98,
+      "dividend_payers": 98,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03142346814274788,
+      "median_yield": 0.025200000032782555
+    },
+    "Textiles Apparel and Luxury Goods": {
+      "total_stocks": 67,
+      "dividend_payers": 67,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.026176119223237038,
+      "median_yield": 0.025200000032782555
+    },
+    "Commercial Services and Supplies": {
+      "total_stocks": 89,
+      "dividend_payers": 88,
+      "dividend_payer_pct": 98.87640449438202,
+      "mean_yield": 0.02766704559326172,
+      "median_yield": 0.024900000542402267
+    },
+    "Air Freight and Logistics": {
+      "total_stocks": 40,
+      "dividend_payers": 39,
+      "dividend_payer_pct": 97.5,
+      "mean_yield": 0.04894359037280083,
+      "median_yield": 0.026200000196695328
+    },
+    "Building Products": {
+      "total_stocks": 78,
+      "dividend_payers": 78,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.02654614858329296,
+      "median_yield": 0.01925000175833702
+    },
+    "Construction Materials": {
+      "total_stocks": 76,
+      "dividend_payers": 75,
+      "dividend_payer_pct": 98.68421052631578,
+      "mean_yield": 0.034282661974430084,
+      "median_yield": 0.025200000032782555
+    },
+    "Food Products": {
       "total_stocks": 208,
-      "dividend_payers": 207,
-      "dividend_payer_pct": 99.51923076923077,
-      "mean_yield": 0.039383091032505035,
+      "dividend_payers": 206,
+      "dividend_payer_pct": 99.03846153846155,
+      "mean_yield": 0.034918930381536484,
+      "median_yield": 0.025800000876188278
+    },
+    "Construction and Engineering": {
+      "total_stocks": 128,
+      "dividend_payers": 128,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.038520313799381256,
+      "median_yield": 0.025200000032782555
+    },
+    "Energy Equipment and Services": {
+      "total_stocks": 70,
+      "dividend_payers": 70,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.05328142270445824,
+      "median_yield": 0.025200000032782555
+    },
+    "Multi-Utilities": {
+      "total_stocks": 37,
+      "dividend_payers": 37,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03901621699333191,
+      "median_yield": 0.03629999980330467
+    },
+    "Independent Power and Renewable Electricity Producers": {
+      "total_stocks": 82,
+      "dividend_payers": 82,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.04297073185443878,
+      "median_yield": 0.026750000193715096
+    },
+    "Trading Companies and Distributors": {
+      "total_stocks": 80,
+      "dividend_payers": 80,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.029691249132156372,
+      "median_yield": 0.024650000035762787
+    },
+    "Real Estate Management and Development": {
+      "total_stocks": 204,
+      "dividend_payers": 203,
+      "dividend_payer_pct": 99.50980392156863,
+      "mean_yield": 0.03855270519852638,
       "median_yield": 0.025200000032782555
     },
     "Passenger Airlines": {
-      "total_stocks": 43,
-      "dividend_payers": 43,
+      "total_stocks": 45,
+      "dividend_payers": 45,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03193953260779381,
+      "mean_yield": 0.031700000166893005,
       "median_yield": 0.025200000032782555
     },
     "Household Durables": {
-      "total_stocks": 116,
-      "dividend_payers": 115,
-      "dividend_payer_pct": 99.13793103448276,
-      "mean_yield": 0.03419477865099907,
+      "total_stocks": 112,
+      "dividend_payers": 112,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03387143090367317,
       "median_yield": 0.025200000032782555
     },
     "Personal Care Products": {
-      "total_stocks": 53,
-      "dividend_payers": 53,
+      "total_stocks": 41,
+      "dividend_payers": 41,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.025311321020126343,
-      "median_yield": 0.025200000032782555
+      "mean_yield": 0.024682926014065742,
+      "median_yield": 0.024299999698996544
     },
     "Health Care Technology": {
       "total_stocks": 19,
       "dividend_payers": 19,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.020642105489969254,
+      "mean_yield": 0.02061578817665577,
       "median_yield": 0.025200000032782555
     },
     "Gas Utilities": {
-      "total_stocks": 26,
-      "dividend_payers": 26,
+      "total_stocks": 33,
+      "dividend_payers": 33,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04149999842047691,
-      "median_yield": 0.03894999995827675
+      "mean_yield": 0.040381815284490585,
+      "median_yield": 0.039000000804662704
     },
     "Water Utilities": {
-      "total_stocks": 25,
-      "dividend_payers": 25,
+      "total_stocks": 20,
+      "dividend_payers": 20,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.042392000555992126,
-      "median_yield": 0.03750000149011612
+      "mean_yield": 0.045559998601675034,
+      "median_yield": 0.04100000113248825
     },
     "Containers and Packaging": {
-      "total_stocks": 44,
-      "dividend_payers": 43,
-      "dividend_payer_pct": 97.72727272727273,
-      "mean_yield": 0.036793023347854614,
-      "median_yield": 0.027899999171495438
+      "total_stocks": 36,
+      "dividend_payers": 35,
+      "dividend_payer_pct": 97.22222222222221,
+      "mean_yield": 0.040794286876916885,
+      "median_yield": 0.038600001484155655
     },
     "Distributors": {
-      "total_stocks": 19,
-      "dividend_payers": 19,
+      "total_stocks": 15,
+      "dividend_payers": 15,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.055021047592163086,
+      "mean_yield": 0.05845332890748978,
       "median_yield": 0.025200000032782555
     },
     "Automobile Components": {
-      "total_stocks": 97,
-      "dividend_payers": 97,
+      "total_stocks": 110,
+      "dividend_payers": 110,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.031391751021146774,
+      "mean_yield": 0.026973631232976913,
       "median_yield": 0.025200000032782555
     },
     "Mortgage Real Estate Investment Trusts (REITs)": {
-      "total_stocks": 10,
-      "dividend_payers": 10,
+      "total_stocks": 11,
+      "dividend_payers": 11,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.11698999255895615,
-      "median_yield": 0.10864999890327454
+      "mean_yield": 0.11645454913377762,
+      "median_yield": 0.10859999805688858
     },
     "Leisure Products": {
-      "total_stocks": 32,
-      "dividend_payers": 31,
-      "dividend_payer_pct": 96.875,
-      "mean_yield": 0.033467743545770645,
+      "total_stocks": 29,
+      "dividend_payers": 29,
+      "dividend_payer_pct": 100.0,
+      "mean_yield": 0.03229310363531113,
       "median_yield": 0.025200000032782555
     },
     "Diversified Consumer Services": {
-      "total_stocks": 42,
-      "dividend_payers": 42,
+      "total_stocks": 39,
+      "dividend_payers": 39,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.028097618371248245,
+      "mean_yield": 0.028123077005147934,
       "median_yield": 0.025200000032782555
     },
     "Marine Transportation": {
-      "total_stocks": 31,
-      "dividend_payers": 31,
+      "total_stocks": 36,
+      "dividend_payers": 36,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.09012579172849655,
-      "median_yield": 0.046799998730421066
+      "mean_yield": 0.09338054060935974,
+      "median_yield": 0.06745000183582306
     },
     "Paper and Forest Products": {
-      "total_stocks": 27,
-      "dividend_payers": 27,
+      "total_stocks": 25,
+      "dividend_payers": 25,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.03889999911189079,
+      "mean_yield": 0.03442399948835373,
       "median_yield": 0.025200000032782555
     },
     "Transportation Infrastructure": {
-      "total_stocks": 43,
-      "dividend_payers": 43,
+      "total_stocks": 52,
+      "dividend_payers": 52,
       "dividend_payer_pct": 100.0,
-      "mean_yield": 0.04516976699233055,
-      "median_yield": 0.029899999499320984
+      "mean_yield": 0.04022884741425514,
+      "median_yield": 0.029750000685453415
     }
   },
   "yield_distribution": {
-    "0-1%": 6907,
+    "0-1%": 6947,
     "1-2%": 2,
     "2-3%": 0,
     "3-4%": 0,
@@ -1638,70 +1652,70 @@
   },
   "forward_yield_analysis": {
     "div_yield_ind": {
-      "count": 6597,
-      "mean": 0.03899344056844711,
-      "median": 0.02410000003874302,
-      "q25": 0.016599999740719795,
-      "q75": 0.03660000115633011
+      "count": 6668,
+      "mean": 0.03776334598660469,
+      "median": 0.023900000378489494,
+      "q25": 0.016200000420212746,
+      "q75": 0.03669999912381172
     },
     "div_yield_1fyind": {
-      "count": 6312,
-      "mean": 0.03275185450911522,
-      "median": 0.02290000021457672,
-      "q25": 0.01677499944344163,
-      "q75": 0.03830000013113022
+      "count": 6396,
+      "mean": 0.03279390186071396,
+      "median": 0.02329999953508377,
+      "q25": 0.016599999740719795,
+      "q75": 0.03882500063627958
     },
     "div_yield_2fyind": {
-      "count": 6314,
-      "mean": 0.03442893177270889,
-      "median": 0.024000000208616257,
-      "q25": 0.018300000578165054,
-      "q75": 0.03970000147819519
+      "count": 6397,
+      "mean": 0.03472347930073738,
+      "median": 0.02449999935925007,
+      "q25": 0.01810000091791153,
+      "q75": 0.040699999779462814
     },
     "div_yield_3fyind": {
-      "count": 6189,
-      "mean": 0.025979189202189445,
-      "median": 0.017799999564886093,
-      "q25": 0.01510000042617321,
-      "q75": 0.02969999983906746
+      "count": 6241,
+      "mean": 0.026447797194123268,
+      "median": 0.018200000748038292,
+      "q25": 0.014600000344216824,
+      "q75": 0.030899999663233757
     },
     "div_yield_4fyind": {
-      "count": 5826,
-      "mean": 0.023745674639940262,
+      "count": 5873,
+      "mean": 0.024349618703126907,
       "median": 0.014800000004470348,
       "q25": 0.014800000004470348,
-      "q75": 0.027799999341368675
+      "q75": 0.028999999165534973
     },
     "div_yield_5fyind": {
-      "count": 6408,
-      "mean": 0.029373176395893097,
-      "median": 0.02250000089406967,
-      "q25": 0.019700000062584877,
-      "q75": 0.03240000084042549
+      "count": 6442,
+      "mean": 0.029281774535775185,
+      "median": 0.022600000724196434,
+      "q25": 0.018824999686330557,
+      "q75": 0.03357499931007624
     },
     "div_yield_5yavgltm": {
-      "count": 6934,
-      "mean": 0.032194264233112335,
+      "count": 6969,
+      "mean": 0.032556191086769104,
       "median": 0.02669999934732914,
-      "q25": 0.01899999938905239,
-      "q75": 0.03550000116229057
+      "q25": 0.01810000091791153,
+      "q75": 0.03680000081658363
     }
   },
   "buyback_analysis": {
     "column": "buyback_yield_ltm",
-    "count": 6940,
-    "buyback_payers": 5249,
-    "buyback_payer_pct": 75.63400576368876,
-    "mean_yield": 0.01507178507745266,
-    "median_yield": 0.002400000113993883,
-    "q25": 0.002400000113993883,
-    "q75": 0.015399999916553497
+    "count": 6976,
+    "buyback_payers": 5284,
+    "buyback_payer_pct": 75.7454128440367,
+    "mean_yield": 0.014931699261069298,
+    "median_yield": 0.0024999999441206455,
+    "q25": 0.0024999999441206455,
+    "q75": 0.016200000420212746
   },
   "total_shareholder_yield": {
-    "count": 6327,
-    "mean": 0.04400129243731499,
-    "median": 0.02969999983906746,
-    "q25": 0.021900000050663948,
-    "q75": 0.053599998354911804
+    "count": 6370,
+    "mean": 0.043987203389406204,
+    "median": 0.030000001192092896,
+    "q25": 0.021825000178068876,
+    "q75": 0.0544000007212162
   }
 }

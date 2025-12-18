@@ -51,6 +51,8 @@ __all__ = [
     "engineer_composite_scores",
     "engineer_sector_relative_interactions",
     "engineer_employee_productivity_features",
+    "engineer_estimated_vs_actual_analytics",
+    "engineer_gaap_vs_adjusted_analytics",
     "build_comprehensive_features",
 ]
 
@@ -1810,12 +1812,8 @@ def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
             "total_revenues_1fy",
         )
     ):
-        cur = _safe_div(
-            df["ebitda_ltm"].astype(float), df["total_revenues_1fy"].astype(float)
-        )
-        prev = _safe_div(
-            df["ebitda_1fy"].astype(float), df["total_revenues_1fy"].astype(float)
-        )
+        cur = _safe_div(df["ebitda_ltm"].astype(float), df["total_revenues_ltm"].astype(float))
+        prev = _safe_div(df["ebitda_fy"].astype(float), df["total_revenues_fy"].astype(float))
         result["ebitda_margin_trend"] = cur - prev
 
     # Gross margin trend (FY reference for previous)
@@ -1829,7 +1827,7 @@ def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
         )
     ):
         cur = _safe_div(
-            df["gross_profit_ltm"].astype(float), df["total_revenues_1fy"].astype(float)
+            df["gross_profit_ltm"].astype(float), df["total_revenues_ltm"].astype(float)
         )
         prev = _safe_div(
             df["gross_profit_fy"].astype(float), df["revenue_fy"].astype(float)
@@ -1842,12 +1840,11 @@ def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
         for c in ("ebit_ltm", "ebit_1fy", "total_revenues_1fy", "total_revenues_1fy")
     ):
         delta_ebit = _safe_div(
-            df["ebit_ltm"].astype(float) - df["ebit_1fy"].astype(float),
+            df["ebit_fy"].astype(float) - df["ebit_1fy"].astype(float),
             df["ebit_1fy"].astype(float),
         )
         delta_rev = _safe_div(
-            df["total_revenues_1fy"].astype(float)
-            - df["total_revenues_1fy"].astype(float),
+            df["total_revenues_fy"].astype(float) - df["total_revenues_1fy"].astype(float),
             df["total_revenues_1fy"].astype(float),
         )
         result["operating_leverage"] = _safe_div(delta_ebit, delta_rev)
@@ -3004,4 +3001,462 @@ def engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame:
         )
 
     logger.info("Engineered employment dynamics features (Phase 9.3 Schema 1.3)")
+    return result
+
+
+def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer Estimated vs. Actual earnings analytics features.
+
+    Phase 9.3 Enhanced Earnings Analytics: Compares forward estimates against
+    actual reported metrics to identify earnings surprises, estimate momentum,
+    and analyst forecast accuracy.
+
+    Features created:
+    - EPS Surprise %: (eps_actual - eps_estimated) / |eps_estimated| * 100
+    - Revenue Surprise %: (revenue_actual - revenue_estimated) / |revenue_estimated| * 100
+    - EBITDA Surprise %: (ebitda_actual - ebitda_estimated) / |ebitda_estimated| * 100
+    - Earnings Beat Indicator: Boolean flag for positive EPS surprise
+    - Surprise Momentum Score: Weighted average of multi-period revisions (1M, 3M, 6M)
+    - Surprise Magnitude: Categorical (small/moderate/large) based on surprise %
+    - Consensus Uncertainty: Spread between estimate and actual as volatility proxy
+    - Estimate Revision Trend: Acceleration in estimate revisions over time
+
+    Input Columns (from COLUMN_SCHEMA):
+    - Actuals: eps_adj_ltm, net_eps_basic_ltm, total_revenues_ltm, ebitda_ltm
+    - Estimates: eps_norm_est_avg_ntm, eps_norm_est_avg_fy1e, revenues_est_avg_ntm,
+                 revenues_est_avg_fy1e, ebitda_est_avg_ntm, ebitda_est_avg_fy1e
+    - Revisions: eps_est_avg_rev_pct_fy1e_1m, eps_est_avg_rev_pct_fy1e_3m,
+                 eps_est_avg_rev_pct_fy1e_6m, eps_est_avg_rev_pct_fy1e_1y
+
+    Args:
+        df: Input DataFrame with EPS, revenue, and estimate columns
+
+    Returns:
+        DataFrame with estimated vs. actual analytics features added
+
+    Example:
+        >>> df_earnings = engineer_estimated_vs_actual_analytics(stocks_df)
+        >>> print(df_earnings[['eps_surprise_pct', 'earnings_beat_indicator']].head())
+        >>> # Identify stocks beating estimates consistently
+        >>> beats = df_earnings[df_earnings['earnings_beat_indicator'] == True]
+    """
+    result = df.copy()
+
+    # =========================================================================
+    # 1. EPS Surprise Analytics
+    # =========================================================================
+    # Primary EPS Surprise: Actual vs. Next Twelve Months (NTM) estimate
+    actual_eps_cols = ["eps_adj_ltm", "net_eps_basic_ltm", "eps"]
+    estimate_eps_cols = ["eps_norm_est_avg_ntm", "eps_norm_est_avg_fy1e"]
+
+    eps_actual = None
+    for col in actual_eps_cols:
+        if col in df.columns:
+            eps_actual = pd.to_numeric(df[col], errors="coerce")
+            break
+
+    eps_estimate = None
+    for col in estimate_eps_cols:
+        if col in df.columns:
+            eps_estimate = pd.to_numeric(df[col], errors="coerce")
+            break
+
+    if eps_actual is not None and eps_estimate is not None:
+        # EPS Surprise Percentage
+        result["eps_surprise_pct"] = (
+            _safe_div((eps_actual - eps_estimate), eps_estimate.abs()) * 100
+        )
+
+        # Earnings Beat Indicator (boolean flag)
+        result["earnings_beat_indicator"] = (result["eps_surprise_pct"] > 0).fillna(False)
+
+        # Surprise Magnitude Categorization
+        surprise_abs = result["eps_surprise_pct"].abs()
+        result["eps_surprise_magnitude"] = (
+            pd.cut(
+                surprise_abs,
+                bins=[0, 5, 15, float("inf")],
+                labels=["small", "moderate", "large"],
+                include_lowest=True,
+            )
+            .astype(str)
+            .fillna("unknown")
+        )
+
+        logger.info(f"Computed EPS surprise for {result['eps_surprise_pct'].notna().sum()} stocks")
+
+    # =========================================================================
+    # 2. Revenue Surprise Analytics
+    # =========================================================================
+    actual_revenue_cols = ["total_revenues_ltm", "total_revenues_fy", "revenue"]
+    estimate_revenue_cols = [
+        "revenues_est_avg_ntm",
+        "revenues_est_avg_fy1e",
+        "revenues_est_med_ntm",
+    ]
+
+    revenue_actual = None
+    for col in actual_revenue_cols:
+        if col in df.columns:
+            revenue_actual = pd.to_numeric(df[col], errors="coerce")
+            break
+
+    revenue_estimate = None
+    for col in estimate_revenue_cols:
+        if col in df.columns:
+            revenue_estimate = pd.to_numeric(df[col], errors="coerce")
+            break
+
+    if revenue_actual is not None and revenue_estimate is not None:
+        # Revenue Surprise Percentage
+        result["revenue_surprise_pct"] = (
+            _safe_div((revenue_actual - revenue_estimate), revenue_estimate.abs()) * 100
+        )
+
+        # Revenue Beat Indicator
+        result["revenue_beat_indicator"] = (result["revenue_surprise_pct"] > 0).fillna(False)
+
+        logger.info(
+            f"Computed revenue surprise for {result['revenue_surprise_pct'].notna().sum()} stocks"
+        )
+
+    # =========================================================================
+    # 3. EBITDA Surprise Analytics
+    # =========================================================================
+    actual_ebitda_cols = ["ebitda_ltm", "ebitda_fy", "ebitda"]
+    estimate_ebitda_cols = ["ebitda_est_avg_ntm", "ebitda_est_avg_fy1e"]
+
+    ebitda_actual = None
+    for col in actual_ebitda_cols:
+        if col in df.columns:
+            ebitda_actual = pd.to_numeric(df[col], errors="coerce")
+            break
+
+    ebitda_estimate = None
+    for col in estimate_ebitda_cols:
+        if col in df.columns:
+            ebitda_estimate = pd.to_numeric(df[col], errors="coerce")
+            break
+
+    if ebitda_actual is not None and ebitda_estimate is not None:
+        # EBITDA Surprise Percentage
+        result["ebitda_surprise_pct"] = (
+            _safe_div((ebitda_actual - ebitda_estimate), ebitda_estimate.abs()) * 100
+        )
+
+        logger.info(
+            f"Computed EBITDA surprise for {result['ebitda_surprise_pct'].notna().sum()} stocks"
+        )
+
+    # =========================================================================
+    # 4. Surprise Momentum Score (Multi-Period Revision Trend)
+    # =========================================================================
+    revision_cols = {
+        "eps_est_avg_rev_pct_fy1e_1m": 0.5,  # 50% weight to 1-month revision
+        "eps_est_avg_rev_pct_fy1e_3m": 0.3,  # 30% weight to 3-month revision
+        "eps_est_avg_rev_pct_fy1e_6m": 0.2,  # 20% weight to 6-month revision
+    }
+
+    revision_components = []
+    for col, weight in revision_cols.items():
+        if col in df.columns:
+            rev_data = pd.to_numeric(df[col], errors="coerce")
+            revision_components.append(rev_data * weight)
+
+    if revision_components:
+        # Weighted sum of revision trends
+        result["surprise_momentum_score"] = pd.concat(revision_components, axis=1).sum(
+            axis=1, skipna=True
+        )
+
+        # Identify stocks with consistent positive momentum (all revisions > 0)
+        if all(
+            col in df.columns
+            for col in ["eps_est_avg_rev_pct_fy1e_1m", "eps_est_avg_rev_pct_fy1e_3m"]
+        ):
+            result["positive_revision_momentum"] = (
+                (pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_1m"], errors="coerce") > 0)
+                & (pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_3m"], errors="coerce") > 0)
+            ).fillna(False)
+
+        logger.info(
+            f"Computed surprise momentum score for {result['surprise_momentum_score'].notna().sum()} stocks"
+        )
+
+    # =========================================================================
+    # 5. Consensus Uncertainty (Estimate Spread as Volatility Proxy)
+    # =========================================================================
+    if "eps_surprise_pct" in result.columns:
+        # Use absolute surprise as proxy for consensus uncertainty
+        result["consensus_uncertainty_score"] = result["eps_surprise_pct"].abs()
+
+    # =========================================================================
+    # 6. Estimate Revision Acceleration
+    # =========================================================================
+    if all(
+        col in df.columns for col in ["eps_est_avg_rev_pct_fy1e_1m", "eps_est_avg_rev_pct_fy1e_3m"]
+    ):
+        rev_1m = pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_1m"], errors="coerce")
+        rev_3m = pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_3m"], errors="coerce")
+
+        # Acceleration: Recent revision change faster than historical average
+        result["estimate_revision_acceleration"] = rev_1m - rev_3m
+
+        # Flag accelerating upgrades
+        result["accelerating_upgrades_flag"] = (
+            (rev_1m > rev_3m) & (rev_1m > 0) & (rev_3m > 0)
+        ).fillna(False)
+
+        logger.info(
+            f"Computed estimate revision acceleration for {result['estimate_revision_acceleration'].notna().sum()} stocks"
+        )
+
+    logger.info("Engineered Estimated vs. Actual analytics features (Phase 9.3)")
+    return result
+
+
+def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer GAAP vs. Adjusted earnings quality analytics features.
+
+    Phase 9.3 Enhanced Earnings Quality: Compares GAAP (reported) metrics against
+    Adjusted (non-GAAP) metrics to assess earnings quality, identify aggressive
+    accounting adjustments, and flag potential red flags.
+
+    Features created:
+    - Adjustment Spreads: Dollar differences between adjusted and GAAP metrics
+    - Adjustment Ratios: Adjusted / GAAP for EPS, Net Income, EBITDA, EBIT
+    - Earnings Quality Flags: Warning indicators for excessive adjustments (>20%)
+    - Adjustment Consistency Score: Temporal stability of adjustment patterns
+    - Exceptional Items Impact: Non-recurring item magnitude relative to core earnings
+    - Quality Score: Composite 0-100 score based on adjustment magnitudes
+
+    Input Columns (from COLUMN_SCHEMA):
+    - GAAP EPS: net_eps_basic_ltm, net_eps_basic_fq, net_eps_basic_fy
+    - Adjusted EPS: eps_adj_ltm, eps_adj_fy, eps_adj_1fy
+    - GAAP Estimates: eps_gaap_est_avg_fy1e, eps_gaap_est_avg_ntm
+    - GAAP Net Income: net_income_is_ltm, net_income_is_fy, net_income_is_fq
+    - Adjusted Net Income: net_income_adj_ltm, net_income_adj_fy, net_income_adj_1fy
+    - GAAP EBITDA: ebitda_ltm, ebitda_fy, ebitda_fq
+    - Adjusted EBITDA: ebitda_adj_ltm, ebitda_adj_fy, ebitda_adj_1fy
+    - GAAP EBIT: ebit_ltm, ebit_fy, ebit_fq
+    - Adjusted EBIT: ebit_adj_ltm, ebit_adj_fy, ebit_adj_1fy
+
+    Args:
+        df: Input DataFrame with GAAP and adjusted earnings columns
+
+    Returns:
+        DataFrame with GAAP vs. Adjusted analytics features added
+
+    Example:
+        >>> df_quality = engineer_gaap_vs_adjusted_analytics(stocks_df)
+        >>> print(df_quality[['eps_adjustment_ratio', 'earnings_quality_flag']].head())
+        >>> # Identify companies with aggressive adjustments
+        >>> aggressive = df_quality[df_quality['earnings_quality_flag'] == True]
+    """
+    result = df.copy()
+
+    # =========================================================================
+    # 1. EPS Adjustment Analytics (LTM - Last Twelve Months)
+    # =========================================================================
+    if "eps_adj_ltm" in df.columns and "net_eps_basic_ltm" in df.columns:
+        eps_adj = pd.to_numeric(df["eps_adj_ltm"], errors="coerce")
+        eps_gaap = pd.to_numeric(df["net_eps_basic_ltm"], errors="coerce")
+
+        # EPS Adjustment Spread (dollar difference)
+        result["eps_adjustment_spread_ltm"] = eps_adj - eps_gaap
+
+        # EPS Adjustment Ratio (adjusted / GAAP)
+        result["eps_adjustment_ratio_ltm"] = _safe_div(eps_adj, eps_gaap)
+
+        # EPS Adjustment Percentage
+        result["eps_adjustment_pct_ltm"] = _safe_div((eps_adj - eps_gaap), eps_gaap.abs()) * 100
+
+        # Earnings Quality Flag: Warn if adjustment > 20%
+        result["eps_quality_flag_ltm"] = (result["eps_adjustment_pct_ltm"].abs() > 20).fillna(False)
+
+        logger.info(
+            f"Computed EPS GAAP vs. Adjusted for {result['eps_adjustment_ratio_ltm'].notna().sum()} stocks (LTM)"
+        )
+
+    # EPS Adjustment Analytics (FY - Fiscal Year)
+    if "eps_adj_fy" in df.columns and "net_eps_basic_fy" in df.columns:
+        eps_adj_fy = pd.to_numeric(df["eps_adj_fy"], errors="coerce")
+        eps_gaap_fy = pd.to_numeric(df["net_eps_basic_fy"], errors="coerce")
+
+        result["eps_adjustment_spread_fy"] = eps_adj_fy - eps_gaap_fy
+        result["eps_adjustment_ratio_fy"] = _safe_div(eps_adj_fy, eps_gaap_fy)
+        result["eps_adjustment_pct_fy"] = (
+            _safe_div((eps_adj_fy - eps_gaap_fy), eps_gaap_fy.abs()) * 100
+        )
+
+    # =========================================================================
+    # 2. Net Income Adjustment Analytics
+    # =========================================================================
+    if "net_income_adj_ltm" in df.columns and "net_income_is_ltm" in df.columns:
+        ni_adj = pd.to_numeric(df["net_income_adj_ltm"], errors="coerce")
+        ni_gaap = pd.to_numeric(df["net_income_is_ltm"], errors="coerce")
+
+        # Net Income Adjustment Spread (dollar difference)
+        result["net_income_adjustment_spread_ltm"] = ni_adj - ni_gaap
+
+        # Net Income Adjustment Ratio
+        result["net_income_adjustment_ratio_ltm"] = _safe_div(ni_adj, ni_gaap)
+
+        # Net Income Adjustment Percentage
+        result["net_income_adjustment_pct_ltm"] = _safe_div((ni_adj - ni_gaap), ni_gaap.abs()) * 100
+
+        logger.info(
+            f"Computed Net Income GAAP vs. Adjusted for {result['net_income_adjustment_ratio_ltm'].notna().sum()} stocks (LTM)"
+        )
+
+    # Net Income Adjustment (FY)
+    if "net_income_adj_fy" in df.columns and "net_income_is_fy" in df.columns:
+        ni_adj_fy = pd.to_numeric(df["net_income_adj_fy"], errors="coerce")
+        ni_gaap_fy = pd.to_numeric(df["net_income_is_fy"], errors="coerce")
+
+        result["net_income_adjustment_spread_fy"] = ni_adj_fy - ni_gaap_fy
+        result["net_income_adjustment_ratio_fy"] = _safe_div(ni_adj_fy, ni_gaap_fy)
+
+    # =========================================================================
+    # 3. EBITDA Adjustment Analytics
+    # =========================================================================
+    # Note: ebitda_adjustment_ratio_ltm/fy already computed in engineer_profitability_ratios()
+    # Adding spread and percentage metrics
+    if "ebitda_adj_ltm" in df.columns and "ebitda_ltm" in df.columns:
+        ebitda_adj = pd.to_numeric(df["ebitda_adj_ltm"], errors="coerce")
+        ebitda_gaap = pd.to_numeric(df["ebitda_ltm"], errors="coerce")
+
+        result["ebitda_adjustment_spread_ltm"] = ebitda_adj - ebitda_gaap
+
+        result["ebitda_adjustment_pct_ltm"] = (
+            _safe_div((ebitda_adj - ebitda_gaap), ebitda_gaap.abs()) * 100
+        )
+
+        logger.info(
+            f"Computed EBITDA GAAP vs. Adjusted for {result['ebitda_adjustment_spread_ltm'].notna().sum()} stocks (LTM)"
+        )
+
+    if "ebitda_adj_fy" in df.columns and "ebitda_fy" in df.columns:
+        ebitda_adj_fy = pd.to_numeric(df["ebitda_adj_fy"], errors="coerce")
+        ebitda_gaap_fy = pd.to_numeric(df["ebitda_fy"], errors="coerce")
+
+        result["ebitda_adjustment_spread_fy"] = ebitda_adj_fy - ebitda_gaap_fy
+
+    # =========================================================================
+    # 4. EBIT Adjustment Analytics
+    # =========================================================================
+    if "ebit_adj_ltm" in df.columns and "ebit_ltm" in df.columns:
+        ebit_adj = pd.to_numeric(df["ebit_adj_ltm"], errors="coerce")
+        ebit_gaap = pd.to_numeric(df["ebit_ltm"], errors="coerce")
+
+        result["ebit_adjustment_spread_ltm"] = ebit_adj - ebit_gaap
+
+        result["ebit_adjustment_pct_ltm"] = _safe_div((ebit_adj - ebit_gaap), ebit_gaap.abs()) * 100
+
+    if "ebit_adj_fy" in df.columns and "ebit_fy" in df.columns:
+        ebit_adj_fy = pd.to_numeric(df["ebit_adj_fy"], errors="coerce")
+        ebit_gaap_fy = pd.to_numeric(df["ebit_fy"], errors="coerce")
+
+        result["ebit_adjustment_spread_fy"] = ebit_adj_fy - ebit_gaap_fy
+
+    # =========================================================================
+    # 5. Adjustment Consistency Score (Temporal Stability)
+    # =========================================================================
+    # Compare LTM vs. FY adjustment ratios to assess consistency
+    if "eps_adjustment_ratio_ltm" in result.columns and "eps_adjustment_ratio_fy" in result.columns:
+        ratio_diff = (result["eps_adjustment_ratio_ltm"] - result["eps_adjustment_ratio_fy"]).abs()
+
+        # Lower difference = higher consistency (invert scale)
+        # Clip to [0, 2] range and invert: consistency = 2 - diff (normalized to 0-100)
+        result["adjustment_consistency_score"] = (2.0 - ratio_diff.clip(0, 2)) / 2.0 * 100
+
+        logger.info(
+            f"Computed adjustment consistency score for {result['adjustment_consistency_score'].notna().sum()} stocks"
+        )
+
+    # =========================================================================
+    # 6. Composite Earnings Quality Flag
+    # =========================================================================
+    # Aggregate quality warning flag from multiple indicators
+    quality_flags = []
+
+    if "eps_quality_flag_ltm" in result.columns:
+        quality_flags.append(result["eps_quality_flag_ltm"])
+
+    if "ebitda_adjustment_pct_ltm" in result.columns:
+        quality_flags.append(result["ebitda_adjustment_pct_ltm"].abs() > 20)
+
+    if "net_income_adjustment_pct_ltm" in result.columns:
+        quality_flags.append(result["net_income_adjustment_pct_ltm"].abs() > 20)
+
+    if quality_flags:
+        # Overall quality flag: ANY metric exceeds threshold
+        result["earnings_quality_warning_flag"] = (
+            pd.concat(quality_flags, axis=1).any(axis=1).fillna(False)
+        )
+
+        logger.info(
+            f"Flagged {result['earnings_quality_warning_flag'].sum()} stocks with earnings quality warnings"
+        )
+
+    # =========================================================================
+    # 7. Normalized Earnings Quality Score (0-100)
+    # =========================================================================
+    # Higher score = better quality (lower adjustments)
+    # Formula: 100 - weighted average of adjustment percentages
+    score_components = []
+
+    if "eps_adjustment_pct_ltm" in result.columns:
+        # Cap at 50% for scoring purposes
+        eps_adj_impact = result["eps_adjustment_pct_ltm"].abs().clip(0, 50)
+        score_components.append(eps_adj_impact * 0.4)  # 40% weight
+
+    if "ebitda_adjustment_pct_ltm" in result.columns:
+        ebitda_adj_impact = result["ebitda_adjustment_pct_ltm"].abs().clip(0, 50)
+        score_components.append(ebitda_adj_impact * 0.3)  # 30% weight
+
+    if "net_income_adjustment_pct_ltm" in result.columns:
+        ni_adj_impact = result["net_income_adjustment_pct_ltm"].abs().clip(0, 50)
+        score_components.append(ni_adj_impact * 0.3)  # 30% weight
+
+    if score_components:
+        total_adjustment_impact = pd.concat(score_components, axis=1).sum(axis=1, skipna=True)
+        result["earnings_quality_score"] = (100 - total_adjustment_impact).clip(0, 100)
+
+        logger.info(
+            f"Computed earnings quality score (mean: {result['earnings_quality_score'].mean():.1f})"
+        )
+
+    # =========================================================================
+    # 8. Exceptional Items Impact Ratio
+    # =========================================================================
+    # Leverage existing adjustment ratios as proxy for exceptional items magnitude
+    exceptional_cols = [
+        "impairment_of_goodwill_ltm",
+        "asset_writedown_ltm",
+        "restructuring_charges_ltm",
+        "merger_and_restructuring_charges_ltm",
+    ]
+
+    exceptional_items_present = [col for col in exceptional_cols if col in df.columns]
+
+    if exceptional_items_present and "net_income_is_ltm" in df.columns:
+        # Sum of absolute exceptional items
+        exceptional_sum = (
+            df[exceptional_items_present]
+            .apply(lambda x: pd.to_numeric(x, errors="coerce"), axis=0)
+            .abs()
+            .sum(axis=1)
+        )
+
+        ni_gaap_abs = pd.to_numeric(df["net_income_is_ltm"], errors="coerce").abs()
+
+        # Exceptional items as % of net income
+        result["exceptional_items_impact_ratio"] = _safe_div(exceptional_sum, ni_gaap_abs)
+
+        logger.info(
+            f"Computed exceptional items impact for {result['exceptional_items_impact_ratio'].notna().sum()} stocks"
+        )
+
+    logger.info("Engineered GAAP vs. Adjusted analytics features (Phase 9.3)")
     return result

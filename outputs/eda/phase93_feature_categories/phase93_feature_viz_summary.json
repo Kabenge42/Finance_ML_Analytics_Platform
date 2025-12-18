@@ -1,9 +1,9 @@
 {
-  "timestamp": "2025-12-15T18:17:42.307745",
-  "total_categories": 16,
-  "total_features_registered": 193,
-  "total_features_present": 190,
-  "overall_coverage_pct": 98.44559585492227,
+  "timestamp": "2025-12-18T11:53:27.715608",
+  "total_categories": 17,
+  "total_features_registered": 223,
+  "total_features_present": 222,
+  "overall_coverage_pct": 99.55156950672645,
   "visualizations_generated": [
     "phase93_feature_treemap.html",
     "phase93_category_coverage.html",
@@ -18,14 +18,14 @@
       "Expected": 4,
       "Present": 4,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.92499249924992
+      "Avg Completeness %": 99.92832568807339
     },
     {
       "Category": "Efficiency Ratios",
       "Expected": 4,
       "Present": 4,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.94749474947494
+      "Avg Completeness %": 99.97133027522935
     },
     {
       "Category": "Composite Scores",
@@ -39,84 +39,84 @@
       "Expected": 5,
       "Present": 5,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.99399939994
+      "Avg Completeness %": 99.99426605504587
     },
     {
       "Category": "Growth Metrics",
       "Expected": 6,
       "Present": 6,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.91999199919992
+      "Avg Completeness %": 99.91399082568807
     },
     {
       "Category": "Leverage & Liquidity",
       "Expected": 8,
       "Present": 8,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.95124512451245
+      "Avg Completeness %": 99.9641628440367
     },
     {
       "Category": "Balance Sheet Dynamics",
       "Expected": 9,
       "Present": 9,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.83998399839984
+      "Avg Completeness %": 99.85187308868501
     },
     {
       "Category": "Revenue Forecasting",
       "Expected": 9,
       "Present": 9,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.56662332899957
+      "Avg Completeness %": 99.67348369011214
     },
     {
       "Category": "Analyst Sentiment",
       "Expected": 10,
       "Present": 10,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.64446444644463
+      "Avg Completeness %": 99.79357798165138
     },
     {
       "Category": "Profitability",
-      "Expected": 14,
-      "Present": 14,
+      "Expected": 13,
+      "Present": 13,
       "Coverage %": 100.0,
-      "Avg Completeness %": 92.84535596416785
+      "Avg Completeness %": 99.97574100211713
     },
     {
       "Category": "Temporal Patterns",
       "Expected": 15,
       "Present": 15,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.99399939994
+      "Avg Completeness %": 99.99617737003058
     },
     {
       "Category": "Employee Productivity",
       "Expected": 15,
       "Present": 15,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.99399939994001
+      "Avg Completeness %": 99.99617737003058
     },
     {
       "Category": "Quality & Risk",
       "Expected": 18,
       "Present": 18,
       "Coverage %": 100.0,
-      "Avg Completeness %": 97.60559389272261
+      "Avg Completeness %": 97.28991462793068
+    },
+    {
+      "Category": "Capital Allocation",
+      "Expected": 21,
+      "Present": 21,
+      "Coverage %": 100.0,
+      "Avg Completeness %": 99.92354740061161
     },
     {
       "Category": "Valuation Ratios",
       "Expected": 23,
-      "Present": 22,
-      "Coverage %": 95.65217391304348,
-      "Avg Completeness %": 99.6986062242588
-    },
-    {
-      "Category": "Capital Allocation",
-      "Expected": 23,
-      "Present": 21,
-      "Coverage %": 91.30434782608695,
-      "Avg Completeness %": 99.92284942779993
+      "Present": 23,
+      "Coverage %": 100.0,
+      "Avg Completeness %": 99.69834463502194
     },
     {
       "Category": "Momentum & Technical",
@@ -124,6 +124,13 @@
       "Present": 25,
       "Coverage %": 100.0,
       "Avg Completeness %": 100.0
+    },
+    {
+      "Category": "Earnings Quality",
+      "Expected": 33,
+      "Present": 32,
+      "Coverage %": 96.96969696969697,
+      "Avg Completeness %": 99.65685923165137
     }
   ]
 }

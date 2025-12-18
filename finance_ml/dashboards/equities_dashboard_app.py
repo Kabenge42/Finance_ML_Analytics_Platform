@@ -207,12 +207,13 @@ def load_data_csv_first(
     # Slow path: run ETL pipeline
     try:
         source: Literal["csv", "db"] = "db" if resolved_db_url else "csv"
-        df = etl_with_features(
+        # Phase 9.1-9.3: Unified ETL Pipeline (STANDARD Pattern)
+        df, metrics = etl_with_features(
             source=source,
             data_dir=resolved_data_dir,
             db_url=resolved_db_url,
             feature_preset=feature_preset,
-            return_metrics=False,
+            return_metrics=True,
         )
 
         # Export to CSV for next time
@@ -222,10 +223,12 @@ def load_data_csv_first(
             except Exception:
                 pass  # Non-critical
 
-        source_label = f"etl_{source}"
-        _validate_explorer_columns(df, source_label)
+        # Return the metrics summary as the source label for the status bar
+        source_label = metrics.summary()
+        _validate_explorer_columns(df, f"etl_{source}")
         return df, source_label
-    except Exception:
+    except Exception as e:
+        logger.error(f"ETL Pipeline failed: {e}")
         return pd.DataFrame(), "failed"
 
 
@@ -467,6 +470,7 @@ def generate_dashboard_artifacts(
             "cash_flow",
             "dividends",
             "forecasts",
+            "earnings_quality",
         ]
 
         for category in phase93_categories:
@@ -2059,15 +2063,16 @@ def create_app(
         prevent_initial_call=not load_on_start,
     )
     def _refresh_data(_n_clicks):
-        df, source_label = load_data_csv_first(
+        df, status_summary = load_data_csv_first(
             data_dir=data_dir,
             db_url=db_url,
         )
 
         if not df.empty:
-            status = f"Loaded {len(df):,} rows | source={source_label}"
+            # status_summary now contains the detailed metrics.summary()
+            status = f"Rows: {len(df):,} | {status_summary}"
         else:
-            status = "No data loaded"
+            status = "No data loaded or ETL failed"
 
         return df.to_json(orient="split"), status
 

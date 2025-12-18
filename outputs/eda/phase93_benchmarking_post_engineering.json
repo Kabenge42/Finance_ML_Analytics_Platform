@@ -1,12 +1,12 @@
 {
   "phase": "9.3",
   "data_source": "all_stocks_features DataFrame (post-feature-engineering)",
-  "timestamp": "2025-12-14T01:48:52.858487",
-  "total_stocks": 6972,
-  "total_columns": 664,
-  "phase93_features_present": 185,
+  "timestamp": "2025-12-17T23:36:58.618118",
+  "total_stocks": 6971,
+  "total_columns": 702,
+  "phase93_features_present": 190,
   "phase93_features_expected": 190,
-  "coverage_percentage": 97.36842105263158,
+  "coverage_percentage": 100.0,
   "category_coverage": {
     "Momentum & Technical": {
       "present": 25,
@@ -14,14 +14,14 @@
       "coverage_pct": 100.0
     },
     "Valuation Ratios": {
-      "present": 22,
+      "present": 23,
       "expected": 23,
-      "coverage_pct": 95.65217391304348
+      "coverage_pct": 100.0
     },
     "Profitability": {
-      "present": 10,
-      "expected": 12,
-      "coverage_pct": 83.33333333333334
+      "present": 13,
+      "expected": 13,
+      "coverage_pct": 100.0
     },
     "Quality & Risk": {
       "present": 18,
@@ -35,8 +35,8 @@
     },
     "Capital Allocation": {
       "present": 21,
-      "expected": 23,
-      "coverage_pct": 91.30434782608695
+      "expected": 21,
+      "coverage_pct": 100.0
     },
     "Analyst Sentiment": {
       "present": 10,
@@ -79,8 +79,8 @@
       "coverage_pct": 100.0
     },
     "Balance Sheet Dynamics": {
-      "present": 8,
-      "expected": 8,
+      "present": 9,
+      "expected": 9,
       "coverage_pct": 100.0
     },
     "Revenue Forecasting": {

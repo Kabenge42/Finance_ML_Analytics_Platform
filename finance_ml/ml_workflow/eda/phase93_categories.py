@@ -8,29 +8,32 @@ This module provides a centralized registry of Phase 9.3 feature families
 to enable explicit tracking and analysis in EDA summaries, dashboards,
 and analytics workflows.
 
-UPDATED: 2025-11-24
+UPDATED: 2025-12-18
 Registry fully synchronized with actual generator outputs from advanced.py.
-- 196 features registered across 16 categories
+- 223 features registered across 17 categories
 - 100% coverage: All generated features are registered
 - All feature names verified to match actual generator outputs
+- NEW: Earnings Quality category (33 features) from engineer_estimated_vs_actual_analytics()
+  and engineer_gaap_vs_adjusted_analytics()
 
 Categories:
-1. Momentum & Technical (27 features)
+1. Momentum & Technical (25 features)
 2. Valuation Ratios (23 features)
-3. Profitability (12 features)
+3. Profitability (13 features)
 4. Quality & Risk (18 features)
 5. Cash Flow (5 features)
-6. Capital Allocation (23 features)
+6. Capital Allocation (21 features)
 7. Analyst Sentiment (10 features)
-8. Market Sentiment (5 features)
-9. Leverage & Liquidity (9 features)
-10. Temporal Patterns (16 features)
+8. Market Sentiment (4 features)
+9. Leverage & Liquidity (8 features)
+10. Temporal Patterns (15 features)
 11. Composite Scores (5 features)
 12. Growth Metrics (6 features)
 13. Efficiency Ratios (4 features)
-14. Employee Productivity (16 features)
-15. Balance Sheet Dynamics (8 features)
+14. Employee Productivity (15 features)
+15. Balance Sheet Dynamics (9 features)
 16. Revenue Forecasting (9 features)
+17. Earnings Quality (33 features) - NEW
 """
 
 from typing import Dict, List, Optional
@@ -262,6 +265,43 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "revenue_growth_implied_fy1e",
         "revenue_growth_implied_ntm",
     ],
+    "Earnings Quality": [
+        # From engineer_estimated_vs_actual_analytics() - 11 features
+        "eps_surprise_pct",
+        "earnings_beat_indicator",
+        "eps_surprise_magnitude",
+        "revenue_surprise_pct",
+        "revenue_beat_indicator",
+        "ebitda_surprise_pct",
+        "surprise_momentum_score",
+        "positive_revision_momentum",
+        "consensus_uncertainty_score",
+        "estimate_revision_acceleration",
+        "accelerating_upgrades_flag",
+        # From engineer_gaap_vs_adjusted_analytics() - 22 features
+        "eps_adjustment_spread_ltm",
+        "eps_adjustment_ratio_ltm",
+        "eps_adjustment_pct_ltm",
+        "eps_quality_flag_ltm",
+        "eps_adjustment_spread_fy",
+        "eps_adjustment_ratio_fy",
+        "eps_adjustment_pct_fy",
+        "net_income_adjustment_spread_ltm",
+        "net_income_adjustment_ratio_ltm",
+        "net_income_adjustment_pct_ltm",
+        "net_income_adjustment_spread_fy",
+        "net_income_adjustment_ratio_fy",
+        "ebitda_adjustment_spread_ltm",
+        "ebitda_adjustment_pct_ltm",
+        "ebitda_adjustment_spread_fy",
+        "ebit_adjustment_spread_ltm",
+        "ebit_adjustment_pct_ltm",
+        "ebit_adjustment_spread_fy",
+        "adjustment_consistency_score",
+        "earnings_quality_warning_flag",
+        "earnings_quality_score",
+        "exceptional_items_impact_ratio",
+    ],
 }
 
 
@@ -358,5 +398,6 @@ def get_category_description(category: str) -> str:
         "Employee Productivity": "Workforce metrics, employee growth, revenue/profit per employee, hiring intensity",
         "Balance Sheet Dynamics": "Asset/equity/debt growth rates, balance sheet expansion, retained earnings trends",
         "Revenue Forecasting": "Analyst estimate spreads, consensus uncertainty, implied growth, forecast reliability",
+        "Earnings Quality": "EPS/revenue/EBITDA surprises, GAAP vs. Adjusted analytics, earnings quality scores, adjustment flags",
     }
     return descriptions.get(category, "")
