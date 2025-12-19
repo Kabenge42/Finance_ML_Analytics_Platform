@@ -170,7 +170,7 @@ RANDOM_SEED = 42
 
 ### Section 9: Column Schema and DataFrame Conventions ✅
 
-- **9.3**: Phase 9.3 feature categories (PHASE93_FEATURE_INPUTS)
+- **9.3**: Phase 9.3 feature categories (PHASE93_FEATURE_CATEGORIES)
 - **Schema Registry**: COLUMN_SCHEMA with 310+ columns
 - **Normalized Naming**: normalize_column_name() function
 - **Dtype Management**: detect_and_cast_dtypes() integration

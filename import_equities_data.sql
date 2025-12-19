@@ -1,18 +1,371 @@
+-- noinspection LongLineForFile
+
 -- ===================================================================
--- Equities Data Import Script (Auto-generated with Schema Alignment)
+-- Equities Data Import Script (Fixed with Explicit Column Names)
 -- ===================================================================
 -- This script imports financial data from CSV files into the equities table.
 -- 
 -- Key features:
+-- - Explicit column names in INSERT to avoid positional misalignment
 -- - Column aliases matching COLUMN_SCHEMA in schema.py
--- - Semantic type casting based on role definitions
 -- - Uses staging tables with TEXT columns to avoid type conversion errors during COPY
--- - Properly casts TEXT to NUMERIC/DATE in INSERT statements with aliases
+-- - Properly casts TEXT to NUMERIC/DATE in INSERT statements
 -- - Handles empty strings as NULL values
--- - Supports all 329 columns from the CSV files
 --
--- Usage:
---   psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
+-- Column Alias Reference (SQL → Python normalized name):
+-- ======================================================
+-- Identifiers:
+--   "Ticker"                              → ticker
+--   "ISIN"                                → isin
+--   "Name"                                → name
+--   "Description"                         → description
+--   "Exchange"                            → exchange
+--   "Unit"                                → unit
+--   "Sector"                              → sector
+--   "Industry"                            → industry
+--   "Last Updated"                        → last_updated
+--   "Income Statement Report Date"        → income_statement_report_date
+--   "FY End"                              → fy_end
+--   "Next Earnings"                       → next_earnings
+--   "Next Earnings (When)"                → next_earnings_when
+--   "Style Class"                         → style_class
+--   "Next Earnings (Status)"              → next_earnings_status
+--   "Size Class"                          → size_class
+--   "Region"                              → region
+--   "Country"                             → country
+--   "Trading Country"                     → trading_country
+--
+-- Market Values:
+--   "Market Cap"                          → market_cap
+--   "Enterprise Value"                    → enterprise_value
+--
+-- Price Columns (NEVER transform):
+--   "Last Price"                          → last_price
+--   "Price Target"                        → price_target
+--   "Price Target (YTD Ago)"              → price_target_ytd_ago
+--   "Price Target - Low"                  → price_target_low
+--   "Price Target - Median"               → price_target_median
+--   "Price Target - High"                 → price_target_high
+--   "Price Target - #"                    → price_target_count
+--   "Price (5D Ago)"                      → price_5d_ago
+--   "Price (1W Ago)"                      → price_1w_ago
+--   "Price (1M Ago)"                      → price_1m_ago
+--   "Price (3M Ago)"                      → price_3m_ago
+--   "Price (6M Ago)"                      → price_6m_ago
+--   "Price (1Y Ago)"                      → price_1y_ago
+--   "Price (3Y Ago)"                      → price_3y_ago
+--   "Price (5Y Ago)"                      → price_5y_ago
+--   "Price (QTD Ago)"                     → price_qtd_ago
+--   "52W High/Adj"                        → 52w_high_adj
+--   "52W Low/Adj"                         → 52w_low_adj
+--   "EMA (20D)"                           → ema_20d
+--   "EMA (50D)"                           → ema_50d
+--   "EMA (100D)"                          → ema_100d
+--   "EMA (250D)"                          → ema_250d
+--
+-- Ratio Columns:
+--   "P/E (NTM)"                           → p_e_ntm
+--   "P/E (LTM)"                           → p_e_ltm
+--   "P/E (EST FY1)"                       → p_e_est_fy1
+--   "P/E (-1FYLTM)"                       → p_e_1fyltm
+--   "P/E (-2FYLTM)"                       → p_e_2fyltm
+--   "P/E (-3FYLTM)"                       → p_e_3fyltm
+--   "P/E (3YAVGLTM)"                      → p_e_3yavgltm
+--   "P/E (-1FQLTM)"                       → p_e_1fqltm
+--   "P/E (-2FQLTM)"                       → p_e_2fqltm
+--   "P/E (-3FQLTM)"                       → p_e_3fqltm
+--   "P/E (5YAVGLTM)"                      → p_e_5yavgltm
+--   "P/E (-0FQQoQLTM)"                    → p_e_0fqqoqltm
+--   "P/E (-0FYYoYLTM)"                    → p_e_0fyyoyltm
+--   "P/E (-1FYYoYLTM)"                    → p_e_1fyyoyltm
+--   "P/E (-0FQYoYLTM)"                    → p_e_0fqyoyltm
+--   "P/B (LTM)"                           → p_b_ltm
+--   "P/B (-1FY)"                          → p_b_1fy
+--   "P/B (5YAVG)"                         → p_b_5yavg
+--   "P/TBV (LTM)"                         → p_tbv_ltm
+--   "EV/Sales (LTM)"                      → ev_sales_ltm
+--   "EV/Sales (NTM)"                      → ev_sales_ntm
+--   "EV/Sales (EST FY1)"                  → ev_sales_est_fy1
+--   "EV/Sales (-1FYLTM)"                  → ev_sales_1fyltm
+--   "EV/Sales (-2FYLTM)"                  → ev_sales_2fyltm
+--   "EV/Sales (-3FYLTM)"                  → ev_sales_3fyltm
+--   "EV/Sales (3YAVGLTM)"                 → ev_sales_3yavgltm
+--   "EV/Sales (-1FQLTM)"                  → ev_sales_1fqltm
+--   "EV/Sales (-2FQLTM)"                  → ev_sales_2fqltm
+--   "EV/Sales (-3FQLTM)"                  → ev_sales_3fqltm
+--   "EV/Sales (-4FQLTM)"                  → ev_sales_4fqltm
+--   "EV/EBITDA (LTM)"                     → ev_ebitda_ltm
+--   "EV/EBITDA (NTM)"                     → ev_ebitda_ntm
+--   "EV/EBITDA (EST FY1)"                 → ev_ebitda_est_fy1
+--   "EV/EBITDA (-1FYLTM)"                 → ev_ebitda_1fyltm
+--   "EV/EBITDA (-1FQLTM)"                 → ev_ebitda_1fqltm
+--   "EV/EBITDA (3YAVGLTM)"                → ev_ebitda_3yavgltm
+--   "Altman Z-Score (FY)"                 → altman_z_score_fy
+--   "Altman Z-Score (FQ)"                 → altman_z_score_fq
+--   "Altman Z-Score (LTM)"                → altman_z_score_ltm
+--   "Current Ratio (FY)"                  → current_ratio_fy
+--   "Current Ratio (LTM)"                 → current_ratio_ltm
+--   "Asset Turnover (FY)"                 → asset_turnover_fy
+--   "Asset Turnover (LTM)"                → asset_turnover_ltm
+--
+-- Percentage Columns:
+--   "Beta (1Y)"                           → beta_1y
+--   "Beta (2Y)"                           → beta_2y
+--   "Beta (5Y)"                           → beta_5y
+--   "Total Return (YTD)"                  → total_return_ytd
+--   "Total Return (5Y)"                   → total_return_5y
+--   "Total Return (10Y)"                  → total_return_10y
+--   "Tot. Return %/CAGR (3Y)"             → tot_return_pct_cagr_3y
+--   "Tot. Return %/CAGR (10Y)"            → tot_return_pct_cagr_10y
+--   "Price Chg. % (1M)"                   → price_chg_pct_1m
+--   "Price Chg. % (3M)"                   → price_chg_pct_3m
+--   "1-Day %"                             → one_day_pct
+--   "Volatility (1M)"                     → volatility_1m
+--   "Volatility (3M)"                     → volatility_3m
+--   "Volatility (6M)"                     → volatility_6m
+--   "Volatility (1Y)"                     → volatility_1y
+--   "Net Income Margin % (FY)"            → net_income_margin_pct_fy
+--   "Net Income Margin % (LTM)"           → net_income_margin_pct_ltm
+--   "Gross Profit Margin % (FY)"          → gross_profit_margin_pct_fy
+--   "Gross Profit Margin % (LTM)"         → gross_profit_margin_pct_ltm
+--   "Return On Equity % (LTM)"            → return_on_equity_pct_ltm
+--   "Return On Equity % (FY)"             → return_on_equity_pct_fy
+--   "Return on Assets (ROA) % (LTM)"      → return_on_assets_roa_pct_ltm
+--   "Return on Assets (ROA) % (FY)"       → return_on_assets_roa_pct_fy
+--   "Total Revenues/CAGR (5Y FY)"         → total_revenues_cagr_5y_fy
+--   "Revenues - Est YoY % (FY1E)"         → revenues_est_yoy_pct_fy1e
+--
+-- Count Columns:
+--   "Analyst Rating"                      → analyst_rating
+--   "# Strong Sell Ratings"               → num_strong_sell_ratings
+--   "# Strong Buys Ratings"               → num_strong_buys_ratings
+--   "# Hold Ratings"                      → num_hold_ratings
+--   "# Buys Ratings"                      → num_buys_ratings
+--   "# Sell Ratings"                      → num_sell_ratings
+--   "Shrs Out"                            → shares_outstanding
+--   "Shrs Out (-1FY)"                     → shrs_out_1fy
+--   "Full Time Employees (FQ)"            → full_time_employees_fq
+--   "Full Time Employees (FY)"            → full_time_employees_fy
+--   "Full Time Employees (-1FY)"          → full_time_employees_1fy
+--   "Full Time Employees (-2FY)"          → full_time_employees_2fy
+--   "Full Time Employees (-3FY)"          → full_time_employees_3fy
+--   "Avg Employees (5YAVGFY)"             → avg_employees_5yavgfy
+--   "Dividend Streak"                     → dividend_streak
+--   "EPS Norm - Est # (FY1E)"             → eps_norm_est_num_fy1e
+--
+-- Market Value Columns (Log-transform recommended):
+--   "TBV (FY)"                            → tbv_fy
+--   "TBV (LTM)"                           → tbv_ltm
+--   "Market Cap (Country R)"              → market_cap_country_r
+--   "Total Revenues (FQ)"                 → total_revenues_fq
+--   "Total Revenues (-1FY)"               → total_revenues_1fy
+--   "Total Revenues (FY)"                 → total_revenues_fy
+--   "Total Revenues (LTM)"                → total_revenues_ltm
+--   "Total Revenues (5YAVGFQ)"            → total_revenues_5yavgfq
+--   "Total Revenues (5YAVGLTM)"           → total_revenues_5yavgltm
+--   "Total Operating Expenses (LTM)"      → total_operating_expenses_ltm
+--   "EBITDA (FQ)"                         → ebitda_fq
+--   "EBITDA (LTM)"                        → ebitda_ltm
+--   "EBITDA (FY)"                         → ebitda_fy
+--   "EBITDA (-1FY)"                       → ebitda_1fy
+--   "EBITDA/Adj. (LTM)"                   → ebitda_adj_ltm
+--   "EBITDA/Adj. (FY)"                    → ebitda_adj_fy
+--   "EBITDA/Adj. (-1FY)"                  → ebitda_adj_1fy
+--   "EBITDA (5YAVGFQ)"                    → ebitda_5yavgfq
+--   "EBITDA (5YAVGLTM)"                   → ebitda_5yavgltm
+--   "EBIT (FQ)"                           → ebit_fq
+--   "EBIT (LTM)"                          → ebit_ltm
+--   "EBIT (FY)"                           → ebit_fy
+--   "EBIT (-1FY)"                         → ebit_1fy
+--   "EBIT/Adj. (-1FY)"                    → ebit_adj_1fy
+--   "EBIT/Adj. (FY)"                      → ebit_adj_fy
+--   "EBIT/Adj. (LTM)"                     → ebit_adj_ltm
+--   "EBIT - Est Med (FY1E)"               → ebit_est_med_fy1e
+--   "EBIT - Est Med (NTM)"                → ebit_est_med_ntm
+--   "EBIT (5YAVGFQ)"                      → ebit_5yavgfq
+--   "EBIT (5YAVGLTM)"                     → ebit_5yavgltm
+--   "Net Income - (IS) (FY)"              → net_income_is_fy
+--   "Net Income - (IS) (LTM)"             → net_income_is_ltm
+--   "Net Income - (IS) (FQ)"              → net_income_is_fq
+--   "Net Income - (IS) (-1FY)"            → net_income_is_1fy
+--   "Net Income - (IS) (5YAVGFQ)"         → net_income_is_5yavgfq
+--   "Net Income - (IS) (5YAVGLTM)"        → net_income_is_5yavgltm
+--   "Normalized Net Income (FY)"          → normalized_net_income_fy
+--   "Normalized Net Income (LTM)"         → normalized_net_income_ltm
+--   "Normalized Net Income (FQ)"          → normalized_net_income_fq
+--   "Normalized Net Income (-1FY)"        → normalized_net_income_1fy
+--   "Normalized Net Income (5YAVGFQ)"     → normalized_net_income_5yavgfq
+--   "Normalized Net Income (5YAVGLTM)"    → normalized_net_income_5yavgltm
+--   "Net Income/Adj. (FY)"                → net_income_adj_fy
+--   "Net Income/Adj. (LTM)"               → net_income_adj_ltm
+--   "Net Income/Adj. (FQ)"                → net_income_adj_fq
+--   "Net Income/Adj. (-1FY)"              → net_income_adj_1fy
+--   "Net Income/Adj. (5YAVGFQ)"           → net_income_adj_5yavgfq
+--   "Operating Income (LTM)"              → operating_income_ltm
+--   "Operating Income (FY)"               → operating_income_fy
+--   "Operating Income (FQ)"               → operating_income_fq
+--   "Operating Income (5YAVGFQ)"          → operating_income_5yavgfq
+--   "Gross Profit (LTM)"                  → gross_profit_ltm
+--   "Gross Profit (FY)"                   → gross_profit_fy
+--   "Total Debt (FY)"                     → total_debt_fy
+--   "Total Debt (LTM)"                    → total_debt_ltm
+--   "Total Equity (FY)"                   → total_equity_fy
+--   "Total Equity (LTM)"                  → total_equity_ltm
+--   "Total Assets (LTM)"                  → total_assets_ltm
+--   "Total Assets (FY)"                   → total_assets_fy
+--   "Total Current Assets (LTM)"          → total_current_assets_ltm
+--   "Total Current Liabilities (LTM)"     → total_current_liabilities_ltm
+--   "Working Capital (LTM)"               → working_capital_ltm
+--   "Working Capital (FQ)"                → working_capital_fq
+--   "Working Capital (FY)"                → working_capital_fy
+--   "Working Capital (5YAVGFY)"           → working_capital_5yavgfy
+--   "Cash And Equivalents (LTM)"          → cash_and_equivalents_ltm
+--   "Cash And Equivalents (FQ)"           → cash_and_equivalents_fq
+--   "Cash And Equivalents (FY)"           → cash_and_equivalents_fy
+--   "Cash And Equivalents (5YAVGFQ)"      → cash_and_equivalents_5yavgfq
+--   "Retained Earnings (LTM)"             → retained_earnings_ltm
+--   "Retained Earnings (FQ)"              → retained_earnings_fq
+--   "Retained Earnings (FY)"              → retained_earnings_fy
+--   "Retained Earnings (5YAVGFQ)"         → retained_earnings_5yavgfq
+--   "CFO (LTM)"                           → cfo_ltm
+--   "CFO (FY)"                            → cfo_fy
+--   "CFO (FQ)"                            → cfo_fq
+--   "CFO (-1FY)"                          → cfo_1fy
+--   "FCF (LTM)"                           → fcf_ltm
+--   "FCF (FY)"                            → fcf_fy
+--   "FCF (FQ)"                            → fcf_fq
+--   "FCF (5YAVGFQ)"                       → fcf_5yavgfq
+--   "CFI (LTM)"                           → cfi_ltm
+--   "CFI (FY)"                            → cfi_fy
+--   "CFI (FQ)"                            → cfi_fq
+--   "CFI (-1FY)"                          → cfi_1fy
+--   "CFF (LTM)"                           → cff_ltm
+--   "CFF (FY)"                            → cff_fy
+--   "CFF (FQ)"                            → cff_fq
+--   "CFF (-1FY)"                          → cff_1fy
+--   "Capital Expenditure (LTM)"           → capital_expenditure_ltm
+--   "Capital Expenditure (FY)"            → capital_expenditure_fy
+--   "Capital Expenditure (FQ)"            → capital_expenditure_fq
+--   "Capital Expenditure (-1FY)"          → capital_expenditure_1fy
+--   "Capital Expenditure (5YAVGFQ)"       → capital_expenditure_5yavgfq
+--   "R&D Expenses (LTM)"                  → randd_expenses_ltm
+--   "Revenues - Est Avg (NTM)"            → revenues_est_avg_ntm
+--   "Revenues - Est Avg (FY1E)"           → revenues_est_avg_fy1e
+--   "Revenues - Est Med (NTM)"            → revenues_est_med_ntm
+--   "Revenues - Est Med (FY1E)"           → revenues_est_med_fy1e
+--   "EBITDA - Est Avg (NTM)"              → ebitda_est_avg_ntm
+--   "EBITDA - Est Avg (FY1E)"             → ebitda_est_avg_fy1e
+--
+-- Feature Columns:
+--   "Volume (Shrs)"                       → volume_shrs
+--   "Rel. Volume"                         → rel_volume
+--   "Dividend Per Share (LTM)"            → dividend_per_share_ltm
+--   "Div Yield (Ind)"                     → div_yield_ind
+--   "Div Yield (LTM)"                     → div_yield_ltm
+--   "Div Yield (TTM)"                     → div_yield_ttm
+--   "Div Yield (NTM)"                     → div_yield_ntm
+--   "Div Yield (-1FYInd)"                 → div_yield_1fyind
+--   "Div Yield (-2FYInd)"                 → div_yield_2fyind
+--   "Div Yield (-3FYInd)"                 → div_yield_3fyind
+--   "Div Yield (-4FYInd)"                 → div_yield_4fyind
+--   "Div Yield (-5FYInd)"                 → div_yield_5fyind
+--   "Div Yield (5YAVGLTM)"                → div_yield_5yavgltm
+--   "Common Dividends Paid (LTM)"         → common_dividends_paid_ltm
+--   "Common Dividends Paid (FY)"          → common_dividends_paid_fy
+--   "Buyback Yield (LTM)"                 → buyback_yield_ltm
+--   "EPS Norm - Est Avg (NTM)"            → eps_norm_est_avg_ntm
+--   "EPS Norm - Est Avg (FY1E)"           → eps_norm_est_avg_fy1e
+--   "EPS/Adj. (-1FY)"                     → eps_adj_1fy
+--   "EPS/Adj. (FY)"                       → eps_adj_fy
+--   "EPS/Adj. (LTM)"                      → eps_adj_ltm
+--   "Net EPS - Basic (LTM)"               → net_eps_basic_ltm
+--   "Net EPS - Basic (FQ)"                → net_eps_basic_fq
+--   "Net EPS - Basic (FY)"                → net_eps_basic_fy
+--   "Net EPS - Basic (-1FQFQ)"            → net_eps_basic_1fqfq
+--   "Net EPS - Basic (-2FQFQ)"            → net_eps_basic_2fqfq
+--   "Net EPS - Basic (-3FQFQ)"            → net_eps_basic_3fqfq
+--   "Net EPS - Basic (-4FQFQ)"            → net_eps_basic_4fqfq
+--   "Net EPS - Basic (-1FY)"              → net_eps_basic_1fy
+--   "Net EPS - Basic (-2FY)"              → net_eps_basic_2fy
+--   "Net EPS - Basic (-3FY)"              → net_eps_basic_3fy
+--   "Net EPS - Basic (-4FY)"              → net_eps_basic_4fy
+--   "Net EPS - Basic (-5FY)"              → net_eps_basic_5fy
+--   "EPS Est Avg Rev % (FY1E - 1W)"       → eps_est_avg_rev_pct_fy1e_1w
+--   "EPS Est Avg Rev % (FY1E - 1M)"       → eps_est_avg_rev_pct_fy1e_1m
+--   "EPS Est Avg Rev % (FY1E - 3M)"       → eps_est_avg_rev_pct_fy1e_3m
+--   "EPS Est Avg Rev % (FY1E - 6M)"       → eps_est_avg_rev_pct_fy1e_6m
+--   "EPS Est Avg Rev % (FY1E - 1Y)"       → eps_est_avg_rev_pct_fy1e_1y
+--   "EPS GAAP - Est Avg (NTM)"            → eps_gaap_est_avg_ntm
+--   "EPS GAAP - Est Avg (FY1E)"           → eps_gaap_est_avg_fy1e
+--   "EPS GAAP Est Avg Rev % (FY1E - 1M)"  → eps_gaap_est_avg_rev_pct_fy1e_1m
+--   "EPS GAAP Est Avg Rev % (FY1E - 3M)"  → eps_gaap_est_avg_rev_pct_fy1e_3m
+--   "EPS GAAP Est Avg Rev % (FY1E - 6M)"  → eps_gaap_est_avg_rev_pct_fy1e_6m
+--   "EPS GAAP Est Avg Rev % (FY1E - 1Y)"  → eps_gaap_est_avg_rev_pct_fy1e_1y
+--   "Inventory (LTM)"                     → inventory_ltm
+--   "Inventory (FQ)"                      → inventory_fq
+--   "Inventory (FY)"                      → inventory_fy
+--   "Inventory (5YAVGFQ)"                 → inventory_5yavgfq
+--   "Goodwill (FQ)"                       → goodwill_fq
+--   "Goodwill (LTM)"                      → goodwill_ltm
+--   "Goodwill (FY)"                       → goodwill_fy
+--   "Goodwill (-1FY)"                     → goodwill_1fy
+--   "Goodwill (5YAVGFQ)"                  → goodwill_5yavgfq
+--   "Impairment of Goodwill (FQ)"         → impairment_of_goodwill_fq
+--   "Impairment of Goodwill (LTM)"        → impairment_of_goodwill_ltm
+--   "Impairment of Goodwill (-1FY)"       → impairment_of_goodwill_1fy
+--   "Impairment of Goodwill (FY)"         → impairment_of_goodwill_fy
+--   "Impairment of Goodwill (5YAVGFQ)"    → impairment_of_goodwill_5yavgfq
+--   "Asset Writedown (LTM)"               → asset_writedown_ltm
+--   "Asset Writedown (FY)"                → asset_writedown_fy
+--   "Asset Writedown (FQ)"                → asset_writedown_fq
+--   "Asset Writedown (-1FY)"              → asset_writedown_1fy
+--   "Asset Writedown (5YAVGFQ)"           → asset_writedown_5yavgfq
+--   "Restructuring Charges (LTM)"         → restructuring_charges_ltm
+--   "Restructuring Charges (FQ)"          → restructuring_charges_fq
+--   "Restructuring Charges (-1FY)"        → restructuring_charges_1fy
+--   "Restructuring Charges (FY)"          → restructuring_charges_fy
+--   "Restructuring Charges (5YAVGFQ)"     → restructuring_charges_5yavgfq
+--   "Merger & Restructuring Charges (LTM)" → merger_and_restructuring_charges_ltm
+--   "Merger & Restructuring Charges (FQ)"  → merger_and_restructuring_charges_fq
+--   "Merger & Restructuring Charges (FY)"  → merger_and_restructuring_charges_fy
+--   "Merger & Restructuring Charges (5YAVGFQ)" → merger_and_restructuring_charges_5yavgfq
+--   "Interest Expense/Total (LTM)"        → interest_expense_total_ltm
+--   "Interest Income On Investments (LTM)" → interest_income_on_investments_ltm
+--   "Gain (Loss) On Sale Of Assets (LTM)" → gain_loss_on_sale_of_assets_ltm
+--   "Cost Of Revenues (LTM)"              → cost_of_revenues_ltm
+--   "Other Unusual Items/Total (LTM)"     → other_unusual_items_total_ltm
+--   "Cash Acquisitions (LTM)"             → cash_acquisitions_ltm
+--   "Cash Acquisitions (FY)"              → cash_acquisitions_fy
+--   "Cash Acquisitions (FQ)"              → cash_acquisitions_fq
+--   "Cash Acquisitions (-1FY)"            → cash_acquisitions_1fy
+--   "Cash Acquisitions (5YAVGFQ)"         → cash_acquisitions_5yavgfq
+--   "Gross Intangible Assets (LTM)"       → gross_intangible_assets_ltm
+--   "Gross Intangible Assets (FY)"        → gross_intangible_assets_fy
+--   "Gross Intangible Assets (5YAVGFQ)"   → gross_intangible_assets_5yavgfq
+--   "Selling General & Admin Expenses/Total (FQ)"      → selling_general_and_admin_expenses_total_fq
+--   "Selling General & Admin Expenses/Total (FY)"      → selling_general_and_admin_expenses_total_fy
+--   "Selling General & Admin Expenses/Total (-1FY)"    → selling_general_and_admin_expenses_total_1fy
+--   "Selling General & Admin Expenses/Total (5YAVGFQ)" → selling_general_and_admin_expenses_total_5yavgfq
+--   "Accounts Receivable/Total (FY)"      → accounts_receivable_total_fy
+--   "Accounts Receivable/Total (-1FY)"    → accounts_receivable_total_1fy
+--   "Accounts Receivable/Total (5YAVGFQ)" → accounts_receivable_total_5yavgfq
+--   "Marketing Expenses (FQ)"             → marketing_expenses_fq
+--   "Marketing Expenses (FY)"             → marketing_expenses_fy
+--   "Marketing Expenses (-1FY)"           → marketing_expenses_1fy
+--   "Marketing Expenses (5YAVGLTM)"       → marketing_expenses_5yavgltm
+--
+-- Dividend Record Columns:
+--   "Dividend Record (Announce Date)"     → dividend_record_announce_date
+--   "Dividend Record (Ex Date)"           → dividend_record_ex_date
+--   "Dividend Record (Payable Date)"      → dividend_record_payable_date
+--   "Dividend Record (Record Date)"       → dividend_record_record_date
+--   "Dividend Record (Frequency)"         → dividend_record_frequency
+--   "Dividend Record (Currency)"          → dividend_record_currency
+--   "Dividend Record (Amount)"            → dividend_record_amount
+--
+-- Usage:psql -h localhost -p 5432 -U postgres -d postgres -f import_equities_data.sql
+--
+--
 -- ===================================================================
 
 -- Enable verbose output
@@ -33,13 +386,13 @@ FROM equities;
 -- ===================================================================
 -- Importing US Region Data...
 -- ===================================================================
-\echo 'Importing US region data...'
+\echo 'Importing regional data (US, EU, APAC, ROTW)...'
 
 -- Drop staging table if exists
-DROP TABLE IF EXISTS screening_us;
+DROP TABLE IF EXISTS screening_staging;
 
 -- Create staging table with all columns as TEXT
-CREATE TEMP TABLE screening_us
+CREATE TEMP TABLE screening_staging
 (
     "Ticker"                                           TEXT,
     "ISIN"                                             TEXT,
@@ -51,7 +404,9 @@ CREATE TEMP TABLE screening_us
     "Industry"                                         TEXT,
     "Last Updated"                                     TEXT,
     "Income Statement Report Date"                     TEXT,
+    "FY End"                                           TEXT,
     "Next Earnings"                                    TEXT,
+    "Next Earnings (When)"                             TEXT,
     "Style Class"                                      TEXT,
     "Next Earnings (Status)"                           TEXT,
     "Size Class"                                       TEXT,
@@ -301,6 +656,12 @@ CREATE TEMP TABLE screening_us
     "EV/Sales (-2FQLTM)"                               TEXT,
     "EV/Sales (-3FQLTM)"                               TEXT,
     "EV/Sales (-4FQLTM)"                               TEXT,
+    "Full Time Employees (FQ)"                         TEXT,
+    "Full Time Employees (FY)"                         TEXT,
+    "Full Time Employees (-1FY)"                       TEXT,
+    "Full Time Employees (-2FY)"                       TEXT,
+    "Full Time Employees (-3FY)"                       TEXT,
+    "Avg Employees (5YAVGFY)"                          TEXT,
     "52W High/Adj"                                     TEXT,
     "52W Low/Adj"                                      TEXT,
     "EMA (20D)"                                        TEXT,
@@ -334,12 +695,6 @@ CREATE TEMP TABLE screening_us
     "Dividend Record (Currency)"                       TEXT,
     "Dividend Record (Amount)"                         TEXT,
     "Dividend Streak"                                  TEXT,
-    "Full Time Employees (FQ)"                         TEXT,
-    "Full Time Employees (FY)"                         TEXT,
-    "Full Time Employees (-1FY)"                       TEXT,
-    "Full Time Employees (-2FY)"                       TEXT,
-    "Full Time Employees (-3FY)"                       TEXT,
-    "Avg Employees (5YAVGFY)"                          TEXT,
     "Net EPS - Basic (LTM)"                            TEXT,
     "Net EPS - Basic (FQ)"                             TEXT,
     "Net EPS - Basic (FY)"                             TEXT,
@@ -373,116 +728,544 @@ CREATE TEMP TABLE screening_us
 );
 
 -- Import CSV with proper NULL handling and encoding
-\copy screening_us FROM 'data/screening_us.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
-
--- Display staging table statistics
-SELECT 'US staging table loaded:' AS status, COUNT(*) AS row_count
-FROM screening_us;
+\copy screening_staging FROM 'data/screening_us.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
 
 -- Set Region for all records (if not already set in CSV)
-UPDATE screening_us
+UPDATE screening_staging
 SET "Region" = 'US'
 WHERE "Region" IS NULL
    OR "Region" = '';
 
--- Insert into main equities table with proper type casting and column aliases
-INSERT INTO equities
+-- Display staging table statistics (US only)
+SELECT 'US staging rows:' AS status, COUNT(*) AS row_count
+FROM screening_staging
+WHERE "Region" = 'US';
+
+-- ===================================================================
+-- Importing EU Region Data...
+-- ===================================================================
+\echo 'Importing EU region data...'
+
+-- Import EU CSV into shared staging table
+\copy screening_staging FROM 'data/screening_eu.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
+
+-- Set Region for EU records (if not already set in CSV)
+UPDATE screening_staging
+SET "Region" = 'EU'
+WHERE "Region" IS NULL
+   OR "Region" = '';
+
+-- Display staging table statistics after EU load (EU only)
+SELECT 'EU staging rows:' AS status, COUNT(*) AS row_count
+FROM screening_staging
+WHERE "Region" = 'EU';
+
+-- ===================================================================
+-- Importing APAC Region Data...
+-- ===================================================================
+\echo 'Importing APAC region data...'
+
+-- Import APAC CSV into shared staging table
+\copy screening_staging FROM 'data/screening_apac.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
+
+-- Set Region for APAC records (if not already set in CSV)
+UPDATE screening_staging
+SET "Region" = 'APAC'
+WHERE "Region" IS NULL
+   OR "Region" = '';
+
+-- Display staging table statistics after APAC load (APAC only)
+SELECT 'APAC staging rows:' AS status, COUNT(*) AS row_count
+FROM screening_staging
+WHERE "Region" = 'APAC';
+
+-- ===================================================================
+-- Importing ROTW Region Data...
+-- ===================================================================
+\echo 'Importing ROTW region data...'
+
+-- Import ROTW CSV into shared staging table
+\copy screening_staging FROM 'data/screening_rotw.csv' WITH (FORMAT csv, HEADER true, NULL '', ENCODING 'UTF8')
+
+-- Set Region for ROTW records (if not already set in CSV)
+UPDATE screening_staging
+SET "Region" = 'ROTW'
+WHERE "Region" IS NULL
+   OR "Region" = '';
+
+-- Display staging table statistics after ROTW load (ROTW only)
+SELECT 'ROTW staging rows:' AS status, COUNT(*) AS row_count
+FROM screening_staging
+WHERE "Region" = 'ROTW';
+
+-- Insert into main equities table with EXPLICIT column names to avoid positional misalignment
+INSERT INTO equities (
+    -- Identifiers
+    "Ticker",
+    "ISIN",
+    "Name",
+    "Description",
+    "Exchange",
+    "Unit",
+    "Sector",
+    "Industry",
+    "Last Updated",
+    "Income Statement Report Date",
+    "FY End",
+    "Next Earnings",
+    "Next Earnings (When)",
+    "Style Class",
+    "Next Earnings (Status)",
+    "Size Class",
+    "Region",
+    "Country",
+    "Trading Country",
+    -- Market values
+    "Market Cap",
+    "Enterprise Value",
+    -- Prices
+    "Last Price",
+    "Price Target (YTD Ago)",
+    "Total Return (YTD)",
+    "Price Target",
+    "Price Target - Low",
+    "Price Target - Median",
+    "Price Target - High",
+    "Price Target - #",
+    -- Ratios
+    "P/E (NTM)",
+    "P/E (LTM)",
+    "Altman Z-Score (FY)",
+    "Altman Z-Score (FQ)",
+    "Altman Z-Score (LTM)",
+    "Beta (1Y)",
+    "Beta (2Y)",
+    "Beta (5Y)",
+    -- Analyst counts
+    "Analyst Rating",
+    "# Strong Sell Ratings",
+    "# Strong Buys Ratings",
+    "# Hold Ratings",
+    "# Buys Ratings",
+    "# Sell Ratings",
+    -- Revenue metrics
+    "Total Revenues/CAGR (5Y FY)",
+    "Total Revenues (FQ)",
+    "Total Revenues (-1FY)",
+    "Total Revenues (FY)",
+    "Total Revenues (LTM)",
+    "Total Operating Expenses (LTM)",
+    -- Valuation
+    "P/TBV (LTM)",
+    "TBV (FY)",
+    "TBV (LTM)",
+    "Market Cap (Country R)",
+    -- Returns
+    "Tot. Return %/CAGR (3Y)",
+    "Tot. Return %/CAGR (10Y)",
+    "Total Return (5Y)",
+    "Total Return (10Y)",
+    -- Income & Cash Flow
+    "Net Income/Adj. (-1FY)",
+    "CFF (LTM)",
+    "CFI (LTM)",
+    "FCF (LTM)",
+    "CFO (LTM)",
+    -- EBITDA
+    "EBITDA (FQ)",
+    "EBITDA (LTM)",
+    "EBITDA (FY)",
+    "EBITDA (-1FY)",
+    "EBITDA/Adj. (LTM)",
+    "EBITDA/Adj. (FY)",
+    "EBITDA/Adj. (-1FY)",
+    -- EBIT
+    "EBIT (FQ)",
+    "EBIT (LTM)",
+    "EBIT (FY)",
+    "EBIT (-1FY)",
+    "EBIT/Adj. (-1FY)",
+    "EBIT/Adj. (FY)",
+    "EBIT/Adj. (LTM)",
+    "EBIT - Est Med (FY1E)",
+    "EBIT - Est Med (NTM)",
+    -- ROE
+    "Return On Equity % (LTM)",
+    "Return On Equity % (FY)",
+    -- Net Income variants
+    "Net Income - (IS) (FY)",
+    "Net Income - (IS) (LTM)",
+    "Normalized Net Income (FY)",
+    "Normalized Net Income (LTM)",
+    "Net Income/Adj. (FY)",
+    "Net Income/Adj. (LTM)",
+    -- Margins
+    "Net Income Margin % (FY)",
+    "Net Income Margin % (LTM)",
+    -- Volatility
+    "Volatility (1M)",
+    "Volatility (3M)",
+    "Volatility (6M)",
+    "Volatility (1Y)",
+    -- Volume & Dividends
+    "Volume (Shrs)",
+    "Dividend Per Share (LTM)",
+    "Div Yield (Ind)",
+    "Div Yield (LTM)",
+    -- Balance Sheet
+    "Total Debt (FY)",
+    "Total Equity (FY)",
+    "Total Equity (LTM)",
+    "Total Debt (LTM)",
+    "Total Assets (LTM)",
+    "Total Assets (FY)",
+    -- Ratios
+    "Current Ratio (FY)",
+    "Current Ratio (LTM)",
+    "Gross Profit Margin % (FY)",
+    "Gross Profit Margin % (LTM)",
+    "Asset Turnover (FY)",
+    "Asset Turnover (LTM)",
+    -- Gross Profit & EPS
+    "Gross Profit (LTM)",
+    "Gross Profit (FY)",
+    "EPS Norm - Est Avg (NTM)",
+    "EPS/Adj. (-1FY)",
+    "EPS/Adj. (FY)",
+    "EPS/Adj. (LTM)",
+    "EPS Norm - Est Avg (FY1E)",
+    -- Operating items
+    "Gain (Loss) On Sale Of Assets (LTM)",
+    "Cost Of Revenues (LTM)",
+    "Cash Acquisitions (LTM)",
+    "Cash Acquisitions (FY)",
+    "Cash Acquisitions (-1FY)",
+    "Inventory (LTM)",
+    -- Goodwill
+    "Goodwill (FQ)",
+    "Goodwill (LTM)",
+    "Goodwill (FY)",
+    "Goodwill (-1FY)",
+    "Impairment of Goodwill (FQ)",
+    "Impairment of Goodwill (LTM)",
+    "Impairment of Goodwill (-1FY)",
+    "Impairment of Goodwill (FY)",
+    -- Operating Income & Writedowns
+    "Operating Income (LTM)",
+    "Asset Writedown (LTM)",
+    "Asset Writedown (FY)",
+    "Asset Writedown (-1FY)",
+    "Operating Income (FY)",
+    -- CapEx
+    "Capital Expenditure (LTM)",
+    "Capital Expenditure (-1FY)",
+    "Capital Expenditure (FY)",
+    -- Balance Sheet items
+    "Retained Earnings (LTM)",
+    "Total Current Assets (LTM)",
+    "Total Current Liabilities (LTM)",
+    "R&D Expenses (LTM)",
+    -- Restructuring
+    "Restructuring Charges (LTM)",
+    "Restructuring Charges (FQ)",
+    "Restructuring Charges (-1FY)",
+    "Restructuring Charges (FY)",
+    "Interest Expense/Total (LTM)",
+    "Merger & Restructuring Charges (LTM)",
+    -- Working Capital & Other
+    "Working Capital (LTM)",
+    "Other Unusual Items/Total (LTM)",
+    "Interest Income On Investments (LTM)",
+    "Buyback Yield (LTM)",
+    -- ROA
+    "Return on Assets (ROA) % (LTM)",
+    "Return on Assets (ROA) % (FY)",
+    -- Historical Net Income
+    "Net Income - (IS) (-1FY)",
+    "Normalized Net Income (-1FY)",
+    -- Historical Cash Flow
+    "CFF (FY)",
+    "CFF (-1FY)",
+    "CFI (FY)",
+    "CFI (-1FY)",
+    "CFO (FY)",
+    "CFO (-1FY)",
+    "Div Yield (-1FYInd)",
+    "FCF (FY)",
+    -- Quarterly metrics
+    "Capital Expenditure (FQ)",
+    "Capital Expenditure (5YAVGFQ)",
+    "CFF (FQ)",
+    "CFI (FQ)",
+    "CFO (FQ)",
+    "FCF (FQ)",
+    "Total Revenues (5YAVGFQ)",
+    "EBITDA (5YAVGFQ)",
+    "EBIT (5YAVGFQ)",
+    "FCF (5YAVGFQ)",
+    "Cash Acquisitions (FQ)",
+    "Cash Acquisitions (5YAVGFQ)",
+    "Asset Writedown (FQ)",
+    "Asset Writedown (5YAVGFQ)",
+    "Impairment of Goodwill (5YAVGFQ)",
+    "Operating Income (FQ)",
+    "Operating Income (5YAVGFQ)",
+    -- P/B Ratios
+    "P/B (LTM)",
+    "P/B (-1FY)",
+    "P/B (5YAVG)",
+    -- Cash
+    "Cash And Equivalents (LTM)",
+    "Cash And Equivalents (FQ)",
+    "Cash And Equivalents (FY)",
+    "Cash And Equivalents (5YAVGFQ)",
+    -- Inventory
+    "Inventory (FQ)",
+    "Inventory (FY)",
+    "Goodwill (5YAVGFQ)",
+    "Inventory (5YAVGFQ)",
+    -- Retained Earnings
+    "Retained Earnings (FQ)",
+    "Retained Earnings (FY)",
+    "Retained Earnings (5YAVGFQ)",
+    -- Working Capital
+    "Working Capital (FQ)",
+    "Working Capital (FY)",
+    "Working Capital (5YAVGFY)",
+    -- Dividend Yields
+    "Div Yield (TTM)",
+    "Div Yield (NTM)",
+    "Div Yield (5YAVGLTM)",
+    -- Intangibles
+    "Gross Intangible Assets (LTM)",
+    "Gross Intangible Assets (FY)",
+    "Gross Intangible Assets (5YAVGFQ)",
+    -- Restructuring 5Y
+    "Restructuring Charges (5YAVGFQ)",
+    "Merger & Restructuring Charges (FQ)",
+    "Merger & Restructuring Charges (FY)",
+    "Merger & Restructuring Charges (5YAVGFQ)",
+    -- Net Income 5Y
+    "Normalized Net Income (FQ)",
+    "Normalized Net Income (5YAVGFQ)",
+    "Net Income/Adj. (FQ)",
+    "Net Income/Adj. (5YAVGFQ)",
+    "Net Income - (IS) (FQ)",
+    "Net Income - (IS) (5YAVGFQ)",
+    "Net Income - (IS) (5YAVGLTM)",
+    "Normalized Net Income (5YAVGLTM)",
+    -- 5Y Averages
+    "EBITDA (5YAVGLTM)",
+    "EBIT (5YAVGLTM)",
+    "Total Revenues (5YAVGLTM)",
+    -- Estimates
+    "Revenues - Est YoY % (FY1E)",
+    -- Price Changes
+    "Price Chg. % (1M)",
+    "Price Chg. % (3M)",
+    "1-Day %",
+    -- Historical Prices
+    "Price (5D Ago)",
+    "Price (1W Ago)",
+    "Price (1M Ago)",
+    "Price (3M Ago)",
+    "Price (6M Ago)",
+    "Price (1Y Ago)",
+    "Price (3Y Ago)",
+    "Price (5Y Ago)",
+    "Price (QTD Ago)",
+    -- Volume & Shares
+    "Rel. Volume",
+    "Shrs Out",
+    "Shrs Out (-1FY)",
+    -- Common Dividends
+    "Common Dividends Paid (LTM)",
+    "Common Dividends Paid (FY)",
+    -- SG&A
+    "Selling General & Admin Expenses/Total (FQ)",
+    "Selling General & Admin Expenses/Total (FY)",
+    "Selling General & Admin Expenses/Total (-1FY)",
+    "Selling General & Admin Expenses/Total (5YAVGFQ)",
+    -- Accounts Receivable
+    "Accounts Receivable/Total (FY)",
+    "Accounts Receivable/Total (-1FY)",
+    "Accounts Receivable/Total (5YAVGFQ)",
+    -- Marketing
+    "Marketing Expenses (FQ)",
+    "Marketing Expenses (FY)",
+    "Marketing Expenses (-1FY)",
+    "Marketing Expenses (5YAVGLTM)",
+    -- Revenue Estimates
+    "Revenues - Est Avg (NTM)",
+    "Revenues - Est Avg (FY1E)",
+    "Revenues - Est Med (NTM)",
+    "Revenues - Est Med (FY1E)",
+    -- EV/Sales Time-Series
+    "EV/Sales (EST FY1)",
+    "EV/Sales (LTM)",
+    "EV/Sales (NTM)",
+    "EV/Sales (-1FYLTM)",
+    "EV/Sales (-2FYLTM)",
+    "EV/Sales (-3FYLTM)",
+    "EV/Sales (3YAVGLTM)",
+    "EV/Sales (-1FQLTM)",
+    "EV/Sales (-2FQLTM)",
+    "EV/Sales (-3FQLTM)",
+    "EV/Sales (-4FQLTM)",
+    -- Employment (CORRECT POSITION per schema)
+    "Full Time Employees (FQ)",
+    "Full Time Employees (FY)",
+    "Full Time Employees (-1FY)",
+    "Full Time Employees (-2FY)",
+    "Full Time Employees (-3FY)",
+    "Avg Employees (5YAVGFY)",
+    -- Technical Indicators
+    "52W High/Adj",
+    "52W Low/Adj",
+    "EMA (20D)",
+    "EMA (50D)",
+    "EMA (100D)",
+    "EMA (250D)",
+    -- EV/EBITDA Time-Series
+    "EV/EBITDA (LTM)",
+    "EV/EBITDA (NTM)",
+    "EV/EBITDA (-1FYLTM)",
+    "EV/EBITDA (-1FQLTM)",
+    "EV/EBITDA (3YAVGLTM)",
+    "EV/EBITDA (EST FY1)",
+    -- P/E Time-Series
+    "P/E (EST FY1)",
+    "P/E (-1FYLTM)",
+    "P/E (-2FYLTM)",
+    "P/E (-3FYLTM)",
+    "P/E (3YAVGLTM)",
+    "P/E (-1FQLTM)",
+    "P/E (-2FQLTM)",
+    "P/E (-3FQLTM)",
+    "P/E (5YAVGLTM)",
+    "P/E (-0FQQoQLTM)",
+    "P/E (-0FYYoYLTM)",
+    "P/E (-1FYYoYLTM)",
+    "P/E (-0FQYoYLTM)",
+    -- Dividend Record
+    "Dividend Record (Announce Date)",
+    "Dividend Record (Ex Date)",
+    "Dividend Record (Payable Date)",
+    "Dividend Record (Record Date)",
+    "Dividend Record (Frequency)",
+    "Dividend Record (Currency)",
+    "Dividend Record (Amount)",
+    "Dividend Streak",
+    -- Net EPS Basic
+    "Net EPS - Basic (LTM)",
+    "Net EPS - Basic (FQ)",
+    "Net EPS - Basic (FY)",
+    "Net EPS - Basic (-1FQFQ)",
+    "Net EPS - Basic (-2FQFQ)",
+    "Net EPS - Basic (-3FQFQ)",
+    "Net EPS - Basic (-4FQFQ)",
+    "Net EPS - Basic (-1FY)",
+    "Net EPS - Basic (-2FY)",
+    "Net EPS - Basic (-3FY)",
+    "Net EPS - Basic (-4FY)",
+    "Net EPS - Basic (-5FY)",
+    -- EPS Revisions
+    "EPS Est Avg Rev % (FY1E - 1W)",
+    "EPS Est Avg Rev % (FY1E - 1M)",
+    "EPS Est Avg Rev % (FY1E - 3M)",
+    "EPS Est Avg Rev % (FY1E - 6M)",
+    "EPS Est Avg Rev % (FY1E - 1Y)",
+    -- Historical Div Yields
+    "Div Yield (-2FYInd)",
+    "Div Yield (-3FYInd)",
+    "Div Yield (-4FYInd)",
+    "Div Yield (-5FYInd)",
+    -- EBITDA Estimates
+    "EBITDA - Est Avg (NTM)",
+    "EBITDA - Est Avg (FY1E)",
+    -- EPS GAAP
+    "EPS GAAP - Est Avg (NTM)",
+    "EPS GAAP - Est Avg (FY1E)",
+    "EPS GAAP Est Avg Rev % (FY1E - 1M)",
+    "EPS GAAP Est Avg Rev % (FY1E - 3M)",
+    "EPS GAAP Est Avg Rev % (FY1E - 6M)",
+    "EPS GAAP Est Avg Rev % (FY1E - 1Y)",
+    -- EPS Count
+    "EPS Norm - Est # (FY1E)")
+
 SELECT
-    -- Identifiers (role: id, string)
-    "Ticker"                                                                AS ticker,
-    "ISIN"                                                                  AS isin,
-    "Name"                                                                  AS name,
-    "Description"                                                           AS description,
-    "Exchange"                                                              AS exchange,
-    "Unit"                                                                  AS unit,
-
-    -- Categorical (role: categorical, category)
-    "Sector"                                                                AS sector,
-    "Industry"                                                              AS industry,
-
-    -- Date columns (role: date, datetime64[ns])
+    -- Identifiers
+    "Ticker",
+    "ISIN",
+    "Name",
+    "Description",
+    "Exchange",
+    "Unit",
+    "Sector",
+    "Industry",
     NULLIF("Last Updated", '')::DATE                                        AS last_updated,
     NULLIF("Income Statement Report Date", '')::DATE                        AS income_statement_report_date,
+    NULLIF("FY End", '')::DATE                                              AS fy_end,
     NULLIF("Next Earnings", '')::DATE                                       AS next_earnings,
-
-    -- Classification metadata
-    "Style Class"                                                           AS style_class,
-    "Next Earnings (Status)"                                                AS next_earnings_status,
-    "Size Class"                                                            AS size_class,
-    "Region"                                                                AS region,
-    "Country"                                                               AS country,
-    "Trading Country"                                                       AS trading_country,
-
-    -- Market value columns (role: market_value) - log-transform recommended
+    NULLIF("Next Earnings (When)", '')                                      AS next_earnings_when,
+    "Style Class",
+    "Next Earnings (Status)",
+    "Size Class",
+    "Region",
+    "Country",
+    "Trading Country",
+    -- Market values
     NULLIF("Market Cap", '')::NUMERIC                                       AS market_cap,
     NULLIF("Enterprise Value", '')::NUMERIC                                 AS enterprise_value,
-
-    -- Price columns (role: price) - NEVER transform
+    -- Prices
     NULLIF("Last Price", '')::NUMERIC                                       AS last_price,
     NULLIF("Price Target (YTD Ago)", '')::NUMERIC                           AS price_target_ytd_ago,
-
-    -- Percentage metrics (role: percentage)
     NULLIF("Total Return (YTD)", '')::NUMERIC                               AS total_return_ytd,
-
-    -- Price targets (role: target, target_fallback, price)
     NULLIF("Price Target", '')::NUMERIC                                     AS price_target,
     NULLIF("Price Target - Low", '')::NUMERIC                               AS price_target_low,
     NULLIF("Price Target - Median", '')::NUMERIC                            AS price_target_median,
     NULLIF("Price Target - High", '')::NUMERIC                              AS price_target_high,
     NULLIF("Price Target - #", '')::NUMERIC                                 AS price_target_count,
-
-    -- Ratio columns (role: ratio) - pre-normalized
+    -- Ratios
     NULLIF("P/E (NTM)", '')::NUMERIC                                        AS p_e_ntm,
     NULLIF("P/E (LTM)", '')::NUMERIC                                        AS p_e_ltm,
     NULLIF("Altman Z-Score (FY)", '')::NUMERIC                              AS altman_z_score_fy,
     NULLIF("Altman Z-Score (FQ)", '')::NUMERIC                              AS altman_z_score_fq,
     NULLIF("Altman Z-Score (LTM)", '')::NUMERIC                             AS altman_z_score_ltm,
-
-    -- Beta (percentage/ratio)
     NULLIF("Beta (1Y)", '')::NUMERIC                                        AS beta_1y,
     NULLIF("Beta (2Y)", '')::NUMERIC                                        AS beta_2y,
     NULLIF("Beta (5Y)", '')::NUMERIC                                        AS beta_5y,
-
-    -- Count columns (role: count)
+    -- Analyst counts
     NULLIF("Analyst Rating", '')::NUMERIC                                   AS analyst_rating,
     NULLIF("# Strong Sell Ratings", '')::NUMERIC                            AS num_strong_sell_ratings,
     NULLIF("# Strong Buys Ratings", '')::NUMERIC                            AS num_strong_buys_ratings,
     NULLIF("# Hold Ratings", '')::NUMERIC                                   AS num_hold_ratings,
     NULLIF("# Buys Ratings", '')::NUMERIC                                   AS num_buys_ratings,
     NULLIF("# Sell Ratings", '')::NUMERIC                                   AS num_sell_ratings,
-
-    -- Growth rates (percentage)
+    -- Revenue metrics
     NULLIF("Total Revenues/CAGR (5Y FY)", '')::NUMERIC                      AS total_revenues_cagr_5y_fy,
-
-    -- Revenues (market_value)
     NULLIF("Total Revenues (FQ)", '')::NUMERIC                              AS total_revenues_fq,
     NULLIF("Total Revenues (-1FY)", '')::NUMERIC                            AS total_revenues_1fy,
     NULLIF("Total Revenues (FY)", '')::NUMERIC                              AS total_revenues_fy,
     NULLIF("Total Revenues (LTM)", '')::NUMERIC                             AS total_revenues_ltm,
     NULLIF("Total Operating Expenses (LTM)", '')::NUMERIC                   AS total_operating_expenses_ltm,
-
-    -- Valuation ratios
+    -- Valuation
     NULLIF("P/TBV (LTM)", '')::NUMERIC                                      AS p_tbv_ltm,
     NULLIF("TBV (FY)", '')::NUMERIC                                         AS tbv_fy,
     NULLIF("TBV (LTM)", '')::NUMERIC                                        AS tbv_ltm,
     NULLIF("Market Cap (Country R)", '')::NUMERIC                           AS market_cap_country_r,
-
-    -- Returns (percentage)
+    -- Returns
     NULLIF("Tot. Return %/CAGR (3Y)", '')::NUMERIC                          AS tot_return_pct_cagr_3y,
     NULLIF("Tot. Return %/CAGR (10Y)", '')::NUMERIC                         AS tot_return_pct_cagr_10y,
     NULLIF("Total Return (5Y)", '')::NUMERIC                                AS total_return_5y,
     NULLIF("Total Return (10Y)", '')::NUMERIC                               AS total_return_10y,
-
-    -- Net Income (market_value)
+    -- Income & Cash Flow
     NULLIF("Net Income/Adj. (-1FY)", '')::NUMERIC                           AS net_income_adj_1fy,
-
-    -- Cash Flow (market_value)
     NULLIF("CFF (LTM)", '')::NUMERIC                                        AS cff_ltm,
     NULLIF("CFI (LTM)", '')::NUMERIC                                        AS cfi_ltm,
     NULLIF("FCF (LTM)", '')::NUMERIC                                        AS fcf_ltm,
     NULLIF("CFO (LTM)", '')::NUMERIC                                        AS cfo_ltm,
-
-    -- EBITDA (market_value)
+    -- EBITDA
     NULLIF("EBITDA (FQ)", '')::NUMERIC                                      AS ebitda_fq,
     NULLIF("EBITDA (LTM)", '')::NUMERIC                                     AS ebitda_ltm,
     NULLIF("EBITDA (FY)", '')::NUMERIC                                      AS ebitda_fy,
@@ -490,8 +1273,7 @@ SELECT
     NULLIF("EBITDA/Adj. (LTM)", '')::NUMERIC                                AS ebitda_adj_ltm,
     NULLIF("EBITDA/Adj. (FY)", '')::NUMERIC                                 AS ebitda_adj_fy,
     NULLIF("EBITDA/Adj. (-1FY)", '')::NUMERIC                               AS ebitda_adj_1fy,
-
-    -- EBIT (market_value)
+    -- EBIT
     NULLIF("EBIT (FQ)", '')::NUMERIC                                        AS ebit_fq,
     NULLIF("EBIT (LTM)", '')::NUMERIC                                       AS ebit_ltm,
     NULLIF("EBIT (FY)", '')::NUMERIC                                        AS ebit_fy,
@@ -501,81 +1283,59 @@ SELECT
     NULLIF("EBIT/Adj. (LTM)", '')::NUMERIC                                  AS ebit_adj_ltm,
     NULLIF("EBIT - Est Med (FY1E)", '')::NUMERIC                            AS ebit_est_med_fy1e,
     NULLIF("EBIT - Est Med (NTM)", '')::NUMERIC                             AS ebit_est_med_ntm,
-
-    -- Returns (percentage)
+    -- ROE
     NULLIF("Return On Equity % (LTM)", '')::NUMERIC                         AS return_on_equity_pct_ltm,
     NULLIF("Return On Equity % (FY)", '')::NUMERIC                          AS return_on_equity_pct_fy,
-
-    -- Net Income - Income Statement (market_value)
+    -- Net Income variants
     NULLIF("Net Income - (IS) (FY)", '')::NUMERIC                           AS net_income_is_fy,
     NULLIF("Net Income - (IS) (LTM)", '')::NUMERIC                          AS net_income_is_ltm,
     NULLIF("Normalized Net Income (FY)", '')::NUMERIC                       AS normalized_net_income_fy,
     NULLIF("Normalized Net Income (LTM)", '')::NUMERIC                      AS normalized_net_income_ltm,
     NULLIF("Net Income/Adj. (FY)", '')::NUMERIC                             AS net_income_adj_fy,
     NULLIF("Net Income/Adj. (LTM)", '')::NUMERIC                            AS net_income_adj_ltm,
-
-    -- Margins (percentage)
+    -- Margins
     NULLIF("Net Income Margin % (FY)", '')::NUMERIC                         AS net_income_margin_pct_fy,
     NULLIF("Net Income Margin % (LTM)", '')::NUMERIC                        AS net_income_margin_pct_ltm,
-
-    -- Volatility (percentage)
+    -- Volatility
     NULLIF("Volatility (1M)", '')::NUMERIC                                  AS volatility_1m,
     NULLIF("Volatility (3M)", '')::NUMERIC                                  AS volatility_3m,
     NULLIF("Volatility (6M)", '')::NUMERIC                                  AS volatility_6m,
     NULLIF("Volatility (1Y)", '')::NUMERIC                                  AS volatility_1y,
-
-    -- Volume (market_value)
+    -- Volume & Dividends
     NULLIF("Volume (Shrs)", '')::NUMERIC                                    AS volume_shrs,
-
-    -- Dividends (feature)
     NULLIF("Dividend Per Share (LTM)", '')::NUMERIC                         AS dividend_per_share_ltm,
     NULLIF("Div Yield (Ind)", '')::NUMERIC                                  AS div_yield_ind,
     NULLIF("Div Yield (LTM)", '')::NUMERIC                                  AS div_yield_ltm,
-
-    -- Balance Sheet (market_value)
+    -- Balance Sheet
     NULLIF("Total Debt (FY)", '')::NUMERIC                                  AS total_debt_fy,
     NULLIF("Total Equity (FY)", '')::NUMERIC                                AS total_equity_fy,
     NULLIF("Total Equity (LTM)", '')::NUMERIC                               AS total_equity_ltm,
     NULLIF("Total Debt (LTM)", '')::NUMERIC                                 AS total_debt_ltm,
     NULLIF("Total Assets (LTM)", '')::NUMERIC                               AS total_assets_ltm,
     NULLIF("Total Assets (FY)", '')::NUMERIC                                AS total_assets_fy,
-
     -- Ratios
     NULLIF("Current Ratio (FY)", '')::NUMERIC                               AS current_ratio_fy,
     NULLIF("Current Ratio (LTM)", '')::NUMERIC                              AS current_ratio_ltm,
-
-    -- Margins (percentage)
     NULLIF("Gross Profit Margin % (FY)", '')::NUMERIC                       AS gross_profit_margin_pct_fy,
     NULLIF("Gross Profit Margin % (LTM)", '')::NUMERIC                      AS gross_profit_margin_pct_ltm,
-
-    -- Efficiency ratios
     NULLIF("Asset Turnover (FY)", '')::NUMERIC                              AS asset_turnover_fy,
     NULLIF("Asset Turnover (LTM)", '')::NUMERIC                             AS asset_turnover_ltm,
-
-    -- Gross Profit (market_value)
+    -- Gross Profit & EPS
     NULLIF("Gross Profit (LTM)", '')::NUMERIC                               AS gross_profit_ltm,
     NULLIF("Gross Profit (FY)", '')::NUMERIC                                AS gross_profit_fy,
-
-    -- EPS (feature)
     NULLIF("EPS Norm - Est Avg (NTM)", '')::NUMERIC                         AS eps_norm_est_avg_ntm,
     NULLIF("EPS/Adj. (-1FY)", '')::NUMERIC                                  AS eps_adj_1fy,
     NULLIF("EPS/Adj. (FY)", '')::NUMERIC                                    AS eps_adj_fy,
     NULLIF("EPS/Adj. (LTM)", '')::NUMERIC                                   AS eps_adj_ltm,
     NULLIF("EPS Norm - Est Avg (FY1E)", '')::NUMERIC                        AS eps_norm_est_avg_fy1e,
-
-    -- Operating metrics (feature)
+    -- Operating items
     NULLIF("Gain (Loss) On Sale Of Assets (LTM)", '')::NUMERIC              AS gain_loss_on_sale_of_assets_ltm,
     NULLIF("Cost Of Revenues (LTM)", '')::NUMERIC                           AS cost_of_revenues_ltm,
-
-    -- Cash Acquisitions (feature/market_value)
     NULLIF("Cash Acquisitions (LTM)", '')::NUMERIC                          AS cash_acquisitions_ltm,
     NULLIF("Cash Acquisitions (FY)", '')::NUMERIC                           AS cash_acquisitions_fy,
     NULLIF("Cash Acquisitions (-1FY)", '')::NUMERIC                         AS cash_acquisitions_1fy,
-
-    -- Inventory (feature)
     NULLIF("Inventory (LTM)", '')::NUMERIC                                  AS inventory_ltm,
-
-    -- Goodwill (feature)
+    -- Goodwill
     NULLIF("Goodwill (FQ)", '')::NUMERIC                                    AS goodwill_fq,
     NULLIF("Goodwill (LTM)", '')::NUMERIC                                   AS goodwill_ltm,
     NULLIF("Goodwill (FY)", '')::NUMERIC                                    AS goodwill_fy,
@@ -584,75 +1344,49 @@ SELECT
     NULLIF("Impairment of Goodwill (LTM)", '')::NUMERIC                     AS impairment_of_goodwill_ltm,
     NULLIF("Impairment of Goodwill (-1FY)", '')::NUMERIC                    AS impairment_of_goodwill_1fy,
     NULLIF("Impairment of Goodwill (FY)", '')::NUMERIC                      AS impairment_of_goodwill_fy,
-
-    -- Operating Income (market_value)
+    -- Operating Income & Writedowns
     NULLIF("Operating Income (LTM)", '')::NUMERIC                           AS operating_income_ltm,
-
-    -- Asset Writedown (feature)
     NULLIF("Asset Writedown (LTM)", '')::NUMERIC                            AS asset_writedown_ltm,
     NULLIF("Asset Writedown (FY)", '')::NUMERIC                             AS asset_writedown_fy,
     NULLIF("Asset Writedown (-1FY)", '')::NUMERIC                           AS asset_writedown_1fy,
-
     NULLIF("Operating Income (FY)", '')::NUMERIC                            AS operating_income_fy,
-
-    -- Capital Expenditure (feature)
+    -- CapEx
     NULLIF("Capital Expenditure (LTM)", '')::NUMERIC                        AS capital_expenditure_ltm,
     NULLIF("Capital Expenditure (-1FY)", '')::NUMERIC                       AS capital_expenditure_1fy,
     NULLIF("Capital Expenditure (FY)", '')::NUMERIC                         AS capital_expenditure_fy,
-
-    -- Balance Sheet items (feature/market_value)
+    -- Balance Sheet items
     NULLIF("Retained Earnings (LTM)", '')::NUMERIC                          AS retained_earnings_ltm,
     NULLIF("Total Current Assets (LTM)", '')::NUMERIC                       AS total_current_assets_ltm,
     NULLIF("Total Current Liabilities (LTM)", '')::NUMERIC                  AS total_current_liabilities_ltm,
-
-    -- R&D (feature) - Note: schema.py uses randd_expenses_ltm
     NULLIF("R&D Expenses (LTM)", '')::NUMERIC                               AS randd_expenses_ltm,
-
-    -- Restructuring (feature)
+    -- Restructuring
     NULLIF("Restructuring Charges (LTM)", '')::NUMERIC                      AS restructuring_charges_ltm,
     NULLIF("Restructuring Charges (FQ)", '')::NUMERIC                       AS restructuring_charges_fq,
     NULLIF("Restructuring Charges (-1FY)", '')::NUMERIC                     AS restructuring_charges_1fy,
     NULLIF("Restructuring Charges (FY)", '')::NUMERIC                       AS restructuring_charges_fy,
-
-    -- Interest (feature)
     NULLIF("Interest Expense/Total (LTM)", '')::NUMERIC                     AS interest_expense_total_ltm,
-
-    -- Merger charges - Note: schema.py uses merger_and_restructuring_charges_*
     NULLIF("Merger & Restructuring Charges (LTM)", '')::NUMERIC             AS merger_and_restructuring_charges_ltm,
-
-    -- Working Capital (market_value)
+    -- Working Capital & Other
     NULLIF("Working Capital (LTM)", '')::NUMERIC                            AS working_capital_ltm,
-
-    -- Other items (feature)
     NULLIF("Other Unusual Items/Total (LTM)", '')::NUMERIC                  AS other_unusual_items_total_ltm,
     NULLIF("Interest Income On Investments (LTM)", '')::NUMERIC             AS interest_income_on_investments_ltm,
-
-    -- Buyback (feature)
     NULLIF("Buyback Yield (LTM)", '')::NUMERIC                              AS buyback_yield_ltm,
-
-    -- ROA (percentage)
+    -- ROA
     NULLIF("Return on Assets (ROA) % (LTM)", '')::NUMERIC                   AS return_on_assets_roa_pct_ltm,
     NULLIF("Return on Assets (ROA) % (FY)", '')::NUMERIC                    AS return_on_assets_roa_pct_fy,
-
-    -- Historical Net Income (market_value)
+    -- Historical Net Income
     NULLIF("Net Income - (IS) (-1FY)", '')::NUMERIC                         AS net_income_is_1fy,
     NULLIF("Normalized Net Income (-1FY)", '')::NUMERIC                     AS normalized_net_income_1fy,
-
-    -- Historical Cash Flow (market_value)
+    -- Historical Cash Flow
     NULLIF("CFF (FY)", '')::NUMERIC                                         AS cff_fy,
     NULLIF("CFF (-1FY)", '')::NUMERIC                                       AS cff_1fy,
     NULLIF("CFI (FY)", '')::NUMERIC                                         AS cfi_fy,
     NULLIF("CFI (-1FY)", '')::NUMERIC                                       AS cfi_1fy,
     NULLIF("CFO (FY)", '')::NUMERIC                                         AS cfo_fy,
     NULLIF("CFO (-1FY)", '')::NUMERIC                                       AS cfo_1fy,
-
-    -- Dividend Yield (feature)
     NULLIF("Div Yield (-1FYInd)", '')::NUMERIC                              AS div_yield_1fyind,
-
-    -- FCF (market_value)
     NULLIF("FCF (FY)", '')::NUMERIC                                         AS fcf_fy,
-
-    -- Quarterly/5Y Average data
+    -- Quarterly metrics
     NULLIF("Capital Expenditure (FQ)", '')::NUMERIC                         AS capital_expenditure_fq,
     NULLIF("Capital Expenditure (5YAVGFQ)", '')::NUMERIC                    AS capital_expenditure_5yavgfq,
     NULLIF("CFF (FQ)", '')::NUMERIC                                         AS cff_fq,
@@ -670,51 +1404,42 @@ SELECT
     NULLIF("Impairment of Goodwill (5YAVGFQ)", '')::NUMERIC                 AS impairment_of_goodwill_5yavgfq,
     NULLIF("Operating Income (FQ)", '')::NUMERIC                            AS operating_income_fq,
     NULLIF("Operating Income (5YAVGFQ)", '')::NUMERIC                       AS operating_income_5yavgfq,
-
-    -- P/B Ratios (ratio)
+    -- P/B Ratios
     NULLIF("P/B (LTM)", '')::NUMERIC                                        AS p_b_ltm,
     NULLIF("P/B (-1FY)", '')::NUMERIC                                       AS p_b_1fy,
     NULLIF("P/B (5YAVG)", '')::NUMERIC                                      AS p_b_5yavg,
-
-    -- Cash (market_value)
+    -- Cash
     NULLIF("Cash And Equivalents (LTM)", '')::NUMERIC                       AS cash_and_equivalents_ltm,
     NULLIF("Cash And Equivalents (FQ)", '')::NUMERIC                        AS cash_and_equivalents_fq,
     NULLIF("Cash And Equivalents (FY)", '')::NUMERIC                        AS cash_and_equivalents_fy,
     NULLIF("Cash And Equivalents (5YAVGFQ)", '')::NUMERIC                   AS cash_and_equivalents_5yavgfq,
-
-    -- Inventory (feature)
+    -- Inventory
     NULLIF("Inventory (FQ)", '')::NUMERIC                                   AS inventory_fq,
     NULLIF("Inventory (FY)", '')::NUMERIC                                   AS inventory_fy,
     NULLIF("Goodwill (5YAVGFQ)", '')::NUMERIC                               AS goodwill_5yavgfq,
     NULLIF("Inventory (5YAVGFQ)", '')::NUMERIC                              AS inventory_5yavgfq,
-
-    -- Retained Earnings (feature)
+    -- Retained Earnings
     NULLIF("Retained Earnings (FQ)", '')::NUMERIC                           AS retained_earnings_fq,
     NULLIF("Retained Earnings (FY)", '')::NUMERIC                           AS retained_earnings_fy,
     NULLIF("Retained Earnings (5YAVGFQ)", '')::NUMERIC                      AS retained_earnings_5yavgfq,
-
-    -- Working Capital (market_value)
+    -- Working Capital
     NULLIF("Working Capital (FQ)", '')::NUMERIC                             AS working_capital_fq,
     NULLIF("Working Capital (FY)", '')::NUMERIC                             AS working_capital_fy,
     NULLIF("Working Capital (5YAVGFY)", '')::NUMERIC                        AS working_capital_5yavgfy,
-
-    -- Dividend Yield (feature)
+    -- Dividend Yields
     NULLIF("Div Yield (TTM)", '')::NUMERIC                                  AS div_yield_ttm,
     NULLIF("Div Yield (NTM)", '')::NUMERIC                                  AS div_yield_ntm,
     NULLIF("Div Yield (5YAVGLTM)", '')::NUMERIC                             AS div_yield_5yavgltm,
-
-    -- Intangible Assets (feature)
+    -- Intangibles
     NULLIF("Gross Intangible Assets (LTM)", '')::NUMERIC                    AS gross_intangible_assets_ltm,
     NULLIF("Gross Intangible Assets (FY)", '')::NUMERIC                     AS gross_intangible_assets_fy,
     NULLIF("Gross Intangible Assets (5YAVGFQ)", '')::NUMERIC                AS gross_intangible_assets_5yavgfq,
-
-    -- Restructuring (feature)
+    -- Restructuring 5Y
     NULLIF("Restructuring Charges (5YAVGFQ)", '')::NUMERIC                  AS restructuring_charges_5yavgfq,
     NULLIF("Merger & Restructuring Charges (FQ)", '')::NUMERIC              AS merger_and_restructuring_charges_fq,
     NULLIF("Merger & Restructuring Charges (FY)", '')::NUMERIC              AS merger_and_restructuring_charges_fy,
     NULLIF("Merger & Restructuring Charges (5YAVGFQ)", '')::NUMERIC         AS merger_and_restructuring_charges_5yavgfq,
-
-    -- Net Income variations (market_value)
+    -- Net Income 5Y
     NULLIF("Normalized Net Income (FQ)", '')::NUMERIC                       AS normalized_net_income_fq,
     NULLIF("Normalized Net Income (5YAVGFQ)", '')::NUMERIC                  AS normalized_net_income_5yavgfq,
     NULLIF("Net Income/Adj. (FQ)", '')::NUMERIC                             AS net_income_adj_fq,
@@ -723,21 +1448,17 @@ SELECT
     NULLIF("Net Income - (IS) (5YAVGFQ)", '')::NUMERIC                      AS net_income_is_5yavgfq,
     NULLIF("Net Income - (IS) (5YAVGLTM)", '')::NUMERIC                     AS net_income_is_5yavgltm,
     NULLIF("Normalized Net Income (5YAVGLTM)", '')::NUMERIC                 AS normalized_net_income_5yavgltm,
-
-    -- 5Y Averages (market_value)
+    -- 5Y Averages
     NULLIF("EBITDA (5YAVGLTM)", '')::NUMERIC                                AS ebitda_5yavgltm,
     NULLIF("EBIT (5YAVGLTM)", '')::NUMERIC                                  AS ebit_5yavgltm,
     NULLIF("Total Revenues (5YAVGLTM)", '')::NUMERIC                        AS total_revenues_5yavgltm,
-
-    -- Estimates (percentage)
+    -- Estimates
     NULLIF("Revenues - Est YoY % (FY1E)", '')::NUMERIC                      AS revenues_est_yoy_pct_fy1e,
-
-    -- Price Changes (percentage)
+    -- Price Changes
     NULLIF("Price Chg. % (1M)", '')::NUMERIC                                AS price_chg_pct_1m,
     NULLIF("Price Chg. % (3M)", '')::NUMERIC                                AS price_chg_pct_3m,
     NULLIF("1-Day %", '')::NUMERIC                                          AS one_day_pct,
-
-    -- Historical Prices (role: price) - NEVER transform
+    -- Historical Prices
     NULLIF("Price (5D Ago)", '')::NUMERIC                                   AS price_5d_ago,
     NULLIF("Price (1W Ago)", '')::NUMERIC                                   AS price_1w_ago,
     NULLIF("Price (1M Ago)", '')::NUMERIC                                   AS price_1m_ago,
@@ -747,42 +1468,33 @@ SELECT
     NULLIF("Price (3Y Ago)", '')::NUMERIC                                   AS price_3y_ago,
     NULLIF("Price (5Y Ago)", '')::NUMERIC                                   AS price_5y_ago,
     NULLIF("Price (QTD Ago)", '')::NUMERIC                                  AS price_qtd_ago,
-
-    -- Volume (ratio)
+    -- Volume & Shares
     NULLIF("Rel. Volume", '')::NUMERIC                                      AS rel_volume,
-
-    -- Shares (count/feature)
     NULLIF("Shrs Out", '')::NUMERIC                                         AS shares_outstanding,
     NULLIF("Shrs Out (-1FY)", '')::NUMERIC                                  AS shrs_out_1fy,
-
-    -- Dividends (feature)
+    -- Common Dividends
     NULLIF("Common Dividends Paid (LTM)", '')::NUMERIC                      AS common_dividends_paid_ltm,
     NULLIF("Common Dividends Paid (FY)", '')::NUMERIC                       AS common_dividends_paid_fy,
-
-    -- SG&A Expenses - Note: schema.py uses selling_general_and_admin_expenses_*
+    -- SG&A
     NULLIF("Selling General & Admin Expenses/Total (FQ)", '')::NUMERIC      AS selling_general_and_admin_expenses_total_fq,
     NULLIF("Selling General & Admin Expenses/Total (FY)", '')::NUMERIC      AS selling_general_and_admin_expenses_total_fy,
     NULLIF("Selling General & Admin Expenses/Total (-1FY)", '')::NUMERIC    AS selling_general_and_admin_expenses_total_1fy,
     NULLIF("Selling General & Admin Expenses/Total (5YAVGFQ)", '')::NUMERIC AS selling_general_and_admin_expenses_total_5yavgfq,
-
-    -- Accounts Receivable (feature) - Note: schema.py uses accounts_receivable_total_*
+    -- Accounts Receivable
     NULLIF("Accounts Receivable/Total (FY)", '')::NUMERIC                   AS accounts_receivable_total_fy,
     NULLIF("Accounts Receivable/Total (-1FY)", '')::NUMERIC                 AS accounts_receivable_total_1fy,
     NULLIF("Accounts Receivable/Total (5YAVGFQ)", '')::NUMERIC              AS accounts_receivable_total_5yavgfq,
-
-    -- Marketing Expenses (feature)
+    -- Marketing
     NULLIF("Marketing Expenses (FQ)", '')::NUMERIC                          AS marketing_expenses_fq,
     NULLIF("Marketing Expenses (FY)", '')::NUMERIC                          AS marketing_expenses_fy,
     NULLIF("Marketing Expenses (-1FY)", '')::NUMERIC                        AS marketing_expenses_1fy,
     NULLIF("Marketing Expenses (5YAVGLTM)", '')::NUMERIC                    AS marketing_expenses_5yavgltm,
-
-    -- Revenue Estimates (market_value)
+    -- Revenue Estimates
     NULLIF("Revenues - Est Avg (NTM)", '')::NUMERIC                         AS revenues_est_avg_ntm,
     NULLIF("Revenues - Est Avg (FY1E)", '')::NUMERIC                        AS revenues_est_avg_fy1e,
     NULLIF("Revenues - Est Med (NTM)", '')::NUMERIC                         AS revenues_est_med_ntm,
     NULLIF("Revenues - Est Med (FY1E)", '')::NUMERIC                        AS revenues_est_med_fy1e,
-
-    -- EV/Sales Ratios (ratio) - Phase 9.3 Schema 1.3
+    -- EV/Sales Time-Series
     NULLIF("EV/Sales (EST FY1)", '')::NUMERIC                               AS ev_sales_est_fy1,
     NULLIF("EV/Sales (LTM)", '')::NUMERIC                                   AS ev_sales_ltm,
     NULLIF("EV/Sales (NTM)", '')::NUMERIC                                   AS ev_sales_ntm,
@@ -794,26 +1506,28 @@ SELECT
     NULLIF("EV/Sales (-2FQLTM)", '')::NUMERIC                               AS ev_sales_2fqltm,
     NULLIF("EV/Sales (-3FQLTM)", '')::NUMERIC                               AS ev_sales_3fqltm,
     NULLIF("EV/Sales (-4FQLTM)", '')::NUMERIC                               AS ev_sales_4fqltm,
-
-    -- 52-Week High/Low (price)
+    -- Employment (CORRECT POSITION per schema - BEFORE 52W/EMA)
+    NULLIF("Full Time Employees (FQ)", '')::NUMERIC                         AS full_time_employees_fq,
+    NULLIF("Full Time Employees (FY)", '')::NUMERIC                         AS full_time_employees_fy,
+    NULLIF("Full Time Employees (-1FY)", '')::NUMERIC                       AS full_time_employees_1fy,
+    NULLIF("Full Time Employees (-2FY)", '')::NUMERIC                       AS full_time_employees_2fy,
+    NULLIF("Full Time Employees (-3FY)", '')::NUMERIC                       AS full_time_employees_3fy,
+    NULLIF("Avg Employees (5YAVGFY)", '')::NUMERIC                          AS avg_employees_5yavgfy,
+    -- Technical Indicators
     NULLIF("52W High/Adj", '')::NUMERIC                                     AS "52w_high_adj",
     NULLIF("52W Low/Adj", '')::NUMERIC                                      AS "52w_low_adj",
-
-    -- EMAs (price) - Technical indicators
     NULLIF("EMA (20D)", '')::NUMERIC                                        AS ema_20d,
     NULLIF("EMA (50D)", '')::NUMERIC                                        AS ema_50d,
     NULLIF("EMA (100D)", '')::NUMERIC                                       AS ema_100d,
     NULLIF("EMA (250D)", '')::NUMERIC                                       AS ema_250d,
-
-    -- EV/EBITDA Ratios (ratio) - Phase 9.3 Schema 1.3
+    -- EV/EBITDA Time-Series
     NULLIF("EV/EBITDA (LTM)", '')::NUMERIC                                  AS ev_ebitda_ltm,
     NULLIF("EV/EBITDA (NTM)", '')::NUMERIC                                  AS ev_ebitda_ntm,
     NULLIF("EV/EBITDA (-1FYLTM)", '')::NUMERIC                              AS ev_ebitda_1fyltm,
     NULLIF("EV/EBITDA (-1FQLTM)", '')::NUMERIC                              AS ev_ebitda_1fqltm,
     NULLIF("EV/EBITDA (3YAVGLTM)", '')::NUMERIC                             AS ev_ebitda_3yavgltm,
     NULLIF("EV/EBITDA (EST FY1)", '')::NUMERIC                              AS ev_ebitda_est_fy1,
-
-    -- P/E Extended Time-Series (ratio) - Phase 9.3 Schema 1.3
+    -- P/E Time-Series
     NULLIF("P/E (EST FY1)", '')::NUMERIC                                    AS p_e_est_fy1,
     NULLIF("P/E (-1FYLTM)", '')::NUMERIC                                    AS p_e_1fyltm,
     NULLIF("P/E (-2FYLTM)", '')::NUMERIC                                    AS p_e_2fyltm,
@@ -827,83 +1541,76 @@ SELECT
     NULLIF("P/E (-0FYYoYLTM)", '')::NUMERIC                                 AS p_e_0fyyoyltm,
     NULLIF("P/E (-1FYYoYLTM)", '')::NUMERIC                                 AS p_e_1fyyoyltm,
     NULLIF("P/E (-0FQYoYLTM)", '')::NUMERIC                                 AS p_e_0fqyoyltm,
-
-    -- Dividend Record Dates (date)
+    -- Dividend Record
     NULLIF("Dividend Record (Announce Date)", '')::DATE                     AS dividend_record_announce_date,
     NULLIF("Dividend Record (Ex Date)", '')::DATE                           AS dividend_record_ex_date,
     NULLIF("Dividend Record (Payable Date)", '')::DATE                      AS dividend_record_payable_date,
     NULLIF("Dividend Record (Record Date)", '')::DATE                       AS dividend_record_record_date,
-
-    -- Dividend Record Info (string/feature)
-    "Dividend Record (Frequency)"                                           AS dividend_record_frequency,
-    "Dividend Record (Currency)"                                            AS dividend_record_currency,
+    "Dividend Record (Frequency)",
+    "Dividend Record (Currency)",
     NULLIF("Dividend Record (Amount)", '')::NUMERIC                         AS dividend_record_amount,
     NULLIF("Dividend Streak", '')::NUMERIC                                  AS dividend_streak,
+    -- Net EPS Basic
+    NULLIF("Net EPS - Basic (LTM)", '')::NUMERIC                            AS net_eps_basic_ltm,
+    NULLIF("Net EPS - Basic (FQ)", '')::NUMERIC                             AS net_eps_basic_fq,
+    NULLIF("Net EPS - Basic (FY)", '')::NUMERIC                             AS net_eps_basic_fy,
+    NULLIF("Net EPS - Basic (-1FQFQ)", '')::NUMERIC                         AS net_eps_basic_1fqfq,
+    NULLIF("Net EPS - Basic (-2FQFQ)", '')::NUMERIC                         AS net_eps_basic_2fqfq,
+    NULLIF("Net EPS - Basic (-3FQFQ)", '')::NUMERIC                         AS net_eps_basic_3fqfq,
+    NULLIF("Net EPS - Basic (-4FQFQ)", '')::NUMERIC                         AS net_eps_basic_4fqfq,
+    NULLIF("Net EPS - Basic (-1FY)", '')::NUMERIC                           AS net_eps_basic_1fy,
+    NULLIF("Net EPS - Basic (-2FY)", '')::NUMERIC                           AS net_eps_basic_2fy,
+    NULLIF("Net EPS - Basic (-3FY)", '')::NUMERIC                           AS net_eps_basic_3fy,
+    NULLIF("Net EPS - Basic (-4FY)", '')::NUMERIC                           AS net_eps_basic_4fy,
+    NULLIF("Net EPS - Basic (-5FY)", '')::NUMERIC                           AS net_eps_basic_5fy,
+    -- EPS Revisions
+    NULLIF("EPS Est Avg Rev % (FY1E - 1W)", '')::NUMERIC                    AS eps_est_avg_rev_pct_fy1e_1w,
+    NULLIF("EPS Est Avg Rev % (FY1E - 1M)", '')::NUMERIC                    AS eps_est_avg_rev_pct_fy1e_1m,
+    NULLIF("EPS Est Avg Rev % (FY1E - 3M)", '')::NUMERIC                    AS eps_est_avg_rev_pct_fy1e_3m,
+    NULLIF("EPS Est Avg Rev % (FY1E - 6M)", '')::NUMERIC                    AS eps_est_avg_rev_pct_fy1e_6m,
+    NULLIF("EPS Est Avg Rev % (FY1E - 1Y)", '')::NUMERIC                    AS eps_est_avg_rev_pct_fy1e_1y,
+    -- Historical Div Yields
+    NULLIF("Div Yield (-2FYInd)", '')::NUMERIC                              AS div_yield_2fyind,
+    NULLIF("Div Yield (-3FYInd)", '')::NUMERIC                              AS div_yield_3fyind,
+    NULLIF("Div Yield (-4FYInd)", '')::NUMERIC                              AS div_yield_4fyind,
+    NULLIF("Div Yield (-5FYInd)", '')::NUMERIC                              AS div_yield_5fyind,
+    -- EBITDA Estimates
+    NULLIF("EBITDA - Est Avg (NTM)", '')::NUMERIC                           AS ebitda_est_avg_ntm,
+    NULLIF("EBITDA - Est Avg (FY1E)", '')::NUMERIC                          AS ebitda_est_avg_fy1e,
+    -- EPS GAAP
+    NULLIF("EPS GAAP - Est Avg (NTM)", '')::NUMERIC                         AS eps_gaap_est_avg_ntm,
+    NULLIF("EPS GAAP - Est Avg (FY1E)", '')::NUMERIC                        AS eps_gaap_est_avg_fy1e,
+    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 1M)", '')::NUMERIC               AS eps_gaap_est_avg_rev_pct_fy1e_1m,
+    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 3M)", '')::NUMERIC               AS eps_gaap_est_avg_rev_pct_fy1e_3m,
+    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 6M)", '')::NUMERIC               AS eps_gaap_est_avg_rev_pct_fy1e_6m,
+    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 1Y)", '')::NUMERIC               AS eps_gaap_est_avg_rev_pct_fy1e_1y,
+    -- EPS Count
+    NULLIF("EPS Norm - Est # (FY1E)", '')::NUMERIC                          AS eps_norm_est_num_fy1e
 
-    -- Employees (count) - float for NULL handling
-    NULLIF("Full Time Employees (FQ)", '')::NUMERIC                         AS full_time_employees_fq,
-    NULLIF("Full Time Employees (FY)", '')::NUMERIC                         AS full_time_employees_fy,
-    NULLIF("Full Time Employees (-1FY)", '')::NUMERIC                       AS full_time_employees_1fy,
-    NULLIF("Full Time Employees (-2FY)", '')::NUMERIC                       AS full_time_employees_2fy,
-    NULLIF("Full Time Employees (-3FY)", '')::NUMERIC                       AS full_time_employees_3fy,
-    NULLIF("Avg Employees (5YAVGFY)", '')::NUMERIC                          AS avg_employees_5yavgfy,
-
-    -- Net EPS - Basic (feature) - Not currently in COLUMN_SCHEMA but included for completeness
-    NULLIF("Net EPS - Basic (LTM)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (FQ)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (FY)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-1FQFQ)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-2FQFQ)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-3FQFQ)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-4FQFQ)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-1FY)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-2FY)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-3FY)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-4FY)", '')::NUMERIC,
-    NULLIF("Net EPS - Basic (-5FY)", '')::NUMERIC,
-
-    -- EPS Estimate Revisions (feature) - Not currently in COLUMN_SCHEMA
-    NULLIF("EPS Est Avg Rev % (FY1E - 1W)", '')::NUMERIC,
-    NULLIF("EPS Est Avg Rev % (FY1E - 1M)", '')::NUMERIC,
-    NULLIF("EPS Est Avg Rev % (FY1E - 3M)", '')::NUMERIC,
-    NULLIF("EPS Est Avg Rev % (FY1E - 6M)", '')::NUMERIC,
-    NULLIF("EPS Est Avg Rev % (FY1E - 1Y)", '')::NUMERIC,
-
-    -- Historical Dividend Yields (feature) - Not currently in COLUMN_SCHEMA
-    NULLIF("Div Yield (-2FYInd)", '')::NUMERIC,
-    NULLIF("Div Yield (-3FYInd)", '')::NUMERIC,
-    NULLIF("Div Yield (-4FYInd)", '')::NUMERIC,
-    NULLIF("Div Yield (-5FYInd)", '')::NUMERIC,
-
-    -- EBITDA Estimates (market_value) - Not currently in COLUMN_SCHEMA
-    NULLIF("EBITDA - Est Avg (NTM)", '')::NUMERIC,
-    NULLIF("EBITDA - Est Avg (FY1E)", '')::NUMERIC,
-
-    -- EPS GAAP Estimates (feature) - Not currently in COLUMN_SCHEMA
-    NULLIF("EPS GAAP - Est Avg (NTM)", '')::NUMERIC,
-    NULLIF("EPS GAAP - Est Avg (FY1E)", '')::NUMERIC,
-    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 1M)", '')::NUMERIC,
-    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 3M)", '')::NUMERIC,
-    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 6M)", '')::NUMERIC,
-    NULLIF("EPS GAAP Est Avg Rev % (FY1E - 1Y)", '')::NUMERIC,
-
-    -- EPS Estimate Count (count) - Not currently in COLUMN_SCHEMA
-    NULLIF("EPS Norm - Est # (FY1E)", '')::NUMERIC
-FROM screening_us
+FROM screening_staging
 ON CONFLICT DO NOTHING;
 
--- Display insert statistics
+-- Display insert statistics per region
 SELECT 'US data inserted:' AS status, COUNT(*) AS row_count
 FROM equities
 WHERE "Region" = 'US';
 
+SELECT 'EU data inserted:' AS status, COUNT(*) AS row_count
+FROM equities
+WHERE "Region" = 'EU';
+
+SELECT 'APAC data inserted:' AS status, COUNT(*) AS row_count
+FROM equities
+WHERE "Region" = 'APAC';
+
+SELECT 'ROTW data inserted:' AS status, COUNT(*) AS row_count
+FROM equities
+WHERE "Region" = 'ROTW';
+
 -- Clean up staging table
-DROP TABLE IF EXISTS screening_us;
+DROP TABLE IF EXISTS screening_staging;
 
-\echo 'US Region import completed.'
-
--- Note: Apply the same aliasing pattern to EU, APAC, and ROTW imports
--- (For brevity, only showing US region - repeat for other regions)
+\echo 'All regions import completed.'
 
 -- ===================================================================
 -- Import Summary and Validation
@@ -914,5 +1621,5 @@ SELECT 'Total rows in equities table:' AS status, COUNT(*) AS row_count
 FROM equities;
 
 \echo '==================================================================='
-\echo 'Import process completed successfully with schema-aligned aliases!'
-\echo '===================================================================
+\echo 'Import process completed successfully!'
+\echo '==================================================================='

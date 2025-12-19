@@ -337,7 +337,7 @@ Extend `*_metadata.json` schema to add:
 Example:
 
 ```python
-PHASE93_FEATURE_INPUTS = {
+PHASE93_FEATURE_CATEGORIES = {
     "momentum": ["price_chg_pct_1m", "price_chg_pct_3m", "price_1m_ago", "ema_20d", "ema_50d"],
     "quality_risk": ["altman_z_score_ltm", "return_on_equity_pct_ltm", ...],
     "cash_flow": ["cfo_ltm", "fcf_ltm", "cfo_fy", ...],
@@ -505,8 +505,8 @@ Below is a practical TDD plan with modules and concrete tests.
     * Remove `price_target` (expected in schema).
     * Assert `diagnostics["unknown_columns"] == ["foo_bar"]` and `"price_target"` in `missing_expected_columns`.
 
-4. **`test_phase93_feature_inputs_all_numeric_where_expected`**
-    * For each column in `PHASE93_FEATURE_INPUTS["momentum"]` etc., assert dtype is numeric or datetime depending on
+4. **`test_PHASE93_FEATURE_CATEGORIES_all_numeric_where_expected`**
+    * For each column in `PHASE93_FEATURE_CATEGORIES["momentum"]` etc., assert dtype is numeric or datetime depending on
       role.
 
 #### 3.3. Test Cases – Imputation Enhancements
@@ -899,7 +899,7 @@ class TestSchemaNormalization(unittest.TestCase):
 import unittest
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA, 
-    PHASE93_FEATURE_INPUTS,
+    PHASE93_FEATURE_CATEGORIES,
     list_numeric_feature_cols,
     list_categorical_cols,
     list_date_cols
@@ -912,7 +912,7 @@ class TestSchemaCompleteness(unittest.TestCase):
     def test_phase93_features_all_in_schema(self):
         """Test all Phase 9.3 feature input columns are in COLUMN_SCHEMA."""
         all_phase93_cols = set()
-        for category, cols in PHASE93_FEATURE_INPUTS.items():
+        for category, cols in PHASE93_FEATURE_CATEGORIES.items():
             all_phase93_cols.update(cols)
         
         missing = [col for col in all_phase93_cols if col not in COLUMN_SCHEMA]
@@ -962,7 +962,7 @@ class TestSchemaCompleteness(unittest.TestCase):
 
 **Estimated Lines**: ~80 lines  
 **Priority**: P2 - Should pass to verify schema quality  
-**Dependencies**: schema.py PHASE93_FEATURE_INPUTS definition
+**Dependencies**: schema.py PHASE93_FEATURE_CATEGORIES definition
 
 ---
 

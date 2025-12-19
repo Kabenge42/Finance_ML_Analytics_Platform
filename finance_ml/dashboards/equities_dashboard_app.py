@@ -54,6 +54,9 @@ from finance_ml.dashboards.components.temporal_utils import (
     get_reference_date,
 )
 from finance_ml.dashboards.earnings_widgets import (
+    DATE_DISPLAY_FORMAT,
+    _add_formatted_date_columns,
+    _resolve_reference_date,
     create_analyst_recommendation_heatmap,
     create_category_comparison_chart,
     create_earnings_metrics_chart,
@@ -61,8 +64,23 @@ from finance_ml.dashboards.earnings_widgets import (
     create_market_movers_dashboard,
     create_price_target_analytics,
 )
-from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
-from finance_ml.ml_workflow.preprocessing.etl import etl_with_features
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
+from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+from finance_ml.ml_workflow.preprocessing.etl import (
+    etl_with_features,
+    ETLConfig,
+    DataExtractionConfig,
+    SchemaValidationConfig,
+    DtypeCastingConfig,
+    SemanticClassificationConfig,
+    ImputationConfig,
+    SemanticTransformConfig,
+    DataSanitizationConfig,
+    ScalingConfig,
+    FeatureEngineeringConfig,
+    FeatureSelectionConfig,
+    FinancialMetricsConfig,
+)
 
 # Type aliases
 DataSource = Literal["auto", "csv", "db"]
@@ -147,6 +165,95 @@ __all__ = [
     "create_app",
     "main",
 ]
+
+
+# =============================================================================
+# Dashboard ETL Configuration (mirrors etl_data_explorer.ipynb)
+# =============================================================================
+
+# Winsorization bounds (code_guidelines.md Section 2.1)
+WINSORIZE_LOWER = 0.10
+WINSORIZE_UPPER = 0.90
+
+
+def _get_dashboard_etl_config() -> ETLConfig:
+    """
+    Get ETL configuration for the dashboard, mirroring etl_data_explorer.ipynb.
+
+    This configuration ensures proper data-loading and processing with correct
+    data types and engineers the required features including earnings analytics.
+    """
+    return ETLConfig(
+        extraction=DataExtractionConfig(
+            normalize_column_names=True,
+        ),
+        validation=SchemaValidationConfig(
+            validate_schema=True,
+            require_target_column=False,  # Dashboard doesn't require target
+            drop_rows_with_missing_critical_fields=True,
+            validate_schema_alignment=True,
+            schema_alignment_threshold=0.80,
+        ),
+        dtype_casting=DtypeCastingConfig(
+            apply_dtype_casting=True,
+            track_diagnostics=True,
+        ),
+        semantic_classification=SemanticClassificationConfig(
+            enabled=False,
+            preserve_price_columns=True,
+        ),
+        imputation=ImputationConfig(
+            apply_imputation=True,
+            strategy="6step",
+            knn_neighbors=5,
+            sector_column="sector",
+            reference_price_column="last_price",
+            impute_categorical_columns=True,
+            impute_datetime_columns=True,  # Critical for earnings calendar
+        ),
+        semantic_transform=SemanticTransformConfig(
+            apply_log_transforms=False,
+            log_transform_method="log1p",
+            log_transform_market_values=False,
+            exclude_ratios_from_winsorization=True,
+            exclude_percentages_from_winsorization=True,
+            exclude_counts_from_scaling=True,
+        ),
+        sanitization=DataSanitizationConfig(
+            sanitize_data=True,
+            apply_winsorization=False,
+            winsorize_lower_percentile=WINSORIZE_LOWER,
+            winsorize_upper_percentile=WINSORIZE_UPPER,
+        ),
+        scaling=ScalingConfig(
+            enabled=False,
+            scaler_type="robust",
+            scale_by_sector=True,
+            exclude_price_columns=True,
+        ),
+        feature_engineering=FeatureEngineeringConfig(
+            enabled=True,
+            preset="comprehensive",
+            engineer_earnings_analytics=True,  # Enable Earnings Quality features
+        ),
+        feature_selection=FeatureSelectionConfig(
+            enabled=False,
+            method="both",
+            min_importance_threshold=0.01,
+            max_correlation_threshold=0.95,
+        ),
+        financial_metrics=FinancialMetricsConfig(
+            compute_valuation_metrics=True,
+            compute_profitability_metrics=True,
+            compute_growth_metrics=True,
+            compute_leverage_metrics=True,
+            compute_target_vs_price_metrics=True,
+            compute_sector_specific_metrics=True,
+            generate_quality_alerts=True,
+            generate_metrics_dashboard=True,
+            output_directory="financial_metrics",
+        ),
+    )
 
 
 # =============================================================================
@@ -344,6 +451,50 @@ def parse_data_store(store_data: Optional[str]) -> pd.DataFrame:
         return pd.DataFrame()
 
 
+def _apply_temporal_enrichments(
+    df: pd.DataFrame, reference_date: Optional[pd.Timestamp] = None
+) -> Tuple[pd.DataFrame, Optional[pd.Timestamp], List[str]]:
+    """Apply temporal features and formatted date companions using unified reference date.
+
+    Args:
+        df: Input DataFrame to enrich.
+        reference_date: Optional reference date override.
+
+    Returns:
+        Tuple of (enriched_df, resolved_reference_date, formatted_columns).
+    """
+
+    if df is None or df.empty:
+        return df, reference_date, []
+
+    resolved_reference_date = _resolve_reference_date(df, reference_date)
+
+    temporal_date_col: Optional[str] = None
+    if "reference_date" in df.columns:
+        temporal_date_col = "reference_date"
+    elif "next_earnings" in df.columns:
+        temporal_date_col = "next_earnings"
+
+    enriched_df = df
+    if temporal_date_col:
+        enriched_df = engineer_temporal_features(
+            df, date_col=temporal_date_col, reference_date=resolved_reference_date
+        )
+
+    date_columns_for_format = [
+        "_reference_date",
+        "reference_date",
+        "next_earnings",
+        "income_statement_report_date",
+        "dividend_record_ex_date",
+        "fy_end",
+    ]
+    date_columns_for_format = [c for c in date_columns_for_format if c in enriched_df.columns]
+    formatted_cols = _add_formatted_date_columns(enriched_df, date_columns_for_format)
+
+    return enriched_df, resolved_reference_date, formatted_cols
+
+
 # =============================================================================
 # Dashboard Configuration Constants (code_guidelines.md Section 8.3)
 # =============================================================================
@@ -405,17 +556,31 @@ def load_data_csv_first(
         except Exception as e:
             logger.warning(f"Failed to load CSV export: {e}, falling back to ETL")
 
-    # Slow path: run ETL pipeline
+    # Slow path: run ETL pipeline with dashboard-specific config
     try:
         source: Literal["csv", "db"] = "db" if resolved_db_url else "csv"
+
+        # Use dashboard ETL config (mirrors etl_data_explorer.ipynb)
+        etl_config = _get_dashboard_etl_config()
+
         # Phase 9.1-9.3: Unified ETL Pipeline (STANDARD Pattern)
         df, metrics = etl_with_features(
             source=source,
             data_dir=resolved_data_dir,
             db_url=resolved_db_url,
             feature_preset=feature_preset,
+            config=etl_config,
             return_metrics=True,
         )
+
+        df, resolved_reference_date, formatted_cols = _apply_temporal_enrichments(df)
+        if resolved_reference_date is not None:
+            logger.info(
+                "Reference date resolved to %s",
+                resolved_reference_date.strftime(DATE_DISPLAY_FORMAT),
+            )
+        if formatted_cols:
+            logger.debug("Formatted date columns added: %s", ", ".join(formatted_cols))
 
         # Export to CSV for next time
         if not df.empty:
@@ -481,7 +646,11 @@ def generate_dashboard_artifacts(
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
     artifacts = {}
-    timestamp = pd.Timestamp.now().isoformat()
+    reference_date = _resolve_reference_date(df, None)
+    timestamp = (reference_date or pd.Timestamp.now()).strftime(DATE_DISPLAY_FORMAT)
+    reference_date_str = (
+        reference_date.strftime(DATE_DISPLAY_FORMAT) if reference_date is not None else None
+    )
 
     try:
         # Generate main dashboard widgets
@@ -491,7 +660,9 @@ def generate_dashboard_artifacts(
             "section": "earnings",
         }
         create_earnings_surprise_dashboard(
-            df, output_path=output_dir / artifacts["earnings_surprise"]["file"]
+            df,
+            reference_date=reference_date,
+            output_path=output_dir / artifacts["earnings_surprise"]["file"],
         )
 
         artifacts["analyst_heatmap"] = {
@@ -509,7 +680,9 @@ def generate_dashboard_artifacts(
             "section": "earnings",
         }
         create_market_movers_dashboard(
-            df, output_path=output_dir / artifacts["market_movers"]["file"]
+            df,
+            reference_date=reference_date,
+            output_path=output_dir / artifacts["market_movers"]["file"],
         )
 
         artifacts["price_target_analytics"] = {
@@ -544,6 +717,7 @@ def generate_dashboard_artifacts(
             create_earnings_metrics_chart(
                 df,
                 metric_category=category,
+                reference_date=reference_date,
                 output_path=output_dir / artifacts[key]["file"],
             )
 
@@ -554,7 +728,9 @@ def generate_dashboard_artifacts(
             "section": "phase93",
         }
         create_category_comparison_chart(
-            df, output_path=output_dir / artifacts["category_comparison"]["file"]
+            df,
+            reference_date=reference_date,
+            output_path=output_dir / artifacts["category_comparison"]["file"],
         )
 
         # Generate monitoring report (Task 8)
@@ -588,6 +764,7 @@ def generate_dashboard_artifacts(
         "artifacts_dir": str(output_dir),
         "artifacts": artifacts,
         "generation_status": "completed",
+        "reference_date": reference_date_str,
     }
 
     # Save metadata
@@ -617,12 +794,16 @@ def load_data(
     resolved_data_dir: Path = Path(data_dir) if data_dir is not None else DEFAULT_DATA_DIR
     resolved_db_url = db_url or os.getenv("DB_URL")
 
+    # Get dashboard ETL config (mirrors etl_data_explorer.ipynb)
+    etl_config = _get_dashboard_etl_config()
+
     def _etl(source: Literal["csv", "db"]) -> pd.DataFrame:
         result = etl_with_features(
             source=source,
             data_dir=resolved_data_dir,
             db_url=resolved_db_url,
             feature_preset=feature_preset,
+            config=etl_config,
             return_metrics=False,
         )
         return result
@@ -643,6 +824,9 @@ def load_data(
                     df = _etl("csv")
             else:
                 df = _etl("csv")
+
+        if not df.empty:
+            df, _, _ = _apply_temporal_enrichments(df)
 
         if limit is not None and limit > 0:
             return df.head(int(limit)).copy()
@@ -1274,7 +1458,7 @@ def create_app(
                                         id="feature-category-dropdown",
                                         options=[
                                             {"label": k, "value": k}
-                                            for k in sorted(PHASE93_FEATURE_INPUTS.keys())
+                                            for k in sorted(PHASE93_FEATURE_CATEGORIES.keys())
                                         ],
                                         multi=True,
                                         value=["profitability"],

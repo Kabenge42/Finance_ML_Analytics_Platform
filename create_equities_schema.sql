@@ -76,7 +76,9 @@ CREATE TABLE equities
     "Industry"                                         TEXT,
     "Last Updated"                                     DATE,
     "Income Statement Report Date"                     DATE,
+    "FY End"                                           DATE,
     "Next Earnings"                                    DATE,
+    "Next Earnings (When)"                             TEXT,
     -- CATEGORICAL: Investment style (Value, Growth, Blend)
     "Style Class"                                      TEXT,
     -- CATEGORICAL: Earnings announcement status
@@ -234,59 +236,59 @@ CREATE TABLE equities
     -- MARKET_VALUE: Gross Profit
     "Gross Profit (LTM)"                               NUMERIC, -- MARKET_VALUE: Gross profit (LTM)
     "Gross Profit (FY)"                                NUMERIC, -- MARKET_VALUE: Gross profit (FY)
-    "EPS Norm - Est Avg (NTM)"                         NUMERIC,
-    "EPS/Adj. (-1FY)"                                  NUMERIC,
-    "EPS/Adj. (FY)"                                    NUMERIC,
-    "EPS/Adj. (LTM)"                                   NUMERIC,
-    "EPS Norm - Est Avg (FY1E)"                        NUMERIC,
-    "Gain (Loss) On Sale Of Assets (LTM)"              NUMERIC,
-    "Cost Of Revenues (LTM)"                           NUMERIC,
-    "Cash Acquisitions (LTM)"                          NUMERIC,
-    "Cash Acquisitions (FY)"                           NUMERIC,
-    "Cash Acquisitions (-1FY)"                         NUMERIC,
-    "Inventory (LTM)"                                  NUMERIC,
-    "Goodwill (FQ)"                                    NUMERIC,
-    "Goodwill (LTM)"                                   NUMERIC,
-    "Goodwill (FY)"                                    NUMERIC,
-    "Goodwill (-1FY)"                                  NUMERIC,
-    "Impairment of Goodwill (FQ)"                      NUMERIC,
-    "Impairment of Goodwill (LTM)"                     NUMERIC,
-    "Impairment of Goodwill (-1FY)"                    NUMERIC,
-    "Impairment of Goodwill (FY)"                      NUMERIC,
-    "Operating Income (LTM)"                           NUMERIC,
-    "Asset Writedown (LTM)"                            NUMERIC,
-    "Asset Writedown (FY)"                             NUMERIC,
-    "Asset Writedown (-1FY)"                           NUMERIC,
-    "Operating Income (FY)"                            NUMERIC,
-    "Capital Expenditure (LTM)"                        NUMERIC,
-    "Capital Expenditure (-1FY)"                       NUMERIC,
-    "Capital Expenditure (FY)"                         NUMERIC,
-    "Retained Earnings (LTM)"                          NUMERIC,
-    "Total Current Assets (LTM)"                       NUMERIC,
-    "Total Current Liabilities (LTM)"                  NUMERIC,
-    "R&D Expenses (LTM)"                               NUMERIC,
-    "Restructuring Charges (LTM)"                      NUMERIC,
-    "Restructuring Charges (FQ)"                       NUMERIC,
-    "Restructuring Charges (-1FY)"                     NUMERIC,
-    "Restructuring Charges (FY)"                       NUMERIC,
-    "Interest Expense/Total (LTM)"                     NUMERIC,
-    "Merger & Restructuring Charges (LTM)"             NUMERIC,
-    "Working Capital (LTM)"                            NUMERIC,
-    "Other Unusual Items/Total (LTM)"                  NUMERIC,
-    "Interest Income On Investments (LTM)"             NUMERIC,
-    "Buyback Yield (LTM)"                              NUMERIC,
-    "Return on Assets (ROA) % (LTM)"                   NUMERIC,
-    "Return on Assets (ROA) % (FY)"                    NUMERIC,
-    "Net Income - (IS) (-1FY)"                         NUMERIC,
-    "Normalized Net Income (-1FY)"                     NUMERIC,
-    "CFF (FY)"                                         NUMERIC,
-    "CFF (-1FY)"                                       NUMERIC,
-    "CFI (FY)"                                         NUMERIC,
-    "CFI (-1FY)"                                       NUMERIC,
-    "CFO (FY)"                                         NUMERIC,
-    "CFO (-1FY)"                                       NUMERIC,
-    "Div Yield (-1FYInd)"                              NUMERIC,
-    "FCF (FY)"                                         NUMERIC,
+    "EPS Norm - Est Avg (NTM)"                         NUMERIC, -- RATIO: EPS normalized estimate average (NTM)
+    "EPS/Adj. (-1FY)"                                  NUMERIC, -- RATIO: Adjusted EPS (Previous Fiscal Year)
+    "EPS/Adj. (FY)"                                    NUMERIC, -- RATIO: Adjusted EPS (Fiscal Year)
+    "EPS/Adj. (LTM)"                                   NUMERIC, -- RATIO: Adjusted EPS (Last Twelve Months)
+    "EPS Norm - Est Avg (FY1E)"                        NUMERIC, -- RATIO: EPS normalized estimate average (FY1E)
+    "Gain (Loss) On Sale Of Assets (LTM)"              NUMERIC, -- MARKET_VALUE: Gain/Loss on asset sales (LTM)
+    "Cost Of Revenues (LTM)"                           NUMERIC, -- MARKET_VALUE: Cost of revenues (LTM)
+    "Cash Acquisitions (LTM)"                          NUMERIC, -- MARKET_VALUE: Cash acquisitions (LTM)
+    "Cash Acquisitions (FY)"                           NUMERIC, -- MARKET_VALUE: Cash acquisitions (FY)
+    "Cash Acquisitions (-1FY)"                         NUMERIC, -- MARKET_VALUE: Cash acquisitions (Previous FY)
+    "Inventory (LTM)"                                  NUMERIC, -- MARKET_VALUE: Inventory (LTM)
+    "Goodwill (FQ)"                                    NUMERIC, -- MARKET_VALUE: Goodwill (Fiscal Quarter)
+    "Goodwill (LTM)"                                   NUMERIC, -- MARKET_VALUE: Goodwill (Last Twelve Months)
+    "Goodwill (FY)"                                    NUMERIC, -- MARKET_VALUE: Goodwill (Fiscal Year)
+    "Goodwill (-1FY)"                                  NUMERIC, -- MARKET_VALUE: Goodwill (Previous Fiscal Year)
+    "Impairment of Goodwill (FQ)"                      NUMERIC, -- MARKET_VALUE: Goodwill impairment (Fiscal Quarter)
+    "Impairment of Goodwill (LTM)"                     NUMERIC, -- MARKET_VALUE: Goodwill impairment (LTM)
+    "Impairment of Goodwill (-1FY)"                    NUMERIC, -- MARKET_VALUE: Goodwill impairment (Previous FY)
+    "Impairment of Goodwill (FY)"                      NUMERIC, -- MARKET_VALUE: Goodwill impairment (FY)
+    "Operating Income (LTM)"                           NUMERIC, -- MARKET_VALUE: Operating income (LTM)
+    "Asset Writedown (LTM)"                            NUMERIC, -- MARKET_VALUE: Asset writedown (LTM)
+    "Asset Writedown (FY)"                             NUMERIC, -- MARKET_VALUE: Asset writedown (FY)
+    "Asset Writedown (-1FY)"                           NUMERIC, -- MARKET_VALUE: Asset writedown (Previous FY)
+    "Operating Income (FY)"                            NUMERIC, -- MARKET_VALUE: Operating income (FY)
+    "Capital Expenditure (LTM)"                        NUMERIC, -- MARKET_VALUE: Capital expenditure (LTM)
+    "Capital Expenditure (-1FY)"                       NUMERIC, -- MARKET_VALUE: Capital expenditure (Previous FY)
+    "Capital Expenditure (FY)"                         NUMERIC, -- MARKET_VALUE: Capital expenditure (FY)
+    "Retained Earnings (LTM)"                          NUMERIC, -- MARKET_VALUE: Retained earnings (LTM)
+    "Total Current Assets (LTM)"                       NUMERIC, -- MARKET_VALUE: Total current assets (LTM)
+    "Total Current Liabilities (LTM)"                  NUMERIC, -- MARKET_VALUE: Total current liabilities (LTM)
+    "R&D Expenses (LTM)"                               NUMERIC, -- MARKET_VALUE: Research & development expenses (LTM)
+    "Restructuring Charges (LTM)"                      NUMERIC, -- MARKET_VALUE: Restructuring charges (LTM)
+    "Restructuring Charges (FQ)"                       NUMERIC, -- MARKET_VALUE: Restructuring charges (Fiscal Quarter)
+    "Restructuring Charges (-1FY)"                     NUMERIC, -- MARKET_VALUE: Restructuring charges (Previous FY)
+    "Restructuring Charges (FY)"                       NUMERIC, -- MARKET_VALUE: Restructuring charges (Fiscal Year)
+    "Interest Expense/Total (LTM)"                     NUMERIC, -- MARKET_VALUE: Interest expense (LTM)
+    "Merger & Restructuring Charges (LTM)"             NUMERIC, -- MARKET_VALUE: Merger & restructuring charges (LTM)
+    "Working Capital (LTM)"                            NUMERIC, -- MARKET_VALUE: Working capital (LTM)
+    "Other Unusual Items/Total (LTM)"                  NUMERIC, -- MARKET_VALUE: Other unusual items (LTM)
+    "Interest Income On Investments (LTM)"             NUMERIC, -- MARKET_VALUE: Interest income on investments (LTM)
+    "Buyback Yield (LTM)"                              NUMERIC, -- PERCENTAGE: Buyback yield (LTM)
+    "Return on Assets (ROA) % (LTM)"                   NUMERIC, -- RATIO: Return on assets percentage (LTM)
+    "Return on Assets (ROA) % (FY)"                    NUMERIC, -- RATIO: Return on assets percentage (FY)
+    "Net Income - (IS) (-1FY)"                         NUMERIC, -- MARKET_VALUE: Net income (Previous FY)
+    "Normalized Net Income (-1FY)"                     NUMERIC, -- MARKET_VALUE: Normalized net income (Previous FY)
+    "CFF (FY)"                                         NUMERIC, -- MARKET_VALUE: Cash from financing (FY)
+    "CFF (-1FY)"                                       NUMERIC, -- MARKET_VALUE: Cash from financing (Previous FY)
+    "CFI (FY)"                                         NUMERIC, -- MARKET_VALUE: Cash from investing (FY)
+    "CFI (-1FY)"                                       NUMERIC, -- MARKET_VALUE: Cash from investing (Previous FY)
+    "CFO (FY)"                                         NUMERIC, -- MARKET_VALUE: Cash from operations (FY)
+    "CFO (-1FY)"                                       NUMERIC, -- MARKET_VALUE: Cash from operations (Previous FY)
+    "Div Yield (-1FYInd)"                              NUMERIC, -- PERCENTAGE: Dividend yield (Previous FY indicated)
+    "FCF (FY)"                                         NUMERIC, -- MARKET_VALUE: Free cash flow (Fiscal Year)
     "Capital Expenditure (FQ)"                         NUMERIC,
     "Capital Expenditure (5YAVGFQ)"                    NUMERIC,
     "CFF (FQ)"                                         NUMERIC,
@@ -342,7 +344,7 @@ CREATE TABLE equities
     "EBITDA (5YAVGLTM)"                                NUMERIC,
     "EBIT (5YAVGLTM)"                                  NUMERIC,
     "Total Revenues (5YAVGLTM)"                        NUMERIC,
-    "Revenues - Est YoY % (FY1E)"                      NUMERIC,
+    "Revenues - Est YoY % (FY1E)"                      NUMERIC, -- PERCENTAGE: Revenue estimate YoY change (FY1E)
     -- PERCENTAGE: Price Change Metrics
     "Price Chg. % (1M)"                                NUMERIC, -- PERCENTAGE: 1-month price change
     "Price Chg. % (3M)"                                NUMERIC, -- PERCENTAGE: 3-month price change
@@ -358,22 +360,22 @@ CREATE TABLE equities
     "Price (3Y Ago)"                                   NUMERIC, -- PRICE: Price 3 years ago
     "Price (5Y Ago)"                                   NUMERIC, -- PRICE: Price 5 years ago
     "Price (QTD Ago)"                                  NUMERIC, -- PRICE: Price quarter-to-date ago
-    "Rel. Volume"                                      NUMERIC,
-    "Shrs Out"                                         NUMERIC,
-    "Shrs Out (-1FY)"                                  NUMERIC,
-    "Common Dividends Paid (LTM)"                      NUMERIC,
-    "Common Dividends Paid (FY)"                       NUMERIC,
-    "Selling General & Admin Expenses/Total (FQ)"      NUMERIC,
-    "Selling General & Admin Expenses/Total (FY)"      NUMERIC,
-    "Selling General & Admin Expenses/Total (-1FY)"    NUMERIC,
-    "Selling General & Admin Expenses/Total (5YAVGFQ)" NUMERIC,
-    "Accounts Receivable/Total (FY)"                   NUMERIC,
-    "Accounts Receivable/Total (-1FY)"                 NUMERIC,
-    "Accounts Receivable/Total (5YAVGFQ)"              NUMERIC,
-    "Marketing Expenses (FQ)"                          NUMERIC,
-    "Marketing Expenses (FY)"                          NUMERIC,
-    "Marketing Expenses (-1FY)"                        NUMERIC,
-    "Marketing Expenses (5YAVGLTM)"                    NUMERIC,
+    "Rel. Volume"                                      NUMERIC, -- RATIO: Relative trading volume
+    "Shrs Out"                                         NUMERIC, -- COUNT: Shares outstanding
+    "Shrs Out (-1FY)"                                  NUMERIC, -- COUNT: Shares outstanding (Previous FY)
+    "Common Dividends Paid (LTM)"                      NUMERIC, -- MARKET_VALUE: Common dividends paid (LTM)
+    "Common Dividends Paid (FY)"                       NUMERIC, -- MARKET_VALUE: Common dividends paid (FY)
+    "Selling General & Admin Expenses/Total (FQ)"      NUMERIC, -- MARKET_VALUE: SG&A expenses (Fiscal Quarter)
+    "Selling General & Admin Expenses/Total (FY)"      NUMERIC, -- MARKET_VALUE: SG&A expenses (Fiscal Year)
+    "Selling General & Admin Expenses/Total (-1FY)"    NUMERIC, -- MARKET_VALUE: SG&A expenses (Previous FY)
+    "Selling General & Admin Expenses/Total (5YAVGFQ)" NUMERIC, -- MARKET_VALUE: SG&A expenses (5Y average FQ)
+    "Accounts Receivable/Total (FY)"                   NUMERIC, -- MARKET_VALUE: Accounts receivable (FY)
+    "Accounts Receivable/Total (-1FY)"                 NUMERIC, -- MARKET_VALUE: Accounts receivable (Previous FY)
+    "Accounts Receivable/Total (5YAVGFQ)"              NUMERIC, -- MARKET_VALUE: Accounts receivable (5Y average FQ)
+    "Marketing Expenses (FQ)"                          NUMERIC, -- MARKET_VALUE: Marketing expenses (Fiscal Quarter)
+    "Marketing Expenses (FY)"                          NUMERIC, -- MARKET_VALUE: Marketing expenses (Fiscal Year)
+    "Marketing Expenses (-1FY)"                        NUMERIC, -- MARKET_VALUE: Marketing expenses (Previous FY)
+    "Marketing Expenses (5YAVGLTM)"                    NUMERIC, -- MARKET_VALUE: Marketing expenses (5Y average LTM)
     -- Phase 9.3 Schema Version 1.3 additions: 48 new columns
     -- Category 1: Revenue Forecasting Estimates (4 columns)
     "Revenues - Est Avg (NTM)"                         NUMERIC, -- MARKET_VALUE: Revenue estimate average (NTM)

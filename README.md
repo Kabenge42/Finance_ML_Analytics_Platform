@@ -1056,7 +1056,7 @@ python tools\run_earnings_monitor.py --data-source auto --out-dir outputs\eda\ea
         - Composite scores: `adjustment_consistency_score`, `earnings_quality_score` (0-100)
 - **ETL Integration**: New `engineer_earnings_analytics` flag in `FeatureEngineeringConfig`
 - **Schema Updates**: 33 new column definitions in `COLUMN_SCHEMA`, new `"earnings_quality"` category in
-  `PHASE93_FEATURE_INPUTS`
+  `PHASE93_FEATURE_CATEGORIES`
 - **Phase 9.3 Feature Categories**: Updated from 196 to **229 features** across **17 categories**
 - **Documentation**: `docs/code_guidelines.md` v1.12 with complete usage examples
 

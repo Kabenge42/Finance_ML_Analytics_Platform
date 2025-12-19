@@ -1,28 +1,28 @@
 {
-  "n": 150,
+  "n": 137,
   "by_sector": {
-    "Communication Services": 11,
-    "Consumer Discretionary": 17,
-    "Consumer Staples": 7,
-    "Energy": 1,
-    "Financials": 12,
-    "Health Care": 13,
-    "Industrials": 36,
-    "Information Technology": 29,
-    "Materials": 19,
-    "Real Estate": 3,
-    "Utilities": 2
+    "Communication Services": 10,
+    "Consumer Discretionary": 11,
+    "Consumer Staples": 13,
+    "Energy": 17,
+    "Financials": 37,
+    "Health Care": 9,
+    "Industrials": 9,
+    "Information Technology": 10,
+    "Materials": 11,
+    "Real Estate": 0,
+    "Utilities": 10
   },
   "by_region": {
-    "Africa / Middle East": 4,
-    "Asia / Pacific": 83,
-    "Europe": 11,
+    "Africa / Middle East": 6,
+    "Asia / Pacific": 35,
+    "Europe": 48,
     "Latin America and Caribbean": 4,
-    "United States and Canada": 48
+    "United States and Canada": 44
   },
   "market_cap_buckets": {
-    "small": 50,
-    "mid": 50,
-    "large": 50
+    "small": 46,
+    "mid": 45,
+    "large": 46
   }
 }

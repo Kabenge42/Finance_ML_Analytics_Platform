@@ -31,6 +31,11 @@ import numpy as np
 import pandas as pd
 from sklearn.impute import KNNImputer
 
+from finance_ml.ml_workflow.preprocessing.column_semantics import (
+    PRICE_COLUMNS,
+    classify_columns,
+)
+
 # Initialize logger
 logger = logging.getLogger(__name__)
 
@@ -840,22 +845,8 @@ def apply_price_imputation(
     result = df.copy()
 
     if columns is None:
-        columns = [
-            "price_target",
-            "price_target_low",
-            "price_target_median",
-            "price_target_high",
-            "price_target_ytd_ago",
-            "price_5d_ago",
-            "price_1w_ago",
-            "price_1m_ago",
-            "price_3m_ago",
-            "price_6m_ago",
-            "price_1y_ago",
-            "price_3y_ago",
-            "price_5y_ago",
-            "price_qtd_ago",
-        ]
+        # Impute all semantic price columns (except the reference price itself)
+        columns = [col for col in sorted(PRICE_COLUMNS) if col != price_column]
 
     # Check if price column exists
     if price_column not in result.columns:
@@ -877,11 +868,13 @@ def apply_price_imputation(
                 f"Price-imputed {n_missing} values in column '{col}' from '{price_column}'"
             )
 
-    logger.info(f"Applied price imputation to {len(available_cols)} columns using '{price_column}'")
+    logger.info(
+        f"Applied price imputation to {len(available_cols)} price columns using '{price_column}'"
+    )
     return result
 
 
-def apply_median_imputation(df: pd.DataFrame) -> pd.DataFrame:
+def apply_median_imputation(df: pd.DataFrame, price_column: str = "last_price") -> pd.DataFrame:
     """Apply median imputation (Step 4 of 6-step strategy).
 
     Fallback imputation strategy that fills any remaining missing values
@@ -900,7 +893,21 @@ def apply_median_imputation(df: pd.DataFrame) -> pd.DataFrame:
     result = df.copy()
 
     # Get all numeric columns
-    numeric_cols = result.select_dtypes(include=[np.number]).columns
+    numeric_cols = result.select_dtypes(include=[np.number]).columns.tolist()
+
+    # Exclude semantic price columns (preserve dollar units), but allow the reference price
+    classification = classify_columns(result.columns.tolist())
+    price_cols = set(classification.get("price", set()))
+    if price_column in price_cols:
+        price_cols.remove(price_column)
+    if price_cols:
+        before = len(numeric_cols)
+        numeric_cols = [col for col in numeric_cols if col not in price_cols]
+        excluded = before - len(numeric_cols)
+        if excluded > 0:
+            logger.info(
+                f"Median imputation: excluded {excluded} semantic price columns to preserve units"
+            )
 
     if len(numeric_cols) == 0:
         logger.warning("No numeric columns found in dataframe")
@@ -1032,8 +1039,8 @@ def apply_enhanced_imputation_strategy_6step(
 
     Step 1: Zero imputation for exceptional event columns (48 columns)
     Step 2: Sector-aware KNN imputation for core financial metrics (148 columns)
-    Step 3: Price imputation for price target columns (5 columns)
-    Step 4: Median imputation for all remaining numerical columns
+    Step 3: Price imputation for semantic price columns (preserve original units)
+    Step 4: Median imputation for all remaining numerical columns (price-protected)
     Step 5: Categorical imputation for string/object columns (NEW)
     Step 6: Datetime imputation and formatting for date columns (NEW)
 
@@ -1095,7 +1102,7 @@ def apply_enhanced_imputation_strategy_6step(
     logger.info(f"After Step 2: {missing_after_step2} numeric missing values remain")
 
     # Step 3: Price imputation for price targets
-    logger.info("Step 3: Applying price imputation for price target columns (5 cols)")
+    logger.info("Step 3: Applying price imputation for semantic price columns (preserve units)")
     result = apply_price_imputation(result, price_column=price_column)
     missing_after_step3 = result.select_dtypes(include=[np.number]).isna().sum().sum()
     logger.info(f"After Step 3: {missing_after_step3} numeric missing values remain")
@@ -1359,8 +1366,8 @@ def apply_enhanced_imputation_strategy_4step(
 
     Step 1: Zero imputation for exceptional event columns (48 columns)
     Step 2: Sector-aware KNN imputation for core financial metrics (148 columns)
-    Step 3: Price imputation for price target columns (5 columns)
-    Step 4: Median imputation for all remaining numerical columns
+    Step 3: Price imputation for semantic price columns (preserve original units)
+    Step 4: Median imputation for all remaining numerical columns (price-protected)
 
     Args:
         df: Input DataFrame with financial data

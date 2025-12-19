@@ -49,10 +49,8 @@ from finance_ml.ml_workflow.data.schema import (
     list_categorical_cols,
     list_numeric_feature_cols,
 )
-
 # Import feature engineering API (Section 9.3)
 from finance_ml.ml_workflow.features.api import build_features
-
 # Import feature selection API (Section 9.3 Task 1)
 from finance_ml.ml_workflow.features.selection import select_features_auto
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
@@ -66,7 +64,6 @@ from finance_ml.ml_workflow.preprocessing.column_semantics import (
     PRICE_COLUMNS,
     RATIO_COLUMNS,
 )
-
 # Import from existing modules (no code duplication)
 from finance_ml.ml_workflow.preprocessing.data import (
     load_from_all_stocks,
@@ -82,7 +79,6 @@ from finance_ml.ml_workflow.preprocessing.dtypes import (
     detect_and_cast_dtypes,
     to_jsonable,
 )
-
 # Import financial metrics functions for unified ETL API
 from finance_ml.ml_workflow.preprocessing.financial_metrics_etl import (
     CONDITIONAL_METRICS,
@@ -165,7 +161,7 @@ class ImputationConfig:
 class SemanticTransformConfig:
     """Configuration for ETL Stage 7: Semantic-Aware Transformations."""
 
-    apply_log_transforms: bool = True
+    apply_log_transforms: bool = False
     log_transform_method: Literal["log1p", "signed_log"] = "log1p"
     log_transform_market_values: bool = True
     log_transform_target_columns: Optional[List[str]] = None
@@ -180,8 +176,8 @@ class DataSanitizationConfig:
 
     sanitize_data: bool = True
     apply_winsorization: bool = False
-    winsorize_lower_percentile: float = 0.10
-    winsorize_upper_percentile: float = 0.90
+    winsorize_lower_percentile: float = 0.05
+    winsorize_upper_percentile: float = 0.95
 
 
 @dataclass
@@ -200,7 +196,7 @@ class FeatureEngineeringConfig:
     """Configuration for Feature Engineering (Phase 9.3)."""
 
     enabled: bool = False
-    preset: str = "standard"
+    preset: str = "comprehensive"
     categories: Optional[List[str]] = None
     engineer_earnings_analytics: bool = (
         True  # Enable Estimated vs. Actual and GAAP vs. Adjusted analytics
@@ -1590,7 +1586,9 @@ class ETLPipeline:
                 )
             elif self.config.imputation.strategy == "median_only":
                 # Simple median fallback
-                result = apply_median_imputation(result)
+                result = apply_median_imputation(
+                    result, price_column=self.config.imputation.reference_price_column
+                )
 
             # Track missing values after imputation and validate completeness
             missing_after = result.isna().sum().sum()
@@ -1622,6 +1620,8 @@ class ETLPipeline:
         # Stage 7: Apply feature scaling (NEW)
         if self.config.scaling.enabled:
             logger.info(f"Stage 7: Applying {self.config.scaling.scaler_type} scaling")
+
+            exclude_counts = self.config.exclude_counts_from_scaling
 
             # Determine columns to scale
             if self.config.scaling.target_columns:
@@ -1663,6 +1663,7 @@ class ETLPipeline:
                         scaler_type=self.config.scaling.scaler_type,
                         by_sector=self.config.scaling.scale_by_sector,
                         exclude_price_columns=self.config.scaling.exclude_price_columns,
+                        exclude_count_columns=exclude_counts,
                     )
 
                     # Track scaling in metrics
@@ -1831,7 +1832,9 @@ class ETLPipeline:
                     logger.warning(
                         f"Post-feature 6-step imputation failed ({e}); falling back to median imputation"
                     )
-                    result = apply_median_imputation(result)
+                    result = apply_median_imputation(
+                        result, price_column=self.config.imputation.reference_price_column
+                    )
                     if self.metrics:
                         self.metrics.stages_executed.append(
                             "post_feature_imputation_median_fallback"
@@ -3113,6 +3116,7 @@ def etl_with_features(
     auto_feature_selection: bool = False,
     importance_threshold: float = 0.01,
     correlation_threshold: float = 0.95,
+    engineer_earnings_analytics: bool = True,  # NEW: Enable earnings analytics by default
     config: Optional[ETLConfig] = None,
     return_metrics: bool = True,
 ) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
@@ -3134,20 +3138,42 @@ def etl_with_features(
         source: Data source ('csv', 'db', 'all_stocks')
         data_dir: Directory for CSV files
         db_url: Database connection URL
-        feature_preset: Feature engineering preset ('basic', 'momentum', 'quality',
-            'standard', 'comprehensive')
-        feature_categories: Specific feature categories to engineer
+        feature_preset: Feature engineering preset
+            - 'basic': Core ratios, margins, volatility, revenue CAGR (20-30 features)
+            - 'momentum': Momentum & technical indicators with RSI, EMA (27 features)
+            - 'quality': Accounting quality, distress, composite scores (45+ features)
+            - 'standard': Balanced feature set (80-100 features)
+            - 'comprehensive': Full advanced feature set (267 features)
+            - 'earnings_analytics': Earnings surprises, GAAP vs adjusted (55+ features)
+            - 'technical_plus': Technical analysis + valuation timeseries (50+ features)
+            - 'dividend_focus': Dividend reliability + capital allocation (30+ features)
+            - 'employment_analytics': Employment dynamics + productivity (35+ features)
+        feature_categories: Specific feature categories to engineer (optional)
         auto_feature_selection: Enable automated feature selection (default: False)
         importance_threshold: Min importance score to keep feature (default: 0.01)
         correlation_threshold: Max correlation before deduplication (default: 0.95)
+        engineer_earnings_analytics: Enable Estimated vs. Actual and GAAP vs. Adjusted
+            earnings analytics features (default: True). Only applied when feature_preset
+            is 'comprehensive', 'standard', or 'earnings_analytics'.
         config: Optional ETLConfig override
         return_metrics: Whether to return ETLMetrics
 
     Returns:
         DataFrame with all features, optionally with ETLMetrics
 
+    Feature Coverage by Preset (Phase 9.3 Schema v1.3):
+        - basic: 20-30 features (core ratios, margins, volatility, CAGR)
+        - momentum: 27 features (momentum, technical indicators, RSI, EMA crossovers)
+        - quality: 45+ features (accounting quality, distress, composite scores, analyst quality)
+        - standard: 80-100 features (balanced mix: valuation, profitability, growth, sentiment)
+        - comprehensive: 267 features (all advanced features including new presets)
+        - earnings_analytics: 55+ features (earnings surprises, GAAP vs adjusted, quality flags)
+        - technical_plus: 50+ features (technical analysis, valuation timeseries, market sentiment)
+        - dividend_focus: 30+ features (dividend reliability, capital allocation, FCF coverage)
+        - employment_analytics: 35+ features (employment dynamics, productivity trends)
+
     Example:
-        >>> # Basic usage with feature engineering
+        >>> # Basic usage with comprehensive feature engineering
         >>> df, metrics = etl_with_features(
         ...     source='csv',
         ...     data_dir=Path('data'),
@@ -3155,6 +3181,16 @@ def etl_with_features(
         ...     return_metrics=True
         ... )
         >>> print(f"Shape: {df.shape}, Quality: {metrics.quality_score:.3f}")
+
+        >>> # Enhanced earnings analytics workflow
+        >>> df, metrics = etl_with_features(
+        ...     source='csv',
+        ...     data_dir=Path('data'),
+        ...     feature_preset='earnings_analytics',
+        ...     engineer_earnings_analytics=True,
+        ...     return_metrics=True
+        ... )
+        >>> print(f"Earnings quality features: {metrics.features_added}")
 
         >>> # With automated feature selection (Phase 9.3 Task 1)
         >>> df, metrics = etl_with_features(
@@ -3180,6 +3216,9 @@ def etl_with_features(
     config.apply_feature_engineering = True
     config.feature_preset = feature_preset
     config.feature_categories = feature_categories
+
+    # NEW: Set earnings analytics flag in config
+    config.feature_engineering.engineer_earnings_analytics = engineer_earnings_analytics
 
     # Enable feature selection (Phase 9.3 Task 1)
     config.apply_feature_selection = auto_feature_selection

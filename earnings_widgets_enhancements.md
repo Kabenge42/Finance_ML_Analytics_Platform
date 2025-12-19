@@ -669,7 +669,7 @@ from finance_ml.ml_workflow.reporting import (
 ```python
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA,
-    PHASE93_FEATURE_INPUTS,
+    PHASE93_FEATURE_CATEGORIES,
     get_expected_dtype,
     get_column_role,
     normalize_column_name,
@@ -975,7 +975,7 @@ The schema validation complements dtype diagnostics by providing:
 
 ### 5.4 Phase 9.3 Feature Categories
 
-Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_INPUTS`):
+Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_CATEGORIES`):
 
 - **Momentum**: price_momentum_1m/3m/6m, rsi_14d/30d, ma_crossover_signal, return_stability_score
     - **Input Columns** (from PRICE_COLUMNS): price_5d_ago, price_1w_ago, price_1m_ago, price_3m_ago, price_6m_ago,
@@ -6087,7 +6087,7 @@ Attachments Text:
 """
 Earnings and Dividend Dashboard Widgets.
 
-Enhanced with Phase 9.3 PHASE93_FEATURE_INPUTS categories for comprehensive
+Enhanced with Phase 9.3 PHASE93_FEATURE_CATEGORIES categories for comprehensive
 metric selection across earnings, dividends, valuation, quality/risk, and
 technical analysis domains.
 
@@ -6103,7 +6103,7 @@ from datetime import timedelta
 from pathlib import Path
 
 # Schema-driven Phase 9.3 feature categorization (code_guidelines.md §9.3)
-from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
 
 # =============================================================================
 # Style Constants (aligned with code_guidelines.md §17.1, §17.2)
@@ -6157,10 +6157,10 @@ def get_category_metrics(
         include_supplemental: bool = True,
         ) -> Dict[str, List[str]]:
     """
-    Get metrics from specified PHASE93_FEATURE_INPUTS categories.
+    Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
 
     Args:
-        categories: List of category names from PHASE93_FEATURE_INPUTS.
+        categories: List of category names from PHASE93_FEATURE_CATEGORIES.
         include_supplemental: Whether to include supplemental domain-specific metrics.
 
     Returns:
@@ -6168,7 +6168,7 @@ def get_category_metrics(
     """
     result = {}
     for cat in categories:
-        metrics = PHASE93_FEATURE_INPUTS.get(cat, []).copy()
+        metrics = PHASE93_FEATURE_CATEGORIES.get(cat, []).copy()
         result[cat] = metrics
 
     # Add supplemental metrics for specific categories
@@ -6225,7 +6225,7 @@ def create_earnings_calendar_dashboard(
     Filters for companies with upcoming or recent earnings (t +/- 10 days).
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
-    Uses PHASE93_FEATURE_INPUTS categories for metric selection:
+    Uses PHASE93_FEATURE_CATEGORIES categories for metric selection:
     - **momentum**: Price changes, returns, EMAs (market reaction context)
     - **valuation**: P/E, P/B, EV/EBITDA multiples (valuation impact)
     - **profitability**: Margins, EBITDA, EBIT, net income (earnings quality)
@@ -6316,7 +6316,7 @@ def create_earnings_calendar_dashboard(
     elif mode == "dividends":
         # Dividend-focused categories
         selected_categories = ["dividends", "cash_flow"]
-    elif mode in PHASE93_FEATURE_INPUTS:
+    elif mode in PHASE93_FEATURE_CATEGORIES:
         # Single category mode
         selected_categories = [mode]
     else:
@@ -6467,7 +6467,7 @@ def display_earnings_dashboard(
     Displays the earnings dashboard using Pandas Styler with enhanced formatting.
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
-    Supports all PHASE93_FEATURE_INPUTS categories with appropriate formatting:
+    Supports all PHASE93_FEATURE_CATEGORIES categories with appropriate formatting:
     - Currency formatting for financial metrics
     - Percentage formatting for yields, margins, returns
     - Ratio formatting for valuation multiples
@@ -6545,7 +6545,7 @@ def create_earnings_metrics_chart(
     Creates an interactive Plotly chart showing metrics for upcoming earnings.
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
-    Visualizes metrics from specified PHASE93_FEATURE_INPUTS category.
+    Visualizes metrics from specified PHASE93_FEATURE_CATEGORIES category.
 
     **Style Guide Alignment (code_guidelines.md §17.2):**
     - Uses PLOTLY_TEMPLATE ('plotly_dark')
@@ -6555,7 +6555,7 @@ def create_earnings_metrics_chart(
 
     Args:
         df: Input DataFrame containing stock data.
-        metric_category: PHASE93_FEATURE_INPUTS category to visualize.
+        metric_category: PHASE93_FEATURE_CATEGORIES category to visualize.
         reference_date: Date for earnings comparison. Defaults to today.
         top_n: Number of companies to include.
         output_path: Optional path to save HTML output.
@@ -6572,10 +6572,10 @@ def create_earnings_metrics_chart(
             reference_date=reference_date,
             top_n=top_n,
             mode=metric_category
-            if metric_category in PHASE93_FEATURE_INPUTS
+            if metric_category in PHASE93_FEATURE_CATEGORIES
             else "earnings",
             categories=[metric_category]
-            if metric_category in PHASE93_FEATURE_INPUTS
+            if metric_category in PHASE93_FEATURE_CATEGORIES
             else None,
             )
 
@@ -6595,7 +6595,7 @@ def create_earnings_metrics_chart(
         return fig
 
     # Get metrics for the category
-    category_metrics = PHASE93_FEATURE_INPUTS.get(metric_category, [])
+    category_metrics = PHASE93_FEATURE_CATEGORIES.get(metric_category, [])
     available_metrics = [c for c in category_metrics if c in dashboard_df.columns][:5]
 
     if not available_metrics:
@@ -6706,7 +6706,7 @@ def create_category_comparison_chart(
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
     Provides visual comparison of metric availability and values across
-    all PHASE93_FEATURE_INPUTS categories for earnings calendar companies.
+    all PHASE93_FEATURE_CATEGORIES categories for earnings calendar companies.
 
     Args:
         df: Input DataFrame containing stock data.
@@ -6719,7 +6719,7 @@ def create_category_comparison_chart(
         go.Figure: Plotly figure with category comparison.
     """
     if categories is None:
-        categories = list(PHASE93_FEATURE_INPUTS.keys())
+        categories = list(PHASE93_FEATURE_CATEGORIES.keys())
 
     if reference_date is None:
         reference_date = pd.Timestamp.now()
@@ -6748,7 +6748,7 @@ def create_category_comparison_chart(
     # Calculate coverage statistics per category
     coverage_data = []
     for cat in categories:
-        metrics = PHASE93_FEATURE_INPUTS.get(cat, [])
+        metrics = PHASE93_FEATURE_CATEGORIES.get(cat, [])
         available = [m for m in metrics if m in df.columns]
         non_null_counts = [
             dashboard_df[m].notna().sum()
@@ -7767,7 +7767,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
 
 # Phase 9.3 Feature Input Categorization
 # Maps feature engineering buckets to required input columns
-PHASE93_FEATURE_INPUTS: Dict[str, List[str]] = {
+PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
     "momentum": [
         "price_chg_pct_1m",
         "price_chg_pct_3m",
@@ -8214,7 +8214,7 @@ profitability metrics, quality indicators, and sector-specific features to maxim
 **Schema Integration (`finance_ml.ml_workflow.data.schema`):**
 - Centralized column definitions via `COLUMN_SCHEMA` (318 columns)
 - Schema-driven column selection using helper functions
-- Phase 9.3 feature categorization via `PHASE93_FEATURE_INPUTS`
+- Phase 9.3 feature categorization via `PHASE93_FEATURE_CATEGORIES`
 
 **Code Guidelines Alignment (`code_guidelines.md` Section 8):**
 - Configuration constants (Section 8.1): Single source of truth for all parameters
@@ -8281,7 +8281,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from finance_ml.notebook_config import NotebookConfig
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA,
-    PHASE93_FEATURE_INPUTS,
+    PHASE93_FEATURE_CATEGORIES,
     get_expected_dtype,
     get_column_role,
     list_numeric_feature_cols,
@@ -8882,17 +8882,17 @@ print('\n' + '=' * 80)
 print('📊 PHASE 9.3 FEATURE ANALYTICS BY REGION & SECTOR')
 print('=' * 80)
 
-# Define key Phase 9.3 features for analysis (schema-driven from PHASE93_FEATURE_INPUTS)
+# Define key Phase 9.3 features for analysis (schema-driven from PHASE93_FEATURE_CATEGORIES)
 # Select representative features from each category for coverage analysis
-# Define key Phase 9.3 features for analysis (schema-driven from PHASE93_FEATURE_INPUTS)
+# Define key Phase 9.3 features for analysis (schema-driven from PHASE93_FEATURE_CATEGORIES)
 # Use all 6 categories comprehensively for complete coverage
 key_phase93_features = (
-        PHASE93_FEATURE_INPUTS.get('profitability', [])[:5] +  # Margins, EBITDA, EBIT, net income
-        PHASE93_FEATURE_INPUTS.get('valuation', [])[:5] +  # P/E, P/B, EV ratios
-        PHASE93_FEATURE_INPUTS.get('momentum', [])[:5] +  # Price changes, returns
-        PHASE93_FEATURE_INPUTS.get('quality_risk', [])[:5] +  # Altman Z, ROE, ROA, volatility
-        PHASE93_FEATURE_INPUTS.get('cash_flow', [])[:5] +  # CFO, FCF, CFI, CFF
-        PHASE93_FEATURE_INPUTS.get('growth', [])  # Revenue CAGR, growth estimates (all)
+        PHASE93_FEATURE_CATEGORIES.get('profitability', [])[:5] +  # Margins, EBITDA, EBIT, net income
+        PHASE93_FEATURE_CATEGORIES.get('valuation', [])[:5] +  # P/E, P/B, EV ratios
+        PHASE93_FEATURE_CATEGORIES.get('momentum', [])[:5] +  # Price changes, returns
+        PHASE93_FEATURE_CATEGORIES.get('quality_risk', [])[:5] +  # Altman Z, ROE, ROA, volatility
+        PHASE93_FEATURE_CATEGORIES.get('cash_flow', [])[:5] +  # CFO, FCF, CFI, CFF
+        PHASE93_FEATURE_CATEGORIES.get('growth', [])  # Revenue CAGR, growth estimates (all)
 )
 # Map input columns to engineered feature names where applicable
 feature_mapping = {
@@ -10034,18 +10034,18 @@ print('EARNINGS MONITORING (Phase 9.3 Schema-Driven)')
 print('=' * 80)
 
 # ============================================================================
-# 1. Revenue & Earnings Growth Analysis (using PHASE93_FEATURE_INPUTS)
+# 1. Revenue & Earnings Growth Analysis (using PHASE93_FEATURE_CATEGORIES)
 # ============================================================================
-print('\n📈 Revenue & Earnings Growth Analysis (PHASE93_FEATURE_INPUTS)...')
+print('\n📈 Revenue & Earnings Growth Analysis (PHASE93_FEATURE_CATEGORIES)...')
 
-# Schema-driven metric selection from PHASE93_FEATURE_INPUTS categories
-# (code_guidelines.md §9.3: Use PHASE93_FEATURE_INPUTS for metric categorization)
+# Schema-driven metric selection from PHASE93_FEATURE_CATEGORIES categories
+# (code_guidelines.md §9.3: Use PHASE93_FEATURE_CATEGORIES for metric categorization)
 earnings_metrics_phase93 = {
-    'growth': PHASE93_FEATURE_INPUTS.get('growth', []),
-    'profitability': PHASE93_FEATURE_INPUTS.get('profitability', []),
-    'valuation': PHASE93_FEATURE_INPUTS.get('valuation', [])[:10],  # Top 10 valuation metrics
-    'forecasts': PHASE93_FEATURE_INPUTS.get('forecasts', []),
-    'momentum': PHASE93_FEATURE_INPUTS.get('momentum', [])[:8],  # Top 8 momentum metrics
+    'growth': PHASE93_FEATURE_CATEGORIES.get('growth', []),
+    'profitability': PHASE93_FEATURE_CATEGORIES.get('profitability', []),
+    'valuation': PHASE93_FEATURE_CATEGORIES.get('valuation', [])[:10],  # Top 10 valuation metrics
+    'forecasts': PHASE93_FEATURE_CATEGORIES.get('forecasts', []),
+    'momentum': PHASE93_FEATURE_CATEGORIES.get('momentum', [])[:8],  # Top 8 momentum metrics
     }
 
 earnings_monitor = {
@@ -10103,12 +10103,12 @@ for category, metrics in earnings_metrics_phase93.items():
         earnings_monitor[f'{category}_metrics'] = category_stats
 
 # ============================================================================
-# 2. Margin Analysis (using PHASE93_FEATURE_INPUTS profitability category)
+# 2. Margin Analysis (using PHASE93_FEATURE_CATEGORIES profitability category)
 # ============================================================================
 print('\n📊 Margin Analysis (PHASE93 Profitability)...')
 
-# Use profitability category from PHASE93_FEATURE_INPUTS + supplemental margin metrics
-profitability_metrics = PHASE93_FEATURE_INPUTS.get('profitability', [])
+# Use profitability category from PHASE93_FEATURE_CATEGORIES + supplemental margin metrics
+profitability_metrics = PHASE93_FEATURE_CATEGORIES.get('profitability', [])
 supplemental_margins = ['gross_margin_pct', 'ebitda_margin', 'gross_profit_margin_pct_fy',
                         'gross_profit_margin_pct_ltm', 'net_income_margin_pct_fy']
 margin_metrics = list(dict.fromkeys(profitability_metrics + supplemental_margins))  # Dedupe
@@ -10157,12 +10157,12 @@ if available_margins:
             print(f'    {sector[:30]:30s}: {stats["mean"]:.2f}')
 
 # ============================================================================
-# 3. Earnings Quality Indicators (using PHASE93_FEATURE_INPUTS quality_risk)
+# 3. Earnings Quality Indicators (using PHASE93_FEATURE_CATEGORIES quality_risk)
 # ============================================================================
 print('\n🎯 Earnings Quality Indicators (PHASE93 Quality/Risk)...')
 
-# Use quality_risk category from PHASE93_FEATURE_INPUTS + supplemental quality metrics
-quality_risk_metrics = PHASE93_FEATURE_INPUTS.get('quality_risk', [])
+# Use quality_risk category from PHASE93_FEATURE_CATEGORIES + supplemental quality metrics
+quality_risk_metrics = PHASE93_FEATURE_CATEGORIES.get('quality_risk', [])
 supplemental_quality = ['roe', 'roa', 'roic', 'asset_turnover', 'fcf_to_net_income']
 quality_metrics = list(dict.fromkeys(quality_risk_metrics + supplemental_quality))  # Dedupe
 available_quality = [m for m in quality_metrics if m in all_stocks_enhanced.columns]
@@ -10170,7 +10170,7 @@ available_quality = [m for m in quality_metrics if m in all_stocks_enhanced.colu
 if available_quality:
     quality_stats = {}
 
-    print(f'  Found {len(available_quality)} quality/risk metrics from PHASE93_FEATURE_INPUTS:')
+    print(f'  Found {len(available_quality)} quality/risk metrics from PHASE93_FEATURE_CATEGORIES:')
 
     for metric in available_quality:
         data = all_stocks_enhanced[metric].dropna()
@@ -10189,13 +10189,13 @@ if available_quality:
     earnings_monitor['quality_indicators'] = quality_stats
 
 # ============================================================================
-# 4. Regional Earnings Trends (using PHASE93_FEATURE_INPUTS growth category)
+# 4. Regional Earnings Trends (using PHASE93_FEATURE_CATEGORIES growth category)
 # ============================================================================
 if 'region' in all_stocks_enhanced.columns:
     print('\n🌍 Regional Earnings Trends (PHASE93 Growth)...')
 
-    # Use growth category from PHASE93_FEATURE_INPUTS for regional analysis
-    growth_metrics = PHASE93_FEATURE_INPUTS.get('growth', [])
+    # Use growth category from PHASE93_FEATURE_CATEGORIES for regional analysis
+    growth_metrics = PHASE93_FEATURE_CATEGORIES.get('growth', [])
     supplemental_growth = ['revenue_growth_1y', 'revenue_growth_3y', 'revenue_cagr_3y']
     rev_growth_cols = list(dict.fromkeys(growth_metrics + supplemental_growth))
     available_growth = [c for c in rev_growth_cols if c in all_stocks_enhanced.columns]
@@ -10816,18 +10816,18 @@ all_stocks_enhanced = engineer_revenue_forecast_features(all_stocks_enhanced)
 print('  ✓ Revenue forecast features engineered')
 
 # ============================================================================
-# 2. Identify Earnings-Related Columns (using PHASE93_FEATURE_INPUTS)
+# 2. Identify Earnings-Related Columns (using PHASE93_FEATURE_CATEGORIES)
 # ============================================================================
-print('\n🔍 Identifying Earnings-Related Columns (PHASE93_FEATURE_INPUTS)...')
+print('\n🔍 Identifying Earnings-Related Columns (PHASE93_FEATURE_CATEGORIES)...')
 
-# Schema-driven metric selection from PHASE93_FEATURE_INPUTS categories
-# (code_guidelines.md §9.3: Use PHASE93_FEATURE_INPUTS for metric categorization)
+# Schema-driven metric selection from PHASE93_FEATURE_CATEGORIES categories
+# (code_guidelines.md §9.3: Use PHASE93_FEATURE_CATEGORIES for metric categorization)
 earnings_phase93_categories = {
-    'profitability': PHASE93_FEATURE_INPUTS.get('profitability', []),
-    'forecasts': PHASE93_FEATURE_INPUTS.get('forecasts', []),
-    'valuation': PHASE93_FEATURE_INPUTS.get('valuation', [])[:15],  # Top 15 valuation
-    'growth': PHASE93_FEATURE_INPUTS.get('growth', []),
-    'cash_flow': PHASE93_FEATURE_INPUTS.get('cash_flow', [])[:10],  # Top 10 cash flow
+    'profitability': PHASE93_FEATURE_CATEGORIES.get('profitability', []),
+    'forecasts': PHASE93_FEATURE_CATEGORIES.get('forecasts', []),
+    'valuation': PHASE93_FEATURE_CATEGORIES.get('valuation', [])[:15],  # Top 15 valuation
+    'growth': PHASE93_FEATURE_CATEGORIES.get('growth', []),
+    'cash_flow': PHASE93_FEATURE_CATEGORIES.get('cash_flow', [])[:10],  # Top 10 cash flow
     }
 
 # Enhanced earnings columns from engineered features
@@ -10885,7 +10885,7 @@ for category, metrics in earnings_phase93_categories.items():
     if available:
         available_phase93_cols[category] = available
 
-print(f'\n  📊 PHASE93_FEATURE_INPUTS Categories:')
+print(f'\n  📊 PHASE93_FEATURE_CATEGORIES Categories:')
 for cat, cols in available_phase93_cols.items():
     print(f'    {cat:15s}: {len(cols)} metrics available')
 
@@ -11485,7 +11485,7 @@ print('\n📈 Generating Phase 9.3 Category Comparison Chart...')
 try:
     fig_comparison = create_category_comparison_chart(
             display_df,
-            categories=list(PHASE93_FEATURE_INPUTS.keys()),
+            categories=list(PHASE93_FEATURE_CATEGORIES.keys()),
             top_n=50,
             output_path=earnings_viz_dir / 'phase93_category_comparison.html'
             )
@@ -11530,16 +11530,16 @@ print('DIVIDEND ANALYTICS (Phase 9.3 Schema-Driven)')
 print('=' * 80)
 
 # ============================================================================
-# 1. Identify Dividend-Related Columns (using PHASE93_FEATURE_INPUTS)
+# 1. Identify Dividend-Related Columns (using PHASE93_FEATURE_CATEGORIES)
 # ============================================================================
-print('\n🔍 Identifying Dividend-Related Columns (PHASE93_FEATURE_INPUTS)...')
+print('\n🔍 Identifying Dividend-Related Columns (PHASE93_FEATURE_CATEGORIES)...')
 
-# Schema-driven metric selection from PHASE93_FEATURE_INPUTS dividends category
-# (code_guidelines.md §9.3: Use PHASE93_FEATURE_INPUTS for metric categorization)
-dividends_phase93 = PHASE93_FEATURE_INPUTS.get('dividends', [])
-cash_flow_phase93 = PHASE93_FEATURE_INPUTS.get('cash_flow', [])[:5]  # Top 5 for sustainability
+# Schema-driven metric selection from PHASE93_FEATURE_CATEGORIES dividends category
+# (code_guidelines.md §9.3: Use PHASE93_FEATURE_CATEGORIES for metric categorization)
+dividends_phase93 = PHASE93_FEATURE_CATEGORIES.get('dividends', [])
+cash_flow_phase93 = PHASE93_FEATURE_CATEGORIES.get('cash_flow', [])[:5]  # Top 5 for sustainability
 
-print(f'\n  📊 PHASE93_FEATURE_INPUTS Dividends Category:')
+print(f'\n  📊 PHASE93_FEATURE_CATEGORIES Dividends Category:')
 print(f'    {len(dividends_phase93)} metrics defined')
 
 # Find available PHASE93 dividend columns

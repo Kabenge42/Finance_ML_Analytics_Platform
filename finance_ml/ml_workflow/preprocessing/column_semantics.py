@@ -105,6 +105,14 @@ MARKET_VALUE_COLUMNS: Set[str] = {
     "operating_income",  # Operating income
     "net_income",  # Net income (can be negative)
     "gross_profit",  # Gross profit
+    "total_revenues_fy",
+    "total_revenues_ltm",
+    "total_revenues_fq",
+    "total_revenues_1fy",
+    "total_operating_expenses_ltm",
+    "ebitda_fy",
+    "ebitda_ltm",
+    "ebitda_fq",
     # Cash flow items
     "operating_cash_flow",  # Operating cash flow
     "free_cash_flow",  # Free cash flow
@@ -167,19 +175,29 @@ RATIO_COLUMNS: Set[str] = {
     "roe_ltm",
     "roa_ltm",
     "roic_ltm",
+    "return_on_equity_pct_fy",
+    "return_on_equity_pct_ltm",
+    "return_on_assets_roa_pct_fy",
+    "return_on_assets_roa_pct_ltm",
     # Leverage ratios
     "debt_equity",
     "debt_to_equity",
     "net_debt_ebitda",
     "net_debt_to_ebitda",
     "debt_to_assets",
+    "interest_coverage",
     # Liquidity ratios
     "current_ratio",
+    "current_ratio_fy",
+    "current_ratio_ltm",
     "quick_ratio",
     "cash_ratio",
     # Efficiency ratios
     "asset_turnover",
+    "asset_turnover_fy",
+    "asset_turnover_ltm",
     "inventory_turnover",
+    "receivables_turnover",
 }
 
 
@@ -195,6 +213,10 @@ PERCENTAGE_COLUMNS: Set[str] = {
     "operating_margin_ltm",
     "net_margin_ltm",
     "ebitda_margin_ltm",
+    "gross_profit_margin_pct_fy",
+    "gross_profit_margin_pct_ltm",
+    "net_income_margin_pct_fy",
+    "net_income_margin_pct_ltm",
     # Growth rates
     "revenue_growth_yoy",
     "earnings_growth_yoy",
@@ -203,15 +225,38 @@ PERCENTAGE_COLUMNS: Set[str] = {
     "revenue_growth_5y_cagr",
     "earnings_growth_3y_cagr",
     "earnings_growth_5y_cagr",
+    "total_return_ytd",
+    "total_return_5y",
+    "total_return_10y",
+    "tot_return_pct_cagr_3y",
+    "tot_return_pct_cagr_10y",
+    "price_chg_pct_1m",
+    "price_chg_pct_3m",
     # Volatility metrics
+    "volatility_30d",
     "volatility_20d",
+    "volatility_3m",
     "volatility_60d",
+    "volatility_6m",
     "volatility_1y",
     "beta",
+    "beta_1y",
+    "beta_2y",
     "beta_5y",
     # Payout ratios
     "dividend_payout_ratio",
     "payout_ratio",
+    "div_yield_ind",
+    "div_yield_ltm",
+    "div_yield_ttm",
+    "div_yield_ntm",
+    "div_yield_1fyind",
+    "div_yield_2fyind",
+    "div_yield_3fyind",
+    "div_yield_4fyind",
+    "div_yield_5fyind",
+    "div_yield_5yavgltm",
+    "buyback_yield_ltm",
 }
 
 
@@ -225,9 +270,19 @@ COUNT_COLUMNS: Set[str] = {
     "num_sell_ratings",
     "num_strong_sell_ratings",
     "price_target_num",
+    "price_target_count",
+    "analyst_rating",
     # Company metrics
     "num_employees",
     "num_employees_total",
+    "total_employees_fy",
+    "total_employees_fq",
+    "full_time_employees_fq",
+    "full_time_employees_fy",
+    "full_time_employees_1fy",
+    "full_time_employees_2fy",
+    "full_time_employees_3fy",
+    "dividend_streak",
 }
 
 
@@ -465,52 +520,54 @@ def get_scalable_columns(df_columns: List[str]) -> List[str]:
 # Check PERCENTAGE and specific patterns before generic time suffixes (_ltm, _fy, etc.)
 SUFFIX_PATTERNS = {
     "PERCENTAGE": [
-        # Returns (check BEFORE time suffixes like _ltm)
-        r"^roe",  # return on equity
-        r"^roa",  # return on assets
-        r"^roic",  # return on invested capital
-        r"^roce",  # return on capital employed
+        # Returns and capital efficiency (check BEFORE generic time suffixes)
+        r"^roe",
+        r"^roa",
+        r"^roic",
+        r"^roce",
+        r"return_on_equity",
+        r"return_on_assets",
         # Margin patterns
-        r"_margin",  # operating_margin, net_margin, gross_margin
-        r"margin_",  # margin_fy, margin_ltm
+        r"_margin",
+        r"margin_",
         # Growth patterns
-        r"_pct",  # growth_pct, change_pct
-        r"_yoy",  # year-over-year growth
-        r"_cagr",  # compound annual growth rate
-        r"growth_",  # growth_rate, growth_3y
-        # Other percentage metrics
-        r"_yield",  # dividend_yield, fcf_yield
-        r"payout_ratio",  # dividend payout ratio
-        r"retention_",  # retention rate
+        r"_pct",
+        r"_yoy",
+        r"_cagr",
+        r"growth_",
+        # Yield / payout
+        r"_yield",
+        r"payout_ratio",
+        r"retention_",
     ],
     "RATIO": [
         # Basic ratio patterns
-        r"_to_",  # debt_to_equity, price_to_book
-        r"_coverage",  # interest_coverage, dividend_coverage
-        r"_turnover",  # asset_turnover, inventory_turnover
+        r"_to_",
+        r"_coverage",
+        r"_turnover",
         # Valuation multiples
-        r"p_e",  # p/e and variants (p_e_ntm, p_e_ltm, etc.)
-        r"p_b",  # p/b and variants
-        r"p_s",  # price to sales
-        r"p_fcf",  # price to free cash flow
-        r"p_tbv",  # price to tangible book value
-        r"ev_ebitda",  # ev/ebitda variants
-        r"ev_sales",  # ev/sales variants
-        r"ev_fcf",  # ev/fcf variants
-        # Financial ratios with time suffixes (checked AFTER PERCENTAGE patterns)
-        r"_ltm$",  # Last twelve months metrics (often ratios)
-        r"_ntm$",  # Next twelve months metrics
-        r"_fq$",  # Fiscal quarter metrics
-        r"_fy$",  # Fiscal year metrics
-        r"_1fyltm$",  # 1 fiscal year last twelve months
-        r"_2fyltm$",  # 2 fiscal year last twelve months
-        r"_3fyltm$",  # 3 fiscal year last twelve months
+        r"p_e",
+        r"p_b",
+        r"p_s",
+        r"p_fcf",
+        r"p_tbv",
+        r"ev_ebitda",
+        r"ev_sales",
+        r"ev_fcf",
+        # Time-series variants (checked last to avoid over-matching)
+        r"_1fyltm$",
+        r"_2fyltm$",
+        r"_3fyltm$",
+        r"_ltm$",
+        r"_ntm$",
+        r"_fq$",
+        r"_fy$",
     ],
     "MARKET_VALUE": [
         # Market metrics
         r"^market_cap",
         r"^enterprise_value",
-        r"^ev$",  # Enterprise value abbreviation
+        r"^ev$",
         # Balance sheet
         r"^total_assets",
         r"^total_debt",
@@ -532,10 +589,10 @@ SUFFIX_PATTERNS = {
         r"^capex",
     ],
     "COUNT": [
-        r"^num_",  # num_employees, num_analysts
-        r"_count$",  # analyst_count, rating_count
-        r"^shares_",  # shares_outstanding
-        r"_num$",  # various _num suffixes
+        r"^num_",
+        r"_count$",
+        r"^shares_",
+        r"_num$",
     ],
 }
 
@@ -625,6 +682,8 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
 
     classifications = {}
 
+    semantic_roles = {"price", "market_value", "ratio", "percentage", "count"}
+
     for col in columns:
         col_lower = col.lower()
 
@@ -633,15 +692,50 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
             dtype = str(schema_info.get("dtype", "object"))
             role = schema_info.get("role", "feature")
 
-            # Infer from dtype and role
-            if "price" in col_lower or "target" in col_lower:
+            if role in semantic_roles:
+                classifications[col] = role.upper()
+                continue
+
+            # Name-based heuristics
+            if "price" in col_lower or "target" in col_lower or "ema_" in col_lower:
                 classifications[col] = "PRICE"
+            elif any(
+                keyword in col_lower
+                for keyword in [
+                    "margin",
+                    "yield",
+                    "growth",
+                    "yoy",
+                    "cagr",
+                    "pct",
+                    "beta",
+                    "volatility",
+                    "return_on",
+                ]
+            ):
+                classifications[col] = "PERCENTAGE"
+            elif any(
+                keyword in col_lower
+                for keyword in [
+                    "_to_",
+                    "ratio",
+                    "turnover",
+                    "coverage",
+                    "p_e",
+                    "p_b",
+                    "ev_",
+                    "net_debt",
+                    "debt_to",
+                    "asset_turnover",
+                    "current_ratio",
+                ]
+            ):
+                classifications[col] = "RATIO"
             elif role == "categorical":
                 classifications[col] = "CATEGORICAL"
-            elif "float" in dtype:  # Matches 'float', 'float64', 'float32'
-                # Default numeric to RATIO if unknown
+            elif "float" in dtype:
                 classifications[col] = "RATIO"
-            elif "int" in dtype:  # Matches 'int', 'int64', 'int32'
+            elif "int" in dtype:
                 classifications[col] = "COUNT"
             else:
                 classifications[col] = "OTHER"

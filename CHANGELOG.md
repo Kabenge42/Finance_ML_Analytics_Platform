@@ -1183,7 +1183,7 @@
   - **Schema Module** - `finance_ml/ml_workflow/data/schema.py` (530 lines)
     - Centralized column schema registry derived from `create_equities_schema.sql`
     - `COLUMN_SCHEMA`: Dict mapping 350+ normalized column names to dtype and role
-    - `PHASE93_FEATURE_INPUTS`: Categorization of Phase 9.3 feature engineering buckets (momentum, valuation,
+    - `PHASE93_FEATURE_CATEGORIES`: Categorization of Phase 9.3 feature engineering buckets (momentum, valuation,
       profitability, quality/risk, cash flow, growth)
     - Helper functions: `get_expected_dtype()`, `get_column_role()`, `list_numeric_feature_cols()`,
       `list_categorical_cols()`, `list_date_cols()`, `normalize_column_name()`

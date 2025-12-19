@@ -190,39 +190,26 @@ CFG.display_summary()
 
 # ETL Pipeline (Phase 9.1)
 from finance_ml.ml_workflow.preprocessing.etl import (
-    run_etl_pipeline,
     etl_with_features,
-    ETLConfig,
-    ETLMetrics,
-    etl_with_imputation,
-    etl_from_csv,
 )
 
 # EDA Analytics (Phase 9.2)
 from finance_ml.ml_workflow.eda.eda import (
-    eda_summary,
     generate_phase93_coverage_report,
-    sector_distribution_summary,
-    correlation_analysis,
 )
 
 # Phase 9.3 Feature Categories
 from finance_ml.ml_workflow.eda.phase93_categories import (
     PHASE93_FEATURE_CATEGORIES,
-    categorize_dataframe_columns,
-    get_phase93_coverage_stats,
     get_category_description,
     list_all_phase93_features,
 )
 
 # Feature Engineering API (Phase 9.3)
-from finance_ml.ml_workflow.features.api import build_features
 
 # Column Semantics and Safety (Section 8.5)
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
     PRICE_COLUMNS,
-    get_winsorizable_columns,
-    get_scalable_columns,
     classify_columns,
 )
 
@@ -324,7 +311,7 @@ assert "sector" in all_stocks_preprocessed.columns, "sector column must be prese
 print(f"\n✓ ETL Pipeline Complete")
 print(f"  Data shape: {all_stocks_preprocessed.shape}")
 print(f"  Source: {metrics.source_type}")
-print(f"  Duration: {metrics.total_time_sec:.2f}s")
+print(f"  Duration: {metrics.total_duration:.2f}s")
 print(f"  Quality score: {metrics.quality_score:.3f}")
 
 
@@ -919,12 +906,9 @@ from finance_ml.ml_workflow.analytics.eval import (
     calculate_financial_metrics_dashboard,
     generate_data_quality_alerts,
     perform_comprehensive_hypothesis_tests,
-    calculate_correlation_matrix,
     find_top_correlations,
-    create_region_sector_heatmap,
 )
 from finance_ml.ml_workflow.eda.eda import eda_summary
-from finance_ml.ml_workflow.eda.reports import generate_benchmarking_report
 
 print("=" * 80)
 print("FINANCIAL METRICS ANALYTICS")
@@ -1417,8 +1401,6 @@ print("\n✓ Financial Metrics Analytics complete")
 # ============================================================================
 # Import unified ETL pipeline (replaces deprecated financial_metrics_etl)
 from finance_ml.ml_workflow.preprocessing.etl import (
-    etl_with_financial_metrics,
-    ETLConfig,
     compute_valuation_metrics,
     compute_profitability_metrics,
     compute_growth_metrics,

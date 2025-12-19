@@ -36,7 +36,7 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
         - `engineer_gaap_vs_adjusted_analytics()`: 22 features for GAAP vs. Adjusted earnings comparison
     - **ETL Integration**: New `engineer_earnings_analytics` flag in `FeatureEngineeringConfig`
     - **Schema Updates**: 33 new column definitions in `COLUMN_SCHEMA` (lines 930-968)
-    - **PHASE93_FEATURE_INPUTS**: New `"earnings_quality"` category with 34 input columns
+  - **PHASE93_FEATURE_CATEGORIES**: New `"earnings_quality"` category with 34 input columns
     - **Code Quality**: Full compliance with v1.11 standards (safe division, logging, type hints, docstrings)
     - **Business Impact**: Enhanced earnings quality signals for portfolio screening and price target prediction
 
@@ -680,7 +680,7 @@ from finance_ml.ml_workflow.reporting import (
 ```python
 from finance_ml.ml_workflow.data.schema import (
    COLUMN_SCHEMA,
-   PHASE93_FEATURE_INPUTS,
+   PHASE93_FEATURE_CATEGORIES,
    get_expected_dtype,
    get_column_role,
    normalize_column_name,
@@ -986,7 +986,7 @@ The schema validation complements dtype diagnostics by providing:
 
 ### 5.4 Phase 9.3 Feature Categories
 
-Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_INPUTS`):
+Schema v1.3 organizes features into categories (defined in `PHASE93_FEATURE_CATEGORIES`):
 
 - **Momentum**: price_momentum_1m/3m/6m, rsi_14d/30d, ma_crossover_signal, return_stability_score
     - **Input Columns** (from PRICE_COLUMNS): price_5d_ago, price_1w_ago, price_1m_ago, price_3m_ago, price_6m_ago,

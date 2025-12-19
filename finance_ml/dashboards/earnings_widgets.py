@@ -1,7 +1,7 @@
 """
 Earnings and Dividend Dashboard Widgets.
 
-Enhanced with Phase 9.3 PHASE93_FEATURE_INPUTS categories for comprehensive
+Enhanced with Phase 9.3 PHASE93_FEATURE_CATEGORIES categories for comprehensive
 metric selection across earnings, dividends, valuation, quality/risk, and
 technical analysis domains.
 
@@ -9,6 +9,7 @@ Aligned with code_guidelines.md v1.4 Section 17 (Style Guides for Visual Element
 """
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -21,7 +22,16 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # Schema-driven Phase 9.3 feature categorization (code_guidelines.md §9.3)
-from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
+from finance_ml.ml_workflow.preprocessing.column_semantics import (
+    COUNT_COLUMNS,
+    MARKET_VALUE_COLUMNS,
+    PERCENTAGE_COLUMNS,
+    PRICE_COLUMNS,
+    RATIO_COLUMNS,
+)
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Style Constants (aligned with code_guidelines.md §17.1, §17.2)
@@ -39,6 +49,9 @@ COLOR_PALETTE = {
     "neutral": "#adb5bd",
 }
 
+DATE_DISPLAY_FORMAT = "%d %b %Y"
+DEFAULT_REFERENCE_DATE = pd.Timestamp("2025-12-21")
+
 # Category colors for visualization
 CATEGORY_COLORS = {
     "momentum": "#3498db",  # Info blue
@@ -53,6 +66,54 @@ CATEGORY_COLORS = {
     "forecasts": "#2980b9",  # Blue
     "earnings_quality": "#e67e22",  # Orange - GAAP vs Adjusted, surprise analytics
 }
+
+
+def _resolve_reference_date(
+    df: Optional[pd.DataFrame], reference_date: Optional[pd.Timestamp]
+) -> pd.Timestamp:
+    """Resolve reference_date using dataset provenance with a stable fallback.
+
+    Preference order:
+    1) Explicit reference_date argument
+    2) Dataset-provided `_reference_date` or `reference_date` columns (max value)
+    3) DEFAULT_REFERENCE_DATE (aligned with dtype casting & temporal features)
+    """
+
+    if reference_date is not None:
+        return pd.Timestamp(reference_date).normalize()
+
+    if df is not None:
+        for candidate in ["_reference_date", "reference_date"]:
+            if candidate in df.columns:
+                ref_series = pd.to_datetime(df[candidate], errors="coerce")
+                if ref_series.notna().any():
+                    return ref_series.dropna().max().normalize()
+
+    return DEFAULT_REFERENCE_DATE
+
+
+def _add_formatted_date_columns(df: pd.DataFrame, date_columns: List[str]) -> List[str]:
+    """Add `*_formatted` companions using the canonical date display format."""
+
+    formatted_cols: List[str] = []
+
+    for col in date_columns:
+        if col not in df.columns:
+            continue
+
+        series = pd.to_datetime(df[col], errors="coerce")
+        formatted_col = f"{col}_formatted"
+
+        if formatted_col in df.columns:
+            # Respect existing column but ensure the canonical format
+            df[formatted_col] = series.dt.strftime(DATE_DISPLAY_FORMAT).where(series.notna(), pd.NA)
+        else:
+            df[formatted_col] = series.dt.strftime(DATE_DISPLAY_FORMAT).where(series.notna(), pd.NA)
+
+        formatted_cols.append(formatted_col)
+
+    return formatted_cols
+
 
 # Valid mode options
 EarningsMode = Literal[
@@ -92,10 +153,14 @@ def get_category_metrics(
     include_supplemental: bool = True,
 ) -> Dict[str, List[str]]:
     """
-    Get metrics from specified PHASE93_FEATURE_INPUTS categories.
+    Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
+
+    **ETL Pipeline Note:** Some metrics may have companion `*_applicable` flags
+    emitted by the ETL pipeline (Stage 8g conditional metrics handling). These
+    flags indicate row-level applicability for the metric computations.
 
     Args:
-        categories: List of category names from PHASE93_FEATURE_INPUTS.
+        categories: List of category names from PHASE93_FEATURE_CATEGORIES.
         include_supplemental: Whether to include supplemental domain-specific metrics.
 
     Returns:
@@ -103,7 +168,7 @@ def get_category_metrics(
     """
     result = {}
     for cat in categories:
-        metrics = PHASE93_FEATURE_INPUTS.get(cat, []).copy()
+        metrics = PHASE93_FEATURE_CATEGORIES.get(cat, []).copy()
         result[cat] = metrics
 
     # Add supplemental metrics for specific categories
@@ -135,6 +200,8 @@ def get_category_metrics(
                 "dividend_record_record_date",
                 "dividend_record_frequency",
                 "dividend_record_currency",
+                "div_yield_ltm",
+                "div_yield_ntm",
                 "div_yield_ind",
                 "div_yield_1fyind",
                 "div_yield_5yavgltm",
@@ -182,14 +249,14 @@ def create_earnings_calendar_dashboard(
     top_n: int = 100,
     mode: EarningsMode = "all",
     categories: Optional[List[str]] = None,
-    days_window: Optional[int] = None,
+    days_window: Optional[int] = 10,
 ) -> pd.DataFrame:
     """
     Creates a dashboard (styled DataFrame) for Earnings and Dividend Analytics.
     Filters for companies with upcoming or recent earnings.
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
-    Uses PHASE93_FEATURE_INPUTS categories for metric selection.
+    Uses PHASE93_FEATURE_CATEGORIES categories for metric selection.
 
     Args:
         df: Input DataFrame containing stock data.
@@ -200,13 +267,18 @@ def create_earnings_calendar_dashboard(
         categories: Optional list of specific PHASE93 categories to include.
             Overrides mode if provided.
         days_window: Optional filter for next_earnings within +/- N days.
-            If None, no additional temporal filtering is applied (caller should filter).
+            Defaults to 10-day window; pass None to disable temporal filtering.
 
     Returns:
         pd.DataFrame: Filtered DataFrame with selected metrics.
     """
-    if reference_date is None:
-        reference_date = pd.Timestamp.now().normalize()
+    critical_columns = ["ticker", "sector"]
+    missing_critical = [col for col in critical_columns if col not in df.columns]
+    if missing_critical:
+        logger.warning("Missing critical columns: %s", missing_critical)
+        return pd.DataFrame()
+
+    reference_date = _resolve_reference_date(df, reference_date)
 
     # Ensure date columns are datetime
     date_cols = [
@@ -222,8 +294,13 @@ def create_earnings_calendar_dashboard(
 
     # Filter logic: next_earnings within +/- N days if days_window provided
     filtered_df = df.copy()
-    if "next_earnings" in df.columns and days_window is not None:
-        mask = (filtered_df["next_earnings"] - reference_date).abs() <= timedelta(days=days_window)
+    if days_window is None:
+        temporal_window = None
+    else:
+        temporal_window = timedelta(days=days_window)
+
+    if "next_earnings" in df.columns and temporal_window is not None:
+        mask = (filtered_df["next_earnings"] - reference_date).abs() <= temporal_window
         filtered_df = filtered_df[mask]
 
     if filtered_df.empty:
@@ -241,11 +318,17 @@ def create_earnings_calendar_dashboard(
 
     filtered_df = filtered_df.head(top_n)
 
-    # Define identity columns
+    # Define identity columns + temporal enrichments when available
     display_cols = ["ticker", "sector", "region", "next_earnings"]
     display_cols = [c for c in display_cols if c in df.columns or c == "next_earnings"]
     if mcap_col and mcap_col not in display_cols:
         display_cols.append(mcap_col)
+
+    temporal_enrichments = [
+        col
+        for col in ["fiscal_quarter_inferred", "fy_end_vs_isrd_days"]
+        if col in filtered_df.columns
+    ]
 
     # Determine which categories to include based on mode or explicit categories
     if categories is not None:
@@ -276,7 +359,7 @@ def create_earnings_calendar_dashboard(
     elif mode == "dividends":
         # Dividend-focused categories
         selected_categories = ["dividends", "cash_flow"]
-    elif mode in PHASE93_FEATURE_INPUTS:
+    elif mode in PHASE93_FEATURE_CATEGORIES:
         # Single category mode
         selected_categories = [mode]
     else:
@@ -291,6 +374,8 @@ def create_earnings_calendar_dashboard(
     for cat, metrics in category_metrics.items():
         existing_metrics = [c for c in metrics if c in df.columns]
         final_cols.extend(existing_metrics)
+
+    final_cols.extend(temporal_enrichments)
 
     # Remove duplicates while preserving order
     final_cols = list(dict.fromkeys(final_cols))
@@ -315,12 +400,33 @@ def create_earnings_calendar_dashboard(
                 cols.insert(idx, "days_to_earnings")
             dashboard_df = dashboard_df[cols]
 
+    # Add standardized formatted date companions for display/export
+    date_columns = [
+        col
+        for col in dashboard_df.columns
+        if pd.api.types.is_datetime64_any_dtype(dashboard_df[col])
+    ]
+
+    formatted_cols = _add_formatted_date_columns(dashboard_df, date_columns)
+
+    if formatted_cols:
+        reordered: List[str] = []
+        for col in dashboard_df.columns:
+            reordered.append(col)
+            formatted_col = f"{col}_formatted"
+            if formatted_col in formatted_cols:
+                reordered.append(formatted_col)
+        dashboard_df = dashboard_df.loc[:, list(dict.fromkeys(reordered))]
+
     return dashboard_df
 
 
 def _build_format_dict(columns: List[str], df: Optional[pd.DataFrame] = None) -> Dict[str, str]:
     """
     Build format dictionary for DataFrame styling based on column names.
+
+    **ETL Alignment:** Respects semantic column classifications from
+    column_semantics (e.g., PRICE_COLUMNS preservation policy).
 
     Args:
         columns: List of column names to format.
@@ -340,9 +446,31 @@ def _build_format_dict(columns: List[str], df: Optional[pd.DataFrame] = None) ->
                 # Skip format for non-numeric columns - let pandas use default
                 continue
 
+        # Semantic preservation for price columns (do not normalize units)
+        if col_lower in PRICE_COLUMNS:
+            format_dict[col] = "${:,.2f}"
+            continue
+
+        # Semantic-guided formatting for percentages, ratios, market values, counts
+        if col_lower in PERCENTAGE_COLUMNS:
+            format_dict[col] = "{:.2%}"
+            continue
+
+        if col_lower in RATIO_COLUMNS:
+            format_dict[col] = "{:.2f}"
+            continue
+
+        if col_lower in MARKET_VALUE_COLUMNS:
+            format_dict[col] = "${:,.0f}"
+            continue
+
+        if col_lower in COUNT_COLUMNS:
+            format_dict[col] = "{:,.0f}"
+            continue
+
         # Date columns
         if any(x in col_lower for x in ["date", "next_earnings", "last_updated", "record_date"]):
-            format_dict[col] = "{:%Y-%m-%d}"
+            format_dict[col] = f"{{:{DATE_DISPLAY_FORMAT}}}"
 
         # Currency/Price columns
         elif any(
@@ -428,8 +556,13 @@ def display_earnings_dashboard(
     """
     Displays the earnings dashboard using Pandas Styler with enhanced formatting.
 
+    **ETL Pipeline Compatibility:**
+    - Expects DataFrame from etl.py Stage 11 (post-validation) for best results
+    - Respects semantic column classifications (code_guidelines.md §8.5)
+    - Preserves PRICE_COLUMNS formatting per preservation policy
+
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
-    Supports all PHASE93_FEATURE_INPUTS categories with appropriate formatting:
+    Supports all PHASE93_FEATURE_CATEGORIES categories with appropriate formatting:
     - Currency formatting for financial metrics
     - Percentage formatting for yields, margins, returns
     - Ratio formatting for valuation multiples
@@ -505,7 +638,7 @@ def create_earnings_metrics_chart(
     Creates an interactive Plotly chart showing metrics for upcoming earnings.
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
-    Visualizes metrics from specified PHASE93_FEATURE_INPUTS category.
+    Visualizes metrics from specified PHASE93_FEATURE_CATEGORIES category.
 
     **Style Guide Alignment (code_guidelines.md §17.2):**
     - Uses PLOTLY_TEMPLATE ('plotly_dark')
@@ -515,7 +648,7 @@ def create_earnings_metrics_chart(
 
     Args:
         df: Input DataFrame containing stock data.
-        metric_category: PHASE93_FEATURE_INPUTS category to visualize.
+        metric_category: PHASE93_FEATURE_CATEGORIES category to visualize.
         reference_date: Date for earnings comparison. Defaults to today.
         top_n: Number of companies to include.
         output_path: Optional path to save HTML output.
@@ -523,16 +656,15 @@ def create_earnings_metrics_chart(
     Returns:
         go.Figure: Plotly figure object.
     """
-    if reference_date is None:
-        reference_date = pd.Timestamp.now().normalize()
+    reference_date = _resolve_reference_date(df, reference_date)
 
     # Get dashboard data for the specific category
     dashboard_df = create_earnings_calendar_dashboard(
         df,
         reference_date=reference_date,
         top_n=top_n,
-        mode=metric_category if metric_category in PHASE93_FEATURE_INPUTS else "earnings",
-        categories=[metric_category] if metric_category in PHASE93_FEATURE_INPUTS else None,
+        mode=metric_category if metric_category in PHASE93_FEATURE_CATEGORIES else "earnings",
+        categories=[metric_category] if metric_category in PHASE93_FEATURE_CATEGORIES else None,
     )
 
     if dashboard_df.empty:
@@ -552,7 +684,7 @@ def create_earnings_metrics_chart(
         return fig
 
     # Get metrics for the category
-    category_metrics = PHASE93_FEATURE_INPUTS.get(metric_category, [])
+    category_metrics = PHASE93_FEATURE_CATEGORIES.get(metric_category, [])
     available_metrics = [c for c in category_metrics if c in dashboard_df.columns][:5]
 
     if not available_metrics:
@@ -654,7 +786,7 @@ def create_category_comparison_chart(
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
     Provides visual comparison of metric availability and values across
-    all PHASE93_FEATURE_INPUTS categories for earnings calendar companies.
+    all PHASE93_FEATURE_CATEGORIES categories for earnings calendar companies.
 
     Args:
         df: Input DataFrame containing stock data.
@@ -667,10 +799,9 @@ def create_category_comparison_chart(
         go.Figure: Plotly figure with category comparison.
     """
     if categories is None:
-        categories = list(PHASE93_FEATURE_INPUTS.keys())
+        categories = list(PHASE93_FEATURE_CATEGORIES.keys())
 
-    if reference_date is None:
-        reference_date = pd.Timestamp.now().normalize()
+    reference_date = _resolve_reference_date(df, reference_date)
 
     # Get base dashboard data
     dashboard_df = create_earnings_calendar_dashboard(
@@ -697,7 +828,7 @@ def create_category_comparison_chart(
     # Calculate coverage statistics per category
     coverage_data = []
     for cat in categories:
-        metrics = PHASE93_FEATURE_INPUTS.get(cat, [])
+        metrics = PHASE93_FEATURE_CATEGORIES.get(cat, [])
         available = [m for m in metrics if m in df.columns]
         non_null_counts = [
             dashboard_df[m].notna().sum() for m in available if m in dashboard_df.columns
@@ -782,23 +913,41 @@ def create_earnings_surprise_dashboard(
     reference_date: Optional[pd.Timestamp] = None,
     top_n: int = 50,
     output_path: Optional[Union[str, Path]] = None,
+    validate_quality: bool = False,
 ) -> go.Figure:
     """Create an interactive dashboard for earnings surprise analysis.
 
     Business objective: monitor expected vs actual earnings performance to
     identify forecast reliability and potential market reaction patterns.
 
+    **ETL Pipeline Integration:**
+    - Best paired with data from etl_with_financial_metrics() output (semantic typing)
+    - Optional quality validation mirrors ETL Stage 9 checks
+
     Args:
         df: DataFrame with earnings estimates and actuals.
         reference_date: Analysis date (defaults to now).
         top_n: Number of rows to analyze (prefers market cap ordering when available).
         output_path: Optional path to save an HTML dashboard.
+        validate_quality: Run ETL-style quality checks before processing.
 
     Returns:
         go.Figure: Plotly figure.
     """
-    if reference_date is None:
-        reference_date = pd.Timestamp.now().normalize()
+    reference_date = _resolve_reference_date(df, reference_date)
+
+    if validate_quality:
+        required_cols = ["total_revenues_ltm", "ebitda_ltm", "eps_adj_ltm"]
+        missing = [col for col in required_cols if col not in df.columns]
+        if missing:
+            logger.warning("Quality check: Missing recommended columns: %s", missing)
+
+        missing_count = df.isna().sum().sum()
+        if missing_count > 0:
+            logger.warning(
+                "Quality check: %s missing values detected (expected 0 after ETL imputation)",
+                missing_count,
+            )
 
     df_local = df.copy()
 
@@ -1101,8 +1250,7 @@ def create_market_movers_dashboard(
     Returns:
         go.Figure: Plotly figure.
     """
-    if reference_date is None:
-        reference_date = pd.Timestamp.now().normalize()
+    reference_date = _resolve_reference_date(df, reference_date)
 
     required_cols = ["ticker", "sector", "last_price", "next_earnings"]
     if not all(c in df.columns for c in required_cols):
@@ -1454,6 +1602,733 @@ def create_price_target_analytics(
     return fig
 
 
+def create_earnings_calendar_analytics(
+    df: pd.DataFrame,
+    output_dir: Union[str, Path],
+    reference_date: Optional[pd.Timestamp] = None,
+    days_window: int = 30,
+) -> Dict[str, object]:
+    """Build interactive earnings calendar analytics with timeline and density views."""
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    reference_date = _resolve_reference_date(df, reference_date)
+
+    earnings_date_cols = [
+        "next_earnings",
+        "last_earnings_date",
+        "income_statement_report_date",
+        "next_earnings_date",
+        "earnings_announcement_date",
+    ]
+    available_earnings_dates = [c for c in earnings_date_cols if c in df.columns]
+
+    if not available_earnings_dates:
+        logger.warning("No earnings date columns found. Falling back to engineered events.")
+        return _engineer_earnings_events_from_fiscal_data(df, output_dir, reference_date)
+
+    identity_cols = [c for c in ["ticker", "sector", "region"] if c in df.columns]
+    earnings_df = df[identity_cols + available_earnings_dates].copy()
+
+    for col in available_earnings_dates:
+        earnings_df[col] = pd.to_datetime(earnings_df[col], errors="coerce")
+
+    anchor_col = (
+        "next_earnings" if "next_earnings" in earnings_df.columns else available_earnings_dates[0]
+    )
+    earnings_df["days_to_earnings"] = (earnings_df[anchor_col] - reference_date).dt.days
+
+    if days_window is not None:
+        earnings_df = earnings_df[
+            earnings_df["days_to_earnings"].between(-days_window, days_window)
+        ]
+
+    earnings_df = earnings_df.dropna(subset=["days_to_earnings"])
+
+    timeline_fig = _create_earnings_timeline_plotly(earnings_df, reference_date)
+    heatmap_fig = _create_earnings_density_heatmap(earnings_df, reference_date)
+
+    _write_html_artifact(timeline_fig, output_dir / "earnings_calendar.html")
+    _write_html_artifact(heatmap_fig, output_dir / "earnings_density_heatmap.html")
+
+    return {
+        "earnings_df": earnings_df,
+        "timeline_fig": timeline_fig,
+        "heatmap_fig": heatmap_fig,
+    }
+
+
+def _create_earnings_timeline_plotly(
+    earnings_df: pd.DataFrame, reference_date: pd.Timestamp
+) -> go.Figure:
+    """Create interactive earnings timeline with sector coloring."""
+
+    valid_df = earnings_df[earnings_df["days_to_earnings"].notna()].copy()
+
+    if valid_df.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No valid earnings dates found in data",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    valid_df = valid_df[
+        (valid_df["days_to_earnings"] >= -60) & (valid_df["days_to_earnings"] <= 60)
+    ]
+
+    y_dim = (
+        "sector"
+        if "sector" in valid_df.columns
+        else "region" if "region" in valid_df.columns else "ticker"
+    )
+    color_dim = "sector" if "sector" in valid_df.columns else None
+
+    fig = px.scatter(
+        valid_df,
+        x="days_to_earnings",
+        y=y_dim,
+        color=color_dim,
+        hover_data=[c for c in ["ticker", "region"] if c in valid_df.columns],
+        title="<b>Earnings Events Timeline</b><br><sup>Days relative to today</sup>",
+        template=PLOTLY_TEMPLATE,
+    )
+
+    fig.add_vline(
+        x=0,
+        line_dash="dash",
+        line_color="white",
+        annotation_text="Today",
+    )
+
+    fig.add_vrect(
+        x0=-7,
+        x1=7,
+        fillcolor="yellow",
+        opacity=0.1,
+        annotation_text="±7 days",
+    )
+
+    fig.update_layout(height=400)
+
+    return fig
+
+
+def _create_earnings_density_heatmap(
+    earnings_df: pd.DataFrame, reference_date: pd.Timestamp
+) -> go.Figure:
+    """Create earnings density heatmap by sector and week."""
+
+    if earnings_df.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No earnings events within selected window",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        return fig
+
+    heatmap_dim = (
+        "sector"
+        if "sector" in earnings_df.columns
+        else "region" if "region" in earnings_df.columns else "ticker"
+    )
+
+    heatmap_df = earnings_df.copy()
+    heatmap_df["event_date"] = reference_date + pd.to_timedelta(
+        heatmap_df["days_to_earnings"], unit="D"
+    )
+    heatmap_df["event_week"] = (
+        heatmap_df["event_date"].dt.to_period("W").apply(lambda r: r.start_time)
+    )
+
+    fig = px.density_heatmap(
+        heatmap_df,
+        x="event_week",
+        y=heatmap_dim,
+        histfunc="count",
+        color_continuous_scale="Viridis",
+        title="<b>Earnings Event Density</b><br><sup>Counts by sector and week</sup>",
+        template=PLOTLY_TEMPLATE,
+    )
+
+    fig.update_xaxes(title_text="Week of Event")
+    fig.update_yaxes(title_text=heatmap_dim.title())
+    fig.update_layout(height=400)
+
+    return fig
+
+
+def _engineer_earnings_events_from_fiscal_data(
+    df: pd.DataFrame, output_dir: Path, reference_date: pd.Timestamp
+) -> Dict[str, object]:
+    """Fallback earnings event engineering using fiscal cadence when explicit dates are missing."""
+
+    placeholder_fig = go.Figure()
+    placeholder_fig.add_annotation(
+        text="No earnings date columns found; unable to engineer events",
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0.5,
+        showarrow=False,
+        font=dict(size=14),
+    )
+    placeholder_fig.update_layout(template=PLOTLY_TEMPLATE)
+
+    _write_html_artifact(placeholder_fig, output_dir / "earnings_calendar.html")
+    _write_html_artifact(placeholder_fig, output_dir / "earnings_density_heatmap.html")
+
+    return {
+        "earnings_df": pd.DataFrame(),
+        "timeline_fig": placeholder_fig,
+        "heatmap_fig": placeholder_fig,
+        "reference_date": reference_date,
+    }
+
+
+def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
+    """Analyze discrepancies between GAAP and Adjusted earnings."""
+
+    gaap_adj_pairs = [
+        ("eps_gaap_est_avg_fy1e", "eps_norm_est_avg_fy1e"),
+        ("eps_gaap_est_avg_ntm", "eps_norm_est_avg_ntm"),
+        ("net_eps_basic_ltm", "eps_adj_ltm"),
+    ]
+
+    base_cols = [c for c in ["ticker", "sector", "region"] if c in df.columns]
+    earnings_quality = df[base_cols].copy()
+
+    for gaap_col, adj_col in gaap_adj_pairs:
+        if gaap_col in df.columns and adj_col in df.columns:
+            gaap_data = pd.to_numeric(df[gaap_col], errors="coerce")
+            adj_data = pd.to_numeric(df[adj_col], errors="coerce")
+
+            with np.errstate(divide="ignore", invalid="ignore"):
+                adjustment = (adj_data - gaap_data) / gaap_data.abs()
+
+            adjustment = adjustment.replace([np.inf, -np.inf], np.nan)
+
+            suffix = gaap_col.split("_")[-1]
+            adjustment_col = f"adj_magnitude_{suffix}"
+            earnings_quality[adjustment_col] = adjustment * 100
+
+            flag_col = f"large_adj_flag_{suffix}"
+            earnings_quality[flag_col] = earnings_quality[adjustment_col].abs() > 20
+
+    adj_cols = [c for c in earnings_quality.columns if "adj_magnitude" in c]
+    if adj_cols:
+        earnings_quality["earnings_quality_score"] = 100 - earnings_quality[adj_cols].abs().mean(
+            axis=1
+        ).clip(0, 100)
+
+    return earnings_quality
+
+
+def create_gaap_adjusted_comparison_chart(df: pd.DataFrame, output_path: Path) -> go.Figure:
+    """Create sector-level GAAP vs Adjusted comparison visualization."""
+
+    earnings_quality = analyze_earnings_quality(df)
+
+    if (
+        "earnings_quality_score" not in earnings_quality.columns
+        or "sector" not in earnings_quality.columns
+    ):
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient GAAP/Adjusted EPS data",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    sector_quality = (
+        earnings_quality.groupby("sector", dropna=True)
+        .agg({"earnings_quality_score": ["mean", "std", "count"]})
+        .round(2)
+    )
+    if sector_quality.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No sector-level earnings quality data",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+    sector_quality.columns = ["mean_quality", "std_quality", "count"]
+    sector_quality = sector_quality.reset_index().sort_values("mean_quality")
+
+    fig = px.bar(
+        sector_quality,
+        y="sector",
+        x="mean_quality",
+        error_x="std_quality",
+        orientation="h",
+        color="mean_quality",
+        color_continuous_scale="RdYlGn",
+        title="<b>Earnings Quality Score by Sector</b><br><sup>Higher = Less GAAP-to-Adjusted discrepancy</sup>",
+        template=PLOTLY_TEMPLATE,
+    )
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
+
+def create_technical_valuation_dashboard(df: pd.DataFrame, output_dir: Path) -> Dict[str, object]:
+    """Create technical analysis dashboard overlaying valuation metrics."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    df = df.copy()
+
+    ema_cols = ["ema_20d", "ema_50d", "ema_100d", "ema_250d"]
+    momentum_cols = ["price_momentum_1m", "price_momentum_3m", "price_momentum_6m"]
+    valuation_cols = ["p_e_ratio", "ev_ebitda_ratio", "p_s_ratio", "p_e_ntm", "ev_ebitda_ltm"]
+
+    if "ema_20d" in df.columns and "ema_50d" in df.columns:
+        df["ema_crossover_bullish"] = df["ema_20d"] > df["ema_50d"]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            df["ema_crossover_score"] = ((df["ema_20d"] - df["ema_50d"]) / df["ema_50d"]) * 100
+
+    if "52w_high_adj" in df.columns and "52w_low_adj" in df.columns and "last_price" in df.columns:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            df["price_52w_position"] = (
+                (df["last_price"] - df["52w_low_adj"]) / (df["52w_high_adj"] - df["52w_low_adj"])
+            ) * 100
+        df["price_52w_position"] = df["price_52w_position"].clip(0, 100)
+
+    fig = make_subplots(
+        rows=3,
+        cols=2,
+        subplot_titles=[
+            "EMA Crossover Distribution",
+            "Momentum Scatter (1M vs 3M)",
+            "52W Position by Sector",
+            "Valuation vs Momentum",
+            "Technical Score Distribution",
+            "Bullish/Bearish Ratio by Sector",
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1,
+    )
+
+    if "ema_crossover_score" in df.columns:
+        fig.add_trace(
+            go.Histogram(
+                x=df["ema_crossover_score"].dropna().clip(-50, 50),
+                nbinsx=50,
+                marker_color=COLOR_PALETTE["success"],
+                name="EMA Crossover %",
+            ),
+            row=1,
+            col=1,
+        )
+
+    available_momentum = [c for c in momentum_cols if c in df.columns]
+    if len(available_momentum) >= 2:
+        fig.add_trace(
+            go.Scatter(
+                x=df[available_momentum[0]],
+                y=df[available_momentum[1]],
+                mode="markers",
+                marker=dict(
+                    size=6,
+                    color=df.get("price_52w_position", 50),
+                    colorscale="RdYlGn",
+                    opacity=0.7,
+                ),
+                name="Momentum",
+            ),
+            row=1,
+            col=2,
+        )
+
+    if "price_52w_position" in df.columns and "sector" in df.columns:
+        sector_position = df.groupby("sector")["price_52w_position"].median().dropna()
+        if not sector_position.empty:
+            fig.add_trace(
+                go.Bar(
+                    y=sector_position.index,
+                    x=sector_position.values,
+                    orientation="h",
+                    marker_color=COLOR_PALETTE["info"],
+                    name="52W Position",
+                ),
+                row=2,
+                col=1,
+            )
+
+    if available_momentum and valuation_cols:
+        valuation_col = next((c for c in valuation_cols if c in df.columns), None)
+        if valuation_col and available_momentum:
+            fig.add_trace(
+                go.Scatter(
+                    x=df[valuation_col],
+                    y=df[available_momentum[0]],
+                    mode="markers",
+                    marker=dict(color=df.get("ema_crossover_score", 0), colorscale="Bluered"),
+                    name="Valuation vs Momentum",
+                    text=df.get("ticker"),
+                ),
+                row=2,
+                col=2,
+            )
+
+    if "ema_crossover_score" in df.columns:
+        fig.add_trace(
+            go.Box(
+                x=df["ema_crossover_score"].dropna(),
+                marker_color=COLOR_PALETTE["secondary"],
+                name="Technical Score",
+                boxmean=True,
+            ),
+            row=3,
+            col=1,
+        )
+
+    if "ema_crossover_bullish" in df.columns and "sector" in df.columns:
+        bullish_ratio = df.groupby("sector")["ema_crossover_bullish"].mean().dropna()
+        if not bullish_ratio.empty:
+            fig.add_trace(
+                go.Bar(
+                    x=bullish_ratio.values * 100,
+                    y=bullish_ratio.index,
+                    orientation="h",
+                    marker_color=COLOR_PALETTE["success"],
+                    name="Bullish %",
+                ),
+                row=3,
+                col=2,
+            )
+
+    fig.update_layout(
+        title="<b>Technical Analysis + Valuation Dashboard</b>",
+        template=PLOTLY_TEMPLATE,
+        height=900,
+        showlegend=True,
+    )
+
+    output_path = output_dir / "technical_valuation_dashboard.html"
+    _write_html_artifact(fig, output_path)
+
+    return {"figure": fig, "output_path": output_path}
+
+
+def create_dividend_sustainability_scorecard(
+    df: pd.DataFrame, output_path: Optional[Union[str, Path]] = None
+) -> pd.DataFrame:
+    """Create comprehensive dividend sustainability scoring."""
+
+    scorecard = df[[c for c in ["ticker", "sector", "region"] if c in df.columns]].copy()
+
+    if "payout_ratio" in df.columns:
+        payout = pd.to_numeric(df["payout_ratio"], errors="coerce")
+        scorecard["payout_score"] = np.where(
+            payout <= 50,
+            25,
+            np.where(payout <= 75, 20, np.where(payout <= 100, 10, 0)),
+        )
+    else:
+        scorecard["payout_score"] = 0
+
+    fcf_col = next((c for c in df.columns if "fcf" in c.lower() and "yield" not in c.lower()), None)
+    div_paid_col = next(
+        (c for c in df.columns if "dividend" in c.lower() and "paid" in c.lower()), None
+    )
+
+    if fcf_col and div_paid_col:
+        fcf = pd.to_numeric(df[fcf_col], errors="coerce")
+        div_paid = pd.to_numeric(df[div_paid_col], errors="coerce").abs()
+        coverage = fcf / div_paid.replace(0, np.nan)
+
+        scorecard["fcf_coverage_score"] = np.where(
+            coverage >= 2.0,
+            25,
+            np.where(
+                coverage >= 1.5, 20, np.where(coverage >= 1.0, 15, np.where(coverage >= 0.5, 5, 0))
+            ),
+        )
+    else:
+        scorecard["fcf_coverage_score"] = 0
+
+    growth_cols = [c for c in df.columns if "div" in c.lower() and "growth" in c.lower()]
+    if growth_cols:
+        div_growth = pd.to_numeric(df[growth_cols[0]], errors="coerce")
+        scorecard["div_growth_score"] = np.where(
+            div_growth >= 10,
+            25,
+            np.where(
+                div_growth >= 5, 20, np.where(div_growth >= 0, 15, np.where(div_growth >= -5, 5, 0))
+            ),
+        )
+    else:
+        scorecard["div_growth_score"] = 0
+
+    if "debt_to_equity" in df.columns:
+        dte = pd.to_numeric(df["debt_to_equity"], errors="coerce")
+        scorecard["balance_sheet_score"] = np.where(
+            dte <= 0.5,
+            25,
+            np.where(dte <= 1.0, 20, np.where(dte <= 2.0, 10, 0)),
+        )
+    else:
+        scorecard["balance_sheet_score"] = 0
+
+    score_cols = [
+        "payout_score",
+        "fcf_coverage_score",
+        "div_growth_score",
+        "balance_sheet_score",
+    ]
+    scorecard["dividend_sustainability_score"] = scorecard[score_cols].sum(axis=1)
+
+    scorecard["sustainability_grade"] = pd.cut(
+        scorecard["dividend_sustainability_score"],
+        bins=[0, 40, 60, 75, 90, 100],
+        labels=["F", "D", "C", "B", "A"],
+    )
+
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        scorecard.to_csv(output_path, index=False)
+
+    return scorecard
+
+
+def create_employee_productivity_dashboard(df: pd.DataFrame, output_dir: Path) -> Dict[str, object]:
+    """Analyze employee productivity metrics and trends."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    df = df.copy()
+
+    sector_categories = df["sector"].astype("category") if "sector" in df.columns else None
+
+    if "total_revenues_ltm" in df.columns and "full_time_employees_fq" in df.columns:
+        revenue = pd.to_numeric(df["total_revenues_ltm"], errors="coerce")
+        employees = pd.to_numeric(df["full_time_employees_fq"], errors="coerce")
+        df["revenue_per_employee"] = (revenue / employees.replace(0, np.nan)) / 1000
+
+    if "total_assets_ltm" in df.columns and "full_time_employees_fq" in df.columns:
+        assets = pd.to_numeric(df["total_assets_ltm"], errors="coerce")
+        employees = pd.to_numeric(df["full_time_employees_fq"], errors="coerce")
+        df["assets_per_employee"] = (assets / employees.replace(0, np.nan)) / 1000
+
+    emp_fq = "full_time_employees_fq"
+    emp_1fy = "full_time_employees_1fy"
+    if emp_fq in df.columns and emp_1fy in df.columns:
+        current = pd.to_numeric(df[emp_fq], errors="coerce")
+        prior = pd.to_numeric(df[emp_1fy], errors="coerce")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            df["employee_growth_yoy"] = ((current - prior) / prior * 100).replace(
+                [np.inf, -np.inf], np.nan
+            )
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Revenue per Employee by Sector",
+            "Employee Growth Distribution",
+            "Productivity vs Profitability",
+            "Employee Count vs Revenue (Log Scale)",
+        ],
+    )
+
+    if "revenue_per_employee" in df.columns and "ebitda_ltm" in df.columns:
+        # Map sectors to numeric values for color scale to avoid invalid color strings
+        sector_codes = sector_categories.cat.codes if sector_categories is not None else None
+        colorbar = None
+        if sector_categories is not None:
+            unique_codes = sorted(sector_categories.cat.codes.unique())
+            colorbar = dict(
+                title="Sector",
+                tickmode="array",
+                tickvals=unique_codes,
+                ticktext=[sector_categories.cat.categories[code] for code in unique_codes],
+            )
+
+        fig.add_trace(
+            go.Scatter(
+                x=df["revenue_per_employee"],
+                y=df["ebitda_ltm"],
+                mode="markers",
+                marker=dict(
+                    color=sector_codes,
+                    colorscale="Viridis",
+                    showscale=sector_categories is not None,
+                    colorbar=colorbar,
+                ),
+                text=df.get("ticker"),
+                name="Productivity vs Profitability",
+            ),
+            row=2,
+            col=1,
+        )
+
+    if "employee_growth_yoy" in df.columns:
+        fig.add_trace(
+            go.Histogram(
+                x=df["employee_growth_yoy"].dropna(),
+                marker_color=COLOR_PALETTE["warning"],
+                name="Employee Growth YoY",
+            ),
+            row=1,
+            col=2,
+        )
+
+    if "full_time_employees_fq" in df.columns and "total_revenues_ltm" in df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=df["full_time_employees_fq"],
+                y=df["total_revenues_ltm"],
+                mode="markers",
+                marker=dict(
+                    color=sector_categories.cat.codes if sector_categories is not None else None,
+                    colorscale="Viridis",
+                    showscale=sector_categories is not None,
+                    colorbar=colorbar,
+                ),
+                text=df.get("ticker"),
+                name="Employees vs Revenue",
+            ),
+            row=2,
+            col=2,
+        )
+        fig.update_xaxes(type="log", row=2, col=2)
+        fig.update_yaxes(type="log", row=2, col=2)
+
+    fig.update_layout(
+        title="<b>Employee Productivity Analytics</b>", template=PLOTLY_TEMPLATE, height=800
+    )
+
+    output_path = output_dir / "employee_productivity.html"
+    _write_html_artifact(fig, output_path)
+
+    metrics = {
+        k: df[k]
+        for k in ["revenue_per_employee", "assets_per_employee", "employee_growth_yoy"]
+        if k in df.columns
+    }
+
+    return {"figure": fig, "metrics": metrics, "output_path": output_path}
+
+
+def create_category_correlation_network(
+    df: pd.DataFrame,
+    category_mapping: Optional[Dict[str, List[str]]],
+    output_dir: Path,
+) -> Optional[go.Figure]:
+    """Create interactive network visualization showing correlations between feature categories."""
+
+    if category_mapping is None:
+        category_mapping = PHASE93_FEATURE_CATEGORIES
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    category_scores: Dict[str, pd.Series] = {}
+    for cat_name, features in category_mapping.items():
+        available = [f for f in features if f in df.columns]
+        if available:
+            cat_data = df[available].apply(pd.to_numeric, errors="coerce")
+            cat_data = cat_data.apply(lambda x: (x - x.mean()) / x.std() if x.std() > 0 else x)
+            category_scores[cat_name] = cat_data.mean(axis=1)
+
+    if len(category_scores) < 2:
+        return None
+
+    category_df = pd.DataFrame(category_scores)
+    corr_matrix = category_df.corr()
+
+    try:
+        import networkx as nx
+    except ImportError:
+        logger.warning("networkx not installed; skipping category correlation network generation")
+        return None
+
+    G = nx.Graph()
+    for cat in corr_matrix.columns:
+        G.add_node(cat)
+
+    threshold = 0.3
+    for i, cat1 in enumerate(corr_matrix.columns):
+        for j, cat2 in enumerate(corr_matrix.columns):
+            if i < j:
+                corr = corr_matrix.loc[cat1, cat2]
+                if abs(corr) > threshold:
+                    G.add_edge(cat1, cat2, weight=abs(corr), correlation=corr)
+
+    pos = nx.spring_layout(G, k=2, iterations=50)
+
+    edge_traces = []
+    for edge in G.edges(data=True):
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        corr = edge[2]["correlation"]
+        color = "#00bc8c" if corr > 0 else "#e74c3c"
+
+        edge_traces.append(
+            go.Scatter(
+                x=[x0, x1, None],
+                y=[y0, y1, None],
+                mode="lines",
+                line=dict(width=abs(corr) * 5, color=color),
+                hoverinfo="none",
+            )
+        )
+
+    node_x = [pos[node][0] for node in G.nodes()]
+    node_y = [pos[node][1] for node in G.nodes()]
+
+    node_trace = go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode="markers+text",
+        text=list(G.nodes()),
+        textposition="top center",
+        marker=dict(size=20, color="#3498db"),
+        hoverinfo="text",
+    )
+
+    fig = go.Figure(data=edge_traces + [node_trace])
+    fig.update_layout(
+        title="<b>Feature Category Correlation Network</b><br><sup>Green=Positive, Red=Negative correlation</sup>",
+        template=PLOTLY_TEMPLATE,
+        showlegend=False,
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        height=700,
+    )
+
+    output_path = output_dir / "category_correlation_network.html"
+    _write_html_artifact(fig, output_path)
+
+    return fig
+
+
 @dataclass(frozen=True)
 class EarningsAlertConfig:
     """Configuration for rule-based earnings monitoring alerts."""
@@ -1498,8 +2373,7 @@ def generate_earnings_quality_alerts(
     if config is None:
         config = EarningsAlertConfig()
 
-    if reference_date is None:
-        reference_date = pd.Timestamp.now().normalize()
+    reference_date = _resolve_reference_date(df, reference_date)
 
     alerts: List[Dict[str, object]] = []
 

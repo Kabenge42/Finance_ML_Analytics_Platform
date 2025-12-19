@@ -639,7 +639,7 @@ def select_features_by_category(
 
     **Alignment:**
     - Aligned with PHASE93_FEATURE_CATEGORIES (phase93_categories.py)
-    - Aligned with PHASE93_FEATURE_INPUTS (schema.py) via feature engineering
+    - Aligned with PHASE93_FEATURE_CATEGORIES (schema.py) via feature engineering
     - Follows code_guidelines.md section 9.2 DataFrame Conventions
 
     Examples
@@ -658,7 +658,7 @@ def select_features_by_category(
     See Also
     --------
     finance_ml.ml_workflow.eda.phase93_categories.PHASE93_FEATURE_CATEGORIES : Full feature catalog
-    finance_ml.ml_workflow.data.schema.PHASE93_FEATURE_INPUTS : Input requirements
+    finance_ml.ml_workflow.data.schema.PHASE93_FEATURE_CATEGORIES : Input requirements
     finance_ml.ml_workflow.classification.labels.CATEGORY_FEATURE_MAPPING : Classification features
     """
     # Import Phase 9.3 feature categories

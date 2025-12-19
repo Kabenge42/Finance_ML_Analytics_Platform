@@ -734,7 +734,7 @@ pd.set_option("display.float_format", "{:.2f}".format)
 #
 # ### v1.3 Standards Applied (NEW)
 # - ✅ Schema-aware datatype detection and casting (`COLUMN_SCHEMA`)
-# - ✅ Phase 9.3 feature input categorization (`PHASE93_FEATURE_INPUTS`)
+# - ✅ Phase 9.3 feature input categorization (`PHASE93_FEATURE_CATEGORIES`)
 # - ✅ Comprehensive dtype diagnostics (coercion tracking, unknown columns)
 # - ✅ Metadata catalog with dtypes and missing counts
 #
@@ -1001,7 +1001,7 @@ print(f"\n✓ Created alias: all_stocks_typed = all_stocks_normalized (for downs
 # %%
 # v1.3 NEW: Schema-aware dtype detection and casting
 # Import schema and dtype detection modules
-from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
 from finance_ml.ml_workflow.preprocessing import detect_and_cast_dtypes, to_jsonable
 
 print("\n🔍 Phase 9.1 v1.3: Schema-Aware Datatype Detection")
@@ -1024,8 +1024,8 @@ if dtype_diagnostics["missing_expected_columns"]:
         print(f"    {', '.join(dtype_diagnostics['missing_expected_columns'])}")
 
 # Display Phase 9.3 feature input categories
-print(f"\n📊 Phase 9.3 Feature Input Categories (PHASE93_FEATURE_INPUTS):")
-for category, features in PHASE93_FEATURE_INPUTS.items():
+print(f"\n📊 Phase 9.3 Feature Input Categories (PHASE93_FEATURE_CATEGORIES):")
+for category, features in PHASE93_FEATURE_CATEGORIES.items():
     available_features = [f for f in features if f in all_stocks_typed.columns]
     print(f"  {category}: {len(available_features)}/{len(features)} available")
 
@@ -2206,16 +2206,16 @@ print(
 print("   'Phase 9.3 Schema 1.3 Summary' for the relocated cells and outputs.")
 
 # Import authoritative schema definitions to fix missing variable references
-from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
 
-# Use schema-defined input categories (only 6 categories exist in PHASE93_FEATURE_INPUTS)
-momentum_technical_metrics = PHASE93_FEATURE_INPUTS.get("momentum", [])
-valuation_metrics = PHASE93_FEATURE_INPUTS.get("valuation", [])
-profitability_metrics = PHASE93_FEATURE_INPUTS.get("profitability", [])
-quality_risk_metrics = PHASE93_FEATURE_INPUTS.get("quality_risk", [])
-cash_flow_metrics = PHASE93_FEATURE_INPUTS.get("cash_flow", [])
+# Use schema-defined input categories (only 6 categories exist in PHASE93_FEATURE_CATEGORIES)
+momentum_technical_metrics = PHASE93_FEATURE_CATEGORIES.get("momentum", [])
+valuation_metrics = PHASE93_FEATURE_CATEGORIES.get("valuation", [])
+profitability_metrics = PHASE93_FEATURE_CATEGORIES.get("profitability", [])
+quality_risk_metrics = PHASE93_FEATURE_CATEGORIES.get("quality_risk", [])
+cash_flow_metrics = PHASE93_FEATURE_CATEGORIES.get("cash_flow", [])
 
-growth_metrics = PHASE93_FEATURE_INPUTS.get("growth", [])
+growth_metrics = PHASE93_FEATURE_CATEGORIES.get("growth", [])
 
 metrics_to_benchmark = (
     momentum_technical_metrics

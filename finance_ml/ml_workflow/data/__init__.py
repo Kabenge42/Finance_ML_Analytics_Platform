@@ -9,7 +9,7 @@ This package provides:
 
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA,
-    PHASE93_FEATURE_INPUTS,
+    PHASE93_FEATURE_CATEGORIES,
     get_expected_dtype,
     get_column_role,
     list_numeric_feature_cols,
@@ -21,7 +21,7 @@ from finance_ml.ml_workflow.data.schema import (
 
 __all__ = [
     "COLUMN_SCHEMA",
-    "PHASE93_FEATURE_INPUTS",
+    "PHASE93_FEATURE_CATEGORIES",
     "get_expected_dtype",
     "get_column_role",
     "list_numeric_feature_cols",

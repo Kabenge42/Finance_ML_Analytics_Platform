@@ -1770,7 +1770,7 @@ def create_multilabel_event_labels(
     - 16 categories (was 8)
     - 196 Phase 9.3 engineered features (was ~20 legacy features)
     - Aligned with PHASE93_FEATURE_CATEGORIES from phase93_categories.py
-    - Aligned with PHASE93_FEATURE_INPUTS from schema.py (raw input requirements)
+    - Aligned with PHASE93_FEATURE_CATEGORIES from schema.py (raw input requirements)
 
     Parameters
     ----------
@@ -1822,7 +1822,7 @@ def create_multilabel_event_labels(
     - For momentum category: uses actual Phase 9.3 momentum features (27 total)
       including price_momentum_1m/3m/6m/1y, rsi_14d/30d, ema_crossovers, etc.
     - Feature alignment:
-      * PHASE93_FEATURE_INPUTS (schema.py): Raw input columns needed for engineering
+      * PHASE93_FEATURE_CATEGORIES (schema.py): Raw input columns needed for engineering
       * PHASE93_FEATURE_CATEGORIES (phase93_categories.py): Engineered output features
       * CATEGORY_FEATURE_MAPPING (this file): Subset used for multilabel classification
 
@@ -1853,7 +1853,7 @@ def create_multilabel_event_labels(
     --------
     create_enhanced_event_labels : Single-label event classification (5-class)
     finance_ml.ml_workflow.eda.phase93_categories.PHASE93_FEATURE_CATEGORIES : Complete feature registry
-    finance_ml.ml_workflow.data.schema.PHASE93_FEATURE_INPUTS : Input requirements for feature engineering
+    finance_ml.ml_workflow.data.schema.PHASE93_FEATURE_CATEGORIES : Input requirements for feature engineering
     """
 
     if label_mode != "multilabel":
@@ -2280,7 +2280,7 @@ def create_multilabel_event_labels(
 # ============================================================================
 # This module aligns three critical feature dictionaries:
 #
-# 1. PHASE93_FEATURE_INPUTS (schema.py:624-765)
+# 1. PHASE93_FEATURE_CATEGORIES (schema.py:624-765)
 #    - Purpose: Raw input columns needed for feature engineering
 #    - Categories: 10 (momentum, valuation, profitability, quality_risk, cash_flow,
 #                     growth, technical, employment, dividends, forecasts)
@@ -2304,7 +2304,7 @@ def create_multilabel_event_labels(
 #    - Usage: create_multilabel_event_labels() for multi-label classification
 #
 # Alignment Principles:
-# - PHASE93_FEATURE_INPUTS defines what goes IN to feature engineering
+# - PHASE93_FEATURE_CATEGORIES defines what goes IN to feature engineering
 # - PHASE93_FEATURE_CATEGORIES defines what comes OUT of feature engineering
 # - CATEGORY_FEATURE_MAPPING uses the engineered features for classification
 # - All three must remain synchronized as schema evolves

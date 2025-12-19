@@ -61,7 +61,7 @@ Finance ML Analytics Platform. Here's a detailed breakdown:
     - Quality flags with dtype="bool"
     - Quality scores with role="feature"
 
-#### PHASE93_FEATURE_INPUTS Updates (Lines 1120-1157):
+#### PHASE93_FEATURE_CATEGORIES Updates (Lines 1120-1157):
 
 - Added new `"earnings_quality"` category with 34 input columns:
     - Estimated vs. Actual inputs (13 columns)

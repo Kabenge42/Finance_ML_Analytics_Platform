@@ -52,6 +52,7 @@ def scale_features(
     scaler_type: str = "robust",
     by_sector: bool = True,
     exclude_price_columns: bool = True,
+    exclude_count_columns: bool = False,
 ) -> pd.DataFrame:
     """Scale features using specified scaler.
 
@@ -61,20 +62,21 @@ def scale_features(
         scaler_type: Type of scaler ('standard', 'robust', 'minmax')
         by_sector: Scale separately by sector (default: True)
         exclude_price_columns: If True, exclude price/valuation columns (default: True)
+        exclude_count_columns: If True, exclude count/int columns (default: False)
 
     Returns:
         DataFrame with scaled features
-        
+
     Note:
         Price columns (last_price, price_target) are excluded by default to preserve
         original dollar values required for business metrics:
         (Predicted_Target - Last_Price) / Last_Price
-        
+
         Scaling price columns would destroy the interpretability needed for valuation
         comparison.
     """
     from finance_ml.ml_workflow.preprocessing.column_semantics import (
-        PRICE_COLUMNS,
+        classify_columns,
         get_scalable_columns,
     )
 
@@ -94,6 +96,19 @@ def scale_features(
             f"Scaling {len(scalable)} columns, excluding {excluded_count} price columns (using semantic classification)"
         )
         columns = scalable
+
+    # Optionally exclude count columns (discrete integers) from scaling
+    if exclude_count_columns and columns:
+        classification = classify_columns(columns)
+        count_columns = set(classification.get("count", set()))
+        if count_columns:
+            before = len(columns)
+            columns = [c for c in columns if c not in count_columns]
+            excluded_counts = before - len(columns)
+            if excluded_counts > 0:
+                logger.info(
+                    f"Excluded {excluded_counts} count columns from scaling (semantic classification)"
+                )
 
     # If no columns to scale after filtering, return original
     if not columns:

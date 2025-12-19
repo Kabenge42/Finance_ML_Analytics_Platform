@@ -5,7 +5,7 @@
 Refine and align semantic `category_patterns` in `select_features_by_category` with:
 
 - `PHASE93_FEATURE_CATEGORIES` in `phase93_categories.py`
-- `PHASE93_FEATURE_INPUTS` in `schema.py`
+- `PHASE93_FEATURE_CATEGORIES` in `schema.py`
 - Reference implementation in `labels.py` (CATEGORY_FEATURE_MAPPING)
 - Section 9.2 DataFrame Conventions in `code_guidelines.md`
 
@@ -97,10 +97,10 @@ CATEGORY_NAME_MAPPING = {
 - Uses exact feature names from the catalog
 - Dynamic import ensures up-to-date feature lists
 
-### ✅ Aligned with PHASE93_FEATURE_INPUTS (schema.py)
+### ✅ Aligned with PHASE93_FEATURE_CATEGORIES (schema.py)
 
 - Understands relationship between input columns and engineered features
-- PHASE93_FEATURE_INPUTS (6 categories, ~94 raw columns) → feature engineering → PHASE93_FEATURE_CATEGORIES (16
+- PHASE93_FEATURE_CATEGORIES (6 categories, ~94 raw columns) → feature engineering → PHASE93_FEATURE_CATEGORIES (16
   categories, 196 features)
 
 ### ✅ Aligned with labels.py Reference Implementation

@@ -1,9 +1,9 @@
 {
-  "timestamp": "2025-12-19T01:45:19.664324",
-  "total_categories": 17,
-  "total_features_registered": 223,
-  "total_features_present": 222,
-  "overall_coverage_pct": 99.55156950672645,
+  "timestamp": "2025-12-21T20:19:19.661562",
+  "total_categories": 21,
+  "total_features_registered": 295,
+  "total_features_present": 232,
+  "overall_coverage_pct": 78.64406779661017,
   "visualizations_generated": [
     "phase93_feature_treemap.html",
     "phase93_category_coverage.html",
@@ -14,18 +14,18 @@
   "output_directory": "C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\phase93_feature_categories",
   "category_summary": [
     {
-      "Category": "Market Sentiment",
-      "Expected": 4,
-      "Present": 4,
-      "Coverage %": 100.0,
-      "Avg Completeness %": 99.92832568807339
-    },
-    {
       "Category": "Efficiency Ratios",
       "Expected": 4,
       "Present": 4,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.97133027522935
+      "Avg Completeness %": 100.0
+    },
+    {
+      "Category": "Cash Flow",
+      "Expected": 5,
+      "Present": 5,
+      "Coverage %": 100.0,
+      "Avg Completeness %": 100.0
     },
     {
       "Category": "Composite Scores",
@@ -35,88 +35,109 @@
       "Avg Completeness %": 100.0
     },
     {
-      "Category": "Cash Flow",
-      "Expected": 5,
-      "Present": 5,
-      "Coverage %": 100.0,
-      "Avg Completeness %": 99.99426605504587
-    },
-    {
-      "Category": "Growth Metrics",
+      "Category": "Market Sentiment",
       "Expected": 6,
-      "Present": 6,
-      "Coverage %": 100.0,
-      "Avg Completeness %": 99.91399082568807
+      "Present": 5,
+      "Coverage %": 83.33333333333334,
+      "Avg Completeness %": 100.0
     },
     {
       "Category": "Leverage & Liquidity",
-      "Expected": 8,
+      "Expected": 9,
       "Present": 8,
+      "Coverage %": 88.88888888888889,
+      "Avg Completeness %": 100.0
+    },
+    {
+      "Category": "Growth Metrics",
+      "Expected": 9,
+      "Present": 9,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.9641628440367
+      "Avg Completeness %": 100.0
     },
     {
       "Category": "Balance Sheet Dynamics",
       "Expected": 9,
-      "Present": 9,
-      "Coverage %": 100.0,
-      "Avg Completeness %": 99.85187308868501
+      "Present": 5,
+      "Coverage %": 55.55555555555556,
+      "Avg Completeness %": 100.0
     },
     {
       "Category": "Revenue Forecasting",
       "Expected": 9,
       "Present": 9,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.67348369011214
+      "Avg Completeness %": 100.0
     },
     {
       "Category": "Analyst Sentiment",
       "Expected": 10,
       "Present": 10,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.79357798165138
+      "Avg Completeness %": 100.0
+    },
+    {
+      "Category": "Employment Dynamics",
+      "Expected": 10,
+      "Present": 0,
+      "Coverage %": 0.0,
+      "Avg Completeness %": 0.0
+    },
+    {
+      "Category": "Dividend Reliability",
+      "Expected": 12,
+      "Present": 0,
+      "Coverage %": 0.0,
+      "Avg Completeness %": 0.0
     },
     {
       "Category": "Profitability",
-      "Expected": 13,
-      "Present": 13,
+      "Expected": 14,
+      "Present": 14,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.97574100211713
+      "Avg Completeness %": 100.0
+    },
+    {
+      "Category": "Technical Analysis",
+      "Expected": 15,
+      "Present": 0,
+      "Coverage %": 0.0,
+      "Avg Completeness %": 0.0
+    },
+    {
+      "Category": "Valuation Timeseries",
+      "Expected": 16,
+      "Present": 0,
+      "Coverage %": 0.0,
+      "Avg Completeness %": 0.0
     },
     {
       "Category": "Temporal Patterns",
-      "Expected": 15,
-      "Present": 15,
+      "Expected": 17,
+      "Present": 17,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.99617737003058
-    },
-    {
-      "Category": "Employee Productivity",
-      "Expected": 15,
-      "Present": 15,
-      "Coverage %": 100.0,
-      "Avg Completeness %": 99.99617737003058
+      "Avg Completeness %": 100.0
     },
     {
       "Category": "Quality & Risk",
       "Expected": 18,
       "Present": 18,
       "Coverage %": 100.0,
-      "Avg Completeness %": 97.28991462793068
+      "Avg Completeness %": 100.0
     },
     {
-      "Category": "Capital Allocation",
+      "Category": "Employee Productivity",
       "Expected": 21,
       "Present": 21,
       "Coverage %": 100.0,
-      "Avg Completeness %": 99.92354740061161
+      "Avg Completeness %": 100.0
     },
     {
-      "Category": "Valuation Ratios",
+      "Category": "Capital Allocation",
       "Expected": 23,
-      "Present": 23,
-      "Coverage %": 100.0,
-      "Avg Completeness %": 99.69834463502194
+      "Present": 21,
+      "Coverage %": 91.30434782608695,
+      "Avg Completeness %": 100.0
     },
     {
       "Category": "Momentum & Technical",
@@ -126,11 +147,18 @@
       "Avg Completeness %": 100.0
     },
     {
+      "Category": "Valuation Ratios",
+      "Expected": 25,
+      "Present": 24,
+      "Coverage %": 96.0,
+      "Avg Completeness %": 100.0
+    },
+    {
       "Category": "Earnings Quality",
       "Expected": 33,
       "Present": 32,
       "Coverage %": 96.96969696969697,
-      "Avg Completeness %": 99.65685923165137
+      "Avg Completeness %": 100.0
     }
   ]
 }

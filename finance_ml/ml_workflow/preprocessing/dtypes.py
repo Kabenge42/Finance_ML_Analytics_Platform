@@ -86,6 +86,17 @@ def detect_and_cast_dtypes(
     # Make a copy to avoid modifying original
     df_cast = df.copy()
 
+    # Determine reference date for fiscal year alignment
+    reference_date: Optional[pd.Timestamp] = None
+    if "reference_date" in df_cast.columns:
+        ref_series = pd.to_datetime(df_cast["reference_date"], errors="coerce")
+        if ref_series.notna().any():
+            reference_date = ref_series.dropna().max().normalize()
+
+    if reference_date is None:
+        # Default reference date aligns with latest snapshot requirement (21 Dec 2025)
+        reference_date = pd.Timestamp("2025-12-21")
+
     # Normalize column names in the dataframe for matching
     col_name_mapping = {}
     for col in df_cast.columns:
@@ -101,9 +112,7 @@ def detect_and_cast_dtypes(
         normalized = col_name_mapping[col]
         if normalized not in schema:
             diagnostics["unknown_columns"].append(col)
-            logger.warning(
-                f"Column '{col}' (normalized: '{normalized}') not found in schema"
-            )
+            logger.warning(f"Column '{col}' (normalized: '{normalized}') not found in schema")
 
     # Identify missing expected columns (in schema but not in df)
     # Only report columns with role 'feature', 'target', 'id', or 'date'
@@ -127,9 +136,7 @@ def detect_and_cast_dtypes(
 
         if normalized not in schema:
             # Unknown column - try to infer type intelligently
-            df_cast[col] = _infer_and_cast_unknown_column(
-                df_cast[col], col, diagnostics
-            )
+            df_cast[col] = _infer_and_cast_unknown_column(df_cast[col], col, diagnostics)
             continue
 
         target_dtype = schema[normalized]["dtype"]
@@ -146,6 +153,31 @@ def detect_and_cast_dtypes(
 
             elif target_dtype == "datetime64[ns]":
                 df_cast[col], coercion_count = _cast_to_datetime(df_cast[col])
+
+                if normalized == "reference_date" and df_cast[col].notna().any():
+                    # Refresh reference date from cleaned column for downstream fy_end alignment
+                    reference_date = df_cast[col].dropna().max().normalize()
+
+                if normalized == "fy_end":
+                    # Align fiscal year end to the last calendar day of the month
+                    aligned_fy_end = df_cast[col] + pd.offsets.MonthEnd(0)
+
+                    if reference_date is not None:
+                        mask = aligned_fy_end.notna() & (aligned_fy_end < reference_date)
+                        if mask.any():
+                            ref_year = reference_date.year
+
+                            def _snap_to_ref_year(ts: pd.Timestamp) -> pd.Timestamp:
+                                return pd.Timestamp(
+                                    year=ref_year, month=ts.month, day=1
+                                ) + pd.offsets.MonthEnd(0)
+
+                            aligned_fy_end.loc[mask] = aligned_fy_end.loc[mask].apply(
+                                _snap_to_ref_year
+                            )
+
+                    df_cast[col] = aligned_fy_end
+
                 if coercion_count > 0:
                     diagnostics["coercion_warnings"][col] = coercion_count
                     logger.info(
@@ -335,9 +367,7 @@ def _infer_and_cast_unknown_column(
     # Check if low cardinality -> category
     nunique = series.nunique()
     if nunique < len(series) * 0.05:  # <5% unique values
-        logger.info(
-            f"Unknown column '{col_name}' inferred as category (low cardinality)"
-        )
+        logger.info(f"Unknown column '{col_name}' inferred as category (low cardinality)")
         diagnostics["cast_applied"][col_name] = "category"
         return series.astype("category")
 
@@ -391,9 +421,9 @@ def validate_dtypes_against_schema(
                 df[col]
             ) or pd.api.types.is_object_dtype(df[col])
         elif expected_dtype == "string":
-            is_compatible = pd.api.types.is_string_dtype(
+            is_compatible = pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(
                 df[col]
-            ) or pd.api.types.is_object_dtype(df[col])
+            )
         elif expected_dtype == "bool":
             is_compatible = pd.api.types.is_bool_dtype(df[col])
 

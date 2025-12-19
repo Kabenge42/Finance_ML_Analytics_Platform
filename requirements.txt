@@ -8,7 +8,7 @@
 
 # Core Data Science Libraries
 # NumPy: Use 1.26.x for Python <3.14 and 2.x for Python 3.14+
-numpy>=1.26.0,<3.0.0; python_version < '3.14'
+numpy>=1.26.0,<3.0.0
 pandas>=2.1.0,<3.0.0
 scipy>=1.12.0,<2.0.0
 statsmodels>=0.14.0,<1.0.0
@@ -82,3 +82,5 @@ ipykernel>=6.29.0,<7.0.0
 # flake8>=7.0.0,<8.0.0
 # mypy>=1.8.0,<2.0.0
 # isort>=5.13.0,<6.0.0
+dash-bootstrap-components
+flask

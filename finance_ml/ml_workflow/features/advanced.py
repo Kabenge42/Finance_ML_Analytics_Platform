@@ -624,7 +624,7 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
 
 def engineer_temporal_features(
     df: pd.DataFrame,
-    date_col: str = "last_updated",
+    date_col: str = "reference_date",
     reference_date: Optional[pd.Timestamp] = None,
 ) -> pd.DataFrame:
     """Engineer temporal and seasonality features using consistent reference_date.
@@ -652,6 +652,9 @@ def engineer_temporal_features(
         DataFrame with temporal features added.
     """
     result = df.copy()
+
+    def _format_date(series: pd.Series) -> pd.Series:
+        return series.dt.strftime("%d %b %Y").astype("string").where(series.notna(), pd.NA)
 
     # Use reference_date per code_guidelines.md Section 9.3.0
     if reference_date is None:
@@ -718,6 +721,33 @@ def engineer_temporal_features(
         ne = pd.to_datetime(result["next_earnings"], errors="coerce")
         result["reporting_lag"] = (ne - isrd).dt.days
 
+    # Fiscal year-end deltas and inferred quarter
+    fy_end_series: Optional[pd.Series] = None
+    if "fy_end" in result.columns:
+        result["fy_end"] = pd.to_datetime(result["fy_end"], errors="coerce")
+        fy_end_aligned = result["fy_end"] + pd.offsets.MonthEnd(0)
+
+        mask_roll = fy_end_aligned.notna() & (fy_end_aligned < effective_ref_date)
+        if mask_roll.any():
+            ref_year = effective_ref_date.year
+
+            def _snap_to_ref_year(ts: pd.Timestamp) -> pd.Timestamp:
+                return pd.Timestamp(year=ref_year, month=ts.month, day=1) + pd.offsets.MonthEnd(0)
+
+            fy_end_aligned.loc[mask_roll] = fy_end_aligned.loc[mask_roll].apply(_snap_to_ref_year)
+
+        result["fy_end"] = fy_end_aligned
+        fy_end_series = result["fy_end"]
+
+    if fy_end_series is not None and "income_statement_report_date" in result.columns:
+        isrd_series = pd.to_datetime(result["income_statement_report_date"], errors="coerce")
+        result["fy_end_vs_isrd_days"] = (fy_end_series - isrd_series).dt.days
+
+        fy_period = fy_end_series.dt.to_period("Q")
+        result["fiscal_quarter_inferred"] = fy_period.apply(
+            lambda p: f"Q{p.quarter} {p.year}" if not pd.isna(p) else pd.NA
+        ).astype("string")
+
     # Seasonality vs 5Y averages
     rev_5y_cols = [
         c
@@ -751,6 +781,28 @@ def engineer_temporal_features(
         mean = qmat.mean(axis=1)
         std = qmat.std(axis=1, ddof=0)
         result["quarterly_volatility_score"] = _safe_div(std, mean)
+
+    # Apply consistent date formatting (dd MMM yyyy) to key date columns
+    date_columns_to_format = []
+    candidates = [
+        date_col,
+        "next_earnings",
+        "dividend_record_ex_date",
+        "income_statement_report_date",
+        "fy_end",
+        "_reference_date",
+    ]
+
+    seen_cols = set()
+    for candidate in candidates:
+        if candidate in result.columns and candidate not in seen_cols:
+            seen_cols.add(candidate)
+            if pd.api.types.is_datetime64_any_dtype(result[candidate]):
+                date_columns_to_format.append(candidate)
+
+    for candidate in date_columns_to_format:
+        formatted_col = f"{candidate}_formatted"
+        result[formatted_col] = _format_date(result[candidate])
 
     logger.info(f"Engineered temporal features using reference_date={effective_ref_date}")
     return result

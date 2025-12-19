@@ -1,12 +1,12 @@
 {
   "phase": "9.3",
   "data_source": "all_stocks_features DataFrame (post-feature-engineering)",
-  "timestamp": "2025-12-17T23:36:58.618118",
-  "total_stocks": 6971,
-  "total_columns": 702,
-  "phase93_features_present": 190,
-  "phase93_features_expected": 190,
-  "coverage_percentage": 100.0,
+  "timestamp": "2025-12-19T05:31:07.858988",
+  "total_stocks": 6976,
+  "total_columns": 735,
+  "phase93_features_present": 222,
+  "phase93_features_expected": 223,
+  "coverage_percentage": 99.55156950672645,
   "category_coverage": {
     "Momentum & Technical": {
       "present": 25,
@@ -87,8 +87,13 @@
       "present": 9,
       "expected": 9,
       "coverage_pct": 100.0
+    },
+    "Earnings Quality": {
+      "present": 32,
+      "expected": 33,
+      "coverage_pct": 96.96969696969697
     }
   },
-  "categories_with_features": 16,
+  "categories_with_features": 17,
   "note": "Analysis performed on engineered features DataFrame after Phase 9.3 completion"
 }

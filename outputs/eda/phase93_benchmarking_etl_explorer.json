@@ -1,12 +1,12 @@
 {
   "phase": "9.3",
-  "data_source": "all_stocks_features DataFrame (ETL Data Explorer)",
-  "timestamp": "2025-12-19T01:45:16.703740",
-  "total_stocks": 6976,
-  "total_columns": 653,
-  "phase93_features_present": 222,
-  "phase93_features_expected": 223,
-  "coverage_percentage": 99.55156950672645,
+  "data_source": "all_stocks_preprocessed DataFrame (ETL Data Explorer)",
+  "timestamp": "2025-12-21T20:19:16.235787",
+  "total_stocks": 6981,
+  "total_columns": 682,
+  "phase93_features_present": 232,
+  "phase93_features_expected": 295,
+  "coverage_percentage": 78.64406779661017,
   "category_coverage": {
     "Momentum & Technical": {
       "present": 25,
@@ -14,13 +14,13 @@
       "coverage_pct": 100.0
     },
     "Valuation Ratios": {
-      "present": 23,
-      "expected": 23,
-      "coverage_pct": 100.0
+      "present": 24,
+      "expected": 25,
+      "coverage_pct": 96.0
     },
     "Profitability": {
-      "present": 13,
-      "expected": 13,
+      "present": 14,
+      "expected": 14,
       "coverage_pct": 100.0
     },
     "Quality & Risk": {
@@ -35,8 +35,8 @@
     },
     "Capital Allocation": {
       "present": 21,
-      "expected": 21,
-      "coverage_pct": 100.0
+      "expected": 23,
+      "coverage_pct": 91.30434782608695
     },
     "Analyst Sentiment": {
       "present": 10,
@@ -44,18 +44,18 @@
       "coverage_pct": 100.0
     },
     "Market Sentiment": {
-      "present": 4,
-      "expected": 4,
-      "coverage_pct": 100.0
+      "present": 5,
+      "expected": 6,
+      "coverage_pct": 83.33333333333334
     },
     "Leverage & Liquidity": {
       "present": 8,
-      "expected": 8,
-      "coverage_pct": 100.0
+      "expected": 9,
+      "coverage_pct": 88.88888888888889
     },
     "Temporal Patterns": {
-      "present": 15,
-      "expected": 15,
+      "present": 17,
+      "expected": 17,
       "coverage_pct": 100.0
     },
     "Composite Scores": {
@@ -64,8 +64,8 @@
       "coverage_pct": 100.0
     },
     "Growth Metrics": {
-      "present": 6,
-      "expected": 6,
+      "present": 9,
+      "expected": 9,
       "coverage_pct": 100.0
     },
     "Efficiency Ratios": {
@@ -74,14 +74,14 @@
       "coverage_pct": 100.0
     },
     "Employee Productivity": {
-      "present": 15,
-      "expected": 15,
+      "present": 21,
+      "expected": 21,
       "coverage_pct": 100.0
     },
     "Balance Sheet Dynamics": {
-      "present": 9,
+      "present": 5,
       "expected": 9,
-      "coverage_pct": 100.0
+      "coverage_pct": 55.55555555555556
     },
     "Revenue Forecasting": {
       "present": 9,
@@ -92,8 +92,27 @@
       "present": 32,
       "expected": 33,
       "coverage_pct": 96.96969696969697
+    },
+    "Technical Analysis": {
+      "present": 0,
+      "expected": 15,
+      "coverage_pct": 0.0
+    },
+    "Valuation Timeseries": {
+      "present": 0,
+      "expected": 16,
+      "coverage_pct": 0.0
+    },
+    "Dividend Reliability": {
+      "present": 0,
+      "expected": 12,
+      "coverage_pct": 0.0
+    },
+    "Employment Dynamics": {
+      "present": 0,
+      "expected": 10,
+      "coverage_pct": 0.0
     }
   },
-  "categories_with_features": 17,
-  "feature_engineering_duration_sec": 1.2165117263793945
+  "categories_with_features": 17
 }
