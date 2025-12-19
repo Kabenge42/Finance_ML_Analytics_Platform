@@ -72,9 +72,7 @@ EarningsMode = Literal[
 ]
 
 
-def _write_html_artifact(
-    fig: go.Figure, output_path: Optional[Union[str, Path]]
-) -> None:
+def _write_html_artifact(fig: go.Figure, output_path: Optional[Union[str, Path]]) -> None:
     """Write a Plotly figure to HTML when an output path is provided.
 
     Several dashboard builders return early with an 'empty' figure (e.g., missing
@@ -184,25 +182,14 @@ def create_earnings_calendar_dashboard(
     top_n: int = 100,
     mode: EarningsMode = "all",
     categories: Optional[List[str]] = None,
+    days_window: Optional[int] = None,
 ) -> pd.DataFrame:
     """
     Creates a dashboard (styled DataFrame) for Earnings and Dividend Analytics.
-    Filters for companies with upcoming or recent earnings (t +/- 10 days).
+    Filters for companies with upcoming or recent earnings.
 
     **Phase 9.3 Schema-Driven Alignment (code_guidelines.md §9.3):**
-    Uses PHASE93_FEATURE_INPUTS categories for metric selection:
-    - **momentum**: Price changes, returns, EMAs (market reaction context)
-    - **valuation**: P/E, P/B, EV/EBITDA multiples (valuation impact)
-    - **profitability**: Margins, EBITDA, EBIT, net income (earnings quality)
-    - **quality_risk**: Altman Z-score, ROE, ROA, volatility (risk assessment)
-    - **cash_flow**: CFO, FCF (dividend sustainability, earnings quality)
-    - **growth**: Revenue CAGR, growth estimates (growth trajectory)
-    - **technical**: EMAs, 52W high/low (price context)
-    - **employment**: Workforce metrics (operational health)
-    - **dividends**: Dividend yields, streaks, payments (income metrics)
-    - **forecasts**: Analyst estimates (earnings expectations)
-    - **earnings_quality**: EPS/revenue surprises, GAAP vs. Adjusted analytics,
-      earnings quality scores, adjustment flags (earnings integrity assessment)
+    Uses PHASE93_FEATURE_INPUTS categories for metric selection.
 
     Args:
         df: Input DataFrame containing stock data.
@@ -212,6 +199,8 @@ def create_earnings_calendar_dashboard(
             or specific category name.
         categories: Optional list of specific PHASE93 categories to include.
             Overrides mode if provided.
+        days_window: Optional filter for next_earnings within +/- N days.
+            If None, no additional temporal filtering is applied (caller should filter).
 
     Returns:
         pd.DataFrame: Filtered DataFrame with selected metrics.
@@ -231,13 +220,14 @@ def create_earnings_calendar_dashboard(
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
 
-    # Filter logic: next_earnings within +/- 10 days
-    if "next_earnings" not in df.columns:
-        print("Warning: 'next_earnings' column not found. Returning empty dataframe.")
-        return pd.DataFrame()
+    # Filter logic: next_earnings within +/- N days if days_window provided
+    filtered_df = df.copy()
+    if "next_earnings" in df.columns and days_window is not None:
+        mask = (filtered_df["next_earnings"] - reference_date).abs() <= timedelta(days=days_window)
+        filtered_df = filtered_df[mask]
 
-    mask = (df["next_earnings"] - reference_date).abs() <= timedelta(days=10)
-    filtered_df = df[mask].copy()
+    if filtered_df.empty:
+        return pd.DataFrame()
 
     # Sort by Market Cap
     mcap_col = None
@@ -294,9 +284,7 @@ def create_earnings_calendar_dashboard(
         selected_categories = ["profitability", "growth", "momentum"]
 
     # Get metrics from selected categories
-    category_metrics = get_category_metrics(
-        selected_categories, include_supplemental=True
-    )
+    category_metrics = get_category_metrics(selected_categories, include_supplemental=True)
 
     # Build final columns list
     final_cols = display_cols.copy()
@@ -315,8 +303,7 @@ def create_earnings_calendar_dashboard(
     # Add computed columns - Use reference_date for temporal consistency
     if "next_earnings" in dashboard_df.columns:
         dashboard_df["days_to_earnings"] = (
-            pd.to_datetime(dashboard_df["next_earnings"], errors="coerce")
-            - reference_date
+            pd.to_datetime(dashboard_df["next_earnings"], errors="coerce") - reference_date
         ).dt.days
 
         # Reorder: Put days_to_earnings near next_earnings
@@ -331,9 +318,7 @@ def create_earnings_calendar_dashboard(
     return dashboard_df
 
 
-def _build_format_dict(
-    columns: List[str], df: Optional[pd.DataFrame] = None
-) -> Dict[str, str]:
+def _build_format_dict(columns: List[str], df: Optional[pd.DataFrame] = None) -> Dict[str, str]:
     """
     Build format dictionary for DataFrame styling based on column names.
 
@@ -356,10 +341,7 @@ def _build_format_dict(
                 continue
 
         # Date columns
-        if any(
-            x in col_lower
-            for x in ["date", "next_earnings", "last_updated", "record_date"]
-        ):
+        if any(x in col_lower for x in ["date", "next_earnings", "last_updated", "record_date"]):
             format_dict[col] = "{:%Y-%m-%d}"
 
         # Currency/Price columns
@@ -494,9 +476,7 @@ def display_earnings_dashboard(
         if val < 0:
             return f"color: {COLOR_PALETTE['danger']}"  # Past
         if val == 0:
-            return (
-                f"background-color: {COLOR_PALETTE['warning']}; color: black"  # Today
-            )
+            return f"background-color: {COLOR_PALETTE['warning']}; color: black"  # Today
         if val > 0:
             return f"color: {COLOR_PALETTE['success']}"  # Future
         return ""
@@ -551,12 +531,8 @@ def create_earnings_metrics_chart(
         df,
         reference_date=reference_date,
         top_n=top_n,
-        mode=metric_category
-        if metric_category in PHASE93_FEATURE_INPUTS
-        else "earnings",
-        categories=[metric_category]
-        if metric_category in PHASE93_FEATURE_INPUTS
-        else None,
+        mode=metric_category if metric_category in PHASE93_FEATURE_INPUTS else "earnings",
+        categories=[metric_category] if metric_category in PHASE93_FEATURE_INPUTS else None,
     )
 
     if dashboard_df.empty:
@@ -583,9 +559,7 @@ def create_earnings_metrics_chart(
         # Fallback to any numeric columns
         numeric_cols = dashboard_df.select_dtypes(include=["float64", "int64"]).columns
         available_metrics = [
-            c
-            for c in numeric_cols
-            if c not in ["days_to_earnings"] and "date" not in c.lower()
+            c for c in numeric_cols if c not in ["days_to_earnings"] and "date" not in c.lower()
         ][:5]
 
     if not available_metrics:
@@ -630,8 +604,7 @@ def create_earnings_metrics_chart(
 
         # Determine color based on value sign
         colors = [
-            COLOR_PALETTE["success"] if v >= 0 else COLOR_PALETTE["danger"]
-            for v in plot_df[metric]
+            COLOR_PALETTE["success"] if v >= 0 else COLOR_PALETTE["danger"] for v in plot_df[metric]
         ]
 
         fig.add_trace(
@@ -642,10 +615,7 @@ def create_earnings_metrics_chart(
                 marker_color=colors,
                 name=metric.replace("_", " ").title(),
                 hovertemplate=(
-                    "<b>%{y}</b><br>"
-                    + f"{metric}: "
-                    + "%{x:.2f}<br>"
-                    + "<extra></extra>"
+                    "<b>%{y}</b><br>" + f"{metric}: " + "%{x:.2f}<br>" + "<extra></extra>"
                 ),
             ),
             row=row,
@@ -730,9 +700,7 @@ def create_category_comparison_chart(
         metrics = PHASE93_FEATURE_INPUTS.get(cat, [])
         available = [m for m in metrics if m in df.columns]
         non_null_counts = [
-            dashboard_df[m].notna().sum()
-            for m in available
-            if m in dashboard_df.columns
+            dashboard_df[m].notna().sum() for m in available if m in dashboard_df.columns
         ]
 
         coverage_data.append(
@@ -742,9 +710,7 @@ def create_category_comparison_chart(
                 "available_metrics": len(available),
                 "coverage_pct": len(available) / len(metrics) * 100 if metrics else 0,
                 "avg_non_null": (
-                    sum(non_null_counts) / len(non_null_counts)
-                    if non_null_counts
-                    else 0
+                    sum(non_null_counts) / len(non_null_counts) if non_null_counts else 0
                 ),
                 "color": CATEGORY_COLORS.get(cat, COLOR_PALETTE["neutral"]),
             }
@@ -1013,9 +979,7 @@ def create_earnings_surprise_dashboard(
         template=PLOTLY_TEMPLATE,
         height=800,
         showlegend=True,
-        legend=dict(
-            orientation="h", yanchor="bottom", y=-0.12, xanchor="center", x=0.5
-        ),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.12, xanchor="center", x=0.5),
         font=dict(family="Arial, sans-serif", size=12),
         title_font_size=20,
     )
@@ -1078,9 +1042,7 @@ def create_analyst_recommendation_heatmap(
         sector_df = df_local[df_local["sector"] == sector]
         row: Dict[str, float] = {"Sector": str(sector)[:25]}
         for rating_name, col in available_ratings.items():
-            row[rating_name] = float(
-                pd.to_numeric(sector_df[col], errors="coerce").sum()
-            )
+            row[rating_name] = float(pd.to_numeric(sector_df[col], errors="coerce").sum())
         heatmap_data.append(row)
 
     heatmap_df = pd.DataFrame(heatmap_data).set_index("Sector")
@@ -1158,9 +1120,7 @@ def create_market_movers_dashboard(
         return fig
 
     df_local = df.copy()
-    df_local["next_earnings"] = pd.to_datetime(
-        df_local["next_earnings"], errors="coerce"
-    )
+    df_local["next_earnings"] = pd.to_datetime(df_local["next_earnings"], errors="coerce")
     df_local["days_to_earnings"] = (df_local["next_earnings"] - reference_date).dt.days
 
     mask = df_local["days_to_earnings"].abs() <= int(lookback_days)
@@ -1195,9 +1155,7 @@ def create_market_movers_dashboard(
         z_score = (data - float(data.mean())) / std
         movers_df["mover_score"] += z_score.abs().fillna(0.0)
 
-    top_movers = movers_df.sort_values(by="mover_score", ascending=False).head(
-        int(top_n)
-    )
+    top_movers = movers_df.sort_values(by="mover_score", ascending=False).head(int(top_n))
     if top_movers.empty:
         fig = go.Figure()
         fig.add_annotation(
@@ -1317,18 +1275,13 @@ def create_price_target_analytics(
         if col in df_local.columns:
             df_local[col] = pd.to_numeric(df_local[col], errors="coerce")
 
-    if (
-        "price_target_high" in df_local.columns
-        and "price_target_low" in df_local.columns
-    ):
+    if "price_target_high" in df_local.columns and "price_target_low" in df_local.columns:
         with np.errstate(divide="ignore", invalid="ignore"):
             df_local["target_spread"] = (
                 (df_local["price_target_high"] - df_local["price_target_low"])
                 / df_local["last_price"]
             ) * 100
-        df_local["target_spread"] = df_local["target_spread"].replace(
-            [np.inf, -np.inf], np.nan
-        )
+        df_local["target_spread"] = df_local["target_spread"].replace([np.inf, -np.inf], np.nan)
 
     top_sectors = df_local["sector"].value_counts().head(int(top_n_sectors)).index
     sector_stats: List[Dict[str, float]] = []
@@ -1337,14 +1290,11 @@ def create_price_target_analytics(
         sector_df = df_local[df_local["sector"] == sector]
 
         if "target_vs_price" in sector_df.columns:
-            upside = (
-                sector_df["target_vs_price"].replace([np.inf, -np.inf], np.nan).dropna()
-            )
+            upside = sector_df["target_vs_price"].replace([np.inf, -np.inf], np.nan).dropna()
         else:
             with np.errstate(divide="ignore", invalid="ignore"):
                 upside = (
-                    (sector_df["price_target"] - sector_df["last_price"])
-                    / sector_df["last_price"]
+                    (sector_df["price_target"] - sector_df["last_price"]) / sector_df["last_price"]
                 ) * 100
             upside = upside.replace([np.inf, -np.inf], np.nan).dropna()
 
@@ -1414,9 +1364,7 @@ def create_price_target_analytics(
                 type="data",
                 symmetric=False,
                 array=(stats_df["q75_upside"] - stats_df["mean_upside"]).clip(lower=0),
-                arrayminus=(stats_df["mean_upside"] - stats_df["q25_upside"]).clip(
-                    lower=0
-                ),
+                arrayminus=(stats_df["mean_upside"] - stats_df["q25_upside"]).clip(lower=0),
                 color="rgba(255,255,255,0.3)",
             ),
             name="Mean Upside",
@@ -1449,14 +1397,11 @@ def create_price_target_analytics(
         )
 
     if "target_vs_price" in df_local.columns:
-        all_upside = (
-            df_local["target_vs_price"].replace([np.inf, -np.inf], np.nan).dropna()
-        )
+        all_upside = df_local["target_vs_price"].replace([np.inf, -np.inf], np.nan).dropna()
     else:
         with np.errstate(divide="ignore", invalid="ignore"):
             all_upside = (
-                (df_local["price_target"] - df_local["last_price"])
-                / df_local["last_price"]
+                (df_local["price_target"] - df_local["last_price"]) / df_local["last_price"]
             ) * 100
         all_upside = all_upside.replace([np.inf, -np.inf], np.nan).dropna()
 
@@ -1586,9 +1531,7 @@ def generate_earnings_quality_alerts(
         valid = eps_actual.notna() & eps_est.notna() & (eps_est.abs() > 0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            surprise = (
-                (eps_actual[valid] - eps_est[valid]) / eps_est[valid].abs()
-            ) * 100
+            surprise = ((eps_actual[valid] - eps_est[valid]) / eps_est[valid].abs()) * 100
         surprise = surprise.replace([np.inf, -np.inf], np.nan).dropna()
 
         misses = surprise[surprise < -float(config.eps_surprise_miss_threshold_pct)]
@@ -1690,9 +1633,7 @@ def generate_earnings_quality_alerts(
         next_earnings = pd.to_datetime(df["next_earnings"], errors="coerce")
         days_to_earnings = (next_earnings - reference_date).dt.days
         vol = pd.to_numeric(df["volatility_1m"], errors="coerce")
-        vol_threshold = float(
-            vol.quantile(float(config.pre_earnings_volatility_quantile))
-        )
+        vol_threshold = float(vol.quantile(float(config.pre_earnings_volatility_quantile)))
 
         high_vol = df[
             (days_to_earnings >= 0)

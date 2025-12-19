@@ -157,8 +157,6 @@ def validate_configuration():
 # Shared validation helpers (Section 19)
 from typing import Sequence
 
-from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS
-
 
 def assert_df_has_columns(
     df: pd.DataFrame, required: Sequence[str], label: str = "DataFrame"
@@ -400,28 +398,17 @@ import shap
 from plotly.subplots import make_subplots
 
 from finance_ml.ml_workflow.evaluation import (
-    build_lineage_json,
     # Phase 9.4 - Uncertainty Quantification
-    build_quantile_diagnostics,
     # Phase 9.6 - Data Splits & Leakage
-    compute_fold_overlap,
     # Phase 9.8 - Stacking & Governance
     compute_stacking_contributions,
-    create_sector_bias_dashboard,
     # Phase 9.7 - Sector Bias Calibration
-    estimate_sector_bias,
-    generate_model_card,
     meta_error_maps,
-    plot_interval_coverage,
     plot_metrics_by_sector_time,
-    plot_reliability_diagram,
     run_fold_overlap_analysis,
-    safety_rails_sensitivity_app,
     summarize_grouped_cv_balance,
     # Phase 9.5 - Safety Rails
-    summarize_winsorization_effects,
     time_leakage_checks,
-    track_constraint_violations,
     validate_fold_assignments,
     validate_temporal_data,
 )
@@ -440,12 +427,8 @@ warnings.filterwarnings("ignore")
 # Phase 9.7: Analytics
 from finance_ml.ml_workflow.analytics import (
     calculate_financial_metrics_dashboard,
-    calculate_mispricing_scores,
-    compute_risk_metrics,
     # Dashboard and quality functions
     generate_data_quality_alerts,
-    optimize_portfolio,
-    rank_stocks,
 )
 
 # Analytics: Analyst comparison
@@ -495,10 +478,8 @@ from finance_ml.ml_workflow.classification import (
     evaluate_classification_by_sector,
     # Visualization and analysis
     plot_confusion_matrices,
-    plot_learning_curves,
     # Additional classification functions
     prepare_classification_data,
-    train_event_classifier,
     tune_classifier_hyperparameters,
 )
 
@@ -508,34 +489,20 @@ from finance_ml.ml_workflow.classification.evaluation import (
 )
 
 # Phase 9.1: Preprocessing - Data Loading and Schema
-from finance_ml.ml_workflow.data.schema import (
-    COLUMN_SCHEMA,
-    get_column_role,
-    get_expected_dtype,
-    normalize_column_name,
-)
 
 # Phase 9.1: Data Catalog
 from finance_ml.ml_workflow.data_catalog import DataCatalog
 
 # Phase 9.2: Exploratory Data Analysis
 from finance_ml.ml_workflow.eda import (
-    compute_correlation_matrix,
-    compute_descriptive_stats,
     # Additional EDA functions
     eda_summary,
     generate_benchmarking_report,
     generate_eda_report,
-    plot_distributions,
     sector_distribution_summary,
 )
 
 # Phase 9.3: Feature Coverage Validation
-from finance_ml.ml_workflow.eda.phase93_categories import (
-    PHASE93_FEATURE_CATEGORIES,
-    categorize_dataframe_columns,
-    get_phase93_coverage_stats,
-)
 
 # Phase 9.6: Evaluation
 from finance_ml.ml_workflow.evaluation import (
@@ -543,20 +510,14 @@ from finance_ml.ml_workflow.evaluation import (
     # Uncertainty Quantification
     build_quantile_diagnostics,
     # Metrics
-    comprehensive_regression_metrics,
-    compute_metrics_by_segment,
-    compute_sector_region_metrics,
     create_sector_bias_dashboard,
-    error_analysis,
     # Calibration
     estimate_sector_bias,
     # Governance
     generate_model_card,
-    model_diagnostics,
     plot_interval_coverage,
     plot_reliability_diagram,
     # Analysis
-    residual_analysis,
     safety_rails_sensitivity_app,
     # Safety Rails
     summarize_winsorization_effects,
@@ -571,32 +532,17 @@ from finance_ml.ml_workflow.evaluation.metrics import (
     compute_metrics_by_segment as evaluation_metrics_by_segment,
 )
 from finance_ml.ml_workflow.features import (
-    build_momentum_features,
-    build_quality_features,
-    build_valuation_features,
     select_features_rf,
 )
 from finance_ml.ml_workflow.features.advanced import (
-    build_comprehensive_features,
-    create_feature_interactions,
-    create_relative_value_features,
     engineer_accounting_quality_features,
     engineer_analyst_quality_features,
     engineer_dividend_reliability_features,
-    engineer_efficiency_ratios,
     engineer_employee_productivity_features,
     engineer_employment_dynamics_features,
-    engineer_growth_metrics,
-    engineer_leverage_ratios,
-    engineer_liquidity_ratios,
-    engineer_market_microstructure_features,
-    engineer_nonlinear_transforms,
-    engineer_profitability_ratios,
     engineer_revenue_forecast_features,
-    engineer_sector_specific_features,
     # Phase 9.3 Schema 1.3 - New feature engineering functions
     engineer_technical_analysis_features,
-    engineer_temporal_features,
     engineer_valuation_ratios,
     engineer_valuation_timeseries_features,
 )
@@ -627,7 +573,6 @@ from finance_ml.ml_workflow.preprocessing import (
     detect_outliers_iqr,
     detect_outliers_isolation_forest,
     detect_outliers_zscore,
-    normalize_columns,
     # Feature scaling (with price column exclusion)
     scale_features,
     validate_imputation_completeness,
@@ -635,28 +580,15 @@ from finance_ml.ml_workflow.preprocessing import (
 )
 
 # Phase 9.1: Preprocessing - Semantic Column Classification (Section 8.5)
-from finance_ml.ml_workflow.preprocessing.column_semantics import (
-    PRICE_COLUMNS,  # 21 protected price columns
-    classify_columns,
-    get_log_transform_columns,
-    get_scalable_columns,
-    get_winsorizable_columns,
-)
 from finance_ml.ml_workflow.preprocessing.etl import (
     ETLConfig,  # Configuration with semantic-aware transformations
-    ETLMetrics,  # Comprehensive metrics tracking
+    # Comprehensive metrics tracking
     etl_with_features,  # RECOMMENDED: Comprehensive ETL + semantic transforms + Phase 9.3 features
-    etl_with_financial_metrics,  # Alternative: ETL + financial metrics only
-    run_etl_pipeline,  # Low-level: Custom ETL configuration
+    # Alternative: ETL + financial metrics only
+    # Low-level: Custom ETL configuration
 )
 
 # Phase 9.5: Regression
-from finance_ml.ml_workflow.regression import (
-    apply_nonnegative_constraint,
-    train_quantile_regressor,
-    train_sector_models,
-    train_stacking_regressor,
-)
 
 # Regression: Calibration
 from finance_ml.ml_workflow.regression.calibration import (
@@ -668,9 +600,7 @@ from finance_ml.ml_workflow.regression.constraints import (
 
 # Regression: Dataset preparation and classification integration
 from finance_ml.ml_workflow.regression.dataset import (
-    align_features_to_model,
     integrate_classification_features,
-    predict_with_model,
 )
 from finance_ml.ml_workflow.regression.dataset import (
     create_classification_interactions as regression_create_classification_interactions,
@@ -692,8 +622,6 @@ from finance_ml.ml_workflow.regression.models import (
     compare_regressors as regression_compare_regressors,
 )
 from finance_ml.ml_workflow.regression.models import (
-    select_meta_learner,
-    select_stacking_base_models,
     tune_stacking_hyperparameters,
 )
 from finance_ml.ml_workflow.regression.models import (
@@ -712,10 +640,6 @@ from finance_ml.ml_workflow.regression.robust import (
 )
 
 # Phase 9.8: Reporting
-from finance_ml.ml_workflow.reporting import (
-    create_quality_alerts,
-    generate_dashboard_data,
-)
 
 # Reporting: Excel and HTML report generation
 from finance_ml.ml_workflow.reporting.excel_reports import (
@@ -1059,7 +983,7 @@ print(f"  - Final shape: {all_stocks_preprocessed.shape}")
 # Display financial metrics status
 date_status = "✓" if etl_metrics.date_columns_ready else "✗"
 print(f"  - Date columns ready: {date_status}")
-print(f"  - Processing time: {etl_metrics.total_time_sec:.2f}s")
+print(f"  - Processing time: {etl_metrics.total_duration:.2f}s")
 print(f"  - Quality score: {etl_metrics.quality_score:.3f}")
 print(f"  - Validation score: {etl_metrics.validation_score:.3f}")
 print(f"  - Imputation: {etl_metrics.imputation_strategy} strategy")
@@ -1135,7 +1059,7 @@ etl_metrics_dict = {
     "imputation_strategy": etl_metrics.imputation_strategy,
     "date_columns_ready": etl_metrics.date_columns_ready,
     "quality_score": etl_metrics.quality_score,
-    "processing_time_sec": etl_metrics.total_time_sec,
+    "processing_time_sec": etl_metrics.total_duration,
     "warnings_count": len(etl_metrics.warnings),
     "errors_count": len(etl_metrics.errors),
 }
@@ -1293,7 +1217,6 @@ from finance_ml.ml_workflow.preprocessing.column_semantics import (
     PRICE_COLUMNS,
     get_winsorizable_columns,
 )
-from finance_ml.ml_workflow.preprocessing.transforms import apply_log_transforms
 
 print("\n  Step 2: Applying semantic-aware winsorization...")
 
@@ -6267,7 +6190,6 @@ print(
 import os
 
 from finance_ml.ml_workflow.regression.io import build_predictions_frame
-from finance_ml.ml_workflow.regression.quantile import enforce_monotonic_quantiles
 
 # Build detailed predictions DataFrame for diagnostics and export
 try:
@@ -7043,9 +6965,7 @@ test_mae = test_metrics.get("mae", test_metrics.get("MAE", test_metrics.get("tes
 
 # Format metrics safely
 test_r2_str = f"{test_r2:.4f}" if isinstance(test_r2, (int, float)) else str(test_r2)
-test_mae_str = (
-    f"{test_mae:.2f}" if isinstance(test_mae, (int, float)) else str(test_mae)
-)
+test_mae_str = f"{test_mae:.2f}" if isinstance(test_mae, (int, float)) else str(test_mae)
 
 summary = {
     "✓ Classification Features Integrated": f"{len(classification_cols)} probability features + interactions",
@@ -7234,7 +7154,6 @@ print("PHASE 9.4: UNCERTAINTY QUANTIFICATION")
 print("=" * 80)
 
 import json
-from pathlib import Path
 
 import pandas as pd
 
@@ -9267,22 +9186,13 @@ from finance_ml.ml_workflow.analytics import (
     TARGET_COL_FALLBACK,
     TECHNICAL_INDICATORS,
     TRAIN_SIZE,
-    calculate_historical_returns,
     # Phase 7.8: Validation & diagnostics
-    calculate_return_prediction_diagnostics,
     # Phase 7.1-7.3: Return normalization & features
     clip_expected_returns,
     # Phase 7.6: Black-Litterman ML integration
-    create_bl_views_from_ml,
-    create_dynamic_ensemble,
-    create_ml_return_features_enhanced,
     # Phase 7.5: Ensemble models
-    create_return_ensemble,
-    detect_market_regime,
-    estimate_covariance_ewm,
     # Phase 7.7: Robust covariance
     estimate_covariance_shrinkage,
-    get_phase93_return_features,
     validate_expected_returns,
     validate_portfolio_metrics,
 )
@@ -9321,7 +9231,6 @@ from finance_ml.ml_workflow.analytics.stock_selection import select_portfolio_ca
 from finance_ml.ml_workflow.config import (
     MAX_EXPECTED_RETURN,
     MIN_EXPECTED_RETURN,
-    REALISTIC_RETURN_MEAN_THRESHOLD,
 )
 
 print("✓ Imported ML Returns configuration constants")
@@ -10389,8 +10298,6 @@ print("\n" + "=" * 80)
 print("10.6 INTERACTIVE DASHBOARD GENERATION")
 print("=" * 80)
 
-from pathlib import Path
-
 # Use OUTPUT_DIR from configuration
 output_dir = OUTPUT_DIR / "analytics"
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -10554,7 +10461,9 @@ Sharpe Ratio: {max_sharpe_result["sharpe_ratio"]:.3f}</p>
 """
     for _, row in trades.iterrows():
         action_class = "buy" if row["action"] == "BUY" else "sell"
-        trades_html += f"<tr><td>{row['ticker']}</td><td class='{action_class}'>{row['action']}</td>"
+        trades_html += (
+            f"<tr><td>{row['ticker']}</td><td class='{action_class}'>{row['action']}</td>"
+        )
         trades_html += f"<td>{row['shares']:.2f}</td><td>${row['estimated_cost']:.2f}</td></tr>\n"
     trades_html += "</table></body></html>"
 

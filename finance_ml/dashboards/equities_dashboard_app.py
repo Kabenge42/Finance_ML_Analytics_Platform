@@ -11,9 +11,10 @@ Design goals:
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import dash
 import dash_bootstrap_components as dbc
@@ -21,65 +22,54 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import Input, Output, State, dash_table, dcc, html
+from dash import dash_table, dcc, html
 from flask import send_from_directory
 
+from finance_ml.dashboards.callbacks import register_all_callbacks
+from finance_ml.dashboards.components import (
+    _safe_options,
+    _severity_style,
+    compute_surprise,
+    create_empty_state_figure,
+    create_missing_columns_warning,
+    validate_required_columns,
+)
+from finance_ml.dashboards.components.constants import (
+    COLOR_PALETTE,
+    FONT_FAMILY,
+    FONT_SIZES,
+    PLOTLY_TEMPLATE,
+)
+from finance_ml.dashboards.components.data_utils import (
+    ARTIFACTS_DIR,
+    ARTIFACTS_METADATA_PATH,
+    DEFAULT_CSV_EXPORT_PATH,
+    DEFAULT_DATA_DIR,
+    DEFAULT_METADATA_PATH,
+    PROJECT_ROOT,
+    _validate_explorer_columns,
+)
+from finance_ml.dashboards.components.temporal_utils import (
+    compute_days_to_earnings,
+    get_reference_date,
+)
 from finance_ml.dashboards.earnings_widgets import (
-    EarningsAlertConfig,
     create_analyst_recommendation_heatmap,
     create_category_comparison_chart,
-    create_earnings_calendar_dashboard,
     create_earnings_metrics_chart,
     create_earnings_surprise_dashboard,
     create_market_movers_dashboard,
     create_price_target_analytics,
-    generate_earnings_quality_alerts,
-    get_category_metrics,
-)
-from finance_ml.dashboards.components import (
-    build_explorer_column_options,
-    _safe_options,
-    apply_filters,
-    _kpi_cards,
-    _monitoring_kpi_cards,
-    _target_vs_price_scatter,
-    _market_cap_distribution,
-    create_earnings_events_chart,
-    _list_artifacts,
-    _render_artifact,
-    compute_surprise,
-    create_empty_state_figure,
-    validate_required_columns,
-    create_missing_columns_warning,
-    _coerce_list,
-    _severity_style,
-    _alerts_to_rows,
-)
-from finance_ml.dashboards.callbacks import register_all_callbacks
-from finance_ml.dashboards.components.data_utils import (
-    PROJECT_ROOT,
-    DASHBOARD_ROOT,
-    DEFAULT_DATA_DIR,
-    DEFAULT_CSV_EXPORT_PATH,
-    DEFAULT_METADATA_PATH,
-    ARTIFACTS_DIR,
-    ARTIFACTS_METADATA_PATH,
-    DEFAULT_ALERTS_PATH,
-    DEFAULT_EXPLORER_COLUMNS,
-    load_alerts_payload,
-    _validate_explorer_columns,
 )
 from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
 from finance_ml.ml_workflow.preprocessing.etl import etl_with_features
 
+# Type aliases
 DataSource = Literal["auto", "csv", "db"]
 
-from finance_ml.dashboards.components.constants import (
-    COLOR_PALETTE,
-    PLOTLY_TEMPLATE,
-    FONT_FAMILY,
-    FONT_SIZES,
-)
+# Logging setup
+logger = logging.getLogger(__name__)
+
 
 # Apply template globally to all Plotly figures
 px.defaults.template = PLOTLY_TEMPLATE
@@ -141,27 +131,195 @@ EARNINGS_MODE_OPTIONS = [
 # Default columns for the Data Explorer tab - always included in initial view
 # (code_guidelines.md Section 8.1: Single Source of Truth for configuration constants)
 
-# Logging setup
-import logging
-
-logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# Temporal Calculation Standards (code_guidelines.md Section 9.3.0)
-# Import from dedicated module to avoid circular imports
-# =============================================================================
-from finance_ml.dashboards.components.temporal_utils import (
-    get_reference_date,
-    compute_days_to_earnings,
-)
-
 # Re-export for backward compatibility
 __all__ = [
     "get_reference_date",
     "compute_days_to_earnings",
-    # ... other exports
+    "parse_data_store",
+    "load_data_csv_first",
+    "validate_required_columns",
+    "create_missing_columns_warning",
+    "compute_surprise",
+    "create_empty_state_figure",
+    "export_equities_data",
+    "generate_dashboard_artifacts",
+    "load_data",
+    "create_app",
+    "main",
 ]
+
+
+# =============================================================================
+# Helper Functions & Utilities (code_guidelines.md Section 8)
+# =============================================================================
+
+
+def _coerce_list(value: Any) -> List[str]:
+    """Coerce value to a list of strings."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(v) for v in value if v is not None]
+    return [str(value)]
+
+
+def validate_required_columns(
+    df: pd.DataFrame,
+    required_cols: List[str],
+    context_name: str,
+) -> Tuple[List[str], List[str]]:
+    """Validate required columns exist in DataFrame.
+
+    Args:
+        df: DataFrame to check
+        required_cols: List of required column names
+        context_name: Name of the context (for logging)
+
+    Returns:
+        Tuple of (present_cols, missing_cols)
+    """
+    if df is None or df.empty:
+        return [], required_cols
+
+    present = [c for c in required_cols if c in df.columns]
+    missing = [c for c in required_cols if c not in df.columns]
+
+    return present, missing
+
+
+def create_missing_columns_warning(
+    missing_cols: List[str],
+    context_name: str,
+) -> html.Div:
+    """Create a warning panel for missing columns."""
+    if not missing_cols:
+        return html.Div()
+
+    return html.Div(
+        [
+            html.H5(f"⚠️ Missing Columns for {context_name}", className="text-warning"),
+            html.P(f"The following columns are unavailable: {', '.join(missing_cols[:10])}"),
+            html.P("Some charts may be limited or unavailable.", className="text-muted"),
+        ],
+        style={
+            "padding": "10px",
+            "backgroundColor": "#2d2d2d",
+            "borderRadius": "5px",
+            "marginBottom": "10px",
+        },
+    )
+
+
+def compute_surprise(
+    actual: pd.Series,
+    estimate: pd.Series,
+    mode: Literal["pct", "abs"] = "pct",
+    clip_bounds: Tuple[float, float] = (-100, 100),
+) -> pd.Series:
+    """Compute earnings surprise with safe handling.
+
+    Args:
+        actual: Actual values
+        estimate: Estimated values
+        mode: 'pct' for percentage, 'abs' for absolute
+        clip_bounds: Bounds to clip extreme values
+
+    Returns:
+        Series of surprise values
+    """
+    actual_num = pd.to_numeric(actual, errors="coerce")
+    estimate_num = pd.to_numeric(estimate, errors="coerce")
+
+    if mode == "pct":
+        # Use absolute estimate as denominator to avoid sign issues
+        denom = estimate_num.abs().replace(0, np.nan)
+        surprise = ((actual_num - estimate_num) / denom) * 100
+    else:
+        surprise = actual_num - estimate_num
+
+    # Replace inf with NaN and clip
+    surprise = surprise.replace([np.inf, -np.inf], np.nan)
+    if clip_bounds:
+        surprise = surprise.clip(lower=clip_bounds[0], upper=clip_bounds[1])
+
+    return surprise
+
+
+def create_empty_state_figure(
+    title: str,
+    message: str = "No data available",
+) -> go.Figure:
+    """Create standardized empty state figure per code_guidelines.md Section 17.2.
+
+    Args:
+        title: Figure title
+        message: Message to display in empty state
+
+    Returns:
+        Plotly Figure with empty state annotation
+    """
+    fig = go.Figure()
+    fig.add_annotation(
+        text=message,
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0.5,
+        showarrow=False,
+        font=dict(
+            family=FONT_FAMILY,
+            size=FONT_SIZES["body"],
+            color=COLOR_PALETTE["neutral"],
+        ),
+    )
+    fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title=title)
+    fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False)
+    fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False)
+    return fig
+
+
+def export_equities_data(
+    df: pd.DataFrame,
+    output_path: Optional[Path] = None,
+    metadata_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Export equities data to CSV with metadata.
+
+    Args:
+        df: DataFrame to export
+        output_path: Path for CSV file (defaults to DEFAULT_CSV_EXPORT_PATH)
+        metadata_path: Path for metadata JSON (defaults to DEFAULT_METADATA_PATH)
+
+    Returns:
+        Dict with export metadata
+    """
+    if output_path is None:
+        output_path = DEFAULT_CSV_EXPORT_PATH
+    if metadata_path is None:
+        metadata_path = DEFAULT_METADATA_PATH
+
+    # Ensure directories exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Export CSV
+    df.to_csv(output_path, index=False)
+
+    # Generate metadata
+    metadata = {
+        "timestamp": pd.Timestamp.now().isoformat(),
+        "row_count": len(df),
+        "column_count": len(df.columns),
+        "columns": list(df.columns),
+        "file_path": str(output_path),
+        "file_size_mb": output_path.stat().st_size / (1024 * 1024) if output_path.exists() else 0,
+    }
+
+    # Save metadata
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    return metadata
 
 
 def parse_data_store(store_data: Optional[str]) -> pd.DataFrame:
@@ -263,8 +421,8 @@ def load_data_csv_first(
         if not df.empty:
             try:
                 export_equities_data(df)
-            except Exception:
-                pass  # Non-critical
+            except Exception as e:
+                logger.debug(f"Non-critical: Failed to export equities data: {e}")
 
         # Return the metrics summary as the source label for the status bar
         source_label = metrics.summary()
@@ -272,126 +430,7 @@ def load_data_csv_first(
         return df, source_label
     except Exception as e:
         logger.error(f"ETL Pipeline failed: {e}")
-        return pd.DataFrame(), "failed"
-
-
-def validate_required_columns(
-    df: pd.DataFrame,
-    required_cols: List[str],
-    context_name: str,
-) -> Tuple[List[str], List[str]]:
-    """Validate required columns exist in DataFrame.
-
-    Args:
-        df: DataFrame to check
-        required_cols: List of required column names
-        context_name: Name of the context (for logging)
-
-    Returns:
-        Tuple of (present_cols, missing_cols)
-    """
-    if df is None or df.empty:
-        return [], required_cols
-
-    present = [c for c in required_cols if c in df.columns]
-    missing = [c for c in required_cols if c not in df.columns]
-
-    return present, missing
-
-
-def create_missing_columns_warning(
-    missing_cols: List[str],
-    context_name: str,
-) -> html.Div:
-    """Create a warning panel for missing columns."""
-    if not missing_cols:
-        return html.Div()
-
-    return html.Div(
-        [
-            html.H5(
-                f"âš ï¸ Missing Columns for {context_name}", className="text-warning"
-            ),
-            html.P(
-                f"The following columns are unavailable: {', '.join(missing_cols[:10])}"
-            ),
-            html.P(
-                "Some charts may be limited or unavailable.", className="text-muted"
-            ),
-        ],
-        style={
-            "padding": "10px",
-            "backgroundColor": "#2d2d2d",
-            "borderRadius": "5px",
-            "marginBottom": "10px",
-        },
-    )
-
-
-def compute_surprise(
-    actual: pd.Series,
-    estimate: pd.Series,
-    mode: Literal["pct", "abs"] = "pct",
-    clip_bounds: Tuple[float, float] = (-100, 100),
-) -> pd.Series:
-    """Compute earnings surprise with safe handling.
-
-    Args:
-        actual: Actual values
-        estimate: Estimated values
-        mode: 'pct' for percentage, 'abs' for absolute
-        clip_bounds: Bounds to clip extreme values
-
-    Returns:
-        Series of surprise values
-    """
-    actual_num = pd.to_numeric(actual, errors="coerce")
-    estimate_num = pd.to_numeric(estimate, errors="coerce")
-
-    if mode == "pct":
-        # Use absolute estimate as denominator to avoid sign issues
-        denom = estimate_num.abs().replace(0, np.nan)
-        surprise = ((actual_num - estimate_num) / denom) * 100
-    else:
-        surprise = actual_num - estimate_num
-
-    # Replace inf with NaN and clip
-    surprise = surprise.replace([np.inf, -np.inf], np.nan)
-    if clip_bounds:
-        surprise = surprise.clip(lower=clip_bounds[0], upper=clip_bounds[1])
-
-    return surprise
-
-
-def create_empty_state_figure(
-    title: str,
-    message: str = "No data available",
-) -> go.Figure:
-    """Create standardized empty state figure per code_guidelines.md Section 17.2.
-
-    Args:
-        title: Figure title
-        message: Message to display in empty state
-
-    Returns:
-        Plotly Figure with empty state annotation
-    """
-    fig = go.Figure()
-    fig.add_annotation(
-        text=message,
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
-        showarrow=False,
-        font=dict(
-            family=FONT_FAMILY,
-            size=FONT_SIZES["body"],
-            color=COLOR_PALETTE["neutral"],
-        ),
-    )
-    fig.update_layout(**PLOTLY_LAYOUT_DEFAULTS, title=title)
-    return fig
+        return pd.DataFrame(), f"ETL failed: {str(e)[:50]}"
 
 
 # Metric mappings for Est vs Actual tab
@@ -415,60 +454,6 @@ EST_ACTUAL_METRICS = {
         "gaap": "ebitda_ltm",
     },
 }
-
-
-def _coerce_list(value: Any) -> List[str]:
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return [str(v) for v in value if v is not None]
-    return [str(value)]
-
-
-def export_equities_data(
-    df: pd.DataFrame,
-    output_path: Optional[Path] = None,
-    metadata_path: Optional[Path] = None,
-) -> Dict[str, Any]:
-    """Export equities data to CSV with metadata.
-
-    Args:
-        df: DataFrame to export
-        output_path: Path for CSV file (defaults to DEFAULT_CSV_EXPORT_PATH)
-        metadata_path: Path for metadata JSON (defaults to DEFAULT_METADATA_PATH)
-
-    Returns:
-        Dict with export metadata
-    """
-    if output_path is None:
-        output_path = DEFAULT_CSV_EXPORT_PATH
-    if metadata_path is None:
-        metadata_path = DEFAULT_METADATA_PATH
-
-    # Ensure directories exist
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    metadata_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Export CSV
-    df.to_csv(output_path, index=False)
-
-    # Generate metadata
-    metadata = {
-        "timestamp": pd.Timestamp.now().isoformat(),
-        "row_count": len(df),
-        "column_count": len(df.columns),
-        "columns": list(df.columns),
-        "file_path": str(output_path),
-        "file_size_mb": output_path.stat().st_size / (1024 * 1024)
-        if output_path.exists()
-        else 0,
-    }
-
-    # Save metadata
-    with open(metadata_path, "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2)
-
-    return metadata
 
 
 def generate_dashboard_artifacts(
@@ -580,9 +565,7 @@ def generate_dashboard_artifacts(
         }
         if "total_revenues_cagr_5y_fy" in df.columns:
             growth = pd.to_numeric(df["total_revenues_cagr_5y_fy"], errors="coerce")
-            report["kpis"]["pct_positive_revenue_growth"] = float(
-                (growth > 0).mean() * 100
-            )
+            report["kpis"]["pct_positive_revenue_growth"] = float((growth > 0).mean() * 100)
             report["kpis"]["median_revenue_growth"] = float(growth.median())
         if "net_income_margin_pct_ltm" in df.columns:
             margin = pd.to_numeric(df["net_income_margin_pct_ltm"], errors="coerce")
@@ -631,9 +614,7 @@ def load_data(
     Returns an empty DataFrame on failures.
     """
 
-    resolved_data_dir: Path = (
-        Path(data_dir) if data_dir is not None else DEFAULT_DATA_DIR
-    )
+    resolved_data_dir: Path = Path(data_dir) if data_dir is not None else DEFAULT_DATA_DIR
     resolved_db_url = db_url or os.getenv("DB_URL")
 
     def _etl(source: Literal["csv", "db"]) -> pd.DataFrame:
@@ -657,7 +638,8 @@ def load_data(
             if resolved_db_url:
                 try:
                     df = _etl("db")
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to load from DB, falling back to CSV: {e}")
                     df = _etl("csv")
             else:
                 df = _etl("csv")
@@ -665,7 +647,8 @@ def load_data(
         if limit is not None and limit > 0:
             return df.head(int(limit)).copy()
         return df
-    except Exception:
+    except Exception as e:
+        logger.error(f"Failed to load data in load_data: {e}")
         return pd.DataFrame()
 
 
@@ -685,9 +668,7 @@ def create_app(
 
     if load_on_start:
         try:
-            initial_df = load_data(
-                data_source=data_source, data_dir=data_dir, db_url=db_url
-            )
+            initial_df = load_data(data_source=data_source, data_dir=data_dir, db_url=db_url)
             if initial_df is None:
                 logger.warning("load_data returned None, using empty DataFrame")
                 initial_df = pd.DataFrame()
@@ -736,9 +717,7 @@ def create_app(
                 # 3. Using pagination/lazy loading for initial data
                 # Current implementation stores full DataFrame as JSON which may
                 # cause performance issues with very large datasets.
-                data=initial_df.to_json(orient="split")
-                if not initial_df.empty
-                else None,
+                data=initial_df.to_json(orient="split") if not initial_df.empty else None,
                 storage_type="memory",  # Explicit default for clarity
             ),
             html.Div(
@@ -751,9 +730,7 @@ def create_app(
             ),
             html.Div(
                 [
-                    html.H4(
-                        "Filters", style={"marginBottom": "10px", "color": "white"}
-                    ),
+                    html.H4("Filters", style={"marginBottom": "10px", "color": "white"}),
                     html.Div(
                         [
                             html.Div(
@@ -791,15 +768,11 @@ def create_app(
                             ),
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Trading Country", className="filter-label"
-                                    ),
+                                    html.Label("Trading Country", className="filter-label"),
                                     dcc.Dropdown(
                                         id="trading-country-dropdown",
                                         multi=True,
-                                        options=_safe_options(
-                                            initial_df, "trading_country"
-                                        ),
+                                        options=_safe_options(initial_df, "trading_country"),
                                     ),
                                 ],
                                 className="filter-item",
@@ -837,9 +810,7 @@ def create_app(
                                     dcc.Dropdown(
                                         id="style-class-dropdown",
                                         multi=True,
-                                        options=_safe_options(
-                                            initial_df, "style_class"
-                                        ),
+                                        options=_safe_options(initial_df, "style_class"),
                                     ),
                                 ],
                                 className="filter-item",
@@ -990,9 +961,7 @@ def create_app(
                                                                 options=EARNINGS_MODE_OPTIONS,
                                                                 value="all",
                                                                 clearable=False,
-                                                                style={
-                                                                    "width": "180px"
-                                                                },
+                                                                style={"width": "180px"},
                                                             ),
                                                         ],
                                                         className="filter-item",
@@ -1095,9 +1064,7 @@ def create_app(
                                                             "filter_query": "{days_to_earnings} < 0",
                                                             "column_id": "days_to_earnings",
                                                         },
-                                                        "color": COLOR_PALETTE[
-                                                            "danger"
-                                                        ],
+                                                        "color": COLOR_PALETTE["danger"],
                                                     },
                                                     # Today (warning background)
                                                     {
@@ -1105,9 +1072,7 @@ def create_app(
                                                             "filter_query": "{days_to_earnings} = 0",
                                                             "column_id": "days_to_earnings",
                                                         },
-                                                        "backgroundColor": COLOR_PALETTE[
-                                                            "warning"
-                                                        ],
+                                                        "backgroundColor": COLOR_PALETTE["warning"],
                                                         "color": "#000000",
                                                     },
                                                     # Future earnings (green)
@@ -1116,9 +1081,7 @@ def create_app(
                                                             "filter_query": "{days_to_earnings} > 0",
                                                             "column_id": "days_to_earnings",
                                                         },
-                                                        "color": COLOR_PALETTE[
-                                                            "success"
-                                                        ],
+                                                        "color": COLOR_PALETTE["success"],
                                                     },
                                                 ],
                                                 sort_action="native",
@@ -1282,21 +1245,15 @@ def create_app(
                                         page_size=DEFAULT_PAGE_SIZE_ALERTS,
                                         style_data_conditional=[
                                             {
-                                                "if": {
-                                                    "filter_query": '{severity} = "high"'
-                                                },
+                                                "if": {"filter_query": '{severity} = "high"'},
                                                 **_severity_style("high"),
                                             },
                                             {
-                                                "if": {
-                                                    "filter_query": '{severity} = "medium"'
-                                                },
+                                                "if": {"filter_query": '{severity} = "medium"'},
                                                 **_severity_style("medium"),
                                             },
                                             {
-                                                "if": {
-                                                    "filter_query": '{severity} = "low"'
-                                                },
+                                                "if": {"filter_query": '{severity} = "low"'},
                                                 **_severity_style("low"),
                                             },
                                         ],
@@ -1317,17 +1274,13 @@ def create_app(
                                         id="feature-category-dropdown",
                                         options=[
                                             {"label": k, "value": k}
-                                            for k in sorted(
-                                                PHASE93_FEATURE_INPUTS.keys()
-                                            )
+                                            for k in sorted(PHASE93_FEATURE_INPUTS.keys())
                                         ],
                                         multi=True,
                                         value=["profitability"],
                                     ),
                                     html.Label("Columns"),
-                                    dcc.Dropdown(
-                                        id="explorer-columns-dropdown", multi=True
-                                    ),
+                                    dcc.Dropdown(id="explorer-columns-dropdown", multi=True),
                                     html.Div(
                                         [
                                             html.Label("Row limit"),
@@ -1533,9 +1486,7 @@ def create_app(
                             html.Div(
                                 [
                                     # KPI cards row
-                                    html.Div(
-                                        id="monitoring-kpi-row", className="kpi-row"
-                                    ),
+                                    html.Div(id="monitoring-kpi-row", className="kpi-row"),
                                     # Controls
                                     html.Div(
                                         [
@@ -1631,9 +1582,7 @@ def create_app(
         app.layout.children.append(
             html.Div(
                 [
-                    html.H4(
-                        "⚠️ Application Error", style={"color": COLOR_PALETTE["danger"]}
-                    ),
+                    html.H4("⚠️ Application Error", style={"color": COLOR_PALETTE["danger"]}),
                     html.P(f"Some features may be unavailable: {str(e)[:200]}"),
                 ],
                 style={

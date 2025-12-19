@@ -112,7 +112,7 @@ elif actual_cols > TARGET_PREPROCESSED_COLS + 10:
 
 # Display financial metrics status
 print(f"  - Date columns ready: +" if etl_metrics.date_columns_ready else "  - Date columns ready: ✗")
-print(f"  - Processing time: {etl_metrics.total_time_sec:.2f}s")
+print(f"  - Processing time: {etl_metrics.total_duration:.2f}s")
 print(f"  - Quality score: {etl_metrics.quality_score:.3f}")
 print(f"  - Validation score: {etl_metrics.validation_score:.3f}")
 print(f"  - Imputation: {etl_metrics.imputation_strategy} strategy")

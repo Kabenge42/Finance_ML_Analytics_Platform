@@ -33,6 +33,7 @@ Aligned with code_guidelines.md ETL best practices.
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -44,7 +45,7 @@ import pandas as pd
 
 from finance_ml.ml_workflow.data.schema import (
     COLUMN_SCHEMA,
-    get_expected_dtype,
+    # Add schema utility functions for Stage 3 classification
     list_categorical_cols,
     list_numeric_feature_cols,
 )
@@ -55,15 +56,15 @@ from finance_ml.ml_workflow.features.api import build_features
 # Import feature selection API (Section 9.3 Task 1)
 from finance_ml.ml_workflow.features.selection import select_features_auto
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
+    classify_columns,
+    get_scalable_columns,
+    get_winsorizable_columns,
+    # Add semantic column constants for pipeline stages
     COUNT_COLUMNS,
     MARKET_VALUE_COLUMNS,
     PERCENTAGE_COLUMNS,
     PRICE_COLUMNS,
     RATIO_COLUMNS,
-    classify_columns,
-    get_log_transform_columns,
-    get_scalable_columns,
-    get_winsorizable_columns,
 )
 
 # Import from existing modules (no code duplication)
@@ -105,10 +106,6 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
 from finance_ml.ml_workflow.preprocessing.scaling import (
     scale_features,
 )
-from finance_ml.ml_workflow.preprocessing.transforms import (
-    apply_log_transforms,
-    get_skewness,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +128,7 @@ class SchemaValidationConfig:
     validate_schema_alignment: bool = True
     schema_alignment_threshold: float = 0.95
     validate_pipeline: bool = True
+    validate_quality: bool = True
     custom_validators: List[Any] = field(default_factory=list)
 
 
@@ -167,9 +165,9 @@ class ImputationConfig:
 class SemanticTransformConfig:
     """Configuration for ETL Stage 7: Semantic-Aware Transformations."""
 
-    apply_log_transforms: bool = False
+    apply_log_transforms: bool = True
     log_transform_method: Literal["log1p", "signed_log"] = "log1p"
-    log_transform_market_values: bool = False
+    log_transform_market_values: bool = True
     log_transform_target_columns: Optional[List[str]] = None
     exclude_ratios_from_winsorization: bool = True
     exclude_percentages_from_winsorization: bool = True
@@ -202,7 +200,7 @@ class FeatureEngineeringConfig:
     """Configuration for Feature Engineering (Phase 9.3)."""
 
     enabled: bool = False
-    preset: str = "comprehensive"
+    preset: str = "standard"
     categories: Optional[List[str]] = None
     engineer_earnings_analytics: bool = (
         True  # Enable Estimated vs. Actual and GAAP vs. Adjusted analytics
@@ -250,20 +248,12 @@ class ETLConfig:
         default_factory=SemanticClassificationConfig
     )
     imputation: ImputationConfig = field(default_factory=ImputationConfig)
-    semantic_transform: SemanticTransformConfig = field(
-        default_factory=SemanticTransformConfig
-    )
+    semantic_transform: SemanticTransformConfig = field(default_factory=SemanticTransformConfig)
     sanitization: DataSanitizationConfig = field(default_factory=DataSanitizationConfig)
     scaling: ScalingConfig = field(default_factory=ScalingConfig)
-    feature_engineering: FeatureEngineeringConfig = field(
-        default_factory=FeatureEngineeringConfig
-    )
-    feature_selection: FeatureSelectionConfig = field(
-        default_factory=FeatureSelectionConfig
-    )
-    financial_metrics: FinancialMetricsConfig = field(
-        default_factory=FinancialMetricsConfig
-    )
+    feature_engineering: FeatureEngineeringConfig = field(default_factory=FeatureEngineeringConfig)
+    feature_selection: FeatureSelectionConfig = field(default_factory=FeatureSelectionConfig)
+    financial_metrics: FinancialMetricsConfig = field(default_factory=FinancialMetricsConfig)
 
     def __init__(
         self,
@@ -283,9 +273,7 @@ class ETLConfig:
         self.extraction = extraction or DataExtractionConfig()
         self.validation = validation or SchemaValidationConfig()
         self.dtype_casting = dtype_casting or DtypeCastingConfig()
-        self.semantic_classification = (
-            semantic_classification or SemanticClassificationConfig()
-        )
+        self.semantic_classification = semantic_classification or SemanticClassificationConfig()
         self.imputation = imputation or ImputationConfig()
         self.semantic_transform = semantic_transform or SemanticTransformConfig()
         self.sanitization = sanitization or DataSanitizationConfig()
@@ -307,7 +295,7 @@ class ETLConfig:
                 "validation",
                 "drop_rows_with_missing_critical_fields",
             ),
-            "validate_quality": ("validation", "validate_schema_alignment"),
+            "validate_quality": ("validation", "validate_quality"),
             "validate_pipeline": ("validation", "validate_pipeline"),
             "custom_validators": ("validation", "custom_validators"),
             "apply_dtype_casting": ("dtype_casting", "apply_dtype_casting"),
@@ -474,11 +462,11 @@ class ETLConfig:
 
     @property
     def validate_quality(self) -> bool:
-        return self.validation.validate_schema_alignment
+        return self.validation.validate_quality
 
     @validate_quality.setter
     def validate_quality(self, value: bool) -> None:
-        self.validation.validate_schema_alignment = value
+        self.validation.validate_quality = value
 
     @property
     def validate_pipeline(self) -> bool:
@@ -842,10 +830,10 @@ class ETLMetrics:
 
     Attributes:
         source_type: Data source type (csv, db, all_stocks)
-        extract_time_sec: Time spent in Extract stage
-        transform_time_sec: Time spent in Transform stage
-        load_time_sec: Time spent in Load stage
-        total_time_sec: Total pipeline execution time
+        extract_duration: Time spent in Extract stage
+        transform_duration: Time spent in Transform stage
+        load_duration: Time spent in Load stage
+        total_duration: Total pipeline execution time
         rows_input: Number of rows after extraction
         rows_output: Number of rows after transformation
         columns_input: Number of columns after extraction
@@ -858,16 +846,18 @@ class ETLMetrics:
     """
 
     source_type: str
-    extract_time_sec: float = 0.0
-    transform_time_sec: float = 0.0
-    load_time_sec: float = 0.0
-    total_time_sec: float = 0.0
+    extract_duration: float = 0.0
+    transform_duration: float = 0.0
+    load_duration: float = 0.0
+    total_duration: float = 0.0
     rows_input: int = 0
     rows_output: int = 0
     columns_input: int = 0
     columns_output: int = 0
+    # Quality metrics
     quality_score: float = 1.0
     validation_score: float = 1.0
+    quality_alerts_generated: int = 0
     stages_executed: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
@@ -899,13 +889,13 @@ class ETLMetrics:
     target_vs_price_metrics_added: int = 0
     sector_specific_metrics_added: int = 0
 
-    # Semantic transformation metrics (Section 8.5)
+    # Semantic classification metrics (from column_semantics.py constants)
     semantic_classification_applied: bool = False
-    price_columns_count: int = 0
-    market_value_columns_count: int = 0
-    ratio_columns_count: int = 0
-    percentage_columns_count: int = 0
-    count_columns_count: int = 0
+    price_columns_count: int = 0  # From PRICE_COLUMNS
+    market_value_columns_count: int = 0  # From MARKET_VALUE_COLUMNS
+    ratio_columns_count: int = 0  # From RATIO_COLUMNS
+    percentage_columns_count: int = 0  # From PERCENTAGE_COLUMNS
+    count_columns_count: int = 0  # From COUNT_COLUMNS
     log_transformed_columns: int = 0
 
     # Feature engineering metrics (Section 9.3)
@@ -930,19 +920,17 @@ class ETLMetrics:
     missing_expected_columns_count: int = 0  # Expected columns not in df
     dtype_mismatches_count: int = 0  # Columns with dtype mismatches
     recognized_columns_count: int = 0  # Columns recognized by schema or allowlist
-    allowlisted_engineered_columns_count: int = (
-        0  # Recognized engineered (not in schema)
-    )
+    allowlisted_engineered_columns_count: int = 0  # Recognized engineered (not in schema)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert metrics to dictionary."""
         return {
             "source_type": self.source_type,
             "timings": {
-                "extract_sec": self.extract_time_sec,
-                "transform_sec": self.transform_time_sec,
-                "load_sec": self.load_time_sec,
-                "total_sec": self.total_time_sec,
+                "extract_sec": self.extract_duration,
+                "transform_sec": self.transform_duration,
+                "load_sec": self.load_duration,
+                "total_sec": self.total_duration,
             },
             "data_shape": {
                 "rows_input": self.rows_input,
@@ -1019,7 +1007,7 @@ class ETLMetrics:
         }
 
     def summary(self) -> str:
-        """Generate human-readable summary."""
+        """Generate human-readable summary of ETL metrics."""
         dtype_info = ""
         if self.dtype_casting_applied:
             warning_icon = "⚠" if self.dtype_coercion_warnings > 0 else "✓"
@@ -1090,9 +1078,7 @@ class ETLMetrics:
         feature_selection_info = ""
         if self.feature_selection_applied:
             reduction_pct = (
-                100
-                * self.features_removed_by_selection
-                / self.features_before_selection
+                100 * self.features_removed_by_selection / self.features_before_selection
                 if self.features_before_selection > 0
                 else 0
             )
@@ -1137,10 +1123,10 @@ class ETLMetrics:
         return (
             f"ETL Pipeline Summary:\n"
             f"  Source: {self.source_type}\n"
-            f"  Duration: {self.total_time_sec:.2f}s "
-            f"(extract: {self.extract_time_sec:.2f}s, "
-            f"transform: {self.transform_time_sec:.2f}s, "
-            f"load: {self.load_time_sec:.2f}s)\n"
+            f"  Duration: {self.total_duration:.2f}s "
+            f"(extract: {self.extract_duration:.2f}s, "
+            f"transform: {self.transform_duration:.2f}s, "
+            f"load: {self.load_duration:.2f}s)\n"
             f"  Data: {self.rows_input} → {self.rows_output} rows, "
             f"{self.columns_input} → {self.columns_output} columns"
             f"{dtype_info}"
@@ -1153,9 +1139,7 @@ class ETLMetrics:
             f"{business_rules_info}"
             f"{schema_validation_info}\n"
             f"  Quality: {self.quality_score:.3f}, "
-            f"Validation: {self.validation_score:.3f}\n"
-            f"  Stages: {', '.join(self.stages_executed)}\n"
-            f"  Warnings: {len(self.warnings)}, Errors: {len(self.errors)}"
+            f"Validation: {self.validation_score:.3f}"
         )
 
 
@@ -1226,18 +1210,14 @@ def validate_etl_output(
         if df.shape[1] >= expected_min_cols:
             report["passed"].append(f"column_count >= {expected_min_cols}")
         else:
-            report["failed"].append(
-                f"column_count: {df.shape[1]} < expected {expected_min_cols}"
-            )
+            report["failed"].append(f"column_count: {df.shape[1]} < expected {expected_min_cols}")
 
     # Check minimum rows
     if expected_min_rows > 0:
         if df.shape[0] >= expected_min_rows:
             report["passed"].append(f"row_count >= {expected_min_rows}")
         else:
-            report["failed"].append(
-                f"row_count: {df.shape[0]} < expected {expected_min_rows}"
-            )
+            report["failed"].append(f"row_count: {df.shape[0]} < expected {expected_min_rows}")
 
     # Check critical columns
     if critical_columns:
@@ -1257,9 +1237,7 @@ def validate_etl_output(
             cols_with_nan = nan_counts[nan_counts > 0].index.tolist()
             report["columns_with_nan"] = cols_with_nan[:20]  # Limit to 20
             # Warning but not failure - NaN is often expected
-            logger.debug(
-                f"{phase}: {total_nan} NaN values in {len(cols_with_nan)} columns"
-            )
+            logger.debug(f"{phase}: {total_nan} NaN values in {len(cols_with_nan)} columns")
         report["passed"].append("nan_check_completed")
 
     # Check infinite values
@@ -1449,9 +1427,7 @@ class ETLPipeline:
         logger.info(f"Extracting data from all_stocks table: {db_url}")
         limit = limit or self.config.limit
         df = load_from_all_stocks(db_url, limit=limit)
-        logger.info(
-            f"Extracted {len(df)} rows, {len(df.columns)} columns from all_stocks"
-        )
+        logger.info(f"Extracted {len(df)} rows, {len(df.columns)} columns from all_stocks")
         return df
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -1490,9 +1466,7 @@ class ETLPipeline:
         if self.config.dtype_casting.apply_dtype_casting:
             logger.info("Stage 1.5: Applying schema-aware dtype casting")
             try:
-                result, dtype_diagnostics = detect_and_cast_dtypes(
-                    result, schema=COLUMN_SCHEMA
-                )
+                result, dtype_diagnostics = detect_and_cast_dtypes(result, schema=COLUMN_SCHEMA)
 
                 # Track metrics
                 if self.metrics:
@@ -1539,8 +1513,7 @@ class ETLPipeline:
 
         # Stage 1.6: Apply semantic column classification (Section 8.5)
         if self.config.semantic_classification.enabled:
-            logger.info("Stage 1.6: Applying semantic column classification")
-            result = self._apply_semantic_transformations(result)
+            result = self._apply_semantic_classification(result)
             if self.metrics:
                 self.metrics.stages_executed.append("semantic_classification")
 
@@ -1573,9 +1546,7 @@ class ETLPipeline:
         # Stage 4: Sanitize data
         if self.config.sanitization.sanitize_data:
             logger.info("Stage 4: Sanitizing data (inf, nan, extremes)")
-            result, sanitize_stats = sanitize_dataframe_with_logging(
-                result, return_stats=True
-            )
+            result, sanitize_stats = sanitize_dataframe_with_logging(result, return_stats=True)
 
             # Track business rule violations in metrics (Priority 1 Fix)
             if self.metrics and sanitize_stats:
@@ -1590,9 +1561,7 @@ class ETLPipeline:
 
         # Stage 5: Apply imputation strategy
         if self.config.imputation.apply_imputation:
-            logger.info(
-                f"Stage 5: Applying {self.config.imputation.strategy} imputation strategy"
-            )
+            logger.info(f"Stage 5: Applying {self.config.imputation.strategy} imputation strategy")
 
             # Track missing values before imputation
             missing_before = result.isna().sum().sum()
@@ -1630,9 +1599,7 @@ class ETLPipeline:
             if self.metrics:
                 self.metrics.missing_values_after_imputation = int(missing_after)
                 self.metrics.imputation_completeness = validation["is_complete"]
-                self.metrics.date_columns_ready = validation[
-                    "ready_for_temporal_features"
-                ]
+                self.metrics.date_columns_ready = validation["ready_for_temporal_features"]
                 self.metrics.quality_score = min(
                     self.metrics.quality_score,
                     1.0 if validation["is_complete"] else 0.8,
@@ -1647,16 +1614,10 @@ class ETLPipeline:
                 f"(reduced from {missing_before})"
             )
 
-        # Stage 6: Apply log transforms (optional)
-        if self.config.semantic_transform.apply_log_transforms:
-            logger.info(
-                f"Stage 6: Applying log transforms (method: {self.config.semantic_transform.log_transform_method})"
-            )
-            result = apply_log_transforms(
-                result,
-                columns=self.config.semantic_transform.log_transform_target_columns,
-                method=self.config.semantic_transform.log_transform_method,
-            )
+        # Stage 6: Apply semantic-aware transformations (log transforms)
+        result = self._apply_semantic_transformations(result)
+        if self.metrics:
+            self.metrics.stages_executed.append("semantic_transformations")
 
         # Stage 7: Apply feature scaling (NEW)
         if self.config.scaling.enabled:
@@ -1686,9 +1647,7 @@ class ETLPipeline:
                         f"{price_cols_to_remove[:3]}{'...' if len(price_cols_to_remove) > 3 else ''}"
                     )
                     columns_to_scale = [
-                        col
-                        for col in columns_to_scale
-                        if col.lower() not in PRICE_COLUMNS
+                        col for col in columns_to_scale if col.lower() not in PRICE_COLUMNS
                     ]
                     if self.metrics:
                         self.metrics.warnings.append(
@@ -1731,9 +1690,7 @@ class ETLPipeline:
             else:
                 logger.warning("No columns to scale after applying exclusions")
                 if self.metrics:
-                    self.metrics.warnings.append(
-                        "Scaling skipped: no valid columns found"
-                    )
+                    self.metrics.warnings.append("Scaling skipped: no valid columns found")
 
         # Stage 8: Compute financial metrics (optional)
         initial_cols = set(result.columns)
@@ -1869,9 +1826,7 @@ class ETLPipeline:
                         handle_dates=self.config.imputation.impute_datetime_columns,
                     )
                     if self.metrics:
-                        self.metrics.stages_executed.append(
-                            "post_feature_imputation_6step"
-                        )
+                        self.metrics.stages_executed.append("post_feature_imputation_6step")
                 except Exception as e:
                     logger.warning(
                         f"Post-feature 6-step imputation failed ({e}); falling back to median imputation"
@@ -1906,13 +1861,9 @@ class ETLPipeline:
                         result[bool_cols] = result[bool_cols].fillna(False)
 
                     # Handle datetime columns
-                    dt_cols = result.select_dtypes(
-                        include=["datetime64[ns]", "datetimetz"]
-                    ).columns
+                    dt_cols = result.select_dtypes(include=["datetime64[ns]", "datetimetz"]).columns
                     if len(dt_cols) > 0:
-                        result[dt_cols] = result[dt_cols].fillna(
-                            pd.Timestamp("1970-01-01")
-                        )
+                        result[dt_cols] = result[dt_cols].fillna(pd.Timestamp("1970-01-01"))
 
                     # Handle object/string/category columns (FIX: categorical-aware)
                     obj_cols = result.select_dtypes(
@@ -1924,9 +1875,7 @@ class ETLPipeline:
                             if result[col].dtype.name == "category":
                                 # Add 'UNKNOWN' to categories first if not already present
                                 if "UNKNOWN" not in result[col].cat.categories:
-                                    result[col] = result[col].cat.add_categories(
-                                        ["UNKNOWN"]
-                                    )
+                                    result[col] = result[col].cat.add_categories(["UNKNOWN"])
                                 # Now safely fill NaN with 'UNKNOWN'
                                 result[col] = result[col].fillna("UNKNOWN")
                             else:
@@ -1934,9 +1883,7 @@ class ETLPipeline:
                                 result[col] = result[col].fillna("UNKNOWN")
 
                     if self.metrics:
-                        self.metrics.stages_executed.append(
-                            "post_feature_imputation_final_pass"
-                        )
+                        self.metrics.stages_executed.append("post_feature_imputation_final_pass")
 
                 missing_after_sweep = int(result.isna().sum().sum())
                 if self.metrics:
@@ -2004,9 +1951,7 @@ class ETLPipeline:
                     logger.error(error_msg)
                     if self.metrics:
                         self.metrics.errors.append(error_msg)
-                        self.metrics.warnings.append(
-                            "Feature selection skipped due to error"
-                        )
+                        self.metrics.warnings.append("Feature selection skipped due to error")
                     logger.warning("Pipeline continuing without feature selection")
             else:
                 logger.warning(
@@ -2023,9 +1968,7 @@ class ETLPipeline:
             schema_validation = self._validate_schema_alignment(result)
 
             if self.metrics:
-                self.metrics.schema_alignment_score = schema_validation.get(
-                    "alignment_score", 1.0
-                )
+                self.metrics.schema_alignment_score = schema_validation.get("alignment_score", 1.0)
                 self.metrics.unknown_columns_count = len(
                     schema_validation.get("unknown_columns", [])
                 )
@@ -2054,10 +1997,100 @@ class ETLPipeline:
                         f"Found {len(schema_validation.get('unknown_columns', []))} unknown columns"
                     )
 
-        logger.info(
-            f"Transformation complete: {len(result)} rows, {len(result.columns)} columns"
-        )
+        # Stage 12: Quality validation (Stage 9 in requirements)
+        if self.config.validation.validate_quality:
+            result = self._validate_quality(result)
+            if self.metrics:
+                self.metrics.stages_executed.append("quality_validation")
+
+        logger.info(f"Transformation complete: {len(result)} rows, {len(result.columns)} columns")
         return result
+
+    def _validate_quality(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Stage 9: Quality validation with alerts and metrics dashboard generation.
+
+        Generates data quality alerts and metrics dashboard JSON files
+        when output_dir is configured (Section 8.6).
+        """
+        logger.info("Stage 9: Validating data quality")
+
+        # Calculate quality score
+        total_cells = df.size
+        missing_cells = df.isna().sum().sum()
+        quality_score = 1.0 - (missing_cells / total_cells) if total_cells > 0 else 0.0
+
+        if self.metrics:
+            self.metrics.quality_score = quality_score
+
+        # Generate quality alerts if output directory is configured
+        if self.config.financial_metrics.output_directory:
+            output_path = Path(self.config.financial_metrics.output_directory)
+            output_path.mkdir(parents=True, exist_ok=True)
+
+            # Generate data quality alerts (Section 19)
+            alerts = generate_data_quality_alerts(
+                df=df,
+            )
+            logger.info(f"Generated {len(alerts)} quality alerts")
+
+            # Save alerts to JSON
+            try:
+                with open(output_path / "quality_alerts.json", "w") as f:
+                    json.dump(to_jsonable(alerts), f, indent=4)
+            except Exception as e:
+                logger.error(f"Failed to save quality alerts: {e}")
+
+            if self.metrics:
+                self.metrics.quality_alerts_generated = len(alerts)
+
+            # Generate metrics dashboard (Section 20.2)
+            dashboard = generate_metrics_dashboard(
+                df=df,
+            )
+
+            # Enrich dashboard with semantic classification
+            if "semantic_classification" not in dashboard:
+                dashboard["semantic_classification"] = {}
+
+            if self.metrics:
+                dashboard["semantic_classification"].update(
+                    {
+                        "price_columns": self.metrics.price_columns_count,
+                        "market_value_columns": self.metrics.market_value_columns_count,
+                        "ratio_columns": self.metrics.ratio_columns_count,
+                        "percentage_columns": self.metrics.percentage_columns_count,
+                        "count_columns": self.metrics.count_columns_count,
+                    }
+                )
+            dashboard["model_version"] = getattr(self.config, "model_version", "unknown")
+
+            # Save dashboard to JSON
+            try:
+                with open(output_path / "metrics_dashboard.json", "w") as f:
+                    json.dump(to_jsonable(dashboard), f, indent=4)
+                logger.info(f"Metrics dashboard saved to {output_path / 'metrics_dashboard.json'}")
+            except Exception as e:
+                logger.error(f"Failed to save metrics dashboard: {e}")
+
+        # Validation checks
+        validation_score = 1.0
+        issues = []
+
+        # Check for remaining missing values (should be 0 after 6-step imputation)
+        if missing_cells > 0:
+            validation_score -= 0.1
+            issues.append(f"Missing values remain: {missing_cells}")
+
+        # Check price column preservation
+        preserved_price_cols = [col for col in PRICE_COLUMNS if col in df.columns]
+        if len(preserved_price_cols) < 21:
+            logger.warning(f"Only {len(preserved_price_cols)}/21 price columns present")
+
+        if self.metrics:
+            self.metrics.validation_score = validation_score
+
+        return df
 
     def validate_quality(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -2084,120 +2117,114 @@ class ETLPipeline:
 
         return quality_metrics
 
-    def _apply_semantic_transformations(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _apply_semantic_classification(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Apply column-semantics-aware transformations (Section 8.5).
+        Stage 3: Semantic column classification (price, market_value, ratio, percentage, count).
 
-        Transformation strategies by semantic category:
-        - Price columns: NEVER transform (preserve original units)
-        - Market value columns: Log-transform to handle skewness
-        - Ratio columns: Skip winsorization (already normalized)
-        - Percentage columns: Skip winsorization (bounded [0, 100])
-        - Count columns: Optional discrete handling
-
-        Args:
-            df: DataFrame with normalized column names
-
-        Returns:
-            DataFrame with semantic-aware transformations applied
+        Uses constants from column_semantics.py to categorize columns for downstream
+        transformation decisions (Section 8.5.1).
         """
-        if not self.config.semantic_classification.enabled:
-            logger.info("Semantic column classification disabled, skipping")
-            return df
+        logger.info("Stage 1.6: Applying semantic column classification")
 
-        # Classify columns by semantic type
-        classification = classify_columns(list(df.columns))
+        # Classify columns using both hardcoded sets and pattern-based inference
+        classification_result = classify_columns(df.columns.tolist())
+
+        # Track column counts by semantic category using imported constants
+        price_cols = [col for col in PRICE_COLUMNS if col in df.columns]
+        market_value_cols = [col for col in MARKET_VALUE_COLUMNS if col in df.columns]
+        ratio_cols = [col for col in RATIO_COLUMNS if col in df.columns]
+        percentage_cols = [col for col in PERCENTAGE_COLUMNS if col in df.columns]
+        count_cols = [col for col in COUNT_COLUMNS if col in df.columns]
+
+        # Update metrics with semantic classification counts
+        if self.metrics:
+            self.metrics.price_columns_count = len(price_cols)
+            self.metrics.market_value_columns_count = len(market_value_cols)
+            self.metrics.ratio_columns_count = len(ratio_cols)
+            self.metrics.percentage_columns_count = len(percentage_cols)
+            self.metrics.count_columns_count = len(count_cols)
+            self.metrics.semantic_classification_applied = True
+
+        # Use schema utility functions for additional classification
+        categorical_cols = list_categorical_cols()
+        numeric_feature_cols = list_numeric_feature_cols()
+
+        # Validate against schema expectations
+        expected_categorical = [col for col in categorical_cols if col in df.columns]
+        expected_numeric = [col for col in numeric_feature_cols if col in df.columns]
 
         logger.info(
-            f"Column classification: "
-            f"price={len(classification['price'])}, "
-            f"market_value={len(classification['market_value'])}, "
-            f"ratio={len(classification['ratio'])}, "
-            f"percentage={len(classification['percentage'])}, "
-            f"count={len(classification['count'])}, "
-            f"other={len(classification['other'])}"
+            f"Column classification: price={len(price_cols)}, "
+            f"market_value={len(market_value_cols)}, ratio={len(ratio_cols)}, "
+            f"percentage={len(percentage_cols)}, count={len(count_cols)}, "
+            f"other={len(classification_result.get('other', set()))}"
         )
+        logger.info(f"Identified {len(market_value_cols)} columns for log-transform")
 
-        # Update metrics with classification counts
+        return df
+
+    def _apply_semantic_transformations(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Stage 5: Semantic-aware transformations (log-transforms for market values).
+
+        Applies log-transforms to MARKET_VALUE_COLUMNS while preserving
+        PRICE_COLUMNS, RATIO_COLUMNS, and PERCENTAGE_COLUMNS (Section 8.5.3).
+        """
+        logger.info("Stage 5: Applying semantic-aware transformations")
+
+        if (
+            not self.config.semantic_transform.apply_log_transforms
+            and not self.config.semantic_transform.log_transform_market_values
+        ):
+            return df
+
+        # Get columns eligible for log-transform using semantic constants
+        log_transform_cols = []
+        if (
+            self.config.semantic_transform.apply_log_transforms
+            or self.config.semantic_transform.log_transform_market_values
+        ):
+            log_transform_cols.extend(
+                [
+                    col
+                    for col in MARKET_VALUE_COLUMNS
+                    if col in df.columns and col not in PRICE_COLUMNS
+                ]
+            )
+
+        if self.config.semantic_transform.log_transform_target_columns:
+            for col in self.config.semantic_transform.log_transform_target_columns:
+                if col in df.columns and col not in log_transform_cols:
+                    log_transform_cols.append(col)
+
+        transformed_count = 0
+        skipped_negative = 0
+
+        for col in log_transform_cols:
+            # Check for negative values (skip log-transform if present)
+            if (df[col] < 0).any():
+                negative_count = (df[col] < 0).sum()
+                logger.warning(
+                    f"Skipped log-transform for '{col}': "
+                    f"{negative_count} negative values present (added applicability flag)"
+                )
+                df[f"log_{col}_applicable"] = df[col] >= 0
+                skipped_negative += 1
+                continue
+
+            # Apply log1p transform (handles zeros)
+            log_col_name = f"log_{col}"
+            df[log_col_name] = np.log1p(df[col].clip(lower=0))
+            transformed_count += 1
+
         if self.metrics:
-            self.metrics.semantic_classification_applied = False
-            self.metrics.price_columns_count = len(classification["price"])
-            self.metrics.market_value_columns_count = len(
-                classification["market_value"]
-            )
-            self.metrics.ratio_columns_count = len(classification["ratio"])
-            self.metrics.percentage_columns_count = len(classification["percentage"])
-            self.metrics.count_columns_count = len(classification["count"])
+            self.metrics.log_transformed_columns = transformed_count
+            self.metrics.log_transforms_skipped = skipped_negative
 
-        # Apply log-transforms to market value columns (high skewness)
-        if self.config.semantic_transform.log_transform_market_values:
-            log_cols = get_log_transform_columns(list(df.columns))
-            log_count = 0
-            log_skipped = 0
-            for col in log_cols:
-                if col not in df.columns:
-                    continue
-
-                expected_dtype = get_expected_dtype(col)
-                if expected_dtype and expected_dtype not in {"float", "int"}:
-                    logger.warning(
-                        f"Skipping log-transform for '{col}': expected dtype '{expected_dtype}' is not numeric"
-                    )
-                    log_skipped += 1
-                    if self.metrics:
-                        self.metrics.warnings.append(
-                            f"Log-transform skipped for '{col}' due to non-numeric expected dtype '{expected_dtype}'"
-                        )
-                    continue
-
-                try:
-                    col_numeric = pd.to_numeric(df[col], errors="coerce")
-                except Exception as e:
-                    logger.error(
-                        f"Failed numeric casting for '{col}' prior to log-transform: {e}"
-                    )
-                    log_skipped += 1
-                    if self.metrics:
-                        self.metrics.warnings.append(
-                            f"Log-transform failed for '{col}' during numeric casting: {e}"
-                        )
-                    continue
-
-                invalid_coercions = int(((df[col].notna()) & col_numeric.isna()).sum())
-                if invalid_coercions > 0 and self.metrics:
-                    self.metrics.warnings.append(
-                        f"Log-transform casting coerced {invalid_coercions} value(s) to NaN in '{col}'"
-                    )
-
-                df[col] = col_numeric
-
-                negative_count = int((col_numeric < 0).sum())
-                if negative_count > 0:
-                    df[f"log_{col}_applicable"] = col_numeric.ge(0).fillna(False)
-                    logger.warning(
-                        f"Skipped log-transform for '{col}': {negative_count} negative values present (added applicability flag)"
-                    )
-                    log_skipped += 1
-                    if self.metrics:
-                        self.metrics.warnings.append(
-                            f"Log-transform skipped for '{col}': {negative_count} negative values"
-                        )
-                    continue
-
-                if col_numeric.notna().any():
-                    df[f"log_{col}"] = np.log1p(col_numeric.clip(lower=0))
-                    log_count += 1
-                else:
-                    logger.warning(
-                        f"Skipped log-transform for '{col}': no numeric values available after casting"
-                    )
-                    log_skipped += 1
-            logger.info(
-                f"Applied log-transforms to {log_count} market value columns ({log_skipped} skipped due to casting or negative values)"
-            )
-            if self.metrics:
-                self.metrics.log_transformed_columns = log_count
-                self.metrics.log_transforms_skipped = log_skipped
+        logger.info(
+            f"Log-transformed {transformed_count} columns, "
+            f"skipped {skipped_negative} due to negative values"
+        )
 
         return df
 
@@ -2288,18 +2315,14 @@ class ETLPipeline:
             # Update metrics
             if self.metrics:
                 self.metrics.feature_engineering_applied = True
-                self.metrics.feature_preset_used = (
-                    self.config.feature_engineering.preset
-                )
+                self.metrics.feature_preset_used = self.config.feature_engineering.preset
                 self.metrics.features_added = len(new_cols)
                 self.metrics.columns_output = len(df_with_features.columns)
 
             return df_with_features
 
         except Exception as e:
-            logger.warning(
-                f"Feature engineering failed: {e}, returning original DataFrame"
-            )
+            logger.warning(f"Feature engineering failed: {e}, returning original DataFrame")
             return df
 
     def _validate_schema_alignment(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -2449,9 +2472,7 @@ class ETLPipeline:
         )
 
         # Expected columns: required raw ETL inputs (scope-aware, source-agnostic)
-        expected_cols = set(
-            list_required_schema_columns_for_etl(include_extended_financials=False)
-        )
+        expected_cols = set(list_required_schema_columns_for_etl(include_extended_financials=False))
         missing_cols = sorted(expected_cols - df_cols)
 
         # Check dtype mismatches for columns present in both
@@ -2487,9 +2508,7 @@ class ETLPipeline:
         # Calculate alignment score
         # 1) Required coverage: are all required raw columns present?
         required_coverage = (
-            (len(expected_cols) - len(missing_cols)) / len(expected_cols)
-            if expected_cols
-            else 1.0
+            (len(expected_cols) - len(missing_cols)) / len(expected_cols) if expected_cols else 1.0
         )
         # 2) Recognition rate: what fraction of produced columns are known (schema or allowlisted engineered)?
         recognized_cols = [
@@ -2501,9 +2520,7 @@ class ETLPipeline:
         alignment_score = required_coverage * recognition_rate
 
         allowlisted_engineered = sorted(
-            c
-            for c in df_cols
-            if (c not in schema_cols) and _is_allowlisted_engineered(c)
+            c for c in df_cols if (c not in schema_cols) and _is_allowlisted_engineered(c)
         )
 
         validation_result = {
@@ -2570,13 +2587,11 @@ class ETLPipeline:
         if validate and self.config.validation.validate_schema_alignment:
             quality_metrics = self.validate_quality(df)
             if self.metrics:
-                self.metrics.quality_score = quality_metrics.get(
-                    "data_quality_score", 1.0
-                )
+                self.metrics.quality_score = quality_metrics.get("data_quality_score", 1.0)
                 if "pipeline_validation" in quality_metrics:
-                    self.metrics.validation_score = quality_metrics[
-                        "pipeline_validation"
-                    ].get("validation_score", 1.0)
+                    self.metrics.validation_score = quality_metrics["pipeline_validation"].get(
+                        "validation_score", 1.0
+                    )
                     self.metrics.warnings.extend(
                         quality_metrics["pipeline_validation"].get("warnings", [])
                     )
@@ -2637,7 +2652,7 @@ class ETLPipeline:
             else:
                 raise ValueError(f"Unknown source type: {source}")
 
-            self.metrics.extract_time_sec = time.time() - extract_start
+            self.metrics.extract_duration = time.time() - extract_start
             self.metrics.rows_input = len(df)
             self.metrics.columns_input = len(df.columns)
             self.metrics.stages_executed.append("extract")
@@ -2645,21 +2660,21 @@ class ETLPipeline:
             # TRANSFORM stage
             transform_start = time.time()
             df = self.transform(df)
-            self.metrics.transform_time_sec = time.time() - transform_start
+            self.metrics.transform_duration = time.time() - transform_start
             self.metrics.stages_executed.append("transform")
 
             # LOAD stage
             load_start = time.time()
             df = self.load(df)
-            self.metrics.load_time_sec = time.time() - load_start
+            self.metrics.load_duration = time.time() - load_start
             self.metrics.rows_output = len(df)
             self.metrics.columns_output = len(df.columns)
             self.metrics.stages_executed.append("load")
 
             # Finalize metrics
-            self.metrics.total_time_sec = time.time() - pipeline_start
+            self.metrics.total_duration = time.time() - pipeline_start
 
-            logger.info(f"ETL pipeline complete in {self.metrics.total_time_sec:.2f}s")
+            logger.info(f"ETL pipeline complete in {self.metrics.total_duration:.2f}s")
             logger.info(self.metrics.summary())
 
             if return_metrics:
@@ -2739,7 +2754,7 @@ def run_etl_pipeline(
             ...     return_metrics=True
             ... )
             >>> print(f"Quality score: {metrics.quality_score}")
-            >>> print(f"Processing time: {metrics.total_time_sec:.2f}s")
+            >>> print(f"Processing time: {metrics.total_duration:.2f}s")
 
         Simplified imputation workflow:
             >>> from finance_ml.ml_workflow.preprocessing.etl import etl_with_imputation
@@ -2780,7 +2795,7 @@ def etl_from_csv(
 
 def etl_from_database(
     db_url: str,
-    unified_table: bool = True,
+    unified_table: bool = False,
     config: Optional[ETLConfig] = None,
 ) -> pd.DataFrame:
     """
