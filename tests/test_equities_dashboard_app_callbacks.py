@@ -292,7 +292,7 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
         opts = cb_artifacts_opts("artifacts")
         self.assertIsInstance(opts, list)
 
-        cb_show = _get_unwrapped_callback(app, "artifact-viewer.children")
+        cb_show = _get_unwrapped_callback(app, "artifact-display.children")
         # Create a JSON artifact inside outputs/ and ensure it renders.
         tmp_json = (
             mod.PROJECT_ROOT
@@ -317,18 +317,7 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
         self.assertEqual(reset_values, (None, None, None, None, None, None, None, None))
 
         # Generate artifacts callback (mock generation)
-        cb_gen = None
-        for key, entry in app.callback_map.items():
-            if "data-status.children" not in key:
-                continue
-            cb = entry["callback"]
-            while hasattr(cb, "__wrapped__"):
-                cb = cb.__wrapped__
-            # _generate_artifacts(_n, data_json) takes 2 args, while _refresh_data(_n_clicks) takes 1.
-            if cb.__code__.co_argcount == 2:
-                cb_gen = cb
-                break
-
+        cb_gen = _get_unwrapped_callback(app, "generate-artifacts-status.children")
         self.assertIsNotNone(cb_gen)
         with patch.object(
             mod,
@@ -336,7 +325,7 @@ class TestEquitiesDashboardAppCallbacks(unittest.TestCase):
             return_value={"artifacts": {"a": {}, "b": {}}},
         ):
             msg = cb_gen(1, data_json)
-            self.assertIn("Generated", msg)
+            self.assertIn("generated", msg.lower())
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 {
   "phase": "9.3",
   "data_source": "all_stocks_features DataFrame (ETL Data Explorer)",
-  "timestamp": "2025-12-18T11:53:25.646782",
+  "timestamp": "2025-12-19T01:45:16.703740",
   "total_stocks": 6976,
-  "total_columns": 652,
+  "total_columns": 653,
   "phase93_features_present": 222,
   "phase93_features_expected": 223,
   "coverage_percentage": 99.55156950672645,
@@ -95,5 +95,5 @@
     }
   },
   "categories_with_features": 17,
-  "feature_engineering_duration_sec": 0.8597221374511719
+  "feature_engineering_duration_sec": 1.2165117263793945
 }

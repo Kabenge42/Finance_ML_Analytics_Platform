@@ -1,4 +1,4 @@
-"""Equities Dashboard (Plotly Dash)
+﻿"""Equities Dashboard (Plotly Dash)
 
 Run:
     python finance_ml/dashboards/equities_dashboard_app.py
@@ -36,37 +36,53 @@ from finance_ml.dashboards.earnings_widgets import (
     generate_earnings_quality_alerts,
     get_category_metrics,
 )
+from finance_ml.dashboards.components import (
+    build_explorer_column_options,
+    _safe_options,
+    apply_filters,
+    _kpi_cards,
+    _monitoring_kpi_cards,
+    _target_vs_price_scatter,
+    _market_cap_distribution,
+    create_earnings_events_chart,
+    _list_artifacts,
+    _render_artifact,
+    compute_surprise,
+    create_empty_state_figure,
+    validate_required_columns,
+    create_missing_columns_warning,
+    _coerce_list,
+    _severity_style,
+    _alerts_to_rows,
+)
+from finance_ml.dashboards.callbacks import register_all_callbacks
+from finance_ml.dashboards.components.data_utils import (
+    PROJECT_ROOT,
+    DASHBOARD_ROOT,
+    DEFAULT_DATA_DIR,
+    DEFAULT_CSV_EXPORT_PATH,
+    DEFAULT_METADATA_PATH,
+    ARTIFACTS_DIR,
+    ARTIFACTS_METADATA_PATH,
+    DEFAULT_ALERTS_PATH,
+    DEFAULT_EXPLORER_COLUMNS,
+    load_alerts_payload,
+    _validate_explorer_columns,
+)
 from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_INPUTS
 from finance_ml.ml_workflow.preprocessing.etl import etl_with_features
 
 DataSource = Literal["auto", "csv", "db"]
 
-# Standard color palette (aligned with code_guidelines.md Section 17.1)
-COLOR_PALETTE = {
-    "primary": "#375a7f",
-    "secondary": "#6c757d",
-    "success": "#00bc8c",
-    "warning": "#f39c12",
-    "danger": "#e74c3c",
-    "info": "#3498db",
-    "neutral": "#adb5bd",
-}
-
-# Plotly template (aligned with code_guidelines.md Section 17.2)
-PLOTLY_TEMPLATE = "plotly_dark"
+from finance_ml.dashboards.components.constants import (
+    COLOR_PALETTE,
+    PLOTLY_TEMPLATE,
+    FONT_FAMILY,
+    FONT_SIZES,
+)
 
 # Apply template globally to all Plotly figures
 px.defaults.template = PLOTLY_TEMPLATE
-
-# Font configuration (aligned with code_guidelines.md Section 17.4)
-FONT_FAMILY = "Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif"
-FONT_SIZES = {
-    "h1": 32,  # 2rem
-    "h2": 24,  # 1.5rem
-    "h3": 20,  # 1.25rem
-    "body": 16,  # 1rem
-    "caption": 14,  # 0.875rem
-}
 
 # Standard Plotly layout configuration
 PLOTLY_LAYOUT_DEFAULTS = {
@@ -124,30 +140,6 @@ EARNINGS_MODE_OPTIONS = [
 
 # Default columns for the Data Explorer tab - always included in initial view
 # (code_guidelines.md Section 8.1: Single Source of Truth for configuration constants)
-DEFAULT_EXPLORER_COLUMNS = [
-    "ticker",
-    "name",
-    "sector",
-    "region",
-    "last_price",
-    "price_target",
-    "market_cap",
-]
-
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-DASHBOARD_ROOT = PROJECT_ROOT / "outputs" / "dashboards" / "equities_dashboard"
-DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
-DEFAULT_CSV_EXPORT_PATH = DASHBOARD_ROOT / "equities_dash_df.csv"
-DEFAULT_METADATA_PATH = DASHBOARD_ROOT / "metadata.json"
-ARTIFACTS_DIR = DASHBOARD_ROOT / "artifacts"
-ARTIFACTS_METADATA_PATH = DASHBOARD_ROOT / "artifacts_metadata.json"
-DEFAULT_ALERTS_PATH = (
-    PROJECT_ROOT
-    / "outputs"
-    / "eda"
-    / "earnings_analytics"
-    / "earnings_quality_alerts.json"
-)
 
 # Logging setup
 import logging
@@ -155,28 +147,79 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def _validate_explorer_columns(df: pd.DataFrame, source_label: str) -> None:
-    """Log warnings for missing DEFAULT_EXPLORER_COLUMNS in loaded data.
+# =============================================================================
+# Temporal Calculation Standards (code_guidelines.md Section 9.3.0)
+# Import from dedicated module to avoid circular imports
+# =============================================================================
+from finance_ml.dashboards.components.temporal_utils import (
+    get_reference_date,
+    compute_days_to_earnings,
+)
+
+# Re-export for backward compatibility
+__all__ = [
+    "get_reference_date",
+    "compute_days_to_earnings",
+    # ... other exports
+]
+
+
+def parse_data_store(store_data: Optional[str]) -> pd.DataFrame:
+    """Safely parse data from dcc.Store component.
+
+    Handles the case where store_data is None (when load_on_start=False
+    or when initial data loading fails).
 
     Args:
-        df: Loaded DataFrame to validate
-        source_label: Data source label for logging context
-    """
-    if df is None or df.empty:
-        return
+        store_data: JSON string from dcc.Store or None
 
-    missing_cols = [c for c in DEFAULT_EXPLORER_COLUMNS if c not in df.columns]
-    if missing_cols:
-        logger.warning(
-            f"Data source '{source_label}' is missing explorer columns: {missing_cols}. "
-            "Some Data Explorer features may be limited."
-        )
-    # Specifically warn about 'name' column as it's important for display
-    if "name" not in df.columns:
-        logger.warning(
-            f"Data source '{source_label}' is missing 'name' column. "
-            "Stock names will not be displayed in the Data Explorer."
-        )
+    Returns:
+        DataFrame (empty if store_data is None or invalid)
+    """
+    if store_data is None:
+        return pd.DataFrame()
+
+    try:
+        return pd.read_json(store_data, orient="split")
+    except (ValueError, TypeError, json.JSONDecodeError) as e:
+        logger.warning(f"Failed to parse data store: {e}")
+        return pd.DataFrame()
+
+
+# =============================================================================
+# Dashboard Configuration Constants (code_guidelines.md Section 8.3)
+# =============================================================================
+
+# DataTable pagination defaults
+DEFAULT_PAGE_SIZE_CALENDAR = 15
+DEFAULT_PAGE_SIZE_ALERTS = 20
+DEFAULT_PAGE_SIZE_EXPLORER = 20
+
+# Earnings calendar defaults
+DEFAULT_EARNINGS_DAYS_WINDOW = 10
+MIN_EARNINGS_DAYS_WINDOW = 3
+MAX_EARNINGS_DAYS_WINDOW = 30
+EARNINGS_DAYS_MARKS = {3: "3", 7: "7", 10: "10", 14: "14", 21: "21", 30: "30"}
+
+# Top N defaults
+DEFAULT_TOP_N = 50
+MIN_TOP_N = 10
+MAX_TOP_N = 200
+TOP_N_STEP = 10
+
+# Alert thresholds (default values for UI inputs)
+DEFAULT_EPS_MISS_THRESHOLD = 20.0
+DEFAULT_DOWNGRADE_THRESHOLD = 5.0
+DEFAULT_MIN_DOWNGRADE_PERIODS = 2
+DEFAULT_TARGET_SPREAD_THRESHOLD = 30.0
+DEFAULT_PRE_EARNINGS_WINDOW_DAYS = 7
+DEFAULT_VOLATILITY_QUANTILE = 0.75
+DEFAULT_MAX_TICKERS_PER_ALERT = 10
+
+# Explorer defaults
+DEFAULT_EXPLORER_ROW_LIMIT = 200
+EXPLORER_ROW_LIMIT_STEP = 50
+MIN_EXPLORER_ROW_LIMIT = 10
 
 
 def load_data_csv_first(
@@ -266,7 +309,9 @@ def create_missing_columns_warning(
 
     return html.Div(
         [
-            html.H5(f"⚠️ Missing Columns for {context_name}", className="text-warning"),
+            html.H5(
+                f"âš ï¸ Missing Columns for {context_name}", className="text-warning"
+            ),
             html.P(
                 f"The following columns are unavailable: {', '.join(missing_cols[:10])}"
             ),
@@ -527,6 +572,29 @@ def generate_dashboard_artifacts(
             df, output_path=output_dir / artifacts["category_comparison"]["file"]
         )
 
+        # Generate monitoring report (Task 8)
+        report = {
+            "timestamp": timestamp,
+            "total_stocks": len(df),
+            "kpis": {},
+        }
+        if "total_revenues_cagr_5y_fy" in df.columns:
+            growth = pd.to_numeric(df["total_revenues_cagr_5y_fy"], errors="coerce")
+            report["kpis"]["pct_positive_revenue_growth"] = float(
+                (growth > 0).mean() * 100
+            )
+            report["kpis"]["median_revenue_growth"] = float(growth.median())
+        if "net_income_margin_pct_ltm" in df.columns:
+            margin = pd.to_numeric(df["net_income_margin_pct_ltm"], errors="coerce")
+            report["kpis"]["median_net_margin"] = float(margin.median())
+        if "return_on_equity_pct_ltm" in df.columns:
+            roe = pd.to_numeric(df["return_on_equity_pct_ltm"], errors="coerce")
+            report["kpis"]["median_roe"] = float(roe.median())
+
+        report_path = output_dir / "monitoring_report.json"
+        with open(report_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+
     except Exception as e:
         print(f"Warning: Error generating some artifacts: {e}")
 
@@ -601,537 +669,6 @@ def load_data(
         return pd.DataFrame()
 
 
-def apply_filters(
-    df: pd.DataFrame,
-    *,
-    sectors: Optional[Iterable[str]] = None,
-    regions: Optional[Iterable[str]] = None,
-    countries: Optional[Iterable[str]] = None,
-    trading_countries: Optional[Iterable[str]] = None,
-    industries: Optional[Iterable[str]] = None,
-    exchanges: Optional[Iterable[str]] = None,
-    style_classes: Optional[Iterable[str]] = None,
-    size_classes: Optional[Iterable[str]] = None,
-) -> pd.DataFrame:
-    """Filter helper with graceful missing-column behavior."""
-
-    if df is None or df.empty:
-        return pd.DataFrame(columns=df.columns if df is not None else [])
-
-    filtered = df
-    filters: List[Tuple[str, Optional[Iterable[str]]]] = [
-        ("sector", sectors),
-        ("region", regions),
-        ("country", countries),
-        ("trading_country", trading_countries),
-        ("industry", industries),
-        ("exchange", exchanges),
-        ("style_class", style_classes),
-        ("size_class", size_classes),
-    ]
-
-    for col, values in filters:
-        values_list = list(values) if values is not None else []
-        if not values_list:
-            continue
-        if col not in filtered.columns:
-            continue
-        filtered = filtered[filtered[col].isin(values_list)]
-
-    return filtered
-
-
-def load_alerts_payload(path: str | Path = DEFAULT_ALERTS_PATH) -> Dict[str, Any]:
-    p = Path(path)
-    if not p.exists():
-        return {}
-    try:
-        return json.loads(p.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-
-
-def _alerts_to_rows(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    alerts = payload.get("alerts", [])
-    if not isinstance(alerts, list):
-        return []
-
-    rows: List[Dict[str, Any]] = []
-    for a in alerts:
-        if not isinstance(a, dict):
-            continue
-        rows.append(
-            {
-                "severity": a.get("severity", ""),
-                "alert_type": a.get("alert_type", ""),
-                "count": a.get("count", ""),
-                "description": a.get("description", ""),
-                "tickers": ", ".join([str(t) for t in (a.get("tickers") or [])]),
-            }
-        )
-    return rows
-
-
-def _severity_style(severity: str) -> Dict[str, str]:
-    """Return conditional style dict for alert severity.
-
-    Uses COLOR_PALETTE colors for consistency (code_guidelines.md Section 17.1).
-    """
-    sev = str(severity).lower().strip()
-    if sev == "high":
-        return {"backgroundColor": COLOR_PALETTE["danger"], "color": "#ffffff"}
-    if sev == "medium":
-        return {"backgroundColor": COLOR_PALETTE["warning"], "color": "#000000"}
-    if sev == "low":
-        return {"backgroundColor": COLOR_PALETTE["info"], "color": "#ffffff"}
-    return {}
-
-
-def _monitoring_kpi_cards(df: pd.DataFrame) -> List[Any]:
-    """Generate monitoring KPI cards.
-
-    Styling aligned with code_guidelines.md Section 17.4.
-    """
-    cards = []
-
-    def card(title: str, value: str, color: str = "primary") -> dbc.Card:
-        return dbc.Card(
-            dbc.CardBody(
-                [
-                    html.Div(
-                        title,
-                        className="kpi-title",
-                        style={
-                            "fontSize": f"{FONT_SIZES['caption']}px",
-                            "fontFamily": FONT_FAMILY,
-                        },
-                    ),
-                    html.Div(
-                        value,
-                        className="kpi-value",
-                        style={
-                            "fontSize": f"{FONT_SIZES['h3']}px",
-                            "fontWeight": "bold",
-                            "fontFamily": FONT_FAMILY,
-                        },
-                    ),
-                ]
-            ),
-            color=color,
-            inverse=True,
-            className="kpi-card",
-            style={"minWidth": "150px"},
-        )
-
-    # 1. % Positive Revenue Growth
-    if "total_revenues_cagr_5y_fy" in df.columns:
-        growth = pd.to_numeric(df["total_revenues_cagr_5y_fy"], errors="coerce")
-        pct_positive = (growth > 0).sum() / len(growth) * 100 if len(growth) > 0 else 0
-        cards.append(
-            card(
-                "% Positive Rev Growth",
-                f"{pct_positive:.1f}%",
-                "success" if pct_positive > 50 else "warning",
-            )
-        )
-
-    # 2. Median Net Margin
-    if "net_income_margin_pct_ltm" in df.columns:
-        margin = pd.to_numeric(df["net_income_margin_pct_ltm"], errors="coerce")
-        median_margin = margin.median() if margin.notna().any() else 0
-        cards.append(card("Median Net Margin", f"{median_margin:.1f}%", "info"))
-
-    # 3. % Flagged by Alerts
-    payload = load_alerts_payload(DEFAULT_ALERTS_PATH)
-    alert_tickers = set()
-    for a in payload.get("alerts", []):
-        alert_tickers.update(a.get("tickers", []))
-    if "ticker" in df.columns and len(df) > 0:
-        pct_flagged = len(alert_tickers & set(df["ticker"])) / len(df) * 100
-        cards.append(
-            card(
-                "% With Alerts",
-                f"{pct_flagged:.1f}%",
-                "danger" if pct_flagged > 20 else "secondary",
-            )
-        )
-
-    # 4. Median EPS Revision (if available)
-    rev_cols = [c for c in df.columns if "eps_est_avg_rev_pct" in c.lower()]
-    if rev_cols:
-        rev = pd.to_numeric(df[rev_cols[0]], errors="coerce")
-        median_rev = rev.median() if rev.notna().any() else 0
-        cards.append(
-            card(
-                "Median EPS Revision",
-                f"{median_rev:+.1f}%",
-                "success" if median_rev > 0 else "danger",
-            )
-        )
-
-    return cards
-
-
-def _safe_options(df: pd.DataFrame, col: str) -> List[Dict[str, str]]:
-    if df is None or df.empty or col not in df.columns:
-        return []
-    values = sorted([v for v in df[col].dropna().astype(str).unique().tolist()])
-    return [{"label": v, "value": v} for v in values]
-
-
-def _kpi_cards(df: pd.DataFrame) -> List[Any]:
-    """Generate overview KPI cards.
-
-    Styling aligned with code_guidelines.md Section 17.4.
-    """
-
-    def _num(series: pd.Series) -> float:
-        return float(pd.to_numeric(series, errors="coerce").dropna().mean())
-
-    total = int(len(df))
-    tickers = int(df["ticker"].nunique()) if "ticker" in df.columns else 0
-    mean_upside = None
-    if "price_target" in df.columns and "last_price" in df.columns:
-        pt = pd.to_numeric(df["price_target"], errors="coerce")
-        lp = pd.to_numeric(df["last_price"], errors="coerce")
-        valid = pt.notna() & lp.notna() & (lp > 0)
-        if valid.any():
-            mean_upside = float((((pt[valid] - lp[valid]) / lp[valid]) * 100).mean())
-
-    market_cap_mean = _num(df["market_cap"]) if "market_cap" in df.columns else None
-
-    def card(title: str, value: str) -> dbc.Card:
-        return dbc.Card(
-            dbc.CardBody(
-                [
-                    html.Div(
-                        title,
-                        className="kpi-title",
-                        style={
-                            "fontSize": f"{FONT_SIZES['caption']}px",
-                            "fontFamily": FONT_FAMILY,
-                        },
-                    ),
-                    html.Div(
-                        value,
-                        className="kpi-value",
-                        style={
-                            "fontSize": f"{FONT_SIZES['h3']}px",
-                            "fontWeight": "bold",
-                            "fontFamily": FONT_FAMILY,
-                        },
-                    ),
-                ]
-            ),
-            className="kpi-card",
-        )
-
-    cards = [
-        card("Rows", f"{total:,}"),
-        card("Tickers", f"{tickers:,}"),
-    ]
-    if mean_upside is not None:
-        cards.append(card("Mean Upside", f"{mean_upside:,.1f}%"))
-    if market_cap_mean is not None and market_cap_mean == market_cap_mean:
-        cards.append(card("Mean Market Cap", f"${market_cap_mean:,.0f}"))
-    return cards
-
-
-def _target_vs_price_scatter(df: pd.DataFrame, use_log_scale: bool = True):
-    """Create scatter plot of price target vs last price with optional log scale.
-
-    Styling aligned with code_guidelines.md Section 17.1-17.2.
-    """
-    if df is None or df.empty:
-        return create_empty_state_figure("Target vs Price", "No data available")
-
-    if "last_price" not in df.columns or "price_target" not in df.columns:
-        return create_empty_state_figure(
-            "Target vs Price", "Missing required columns: last_price, price_target"
-        )
-
-    # Filter valid data
-    plot_df = df[
-        (df["last_price"].notna())
-        & (df["price_target"].notna())
-        & (df["last_price"] > 0)
-        & (df["price_target"] > 0)
-    ].copy()
-
-    if plot_df.empty:
-        return create_empty_state_figure(
-            "Target vs Price", "No valid price data after filtering"
-        )
-
-    # Include detailed hover information (code_guidelines.md Section 17.1)
-    hover_cols = [
-        c
-        for c in [
-            "ticker",
-            "name",
-            "sector",
-            "region",
-            "country",
-            "industry",
-            "exchange",
-            "market_cap",
-        ]
-        if c in plot_df.columns
-    ]
-
-    # Use log scale for better visibility across price ranges
-    title = "Price Target vs Last Price" + (" (Log Scale)" if use_log_scale else "")
-
-    fig = px.scatter(
-        plot_df,
-        x="last_price",
-        y="price_target",
-        color="sector" if "sector" in plot_df.columns else None,
-        hover_data=hover_cols,
-        title=title,
-        template=PLOTLY_TEMPLATE,
-        log_x=use_log_scale,
-        log_y=use_log_scale,
-        labels={
-            "last_price": "Last Price ($)",
-            "price_target": "Price Target ($)",
-            "sector": "Sector",
-        },
-    )
-
-    # Add diagonal reference line (y=x) using COLOR_PALETTE
-    if use_log_scale:
-        min_val = min(plot_df["last_price"].min(), plot_df["price_target"].min())
-        max_val = max(plot_df["last_price"].max(), plot_df["price_target"].max())
-        fig.add_scatter(
-            x=[min_val, max_val],
-            y=[min_val, max_val],
-            mode="lines",
-            line=dict(color=COLOR_PALETTE["neutral"], dash="dash", width=1),
-            name="Current Price",
-            showlegend=True,
-        )
-
-    # Apply standard layout configuration
-    fig.update_layout(
-        **PLOTLY_LAYOUT_DEFAULTS,
-        xaxis_title="Last Price ($)" + (" - Log Scale" if use_log_scale else ""),
-        yaxis_title="Price Target ($)" + (" - Log Scale" if use_log_scale else ""),
-    )
-    return fig
-
-
-def _market_cap_distribution(df: pd.DataFrame):
-    """Create market cap distribution with log scale.
-
-    Styling aligned with code_guidelines.md Section 17.1-17.2.
-    """
-    if df is None or df.empty or "market_cap" not in df.columns:
-        return create_empty_state_figure(
-            "Market Cap Distribution", "Market cap data not available"
-        )
-
-    valid_df = df[df["market_cap"].notna() & (df["market_cap"] > 0)].copy()
-
-    if valid_df.empty:
-        return create_empty_state_figure(
-            "Market Cap Distribution", "No valid market cap data"
-        )
-
-    # Use log10 for market cap
-    valid_df["log_market_cap"] = np.log10(valid_df["market_cap"])
-
-    fig = px.histogram(
-        valid_df,
-        x="log_market_cap",
-        nbins=50,
-        title="Market Cap Distribution (Log Scale)",
-        template=PLOTLY_TEMPLATE,
-        color="sector" if "sector" in valid_df.columns else None,
-        labels={
-            "log_market_cap": "Market Cap (Log₁₀ $)",
-            "sector": "Sector",
-        },
-    )
-
-    # Apply standard layout configuration, merging defaults with custom values
-    layout_config = {
-        **PLOTLY_LAYOUT_DEFAULTS,
-        "xaxis_title": "Market Cap (Log₁₀ $)",
-        "yaxis_title": "Count",
-        "showlegend": "sector" in valid_df.columns,
-    }
-    fig.update_layout(**layout_config)
-
-    return fig
-
-
-def create_earnings_events_chart(df: pd.DataFrame, days_window: int = 30):
-    """Create dynamic earnings events timeline chart.
-
-    Styling aligned with code_guidelines.md Section 17.1-17.2.
-
-    Args:
-        df: DataFrame with next_earnings column
-        days_window: Number of days before/after today to include
-
-    Returns:
-        Plotly figure
-    """
-    if df is None or df.empty or "next_earnings" not in df.columns:
-        return create_empty_state_figure(
-            "Earnings Events Timeline", "Earnings data not available"
-        )
-
-    # Filter data
-    ref_date = pd.Timestamp.now()
-    df_work = df.copy()
-    df_work["next_earnings"] = pd.to_datetime(df_work["next_earnings"], errors="coerce")
-    df_work["days_to_earnings"] = (df_work["next_earnings"] - ref_date).dt.days
-
-    # Filter to window
-    mask = df_work["days_to_earnings"].notna() & (
-        df_work["days_to_earnings"].abs() <= days_window
-    )
-    events_df = df_work[mask].copy()
-
-    if events_df.empty:
-        return create_empty_state_figure(
-            "Earnings Events Timeline", f"No earnings events within ±{days_window} days"
-        )
-
-    # Create timeline chart
-    events_df = events_df.sort_values("days_to_earnings")
-
-    # Color by sector if available
-    if "sector" in events_df.columns:
-        color = events_df["sector"]
-    else:
-        color = None
-
-    fig = px.scatter(
-        events_df,
-        x="days_to_earnings",
-        y="ticker" if "ticker" in events_df.columns else events_df.index,
-        color=color,
-        hover_data=[
-            c
-            for c in ["ticker", "name", "sector", "next_earnings"]
-            if c in events_df.columns
-        ],
-        title=f"Earnings Events Timeline (±{days_window} days)",
-        template=PLOTLY_TEMPLATE,
-        height=max(400, len(events_df) * 15),
-        labels={
-            "days_to_earnings": "Days to Earnings",
-            "ticker": "Ticker",
-            "sector": "Sector",
-        },
-    )
-
-    # Add vertical line at today using COLOR_PALETTE
-    fig.add_vline(
-        x=0,
-        line_dash="dash",
-        line_color=COLOR_PALETTE["neutral"],
-        annotation_text="Today",
-        annotation_position="top",
-    )
-
-    # Apply standard layout configuration
-    fig.update_layout(
-        **PLOTLY_LAYOUT_DEFAULTS,
-        xaxis_title="Days to Earnings (negative = past)",
-        yaxis_title="Ticker",
-    )
-
-    return fig
-
-
-def _list_artifacts() -> List[Dict[str, str]]:
-    """List all available artifacts from earnings_analytics and dashboard artifacts dirs."""
-    items: List[Dict[str, str]] = []
-
-    # Include artifacts from earnings_analytics directory
-    base1 = PROJECT_ROOT / "outputs" / "eda" / "earnings_analytics"
-    if base1.exists():
-        for p in sorted(base1.glob("*")):
-            if p.suffix.lower() not in {".html", ".json"}:
-                continue
-            items.append({"label": f"[Earnings] {p.name}", "value": str(p)})
-
-    # Include artifacts from dashboard artifacts directory
-    if ARTIFACTS_DIR.exists():
-        for p in sorted(ARTIFACTS_DIR.glob("*")):
-            if p.suffix.lower() not in {".html", ".json"}:
-                continue
-            items.append({"label": f"[Dashboard] {p.name}", "value": str(p)})
-
-    return items
-
-
-def _render_artifact(path_str: str) -> Any:
-    """Render artifact content for the Artifacts tab.
-
-    Styling aligned with code_guidelines.md Section 17.
-    """
-    if not path_str:
-        return html.Div(
-            "Select an artifact",
-            style={"padding": "10px", "color": COLOR_PALETTE["neutral"]},
-        )
-
-    p = Path(path_str)
-    if not p.exists():
-        return html.Div(
-            "Artifact not found",
-            style={"padding": "10px", "color": COLOR_PALETTE["warning"]},
-        )
-
-    if p.suffix.lower() == ".html":
-        # Serve via /app_assets route so iframe can load it.
-        rel = (
-            p.relative_to(PROJECT_ROOT / "outputs")
-            if str(p).startswith(str(PROJECT_ROOT / "outputs"))
-            else None
-        )
-        if rel is not None:
-            src = f"/app_assets/{rel.as_posix()}"
-            return html.Iframe(
-                src=src,
-                style={
-                    "width": "100%",
-                    "height": "650px",
-                    "border": f"1px solid {COLOR_PALETTE['secondary']}",
-                },
-            )
-        # Fallback: show simple message
-        return html.Div(
-            "HTML artifact is outside outputs/ and cannot be embedded.",
-            style={"padding": "10px"},
-        )
-
-    if p.suffix.lower() == ".json":
-        try:
-            payload = json.loads(p.read_text(encoding="utf-8"))
-            pretty = json.dumps(payload, indent=2, sort_keys=True)
-        except Exception:
-            pretty = p.read_text(encoding="utf-8", errors="replace")
-        return html.Pre(
-            pretty,
-            style={
-                "maxHeight": "650px",
-                "overflowY": "auto",
-                "backgroundColor": "#111",
-                "color": "#ffffff",
-                "padding": "10px",
-                "fontFamily": FONT_FAMILY,
-            },
-        )
-
-    return html.Div("Unsupported artifact type", style={"padding": "10px"})
-
-
 def create_app(
     *,
     data_source: DataSource = "auto",
@@ -1144,12 +681,19 @@ def create_app(
     Set load_on_start=True when running interactively.
     Keep it False in tests to avoid running ETL.
     """
+    initial_df = pd.DataFrame()
 
-    initial_df = (
-        load_data(data_source=data_source, data_dir=data_dir, db_url=db_url)
-        if load_on_start
-        else pd.DataFrame()
-    )
+    if load_on_start:
+        try:
+            initial_df = load_data(
+                data_source=data_source, data_dir=data_dir, db_url=db_url
+            )
+            if initial_df is None:
+                logger.warning("load_data returned None, using empty DataFrame")
+                initial_df = pd.DataFrame()
+        except Exception as e:
+            logger.error(f"Failed to load initial data: {e}")
+            initial_df = pd.DataFrame()
 
     app = dash.Dash(
         __name__,
@@ -1161,7 +705,24 @@ def create_app(
 
     @server.route("/app_assets/<path:filename>")
     def serve_outputs(filename: str):
-        return send_from_directory(PROJECT_ROOT / "outputs", filename)
+        """Serve files from outputs directory with path traversal protection."""
+        from flask import abort
+
+        # Validate filename to prevent directory traversal attacks
+        # Reject any path containing '..' or absolute paths
+        if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
+            abort(403)  # Forbidden
+
+        # Ensure the resolved path is within the outputs directory
+        outputs_dir = PROJECT_ROOT / "outputs"
+        try:
+            requested_path = (outputs_dir / filename).resolve()
+            if not str(requested_path).startswith(str(outputs_dir.resolve())):
+                abort(403)  # Forbidden
+        except (ValueError, OSError):
+            abort(400)  # Bad Request
+
+        return send_from_directory(outputs_dir, filename)
 
     # Layout
     app.layout = html.Div(
@@ -1169,9 +730,16 @@ def create_app(
             html.H1("📈 Equities Analytics Dashboard", style={"textAlign": "center"}),
             dcc.Store(
                 id="equities-data-store",
+                # Note: For large datasets (>6000 rows, 300+ columns), consider:
+                # 1. Using storage_type='session' or 'local' for persistence
+                # 2. Implementing server-side caching with flask-caching
+                # 3. Using pagination/lazy loading for initial data
+                # Current implementation stores full DataFrame as JSON which may
+                # cause performance issues with very large datasets.
                 data=initial_df.to_json(orient="split")
                 if not initial_df.empty
                 else None,
+                storage_type="memory",  # Explicit default for clarity
             ),
             html.Div(
                 id="kpi-cards",
@@ -1437,18 +1005,11 @@ def create_app(
                                                             ),
                                                             dcc.Slider(
                                                                 id="earnings-calendar-days",
-                                                                min=3,
-                                                                max=30,
+                                                                min=MIN_EARNINGS_DAYS_WINDOW,
+                                                                max=MAX_EARNINGS_DAYS_WINDOW,
                                                                 step=1,
-                                                                value=10,
-                                                                marks={
-                                                                    3: "3",
-                                                                    7: "7",
-                                                                    10: "10",
-                                                                    14: "14",
-                                                                    21: "21",
-                                                                    30: "30",
-                                                                },
+                                                                value=DEFAULT_EARNINGS_DAYS_WINDOW,
+                                                                marks=EARNINGS_DAYS_MARKS,
                                                                 tooltip={
                                                                     "placement": "bottom",
                                                                     "always_visible": False,
@@ -1469,10 +1030,10 @@ def create_app(
                                                             dcc.Input(
                                                                 id="earnings-calendar-top-n",
                                                                 type="number",
-                                                                value=50,
-                                                                min=10,
-                                                                max=200,
-                                                                step=10,
+                                                                value=DEFAULT_TOP_N,
+                                                                min=MIN_TOP_N,
+                                                                max=MAX_TOP_N,
+                                                                step=TOP_N_STEP,
                                                                 style={"width": "80px"},
                                                             ),
                                                         ],
@@ -1563,7 +1124,7 @@ def create_app(
                                                 sort_action="native",
                                                 filter_action="native",
                                                 page_action="native",
-                                                page_size=15,
+                                                page_size=DEFAULT_PAGE_SIZE_CALENDAR,
                                                 row_selectable="multi",
                                                 selected_rows=[],
                                             ),
@@ -1615,7 +1176,7 @@ def create_app(
                                             dcc.Input(
                                                 id="cfg-eps-miss",
                                                 type="number",
-                                                value=20.0,
+                                                value=DEFAULT_EPS_MISS_THRESHOLD,
                                                 step=1,
                                             ),
                                             html.Label(
@@ -1625,7 +1186,7 @@ def create_app(
                                             dcc.Input(
                                                 id="cfg-downgrade",
                                                 type="number",
-                                                value=5.0,
+                                                value=DEFAULT_DOWNGRADE_THRESHOLD,
                                                 step=0.5,
                                             ),
                                             html.Label(
@@ -1635,7 +1196,7 @@ def create_app(
                                             dcc.Input(
                                                 id="cfg-min-periods",
                                                 type="number",
-                                                value=2,
+                                                value=DEFAULT_MIN_DOWNGRADE_PERIODS,
                                                 step=1,
                                             ),
                                             html.Br(),
@@ -1643,7 +1204,7 @@ def create_app(
                                             dcc.Input(
                                                 id="cfg-target-spread",
                                                 type="number",
-                                                value=30.0,
+                                                value=DEFAULT_TARGET_SPREAD_THRESHOLD,
                                                 step=1,
                                             ),
                                             html.Label(
@@ -1653,7 +1214,7 @@ def create_app(
                                             dcc.Input(
                                                 id="cfg-window-days",
                                                 type="number",
-                                                value=7,
+                                                value=DEFAULT_PRE_EARNINGS_WINDOW_DAYS,
                                                 step=1,
                                             ),
                                             html.Label(
@@ -1663,7 +1224,7 @@ def create_app(
                                             dcc.Input(
                                                 id="cfg-vol-quantile",
                                                 type="number",
-                                                value=0.75,
+                                                value=DEFAULT_VOLATILITY_QUANTILE,
                                                 step=0.05,
                                                 min=0,
                                                 max=1,
@@ -1675,7 +1236,7 @@ def create_app(
                                             dcc.Input(
                                                 id="cfg-max-tickers",
                                                 type="number",
-                                                value=10,
+                                                value=DEFAULT_MAX_TICKERS_PER_ALERT,
                                                 step=1,
                                             ),
                                             html.Br(),
@@ -1718,7 +1279,7 @@ def create_app(
                                         sort_action="native",
                                         filter_action="native",
                                         page_action="native",
-                                        page_size=20,
+                                        page_size=DEFAULT_PAGE_SIZE_ALERTS,
                                         style_data_conditional=[
                                             {
                                                 "if": {
@@ -1773,9 +1334,9 @@ def create_app(
                                             dcc.Input(
                                                 id="explorer-row-limit",
                                                 type="number",
-                                                value=200,
-                                                step=50,
-                                                min=10,
+                                                value=DEFAULT_EXPLORER_ROW_LIMIT,
+                                                step=EXPLORER_ROW_LIMIT_STEP,
+                                                min=MIN_EXPLORER_ROW_LIMIT,
                                             ),
                                         ],
                                         style={"marginTop": "10px"},
@@ -1803,7 +1364,7 @@ def create_app(
                                 sort_action="native",
                                 filter_action="native",
                                 page_action="native",
-                                page_size=20,
+                                page_size=DEFAULT_PAGE_SIZE_EXPLORER,
                             ),
                         ],
                     ),
@@ -2053,924 +1614,42 @@ def create_app(
     )
 
     # ---------------------- Callbacks ----------------------
-
-    @app.callback(
-        Output("equities-data-store", "data"),
-        Output("data-status", "children"),
-        Output("sector-dropdown", "options"),
-        Output("region-dropdown", "options"),
-        Output("country-dropdown", "options"),
-        Output("trading-country-dropdown", "options"),
-        Output("industry-dropdown", "options"),
-        Output("exchange-dropdown", "options"),
-        Output("style-class-dropdown", "options"),
-        Output("size-class-dropdown", "options"),
-        Input("refresh-data-btn", "n_clicks"),
-        prevent_initial_call=not load_on_start,
-    )
-    def _refresh_data(_n_clicks):
-        df, status_summary = load_data_csv_first(
+    # Callbacks are now registered via the callbacks module (code_guidelines.md §6.2)
+    try:
+        register_all_callbacks(
+            app=app,
             data_dir=data_dir,
             db_url=db_url,
+            load_on_start=load_on_start,
+            initial_df=initial_df,
+            load_data_csv_first=load_data_csv_first,
+            generate_dashboard_artifacts=generate_dashboard_artifacts,
         )
-
-        if not df.empty:
-            # status_summary now contains the detailed metrics.summary()
-            status = f"Rows: {len(df):,} | {status_summary}"
-        else:
-            status = "No data loaded or ETL failed"
-
-        # Update filter dropdown options with loaded data
-        return (
-            df.to_json(orient="split"),
-            status,
-            _safe_options(df, "sector"),
-            _safe_options(df, "region"),
-            _safe_options(df, "country"),
-            _safe_options(df, "trading_country"),
-            _safe_options(df, "industry"),
-            _safe_options(df, "exchange"),
-            _safe_options(df, "style_class"),
-            _safe_options(df, "size_class"),
-        )
-
-    @app.callback(
-        Output("kpi-cards", "children"),
-        Output("target-vs-price-scatter", "figure"),
-        Output("market-cap-distribution", "figure"),
-        Input("equities-data-store", "data"),
-        Input("sector-dropdown", "value"),
-        Input("region-dropdown", "value"),
-        Input("country-dropdown", "value"),
-        Input("trading-country-dropdown", "value"),
-        Input("industry-dropdown", "value"),
-        Input("exchange-dropdown", "value"),
-        Input("style-class-dropdown", "value"),
-        Input("size-class-dropdown", "value"),
-        prevent_initial_call=False,
-    )
-    def _update_overview(
-        data_json,
-        sectors,
-        regions,
-        countries,
-        trading_countries,
-        industries,
-        exchanges,
-        style_classes,
-        size_classes,
-    ):
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        filtered = apply_filters(
-            df,
-            sectors=_coerce_list(sectors),
-            regions=_coerce_list(regions),
-            countries=_coerce_list(countries),
-            trading_countries=_coerce_list(trading_countries),
-            industries=_coerce_list(industries),
-            exchanges=_coerce_list(exchanges),
-            style_classes=_coerce_list(style_classes),
-            size_classes=_coerce_list(size_classes),
-        )
-
-        return (
-            _kpi_cards(filtered),
-            _target_vs_price_scatter(filtered, use_log_scale=True),
-            _market_cap_distribution(filtered),
-        )
-
-    # Task 3: Alert summary callback
-    @app.callback(
-        Output("earnings-alert-summary", "children"),
-        Input("equities-data-store", "data"),
-    )
-    def _update_alert_summary(data_json):
-        """Render compact alert summary panel."""
-        payload = load_alerts_payload(DEFAULT_ALERTS_PATH)
-        alerts = payload.get("alerts", [])
-
-        if not alerts:
-            return html.Div(
-                "No alerts available. Click 'Generate Alerts' in the Alerts tab.",
+    except Exception as e:
+        logger.error(f"Failed to register callbacks: {e}")
+        # Add a fallback error display to the layout
+        app.layout.children.append(
+            html.Div(
+                [
+                    html.H4(
+                        "⚠️ Application Error", style={"color": COLOR_PALETTE["danger"]}
+                    ),
+                    html.P(f"Some features may be unavailable: {str(e)[:200]}"),
+                ],
                 style={
-                    "color": COLOR_PALETTE["neutral"],
-                    "padding": "10px",
-                    "fontFamily": FONT_FAMILY,
+                    "padding": "20px",
+                    "backgroundColor": "#2d2d2d",
+                    "margin": "20px",
+                    "borderRadius": "5px",
                 },
             )
-
-        # Build summary cards
-        severity_counts = {"high": 0, "medium": 0, "low": 0}
-        for a in alerts:
-            sev = a.get("severity", "low").lower()
-            severity_counts[sev] = severity_counts.get(sev, 0) + 1
-
-        cards = []
-        for sev, count in severity_counts.items():
-            if count > 0:
-                color = {"high": "danger", "medium": "warning", "low": "info"}.get(
-                    sev, "secondary"
-                )
-                cards.append(
-                    dbc.Badge(f"{sev.upper()}: {count}", color=color, className="me-2")
-                )
-
-        return html.Div(
-            [html.Span("Alerts: ", style={"fontWeight": "bold"})] + cards,
-            style={
-                "padding": "10px",
-                "backgroundColor": "#1a1a1a",
-                "borderRadius": "5px",
-                "marginBottom": "10px",
-            },
         )
-
-    # Task 4: Updated earnings figures callback with alert filter and global filter integration
-    @app.callback(
-        Output("earnings-events-timeline", "figure"),
-        Output("earnings-surprise-fig", "figure"),
-        Output("analyst-heatmap-fig", "figure"),
-        Output("market-movers-fig", "figure"),
-        Output("price-target-analytics-fig", "figure"),
-        Input("equities-data-store", "data"),
-        Input("earnings-alert-filter-dropdown", "value"),
-        Input("sector-dropdown", "value"),
-        Input("region-dropdown", "value"),
-        Input("country-dropdown", "value"),
-        Input("trading-country-dropdown", "value"),
-        Input("industry-dropdown", "value"),
-        Input("exchange-dropdown", "value"),
-        Input("style-class-dropdown", "value"),
-        Input("size-class-dropdown", "value"),
-    )
-    def _update_earnings_figs(
-        data_json,
-        alert_filter,
-        sectors,
-        regions,
-        countries,
-        trading_countries,
-        industries,
-        exchanges,
-        style_classes,
-        size_classes,
-    ):
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            empty = create_empty_state_figure("Earnings Analytics", "No data loaded")
-            return empty, empty, empty, empty, empty
-
-        # Apply global filters for cross-tab synchronization
-        df = apply_filters(
-            df,
-            sectors=_coerce_list(sectors),
-            regions=_coerce_list(regions),
-            countries=_coerce_list(countries),
-            trading_countries=_coerce_list(trading_countries),
-            industries=_coerce_list(industries),
-            exchanges=_coerce_list(exchanges),
-            style_classes=_coerce_list(style_classes),
-            size_classes=_coerce_list(size_classes),
-        )
-
-        if df.empty:
-            empty = create_empty_state_figure(
-                "Earnings Analytics", "No data matching filters"
-            )
-            return empty, empty, empty, empty, empty
-
-        # Apply alert filter (Task 4)
-        if alert_filter == "alerts_only":
-            payload = load_alerts_payload(DEFAULT_ALERTS_PATH)
-            alert_tickers = set()
-            for a in payload.get("alerts", []):
-                alert_tickers.update(a.get("tickers", []))
-            if alert_tickers and "ticker" in df.columns:
-                df = df[df["ticker"].isin(alert_tickers)]
-                if df.empty:
-                    empty = create_empty_state_figure(
-                        "Earnings Analytics", "No tickers with active alerts"
-                    )
-                    return empty, empty, empty, empty, empty
-
-        # These functions are designed to be robust to missing columns.
-        return (
-            create_earnings_events_chart(df),
-            create_earnings_surprise_dashboard(df),
-            create_analyst_recommendation_heatmap(df),
-            create_market_movers_dashboard(df),
-            create_price_target_analytics(df),
-        )
-
-    # Task 5: Generate earnings artifacts callback
-    @app.callback(
-        Output("earnings-artifacts-status", "children"),
-        Input("generate-earnings-artifacts-btn", "n_clicks"),
-        State("equities-data-store", "data"),
-        prevent_initial_call=True,
-    )
-    def _generate_earnings_artifacts(_n, data_json):
-        """Generate earnings analytics artifacts (Task 5)."""
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            return "No data available"
-
-        try:
-            # Generate the 4 main earnings artifacts
-            artifacts_generated = []
-
-            for name, func in [
-                (
-                    "earnings_surprise_dashboard.html",
-                    create_earnings_surprise_dashboard,
-                ),
-                (
-                    "analyst_recommendation_heatmap.html",
-                    create_analyst_recommendation_heatmap,
-                ),
-                ("market_movers_dashboard.html", create_market_movers_dashboard),
-                ("price_target_analytics.html", create_price_target_analytics),
-            ]:
-                output_path = ARTIFACTS_DIR / name
-                func(df, output_path=output_path)
-                artifacts_generated.append(name)
-
-            return f"✓ Generated {len(artifacts_generated)} artifacts"
-        except Exception as e:
-            return f"Error: {e}"
-
-    # Interactive Earnings Calendar callback with global filter integration
-    @app.callback(
-        Output("earnings-calendar-table", "columns"),
-        Output("earnings-calendar-table", "data"),
-        Output("earnings-calendar-status", "children"),
-        Input("equities-data-store", "data"),
-        Input("earnings-calendar-mode", "value"),
-        Input("earnings-calendar-days", "value"),
-        Input("earnings-calendar-top-n", "value"),
-        Input("earnings-calendar-apply-filters", "value"),
-        Input("sector-dropdown", "value"),
-        Input("region-dropdown", "value"),
-        Input("country-dropdown", "value"),
-        Input("trading-country-dropdown", "value"),
-        Input("industry-dropdown", "value"),
-        Input("exchange-dropdown", "value"),
-        Input("style-class-dropdown", "value"),
-        Input("size-class-dropdown", "value"),
-        prevent_initial_call=False,
-    )
-    def _update_earnings_calendar(
-        data_json,
-        mode,
-        days_window,
-        top_n,
-        should_apply_filters,
-        sectors,
-        regions,
-        countries,
-        trading_countries,
-        industries,
-        exchanges,
-        style_classes,
-        size_classes,
-    ):
-        """Update the interactive earnings calendar DataTable."""
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            return [], [], "No data available"
-
-        # Apply global filters if checkbox is checked
-        if should_apply_filters:
-            df = apply_filters(
-                df,
-                sectors=_coerce_list(sectors),
-                regions=_coerce_list(regions),
-                countries=_coerce_list(countries),
-                trading_countries=_coerce_list(trading_countries),
-                industries=_coerce_list(industries),
-                exchanges=_coerce_list(exchanges),
-                style_classes=_coerce_list(style_classes),
-                size_classes=_coerce_list(size_classes),
-            )
-
-        if df.empty:
-            return [], [], "No data after applying filters"
-
-        # Ensure next_earnings column exists (graceful fallback)
-        if "next_earnings" not in df.columns:
-            logger.warning(
-                "next_earnings column missing, creating empty column for calendar"
-            )
-            df = df.copy()
-            df["next_earnings"] = pd.NaT
-        else:
-            df = df.copy()
-
-        # Parse dates and calculate days to earnings
-        reference_date = pd.Timestamp.now()
-        df["next_earnings"] = pd.to_datetime(df["next_earnings"], errors="coerce")
-
-        # Filter by days window
-        days_window = int(days_window) if days_window else 10
-        df["days_to_earnings"] = (df["next_earnings"] - reference_date).dt.days
-        mask = df["days_to_earnings"].notna() & (
-            df["days_to_earnings"].abs() <= days_window
-        )
-        filtered_df = df[mask].copy()
-
-        if filtered_df.empty:
-            return [], [], f"No earnings within ±{days_window} days"
-
-        # Use create_earnings_calendar_dashboard for consistent column selection
-        try:
-            calendar_df = create_earnings_calendar_dashboard(
-                filtered_df,
-                reference_date=reference_date,
-                top_n=int(top_n) if top_n else 50,
-                mode=mode or "all",
-            )
-        except Exception as e:
-            logger.warning(f"Calendar dashboard creation failed: {e}")
-            # Fallback to basic columns
-            basic_cols = [
-                "ticker",
-                "sector",
-                "region",
-                "next_earnings",
-                "days_to_earnings",
-            ]
-            available_cols = [c for c in basic_cols if c in filtered_df.columns]
-            if "market_cap" in filtered_df.columns:
-                available_cols.append("market_cap")
-            calendar_df = filtered_df[available_cols].head(int(top_n) if top_n else 50)
-
-        if calendar_df.empty:
-            return [], [], "No data to display"
-
-        # Ensure days_to_earnings is in the output
-        if (
-            "days_to_earnings" not in calendar_df.columns
-            and "next_earnings" in calendar_df.columns
-        ):
-            calendar_df["days_to_earnings"] = (
-                pd.to_datetime(calendar_df["next_earnings"], errors="coerce")
-                - reference_date
-            ).dt.days
-
-        # Format columns for DataTable (code_guidelines.md Section 17.3)
-        columns = []
-        for col in calendar_df.columns:
-            col_name = col.replace("_", " ").strip().capitalize()
-            # Headers: Bold, sentence case (handled via css/DataTable props)
-            col_def = {"name": col_name, "id": col, "selectable": True}
-
-            # Apply numeric formatting based on column role/type
-            if any(
-                x in col
-                for x in [
-                    "price",
-                    "market_cap",
-                    "enterprise_value",
-                    "ebitda",
-                    "ebit",
-                    "income",
-                    "revenue",
-                ]
-            ):
-                col_def.update({"type": "numeric", "format": {"specifier": "$,.2f"}})
-            elif "pct" in col or "margin" in col or "growth" in col or "yield" in col:
-                col_def.update({"type": "numeric", "format": {"specifier": ".2%"}})
-            elif col in calendar_df.columns and calendar_df[col].dtype in [
-                np.float64,
-                np.float32,
-            ]:
-                col_def.update({"type": "numeric", "format": {"specifier": ".2f"}})
-
-            columns.append(col_def)
-
-        # Convert to records, handling dates and rounding
-        display_df = calendar_df.copy()
-        for col in display_df.columns:
-            if pd.api.types.is_datetime64_any_dtype(display_df[col]):
-                display_df[col] = display_df[col].dt.strftime("%Y-%m-%d")
-            elif "days_to_earnings" in col:
-                # Special handling for days display as seen in images (+0, -1)
-                display_df[col] = display_df[col].apply(
-                    lambda x: f"{int(x):+d}" if pd.notnull(x) else ""
-                )
-
-        data = display_df.to_dict("records")
-
-        # Status message
-        mode_display = (mode or "all").replace("_", " ").title()
-        status = f"Showing {len(data)} companies | Mode: {mode_display} | Window: ±{days_window} days"
-        if should_apply_filters:
-            status += " | Global filters applied"
-
-        return columns, data, status
-
-    @app.callback(
-        Output("alerts-table", "data"),
-        Output("alerts-meta", "children"),
-        Output("generate-alerts-status", "children"),
-        Input("generate-alerts-btn", "n_clicks"),
-        State("equities-data-store", "data"),
-        State("cfg-eps-miss", "value"),
-        State("cfg-downgrade", "value"),
-        State("cfg-min-periods", "value"),
-        State("cfg-target-spread", "value"),
-        State("cfg-window-days", "value"),
-        State("cfg-vol-quantile", "value"),
-        State("cfg-max-tickers", "value"),
-        prevent_initial_call=True,
-    )
-    def _generate_alerts(
-        _n,
-        data_json,
-        eps_miss,
-        downgrade,
-        min_periods,
-        target_spread,
-        window_days,
-        vol_quantile,
-        max_tickers,
-    ):
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            payload = load_alerts_payload(DEFAULT_ALERTS_PATH)
-            rows = _alerts_to_rows(payload)
-            meta = (
-                f"Loaded {len(rows)} alerts from disk"
-                if rows
-                else "No alerts available"
-            )
-            return rows, meta, ""
-
-        cfg = EarningsAlertConfig(
-            eps_surprise_miss_threshold_pct=float(eps_miss)
-            if eps_miss is not None
-            else 20.0,
-            analyst_downgrade_threshold_pct=float(downgrade)
-            if downgrade is not None
-            else 5.0,
-            analyst_downgrade_min_periods=int(min_periods)
-            if min_periods is not None
-            else 2,
-            target_spread_threshold_pct=float(target_spread)
-            if target_spread is not None
-            else 30.0,
-            pre_earnings_window_days=int(window_days) if window_days is not None else 7,
-            pre_earnings_volatility_quantile=(
-                float(vol_quantile) if vol_quantile is not None else 0.75
-            ),
-            max_tickers_per_alert=int(max_tickers) if max_tickers is not None else 10,
-        )
-        payload = generate_earnings_quality_alerts(
-            df,
-            config=cfg,
-            output_path=DEFAULT_ALERTS_PATH,
-        )
-        rows = _alerts_to_rows(payload)
-        meta = f"Generated {len(rows)} alerts (monitored: {payload.get('total_stocks_monitored', '')})"
-        status = (
-            f"Wrote {DEFAULT_ALERTS_PATH.name}"
-            if DEFAULT_ALERTS_PATH.parent.exists()
-            else ""
-        )
-        return rows, meta, status
-
-    @app.callback(
-        Output("explorer-columns-dropdown", "options"),
-        Output("explorer-columns-dropdown", "value"),
-        Input("feature-category-dropdown", "value"),
-        Input("equities-data-store", "data"),
-    )
-    def _update_explorer_columns(categories, data_json):
-        """Update explorer column options based on selected categories.
-
-        Uses DEFAULT_EXPLORER_COLUMNS as base selection, then adds category-specific
-        columns up to 10 total. Ensures 'name' and other key columns are always
-        included when available.
-        """
-        categories_list = _coerce_list(categories)
-        metrics = get_category_metrics(categories_list)
-        cols = sorted({c for values in metrics.values() for c in values})
-        # Only show columns that exist
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is not None and not df.empty:
-            cols = [c for c in cols if c in df.columns]
-            # Use DEFAULT_EXPLORER_COLUMNS as base, filtering to available columns
-            default = [c for c in DEFAULT_EXPLORER_COLUMNS if c in df.columns]
-        else:
-            default = []
-
-        # Add additional columns from category selection up to 10 total
-        for c in cols:
-            if c not in default and len(default) < 10:
-                default.append(c)
-
-        return ([{"label": c, "value": c} for c in cols], default)
-
-    @app.callback(
-        Output("explorer-table", "columns"),
-        Output("explorer-table", "data"),
-        Input("explorer-update-btn", "n_clicks"),
-        State("equities-data-store", "data"),
-        State("explorer-columns-dropdown", "value"),
-        State("explorer-row-limit", "value"),
-        prevent_initial_call=True,
-    )
-    def _update_explorer_table(_n, data_json, columns, row_limit):
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        cols = _coerce_list(columns)
-        limit = int(row_limit) if row_limit is not None else 200
-        if df is None or df.empty or not cols:
-            return [], []
-        existing_cols = [c for c in cols if c in df.columns]
-        view = df[existing_cols].head(max(10, limit)).copy()
-        return ([{"name": c, "id": c} for c in existing_cols], view.to_dict("records"))
-
-    @app.callback(
-        Output("artifact-dropdown", "options"),
-        Input("tabs", "value"),
-    )
-    def _populate_artifact_dropdown(tab_value):
-        if tab_value != "artifacts":
-            return []
-        return _list_artifacts()
-
-    @app.callback(
-        Output("artifact-viewer", "children"),
-        Input("artifact-dropdown", "value"),
-    )
-    def _show_artifact(path_str):
-        return _render_artifact(path_str or "")
-
-    @app.callback(
-        Output("sector-dropdown", "value"),
-        Output("region-dropdown", "value"),
-        Output("country-dropdown", "value"),
-        Output("trading-country-dropdown", "value"),
-        Output("industry-dropdown", "value"),
-        Output("exchange-dropdown", "value"),
-        Output("style-class-dropdown", "value"),
-        Output("size-class-dropdown", "value"),
-        Input("reset-filters-btn", "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def _reset_filters(_n):
-        """Reset all filter dropdowns to empty."""
-        return None, None, None, None, None, None, None, None
-
-    @app.callback(
-        Output("data-status", "children", allow_duplicate=True),
-        Input("generate-artifacts-btn", "n_clicks"),
-        State("equities-data-store", "data"),
-        prevent_initial_call=True,
-    )
-    def _generate_artifacts(_n, data_json):
-        """Generate dashboard artifacts from current data."""
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            return "No data available for artifact generation"
-
-        try:
-            metadata = generate_dashboard_artifacts(df)
-            total_artifacts = len(metadata.get("artifacts", {}))
-            return f"Generated {total_artifacts} artifacts in {ARTIFACTS_DIR.name}"
-        except Exception as e:
-            return f"Artifact generation failed: {e}"
-
-    # Task 6-7: Est vs Actual tab callback
-    @app.callback(
-        Output("est-actual-missing-cols-warning", "children"),
-        Output("est-actual-scatter-fig", "figure"),
-        Output("est-actual-distribution-fig", "figure"),
-        Output("est-actual-adjusted-fig", "figure"),
-        Output("est-actual-revision-fig", "figure"),
-        Input("equities-data-store", "data"),
-        Input("est-actual-metric-selector", "value"),
-        Input("est-actual-surprise-method", "value"),
-        Input("est-actual-segment-by", "value"),
-    )
-    def _update_est_actual_tab(data_json, metric, surprise_method, segment_by):
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            empty_fig = create_empty_state_figure(
-                "Estimated vs Actual", "No data available"
-            )
-            return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig
-
-        # Get metric columns
-        metric_config = EST_ACTUAL_METRICS.get(metric, EST_ACTUAL_METRICS["EPS"])
-        actual_col = metric_config["actual"]
-        estimate_col = metric_config["estimate"]
-        adjusted_col = metric_config.get("adjusted")
-        gaap_col = metric_config.get("gaap")
-
-        # Check for missing columns
-        required = [actual_col, estimate_col]
-        _, missing = validate_required_columns(df, required, f"{metric} Analysis")
-        warning = create_missing_columns_warning(missing, f"{metric} Analysis")
-
-        # 1. Scatter: Estimated vs Actual
-        scatter_fig = create_empty_state_figure(
-            f"{metric}: Estimated vs Actual", "Required columns not available"
-        )
-        if actual_col in df.columns and estimate_col in df.columns:
-            plot_df = df[[actual_col, estimate_col]].dropna()
-            if segment_by in df.columns:
-                plot_df[segment_by] = df.loc[plot_df.index, segment_by]
-
-            if not plot_df.empty:
-                scatter_fig = px.scatter(
-                    plot_df,
-                    x=estimate_col,
-                    y=actual_col,
-                    color=segment_by if segment_by in plot_df.columns else None,
-                    title=f"{metric}: Estimated vs Actual",
-                    template="plotly_dark",
-                    hover_data=[segment_by] if segment_by in plot_df.columns else None,
-                )
-                # Add diagonal line
-                min_val = min(plot_df[estimate_col].min(), plot_df[actual_col].min())
-                max_val = max(plot_df[estimate_col].max(), plot_df[actual_col].max())
-                scatter_fig.add_scatter(
-                    x=[min_val, max_val],
-                    y=[min_val, max_val],
-                    mode="lines",
-                    line=dict(dash="dash", color="white"),
-                    name="Perfect Forecast",
-                    showlegend=True,
-                )
-
-        # 2. Distribution: Surprise histogram
-        dist_fig = create_empty_state_figure(
-            f"{metric} Surprise Distribution", "Data not available"
-        )
-        if actual_col in df.columns and estimate_col in df.columns:
-            surprise = compute_surprise(
-                df[actual_col], df[estimate_col], mode=surprise_method
-            )
-            surprise_df = pd.DataFrame({"surprise": surprise})
-            if segment_by in df.columns:
-                surprise_df[segment_by] = df[segment_by]
-            surprise_df = surprise_df.dropna(subset=["surprise"])
-
-            if not surprise_df.empty:
-                dist_fig = px.histogram(
-                    surprise_df,
-                    x="surprise",
-                    color=segment_by if segment_by in surprise_df.columns else None,
-                    nbins=50,
-                    title=f"{metric} Surprise Distribution ({'%' if surprise_method == 'pct' else 'Absolute'})",
-                    template="plotly_dark",
-                )
-                dist_fig.add_vline(x=0, line_dash="dash", line_color="white")
-
-        # 3. Adjusted vs GAAP delta
-        adjusted_fig = create_empty_state_figure(
-            f"{metric}: Adjusted vs GAAP", "Data not available"
-        )
-        if (
-            adjusted_col
-            and gaap_col
-            and adjusted_col in df.columns
-            and gaap_col in df.columns
-        ):
-            adj_num = pd.to_numeric(df[adjusted_col], errors="coerce")
-            gaap_num = pd.to_numeric(df[gaap_col], errors="coerce")
-            delta = adj_num - gaap_num
-            delta_df = pd.DataFrame({"delta": delta})
-            if segment_by in df.columns:
-                delta_df[segment_by] = df[segment_by]
-            delta_df = delta_df.dropna(subset=["delta"])
-
-            if not delta_df.empty:
-                adjusted_fig = px.box(
-                    delta_df,
-                    x=segment_by if segment_by in delta_df.columns else None,
-                    y="delta",
-                    title=f"{metric}: Adjusted vs GAAP Delta by {segment_by.replace('_', ' ').title()}",
-                    template="plotly_dark",
-                )
-        else:
-            adjusted_fig.add_annotation(
-                text="Adjusted vs GAAP comparison not available for this metric",
-                xref="paper",
-                yref="paper",
-                x=0.5,
-                y=0.5,
-                showarrow=False,
-            )
-
-        # 4. Revision trend (if revision columns exist)
-        revision_fig = create_empty_state_figure(
-            "Estimate Revision Trend", "Revision data not available"
-        )
-        revision_cols = [c for c in df.columns if "rev_pct" in c.lower()]
-        if revision_cols:
-            # Use first available revision column
-            rev_col = revision_cols[0]
-            rev_df = pd.DataFrame(
-                {rev_col: pd.to_numeric(df[rev_col], errors="coerce")}
-            )
-            if segment_by in df.columns:
-                rev_df[segment_by] = df[segment_by]
-            rev_df = rev_df.dropna(subset=[rev_col])
-
-            if not rev_df.empty:
-                revision_fig = px.box(
-                    rev_df,
-                    x=segment_by if segment_by in rev_df.columns else None,
-                    y=rev_col,
-                    title=f"Estimate Revision Trend ({rev_col})",
-                    template="plotly_dark",
-                )
-
-        return warning, scatter_fig, dist_fig, adjusted_fig, revision_fig
-
-    # Task 8: Monitoring tab callback
-    @app.callback(
-        Output("monitoring-kpi-row", "children"),
-        Output("monitoring-growth-fig", "figure"),
-        Output("monitoring-margin-fig", "figure"),
-        Output("monitoring-quality-fig", "figure"),
-        Input("equities-data-store", "data"),
-        Input("monitoring-segment-by", "value"),
-    )
-    def _update_monitoring_tab(data_json, segment_by):
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            empty_fig = create_empty_state_figure("Monitoring", "No data available")
-            return [], empty_fig, empty_fig, empty_fig
-
-        # KPI cards
-        kpi_cards = _monitoring_kpi_cards(df)
-
-        # 1. Growth trends by segment
-        growth_fig = create_empty_state_figure("Revenue Growth", "Data not available")
-        growth_cols = ["total_revenues_cagr_5y_fy", "revenues_est_yoy_pct_fy1e"]
-        available_growth = [c for c in growth_cols if c in df.columns]
-        if available_growth and segment_by in df.columns:
-            growth_col = available_growth[0]
-            growth_df = df[[segment_by, growth_col]].copy()
-            growth_df[growth_col] = pd.to_numeric(
-                growth_df[growth_col], errors="coerce"
-            )
-            growth_df = growth_df.dropna()
-
-            if not growth_df.empty:
-                growth_fig = px.box(
-                    growth_df,
-                    x=segment_by,
-                    y=growth_col,
-                    title=f"Revenue Growth by {segment_by.replace('_', ' ').title()}",
-                    template="plotly_dark",
-                )
-
-        # 2. Margin distribution
-        margin_fig = create_empty_state_figure("Margin Analysis", "Data not available")
-        margin_cols = ["gross_profit_margin_pct_ltm", "net_income_margin_pct_ltm"]
-        available_margin = [c for c in margin_cols if c in df.columns]
-        if available_margin and segment_by in df.columns:
-            margin_col = available_margin[0]
-            margin_df = df[[segment_by, margin_col]].copy()
-            margin_df[margin_col] = pd.to_numeric(
-                margin_df[margin_col], errors="coerce"
-            )
-            margin_df = margin_df.dropna()
-
-            if not margin_df.empty:
-                margin_fig = px.box(
-                    margin_df,
-                    x=segment_by,
-                    y=margin_col,
-                    title=f"Margin Distribution by {segment_by.replace('_', ' ').title()}",
-                    template="plotly_dark",
-                )
-
-        # 3. Quality metrics (ROE, Altman Z, etc.)
-        quality_fig = create_empty_state_figure("Quality Metrics", "Data not available")
-        quality_cols = [
-            "return_on_equity_pct_ltm",
-            "altman_z_score_ltm",
-            "return_on_assets_roa_pct_ltm",
-        ]
-        available_quality = [c for c in quality_cols if c in df.columns]
-        if available_quality and segment_by in df.columns:
-            quality_col = available_quality[0]
-            quality_df = df[[segment_by, quality_col]].copy()
-            quality_df[quality_col] = pd.to_numeric(
-                quality_df[quality_col], errors="coerce"
-            )
-            quality_df = quality_df.dropna()
-
-            if not quality_df.empty:
-                quality_fig = px.box(
-                    quality_df,
-                    x=segment_by,
-                    y=quality_col,
-                    title=f"Quality Metrics ({quality_col.replace('_', ' ').title()}) by {segment_by.replace('_', ' ').title()}",
-                    template="plotly_dark",
-                )
-
-        return kpi_cards, growth_fig, margin_fig, quality_fig
-
-    # Task 8: Generate monitoring report callback
-    @app.callback(
-        Output("monitoring-report-status", "children"),
-        Input("generate-monitoring-report-btn", "n_clicks"),
-        State("equities-data-store", "data"),
-        prevent_initial_call=True,
-    )
-    def _generate_monitoring_report(_n, data_json):
-        """Generate monitoring JSON report."""
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
-            df = initial_df
-
-        if df is None or df.empty:
-            return "No data available"
-
-        try:
-            report = {
-                "timestamp": pd.Timestamp.now().isoformat(),
-                "total_stocks": len(df),
-                "kpis": {},
-            }
-
-            # Collect KPI values
-            if "total_revenues_cagr_5y_fy" in df.columns:
-                growth = pd.to_numeric(df["total_revenues_cagr_5y_fy"], errors="coerce")
-                report["kpis"]["pct_positive_revenue_growth"] = float(
-                    (growth > 0).mean() * 100
-                )
-                report["kpis"]["median_revenue_growth"] = float(growth.median())
-
-            if "net_income_margin_pct_ltm" in df.columns:
-                margin = pd.to_numeric(df["net_income_margin_pct_ltm"], errors="coerce")
-                report["kpis"]["median_net_margin"] = float(margin.median())
-
-            if "return_on_equity_pct_ltm" in df.columns:
-                roe = pd.to_numeric(df["return_on_equity_pct_ltm"], errors="coerce")
-                report["kpis"]["median_roe"] = float(roe.median())
-
-            # Save report
-            output_path = ARTIFACTS_DIR / "monitoring_report.json"
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(report, f, indent=2)
-
-            return f"✓ Report saved to {output_path.name}"
-        except Exception as e:
-            return f"Error: {e}"
 
     return app
 
 
 def main() -> None:
+    """Run the Equities Dashboard application."""
     app = create_app(load_on_start=True)
     app.run(debug=False)
 

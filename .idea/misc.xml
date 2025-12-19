@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
@@ -7,12 +8,13 @@
   <component name="ProjectResources">
     <xml-schema-version>XMLSchema_1_1</xml-schema-version>
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_25" project-jdk-name="Python 3.13" project-jdk-type="Python SDK">
+    <output url="file://$PROJECT_DIR$" />
+  </component>
   <component name="PyCharmDSProjectLayout">
     <option name="id" value="JupyterRightHiddenStructureLayout" />
   </component>
   <component name="PyreflyConfiguration">
-    <option name="enabled" value="true" />
     <option name="inlayHints" value="false" />
   </component>
   <component name="PyrightConfiguration">

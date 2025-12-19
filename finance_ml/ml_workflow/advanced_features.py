@@ -46,14 +46,16 @@ logger = logging.getLogger(__name__)
 
 
 def _safe_div(numer: pd.Series, denom: pd.Series) -> pd.Series:  # pragma: no cover
-    result = pd.to_numeric(numer, errors="coerce") / pd.to_numeric(denom, errors="coerce").replace(
-        0, np.nan
-    )
+    result = pd.to_numeric(numer, errors="coerce") / pd.to_numeric(
+        denom, errors="coerce"
+    ).replace(0, np.nan)
     return pd.Series(result).replace([np.inf, -np.inf], np.nan)
 
 
 def engineer_temporal_features(
-    df: pd.DataFrame, date_col: str = "next_earnings", reference_date: Optional[pd.Timestamp] = None
+    df: pd.DataFrame,
+    date_col: str = "next_earnings",
+    reference_date: Optional[pd.Timestamp] = None,
 ) -> pd.DataFrame:
     """Engineer temporal features from date columns.
 
@@ -68,7 +70,9 @@ def engineer_temporal_features(
     result = df.copy()
 
     if date_col not in df.columns:
-        logger.warning(f"Date column '{date_col}' not found, skipping temporal features")
+        logger.warning(
+            f"Date column '{date_col}' not found, skipping temporal features"
+        )
         return result
 
     # Ensure date column is datetime
@@ -89,8 +93,16 @@ def engineer_temporal_features(
     result["year"] = result[date_col].dt.year
 
     # Days since reference date
+    # Per code_guidelines.md Section 9.3.0 Temporal Calculation Standards:
+    # Normalize reference_date to midnight for consistency
     if reference_date is not None:
-        result["days_since_reference"] = (result[date_col] - reference_date).dt.days
+        effective_ref_date = (
+            reference_date.normalize()
+            if hasattr(reference_date, "normalize")
+            else reference_date
+        )
+        result["days_since_reference"] = (result[date_col] - effective_ref_date).dt.days
+        result["_reference_date"] = effective_ref_date
 
     logger.info(f"Engineered temporal features from {date_col}")
     return result
@@ -132,7 +144,9 @@ def engineer_market_microstructure_features(
     if group_col and group_col in df.columns:
         # Historical volatility (30, 60, 90 day rolling windows)
         for window in [30, 60, 90]:
-            result[f"volatility_{window}d"] = df.groupby(group_col)[price_col].transform(
+            result[f"volatility_{window}d"] = df.groupby(group_col)[
+                price_col
+            ].transform(
                 lambda x: x.pct_change()
                 .rolling(window=window, min_periods=max(1, window // 2))
                 .std()
@@ -147,7 +161,9 @@ def engineer_market_microstructure_features(
         # Moving averages (20, 50 day)
         for window in [20, 50]:
             result[f"ma_{window}d"] = df.groupby(group_col)[price_col].transform(
-                lambda x: x.rolling(window=window, min_periods=max(1, window // 2)).mean()
+                lambda x: x.rolling(
+                    window=window, min_periods=max(1, window // 2)
+                ).mean()
             )
     else:
         # Without grouping, calculate simple rolling features if enough data
@@ -168,7 +184,9 @@ def engineer_market_microstructure_features(
             for window in [20, 50]:
                 if len(df) >= window:
                     result[f"ma_{window}d"] = (
-                        df[price_col].rolling(window=window, min_periods=window // 2).mean()
+                        df[price_col]
+                        .rolling(window=window, min_periods=window // 2)
+                        .mean()
                     )
 
     logger.info("Engineered market microstructure features")
@@ -216,7 +234,9 @@ def engineer_nonlinear_transforms(
     if inverse_features:
         for feature in inverse_features:
             if feature in df.columns:
-                result[f"inv_{feature}"] = _safe_div(pd.Series([1.0] * len(df)), df[feature])
+                result[f"inv_{feature}"] = _safe_div(
+                    pd.Series([1.0] * len(df)), df[feature]
+                )
 
     logger.info(f"Applied non-linear transforms")
     return result
@@ -239,7 +259,13 @@ def create_feature_interactions(
 
     if features is None:
         # Default key features for interactions
-        features = ["market_cap", "p_e_ratio", "roe", "debt_to_equity", "revenue_growth_yoy"]
+        features = [
+            "market_cap",
+            "p_e_ratio",
+            "roe",
+            "debt_to_equity",
+            "revenue_growth_yoy",
+        ]
         features = [f for f in features if f in df.columns]
 
     if len(features) == 0:
@@ -299,10 +325,14 @@ def create_relative_value_features(
         sector_std = df.groupby(sector_col)[metric].transform("std")
 
         result[f"{metric}_vs_sector_median"] = df[metric] - sector_median
-        result[f"{metric}_sector_zscore"] = _safe_div(df[metric] - sector_mean, sector_std)
+        result[f"{metric}_sector_zscore"] = _safe_div(
+            df[metric] - sector_mean, sector_std
+        )
 
         # Percentile rank within sector
-        result[f"{metric}_sector_percentile"] = df.groupby(sector_col)[metric].rank(pct=True) * 100
+        result[f"{metric}_sector_percentile"] = (
+            df.groupby(sector_col)[metric].rank(pct=True) * 100
+        )
 
     logger.info(f"Created relative value features for {len(metrics)} metrics")
     return result
@@ -355,9 +385,9 @@ def calculate_feature_importance_mutual_info(
     mi_scores = mutual_info_regression(X_clean, y_clean, random_state=42)
 
     # Create result DataFrame
-    importance_df = pd.DataFrame({"feature": X.columns, "importance": mi_scores}).sort_values(
-        "importance", ascending=False
-    )
+    importance_df = pd.DataFrame(
+        {"feature": X.columns, "importance": mi_scores}
+    ).sort_values("importance", ascending=False)
 
     if top_k is not None:
         importance_df = importance_df.head(top_k)
@@ -435,7 +465,9 @@ def calculate_feature_importance_rf(
         return pd.DataFrame({"feature": [], "importance": []})
 
     # Train Random Forest
-    rf = RandomForestRegressor(n_estimators=n_estimators, random_state=42, n_jobs=-1, max_depth=10)
+    rf = RandomForestRegressor(
+        n_estimators=n_estimators, random_state=42, n_jobs=-1, max_depth=10
+    )
     rf.fit(X_clean, y_clean)
 
     # Get feature importance
@@ -446,7 +478,9 @@ def calculate_feature_importance_rf(
     if top_k is not None:
         importance_df = importance_df.head(top_k)
 
-    logger.info(f"Calculated Random Forest importance for {len(X_clean.columns)} features")
+    logger.info(
+        f"Calculated Random Forest importance for {len(X_clean.columns)} features"
+    )
     return importance_df
 
 
@@ -489,7 +523,9 @@ def calculate_feature_importance_shap(
     except ImportError:
         shap = None  # Define in except block for type checker
         # Fallback to Random Forest feature importance if SHAP not available
-        logger.warning("SHAP not available, falling back to Random Forest feature importance")
+        logger.warning(
+            "SHAP not available, falling back to Random Forest feature importance"
+        )
         importance_df = pd.DataFrame(
             {"feature": X.columns, "importance": model.feature_importances_}
         ).sort_values("importance", ascending=False)
@@ -502,7 +538,10 @@ def calculate_feature_importance_shap(
 
 
 def calculate_feature_importance_rfe(
-    X: pd.DataFrame, y: pd.Series, n_features_to_select: int = 10, cv: Optional[int] = None
+    X: pd.DataFrame,
+    y: pd.Series,
+    n_features_to_select: int = 10,
+    cv: Optional[int] = None,
 ) -> List[str]:
     """Select features using Recursive Feature Elimination.
 

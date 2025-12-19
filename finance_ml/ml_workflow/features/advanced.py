@@ -680,12 +680,16 @@ def engineer_temporal_features(
     Adds:
     - fiscal_quarter, month, year from date_col
     - days_since_reference if reference_date provided
-    - days_to_earnings: (next_earnings - last_updated).days when both present
-    - earnings_report_recency: (reference_date - last_updated).days if both provided
-    - reporting_lag: (last_updated - income_statement_report_date).days when both present
+    - days_to_earnings: (next_earnings - reference_date).days calculated from reference_date
+    - earnings_report_recency: (reference_date - income_statement_report_date).days from reference_date
+    - reporting_lag: (next_earnings - income_statement_report_date).days when both present
     - ltm_vs_5yavg_revenue: (total_revenues_1fy - 5Y avg)/5Y avg
     - fq_vs_5yavg_ebitda: (ebitda_fq - ebitda_5yavgfq)/ebitda_5yavgfq
     - quarterly_volatility_score: coefficient of variation across available quarterly EBITDA columns
+
+    Note:
+        All temporal calculations use reference_date (defaults to pd.Timestamp.now())
+        for consistency across runs and reproducibility.
     """
     result = df.copy()
 
@@ -719,17 +723,26 @@ def engineer_temporal_features(
     result["year"] = result[date_col].dt.year
 
     # Additional earnings/reporting timing features
-    if "next_earnings" in result.columns and "last_updated" in result.columns:
+    # Use reference_date for temporal calculations to ensure consistency across runs
+    # Per code_guidelines.md Section 9.3.0 Temporal Calculation Standards:
+    # Normalize to midnight to match date-only storage format
+    if reference_date is not None:
+        effective_ref_date = (
+            reference_date.normalize()
+            if hasattr(reference_date, "normalize")
+            else reference_date
+        )
+    else:
+        effective_ref_date = pd.Timestamp.now().normalize()
+    result["_reference_date"] = effective_ref_date
+
+    if "next_earnings" in result.columns:
         ne = pd.to_datetime(result["next_earnings"], errors="coerce")
-        lu = pd.to_datetime(result["last_updated"], errors="coerce")
-        result["days_to_earnings"] = (ne - lu).dt.days
-    if (
-        "last_updated" in result.columns
-        and "income_statement_report_date" in result.columns
-    ):
+        result["days_to_earnings"] = (ne - effective_ref_date).dt.days
+
+    if "income_statement_report_date" in result.columns:
         isrd = pd.to_datetime(result["income_statement_report_date"], errors="coerce")
-        lu = pd.to_datetime(result["last_updated"], errors="coerce")
-        result["earnings_report_recency"] = (lu - isrd).dt.days
+        result["earnings_report_recency"] = (effective_ref_date - isrd).dt.days
     if (
         "income_statement_report_date" in result.columns
         and "next_earnings" in result.columns
@@ -1812,8 +1825,12 @@ def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
             "total_revenues_1fy",
         )
     ):
-        cur = _safe_div(df["ebitda_ltm"].astype(float), df["total_revenues_ltm"].astype(float))
-        prev = _safe_div(df["ebitda_fy"].astype(float), df["total_revenues_fy"].astype(float))
+        cur = _safe_div(
+            df["ebitda_ltm"].astype(float), df["total_revenues_ltm"].astype(float)
+        )
+        prev = _safe_div(
+            df["ebitda_fy"].astype(float), df["total_revenues_fy"].astype(float)
+        )
         result["ebitda_margin_trend"] = cur - prev
 
     # Gross margin trend (FY reference for previous)
@@ -1844,7 +1861,8 @@ def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
             df["ebit_1fy"].astype(float),
         )
         delta_rev = _safe_div(
-            df["total_revenues_fy"].astype(float) - df["total_revenues_1fy"].astype(float),
+            df["total_revenues_fy"].astype(float)
+            - df["total_revenues_1fy"].astype(float),
             df["total_revenues_1fy"].astype(float),
         )
         result["operating_leverage"] = _safe_div(delta_ebit, delta_rev)
@@ -3068,22 +3086,27 @@ def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
         )
 
         # Earnings Beat Indicator (boolean flag)
-        result["earnings_beat_indicator"] = (result["eps_surprise_pct"] > 0).fillna(False)
+        result["earnings_beat_indicator"] = (result["eps_surprise_pct"] > 0).fillna(
+            False
+        )
 
         # Surprise Magnitude Categorization
         surprise_abs = result["eps_surprise_pct"].abs()
-        result["eps_surprise_magnitude"] = (
-            pd.cut(
-                surprise_abs,
-                bins=[0, 5, 15, float("inf")],
-                labels=["small", "moderate", "large"],
-                include_lowest=True,
-            )
-            .astype(str)
-            .fillna("unknown")
+        eps_magnitude_cat = pd.cut(
+            surprise_abs,
+            bins=[0, 5, 15, float("inf")],
+            labels=["small", "moderate", "large"],
+            include_lowest=True,
+        )
+        # Add "unknown" to categories before filling NaN, then convert to category dtype
+        eps_magnitude_cat = eps_magnitude_cat.cat.add_categories(["unknown"])
+        result["eps_surprise_magnitude"] = eps_magnitude_cat.fillna("unknown").astype(
+            "category"
         )
 
-        logger.info(f"Computed EPS surprise for {result['eps_surprise_pct'].notna().sum()} stocks")
+        logger.info(
+            f"Computed EPS surprise for {result['eps_surprise_pct'].notna().sum()} stocks"
+        )
 
     # =========================================================================
     # 2. Revenue Surprise Analytics
@@ -3114,7 +3137,9 @@ def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
         )
 
         # Revenue Beat Indicator
-        result["revenue_beat_indicator"] = (result["revenue_surprise_pct"] > 0).fillna(False)
+        result["revenue_beat_indicator"] = (result["revenue_surprise_pct"] > 0).fillna(
+            False
+        )
 
         logger.info(
             f"Computed revenue surprise for {result['revenue_surprise_pct'].notna().sum()} stocks"
@@ -3176,7 +3201,10 @@ def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
         ):
             result["positive_revision_momentum"] = (
                 (pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_1m"], errors="coerce") > 0)
-                & (pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_3m"], errors="coerce") > 0)
+                & (
+                    pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_3m"], errors="coerce")
+                    > 0
+                )
             ).fillna(False)
 
         logger.info(
@@ -3194,7 +3222,8 @@ def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
     # 6. Estimate Revision Acceleration
     # =========================================================================
     if all(
-        col in df.columns for col in ["eps_est_avg_rev_pct_fy1e_1m", "eps_est_avg_rev_pct_fy1e_3m"]
+        col in df.columns
+        for col in ["eps_est_avg_rev_pct_fy1e_1m", "eps_est_avg_rev_pct_fy1e_3m"]
     ):
         rev_1m = pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_1m"], errors="coerce")
         rev_3m = pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_3m"], errors="coerce")
@@ -3269,10 +3298,14 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
         result["eps_adjustment_ratio_ltm"] = _safe_div(eps_adj, eps_gaap)
 
         # EPS Adjustment Percentage
-        result["eps_adjustment_pct_ltm"] = _safe_div((eps_adj - eps_gaap), eps_gaap.abs()) * 100
+        result["eps_adjustment_pct_ltm"] = (
+            _safe_div((eps_adj - eps_gaap), eps_gaap.abs()) * 100
+        )
 
         # Earnings Quality Flag: Warn if adjustment > 20%
-        result["eps_quality_flag_ltm"] = (result["eps_adjustment_pct_ltm"].abs() > 20).fillna(False)
+        result["eps_quality_flag_ltm"] = (
+            result["eps_adjustment_pct_ltm"].abs() > 20
+        ).fillna(False)
 
         logger.info(
             f"Computed EPS GAAP vs. Adjusted for {result['eps_adjustment_ratio_ltm'].notna().sum()} stocks (LTM)"
@@ -3303,7 +3336,9 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
         result["net_income_adjustment_ratio_ltm"] = _safe_div(ni_adj, ni_gaap)
 
         # Net Income Adjustment Percentage
-        result["net_income_adjustment_pct_ltm"] = _safe_div((ni_adj - ni_gaap), ni_gaap.abs()) * 100
+        result["net_income_adjustment_pct_ltm"] = (
+            _safe_div((ni_adj - ni_gaap), ni_gaap.abs()) * 100
+        )
 
         logger.info(
             f"Computed Net Income GAAP vs. Adjusted for {result['net_income_adjustment_ratio_ltm'].notna().sum()} stocks (LTM)"
@@ -3351,7 +3386,9 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
 
         result["ebit_adjustment_spread_ltm"] = ebit_adj - ebit_gaap
 
-        result["ebit_adjustment_pct_ltm"] = _safe_div((ebit_adj - ebit_gaap), ebit_gaap.abs()) * 100
+        result["ebit_adjustment_pct_ltm"] = (
+            _safe_div((ebit_adj - ebit_gaap), ebit_gaap.abs()) * 100
+        )
 
     if "ebit_adj_fy" in df.columns and "ebit_fy" in df.columns:
         ebit_adj_fy = pd.to_numeric(df["ebit_adj_fy"], errors="coerce")
@@ -3363,12 +3400,19 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
     # 5. Adjustment Consistency Score (Temporal Stability)
     # =========================================================================
     # Compare LTM vs. FY adjustment ratios to assess consistency
-    if "eps_adjustment_ratio_ltm" in result.columns and "eps_adjustment_ratio_fy" in result.columns:
-        ratio_diff = (result["eps_adjustment_ratio_ltm"] - result["eps_adjustment_ratio_fy"]).abs()
+    if (
+        "eps_adjustment_ratio_ltm" in result.columns
+        and "eps_adjustment_ratio_fy" in result.columns
+    ):
+        ratio_diff = (
+            result["eps_adjustment_ratio_ltm"] - result["eps_adjustment_ratio_fy"]
+        ).abs()
 
         # Lower difference = higher consistency (invert scale)
         # Clip to [0, 2] range and invert: consistency = 2 - diff (normalized to 0-100)
-        result["adjustment_consistency_score"] = (2.0 - ratio_diff.clip(0, 2)) / 2.0 * 100
+        result["adjustment_consistency_score"] = (
+            (2.0 - ratio_diff.clip(0, 2)) / 2.0 * 100
+        )
 
         logger.info(
             f"Computed adjustment consistency score for {result['adjustment_consistency_score'].notna().sum()} stocks"
@@ -3420,7 +3464,9 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
         score_components.append(ni_adj_impact * 0.3)  # 30% weight
 
     if score_components:
-        total_adjustment_impact = pd.concat(score_components, axis=1).sum(axis=1, skipna=True)
+        total_adjustment_impact = pd.concat(score_components, axis=1).sum(
+            axis=1, skipna=True
+        )
         result["earnings_quality_score"] = (100 - total_adjustment_impact).clip(0, 100)
 
         logger.info(
@@ -3452,7 +3498,9 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
         ni_gaap_abs = pd.to_numeric(df["net_income_is_ltm"], errors="coerce").abs()
 
         # Exceptional items as % of net income
-        result["exceptional_items_impact_ratio"] = _safe_div(exceptional_sum, ni_gaap_abs)
+        result["exceptional_items_impact_ratio"] = _safe_div(
+            exceptional_sum, ni_gaap_abs
+        )
 
         logger.info(
             f"Computed exceptional items impact for {result['exceptional_items_impact_ratio'].notna().sum()} stocks"

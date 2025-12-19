@@ -1,0 +1,102 @@
+from __future__ import annotations
+import pandas as pd
+from dash import Input, Output, State, html, callback
+from finance_ml.dashboards.components import (
+    _safe_options,
+    apply_filters,
+    _kpi_cards,
+    _target_vs_price_scatter,
+    _market_cap_distribution,
+    _coerce_list,
+)
+
+
+def register_data_callbacks(
+    app, data_dir, db_url, load_on_start, initial_df, load_data_csv_first
+):
+    @app.callback(
+        Output("equities-data-store", "data"),
+        Output("data-status", "children"),
+        Output("sector-dropdown", "options"),
+        Output("region-dropdown", "options"),
+        Output("country-dropdown", "options"),
+        Output("trading-country-dropdown", "options"),
+        Output("industry-dropdown", "options"),
+        Output("exchange-dropdown", "options"),
+        Output("style-class-dropdown", "options"),
+        Output("size-class-dropdown", "options"),
+        Input("refresh-data-btn", "n_clicks"),
+        prevent_initial_call=not load_on_start,
+    )
+    def _refresh_data(_n_clicks):
+        df, status_summary = load_data_csv_first(
+            data_dir=data_dir,
+            db_url=db_url,
+        )
+
+        if not df.empty:
+            status = f"Rows: {len(df):,} | {status_summary}"
+        else:
+            status = "No data loaded or ETL failed"
+
+        return (
+            df.to_json(orient="split"),
+            status,
+            _safe_options(df, "sector"),
+            _safe_options(df, "region"),
+            _safe_options(df, "country"),
+            _safe_options(df, "trading_country"),
+            _safe_options(df, "industry"),
+            _safe_options(df, "exchange"),
+            _safe_options(df, "style_class"),
+            _safe_options(df, "size_class"),
+        )
+
+    @app.callback(
+        Output("kpi-cards", "children"),
+        Output("target-vs-price-scatter", "figure"),
+        Output("market-cap-distribution", "figure"),
+        Input("equities-data-store", "data"),
+        Input("sector-dropdown", "value"),
+        Input("region-dropdown", "value"),
+        Input("country-dropdown", "value"),
+        Input("trading-country-dropdown", "value"),
+        Input("industry-dropdown", "value"),
+        Input("exchange-dropdown", "value"),
+        Input("style-class-dropdown", "value"),
+        Input("size-class-dropdown", "value"),
+        prevent_initial_call=False,
+    )
+    def _update_overview(
+        data_json,
+        sectors,
+        regions,
+        countries,
+        trading_countries,
+        industries,
+        exchanges,
+        style_classes,
+        size_classes,
+    ):
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        filtered = apply_filters(
+            df,
+            sectors=_coerce_list(sectors),
+            regions=_coerce_list(regions),
+            countries=_coerce_list(countries),
+            trading_countries=_coerce_list(trading_countries),
+            industries=_coerce_list(industries),
+            exchanges=_coerce_list(exchanges),
+            style_classes=_coerce_list(style_classes),
+            size_classes=_coerce_list(size_classes),
+        )
+
+        return (
+            _kpi_cards(filtered),
+            _target_vs_price_scatter(filtered, use_log_scale=True),
+            _market_cap_distribution(filtered),
+        )

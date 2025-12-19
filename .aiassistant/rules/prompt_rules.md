@@ -19,7 +19,7 @@ Finance ML Analytics Platform is a professional, modular Python package for equi
 - Comprehensive unit tests with good coverage (≈128 test modules, ≥80% target)
 - Configuration management via environment variables, JSON, or YAML
 
-### Module Architecture (v9_9 - Phase 9.1-9.8)
+### Module Architecture (v9_10 - Phase 9.1-9.8)
 
 The platform follows a **phase-aligned architecture** with dedicated subpackages:
 

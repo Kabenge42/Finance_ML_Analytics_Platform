@@ -752,7 +752,7 @@ def train_random_forest_regressor(
     n_estimators: int = 100,
     max_depth: Optional[int] = None,
     random_state: int = 42,
-) -> Tuple[RandomForestRegressor, Dict[str, Any]]:
+) -> Dict[str, Any]:
     """
     Train Random Forest regressor.
 
@@ -806,17 +806,29 @@ def train_random_forest_regressor(
     )
     model.fit(X, y)
 
-    # Feature importance
-    feature_importance = model.feature_importances_
-
-    results = {
+    y_pred = model.predict(X)
+    metrics = {
+        "r2": r2_score(y, y_pred),
+        "r2_score": r2_score(y, y_pred),
+        "mae": mean_absolute_error(y, y_pred),
+        "rmse": float(np.sqrt(mean_squared_error(y, y_pred))),
         "train_score": model.score(X, y),
-        "feature_importance": feature_importance,
+    }
+
+    artifacts = {
+        "feature_importance": model.feature_importances_,
         "n_estimators": n_estimators,
+        "max_depth": max_depth,
         "model_type": "random_forest",
     }
 
-    return model, results
+    return {
+        "model": model,
+        "metrics": metrics,
+        "y_pred": y_pred,
+        "y_proba": None,
+        "artifacts": artifacts,
+    }
 
 
 def train_extra_trees_regressor(
@@ -825,7 +837,7 @@ def train_extra_trees_regressor(
     n_estimators: int = 100,
     max_depth: Optional[int] = None,
     random_state: int = 42,
-) -> Tuple[ExtraTreesRegressor, Dict[str, Any]]:
+) -> Dict[str, Any]:
     """
     Train Extra Trees regressor (more randomness than RF).
 
@@ -844,13 +856,29 @@ def train_extra_trees_regressor(
     )
     model.fit(X, y)
 
-    results = {
+    y_pred = model.predict(X)
+    metrics = {
+        "r2": r2_score(y, y_pred),
+        "r2_score": r2_score(y, y_pred),
+        "mae": mean_absolute_error(y, y_pred),
+        "rmse": float(np.sqrt(mean_squared_error(y, y_pred))),
         "train_score": model.score(X, y),
+    }
+
+    artifacts = {
+        "feature_importance": getattr(model, "feature_importances_", None),
         "n_estimators": n_estimators,
+        "max_depth": max_depth,
         "model_type": "extra_trees",
     }
 
-    return model, results
+    return {
+        "model": model,
+        "metrics": metrics,
+        "y_pred": y_pred,
+        "y_proba": None,
+        "artifacts": artifacts,
+    }
 
 
 # ==============================================================================

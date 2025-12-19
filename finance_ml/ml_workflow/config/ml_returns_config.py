@@ -80,6 +80,66 @@ Default: 0.80 (80% train, 20% test)
 Used by: Notebook Section 10.2 (linear model training)
 """
 
+TEST_SIZE: float = 0.20
+"""Test set proportion for train/test split.
+
+Type: float
+Default: 0.20
+"""
+
+CV_FOLDS: int = 5
+"""Number of cross-validation folds.
+
+Type: int
+Default: 5
+"""
+
+# ========== MODEL CONFIGURATION ==========
+
+QUANTILES: List[float] = [0.1, 0.5, 0.9]
+"""Quantiles for uncertainty estimation.
+
+Type: List[float]
+Default: [0.1, 0.5, 0.9]
+"""
+
+RANDOM_SEED: int = 42
+"""Global random seed for reproducibility.
+
+Type: int
+Default: 42
+"""
+
+MODEL_VERSION: str = "v9_10"
+"""Current model version.
+
+Type: str
+Default: 'v9_10'
+"""
+
+# ========== PREPROCESSING CONSTRAINTS ==========
+
+MIN_SECTOR_SAMPLES: int = 20
+"""Minimum samples per sector for sector-specific modeling.
+
+Type: int
+Default: 20
+"""
+
+WINSORIZE_LOWER: float = 0.10
+"""Lower percentile for winsorization.
+
+Type: float
+Default: 0.10
+"""
+
+WINSORIZE_UPPER: float = 0.90
+"""Upper percentile for winsorization.
+
+Type: float
+Default: 0.90
+"""
+
 # ========== SCHEMA COMPLIANCE (Section 2.2) ==========
 
 TARGET_COL: str = "price_target"

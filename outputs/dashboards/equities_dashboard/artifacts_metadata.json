@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-12-17T20:42:58.801669",
-  "total_stocks": 6940,
+  "timestamp": "2025-12-19T00:52:52.304090",
+  "total_stocks": 6,
   "artifacts_dir": "C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\dashboards\\equities_dashboard\\artifacts",
   "artifacts": {
     "earnings_surprise": {
@@ -56,6 +56,21 @@
     "earnings_metrics_dividends": {
       "file": "earnings_metrics_dividends.html",
       "title": "Earnings Metrics: Dividends",
+      "section": "phase93"
+    },
+    "earnings_metrics_forecasts": {
+      "file": "earnings_metrics_forecasts.html",
+      "title": "Earnings Metrics: Forecasts",
+      "section": "phase93"
+    },
+    "earnings_metrics_earnings_quality": {
+      "file": "earnings_metrics_earnings_quality.html",
+      "title": "Earnings Metrics: Earnings Quality",
+      "section": "phase93"
+    },
+    "category_comparison": {
+      "file": "phase93_category_comparison.html",
+      "title": "Phase 9.3 Category Comparison",
       "section": "phase93"
     }
   },

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-18T11:58:12.327316",
+  "timestamp": "2025-12-19T01:58:42.174303",
   "total_stocks_analyzed": 6976,
   "phase93_dividends_metrics": [
     "dividend_streak",
@@ -28,6 +28,8 @@
     "dividend_yield_fwd_5y": "div_yield_5fyind",
     "dividend_yield_5y_avg": "div_yield_5yavgltm",
     "dividend_per_share": "dividend_per_share_ltm",
+    "payout_ratio": "dividend_payout_ratio",
+    "dividend_growth": "dividend_growth_trend",
     "ex_dividend_date": "dividend_record_ex_date",
     "dividend_frequency": "dividend_record_frequency",
     "dividend_streak": "dividend_streak",
@@ -103,7 +105,14 @@
     "q25": 0.016699999570846558,
     "q75": 0.03610000014305115
   },
-  "payout_analysis": {},
+  "payout_analysis": {
+    "column": "dividend_payout_ratio",
+    "count": 6610,
+    "mean_payout": 0.8849633772705823,
+    "median_payout": 0.33018869144630564,
+    "sustainable_pct": 99.95461422087746,
+    "high_payout_pct": 0.0
+  },
   "dividend_payers": {},
   "sustainability_analysis": {
     "cfo_ltm": {
@@ -1644,6 +1653,15 @@
     "5-7%": 0,
     "7-10%": 0,
     "10%+": 0
+  },
+  "dividend_growth": {
+    "column": "dividend_growth_trend",
+    "count": 6976,
+    "mean_growth": 0.0,
+    "median_growth": 0.0,
+    "positive_growth_pct": 0.0,
+    "growers_pct": 0.0,
+    "cutters_pct": 0.0
   },
   "high_yield_screening": {
     "threshold": 4.0,

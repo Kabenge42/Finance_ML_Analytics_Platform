@@ -60,6 +60,6 @@
     "ebitda_adj_fy",
     "ebitda_adj_ltm"
   ],
-  "model_version": "v9_9",
+  "model_version": "v9_10",
   "random_seed": 42
 }

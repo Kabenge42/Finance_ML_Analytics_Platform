@@ -2377,6 +2377,9 @@ class ETLPipeline:
                 base = col[: -len("_applicable")]
                 if base in schema_cols or base in CONDITIONAL_METRICS:
                     return True
+                # Also allow log_* applicability flags
+                if base.startswith("log_"):
+                    return True
 
             # Growth / YoY metrics produced by metrics ETL.
             if col.endswith("_growth") or col.endswith("_yoy"):
@@ -2384,6 +2387,32 @@ class ETLPipeline:
 
             # Sector interaction features (dynamically generated).
             if col.startswith("sector_") and "_x_" in col:
+                return True
+
+            # Sector-relative features (percentile, zscore, vs_sector_median, vs_sector_top_quartile)
+            if "_sector_percentile" in col or "_sector_zscore" in col:
+                return True
+            if "_vs_sector_median" in col or "_vs_sector_top_quartile" in col:
+                return True
+
+            # Squared/polynomial features
+            if col.endswith("_squared") or col.endswith("_cubed"):
+                return True
+
+            # FTE (full-time employee) derived metrics
+            if col.startswith("fte_"):
+                return True
+
+            # Momentum features
+            if "_momentum_" in col or col.endswith("_momentum"):
+                return True
+
+            # Volatility features
+            if col.endswith("_volatility"):
+                return True
+
+            # Reference date column
+            if col == "_reference_date":
                 return True
 
             # Common semantic/derived suffixes used by the pipeline.
@@ -2404,6 +2433,8 @@ class ETLPipeline:
                     "dividend",
                     "price_",
                     "target_",
+                    "efficiency",
+                    "payout",
                 )
                 if any(t in col for t in tokens):
                     return True

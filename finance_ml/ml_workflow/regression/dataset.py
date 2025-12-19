@@ -1298,14 +1298,17 @@ def train_sector_specific_models(
         # Train model
         try:
             if model_type == "random_forest":
-                # Code Guidelines Section 1.1: Training functions return (model, results_dict) tuple
-                model, result = train_random_forest_regressor(
+                rf_result = train_random_forest_regressor(
                     X_sector, y_sector, n_estimators=50, random_state=random_state
                 )
+                model = rf_result.get("model")
+                rf_metrics = rf_result.get("metrics", {})
                 metrics = {
-                    "train_score": result.get("train_score", 0),
-                    "cv_mean": result.get("cv_mean", 0),
-                    "cv_std": result.get("cv_std", 0),
+                    "train_score": rf_metrics.get("train_score", 0),
+                    "cv_mean": rf_metrics.get("r2", rf_metrics.get("r2_score", 0)),
+                    "cv_std": rf_metrics.get("cv_std", 0),
+                    "mae": rf_metrics.get("mae"),
+                    "rmse": rf_metrics.get("rmse"),
                 }
             else:  # ridge
                 # Code Guidelines Section 1.1: Training functions return (model, results_dict) tuple

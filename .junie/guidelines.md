@@ -486,7 +486,7 @@ Comprehensive feature engineering enhancements documented in
 - Phase 9 integration with classification/regression COMPLETE
 - All features accessible via `finance_ml.ml_workflow.features.advanced.py`
 
-**Model Version Target:** v9_9
+**Model Version Target:** v9_10
 
 C. Portfolio Optimization Enhancement Plan
 

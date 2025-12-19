@@ -1,8 +1,8 @@
 ﻿# Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.12  
-**Last Updated:** 2025-12-18  
-**Package Version:** 0.9.5  
+**Version:** 1.13
+**Last Updated:** 2025-12-18
+**Package Version:** 0.9.5
 **Model Version:** v9_10
 
 These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
@@ -15,7 +15,19 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
   acceptance criteria, success metrics, and validation checkpoints for each phase. Includes critical issues analysis
   and recommended fixes.
 
-**Recent Updates (v1.12):**
+**Recent Updates (v1.13):**
+
+- **Temporal Calculation Standards** (2025-12-18)
+    - **NEW Section 9.3.0**: Temporal Calculation Standards for consistent `reference_date` usage
+    - **Breaking Change**: All temporal calculations now use `reference_date` instead of `last_updated`
+    - **Updated Functions**:
+        - `engineer_temporal_features()`: Now uses `reference_date` for `days_to_earnings` and `earnings_report_recency`
+        - `create_earnings_calendar_dashboard()`: Uses `reference_date` for event window filtering
+        - `equities_dashboard_app.py`: Consistent `reference_date` usage across all temporal displays
+    - **Rationale**: Ensures reproducibility, consistency, and testability across feature engineering and dashboards
+    - **Migration Path**: Pass explicit `reference_date` parameter to reproduce historical behavior
+
+**Previous Updates (v1.12):**
 
 - **Feature Engineering Enhancements: Earnings Quality Analytics** (2025-12-18)
     - **Section 9.3**: Updated Phase 9.3 Feature Categories from 196 to **229 features** across **17 categories**
@@ -3096,6 +3108,56 @@ outputs/eda/phase93_feature_categories/
 4. **Use category grouping** for feature importance analysis and interpretation
 5. **Document missing features** when coverage < 90% (e.g., due to missing source columns)
 6. **Enable earnings analytics** for enhanced earnings quality signals (`engineer_earnings_analytics=True`)
+7. **Use reference_date consistently** for all temporal calculations (see Section 9.3.1)
+
+#### 9.3.0 Temporal Calculation Standards
+
+**Policy:** All temporal calculations (e.g., `days_to_earnings`, `earnings_report_recency`) MUST use a consistent
+`reference_date` parameter rather than `last_updated` or mixed date columns. This ensures:
+
+1. **Reproducibility**: Re-running analysis on historical data produces identical results
+2. **Consistency**: All temporal features use the same reference point
+3. **Testability**: Unit tests can specify exact dates for deterministic results
+4. **Dashboard alignment**: Feature engineering and dashboard calculations stay synchronized
+
+**Implementation:**
+
+```python
+from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+
+# CORRECT: Use reference_date parameter
+df_with_temporal = engineer_temporal_features(
+    df,
+    date_col='last_updated',
+    reference_date=pd.Timestamp('2025-12-18')  # Explicit reference date
+)
+
+# CORRECT: Defaults to pd.Timestamp.now() if not provided
+df_with_temporal = engineer_temporal_features(df)
+
+# INCORRECT: Don't calculate days using last_updated directly
+# df['days_to_earnings'] = (df['next_earnings'] - df['last_updated']).dt.days
+```
+
+**Affected Functions:**
+
+- `finance_ml.ml_workflow.features.advanced.engineer_temporal_features()`: Uses `reference_date` for:
+    - `days_to_earnings = (next_earnings - reference_date).dt.days`
+    - `earnings_report_recency = (reference_date - income_statement_report_date).dt.days`
+
+- `finance_ml.dashboards.earnings_widgets.create_earnings_calendar_dashboard()`: Uses `reference_date` for:
+    - `days_to_earnings` calculation
+    - Event window filtering (±10 days)
+
+- `finance_ml.dashboards.equities_dashboard_app.py`: Uses `reference_date` for:
+    - Dashboard filtering and displays
+    - Timeline visualizations
+
+**Migration Notes:**
+
+- **v0.9.5**: Updated all temporal calculations to use `reference_date` consistently
+- **Breaking Change**: Code that relied on `last_updated` for temporal calculations may see different results
+- **Migration Path**: Pass explicit `reference_date=pd.Timestamp('YYYY-MM-DD')` to reproduce old behavior
 
 #### 9.3.1 Automated Feature Selection (Phase 9.3 Task 1)
 

@@ -5,7 +5,7 @@
 #
 # This notebook explores the unified ETL (Extract, Transform, Load) Pipeline for stock data.
 #
-# **Version:** 1.0.0 | **Model Version:** v9_9
+# **Version:** 1.0.0 | **Model Version:** v9_10
 #
 # ## Pipeline Stages
 # 1. **Extract** - Load from DB with CSV fallback

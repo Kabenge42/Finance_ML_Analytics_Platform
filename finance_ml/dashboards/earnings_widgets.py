@@ -72,7 +72,9 @@ EarningsMode = Literal[
 ]
 
 
-def _write_html_artifact(fig: go.Figure, output_path: Optional[Union[str, Path]]) -> None:
+def _write_html_artifact(
+    fig: go.Figure, output_path: Optional[Union[str, Path]]
+) -> None:
     """Write a Plotly figure to HTML when an output path is provided.
 
     Several dashboard builders return early with an 'empty' figure (e.g., missing
@@ -215,7 +217,7 @@ def create_earnings_calendar_dashboard(
         pd.DataFrame: Filtered DataFrame with selected metrics.
     """
     if reference_date is None:
-        reference_date = pd.Timestamp.now()
+        reference_date = pd.Timestamp.now().normalize()
 
     # Ensure date columns are datetime
     date_cols = [
@@ -310,10 +312,11 @@ def create_earnings_calendar_dashboard(
 
     dashboard_df = filtered_df[final_cols].copy()
 
-    # Add computed columns
+    # Add computed columns - Use reference_date for temporal consistency
     if "next_earnings" in dashboard_df.columns:
         dashboard_df["days_to_earnings"] = (
-            dashboard_df["next_earnings"] - reference_date
+            pd.to_datetime(dashboard_df["next_earnings"], errors="coerce")
+            - reference_date
         ).dt.days
 
         # Reorder: Put days_to_earnings near next_earnings
@@ -328,12 +331,15 @@ def create_earnings_calendar_dashboard(
     return dashboard_df
 
 
-def _build_format_dict(columns: List[str]) -> Dict[str, str]:
+def _build_format_dict(
+    columns: List[str], df: Optional[pd.DataFrame] = None
+) -> Dict[str, str]:
     """
     Build format dictionary for DataFrame styling based on column names.
 
     Args:
         columns: List of column names to format.
+        df: Optional DataFrame to check actual dtypes before applying numeric formats.
 
     Returns:
         Dict mapping column names to format strings.
@@ -342,6 +348,12 @@ def _build_format_dict(columns: List[str]) -> Dict[str, str]:
 
     for col in columns:
         col_lower = col.lower()
+
+        # If df is provided, skip numeric formatting for non-numeric columns
+        if df is not None and col in df.columns:
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                # Skip format for non-numeric columns - let pandas use default
+                continue
 
         # Date columns
         if any(
@@ -469,8 +481,8 @@ def display_earnings_dashboard(
         print("No companies found with earnings within +/- 10 days.")
         return None
 
-    # Build comprehensive format dictionary
-    format_dict = _build_format_dict(list(dashboard_df.columns))
+    # Build comprehensive format dictionary, passing df to check dtypes
+    format_dict = _build_format_dict(list(dashboard_df.columns), df=dashboard_df)
 
     # Apply styling
     styler = dashboard_df.style.format(format_dict, na_rep="-")
@@ -532,7 +544,7 @@ def create_earnings_metrics_chart(
         go.Figure: Plotly figure object.
     """
     if reference_date is None:
-        reference_date = pd.Timestamp.now()
+        reference_date = pd.Timestamp.now().normalize()
 
     # Get dashboard data for the specific category
     dashboard_df = create_earnings_calendar_dashboard(
@@ -688,7 +700,7 @@ def create_category_comparison_chart(
         categories = list(PHASE93_FEATURE_INPUTS.keys())
 
     if reference_date is None:
-        reference_date = pd.Timestamp.now()
+        reference_date = pd.Timestamp.now().normalize()
 
     # Get base dashboard data
     dashboard_df = create_earnings_calendar_dashboard(
@@ -820,7 +832,7 @@ def create_earnings_surprise_dashboard(
         go.Figure: Plotly figure.
     """
     if reference_date is None:
-        reference_date = pd.Timestamp.now()
+        reference_date = pd.Timestamp.now().normalize()
 
     df_local = df.copy()
 
@@ -1128,7 +1140,7 @@ def create_market_movers_dashboard(
         go.Figure: Plotly figure.
     """
     if reference_date is None:
-        reference_date = pd.Timestamp.now()
+        reference_date = pd.Timestamp.now().normalize()
 
     required_cols = ["ticker", "sector", "last_price", "next_earnings"]
     if not all(c in df.columns for c in required_cols):
@@ -1542,7 +1554,7 @@ def generate_earnings_quality_alerts(
         config = EarningsAlertConfig()
 
     if reference_date is None:
-        reference_date = pd.Timestamp.now()
+        reference_date = pd.Timestamp.now().normalize()
 
     alerts: List[Dict[str, object]] = []
 
