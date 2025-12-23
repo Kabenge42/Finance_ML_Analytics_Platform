@@ -1,7 +1,7 @@
 ﻿# Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 1.13
-**Last Updated:** 2025-12-18
+**Version:** 1.18  
+**Last Updated:** 2025-12-23
 **Package Version:** 0.9.5
 **Model Version:** v9_10
 
@@ -15,7 +15,91 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
   acceptance criteria, success metrics, and validation checkpoints for each phase. Includes critical issues analysis
   and recommended fixes.
 
-**Recent Updates (v1.13):**
+**Recent Updates (v1.18):**
+
+- **Critical Fix: Zero Imputation Protection in Median Imputation** (2025-12-23)
+    - **Issue**: Zero-imputation columns (non-recurring exceptional items) were being overwritten by median imputation in Step 4 of the 6-step strategy
+    - **Symptom**: Missing values in columns like `impairment_of_goodwill_fq`, `asset_writedown_ltm`, `restructuring_charges_ltm` were being imputed with non-zero median values (e.g., -13.0, -4.19, -15.75) instead of zero
+    - **Root Cause**: `apply_median_imputation()` excluded only price columns but NOT zero-imputation columns, causing it to overwrite zeros set in Step 1
+    - **Affected Columns** (22 zero-imputation columns):
+        - Impairment of goodwill (5 periods): `impairment_of_goodwill_fq`, `impairment_of_goodwill_ltm`, `impairment_of_goodwill_1fy`, `impairment_of_goodwill_fy`, `impairment_of_goodwill_5yavgfq`
+        - Asset writedowns (5 periods): `asset_writedown_fq`, `asset_writedown_ltm`, `asset_writedown_fy`, `asset_writedown_1fy`, `asset_writedown_5yavgfq`
+        - Restructuring charges (5 periods): `restructuring_charges_fq`, `restructuring_charges_ltm`, `restructuring_charges_fy`, `restructuring_charges_1fy`, `restructuring_charges_5yavgfq`
+        - Merger & restructuring charges (5 periods): `merger_and_restructuring_charges_fq`, `merger_and_restructuring_charges_ltm`, `merger_and_restructuring_charges_fy`, `merger_and_restructuring_charges_1fy`, `merger_and_restructuring_charges_5yavgfq`
+        - Other exceptional items (2 columns): `gain_loss_on_sale_of_assets_ltm`, `other_unusual_items_total_ltm`
+    - **Fix Implementation** (`finance_ml/ml_workflow/preprocessing/imputation.py`):
+        - Added exclusion logic to `apply_median_imputation()` (lines 1228-1237)
+        - Zero-imputation columns are now explicitly excluded from median imputation
+        - Mirrors existing exclusion logic in `get_knn_imputation_columns()` and `get_median_imputation_columns()`
+    - **Protection Mechanism**: 
+        - Step 1: `apply_zero_imputation()` sets missing values to zero
+        - Step 4: `apply_median_imputation()` now excludes zero-imputation columns, preserving zeros
+        - Comprehensive exclusion across all imputation steps (KNN, median)
+    - **Validation**: Test suite confirms missing values correctly imputed to zero and preserved through all steps
+        - Example: `impairment_of_goodwill_fq` with 96 missing values → 96 zeros after Step 1 → 96 zeros preserved after Step 4 ✓
+    - **Conservative Approach**: Zero imputation fills ONLY missing values with zero, preserving actual reported values from source data
+    - **Business Impact**: Ensures non-recurring exceptional items are correctly represented as zero when not reported, maintaining data integrity for financial analysis and ML models
+
+**Previous Updates (v1.17):**
+
+- **Critical Fix: Zero Imputation Protection Mechanism** (2025-12-23)
+    - **Issue**: Zero-imputation columns (non-recurring exceptional items) were being overwritten by KNN and median imputation in Steps 2 and 4
+    - **Root Cause**: `get_knn_imputation_columns()` and `get_median_imputation_columns()` included zero-imputation columns, causing subsequent steps to overwrite zeros set in Step 1
+    - **Fix Implementation**: Added exclusion logic to both functions to filter out zero-imputation columns
+    - **Note**: This fix was incomplete - see v1.18 for the complete solution that also fixes `apply_median_imputation()`
+
+**Previous Updates (v1.16):**
+
+- **Critical Fix: Schema-Aware Datetime Detection** (2025-12-23)
+    - **Issue**: `apply_datetime_imputation_and_formatting()` used overly broad pattern matching that incorrectly converted numeric and categorical columns to datetime format
+    - **Affected Columns** (8 columns falsely converted):
+        - **Numeric columns** → datetime with epoch timestamps: `retained_earnings_ltm`, `dividend_per_share_ltm`, `dividend_record_amount`, `dividend_streak`
+        - **Categorical columns** → datetime with current timestamp: `next_earnings_when`, `dividend_record_frequency`, `next_earnings_status`, `dividend_record_currency`
+    - **Root Cause**: Pattern matching on "earnings" and "dividend" in column names caught non-date columns
+    - **Fix**: Replaced pattern-based detection with schema-aware detection using `COLUMN_SCHEMA` role='date'
+    - **Implementation**:
+        - Primary: Check `COLUMN_SCHEMA` for role='date' (8 legitimate date columns)
+        - Fallback: Conservative pattern matching (only columns ending with '_date' or 'date', or exactly 'fy_end')
+    - **Validation**: Test suite confirms numeric/categorical columns preserved, true date columns converted correctly
+    - **Business Impact**: Prevents data corruption in financial metrics and categorical features, ensures ML model input integrity
+
+**Previous Updates (v1.15):**
+
+- **100% Schema Coverage: Schema-Based Imputation** (2025-12-23)
+    - **Achievement**: 100% coverage of all 555 COLUMN_SCHEMA columns across 6 imputation strategies
+    - **Schema-Based Selection**: All imputation functions now dynamically select columns from COLUMN_SCHEMA by role
+        - `get_knn_imputation_columns()`: **561 columns** (feature, market_value, ratio, percentage, bool)
+        - `get_median_imputation_columns()`: **49 columns** (count + recurring operational items)
+        - `apply_price_imputation()`: **26 columns** (price, target, target_fallback roles)
+        - `get_categorical_imputation_config()`: **18 columns** (ordinal + nominal + status flags)
+        - `apply_datetime_imputation_and_formatting()`: **8 columns** (auto-detected via patterns)
+        - `get_zero_imputation_columns()`: **22 columns** (non-recurring exceptional items)
+    - **Enhanced Coverage**:
+        - **Boolean features**: Added bool dtype to KNN imputation (4 flag columns)
+        - **Date patterns**: Added "fy_end" and "dividend" to auto-detection patterns
+        - **Missing categoricals**: Added `eps_surprise_magnitude` (ordinal), `unit` (most_frequent)
+    - **Maintainability**: Schema-based approach eliminates hardcoded column lists, ensures automatic coverage of new columns
+    - **Validation**: New `analyze_imputation_coverage.py` script for continuous schema coverage monitoring
+    - **Business Impact**: Zero fallback to generic median imputation, every column has appropriate strategy
+
+**Previous Updates (v1.14):**
+
+- **Improved Imputation Strategy: Conservative Approach** (2025-12-23)
+    - **Zero-Imputation Refinement**: Reduced from 48 to **27 columns** (non-recurring items only)
+        - **EXCLUDED**: R&D expenses, CapEx, Goodwill, Intangible assets, Volume/trading metrics, Cash acquisitions, Interest expense/income (now use median)
+        - **INCLUDED**: Impairments, restructuring charges, merger costs, asset sale gains/losses, unusual items
+    - **NEW Function**: `get_median_imputation_columns()` — 32 recurring operational items (now 49 with count columns)
+        - R&D expenses (4 periods), Capital expenditure (5 periods), Interest expense/income (2 columns)
+        - Cash acquisitions (5 periods), Trading metrics (2 columns), Balance sheet items (14 columns)
+    - **Enhanced Categorical Encoding**:
+        - **Ordinal encoding**: `style_class` (Value=0, Blend=1, Growth=2), `size_class` (Small=0, Mid=1, Large=2)
+        - **One-hot encoding**: `sector`, `industry`, `region`, `country`, `trading_country`, `exchange`
+        - **NEW Functions**: `apply_ordinal_encoding()`, `apply_onehot_encoding()`
+    - **ETL Integration**: New `ImputationConfig` parameters (`apply_categorical_encoding`, `ordinal_columns`, `onehot_columns`, `onehot_drop_first`, `onehot_min_frequency`)
+    - **Rationale**: More conservative and less distorting — zero-fill only where economically justified, median for recurring items preserves distribution
+    - **Business Impact**: Improved data integrity for ML models, reduced bias in imputation, better handling of categorical features
+
+**Previous Updates (v1.13):**
 
 - **Temporal Calculation Standards** (2025-12-18)
     - **NEW Section 9.3.0**: Temporal Calculation Standards for consistent `reference_date` usage

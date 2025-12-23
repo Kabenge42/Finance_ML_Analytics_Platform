@@ -199,11 +199,11 @@ def _get_dashboard_etl_config() -> ETLConfig:
             track_diagnostics=True,
         ),
         semantic_classification=SemanticClassificationConfig(
-            enabled=False,
+            enabled=True,
             preserve_price_columns=True,
         ),
         imputation=ImputationConfig(
-            apply_imputation=True,
+            apply_imputation=False,
             strategy="6step",
             knn_neighbors=5,
             sector_column="sector",
@@ -220,13 +220,13 @@ def _get_dashboard_etl_config() -> ETLConfig:
             exclude_counts_from_scaling=True,
         ),
         sanitization=DataSanitizationConfig(
-            sanitize_data=True,
+            sanitize_data=False,
             apply_winsorization=False,
             winsorize_lower_percentile=WINSORIZE_LOWER,
             winsorize_upper_percentile=WINSORIZE_UPPER,
         ),
         scaling=ScalingConfig(
-            enabled=False,
+            enabled=True,
             scaler_type="robust",
             scale_by_sector=True,
             exclude_price_columns=True,
@@ -804,7 +804,7 @@ def load_data(
             db_url=resolved_db_url,
             feature_preset=feature_preset,
             config=etl_config,
-            return_metrics=False,
+            return_metrics=True,
         )
         return result
 

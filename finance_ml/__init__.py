@@ -77,8 +77,6 @@ __all__ = [
     "simple_eda",
     # Core preprocessing (imported below)
     "normalize_columns",
-    # Regression (imported below)
-    "train_stacking_regressor",
     # Analytics (imported below)
     "calculate_mispricing_score",
     "rank_undervalued_stocks",
@@ -111,110 +109,9 @@ __legacy_all__ = [
 ]
 
 # Many legacy imports below are optional; guard them to avoid breaking basic imports
-try:
-    # Import from advanced_eda module (Phase 9.2)
-    from finance_ml.ml_workflow.advanced_eda import (
-        CorrelationReport,
-        StatisticalTestResult,
-        EDAReport,
-        calculate_correlation_matrix as calc_corr_matrix,
-        find_top_correlations as find_top_corr,
-        test_normality as test_norm,
-        calculate_skewness_kurtosis as calc_skew_kurt,
-        detect_outliers_statistical as detect_outliers_stat,
-        calculate_mutual_information as calc_mutual_info,
-        calculate_feature_importance_rf as calc_rf_importance,
-        perform_pca,
-        calculate_optimal_pca_components as calc_optimal_pca,
-        compare_sector_means,
-        compare_two_groups,
-        generate_eda_report,
-        generate_sector_comparison_report,
-    )
-except Exception:  # pragma: no cover - optional import guard
-    pass
 
-try:
-    # Import from advanced_models module (Phase 9.5)
-    from finance_ml.ml_workflow.advanced_models import (
-        # Feature Integration
-        prepare_regression_data,
-        create_classification_interactions,
-        # Linear Models
-        train_ridge_regressor,
-        train_lasso_regressor,
-        train_elastic_net_regressor,
-        train_bayesian_ridge_regressor,
-        train_polynomial_regressor,
-        # Gradient Boosting Models
-        train_xgboost_regressor,
-        train_lightgbm_regressor,
-        train_catboost_regressor,
-        train_histgb_regressor,
-        # Tree and Neural Models
-        train_random_forest_regressor,
-        train_extra_trees_regressor,
-        train_neural_network_regressor,
-        # Ensemble Methods
-        train_voting_regressor,
-        train_stacking_regressor,
-        train_quantile_regressor,
-        optimize_hyperparameters_optuna,
-        # Utilities
-        extract_numeric_feature_columns,
-        compare_regressors,
-        train_sector_specific_models,
-        save_model,
-        load_model,
-        # Data Validation (ML Workflow Improvement Plan)
-        validate_training_data,
-        prepare_features_for_training,
-    )
-except Exception:  # pragma: no cover - optional import guard
-    pass
 
-try:
-    # Import from advanced_preprocessing module (Phase 9.1)
-    # Note: These are backward compatibility shims; prefer importing from preprocessing subpackage
-    from finance_ml.ml_workflow.advanced_preprocessing import (
-        DataQualityReport,
-        detect_outliers_iqr as detect_outliers_iqr_method,
-        detect_outliers_zscore as detect_outliers_zscore_method,
-        detect_outliers_isolation_forest,
-        winsorize_by_sector as winsorize_by_sector_method,
-        calculate_data_quality_score,
-        impute_missing_values,
-        impute_missing_values_knn_sector,
-        create_scaler_pipeline,
-        scale_features,
-        # Phase 9.1: Enhanced 6-step Imputation Strategy
-        get_zero_imputation_columns,
-        get_knn_imputation_columns,
-        apply_zero_imputation,
-        apply_knn_imputation_enhanced,
-        apply_price_imputation,
-        apply_median_imputation,
-        apply_enhanced_imputation_strategy_4step,
-        # Phase 9.5: Data Preparation Pipeline
-        prepare_phase95_data,
-    )
-except Exception:  # pragma: no cover - optional import guard
-    pass
 
-try:
-    # Import from analyst_comparison module (Phase 9.8)
-    from finance_ml.ml_workflow.analyst_comparison import (
-        compare_prediction_vs_analyst_targets,
-        calculate_agreement_rate,
-        calculate_directional_accuracy,
-        analyze_systematic_bias,
-        identify_disagreement_opportunities,
-        segment_comparison_by_attribute,
-        generate_prediction_analyst_excel_report,
-        PredictionAnalystAnalytics,
-    )
-except Exception:  # pragma: no cover - optional import guard
-    pass
 
 # Phase 9.7 Refactor: Import from analytics subpackage (guarded)
 try:  # pragma: no cover - optional heavy import
@@ -395,18 +292,8 @@ from finance_ml.ml_workflow.reporting import (
     prepare_plotly_dashboard_data as reporting_plotly_data,
 )
 
-# Import from classification_enhanced module (Phase 2.1)
-# Note: These are now also available from classification.tuning (Phase 9.4)
-try:
-    from finance_ml.ml_workflow.classification_enhanced import (
-        optimize_classifier_hyperparameters,
-        cross_validate_with_sector_stratification,
-        analyze_calibration,
-    )
-
-    HAVE_CLASSIFICATION_ENHANCED = True
-except ImportError:
-    HAVE_CLASSIFICATION_ENHANCED = False
+# classification_enhanced module has been moved to classification.tuning (Phase 9.4)
+HAVE_CLASSIFICATION_ENHANCED = False
 
 # Import from benchmarking module (Phase 9.2)
 from finance_ml.ml_workflow.eda.benchmarking import (
@@ -459,24 +346,6 @@ from finance_ml.ml_workflow.preprocessing.data import (
     create_expanding_windows,
 )
 
-# Import from data_catalog module (Phase 9.1 - Data Catalog)
-from finance_ml.ml_workflow.data_catalog import (
-    SchemaInfo,
-    StatisticalProfile,
-    DatasetMetadata,
-    DataCatalog,
-    extract_schema_info,
-    create_statistical_profile,
-)
-
-# Import from data_versioning module (Phase 9.1 - Data Versioning)
-from finance_ml.ml_workflow.data_versioning import (
-    DataVersion,
-    DataVersionManager,
-    calculate_dataframe_hash,
-    compare_versions,
-    create_version_snapshot,
-)
 
 # Import from eval module (Phase 7 TDD implementation complete)
 # Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
@@ -556,26 +425,6 @@ from finance_ml.logging_config import (
     set_log_level,
 )
 
-# Import from regression module (Phase 7 TDD implementation complete)
-# Note: Guard heavy or legacy imports to keep top-level import resilient.
-try:  # pragma: no cover - defensive import to avoid hard failures during tests
-    from finance_ml.ml_workflow.models import (
-        create_event_labels,
-        train_event_classifier,
-        build_regression_pipeline,
-        train_and_evaluate_regression,
-        train_and_evaluate_regression_by_sector,
-        train_quantile_regression,
-        predict_quantile_regression,
-        train_quantile_regression_by_sector,
-        train_stacking_ensemble,
-        train_stacking_ensemble_by_sector,
-        monitor_ensemble_training,
-    )
-except Exception:  # pragma: no cover - allow partial surface if optional deps missing
-    # Minimal fallbacks provided via api facade or shims; detailed functions
-    # remain accessible when users import structured submodules explicitly.
-    pass
 
 # Import notebook configuration module
 from finance_ml.notebook_config import NotebookConfig
@@ -591,38 +440,52 @@ from finance_ml.notebook_utils import (
     perform_and_display_eda,
 )
 
-# Import portfolio optimization module (TDD implementation)
-from finance_ml.ml_workflow.portfolio_optimization import (
-    calculate_portfolio_return,
-    calculate_portfolio_volatility,
-    calculate_portfolio_sharpe_ratio,
-    validate_weights,
-    generate_efficient_frontier,
-    optimize_portfolio_max_sharpe,
-    optimize_portfolio_min_volatility,
-    optimize_portfolio_target_return,
-    rebalance_portfolio,
-)
+# Portfolio optimization moved to analytics.portfolio (Phase 9.7+)
+# Import from new location if needed
+try:
+    from finance_ml.ml_workflow.analytics.portfolio import (
+        calculate_portfolio_return,
+        calculate_portfolio_volatility,
+        calculate_portfolio_sharpe_ratio,
+        validate_weights,
+        generate_efficient_frontier,
+        optimize_portfolio_max_sharpe,
+        optimize_portfolio_min_volatility,
+        optimize_portfolio_target_return,
+        rebalance_portfolio,
+    )
+except ImportError:  # pragma: no cover
+    # Portfolio functions not available
+    pass
 
-# Import risk metrics module (TDD implementation)
-from finance_ml.ml_workflow.risk_metrics import (
-    calculate_var_historical,
-    calculate_var_parametric,
-    calculate_cvar,
-    calculate_sharpe_ratio,
-    calculate_sortino_ratio,
-    calculate_max_drawdown,
-    calculate_portfolio_risk_metrics,
-)
+# Risk metrics moved to analytics.risk (Phase 9.7+)
+# Import from new location if needed
+try:
+    from finance_ml.ml_workflow.analytics.risk import (
+        calculate_var_historical,
+        calculate_var_parametric,
+        calculate_cvar,
+        calculate_sharpe_ratio,
+        calculate_sortino_ratio,
+        calculate_max_drawdown,
+        calculate_portfolio_risk_metrics,
+    )
+except ImportError:  # pragma: no cover
+    # Risk metrics functions not available
+    pass
 
-# Import from transformers module (Phase 9.1 Enhancements #2 and #5)
-from finance_ml.ml_workflow.transformers import (
-    RegularizedTargetEncoder,
-    TargetEncoder,
-    FinancialRatioTransformer,
-    SafeDivisionTransformer,
-    ValuationRatioTransformer,
-)
+# Transformers module deleted - functionality may be in features or preprocessing subpackages
+# Commenting out for now to allow imports to succeed
+# try:
+#     from finance_ml.ml_workflow.features.transformers import (
+#         RegularizedTargetEncoder,
+#         TargetEncoder,
+#         FinancialRatioTransformer,
+#         SafeDivisionTransformer,
+#         ValuationRatioTransformer,
+#     )
+# except ImportError:  # pragma: no cover
+#     pass
 
 # Legacy exports list - retained for backward compatibility reference
 # The curated __all__ is defined at the top of this file
@@ -668,57 +531,6 @@ __legacy_exports__ = [
     "safe_divide",
     "create_temporal_split",
     "create_expanding_windows",
-    # Advanced preprocessing module (Phase 9.1)
-    "DataQualityReport",
-    "detect_outliers_iqr_method",
-    "detect_outliers_zscore_method",
-    "detect_outliers_isolation_forest",
-    "winsorize_by_sector_method",
-    "calculate_data_quality_score",
-    "impute_missing_values",
-    "impute_missing_values_knn_sector",
-    "create_scaler_pipeline",
-    "scale_features",
-    # Phase 9.1: Enhanced 6-step Imputation Strategy
-    "get_zero_imputation_columns",
-    "get_knn_imputation_columns",
-    "apply_zero_imputation",
-    "apply_knn_imputation_enhanced",
-    "apply_price_imputation",
-    "apply_median_imputation",
-    "apply_enhanced_imputation_strategy_4step",
-    # Phase 9.5: Data Preparation Pipeline
-    "prepare_phase95_data",
-    # Data Catalog module (Phase 9.1)
-    "SchemaInfo",
-    "StatisticalProfile",
-    "DatasetMetadata",
-    "DataCatalog",
-    "extract_schema_info",
-    "create_statistical_profile",
-    # Data Versioning module (Phase 9.1)
-    "DataVersion",
-    "DataVersionManager",
-    "calculate_dataframe_hash",
-    "compare_versions",
-    "create_version_snapshot",
-    # Advanced EDA module (Phase 9.2)
-    "CorrelationReport",
-    "StatisticalTestResult",
-    "EDAReport",
-    "calc_corr_matrix",
-    "find_top_corr",
-    "test_norm",
-    "calc_skew_kurt",
-    "detect_outliers_stat",
-    "calc_mutual_info",
-    "calc_rf_importance",
-    "perform_pca",
-    "calc_optimal_pca",
-    "compare_sector_means",
-    "compare_two_groups",
-    "generate_eda_report",
-    "generate_sector_comparison_report",
     # Features module
     "engineer_basic_ratios",
     "engineer_margin_features",
@@ -731,43 +543,6 @@ __legacy_exports__ = [
     "FinancialRatioTransformer",
     "SafeDivisionTransformer",
     "ValuationRatioTransformer",
-    # Models module
-    "create_event_labels",
-    "train_event_classifier",
-    "build_regression_pipeline",
-    "train_and_evaluate_regression",
-    "train_and_evaluate_regression_by_sector",
-    "train_quantile_regression",
-    "predict_quantile_regression",
-    "train_quantile_regression_by_sector",
-    "train_stacking_ensemble",
-    "train_stacking_ensemble_by_sector",
-    "monitor_ensemble_training",
-    # Advanced Models module (Phase 9.5)
-    "prepare_regression_data",
-    "create_classification_interactions",
-    "train_ridge_regressor",
-    "train_lasso_regressor",
-    "train_elastic_net_regressor",
-    "train_bayesian_ridge_regressor",
-    "train_polynomial_regressor",
-    "train_xgboost_regressor",
-    "train_lightgbm_regressor",
-    "train_catboost_regressor",
-    "train_histgb_regressor",
-    "train_random_forest_regressor",
-    "train_extra_trees_regressor",
-    "train_neural_network_regressor",
-    "train_voting_regressor",
-    "train_stacking_regressor",
-    "train_quantile_regressor",
-    "optimize_hyperparameters_optuna",
-    "compare_regressors",
-    "train_sector_specific_models",
-    "save_model",
-    "load_model",
-    "validate_training_data",
-    "prepare_features_for_training",
     # Evaluation module
     "calculate_mispricing_score",
     "rank_undervalued_stocks",
@@ -794,7 +569,6 @@ __legacy_exports__ = [
     "calculate_optimal_pca_components",
     "compare_sector_means",
     "compare_two_groups",
-    "generate_eda_report",
     "generate_sector_comparison_report",
     # Phase 9.2: Benchmarking
     "compare_sector_distributions",
@@ -806,8 +580,7 @@ __legacy_exports__ = [
     # Phase 9.1 Enhancement #3: Data Quality Dashboard
     "generate_data_quality_dashboard",
     "export_profiling_report",
-    # Phase 9.8: Prediction vs. Analyst Analytics
-    "PredictionAnalystAnalytics",
+    # Phase 9.8: Prediction vs. Analyst Analytics (available in analytics.eval)
     "compare_prediction_vs_analyst_targets",
     "calculate_agreement_rate",
     "calculate_directional_accuracy",
@@ -929,15 +702,8 @@ __legacy_exports__ = [
     "reporting_plotly_data",
 ]
 
-# Conditionally add enhanced classification functions
-if HAVE_CLASSIFICATION_ENHANCED:
-    __legacy_exports__.extend(
-        [
-            "optimize_classifier_hyperparameters",
-            "cross_validate_with_sector_stratification",
-            "analyze_calibration",
-        ]
-    )
+# classification_enhanced functions moved to classification.tuning (Phase 9.4)
+# HAVE_CLASSIFICATION_ENHANCED is now always False
 
 # Additional exports from eval module (dashboard helpers and advanced analytics)
 # Updated path: eval.py moved to analytics/eval.py (Phase 9.7)

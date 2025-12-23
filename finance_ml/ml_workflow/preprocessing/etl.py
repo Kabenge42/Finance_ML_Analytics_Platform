@@ -146,7 +146,10 @@ class SemanticClassificationConfig:
 
 @dataclass
 class ImputationConfig:
-    """Configuration for ETL Stages 6 & 10: Missing Value Imputation."""
+    """Configuration for ETL Stages 6 & 10: Missing Value Imputation.
+    
+    Enhanced with categorical encoding support for ordinal and one-hot encoding.
+    """
 
     apply_imputation: bool = True
     strategy: Literal["6step", "4step", "median_only"] = "6step"
@@ -155,6 +158,12 @@ class ImputationConfig:
     reference_price_column: str = "last_price"
     impute_categorical_columns: bool = True
     impute_datetime_columns: bool = True
+    # NEW: Categorical encoding options
+    apply_categorical_encoding: bool = False
+    ordinal_columns: Optional[List[str]] = None  # e.g., ['style_class', 'size_class']
+    onehot_columns: Optional[List[str]] = None   # e.g., ['sector', 'region']
+    onehot_drop_first: bool = True
+    onehot_min_frequency: float = 0.01
 
 
 @dataclass
@@ -1573,6 +1582,7 @@ class ETLPipeline:
                     price_column=self.config.imputation.reference_price_column,
                     handle_categoricals=self.config.imputation.impute_categorical_columns,
                     handle_dates=self.config.imputation.impute_datetime_columns,
+                    apply_categorical_encoding=self.config.imputation.apply_categorical_encoding,
                 )
             elif self.config.imputation.strategy == "4step":
                 # Backward compatibility - numeric only
@@ -1583,6 +1593,7 @@ class ETLPipeline:
                     price_column=self.config.imputation.reference_price_column,
                     handle_categoricals=False,
                     handle_dates=False,
+                    apply_categorical_encoding=False,
                 )
             elif self.config.imputation.strategy == "median_only":
                 # Simple median fallback
@@ -1825,6 +1836,7 @@ class ETLPipeline:
                         price_column=self.config.imputation.reference_price_column,
                         handle_categoricals=self.config.imputation.impute_categorical_columns,
                         handle_dates=self.config.imputation.impute_datetime_columns,
+                        apply_categorical_encoding=self.config.imputation.apply_categorical_encoding,
                     )
                     if self.metrics:
                         self.metrics.stages_executed.append("post_feature_imputation_6step")

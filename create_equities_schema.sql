@@ -60,47 +60,35 @@ DROP TABLE IF EXISTS equities;
 -- Create equities table with appropriate data types
 CREATE TABLE equities
 (
-    -- ====================
-    -- IDENTIFIER COLUMNS
-    -- ====================
     "Ticker"                                           TEXT,
     "ISIN"                                             TEXT,
     "Name"                                             TEXT,
-    "Description"                                      TEXT,
-    -- CATEGORICAL: Exchange where stock trades
+    "Description"                                      TEXT,    -- CATEGORICAL: Exchange where stock trades
+    "Region"                                           TEXT,    -- CATEGORICAL: Country of incorporation
+    "Country"                                          TEXT,    -- CATEGORICAL: Country where stock trades
+    "Trading Country"                                  TEXT,    -- ====================
     "Exchange"                                         TEXT,
-    "Unit"                                             TEXT,
-    -- CATEGORICAL: GICS Sector classification
-    "Sector"                                           TEXT,
-    -- CATEGORICAL: GICS Industry classification
+    "Unit"                                             TEXT,    -- CATEGORICAL: GICS Sector classification
+    "Sector"                                           TEXT,    -- CATEGORICAL: GICS Industry classification
     "Industry"                                         TEXT,
+    "Style Class"                                      TEXT,    -- CATEGORICAL: Earnings announcement status
+    "Size Class"                                       TEXT,    -- CATEGORICAL: Geographic region
     "Last Updated"                                     DATE,
     "Income Statement Report Date"                     DATE,
-    "FY End"                                           DATE,
+    "FY End"                                           TEXT,
     "Next Earnings"                                    DATE,
-    "Next Earnings (When)"                             TEXT,
-    -- CATEGORICAL: Investment style (Value, Growth, Blend)
-    "Style Class"                                      TEXT,
-    -- CATEGORICAL: Earnings announcement status
-    "Next Earnings (Status)"                           TEXT,
-    -- CATEGORICAL: Market cap size (Small, Mid, Large)
-    "Size Class"                                       TEXT,
-    -- CATEGORICAL: Geographic region
-    "Region"                                           TEXT,
-    -- CATEGORICAL: Country of incorporation
-    "Country"                                          TEXT,
-    -- CATEGORICAL: Country where stock trades
-    "Trading Country"                                  TEXT,
-
-    -- ====================
-    -- MARKET VALUE COLUMNS - Log-transform recommended
-    -- ====================
+    "Next Earnings (When)"                             TEXT,    -- CATEGORICAL: Investment style (Value, Growth, Blend)
+    "Next Earnings (Status)"                           TEXT,    -- CATEGORICAL: Market cap size (Small, Mid, Large)
+    "Dividend Record (Currency)"                       TEXT,    -- CATEGORICAL: Dividend currency
+    "Dividend Record (Amount)"                         NUMERIC, -- PRICE: Dividend amount
+    "Dividend Record (Frequency)"                      TEXT,    -- CATEGORICAL: Dividend frequency (FQ,FY,etc.)
+    "Dividend Streak"                                  NUMERIC, -- COUNT: Consecutive years of dividend payments
+    "Dividend Record (Announce Date)"                  DATE,    -- Date: Dividend announcement date
+    "Dividend Record (Payable Date)"                   DATE,    -- Date: Dividend payable date
+    "Dividend Record (Record Date)"                    DATE,    -- Date: Dividend record date
+    "Dividend Record (Ex Date)"                        DATE,    -- Date: Dividend ex-date
     "Market Cap"                                       NUMERIC, -- MARKET_VALUE: Market capitalization
     "Enterprise Value"                                 NUMERIC, -- MARKET_VALUE: Enterprise value
-
-    -- ====================
-    -- PRICE COLUMNS - NEVER transform (preserve original dollar units)
-    -- ====================
     "Last Price"                                       NUMERIC, -- PRICE: Current market price (critical for valuation)
     "Price Target (YTD Ago)"                           NUMERIC, -- PRICE: Historical price target (YTD)
     "Total Return (YTD)"                               NUMERIC, -- PERCENTAGE: YTD return percentage
@@ -109,63 +97,39 @@ CREATE TABLE equities
     "Price Target - Median"                            NUMERIC, -- PRICE: Median analyst price target
     "Price Target - High"                              NUMERIC, -- PRICE: High analyst price target
     "Price Target - #"                                 NUMERIC, -- COUNT: Number of price targets
-
-    -- ====================
-    -- RATIO COLUMNS - Pre-normalized financial ratios
-    -- ====================
     "P/E (NTM)"                                        NUMERIC, -- RATIO: Price-to-Earnings (Next Twelve Months)
     "P/E (LTM)"                                        NUMERIC, -- RATIO: Price-to-Earnings (Last Twelve Months)
     "Altman Z-Score (FY)"                              NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Year)
     "Altman Z-Score (FQ)"                              NUMERIC, -- RATIO: Bankruptcy prediction score (Fiscal Quarter)
     "Altman Z-Score (LTM)"                             NUMERIC, -- RATIO: Bankruptcy prediction score (LTM)
-
-    -- ====================
-    -- PERCENTAGE COLUMNS - Volatility & Risk Metrics
-    -- ====================
     "Beta (1Y)"                                        NUMERIC, -- PERCENTAGE: 1-year beta
     "Beta (2Y)"                                        NUMERIC, -- PERCENTAGE: 2-year beta
     "Beta (5Y)"                                        NUMERIC, -- PERCENTAGE: 5-year beta
-
-    -- ====================
-    -- COUNT COLUMNS - Analyst Coverage
-    -- ====================
     "Analyst Rating"                                   NUMERIC, -- COUNT: Consensus analyst rating
     "# Strong Sell Ratings"                            NUMERIC, -- COUNT: Number of strong sell ratings
     "# Strong Buys Ratings"                            NUMERIC, -- COUNT: Number of strong buy ratings
     "# Hold Ratings"                                   NUMERIC, -- COUNT: Number of hold ratings
     "# Buys Ratings"                                   NUMERIC, -- COUNT: Number of buy ratings
     "# Sell Ratings"                                   NUMERIC, -- COUNT: Number of sell ratings
-
-    -- ====================
-    -- PERCENTAGE/MARKET_VALUE - Growth & Revenue Metrics
-    -- ====================
     "Total Revenues/CAGR (5Y FY)"                      NUMERIC, -- PERCENTAGE: 5-year revenue CAGR
     "Total Revenues (FQ)"                              NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Quarter)
     "Total Revenues (-1FY)"                            NUMERIC, -- MARKET_VALUE: Total revenues (Previous Fiscal Year)
     "Total Revenues (FY)"                              NUMERIC, -- MARKET_VALUE: Total revenues (Fiscal Year)
     "Total Revenues (LTM)"                             NUMERIC, -- MARKET_VALUE: Total revenues (Last Twelve Months)
     "Total Operating Expenses (LTM)"                   NUMERIC, -- MARKET_VALUE: Operating expenses (LTM)
-
-    -- RATIO: Tangible Book Value Metrics
     "P/TBV (LTM)"                                      NUMERIC, -- RATIO: Price-to-Tangible Book Value (LTM)
     "TBV (FY)"                                         NUMERIC, -- MARKET_VALUE: Tangible book value (FY)
     "TBV (LTM)"                                        NUMERIC, -- MARKET_VALUE: Tangible book value (LTM)
     "Market Cap (Country R)"                           NUMERIC, -- MARKET_VALUE: Market cap country ranking
-
-    -- PERCENTAGE: Total Return Metrics
     "Tot. Return %/CAGR (3Y)"                          NUMERIC, -- PERCENTAGE: 3-year total return CAGR
     "Tot. Return %/CAGR (10Y)"                         NUMERIC, -- PERCENTAGE: 10-year total return CAGR
     "Total Return (5Y)"                                NUMERIC, -- PERCENTAGE: 5-year total return
     "Total Return (10Y)"                               NUMERIC, -- PERCENTAGE: 10-year total return
-
-    -- MARKET_VALUE: Net Income & Cash Flow Metrics
     "Net Income/Adj. (-1FY)"                           NUMERIC, -- MARKET_VALUE: Adjusted net income (Previous FY)
     "CFF (LTM)"                                        NUMERIC, -- MARKET_VALUE: Cash from financing (LTM)
     "CFI (LTM)"                                        NUMERIC, -- MARKET_VALUE: Cash from investing (LTM)
     "FCF (LTM)"                                        NUMERIC, -- MARKET_VALUE: Free cash flow (LTM)
     "CFO (LTM)"                                        NUMERIC, -- MARKET_VALUE: Cash from operations (LTM)
-
-    -- MARKET_VALUE: EBITDA Metrics
     "EBITDA (FQ)"                                      NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Quarter)
     "EBITDA (LTM)"                                     NUMERIC, -- MARKET_VALUE: EBITDA (Last Twelve Months)
     "EBITDA (FY)"                                      NUMERIC, -- MARKET_VALUE: EBITDA (Fiscal Year)
@@ -173,8 +137,6 @@ CREATE TABLE equities
     "EBITDA/Adj. (LTM)"                                NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (LTM)
     "EBITDA/Adj. (FY)"                                 NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (FY)
     "EBITDA/Adj. (-1FY)"                               NUMERIC, -- MARKET_VALUE: Adjusted EBITDA (Previous FY)
-
-    -- MARKET_VALUE: EBIT Metrics
     "EBIT (FQ)"                                        NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Quarter)
     "EBIT (LTM)"                                       NUMERIC, -- MARKET_VALUE: EBIT (Last Twelve Months)
     "EBIT (FY)"                                        NUMERIC, -- MARKET_VALUE: EBIT (Fiscal Year)
@@ -184,56 +146,36 @@ CREATE TABLE equities
     "EBIT/Adj. (LTM)"                                  NUMERIC, -- MARKET_VALUE: Adjusted EBIT (LTM)
     "EBIT - Est Med (FY1E)"                            NUMERIC, -- MARKET_VALUE: EBIT estimate median (FY1E)
     "EBIT - Est Med (NTM)"                             NUMERIC, -- MARKET_VALUE: EBIT estimate median (NTM)
-
-    -- RATIO: Profitability Metrics
     "Return On Equity % (LTM)"                         NUMERIC, -- RATIO: ROE percentage (LTM)
     "Return On Equity % (FY)"                          NUMERIC, -- RATIO: ROE percentage (FY)
-
-    -- MARKET_VALUE: Net Income Metrics
     "Net Income - (IS) (FY)"                           NUMERIC, -- MARKET_VALUE: Net income from income statement (FY)
     "Net Income - (IS) (LTM)"                          NUMERIC, -- MARKET_VALUE: Net income from income statement (LTM)
     "Normalized Net Income (FY)"                       NUMERIC, -- MARKET_VALUE: Normalized net income (FY)
     "Normalized Net Income (LTM)"                      NUMERIC, -- MARKET_VALUE: Normalized net income (LTM)
     "Net Income/Adj. (FY)"                             NUMERIC, -- MARKET_VALUE: Adjusted net income (FY)
     "Net Income/Adj. (LTM)"                            NUMERIC, -- MARKET_VALUE: Adjusted net income (LTM)
-
-    -- PERCENTAGE: Margin Metrics
     "Net Income Margin % (FY)"                         NUMERIC, -- PERCENTAGE: Net income margin (FY)
     "Net Income Margin % (LTM)"                        NUMERIC, -- PERCENTAGE: Net income margin (LTM)
-
-    -- PERCENTAGE: Volatility Metrics
     "Volatility (1M)"                                  NUMERIC, -- PERCENTAGE: 1-month volatility
     "Volatility (3M)"                                  NUMERIC, -- PERCENTAGE: 3-month volatility
     "Volatility (6M)"                                  NUMERIC, -- PERCENTAGE: 6-month volatility
     "Volatility (1Y)"                                  NUMERIC, -- PERCENTAGE: 1-year volatility
-
-    -- OTHER: Volume & Dividend Metrics
     "Volume (Shrs)"                                    NUMERIC, -- OTHER: Trading volume in shares
     "Dividend Per Share (LTM)"                         NUMERIC, -- PRICE: Dividend per share (LTM)
     "Div Yield (Ind)"                                  NUMERIC, -- PERCENTAGE: Dividend yield (Indicated)
     "Div Yield (LTM)"                                  NUMERIC, -- PERCENTAGE: Dividend yield (LTM)
-
-    -- MARKET_VALUE: Balance Sheet Metrics
     "Total Debt (FY)"                                  NUMERIC, -- MARKET_VALUE: Total debt (FY)
     "Total Equity (FY)"                                NUMERIC, -- MARKET_VALUE: Total equity (FY)
     "Total Equity (LTM)"                               NUMERIC, -- MARKET_VALUE: Total equity (LTM)
     "Total Debt (LTM)"                                 NUMERIC, -- MARKET_VALUE: Total debt (LTM)
     "Total Assets (LTM)"                               NUMERIC, -- MARKET_VALUE: Total assets (LTM)
     "Total Assets (FY)"                                NUMERIC, -- MARKET_VALUE: Total assets (FY)
-
-    -- RATIO: Liquidity & Efficiency Ratios
     "Current Ratio (FY)"                               NUMERIC, -- RATIO: Current ratio (FY)
     "Current Ratio (LTM)"                              NUMERIC, -- RATIO: Current ratio (LTM)
-
-    -- PERCENTAGE: Margin Ratios
     "Gross Profit Margin % (FY)"                       NUMERIC, -- PERCENTAGE: Gross profit margin (FY)
     "Gross Profit Margin % (LTM)"                      NUMERIC, -- PERCENTAGE: Gross profit margin (LTM)
-
-    -- RATIO: Efficiency Metrics
     "Asset Turnover (FY)"                              NUMERIC, -- RATIO: Asset turnover (FY)
     "Asset Turnover (LTM)"                             NUMERIC, -- RATIO: Asset turnover (LTM)
-
-    -- MARKET_VALUE: Gross Profit
     "Gross Profit (LTM)"                               NUMERIC, -- MARKET_VALUE: Gross profit (LTM)
     "Gross Profit (FY)"                                NUMERIC, -- MARKET_VALUE: Gross profit (FY)
     "EPS Norm - Est Avg (NTM)"                         NUMERIC, -- RATIO: EPS normalized estimate average (NTM)
@@ -345,12 +287,9 @@ CREATE TABLE equities
     "EBIT (5YAVGLTM)"                                  NUMERIC,
     "Total Revenues (5YAVGLTM)"                        NUMERIC,
     "Revenues - Est YoY % (FY1E)"                      NUMERIC, -- PERCENTAGE: Revenue estimate YoY change (FY1E)
-    -- PERCENTAGE: Price Change Metrics
     "Price Chg. % (1M)"                                NUMERIC, -- PERCENTAGE: 1-month price change
     "Price Chg. % (3M)"                                NUMERIC, -- PERCENTAGE: 3-month price change
     "1-Day %"                                          NUMERIC, -- PERCENTAGE: 1-day price change
-
-    -- PRICE: Historical Prices (for momentum calculations)
     "Price (5D Ago)"                                   NUMERIC, -- PRICE: Price 5 days ago
     "Price (1W Ago)"                                   NUMERIC, -- PRICE: Price 1 week ago
     "Price (1M Ago)"                                   NUMERIC, -- PRICE: Price 1 month ago
@@ -376,13 +315,10 @@ CREATE TABLE equities
     "Marketing Expenses (FY)"                          NUMERIC, -- MARKET_VALUE: Marketing expenses (Fiscal Year)
     "Marketing Expenses (-1FY)"                        NUMERIC, -- MARKET_VALUE: Marketing expenses (Previous FY)
     "Marketing Expenses (5YAVGLTM)"                    NUMERIC, -- MARKET_VALUE: Marketing expenses (5Y average LTM)
-    -- Phase 9.3 Schema Version 1.3 additions: 48 new columns
-    -- Category 1: Revenue Forecasting Estimates (4 columns)
     "Revenues - Est Avg (NTM)"                         NUMERIC, -- MARKET_VALUE: Revenue estimate average (NTM)
     "Revenues - Est Avg (FY1E)"                        NUMERIC, -- MARKET_VALUE: Revenue estimate average (FY1E)
     "Revenues - Est Med (NTM)"                         NUMERIC, -- MARKET_VALUE: Revenue estimate median (NTM)
     "Revenues - Est Med (FY1E)"                        NUMERIC, -- MARKET_VALUE: Revenue estimate median (FY1E)
-    -- Category 2: EV/Sales Time-Series (11 columns)
     "EV/Sales (EST FY1)"                               NUMERIC, -- RATIO: EV/Sales (Estimate FY1)
     "EV/Sales (LTM)"                                   NUMERIC, -- RATIO: EV/Sales (Last Twelve Months)
     "EV/Sales (NTM)"                                   NUMERIC, -- RATIO: EV/Sales (Next Twelve Months)
@@ -394,30 +330,18 @@ CREATE TABLE equities
     "EV/Sales (-2FQLTM)"                               NUMERIC, -- RATIO: EV/Sales (2 FQ ago LTM)
     "EV/Sales (-3FQLTM)"                               NUMERIC, -- RATIO: EV/Sales (3 FQ ago LTM)
     "EV/Sales (-4FQLTM)"                               NUMERIC, -- RATIO: EV/Sales (4 FQ ago LTM)
-    -- Category 3: Employment Metrics (7 columns)
-    "Full Time Employees (FQ)"                         NUMERIC, -- COUNT: Full time employees (Fiscal Quarter)
-    "Full Time Employees (FY)"                         NUMERIC, -- COUNT: Full time employees (Fiscal Year)
-    "Full Time Employees (-1FY)"                       NUMERIC, -- COUNT: Full time employees (Previous Fiscal Year)
-    "Full Time Employees (-2FY)"                       NUMERIC, -- COUNT: Full time employees (2 Years Ago)
-    "Full Time Employees (-3FY)"                       NUMERIC, -- COUNT: Full time employees (3 Years Ago)
-    "Avg Employees (5YAVGFY)"                          NUMERIC, -- COUNT: Average employees (5-year average Fiscal Year)
-    -- Category 4: Technical Indicators (6 columns)
-    -- PRICE: 52-Week Bounds (for relative positioning)
     "52W High/Adj"                                     NUMERIC, -- PRICE: 52-week adjusted high
     "52W Low/Adj"                                      NUMERIC, -- PRICE: 52-week adjusted low
-    -- PRICE: Exponential Moving Averages (technical indicators)
     "EMA (20D)"                                        NUMERIC, -- PRICE: 20-day EMA
     "EMA (50D)"                                        NUMERIC, -- PRICE: 50-day EMA
     "EMA (100D)"                                       NUMERIC, -- PRICE: 100-day EMA
     "EMA (250D)"                                       NUMERIC, -- PRICE: 250-day EMA (1-year trend proxy)
-    -- Category 5: EV/EBITDA Extended Time-Series (6 columns)
     "EV/EBITDA (LTM)"                                  NUMERIC, -- RATIO: EV/EBITDA (Last Twelve Months)
     "EV/EBITDA (NTM)"                                  NUMERIC, -- RATIO: EV/EBITDA (Next Twelve Months)
     "EV/EBITDA (-1FYLTM)"                              NUMERIC, -- RATIO: EV/EBITDA (1 FY ago LTM)
     "EV/EBITDA (-1FQLTM)"                              NUMERIC, -- RATIO: EV/EBITDA (1 FQ ago LTM)
     "EV/EBITDA (3YAVGLTM)"                             NUMERIC, -- RATIO: EV/EBITDA (3-year average LTM)
     "EV/EBITDA (EST FY1)"                              NUMERIC, -- RATIO: EV/EBITDA (Estimate FY1)
-    -- Category 6: P/E Extended Time-Series (14 columns)
     "P/E (EST FY1)"                                    NUMERIC, -- RATIO: P/E (Estimate FY1)
     "P/E (-1FYLTM)"                                    NUMERIC, -- RATIO: P/E (1 FY ago LTM)
     "P/E (-2FYLTM)"                                    NUMERIC, -- RATIO: P/E (2 FY ago LTM)
@@ -431,16 +355,12 @@ CREATE TABLE equities
     "P/E (-0FYYoYLTM)"                                 NUMERIC, -- RATIO: P/E (Year-over-Year LTM)
     "P/E (-1FYYoYLTM)"                                 NUMERIC, -- RATIO: P/E (1 FY YoY LTM)
     "P/E (-0FQYoYLTM)"                                 NUMERIC, -- RATIO: P/E (Quarter YoY LTM)
-    -- Category 7: Dividend Record Information (8 columns)
-    "Dividend Record (Announce Date)"                  DATE,    -- Date: Dividend announcement date
-    "Dividend Record (Ex Date)"                        DATE,    -- Date: Dividend ex-date
-    "Dividend Record (Payable Date)"                   DATE,    -- Date: Dividend payable date
-    "Dividend Record (Record Date)"                    DATE,    -- Date: Dividend record date
-    "Dividend Record (Frequency)"                      TEXT,    -- CATEGORICAL: Dividend frequency (FQ,FY,etc.)
-    "Dividend Record (Currency)"                       TEXT,    -- CATEGORICAL: Dividend currency
-    "Dividend Record (Amount)"                         NUMERIC, -- PRICE: Dividend amount
-    "Dividend Streak"                                  NUMERIC, -- COUNT: Consecutive years of dividend payments
-    -- Category 8: Net EPS - Basic Time-Series (12 columns)
+    "Full Time Employees (FQ)"                         NUMERIC, -- COUNT: Full time employees (Fiscal Quarter)
+    "Full Time Employees (FY)"                         NUMERIC, -- COUNT: Full time employees (Fiscal Year)
+    "Full Time Employees (-1FY)"                       NUMERIC, -- COUNT: Full time employees (Previous Fiscal Year)
+    "Full Time Employees (-2FY)"                       NUMERIC, -- COUNT: Full time employees (2 Years Ago)
+    "Full Time Employees (-3FY)"                       NUMERIC, -- COUNT: Full time employees (3 Years Ago)
+    "Avg Employees (5YAVGFY)"                          NUMERIC, -- COUNT: Average employees (5-year average Fiscal Year)
     "Net EPS - Basic (LTM)"                            NUMERIC, -- RATIO: Net EPS Basic (Last Twelve Months)
     "Net EPS - Basic (FQ)"                             NUMERIC, -- RATIO: Net EPS Basic (Fiscal Quarter)
     "Net EPS - Basic (FY)"                             NUMERIC, -- RATIO: Net EPS Basic (Fiscal Year)
@@ -453,28 +373,23 @@ CREATE TABLE equities
     "Net EPS - Basic (-3FY)"                           NUMERIC, -- RATIO: Net EPS Basic (3 FY ago)
     "Net EPS - Basic (-4FY)"                           NUMERIC, -- RATIO: Net EPS Basic (4 FY ago)
     "Net EPS - Basic (-5FY)"                           NUMERIC, -- RATIO: Net EPS Basic (5 FY ago)
-    -- Category 9: EPS Estimate Revisions (5 columns)
     "EPS Est Avg Rev % (FY1E - 1W)"                    NUMERIC, -- PERCENTAGE: EPS estimate revision (1 week)
     "EPS Est Avg Rev % (FY1E - 1M)"                    NUMERIC, -- PERCENTAGE: EPS estimate revision (1 month)
     "EPS Est Avg Rev % (FY1E - 3M)"                    NUMERIC, -- PERCENTAGE: EPS estimate revision (3 months)
     "EPS Est Avg Rev % (FY1E - 6M)"                    NUMERIC, -- PERCENTAGE: EPS estimate revision (6 months)
     "EPS Est Avg Rev % (FY1E - 1Y)"                    NUMERIC, -- PERCENTAGE: EPS estimate revision (1 year)
-    -- Category 10: Historical Dividend Yields (4 columns)
     "Div Yield (-2FYInd)"                              NUMERIC, -- PERCENTAGE: Dividend yield (2 FY ago indicated)
     "Div Yield (-3FYInd)"                              NUMERIC, -- PERCENTAGE: Dividend yield (3 FY ago indicated)
     "Div Yield (-4FYInd)"                              NUMERIC, -- PERCENTAGE: Dividend yield (4 FY ago indicated)
     "Div Yield (-5FYInd)"                              NUMERIC, -- PERCENTAGE: Dividend yield (5 FY ago indicated)
-    -- Category 11: EBITDA Estimates (2 columns)
     "EBITDA - Est Avg (NTM)"                           NUMERIC, -- MARKET_VALUE: EBITDA estimate average (NTM)
     "EBITDA - Est Avg (FY1E)"                          NUMERIC, -- MARKET_VALUE: EBITDA estimate average (FY1E)
-    -- Category 12: EPS GAAP Estimates and Revisions (6 columns)
     "EPS GAAP - Est Avg (NTM)"                         NUMERIC, -- RATIO: EPS GAAP estimate average (NTM)
     "EPS GAAP - Est Avg (FY1E)"                        NUMERIC, -- RATIO: EPS GAAP estimate average (FY1E)
     "EPS GAAP Est Avg Rev % (FY1E - 1M)"               NUMERIC, -- PERCENTAGE: EPS GAAP estimate revision (1 month)
     "EPS GAAP Est Avg Rev % (FY1E - 3M)"               NUMERIC, -- PERCENTAGE: EPS GAAP estimate revision (3 months)
     "EPS GAAP Est Avg Rev % (FY1E - 6M)"               NUMERIC, -- PERCENTAGE: EPS GAAP estimate revision (6 months)
     "EPS GAAP Est Avg Rev % (FY1E - 1Y)"               NUMERIC, -- PERCENTAGE: EPS GAAP estimate revision (1 year)
-    -- Category 13: EPS Analyst Count (1 column)
     "EPS Norm - Est # (FY1E)"                          NUMERIC  -- COUNT: Number of EPS estimates (FY1E)
 ) TABLESPACE pg_default;
 
