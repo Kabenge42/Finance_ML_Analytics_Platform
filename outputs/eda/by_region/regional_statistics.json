@@ -1,0 +1,310 @@
+{
+  "roe_mean": {
+    "Africa / Middle East": 14.507055809970463,
+    "Asia / Pacific": 9.900985863840775,
+    "Europe": -8.852607486585278,
+    "Latin America and Caribbean": 6.021537287309795,
+    "United States and Canada": 10.79468395237449
+  },
+  "roe_median": {
+    "Africa / Middle East": 13.572944126535072,
+    "Asia / Pacific": 9.773467169498133,
+    "Europe": 10.190606656388605,
+    "Latin America and Caribbean": 9.843461483715814,
+    "United States and Canada": 10.036245157541355
+  },
+  "roe_std": {
+    "Africa / Middle East": 36.736042856095175,
+    "Asia / Pacific": 62.82968640250666,
+    "Europe": 961.0030229069353,
+    "Latin America and Caribbean": 44.1514444115288,
+    "United States and Canada": 193.6697717723646
+  },
+  "roe_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "roa_mean": {
+    "Africa / Middle East": 6.045789650405336,
+    "Asia / Pacific": 5.732166195506494,
+    "Europe": 3.646028865285114,
+    "Latin America and Caribbean": 3.7902062895254143,
+    "United States and Canada": 1.7551045938665732
+  },
+  "roa_median": {
+    "Africa / Middle East": 4.295108100029889,
+    "Asia / Pacific": 4.361274777564194,
+    "Europe": 3.517511064816461,
+    "Latin America and Caribbean": 3.088970626287304,
+    "United States and Canada": 3.609249275643399
+  },
+  "roa_std": {
+    "Africa / Middle East": 8.35092467151892,
+    "Asia / Pacific": 8.724784521169854,
+    "Europe": 14.180450965727477,
+    "Latin America and Caribbean": 6.989338049391191,
+    "United States and Canada": 18.771072507351064
+  },
+  "roa_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "p_e_ratio_mean": {
+    "Africa / Middle East": 180.05180794528744,
+    "Asia / Pacific": -2129.6559953496103,
+    "Europe": 155.37817303231952,
+    "Latin America and Caribbean": 2339.999520258148,
+    "United States and Canada": 18.979229694556867
+  },
+  "p_e_ratio_median": {
+    "Africa / Middle East": 30.246153846153845,
+    "Asia / Pacific": 198.98749218261415,
+    "Europe": 16.659786627871732,
+    "Latin America and Caribbean": 45.5155661100046,
+    "United States and Canada": 18.692750677506776
+  },
+  "p_e_ratio_std": {
+    "Africa / Middle East": 1054.8498681877788,
+    "Asia / Pacific": 741799.650538052,
+    "Europe": 2093.87357696959,
+    "Latin America and Caribbean": 13849.9009295275,
+    "United States and Canada": 122.66029138422996
+  },
+  "p_e_ratio_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "debt_to_equity_mean": {
+    "Africa / Middle East": 0.7989867284024758,
+    "Asia / Pacific": 0.7019261530304365,
+    "Europe": 0.6566355674552344,
+    "Latin America and Caribbean": 1.4141465665003912,
+    "United States and Canada": 1.18007425425253
+  },
+  "debt_to_equity_median": {
+    "Africa / Middle East": 0.5430552375968866,
+    "Asia / Pacific": 0.3618684389751067,
+    "Europe": 0.6009223605080329,
+    "Latin America and Caribbean": 0.7843408324606356,
+    "United States and Canada": 0.5778897305269977
+  },
+  "debt_to_equity_std": {
+    "Africa / Middle East": 2.042969936923819,
+    "Asia / Pacific": 2.4217481643305474,
+    "Europe": 18.247987612967112,
+    "Latin America and Caribbean": 2.39518315614334,
+    "United States and Canada": 37.71942688602535
+  },
+  "debt_to_equity_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "price_momentum_1m_mean": {
+    "Africa / Middle East": 2.5785120322611728,
+    "Asia / Pacific": 4.633876227588665,
+    "Europe": 4.934484568995648,
+    "Latin America and Caribbean": 4.368936553527979,
+    "United States and Canada": 7.580748935150936
+  },
+  "price_momentum_1m_median": {
+    "Africa / Middle East": 1.328903654485045,
+    "Asia / Pacific": 2.5402982317912066,
+    "Europe": 3.811042657477633,
+    "Latin America and Caribbean": 2.8139371881816997,
+    "United States and Canada": 5.21561047535055
+  },
+  "price_momentum_1m_std": {
+    "Africa / Middle East": 10.234143191338411,
+    "Asia / Pacific": 11.565742513915552,
+    "Europe": 23.156070635588993,
+    "Latin America and Caribbean": 12.029984246309292,
+    "United States and Canada": 13.215899454791776
+  },
+  "price_momentum_1m_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "earnings_quality_score_mean": {
+    "Africa / Middle East": 60.7311657955267,
+    "Asia / Pacific": 66.19600867228264,
+    "Europe": 64.39158024662883,
+    "Latin America and Caribbean": 74.02092346456574,
+    "United States and Canada": 75.2973609057429
+  },
+  "earnings_quality_score_median": {
+    "Africa / Middle East": 56.59018285684474,
+    "Asia / Pacific": 62.285121707123025,
+    "Europe": 60.180221237121216,
+    "Latin America and Caribbean": 73.75271663343051,
+    "United States and Canada": 77.97255391769355
+  },
+  "earnings_quality_score_std": {
+    "Africa / Middle East": 12.930443837883798,
+    "Asia / Pacific": 16.220744266314284,
+    "Europe": 15.328270545009127,
+    "Latin America and Caribbean": 15.998579513983923,
+    "United States and Canada": 16.921456368086908
+  },
+  "earnings_quality_score_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "ema_trend_consistency_mean": {
+    "Africa / Middle East": 0.12239221140472879,
+    "Asia / Pacific": 0.28411306042884993,
+    "Europe": 0.11796116504854369,
+    "Latin America and Caribbean": 0.3693181818181818,
+    "United States and Canada": 0.2733333333333333
+  },
+  "ema_trend_consistency_median": {
+    "Africa / Middle East": 0.0,
+    "Asia / Pacific": 0.0,
+    "Europe": 0.0,
+    "Latin America and Caribbean": 1.0,
+    "United States and Canada": 0.0
+  },
+  "ema_trend_consistency_std": {
+    "Africa / Middle East": 0.8305026546173344,
+    "Asia / Pacific": 0.7361137976205072,
+    "Europe": 0.7989598133436537,
+    "Latin America and Caribbean": 0.7395783744649189,
+    "United States and Canada": 0.7528046503434042
+  },
+  "ema_trend_consistency_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "piotroski_f_score_mean": {
+    "Africa / Middle East": 6.35605006954103,
+    "Asia / Pacific": 6.564814814814815,
+    "Europe": 6.559223300970873,
+    "Latin America and Caribbean": 6.457386363636363,
+    "United States and Canada": 6.39
+  },
+  "piotroski_f_score_median": {
+    "Africa / Middle East": 7.0,
+    "Asia / Pacific": 7.0,
+    "Europe": 7.0,
+    "Latin America and Caribbean": 7.0,
+    "United States and Canada": 7.0
+  },
+  "piotroski_f_score_std": {
+    "Africa / Middle East": 1.572239669917488,
+    "Asia / Pacific": 1.4228715496904127,
+    "Europe": 1.4694186731986902,
+    "Latin America and Caribbean": 1.4630888718321413,
+    "United States and Canada": 1.5170368414149074
+  },
+  "piotroski_f_score_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "altman_z_score_mean": {
+    "Africa / Middle East": 1.3994811340813436,
+    "Asia / Pacific": 1.4688048645264415,
+    "Europe": 1.4435660272549191,
+    "Latin America and Caribbean": 1.127928899661608,
+    "United States and Canada": 1.0752715924066802
+  },
+  "altman_z_score_median": {
+    "Africa / Middle East": 1.2961710394525447,
+    "Asia / Pacific": 1.4108056978518864,
+    "Europe": 1.3651997982465165,
+    "Latin America and Caribbean": 1.1437831299676477,
+    "United States and Canada": 1.1034757136608475
+  },
+  "altman_z_score_std": {
+    "Africa / Middle East": 1.580720078494265,
+    "Asia / Pacific": 1.5272840291258452,
+    "Europe": 1.8825888352778914,
+    "Latin America and Caribbean": 0.8754536496589366,
+    "United States and Canada": 2.0782007396918143
+  },
+  "altman_z_score_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "dividend_yield_mean": {
+    "Africa / Middle East": 28.595351278079693,
+    "Asia / Pacific": 19.770707121413356,
+    "Europe": 31.014846556834808,
+    "Latin America and Caribbean": 30.568378138212594,
+    "United States and Canada": 44.49375147389713
+  },
+  "dividend_yield_median": {
+    "Africa / Middle East": 1.2121211850281917,
+    "Asia / Pacific": 0.1819039069923003,
+    "Europe": 4.460403795969166,
+    "Latin America and Caribbean": 1.2110537544978923,
+    "United States and Canada": 4.264864585991875
+  },
+  "dividend_yield_std": {
+    "Africa / Middle East": 43.902013802449005,
+    "Asia / Pacific": 39.4931709599496,
+    "Europe": 43.76821192616884,
+    "Latin America and Caribbean": 45.353656680652534,
+    "United States and Canada": 48.36848266559048
+  },
+  "dividend_yield_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  },
+  "revenue_growth_yoy_mean": {
+    "Africa / Middle East": 19.253355822940133,
+    "Asia / Pacific": 23.46085140121867,
+    "Europe": 410.7545824208655,
+    "Latin America and Caribbean": 12.332520020304809,
+    "United States and Canada": 221.82528632311724
+  },
+  "revenue_growth_yoy_median": {
+    "Africa / Middle East": 13.610994418772126,
+    "Asia / Pacific": 10.618143660252162,
+    "Europe": 12.666975792557295,
+    "Latin America and Caribbean": 7.757530315447255,
+    "United States and Canada": 11.112595845934575
+  },
+  "revenue_growth_yoy_std": {
+    "Africa / Middle East": 92.77670195262495,
+    "Asia / Pacific": 85.96590837942601,
+    "Europe": 14373.894194120241,
+    "Latin America and Caribbean": 36.96626154256737,
+    "United States and Canada": 5707.111543846047
+  },
+  "revenue_growth_yoy_count": {
+    "Africa / Middle East": 719,
+    "Asia / Pacific": 2052,
+    "Europe": 2060,
+    "Latin America and Caribbean": 352,
+    "United States and Canada": 1800
+  }
+}

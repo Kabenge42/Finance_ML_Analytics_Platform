@@ -115,6 +115,7 @@ COLUMN_SCHEMA: Dict[str, Dict[str, str]] = {
     "dividend_record_ex_date": {"dtype": "datetime64[ns]", "role": "date"},
     "dividend_record_payable_date": {"dtype": "datetime64[ns]", "role": "date"},
     "dividend_record_record_date": {"dtype": "datetime64[ns]", "role": "date"},
+    "reference_date": {"dtype": "datetime64[ns]", "role": "date"},
     # ====================
     # PRICE COLUMNS - NEVER transform (preserve original dollar units)
     # ====================

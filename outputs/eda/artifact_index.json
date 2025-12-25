@@ -1,0 +1,109 @@
+{
+  "generated_at": "2025-12-25T14:58:44.420976",
+  "reference_date": "2025-12-25T00:00:00",
+  "data_shape": {
+    "rows": 6983,
+    "columns": 682
+  },
+  "phase93_coverage": {
+    "Momentum & Technical": 25,
+    "Valuation Ratios": 24,
+    "Profitability": 14,
+    "Quality & Risk": 18,
+    "Cash Flow": 5,
+    "Capital Allocation": 21,
+    "Analyst Sentiment": 10,
+    "Market Sentiment": 5,
+    "Leverage & Liquidity": 8,
+    "Temporal Patterns": 17,
+    "Composite Scores": 5,
+    "Growth Metrics": 9,
+    "Efficiency Ratios": 4,
+    "Employee Productivity": 21,
+    "Balance Sheet Dynamics": 5,
+    "Revenue Forecasting": 9,
+    "Earnings Quality": 32
+  },
+  "artifacts": {
+    "dashboards": [
+      "exchange_sector_treemap.html",
+      "industry_distribution.html",
+      "region_exchange_heatmap.html",
+      "region_sector_sunburst.html"
+    ],
+    "by_region": [
+      "regional_boxplots.html",
+      "regional_radar_comparison.html",
+      "regional_valuation_comparison.html",
+      "regional_statistics.json"
+    ],
+    "by_sector": [
+      "sector_category_coverage.html",
+      "sector_distribution_comparison.html",
+      "sector_performance_heatmap.html",
+      "sector_valuation_scatter.html"
+    ],
+    "by_industry": [],
+    "by_exchange": [],
+    "earnings_analytics": [
+      "analyst_recommendations.html",
+      "analyst_recommendation_heatmap.html",
+      "category_comparison_chart.html",
+      "earnings_calendar.html",
+      "earnings_density_heatmap.html",
+      "earnings_metrics_profitability.html",
+      "earnings_surprise_analysis.html",
+      "earnings_surprise_dashboard.html",
+      "gaap_vs_adjusted_comparison.html",
+      "market_movers.html",
+      "market_movers_dashboard.html",
+      "price_target_analysis.html",
+      "price_target_analytics.html",
+      "technical_valuation_dashboard.html",
+      "earnings_alerts.json",
+      "earnings_quality_alerts.json"
+    ],
+    "dividend_visualizations": [
+      "dividend_scorecard.html",
+      "dividend_yield_by_sector.html",
+      "dividend_yield_distribution.html",
+      "forward_dividend_yield_trend.html",
+      "shareholder_returns_comparison.html"
+    ],
+    "employment_analytics": [
+      "efficiency_by_sector.html",
+      "employee_productivity.html"
+    ],
+    "advanced_analytics": [
+      "cross_sectional_risk_heatmap.html",
+      "hypothesis_test_heatmap.html",
+      "performance_attribution_sunburst.html",
+      "statistical_benchmarking.html",
+      "var_risk_analytics.html",
+      "advanced_analytics_summary.json",
+      "anova_by_sector.json"
+    ],
+    "earnings_visualizations": [
+      "earnings_calendar.html",
+      "earnings_density_heatmap.html",
+      "earnings_forecasts_metrics.html",
+      "earnings_growth_metrics.html",
+      "earnings_profitability_metrics.html",
+      "earnings_quality_by_sector.html",
+      "earnings_quality_risk_metrics.html",
+      "earnings_valuation_metrics.html",
+      "eps_revision_momentum_heatmap.html",
+      "eps_revision_momentum_scatter.html",
+      "eps_upgrade_downgrade_distribution.html",
+      "phase93_category_comparison.html",
+      "technical_valuation_dashboard.html"
+    ],
+    "visualizations": [
+      "analyst_recommendations_chart.html",
+      "dividend_yield_distribution.html",
+      "financial_metrics_radar.html",
+      "hypothesis_test_heatmap.html",
+      "sector_benchmarking.html"
+    ]
+  }
+}

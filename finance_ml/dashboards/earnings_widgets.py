@@ -22,14 +22,11 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # Schema-driven Phase 9.3 feature categorization (code_guidelines.md §9.3)
-from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
-from finance_ml.ml_workflow.preprocessing.column_semantics import (
-    COUNT_COLUMNS,
-    MARKET_VALUE_COLUMNS,
-    PERCENTAGE_COLUMNS,
-    PRICE_COLUMNS,
-    RATIO_COLUMNS,
+from finance_ml.ml_workflow.data.schema import (
+    COLUMN_SCHEMA,
+    PHASE93_FEATURE_CATEGORIES,
 )
+from finance_ml.ml_workflow.preprocessing.dtypes import detect_and_cast_dtypes
 
 logger = logging.getLogger(__name__)
 
@@ -160,21 +157,46 @@ def get_category_metrics(
     flags indicate row-level applicability for the metric computations.
 
     Args:
-        categories: List of category names from PHASE93_FEATURE_CATEGORIES.
+        categories: List of category names from PHASE93_FEATURE_CATEGORIES or short names.
         include_supplemental: Whether to include supplemental domain-specific metrics.
 
     Returns:
         Dict mapping category name to list of metric column names.
     """
+    # Mapping of short names to PHASE93_FEATURE_CATEGORIES keys
+    category_mapping = {
+        "profitability": "Profitability",
+        "valuation": "Valuation Ratios",
+        "growth": "Growth Metrics",
+        "momentum": "Momentum & Technical",
+        "quality_risk": "Quality & Risk",
+        "cash_flow": "Cash Flow",
+        "capital_allocation": "Capital Allocation",
+        "analyst_sentiment": "Analyst Sentiment",
+        "market_sentiment": "Market Sentiment",
+        "leverage_liquidity": "Leverage & Liquidity",
+        "temporal": "Temporal Patterns",
+        "composite": "Composite Scores",
+        "growth_metrics": "Growth Metrics",
+        "efficiency": "Efficiency Ratios",
+        "productivity": "Employee Productivity",
+        "balance_sheet": "Balance Sheet Dynamics",
+        "forecasts": "Revenue Forecasting",
+        "earnings_quality": "Earnings Quality",
+        "dividends": "Dividend Reliability",
+    }
+
     result = {}
     for cat in categories:
-        metrics = PHASE93_FEATURE_CATEGORIES.get(cat, []).copy()
-        result[cat] = metrics
+        # Resolve to full category name if short name provided
+        full_cat = category_mapping.get(cat.lower(), cat)
+        metrics = PHASE93_FEATURE_CATEGORIES.get(full_cat, []).copy()
+        result[full_cat] = metrics
 
-    # Add supplemental metrics for specific categories
+    # Add supplemental metrics for specific categories (using normalized keys)
     if include_supplemental:
         # Earnings-related supplemental metrics
-        if "profitability" in result or "growth" in result:
+        if "Profitability" in result or "Growth Metrics" in result:
             supplemental_earnings = [
                 "net_income_adj_1fy",
                 "ebitda_adj_fy",
@@ -188,11 +210,14 @@ def get_category_metrics(
                 "eps_adj_fy",
                 "eps_adj_ltm",
             ]
-            if "profitability" in result:
-                result["profitability"].extend(supplemental_earnings)
+            if "Profitability" in result:
+                result["Profitability"].extend(supplemental_earnings)
+            if "Growth Metrics" in result:
+                result["Growth Metrics"].extend(supplemental_earnings)
 
         # Dividend-related supplemental metrics
-        if "dividends" in result:
+        div_key = next((k for k in ["Dividend Reliability", "Capital Allocation"] if k in result), None)
+        if div_key:
             supplemental_dividends = [
                 "dividend_record_announce_date",
                 "dividend_record_ex_date",
@@ -210,10 +235,10 @@ def get_category_metrics(
                 "dividends_paid",
                 "dividends_paid_ltm",
             ]
-            result["dividends"].extend(supplemental_dividends)
+            result[div_key].extend(supplemental_dividends)
 
         # Earnings Quality supplemental metrics (Phase 9.3 output features)
-        if "earnings_quality" in result:
+        if "Earnings Quality" in result:
             supplemental_earnings_quality = [
                 # Estimated vs. Actual analytics outputs
                 "eps_surprise_pct",
@@ -238,7 +263,7 @@ def get_category_metrics(
                 "earnings_quality_score",
                 "exceptional_items_impact_ratio",
             ]
-            result["earnings_quality"].extend(supplemental_earnings_quality)
+            result["Earnings Quality"].extend(supplemental_earnings_quality)
 
     return result
 
@@ -336,35 +361,35 @@ def create_earnings_calendar_dashboard(
     elif mode == "all":
         # Include all major categories for comprehensive view
         selected_categories = [
-            "profitability",
-            "valuation",
-            "growth",
-            "momentum",
-            "quality_risk",
-            "cash_flow",
-            "dividends",
-            "forecasts",
-            "earnings_quality",
+            "Profitability",
+            "Valuation Ratios",
+            "Growth Metrics",
+            "Momentum & Technical",
+            "Quality & Risk",
+            "Cash Flow",
+            "Dividend Reliability",
+            "Revenue Forecasting",
+            "Earnings Quality",
         ]
     elif mode == "earnings":
         # Earnings-focused categories
         selected_categories = [
-            "profitability",
-            "valuation",
-            "growth",
-            "momentum",
-            "forecasts",
-            "earnings_quality",
+            "Profitability",
+            "Valuation Ratios",
+            "Growth Metrics",
+            "Momentum & Technical",
+            "Revenue Forecasting",
+            "Earnings Quality",
         ]
     elif mode == "dividends":
         # Dividend-focused categories
-        selected_categories = ["dividends", "cash_flow"]
+        selected_categories = ["Dividend Reliability", "Cash Flow"]
     elif mode in PHASE93_FEATURE_CATEGORIES:
         # Single category mode
         selected_categories = [mode]
     else:
         # Default to earnings mode
-        selected_categories = ["profitability", "growth", "momentum"]
+        selected_categories = ["Profitability", "Growth Metrics", "Momentum & Technical"]
 
     # Get metrics from selected categories
     category_metrics = get_category_metrics(selected_categories, include_supplemental=True)
@@ -421,129 +446,72 @@ def create_earnings_calendar_dashboard(
     return dashboard_df
 
 
-def _build_format_dict(columns: List[str], df: Optional[pd.DataFrame] = None) -> Dict[str, str]:
-    """
-    Build format dictionary for DataFrame styling based on column names.
+from typing import Any
 
-    **ETL Alignment:** Respects semantic column classifications from
-    column_semantics (e.g., PRICE_COLUMNS preservation policy).
 
-    Args:
-        columns: List of column names to format.
-        df: Optional DataFrame to check actual dtypes before applying numeric formats.
-
-    Returns:
-        Dict mapping column names to format strings.
+def _build_format_dict(
+    df: pd.DataFrame,
+    date_columns: list[str] | None = None,
+    date_format: str = DATE_DISPLAY_FORMAT,
+) -> dict[str, Any]:
+    """Build a format dictionary for Styler, safely handling column types.
+    
+    Only applies date formatting to columns that are actually datetime dtype.
     """
     format_dict = {}
-
-    for col in columns:
-        col_lower = col.lower()
-
-        # If df is provided, skip numeric formatting for non-numeric columns
-        if df is not None and col in df.columns:
-            if not pd.api.types.is_numeric_dtype(df[col]):
-                # Skip format for non-numeric columns - let pandas use default
-                continue
-
-        # Semantic preservation for price columns (do not normalize units)
-        if col_lower in PRICE_COLUMNS:
-            format_dict[col] = "${:,.2f}"
-            continue
-
-        # Semantic-guided formatting for percentages, ratios, market values, counts
-        if col_lower in PERCENTAGE_COLUMNS:
-            format_dict[col] = "{:.2%}"
-            continue
-
-        if col_lower in RATIO_COLUMNS:
+    
+    if date_columns is None:
+        date_columns = []
+    
+    for col in df.columns:
+        if col in date_columns:
+            # Only apply date format if the column is actually datetime
+            if pd.api.types.is_datetime64_any_dtype(df[col]):
+                format_dict[col] = lambda x, fmt=date_format: (
+                    x.strftime(fmt) if pd.notna(x) else ""
+                )
+            # If it's not datetime, skip date formatting (leave as default)
+        elif pd.api.types.is_float_dtype(df[col]):
             format_dict[col] = "{:.2f}"
-            continue
-
-        if col_lower in MARKET_VALUE_COLUMNS:
-            format_dict[col] = "${:,.0f}"
-            continue
-
-        if col_lower in COUNT_COLUMNS:
-            format_dict[col] = "{:,.0f}"
-            continue
-
-        # Date columns
-        if any(x in col_lower for x in ["date", "next_earnings", "last_updated", "record_date"]):
-            format_dict[col] = f"{{:{DATE_DISPLAY_FORMAT}}}"
-
-        # Currency/Price columns
-        elif any(
-            x in col_lower
-            for x in [
-                "market_cap",
-                "enterprise_value",
-                "price",
-                "ebitda",
-                "ebit",
-                "revenue",
-                "income",
-                "fcf",
-                "cfo",
-                "cfi",
-                "cff",
-                "capex",
-                "capital_expenditure",
-                "eps",
-                "dividend_per_share",
-                "dividends_paid",
-                "gross_profit",
-            ]
-        ):
-            if "pct" in col_lower or "yield" in col_lower or "margin" in col_lower:
-                format_dict[col] = "{:.2%}"
-            elif "eps" in col_lower or "per_share" in col_lower:
-                format_dict[col] = "${:.2f}"
-            else:
-                format_dict[col] = "${:,.0f}"
-
-        # Percentage columns
-        elif any(
-            x in col_lower
-            for x in [
-                "pct",
-                "yield",
-                "margin",
-                "return",
-                "roe",
-                "roa",
-                "cagr",
-                "volatility",
-            ]
-        ):
-            format_dict[col] = "{:.2%}"
-
-        # Ratio columns
-        elif any(
-            x in col_lower
-            for x in [
-                "p_e",
-                "p_b",
-                "p_tbv",
-                "ev_sales",
-                "ev_ebitda",
-                "current_ratio",
-                "beta",
-                "altman",
-                "z_score",
-            ]
-        ):
-            format_dict[col] = "{:.2f}"
-
-        # Integer columns
-        elif any(x in col_lower for x in ["employees", "streak", "count", "num"]):
-            format_dict[col] = "{:,.0f}"
-
-        # Days column
-        elif "days" in col_lower:
-            format_dict[col] = "{:+.0f}"
-
+        elif pd.api.types.is_integer_dtype(df[col]):
+            format_dict[col] = "{:,}"
+    
     return format_dict
+
+
+def _ensure_schema_dtypes(df: pd.DataFrame, date_columns: list[str] | None = None) -> pd.DataFrame:
+    """Ensure DataFrame columns have schema-compliant dtypes before styling.
+
+    Uses detect_and_cast_dtypes from dtypes.py for schema-aware casting.
+    Specifically ensures date columns are datetime64[ns] to prevent
+    strftime errors on float values.
+
+    Args:
+        df: DataFrame to cast
+        date_columns: Specific date columns to ensure are datetime
+
+    Returns:
+        DataFrame with schema-compliant dtypes
+    """
+    df = df.copy()
+
+    # First pass: use schema-aware dtype casting
+    df_cast, diagnostics = detect_and_cast_dtypes(df, schema=COLUMN_SCHEMA)
+
+    # Second pass: explicit datetime conversion for known date columns
+    if date_columns:
+        for col in date_columns:
+            if col in df_cast.columns:
+                if not pd.api.types.is_datetime64_any_dtype(df_cast[col]):
+                    df_cast[col] = pd.to_datetime(df_cast[col], errors="coerce")
+
+    # Log any coercion warnings for debugging
+    if diagnostics.get("coercion_warnings"):
+        for col, count in diagnostics["coercion_warnings"].items():
+            if count > 0:
+                logger.debug("Column '%s': %s values coerced during dtype casting", col, count)
+
+    return df_cast
 
 
 def display_earnings_dashboard(
@@ -552,6 +520,8 @@ def display_earnings_dashboard(
     categories: Optional[List[str]] = None,
     reference_date: Optional[pd.Timestamp] = None,
     top_n: int = 100,
+    date_columns: Optional[List[str]] = None,
+    output_path: Optional[Union[str, Path]] = None,
 ) -> Optional["pd.io.formats.style.Styler"]:
     """
     Displays the earnings dashboard using Pandas Styler with enhanced formatting.
@@ -580,10 +550,13 @@ def display_earnings_dashboard(
         categories: Optional list of specific PHASE93 categories to include.
         reference_date: Date for earnings comparison. Defaults to today.
         top_n: Number of top companies to include.
+        date_columns: Optional list of date columns to format (auto-detected if None).
+        output_path: Optional path to save HTML output.
 
     Returns:
         pd.io.formats.style.Styler: Styled DataFrame for display, or None if empty.
     """
+    # Create the base dashboard DataFrame using existing logic
     dashboard_df = create_earnings_calendar_dashboard(
         df,
         reference_date=reference_date,
@@ -593,43 +566,85 @@ def display_earnings_dashboard(
     )
 
     if dashboard_df.empty:
-        print("No companies found with earnings within +/- 10 days.")
+        logger.warning("No companies found with earnings within the specified window.")
         return None
 
-    # Build comprehensive format dictionary, passing df to check dtypes
-    format_dict = _build_format_dict(list(dashboard_df.columns), df=dashboard_df)
+    # Default date columns for earnings dashboard if not provided
+    if date_columns is None:
+        date_columns = [
+            "next_earnings",
+            "income_statement_report_date",
+            "dividend_record_ex_date",
+            "fy_end",
+            "_reference_date",
+            "reference_date",
+        ]
 
-    # Apply styling
-    styler = dashboard_df.style.format(format_dict, na_rep="-")
+    # Filter to columns that exist in dashboard_df
+    date_columns = [c for c in date_columns if c in dashboard_df.columns]
+
+    # Ensure schema-compliant dtypes before styling
+    df_styled = _ensure_schema_dtypes(dashboard_df, date_columns=date_columns)
+
+    # Build schema-aware format dictionary with safe callables
+    format_dict = _build_format_dict(
+        df_styled,
+        date_columns=date_columns,
+    )
+
+    # Apply styling with safe formatters
+    styler = df_styled.style.format(format_dict, na_rep="—")
 
     # Color-code days_to_earnings (aligned with code_guidelines.md §17.1 colors)
     def color_days(val):
         if pd.isna(val):
             return ""
-        if val < 0:
-            return f"color: {COLOR_PALETTE['danger']}"  # Past
-        if val == 0:
-            return f"background-color: {COLOR_PALETTE['warning']}; color: black"  # Today
-        if val > 0:
-            return f"color: {COLOR_PALETTE['success']}"  # Future
+        try:
+            val_float = float(val)
+            if val_float < 0:
+                return f"color: {COLOR_PALETTE['danger']}"  # Past
+            if val_float == 0:
+                return f"background-color: {COLOR_PALETTE['warning']}; color: black"  # Today
+            if val_float > 0:
+                return f"color: {COLOR_PALETTE['success']}"  # Future
+        except (ValueError, TypeError):
+            pass
         return ""
 
-    if "days_to_earnings" in dashboard_df.columns:
+    if "days_to_earnings" in df_styled.columns:
         styler = styler.map(color_days, subset=["days_to_earnings"])
+
+    # Apply additional styling (background gradients for key metrics)
+    numeric_cols = df_styled.select_dtypes(include=[np.number]).columns.tolist()
+    gradient_cols = [c for c in ["earnings_quality_score", "roe", "roa"] if c in numeric_cols]
+    if gradient_cols:
+        styler = styler.background_gradient(
+            subset=gradient_cols,
+            cmap="RdYlGn",
+            vmin=-50,
+            vmax=50,
+        )
 
     # Add caption with mode info
     mode_display = mode.replace("_", " ").title()
     styler = styler.set_caption(
         f"Earnings Calendar Dashboard - Mode: {mode_display} "
-        f"(Top {len(dashboard_df)} by Market Cap)"
+        f"(Top {len(df_styled)} by Market Cap)"
     )
+
+    # Save to HTML if path provided
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        styler.to_html(output_path)
+        logger.info("Saved earnings dashboard to %s", output_path)
 
     return styler
 
 
 def create_earnings_metrics_chart(
     df: pd.DataFrame,
-    metric_category: str = "profitability",
+    metric_category: str = "Profitability",
     reference_date: Optional[pd.Timestamp] = None,
     top_n: int = 20,
     output_path: Optional[Union[str, Path]] = None,
@@ -648,7 +663,7 @@ def create_earnings_metrics_chart(
 
     Args:
         df: Input DataFrame containing stock data.
-        metric_category: PHASE93_FEATURE_CATEGORIES category to visualize.
+        metric_category: PHASE93_FEATURE_CATEGORIES category or short name to visualize.
         reference_date: Date for earnings comparison. Defaults to today.
         top_n: Number of companies to include.
         output_path: Optional path to save HTML output.
@@ -656,6 +671,20 @@ def create_earnings_metrics_chart(
     Returns:
         go.Figure: Plotly figure object.
     """
+    # Standardize category name
+    category_mapping = {
+        "profitability": "Profitability",
+        "valuation": "Valuation Ratios",
+        "growth": "Growth Metrics",
+        "momentum": "Momentum & Technical",
+        "quality_risk": "Quality & Risk",
+        "cash_flow": "Cash Flow",
+        "forecasts": "Revenue Forecasting",
+        "earnings_quality": "Earnings Quality",
+        "dividends": "Dividend Reliability",
+    }
+    metric_category = category_mapping.get(metric_category.lower(), metric_category)
+
     reference_date = _resolve_reference_date(df, reference_date)
 
     # Get dashboard data for the specific category

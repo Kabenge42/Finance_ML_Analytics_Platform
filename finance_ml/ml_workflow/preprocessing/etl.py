@@ -1367,6 +1367,7 @@ class ETLPipeline:
         - screening_eu.csv
         - screening_apac.csv
         - screening_rotw.csv
+        - equities.csv
 
         Args:
             data_dir: Directory containing CSV files

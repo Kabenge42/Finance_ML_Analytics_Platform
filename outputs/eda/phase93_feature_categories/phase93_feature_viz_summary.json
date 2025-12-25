@@ -1,9 +1,9 @@
 {
-  "timestamp": "2025-12-21T20:19:19.661562",
+  "timestamp": "2025-12-24T15:58:20.642156",
   "total_categories": 21,
-  "total_features_registered": 295,
+  "total_features_registered": 294,
   "total_features_present": 232,
-  "overall_coverage_pct": 78.64406779661017,
+  "overall_coverage_pct": 78.91156462585033,
   "visualizations_generated": [
     "phase93_feature_treemap.html",
     "phase93_category_coverage.html",
@@ -11,7 +11,7 @@
     "phase93_feature_radar.html",
     "phase93_category_sunburst.html"
   ],
-  "output_directory": "C:\\Users\\markm\\PycharmProjects\\Finance_ML_Analytics_Platform\\outputs\\eda\\phase93_feature_categories",
+  "output_directory": "C:\\Users\\markm\\PycharmProjects\\Finance_Analytics_Platform\\outputs\\eda\\phase93_feature_categories",
   "category_summary": [
     {
       "Category": "Efficiency Ratios",
@@ -21,7 +21,7 @@
       "Avg Completeness %": 100.0
     },
     {
-      "Category": "Cash Flow",
+      "Category": "Market Sentiment",
       "Expected": 5,
       "Present": 5,
       "Coverage %": 100.0,
@@ -35,10 +35,10 @@
       "Avg Completeness %": 100.0
     },
     {
-      "Category": "Market Sentiment",
-      "Expected": 6,
+      "Category": "Cash Flow",
+      "Expected": 5,
       "Present": 5,
-      "Coverage %": 83.33333333333334,
+      "Coverage %": 100.0,
       "Avg Completeness %": 100.0
     },
     {
@@ -116,7 +116,7 @@
       "Expected": 17,
       "Present": 17,
       "Coverage %": 100.0,
-      "Avg Completeness %": 100.0
+      "Avg Completeness %": 99.99578809040443
     },
     {
       "Category": "Quality & Risk",

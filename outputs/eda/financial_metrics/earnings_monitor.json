@@ -1,321 +1,953 @@
 {
-  "timestamp": "2025-12-21T20:03:26.179715",
-  "total_stocks_monitored": 6981,
+  "timestamp": "2025-12-25T02:15:14.014443",
+  "total_stocks_monitored": 6983,
   "phase93_categories_used": [
     "growth",
     "profitability",
     "valuation",
+    "earnings_quality",
     "forecasts",
     "momentum"
   ],
-  "growth_metrics": {},
-  "profitability_metrics": {},
-  "valuation_metrics": {},
-  "forecasts_metrics": {},
-  "momentum_metrics": {},
+  "growth_metrics": {
+    "earnings_growth": {
+      "count": 6982,
+      "mean": 62.825842898111816,
+      "median": 7.2686592255885465,
+      "std": 3247.059366585298,
+      "positive_pct": 61.52964766542538,
+      "negative_pct": 32.7843024921226
+    },
+    "ebitda_growth": {
+      "count": 6982,
+      "mean": 21.850413261399186,
+      "median": 8.466386200170863,
+      "std": 894.909663238765,
+      "positive_pct": 68.73388713835578,
+      "negative_pct": 26.05270696075623
+    },
+    "ebitda_growth_yoy": {
+      "count": 6983,
+      "mean": -8.20915872711298,
+      "median": 13.909840378880897,
+      "std": 2016.341981232274,
+      "positive_pct": 68.02233996849492,
+      "negative_pct": 31.977660031505085
+    },
+    "eps_growth_yoy": {
+      "count": 6983,
+      "mean": 16.519601424778052,
+      "median": -6.474819181375217,
+      "std": 553.3907746074742,
+      "positive_pct": 35.686667621366176,
+      "negative_pct": 64.31333237863383
+    },
+    "revenue_growth": {
+      "count": 6982,
+      "mean": 24.573449290030144,
+      "median": 8.170302135635968,
+      "std": 443.37887874620435,
+      "positive_pct": 78.20108851331996,
+      "negative_pct": 16.15582927527929
+    },
+    "revenue_growth_yoy": {
+      "count": 6983,
+      "mean": 187.8513292464179,
+      "median": 11.601926163723912,
+      "std": 8327.787894804535,
+      "positive_pct": 76.94400687383646,
+      "negative_pct": 23.02735214091365
+    },
+    "debt_growth_rate": {
+      "count": 6983,
+      "mean": 1.6722388565443362,
+      "median": 0.053801991384199596,
+      "std": 82.34411407395685,
+      "positive_pct": 63.8693971072605,
+      "negative_pct": 30.488328798510665
+    },
+    "equity_growth_rate": {
+      "count": 6983,
+      "mean": 0.27767678716364586,
+      "median": 0.06853794285740995,
+      "std": 17.876961559889565,
+      "positive_pct": 76.88672490333668,
+      "negative_pct": 17.499641987684374
+    },
+    "asset_growth_rate": {
+      "count": 6983,
+      "mean": 0.3470703089149046,
+      "median": 0.07329160939092752,
+      "std": 14.461486102488882,
+      "positive_pct": 79.85106687670056,
+      "negative_pct": 14.535300014320493
+    }
+  },
+  "profitability_metrics": {
+    "earnings_quality_score": {
+      "count": 6983,
+      "mean": 67.84149906922919,
+      "median": 63.845391476709615,
+      "std": 16.61892964934838,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "ebit_adjustment_ratio_ltm": {
+      "count": 6983,
+      "mean": 13.144382417820612,
+      "median": 1.009660188657802,
+      "std": 458.7383212294119,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "ebit_adjustment_ratio_fy": {
+      "count": 6983,
+      "mean": 4.912519127937031,
+      "median": 1.0037497460607994,
+      "std": 118.11817066083324,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "ebitda_adjustment_ratio_fy": {
+      "count": 6983,
+      "mean": 2.9257714793125045,
+      "median": 1.0638176228617215,
+      "std": 24.579445322503826,
+      "positive_pct": 99.98567950737505,
+      "negative_pct": 0.0
+    },
+    "ebitda_adjustment_ratio_ltm": {
+      "count": 6983,
+      "mean": 6.908235131474428,
+      "median": 1.078669378649695,
+      "std": 73.89554982141742,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "ebitda_margin_trend": {
+      "count": 6983,
+      "mean": -1.889695189761871,
+      "median": 0.00042965453514491603,
+      "std": 210.35424258372583,
+      "positive_pct": 51.31032507518258,
+      "negative_pct": 43.5199770872118
+    },
+    "gross_margin_pct": {
+      "count": 6980,
+      "mean": 25.776520425566183,
+      "median": 39.90240033764702,
+      "std": 667.0841067329437,
+      "positive_pct": 98.5243553008596,
+      "negative_pct": 1.4756446991404013
+    },
+    "gross_margin_trend": {
+      "count": 6983,
+      "mean": 0.06712183579735585,
+      "median": 0.0,
+      "std": 10.536636527392686,
+      "positive_pct": 46.78504940569956,
+      "negative_pct": 39.753687526850925
+    },
+    "net_margin_pct": {
+      "count": 6980,
+      "mean": 265.8156220323277,
+      "median": 8.443559739273248,
+      "std": 18948.77015788693,
+      "positive_pct": 85.38681948424069,
+      "negative_pct": 14.598853868194842
+    },
+    "operating_margin_pct": {
+      "count": 6980,
+      "mean": -17.686352401623,
+      "median": 12.905469921589816,
+      "std": 1012.5062177938673,
+      "positive_pct": 90.65902578796562,
+      "negative_pct": 9.340974212034384
+    },
+    "roa": {
+      "count": 6983,
+      "mean": 4.27874773742832,
+      "median": 4.16703195546399,
+      "std": 17.70513017062601,
+      "positive_pct": 85.17829013318058,
+      "negative_pct": 14.807389374194472
+    },
+    "roe": {
+      "count": 6983,
+      "mean": 12.772662362648353,
+      "median": 11.192254094068938,
+      "std": 183.49607944221756,
+      "positive_pct": 84.77731633968209,
+      "negative_pct": 15.208363167692967
+    },
+    "roic": {
+      "count": 6983,
+      "mean": 6.689022816559402,
+      "median": 6.012866091078382,
+      "std": 45.19512649618052,
+      "positive_pct": 85.26421308893026,
+      "negative_pct": 14.721466418444795
+    },
+    "operating_leverage": {
+      "count": 6983,
+      "mean": -0.3266351429342729,
+      "median": 1.2874999338499475,
+      "std": 177.70325067747277,
+      "positive_pct": 70.02720893598739,
+      "negative_pct": 29.929829586137764
+    }
+  },
+  "valuation_metrics": {
+    "dividend_yield": {
+      "count": 6983,
+      "mean": 30.913497672465255,
+      "median": 2.277699113275658,
+      "std": 44.856633583653526,
+      "positive_pct": 98.25289989975656,
+      "negative_pct": 0.0
+    },
+    "ev_ebitda_forward_discount": {
+      "count": 6983,
+      "mean": 0.24015964399704653,
+      "median": -0.08823534774120141,
+      "std": 2.917870643371051,
+      "positive_pct": 28.655305742517545,
+      "negative_pct": 69.61191464986396
+    },
+    "ev_ebitda_momentum": {
+      "count": 6983,
+      "mean": 1.3068127335798245,
+      "median": 0.0,
+      "std": 25.7006481300741,
+      "positive_pct": 48.83287985106688,
+      "negative_pct": 47.02849778032364
+    },
+    "ev_ebitda_ratio": {
+      "count": 6983,
+      "mean": 33.67625382644465,
+      "median": 11.265558955205217,
+      "std": 1119.3350521114712,
+      "positive_pct": 93.64170127452385,
+      "negative_pct": 6.358298725476157
+    },
+    "ev_ebitda_vs_3y_avg": {
+      "count": 6983,
+      "mean": 0.24805474883464163,
+      "median": -0.024390240120268046,
+      "std": 2.5265101682758275,
+      "positive_pct": 45.91149935557783,
+      "negative_pct": 52.799656308177
+    },
+    "ev_sales_forward_discount": {
+      "count": 6983,
+      "mean": 0.25322063696255254,
+      "median": -0.05555550404536735,
+      "std": 5.292081119027959,
+      "positive_pct": 16.855219819561793,
+      "negative_pct": 62.15093799226693
+    },
+    "ev_sales_quarterly_volatility": {
+      "count": 6983,
+      "mean": 1.5876429873979372,
+      "median": 0.22173556840448552,
+      "std": 10.660674423266947,
+      "positive_pct": 95.74681369039095,
+      "negative_pct": 0.0
+    },
+    "ev_sales_ratio": {
+      "count": 6980,
+      "mean": 128.78667897089872,
+      "median": 2.5154342962014775,
+      "std": 7239.767391485796,
+      "positive_pct": 99.62750716332378,
+      "negative_pct": 0.37249283667621774
+    },
+    "ev_sales_trend_1y": {
+      "count": 6983,
+      "mean": 0.47061414580086536,
+      "median": 0.03448272460139292,
+      "std": 4.349781850407084,
+      "positive_pct": 51.8401833023056,
+      "negative_pct": 41.099813833595874
+    },
+    "ev_sales_trend_3y": {
+      "count": 6983,
+      "mean": 2603466.0395496055,
+      "median": -0.104166662505754,
+      "std": 112420484.53218365,
+      "positive_pct": 39.35271373335243,
+      "negative_pct": 56.15065158241443
+    }
+  },
+  "forecasts_metrics": {
+    "avg_vs_median_bias": {
+      "count": 6983,
+      "mean": 0.041272013369752815,
+      "median": 0.0,
+      "std": 2.104791772310588,
+      "positive_pct": 39.10926535872834,
+      "negative_pct": 36.40269225261349
+    },
+    "estimate_confidence_flag": {
+      "count": 6983,
+      "mean": 0.9670628669626236,
+      "median": 1.0,
+      "std": 0.17848484630670777,
+      "positive_pct": 96.70628669626235,
+      "negative_pct": 0.0
+    },
+    "growth_surprise_potential": {
+      "count": 6983,
+      "mean": 48.01271975185603,
+      "median": 0.15100454340086714,
+      "std": 2799.689282677087,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "revenue_consensus_uncertainty_score": {
+      "count": 6983,
+      "mean": 0.015943701998538284,
+      "median": 0.0018932990736358454,
+      "std": 0.16756561167667575,
+      "positive_pct": 82.55763998281542,
+      "negative_pct": 0.0
+    },
+    "revenue_estimate_spread_fy1e": {
+      "count": 6983,
+      "mean": 0.001904338734720437,
+      "median": 0.0,
+      "std": 0.035039587385192264,
+      "positive_pct": 43.033080337963625,
+      "negative_pct": 35.62938565086639
+    },
+    "revenue_estimate_spread_ntm": {
+      "count": 6983,
+      "mean": 0.041272013369752815,
+      "median": 0.0,
+      "std": 2.104791772310588,
+      "positive_pct": 39.10926535872834,
+      "negative_pct": 36.40269225261349
+    },
+    "revenue_growth_acceleration": {
+      "count": 6983,
+      "mean": 47.74847492303408,
+      "median": 0.05740485225600467,
+      "std": 2799.693802465132,
+      "positive_pct": 61.64972075039381,
+      "negative_pct": 38.35027924960618
+    },
+    "revenue_growth_implied_fy1e": {
+      "count": 6983,
+      "mean": 47.885001260095045,
+      "median": 0.15053804932400164,
+      "std": 2799.6804670551087,
+      "positive_pct": 77.23041672633538,
+      "negative_pct": 22.769583273664615
+    },
+    "revenue_growth_implied_ntm": {
+      "count": 6983,
+      "mean": 49.93750190129393,
+      "median": 0.1920998414359218,
+      "std": 2919.484286746802,
+      "positive_pct": 80.08019475869969,
+      "negative_pct": 19.9198052413003
+    }
+  },
+  "momentum_metrics": {
+    "52w_range_position": {
+      "count": 6983,
+      "mean": 0.6161439785695759,
+      "median": 0.6760538904681809,
+      "std": 0.29292660070800625,
+      "positive_pct": 99.91407704425032,
+      "negative_pct": 0.0
+    },
+    "breakout_signal": {
+      "count": 6983,
+      "mean": 0.23886581698410425,
+      "median": 0.0,
+      "std": 0.42642112767222573,
+      "positive_pct": 23.886581698410424,
+      "negative_pct": 0.0
+    },
+    "ema_crossover_20_50": {
+      "count": 6983,
+      "mean": 0.10998138335958757,
+      "median": 1.0,
+      "std": 0.993932775831987,
+      "positive_pct": 55.49190892166691,
+      "negative_pct": 44.49377058570815
+    },
+    "ema_crossover_50_250": {
+      "count": 6983,
+      "mean": 0.30488328798510667,
+      "median": 1.0,
+      "std": 0.9515552467149784,
+      "positive_pct": 65.15824144350566,
+      "negative_pct": 34.66991264499499
+    },
+    "ema_slope_20d": {
+      "count": 6983,
+      "mean": 0.0063390541112035145,
+      "median": 0.0044902959447466785,
+      "std": 0.04463238201751311,
+      "positive_pct": 55.49190892166691,
+      "negative_pct": 44.49377058570815
+    },
+    "ema_trend_consistency": {
+      "count": 6983,
+      "mean": 0.21996276671917514,
+      "median": 0.0,
+      "std": 0.773943425579795,
+      "positive_pct": 43.36245166833739,
+      "negative_pct": 21.366174996419875
+    },
+    "ma_20d_simple": {
+      "count": 6983,
+      "mean": 4377.86497701561,
+      "median": 43.646,
+      "std": 49546.99705898785,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "ma_50d_simple": {
+      "count": 6983,
+      "mean": 4286.663689646283,
+      "median": 43.3611,
+      "std": 48455.244798211446,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "ma_crossover_signal": {
+      "count": 6983,
+      "mean": 0.14964914793068881,
+      "median": 1.0,
+      "std": 0.9197704868907262,
+      "positive_pct": 50.89503078905915,
+      "negative_pct": 35.93011599599026
+    },
+    "near_52w_high_flag": {
+      "count": 6983,
+      "mean": 0.2460260632965774,
+      "median": 0.0,
+      "std": 0.43072474667532384,
+      "positive_pct": 24.60260632965774,
+      "negative_pct": 0.0
+    }
+  },
   "margin_metrics": {
     "gross_margin_pct": {
-      "count": 6976,
-      "mean": 25.746669907655306,
-      "median": 39.748358035103585,
-      "q25": 23.824582473180374,
-      "q75": 64.03700862932817,
-      "positive_pct": 98.53784403669725
+      "count": 6980,
+      "mean": 25.776520425566183,
+      "median": 39.90240033764702,
+      "q25": 23.952464550562553,
+      "q75": 64.12057421340783,
+      "positive_pct": 98.5243553008596
     },
     "gross_profit_margin_pct_fy": {
-      "count": 6981,
-      "mean": 0.4111845791339874,
-      "median": 0.3736500144004822,
-      "q25": 0.243599995970726,
-      "q75": 0.5458999872207642,
-      "positive_pct": 99.01160292221745
+      "count": 6983,
+      "mean": 0.42680746970118444,
+      "median": 0.3951999992132187,
+      "q25": 0.2434999942779541,
+      "q75": 0.5875399887561799,
+      "positive_pct": 98.99756551625376
     },
     "gross_profit_margin_pct_ltm": {
-      "count": 6981,
-      "mean": 0.41113024950027466,
-      "median": 0.37549999356269836,
-      "q25": 0.24150000512599945,
-      "q75": 0.5526999831199646,
-      "positive_pct": 98.95430454089671
+      "count": 6983,
+      "mean": 0.42763423729166217,
+      "median": 0.3977999985218048,
+      "q25": 0.24160000681877136,
+      "q75": 0.5920500159263611,
+      "positive_pct": 98.95460403837892
     },
     "net_income_margin_pct_fy": {
-      "count": 6981,
-      "mean": 6.822598934173584,
-      "median": 0.08569999784231186,
-      "q25": 0.031099999323487282,
-      "q75": 0.17589999735355377,
-      "positive_pct": 87.83841856467555
+      "count": 6983,
+      "mean": 7.3645194141162005,
+      "median": 0.08659999817609787,
+      "q25": 0.03139999881386757,
+      "q75": 0.17844999581575394,
+      "positive_pct": 87.84190176142059
     }
   },
   "quality_indicators": {
     "roe": {
-      "count": 6981,
-      "mean": 12.19072295136291,
-      "median": 11.191200657894736,
-      "std": 178.97242194007217,
-      "q25": 4.7010805047247795,
-      "q75": 19.531698100475726
+      "count": 6983,
+      "mean": 12.772662362648353,
+      "median": 11.192254094068938,
+      "std": 183.49607944221756,
+      "q25": 4.69689106131072,
+      "q75": 19.54483232303184
     },
     "roa": {
-      "count": 6981,
-      "mean": 4.2289046493613185,
+      "count": 6983,
+      "mean": 4.27874773742832,
       "median": 4.16703195546399,
-      "std": 18.100177276535298,
-      "q25": 1.2253296468000723,
-      "q75": 8.532555879494653
+      "std": 17.70513017062601,
+      "q25": 1.2245919354928025,
+      "q75": 8.534427364134515
     },
     "roic": {
-      "count": 6981,
-      "mean": 6.608213591654772,
-      "median": 6.0296306739257535,
-      "std": 45.65605870931614,
-      "q25": 2.241516595948909,
-      "q75": 11.563195298491348
+      "count": 6983,
+      "mean": 6.689022816559402,
+      "median": 6.012866091078382,
+      "std": 45.19512649618052,
+      "q25": 2.2401633655762616,
+      "q75": 11.553016588096868
     },
     "asset_turnover": {
-      "count": 6981,
-      "mean": 0.7328375980744204,
-      "median": 0.5602626089261918,
-      "std": 1.6788776407477528,
-      "q25": 0.28112166970985325,
-      "q75": 0.9022128622618972
+      "count": 6983,
+      "mean": 0.7070158939724084,
+      "median": 0.558627384897118,
+      "std": 0.8670553261533978,
+      "q25": 0.27927709133862233,
+      "q75": 0.8964916751973905
     },
     "fcf_to_net_income": {
-      "count": 6981,
-      "mean": -0.6524249082641438,
-      "median": 0.8747957812641087,
-      "std": 71.20847404852621,
-      "q25": 0.07001477104874446,
-      "q75": 1.5318603906500161
+      "count": 6983,
+      "mean": -0.6568229854349992,
+      "median": 0.8743119727151728,
+      "std": 71.21517851202013,
+      "q25": 0.05510229924304571,
+      "q75": 1.5370415651000342
     }
   },
   "eps_metrics": {
     "basic_gaap": {
       "net_eps_basic_ltm": {
-        "count": 6981,
-        "mean": 9.631134033203125,
-        "median": 0.4950000047683716,
-        "std": 563.09521484375,
-        "positive_pct": 84.44348947142242
+        "count": 6983,
+        "mean": 9.647085527370487,
+        "median": 0.5,
+        "std": 563.0143859280283,
+        "positive_pct": 84.43362451668337
       },
       "net_eps_basic_fq": {
-        "count": 6981,
-        "mean": 3.7995774244377594,
+        "count": 6983,
+        "mean": 3.8029715022196755,
         "median": 0.13,
-        "std": 256.3621717771893,
-        "positive_pct": 83.21157427302678
+        "std": 256.32538450106017,
+        "positive_pct": 83.20206215093799
       },
       "net_eps_basic_fy": {
-        "count": 6981,
-        "mean": 11.605229377746582,
+        "count": 6983,
+        "mean": 11.612691662932642,
         "median": 0.4399999976158142,
-        "std": 741.9773559570312,
-        "positive_pct": 84.40051568543188
+        "std": 741.8709500584897,
+        "positive_pct": 84.40498353143349
       },
       "net_eps_basic_1fqfq": {
-        "count": 6981,
-        "mean": 1.9158130884170532,
+        "count": 6983,
+        "mean": 1.9178527332039996,
         "median": 0.11999999731779099,
-        "std": 103.12383270263672,
-        "positive_pct": 82.40939693453659
+        "std": 103.10902964218863,
+        "positive_pct": 82.41443505656595
       },
       "net_eps_basic_2fqfq": {
-        "count": 6981,
-        "mean": 1.2296935319900513,
+        "count": 6983,
+        "mean": 1.2320538483150372,
         "median": 0.10000000149011612,
-        "std": 41.703678131103516,
-        "positive_pct": 80.5185503509526
+        "std": 41.69780103979079,
+        "positive_pct": 80.39524559644852
       },
       "net_eps_basic_3fqfq": {
-        "count": 6981,
-        "mean": 2.8001861572265625,
+        "count": 6983,
+        "mean": 2.8047077824009126,
         "median": 0.10999999940395355,
-        "std": 164.8567657470703,
-        "positive_pct": 78.57040538604785
+        "std": 164.83299381508192,
+        "positive_pct": 78.60518401833023
       }
     },
     "adjusted": {
       "eps_adj_1fy": {
-        "count": 6981,
-        "mean": 5.944319725036621,
-        "median": 1.190000057220459,
-        "std": 308.6552734375,
-        "positive_pct": 95.11531299240796
+        "count": 6983,
+        "mean": 6.176237460784587,
+        "median": 1.3899999856948853,
+        "std": 308.60996686933055,
+        "positive_pct": 95.00214807389375
       },
       "eps_adj_fy": {
-        "count": 6981,
-        "mean": 7.682678699326745,
-        "median": 0.66,
-        "std": 396.8676685855084,
-        "positive_pct": 91.33361982523994
+        "count": 6983,
+        "mean": 7.749216096233712,
+        "median": 0.7,
+        "std": 396.8106007656218,
+        "positive_pct": 91.26449949878275
       },
       "eps_adj_ltm": {
-        "count": 6981,
-        "mean": 7.213910614525137,
-        "median": 1.07,
-        "std": 406.2982471572366,
-        "positive_pct": 94.25583727259705
+        "count": 6983,
+        "mean": 7.504517542603465,
+        "median": 1.3,
+        "std": 406.2383123009057,
+        "positive_pct": 94.1858799942718
       }
     },
     "forward_estimates": {
       "eps_norm_est_avg_ntm": {
-        "count": 6981,
-        "mean": 8.38573270305114,
-        "median": 0.87,
-        "std": 396.5114248698486
+        "count": 6983,
+        "mean": 8.449377917800371,
+        "median": 0.91,
+        "std": 396.50149521748995
       },
       "eps_norm_est_avg_fy1e": {
-        "count": 6981,
-        "mean": 8.032161581435325,
-        "median": 0.78,
-        "std": 391.0343169301169
+        "count": 6983,
+        "mean": 8.103992839753689,
+        "median": 0.8,
+        "std": 391.0229628042497
       },
       "eps_norm_est_num_fy1e": {
-        "count": 6981,
-        "mean": 7.417132377624512,
+        "count": 6983,
+        "mean": 7.464127063751221,
         "median": 5.0,
-        "std": 6.830838680267334
+        "std": 6.880311965942383
       }
     },
     "gaap_estimates": {
       "eps_gaap_est_avg_fy1e": {
-        "count": 6981,
-        "mean": 9.181229591369629,
-        "median": 0.6299999952316284,
-        "std": 508.4530334472656
+        "count": 6983,
+        "mean": 9.253931557473324,
+        "median": 0.6499999761581421,
+        "std": 508.41572679731445
       },
       "eps_gaap_est_avg_ntm": {
-        "count": 6981,
-        "mean": 8.202302932739258,
-        "median": 0.7699999809265137,
-        "std": 397.0819091796875
+        "count": 6983,
+        "mean": 8.264938570665935,
+        "median": 0.800000011920929,
+        "std": 397.0727058547102
       }
     }
   },
   "eps_revisions": {
     "normalized": {
       "eps_est_avg_rev_pct_fy1e_1w": {
-        "count": 6981,
-        "mean": 9.394064545631409e-05,
-        "median": 0.0,
-        "positive_pct": 34.83741584300243,
-        "negative_pct": 30.554361839278037
+        "count": 6983,
+        "mean": 0.0018415208424123729,
+        "median": 0.001500000013038516,
+        "positive_pct": 69.95560647286267,
+        "negative_pct": 16.568809967062865
       },
       "eps_est_avg_rev_pct_fy1e_1m": {
-        "count": 6981,
-        "mean": 0.17145071923732758,
-        "median": 0.0035000001080334187,
-        "positive_pct": 67.84128348374159,
-        "negative_pct": 26.056438905600913
+        "count": 6983,
+        "mean": 0.17566761505044554,
+        "median": 0.008700000122189522,
+        "positive_pct": 71.67406558785622,
+        "negative_pct": 20.363740512673637
       },
       "eps_est_avg_rev_pct_fy1e_3m": {
-        "count": 6981,
-        "mean": 0.18120956420898438,
-        "median": -9.999999747378752e-05,
-        "positive_pct": 38.60478441484028,
-        "negative_pct": 61.08007448789572
+        "count": 6983,
+        "mean": 0.20163816974173485,
+        "median": 0.00419999985024333,
+        "positive_pct": 63.883717599885436,
+        "negative_pct": 35.88715451811542
       },
       "eps_est_avg_rev_pct_fy1e_6m": {
-        "count": 6981,
-        "mean": 0.23829126358032227,
-        "median": 0.009200000204145908,
-        "positive_pct": 65.0623119896863,
-        "negative_pct": 34.90903881965334
+        "count": 6983,
+        "mean": 0.23546139245376216,
+        "median": 0.012199999764561653,
+        "positive_pct": 64.88615208363167,
+        "negative_pct": 35.05656594586854
       },
       "eps_est_avg_rev_pct_fy1e_1y": {
-        "count": 6981,
-        "mean": 0.11552836745977402,
-        "median": 0.0035000001080334187,
-        "positive_pct": 63.25741297808337,
-        "negative_pct": 36.71393783125627
+        "count": 6983,
+        "mean": 0.12152739854427397,
+        "median": 0.010400000028312206,
+        "positive_pct": 62.96720607188887,
+        "negative_pct": 37.01847343548618
       }
     },
     "gaap": {
       "eps_gaap_est_avg_rev_pct_fy1e_1m": {
-        "count": 6981,
-        "mean": 0.015732301399111748,
-        "median": 0.004000000189989805,
-        "positive_pct": 64.61824953445065,
-        "negative_pct": 27.58917060593038
+        "count": 6983,
+        "mean": 0.015496700660416661,
+        "median": 0.009399999864399433,
+        "positive_pct": 69.03909494486611,
+        "negative_pct": 21.337534011169986
       },
       "eps_gaap_est_avg_rev_pct_fy1e_3m": {
-        "count": 6981,
-        "mean": 0.00935880932956934,
-        "median": -0.00634999992325902,
-        "positive_pct": 36.64231485460536,
-        "negative_pct": 63.11416702478155
+        "count": 6983,
+        "mean": 0.014153191927749609,
+        "median": -9.999999747378752e-05,
+        "positive_pct": 42.016325361592436,
+        "negative_pct": 57.78318774165832
       },
       "eps_gaap_est_avg_rev_pct_fy1e_6m": {
-        "count": 6981,
-        "mean": 0.06511051207780838,
-        "median": -0.003700000001117587,
-        "positive_pct": 38.791004154132644,
-        "negative_pct": 61.12304827388626
+        "count": 6983,
+        "mean": 0.05818948490603416,
+        "median": -9.999999747378752e-05,
+        "positive_pct": 41.74423600171846,
+        "negative_pct": 58.18416153515681
       },
       "eps_gaap_est_avg_rev_pct_fy1e_1y": {
-        "count": 6981,
-        "mean": 0.1660558581352234,
-        "median": -0.016200000420212746,
-        "positive_pct": 36.914482165878816,
-        "negative_pct": 63.05686864346082
+        "count": 6983,
+        "mean": 0.1763676587872847,
+        "median": -0.006599999964237213,
+        "positive_pct": 40.126020335099525,
+        "negative_pct": 59.84533867965058
       }
+    }
+  },
+  "earnings_quality_metrics": {
+    "eps_surprise_pct": {
+      "count": 6983,
+      "mean": 338.1367553555369,
+      "median": -2.790697674418614,
+      "std": 1847.063484469258,
+      "positive_pct": 45.92581984820278,
+      "negative_pct": 52.48460547042818
+    },
+    "revenue_surprise_pct": {
+      "count": 6983,
+      "mean": 132.11832587438255,
+      "median": -6.509969923136912,
+      "std": 3618.940915120476,
+      "positive_pct": 20.950880710296435,
+      "negative_pct": 79.04911928970357
+    },
+    "ebitda_surprise_pct": {
+      "count": 6983,
+      "mean": 9.536727973661717,
+      "median": -17.765100754417315,
+      "std": 2005.6475704119578,
+      "positive_pct": 18.91737075755406,
+      "negative_pct": 81.08262924244593
+    },
+    "surprise_momentum_score": {
+      "count": 6983,
+      "mean": 0.19541753693849565,
+      "median": 0.008049999969080091,
+      "std": 13.477853418123384,
+      "positive_pct": 68.6381211513676,
+      "negative_pct": 31.34755835600745
+    },
+    "consensus_uncertainty_score": {
+      "count": 6983,
+      "mean": 395.9032542334921,
+      "median": 42.857142857142854,
+      "std": 1835.700096662952,
+      "positive_pct": 98.41042531863096,
+      "negative_pct": 0.0
+    },
+    "estimate_revision_acceleration": {
+      "count": 6983,
+      "mean": -0.025970554691289303,
+      "median": 0.004500000271946192,
+      "std": 1.8234963511056494,
+      "positive_pct": 63.51138479163683,
+      "negative_pct": 35.70098811399112
+    },
+    "eps_adjustment_spread_ltm": {
+      "count": 6983,
+      "mean": -2.1425679847670223,
+      "median": 0.30000000000000004,
+      "std": 160.96631863658556,
+      "positive_pct": 67.39223829299728,
+      "negative_pct": 32.135185450379495
+    },
+    "eps_adjustment_ratio_ltm": {
+      "count": 6983,
+      "mean": 4.5058570536059,
+      "median": 1.0166666262679647,
+      "std": 26.84122602969542,
+      "positive_pct": 89.9183731920378,
+      "negative_pct": 9.780896462838323
+    },
+    "eps_adjustment_pct_ltm": {
+      "count": 6983,
+      "mean": 676.4563875138823,
+      "median": 22.8991537543311,
+      "std": 2621.7587301642125,
+      "positive_pct": 67.4924817413719,
+      "negative_pct": 32.26406988400401
+    },
+    "eps_adjustment_spread_fy": {
+      "count": 6983,
+      "mean": -3.863475566698933,
+      "median": 0.009999914169311452,
+      "std": 346.089587555868,
+      "positive_pct": 62.881283116139194,
+      "negative_pct": 35.87283402549048
+    },
+    "eps_adjustment_ratio_fy": {
+      "count": 6983,
+      "mean": 1.9471383632260748,
+      "median": 1.0000000223517422,
+      "std": 13.261768227028261,
+      "positive_pct": 92.78247171702706,
+      "negative_pct": 7.002720893598739
+    },
+    "eps_adjustment_pct_fy": {
+      "count": 6983,
+      "mean": 195.8068304043712,
+      "median": 0.35714456621484547,
+      "std": 1316.18575215403,
+      "positive_pct": 63.33953888013748,
+      "negative_pct": 36.04467993698983
+    },
+    "net_income_adjustment_spread_ltm": {
+      "count": 6983,
+      "mean": -0.877041959043394,
+      "median": 16.520000000000437,
+      "std": 1420.2375354369872,
+      "positive_pct": 58.49921237290563,
+      "negative_pct": 32.235428898754115
+    },
+    "net_income_adjustment_ratio_ltm": {
+      "count": 6983,
+      "mean": 1.7042769199110528,
+      "median": 1.0,
+      "std": 44.76955330127065,
+      "positive_pct": 89.84677072891307,
+      "negative_pct": 10.153229271086925
+    },
+    "net_income_adjustment_pct_ltm": {
+      "count": 6983,
+      "mean": 575.9812334454837,
+      "median": 6.975179752409068,
+      "std": 4440.30268126076,
+      "positive_pct": 58.51353286553057,
+      "negative_pct": 32.235428898754115
+    },
+    "net_income_adjustment_spread_fy": {
+      "count": 6983,
+      "mean": 78.63845324359158,
+      "median": 0.3099999999999996,
+      "std": 1085.3556187859367,
+      "positive_pct": 51.96906773593012,
+      "negative_pct": 25.189746527280537
+    },
+    "net_income_adjustment_ratio_fy": {
+      "count": 6983,
+      "mean": 1.6956449274100411,
+      "median": 1.0,
+      "std": 50.14567681972022,
+      "positive_pct": 93.02592009165114,
+      "negative_pct": 6.974079908348847
+    },
+    "ebitda_adjustment_spread_ltm": {
+      "count": 6983,
+      "mean": -238.7780087355005,
+      "median": 38.44,
+      "std": 2422.8325384788222,
+      "positive_pct": 65.10095947300587,
+      "negative_pct": 34.14005441787197
+    },
+    "ebitda_adjustment_pct_ltm": {
+      "count": 6983,
+      "mean": 599.087102521609,
+      "median": 9.496694373348236,
+      "std": 7394.819549527872,
+      "positive_pct": 65.10095947300587,
+      "negative_pct": 34.14005441787197
+    },
+    "ebitda_adjustment_spread_fy": {
+      "count": 6983,
+      "mean": 23.276587426607485,
+      "median": 19.348000000000184,
+      "std": 1853.9264130259717,
+      "positive_pct": 74.02262637834741,
+      "negative_pct": 23.013031648288703
+    },
+    "ebit_adjustment_spread_ltm": {
+      "count": 6983,
+      "mean": 39.71150966633253,
+      "median": 2.979999999999997,
+      "std": 2725.9540125748363,
+      "positive_pct": 53.98825719604754,
+      "negative_pct": 40.45539166547329
+    },
+    "ebit_adjustment_pct_ltm": {
+      "count": 6983,
+      "mean": 1194.7173511956125,
+      "median": 0.9671993271656885,
+      "std": 45878.06035451723,
+      "positive_pct": 53.98825719604754,
+      "negative_pct": 40.45539166547329
+    },
+    "ebit_adjustment_spread_fy": {
+      "count": 6983,
+      "mean": 143.5559236717743,
+      "median": 0.5,
+      "std": 2636.160601690343,
+      "positive_pct": 53.34383502792496,
+      "negative_pct": 35.87283402549048
+    },
+    "adjustment_consistency_score": {
+      "count": 6983,
+      "mean": 57.64653528703152,
+      "median": 74.09091104762715,
+      "std": 41.10906775974314,
+      "positive_pct": 72.23256480022913,
+      "negative_pct": 0.0
+    },
+    "earnings_quality_score": {
+      "count": 6983,
+      "mean": 67.84149906922919,
+      "median": 63.845391476709615,
+      "std": 16.61892964934838,
+      "positive_pct": 100.0,
+      "negative_pct": 0.0
+    },
+    "exceptional_items_impact_ratio": {
+      "count": 6983,
+      "mean": 0.435626143760565,
+      "median": 0.003958258344870585,
+      "std": 6.987071830535482,
+      "positive_pct": 57.22468852928541,
+      "negative_pct": 0.0
     }
   },
   "margin_by_sector": {
     "Information Technology": {
-      "mean": -1.3446675845198461,
-      "median": 39.74743128889382,
-      "count": 840
+      "mean": -1.288225599316916,
+      "median": 39.646435606521464,
+      "count": 842
     },
     "Communication Services": {
-      "mean": 52.88482457271791,
-      "median": 51.43736103121288,
-      "count": 337
+      "mean": 53.01613083203411,
+      "median": 51.52430391694196,
+      "count": 335
     },
     "Consumer Discretionary": {
-      "mean": 37.568820501000324,
-      "median": 35.54808669900547,
-      "count": 810
+      "mean": 37.746761543600584,
+      "median": 35.60752871579271,
+      "count": 808
     },
     "Financials": {
-      "mean": 78.32773835746006,
-      "median": 99.36268344470493,
-      "count": 1136
+      "mean": 78.55750152407896,
+      "median": 99.33591323873681,
+      "count": 1137
     },
     "Health Care": {
-      "mean": -60.46859206459597,
-      "median": 52.85770194437051,
-      "count": 650
+      "mean": -61.240709918684374,
+      "median": 52.8602033448933,
+      "count": 647
     },
     "Consumer Staples": {
-      "mean": 35.01538248461102,
+      "mean": 35.068590914647814,
       "median": 33.0900291221579,
-      "count": 472
+      "count": 470
     },
     "Energy": {
-      "mean": 40.0239700319553,
+      "mean": 39.99490679380928,
       "median": 36.449020396330575,
-      "count": 310
+      "count": 314
     },
     "Industrials": {
-      "mean": 32.26736420424823,
-      "median": 29.90040024687339,
-      "count": 1300
+      "mean": 32.28093763511293,
+      "median": 29.906896606231133,
+      "count": 1303
     },
     "Materials": {
-      "mean": -16.946235249742426,
-      "median": 29.38270527631407,
-      "count": 644
+      "mean": -16.59487111508196,
+      "median": 29.44439878359497,
+      "count": 649
     },
     "Utilities": {
-      "mean": 41.884626799386986,
-      "median": 38.145357661337286,
-      "count": 266
+      "mean": 42.04225049987697,
+      "median": 38.16549939007554,
+      "count": 267
     },
     "Real Estate": {
-      "mean": 55.44755304231566,
-      "median": 58.315620301726376,
-      "count": 211
+      "mean": 55.24020058728571,
+      "median": 57.58288312400799,
+      "count": 208
     }
   }
 }

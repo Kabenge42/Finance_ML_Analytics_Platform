@@ -1,12 +1,12 @@
 {
   "phase": "9.3",
   "data_source": "all_stocks_preprocessed DataFrame (ETL Data Explorer)",
-  "timestamp": "2025-12-21T20:19:16.235787",
-  "total_stocks": 6981,
-  "total_columns": 682,
+  "timestamp": "2025-12-24T15:58:18.695775",
+  "total_stocks": 6983,
+  "total_columns": 683,
   "phase93_features_present": 232,
-  "phase93_features_expected": 295,
-  "coverage_percentage": 78.64406779661017,
+  "phase93_features_expected": 294,
+  "coverage_percentage": 78.91156462585033,
   "category_coverage": {
     "Momentum & Technical": {
       "present": 25,
@@ -45,8 +45,8 @@
     },
     "Market Sentiment": {
       "present": 5,
-      "expected": 6,
-      "coverage_pct": 83.33333333333334
+      "expected": 5,
+      "coverage_pct": 100.0
     },
     "Leverage & Liquidity": {
       "present": 8,
