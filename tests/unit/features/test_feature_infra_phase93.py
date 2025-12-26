@@ -30,7 +30,7 @@ from tests.utils.feature_test_helpers import (
 
 # Prefer the consolidated module path if available; fall back to legacy for BC
 try:
-    from finance_ml.ml_workflow.features.advanced import build_comprehensive_features
+    from finance_ml.features.advanced import build_comprehensive_features
 except Exception:  # pragma: no cover - legacy import path fallback
     from finance_ml.advanced_features import build_comprehensive_features  # type: ignore
 

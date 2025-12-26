@@ -16,7 +16,7 @@
 **Required Imports - Add to Import Cell**:
 
 ```python
-from finance_ml.ml_workflow.features.advanced import (
+from finance_ml.features.advanced import (
     engineer_technical_analysis_features,
     engineer_valuation_timeseries_features,
     engineer_revenue_forecast_features,
@@ -25,7 +25,7 @@ from finance_ml.ml_workflow.features.advanced import (
     )
 ```
 
-**Note**: These functions exist in `finance_ml/ml_workflow/features/advanced.py` (confirmed via grep)
+**Note**: These functions exist in `finance_ml.features.advanced.py` (confirmed via grep)
 
 ---
 
@@ -803,7 +803,7 @@ from finance_ml.ml_workflow.data.etl import (
 
 ```python
 # REMOVE if not used - verify first:
-from finance_ml.ml_workflow.features.advanced import (
+from finance_ml.features.advanced import (
     normalize_columns,
     build_valuation_features,
     build_momentum_features,
@@ -1007,7 +1007,7 @@ def assert_df_has_columns(df, columns):
 
 ```bash
 # Check if a function exists in a module
-python -c "from finance_ml.ml_workflow.features.advanced import engineer_technical_analysis_features; print('OK')"
+python -c "from finance_ml.features.advanced import engineer_technical_analysis_features; print('OK')"
 
 # List all exports from a module
 python -c "from finance_ml.ml_workflow.regression import *; print(dir())"

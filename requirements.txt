@@ -84,3 +84,4 @@ ipykernel>=6.29.0,<7.0.0
 # isort>=5.13.0,<6.0.0
 dash-bootstrap-components
 flask
+ipython

@@ -615,7 +615,7 @@ The following feature categories leverage the 48 new columns added in Schema Ver
 
 **2.2 Implement Features**
 
-- `finance_ml/ml_workflow/features/advanced.py`
+- `finance_ml.features.advanced.py`
 - Add `engineer_momentum_features()`
 - Ensure all tests pass
 
@@ -897,7 +897,7 @@ Follow existing conventions from `docs/code_guidelines.md`:
 ## Appendix A: Feature Function Signatures (Implemented)
 
 The following feature functions are implemented in
-``finance_ml/ml_workflow/features/advanced.py``. Signatures are shown here
+``finance_ml.features.advanced.py``. Signatures are shown here
 for quick reference; see the module docstrings for detailed behavior.
 
 ```python

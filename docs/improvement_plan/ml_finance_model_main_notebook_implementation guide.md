@@ -1,9 +1,9 @@
-ï»¿### ml_finance_model_main_notebook_implementation guide.md
+### ml_finance_model_main_notebook_implementation guide.md
 
 #### Purpose and scope
 
 This guide describes how to upgrade the `ml_finance_model_main.ipynb` notebook into a robust, modular workflow aligned
-with the projectâ€™s README and IMPROVEMENT_PLAN. It consolidates data into a single `all_stocks` dataframe, adds
+with the project’s README and IMPROVEMENT_PLAN. It consolidates data into a single `all_stocks` dataframe, adds
 validation, advanced feature engineering, multi-model training (classification + sector-optimized regression with
 quantiles and stacking), and delivers rich analytics (mispricing, rankings, interactive visuals, and exportable
 reports).
@@ -15,17 +15,17 @@ tests.
 
 ### High-level architecture (modules and notebook sections)
 
-- `finance_ml.data` â€” Data access, validation, and preprocessing
-- `finance_ml.features` â€” Feature engineering and encoders
-- `finance_ml.models` â€” Model definitions, training loops, CV strategies
-- `finance_ml.eval` â€” Metrics, diagnostics, SHAP/feature importance
-- `finance_ml.analytics` â€” Mispricing, rankings, interactive visuals
-- `finance_ml.reporting` â€” Exports to CSV/Excel and JSON summaries
+- `finance_ml.data` — Data access, validation, and preprocessing
+- `finance_ml.features` — Feature engineering and encoders
+- `finance_ml.models` — Model definitions, training loops, CV strategies
+- `finance_ml.eval` — Metrics, diagnostics, SHAP/feature importance
+- `finance_ml.analytics` — Mispricing, rankings, interactive visuals
+- `finance_ml.reporting` — Exports to CSV/Excel and JSON summaries
 
 Notebook section map (cell groups):
 
 1) Setup and config (env vars, paths, logging, seed)
-2) Data management (DB/CSV loaders â†’ `all_stocks`) + validation
+2) Data management (DB/CSV loaders ? `all_stocks`) + validation
 3) EDA essentials (counts, missingness, correlations)
 4) Feature engineering (ratios, volatility, encodings, interactions)
 5) Event classification labels (leak-safe) + classifier training
@@ -42,7 +42,7 @@ Each section presents notebook-ready code that can later be promoted into `finan
 
 ### 0) Setup and configuration
 
-- Python 3.10â€“3.11 recommended.
+- Python 3.10–3.11 recommended.
 - Environment variables: see `environment_variables.txt`. Common: `DATA_DIR`, `MODEL_DIR`, `OUTPUT_DIR`, `RANDOM_SEED`,
   `N_JOBS`, `DB_URL`, `MODEL_VERSION` (e.g., `v8_3`).
 - Dependencies: `pandas`, `numpy`, `scikit-learn`, `xgboost`, `lightgbm`, optional `catboost`, `sqlalchemy`,
@@ -246,7 +246,7 @@ with open(OUTPUT_DIR / "data_quality.json", "w", encoding="utf-8") as f:
 logger.info(f"Prepared all_stocks: {all_stocks.shape}")
 ```
 
-Optional: add SQLite quick path as in the projectâ€™s addendum when PostgreSQL isnâ€™t available.
+Optional: add SQLite quick path as in the project’s addendum when PostgreSQL isn’t available.
 
 ---
 
@@ -630,7 +630,7 @@ if lgb is not None:
 Simple stacking skeleton (OOF meta-features from base learners):
 
 ```python
-# Suppose we have two base regressors (lgb and xgb) â€” create OOF preds and train a meta-ridge
+# Suppose we have two base regressors (lgb and xgb) — create OOF preds and train a meta-ridge
 from sklearn.linear_model import Ridge
 
 stack_oof = pd.DataFrame(index=reg_base.index)
@@ -916,7 +916,7 @@ python -m unittest -v
 
 ### Quick summary of key improvements to make in ml_finance_model_main.ipynb
 
-- Introduce a unified data loader with DBâ†’CSV fallback and robust validation â†’ `all_stocks` dataframe
+- Introduce a unified data loader with DB?CSV fallback and robust validation ? `all_stocks` dataframe
 - Add comprehensive, sector-aware feature engineering and encodings with leak-safe practices
 - Add multi-class event classifier; feed class probabilities into sector-specific regressors
 - Add quantile prediction and optional stacking for improved accuracy and uncertainty estimates

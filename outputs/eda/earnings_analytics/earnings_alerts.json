@@ -1,31 +1,31 @@
 {
-  "timestamp": "2025-12-25T14:58:41.477458",
-  "reference_date": "2025-12-25 00:00:00",
-  "total_stocks_monitored": 6983,
+  "timestamp": "2025-12-27T18:35:25.084602",
+  "reference_date": "2025-12-27 00:00:00",
+  "total_stocks_monitored": 6913,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 2019,
-      "description": "2019 stocks with EPS surprise < -20%",
+      "count": 3855,
+      "description": "3855 stocks with EPS surprise < -5%",
       "tickers": [
         "NVDA",
+        "AAPL",
+        "MSFT",
         "AVGO",
+        "TSLA",
         "LLY",
-        "PLTR",
-        "NFLX",
-        "ABBV",
-        "AMD",
-        "MU",
-        "APP",
-        "GEV"
+        "WMT",
+        "V",
+        "ORCL",
+        "MA"
       ]
     },
     {
       "alert_type": "high_target_uncertainty",
       "severity": "low",
-      "count": 4360,
-      "description": "4360 stocks with price target spread > 30%",
+      "count": 4850,
+      "description": "4850 stocks with price target spread > 25%",
       "tickers": [
         "NVDA",
         "AAPL",
@@ -35,33 +35,35 @@
         "META",
         "AVGO",
         "TSLA",
-        "LLY",
-        "JPM"
+        "BRKA",
+        "LLY"
       ]
     },
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 8,
-      "description": "8 stocks with elevated volatility (> q0.75) within 7 days of earnings",
+      "count": 28,
+      "description": "28 stocks with elevated volatility (> q0.80) within 14 days of earnings",
       "tickers": [
-        "MCHB",
+        "BMNR",
+        "APLD",
+        "UNF",
+        "INSP",
+        "NEOG",
+        "TRI",
+        "MNTN",
+        "OVH",
         "AGY",
-        "GNFT",
-        "SAVE",
-        "CCAP",
-        "STAR",
-        "DWY",
-        "SCB"
+        "TRST"
       ]
     }
   ],
   "thresholds": {
-    "eps_surprise_miss_threshold_pct": 20.0,
-    "analyst_downgrade_threshold_pct": 5.0,
+    "eps_surprise_miss_threshold_pct": 5.0,
+    "analyst_downgrade_threshold_pct": 10.0,
     "analyst_downgrade_min_periods": 2,
-    "target_spread_threshold_pct": 30.0,
-    "pre_earnings_window_days": 7,
-    "pre_earnings_volatility_quantile": 0.75
+    "target_spread_threshold_pct": 25.0,
+    "pre_earnings_window_days": 14,
+    "pre_earnings_volatility_quantile": 0.8
   }
 }

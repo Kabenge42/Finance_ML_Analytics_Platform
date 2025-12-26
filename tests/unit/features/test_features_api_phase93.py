@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-import numpy as np
+
 import pandas as pd
 
 from tests.utils.feature_test_helpers import (
@@ -89,7 +89,7 @@ class TestFeaturesApiPhase93(unittest.TestCase):
             }
         )
         from finance_ml.ml_workflow.features.api import build_features
-        from finance_ml.ml_workflow.features.advanced import build_comprehensive_features
+        from finance_ml.features.advanced import build_comprehensive_features
 
         res_api = build_features(
             df, preset="full_enhanced", include_interactions=False, include_relative=False
@@ -114,7 +114,7 @@ class TestFeaturesApiPhase93(unittest.TestCase):
                 "price_1m_ago": [90.0],
             }
         )
-        from finance_ml.ml_workflow.features.advanced import build_comprehensive_features
+        from finance_ml.features.advanced import build_comprehensive_features
 
         out = build_comprehensive_features(
             df, preset="momentum", include_interactions=False, include_relative_values=False

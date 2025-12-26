@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests for Phase 9.3 Future Enhancements.
 
 This test module follows strict TDD methodology (Red-Green-Refactor):
@@ -13,16 +13,15 @@ Phase 9.3 Features:
 - Enhanced Plotly dashboard data preparation
 - Enhanced PDF report generation with Phase 9.2 integration
 
-Coverage target: ≥80% for new code
+Coverage target: =80% for new code
 """
 
-import unittest
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import tempfile
-import json
-from datetime import datetime, timedelta
+import unittest
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 
 class TestTimeSeriesHypothesisTesting(unittest.TestCase):

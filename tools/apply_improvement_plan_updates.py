@@ -1,4 +1,4 @@
-Ôªø"""
+"""
 Utility to apply structured updates to IMPROVEMENT_PLAN.md.
 
 Implements the user story: Revise_the_IMPROVEMENT_PLAN.md_by_integr.md
@@ -31,7 +31,7 @@ SQLITE_SECTION_BODY = f"""
 - Default missing `"Region"` per file (US/EU/APAC/ROTW) and rely on `UNIQUE("Ticker","Region")`.
 - Provide a Python importer alternative with chunking using pandas for reliability.
 
-#### Tasks (to be tracked under Phase 2 ‚Äî Data Ingestion and Validation)
+#### Tasks (to be tracked under Phase 2 ó Data Ingestion and Validation)
 1) SQLite import hardening (shell-based)
 - Add `import_equities_data_sqlite.sql` with:
   - `.bail on`, `.echo on`
@@ -52,7 +52,7 @@ SQLITE_SECTION_BODY = f"""
 - Emit a machine-readable JSON report for CI.
 
 4) Documentation updates
-- README: add a ‚ÄúSQLite local path‚Äù subsection with exact commands and caveats
+- README: add a ìSQLite local pathî subsection with exact commands and caveats
   (header handling, NULLs, `.bail on`).
 
 5) Tests for SQLite path

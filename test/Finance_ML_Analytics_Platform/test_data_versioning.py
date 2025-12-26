@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests for Data Versioning and Lineage Tracking (Phase 9.1 - TDD)
 
 This module tests data versioning capabilities including:
@@ -15,7 +15,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-
 from finance_ml.data_versioning import (
     DataVersion,
     DataVersionManager,

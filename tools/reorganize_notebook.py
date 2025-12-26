@@ -1,4 +1,4 @@
-ï»¿#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 
 class NotebookCellFactory:
@@ -30,12 +30,12 @@ class NotebookCellFactory:
     @staticmethod
     def create_phase_header(phase_number: str, title: str, description: list[str]) -> dict:
         """Create a standardized phase header markdown cell."""
-        content = f"## Phase {phase_number} â€” {title}\n\n"
+        content = f"## Phase {phase_number} — {title}\n\n"
         content += "\n".join(f"{i}. {desc}" for i, desc in enumerate(description, 1))
         return NotebookCellFactory.create_markdown_cell(content)
 
     @staticmethod
     def create_section_header(phase: str, section: str, title: str) -> dict:
         """Create a standardized section header markdown cell."""
-        content = f"### {phase}.{section} â€” {title}"
+        content = f"### {phase}.{section} — {title}"
         return NotebookCellFactory.create_markdown_cell(content)

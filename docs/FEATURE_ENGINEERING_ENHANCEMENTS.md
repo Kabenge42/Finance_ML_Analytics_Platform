@@ -99,7 +99,7 @@ df_processed = pipeline.run(df_raw)
 
 ### Files Modified
 
-1. **finance_ml/ml_workflow/features/advanced.py**
+1. **finance_ml.features.advanced.py**
     - Added ~440 lines (2 new functions)
     - Updated `__all__` exports (lines 54-55)
 
@@ -123,7 +123,7 @@ df_processed = pipeline.run(df_raw)
 
 ```python
 # Import and engineer features
-from finance_ml.ml_workflow.features.advanced import (
+from finance_ml.features.advanced import (
     engineer_estimated_vs_actual_analytics,
     engineer_gaap_vs_adjusted_analytics
     )

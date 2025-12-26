@@ -1,117 +1,288 @@
 <problems>
 <problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>5031</line>
+    <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+    <line>1332</line>
     <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
     <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
         references
     </problem_class>
-    <description>Cannot find reference 'copy' in 'Never'</description>
-    <highlighted_element>copy</highlighted_element>
+    <description>Cannot find reference 'values' in 'str | bytes | date | datetime | timedelta | datetime64 | timedelta64
+        | bool | int | float | Timestamp | Timedelta | complex | integer | floating | complexfloating'
+    </description>
+    <highlighted_element>values</highlighted_element>
     <language>Python</language>
-    <offset>36</offset>
-    <length>4</length>
-</problem>
-    <problem>
-        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>5032</line>
-  <module>Finance_ML_Analytics_Platform</module>
-        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
-            Unresolved references
-        </problem_class>
-        <description>Cannot find reference 'index' in 'Never'</description>
-        <highlighted_element>index</highlighted_element>
-  <language>Python</language>
-        <offset>70</offset>
-        <length>5</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>7025</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
-        references
-    </problem_class>
-    <description>Unresolved attribute reference 'nunique' for class 'None'</description>
-    <highlighted_element>nunique</highlighted_element>
-  <language>Python</language>
-    <offset>69</offset>
-    <length>7</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>8930</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
-        references
-    </problem_class>
-    <description>Unresolved attribute reference 'head' for class 'None'</description>
-    <highlighted_element>head</highlighted_element>
-  <language>Python</language>
-    <offset>46</offset>
-    <length>4</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>9165</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
-        references
-    </problem_class>
-    <description>Unresolved attribute reference 'fillna' for class 'None'</description>
-    <highlighted_element>fillna</highlighted_element>
-  <language>Python</language>
     <offset>45</offset>
     <length>6</length>
 </problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>9785</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
-        references
-    </problem_class>
-    <description>Class 'type' does not define '__truediv__', so the '/' operator cannot be used on its instances
-    </description>
-    <highlighted_element>/</highlighted_element>
-  <language>Python</language>
-    <offset>67</offset>
-    <length>1</length>
-</problem>
-<problem>
-    <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-    <line>9831</line>
-  <module>Finance_ML_Analytics_Platform</module>
-    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
-    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
-        references
-    </problem_class>
-    <description>Class 'type' does not define '__truediv__', so the '/' operator cannot be used on its instances
-    </description>
-    <highlighted_element>/</highlighted_element>
-  <language>Python</language>
-    <offset>48</offset>
-    <length>1</length>
-</problem>
     <problem>
-        <file>file://$PROJECT_DIR$/ml_finance_model_main.ipynb</file>
-        <line>10054</line>
+        <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+        <line>1429</line>
         <module>Finance_ML_Analytics_Platform</module>
-        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ml_finance_model_main.ipynb"/>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
         <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
             Unresolved references
         </problem_class>
-        <description>Class 'type' does not define '__truediv__', so the '/' operator cannot be used on its instances
-        </description>
-        <highlighted_element>/</highlighted_element>
+        <description>Unresolved attribute reference 'get' for class 'list'</description>
+        <highlighted_element>get</highlighted_element>
+        <language>Python</language>
+        <offset>64</offset>
+        <length>3</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+        <line>2487</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'dropna' for class 'float'</description>
+        <highlighted_element>dropna</highlighted_element>
+        <language>Python</language>
+        <offset>10</offset>
+        <length>6</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+        <line>2660</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'dropna' for class 'float'</description>
+        <highlighted_element>dropna</highlighted_element>
+        <language>Python</language>
+        <offset>76</offset>
+        <length>6</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+        <line>2849</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'dropna' for class 'float'</description>
+        <highlighted_element>dropna</highlighted_element>
+        <language>Python</language>
+        <offset>71</offset>
+        <length>6</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+        <line>2920</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'dropna' for class 'float'</description>
+        <highlighted_element>dropna</highlighted_element>
+        <language>Python</language>
+        <offset>66</offset>
+        <length>6</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+        <line>3170</line>
+  <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'empty' for class 'object'</description>
+        <highlighted_element>empty</highlighted_element>
+  <language>Python</language>
+        <offset>28</offset>
+        <length>5</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+    <line>3172</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Unresolved attribute reference 'columns' for class 'object'</description>
+    <highlighted_element>columns</highlighted_element>
+  <language>Python</language>
+    <offset>46</offset>
+    <length>7</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+    <line>3174</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Class 'object' does not define '__getitem__', so the '[]' operator cannot be used on its instances
+    </description>
+    <highlighted_element>[</highlighted_element>
+  <language>Python</language>
+    <offset>32</offset>
+    <length>1</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/etl_data_explorer.ipynb</file>
+        <line>5451</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/etl_data_explorer.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'items' for class 'object'</description>
+        <highlighted_element>items</highlighted_element>
         <language>Python</language>
         <offset>48</offset>
-        <length>1</length>
+        <length>5</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+        <line>199</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Cannot find reference 'etl_with_features' in
+            'finance_ml.ml_workflow.preprocessing.financial_metrics_etl'
+        </description>
+        <highlighted_element>etl_with_features</highlighted_element>
+        <language>Python</language>
+        <offset>71</offset>
+        <length>17</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+        <line>919</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'show' for class 'object'</description>
+        <highlighted_element>show</highlighted_element>
+        <language>Python</language>
+        <offset>13</offset>
+        <length>4</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+        <line>920</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'name' for class 'object'</description>
+        <highlighted_element>name</highlighted_element>
+        <language>Python</language>
+        <offset>51</offset>
+        <length>4</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+        <line>969</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'show' for class 'object'</description>
+        <highlighted_element>show</highlighted_element>
+        <language>Python</language>
+        <offset>41</offset>
+        <length>4</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+        <line>971</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'show' for class 'object'</description>
+        <highlighted_element>show</highlighted_element>
+        <language>Python</language>
+        <offset>40</offset>
+        <length>4</length>
+    </problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+        <line>1025</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'show' for class 'object'</description>
+        <highlighted_element>show</highlighted_element>
+        <language>Python</language>
+        <offset>12</offset>
+        <length>4</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+    <line>1026</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Unresolved attribute reference 'name' for class 'object'</description>
+    <highlighted_element>name</highlighted_element>
+  <language>Python</language>
+    <offset>50</offset>
+    <length>4</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/stock_analytics.ipynb</file>
+    <line>1247</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/stock_analytics.ipynb"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Class 'int' does not define '__getitem__', so the '[]' operator cannot be used on its instances
+    </description>
+    <highlighted_element>[</highlighted_element>
+  <language>Python</language>
+    <offset>22</offset>
+    <length>1</length>
+</problem>
+<problem>
+    <file>file://$PROJECT_DIR$/tests/test_data_types_detection.py</file>
+    <line>182</line>
+  <module>Finance_ML_Analytics_Platform</module>
+    <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_data_types_detection.py"/>
+    <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">Unresolved
+        references
+    </problem_class>
+    <description>Unresolved attribute reference 'get' for class 'None'</description>
+    <highlighted_element>get</highlighted_element>
+  <language>Python</language>
+    <offset>47</offset>
+    <length>3</length>
+</problem>
+    <problem>
+        <file>file://$PROJECT_DIR$/tests/test_data_types_detection.py</file>
+        <line>184</line>
+        <module>Finance_ML_Analytics_Platform</module>
+        <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tests/test_data_types_detection.py"/>
+        <problem_class id="PyUnresolvedReferencesInspection" severity="WARNING" attribute_key="INFO_ATTRIBUTES">
+            Unresolved references
+        </problem_class>
+        <description>Unresolved attribute reference 'get' for class 'None'</description>
+        <highlighted_element>get</highlighted_element>
+        <language>Python</language>
+        <offset>51</offset>
+        <length>3</length>
 </problem>
 </problems>

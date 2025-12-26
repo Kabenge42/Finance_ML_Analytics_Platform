@@ -1,4 +1,4 @@
-﻿"""Test what the validation script's regex actually extracts."""
+"""Test what the validation script's regex actually extracts."""
 
 import json
 import re
@@ -65,7 +65,7 @@ test_funcs = [
     "calculate_sector_zscores",
 ]
 for func in test_funcs:
-    status = "✓ FOUND" if func in all_imported else "✗ NOT FOUND"
+    status = "? FOUND" if func in all_imported else "? NOT FOUND"
     print(f"  {func}: {status}")
 
 if len(all_imported) > 0:

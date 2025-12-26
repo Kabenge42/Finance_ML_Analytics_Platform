@@ -1,4 +1,4 @@
-﻿"""
+"""
 Test-Driven Development tests for Phase 9 Notebook Integration.
 
 This module tests the ml_finance_model_main.ipynb notebook structure,
@@ -6,7 +6,7 @@ ensuring all phases are present in the correct order with expected content.
 
 Acceptance Criteria (from IMPROVEMENT_PLAN.md and NOTEBOOK_INTEGRATION_SUMMARY.md):
 - All Phase 9 imports present (9.1-9.7)
-- Correct workflow order: 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.6 → 9.7
+- Correct workflow order: 9.1 ? 9.2 ? 9.3 ? 9.4 ? 9.5 ? 9.6 ? 9.7
 - Phase 9.1: Advanced Preprocessing (outliers, winsorization, imputation)
 - Phase 9.2: Enhanced EDA (after 9.1, not before)
 - Phase 9.3: Advanced Feature Engineering (NEW - must be added)
@@ -181,7 +181,7 @@ class TestNotebookIntegration(unittest.TestCase):
 
     # Test 9: Phase ordering is correct (SHOULD FAIL - Phase 9.2 before 9.1)
     def test_phase_ordering_correct(self):
-        """Test that phases appear in correct order: 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.6 → 9.7."""
+        """Test that phases appear in correct order: 9.1 ? 9.2 ? 9.3 ? 9.4 ? 9.5 ? 9.6 ? 9.7."""
         expected_order = ["9.1", "9.2", "9.3", "9.4", "9.5", "9.6", "9.7"]
 
         # Get positions of all present phases
@@ -305,7 +305,7 @@ class TestNotebookCellFactory(unittest.TestCase):
 
     def test_create_markdown_cell_content(self):
         """Test that markdown cell contains expected content."""
-        content = "## Phase 9.1 — Test Phase"
+        content = "## Phase 9.1 � Test Phase"
         cell = NotebookCellFactory.create_markdown_cell(content)
 
         source_text = (
@@ -375,7 +375,7 @@ class TestNotebookCellFactory(unittest.TestCase):
         # Check markdown level 2 header
         self.assertTrue(source_text.startswith("## Phase"))
         # Check em-dash separator
-        self.assertIn("—", source_text)
+        self.assertIn("�", source_text)
         # Check numbered list format
         self.assertIn("1. Metric 1", source_text)
         self.assertIn("2. Metric 2", source_text)
@@ -407,7 +407,7 @@ class TestNotebookCellFactory(unittest.TestCase):
         # Check markdown level 3 header
         self.assertTrue(source_text.startswith("### 9.7"))
         # Check em-dash separator
-        self.assertIn("—", source_text)
+        self.assertIn("�", source_text)
         self.assertIn("Stock Rankings", source_text)
 
     def test_newline_suffix_constant(self):

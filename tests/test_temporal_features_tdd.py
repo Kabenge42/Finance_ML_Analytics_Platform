@@ -52,7 +52,7 @@ class TestDaysToDividendFeature(unittest.TestCase):
 
     def test_days_to_dividend_basic_calculation(self):
         """Test basic days_to_dividend calculation."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         # Use explicit reference_date for predictability
         result = engineer_temporal_features(
@@ -70,7 +70,7 @@ class TestDaysToDividendFeature(unittest.TestCase):
 
     def test_days_to_dividend_handles_missing_dividend_date(self):
         """Test that missing dividend dates result in NaN."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         result = engineer_temporal_features(
             self.df, date_col="next_earnings", reference_date=self.base_date
@@ -81,7 +81,7 @@ class TestDaysToDividendFeature(unittest.TestCase):
 
     def test_days_to_dividend_handles_missing_last_updated(self):
         """Test that missing last_updated (date_col) still allows days_to_dividend if ref_date provided."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         result = engineer_temporal_features(
             self.df, date_col="next_earnings", reference_date=self.base_date
@@ -92,7 +92,7 @@ class TestDaysToDividendFeature(unittest.TestCase):
 
     def test_days_to_dividend_negative_values_allowed(self):
         """Test that past dividends result in negative days."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         result = engineer_temporal_features(
             self.df, date_col="next_earnings", reference_date=self.base_date
@@ -103,7 +103,7 @@ class TestDaysToDividendFeature(unittest.TestCase):
 
     def test_days_to_dividend_without_dividend_column(self):
         """Test graceful handling when dividend column is missing."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         df_no_dividend = self.df.drop(columns=["dividend_record_ex_date"])
         result = engineer_temporal_features(df_no_dividend, date_col="next_earnings")
@@ -133,7 +133,7 @@ class TestQuarterlyVolatilityScore(unittest.TestCase):
 
     def test_quarterly_volatility_score_calculation(self):
         """Test coefficient of variation calculation across quarters."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         result = engineer_temporal_features(self.df, date_col="next_earnings")
 
@@ -147,7 +147,7 @@ class TestQuarterlyVolatilityScore(unittest.TestCase):
 
     def test_quarterly_volatility_handles_missing_quarters(self):
         """Test handling of missing quarterly values."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         result = engineer_temporal_features(self.df, date_col="next_earnings")
 
@@ -177,7 +177,7 @@ class TestDaysSinceReference(unittest.TestCase):
 
     def test_days_since_reference_with_reference_date(self):
         """Test days_since_reference when reference_date is provided."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         reference = pd.Timestamp("2025-11-01")
         result = engineer_temporal_features(
@@ -193,7 +193,7 @@ class TestDaysSinceReference(unittest.TestCase):
 
     def test_days_since_reference_without_reference_date(self):
         """Test that days_since_reference is NOT added without reference_date."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         result = engineer_temporal_features(self.df, date_col="next_earnings")
 
@@ -220,7 +220,7 @@ class TestMarketSentimentFeatures(unittest.TestCase):
 
     def test_momentum_20d_calculation(self):
         """Test 20-day momentum calculation."""
-        from finance_ml.ml_workflow.features.advanced import engineer_momentum_features
+        from finance_ml.features.advanced import engineer_momentum_features
 
         result = engineer_momentum_features(self.df)
 
@@ -233,7 +233,7 @@ class TestMarketSentimentFeatures(unittest.TestCase):
 
     def test_short_interest_ratio_calculation(self):
         """Test short interest ratio calculation."""
-        from finance_ml.ml_workflow.features.advanced import engineer_market_sentiment_features
+        from finance_ml.features.advanced import engineer_market_sentiment_features
 
         result = engineer_market_sentiment_features(self.df)
 
@@ -258,7 +258,7 @@ class TestPhase93FeatureCoverage(unittest.TestCase):
 
     def test_all_temporal_features_generated(self):
         """Test that all temporal features can be generated."""
-        from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+        from finance_ml.features.advanced import engineer_temporal_features
 
         # Create comprehensive test DataFrame
         base_date = pd.Timestamp("2025-11-30")

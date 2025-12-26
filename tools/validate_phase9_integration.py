@@ -1,4 +1,4 @@
-﻿"""
+"""
 Validation script for Phase 9 module integrations.
 Tests that all modules can be imported and key functions are available.
 """
@@ -14,9 +14,9 @@ print("\n[1/5] Testing core package import...")
 try:
     import finance_ml
 
-    print(f"✓ finance_ml version: {finance_ml.__version__}")
+    print(f"? finance_ml version: {finance_ml.__version__}")
 except Exception as e:
-    print(f"✗ Failed to import finance_ml: {e}")
+    print(f"? Failed to import finance_ml: {e}")
     sys.exit(1)
 
 # Test 2: Import Phase 9.1 Advanced Preprocessing
@@ -30,11 +30,11 @@ try:
         impute_missing_values,
     )
 
-    print("✓ Advanced preprocessing functions imported")
+    print("? Advanced preprocessing functions imported")
     print(f"  - detect_outliers_iqr_method: {callable(detect_outliers_iqr_method)}")
     print(f"  - winsorize_by_sector_method: {callable(winsorize_by_sector_method)}")
 except Exception as e:
-    print(f"✗ Failed to import Phase 9.1 functions: {e}")
+    print(f"? Failed to import Phase 9.1 functions: {e}")
     sys.exit(1)
 
 # Test 3: Import Phase 9.2 Advanced EDA
@@ -49,11 +49,11 @@ try:
         compare_sector_means,
     )
 
-    print("✓ Advanced EDA functions imported")
+    print("? Advanced EDA functions imported")
     print(f"  - generate_eda_report: {callable(generate_eda_report)}")
     print(f"  - calculate_correlation_matrix: {callable(calculate_correlation_matrix)}")
 except Exception as e:
-    print(f"✗ Failed to import Phase 9.2 functions: {e}")
+    print(f"? Failed to import Phase 9.2 functions: {e}")
     sys.exit(1)
 
 # Test 4: Import Phase 9.4 Classification
@@ -69,11 +69,11 @@ try:
         compare_classifiers,
     )
 
-    print("✓ Classification functions imported")
+    print("? Classification functions imported")
     print(f"  - create_enhanced_event_labels: {callable(create_enhanced_event_labels)}")
     print(f"  - export_classification_features: {callable(export_classification_features)}")
 except Exception as e:
-    print(f"✗ Failed to import Phase 9.4 functions: {e}")
+    print(f"? Failed to import Phase 9.4 functions: {e}")
     sys.exit(1)
 
 # Test 5: Import Phase 9.5 Advanced Regression
@@ -91,23 +91,23 @@ try:
         load_model,
     )
 
-    print("✓ Advanced regression functions imported")
+    print("? Advanced regression functions imported")
     print(f"  - prepare_regression_data: {callable(prepare_regression_data)}")
     print(f"  - create_classification_interactions: {callable(create_classification_interactions)}")
     print(f"  - train_stacking_regressor: {callable(train_stacking_regressor)}")
     print(f"  - train_quantile_regressor: {callable(train_quantile_regressor)}")
 except Exception as e:
-    print(f"✗ Failed to import Phase 9.5 functions: {e}")
+    print(f"? Failed to import Phase 9.5 functions: {e}")
     sys.exit(1)
 
 # Summary
 print("\n" + "=" * 80)
-print("✓ ALL PHASE 9 MODULES VALIDATED SUCCESSFULLY")
+print("? ALL PHASE 9 MODULES VALIDATED SUCCESSFULLY")
 print("=" * 80)
 print("\nModule Summary:")
-print("  ✓ Phase 9.1: Advanced Preprocessing (5 functions)")
-print("  ✓ Phase 9.2: Advanced EDA (6 functions)")
-print("  ✓ Phase 9.4: Classification (7 functions)")
-print("  ✓ Phase 9.5: Advanced Regression (9 functions)")
+print("  ? Phase 9.1: Advanced Preprocessing (5 functions)")
+print("  ? Phase 9.2: Advanced EDA (6 functions)")
+print("  ? Phase 9.4: Classification (7 functions)")
+print("  ? Phase 9.5: Advanced Regression (9 functions)")
 print("\nTotal: 27 key functions validated")
 print("\nNotebook ml_finance_model_main.ipynb is ready to use!")

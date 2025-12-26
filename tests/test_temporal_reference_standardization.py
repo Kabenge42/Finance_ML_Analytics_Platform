@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+from finance_ml.features.advanced import engineer_temporal_features
 
 
 class TestTemporalReferenceDateStandardization(unittest.TestCase):

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests for Data Catalog with Metadata (Phase 9.1 - TDD)
 
 This module tests data catalog capabilities including:
@@ -16,7 +16,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from finance_ml.data_catalog import (
     DatasetMetadata,
     SchemaInfo,
@@ -24,7 +23,7 @@ from finance_ml.data_catalog import (
     DataCatalog,
     extract_schema_info,
     create_statistical_profile,
-    )
+)
 
 
 class TestSchemaInfo(unittest.TestCase):

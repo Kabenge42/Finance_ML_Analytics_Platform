@@ -18,7 +18,7 @@ import pandas as pd
 
 # Prefer new path; fallback to legacy if needed
 try:
-    from finance_ml.ml_workflow.features.advanced import engineer_momentum_features
+    from finance_ml.features.advanced import engineer_momentum_features
 except Exception:  # pragma: no cover
     from finance_ml.advanced_features import engineer_momentum_features  # type: ignore
 

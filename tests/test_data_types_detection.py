@@ -6,9 +6,8 @@ functionality following TDD principles (Phase 9.3).
 """
 
 import unittest
+
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
 
 # Import the modules we're about to create (will fail initially - TDD)
 try:
@@ -178,8 +177,10 @@ class TestDataTypesDetection(unittest.TestCase):
             self.skipTest("PHASE93_FEATURE_INPUTS not yet implemented")
 
         # Arrange: Create dataframe with Phase 9.3 feature columns
-        # Sample momentum features
+        # Sample momentum features (try both old short key and new full key)
         momentum_cols = PHASE93_FEATURE_INPUTS.get("momentum", [])
+        if not momentum_cols:
+            momentum_cols = PHASE93_FEATURE_INPUTS.get("Momentum & Technical", [])
 
         if not momentum_cols:
             self.skipTest("No momentum features defined yet")

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Test suite for finance_ml.benchmarking module
 
 This module tests sector and region-specific benchmarking functions.
@@ -6,10 +6,9 @@ Following TDD methodology for Phase 9.2 continuation.
 """
 
 import unittest
-import pandas as pd
+
 import numpy as np
-from pathlib import Path
-import tempfile
+import pandas as pd
 
 
 class TestSectorDistributionComparison(unittest.TestCase):

@@ -1,1 +1,1 @@
-﻿# Tools package initializer (empty). Enables explicit package imports for tools.* modules.
+# Tools package initializer (empty). Enables explicit package imports for tools.* modules.

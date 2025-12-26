@@ -25,6 +25,9 @@ import plotly.graph_objects as go
 from dash import dash_table, dcc, html
 from flask import send_from_directory
 
+from finance_ml.core.constants import (
+    DATE_DISPLAY_FORMAT,
+)
 from finance_ml.dashboards.callbacks import register_all_callbacks
 from finance_ml.dashboards.components import (
     _safe_options,
@@ -53,10 +56,9 @@ from finance_ml.dashboards.components.temporal_utils import (
     compute_days_to_earnings,
     get_reference_date,
 )
-from finance_ml.dashboards.earnings_widgets import (
-    DATE_DISPLAY_FORMAT,
-    _add_formatted_date_columns,
-    _resolve_reference_date,
+from finance_ml.dashboards.widgets import (
+    add_formatted_date_columns,
+    resolve_reference_date,
     create_analyst_recommendation_heatmap,
     create_category_comparison_chart,
     create_earnings_metrics_chart,
@@ -64,11 +66,7 @@ from finance_ml.dashboards.earnings_widgets import (
     create_market_movers_dashboard,
     create_price_target_analytics,
 )
-from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
-from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
-from finance_ml.ml_workflow.preprocessing.etl import (
-    etl_with_features,
-    ETLConfig,
+from finance_ml.etl.config import (
     DataExtractionConfig,
     SchemaValidationConfig,
     DtypeCastingConfig,
@@ -80,6 +78,12 @@ from finance_ml.ml_workflow.preprocessing.etl import (
     FeatureEngineeringConfig,
     FeatureSelectionConfig,
     FinancialMetricsConfig,
+)
+from finance_ml.features.advanced import engineer_temporal_features
+from finance_ml.ml_workflow.data.schema import PHASE93_FEATURE_CATEGORIES
+from finance_ml.ml_workflow.preprocessing.etl import (
+    etl_with_features,
+    ETLConfig,
 )
 
 # Type aliases
@@ -467,7 +471,7 @@ def _apply_temporal_enrichments(
     if df is None or df.empty:
         return df, reference_date, []
 
-    resolved_reference_date = _resolve_reference_date(df, reference_date)
+    resolved_reference_date = resolve_reference_date(df, reference_date)
 
     temporal_date_col: Optional[str] = None
     if "reference_date" in df.columns:
@@ -490,7 +494,7 @@ def _apply_temporal_enrichments(
         "fy_end",
     ]
     date_columns_for_format = [c for c in date_columns_for_format if c in enriched_df.columns]
-    formatted_cols = _add_formatted_date_columns(enriched_df, date_columns_for_format)
+    formatted_cols = add_formatted_date_columns(enriched_df, date_columns_for_format)
 
     return enriched_df, resolved_reference_date, formatted_cols
 
@@ -646,7 +650,7 @@ def generate_dashboard_artifacts(
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
     artifacts = {}
-    reference_date = _resolve_reference_date(df, None)
+    reference_date = resolve_reference_date(df, None)
     timestamp = (reference_date or pd.Timestamp.now()).strftime(DATE_DISPLAY_FORMAT)
     reference_date_str = (
         reference_date.strftime(DATE_DISPLAY_FORMAT) if reference_date is not None else None

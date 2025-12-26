@@ -1,1 +1,1 @@
-﻿"""Tests for this module."""
+"""Tests for this module."""

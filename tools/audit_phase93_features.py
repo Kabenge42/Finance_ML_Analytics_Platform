@@ -5,10 +5,10 @@ This script parses advanced.py to identify the actual features produced by each
 generator function and compares them with the registry in phase93_categories.py.
 """
 
+import json
 import re
 from pathlib import Path
-from typing import Dict, List, Set
-import json
+from typing import Set
 
 # Category to generator function mapping
 CATEGORY_GENERATORS = {
@@ -104,7 +104,7 @@ def extract_function_source(file_path: Path, func_name: str) -> str:
 
 def audit_generators():
     """Audit all generator functions and compare with registry."""
-    advanced_path = Path("finance_ml/ml_workflow/features/advanced.py")
+    advanced_path = Path("finance_ml.features.advanced.py")
 
     if not advanced_path.exists():
         print(f"Error: {advanced_path} not found")

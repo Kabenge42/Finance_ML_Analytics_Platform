@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 try:  # pragma: no cover - import shim
-    from finance_ml.ml_workflow.features.advanced import (
+    from finance_ml.features.advanced import (
         engineer_composite_scores,
         engineer_sector_relative_interactions,
     )

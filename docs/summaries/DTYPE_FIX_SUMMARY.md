@@ -2,7 +2,7 @@
 
 ## Problem Summary
 
-A `TypeError` was occurring in `finance_ml/ml_workflow/features/advanced.py` when assigning float values to
+A `TypeError` was occurring in `finance_ml.features.advanced.py` when assigning float values to
 sector-specific feature columns during boolean mask operations. The error manifested as:
 
 ```
@@ -126,7 +126,7 @@ if tech_mask.any():
 
 ## Files Modified
 
-### 1. `finance_ml/ml_workflow/features/advanced.py`
+### 1. `finance_ml.features.advanced.py`
 
 - **Added**: `_ensure_float_column()` helper function (lines 77-98)
 - **Modified**: `engineer_sector_specific_features()` function (lines 402-607)

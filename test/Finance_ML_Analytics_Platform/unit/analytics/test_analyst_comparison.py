@@ -1,14 +1,14 @@
-﻿"""
+"""
 Tests for Phase 9.8: Prediction vs. Analyst Comparison Analytics
 """
 
-import unittest
-import pandas as pd
-import numpy as np
-from pathlib import Path
-import tempfile
 import os
+import tempfile
+import unittest
+from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from finance_ml.analyst_comparison import (
     compare_prediction_vs_analyst_targets,
     calculate_agreement_rate,

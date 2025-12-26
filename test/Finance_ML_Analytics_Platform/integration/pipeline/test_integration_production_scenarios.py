@@ -1,13 +1,10 @@
-﻿import os
+import os
 import sqlite3
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-
-import pandas as pd
-
 
 SQLITE_SCHEMA = (
     Path(__file__).resolve().parents[1] / "create_equities_schema_sqlite.sql"

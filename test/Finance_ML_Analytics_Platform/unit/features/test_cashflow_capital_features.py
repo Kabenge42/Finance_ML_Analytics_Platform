@@ -11,12 +11,13 @@ Covers:
 from __future__ import annotations
 
 import unittest
+
 import numpy as np
 import pandas as pd
 
 # Prefer new module path with refactor; fallback to legacy if needed
 try:
-    from finance_ml.ml_workflow.features.advanced import (
+    from finance_ml.features.advanced import (
         engineer_cash_flow_quality_features,
         engineer_capital_allocation_features,
     )

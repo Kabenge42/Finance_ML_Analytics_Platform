@@ -17,7 +17,7 @@ import pandas as pd
 
 # Prefer consolidated module path; fall back to legacy for BC
 try:  # pragma: no cover - import resolution shim
-    from finance_ml.ml_workflow.features.advanced import (
+    from finance_ml.features.advanced import (
         engineer_analyst_quality_features,
         engineer_market_sentiment_features,
     )

@@ -11,13 +11,14 @@ Usage:
 """
 
 import sys
+
 import numpy as np
 import pandas as pd
 
 # Add the project root to the path
 sys.path.insert(0, r"C:\Users\markm\PycharmProjects\Finance_ML_Analytics_Platform")
 
-from finance_ml.ml_workflow.features.advanced import build_comprehensive_features
+from finance_ml.features.advanced import build_comprehensive_features
 from finance_ml.ml_workflow.classification.labels import create_enhanced_event_labels
 
 

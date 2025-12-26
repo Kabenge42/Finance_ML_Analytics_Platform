@@ -2,7 +2,7 @@
 Test fixtures: Sample DataFrames for feature engineering tests (Phase 9.3 - Week 1 Infra)
 
 Provides compact, deterministic samples with edge cases (NaN, inf, zeros, negatives, outliers)
-covering common columns used by finance_ml.ml_workflow.features.advanced functions.
+covering common columns used by finance_ml.features.advanced functions.
 
 Usage:
     from tests.fixtures.feature_engineering_samples import (
@@ -13,8 +13,6 @@ Usage:
 """
 
 from __future__ import annotations
-
-from typing import Tuple
 
 import numpy as np
 import pandas as pd

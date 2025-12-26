@@ -67,7 +67,7 @@ columns and high-importance features.
 
 ### Current Implementation
 
-- Manual feature engineering in `finance_ml/ml_workflow/features/advanced.py`
+- Manual feature engineering in `finance_ml.features.advanced.py`
 - Static feature presets: basic, momentum, quality, comprehensive (196 features)
 - No automatic pruning of low-importance or redundant features
 

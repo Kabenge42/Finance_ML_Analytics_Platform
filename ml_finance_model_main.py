@@ -534,7 +534,7 @@ from finance_ml.ml_workflow.evaluation.metrics import (
 from finance_ml.ml_workflow.features import (
     select_features_rf,
 )
-from finance_ml.ml_workflow.features.advanced import (
+from finance_ml.features.advanced import (
     engineer_accounting_quality_features,
     engineer_analyst_quality_features,
     engineer_dividend_reliability_features,

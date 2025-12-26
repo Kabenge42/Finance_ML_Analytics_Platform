@@ -129,6 +129,20 @@ except Exception:
     # Analytics stack is optional for light imports
     pass
 
+# Phase 9.3 Refactor: Import from features.advanced (new modular location)
+from finance_ml.features.advanced import (
+    engineer_valuation_ratios,
+    engineer_profitability_ratios,
+    engineer_leverage_ratios,
+    engineer_liquidity_ratios,
+    engineer_efficiency_ratios,
+    engineer_growth_metrics,
+    engineer_sector_specific_features,
+    engineer_analyst_quality_features,
+    engineer_accounting_quality_features,
+    engineer_employee_productivity_features,
+    build_comprehensive_features as features_build_comprehensive,
+)
 # Phase 9.4 Refactor: Import from new classification subpackage
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels as classification_create_enhanced_event_labels,
@@ -137,7 +151,6 @@ from finance_ml.ml_workflow.classification.tuning import (
     optimize_classifier_hyperparameters as classification_optimize_hyperparameters,
     cross_validate_with_sector_stratification as classification_cross_validate_sector,
 )
-
 # Phase 9.6 Refactor: Import from evaluation subpackage
 from finance_ml.ml_workflow.evaluation import (
     comprehensive_regression_metrics as evaluation_comprehensive_metrics,
@@ -165,28 +178,11 @@ from finance_ml.ml_workflow.evaluation import (
     generate_model_card as evaluation_generate_model_card,
     build_lineage_json as evaluation_build_lineage_json,
 )
-
-# Phase 9.3 Refactor: Import from features.advanced (new schema-driven features)
-from finance_ml.ml_workflow.features.advanced import (
-    engineer_valuation_ratios,
-    engineer_profitability_ratios,
-    engineer_leverage_ratios,
-    engineer_liquidity_ratios,
-    engineer_efficiency_ratios,
-    engineer_growth_metrics,
-    engineer_sector_specific_features,
-    engineer_analyst_quality_features,
-    engineer_accounting_quality_features,
-    engineer_employee_productivity_features,
-    build_comprehensive_features as features_build_comprehensive,
-)
-
 # Phase 9.3 API: Import from features.api (public API with presets)
 from finance_ml.ml_workflow.features.api import (
     build_features,
     PresetName,
 )
-
 # Phase 9.3 Refactor: Import from new features subpackage
 from finance_ml.ml_workflow.features.core import (
     _safe_div as features_safe_div,
@@ -196,7 +192,6 @@ from finance_ml.ml_workflow.features.core import (
     engineer_revenue_cagr as features_revenue_cagr,
     build_features_and_target as features_build_features_and_target,
 )
-
 # Phase 9.3 Refactor: Import from features.selection
 from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_mutual_info as features_importance_mi,
@@ -204,7 +199,6 @@ from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_shap as features_importance_shap,
     calculate_feature_importance_rfe as features_importance_rfe,
 )
-
 # Phase 9.1 Refactor: Import from new preprocessing subpackage
 from finance_ml.ml_workflow.preprocessing import (
     # Quality module
@@ -216,11 +210,11 @@ from finance_ml.ml_workflow.preprocessing import (
     detect_and_cast_dtypes,
     to_jsonable,
 )
-
 # Phase 9.5.0 Refactor: Import from new regression subpackage
 from finance_ml.ml_workflow.regression.constraints import (
     NonNegativeRegressionWrapper as regression_nonnegative_wrapper,
 )
+
 try:  # pragma: no cover - allow import without full regression stack present
     from finance_ml.ml_workflow.regression.dataset import (
         # Classification feature integration

@@ -170,7 +170,14 @@ all_stocks_features = build_features(
 - `"basic"`: Core ratios, margins, volatility, revenue CAGR
 - `"momentum"`: Price momentum and technical indicators
 - `"quality"`: Accounting quality and financial distress signals
-- `"comprehensive"`: Full advanced feature set (used in this notebook)
+- `"standard"`: Balanced feature set (valuation, profitability, growth, sentiment)
+- `"earnings_analytics"`: Earnings surprises, GAAP vs adjusted, quality flags
+- `"technical_plus"`: Technical analysis, valuation timeseries, market sentiment
+- `"dividend_focus"`: Dividend reliability, capital allocation, FCF coverage
+- `"employment_analytics"`: Employment dynamics, productivity trends
+- `"revenue_forecasting"`: Revenue forecasts, growth metrics, analyst quality
+- `"balance_sheet"`: Balance sheet trends, leverage, liquidity
+- `"comprehensive"`: Full advanced feature set (290+ features)
 
 ```
 

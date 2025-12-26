@@ -9,14 +9,12 @@ Covers:
 
 from __future__ import annotations
 
-import datetime as dt
 import unittest
 
-import numpy as np
 import pandas as pd
 
 try:  # pragma: no cover - import shim
-    from finance_ml.ml_workflow.features.advanced import engineer_temporal_features
+    from finance_ml.features.advanced import engineer_temporal_features
 except Exception:  # pragma: no cover
     from finance_ml.advanced_features import engineer_temporal_features  # type: ignore
 

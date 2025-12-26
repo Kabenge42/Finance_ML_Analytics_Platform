@@ -1392,7 +1392,7 @@ features_df = build_features(
         )
 # Presets: "basic", "momentum", "quality", "comprehensive"
 
-from finance_ml.ml_workflow.features.advanced import (
+from finance_ml.features.advanced import (
     engineer_valuation_ratios,
     engineer_momentum_features,
     build_comprehensive_features
@@ -10802,7 +10802,7 @@ print('=' * 80)
 print('\n🔧 Engineering Profitability and Revenue Forecast Features...')
 
 # Import advanced feature engineering functions
-from finance_ml.ml_workflow.features.advanced import (
+from finance_ml.features.advanced import (
     engineer_profitability_ratios,
     engineer_revenue_forecast_features
     )

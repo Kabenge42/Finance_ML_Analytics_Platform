@@ -678,7 +678,7 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
     - int64 defaults to COUNT
     - object defaults to CATEGORICAL
     """
-    from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
+    from finance_ml.core.schema import COLUMN_SCHEMA
 
     classifications = {}
 

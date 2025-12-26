@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests for finance_ml.advanced_eda module - Phase 9.2
 
 Test-Driven Development approach for Advanced EDA functions:

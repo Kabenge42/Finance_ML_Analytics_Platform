@@ -51,7 +51,7 @@
 ```python
 # Find import cell (usually near top)
 # Add to existing import block or create new one:
-from finance_ml.ml_workflow.features.advanced import (
+from finance_ml.features.advanced import (
     engineer_technical_analysis_features,
     engineer_valuation_timeseries_features
     )

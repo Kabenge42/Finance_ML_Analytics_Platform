@@ -11,11 +11,10 @@ from __future__ import annotations
 
 import unittest
 
-import numpy as np
 import pandas as pd
 
 try:  # pragma: no cover - import shim
-    from finance_ml.ml_workflow.features.advanced import engineer_balance_sheet_trends
+    from finance_ml.features.advanced import engineer_balance_sheet_trends
 except Exception:  # pragma: no cover
     from finance_ml.advanced_features import engineer_balance_sheet_trends  # type: ignore
 

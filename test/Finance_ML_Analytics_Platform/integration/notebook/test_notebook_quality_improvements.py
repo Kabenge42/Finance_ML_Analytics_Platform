@@ -1,4 +1,4 @@
-﻿"""
+"""
 Test suite for Notebook Quality Improvements (TDD Implementation)
 
 Tests written following strict TDD approach:
@@ -6,7 +6,7 @@ Tests written following strict TDD approach:
 2. Implement minimal code to pass
 3. Refactor
 
-Coverage target: ≥80% for changed files
+Coverage target: =80% for changed files
 """
 
 import shutil
