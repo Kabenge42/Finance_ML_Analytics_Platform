@@ -32,12 +32,58 @@ import pandas as pd
 from sklearn.impute import KNNImputer
 
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
-    PRICE_COLUMNS,
     classify_columns,
 )
 
 # Initialize logger
 logger = logging.getLogger(__name__)
+
+
+def get_schema_aligned_columns_by_role(
+    df: pd.DataFrame,
+    roles: List[str],
+    dtypes: Optional[List[str]] = None,
+) -> List[str]:
+    """Get DataFrame columns filtered by schema role and dtype.
+
+    This helper function provides schema-aware column selection for imputation,
+    ensuring columns are selected based on their semantic role rather than
+    name patterns.
+
+    Args:
+        df: Input DataFrame
+        roles: List of schema roles to include (e.g., ['feature', 'ratio', 'percentage'])
+        dtypes: Optional list of schema dtypes to include (e.g., ['float', 'int'])
+
+    Returns:
+        List of column names from df that match the specified roles and dtypes
+
+    Example:
+        >>> # Get all numeric feature columns for KNN imputation
+        >>> knn_cols = get_schema_aligned_columns_by_role(
+        ...     df,
+        ...     roles=['feature', 'market_value', 'ratio', 'percentage'],
+        ...     dtypes=['float', 'int']
+        ... )
+    """
+    from finance_ml.core.schema import COLUMN_SCHEMA, normalize_column_name
+
+    if dtypes is None:
+        dtypes = ["float", "int", "bool"]
+
+    matched_columns = []
+
+    for col in df.columns:
+        normalized = normalize_column_name(col)
+        schema_entry = COLUMN_SCHEMA.get(normalized, {})
+
+        col_role = schema_entry.get("role", "")
+        col_dtype = schema_entry.get("dtype", "")
+
+        if col_role in roles and col_dtype in dtypes:
+            matched_columns.append(col)
+
+    return matched_columns
 
 
 def get_zero_imputation_columns() -> List[str]:
@@ -866,6 +912,9 @@ def impute_missing_values_knn_sector(
     This enhanced KNN imputation performs imputation separately within each sector,
     ensuring that missing values are filled using only neighbors from the same sector.
     This preserves sector-specific characteristics and improves imputation quality.
+    
+    Schema-aligned: Uses COLUMN_SCHEMA to ensure only numeric columns with appropriate
+    roles (feature, market_value, ratio, percentage) are imputed via KNN.
 
     Args:
         df: Input DataFrame
@@ -908,19 +957,27 @@ def impute_missing_values_knn_sector(
         logger.warning("No numeric columns to impute")
         return result
 
-    # FIX: Coerce all columns to numeric BEFORE sector loop
-    # This ensures string-contaminated columns are cleaned globally
-    non_numeric_global = []
+    # SCHEMA-ALIGNED FIX: Filter to only truly numeric columns based on schema
+    # This prevents string/object columns from causing KNN failures
+    numeric_columns = []
     for col in columns:
-        if result[col].dtype == "object":
-            non_numeric_global.append(col)
-            logger.debug(f"Pre-processing: Converting column '{col}' from object to numeric")
+        # Check actual dtype first
+        if not pd.api.types.is_numeric_dtype(result[col]):
+            # Try to coerce to numeric
             result[col] = pd.to_numeric(result[col], errors="coerce")
-
-    if non_numeric_global:
-        logger.info(
-            f"Pre-processed {len(non_numeric_global)} object columns to numeric before imputation"
-        )
+            logger.debug(f"Pre-processing: Coerced column '{col}' to numeric")
+        
+        # Verify dtype after potential coercion
+        if pd.api.types.is_numeric_dtype(result[col]):
+            numeric_columns.append(col)
+        else:
+            logger.debug(f"Skipping non-numeric column '{col}' (dtype: {result[col].dtype})")
+    
+    columns = numeric_columns
+    
+    if not columns:
+        logger.warning("No numeric columns available for KNN imputation after dtype filtering")
+        return result
 
     # Check if sector column exists
     if sector_column not in df.columns:
@@ -928,18 +985,35 @@ def impute_missing_values_knn_sector(
             f"Sector column '{sector_column}' not found, falling back to global KNN imputation"
         )
         # Fall back to global KNN imputation
-        imputer = KNNImputer(n_neighbors=n_neighbors)
-        result[columns] = imputer.fit_transform(df[columns])
-        logger.info(f"Applied global KNN imputation (k={n_neighbors}) to {len(columns)} columns")
+        imputer = KNNImputer(n_neighbors=n_neighbors, keep_empty_features=True)
+        # FIX: Use explicit column list for imputation
+        cols_for_knn = [c for c in columns if c in result.columns]
+        imputed_values = imputer.fit_transform(result[cols_for_knn])
+        result[cols_for_knn] = imputed_values
+        logger.info(f"Applied global KNN imputation (k={n_neighbors}) to {len(cols_for_knn)} columns")
         return result
 
     # Perform sector-aware KNN imputation
     sectors = df[sector_column].dropna().unique()
     imputed_count = 0
+    skipped_sectors = []
 
     for sector in sectors:
-        sector_mask = df[sector_column] == sector
-        sector_data = df.loc[sector_mask, columns].copy()
+        sector_mask = result[sector_column] == sector
+        
+        # FIX: Capture exact columns that exist at slice time
+        cols_to_impute = [c for c in columns if c in result.columns]
+        
+        # FIX: Create an explicit copy with known columns to avoid view/copy ambiguity
+        sector_data = result.loc[sector_mask, cols_to_impute].copy()
+        
+        # Verify column alignment
+        if list(sector_data.columns) != cols_to_impute:
+            logger.warning(
+                f"Sector '{sector}': Column mismatch detected. "
+                f"Expected {len(cols_to_impute)}, got {len(sector_data.columns)}"
+            )
+            cols_to_impute = list(sector_data.columns)  # Use actual columns
 
         # Check if sector has enough samples for KNN
         n_samples = sector_data.shape[0]
@@ -947,92 +1021,108 @@ def impute_missing_values_knn_sector(
             logger.warning(
                 f"Sector '{sector}' has only {n_samples} sample(s), skipping KNN imputation"
             )
+            skipped_sectors.append((sector, "insufficient_samples"))
             continue
 
-        # FIX: Coerce all columns to numeric, converting strings to NaN
-        # This prevents "could not convert string to float" errors in KNN imputation
-        non_numeric_cols = []
-        for col in columns:
-            if sector_data[col].dtype == "object":
-                non_numeric_cols.append(col)
-                logger.debug(f"Sector '{sector}': Converting column '{col}' from object to numeric")
-                sector_data[col] = pd.to_numeric(sector_data[col], errors="coerce")
-
-        if non_numeric_cols:
-            logger.info(
-                f"Sector '{sector}': Coerced {len(non_numeric_cols)} object columns to numeric"
-            )
-
-        # Validate no object dtypes remain
+        # Validate no object dtypes remain (should have been handled above)
         remaining_objects = sector_data.select_dtypes(include=["object"]).columns.tolist()
         if remaining_objects:
             logger.warning(
                 f"Sector '{sector}': Skipping KNN due to non-numeric columns: {remaining_objects}"
             )
+            skipped_sectors.append((sector, "non_numeric_columns"))
             continue
 
         # Adjust n_neighbors if sector has fewer samples
         k = min(n_neighbors, n_samples - 1)
+        if k < 1:
+            logger.warning(f"Sector '{sector}': k={k} is too small, skipping")
+            skipped_sectors.append((sector, "k_too_small"))
+            continue
 
         # Check if sector has any missing values
         if not sector_data.isna().any().any():
             continue
 
         # Apply KNN imputation to this sector
-        imputer = KNNImputer(n_neighbors=k)
+        imputer = KNNImputer(n_neighbors=k, keep_empty_features=True)
         try:
-            sector_imputed = imputer.fit_transform(sector_data)
-            # Convert back to DataFrame to preserve column alignment
+            # FIX: Store column order BEFORE numpy conversion
+            impute_col_order = list(sector_data.columns)
+            sector_index = sector_data.index.copy()
+            
+            # Perform imputation
+            sector_imputed = imputer.fit_transform(sector_data.values)
+            
+            # FIX: Create DataFrame with explicit column/index alignment
             sector_imputed_df = pd.DataFrame(
-                sector_imputed, index=sector_data.index, columns=sector_data.columns
+                sector_imputed, 
+                index=sector_index, 
+                columns=impute_col_order
             )
-            result.loc[sector_mask, columns] = sector_imputed_df
+            
+            # FIX: Write back using explicit column list from imputed result
+            result.loc[sector_mask, impute_col_order] = sector_imputed_df.values
             imputed_count += 1
+            
+        except ValueError as ve:
+            # Catch shape mismatch errors specifically
+            error_msg = str(ve)
+            if "Shape of passed values" in error_msg:
+                logger.warning(
+                    f"KNN imputation failed for sector '{sector}': Shape mismatch. "
+                    f"Sector data shape: {sector_data.shape}, columns: {len(impute_col_order)}. "
+                    f"Error: {error_msg}. Skipping."
+                )
+            else:
+                logger.warning(f"KNN imputation failed for sector '{sector}': {ve}. Skipping.")
+            skipped_sectors.append((sector, str(ve)[:50]))
+            continue
         except Exception as e:
             logger.warning(f"KNN imputation failed for sector '{sector}': {e}. Skipping.")
+            skipped_sectors.append((sector, str(e)[:50]))
             continue
 
     # Handle rows with missing sector values using global imputation
-    missing_sector_mask = df[sector_column].isna()
+    missing_sector_mask = result[sector_column].isna()
     if missing_sector_mask.any():
-        missing_sector_data = df.loc[missing_sector_mask, columns].copy()
-
-        # FIX: Coerce all columns to numeric for global imputation
-        non_numeric_cols_global = []
-        for col in columns:
-            if missing_sector_data[col].dtype == "object":
-                non_numeric_cols_global.append(col)
-                logger.debug(f"Global imputation: Converting column '{col}' from object to numeric")
-                missing_sector_data[col] = pd.to_numeric(missing_sector_data[col], errors="coerce")
-
-        if non_numeric_cols_global:
-            logger.info(
-                f"Global imputation: Coerced {len(non_numeric_cols_global)} object columns to numeric"
-            )
+        missing_sector_data = result.loc[missing_sector_mask, columns].copy()
 
         if missing_sector_data.isna().any().any():
             k = min(n_neighbors, missing_sector_data.shape[0] - 1)
             if k > 0:
-                imputer = KNNImputer(n_neighbors=k)
+                imputer = KNNImputer(n_neighbors=k, keep_empty_features=True)
                 try:
-                    missing_imputed = imputer.fit_transform(missing_sector_data)
-                    # Convert back to DataFrame to preserve column alignment
+                    # FIX: Use same explicit alignment pattern
+                    impute_col_order = list(missing_sector_data.columns)
+                    missing_index = missing_sector_data.index.copy()
+                    
+                    missing_imputed = imputer.fit_transform(missing_sector_data.values)
+                    
                     missing_imputed_df = pd.DataFrame(
                         missing_imputed,
-                        index=missing_sector_data.index,
-                        columns=missing_sector_data.columns,
+                        index=missing_index,
+                        columns=impute_col_order,
                     )
-                    result.loc[missing_sector_mask, columns] = missing_imputed_df
+                    result.loc[missing_sector_mask, impute_col_order] = missing_imputed_df.values
                     logger.info(
                         f"Applied global KNN to {missing_sector_mask.sum()} rows with missing sector"
                     )
                 except Exception as e:
                     logger.warning(f"KNN imputation failed for missing sectors: {e}")
 
-    logger.info(
-        f"Applied sector-aware KNN imputation (k={n_neighbors}) to {imputed_count} sectors "
-        f"across {len(columns)} columns"
-    )
+    # Log summary including skipped sectors
+    if skipped_sectors:
+        logger.info(
+            f"Sector-aware KNN: {imputed_count} sectors imputed, {len(skipped_sectors)} skipped. "
+            f"Skipped reasons: {dict((s[1], sum(1 for x in skipped_sectors if x[1] == s[1])) for s in skipped_sectors)}"
+        )
+    else:
+        logger.info(
+            f"Applied sector-aware KNN imputation (k={n_neighbors}) to {imputed_count} sectors "
+            f"across {len(columns)} columns"
+        )
+    
     return result
 
 

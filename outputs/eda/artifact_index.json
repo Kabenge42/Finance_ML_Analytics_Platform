@@ -1,28 +1,13 @@
 {
-  "generated_at": "2025-12-25T14:58:44.420976",
-  "reference_date": "2025-12-25T00:00:00",
+  "generated_at": "2025-12-26T14:56:14.277167",
+  "reference_date": "2025-12-26T00:00:00",
   "data_shape": {
     "rows": 6983,
-    "columns": 682
+    "columns": 618
   },
   "phase93_coverage": {
     "Momentum & Technical": 25,
-    "Valuation Ratios": 24,
-    "Profitability": 14,
-    "Quality & Risk": 18,
-    "Cash Flow": 5,
-    "Capital Allocation": 21,
-    "Analyst Sentiment": 10,
-    "Market Sentiment": 5,
-    "Leverage & Liquidity": 8,
-    "Temporal Patterns": 17,
-    "Composite Scores": 5,
-    "Growth Metrics": 9,
-    "Efficiency Ratios": 4,
-    "Employee Productivity": 21,
-    "Balance Sheet Dynamics": 5,
-    "Revenue Forecasting": 9,
-    "Earnings Quality": 32
+    "Valuation Ratios": 24
   },
   "artifacts": {
     "dashboards": [

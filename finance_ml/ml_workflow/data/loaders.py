@@ -119,7 +119,7 @@ def load_from_csv(
 
     # Optional schema validation
     if validate_schema:
-        from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
+        from finance_ml.core.schema import COLUMN_SCHEMA
 
         unknown_cols = [col for col in df.columns if col not in COLUMN_SCHEMA]
         if unknown_cols:
@@ -189,7 +189,7 @@ def load_from_db(
 
     # Optional schema validation
     if validate_schema:
-        from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
+        from finance_ml.core.schema import COLUMN_SCHEMA
 
         unknown_cols = [col for col in df.columns if col not in COLUMN_SCHEMA]
         if unknown_cols:

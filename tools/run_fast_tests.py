@@ -18,7 +18,6 @@ Exit code is non-zero if any test fails.
 
 from __future__ import annotations
 
-import os
 import sys
 import unittest
 from pathlib import Path
@@ -33,13 +32,14 @@ def _ensure_project_root_on_sys_path() -> None:
 
 
 def main() -> int:
+    """Run fast unit tests for utility modules."""
     _ensure_project_root_on_sys_path()
     # Explicit test modules to keep runtime minimal
     test_modules = [
-        "tests.test_uncertainty_conformal",
-        "tests.test_robust_outlier_safety",
-        "tests.test_sector_specific_features",
-        "tests.test_sector_calibration",
+        "tests.unit.regression.test_uncertainty_conformal",
+        "tests.unit.preprocessing.test_robust_outlier_safety",
+        "tests.unit.features.test_sector_specific_features",
+        "tests.unit.regression.test_sector_calibration",
     ]
     suite = unittest.TestSuite()
     loader = unittest.defaultTestLoader

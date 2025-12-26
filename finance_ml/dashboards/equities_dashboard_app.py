@@ -55,8 +55,8 @@ from finance_ml.dashboards.components.temporal_utils import (
 )
 from finance_ml.dashboards.earnings_widgets import (
     DATE_DISPLAY_FORMAT,
-    _add_formatted_date_columns,
-    _resolve_reference_date,
+    add_formatted_date_columns,
+    resolve_reference_date,
     create_analyst_recommendation_heatmap,
     create_category_comparison_chart,
     create_earnings_metrics_chart,
@@ -467,7 +467,7 @@ def _apply_temporal_enrichments(
     if df is None or df.empty:
         return df, reference_date, []
 
-    resolved_reference_date = _resolve_reference_date(df, reference_date)
+    resolved_reference_date = resolve_reference_date(df, reference_date)
 
     temporal_date_col: Optional[str] = None
     if "reference_date" in df.columns:
@@ -490,7 +490,7 @@ def _apply_temporal_enrichments(
         "fy_end",
     ]
     date_columns_for_format = [c for c in date_columns_for_format if c in enriched_df.columns]
-    formatted_cols = _add_formatted_date_columns(enriched_df, date_columns_for_format)
+    formatted_cols = add_formatted_date_columns(enriched_df, date_columns_for_format)
 
     return enriched_df, resolved_reference_date, formatted_cols
 
@@ -646,7 +646,7 @@ def generate_dashboard_artifacts(
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
     artifacts = {}
-    reference_date = _resolve_reference_date(df, None)
+    reference_date = resolve_reference_date(df, None)
     timestamp = (reference_date or pd.Timestamp.now()).strftime(DATE_DISPLAY_FORMAT)
     reference_date_str = (
         reference_date.strftime(DATE_DISPLAY_FORMAT) if reference_date is not None else None

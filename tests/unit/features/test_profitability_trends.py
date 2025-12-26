@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import unittest
 
-import numpy as np
 import pandas as pd
 
 try:  # pragma: no cover - import shim
@@ -30,23 +29,27 @@ class TestProfitabilityTrends(unittest.TestCase):
                 # LTM
                 "ebitda_ltm": [200.0],
                 "total_revenues_ltm": [1000.0],
-                "gross_profit_ltm": [400.0],
+                "gross_profit_margin_pct_ltm": [40.0],  # 400/1000 * 100
                 "ebit_ltm": [150.0],
                 # -1FY / FY
                 "ebitda_1fy": [150.0],
                 "total_revenues_1fy": [900.0],
-                "gross_profit_fy": [350.0],
-                "revenue_fy": [900.0],
+                "gross_profit_margin_pct_fy": [38.888889],  # 350/900 * 100
                 "ebit_1fy": [120.0],
             }
         )
         res = engineer_margin_trends(df)
-        # EBITDA margin trend = 200/1000 - 150/900
-        exp_ebitda_trend = 200.0 / 1000.0 - 150.0 / 900.0
+        
+        # EBITDA margin trend = (cur_margin - prev_margin) / prev_margin
+        cur_ebitda_margin = 200.0 / 1000.0 * 100
+        prev_ebitda_margin = 150.0 / 900.0 * 100
+        exp_ebitda_trend = (cur_ebitda_margin - prev_ebitda_margin) / prev_ebitda_margin
         self.assertAlmostEqual(float(res.loc[0, "ebitda_margin_trend"]), exp_ebitda_trend, places=6)
-        # Gross margin trend = 400/1000 - 350/900
-        exp_gross_trend = 400.0 / 1000.0 - 350.0 / 900.0
+        
+        # Gross margin trend = (cur_margin - prev_margin) / prev_margin
+        exp_gross_trend = (40.0 - 38.888889) / 38.888889
         self.assertAlmostEqual(float(res.loc[0, "gross_margin_trend"]), exp_gross_trend, places=6)
+        
         # Operating leverage = %ΔEBIT / %ΔRevenue
         pct_ebit = (150.0 - 120.0) / 120.0
         pct_rev = (1000.0 - 900.0) / 900.0
@@ -63,13 +66,14 @@ class TestProfitabilityTrends(unittest.TestCase):
             }
         )
         res = engineer_profitability_ratios(df)
-        self.assertIn("ebitda_adjustment_ratio", res.columns)
-        self.assertIn("ebit_adjustment_ratio", res.columns)
-        self.assertAlmostEqual(float(res.loc[0, "ebitda_adjustment_ratio"]), 0.1, places=6)
-        self.assertAlmostEqual(float(res.loc[0, "ebit_adjustment_ratio"]), 0.1, places=6)
+        self.assertIn("ebitda_adjustment_ratio_ltm", res.columns)
+        self.assertIn("ebit_adjustment_ratio_ltm", res.columns)
+        self.assertAlmostEqual(float(res.loc[0, "ebitda_adjustment_ratio_ltm"]), 0.1, places=6)
+        self.assertAlmostEqual(float(res.loc[0, "ebit_adjustment_ratio_ltm"]), 0.1, places=6)
 
         # Earnings quality score via engineer_margin_trends when ratios available
-        res2 = engineer_margin_trends(df)
+        # engineer_margin_trends will now use the *_ltm versions created by engineer_profitability_ratios
+        res2 = engineer_margin_trends(res)
         # Expected simple composite: 100 - 50*a - 30*b (clipped)
         expected_score = max(0.0, min(100.0, 100.0 - 50.0 * 0.1 - 30.0 * 0.1))
         self.assertIn("earnings_quality_score", res2.columns)

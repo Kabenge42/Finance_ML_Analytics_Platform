@@ -200,13 +200,13 @@ def adaptive_clip_predictions(
     train_p0_5 = float(np.nanpercentile(y_arr, 0.5))  # 0.5th percentile
     train_p99_5 = float(np.nanpercentile(y_arr, 99.5))  # 99.5th percentile
 
-    # Lower bound: 1.5 × p0.5, with minimum threshold to prevent zeros
-    lower_bound = max(min_lower_bound, train_p0_5 * 1.5)
+    # Lower bound: 0.5 × p0.5, with minimum threshold to prevent zeros
+    lower_bound = max(min_lower_bound, train_p0_5 * 0.5)
 
-    # Upper bound: 3.5 × p99.5 (relaxed from 1.5× to allow legitimate high-value predictions)
-    # Financial price targets have heavy right-tails; 3.0× reduces over-aggressive clipping
+    # Upper bound: 1.5 × p99.5
+    # Financial price targets have heavy right-tails; 1.5× reduces over-aggressive clipping
     # while still protecting against unrealistic outliers
-    upper_bound = train_p99_5 * 3.5
+    upper_bound = train_p99_5 * 1.5
 
     # Ensure upper >= lower (handle edge cases)
     if not np.isfinite(lower_bound) or not np.isfinite(upper_bound):

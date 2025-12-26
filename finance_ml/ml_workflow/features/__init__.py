@@ -11,30 +11,33 @@ Modules:
 Phase 9.3 refactor: Consolidated and enhanced from features.py and advanced_features.py.
 """
 
-# Advanced features
-from finance_ml.ml_workflow.features.advanced import (
+# Advanced features - importing from new modular location
+from finance_ml.features.advanced import (
     engineer_valuation_ratios,
+    engineer_valuation_timeseries_features,
     engineer_profitability_ratios,
+    engineer_technical_analysis_features,
+    engineer_market_microstructure_features,
+    engineer_accounting_quality_features,
+    engineer_employee_productivity_features,
+    engineer_employment_dynamics_features,
+    engineer_growth_metrics,
     engineer_leverage_ratios,
     engineer_liquidity_ratios,
     engineer_efficiency_ratios,
-    engineer_growth_metrics,
+    engineer_analyst_quality_features,
     engineer_sector_specific_features,
+    create_relative_value_features,
     engineer_temporal_features,
-    engineer_market_microstructure_features,
+    engineer_dividend_reliability_features,
+    engineer_revenue_forecast_features,
+    build_comprehensive_features,
+)
+
+# Utils
+from finance_ml.features.advanced.utils import (
     engineer_nonlinear_transforms,
     create_feature_interactions,
-    create_relative_value_features,
-    engineer_analyst_quality_features,
-    engineer_accounting_quality_features,
-    engineer_employee_productivity_features,
-    build_comprehensive_features,
-    # Phase 9.3 Schema 1.3 feature engineering functions
-    engineer_technical_analysis_features,
-    engineer_valuation_timeseries_features,
-    engineer_revenue_forecast_features,
-    engineer_dividend_reliability_features,
-    engineer_employment_dynamics_features,
 )
 
 # Core features

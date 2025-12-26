@@ -16,16 +16,17 @@ Presets:
 - "technical_plus": technical analysis + valuation timeseries + market sentiment
 - "dividend_focus": dividend reliability + capital allocation features
 - "employment_analytics": employment dynamics + employee productivity features
+- "revenue_forecasting": revenue forecast + growth metrics + analyst quality (NEW)
+- "balance_sheet": balance sheet dynamics + leverage + liquidity ratios (NEW)
 
 Backwards compatibility:
 - The advanced.build_comprehensive_features remains available and unchanged by
   default behavior. This API simply provides a user-friendly front end.
 
-UPDATED: 2025-12-20
-- Added 5 new presets: standard, earnings_analytics, technical_plus, dividend_focus, employment_analytics
-- Enhanced momentum preset with RSI and EMA features
-- Enhanced quality preset with composite scores (Piotroski, Altman, Beneish)
-- Total coverage: 267 features across all presets
+UPDATED: 2025-12-25
+- Added 2 new presets: revenue_forecasting, balance_sheet
+- Aligned with phase93_categories.py 21 categories (up from 17)
+- Total coverage: 290+ features across all presets
 """
 
 from __future__ import annotations
@@ -35,9 +36,12 @@ from typing import Literal
 
 import pandas as pd
 
-from finance_ml.ml_workflow.features import core as core_feats, advanced as adv_feats
+from finance_ml.features import advanced as adv_feats
+from finance_ml.ml_workflow.features import core as core_feats
 
 logger = logging.getLogger(__name__)
+
+__all__ = ["build_features", "PresetName"]
 
 PresetName = Literal[
     "basic",
@@ -50,6 +54,8 @@ PresetName = Literal[
     "technical_plus",
     "dividend_focus",
     "employment_analytics",
+    "revenue_forecasting",
+    "balance_sheet",
 ]
 
 
@@ -67,7 +73,8 @@ def build_features(
         df: Input DataFrame
         preset: One of {"basic", "momentum", "quality", "standard", "comprehensive",
                 "full_enhanced", "earnings_analytics", "technical_plus",
-                "dividend_focus", "employment_analytics"}
+                "dividend_focus", "employment_analytics", "revenue_forecasting",
+                "balance_sheet"}
         include_interactions: For comprehensive presets, whether to add interactions
         include_relative: For comprehensive presets, whether to add relative/sector features
         sector_col: Sector column name (used by some feature groups)
@@ -80,11 +87,13 @@ def build_features(
         - momentum: 27 features (momentum, technical indicators, RSI, EMA crossovers)
         - quality: 45+ features (accounting quality, distress, composite scores, analyst quality)
         - standard: 80-100 features (balanced mix: valuation, profitability, growth, sentiment)
-        - comprehensive: 267 features (all advanced features)
+        - comprehensive: 290+ features (all advanced features)
         - earnings_analytics: 55+ features (earnings surprises, GAAP vs adjusted, quality flags)
         - technical_plus: 50+ features (technical analysis, valuation timeseries, market sentiment)
         - dividend_focus: 30+ features (dividend reliability, capital allocation, FCF coverage)
         - employment_analytics: 35+ features (employment dynamics, productivity trends)
+        - revenue_forecasting: 25+ features (revenue forecasts, growth metrics, analyst quality)
+        - balance_sheet: 30+ features (balance sheet trends, leverage, liquidity)
     """
     preset_norm = (preset or "comprehensive").lower()
 
@@ -180,6 +189,27 @@ def build_features(
         logger.info("Built EMPLOYMENT_ANALYTICS features preset (35+ features)")
         return result
 
+    if preset_norm == "revenue_forecasting":
+        # Revenue forecasting + growth metrics
+        result = df.copy()
+        result = adv_feats.engineer_revenue_forecast_features(result)
+        result = adv_feats.engineer_growth_metrics(result)
+        result = adv_feats.engineer_analyst_quality_features(result)
+        result = result.replace([float("inf"), float("-inf")], pd.NA)
+        logger.info("Built REVENUE_FORECASTING features preset (25+ features)")
+        return result
+
+    if preset_norm == "balance_sheet":
+        # Balance sheet dynamics + leverage + liquidity
+        result = df.copy()
+        result = adv_feats.engineer_balance_sheet_trends(result)
+        result = adv_feats.engineer_leverage_ratios(result)
+        result = adv_feats.engineer_liquidity_ratios(result)
+        result = adv_feats.engineer_growth_metrics(result)
+        result = result.replace([float("inf"), float("-inf")], pd.NA)
+        logger.info("Built BALANCE_SHEET features preset (30+ features)")
+        return result
+
     if preset_norm in ("comprehensive", "full_enhanced"):
         logger.info("Building COMPREHENSIVE features via advanced.build_comprehensive_features")
         return adv_feats.build_comprehensive_features(
@@ -192,5 +222,5 @@ def build_features(
     raise ValueError(
         f"Unknown preset '{preset}'. Expected one of: basic, momentum, quality, standard, "
         f"comprehensive, full_enhanced, earnings_analytics, technical_plus, dividend_focus, "
-        f"employment_analytics"
+        f"employment_analytics, revenue_forecasting, balance_sheet"
     )

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from finance_ml.dashboards.earnings_widgets import (
+from finance_ml.dashboards.widgets import (
     create_analyst_recommendation_heatmap,
     create_category_comparison_chart,
     create_earnings_metrics_chart,
