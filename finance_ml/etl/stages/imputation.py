@@ -5,6 +5,12 @@ from typing import Set
 
 import pandas as pd
 
+from finance_ml.etl.stages.sanitization import (
+    get_dividend_zero_fill_columns,
+    get_analyst_rating_zero_fill_columns,
+    get_income_statement_zero_fill_columns,
+    get_balance_sheet_zero_fill_columns,
+)
 from finance_ml.ml_workflow.preprocessing.imputation import (
     apply_enhanced_imputation_strategy_6step,
     get_zero_imputation_columns,
@@ -15,41 +21,22 @@ logger = logging.getLogger(__name__)
 
 def get_pre_imputation_zero_fill_columns() -> Set[str]:
     """Return columns that should be zero-filled BEFORE imputation.
-    
+
     These columns have business meaning when missing that would be
     distorted by KNN or median imputation.
-    
+
     Returns:
         Set of column names for pre-imputation zero fill
     """
     # Start with the non-recurring exceptional items
     zero_cols = set(get_zero_imputation_columns())
-    
-    # Add dividend numeric columns (missing = no dividend)
-    zero_cols.update({
-        "dividend_record_amount",
-        "dividend_streak",
-        "common_dividends_paid_ltm",
-        "common_dividends_paid_fy",
-        "dividend_per_share_ltm",
-        "div_yield_ind",
-        "div_yield_ltm",
-        "div_yield_1fyind",
-        "div_yield_2fyind",
-        "div_yield_3fyind",
-        "div_yield_4fyind",
-        "div_yield_5fyind",
-    })
-    
-    # Add analyst rating counts (missing = no coverage)
-    zero_cols.update({
-        "num_strong_sell_ratings",
-        "num_strong_buys_ratings",
-        "num_hold_ratings",
-        "num_buys_ratings",
-        "num_sell_ratings",
-    })
-    
+
+    # Add all business-rule zero-fill columns from sanitization
+    zero_cols.update(get_dividend_zero_fill_columns())
+    zero_cols.update(get_analyst_rating_zero_fill_columns())
+    zero_cols.update(get_income_statement_zero_fill_columns())
+    zero_cols.update(get_balance_sheet_zero_fill_columns())
+
     return zero_cols
 
 

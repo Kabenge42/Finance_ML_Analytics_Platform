@@ -94,6 +94,7 @@ def get_analyst_rating_zero_fill_columns() -> Set[str]:
         "num_hold_ratings",
         "num_buys_ratings",
         "num_sell_ratings",
+        "num_analyst_ratings",
     }
 
 
@@ -131,10 +132,10 @@ def get_income_statement_zero_fill_columns() -> Set[str]:
         "restructuring_charges_1fy",
         "restructuring_charges_5yavgfq",
         "merger_and_restructuring_charges_fq",
-        "merger_and_restructuring_charges_ltm",
         "merger_and_restructuring_charges_fy",
-        "merger_and_restructuring_charges_1fy",
         "merger_and_restructuring_charges_5yavgfq",
+        "merger_and_restructuring_charges_ltm",
+
 
         # Unusual Items & Asset Sales (Non-recurring)
         "gain_loss_on_sale_of_assets_ltm",
@@ -159,6 +160,9 @@ def get_balance_sheet_zero_fill_columns() -> Set[str]:
         "goodwill_fy",
         "goodwill_1fy",
         "goodwill_5yavgfq",
+        "gross_intangible_assets_fy",
+        "gross_intangible_assets_ltm",
+        "gross_intangible_assets_5yavgfq",
     }
 
 
@@ -187,6 +191,7 @@ def apply_business_rule_zero_fills(df: pd.DataFrame) -> pd.DataFrame:
     # Apply zero fills
     zero_filled_count = 0
     for col in zero_fill_columns:
+        # Fills missing numeric values with zero if present
         if col in result.columns:
             missing_count = result[col].isna().sum()
             if missing_count > 0:

@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from finance_ml.core.constants import PLOTLY_TEMPLATE, COLOR_PALETTE
-from finance_ml.core.schema import PHASE93_FEATURE_CATEGORIES
+from finance_ml.core.schema import COLUMN_SCHEMA, PHASE93_FEATURE_CATEGORIES
 from .base import (
     EarningsMode, resolve_reference_date, add_formatted_date_columns,
     _write_html_artifact, _build_format_dict, _ensure_schema_dtypes,
@@ -20,6 +20,43 @@ from .base import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _get_market_cap_column(df: pd.DataFrame) -> Optional[str]:
+    """Find the best available market cap column using schema metadata.
+    
+    Prefers columns in order of liquidity/standardization:
+    market_cap > market_cap_usd > market_cap_country_r
+    
+    All these columns have role="market_value" in COLUMN_SCHEMA.
+    """
+    preferred = ["market_cap", "market_cap_usd", "market_cap_country_r"]
+    for col in preferred:
+        if col in df.columns:
+            return col
+    return None
+
+
+def _validate_surprise_columns(df: pd.DataFrame) -> Dict[str, bool]:
+    """Validate availability of earnings surprise columns against schema.
+    
+    Checks for actual/estimate column pairs needed for surprise calculations.
+    All columns referenced are defined in COLUMN_SCHEMA with appropriate roles.
+    
+    Returns:
+        Dict mapping metric name to boolean indicating if both columns are available.
+    """
+    required_pairs = {
+        "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
+        "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
+        "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
+        "Net Income": ("net_income_is_ltm", "net_income_adj_1fy"),
+        "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
+    }
+    return {
+        metric: (actual in df.columns and estimate in df.columns)
+        for metric, (actual, estimate) in required_pairs.items()
+    }
 
 def get_category_metrics(
     categories: List[str],
@@ -206,12 +243,8 @@ def create_earnings_calendar_dashboard(
     if filtered_df.empty:
         return pd.DataFrame()
 
-    # Sort by Market Cap
-    mcap_col = None
-    for col in ["market_cap", "market_cap_usd", "market_cap_curr"]:
-        if col in df.columns:
-            mcap_col = col
-            break
+    # Sort by Market Cap using schema-aware helper
+    mcap_col = _get_market_cap_column(df)
 
     if mcap_col:
         filtered_df = filtered_df.sort_values(by=mcap_col, ascending=False)
@@ -449,7 +482,7 @@ def display_earnings_dashboard(
 
 def create_earnings_metrics_chart(
     df: pd.DataFrame,
-    metric_category: str = "Profitability",
+    metric_category: str = "PHASE93_FEATURE_CATEGORIES",
     reference_date: Optional[pd.Timestamp] = None,
     top_n: int = 20,
     output_path: Optional[Union[str, Path]] = None,
@@ -613,6 +646,7 @@ def create_earnings_surprise_dashboard(
     top_n: int = 50,
     output_path: Optional[Union[str, Path]] = None,
     validate_quality: bool = False,
+    use_precomputed: bool = True,
 ) -> go.Figure:
     """Create an interactive dashboard for earnings surprise analysis.
 
@@ -622,6 +656,12 @@ def create_earnings_surprise_dashboard(
     **ETL Pipeline Integration:**
     - Best paired with data from etl_with_financial_metrics() output (semantic typing)
     - Optional quality validation mirrors ETL Stage 9 checks
+    - Supports pre-computed surprise columns from ETL pipeline
+
+    **Schema Alignment:**
+    - Uses COLUMN_SCHEMA-defined columns for market cap detection (market_value role)
+    - Surprise mappings reference schema-validated actual/estimate column pairs
+    - Pre-computed columns (eps_surprise_pct, etc.) defined in COLUMN_SCHEMA
 
     Args:
         df: DataFrame with earnings estimates and actuals.
@@ -629,14 +669,35 @@ def create_earnings_surprise_dashboard(
         top_n: Number of rows to analyze (prefers market cap ordering when available).
         output_path: Optional path to save an HTML dashboard.
         validate_quality: Run ETL-style quality checks before processing.
+        use_precomputed: Use schema-defined surprise columns if available
+            (eps_surprise_pct, revenue_surprise_pct, ebitda_surprise_pct).
 
     Returns:
         go.Figure: Plotly figure.
     """
     reference_date = resolve_reference_date(df, reference_date)
 
+    # Check for pre-computed surprise columns from ETL (COLUMN_SCHEMA defines these)
+    precomputed_surprise_cols = {
+        "EPS": "eps_surprise_pct",
+        "Revenue": "revenue_surprise_pct",
+        "EBITDA": "ebitda_surprise_pct",
+    }
+
+    has_precomputed = use_precomputed and all(
+        col in df.columns for col in precomputed_surprise_cols.values()
+    )
+
     if validate_quality:
-        required_cols = ["total_revenues_ltm", "ebitda_ltm", "eps_adj_ltm"]
+        # Use schema-defined market_value columns for quality checks
+        required_cols = [
+            col for col, meta in COLUMN_SCHEMA.items()
+            if meta.get("role") == "market_value"
+            and col in ["total_revenues_ltm", "ebitda_ltm", "eps_adj_ltm"]
+        ]
+        # Fallback if schema filtering returns empty (eps_adj_ltm is ratio, not market_value)
+        if not required_cols:
+            required_cols = ["total_revenues_ltm", "ebitda_ltm", "eps_adj_ltm"]
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
             logger.warning("Quality check: Missing recommended columns: %s", missing)
@@ -648,49 +709,76 @@ def create_earnings_surprise_dashboard(
                 missing_count,
             )
 
+        # Log column availability status using helper
+        col_availability = _validate_surprise_columns(df)
+        unavailable = [m for m, avail in col_availability.items() if not avail]
+        if unavailable:
+            logger.info("Surprise columns unavailable for: %s", unavailable)
+
     df_local = df.copy()
 
     # Prefer analyzing the most liquid/large names when possible.
-    mcap_col = None
-    for col in ["market_cap", "market_cap_usd", "market_cap_curr"]:
-        if col in df_local.columns:
-            mcap_col = col
-            break
+    mcap_col = _get_market_cap_column(df_local)
     if mcap_col is not None:
         df_local[mcap_col] = pd.to_numeric(df_local[mcap_col], errors="coerce")
         df_local = df_local.sort_values(by=mcap_col, ascending=False)
     df_local = df_local.head(int(top_n))
 
+    # Surprise mappings aligned with COLUMN_SCHEMA definitions
+    # Actual columns use market_value role, estimates use market_value/ratio roles
     surprise_cols: Dict[str, Dict[str, str]] = {
-        "Revenue": {"actual": "total_revenues_ltm", "estimate": "revenues_est_avg_ntm"},
-        "EBITDA": {"actual": "ebitda_ltm", "estimate": "ebitda_est_avg_fy1e"},
-        "EBIT": {"actual": "ebit_ltm", "estimate": "ebit_est_med_ntm"},
-        "Net Income": {"actual": "net_income_is_ltm", "estimate": "net_income_adj_1fy"},
-        "EPS": {"actual": "eps_adj_ltm", "estimate": "eps_norm_est_avg_ntm"},
+        "Revenue": {
+            "actual": "total_revenues_ltm",      # market_value in schema
+            "estimate": "revenues_est_avg_ntm",  # market_value in schema
+        },
+        "EBITDA": {
+            "actual": "ebitda_ltm",              # market_value in schema
+            "estimate": "ebitda_est_avg_fy1e",   # market_value in schema
+        },
+        "EBIT": {
+            "actual": "ebit_ltm",                # market_value in schema
+            "estimate": "ebit_est_med_ntm",      # market_value in schema
+        },
+        "Net Income": {
+            "actual": "net_income_is_ltm",       # market_value in schema
+            "estimate": "net_income_adj_1fy",    # market_value in schema
+        },
+        "EPS": {
+            "actual": "eps_adj_ltm",             # ratio in schema
+            "estimate": "eps_norm_est_avg_ntm",  # ratio in schema
+        },
     }
 
     surprise_data: List[Dict[str, float]] = []
     all_surprises: List[float] = []
 
     for metric_name, cols in surprise_cols.items():
-        actual_col = cols["actual"]
-        est_col = cols["estimate"]
+        # Check if precomputed surprise column is available for this metric
+        precomputed_col = precomputed_surprise_cols.get(metric_name)
+        if has_precomputed and precomputed_col and precomputed_col in df_local.columns:
+            # Use precomputed surprise values from ETL pipeline
+            surprise_pct = pd.to_numeric(df_local[precomputed_col], errors="coerce")
+            surprise_pct = surprise_pct.replace([np.inf, -np.inf], np.nan).dropna()
+        else:
+            # Calculate surprise from actual/estimate columns
+            actual_col = cols["actual"]
+            est_col = cols["estimate"]
 
-        if actual_col not in df_local.columns or est_col not in df_local.columns:
-            continue
+            if actual_col not in df_local.columns or est_col not in df_local.columns:
+                continue
 
-        actual = pd.to_numeric(df_local[actual_col], errors="coerce")
-        estimate = pd.to_numeric(df_local[est_col], errors="coerce")
-        valid_mask = actual.notna() & estimate.notna() & (estimate.abs() > 0)
+            actual = pd.to_numeric(df_local[actual_col], errors="coerce")
+            estimate = pd.to_numeric(df_local[est_col], errors="coerce")
+            valid_mask = actual.notna() & estimate.notna() & (estimate.abs() > 0)
 
-        if valid_mask.sum() == 0:
-            continue
+            if valid_mask.sum() == 0:
+                continue
 
-        with np.errstate(divide="ignore", invalid="ignore"):
-            surprise_pct = (
-                (actual[valid_mask] - estimate[valid_mask]) / estimate[valid_mask].abs()
-            ) * 100
-        surprise_pct = surprise_pct.replace([np.inf, -np.inf], np.nan).dropna()
+            with np.errstate(divide="ignore", invalid="ignore"):
+                surprise_pct = (
+                    (actual[valid_mask] - estimate[valid_mask]) / estimate[valid_mask].abs()
+                ) * 100
+            surprise_pct = surprise_pct.replace([np.inf, -np.inf], np.nan).dropna()
 
         if len(surprise_pct) == 0:
             continue
@@ -869,7 +957,7 @@ def create_earnings_calendar_analytics(
         logger.warning("No earnings date columns found. Falling back to engineered events.")
         return _engineer_earnings_events_from_fiscal_data(df, output_dir, reference_date)
 
-    identity_cols = [c for c in ["ticker","exchange", "sector", "region"] if c in df.columns]
+    identity_cols = [c for c in ["ticker","name","exchange", "sector","industry", "region","trading_country"] if c in df.columns]
     earnings_df = df[identity_cols + available_earnings_dates].copy()
 
     for col in available_earnings_dates:
@@ -936,7 +1024,7 @@ def _create_earnings_timeline_plotly(
         x="days_to_earnings",
         y=y_dim,
         color=color_dim,
-        hover_data=[c for c in ["ticker", "region"] if c in valid_df.columns],
+        hover_data=[c for c in ["ticker","name","sector","exchange", "region"] if c in valid_df.columns],
         title="<b>Earnings Events Timeline</b><br><sup>Days relative to today</sup>",
         template=PLOTLY_TEMPLATE,
     )
@@ -963,7 +1051,7 @@ def _create_earnings_timeline_plotly(
 def _create_earnings_density_heatmap(
     earnings_df: pd.DataFrame, reference_date: pd.Timestamp
 ) -> go.Figure:
-    """Create earnings density heatmap by sector and week."""
+    """Create earnings density heatmap by exchange and week."""
 
     if earnings_df.empty:
         fig = go.Figure()
@@ -979,8 +1067,8 @@ def _create_earnings_density_heatmap(
         return fig
 
     heatmap_dim = (
-        "sector"
-        if "sector" in earnings_df.columns
+        "exchange"
+        if "exchange" in earnings_df.columns
         else "region" if "region" in earnings_df.columns else "ticker"
     )
 
@@ -1062,7 +1150,7 @@ def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
             earnings_quality[adjustment_col] = adjustment * 100
 
             flag_col = f"large_adj_flag_{suffix}"
-            earnings_quality[flag_col] = earnings_quality[adjustment_col].abs() > 20
+            earnings_quality[flag_col] = earnings_quality[adjustment_col].abs() > 35
 
     adj_cols = [c for c in earnings_quality.columns if "adj_magnitude" in c]
     if adj_cols:
@@ -1176,8 +1264,8 @@ def generate_earnings_quality_alerts(
     # ---------------------------------------------------------------------
     # Alert 1: EPS surprise misses
     # ---------------------------------------------------------------------
-    eps_actual_col = "eps_adj_ltm"
-    eps_est_col = "eps_norm_est_avg_ntm"
+    eps_actual_col = "net_eps_basic_fy"
+    eps_est_col = "eps_gaap_est_avg_fy1e"
     if eps_actual_col in df.columns and eps_est_col in df.columns:
         eps_actual = pd.to_numeric(df[eps_actual_col], errors="coerce")
         eps_est = pd.to_numeric(df[eps_est_col], errors="coerce")
@@ -1216,6 +1304,7 @@ def generate_earnings_quality_alerts(
         "eps_est_avg_rev_pct_fy1e_6m",
     ]
     available_rev_cols = [c for c in default_rev_cols if c in df.columns]
+    # Generates alert for stocks with analyst downgrade momentum
     if len(available_rev_cols) >= int(config.analyst_downgrade_min_periods):
         downgrade_mask = pd.Series(True, index=df.index)
         for col in available_rev_cols:

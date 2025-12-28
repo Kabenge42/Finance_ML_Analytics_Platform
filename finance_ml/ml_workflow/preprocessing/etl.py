@@ -261,3 +261,7 @@ def etl_with_features(
     config.engineer_earnings_analytics = engineer_earnings_analytics
     
     return run_etl_pipeline(source=source, data_dir=data_dir, db_url=db_url, config=config, return_metrics=return_metrics)
+
+
+def generate_metrics_dashboard():
+    return None
