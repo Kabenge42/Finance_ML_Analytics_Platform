@@ -73,5 +73,21 @@ def engineer_growth_metrics(df: pd.DataFrame) -> pd.DataFrame:
             (df["fcf_ltm"] - df["fcf_fy"]), df["fcf_fy"].abs()
         ) * 100
 
+    # 4. Forward Growth Indicators
+    if "revenues_est_yoy_pct_fy1e" in df.columns:
+        result["forward_revenue_growth"] = pd.to_numeric(
+            df["revenues_est_yoy_pct_fy1e"], errors="coerce"
+        )
+
+    # 5. Long-Term Consistency
+    if "total_revenues_cagr_5y_fy" in df.columns:
+        result["revenue_cagr_5y"] = pd.to_numeric(df["total_revenues_cagr_5y_fy"], errors="coerce")
+
+    # Growth Persistence Score (Current Growth vs Long-Term Trend)
+    if "revenue_growth_yoy" in result.columns and "revenue_cagr_5y" in result.columns:
+        result["growth_persistence_score"] = (
+            result["revenue_growth_yoy"] - result["revenue_cagr_5y"]
+        )
+
     logger.info("Engineered growth metrics (enhanced coverage)")
     return result

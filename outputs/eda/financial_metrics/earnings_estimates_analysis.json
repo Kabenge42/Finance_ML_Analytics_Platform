@@ -1,299 +1,235 @@
 {
-  "timestamp": "2025-12-27T17:53:13.950565",
-  "total_stocks_analyzed": 6913,
+  "timestamp": "2025-12-30T19:29:05.254431",
+  "total_stocks_analyzed": 6948,
   "available_columns": {
-    "eps_actual": "eps_adj_ltm",
+    "eps_actual": "net_eps_basic_fq",
     "eps_estimate": "eps_norm_est_avg_ntm",
     "eps_adjusted": "eps_adj_fy",
-    "revenue_actual": "total_revenues_ltm",
+    "revenue_actual": "total_revenues_fq",
     "ebitda": "ebitda_ltm"
   },
   "eps_analysis": {
     "actual": {
-      "column": "eps_adj_ltm",
-      "count": 6913,
-      "mean": 7.265052799074208,
-      "median": 1.06,
-      "std": 408.29164732473464,
-      "positive_pct": 94.08361058874584,
-      "negative_pct": 5.366700419499494
+      "column": "net_eps_basic_fq",
+      "count": 6948,
+      "mean": 3.8127288428324686,
+      "median": 0.13,
+      "std": 256.97030163266606,
+      "positive_pct": 83.07426597582038,
+      "negative_pct": 12.593552101324121
     },
     "estimate": {
       "column": "eps_norm_est_avg_ntm",
-      "count": 6913,
-      "mean": 8.482584984811224,
+      "count": 6948,
+      "mean": 8.439861830742661,
       "median": 0.89,
-      "std": 398.52048145726434,
-      "positive_pct": 93.80876609286851,
-      "negative_pct": 5.294372920584406
+      "std": 397.4864993639455,
+      "positive_pct": 93.88313183649971,
+      "negative_pct": 5.253310305123777
     },
     "adjusted": {
       "column": "eps_adj_fy",
-      "count": 6913,
-      "mean": 7.7569506726457425,
+      "count": 6948,
+      "mean": 7.724784110535405,
       "median": 0.67,
-      "std": 398.8145725294187,
-      "positive_pct": 91.06032113409518,
-      "negative_pct": 8.057283379140749
+      "std": 397.80892089201086,
+      "positive_pct": 91.19170984455958,
+      "negative_pct": 7.959124928036846
     }
   },
   "earnings_surprise": {
-    "count": 6851,
-    "mean_surprise_pct": 224.14100736023488,
-    "median_surprise_pct": -4.504504504504508,
-    "beat_pct": 44.2271201284484,
-    "miss_pct": 54.284046124653344,
-    "large_beat_pct": 39.760618887753616,
-    "large_miss_pct": 41.52678441103488
+    "count": 6888,
+    "mean_surprise_pct": -79.52489349150598,
+    "median_surprise_pct": -78.8135593220339,
+    "beat_pct": 6.5911730545876885,
+    "miss_pct": 93.08943089430895,
+    "large_beat_pct": 6.300813008130081,
+    "large_miss_pct": 92.78455284552845
   },
   "by_sector": {
     "Information Technology": {
-      "count": 841,
-      "mean_eps": 2.1801426872770513,
-      "median_eps": 1.06,
-      "positive_pct": 93.81688466111771,
-      "mean_surprise": 185.31883005031943,
-      "beat_pct": 38.00959232613909
+      "count": 843,
+      "mean_eps": 0.4119691577698695,
+      "median_eps": 0.11,
+      "positive_pct": 79.7153024911032,
+      "mean_surprise": -83.00880921353142,
+      "beat_pct": 5.741626794258373
     },
     "Communication Services": {
-      "count": 334,
-      "mean_eps": 1.476916167664671,
-      "median_eps": 1.06,
-      "positive_pct": 90.11976047904191,
-      "mean_surprise": 310.99224213317274,
-      "beat_pct": 50.609756097560975
-    },
-    "Consumer Discretionary": {
-      "count": 802,
-      "mean_eps": 3.7193391521197006,
-      "median_eps": 1.06,
-      "positive_pct": 95.76059850374065,
-      "mean_surprise": 163.46903728249694,
-      "beat_pct": 45.97989949748744
+      "count": 335,
+      "mean_eps": 0.1891940298507463,
+      "median_eps": 0.09,
+      "positive_pct": 77.01492537313432,
+      "mean_surprise": -89.86198209648424,
+      "beat_pct": 7.29483282674772
     },
     "Financials": {
-      "count": 1057,
-      "mean_eps": 35.39350993377484,
-      "median_eps": 1.06,
-      "positive_pct": 98.58088930936613,
-      "mean_surprise": 250.42397421850595,
-      "beat_pct": 43.51145038167939
+      "count": 1132,
+      "mean_eps": 19.943038869257954,
+      "median_eps": 0.23,
+      "positive_pct": 90.7243816254417,
+      "mean_surprise": -74.368099295326,
+      "beat_pct": 3.561887800534283
+    },
+    "Consumer Discretionary": {
+      "count": 806,
+      "mean_eps": 0.8546401985111662,
+      "median_eps": 0.135,
+      "positive_pct": 84.49131513647643,
+      "mean_surprise": -93.35383940882683,
+      "beat_pct": 5.742821473158552
     },
     "Health Care": {
-      "count": 652,
-      "mean_eps": 1.940153374233129,
-      "median_eps": 1.06,
-      "positive_pct": 82.05521472392638,
-      "mean_surprise": 179.09974774392742,
-      "beat_pct": 43.53846153846154
+      "count": 655,
+      "mean_eps": 0.308824427480916,
+      "median_eps": 0.07,
+      "positive_pct": 66.87022900763358,
+      "mean_surprise": -56.3126478796075,
+      "beat_pct": 23.27718223583461
     },
     "Consumer Staples": {
-      "count": 453,
-      "mean_eps": 1.6541721854304638,
-      "median_eps": 1.06,
-      "positive_pct": 96.46799116997794,
-      "mean_surprise": 313.9700031128001,
-      "beat_pct": 45.61797752808989
+      "count": 466,
+      "mean_eps": 1.7008583690987127,
+      "median_eps": 0.11499999999999999,
+      "positive_pct": 85.62231759656652,
+      "mean_surprise": -77.51989358586097,
+      "beat_pct": 3.2751091703056767
     },
     "Energy": {
-      "count": 294,
-      "mean_eps": 1.7408163265306125,
-      "median_eps": 1.06,
-      "positive_pct": 94.21768707482994,
-      "mean_surprise": 389.2464301758209,
-      "beat_pct": 48.4641638225256
+      "count": 303,
+      "mean_eps": 0.6785478547854784,
+      "median_eps": 0.16,
+      "positive_pct": 81.84818481848185,
+      "mean_surprise": -62.80906631826839,
+      "beat_pct": 7.9470198675496695
     },
     "Industrials": {
-      "count": 1270,
-      "mean_eps": 2.6981811023622053,
-      "median_eps": 1.06,
-      "positive_pct": 96.45669291338582,
-      "mean_surprise": 145.2122412018762,
-      "beat_pct": 41.69303797468354
+      "count": 1296,
+      "mean_eps": 0.8414429012345679,
+      "median_eps": 0.20500000000000002,
+      "positive_pct": 88.81172839506173,
+      "mean_surprise": -75.0853007800406,
+      "beat_pct": 4.422032583397983
     },
     "Materials": {
-      "count": 618,
-      "mean_eps": 1.3035113268608416,
-      "median_eps": 1.06,
-      "positive_pct": 90.29126213592234,
-      "mean_surprise": 331.79441508252927,
-      "beat_pct": 48.17880794701987
-    },
-    "Utilities": {
-      "count": 250,
-      "mean_eps": 1.63404,
-      "median_eps": 1.06,
-      "positive_pct": 96.39999999999999,
-      "mean_surprise": 267.2105489230762,
-      "beat_pct": 51.00401606425703
+      "count": 641,
+      "mean_eps": 0.377581903276131,
+      "median_eps": 0.06,
+      "positive_pct": 76.28705148205928,
+      "mean_surprise": -101.09190978359175,
+      "beat_pct": 5.573248407643312
     },
     "Real Estate": {
-      "count": 199,
-      "mean_eps": 1.1124120603015075,
-      "median_eps": 1.06,
-      "positive_pct": 95.97989949748744,
-      "mean_surprise": 285.3683505868,
-      "beat_pct": 52.52525252525253
+      "count": 205,
+      "mean_eps": 0.8315609756097561,
+      "median_eps": 0.08,
+      "positive_pct": 85.85365853658537,
+      "mean_surprise": -92.72098103033215,
+      "beat_pct": 2.941176470588235
     },
-    "Energy                ": {
-      "count": 11,
-      "mean_eps": 0.40363636363636357,
-      "median_eps": 0.18,
-      "positive_pct": 100.0,
-      "mean_surprise": 86.35526161971762,
-      "beat_pct": 36.36363636363637
-    },
-    "Utilities             ": {
-      "count": 14,
-      "mean_eps": 0.6485714285714286,
-      "median_eps": 0.67,
-      "positive_pct": 92.85714285714286,
-      "mean_surprise": 88.89593396984878,
-      "beat_pct": 57.14285714285714
-    },
-    "Financials            ": {
-      "count": 59,
-      "mean_eps": 0.8589830508474579,
-      "median_eps": 1.03,
-      "positive_pct": 100.0,
-      "mean_surprise": 47.25593846394614,
-      "beat_pct": 30.508474576271187
-    },
-    "Materials             ": {
-      "count": 18,
-      "mean_eps": 0.9683333333333333,
-      "median_eps": 1.06,
-      "positive_pct": 94.44444444444444,
-      "mean_surprise": 113.41737574517035,
-      "beat_pct": 27.77777777777778
-    },
-    "Consumer Staples      ": {
-      "count": 13,
-      "mean_eps": 0.40230769230769226,
-      "median_eps": 0.24,
-      "positive_pct": 100.0,
-      "mean_surprise": -22.216658164836822,
-      "beat_pct": 15.384615384615385
-    },
-    "Industrials           ": {
-      "count": 20,
-      "mean_eps": 1.0414999999999999,
-      "median_eps": 1.06,
-      "positive_pct": 95.0,
-      "mean_surprise": 138.520766915803,
-      "beat_pct": 47.368421052631575
-    },
-    "Real Estate           ": {
-      "count": 5,
-      "mean_eps": 0.9019999999999999,
-      "median_eps": 0.51,
-      "positive_pct": 100.0,
-      "mean_surprise": 3.868796609552908,
-      "beat_pct": 40.0
+    "Utilities": {
+      "count": 266,
+      "mean_eps": 0.4222556390977444,
+      "median_eps": 0.11,
+      "positive_pct": 87.59398496240601,
+      "mean_surprise": -75.79376734541636,
+      "beat_pct": 2.6415094339622645
     }
   },
   "by_region": {
     "United States and Canada": {
-      "count": 1799,
-      "mean_eps": 24.123368538076708,
-      "median_eps": 3.03,
-      "positive_pct": 89.60533629794331,
-      "mean_surprise": -11.444718445471286,
-      "beat_pct": 23.427935447968835
+      "count": 1803,
+      "mean_eps": 13.021064891846924,
+      "median_eps": 0.61,
+      "positive_pct": 79.97781475318912,
+      "mean_surprise": -87.25980242858108,
+      "beat_pct": 9.106052193225986
     },
     "Asia / Pacific": {
-      "count": 2053,
-      "mean_eps": 1.0713589868485145,
-      "median_eps": 1.06,
-      "positive_pct": 96.10326351680467,
-      "mean_surprise": 333.3113190958559,
-      "beat_pct": 62.234305486900645
+      "count": 2052,
+      "mean_eps": 0.28773391812865495,
+      "median_eps": 0.06,
+      "positive_pct": 87.91423001949317,
+      "mean_surprise": -69.64196743069888,
+      "beat_pct": 5.0914483440435
     },
     "Europe": {
-      "count": 2058,
-      "mean_eps": 1.7360398445092324,
-      "median_eps": 1.06,
-      "positive_pct": 95.578231292517,
-      "mean_surprise": 171.93479755516893,
-      "beat_pct": 39.882697947214076
+      "count": 2060,
+      "mean_eps": 1.0337038834951457,
+      "median_eps": 0.17,
+      "positive_pct": 82.42718446601943,
+      "mean_surprise": -80.12316744051786,
+      "beat_pct": 7.271839921913129
     },
     "Latin America and Caribbean": {
-      "count": 348,
-      "mean_eps": 1.145316091954023,
-      "median_eps": 0.415,
-      "positive_pct": 88.50574712643679,
-      "mean_surprise": 150.89123864142928,
-      "beat_pct": 36.231884057971016
+      "count": 352,
+      "mean_eps": 0.29843749999999997,
+      "median_eps": 0.05,
+      "positive_pct": 81.81818181818183,
+      "mean_surprise": -89.95799914713544,
+      "beat_pct": 4.297994269340974
     },
     "Africa / Middle East": {
-      "count": 546,
-      "mean_eps": 0.9940659340659342,
-      "median_eps": 1.06,
-      "positive_pct": 98.16849816849816,
-      "mean_surprise": 869.7359652216015,
-      "beat_pct": 69.86817325800376
-    },
-    "Africa / Middle East       ": {
-      "count": 109,
-      "mean_eps": 1.0254128440366974,
-      "median_eps": 1.06,
-      "positive_pct": 99.08256880733946,
-      "mean_surprise": 148.6379016396821,
-      "beat_pct": 34.862385321100916
+      "count": 681,
+      "mean_eps": 0.2774596182085169,
+      "median_eps": 0.04,
+      "positive_pct": 79.29515418502203,
+      "mean_surprise": -81.3200454885036,
+      "beat_pct": 3.453453453453453
     }
   },
   "eps_revision_momentum": {
     "normalized": {
       "1w": {
         "column": "eps_est_avg_rev_pct_fy1e_1w",
-        "count": 6913,
-        "mean": 0.003949052654206753,
-        "median": 0.0034000000450760126,
-        "positive_pct": 72.83379140749314,
-        "negative_pct": 8.708230869376537,
+        "count": 6948,
+        "mean": 0.0038903283420950174,
+        "median": 0.004800000227987766,
+        "positive_pct": 67.70293609671847,
+        "negative_pct": 11.64363845710996,
         "large_upgrade_pct": 0.0,
         "large_downgrade_pct": 0.0
       },
       "1m": {
         "column": "eps_est_avg_rev_pct_fy1e_1m",
-        "count": 6913,
-        "mean": 0.17565788328647614,
-        "median": 0.01119999960064888,
-        "positive_pct": 73.42687689859684,
-        "negative_pct": 19.557355706639665,
-        "large_upgrade_pct": 0.014465499783017505,
+        "count": 6948,
+        "mean": 0.006990731228142977,
+        "median": 0.007400000002235174,
+        "positive_pct": 72.4237190558434,
+        "negative_pct": 19.545192861255035,
+        "large_upgrade_pct": 0.0,
         "large_downgrade_pct": 0.0
       },
       "3m": {
         "column": "eps_est_avg_rev_pct_fy1e_3m",
-        "count": 6913,
-        "mean": 0.20999398827552795,
-        "median": 0.0066999997943639755,
-        "positive_pct": 68.16143497757847,
-        "negative_pct": 31.433531028497036,
-        "large_upgrade_pct": 0.10125849848112252,
+        "count": 6948,
+        "mean": 0.20902997255325317,
+        "median": 0.007199999876320362,
+        "positive_pct": 68.65284974093264,
+        "negative_pct": 31.160046056419116,
+        "large_upgrade_pct": 0.10074841681059296,
         "large_downgrade_pct": 0.0
       }
     },
     "gaap": {
       "1m": {
         "column": "eps_gaap_est_avg_rev_pct_fy1e_1m",
-        "count": 6913,
-        "mean": 0.018272357061505318,
-        "median": 0.012600000016391277,
-        "positive_pct": 71.54636192680456,
-        "negative_pct": 20.005786199913207,
-        "large_upgrade_pct": 0.014465499783017505,
+        "count": 6948,
+        "mean": 0.017212795093655586,
+        "median": 0.007699999958276749,
+        "positive_pct": 70.20725388601036,
+        "negative_pct": 20.236039147956248,
+        "large_upgrade_pct": 0.05757052389176742,
         "large_downgrade_pct": 0.0
       },
       "3m": {
         "column": "eps_gaap_est_avg_rev_pct_fy1e_3m",
-        "count": 6913,
-        "mean": 0.019350534304976463,
-        "median": 0.003750000149011612,
-        "positive_pct": 61.594098076088535,
-        "negative_pct": 38.02979892955302,
-        "large_upgrade_pct": 0.08679299869810501,
+        "count": 6948,
+        "mean": 0.019905511289834976,
+        "median": 0.004699999932199717,
+        "positive_pct": 62.1042026482441,
+        "negative_pct": 37.66551525618883,
+        "large_upgrade_pct": 0.08635578583765112,
         "large_downgrade_pct": 0.0
       }
     }

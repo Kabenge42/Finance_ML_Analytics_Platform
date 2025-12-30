@@ -123,6 +123,13 @@ def detect_and_cast_dtypes(
         "id",
         "date",
         "categorical",
+        "market",
+        "financial_statement",
+        "balance_sheet",
+        "cash_flow",
+        "ratio",
+        "percentage",
+        "count",
     }
     for schema_col, meta in schema.items():
         if meta["role"] in important_roles:

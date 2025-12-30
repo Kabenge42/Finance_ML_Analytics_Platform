@@ -135,6 +135,16 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
             excess = total_return_pct - rf
             result["sharpe_proxy"] = _safe_div(excess, vol)
 
+    # Beta Momentum (1Y - 5Y)
+    if "beta_1y" in df.columns and "beta_5y" in df.columns:
+        result["beta_momentum"] = df["beta_1y"].astype(float) - df["beta_5y"].astype(float)
+
+    # Volatility Term Structure (1M / 1Y)
+    if "volatility_1m" in df.columns and "volatility_1y" in df.columns:
+        result["volatility_term_structure"] = _safe_div(
+            df["volatility_1m"].astype(float), df["volatility_1y"].astype(float)
+        )
+
     logger.info("Engineered momentum & technical features")
     return result
 

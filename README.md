@@ -5,6 +5,7 @@ global regions.
 
 [![Python Version](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.9.5-green)](https://github.com/Kabenge42/Finance_ML_Analytics_Platform)
 
 ## Overview
 
@@ -27,15 +28,29 @@ engineering, and reliable model evaluation, followed by a Portfolio Optimization
   performance.
 - **Production-Ready**: CLI entry points and optimized scripts for automated execution.
 
+## Tech Stack
+
+| Category            | Technologies                                                     |
+|:--------------------|:-----------------------------------------------------------------|
+| **Language**        | Python 3.12 / 3.13 / 3.14                                        |
+| **Package Manager** | pip, Pipfile (pipenv), pyproject.toml (setuptools)               |
+| **ML Frameworks**   | scikit-learn, XGBoost, LightGBM, CatBoost, TensorFlow (optional) |
+| **Data Processing** | pandas, NumPy, SciPy, statsmodels                                |
+| **Visualization**   | Plotly, Matplotlib, Seaborn                                      |
+| **Dashboards**      | Streamlit, Dash                                                  |
+| **Database**        | PostgreSQL (psycopg2), SQLAlchemy, SQLite                        |
+| **Testing**         | pytest, unittest                                                 |
+| **Code Quality**    | Black, Flake8, isort, Mypy                                       |
+
 ## Requirements
 
-- **Python**: Version 3.12, 3.13, or 3.14.
+- **Python**: Version 3.12, 3.13, or 3.14 (`>=3.12,<3.15`).
 - **Operating System**: Windows (primary support via PowerShell), Linux, or macOS.
-- **Dependencies**: Managed via `requirements.txt`. Key libraries include:
+- **Dependencies**: Managed via `requirements.txt`, `Pipfile`, or `pyproject.toml`. Key libraries include:
     - `pandas`, `numpy`, `scipy`, `statsmodels`
     - `scikit-learn`, `xgboost`, `lightgbm`, `catboost`
-    - `streamlit`, `dash`
-    - `sqlalchemy`
+  - `streamlit`, `dash`, `plotly`
+  - `sqlalchemy`, `psycopg2-binary`
 
 ## Setup
 
@@ -65,6 +80,10 @@ environment variables.
    ```powershell
    pip install -e .
    ```
+4. **(Optional) Install with all extras:**
+   ```powershell
+   pip install -e ".[all]"
+   ```
 
 ## Running the Platform
 
@@ -76,12 +95,20 @@ To execute the complete 8-phase ML workflow and portfolio optimization:
 python finance_ml_analytics_platform.py
 ```
 
+### Entry Points
+
+| Entry Point                        | Description                                    |
+|:-----------------------------------|:-----------------------------------------------|
+| `finance_ml_analytics_platform.py` | Main orchestration script for full ML pipeline |
+| `ml_finance_model_main.py`         | Core ML pipeline execution                     |
+
 ### Jupyter Notebooks
 
-- `ml_finance_model_main.py` / `.ipynb`: Core ML pipeline execution and experimentation.
+- `ml_finance_model_main.ipynb`: Core ML pipeline execution and experimentation.
 - `etl_data_explorer.ipynb`: Interactive data exploration and ETL testing.
 - `stock_analytics.ipynb`: Comprehensive stock market analysis.
 - `stock_price_target_prediction.ipynb`: Price target prediction modeling.
+- `portfolio_optimization_risk_management.ipynb`: Portfolio optimization and risk analysis.
 
 ### Interactive Dashboards
 
@@ -102,33 +129,48 @@ python tools\setup_dashboard_assets.py
 ### CLI Commands
 
 The package exposes the following CLI commands (after `pip install -e .`):
-- `finance-ml`: Main analysis pipeline.
-- `finance-ml-analyze`: Quick data analysis.
-- `finance-ml-validate`: Data schema and quality validation.
+
+| Command               | Description                        |
+|:----------------------|:-----------------------------------|
+| `finance-ml`          | Main analysis pipeline             |
+| `finance-ml-analyze`  | Quick data analysis                |
+| `finance-ml-validate` | Data schema and quality validation |
 
 ## Scripts
 
 Useful utility scripts located in `tools/`:
 
-| Script                                | Purpose                                          |
-|:--------------------------------------|:-------------------------------------------------|
-| `tools\setup_environment.py`          | Full environment and dependency setup.           |
-| `tools\run_fast_tests.py`             | Quick verification of utility modules.           |
-| `tools\run_earnings_monitor.py`       | Monitors and visualizes company earnings events. |
-| `tools\setup_dashboard_assets.py`     | Syncs pipeline results with dashboard interface. |
-| `tools\load_equities_data.py`         | Loads and processes equities data.               |
-| `tools\check_source_csv_zero_cols.py` | Validates source CSVs for empty columns.         |
+| Script                         | Purpose                                         |
+|:-------------------------------|:------------------------------------------------|
+| `setup_environment.py`         | Full environment and dependency setup           |
+| `run_fast_tests.py`            | Quick verification of utility modules           |
+| `run_earnings_monitor.py`      | Monitors and visualizes company earnings events |
+| `setup_dashboard_assets.py`    | Syncs pipeline results with dashboard interface |
+| `load_equities_data.py`        | Loads and processes equities data               |
+| `validate_schema_alignment.py` | Validates SQL/Python schema alignment           |
+| `extract_schema.py`            | Extracts schema definitions from database       |
+| `cleanup_environments.py`      | Cleans up virtual environments and caches       |
+| `import_sqlite.py`             | Imports data into SQLite database               |
 
 ## Environment Variables
 
-Key configuration options (see `environment_variables.txt` for full list):
+Configuration options can be set via environment variables or in `environment_variables.txt`:
 
-| Variable        | Description                      | Default   |
-|:----------------|:---------------------------------|:----------|
-| `OUTPUT_DIR`    | Directory for generated reports. | `outputs` |
-| `DB_URL`        | SQLAlchemy connection URL.       | -         |
-| `MODEL_VERSION` | Identifier for current model.    | `v9_10`   |
-| `LOG_LEVEL`     | Logging verbosity.               | `INFO`    |
+| Variable                   | Description                             | Default    |
+|:---------------------------|:----------------------------------------|:-----------|
+| `OUTPUT_DIR`               | Directory for generated reports         | `outputs`  |
+| `DATA_DIR`                 | Directory for input data                | `data`     |
+| `MODEL_DIR`                | Directory for saved models              | `models`   |
+| `DB_URL`                   | SQLAlchemy connection URL               | —          |
+| `DB_SCHEMA`                | Database schema name                    | `public`   |
+| `DB_TABLE`                 | Database table name                     | `equities` |
+| `MODEL_VERSION`            | Identifier for current model            | `v9_10`    |
+| `LOG_LEVEL`                | Logging verbosity                       | `INFO`     |
+| `TF_CPP_MIN_LOG_LEVEL`     | TensorFlow log level (0-3)              | `2`        |
+| `N_JOBS`                   | Parallel jobs (-1 for all cores)        | `-1`       |
+| `RANDOM_SEED`              | Random seed for reproducibility         | `42`       |
+| `ENABLE_INTERACTIVE_PLOTS` | Enable interactive visualizations       | `true`     |
+| `REPORT_FORMAT`            | Report output format (html, pdf, excel) | `html`     |
 
 ## Tests
 
@@ -140,29 +182,79 @@ pytest
 
 # Run fast tests only (skips heavy ML tests)
 python tools\run_fast_tests.py
+
+# Run specific test file
+pytest tests\test_etl_unified_pipeline.py
+
+# Run with coverage
+pytest --cov=finance_ml --cov-report=html
 ```
+
+Test files are located in `tests/` and follow the naming convention `test_*.py`.
 
 ## Project Structure
 
 ```text
-finance_ml_analytics_platform/
-├── finance_ml/               # Core package
-│   ├── core/                 # Shared constants & schema
-│   ├── etl/                  # ETL pipeline & config
-│   ├── features/             # Feature engineering
-│   ├── ml_workflow/          # ML phases (9.1-9.8)
-│   └── dashboards/           # Streamlit/Dash apps
-├── tests/                    # Unit & integration tests
-├── tools/                    # Utility scripts
-├── docs/                     # Documentation & guidelines
-├── data/                     # Local data storage
-├── models/                   # Serialized models
-└── outputs/                  # Generated reports & logs
+Finance_Analytics_Platform/
+├── finance_ml/                 # Core Python package
+│   ├── core/                   # Shared constants, schema, utilities
+│   │   ├── schema.py           # Unified column schema (500+ columns)
+│   │   └── constants.py        # Global constants and configurations
+│   ├── etl/                    # ETL pipeline modules
+│   │   ├── config.py           # ETL configuration
+│   │   └── stages/             # Pipeline stages (imputation, validation)
+│   ├── features/               # Feature engineering
+│   │   └── advanced/           # Domain-specific features (valuation, momentum)
+│   ├── ml_workflow/            # ML phases (9.1-9.8)
+│   │   └── preprocessing/      # Data preprocessing modules
+│   ├── dashboards/             # Interactive dashboards
+│   │   ├── streamlit_app.py    # Streamlit application
+│   │   ├── dash_app.py         # Dash application
+│   │   └── widgets/            # Dashboard components
+│   └── cli.py                  # Command-line interface
+├── tests/                      # Unit and integration tests
+├── tools/                      # Utility scripts
+├── docs/                       # Documentation and guidelines
+│   └── code_guidelines.md      # Development guidelines
+├── data/                       # Local data storage (CSV, etc.)
+├── models/                     # Serialized ML models
+├── outputs/                    # Generated reports, visualizations, logs
+├── create_equities_schema.sql  # PostgreSQL schema definition
+├── import_equities_data.sql    # Data import SQL scripts
+├── requirements.txt            # Python dependencies
+├── pyproject.toml              # Project metadata and build config
+├── Pipfile                     # Pipenv dependencies
+└── LICENSE                     # MIT License
 ```
+
+## Database Setup (Optional)
+
+For PostgreSQL database support:
+
+1. Create the schema:
+   ```powershell
+   psql -U postgres -d your_database -f create_equities_schema.sql
+   ```
+
+2. Import data:
+   ```powershell
+   psql -U postgres -d your_database -f import_equities_data.sql
+   ```
+
+3. Set the connection URL:
+   ```powershell
+   $env:DB_URL = "postgresql+psycopg2://user:password@localhost:5432/database"
+   ```
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Links
+
+- **Repository**: [GitHub](https://github.com/Kabenge42/Finance_ML_Analytics_Platform)
+- **Issues**: [GitHub Issues](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/issues)
+- **Documentation**: [docs/code_guidelines.md](docs/code_guidelines.md)
 
 ## TODOs
 
@@ -171,3 +263,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] **Deployment**: Add Docker Compose for one-click environment deployment.
 - [ ] **Docs**: Expand KDoc-style documentation for the `finance_ml.ml_workflow` sub-packages.
 - [ ] **Testing**: Increase coverage for `finance_ml.features.advanced` modules.
+- [ ] **CI/CD**: Add GitHub Actions workflow for automated testing.

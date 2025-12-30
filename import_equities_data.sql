@@ -416,6 +416,152 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ===================================================================
+-- HELPER FUNCTION: Parse FY End to Date
+-- ===================================================================
+-- Converts "FY End" text (e.g., "Dec 2024", "Mar 2025") to a DATE
+-- Returns the last day of the specified month/year
+
+CREATE OR REPLACE FUNCTION parse_fy_end_to_date(fy_end_text TEXT)
+    RETURNS DATE AS
+$$
+DECLARE
+    month_name  TEXT;
+    year_text   TEXT;
+    month_num   INTEGER;
+    parsed_date DATE;
+BEGIN
+    -- Return NULL if input is NULL or empty
+    IF fy_end_text IS NULL OR TRIM(fy_end_text) = '' THEN
+        RETURN NULL;
+    END IF;
+
+    -- Extract month and year from format "Mon YYYY" (e.g., "Dec 2024")
+    month_name := TRIM(SPLIT_PART(fy_end_text, ' ', 1));
+    year_text := TRIM(SPLIT_PART(fy_end_text, ' ', 2));
+
+    -- Convert month name to number
+    month_num := CASE UPPER(SUBSTRING(month_name, 1, 3))
+                     WHEN 'JAN' THEN 1
+                     WHEN 'FEB' THEN 2
+                     WHEN 'MAR' THEN 3
+                     WHEN 'APR' THEN 4
+                     WHEN 'MAY' THEN 5
+                     WHEN 'JUN' THEN 6
+                     WHEN 'JUL' THEN 7
+                     WHEN 'AUG' THEN 8
+                     WHEN 'SEP' THEN 9
+                     WHEN 'OCT' THEN 10
+                     WHEN 'NOV' THEN 11
+                     WHEN 'DEC' THEN 12
+                     ELSE NULL
+        END;
+
+    -- Return NULL if month couldn't be parsed
+    IF month_num IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    -- Build date as last day of the month
+    parsed_date :=
+            (DATE_TRUNC('MONTH', MAKE_DATE(year_text::INTEGER, month_num, 1)) + INTERVAL '1 MONTH - 1 DAY')::DATE;
+
+    RETURN parsed_date;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN NULL;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Calculate Fiscal Month (Numeric)
+-- ===================================================================
+-- Returns the number of months between Income Statement Report Date and FY End Date
+-- Example: age('2025-09-30', '2024-12-31') = 9 months
+
+CREATE OR REPLACE FUNCTION calculate_fiscal_month(report_date DATE, fy_end_date DATE)
+    RETURNS INTEGER AS
+$$
+DECLARE
+    age_interval INTERVAL;
+    years_part   INTEGER;
+    months_part  INTEGER;
+    total_months INTEGER;
+BEGIN
+    -- Return NULL if either date is missing
+    IF report_date IS NULL OR fy_end_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    -- Calculate age interval
+    age_interval := age(report_date, fy_end_date);
+
+    -- Extract years and months from interval
+    years_part := EXTRACT(YEAR FROM age_interval);
+    months_part := EXTRACT(MONTH FROM age_interval);
+
+    -- Convert to total months
+    total_months := (years_part * 12) + months_part;
+
+    RETURN total_months;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN NULL;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Calculate Next Fiscal Quarter
+-- ===================================================================
+-- Returns fiscal quarter in format "Q4 2025"
+-- Based on months elapsed: 0-2 months = Q1, 3-5 = Q2, 6-8 = Q3, 9-11 = Q4
+-- Fiscal year is the year following the FY End Date (the current fiscal period)
+-- Example: FY End Date = 31.12.2024, Report Date = 30.09.2025 → Q4 2025
+
+CREATE OR REPLACE FUNCTION calculate_next_fiscal_quarter(report_date DATE, fy_end_date DATE)
+    RETURNS TEXT AS
+$$
+DECLARE
+    fiscal_months INTEGER;
+    quarter_num   INTEGER;
+    fiscal_year   INTEGER;
+BEGIN
+    -- Return NULL if either date is missing
+    IF report_date IS NULL OR fy_end_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    -- Get fiscal months
+    fiscal_months := calculate_fiscal_month(report_date, fy_end_date);
+
+    IF fiscal_months IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    -- Normalize to 0-11 range (handle multi-year periods)
+    fiscal_months := fiscal_months % 12;
+
+    -- Determine quarter based on months elapsed since FY end
+    -- 0-2 months = Q1, 3-5 = Q2, 6-8 = Q3, 9-11 = Q4
+    quarter_num := CASE
+                       WHEN fiscal_months BETWEEN 0 AND 2 THEN 1
+                       WHEN fiscal_months BETWEEN 3 AND 5 THEN 2
+                       WHEN fiscal_months BETWEEN 6 AND 8 THEN 3
+                       ELSE 4
+        END;
+
+    -- Fiscal year is the year following the FY End Date
+    -- This represents the current fiscal period (e.g., FY End Dec 2024 → FY 2025)
+    fiscal_year := EXTRACT(YEAR FROM fy_end_date) + 1;
+
+    -- Format as "Q# YYYY"
+    RETURN 'Q' || quarter_num || ' ' || fiscal_year;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN NULL;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
 -- Importing US Region Data...
 -- ===================================================================
 \echo 'Importing regional data (US, EU, APAC, ROTW)...'
@@ -837,6 +983,9 @@ INSERT INTO equities ("Ticker",
                       "Last Updated",
                       "Income Statement Report Date",
                       "FY End",
+                      "FY End Date",
+                      "Fiscal Month",
+                      "Next Fiscal Quarter",
                       "Next Earnings",
                       "Next Earnings (When)",
                       "Next Earnings (Status)",
@@ -848,6 +997,7 @@ INSERT INTO equities ("Ticker",
                       "Dividend Record (Payable Date)",
                       "Dividend Record (Record Date)",
                       "Dividend Record (Ex Date)",
+                      "Reference Date",
                       "Market Cap",
                       "Enterprise Value",
                       "Last Price",
@@ -1152,337 +1302,347 @@ INSERT INTO equities ("Ticker",
                       "EPS GAAP Est Avg Rev % (FY1E - 6M)",
                       "EPS GAAP Est Avg Rev % (FY1E - 1Y)",
                       "EPS Norm - Est # (FY1E)")
-SELECT NULLIF(TRIM("Ticker"), ''),                                          -- "Ticker"
-       NULLIF(TRIM("ISIN"), ''),                                            -- "ISIN"
-       NULLIF(TRIM("Name"), ''),                                            -- "Name"
-       NULLIF(TRIM("Description"), ''),                                     -- "Description"
-       NULLIF(TRIM("Region"), ''),                                          -- "Region"
-       NULLIF(TRIM("Country"), ''),                                         -- "Country"
-       NULLIF(TRIM("Trading Country"), ''),                                 -- "Trading Country"
-       NULLIF(TRIM("Exchange"), ''),                                        -- "Exchange"
-       NULLIF(TRIM("Unit"), ''),                                            -- "Unit"
-       NULLIF(TRIM("Sector"), ''),                                          -- "Sector"
-       NULLIF(TRIM("Industry"), ''),                                        -- "Industry"
-       NULLIF(TRIM("Style Class"), ''),                                     -- "Style Class"
-       NULLIF(TRIM("Size Class"), ''),                                      -- "Size Class"
-       NULLIF(TRIM("Last Updated"), '')::DATE,                              -- "Last Updated"
-       NULLIF(TRIM("Income Statement Report Date"), '')::DATE,              -- "Income Statement Report Date"
-       NULLIF(TRIM("FY End"), ''),                                          -- "FY End"
-       NULLIF(TRIM("Next Earnings"), '')::DATE,                             -- "Next Earnings"
-       NULLIF(TRIM("Next Earnings (When)"), ''),                            -- "Next Earnings (When)"
-       NULLIF(TRIM("Next Earnings (Status)"), ''),                          -- "Next Earnings (Status)"
-       NULLIF(TRIM("Dividend Record (Currency)"), ''),                      -- "Dividend Record (Currency)"
-       safe_to_numeric("Dividend Record (Amount)"),                         -- "Dividend Record (Amount)"
-       NULLIF(TRIM("Dividend Record (Frequency)"), ''),                     -- "Dividend Record (Frequency)"
-       safe_to_numeric("Dividend Streak"),                                  -- "Dividend Streak"
-       NULLIF(TRIM("Dividend Record (Announce Date)"), '')::DATE,           -- "Dividend Record (Announce Date)"
-       NULLIF(TRIM("Dividend Record (Payable Date)"), '')::DATE,            -- "Dividend Record (Payable Date)"
-       NULLIF(TRIM("Dividend Record (Record Date)"), '')::DATE,             -- "Dividend Record (Record Date)"
-       NULLIF(TRIM("Dividend Record (Ex Date)"), '')::DATE,                 -- "Dividend Record (Ex Date)"
-       safe_to_numeric("Market Cap"),                                       -- "Market Cap"
-       safe_to_numeric("Enterprise Value"),                                 -- "Enterprise Value"
-       safe_to_numeric("Last Price"),                                       -- "Last Price"
-       safe_to_numeric("Price Target (YTD Ago)"),                           -- "Price Target (YTD Ago)"
-       safe_to_numeric("Total Return (YTD)"),                               -- "Total Return (YTD)"
-       safe_to_numeric("Price Target"),                                     -- "Price Target"
-       safe_to_numeric("Price Target - Low"),                               -- "Price Target - Low"
-       safe_to_numeric("Price Target - Median"),                            -- "Price Target - Median"
-       safe_to_numeric("Price Target - High"),                              -- "Price Target - High"
-       safe_to_numeric("Price Target - #"),                                 -- "Price Target - #"
-       safe_to_numeric("P/E (NTM)"),                                        -- "P/E (NTM)"
-       safe_to_numeric("P/E (LTM)"),                                        -- "P/E (LTM)"
-       safe_to_numeric("Altman Z-Score (FY)"),                              -- "Altman Z-Score (FY)"
-       safe_to_numeric("Altman Z-Score (FQ)"),                              -- "Altman Z-Score (FQ)"
-       safe_to_numeric("Altman Z-Score (LTM)"),                             -- "Altman Z-Score (LTM)"
-       safe_to_numeric("Beta (1Y)"),                                        -- "Beta (1Y)"
-       safe_to_numeric("Beta (2Y)"),                                        -- "Beta (2Y)"
-       safe_to_numeric("Beta (5Y)"),                                        -- "Beta (5Y)"
-       safe_to_numeric("Analyst Rating"),                                   -- "Analyst Rating"
-       safe_to_numeric("# Strong Sell Ratings"),                            -- "# Strong Sell Ratings"
-       safe_to_numeric("# Strong Buys Ratings"),                            -- "# Strong Buys Ratings"
-       safe_to_numeric("# Hold Ratings"),                                   -- "# Hold Ratings"
-       safe_to_numeric("# Buys Ratings"),                                   -- "# Buys Ratings"
-       safe_to_numeric("# Sell Ratings"),                                   -- "# Sell Ratings"
-       safe_to_numeric("Total Revenues/CAGR (5Y FY)"),                      -- "Total Revenues/CAGR (5Y FY)"
-       safe_to_numeric("Total Revenues (FQ)"),                              -- "Total Revenues (FQ)"
-       safe_to_numeric("Total Revenues (-1FY)"),                            -- "Total Revenues (-1FY)"
-       safe_to_numeric("Total Revenues (FY)"),                              -- "Total Revenues (FY)"
-       safe_to_numeric("Total Revenues (LTM)"),                             -- "Total Revenues (LTM)"
-       safe_to_numeric("Total Operating Expenses (LTM)"),                   -- "Total Operating Expenses (LTM)"
-       safe_to_numeric("P/TBV (LTM)"),                                      -- "P/TBV (LTM)"
-       safe_to_numeric("TBV (FY)"),                                         -- "TBV (FY)"
-       safe_to_numeric("TBV (LTM)"),                                        -- "TBV (LTM)"
-       safe_to_numeric("Market Cap (Country R)"),                           -- "Market Cap (Country R)"
-       safe_to_numeric("Tot. Return %/CAGR (3Y)"),                          -- "Tot. Return %/CAGR (3Y)"
-       safe_to_numeric("Tot. Return %/CAGR (10Y)"),                         -- "Tot. Return %/CAGR (10Y)"
-       safe_to_numeric("Total Return (5Y)"),                                -- "Total Return (5Y)"
-       safe_to_numeric("Total Return (10Y)"),                               -- "Total Return (10Y)"
-       safe_to_numeric("Net Income/Adj. (-1FY)"),                           -- "Net Income/Adj. (-1FY)"
-       safe_to_numeric("CFF (LTM)"),                                        -- "CFF (LTM)"
-       safe_to_numeric("CFI (LTM)"),                                        -- "CFI (LTM)"
-       safe_to_numeric("FCF (LTM)"),                                        -- "FCF (LTM)"
-       safe_to_numeric("CFO (LTM)"),                                        -- "CFO (LTM)"
-       safe_to_numeric("EBITDA (FQ)"),                                      -- "EBITDA (FQ)"
-       safe_to_numeric("EBITDA (LTM)"),                                     -- "EBITDA (LTM)"
-       safe_to_numeric("EBITDA (FY)"),                                      -- "EBITDA (FY)"
-       safe_to_numeric("EBITDA (-1FY)"),                                    -- "EBITDA (-1FY)"
-       safe_to_numeric("EBITDA/Adj. (LTM)"),                                -- "EBITDA/Adj. (LTM)"
-       safe_to_numeric("EBITDA/Adj. (FY)"),                                 -- "EBITDA/Adj. (FY)"
-       safe_to_numeric("EBITDA/Adj. (-1FY)"),                               -- "EBITDA/Adj. (-1FY)"
-       safe_to_numeric("EBIT (FQ)"),                                        -- "EBIT (FQ)"
-       safe_to_numeric("EBIT (LTM)"),                                       -- "EBIT (LTM)"
-       safe_to_numeric("EBIT (FY)"),                                        -- "EBIT (FY)"
-       safe_to_numeric("EBIT (-1FY)"),                                      -- "EBIT (-1FY)"
-       safe_to_numeric("EBIT/Adj. (-1FY)"),                                 -- "EBIT/Adj. (-1FY)"
-       safe_to_numeric("EBIT/Adj. (FY)"),                                   -- "EBIT/Adj. (FY)"
-       safe_to_numeric("EBIT/Adj. (LTM)"),                                  -- "EBIT/Adj. (LTM)"
-       safe_to_numeric("EBIT - Est Med (FY1E)"),                            -- "EBIT - Est Med (FY1E)"
-       safe_to_numeric("EBIT - Est Med (NTM)"),                             -- "EBIT - Est Med (NTM)"
-       safe_to_numeric("Return On Equity % (LTM)"),                         -- "Return On Equity % (LTM)"
-       safe_to_numeric("Return On Equity % (FY)"),                          -- "Return On Equity % (FY)"
-       safe_to_numeric("Net Income - (IS) (FY)"),                           -- "Net Income - (IS) (FY)"
-       safe_to_numeric("Net Income - (IS) (LTM)"),                          -- "Net Income - (IS) (LTM)"
-       safe_to_numeric("Normalized Net Income (FY)"),                       -- "Normalized Net Income (FY)"
-       safe_to_numeric("Normalized Net Income (LTM)"),                      -- "Normalized Net Income (LTM)"
-       safe_to_numeric("Net Income/Adj. (FY)"),                             -- "Net Income/Adj. (FY)"
-       safe_to_numeric("Net Income/Adj. (LTM)"),                            -- "Net Income/Adj. (LTM)"
-       safe_to_numeric("Net Income Margin % (FY)"),                         -- "Net Income Margin % (FY)"
-       safe_to_numeric("Net Income Margin % (LTM)"),                        -- "Net Income Margin % (LTM)"
-       safe_to_numeric("Volatility (1M)"),                                  -- "Volatility (1M)"
-       safe_to_numeric("Volatility (3M)"),                                  -- "Volatility (3M)"
-       safe_to_numeric("Volatility (6M)"),                                  -- "Volatility (6M)"
-       safe_to_numeric("Volatility (1Y)"),                                  -- "Volatility (1Y)"
-       safe_to_numeric("Volume (Shrs)"),                                    -- "Volume (Shrs)"
-       safe_to_numeric("Dividend Per Share (LTM)"),                         -- "Dividend Per Share (LTM)"
-       safe_to_numeric("Div Yield (Ind)"),                                  -- "Div Yield (Ind)"
-       safe_to_numeric("Div Yield (LTM)"),                                  -- "Div Yield (LTM)"
-       safe_to_numeric("Total Debt (FY)"),                                  -- "Total Debt (FY)"
-       safe_to_numeric("Total Equity (FY)"),                                -- "Total Equity (FY)"
-       safe_to_numeric("Total Equity (LTM)"),                               -- "Total Equity (LTM)"
-       safe_to_numeric("Total Debt (LTM)"),                                 -- "Total Debt (LTM)"
-       safe_to_numeric("Total Assets (LTM)"),                               -- "Total Assets (LTM)"
-       safe_to_numeric("Total Assets (FY)"),                                -- "Total Assets (FY)"
-       safe_to_numeric("Current Ratio (FY)"),                               -- "Current Ratio (FY)"
-       safe_to_numeric("Current Ratio (LTM)"),                              -- "Current Ratio (LTM)"
-       safe_to_numeric("Gross Profit Margin % (FY)"),                       -- "Gross Profit Margin % (FY)"
-       safe_to_numeric("Gross Profit Margin % (LTM)"),                      -- "Gross Profit Margin % (LTM)"
-       safe_to_numeric("Asset Turnover (FY)"),                              -- "Asset Turnover (FY)"
-       safe_to_numeric("Asset Turnover (LTM)"),                             -- "Asset Turnover (LTM)"
-       safe_to_numeric("Gross Profit (LTM)"),                               -- "Gross Profit (LTM)"
-       safe_to_numeric("Gross Profit (FY)"),                                -- "Gross Profit (FY)"
-       safe_to_numeric("EPS Norm - Est Avg (NTM)"),                         -- "EPS Norm - Est Avg (NTM)"
-       safe_to_numeric("EPS/Adj. (-1FY)"),                                  -- "EPS/Adj. (-1FY)"
-       safe_to_numeric("EPS/Adj. (FY)"),                                    -- "EPS/Adj. (FY)"
-       safe_to_numeric("EPS/Adj. (LTM)"),                                   -- "EPS/Adj. (LTM)"
-       safe_to_numeric("EPS Norm - Est Avg (FY1E)"),                        -- "EPS Norm - Est Avg (FY1E)"
-       safe_to_numeric("Gain (Loss) On Sale Of Assets (LTM)"),              -- "Gain (Loss) On Sale Of Assets (LTM)"
-       safe_to_numeric("Cost Of Revenues (LTM)"),                           -- "Cost Of Revenues (LTM)"
-       safe_to_numeric("Cash Acquisitions (LTM)"),                          -- "Cash Acquisitions (LTM)"
-       safe_to_numeric("Cash Acquisitions (FY)"),                           -- "Cash Acquisitions (FY)"
-       safe_to_numeric("Cash Acquisitions (-1FY)"),                         -- "Cash Acquisitions (-1FY)"
-       safe_to_numeric("Inventory (LTM)"),                                  -- "Inventory (LTM)"
-       safe_to_numeric("Goodwill (FQ)"),                                    -- "Goodwill (FQ)"
-       safe_to_numeric("Goodwill (LTM)"),                                   -- "Goodwill (LTM)"
-       safe_to_numeric("Goodwill (FY)"),                                    -- "Goodwill (FY)"
-       safe_to_numeric("Goodwill (-1FY)"),                                  -- "Goodwill (-1FY)"
-       safe_to_numeric("Impairment of Goodwill (FQ)"),                      -- "Impairment of Goodwill (FQ)"
-       safe_to_numeric("Impairment of Goodwill (LTM)"),                     -- "Impairment of Goodwill (LTM)"
-       safe_to_numeric("Impairment of Goodwill (-1FY)"),                    -- "Impairment of Goodwill (-1FY)"
-       safe_to_numeric("Impairment of Goodwill (FY)"),                      -- "Impairment of Goodwill (FY)"
-       safe_to_numeric("Operating Income (LTM)"),                           -- "Operating Income (LTM)"
-       safe_to_numeric("Asset Writedown (LTM)"),                            -- "Asset Writedown (LTM)"
-       safe_to_numeric("Asset Writedown (FY)"),                             -- "Asset Writedown (FY)"
-       safe_to_numeric("Asset Writedown (-1FY)"),                           -- "Asset Writedown (-1FY)"
-       safe_to_numeric("Operating Income (FY)"),                            -- "Operating Income (FY)"
-       safe_to_numeric("Capital Expenditure (LTM)"),                        -- "Capital Expenditure (LTM)"
-       safe_to_numeric("Capital Expenditure (-1FY)"),                       -- "Capital Expenditure (-1FY)"
-       safe_to_numeric("Capital Expenditure (FY)"),                         -- "Capital Expenditure (FY)"
-       safe_to_numeric("Retained Earnings (LTM)"),                          -- "Retained Earnings (LTM)"
-       safe_to_numeric("Total Current Assets (LTM)"),                       -- "Total Current Assets (LTM)"
-       safe_to_numeric("Total Current Liabilities (LTM)"),                  -- "Total Current Liabilities (LTM)"
-       safe_to_numeric("R&D Expenses (LTM)"),                               -- "R&D Expenses (LTM)"
-       safe_to_numeric("Restructuring Charges (LTM)"),                      -- "Restructuring Charges (LTM)"
-       safe_to_numeric("Restructuring Charges (FQ)"),                       -- "Restructuring Charges (FQ)"
-       safe_to_numeric("Restructuring Charges (-1FY)"),                     -- "Restructuring Charges (-1FY)"
-       safe_to_numeric("Restructuring Charges (FY)"),                       -- "Restructuring Charges (FY)"
-       safe_to_numeric("Interest Expense/Total (LTM)"),                     -- "Interest Expense/Total (LTM)"
-       safe_to_numeric("Merger & Restructuring Charges (LTM)"),             -- "Merger & Restructuring Charges (LTM)"
-       safe_to_numeric("Working Capital (LTM)"),                            -- "Working Capital (LTM)"
-       safe_to_numeric("Other Unusual Items/Total (LTM)"),                  -- "Other Unusual Items/Total (LTM)"
-       safe_to_numeric("Interest Income On Investments (LTM)"),             -- "Interest Income On Investments (LTM)"
-       safe_to_numeric("Buyback Yield (LTM)"),                              -- "Buyback Yield (LTM)"
-       safe_to_numeric("Return on Assets (ROA) % (LTM)"),                   -- "Return on Assets (ROA) % (LTM)"
-       safe_to_numeric("Return on Assets (ROA) % (FY)"),                    -- "Return on Assets (ROA) % (FY)"
-       safe_to_numeric("Net Income - (IS) (-1FY)"),                         -- "Net Income - (IS) (-1FY)"
-       safe_to_numeric("Normalized Net Income (-1FY)"),                     -- "Normalized Net Income (-1FY)"
-       safe_to_numeric("CFF (FY)"),                                         -- "CFF (FY)"
-       safe_to_numeric("CFF (-1FY)"),                                       -- "CFF (-1FY)"
-       safe_to_numeric("CFI (FY)"),                                         -- "CFI (FY)"
-       safe_to_numeric("CFI (-1FY)"),                                       -- "CFI (-1FY)"
-       safe_to_numeric("CFO (FY)"),                                         -- "CFO (FY)"
-       safe_to_numeric("CFO (-1FY)"),                                       -- "CFO (-1FY)"
-       safe_to_numeric("Div Yield (-1FYInd)"),                              -- "Div Yield (-1FYInd)"
-       safe_to_numeric("FCF (FY)"),                                         -- "FCF (FY)"
-       safe_to_numeric("Capital Expenditure (FQ)"),                         -- "Capital Expenditure (FQ)"
-       safe_to_numeric("Capital Expenditure (5YAVGFQ)"),                    -- "Capital Expenditure (5YAVGFQ)"
-       safe_to_numeric("CFF (FQ)"),                                         -- "CFF (FQ)"
-       safe_to_numeric("CFI (FQ)"),                                         -- "CFI (FQ)"
-       safe_to_numeric("CFO (FQ)"),                                         -- "CFO (FQ)"
-       safe_to_numeric("FCF (FQ)"),                                         -- "FCF (FQ)"
-       safe_to_numeric("Total Revenues (5YAVGFQ)"),                         -- "Total Revenues (5YAVGFQ)"
-       safe_to_numeric("EBITDA (5YAVGFQ)"),                                 -- "EBITDA (5YAVGFQ)"
-       safe_to_numeric("EBIT (5YAVGFQ)"),                                   -- "EBIT (5YAVGFQ)"
-       safe_to_numeric("FCF (5YAVGFQ)"),                                    -- "FCF (5YAVGFQ)"
-       safe_to_numeric("Cash Acquisitions (FQ)"),                           -- "Cash Acquisitions (FQ)"
-       safe_to_numeric("Cash Acquisitions (5YAVGFQ)"),                      -- "Cash Acquisitions (5YAVGFQ)"
-       safe_to_numeric("Asset Writedown (FQ)"),                             -- "Asset Writedown (FQ)"
-       safe_to_numeric("Asset Writedown (5YAVGFQ)"),                        -- "Asset Writedown (5YAVGFQ)"
-       safe_to_numeric("Impairment of Goodwill (5YAVGFQ)"),                 -- "Impairment of Goodwill (5YAVGFQ)"
-       safe_to_numeric("Operating Income (FQ)"),                            -- "Operating Income (FQ)"
-       safe_to_numeric("Operating Income (5YAVGFQ)"),                       -- "Operating Income (5YAVGFQ)"
-       safe_to_numeric("P/B (LTM)"),                                        -- "P/B (LTM)"
-       safe_to_numeric("P/B (-1FY)"),                                       -- "P/B (-1FY)"
-       safe_to_numeric("P/B (5YAVG)"),                                      -- "P/B (5YAVG)"
-       safe_to_numeric("Cash And Equivalents (LTM)"),                       -- "Cash And Equivalents (LTM)"
-       safe_to_numeric("Cash And Equivalents (FQ)"),                        -- "Cash And Equivalents (FQ)"
-       safe_to_numeric("Cash And Equivalents (FY)"),                        -- "Cash And Equivalents (FY)"
-       safe_to_numeric("Cash And Equivalents (5YAVGFQ)"),                   -- "Cash And Equivalents (5YAVGFQ)"
-       safe_to_numeric("Inventory (FQ)"),                                   -- "Inventory (FQ)"
-       safe_to_numeric("Inventory (FY)"),                                   -- "Inventory (FY)"
-       safe_to_numeric("Goodwill (5YAVGFQ)"),                               -- "Goodwill (5YAVGFQ)"
-       safe_to_numeric("Inventory (5YAVGFQ)"),                              -- "Inventory (5YAVGFQ)"
-       safe_to_numeric("Retained Earnings (FQ)"),                           -- "Retained Earnings (FQ)"
-       safe_to_numeric("Retained Earnings (FY)"),                           -- "Retained Earnings (FY)"
-       safe_to_numeric("Retained Earnings (5YAVGFQ)"),                      -- "Retained Earnings (5YAVGFQ)"
-       safe_to_numeric("Working Capital (FQ)"),                             -- "Working Capital (FQ)"
-       safe_to_numeric("Working Capital (FY)"),                             -- "Working Capital (FY)"
-       safe_to_numeric("Working Capital (5YAVGFY)"),                        -- "Working Capital (5YAVGFY)"
-       safe_to_numeric("Div Yield (TTM)"),                                  -- "Div Yield (TTM)"
-       safe_to_numeric("Div Yield (NTM)"),                                  -- "Div Yield (NTM)"
-       safe_to_numeric("Div Yield (5YAVGLTM)"),                             -- "Div Yield (5YAVGLTM)"
-       safe_to_numeric("Gross Intangible Assets (LTM)"),                    -- "Gross Intangible Assets (LTM)"
-       safe_to_numeric("Gross Intangible Assets (FY)"),                     -- "Gross Intangible Assets (FY)"
-       safe_to_numeric("Gross Intangible Assets (5YAVGFQ)"),                -- "Gross Intangible Assets (5YAVGFQ)"
-       safe_to_numeric("Restructuring Charges (5YAVGFQ)"),                  -- "Restructuring Charges (5YAVGFQ)"
-       safe_to_numeric("Merger & Restructuring Charges (FQ)"),              -- "Merger & Restructuring Charges (FQ)"
-       safe_to_numeric("Merger & Restructuring Charges (FY)"),              -- "Merger & Restructuring Charges (FY)"
-       safe_to_numeric("Merger & Restructuring Charges (5YAVGFQ)"),         -- "Merger & Restructuring Charges (5YAVGFQ)"
-       safe_to_numeric("Normalized Net Income (FQ)"),                       -- "Normalized Net Income (FQ)"
-       safe_to_numeric("Normalized Net Income (5YAVGFQ)"),                  -- "Normalized Net Income (5YAVGFQ)"
-       safe_to_numeric("Net Income/Adj. (FQ)"),                             -- "Net Income/Adj. (FQ)"
-       safe_to_numeric("Net Income/Adj. (5YAVGFQ)"),                        -- "Net Income/Adj. (5YAVGFQ)"
-       safe_to_numeric("Net Income - (IS) (FQ)"),                           -- "Net Income - (IS) (FQ)"
-       safe_to_numeric("Net Income - (IS) (5YAVGFQ)"),                      -- "Net Income - (IS) (5YAVGFQ)"
-       safe_to_numeric("Net Income - (IS) (5YAVGLTM)"),                     -- "Net Income - (IS) (5YAVGLTM)"
-       safe_to_numeric("Normalized Net Income (5YAVGLTM)"),                 -- "Normalized Net Income (5YAVGLTM)"
-       safe_to_numeric("EBITDA (5YAVGLTM)"),                                -- "EBITDA (5YAVGLTM)"
-       safe_to_numeric("EBIT (5YAVGLTM)"),                                  -- "EBIT (5YAVGLTM)"
-       safe_to_numeric("Total Revenues (5YAVGLTM)"),                        -- "Total Revenues (5YAVGLTM)"
-       safe_to_numeric("Revenues - Est YoY % (FY1E)"),                      -- "Revenues - Est YoY % (FY1E)"
-       safe_to_numeric("Price Chg. % (1M)"),                                -- "Price Chg. % (1M)"
-       safe_to_numeric("Price Chg. % (3M)"),                                -- "Price Chg. % (3M)"
-       safe_to_numeric("1-Day %"),                                          -- "1-Day %"
-       safe_to_numeric("Price (5D Ago)"),                                   -- "Price (5D Ago)"
-       safe_to_numeric("Price (1W Ago)"),                                   -- "Price (1W Ago)"
-       safe_to_numeric("Price (1M Ago)"),                                   -- "Price (1M Ago)"
-       safe_to_numeric("Price (3M Ago)"),                                   -- "Price (3M Ago)"
-       safe_to_numeric("Price (6M Ago)"),                                   -- "Price (6M Ago)"
-       safe_to_numeric("Price (1Y Ago)"),                                   -- "Price (1Y Ago)"
-       safe_to_numeric("Price (3Y Ago)"),                                   -- "Price (3Y Ago)"
-       safe_to_numeric("Price (5Y Ago)"),                                   -- "Price (5Y Ago)"
-       safe_to_numeric("Price (QTD Ago)"),                                  -- "Price (QTD Ago)"
-       safe_to_numeric("Rel. Volume"),                                      -- "Rel. Volume"
-       safe_to_numeric("Shrs Out"),                                         -- "Shrs Out"
-       safe_to_numeric("Shrs Out (-1FY)"),                                  -- "Shrs Out (-1FY)"
-       safe_to_numeric("Common Dividends Paid (LTM)"),                      -- "Common Dividends Paid (LTM)"
-       safe_to_numeric("Common Dividends Paid (FY)"),                       -- "Common Dividends Paid (FY)"
-       safe_to_numeric("Selling General & Admin Expenses/Total (FQ)"),      -- "Selling General & Admin Expenses/Total (FQ)"
-       safe_to_numeric("Selling General & Admin Expenses/Total (FY)"),      -- "Selling General & Admin Expenses/Total (FY)"
-       safe_to_numeric("Selling General & Admin Expenses/Total (-1FY)"),    -- "Selling General & Admin Expenses/Total (-1FY)"
-       safe_to_numeric("Selling General & Admin Expenses/Total (5YAVGFQ)"), -- "Selling General & Admin Expenses/Total (5YAVGFQ)"
-       safe_to_numeric("Accounts Receivable/Total (FY)"),                   -- "Accounts Receivable/Total (FY)"
-       safe_to_numeric("Accounts Receivable/Total (-1FY)"),                 -- "Accounts Receivable/Total (-1FY)"
-       safe_to_numeric("Accounts Receivable/Total (5YAVGFQ)"),              -- "Accounts Receivable/Total (5YAVGFQ)"
-       safe_to_numeric("Marketing Expenses (FQ)"),                          -- "Marketing Expenses (FQ)"
-       safe_to_numeric("Marketing Expenses (FY)"),                          -- "Marketing Expenses (FY)"
-       safe_to_numeric("Marketing Expenses (-1FY)"),                        -- "Marketing Expenses (-1FY)"
-       safe_to_numeric("Marketing Expenses (5YAVGLTM)"),                    -- "Marketing Expenses (5YAVGLTM)"
-       safe_to_numeric("Revenues - Est Avg (NTM)"),                         -- "Revenues - Est Avg (NTM)"
-       safe_to_numeric("Revenues - Est Avg (FY1E)"),                        -- "Revenues - Est Avg (FY1E)"
-       safe_to_numeric("Revenues - Est Med (NTM)"),                         -- "Revenues - Est Med (NTM)"
-       safe_to_numeric("Revenues - Est Med (FY1E)"),                        -- "Revenues - Est Med (FY1E)"
-       safe_to_numeric("EV/Sales (EST FY1)"),                               -- "EV/Sales (EST FY1)"
-       safe_to_numeric("EV/Sales (LTM)"),                                   -- "EV/Sales (LTM)"
-       safe_to_numeric("EV/Sales (NTM)"),                                   -- "EV/Sales (NTM)"
-       safe_to_numeric("EV/Sales (-1FYLTM)"),                               -- "EV/Sales (-1FYLTM)"
-       safe_to_numeric("EV/Sales (-2FYLTM)"),                               -- "EV/Sales (-2FYLTM)"
-       safe_to_numeric("EV/Sales (-3FYLTM)"),                               -- "EV/Sales (-3FYLTM)"
-       safe_to_numeric("EV/Sales (3YAVGLTM)"),                              -- "EV/Sales (3YAVGLTM)"
-       safe_to_numeric("EV/Sales (-1FQLTM)"),                               -- "EV/Sales (-1FQLTM)"
-       safe_to_numeric("EV/Sales (-2FQLTM)"),                               -- "EV/Sales (-2FQLTM)"
-       safe_to_numeric("EV/Sales (-3FQLTM)"),                               -- "EV/Sales (-3FQLTM)"
-       safe_to_numeric("EV/Sales (-4FQLTM)"),                               -- "EV/Sales (-4FQLTM)"
-       safe_to_numeric("52W High/Adj"),                                     -- "52W High/Adj"
-       safe_to_numeric("52W Low/Adj"),                                      -- "52W Low/Adj"
-       safe_to_numeric("EMA (20D)"),                                        -- "EMA (20D)"
-       safe_to_numeric("EMA (50D)"),                                        -- "EMA (50D)"
-       safe_to_numeric("EMA (100D)"),                                       -- "EMA (100D)"
-       safe_to_numeric("EMA (250D)"),                                       -- "EMA (250D)"
-       safe_to_numeric("EV/EBITDA (LTM)"),                                  -- "EV/EBITDA (LTM)"
-       safe_to_numeric("EV/EBITDA (NTM)"),                                  -- "EV/EBITDA (NTM)"
-       safe_to_numeric("EV/EBITDA (-1FYLTM)"),                              -- "EV/EBITDA (-1FYLTM)"
-       safe_to_numeric("EV/EBITDA (-1FQLTM)"),                              -- "EV/EBITDA (-1FQLTM)"
-       safe_to_numeric("EV/EBITDA (3YAVGLTM)"),                             -- "EV/EBITDA (3YAVGLTM)"
-       safe_to_numeric("EV/EBITDA (EST FY1)"),                              -- "EV/EBITDA (EST FY1)"
-       safe_to_numeric("P/E (EST FY1)"),                                    -- "P/E (EST FY1)"
-       safe_to_numeric("P/E (-1FYLTM)"),                                    -- "P/E (-1FYLTM)"
-       safe_to_numeric("P/E (-2FYLTM)"),                                    -- "P/E (-2FYLTM)"
-       safe_to_numeric("P/E (-3FYLTM)"),                                    -- "P/E (-3FYLTM)"
-       safe_to_numeric("P/E (3YAVGLTM)"),                                   -- "P/E (3YAVGLTM)"
-       safe_to_numeric("P/E (-1FQLTM)"),                                    -- "P/E (-1FQLTM)"
-       safe_to_numeric("P/E (-2FQLTM)"),                                    -- "P/E (-2FQLTM)"
-       safe_to_numeric("P/E (-3FQLTM)"),                                    -- "P/E (-3FQLTM)"
-       safe_to_numeric("P/E (5YAVGLTM)"),                                   -- "P/E (5YAVGLTM)"
-       safe_to_numeric("P/E (-0FQQoQLTM)"),                                 -- "P/E (-0FQQoQLTM)"
-       safe_to_numeric("P/E (-0FYYoYLTM)"),                                 -- "P/E (-0FYYoYLTM)"
-       safe_to_numeric("P/E (-1FYYoYLTM)"),                                 -- "P/E (-1FYYoYLTM)"
-       safe_to_numeric("P/E (-0FQYoYLTM)"),                                 -- "P/E (-0FQYoYLTM)"
-       safe_to_numeric("Full Time Employees (FQ)"),                         -- "Full Time Employees (FQ)"
-       safe_to_numeric("Full Time Employees (FY)"),                         -- "Full Time Employees (FY)"
-       safe_to_numeric("Full Time Employees (-1FY)"),                       -- "Full Time Employees (-1FY)"
-       safe_to_numeric("Full Time Employees (-2FY)"),                       -- "Full Time Employees (-2FY)"
-       safe_to_numeric("Full Time Employees (-3FY)"),                       -- "Full Time Employees (-3FY)"
-       safe_to_numeric("Avg Employees (5YAVGFY)"),                          -- "Avg Employees (5YAVGFY)"
-       safe_to_numeric("Net EPS - Basic (LTM)"),                            -- "Net EPS - Basic (LTM)"
-       safe_to_numeric("Net EPS - Basic (FQ)"),                             -- "Net EPS - Basic (FQ)"
-       safe_to_numeric("Net EPS - Basic (FY)"),                             -- "Net EPS - Basic (FY)"
-       safe_to_numeric("Net EPS - Basic (-1FQFQ)"),                         -- "Net EPS - Basic (-1FQFQ)"
-       safe_to_numeric("Net EPS - Basic (-2FQFQ)"),                         -- "Net EPS - Basic (-2FQFQ)"
-       safe_to_numeric("Net EPS - Basic (-3FQFQ)"),                         -- "Net EPS - Basic (-3FQFQ)"
-       safe_to_numeric("Net EPS - Basic (-4FQFQ)"),                         -- "Net EPS - Basic (-4FQFQ)"
-       safe_to_numeric("Net EPS - Basic (-1FY)"),                           -- "Net EPS - Basic (-1FY)"
-       safe_to_numeric("Net EPS - Basic (-2FY)"),                           -- "Net EPS - Basic (-2FY)"
-       safe_to_numeric("Net EPS - Basic (-3FY)"),                           -- "Net EPS - Basic (-3FY)"
-       safe_to_numeric("Net EPS - Basic (-4FY)"),                           -- "Net EPS - Basic (-4FY)"
-       safe_to_numeric("Net EPS - Basic (-5FY)"),                           -- "Net EPS - Basic (-5FY)"
-       safe_to_numeric("EPS Est Avg Rev % (FY1E - 1W)"),                    -- "EPS Est Avg Rev % (FY1E - 1W)"
-       safe_to_numeric("EPS Est Avg Rev % (FY1E - 1M)"),                    -- "EPS Est Avg Rev % (FY1E - 1M)"
-       safe_to_numeric("EPS Est Avg Rev % (FY1E - 3M)"),                    -- "EPS Est Avg Rev % (FY1E - 3M)"
-       safe_to_numeric("EPS Est Avg Rev % (FY1E - 6M)"),                    -- "EPS Est Avg Rev % (FY1E - 6M)"
-       safe_to_numeric("EPS Est Avg Rev % (FY1E - 1Y)"),                    -- "EPS Est Avg Rev % (FY1E - 1Y)"
-       safe_to_numeric("Div Yield (-2FYInd)"),                              -- "Div Yield (-2FYInd)"
-       safe_to_numeric("Div Yield (-3FYInd)"),                              -- "Div Yield (-3FYInd)"
-       safe_to_numeric("Div Yield (-4FYInd)"),                              -- "Div Yield (-4FYInd)"
-       safe_to_numeric("Div Yield (-5FYInd)"),                              -- "Div Yield (-5FYInd)"
-       safe_to_numeric("EBITDA - Est Avg (NTM)"),                           -- "EBITDA - Est Avg (NTM)"
-       safe_to_numeric("EBITDA - Est Avg (FY1E)"),                          -- "EBITDA - Est Avg (FY1E)"
-       safe_to_numeric("EPS GAAP - Est Avg (NTM)"),                         -- "EPS GAAP - Est Avg (NTM)"
-       safe_to_numeric("EPS GAAP - Est Avg (FY1E)"),                        -- "EPS GAAP - Est Avg (FY1E)"
-       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 1M)"),               -- "EPS GAAP Est Avg Rev % (FY1E - 1M)"
-       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 3M)"),               -- "EPS GAAP Est Avg Rev % (FY1E - 3M)"
-       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 6M)"),               -- "EPS GAAP Est Avg Rev % (FY1E - 6M)"
-       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 1Y)"),               -- "EPS GAAP Est Avg Rev % (FY1E - 1Y)"
-       safe_to_numeric("EPS Norm - Est # (FY1E)")                           -- "EPS Norm - Est # (FY1E)"
+SELECT NULLIF(TRIM("Ticker"), '')                                             AS "Ticker",
+       NULLIF(TRIM("ISIN"), '')                                               AS "ISIN",
+       NULLIF(TRIM("Name"), '')                                               AS "Name",
+       NULLIF(TRIM("Description"), '')                                        AS "Description",
+       NULLIF(TRIM("Region"), '')                                             AS "Region",
+       NULLIF(TRIM("Country"), '')                                            AS "Country",
+       NULLIF(TRIM("Trading Country"), '')                                    AS "Trading Country",
+       NULLIF(TRIM("Exchange"), '')                                           AS "Exchange",
+       NULLIF(TRIM("Unit"), '')                                               AS "Unit",
+       NULLIF(TRIM("Sector"), '')                                             AS "Sector",
+       NULLIF(TRIM("Industry"), '')                                           AS "Industry",
+       NULLIF(TRIM("Style Class"), '')                                        AS "Style Class",
+       NULLIF(TRIM("Size Class"), '')                                         AS "Size Class",
+       NULLIF(TRIM("Last Updated"), '')::DATE                                 AS "Last Updated",
+       NULLIF(TRIM("Income Statement Report Date"), '')::DATE                 AS "Income Statement Report Date",
+       COALESCE(NULLIF(TRIM("FY End"), ''), 'Dec 2024')                       AS "FY End",
+       parse_fy_end_to_date(COALESCE(NULLIF(TRIM("FY End"), ''), 'Dec 2024')) AS "FY End Date",
+       calculate_fiscal_month(
+               NULLIF(TRIM("Income Statement Report Date"), '')::DATE,
+               parse_fy_end_to_date(COALESCE(NULLIF(TRIM("FY End"), ''), 'Dec 2024'))
+       )                                                                      AS "Fiscal Month",
+       calculate_next_fiscal_quarter(
+               NULLIF(TRIM("Income Statement Report Date"), '')::DATE,
+               parse_fy_end_to_date(COALESCE(NULLIF(TRIM("FY End"), ''), 'Dec 2024'))
+       )                                                                      AS "Next Fiscal Quarter",
+       NULLIF(TRIM("Next Earnings"), '')::DATE                                AS "Next Earnings",
+       NULLIF(TRIM("Next Earnings (When)"), '')                               AS "Next Earnings (When)",
+       NULLIF(TRIM("Next Earnings (Status)"), '')                             AS "Next Earnings (Status)",
+       NULLIF(TRIM("Dividend Record (Currency)"), '')                         AS "Dividend Record (Currency)",
+       safe_to_numeric("Dividend Record (Amount)")                            AS "Dividend Record (Amount)",
+       NULLIF(TRIM("Dividend Record (Frequency)"), '')                        AS "Dividend Record (Frequency)",
+       safe_to_numeric("Dividend Streak")                                     AS "Dividend Streak",
+       NULLIF(TRIM("Dividend Record (Announce Date)"), '')::DATE              AS "Dividend Record (Announce Date)",
+       NULLIF(TRIM("Dividend Record (Payable Date)"), '')::DATE               AS "Dividend Record (Payable Date)",
+       NULLIF(TRIM("Dividend Record (Record Date)"), '')::DATE                AS "Dividend Record (Record Date)",
+       NULLIF(TRIM("Dividend Record (Ex Date)"), '')::DATE                    AS "Dividend Record (Ex Date)",
+       CURRENT_DATE                                                           AS "Reference Date",
+       safe_to_numeric("Market Cap")                                          AS "Market Cap",
+       safe_to_numeric("Enterprise Value")                                    AS "Enterprise Value",
+       safe_to_numeric("Last Price")                                          AS "Last Price",
+       safe_to_numeric("Price Target (YTD Ago)")                              AS "Price Target (YTD Ago)",
+       safe_to_numeric("Total Return (YTD)")                                  AS "Total Return (YTD)",
+       safe_to_numeric("Price Target")                                        AS "Price Target",
+       safe_to_numeric("Price Target - Low")                                  AS "Price Target - Low",
+       safe_to_numeric("Price Target - Median")                               AS "Price Target - Median",
+       safe_to_numeric("Price Target - High")                                 AS "Price Target - High",
+       safe_to_numeric("Price Target - #")                                    AS "Price Target - #",
+       safe_to_numeric("P/E (NTM)")                                           AS "P/E (NTM)",
+       safe_to_numeric("P/E (LTM)")                                           AS "P/E (LTM)",
+       safe_to_numeric("Altman Z-Score (FY)")                                 AS "Altman Z-Score (FY)",
+       safe_to_numeric("Altman Z-Score (FQ)")                                 AS "Altman Z-Score (FQ)",
+       safe_to_numeric("Altman Z-Score (LTM)")                                AS "Altman Z-Score (LTM)",
+       safe_to_numeric("Beta (1Y)")                                           AS "Beta (1Y)",
+       safe_to_numeric("Beta (2Y)")                                           AS "Beta (2Y)",
+       safe_to_numeric("Beta (5Y)")                                           AS "Beta (5Y)",
+       safe_to_numeric("Analyst Rating")                                      AS "Analyst Rating",
+       safe_to_numeric("# Strong Sell Ratings")                               AS "# Strong Sell Ratings",
+       safe_to_numeric("# Strong Buys Ratings")                               AS "# Strong Buys Ratings",
+       safe_to_numeric("# Hold Ratings")                                      AS "# Hold Ratings",
+       safe_to_numeric("# Buys Ratings")                                      AS "# Buys Ratings",
+       safe_to_numeric("# Sell Ratings")                                      AS "# Sell Ratings",
+       safe_to_numeric("Total Revenues/CAGR (5Y FY)")                         AS "Total Revenues/CAGR (5Y FY)",
+       safe_to_numeric("Total Revenues (FQ)")                                 AS "Total Revenues (FQ)",
+       safe_to_numeric("Total Revenues (-1FY)")                               AS "Total Revenues (-1FY)",
+       safe_to_numeric("Total Revenues (FY)")                                 AS "Total Revenues (FY)",
+       safe_to_numeric("Total Revenues (LTM)")                                AS "Total Revenues (LTM)",
+       safe_to_numeric("Total Operating Expenses (LTM)")                      AS "Total Operating Expenses (LTM)",
+       safe_to_numeric("P/TBV (LTM)")                                         AS "P/TBV (LTM)",
+       safe_to_numeric("TBV (FY)")                                            AS "TBV (FY)",
+       safe_to_numeric("TBV (LTM)")                                           AS "TBV (LTM)",
+       safe_to_numeric("Market Cap (Country R)")                              AS "Market Cap (Country R)",
+       safe_to_numeric("Tot. Return %/CAGR (3Y)")                             AS "Tot. Return %/CAGR (3Y)",
+       safe_to_numeric("Tot. Return %/CAGR (10Y)")                            AS "Tot. Return %/CAGR (10Y)",
+       safe_to_numeric("Total Return (5Y)")                                   AS "Total Return (5Y)",
+       safe_to_numeric("Total Return (10Y)")                                  AS "Total Return (10Y)",
+       safe_to_numeric("Net Income/Adj. (-1FY)")                              AS "Net Income/Adj. (-1FY)",
+       safe_to_numeric("CFF (LTM)")                                           AS "CFF (LTM)",
+       safe_to_numeric("CFI (LTM)")                                           AS "CFI (LTM)",
+       safe_to_numeric("FCF (LTM)")                                           AS "FCF (LTM)",
+       safe_to_numeric("CFO (LTM)")                                           AS "CFO (LTM)",
+       safe_to_numeric("EBITDA (FQ)")                                         AS "EBITDA (FQ)",
+       safe_to_numeric("EBITDA (LTM)")                                        AS "EBITDA (LTM)",
+       safe_to_numeric("EBITDA (FY)")                                         AS "EBITDA (FY)",
+       safe_to_numeric("EBITDA (-1FY)")                                       AS "EBITDA (-1FY)",
+       safe_to_numeric("EBITDA/Adj. (LTM)")                                   AS "EBITDA/Adj. (LTM)",
+       safe_to_numeric("EBITDA/Adj. (FY)")                                    AS "EBITDA/Adj. (FY)",
+       safe_to_numeric("EBITDA/Adj. (-1FY)")                                  AS "EBITDA/Adj. (-1FY)",
+       safe_to_numeric("EBIT (FQ)")                                           AS "EBIT (FQ)",
+       safe_to_numeric("EBIT (LTM)")                                          AS "EBIT (LTM)",
+       safe_to_numeric("EBIT (FY)")                                           AS "EBIT (FY)",
+       safe_to_numeric("EBIT (-1FY)")                                         AS "EBIT (-1FY)",
+       safe_to_numeric("EBIT/Adj. (-1FY)")                                    AS "EBIT/Adj. (-1FY)",
+       safe_to_numeric("EBIT/Adj. (FY)")                                      AS "EBIT/Adj. (FY)",
+       safe_to_numeric("EBIT/Adj. (LTM)")                                     AS "EBIT/Adj. (LTM)",
+       safe_to_numeric("EBIT - Est Med (FY1E)")                               AS "EBIT - Est Med (FY1E)",
+       safe_to_numeric("EBIT - Est Med (NTM)")                                AS "EBIT - Est Med (NTM)",
+       safe_to_numeric("Return On Equity % (LTM)")                            AS "Return On Equity % (LTM)",
+       safe_to_numeric("Return On Equity % (FY)")                             AS "Return On Equity % (FY)",
+       safe_to_numeric("Net Income - (IS) (FY)")                              AS "Net Income - (IS) (FY)",
+       safe_to_numeric("Net Income - (IS) (LTM)")                             AS "Net Income - (IS) (LTM)",
+       safe_to_numeric("Normalized Net Income (FY)")                          AS "Normalized Net Income (FY)",
+       safe_to_numeric("Normalized Net Income (LTM)")                         AS "Normalized Net Income (LTM)",
+       safe_to_numeric("Net Income/Adj. (FY)")                                AS "Net Income/Adj. (FY)",
+       safe_to_numeric("Net Income/Adj. (LTM)")                               AS "Net Income/Adj. (LTM)",
+       safe_to_numeric("Net Income Margin % (FY)")                            AS "Net Income Margin % (FY)",
+       safe_to_numeric("Net Income Margin % (LTM)")                           AS "Net Income Margin % (LTM)",
+       safe_to_numeric("Volatility (1M)")                                     AS "Volatility (1M)",
+       safe_to_numeric("Volatility (3M)")                                     AS "Volatility (3M)",
+       safe_to_numeric("Volatility (6M)")                                     AS "Volatility (6M)",
+       safe_to_numeric("Volatility (1Y)")                                     AS "Volatility (1Y)",
+       safe_to_numeric("Volume (Shrs)")                                       AS "Volume (Shrs)",
+       safe_to_numeric("Dividend Per Share (LTM)")                            AS "Dividend Per Share (LTM)",
+       safe_to_numeric("Div Yield (Ind)")                                     AS "Div Yield (Ind)",
+       safe_to_numeric("Div Yield (LTM)")                                     AS "Div Yield (LTM)",
+       safe_to_numeric("Total Debt (FY)")                                     AS "Total Debt (FY)",
+       safe_to_numeric("Total Equity (FY)")                                   AS "Total Equity (FY)",
+       safe_to_numeric("Total Equity (LTM)")                                  AS "Total Equity (LTM)",
+       safe_to_numeric("Total Debt (LTM)")                                    AS "Total Debt (LTM)",
+       safe_to_numeric("Total Assets (LTM)")                                  AS "Total Assets (LTM)",
+       safe_to_numeric("Total Assets (FY)")                                   AS "Total Assets (FY)",
+       safe_to_numeric("Current Ratio (FY)")                                  AS "Current Ratio (FY)",
+       safe_to_numeric("Current Ratio (LTM)")                                 AS "Current Ratio (LTM)",
+       safe_to_numeric("Gross Profit Margin % (FY)")                          AS "Gross Profit Margin % (FY)",
+       safe_to_numeric("Gross Profit Margin % (LTM)")                         AS "Gross Profit Margin % (LTM)",
+       safe_to_numeric("Asset Turnover (FY)")                                 AS "Asset Turnover (FY)",
+       safe_to_numeric("Asset Turnover (LTM)")                                AS "Asset Turnover (LTM)",
+       safe_to_numeric("Gross Profit (LTM)")                                  AS "Gross Profit (LTM)",
+       safe_to_numeric("Gross Profit (FY)")                                   AS "Gross Profit (FY)",
+       safe_to_numeric("EPS Norm - Est Avg (NTM)")                            AS "EPS Norm - Est Avg (NTM)",
+       safe_to_numeric("EPS/Adj. (-1FY)")                                     AS "EPS/Adj. (-1FY)",
+       safe_to_numeric("EPS/Adj. (FY)")                                       AS "EPS/Adj. (FY)",
+       safe_to_numeric("EPS/Adj. (LTM)")                                      AS "EPS/Adj. (LTM)",
+       safe_to_numeric("EPS Norm - Est Avg (FY1E)")                           AS "EPS Norm - Est Avg (FY1E)",
+       safe_to_numeric("Gain (Loss) On Sale Of Assets (LTM)")                 AS "Gain (Loss) On Sale Of Assets (LTM)",
+       safe_to_numeric("Cost Of Revenues (LTM)")                              AS "Cost Of Revenues (LTM)",
+       safe_to_numeric("Cash Acquisitions (LTM)")                             AS "Cash Acquisitions (LTM)",
+       safe_to_numeric("Cash Acquisitions (FY)")                              AS "Cash Acquisitions (FY)",
+       safe_to_numeric("Cash Acquisitions (-1FY)")                            AS "Cash Acquisitions (-1FY)",
+       safe_to_numeric("Inventory (LTM)")                                     AS "Inventory (LTM)",
+       safe_to_numeric("Goodwill (FQ)")                                       AS "Goodwill (FQ)",
+       safe_to_numeric("Goodwill (LTM)")                                      AS "Goodwill (LTM)",
+       safe_to_numeric("Goodwill (FY)")                                       AS "Goodwill (FY)",
+       safe_to_numeric("Goodwill (-1FY)")                                     AS "Goodwill (-1FY)",
+       safe_to_numeric("Impairment of Goodwill (FQ)")                         AS "Impairment of Goodwill (FQ)",
+       safe_to_numeric("Impairment of Goodwill (LTM)")                        AS "Impairment of Goodwill (LTM)",
+       safe_to_numeric("Impairment of Goodwill (-1FY)")                       AS "Impairment of Goodwill (-1FY)",
+       safe_to_numeric("Impairment of Goodwill (FY)")                         AS "Impairment of Goodwill (FY)",
+       safe_to_numeric("Operating Income (LTM)")                              AS "Operating Income (LTM)",
+       safe_to_numeric("Asset Writedown (LTM)")                               AS "Asset Writedown (LTM)",
+       safe_to_numeric("Asset Writedown (FY)")                                AS "Asset Writedown (FY)",
+       safe_to_numeric("Asset Writedown (-1FY)")                              AS "Asset Writedown (-1FY)",
+       safe_to_numeric("Operating Income (FY)")                               AS "Operating Income (FY)",
+       safe_to_numeric("Capital Expenditure (LTM)")                           AS "Capital Expenditure (LTM)",
+       safe_to_numeric("Capital Expenditure (-1FY)")                          AS "Capital Expenditure (-1FY)",
+       safe_to_numeric("Capital Expenditure (FY)")                            AS "Capital Expenditure (FY)",
+       safe_to_numeric("Retained Earnings (LTM)")                             AS "Retained Earnings (LTM)",
+       safe_to_numeric("Total Current Assets (LTM)")                          AS "Total Current Assets (LTM)",
+       safe_to_numeric("Total Current Liabilities (LTM)")                     AS "Total Current Liabilities (LTM)",
+       safe_to_numeric("R&D Expenses (LTM)")                                  AS "R&D Expenses (LTM)",
+       safe_to_numeric("Restructuring Charges (LTM)")                         AS "Restructuring Charges (LTM)",
+       safe_to_numeric("Restructuring Charges (FQ)")                          AS "Restructuring Charges (FQ)",
+       safe_to_numeric("Restructuring Charges (-1FY)")                        AS "Restructuring Charges (-1FY)",
+       safe_to_numeric("Restructuring Charges (FY)")                          AS "Restructuring Charges (FY)",
+       safe_to_numeric("Interest Expense/Total (LTM)")                        AS "Interest Expense/Total (LTM)",
+       safe_to_numeric("Merger & Restructuring Charges (LTM)")                AS "Merger & Restructuring Charges (LTM)",
+       safe_to_numeric("Working Capital (LTM)")                               AS "Working Capital (LTM)",
+       safe_to_numeric("Other Unusual Items/Total (LTM)")                     AS "Other Unusual Items/Total (LTM)",
+       safe_to_numeric("Interest Income On Investments (LTM)")                AS "Interest Income On Investments (LTM)",
+       safe_to_numeric("Buyback Yield (LTM)")                                 AS "Buyback Yield (LTM)",
+       safe_to_numeric("Return on Assets (ROA) % (LTM)")                      AS "Return on Assets (ROA) % (LTM)",
+       safe_to_numeric("Return on Assets (ROA) % (FY)")                       AS "Return on Assets (ROA) % (FY)",
+       safe_to_numeric("Net Income - (IS) (-1FY)")                            AS "Net Income - (IS) (-1FY)",
+       safe_to_numeric("Normalized Net Income (-1FY)")                        AS "Normalized Net Income (-1FY)",
+       safe_to_numeric("CFF (FY)")                                            AS "CFF (FY)",
+       safe_to_numeric("CFF (-1FY)")                                          AS "CFF (-1FY)",
+       safe_to_numeric("CFI (FY)")                                            AS "CFI (FY)",
+       safe_to_numeric("CFI (-1FY)")                                          AS "CFI (-1FY)",
+       safe_to_numeric("CFO (FY)")                                            AS "CFO (FY)",
+       safe_to_numeric("CFO (-1FY)")                                          AS "CFO (-1FY)",
+       safe_to_numeric("Div Yield (-1FYInd)")                                 AS "Div Yield (-1FYInd)",
+       safe_to_numeric("FCF (FY)")                                            AS "FCF (FY)",
+       safe_to_numeric("Capital Expenditure (FQ)")                            AS "Capital Expenditure (FQ)",
+       safe_to_numeric("Capital Expenditure (5YAVGFQ)")                       AS "Capital Expenditure (5YAVGFQ)",
+       safe_to_numeric("CFF (FQ)")                                            AS "CFF (FQ)",
+       safe_to_numeric("CFI (FQ)")                                            AS "CFI (FQ)",
+       safe_to_numeric("CFO (FQ)")                                            AS "CFO (FQ)",
+       safe_to_numeric("FCF (FQ)")                                            AS "FCF (FQ)",
+       safe_to_numeric("Total Revenues (5YAVGFQ)")                            AS "Total Revenues (5YAVGFQ)",
+       safe_to_numeric("EBITDA (5YAVGFQ)")                                    AS "EBITDA (5YAVGFQ)",
+       safe_to_numeric("EBIT (5YAVGFQ)")                                      AS "EBIT (5YAVGFQ)",
+       safe_to_numeric("FCF (5YAVGFQ)")                                       AS "FCF (5YAVGFQ)",
+       safe_to_numeric("Cash Acquisitions (FQ)")                              AS "Cash Acquisitions (FQ)",
+       safe_to_numeric("Cash Acquisitions (5YAVGFQ)")                         AS "Cash Acquisitions (5YAVGFQ)",
+       safe_to_numeric("Asset Writedown (FQ)")                                AS "Asset Writedown (FQ)",
+       safe_to_numeric("Asset Writedown (5YAVGFQ)")                           AS "Asset Writedown (5YAVGFQ)",
+       safe_to_numeric("Impairment of Goodwill (5YAVGFQ)")                    AS "Impairment of Goodwill (5YAVGFQ)",
+       safe_to_numeric("Operating Income (FQ)")                               AS "Operating Income (FQ)",
+       safe_to_numeric("Operating Income (5YAVGFQ)")                          AS "Operating Income (5YAVGFQ)",
+       safe_to_numeric("P/B (LTM)")                                           AS "P/B (LTM)",
+       safe_to_numeric("P/B (-1FY)")                                          AS "P/B (-1FY)",
+       safe_to_numeric("P/B (5YAVG)")                                         AS "P/B (5YAVG)",
+       safe_to_numeric("Cash And Equivalents (LTM)")                          AS "Cash And Equivalents (LTM)",
+       safe_to_numeric("Cash And Equivalents (FQ)")                           AS "Cash And Equivalents (FQ)",
+       safe_to_numeric("Cash And Equivalents (FY)")                           AS "Cash And Equivalents (FY)",
+       safe_to_numeric("Cash And Equivalents (5YAVGFQ)")                      AS "Cash And Equivalents (5YAVGFQ)",
+       safe_to_numeric("Inventory (FQ)")                                      AS "Inventory (FQ)",
+       safe_to_numeric("Inventory (FY)")                                      AS "Inventory (FY)",
+       safe_to_numeric("Goodwill (5YAVGFQ)")                                  AS "Goodwill (5YAVGFQ)",
+       safe_to_numeric("Inventory (5YAVGFQ)")                                 AS "Inventory (5YAVGFQ)",
+       safe_to_numeric("Retained Earnings (FQ)")                              AS "Retained Earnings (FQ)",
+       safe_to_numeric("Retained Earnings (FY)")                              AS "Retained Earnings (FY)",
+       safe_to_numeric("Retained Earnings (5YAVGFQ)")                         AS "Retained Earnings (5YAVGFQ)",
+       safe_to_numeric("Working Capital (FQ)")                                AS "Working Capital (FQ)",
+       safe_to_numeric("Working Capital (FY)")                                AS "Working Capital (FY)",
+       safe_to_numeric("Working Capital (5YAVGFY)")                           AS "Working Capital (5YAVGFY)",
+       safe_to_numeric("Div Yield (TTM)")                                     AS "Div Yield (TTM)",
+       safe_to_numeric("Div Yield (NTM)")                                     AS "Div Yield (NTM)",
+       safe_to_numeric("Div Yield (5YAVGLTM)")                                AS "Div Yield (5YAVGLTM)",
+       safe_to_numeric("Gross Intangible Assets (LTM)")                       AS "Gross Intangible Assets (LTM)",
+       safe_to_numeric("Gross Intangible Assets (FY)")                        AS "Gross Intangible Assets (FY)",
+       safe_to_numeric("Gross Intangible Assets (5YAVGFQ)")                   AS "Gross Intangible Assets (5YAVGFQ)",
+       safe_to_numeric("Restructuring Charges (5YAVGFQ)")                     AS "Restructuring Charges (5YAVGFQ)",
+       safe_to_numeric("Merger & Restructuring Charges (FQ)")                 AS "Merger & Restructuring Charges (FQ)",
+       safe_to_numeric("Merger & Restructuring Charges (FY)")                 AS "Merger & Restructuring Charges (FY)",
+       safe_to_numeric("Merger & Restructuring Charges (5YAVGFQ)")            AS "Merger & Restructuring Charges (5YAVGFQ)",
+       safe_to_numeric("Normalized Net Income (FQ)")                          AS "Normalized Net Income (FQ)",
+       safe_to_numeric("Normalized Net Income (5YAVGFQ)")                     AS "Normalized Net Income (5YAVGFQ)",
+       safe_to_numeric("Net Income/Adj. (FQ)")                                AS "Net Income/Adj. (FQ)",
+       safe_to_numeric("Net Income/Adj. (5YAVGFQ)")                           AS "Net Income/Adj. (5YAVGFQ)",
+       safe_to_numeric("Net Income - (IS) (FQ)")                              AS "Net Income - (IS) (FQ)",
+       safe_to_numeric("Net Income - (IS) (5YAVGFQ)")                         AS "Net Income - (IS) (5YAVGFQ)",
+       safe_to_numeric("Net Income - (IS) (5YAVGLTM)")                        AS "Net Income - (IS) (5YAVGLTM)",
+       safe_to_numeric("Normalized Net Income (5YAVGLTM)")                    AS "Normalized Net Income (5YAVGLTM)",
+       safe_to_numeric("EBITDA (5YAVGLTM)")                                   AS "EBITDA (5YAVGLTM)",
+       safe_to_numeric("EBIT (5YAVGLTM)")                                     AS "EBIT (5YAVGLTM)",
+       safe_to_numeric("Total Revenues (5YAVGLTM)")                           AS "Total Revenues (5YAVGLTM)",
+       safe_to_numeric("Revenues - Est YoY % (FY1E)")                         AS "Revenues - Est YoY % (FY1E)",
+       safe_to_numeric("Price Chg. % (1M)")                                   AS "Price Chg. % (1M)",
+       safe_to_numeric("Price Chg. % (3M)")                                   AS "Price Chg. % (3M)",
+       safe_to_numeric("1-Day %")                                             AS "1-Day %",
+       safe_to_numeric("Price (5D Ago)")                                      AS "Price (5D Ago)",
+       safe_to_numeric("Price (1W Ago)")                                      AS "Price (1W Ago)",
+       safe_to_numeric("Price (1M Ago)")                                      AS "Price (1M Ago)",
+       safe_to_numeric("Price (3M Ago)")                                      AS "Price (3M Ago)",
+       safe_to_numeric("Price (6M Ago)")                                      AS "Price (6M Ago)",
+       safe_to_numeric("Price (1Y Ago)")                                      AS "Price (1Y Ago)",
+       safe_to_numeric("Price (3Y Ago)")                                      AS "Price (3Y Ago)",
+       safe_to_numeric("Price (5Y Ago)")                                      AS "Price (5Y Ago)",
+       safe_to_numeric("Price (QTD Ago)")                                     AS "Price (QTD Ago)",
+       safe_to_numeric("Rel. Volume")                                         AS "Rel. Volume",
+       safe_to_numeric("Shrs Out")                                            AS "Shrs Out",
+       safe_to_numeric("Shrs Out (-1FY)")                                     AS "Shrs Out (-1FY)",
+       safe_to_numeric("Common Dividends Paid (LTM)")                         AS "Common Dividends Paid (LTM)",
+       safe_to_numeric("Common Dividends Paid (FY)")                          AS "Common Dividends Paid (FY)",
+       safe_to_numeric("Selling General & Admin Expenses/Total (FQ)")         AS "Selling General & Admin Expenses/Total (FQ)",
+       safe_to_numeric("Selling General & Admin Expenses/Total (FY)")         AS "Selling General & Admin Expenses/Total (FY)",
+       safe_to_numeric("Selling General & Admin Expenses/Total (-1FY)")       AS "Selling General & Admin Expenses/Total (-1FY)",
+       safe_to_numeric("Selling General & Admin Expenses/Total (5YAVGFQ)")    AS "Selling General & Admin Expenses/Total (5YAVGFQ)",
+       safe_to_numeric("Accounts Receivable/Total (FY)")                      AS "Accounts Receivable/Total (FY)",
+       safe_to_numeric("Accounts Receivable/Total (-1FY)")                    AS "Accounts Receivable/Total (-1FY)",
+       safe_to_numeric("Accounts Receivable/Total (5YAVGFQ)")                 AS "Accounts Receivable/Total (5YAVGFQ)",
+       safe_to_numeric("Marketing Expenses (FQ)")                             AS "Marketing Expenses (FQ)",
+       safe_to_numeric("Marketing Expenses (FY)")                             AS "Marketing Expenses (FY)",
+       safe_to_numeric("Marketing Expenses (-1FY)")                           AS "Marketing Expenses (-1FY)",
+       safe_to_numeric("Marketing Expenses (5YAVGLTM)")                       AS "Marketing Expenses (5YAVGLTM)",
+       safe_to_numeric("Revenues - Est Avg (NTM)")                            AS "Revenues - Est Avg (NTM)",
+       safe_to_numeric("Revenues - Est Avg (FY1E)")                           AS "Revenues - Est Avg (FY1E)",
+       safe_to_numeric("Revenues - Est Med (NTM)")                            AS "Revenues - Est Med (NTM)",
+       safe_to_numeric("Revenues - Est Med (FY1E)")                           AS "Revenues - Est Med (FY1E)",
+       safe_to_numeric("EV/Sales (EST FY1)")                                  AS "EV/Sales (EST FY1)",
+       safe_to_numeric("EV/Sales (LTM)")                                      AS "EV/Sales (LTM)",
+       safe_to_numeric("EV/Sales (NTM)")                                      AS "EV/Sales (NTM)",
+       safe_to_numeric("EV/Sales (-1FYLTM)")                                  AS "EV/Sales (-1FYLTM)",
+       safe_to_numeric("EV/Sales (-2FYLTM)")                                  AS "EV/Sales (-2FYLTM)",
+       safe_to_numeric("EV/Sales (-3FYLTM)")                                  AS "EV/Sales (-3FYLTM)",
+       safe_to_numeric("EV/Sales (3YAVGLTM)")                                 AS "EV/Sales (3YAVGLTM)",
+       safe_to_numeric("EV/Sales (-1FQLTM)")                                  AS "EV/Sales (-1FQLTM)",
+       safe_to_numeric("EV/Sales (-2FQLTM)")                                  AS "EV/Sales (-2FQLTM)",
+       safe_to_numeric("EV/Sales (-3FQLTM)")                                  AS "EV/Sales (-3FQLTM)",
+       safe_to_numeric("EV/Sales (-4FQLTM)")                                  AS "EV/Sales (-4FQLTM)",
+       safe_to_numeric("52W High/Adj")                                        AS "52W High/Adj",
+       safe_to_numeric("52W Low/Adj")                                         AS "52W Low/Adj",
+       safe_to_numeric("EMA (20D)")                                           AS "EMA (20D)",
+       safe_to_numeric("EMA (50D)")                                           AS "EMA (50D)",
+       safe_to_numeric("EMA (100D)")                                          AS "EMA (100D)",
+       safe_to_numeric("EMA (250D)")                                          AS "EMA (250D)",
+       safe_to_numeric("EV/EBITDA (LTM)")                                     AS "EV/EBITDA (LTM)",
+       safe_to_numeric("EV/EBITDA (NTM)")                                     AS "EV/EBITDA (NTM)",
+       safe_to_numeric("EV/EBITDA (-1FYLTM)")                                 AS "EV/EBITDA (-1FYLTM)",
+       safe_to_numeric("EV/EBITDA (-1FQLTM)")                                 AS "EV/EBITDA (-1FQLTM)",
+       safe_to_numeric("EV/EBITDA (3YAVGLTM)")                                AS "EV/EBITDA (3YAVGLTM)",
+       safe_to_numeric("EV/EBITDA (EST FY1)")                                 AS "EV/EBITDA (EST FY1)",
+       safe_to_numeric("P/E (EST FY1)")                                       AS "P/E (EST FY1)",
+       safe_to_numeric("P/E (-1FYLTM)")                                       AS "P/E (-1FYLTM)",
+       safe_to_numeric("P/E (-2FYLTM)")                                       AS "P/E (-2FYLTM)",
+       safe_to_numeric("P/E (-3FYLTM)")                                       AS "P/E (-3FYLTM)",
+       safe_to_numeric("P/E (3YAVGLTM)")                                      AS "P/E (3YAVGLTM)",
+       safe_to_numeric("P/E (-1FQLTM)")                                       AS "P/E (-1FQLTM)",
+       safe_to_numeric("P/E (-2FQLTM)")                                       AS "P/E (-2FQLTM)",
+       safe_to_numeric("P/E (-3FQLTM)")                                       AS "P/E (-3FQLTM)",
+       safe_to_numeric("P/E (5YAVGLTM)")                                      AS "P/E (5YAVGLTM)",
+       safe_to_numeric("P/E (-0FQQoQLTM)")                                    AS "P/E (-0FQQoQLTM)",
+       safe_to_numeric("P/E (-0FYYoYLTM)")                                    AS "P/E (-0FYYoYLTM)",
+       safe_to_numeric("P/E (-1FYYoYLTM)")                                    AS "P/E (-1FYYoYLTM)",
+       safe_to_numeric("P/E (-0FQYoYLTM)")                                    AS "P/E (-0FQYoYLTM)",
+       safe_to_numeric("Full Time Employees (FQ)")                            AS "Full Time Employees (FQ)",
+       safe_to_numeric("Full Time Employees (FY)")                            AS "Full Time Employees (FY)",
+       safe_to_numeric("Full Time Employees (-1FY)")                          AS "Full Time Employees (-1FY)",
+       safe_to_numeric("Full Time Employees (-2FY)")                          AS "Full Time Employees (-2FY)",
+       safe_to_numeric("Full Time Employees (-3FY)")                          AS "Full Time Employees (-3FY)",
+       safe_to_numeric("Avg Employees (5YAVGFY)")                             AS "Avg Employees (5YAVGFY)",
+       safe_to_numeric("Net EPS - Basic (LTM)")                               AS "Net EPS - Basic (LTM)",
+       safe_to_numeric("Net EPS - Basic (FQ)")                                AS "Net EPS - Basic (FQ)",
+       safe_to_numeric("Net EPS - Basic (FY)")                                AS "Net EPS - Basic (FY)",
+       safe_to_numeric("Net EPS - Basic (-1FQFQ)")                            AS "Net EPS - Basic (-1FQFQ)",
+       safe_to_numeric("Net EPS - Basic (-2FQFQ)")                            AS "Net EPS - Basic (-2FQFQ)",
+       safe_to_numeric("Net EPS - Basic (-3FQFQ)")                            AS "Net EPS - Basic (-3FQFQ)",
+       safe_to_numeric("Net EPS - Basic (-4FQFQ)")                            AS "Net EPS - Basic (-4FQFQ)",
+       safe_to_numeric("Net EPS - Basic (-1FY)")                              AS "Net EPS - Basic (-1FY)",
+       safe_to_numeric("Net EPS - Basic (-2FY)")                              AS "Net EPS - Basic (-2FY)",
+       safe_to_numeric("Net EPS - Basic (-3FY)")                              AS "Net EPS - Basic (-3FY)",
+       safe_to_numeric("Net EPS - Basic (-4FY)")                              AS "Net EPS - Basic (-4FY)",
+       safe_to_numeric("Net EPS - Basic (-5FY)")                              AS "Net EPS - Basic (-5FY)",
+       safe_to_numeric("EPS Est Avg Rev % (FY1E - 1W)")                       AS "EPS Est Avg Rev % (FY1E - 1W)",
+       safe_to_numeric("EPS Est Avg Rev % (FY1E - 1M)")                       AS "EPS Est Avg Rev % (FY1E - 1M)",
+       safe_to_numeric("EPS Est Avg Rev % (FY1E - 3M)")                       AS "EPS Est Avg Rev % (FY1E - 3M)",
+       safe_to_numeric("EPS Est Avg Rev % (FY1E - 6M)")                       AS "EPS Est Avg Rev % (FY1E - 6M)",
+       safe_to_numeric("EPS Est Avg Rev % (FY1E - 1Y)")                       AS "EPS Est Avg Rev % (FY1E - 1Y)",
+       safe_to_numeric("Div Yield (-2FYInd)")                                 AS "Div Yield (-2FYInd)",
+       safe_to_numeric("Div Yield (-3FYInd)")                                 AS "Div Yield (-3FYInd)",
+       safe_to_numeric("Div Yield (-4FYInd)")                                 AS "Div Yield (-4FYInd)",
+       safe_to_numeric("Div Yield (-5FYInd)")                                 AS "Div Yield (-5FYInd)",
+       safe_to_numeric("EBITDA - Est Avg (NTM)")                              AS "EBITDA - Est Avg (NTM)",
+       safe_to_numeric("EBITDA - Est Avg (FY1E)")                             AS "EBITDA - Est Avg (FY1E)",
+       safe_to_numeric("EPS GAAP - Est Avg (NTM)")                            AS "EPS GAAP - Est Avg (NTM)",
+       safe_to_numeric("EPS GAAP - Est Avg (FY1E)")                           AS "EPS GAAP - Est Avg (FY1E)",
+       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 1M)")                  AS "EPS GAAP Est Avg Rev % (FY1E - 1M)",
+       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 3M)")                  AS "EPS GAAP Est Avg Rev % (FY1E - 3M)",
+       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 6M)")                  AS "EPS GAAP Est Avg Rev % (FY1E - 6M)",
+       safe_to_numeric("EPS GAAP Est Avg Rev % (FY1E - 1Y)")                  AS "EPS GAAP Est Avg Rev % (FY1E - 1Y)",
+       safe_to_numeric("EPS Norm - Est # (FY1E)")                             AS "EPS Norm - Est # (FY1E)"
 FROM screening_staging
 ON CONFLICT DO NOTHING;;
 
@@ -1507,6 +1667,9 @@ LIMIT 10;
 -- ===================================================================
 DROP TABLE IF EXISTS screening_staging;
 DROP FUNCTION IF EXISTS safe_to_numeric(TEXT);
+DROP FUNCTION IF EXISTS parse_fy_end_to_date(TEXT);
+DROP FUNCTION IF EXISTS calculate_fiscal_month(DATE, DATE);
+DROP FUNCTION IF EXISTS calculate_next_fiscal_quarter(DATE, DATE);
 
 \echo 'Import complete!'
 

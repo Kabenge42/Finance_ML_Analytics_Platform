@@ -120,9 +120,11 @@ def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
     # =========================================================================
     # Composite score based on multi-period revisions
     rev_cols = {
-        "eps_est_avg_rev_pct_fy1e_1m": 0.5, # 1M revision weighted most
+        "eps_est_avg_rev_pct_fy1e_1w": 0.6,
+        "eps_est_avg_rev_pct_fy1e_1m": 0.5,  # 1M revision weighted most
         "eps_est_avg_rev_pct_fy1e_3m": 0.3,
         "eps_est_avg_rev_pct_fy1e_6m": 0.2,
+        "eps_est_avg_rev_pct_fy1e_1y": 0.1,
     }
 
     momentum_components = []
@@ -133,6 +135,21 @@ def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
 
     if momentum_components:
         result["surprise_momentum_score"] = pd.concat(momentum_components, axis=1).sum(axis=1)
+
+    # GAAP vs Non-GAAP Revision Divergence
+    if (
+        "eps_gaap_est_avg_rev_pct_fy1e_1m" in df.columns
+        and "eps_est_avg_rev_pct_fy1e_1m" in df.columns
+    ):
+        result["gaap_revision_divergence"] = pd.to_numeric(
+            df["eps_gaap_est_avg_rev_pct_fy1e_1m"], errors="coerce"
+        ) - pd.to_numeric(df["eps_est_avg_rev_pct_fy1e_1m"], errors="coerce")
+
+    # Revenue Forecast Skew
+    if "revenues_est_avg_ntm" in df.columns and "revenues_est_med_ntm" in df.columns:
+        avg_rev = pd.to_numeric(df["revenues_est_avg_ntm"], errors="coerce")
+        med_rev = pd.to_numeric(df["revenues_est_med_ntm"], errors="coerce")
+        result["revenue_forecast_skew"] = _safe_div(avg_rev - med_rev, avg_rev)
 
     # Revision acceleration (1M revision - 3M revision)
     if "eps_est_avg_rev_pct_fy1e_1m" in df.columns and "eps_est_avg_rev_pct_fy1e_3m" in df.columns:

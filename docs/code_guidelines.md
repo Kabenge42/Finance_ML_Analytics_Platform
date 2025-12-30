@@ -1,7 +1,7 @@
 # Finance ML Analytics Platform � Code Guidelines
 
-**Version:** 1.18  
-**Last Updated:** 2025-12-23
+**Version:** 1.20  
+**Last Updated:** 2025-12-30
 **Package Version:** 0.9.5
 **Model Version:** v9_10
 
@@ -15,7 +15,29 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
   acceptance criteria, success metrics, and validation checkpoints for each phase. Includes critical issues analysis
   and recommended fixes.
 
-**Recent Updates (v1.19):**
+**Recent Updates (v1.20):**
+
+- **Phase 9.3 Feature Engineering Enhancement** (2025-12-30)
+    - **Implementation**: Comprehensive update to `finance_ml/features/advanced/` modules based on
+      `Feature Engineering Enhancement Opportunities.md`.
+    - **New Features**: Added 14 new features across Earnings, Growth, Dividends, Profitability, Quality, Revenue,
+      Momentum, and Sector domains.
+    - **Updates**: Refined logic for `surprise_momentum_score`, `roe` decomposition, and `TBV` calculation.
+    - **Modules Affected**: `earnings.py`, `growth.py`, `dividends.py`, `profitability.py`, `quality.py`, `revenue.py`,
+      `momentum.py`, `sector.py`.
+
+- **Semantic Role Alignment & 100% SQL Coverage** (2025-12-30)
+    - **Sync**: Fully aligned `COLUMN_SCHEMA` (599 columns) with `create_equities_schema.sql` and
+      `import_equities_data.sql`.
+    - **SQL Mapping**: Introduced `sql_name` for all source columns in `COLUMN_SCHEMA`, ensuring 1:1 mapping between
+      Python and PostgreSQL.
+    - **Role Cleanup**: Replaced outdated roles (`price`, `market_value`) with standardized semantic roles (`market`,
+      `financial_statement`, `balance_sheet`, `cash_flow`).
+    - **Reference Date**: Added `Reference Date` to both Python schema and SQL schema for consistent temporal feature
+      engineering.
+    - **Consistency**: Updated `import_equities_data.sql` to use explicit column aliases matching the Python schema.
+
+**Previous Updates (v1.19):**
 
 - **Enhanced Business-Rule Imputation** (2025-12-26)
     - **Issue**: Statistical imputation (KNN/Median) was distorting business-specific columns where missing values have
@@ -86,11 +108,12 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 **Previous Updates (v1.15):**
 
 - **100% Schema Coverage: Schema-Based Imputation** (2025-12-23)
-    - **Achievement**: 100% coverage of all 555 COLUMN_SCHEMA columns across 6 imputation strategies
+    - **Achievement**: 100% coverage of all 599 COLUMN_SCHEMA columns across 6 imputation strategies
     - **Schema-Based Selection**: All imputation functions now dynamically select columns from COLUMN_SCHEMA by role
-        - `get_knn_imputation_columns()`: **561 columns** (feature, market_value, ratio, percentage, bool)
+        - `get_knn_imputation_columns()`: **561 columns** (feature, market, financial_statement, balance_sheet,
+          cash_flow, ratio, percentage, bool)
         - `get_median_imputation_columns()`: **49 columns** (count + recurring operational items)
-        - `apply_price_imputation()`: **26 columns** (price, target, target_fallback roles)
+        - `apply_price_imputation()`: **26 columns** (market, target, target_fallback roles)
         - `get_categorical_imputation_config()`: **18 columns** (ordinal + nominal + status flags)
         - `apply_datetime_imputation_and_formatting()`: **8 columns** (auto-detected via patterns)
         - `get_zero_imputation_columns()`: **22 columns** (non-recurring exceptional items)
@@ -655,14 +678,14 @@ def normalize_column_name(col: str) -> str:
 
 ### 5.3 Schema Registry
 
-**Version:** 1.11 (Updated 2025-12-14)  
-**Total Columns:** 503 (up from 447)
+**Version:** 1.12 (Updated 2025-12-30)  
+**Total Columns:** 599 (up from 503)
 
-The authoritative column schema is defined in `finance_ml/ml_workflow/data/schema.py`:
+The authoritative column schema is defined in `finance_ml/core/schema.py`:
 
-**Schema Structure (v1.11):**
+**Schema Structure (v1.12):**
 
-- 299 source columns (from CSV/SQL schema)
+- 330 source columns (from CSV/SQL schema)
 - 61 log-transformed columns (ETL-generated, log1p of market values)
 - 43 legacy aliases (role=auxiliary, for backward compatibility)
 - 36 generic base columns (no time suffix)
@@ -1616,7 +1639,7 @@ def etl_with_features(
     Pipeline Stages:
     1. Extract from source (CSV or database)
     2. Column normalization and dtype casting
-    3. Semantic column classification (price, market_value, ratio, percentage, count)
+    3. Semantic column classification (market, financial_statement, balance_sheet, cash_flow, ratio, percentage, count)
     4. 6-step imputation strategy
     5. Semantic-aware transformations (log-transforms for market values)
     6. Winsorization (excluding price/ratio/percentage columns)

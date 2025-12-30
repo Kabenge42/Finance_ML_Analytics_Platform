@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2025-12-30
+
+### Added
+
+- **Feature Engineering**: Implemented comprehensive enhancement plan for Phase 9.3 (Feature Engineering Registry).
+  - **Earnings**: Added `gaap_revision_divergence` and `revenue_forecast_skew`. Updated `surprise_momentum_score` to
+    include 1W and 1Y trends.
+  - **Growth**: Added `forward_revenue_growth`, `revenue_cagr_5y`, and `growth_persistence_score`.
+  - **Dividends**: Added `buyback_yield`, `total_shareholder_yield`, and `dividend_growth_expectation`.
+  - **Profitability**: Added `rnd_intensity`, `marketing_efficiency`, `sga_ratio`, and explicit `equity_multiplier` for
+    Dupont analysis.
+  - **Quality**: Added `merger_impact_ratio`, `non_operating_income_share`, and `asset_sale_boost`.
+  - **Revenue**: Implemented `revenue_estimate_momentum` and `revenue_surprise_volatility` placeholder.
+  - **Momentum**: Added `beta_momentum` and `volatility_term_structure`.
+  - **Sector**: Added `size_factor_percentile` and updated Tangible Book Value logic to use direct schema columns.
+
 ## [1.20.0] - 2025-12-27
 
 ### Added

@@ -1,31 +1,31 @@
 {
-  "timestamp": "2025-12-27T18:35:25.084602",
-  "reference_date": "2025-12-27 00:00:00",
-  "total_stocks_monitored": 6913,
+  "timestamp": "2025-12-29T18:25:44.485362",
+  "reference_date": "2025-12-29 00:00:00",
+  "total_stocks_monitored": 6725,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 3855,
-      "description": "3855 stocks with EPS surprise < -5%",
+      "count": 4384,
+      "description": "4384 stocks with EPS surprise < -5%",
       "tickers": [
         "NVDA",
         "AAPL",
+        "GOOGL",
         "MSFT",
+        "AMZN",
         "AVGO",
-        "TSLA",
         "LLY",
         "WMT",
         "V",
-        "ORCL",
-        "MA"
+        "ORCL"
       ]
     },
     {
       "alert_type": "high_target_uncertainty",
       "severity": "low",
-      "count": 4850,
-      "description": "4850 stocks with price target spread > 25%",
+      "count": 4746,
+      "description": "4746 stocks with price target spread > 25%",
       "tickers": [
         "NVDA",
         "AAPL",
@@ -50,11 +50,11 @@
         "UNF",
         "INSP",
         "NEOG",
-        "TRI",
         "MNTN",
         "OVH",
         "AGY",
-        "TRST"
+        "TRST",
+        "APN"
       ]
     }
   ],

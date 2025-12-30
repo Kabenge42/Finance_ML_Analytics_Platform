@@ -1,17 +1,17 @@
 {
-  "timestamp": "2025-12-27T17:53:07.763161",
-  "total_stocks_analyzed": 6913,
+  "timestamp": "2025-12-30T19:28:56.980698",
+  "total_stocks_analyzed": 6948,
   "valuation_summary": {
-    "mean_target_vs_price": 19.94537919100765,
-    "median_target_vs_price": 14.79857904085259,
-    "std_target_vs_price": 57.97879172554931
+    "mean_target_vs_price": 19.832857470082022,
+    "median_target_vs_price": 14.808222760048212,
+    "std_target_vs_price": 57.482531649428104
   },
   "category_distribution": {
-    "Fairly Valued": 3222,
-    "Undervalued": 2844,
-    "Deeply Undervalued": 585,
-    "Overvalued": 177,
-    "Deeply Overvalued": 85
+    "Fairly Valued": 3251,
+    "Undervalued": 2846,
+    "Deeply Undervalued": 593,
+    "Overvalued": 171,
+    "Deeply Overvalued": 87
   },
   "top_undervalued": [
     {
@@ -22,139 +22,139 @@
       "target_vs_price": 4185.714285714285
     },
     {
-      "ticker": "PANR",
-      "sector": "Energy",
-      "last_price": 0.0954,
-      "price_target": 0.66,
-      "target_vs_price": 591.8238993710692
-    },
-    {
       "ticker": "SAVE",
       "sector": "Energy",
-      "last_price": 0.0673,
+      "last_price": 0.0685,
       "price_target": 0.3913,
-      "target_vs_price": 481.4264487369985
+      "target_vs_price": 471.2408759124087
     },
     {
       "ticker": "IBRX",
       "sector": "Health Care",
-      "last_price": 2.14,
+      "last_price": 2.04,
       "price_target": 10.4,
-      "target_vs_price": 385.9813084112149
+      "target_vs_price": 409.8039215686274
     },
     {
       "ticker": "AVTX",
       "sector": "Industrials",
-      "last_price": 6.576,
+      "last_price": 6.663,
       "price_target": 31.18,
-      "target_vs_price": 374.14841849148416
-    },
-    {
-      "ticker": "3350",
-      "sector": "Consumer Discretionary",
-      "last_price": 444.0,
-      "price_target": 1927.5,
-      "target_vs_price": 334.1216216216216
-    },
-    {
-      "ticker": "000021",
-      "sector": "Information Technology",
-      "last_price": 24.76,
-      "price_target": 107.15,
-      "target_vs_price": 332.75444264943457
+      "target_vs_price": 367.9573765571064
     },
     {
       "ticker": "ALVO",
       "sector": "Health Care",
-      "last_price": 5.26,
+      "last_price": 4.97,
       "price_target": 22.1667,
-      "target_vs_price": 321.4201520912548
+      "target_vs_price": 346.0100603621731
+    },
+    {
+      "ticker": "3350",
+      "sector": "Consumer Discretionary",
+      "last_price": 440.0,
+      "price_target": 1927.5,
+      "target_vs_price": 338.0681818181818
+    },
+    {
+      "ticker": "000021",
+      "sector": "Information Technology",
+      "last_price": 24.46,
+      "price_target": 107.15,
+      "target_vs_price": 338.0621422730989
+    },
+    {
+      "ticker": "RARE",
+      "sector": "Health Care",
+      "last_price": 19.72,
+      "price_target": 78.9474,
+      "target_vs_price": 300.34178498985807
     },
     {
       "ticker": "PRTC",
       "sector": "Health Care",
-      "last_price": 1.262,
+      "last_price": 1.278,
       "price_target": 5.0941,
-      "target_vs_price": 303.6529318541997
+      "target_vs_price": 298.5993740219092
     },
     {
       "ticker": "SBET",
       "sector": "Consumer Discretionary",
-      "last_price": 8.9,
+      "last_price": 8.96,
       "price_target": 35.25,
-      "target_vs_price": 296.0674157303371
+      "target_vs_price": 293.4151785714285
     }
   ],
   "top_overvalued": [
     {
       "ticker": "BFG",
       "sector": "Consumer Staples",
-      "last_price": 4.14,
+      "last_price": 4.0,
       "price_target": 0.0,
       "target_vs_price": -100.0
     },
     {
       "ticker": "LAT",
       "sector": "Industrials",
-      "last_price": 0.0153,
+      "last_price": 0.0148,
       "price_target": 0.0,
       "target_vs_price": -100.0
     },
     {
       "ticker": "688110",
       "sector": "Information Technology",
-      "last_price": 123.04,
+      "last_price": 123.22,
       "price_target": 20.0,
-      "target_vs_price": -83.74512353706112
+      "target_vs_price": -83.7688686901477
     },
     {
       "ticker": "TIN",
       "sector": "Materials",
-      "last_price": 0.852,
+      "last_price": 0.85,
       "price_target": 0.15,
-      "target_vs_price": -82.3943661971831
+      "target_vs_price": -82.35294117647058
     },
     {
       "ticker": "300718",
       "sector": "Industrials",
-      "last_price": 83.78,
+      "last_price": 84.84,
       "price_target": 21.05,
-      "target_vs_price": -74.87467175936978
+      "target_vs_price": -75.18859028760019
     },
     {
       "ticker": "688195",
       "sector": "Information Technology",
-      "last_price": 176.5,
+      "last_price": 171.88,
       "price_target": 52.49,
-      "target_vs_price": -70.26062322946174
+      "target_vs_price": -69.46125203630439
     },
     {
       "ticker": "688502",
       "sector": "Information Technology",
-      "last_price": 417.01,
+      "last_price": 406.8,
       "price_target": 133.0,
-      "target_vs_price": -68.10628042492985
+      "target_vs_price": -67.30580137659784
     },
     {
       "ticker": "BERGER",
       "sector": "Materials",
-      "last_price": 45.85,
+      "last_price": 48.0,
       "price_target": 16.46,
-      "target_vs_price": -64.10032715376227
+      "target_vs_price": -65.70833333333333
     },
     {
       "ticker": "1860",
       "sector": "Communication Services",
-      "last_price": 15.1,
+      "last_price": 15.18,
       "price_target": 5.4997,
-      "target_vs_price": -63.57814569536424
+      "target_vs_price": -63.77009222661396
     },
     {
-      "ticker": "A086520",
+      "ticker": "603667",
       "sector": "Industrials",
-      "last_price": 97000.0,
-      "price_target": 37000.0,
-      "target_vs_price": -61.855670103092784
+      "last_price": 57.84,
+      "price_target": 22.0,
+      "target_vs_price": -61.964038727524205
     }
   ]
 }

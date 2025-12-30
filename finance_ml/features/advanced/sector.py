@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 
 from .utils import _safe_div, _ensure_float_column
@@ -25,13 +26,25 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
     utilities_mask = result[sector_col].str.contains("Utilities", case=False, na=False)
 
     if financials_mask.any():
-        # Tangible Book Value
-        if "total_equity" in df.columns and "intangible_assets" in df.columns:
-            total_equity = pd.to_numeric(df["total_equity"], errors="coerce")
-            intangible_assets = pd.to_numeric(df["intangible_assets"], errors="coerce").fillna(0)
-            tangible_book_value = total_equity - intangible_assets
+        # Tangible Book Value - use direct column if available, else calculate
+        tbv = None
+        if "tbv_ltm" in df.columns:
+            tbv = pd.to_numeric(df["tbv_ltm"], errors="coerce")
+        elif "tbv_fy" in df.columns:
+            tbv = pd.to_numeric(df["tbv_fy"], errors="coerce")
+
+        if tbv is None:
+            # Fallback to calculation
+            if "total_equity" in df.columns and "intangible_assets" in df.columns:
+                total_equity = pd.to_numeric(df["total_equity"], errors="coerce")
+                intangible_assets = pd.to_numeric(df["intangible_assets"], errors="coerce").fillna(
+                    0
+                )
+                tbv = total_equity - intangible_assets
+
+        if tbv is not None:
             result = _ensure_float_column(result, "tangible_book_value")
-            result.loc[financials_mask, "tangible_book_value"] = tangible_book_value.loc[financials_mask]
+            result.loc[financials_mask, "tangible_book_value"] = tbv.loc[financials_mask]
 
         # Price to Tangible Book Value
         if "last_price" in df.columns and "shares_outstanding" in df.columns and "tangible_book_value" in result.columns:
@@ -43,6 +56,21 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
         if "capex" in df.columns and "revenue" in df.columns:
             result = _ensure_float_column(result, "capex_intensity")
             result.loc[energy_mask, "capex_intensity"] = (_safe_div(df["capex"], df["revenue"]) * 100).loc[energy_mask]
+
+    # Size Factor Percentile (using Country Rank)
+    if "market_cap_country_r" in df.columns:
+        if "country" in df.columns:
+            max_rank = df.groupby("country")["market_cap_country_r"].transform("max")
+            result["size_factor_percentile"] = _safe_div(df["market_cap_country_r"], max_rank) * 100
+        else:
+            # Global normalization
+            max_rank = df["market_cap_country_r"].max()
+            # scalar division is safe if max_rank != 0. safe_div expects Series.
+            # We can just divide directly as max_rank is scalar.
+            if max_rank != 0 and not pd.isna(max_rank):
+                result["size_factor_percentile"] = (df["market_cap_country_r"] / max_rank) * 100
+            else:
+                result["size_factor_percentile"] = np.nan
 
     # ... other sector specific logic would go here
 

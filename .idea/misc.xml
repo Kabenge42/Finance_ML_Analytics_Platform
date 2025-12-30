@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="pathToExecutable" value="C:\Users\markm\AppData\Local\Programs\Python\Python313\Scripts\black.exe" />
-    <option name="sdkName" value="Python 3.13" />
+    <option name="sdkName" value="Python 3.14 (Finance_Analytics_Platform)" />
   </component>
   <component name="ProjectResources">
     <xml-schema-version>XMLSchema_1_1</xml-schema-version>

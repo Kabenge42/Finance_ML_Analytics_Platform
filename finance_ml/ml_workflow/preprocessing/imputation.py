@@ -824,25 +824,33 @@ def get_knn_imputation_columns() -> List[str]:
         List of column names for KNN imputation (dynamically generated from schema)
     """
     from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
-    
+
     # Get zero-imputation columns to exclude (prevent overwriting Step 1)
     zero_imputation_cols = set(get_zero_imputation_columns())
-    
+
     # Roles that benefit from KNN imputation (sector-aware)
-    knn_roles = {"feature", "market_value", "ratio", "percentage"}
-    
+    knn_roles = {
+        "feature",
+        "market",
+        "financial_statement",
+        "balance_sheet",
+        "cash_flow",
+        "ratio",
+        "percentage",
+    }
+
     # Collect all numeric columns with appropriate roles
     knn_columns = []
     for col, meta in COLUMN_SCHEMA.items():
         role = meta.get("role", "")
         dtype = meta.get("dtype", "")
-        
+
         # Include numeric and boolean columns with KNN-appropriate roles
         # Boolean flags (e.g., accelerating_upgrades_flag) are treated as binary features
         # EXCLUDE zero-imputation columns to preserve Step 1 zero values
         if role in knn_roles and dtype in ["float", "int", "bool"] and col not in zero_imputation_cols:
             knn_columns.append(col)
-    
+
     # Also include the original hardcoded columns for backward compatibility
     # (in case some are not in schema or have different roles)
     hardcoded_columns = [
@@ -996,20 +1004,20 @@ def get_knn_imputation_columns() -> List[str]:
         "avg_employees_fy",
         "avg_employees_5yavgfy",
     ]
-    
+
     # Filter hardcoded columns to exclude zero-imputation columns
     filtered_hardcoded = [col for col in hardcoded_columns if col not in zero_imputation_cols]
-    
+
     # Merge schema-based and filtered hardcoded columns, removing duplicates
     all_columns = list(set(knn_columns + filtered_hardcoded))
-    
+
     excluded_count = len(hardcoded_columns) - len(filtered_hardcoded)
     logger.debug(
         f"KNN imputation columns: {len(all_columns)} total "
         f"({len(knn_columns)} from schema, {len(filtered_hardcoded)} hardcoded, "
         f"{excluded_count} zero-imputation columns excluded)"
     )
-    
+
     return all_columns
 
 

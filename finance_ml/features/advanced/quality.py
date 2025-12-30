@@ -118,6 +118,24 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
             df["restructuring_charges_ltm"], df["total_assets_ltm"]
         )
 
+    # Merger Impact Ratio (Merger Charges / Market Cap)
+    if "merger_and_restructuring_charges_ltm" in df.columns and "market_cap" in df.columns:
+        result["merger_impact_ratio"] = _safe_div(
+            df["merger_and_restructuring_charges_ltm"], df["market_cap"]
+        )
+
+    # Non-Operating Income Share (Interest Income / Net Income)
+    if "interest_income_on_investments_ltm" in df.columns and "net_income_ltm" in df.columns:
+        result["non_operating_income_share"] = _safe_div(
+            df["interest_income_on_investments_ltm"], df["net_income_ltm"].abs()
+        )
+
+    # Asset Sale Boost (Flag if gain on sale of assets > 0)
+    if "gain_loss_on_sale_of_assets_ltm" in df.columns:
+        result["asset_sale_boost"] = (df["gain_loss_on_sale_of_assets_ltm"].fillna(0) > 0).astype(
+            int
+        )
+
     # Accounting quality score (lower is better, 0-100 scale)
     # High exceptional items, high goodwill, presence of impairments = lower quality
     quality_components = []

@@ -85,6 +85,31 @@ def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
             df["net_income_adj_fy"].abs(), df["net_income_is_fy"].abs()
         )
 
+    # 5. Operational Efficiency Ratios
+    # R&D Intensity
+    if "randd_expenses_ltm" in df.columns and "total_revenues_ltm" in df.columns:
+        result["rnd_intensity"] = _safe_div(df["randd_expenses_ltm"], df["total_revenues_ltm"])
+
+    # Marketing Efficiency (Revenue / Marketing Expenses) - using FY data
+    if "marketing_expenses_fy" in df.columns:
+        rev_col = "total_revenues_fy" if "total_revenues_fy" in df.columns else "total_revenues"
+        if rev_col in df.columns:
+            result["marketing_efficiency"] = _safe_div(df[rev_col], df["marketing_expenses_fy"])
+
+    # SG&A Ratio
+    if "selling_general_and_admin_expenses_total_fy" in df.columns:
+        rev_col = "total_revenues_fy" if "total_revenues_fy" in df.columns else "total_revenues"
+        if rev_col in df.columns:
+            result["sga_ratio"] = _safe_div(
+                df["selling_general_and_admin_expenses_total_fy"], df[rev_col]
+            )
+
+    # 6. Dupont Analysis Components (Equity Multiplier)
+    # ROE = Net Margin * Asset Turnover * Equity Multiplier
+    # Equity Multiplier = Total Assets / Total Equity
+    if "total_assets" in df.columns and "total_equity" in df.columns:
+        result["equity_multiplier"] = _safe_div(df["total_assets"], df["total_equity"])
+
     logger.info("Engineered profitability ratios")
     return result
 

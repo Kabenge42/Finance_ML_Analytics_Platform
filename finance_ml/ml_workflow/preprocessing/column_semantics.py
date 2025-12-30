@@ -682,7 +682,17 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
 
     classifications = {}
 
-    semantic_roles = {"price", "market_value", "ratio", "percentage", "count"}
+    semantic_roles = {
+        "market",
+        "financial_statement",
+        "balance_sheet",
+        "cash_flow",
+        "ratio",
+        "percentage",
+        "count",
+        "target",
+        "target_fallback",
+    }
 
     for col in columns:
         col_lower = col.lower()
@@ -693,7 +703,13 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
             role = schema_info.get("role", "feature")
 
             if role in semantic_roles:
-                classifications[col] = role.upper()
+                # Map to standard categories for this module
+                if role in ["market", "financial_statement", "balance_sheet", "cash_flow"]:
+                    classifications[col] = "MARKET_VALUE"
+                elif role in ["target", "target_fallback"]:
+                    classifications[col] = "PRICE"
+                else:
+                    classifications[col] = role.upper()
                 continue
 
             # Name-based heuristics
