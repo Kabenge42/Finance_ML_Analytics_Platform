@@ -359,9 +359,9 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "Selling General & Admin Expenses/Total (FY)": "selling_general_and_admin_expenses_total_fy",
             "Selling General & Admin Expenses/Total (-1FY)": "selling_general_and_admin_expenses_total_1fy",
             "Selling General & Admin Expenses/Total (5YAVGFQ)": "selling_general_and_admin_expenses_total_5yavgfq",
-            "Accounts Receivable/Total (FY)": "accounts_receivable_fy",
-            "Accounts Receivable/Total (-1FY)": "accounts_receivable_1fy",
-            "Accounts Receivable/Total (5YAVGFQ)": "accounts_receivable_5yavgfq",
+            "Accounts Receivable/Total (FY)": "accounts_receivable_total_fy",
+            "Accounts Receivable/Total (-1FY)": "accounts_receivable_total_1fy",
+            "Accounts Receivable/Total (5YAVGFQ)": "accounts_receivable_total_5yavgfq",
             "Marketing Expenses (FQ)": "marketing_expenses_fq",
             "Marketing Expenses (FY)": "marketing_expenses_fy",
             "Marketing Expenses (-1FY)": "marketing_expenses_1fy",
@@ -474,7 +474,7 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "shares_outstanding": "shrs_out",  # Shares outstanding (maps to existing column)
             "operating_expenses": "total_operating_expenses_ltm",  # Operating expenses (LTM)
             "operating_cash_flow": "cfo_ltm",  # Operating cash flow (alias for CFO)
-            "sga_expenses": "sga_expenses_fy",  # SG&A expenses (FY - most recent)
+            "sga_expenses": "selling_general_and_admin_expenses_total_fy",  # SG&A expenses (FY - most recent)
             "marketing_expenses": "marketing_expenses_5yavgltm",  # Marketing expenses (5Y average LTM)
             "depreciation_amortization": None,  # Not directly available in base columns
             "depreciation_amortization_ltm": None,  # Not directly available
@@ -494,7 +494,7 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
             "gross_profit_previous_year": "gross_profit_fy",  # Gross profit FY (proxy for -1FY)
             "revenue_fy": "total_revenues_fy",  # Revenue FY (fiscal year)
             "working_capital_1fy": "working_capital_fy",  # Working capital FY (proxy for -1FY)
-            "accounts_receivable_previous_year": "accounts_receivable_1fy",  # Accounts receivable -1FY
+            "accounts_receivable_previous_year": "accounts_receivable_total_1fy",  # Accounts receivable -1FY
             "roa_previous_year": "return_on_assets_roa_pct_fy",  # ROA FY (proxy for -1FY)
             "debt_to_equity_previous_year": None,  # Would need to be calculated
             "current_ratio_previous_year": "current_ratio_fy",  # Current ratio FY (proxy for -1FY)

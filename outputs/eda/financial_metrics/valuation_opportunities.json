@@ -1,17 +1,17 @@
 {
-  "timestamp": "2025-12-30T19:28:56.980698",
+  "timestamp": "2025-12-31T16:59:31.888335",
   "total_stocks_analyzed": 6948,
   "valuation_summary": {
-    "mean_target_vs_price": 19.832857470082022,
-    "median_target_vs_price": 14.808222760048212,
-    "std_target_vs_price": 57.482531649428104
+    "mean_target_vs_price": 19.839057359529875,
+    "median_target_vs_price": 14.810357583230582,
+    "std_target_vs_price": 57.484346034313354
   },
   "category_distribution": {
     "Fairly Valued": 3251,
     "Undervalued": 2846,
     "Deeply Undervalued": 593,
-    "Overvalued": 171,
-    "Deeply Overvalued": 87
+    "Overvalued": 170,
+    "Deeply Overvalued": 88
   },
   "top_undervalued": [
     {

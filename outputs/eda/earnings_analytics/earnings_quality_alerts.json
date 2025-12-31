@@ -1,13 +1,13 @@
 {
-  "timestamp": "2025-12-30T19:29:17.414213",
-  "reference_date": "2025-12-30 00:00:00",
+  "timestamp": "2025-12-31T15:33:30.055785",
+  "reference_date": "2025-12-31 00:00:00",
   "total_stocks_monitored": 6948,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 2608,
-      "description": "2608 stocks with EPS surprise < -25%",
+      "count": 2277,
+      "description": "2277 stocks with EPS surprise < -25%",
       "tickers": [
         "NVDA",
         "AVGO",
@@ -40,7 +40,6 @@
         "VRTX",
         "NEM",
         "BMY",
-        "BN",
         "ENB",
         "SBUX",
         "CVNA",
@@ -108,7 +107,8 @@
         "KVUE",
         "HPE",
         "VIK",
-        "WTW"
+        "WTW",
+        "NTR"
       ]
     },
     {
@@ -222,8 +222,8 @@
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 21,
-      "description": "21 stocks with elevated volatility (> q0.85) within 10 days of earnings",
+      "count": 17,
+      "description": "17 stocks with elevated volatility (> q0.85) within 10 days of earnings",
       "tickers": [
         "BMNR",
         "APLD",
@@ -236,16 +236,12 @@
         "TRST",
         "SAGA",
         "AL2SI",
-        "FNX",
-        "ALCRB",
-        "BKS",
         "KIST",
         "SAVE",
         "AAA",
         "8267",
         "6506",
-        "ARD",
-        "ASSAD"
+        "ARD"
       ]
     }
   ],

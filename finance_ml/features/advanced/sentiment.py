@@ -23,7 +23,7 @@ def engineer_analyst_quality_features(df: pd.DataFrame) -> pd.DataFrame:
 
     Column naming (normalized expected; legacy tolerated where possible):
     - Ratings: strong_buy_ratings, buy_ratings, hold_ratings, sell_ratings, strong_sell_ratings
-    - Targets: price_target_median, price_target_high, price_target_low, price_target_ytd_ago, price_target_number
+    - Targets: price_target_median, price_target_high, price_target_low, price_target_ytd_ago, price_target_count
     - Other: last_price, market_cap
     """
     result = df.copy()
@@ -92,11 +92,11 @@ def engineer_analyst_quality_features(df: pd.DataFrame) -> pd.DataFrame:
         )
 
     # --- Coverage quality (#analysts scaled by firm size) ---
-    if "price_target_number" in df.columns and "market_cap" in df.columns:
+    if "price_target_count" in df.columns and "market_cap" in df.columns:
         # log1p(market_cap) in denominator; safe-div guards zero/negatives (log1p of negative is NaN)
         denom = pd.Series(np.log1p(df["market_cap"].astype(float)), index=df.index)
         result["analyst_coverage_quality"] = _safe_div(
-            df["price_target_number"].astype(float), denom
+            df["price_target_count"].astype(float), denom
         )
 
     logger.info("Engineered analyst quality & consensus features")

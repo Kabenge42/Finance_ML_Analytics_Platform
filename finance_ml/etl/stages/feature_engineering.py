@@ -20,7 +20,9 @@ def run_feature_engineering_stage(
     # Current build_features doesn't take categories directly, but it's in the config for future use
     result = build_features(df, preset=preset)
 
-    if engineer_earnings_analytics:
+    # Earnings analytics are now included in "comprehensive" and "full_enhanced" presets.
+    # Only apply explicitly if using a different preset and the flag is True.
+    if engineer_earnings_analytics and preset not in ("comprehensive", "full_enhanced"):
         logger.info(
             "Applying earnings analytics features (Estimated vs. Actual and GAAP vs. Adjusted)"
         )

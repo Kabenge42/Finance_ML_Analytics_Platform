@@ -8,6 +8,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from .earnings import engineer_estimated_vs_actual_analytics, engineer_gaap_vs_adjusted_analytics
 from .employment import engineer_employee_productivity_features, engineer_employment_dynamics_features
 from .growth import engineer_growth_metrics
 from .leverage import (
@@ -29,11 +30,13 @@ from .quality import (
     engineer_capital_allocation_features,
     engineer_composite_scores
 )
+from .revenue import engineer_revenue_forecast_features
 from .sector import engineer_sector_specific_features, create_relative_value_features
 from .sentiment import engineer_analyst_quality_features, engineer_market_sentiment_features
 from .temporal import engineer_temporal_features
 from .utils import engineer_nonlinear_transforms, create_feature_interactions
 from .valuation import engineer_valuation_ratios, engineer_valuation_timeseries_features
+from .dividends import engineer_dividend_reliability_features
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +49,11 @@ def build_comprehensive_features(
 ) -> pd.DataFrame:
     """Build feature sets by applying advanced feature engineering functions."""
     preset_norm = (preset or "comprehensive").lower()
-    
+
     if preset_norm == "momentum":
         result = engineer_momentum_features(df.copy())
         return result.replace([np.inf, -np.inf], np.nan)
-        
+
     if preset_norm == "quality":
         result = df.copy()
         result = engineer_accounting_quality_features(result)
@@ -83,9 +86,11 @@ def build_comprehensive_features(
 
     result = engineer_technical_analysis_features(result)
     result = engineer_valuation_timeseries_features(result)
-    # result = engineer_revenue_forecast_features(result)
-    # result = engineer_dividend_reliability_features(result)
+    result = engineer_revenue_forecast_features(result)
+    result = engineer_dividend_reliability_features(result)
     result = engineer_employment_dynamics_features(result)
+    result = engineer_estimated_vs_actual_analytics(result)
+    result = engineer_gaap_vs_adjusted_analytics(result)
 
     # Temporal features
     date_col_candidates = ["next_earnings", "last_updated", "income_statement_report_date"]

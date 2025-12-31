@@ -34,18 +34,18 @@ class TestAnalystConsensus(unittest.TestCase):
             {
                 "last_price": [100.0],
                 # Ratings
-                "strong_buy_ratings": [3],
-                "buy_ratings": [4],
-                "hold_ratings": [2],
-                "sell_ratings": [1],
-                "strong_sell_ratings": [0],
+                "num_strong_buys_ratings": [3],
+                "num_buys_ratings": [4],
+                "num_hold_ratings": [2],
+                "num_sell_ratings": [1],
+                "num_strong_sell_ratings": [0],
                 # Targets
                 "price_target_median": [120.0],
                 "price_target_high": [150.0],
                 "price_target_low": [90.0],
                 "price_target_ytd_ago": [110.0],
                 # Coverage
-                "price_target_number": [10],  # number of analysts
+                "price_target_count": [10],  # number of analysts
                 "market_cap": [1.0e10],
             }
         )

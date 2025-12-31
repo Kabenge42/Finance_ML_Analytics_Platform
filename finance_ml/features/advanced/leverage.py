@@ -118,8 +118,10 @@ def engineer_efficiency_ratios(df: pd.DataFrame) -> pd.DataFrame:
         result["inventory_turnover"] = _safe_div(df["cost_of_revenues_ltm"], df["inventory"])
 
     # Receivables Turnover (Revenue / Accounts Receivable)
-    if "revenue" in df.columns and "accounts_receivable_fy" in df.columns:
-        result["receivables_turnover"] = _safe_div(df["revenue"], df["accounts_receivable_fy"])
+    if "revenue" in df.columns and "accounts_receivable_total_fy" in df.columns:
+        result["receivables_turnover"] = _safe_div(
+            df["revenue"], df["accounts_receivable_total_fy"]
+        )
 
     # Revenue per Employee
     if "revenue" in df.columns and "full_time_employees_fy" in df.columns:

@@ -475,8 +475,8 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- ===================================================================
 -- HELPER FUNCTION: Calculate Fiscal Month (Numeric)
 -- ===================================================================
--- Returns the number of months between Income Statement Report Date and FY End Date
--- Example: age('2025-09-30', '2024-12-31') = 9 months
+-- Returns the fiscal month number (1-12) based on months elapsed since FY End + 1
+-- Example: FY End 31.12.2024, Report Date 30.09.2025 = 9 months elapsed + 1 = Fiscal Month 9
 
 CREATE OR REPLACE FUNCTION calculate_fiscal_month(report_date DATE, fy_end_date DATE)
     RETURNS INTEGER AS
@@ -486,6 +486,7 @@ DECLARE
     years_part   INTEGER;
     months_part  INTEGER;
     total_months INTEGER;
+    fiscal_month INTEGER;
 BEGIN
     -- Return NULL if either date is missing
     IF report_date IS NULL OR fy_end_date IS NULL THEN
@@ -499,10 +500,16 @@ BEGIN
     years_part := EXTRACT(YEAR FROM age_interval);
     months_part := EXTRACT(MONTH FROM age_interval);
 
-    -- Convert to total months
+    -- Convert to total months and add 1 to get fiscal month
     total_months := (years_part * 12) + months_part;
+    fiscal_month := total_months + 1;
 
-    RETURN total_months;
+    -- Normalize to 1-12 range for display purposes
+    IF fiscal_month > 12 THEN
+        fiscal_month := ((fiscal_month - 1) % 12) + 1;
+    END IF;
+
+    RETURN fiscal_month;
 EXCEPTION
     WHEN OTHERS THEN
         RETURN NULL;
@@ -513,45 +520,48 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- HELPER FUNCTION: Calculate Next Fiscal Quarter
 -- ===================================================================
 -- Returns fiscal quarter in format "Q4 2025"
--- Based on months elapsed: 0-2 months = Q1, 3-5 = Q2, 6-8 = Q3, 9-11 = Q4
--- Fiscal year is the year following the FY End Date (the current fiscal period)
--- Example: FY End Date = 31.12.2024, Report Date = 30.09.2025 → Q4 2025
+-- Based on fiscal month: 1-3 = Q1, 4-6 = Q2, 7-9 = Q3, 10-12 = Q4
+-- Example: FY End Date = 31.12.2024, Report Date = 30.09.2025 → Fiscal Month 9 → Q4 2025
 
 CREATE OR REPLACE FUNCTION calculate_next_fiscal_quarter(report_date DATE, fy_end_date DATE)
     RETURNS TEXT AS
 $$
 DECLARE
-    fiscal_months INTEGER;
-    quarter_num   INTEGER;
-    fiscal_year   INTEGER;
+    fiscal_month INTEGER;
+    quarter_num  INTEGER;
+    fiscal_year  INTEGER;
 BEGIN
     -- Return NULL if either date is missing
     IF report_date IS NULL OR fy_end_date IS NULL THEN
         RETURN NULL;
     END IF;
 
-    -- Get fiscal months
-    fiscal_months := calculate_fiscal_month(report_date, fy_end_date);
+    -- Get fiscal month (already adjusted with +1)
+    fiscal_month := calculate_fiscal_month(report_date, fy_end_date);
 
-    IF fiscal_months IS NULL THEN
+    IF fiscal_month IS NULL THEN
         RETURN NULL;
     END IF;
 
-    -- Normalize to 0-11 range (handle multi-year periods)
-    fiscal_months := fiscal_months % 12;
-
-    -- Determine quarter based on months elapsed since FY end
-    -- 0-2 months = Q1, 3-5 = Q2, 6-8 = Q3, 9-11 = Q4
+    -- Determine NEXT quarter based on current fiscal month
+    -- Fiscal months 1-3 (Q1) → Next is Q2
+    -- Fiscal months 4-6 (Q2) → Next is Q3
+    -- Fiscal months 7-9 (Q3) → Next is Q4
+    -- Fiscal months 10-12 (Q4) → Next is Q1 (of next fiscal year)
     quarter_num := CASE
-                       WHEN fiscal_months BETWEEN 0 AND 2 THEN 1
-                       WHEN fiscal_months BETWEEN 3 AND 5 THEN 2
-                       WHEN fiscal_months BETWEEN 6 AND 8 THEN 3
-                       ELSE 4
+                       WHEN fiscal_month BETWEEN 1 AND 3 THEN 2
+                       WHEN fiscal_month BETWEEN 4 AND 6 THEN 3
+                       WHEN fiscal_month BETWEEN 7 AND 9 THEN 4
+                       ELSE 1
         END;
 
     -- Fiscal year is the year following the FY End Date
-    -- This represents the current fiscal period (e.g., FY End Dec 2024 → FY 2025)
     fiscal_year := EXTRACT(YEAR FROM fy_end_date) + 1;
+
+    -- If we're in Q4 and next quarter is Q1, increment fiscal year
+    IF fiscal_month BETWEEN 10 AND 12 THEN
+        fiscal_year := fiscal_year + 1;
+    END IF;
 
     -- Format as "Q# YYYY"
     RETURN 'Q' || quarter_num || ' ' || fiscal_year;

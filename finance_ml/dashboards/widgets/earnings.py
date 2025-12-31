@@ -22,16 +22,105 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 
+# Market cap columns in order of preference (role="market_value" in COLUMN_SCHEMA)
+_MARKET_CAP_COLUMNS = ["market_cap", "market_cap_usd", "market_cap_country_r"]
+
+# Required column pairs for earnings surprise calculations
+_EARNINGS_SURPRISE_PAIRS = {
+    "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
+    "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
+    "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
+    "Net Income": ("net_income_is_ltm", "net_income_adj_1fy"),
+    "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
+}
+
+# Mapping of short category names to PHASE93_FEATURE_CATEGORIES keys
+_CATEGORY_SHORT_NAMES = {
+    "profitability": "Profitability",
+    "valuation": "Valuation Ratios",
+    "growth": "Growth Metrics",
+    "momentum": "Momentum & Technical",
+    "quality_risk": "Quality & Risk",
+    "cash_flow": "Cash Flow",
+    "capital_allocation": "Capital Allocation",
+    "analyst_sentiment": "Analyst Sentiment",
+    "market_sentiment": "Market Sentiment",
+    "leverage_liquidity": "Leverage & Liquidity",
+    "temporal": "Temporal Patterns",
+    "composite": "Composite Scores",
+    "growth_metrics": "Growth Metrics",
+    "efficiency": "Efficiency Ratios",
+    "productivity": "Employee Productivity",
+    "balance_sheet": "Balance Sheet Dynamics",
+    "forecasts": "Revenue Forecasting",
+    "earnings_quality": "Earnings Quality",
+    "dividends": "Dividend Reliability",
+}
+
+# Supplemental metrics by category for get_category_metrics
+_SUPPLEMENTAL_METRICS = {
+    "earnings": [
+        "net_income_adj_1fy",
+        "ebitda_adj_fy",
+        "ebitda_adj_1fy",
+        "ebit_adj_1fy",
+        "ebit_adj_fy",
+        "net_income_adj_fy",
+        "net_income_adj_fq",
+        "net_income_adj_5yavgfq",
+        "eps_adj_1fy",
+        "eps_adj_fy",
+        "eps_adj_ltm",
+    ],
+    "dividends": [
+        "dividend_record_announce_date",
+        "dividend_record_ex_date",
+        "dividend_record_payable_date",
+        "dividend_record_record_date",
+        "dividend_record_frequency",
+        "dividend_record_currency",
+        "div_yield_ltm",
+        "div_yield_ntm",
+        "div_yield_ind",
+        "div_yield_1fyind",
+        "div_yield_5yavgltm",
+        "dividend_per_share",
+        "common_dividends_paid_fy",
+        "dividends_paid",
+        "dividends_paid_ltm",
+    ],
+    "earnings_quality": [
+        "eps_surprise_pct",
+        "earnings_beat_indicator",
+        "eps_surprise_magnitude",
+        "revenue_surprise_pct",
+        "revenue_beat_indicator",
+        "ebitda_surprise_pct",
+        "surprise_momentum_score",
+        "positive_revision_momentum",
+        "consensus_uncertainty_score",
+        "estimate_revision_acceleration",
+        "accelerating_upgrades_flag",
+        "eps_adjustment_ratio_ltm",
+        "eps_adjustment_pct_ltm",
+        "eps_quality_flag_ltm",
+        "net_income_adjustment_ratio_ltm",
+        "ebitda_adjustment_pct_ltm",
+        "adjustment_consistency_score",
+        "earnings_quality_warning_flag",
+        "earnings_quality_score",
+        "exceptional_items_impact_ratio",
+    ],
+}
+
+
 def _get_market_cap_column(df: pd.DataFrame) -> Optional[str]:
     """Find the best available market cap column using schema metadata.
-    
-    Prefers columns in order of liquidity/standardization:
-    market_cap > market_cap_usd > market_cap_country_r
-    
+
+    Prefers columns in order of liquidity/standardization.
     All these columns have role="market_value" in COLUMN_SCHEMA.
     """
-    preferred = ["market_cap", "market_cap_usd", "market_cap_country_r"]
-    for col in preferred:
+    for col in _MARKET_CAP_COLUMNS:
         if col in df.columns:
             return col
     return None
@@ -46,24 +135,40 @@ def _validate_surprise_columns(df: pd.DataFrame) -> Dict[str, bool]:
     Returns:
         Dict mapping metric name to boolean indicating if both columns are available.
     """
-    required_pairs = {
-        "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
-        "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
-        "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
-        "Net Income": ("net_income_is_ltm", "net_income_adj_1fy"),
-        "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
-    }
     return {
         metric: (actual in df.columns and estimate in df.columns)
-        for metric, (actual, estimate) in required_pairs.items()
+        for metric, (actual, estimate) in _EARNINGS_SURPRISE_PAIRS.items()
     }
+
+
+def _resolve_category_name(category: str) -> str:
+    """Resolve short category name to full PHASE93_FEATURE_CATEGORIES key."""
+    return _CATEGORY_SHORT_NAMES.get(category.lower(), category)
+
+
+def _add_supplemental_metrics(result: Dict[str, List[str]]) -> None:
+    """Add supplemental domain-specific metrics to category results in-place."""
+    # Earnings-related supplemental metrics
+    earnings_categories = {"Profitability", "Growth Metrics"}
+    for category in earnings_categories & result.keys():
+        result[category].extend(_SUPPLEMENTAL_METRICS["earnings"])
+
+    # Dividend-related supplemental metrics
+    dividend_categories = ["Dividend Reliability", "Capital Allocation"]
+    dividend_category_key = next((k for k in dividend_categories if k in result), None)
+    if dividend_category_key:
+        result[dividend_category_key].extend(_SUPPLEMENTAL_METRICS["dividends"])
+
+    # Earnings Quality supplemental metrics
+    if "Earnings Quality" in result:
+        result["Earnings Quality"].extend(_SUPPLEMENTAL_METRICS["earnings_quality"])
+
 
 def get_category_metrics(
     categories: List[str],
     include_supplemental: bool = True,
 ) -> Dict[str, List[str]]:
-    """
-    Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
+    """Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
 
     **ETL Pipeline Note:** Some metrics may have companion `*_applicable` flags
     emitted by the ETL pipeline (Stage 8g conditional metrics handling). These
@@ -76,107 +181,14 @@ def get_category_metrics(
     Returns:
         Dict mapping category name to list of metric column names.
     """
-    # Mapping of short names to PHASE93_FEATURE_CATEGORIES keys
-    category_mapping = {
-        "profitability": "Profitability",
-        "valuation": "Valuation Ratios",
-        "growth": "Growth Metrics",
-        "momentum": "Momentum & Technical",
-        "quality_risk": "Quality & Risk",
-        "cash_flow": "Cash Flow",
-        "capital_allocation": "Capital Allocation",
-        "analyst_sentiment": "Analyst Sentiment",
-        "market_sentiment": "Market Sentiment",
-        "leverage_liquidity": "Leverage & Liquidity",
-        "temporal": "Temporal Patterns",
-        "composite": "Composite Scores",
-        "growth_metrics": "Growth Metrics",
-        "efficiency": "Efficiency Ratios",
-        "productivity": "Employee Productivity",
-        "balance_sheet": "Balance Sheet Dynamics",
-        "forecasts": "Revenue Forecasting",
-        "earnings_quality": "Earnings Quality",
-        "dividends": "Dividend Reliability",
-    }
-
     result = {}
     for cat in categories:
-        # Resolve to full category name if short name provided
-        full_cat = category_mapping.get(cat.lower(), cat)
+        full_cat = _resolve_category_name(cat)
         metrics = PHASE93_FEATURE_CATEGORIES.get(full_cat, []).copy()
         result[full_cat] = metrics
 
-    # Add supplemental metrics for specific categories (using normalized keys)
     if include_supplemental:
-        # Earnings-related supplemental metrics
-        if "Profitability" in result or "Growth Metrics" in result:
-            supplemental_earnings = [
-                "net_income_adj_1fy",
-                "ebitda_adj_fy",
-                "ebitda_adj_1fy",
-                "ebit_adj_1fy",
-                "ebit_adj_fy",
-                "net_income_adj_fy",
-                "net_income_adj_fq",
-                "net_income_adj_5yavgfq",
-                "eps_adj_1fy",
-                "eps_adj_fy",
-                "eps_adj_ltm",
-            ]
-            if "Profitability" in result:
-                result["Profitability"].extend(supplemental_earnings)
-            if "Growth Metrics" in result:
-                result["Growth Metrics"].extend(supplemental_earnings)
-
-        # Dividend-related supplemental metrics
-        div_key = next((k for k in ["Dividend Reliability", "Capital Allocation"] if k in result), None)
-        if div_key:
-            supplemental_dividends = [
-                "dividend_record_announce_date",
-                "dividend_record_ex_date",
-                "dividend_record_payable_date",
-                "dividend_record_record_date",
-                "dividend_record_frequency",
-                "dividend_record_currency",
-                "div_yield_ltm",
-                "div_yield_ntm",
-                "div_yield_ind",
-                "div_yield_1fyind",
-                "div_yield_5yavgltm",
-                "dividend_per_share",
-                "common_dividends_paid_fy",
-                "dividends_paid",
-                "dividends_paid_ltm",
-            ]
-            result[div_key].extend(supplemental_dividends)
-
-        # Earnings Quality supplemental metrics (Phase 9.3 output features)
-        if "Earnings Quality" in result:
-            supplemental_earnings_quality = [
-                # Estimated vs. Actual analytics outputs
-                "eps_surprise_pct",
-                "earnings_beat_indicator",
-                "eps_surprise_magnitude",
-                "revenue_surprise_pct",
-                "revenue_beat_indicator",
-                "ebitda_surprise_pct",
-                "surprise_momentum_score",
-                "positive_revision_momentum",
-                "consensus_uncertainty_score",
-                "estimate_revision_acceleration",
-                "accelerating_upgrades_flag",
-                # GAAP vs. Adjusted analytics outputs
-                "eps_adjustment_ratio_ltm",
-                "eps_adjustment_pct_ltm",
-                "eps_quality_flag_ltm",
-                "net_income_adjustment_ratio_ltm",
-                "ebitda_adjustment_pct_ltm",
-                "adjustment_consistency_score",
-                "earnings_quality_warning_flag",
-                "earnings_quality_score",
-                "exceptional_items_impact_ratio",
-            ]
-            result["Earnings Quality"].extend(supplemental_earnings_quality)
+        _add_supplemental_metrics(result)
 
     return result
 
@@ -510,18 +522,7 @@ def create_earnings_metrics_chart(
         go.Figure: Plotly figure object.
     """
     # Standardize category name
-    category_mapping = {
-        "profitability": "Profitability",
-        "valuation": "Valuation Ratios",
-        "growth": "Growth Metrics",
-        "momentum": "Momentum & Technical",
-        "quality_risk": "Quality & Risk",
-        "cash_flow": "Cash Flow",
-        "forecasts": "Revenue Forecasting",
-        "earnings_quality": "Earnings Quality",
-        "dividends": "Dividend Reliability",
-    }
-    metric_category = category_mapping.get(metric_category.lower(), metric_category)
+    metric_category = _resolve_category_name(metric_category)
 
     reference_date = resolve_reference_date(df, reference_date)
 
@@ -724,35 +725,10 @@ def create_earnings_surprise_dashboard(
         df_local = df_local.sort_values(by=mcap_col, ascending=False)
     df_local = df_local.head(int(top_n))
 
-    # Surprise mappings aligned with COLUMN_SCHEMA definitions
-    # Actual columns use market_value role, estimates use market_value/ratio roles
-    surprise_cols: Dict[str, Dict[str, str]] = {
-        "Revenue": {
-            "actual": "total_revenues_ltm",      # market_value in schema
-            "estimate": "revenues_est_avg_ntm",  # market_value in schema
-        },
-        "EBITDA": {
-            "actual": "ebitda_ltm",              # market_value in schema
-            "estimate": "ebitda_est_avg_fy1e",   # market_value in schema
-        },
-        "EBIT": {
-            "actual": "ebit_ltm",                # market_value in schema
-            "estimate": "ebit_est_med_ntm",      # market_value in schema
-        },
-        "Net Income": {
-            "actual": "net_income_is_ltm",       # market_value in schema
-            "estimate": "net_income_adj_1fy",    # market_value in schema
-        },
-        "EPS": {
-            "actual": "eps_adj_ltm",             # ratio in schema
-            "estimate": "eps_norm_est_avg_ntm",  # ratio in schema
-        },
-    }
-
     surprise_data: List[Dict[str, float]] = []
     all_surprises: List[float] = []
 
-    for metric_name, cols in surprise_cols.items():
+    for metric_name, (actual_col, est_col) in _EARNINGS_SURPRISE_PAIRS.items():
         # Check if precomputed surprise column is available for this metric
         precomputed_col = precomputed_surprise_cols.get(metric_name)
         if has_precomputed and precomputed_col and precomputed_col in df_local.columns:
@@ -761,8 +737,6 @@ def create_earnings_surprise_dashboard(
             surprise_pct = surprise_pct.replace([np.inf, -np.inf], np.nan).dropna()
         else:
             # Calculate surprise from actual/estimate columns
-            actual_col = cols["actual"]
-            est_col = cols["estimate"]
 
             if actual_col not in df_local.columns or est_col not in df_local.columns:
                 continue
@@ -1024,7 +998,20 @@ def _create_earnings_timeline_plotly(
         x="days_to_earnings",
         y=y_dim,
         color=color_dim,
-        hover_data=[c for c in ["ticker","name","sector","exchange", "region"] if c in valid_df.columns],
+        hover_data=[
+            c
+            for c in [
+                "ticker",
+                "name",
+                "sector",
+                "exchange",
+                "region",
+                "fy_end_date",
+                "next_earnings_when",
+                "next_fiscal_quarter",
+            ]
+            if c in valid_df.columns
+        ],
         title="<b>Earnings Events Timeline</b><br><sup>Days relative to today</sup>",
         template=PLOTLY_TEMPLATE,
     )
@@ -1129,10 +1116,22 @@ def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
     gaap_adj_pairs = [
         ("eps_gaap_est_avg_fy1e", "eps_norm_est_avg_fy1e"),
         ("eps_gaap_est_avg_ntm", "eps_norm_est_avg_ntm"),
-        ("net_eps_basic_ltm", "eps_adj_ltm"),
+        ("net_eps_basic_ltm", "eps_adj_ltm", "eps_adj_fy", "eps_adj_1fy"),
     ]
 
-    base_cols = [c for c in ["ticker", "sector", "region"] if c in df.columns]
+    base_cols = [
+        c
+        for c in [
+            "ticker",
+            "name",
+            "exchange",
+            "sector",
+            "region",
+            "fy_end_date",
+            "next_fiscal_quarter",
+        ]
+        if c in df.columns
+    ]
     earnings_quality = df[base_cols].copy()
 
     for gaap_col, adj_col in gaap_adj_pairs:
@@ -1264,8 +1263,7 @@ def generate_earnings_quality_alerts(
     # ---------------------------------------------------------------------
     # Alert 1: EPS surprise misses
     # ---------------------------------------------------------------------
-    eps_actual_col = "net_eps_basic_fy"
-    eps_est_col = "eps_gaap_est_avg_fy1e"
+    eps_actual_col, eps_est_col = _EARNINGS_SURPRISE_PAIRS["EPS"]
     if eps_actual_col in df.columns and eps_est_col in df.columns:
         eps_actual = pd.to_numeric(df[eps_actual_col], errors="coerce")
         eps_est = pd.to_numeric(df[eps_est_col], errors="coerce")
@@ -1299,9 +1297,15 @@ def generate_earnings_quality_alerts(
     # Alert 2: Analyst downgrade momentum (negative revisions across periods)
     # ---------------------------------------------------------------------
     default_rev_cols = [
+        "eps_est_avg_rev_pct_fy1e_1w",
         "eps_est_avg_rev_pct_fy1e_1m",
         "eps_est_avg_rev_pct_fy1e_3m",
         "eps_est_avg_rev_pct_fy1e_6m",
+        "eps_est_avg_rev_pct_fy1e_1y",
+        "eps_gaap_est_avg_rev_pct_fy1e_1m",
+        "eps_gaap_est_avg_rev_pct_fy1e_1y",
+        "eps_gaap_est_avg_rev_pct_fy1e_3m",
+        "eps_gaap_est_avg_rev_pct_fy1e_6m",
     ]
     available_rev_cols = [c for c in default_rev_cols if c in df.columns]
     # Generates alert for stocks with analyst downgrade momentum
@@ -1410,4 +1414,3 @@ def generate_earnings_quality_alerts(
             json.dump(payload, f, indent=2, default=str)
 
     return payload
-
