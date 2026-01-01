@@ -1,0 +1,92 @@
+{
+  "segment_stats": {
+    "Information Technology": {
+      "count": 843,
+      "mean_eps": 0.4119691577698695,
+      "median_eps": 0.11,
+      "positive_pct": 79.7153024911032,
+      "mean_surprise": -83.00880921353142,
+      "beat_pct": 5.741626794258373
+    },
+    "Communication Services": {
+      "count": 335,
+      "mean_eps": 0.1891940298507463,
+      "median_eps": 0.09,
+      "positive_pct": 77.01492537313432,
+      "mean_surprise": -89.86198209648424,
+      "beat_pct": 7.29483282674772
+    },
+    "Financials": {
+      "count": 1132,
+      "mean_eps": 19.943038869257954,
+      "median_eps": 0.23,
+      "positive_pct": 90.7243816254417,
+      "mean_surprise": -74.368099295326,
+      "beat_pct": 3.561887800534283
+    },
+    "Consumer Discretionary": {
+      "count": 806,
+      "mean_eps": 0.8546401985111662,
+      "median_eps": 0.135,
+      "positive_pct": 84.49131513647643,
+      "mean_surprise": -93.35383940882683,
+      "beat_pct": 5.742821473158552
+    },
+    "Health Care": {
+      "count": 655,
+      "mean_eps": 0.308824427480916,
+      "median_eps": 0.07,
+      "positive_pct": 66.87022900763358,
+      "mean_surprise": -56.3126478796075,
+      "beat_pct": 23.27718223583461
+    },
+    "Consumer Staples": {
+      "count": 466,
+      "mean_eps": 1.7008583690987127,
+      "median_eps": 0.11499999999999999,
+      "positive_pct": 85.62231759656652,
+      "mean_surprise": -77.51989358586097,
+      "beat_pct": 3.2751091703056767
+    },
+    "Energy": {
+      "count": 303,
+      "mean_eps": 0.6785478547854784,
+      "median_eps": 0.16,
+      "positive_pct": 81.84818481848185,
+      "mean_surprise": -62.80906631826839,
+      "beat_pct": 7.9470198675496695
+    },
+    "Industrials": {
+      "count": 1296,
+      "mean_eps": 0.8414429012345679,
+      "median_eps": 0.20500000000000002,
+      "positive_pct": 88.81172839506173,
+      "mean_surprise": -75.0853007800406,
+      "beat_pct": 4.422032583397983
+    },
+    "Materials": {
+      "count": 641,
+      "mean_eps": 0.377581903276131,
+      "median_eps": 0.06,
+      "positive_pct": 76.28705148205928,
+      "mean_surprise": -101.09190978359175,
+      "beat_pct": 5.573248407643312
+    },
+    "Real Estate": {
+      "count": 205,
+      "mean_eps": 0.8315609756097561,
+      "median_eps": 0.08,
+      "positive_pct": 85.85365853658537,
+      "mean_surprise": -92.72098103033215,
+      "beat_pct": 2.941176470588235
+    },
+    "Utilities": {
+      "count": 266,
+      "mean_eps": 0.4222556390977444,
+      "median_eps": 0.11,
+      "positive_pct": 87.59398496240601,
+      "mean_surprise": -75.79376734541636,
+      "beat_pct": 2.6415094339622645
+    }
+  }
+}

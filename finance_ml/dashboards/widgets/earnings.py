@@ -264,8 +264,27 @@ def create_earnings_calendar_dashboard(
     filtered_df = filtered_df.head(top_n)
 
     # Define identity columns + temporal enrichments when available
-    display_cols = ["isin","ticker","name","exchange", "sector","country", "industry", "region", "next_earnings"]
-    display_cols = [c for c in display_cols if c in df.columns or c == "next_earnings"]
+    display_cols = [
+        "isin",
+        "ticker",
+        "name",
+        "exchange",
+        "sector",
+        "country",
+        "industry",
+        "region",
+        "next_earnings",
+        "fy_end_date",
+        "next_fiscal_quarter",
+    ]
+    display_cols = [
+        c
+        for c in display_cols
+        if c in df.columns
+        or c == "next_earnings"
+        or c == "fy_end_date"
+        or c == "next_fiscal_quarter"
+    ]
     if mcap_col and mcap_col not in display_cols:
         display_cols.append(mcap_col)
 
@@ -344,24 +363,6 @@ def create_earnings_calendar_dashboard(
                 idx = cols.index("next_earnings") + 1
                 cols.insert(idx, "days_to_earnings")
             dashboard_df = dashboard_df[cols]
-
-    # Add standardized formatted date companions for display/export
-    date_columns = [
-        col
-        for col in dashboard_df.columns
-        if pd.api.types.is_datetime64_any_dtype(dashboard_df[col])
-    ]
-
-    formatted_cols = add_formatted_date_columns(dashboard_df, date_columns)
-
-    if formatted_cols:
-        reordered: List[str] = []
-        for col in dashboard_df.columns:
-            reordered.append(col)
-            formatted_col = f"{col}_formatted"
-            if formatted_col in formatted_cols:
-                reordered.append(formatted_col)
-        dashboard_df = dashboard_df.loc[:, list(dict.fromkeys(reordered))]
 
     return dashboard_df
 
@@ -1110,13 +1111,16 @@ def _engineer_earnings_events_from_fiscal_data(
         "reference_date": reference_date,
     }
 
+
 def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
     """Analyze discrepancies between GAAP and Adjusted earnings."""
 
     gaap_adj_pairs = [
         ("eps_gaap_est_avg_fy1e", "eps_norm_est_avg_fy1e"),
         ("eps_gaap_est_avg_ntm", "eps_norm_est_avg_ntm"),
-        ("net_eps_basic_ltm", "eps_adj_ltm", "eps_adj_fy", "eps_adj_1fy"),
+        ("net_eps_basic_ltm", "eps_adj_ltm"),
+        ("net_eps_basic_fy", "eps_adj_fy"),  # Separate pair for FY
+        ("net_eps_basic_1fy", "eps_adj_1fy"),  # Separate pair for 1FY
     ]
 
     base_cols = [
@@ -1158,6 +1162,7 @@ def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
         ).clip(0, 100)
 
     return earnings_quality
+
 
 def create_gaap_adjusted_comparison_chart(df: pd.DataFrame, output_path: Path) -> go.Figure:
     """Create sector-level GAAP vs Adjusted comparison visualization."""

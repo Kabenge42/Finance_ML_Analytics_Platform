@@ -1,125 +1,125 @@
 {
-  "timestamp": "2025-12-31T16:59:32.957562",
-  "total_stocks_analyzed": 6948,
+  "timestamp": "2026-01-01T16:54:33.933628",
+  "total_stocks_analyzed": 6899,
   "rating_distribution": {},
   "by_sector": {
+    "Health Care": {
+      "count": 678,
+      "mean_target": 6371.476406784661,
+      "median_target": 58.4,
+      "mean_upside": 34.71673685380034,
+      "positive_upside_pct": 92.77286135693215
+    },
+    "Consumer Discretionary": {
+      "count": 799,
+      "mean_target": 2479.6923922403007,
+      "median_target": 51.4754,
+      "mean_upside": 24.757912581351007,
+      "positive_upside_pct": 86.7334167709637
+    },
     "Information Technology": {
-      "count": 843,
-      "mean_target": 4136.7169396204035,
-      "median_target": 76.8,
-      "mean_upside": 20.73618498616207,
-      "positive_upside_pct": 83.15539739027284
+      "count": 877,
+      "mean_target": 3975.562746066135,
+      "median_target": 75.0889,
+      "mean_upside": 22.501087723334923,
+      "positive_upside_pct": 84.26453819840364
     },
     "Communication Services": {
       "count": 335,
-      "mean_target": 4537.023742985075,
-      "median_target": 31.721,
-      "mean_upside": 24.43405543699624,
-      "positive_upside_pct": 86.86567164179104
+      "mean_target": 4538.121559402985,
+      "median_target": 32.0,
+      "mean_upside": 25.500863493985538,
+      "positive_upside_pct": 87.16417910447761
     },
     "Financials": {
-      "count": 1132,
-      "mean_target": 3644.211094787986,
-      "median_target": 47.7149,
-      "mean_upside": 12.842329341325442,
-      "positive_upside_pct": 79.59363957597174
-    },
-    "Consumer Discretionary": {
-      "count": 806,
-      "mean_target": 2454.678649503722,
-      "median_target": 50.0769,
-      "mean_upside": 23.181252168921702,
-      "positive_upside_pct": 87.09677419354838
-    },
-    "Health Care": {
-      "count": 655,
-      "mean_target": 6598.904560763359,
-      "median_target": 64.2,
-      "mean_upside": 29.849888113472456,
-      "positive_upside_pct": 92.67175572519083
+      "count": 1065,
+      "mean_target": 3921.5690092957743,
+      "median_target": 54.1,
+      "mean_upside": 13.229155453914062,
+      "positive_upside_pct": 78.30985915492957
     },
     "Consumer Staples": {
-      "count": 466,
-      "mean_target": 6591.365322317596,
-      "median_target": 62.118750000000006,
-      "mean_upside": 20.6928958668336,
-      "positive_upside_pct": 87.1244635193133
+      "count": 456,
+      "mean_target": 6729.855712719298,
+      "median_target": 60.816649999999996,
+      "mean_upside": 20.992829627070712,
+      "positive_upside_pct": 86.8421052631579
     },
     "Energy": {
-      "count": 303,
-      "mean_target": 2920.9385844884487,
-      "median_target": 33.6667,
-      "mean_upside": 20.452691324637932,
-      "positive_upside_pct": 87.12871287128714
+      "count": 300,
+      "mean_target": 2949.280194333333,
+      "median_target": 33.8795,
+      "mean_upside": 18.23804400485002,
+      "positive_upside_pct": 86.0
     },
     "Industrials": {
-      "count": 1295,
-      "mean_target": 10514.253748416986,
-      "median_target": 68.4815,
-      "mean_upside": 21.242993042902036,
-      "positive_upside_pct": 84.24710424710425
+      "count": 1291,
+      "mean_target": 10537.83383020914,
+      "median_target": 70.275,
+      "mean_upside": 22.1087600194251,
+      "positive_upside_pct": 83.03640588690936
     },
     "Materials": {
-      "count": 641,
-      "mean_target": 3534.2575024960993,
-      "median_target": 37.9,
-      "mean_upside": 11.678025077065769,
-      "positive_upside_pct": 73.16692667706708
-    },
-    "Real Estate": {
-      "count": 205,
-      "mean_target": 1297.0207921951219,
-      "median_target": 26.55,
-      "mean_upside": 22.08129050463658,
-      "positive_upside_pct": 81.95121951219512
+      "count": 625,
+      "mean_target": 3613.3308636799998,
+      "median_target": 37.0667,
+      "mean_upside": 11.86754027200069,
+      "positive_upside_pct": 72.8
     },
     "Utilities": {
-      "count": 266,
-      "mean_target": 876.0820142857143,
-      "median_target": 42.6857,
-      "mean_upside": 15.115137674257108,
-      "positive_upside_pct": 88.34586466165413
+      "count": 259,
+      "mean_target": 902.6839208494208,
+      "median_target": 44.0,
+      "mean_upside": 15.60717693535295,
+      "positive_upside_pct": 87.64478764478764
+    },
+    "Real Estate": {
+      "count": 214,
+      "mean_target": 1322.9604654205602,
+      "median_target": 26.69585,
+      "mean_upside": 21.09875173268227,
+      "positive_upside_pct": 83.17757009345794
     }
   },
   "by_region": {},
   "by_size_class": {
+    "Mid Cap": {
+      "count": 2868,
+      "mean_upside": 17.716837190637275,
+      "median_upside": 14.799316375802217,
+      "positive_pct": 84.51882845188284
+    },
     "Large Cap": {
-      "count": 2053,
-      "mean_upside": 11.730596273544771,
-      "median_upside": 10.681658468025296,
-      "positive_pct": 80.07793472966391
+      "count": 1984,
+      "mean_upside": 11.94650406083612,
+      "median_upside": 10.56327664765749,
+      "positive_pct": 79.93951612903226
     },
     "Small Cap": {
-      "count": 1918,
-      "mean_upside": 32.548314330144855,
-      "median_upside": 23.313966094801845,
-      "positive_pct": 87.12200208550573
-    },
-    "Mid Cap": {
-      "count": 2976,
-      "mean_upside": 17.241717218363178,
-      "median_upside": 14.353744890680762,
-      "positive_pct": 84.67741935483872
+      "count": 2047,
+      "mean_upside": 34.55408766278739,
+      "median_upside": 23.161764705882355,
+      "positive_pct": 86.12603810454324
     }
   },
   "by_style_class": {
-    "Growth": {
-      "count": 719,
-      "mean_upside": 16.71247180278706,
-      "median_upside": 15.305206942590118,
-      "positive_pct": 85.53546592489569
-    },
     "Core": {
-      "count": 4519,
-      "mean_upside": 18.97016566098488,
-      "median_upside": 14.471661237785021,
-      "positive_pct": 83.51405178136756
+      "count": 4475,
+      "mean_upside": 20.040528823647723,
+      "median_upside": 14.937835560142798,
+      "positive_pct": 83.28491620111733
+    },
+    "Growth": {
+      "count": 708,
+      "mean_upside": 17.48222436601154,
+      "median_upside": 15.781196243692408,
+      "positive_pct": 85.59322033898306
     },
     "Value": {
-      "count": 1709,
-      "mean_upside": 23.45201031507284,
-      "median_upside": 15.547886108714406,
-      "positive_pct": 84.61088355763604
+      "count": 1716,
+      "mean_upside": 25.167359690100604,
+      "median_upside": 15.380479735318438,
+      "positive_pct": 83.91608391608392
     }
   },
   "available_columns": {
@@ -132,10 +132,10 @@
     "target_low": "price_target_low"
   },
   "price_target_stats": {
-    "count": 6947,
-    "mean": 5149.00261190442,
-    "median": 52.4286,
-    "std": 61229.279355481725,
+    "count": 6899,
+    "mean": 5191.712954602116,
+    "median": 53.0,
+    "std": 61443.35154204616,
     "min": 0.0,
     "max": 2538125.0
   }

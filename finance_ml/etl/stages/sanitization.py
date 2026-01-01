@@ -5,6 +5,7 @@ from typing import Set
 
 import pandas as pd
 
+from finance_ml.core.schema import list_non_recurring_cols
 from finance_ml.ml_workflow.preprocessing.data import sanitize_dataframe_with_logging
 
 logger = logging.getLogger(__name__)
@@ -112,58 +113,18 @@ def get_income_statement_zero_fill_columns() -> Set[str]:
     Returns:
         Set of non-recurring income statement column names for zero-fill
     """
-    return {
-        # Impairments & Writedowns (Non-recurring)
-        "impairment_of_goodwill_fq",
-        "impairment_of_goodwill_ltm",
-        "impairment_of_goodwill_fy",
-        "impairment_of_goodwill_1fy",
-        "impairment_of_goodwill_5yavgfq",
-        "asset_writedown_fq",
-        "asset_writedown_ltm",
-        "asset_writedown_fy",
-        "asset_writedown_1fy",
-        "asset_writedown_5yavgfq",
-
-        # Restructuring & Merger Charges (Non-recurring)
-        "restructuring_charges_fq",
-        "restructuring_charges_ltm",
-        "restructuring_charges_fy",
-        "restructuring_charges_1fy",
-        "restructuring_charges_5yavgfq",
-        "merger_and_restructuring_charges_fq",
-        "merger_and_restructuring_charges_fy",
-        "merger_and_restructuring_charges_5yavgfq",
-        "merger_and_restructuring_charges_ltm",
-
-
-        # Unusual Items & Asset Sales (Non-recurring)
-        "gain_loss_on_sale_of_assets_ltm",
-        "other_unusual_items_total_ltm",
-    }
+    return set(list_non_recurring_cols())
 
 
 def get_balance_sheet_zero_fill_columns() -> Set[str]:
     """Return balance sheet columns that should be zero-filled when missing.
 
     Business Logic:
-        These represent optional balance sheet items. Missing values indicate
-        the item is not present on the balance sheet.
+        Aligns with imputation strategy: Balance sheet items like Goodwill
+        and Intangibles are now handled via median imputation in the main
+        pipeline to avoid sector bias, rather than zero-filling here.
     """
-    return {
-        # Note: Inventory and recurring Intangibles are now handled 
-        # via median imputation in Step 4 to avoid sector bias.
-        
-        # Goodwill (Balance Sheet - usually non-existent if no M&A)
-        "goodwill_fq",
-        "goodwill_ltm",
-        "goodwill_fy",
-        "goodwill_1fy",
-        "goodwill_5yavgfq",
-        "gross_intangible_assets_fy",
-        "gross_intangible_assets_ltm",
-        "gross_intangible_assets_5yavgfq",
-    }
+    return set()
 
 
 def apply_business_rule_zero_fills(df: pd.DataFrame) -> pd.DataFrame:

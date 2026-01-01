@@ -2,100 +2,100 @@
   "sector_tests": {
     "roe": {
       "anova": {
-        "statistic": 0.807075926055819,
-        "p_value": 0.6219293339516461,
+        "statistic": 0.9209923970964674,
+        "p_value": 0.5123795398389701,
         "significant": "False",
-        "interpretation": "No significant difference in means (p=0.6219)"
+        "interpretation": "No significant difference in means (p=0.5124)"
       },
       "kruskal_wallis": {
-        "statistic": 214.34911929148439,
-        "p_value": 1.6262782151234102e-40,
+        "statistic": 198.30222861082453,
+        "p_value": 3.646643367059167e-37,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 214.34911929148439,
-        "p_value": 1.6262782151234102e-40,
+        "statistic": 198.30222861082453,
+        "p_value": 3.646643367059167e-37,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
     },
     "price_momentum_1m": {
       "anova": {
-        "statistic": 12.364740065070741,
-        "p_value": 1.4807317220082949e-21,
+        "statistic": 17.055731769277287,
+        "p_value": 5.464778685467358e-31,
         "significant": "True",
         "interpretation": "Groups have significantly different means (p=0.0000)"
       },
       "kruskal_wallis": {
-        "statistic": 426.86590599381145,
-        "p_value": 1.7875497650571627e-85,
+        "statistic": 353.2967649612505,
+        "p_value": 7.956081509622009e-70,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 426.86590599381145,
-        "p_value": 1.7875497650571627e-85,
+        "statistic": 353.2967649612505,
+        "p_value": 7.956081509622009e-70,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
     },
     "earnings_quality_score": {
       "anova": {
-        "statistic": 14.354607929186221,
-        "p_value": 2.6480389915419647e-25,
+        "statistic": 9.06529184582384,
+        "p_value": 5.105282244218082e-15,
         "significant": "True",
         "interpretation": "Groups have significantly different means (p=0.0000)"
       },
       "kruskal_wallis": {
-        "statistic": 79.63894837279179,
-        "p_value": 5.908725729470872e-13,
+        "statistic": 61.69953662428525,
+        "p_value": 1.7258441632123084e-09,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 79.63894837279179,
-        "p_value": 5.908725729470872e-13,
+        "statistic": 61.69953662428525,
+        "p_value": 1.7258441632123084e-09,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
     },
     "ema_trend_consistency": {
       "anova": {
-        "statistic": 19.748155476300123,
-        "p_value": 1.9253020564992888e-36,
+        "statistic": 21.73169913770527,
+        "p_value": 1.8484641040686984e-40,
         "significant": "True",
         "interpretation": "Groups have significantly different means (p=0.0000)"
       },
       "kruskal_wallis": {
-        "statistic": 192.80117646716508,
-        "p_value": 5.105872198507981e-36,
+        "statistic": 213.0495040305477,
+        "p_value": 3.0404559530681187e-40,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 192.80117646716508,
-        "p_value": 5.105872198507981e-36,
+        "statistic": 213.0495040305477,
+        "p_value": 3.0404559530681187e-40,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
     },
     "debt_to_equity": {
       "anova": {
-        "statistic": 1.2451768446344376,
-        "p_value": 0.2562055654051652,
+        "statistic": 1.2720329307103193,
+        "p_value": 0.2399882729172027,
         "significant": "False",
-        "interpretation": "No significant difference in means (p=0.2562)"
+        "interpretation": "No significant difference in means (p=0.2400)"
       },
       "kruskal_wallis": {
-        "statistic": 470.2348734509205,
-        "p_value": 1.0049457791167277e-94,
+        "statistic": 513.3331908362454,
+        "p_value": 6.23985655616173e-104,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       },
       "kruskal": {
-        "statistic": 470.2348734509205,
-        "p_value": 1.0049457791167277e-94,
+        "statistic": 513.3331908362454,
+        "p_value": 6.23985655616173e-104,
         "significant": "True",
         "interpretation": "Groups have significantly different distributions (p=0.0000)"
       }
@@ -103,17 +103,17 @@
     "summary": {
       "total_metrics_tested": 4,
       "groups_compared": [
+        "Health Care",
+        "Consumer Discretionary",
         "Information Technology",
         "Communication Services",
         "Financials",
-        "Consumer Discretionary",
-        "Health Care",
         "Consumer Staples",
         "Energy",
         "Industrials",
         "Materials",
-        "Real Estate",
-        "Utilities"
+        "Utilities",
+        "Real Estate"
       ],
       "alpha": 0.05
     }

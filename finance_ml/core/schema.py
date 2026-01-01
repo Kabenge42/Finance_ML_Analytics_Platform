@@ -40,6 +40,7 @@ Role = Literal[
     "count",  # Discrete integers (analyst ratings, employees, shares, dividend streak)
     "auxiliary",  # Legacy aliases, optional - excluded from diagnostics
     "label",  # Classification targets (multi-label)
+    "non_recurring",  # Non-recurring exceptional items (impairments, restructuring) - zero imputation
 ]
 
 class ColumnMeta(TypedDict, total=False):
@@ -801,107 +802,112 @@ COLUMN_SCHEMA: Dict[str, ColumnMeta] = {
     },
     "impairment_of_goodwill_fq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Impairment of Goodwill (FQ)",
     },
     "impairment_of_goodwill_ltm": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Impairment of Goodwill (LTM)",
     },
     "impairment_of_goodwill_1fy": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Impairment of Goodwill (-1FY)",
     },
     "impairment_of_goodwill_fy": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Impairment of Goodwill (FY)",
     },
     "impairment_of_goodwill_5yavgfq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Impairment of Goodwill (5YAVGFQ)",
     },
     "asset_writedown_ltm": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Asset Writedown (LTM)",
     },
     "asset_writedown_fy": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Asset Writedown (FY)",
     },
     "asset_writedown_fq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Asset Writedown (FQ)",
     },
     "asset_writedown_1fy": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Asset Writedown (-1FY)",
     },
     "asset_writedown_5yavgfq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Asset Writedown (5YAVGFQ)",
     },
     "restructuring_charges_ltm": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Restructuring Charges (LTM)",
     },
     "restructuring_charges_fq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Restructuring Charges (FQ)",
     },
     "restructuring_charges_1fy": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Restructuring Charges (-1FY)",
     },
     "restructuring_charges_fy": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Restructuring Charges (FY)",
     },
     "restructuring_charges_5yavgfq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Restructuring Charges (5YAVGFQ)",
     },
     "merger_and_restructuring_charges_ltm": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Merger & Restructuring Charges (LTM)",
     },
     "merger_and_restructuring_charges_fq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Merger & Restructuring Charges (FQ)",
     },
     "merger_and_restructuring_charges_fy": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Merger & Restructuring Charges (FY)",
+    },
+    "merger_and_restructuring_charges_1fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Merger & Restructuring Charges (-1FY)",
     },
     "merger_and_restructuring_charges_5yavgfq": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Merger & Restructuring Charges (5YAVGFQ)",
     },
     "other_unusual_items_total_ltm": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Other Unusual Items/Total (LTM)",
     },
     "gain_loss_on_sale_of_assets_ltm": {
         "dtype": "float",
-        "role": "financial_statement",
+        "role": "non_recurring",
         "sql_name": "Gain (Loss) On Sale Of Assets (LTM)",
     },
     "cost_of_revenues_ltm": {
@@ -1923,3 +1929,88 @@ def list_required_schema_columns_for_etl(include_extended_financials: bool = Fal
     if include_extended_financials:
         required.extend(["enterprise_value", "ebitda_ltm", "total_revenues_ltm"])
     return required
+
+
+def list_non_recurring_cols() -> List[str]:
+    """List all non-recurring exceptional item columns from COLUMN_SCHEMA.
+
+    These columns represent rare/exceptional events where missing values
+    typically mean the event did not occur. Zero is the economically
+    correct imputation for these items.
+
+    Returns:
+        List of column names with role='non_recurring'
+    """
+    return [col for col, meta in COLUMN_SCHEMA.items() if meta.get("role") == "non_recurring"]
+
+
+def list_knn_imputable_cols() -> List[str]:
+    """List all columns suitable for KNN imputation from COLUMN_SCHEMA.
+
+    These are core financial metrics where KNN can leverage sector relationships
+    and correlations to provide better estimates than simple statistics.
+
+    Includes columns with roles: feature, market, financial_statement,
+    balance_sheet, cash_flow, ratio, percentage.
+
+    Excludes: non_recurring (zero imputation), count (median imputation),
+    id, categorical, date, target, auxiliary.
+
+    Returns:
+        List of column names suitable for KNN imputation
+    """
+    knn_roles = {
+        "feature",
+        "market",
+        "financial_statement",
+        "balance_sheet",
+        "cash_flow",
+        "ratio",
+        "percentage",
+    }
+
+    return [
+        col
+        for col, meta in COLUMN_SCHEMA.items()
+        if meta.get("role") in knn_roles and meta.get("dtype") in ["float", "int", "bool"]
+    ]
+
+
+def list_count_cols() -> List[str]:
+    """List all count columns from COLUMN_SCHEMA.
+
+    These are discrete integer columns (analyst ratings, employees, shares)
+    that should use median imputation rather than KNN.
+
+    Returns:
+        List of column names with role='count'
+    """
+    return [
+        col
+        for col, meta in COLUMN_SCHEMA.items()
+        if meta.get("role") == "count" and meta.get("dtype") in ["float", "int"]
+    ]
+
+
+def list_price_cols() -> List[str]:
+    """List all price-related columns from COLUMN_SCHEMA.
+
+    These columns should be used for price imputation (filling missing
+    price targets with last_price as fallback).
+
+    Returns:
+        List of column names with role in ('market', 'target', 'target_fallback')
+        and containing price-related semantics
+    """
+    price_roles = {"market", "target", "target_fallback"}
+    price_keywords = {"price", "target", "ema_", "52w_"}
+
+    result = []
+    for col, meta in COLUMN_SCHEMA.items():
+        role = meta.get("role", "")
+        if role in price_roles:
+            # Check if column name suggests price-related data
+            if any(kw in col.lower() for kw in price_keywords):
+                result.append(col)
+
+    return result

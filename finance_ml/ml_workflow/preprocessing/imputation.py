@@ -31,6 +31,16 @@ import numpy as np
 import pandas as pd
 from sklearn.impute import KNNImputer
 
+from finance_ml.core.schema import (
+    COLUMN_SCHEMA,
+    normalize_column_name,
+    list_non_recurring_cols,
+    list_knn_imputable_cols,
+    list_count_cols,
+    list_price_cols,
+    list_categorical_cols,
+    list_date_cols,
+)
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
     classify_columns,
 )
@@ -89,134 +99,109 @@ def get_schema_aligned_columns_by_role(
 def get_zero_imputation_columns() -> List[str]:
     """Return list of columns for zero imputation (Step 1 of 6-step strategy).
 
-    These columns represent rare/exceptional non-recurring events where missing 
-    values typically mean the event did not occur. Zero is the economically 
+    These columns represent rare/exceptional non-recurring events where missing
+    values typically mean the event did not occur. Zero is the economically
     correct imputation.
-    
-    IMPORTANT: This list should ONLY include non-recurring income statement items:
-    - Impairments (goodwill, asset writedowns)
-    - Restructuring charges
-    - Merger & acquisition costs
-    - Gains/losses on asset sales
-    - Other unusual/exceptional items
-    
-    EXCLUDED from zero-imputation (these are recurring or balance sheet items):
-    - R&D expenses (recurring operational expense)
-    - Capital expenditure (recurring investment)
-    - Goodwill (balance sheet asset, not income statement)
-    - Intangible assets (balance sheet item)
-    - Volume/trading metrics (operational data)
-    - Cash acquisitions (strategic but recurring for active acquirers)
-    - Interest expense/income (recurring financing)
+
+    Now uses schema-based selection via role='non_recurring' to ensure
+    alignment with COLUMN_SCHEMA and prevent drift.
 
     Returns:
-        List of 27 column names for zero imputation (non-recurring items only)
+        List of column names for zero imputation (non-recurring items only)
     """
-    return [
-        # ===== NON-RECURRING INCOME STATEMENT ITEMS =====
-        
-        # Impairment of Goodwill (all periods) - non-recurring writedown
+    # Primary: Schema-driven selection
+    schema_columns = list_non_recurring_cols()
+
+    # Fallback: Hardcoded list for backward compatibility if schema is incomplete
+    hardcoded_columns = [
+        # Impairment of Goodwill (all periods)
         "impairment_of_goodwill_fq",
         "impairment_of_goodwill_ltm",
         "impairment_of_goodwill_1fy",
         "impairment_of_goodwill_fy",
         "impairment_of_goodwill_5yavgfq",
-        
-        # Asset Writedown (all periods) - non-recurring impairment
+        # Asset Writedown (all periods)
         "asset_writedown_fq",
         "asset_writedown_ltm",
         "asset_writedown_fy",
         "asset_writedown_1fy",
         "asset_writedown_5yavgfq",
-        
-        # Restructuring Charges (all periods) - non-recurring
+        # Restructuring Charges (all periods)
         "restructuring_charges_fq",
         "restructuring_charges_ltm",
         "restructuring_charges_fy",
         "restructuring_charges_1fy",
         "restructuring_charges_5yavgfq",
-        
-        # Merger & Restructuring Charges (all periods) - non-recurring
+        # Merger & Restructuring Charges (all periods)
         "merger_and_restructuring_charges_fq",
         "merger_and_restructuring_charges_ltm",
         "merger_and_restructuring_charges_fy",
         "merger_and_restructuring_charges_1fy",
         "merger_and_restructuring_charges_5yavgfq",
-        
-        # Gain/Loss on Asset Sales - non-recurring
+        # Other exceptional items
         "gain_loss_on_sale_of_assets_ltm",
-        
-        # Other Unusual/Exceptional Items - non-recurring by definition
         "other_unusual_items_total_ltm",
     ]
+
+    # Merge schema-based and hardcoded, removing duplicates
+    all_columns = list(set(schema_columns + hardcoded_columns))
+
+    logger.debug(
+        f"Zero imputation columns: {len(all_columns)} total "
+        f"({len(schema_columns)} from schema, {len(hardcoded_columns)} hardcoded)"
+    )
+
+    return all_columns
 
 
 def get_median_imputation_columns() -> List[str]:
     """Return columns that should use median imputation (recurring items).
-    
+
     These are recurring operational items where median is appropriate:
-    - R&D expenses (recurring operational)
-    - Capital expenditure (recurring investment)
-    - Interest expense/income (recurring financing)
-    - Cash acquisitions (strategic but recurring for active acquirers)
+    - Count columns (discrete integers like employee counts, shares outstanding)
+    - R&D expenses, Capital expenditure, Interest expense/income
     - Balance sheet items (goodwill, intangible assets)
     - Trading metrics (volume, short interest)
-    - Count columns (discrete integers like employee counts, shares outstanding)
-    
+
     Now uses schema-based selection to ensure 100% coverage of count columns.
-    
+
     IMPORTANT: Excludes zero-imputation columns to prevent overwriting zero values
     set in Step 1 (non-recurring exceptional items).
-    
+
     Returns:
         List of column names for median imputation
     """
-    from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
-    
     # Get zero-imputation columns to exclude (prevent overwriting Step 1)
     zero_imputation_cols = set(get_zero_imputation_columns())
-    
-    # Collect all count columns from schema
-    count_columns = []
-    for col, meta in COLUMN_SCHEMA.items():
-        role = meta.get("role", "")
-        dtype = meta.get("dtype", "")
-        
-        # Include numeric columns with count role
-        # EXCLUDE zero-imputation columns to preserve Step 1 zero values
-        if role == "count" and dtype in ["float", "int"] and col not in zero_imputation_cols:
-            count_columns.append(col)
-    
-    # Hardcoded recurring operational items
+
+    # Primary: Schema-driven count columns
+    count_columns = [col for col in list_count_cols() if col not in zero_imputation_cols]
+
+    # Hardcoded recurring operational items (not in count role)
     hardcoded_columns = [
         # R&D Expenses - recurring operational expense
         "r_d_expenses_ltm",
         "r_d_expenses_fy",
         "r_d_expenses_fq",
         "r_d_expenses_5yavgfq",
-        
         # Capital Expenditure - recurring investment
         "capital_expenditure_ltm",
         "capital_expenditure_fy",
         "capital_expenditure_fq",
         "capital_expenditure_1fy",
         "capital_expenditure_5yavgfq",
-        
         # Interest expense/income - recurring financing
         "interest_expense_total_ltm",
         "interest_income_on_investments_ltm",
-        
         # Cash Acquisitions - use median (0 is misleading for non-acquirers)
         "cash_acquisitions_fq",
         "cash_acquisitions_ltm",
         "cash_acquisitions_fy",
         "cash_acquisitions_1fy",
         "cash_acquisitions_5yavgfq",
-        
         # Trading metrics - use median, not zero
         "volume_shrs",
         "short_int",
-        
         # Balance sheet items - use median
         "goodwill_fq",
         "goodwill_ltm",
@@ -227,65 +212,86 @@ def get_median_imputation_columns() -> List[str]:
         "gross_intangible_assets_fy",
         "gross_intangible_assets_5yavgfq",
     ]
-    
-    # Filter hardcoded columns to exclude zero-imputation columns
+
+    # Filter hardcoded to exclude zero-imputation columns
     filtered_hardcoded = [col for col in hardcoded_columns if col not in zero_imputation_cols]
-    
-    # Merge schema-based count columns with filtered hardcoded recurring items
+
+    # Merge schema-based and filtered hardcoded
     all_columns = list(set(count_columns + filtered_hardcoded))
-    
-    excluded_count = len(hardcoded_columns) - len(filtered_hardcoded)
+
     logger.debug(
         f"Median imputation columns: {len(all_columns)} total "
-        f"({len(count_columns)} count columns from schema, {len(filtered_hardcoded)} hardcoded, "
-        f"{excluded_count} zero-imputation columns excluded)"
+        f"({len(count_columns)} count columns from schema, "
+        f"{len(filtered_hardcoded)} hardcoded recurring items)"
     )
-    
+
     return all_columns
 
 
 def get_categorical_imputation_config() -> dict:
     """Return configuration for categorical column imputation strategies.
 
-    Returns:
-        Dictionary mapping column names to imputation strategies:
-        - 'most_frequent': Use mode (most common value)
-        - 'constant': Use a specific constant value
-        - 'ordinal': Ordinal encoding with defined order
-        - 'onehot': One-hot encoding for nominal categories
+    Now uses schema-based selection via list_categorical_cols() to ensure
+    alignment with COLUMN_SCHEMA and prevent drift.
 
-    Examples:
-        >>> config = get_categorical_imputation_config()
-        >>> config['style_class']  # Returns ('ordinal', ['Value', 'Blend', 'Growth'])
-        >>> config['sector']  # Returns 'onehot'
+    Returns:
+        Dictionary mapping column names to imputation strategies
     """
-    return {
-        # ===== ORDINAL CATEGORIES (have natural ordering) =====
-        "style_class": ("ordinal", ["Value", "Blend", "Growth"]),
-        "size_class": ("ordinal", ["Small", "Mid", "Large"]),
-        "eps_surprise_magnitude": ("ordinal", ["Small", "Medium", "Large"]),  # Earnings surprise magnitude
-        
-        # ===== NOMINAL CATEGORIES (one-hot encoding recommended) =====
-        "sector": "onehot",
-        "industry": "onehot",
-        "region": "onehot",
-        "country": "onehot",
-        "trading_country": "onehot",
-        "exchange": "onehot",
-        "unit": "most_frequent",  # Currency/unit designation
-        
-        # ===== STATUS/FLAG CATEGORIES (most frequent) =====
-        "next_earnings_status": "most_frequent",
-        "next_earnings_when": "most_frequent",
-        "dividend_record_frequency": "most_frequent",
-        "dividend_record_currency": "most_frequent",
-        
-        # ===== IDENTIFIERS (constant fallback) =====
-        "ticker": ("constant", "N/A"),
-        "isin": ("constant", "N/A"),
-        "name": ("constant", "Unknown"),
-        "description": ("constant", "No description available"),
+    # Schema-driven categorical columns
+    schema_categorical = list_categorical_cols()
+
+    # Build config dynamically based on schema
+    config = {}
+
+    # Ordinal categories (have natural ordering)
+    ordinal_mappings = {
+        "style_class": ["Value", "Blend", "Growth"],
+        "size_class": ["Small", "Mid", "Large"],
+        "eps_surprise_magnitude": ["Small", "Medium", "Large"],
     }
+
+    # Nominal categories (one-hot encoding recommended)
+    onehot_columns = {"sector", "industry", "region", "country", "trading_country", "exchange"}
+
+    # Status/flag categories (most frequent)
+    most_frequent_columns = {
+        "unit",
+        "next_earnings_status",
+        "next_earnings_when",
+        "dividend_record_frequency",
+        "dividend_record_currency",
+        "fy_end",
+        "next_fiscal_quarter",
+    }
+
+    # Identifier columns (constant fallback)
+    constant_columns = {
+        "ticker": "N/A",
+        "isin": "N/A",
+        "name": "Unknown",
+        "description": "No description available",
+    }
+
+    # Build config
+    for col in schema_categorical:
+        if col in ordinal_mappings:
+            config[col] = ("ordinal", ordinal_mappings[col])
+        elif col in onehot_columns:
+            config[col] = "onehot"
+        elif col in most_frequent_columns:
+            config[col] = "most_frequent"
+        elif col in constant_columns:
+            config[col] = ("constant", constant_columns[col])
+        else:
+            # Default to most_frequent for unknown categoricals
+            config[col] = "most_frequent"
+
+    # Add any constant columns not in schema
+    for col, value in constant_columns.items():
+        if col not in config:
+            config[col] = ("constant", value)
+
+    return config
 
 
 def _get_schema_aligned_fallback(col: str) -> str:
@@ -710,35 +716,20 @@ def apply_datetime_imputation_and_formatting(
         ...     strategy='forward_fill'
         ... )
     """
-    from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
-    
     result = df.copy()
 
-    # Auto-detect date columns if not specified
+    # Schema-driven date column detection
     if date_columns is None:
-        # Use schema-aware detection to avoid false positives
-        # Only include columns with role='date' in COLUMN_SCHEMA
-        date_columns = []
-        for col in result.columns:
-            # Normalize column name for schema lookup
-            normalized_col = col.lower().replace(' ', '_').replace('-', '_')
-            schema_entry = COLUMN_SCHEMA.get(normalized_col, {})
-            
-            # Only include if explicitly marked as date role in schema
-            if schema_entry.get('role') == 'date':
-                date_columns.append(col)
-        
-        # Fallback: if no schema matches, use conservative pattern matching
-        # Only match columns that END with 'date' or ARE exactly 'fy_end'
-        if not date_columns:
-            for col in result.columns:
-                col_lower = col.lower()
-                if col_lower.endswith('_date') or col_lower.endswith('date') or col_lower == 'fy_end':
-                    date_columns.append(col)
+        # Primary: Use schema-based detection
+        schema_date_cols = list_date_cols()
+        date_columns = [col for col in schema_date_cols if col in result.columns]
 
-    if len(date_columns) == 0:
-        logger.info("No date columns found for imputation")
-        return result
+        # If no schema matches in DataFrame, log and return
+        if not date_columns:
+            logger.info("No date columns found in DataFrame matching schema")
+            return result
+
+        logger.debug(f"Schema-detected date columns: {date_columns}")
 
     # Filter to columns that exist
     date_columns = [col for col in date_columns if col in result.columns]
@@ -813,212 +804,39 @@ def get_knn_imputation_columns() -> List[str]:
 
     These are core financial metrics where KNN can leverage sector relationships
     and correlations to provide better estimates than simple statistics.
-    
+
     Now uses schema-based selection to ensure 100% coverage of numeric features.
-    Includes columns with roles: feature, market_value, ratio, percentage.
-    
+    Includes columns with roles: feature, market, financial_statement,
+    balance_sheet, cash_flow, ratio, percentage.
+
     IMPORTANT: Excludes zero-imputation columns to prevent overwriting zero values
     set in Step 1 (non-recurring exceptional items).
 
     Returns:
         List of column names for KNN imputation (dynamically generated from schema)
     """
-    from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
-
     # Get zero-imputation columns to exclude (prevent overwriting Step 1)
     zero_imputation_cols = set(get_zero_imputation_columns())
 
-    # Roles that benefit from KNN imputation (sector-aware)
-    knn_roles = {
-        "feature",
-        "market",
-        "financial_statement",
-        "balance_sheet",
-        "cash_flow",
-        "ratio",
-        "percentage",
-    }
+    # Get count columns to exclude (use median instead)
+    count_cols = set(list_count_cols())
 
-    # Collect all numeric columns with appropriate roles
-    knn_columns = []
-    for col, meta in COLUMN_SCHEMA.items():
-        role = meta.get("role", "")
-        dtype = meta.get("dtype", "")
+    # Primary: Schema-driven selection
+    schema_columns = list_knn_imputable_cols()
 
-        # Include numeric and boolean columns with KNN-appropriate roles
-        # Boolean flags (e.g., accelerating_upgrades_flag) are treated as binary features
-        # EXCLUDE zero-imputation columns to preserve Step 1 zero values
-        if role in knn_roles and dtype in ["float", "int", "bool"] and col not in zero_imputation_cols:
-            knn_columns.append(col)
-
-    # Also include the original hardcoded columns for backward compatibility
-    # (in case some are not in schema or have different roles)
-    hardcoded_columns = [
-        # Market metrics (3 columns)
-        "market_cap",
-        "enterprise_value",
-        "market_cap_country_r",
-        # Analyst ratings (6 columns)
-        "analyst_rating",
-        "num_strong_sell_ratings",
-        "num_strong_buys_ratings",
-        "num_hold_ratings",
-        "num_buys_ratings",
-        "num_sell_ratings",
-        # Returns (4 columns)
-        "total_return_ytd",
-        "total_return_5y",
-        "total_return_10y",
-        "tot_return_cagr_3y",
-        # Valuation ratios (8 columns)
-        "p_e_ntm",
-        "p_e_ltm",
-        "p_e_1fyltm",
-        "p_e_5yavgltm",
-        "p_b_ltm",
-        "p_b_1fy",
-        "p_b_5yavg",
-        "p_tbv_ltm",
-        # Altman Z-Score (3 columns)
-        "altman_z_score_fy",
-        "altman_z_score_fq",
-        "altman_z_score_ltm",
-        # Profitability ratios (11 columns)
-        "roe_5yavg",
-        "roe_ltm",
-        "roe_1fy",
-        "roe_fy",
-        "roa_5yavg",
-        "roa_ltm",
-        "roa_1fy",
-        "roa_fy",
-        "roic_5yavg",
-        "roic_ltm",
-        "roic_1fy",
-        # Margin ratios (12 columns)
-        "operating_margin_ltm",
-        "operating_margin_1fy",
-        "operating_margin_fy",
-        "operating_margin_5yavg",
-        "pretax_margin_ltm",
-        "pretax_margin_1fy",
-        "pretax_margin_fy",
-        "pretax_margin_5yavg",
-        "net_profit_margin_ltm",
-        "net_profit_margin_1fy",
-        "net_profit_margin_fy",
-        "net_profit_margin_5yavg",
-        # Leverage ratios (8 columns)
-        "net_debt_ebitda_ltm",
-        "net_debt_ebitda_1fy",
-        "net_debt_ebitda_5yavg",
-        "total_debt_total_equity_ltm",
-        "total_debt_total_equity_1fy",
-        "total_debt_total_equity_fy",
-        "total_debt_total_equity_5yavg",
-        "long_term_debt_total_capital_ltm",
-        # Liquidity ratios (6 columns)
-        "current_ratio_ltm",
-        "current_ratio_1fy",
-        "current_ratio_fy",
-        "current_ratio_5yavg",
-        "quick_ratio_ltm",
-        "quick_ratio_1fy",
-        # Growth metrics (8 columns)
-        "revenue_cagr_3y",
-        "revenue_cagr_5y",
-        "revenue_cagr_10y",
-        "ebitda_cagr_3y",
-        "ebitda_cagr_5y",
-        "net_income_cagr_3y",
-        "net_income_cagr_5y",
-        "eps_basic_excl_extra_items_cagr_5y",
-        # Dividend metrics (8 columns)
-        "dividend_yield_ltm",
-        "dividend_yield_1fy",
-        "dividend_yield_5yavg",
-        "dividend_per_share_ltm",
-        "dividend_per_share_1fy",
-        "dividend_per_share_fy",
-        "dividend_payout_ratio_ltm",
-        "dividend_payout_ratio_1fy",
-        # EPS metrics (11 columns)
-        "eps_normalized_ltm",
-        "eps_normalized_1fy",
-        "eps_normalized_fy",
-        "eps_normalized_5yavg",
-        "eps_diluted_ltm",
-        "eps_diluted_1fy",
-        "eps_diluted_fy",
-        "eps_basic_excl_extra_items_ltm",
-        "eps_basic_excl_extra_items_1fy",
-        "eps_basic_excl_extra_items_fy",
-        "eps_basic_incl_extra_items_ltm",
-        # Cash flow metrics (12 columns)
-        "free_cash_flow_ltm",
-        "free_cash_flow_1fy",
-        "free_cash_flow_fy",
-        "free_cash_flow_5yavg",
-        "free_cash_flow_per_share_ltm",
-        "free_cash_flow_per_share_1fy",
-        "operating_cash_flow_ltm",
-        "operating_cash_flow_1fy",
-        "operating_cash_flow_fy",
-        "operating_cash_flow_5yavg",
-        "cash_from_financing_activities_ltm",
-        "cash_from_investing_activities_ltm",
-        # Balance sheet metrics (10 columns)
-        "total_assets_ltm",
-        "total_assets_1fy",
-        "total_assets_fy",
-        "total_assets_5yavg",
-        "tangible_book_value_per_share_ltm",
-        "tangible_book_value_per_share_1fy",
-        "book_value_per_share_ltm",
-        "book_value_per_share_1fy",
-        "book_value_per_share_fy",
-        "book_value_per_share_5yavg",
-        # Income statement metrics (10 columns)
-        "revenue_ltm",
-        "revenue_1fy",
-        "revenue_fy",
-        "revenue_5yavg",
-        "ebitda_ltm",
-        "ebitda_1fy",
-        "ebitda_fy",
-        "ebitda_5yavg",
-        "net_income_ltm",
-        "net_income_1fy",
-        # Working capital metrics (8 columns)
-        "accounts_receivable_ltm",
-        "accounts_receivable_fy",
-        "accounts_receivable_5yavg",
-        "inventory_ltm",
-        "inventory_fy",
-        "working_capital_ltm",
-        "working_capital_fy",
-        "working_capital_5yavgfy",
-        # Other metrics (4 columns)
-        "buyback_yield_ltm",
-        "avg_employees_ltm",
-        "avg_employees_fy",
-        "avg_employees_5yavgfy",
+    # Filter out zero-imputation and count columns
+    knn_columns = [
+        col for col in schema_columns if col not in zero_imputation_cols and col not in count_cols
     ]
 
-    # Filter hardcoded columns to exclude zero-imputation columns
-    filtered_hardcoded = [col for col in hardcoded_columns if col not in zero_imputation_cols]
-
-    # Merge schema-based and filtered hardcoded columns, removing duplicates
-    all_columns = list(set(knn_columns + filtered_hardcoded))
-
-    excluded_count = len(hardcoded_columns) - len(filtered_hardcoded)
     logger.debug(
-        f"KNN imputation columns: {len(all_columns)} total "
-        f"({len(knn_columns)} from schema, {len(filtered_hardcoded)} hardcoded, "
-        f"{excluded_count} zero-imputation columns excluded)"
+        f"KNN imputation columns: {len(knn_columns)} total "
+        f"(from {len(schema_columns)} schema columns, "
+        f"excluded {len(zero_imputation_cols)} zero-imputation, "
+        f"{len(count_cols)} count columns)"
     )
 
-    return all_columns
+    return knn_columns
 
 
 def impute_missing_values_knn_sector(
@@ -1648,6 +1466,105 @@ def apply_business_rule_imputation(
     return result
 
 
+def validate_imputation_schema_alignment(df: pd.DataFrame) -> dict:
+    """Validate that imputation column lists align with schema and DataFrame.
+
+    This diagnostic function checks for:
+    1. Columns in imputation lists but not in schema
+    2. Columns in imputation lists but not in DataFrame
+    3. Schema columns with appropriate roles not in any imputation list
+    4. Overlap between imputation strategies (should be zero)
+
+    Args:
+        df: Input DataFrame to validate against
+
+    Returns:
+        Dictionary with validation results:
+        - 'is_aligned': bool - True if fully aligned
+        - 'zero_imputation_gaps': List of gap descriptions
+        - 'knn_imputation_gaps': List of gap descriptions
+        - 'median_imputation_gaps': List of gap descriptions
+        - 'overlap_issues': List of columns in multiple strategies
+        - 'uncovered_columns': Schema columns not in any imputation list
+    """
+    results = {
+        "is_aligned": True,
+        "zero_imputation_gaps": [],
+        "knn_imputation_gaps": [],
+        "median_imputation_gaps": [],
+        "overlap_issues": [],
+        "uncovered_columns": [],
+    }
+
+    # Get imputation column lists
+    zero_cols = set(get_zero_imputation_columns())
+    knn_cols = set(get_knn_imputation_columns())
+    median_cols = set(get_median_imputation_columns())
+
+    # Check for overlaps (should be none)
+    zero_knn_overlap = zero_cols & knn_cols
+    zero_median_overlap = zero_cols & median_cols
+    knn_median_overlap = knn_cols & median_cols
+
+    if zero_knn_overlap:
+        results["overlap_issues"].append(f"Zero/KNN overlap: {list(zero_knn_overlap)[:5]}")
+        results["is_aligned"] = False
+    if zero_median_overlap:
+        results["overlap_issues"].append(f"Zero/Median overlap: {list(zero_median_overlap)[:5]}")
+        results["is_aligned"] = False
+    if knn_median_overlap:
+        # Note: Some overlap is expected (both can handle same columns)
+        logger.debug(f"KNN/Median overlap (expected): {len(knn_median_overlap)} columns")
+
+    # Check schema coverage for numeric columns
+    numeric_roles = {
+        "feature",
+        "market",
+        "financial_statement",
+        "balance_sheet",
+        "cash_flow",
+        "ratio",
+        "percentage",
+        "count",
+        "non_recurring",
+    }
+
+    all_imputation_cols = zero_cols | knn_cols | median_cols
+
+    for col, meta in COLUMN_SCHEMA.items():
+        role = meta.get("role", "")
+        dtype = meta.get("dtype", "")
+
+        # Only check numeric columns with imputable roles
+        if role in numeric_roles and dtype in ["float", "int"]:
+            if col not in all_imputation_cols:
+                results["uncovered_columns"].append(f"{col} (role={role})")
+                results["is_aligned"] = False
+
+    # Check DataFrame coverage
+    df_numeric = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    for col in zero_cols:
+        if col in df.columns and col not in df_numeric:
+            results["zero_imputation_gaps"].append(f"{col} not numeric in DataFrame")
+
+    for col in knn_cols:
+        if col in df.columns and col not in df_numeric:
+            results["knn_imputation_gaps"].append(f"{col} not numeric in DataFrame")
+
+    # Log summary
+    if results["is_aligned"]:
+        logger.info("✓ Imputation schema alignment validation passed")
+    else:
+        logger.warning(
+            f"✗ Imputation schema alignment issues: "
+            f"{len(results['overlap_issues'])} overlaps, "
+            f"{len(results['uncovered_columns'])} uncovered columns"
+        )
+
+    return results
+
+
 def apply_enhanced_imputation_strategy_6step(
     df: pd.DataFrame,
     sector_column: str = "sector",
@@ -1658,22 +1575,21 @@ def apply_enhanced_imputation_strategy_6step(
     categorical_strategy: str = "most_frequent",
     date_strategy: str = "forward_fill",
     apply_categorical_encoding: bool = False,
+    validate_schema_alignment: bool = True,  # NEW: Validate alignment before imputation
 ) -> pd.DataFrame:
     """Apply comprehensive 6-step imputation strategy for financial data.
 
-    CONSERVATIVE APPROACH: This strategy prioritizes data integrity by:
-    1. Zero-filling ONLY truly non-recurring items (impairments, restructuring)
-    2. Using sector-aware KNN for core metrics (preserves cross-sectional relationships)
-    3. Using median for recurring operational items (R&D, CapEx, etc.)
-    4. Protecting price columns from distortion
-    
+    SCHEMA-ALIGNED APPROACH: This strategy now uses COLUMN_SCHEMA roles
+    to automatically select columns for each imputation step, ensuring
+    alignment with the canonical schema and preventing drift.
+
     Steps:
-        1. Zero imputation for non-recurring exceptional items (27 columns)
-        2. Sector-aware KNN imputation for core financial metrics (148 columns)
-        3. Price imputation for price targets (uses last_price as reference)
-        4. Median imputation for recurring items and remaining numerics
-        5. Categorical imputation (mode with optional ordinal/one-hot encoding)
-        6. Datetime imputation and formatting
+        1. Zero imputation for non-recurring items (role='non_recurring')
+        2. Sector-aware KNN for core metrics (role in knn_roles)
+        3. Price imputation for price targets (role in price_roles)
+        4. Median imputation for count columns and remaining numerics
+        5. Categorical imputation (schema categorical columns)
+        6. Datetime imputation (schema date columns)
 
     Args:
         df: Input DataFrame with financial data
@@ -1682,41 +1598,37 @@ def apply_enhanced_imputation_strategy_6step(
         price_column: Reference price column for price target imputation
         handle_categoricals: Apply Step 5 categorical imputation
         handle_dates: Apply Step 6 datetime imputation
-        categorical_strategy: Strategy for categorical imputation ('most_frequent' or 'constant')
-        date_strategy: Strategy for datetime imputation ('forward_fill', 'now')
+        categorical_strategy: Strategy for categorical imputation
+        date_strategy: Strategy for datetime imputation
         apply_categorical_encoding: Apply ordinal/one-hot encoding after imputation
+        validate_schema_alignment: Validate column alignment before imputation
 
     Returns:
         DataFrame with complete imputation applied (zero missing values)
-
-    Examples:
-        >>> # Apply complete 6-step imputation pipeline
-        >>> df_complete = apply_enhanced_imputation_strategy_6step(
-        ...     all_stocks,
-        ...     sector_column='sector',
-        ...     n_neighbors=5,
-        ...     price_column='last_price',
-        ...     handle_categoricals=True,
-        ...     handle_dates=True,
-        ...     apply_categorical_encoding=True
-        ... )
-        >>> # Verify no missing values remain in ANY column
-        >>> assert df_complete.isna().sum().sum() == 0
     """
     result = df.copy()
     missing_initial = result.isna().sum().sum()
     logger.info(f"Starting 6-step imputation. Initial missing: {missing_initial}")
 
-    # Step 1: Zero imputation for NON-RECURRING items only
+    # Optional: Validate schema alignment
+    if validate_schema_alignment:
+        alignment = validate_imputation_schema_alignment(result)
+        if not alignment["is_aligned"]:
+            logger.warning(
+                f"Schema alignment issues detected: {len(alignment['uncovered_columns'])} uncovered columns. "
+                "Proceeding with imputation but results may be incomplete."
+            )
+
+    # Step 1: Zero imputation for NON-RECURRING items (schema-driven)
     logger.info("Step 1: Zero imputation for non-recurring exceptional items")
-    zero_columns = get_zero_imputation_columns()  # Now returns only 27 columns
+    zero_columns = get_zero_imputation_columns()  # Now schema-driven
     result = apply_zero_imputation(result, columns=zero_columns)
     missing_after_step1 = result.isna().sum().sum()
     logger.info(f"After Step 1: {missing_after_step1} missing values remain")
 
-    # Step 2: Sector-aware KNN imputation for core metrics
+    # Step 2: Sector-aware KNN imputation for core metrics (schema-driven)
     logger.info("Step 2: Sector-aware KNN imputation for core metrics")
-    knn_columns = get_knn_imputation_columns()
+    knn_columns = get_knn_imputation_columns()  # Now schema-driven
     result = impute_missing_values_knn_sector(
         result,
         sector_column=sector_column,
@@ -1726,17 +1638,16 @@ def apply_enhanced_imputation_strategy_6step(
     missing_after_step2 = result.isna().sum().sum()
     logger.info(f"After Step 2: {missing_after_step2} missing values remain")
 
-    # Step 3: Price imputation for price targets
+    # Step 3: Price imputation for price targets (schema-driven)
     logger.info("Step 3: Price imputation for price target columns")
-    result = apply_price_imputation(result, price_column=price_column)
+    price_cols = list_price_cols()  # Now schema-driven
+    result = apply_price_imputation(result, price_column=price_column, columns=price_cols)
     missing_after_step3 = result.isna().sum().sum()
     logger.info(f"After Step 3: {missing_after_step3} missing values remain")
 
-    # Step 4: Median imputation for recurring items and remaining numerics
-    logger.info("Step 4: Median imputation (recurring items + remaining numerics)")
-    
-    # First handle explicitly recurring items
-    median_priority_columns = get_median_imputation_columns()
+    # Step 4: Median imputation for count columns and remaining numerics (schema-driven)
+    logger.info("Step 4: Median imputation (count columns + remaining numerics)")
+    median_priority_columns = get_median_imputation_columns()  # Now schema-driven
     result = apply_median_imputation(
         result, 
         price_column=price_column, 
@@ -1745,15 +1656,15 @@ def apply_enhanced_imputation_strategy_6step(
     missing_after_step4 = result.isna().sum().sum()
     logger.info(f"After Step 4: {missing_after_step4} missing values remain")
 
-    # Step 5: Categorical imputation
+    # Step 5: Categorical imputation (schema-driven)
     if handle_categoricals:
         logger.info("Step 5: Categorical imputation")
-        config = get_categorical_imputation_config()
-        
+        config = get_categorical_imputation_config()  # Now schema-driven
+
         for col, strategy in config.items():
             if col not in result.columns:
                 continue
-                
+
             if isinstance(strategy, tuple):
                 strat_type, strat_param = strategy
                 if strat_type == "ordinal" and apply_categorical_encoding:
@@ -1766,70 +1677,35 @@ def apply_enhanced_imputation_strategy_6step(
                     result[col] = result[col].fillna(mode_val.iloc[0])
             elif strategy == "onehot" and apply_categorical_encoding:
                 result = apply_onehot_encoding(result, [col])
-        
+
         missing_after_step5 = result.isna().sum().sum()
         logger.info(f"After Step 5: {missing_after_step5} missing values remain")
 
-    # Step 6: Datetime imputation
+    # Step 6: Datetime imputation (schema-driven)
     if handle_dates:
         logger.info("Step 6: Datetime imputation")
         result = apply_datetime_imputation_and_formatting(
             result, strategy=date_strategy
-        )
+        )  # Now auto-detects from schema
         missing_after_step6 = result.isna().sum().sum()
         logger.info(f"After Step 6: {missing_after_step6} missing values remain")
-    else:
-        missing_after_step6 = result.isna().sum().sum()
 
-    # Final verification and reporting
-    missing_final = result.isna().sum().sum()
-    total_reduction = missing_initial - missing_final
-
-    logger.info(
-        f"6-step imputation complete: Reduced missing values from {missing_initial} "
-        f"to {missing_final} (reduction: {total_reduction})"
-    )
-
-    if missing_final > 0:
-        # Identify which columns still have missing values
-        cols_with_missing = result.columns[result.isna().any()].tolist()
-
-        # Import schema for diagnostic reporting
-        try:
-            from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
-
-            # Annotate columns with schema membership for diagnostics
-            cols_annotated = [
-                f"{col} ({'in_schema' if col in COLUMN_SCHEMA else 'NOT_IN_SCHEMA'})"
-                for col in cols_with_missing[:5]
-            ]
-            schema_info_msg = f"\n  Schema status: {cols_annotated}"
-        except ImportError:
-            schema_info_msg = ""
-
+    # Step 7 (Verification): Check for any remaining missing values and apply emergency fallback
+    if missing_after_step6 > 0:
         logger.warning(
-            f"WARNING: {missing_final} NaN values still present\n"
-            f"  Affected columns ({len(cols_with_missing)}): {cols_with_missing[:5]}..."
-            f"{schema_info_msg}"
+            f"Step 7: {missing_after_step6} missing values remaining. Applying emergency fallback."
         )
+        # Emergency fallback for anything missed by specific steps
+        numeric_cols = result.select_dtypes(include=[np.number]).columns
+        for col in numeric_cols:
+            if result[col].isna().any():
+                median_val = result[col].median()
+                if pd.isna(median_val):
+                    median_val = 0
+                result[col] = result[col].fillna(median_val)
 
-        # Emergency fallback: only fill if user requested that data type to be handled
-        if handle_categoricals or handle_dates:
-            logger.warning("  Applying emergency fallback imputation...")
-
-            for col in cols_with_missing:
-                if pd.api.types.is_numeric_dtype(result[col]):
-                    # Always fill numeric (Steps 1-4 should have handled these)
-                    result[col] = result[col].fillna(result[col].median())
-                elif handle_categoricals and not pd.api.types.is_datetime64_any_dtype(result[col]):
-                    # Fill categorical only if handle_categoricals=True
-                    result[col] = result[col].fillna("Unknown")
-                elif handle_dates and pd.api.types.is_datetime64_any_dtype(result[col]):
-                    # Fill datetime only if handle_dates=True
-                    result[col] = result[col].fillna(pd.Timestamp.now())
-
-            missing_final = result.isna().sum().sum()
-            logger.info(f"After emergency fallback: {missing_final} missing values remain")
+    final_missing = result.isna().sum().sum()
+    logger.info(f"Imputation complete. Final missing values: {final_missing}")
 
     return result
 
