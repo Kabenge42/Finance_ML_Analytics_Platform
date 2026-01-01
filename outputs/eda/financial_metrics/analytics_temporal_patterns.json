@@ -1,0 +1,108 @@
+{
+  "category": "Temporal Patterns",
+  "features_analyzed": 7,
+  "features_available": 8,
+  "distribution_stats": {
+    "days_to_dividend": {
+      "count": 6899,
+      "mean": -106.4181765473257,
+      "median": -83.0,
+      "std": 102.62420824732816,
+      "skew": -0.09605869466764812,
+      "kurtosis": -0.9213213597580272,
+      "q25": -202.0,
+      "q75": -28.0,
+      "min": -364.0,
+      "max": 274.0
+    },
+    "days_to_earnings": {
+      "count": 6899,
+      "mean": 55.86534280330483,
+      "median": 53.0,
+      "std": 27.894054376617795,
+      "skew": -1.990552957521889,
+      "kurtosis": 66.81977524325264,
+      "q25": 36.0,
+      "q75": 72.0,
+      "min": -672.0,
+      "max": 176.0
+    },
+    "earnings_report_recency": {
+      "count": 6899,
+      "mean": 110.67198144658646,
+      "median": 93.0,
+      "std": 180.95436756036793,
+      "skew": 46.09357990314541,
+      "kurtosis": 2339.0396644081134,
+      "q25": 93.0,
+      "q75": 93.0,
+      "min": 32.0,
+      "max": 9682.0
+    },
+    "fiscal_quarter": {
+      "count": 6899,
+      "mean": 1.105522539498478,
+      "median": 1.0,
+      "std": 0.3317497981394139,
+      "skew": 3.6204033560971696,
+      "kurtosis": 17.310629609457788,
+      "q25": 1.0,
+      "q75": 1.0,
+      "min": 1.0,
+      "max": 4.0
+    },
+    "month": {
+      "count": 6899,
+      "mean": 2.341208870850848,
+      "median": 2.0,
+      "std": 0.9967178900453676,
+      "skew": 2.6242515898473457,
+      "kurtosis": 21.73312080240976,
+      "q25": 2.0,
+      "q75": 3.0,
+      "min": 1.0,
+      "max": 12.0
+    },
+    "reporting_lag": {
+      "count": 6899,
+      "mean": 166.5373242498913,
+      "median": 148.0,
+      "std": 183.9209632472716,
+      "skew": 44.47479411248652,
+      "kurtosis": 2228.8292852116238,
+      "q25": 129.0,
+      "q75": 179.0,
+      "min": 98.0,
+      "max": 9781.0
+    },
+    "year": {
+      "count": 6899,
+      "mean": 2025.9971010291347,
+      "median": 2026.0,
+      "std": 0.05639968962895588,
+      "skew": -20.86141838588458,
+      "kurtosis": 480.2495694588775,
+      "q25": 2026.0,
+      "q75": 2026.0,
+      "min": 2024.0,
+      "max": 2026.0
+    }
+  },
+  "high_correlations": [
+    {
+      "feature_1": "earnings_report_recency",
+      "feature_2": "reporting_lag",
+      "correlation": 0.9884427960604286
+    },
+    {
+      "feature_1": "fiscal_quarter",
+      "feature_2": "month",
+      "correlation": 0.739883582971452
+    },
+    {
+      "feature_1": "days_to_earnings",
+      "feature_2": "month",
+      "correlation": 0.7223004473591539
+    }
+  ]
+}

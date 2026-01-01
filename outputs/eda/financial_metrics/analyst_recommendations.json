@@ -1,7 +1,21 @@
 {
-  "timestamp": "2026-01-01T16:54:33.933628",
-  "total_stocks_analyzed": 6899,
-  "rating_distribution": {},
+  "available_columns": {
+    "analyst_rating": "analyst_rating",
+    "buy_ratings": "num_buys_ratings",
+    "num_hold_ratings": "num_hold_ratings",
+    "num_sell_ratings": "num_sell_ratings",
+    "price_target": "price_target",
+    "target_high": "price_target_high",
+    "target_low": "price_target_low"
+  },
+  "price_target_stats": {
+    "count": 6899,
+    "mean": 5191.712954602116,
+    "median": 53.0,
+    "std": 61443.35154204616,
+    "min": 0.0,
+    "max": 2538125.0
+  },
   "by_sector": {
     "Health Care": {
       "count": 678,
@@ -81,7 +95,6 @@
       "positive_upside_pct": 83.17757009345794
     }
   },
-  "by_region": {},
   "by_size_class": {
     "Mid Cap": {
       "count": 2868,
@@ -122,21 +135,6 @@
       "positive_pct": 83.91608391608392
     }
   },
-  "available_columns": {
-    "analyst_rating": "analyst_rating",
-    "buy_ratings": "num_buys_ratings",
-    "num_hold_ratings": "num_hold_ratings",
-    "num_sell_ratings": "num_sell_ratings",
-    "price_target": "price_target",
-    "target_high": "price_target_high",
-    "target_low": "price_target_low"
-  },
-  "price_target_stats": {
-    "count": 6899,
-    "mean": 5191.712954602116,
-    "median": 53.0,
-    "std": 61443.35154204616,
-    "min": 0.0,
-    "max": 2538125.0
-  }
+  "timestamp": "2026-01-01T23:10:24.327800",
+  "total_stocks_analyzed": 6899
 }

@@ -1,0 +1,142 @@
+{
+  "category": "Analyst Sentiment",
+  "features_analyzed": 9,
+  "features_available": 9,
+  "distribution_stats": {
+    "analyst_bullish_pct": {
+      "count": 6822,
+      "mean": 64.32957320847642,
+      "median": 68.75,
+      "std": 31.420746053486077,
+      "skew": -0.5778471358645444,
+      "kurtosis": -0.736579141458503,
+      "q25": 42.857142857142854,
+      "q75": 94.44444444444444,
+      "min": 0.0,
+      "max": 100.0
+    },
+    "analyst_bearish_pct": {
+      "count": 6822,
+      "mean": 6.896591201664755,
+      "median": 0.0,
+      "std": 15.872748721485094,
+      "skew": 3.7725960170423547,
+      "kurtosis": 16.799241346645964,
+      "q25": 0.0,
+      "q75": 7.6923076923076925,
+      "min": 0.0,
+      "max": 100.0
+    },
+    "analyst_conviction": {
+      "count": 6822,
+      "mean": 63.0065741128847,
+      "median": 66.66666666666666,
+      "std": 32.357194025323295,
+      "skew": -0.47097550489556905,
+      "kurtosis": -0.952579088456631,
+      "q25": 39.60526315789474,
+      "q75": 100.0,
+      "min": 0.0,
+      "max": 100.0
+    },
+    "consensus_strength": {
+      "count": 6897,
+      "mean": 64.58049923775219,
+      "median": 67.10526315789474,
+      "std": 26.227384561700593,
+      "skew": -0.6371987157297389,
+      "kurtosis": -0.1010762681634021,
+      "q25": 50.0,
+      "q75": 84.21052631578948,
+      "min": 0.0,
+      "max": 100.0
+    },
+    "price_target_range": {
+      "count": 6897,
+      "mean": 36.9246485864821,
+      "median": 32.89473684210527,
+      "std": 33.884556319797355,
+      "skew": 4.713008048712861,
+      "kurtosis": 69.65744450872016,
+      "q25": 15.789473684210526,
+      "q75": 50.0,
+      "min": 0.0,
+      "max": 850.0
+    },
+    "price_target_revision": {
+      "count": 6899,
+      "mean": 1.308773465296722,
+      "median": 0.07489135433589399,
+      "std": 43.6605020185999,
+      "skew": 58.795266885563755,
+      "kurtosis": 3827.4813910957487,
+      "q25": -0.08760849567887971,
+      "q75": 0.32069242043362894,
+      "min": -1.0,
+      "max": 3073.4383001225674
+    },
+    "price_target_spread_pct": {
+      "count": 6897,
+      "mean": 36.9246485864821,
+      "median": 32.89473684210527,
+      "std": 33.884556319797355,
+      "skew": 4.713008048712861,
+      "kurtosis": 69.65744450872016,
+      "q25": 15.789473684210526,
+      "q75": 50.0,
+      "min": 0.0,
+      "max": 850.0
+    },
+    "target_price_upside_pct": {
+      "count": 6899,
+      "mean": 20.903812899681974,
+      "median": 15.345822871735454,
+      "std": 60.78152898614422,
+      "skew": 52.74140455425272,
+      "kurtosis": 3714.753070959893,
+      "q25": 4.899492416432636,
+      "q75": 29.52664647665079,
+      "min": -100.0,
+      "max": 4344.444444444444
+    },
+    "upside_potential": {
+      "count": 6899,
+      "mean": 20.903812899681974,
+      "median": 15.345822871735454,
+      "std": 60.78152898614422,
+      "skew": 52.74140455425272,
+      "kurtosis": 3714.753070959893,
+      "q25": 4.899492416432636,
+      "q75": 29.52664647665079,
+      "min": -100.0,
+      "max": 4344.444444444444
+    }
+  },
+  "high_correlations": [
+    {
+      "feature_1": "price_target_range",
+      "feature_2": "price_target_spread_pct",
+      "correlation": 1.0
+    },
+    {
+      "feature_1": "target_price_upside_pct",
+      "feature_2": "upside_potential",
+      "correlation": 1.0
+    },
+    {
+      "feature_1": "consensus_strength",
+      "feature_2": "price_target_range",
+      "correlation": -0.8834140752095458
+    },
+    {
+      "feature_1": "consensus_strength",
+      "feature_2": "price_target_spread_pct",
+      "correlation": -0.8834140752095458
+    },
+    {
+      "feature_1": "analyst_bullish_pct",
+      "feature_2": "analyst_conviction",
+      "correlation": 0.8748069521957713
+    }
+  ]
+}

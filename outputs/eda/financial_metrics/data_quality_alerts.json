@@ -2599,18 +2599,6 @@
   },
   {
     "severity": "low",
-    "message": "Column 'log_market_cap' has 25 outliers (0.4%) beyond 3.0 standard deviations",
-    "column": "log_market_cap",
-    "count": 25
-  },
-  {
-    "severity": "low",
-    "message": "Column 'log_total_assets' has 33 outliers (0.5%) beyond 3.0 standard deviations",
-    "column": "log_total_assets",
-    "count": 33
-  },
-  {
-    "severity": "low",
     "message": "Column 'log_total_debt' has 2 outliers (0.0%) beyond 3.0 standard deviations",
     "column": "log_total_debt",
     "count": 2
@@ -2620,6 +2608,18 @@
     "message": "Column 'log_cash_and_equivalents' has 22 outliers (0.3%) beyond 3.0 standard deviations",
     "column": "log_cash_and_equivalents",
     "count": 22
+  },
+  {
+    "severity": "low",
+    "message": "Column 'log_total_assets' has 33 outliers (0.5%) beyond 3.0 standard deviations",
+    "column": "log_total_assets",
+    "count": 33
+  },
+  {
+    "severity": "low",
+    "message": "Column 'log_market_cap' has 25 outliers (0.4%) beyond 3.0 standard deviations",
+    "column": "log_market_cap",
+    "count": 25
   },
   {
     "severity": "low",
