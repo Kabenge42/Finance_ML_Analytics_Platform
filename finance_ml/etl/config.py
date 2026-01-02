@@ -62,6 +62,22 @@ class SemanticTransformConfig:
     exclude_percentages_from_winsorization: bool = True
     exclude_counts_from_scaling: bool = True
 
+
+@dataclass
+class CurrencyConversionConfig:
+    """Configuration for foreign currency conversion."""
+
+    enabled: bool = True
+    target_currency: str = "USD"
+    currency_column: str = "unit"
+    date_column: str = "reference_date"
+    columns_to_convert: Optional[List[str]] = None
+    suffix: str = "_usd"
+    cache_rates: bool = True
+    max_fallback_days: int = 7
+    use_business_day_fallback: bool = True
+
+
 @dataclass
 class DataSanitizationConfig:
     """Configuration for data sanitization and winsorization."""
@@ -126,6 +142,7 @@ class ETLConfig:
     dtype_casting: DtypeCastingConfig = field(default_factory=DtypeCastingConfig)
     semantic_classification: SemanticClassificationConfig = field(default_factory=SemanticClassificationConfig)
     imputation: ImputationConfig = field(default_factory=ImputationConfig)
+    currency_conversion: CurrencyConversionConfig = field(default_factory=CurrencyConversionConfig)
     semantic_transform: SemanticTransformConfig = field(default_factory=SemanticTransformConfig)
     sanitization: DataSanitizationConfig = field(default_factory=DataSanitizationConfig)
     scaling: ScalingConfig = field(default_factory=ScalingConfig)

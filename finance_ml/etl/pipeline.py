@@ -16,6 +16,7 @@ from finance_ml.etl.stages import (
     run_extraction_stage,
     run_dtype_casting_stage,
     run_semantic_classification_stage,
+    run_currency_conversion_stage,
     run_validation_stage,
     run_row_dropping_stage,
     run_sanitization_stage,
@@ -362,6 +363,23 @@ class ETLPipeline:
             if self.metrics:
                 self.metrics.imputation_strategy = self.config.imputation.strategy
                 self.metrics.stages_executed.append("imputation")
+
+        # Stage 5.5: Currency Conversion
+        if self.config.currency_conversion.enabled:
+            result = run_currency_conversion_stage(
+                result,
+                enabled=self.config.currency_conversion.enabled,
+                target_currency=self.config.currency_conversion.target_currency,
+                currency_column=self.config.currency_conversion.currency_column,
+                date_column=self.config.currency_conversion.date_column,
+                columns_to_convert=self.config.currency_conversion.columns_to_convert,
+                suffix=self.config.currency_conversion.suffix,
+                cache_rates=self.config.currency_conversion.cache_rates,
+                max_fallback_days=self.config.currency_conversion.max_fallback_days,
+                use_business_day_fallback=self.config.currency_conversion.use_business_day_fallback,
+            )
+            if self.metrics:
+                self.metrics.stages_executed.append("currency_conversion")
 
         # Stage 6: Apply semantic-aware transformations (log transforms)
         if self.config.semantic_transform.apply_log_transforms or self.config.semantic_transform.log_transform_market_values:

@@ -1,8 +1,8 @@
 # Finance ML Analytics Platform � Code Guidelines
 
-**Version:** 1.20  
-**Last Updated:** 2025-12-30
-**Package Version:** 0.9.5
+**Version:** 1.22  
+**Last Updated:** 2026-01-02
+**Package Version:** 0.9.6
 **Model Version:** v9_10
 
 These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
@@ -14,6 +14,28 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 - **[ML Workflow Guidelines](ml_workflow_guidelines.md)**: Comprehensive guidelines for the 8-phase ML workflow with
   acceptance criteria, success metrics, and validation checkpoints for each phase. Includes critical issues analysis
   and recommended fixes.
+
+**Recent Updates (v1.22):**
+
+- **Refined Currency Conversion with Business Day Fallback** (2026-01-02)
+    - **Implementation**: Major refactoring of `finance_ml/etl/currency.py` with automatic fallback logic.
+    - **Business Day Fallback**: Automatically searches backwards up to 7 days for exchange rates on holidays and
+      weekends.
+    - **Option 3 Support**: Added `convert_with_fallback_date()` to derive an alternative reference date for all rows
+      when primary dates fail.
+    - **Metrics**: Integrated `CurrencyConversionMetrics` for detailed tracking of success, failure, and fallback usage.
+    - **Pipeline Integration**: Fully integrated into Stage 8 of the modular ETL pipeline via
+      `CurrencyConversionConfig`.
+
+**Recent Updates (v1.21):**
+
+- **Currency Conversion Integration (Phase 5.5)** (2026-01-02)
+    - **Implementation**: Added `finance_ml/etl/currency.py` for automated historical FOREX conversion.
+    - **Features**: Supports conversion of 100+ monetary columns from local currencies (e.g., EUR, GBP, JPY) to USD
+      using `forex-python`.
+    - **Integration**: New Stage 5.5 in `ETLPipeline` (between Imputation and Semantic Transforms).
+    - **Configuration**: Added `CurrencyConversionConfig` to `ETLConfig` for fine-grained control over target currency
+      and column selection.
 
 **Recent Updates (v1.20):**
 
@@ -1419,367 +1441,245 @@ undervalued_df = rank_undervalued_stocks(df, mispricing_col='mispricing_score', 
 
 ### 7.5 ETL Pipeline Functions
 
-The ETL module provides unified entry points for complete Extract-Transform-Load workflows with financial metrics
-computation.
+The ETL module provides a modular, 12-stage pipeline for complete Extract-Transform-Load workflows.
 
-**Primary Function: `etl_with_financial_metrics()`**
+**Primary Interface: `finance_ml.etl`**
 
-```python
-from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
-
-def etl_with_financial_metrics(
-    source: Literal["csv", "db", "all_stocks"],
-    data_dir: Optional[Path | str] = None,
-    db_url: Optional[str] = None,
-    compute_all_metrics: bool = True,
-    output_dir: Optional[Path] = None,
-    return_metrics: bool = True,
-) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
-    """
-    Complete ETL pipeline with financial metrics computation.
-    
-    Unified entry point for: Extract ? Transform (with 6-step imputation + 
-    scaling + financial metrics) ? Load
-    
-    Args:
-        source: Data source type
-            - 'csv': Load from regional CSV files
-            - 'db': Load from PostgreSQL equities table
-            - 'all_stocks': Load from unified all_stocks table (recommended)
-        data_dir: Directory for CSV files (required if source='csv')
-        db_url: Database URL (required if source='db' or 'all_stocks')
-        compute_all_metrics: Enable all financial metrics computation (default: True)
-            When True, computes:
-            - Valuation metrics (P/E, P/S, EV/EBITDA, EV/Sales)
-            - Profitability metrics (margins, ROE, ROA)
-            - Growth metrics (revenue, EBITDA, earnings growth)
-            - Leverage metrics (debt ratios)
-            - Target vs price metrics
-            - Sector-specific ratios
-        output_dir: Optional directory for quality alerts and dashboard JSON files
-        return_metrics: Return ETLMetrics for monitoring (default: True)
-    
-    Returns:
-        (DataFrame, ETLMetrics) tuple if return_metrics=True
-        DataFrame only if return_metrics=False
-    """
-```
-
-**Usage Examples:**
+Starting with v1.21, use the unified `finance_ml.etl` subpackage for all ETL operations.
 
 ```python
-# Basic usage with all metrics
-from finance_ml.ml_workflow.preprocessing.etl import etl_with_financial_metrics
-
-df, metrics = etl_with_financial_metrics(
-    source='csv',
-    data_dir='data/',
-    compute_all_metrics=True,
-    output_dir='outputs/eda/financial_metrics',
-    return_metrics=True
-)
-
-print(metrics.summary())
-print(f"Valuation metrics added: {metrics.valuation_metrics_added}")
-
-# Database source
-df, metrics = etl_with_financial_metrics(
-    source='all_stocks',
-    db_url='postgresql+psycopg2://postgres:@localhost:5432/postgres',
-    compute_all_metrics=True,
-    return_metrics=True
-)
-```
-
-**Advanced Function: `run_etl_pipeline()`**
-
-The ETL pipeline now uses stage-aligned configuration dataclasses to match the 11-stage workflow (Extract ? Normalize ?
-Dtype Cast ? Semantic Classification ? Imputation ? Semantic Transforms ? Winsorization ? Scaling ? Feature
-Engineering ? Post-Feature Imputation ? Schema Validation).
-
-```python
-from finance_ml.ml_workflow.preprocessing.etl import (
-    DataExtractionConfig,
-    DataSanitizationConfig,
-    DtypeCastingConfig,
+from finance_ml.etl import (
     ETLConfig,
-    FeatureEngineeringConfig,
-    FeatureSelectionConfig,
-    FinancialMetricsConfig,
-    ImputationConfig,
-    ScalingConfig,
-    SchemaValidationConfig,
-    SemanticClassificationConfig,
-    SemanticTransformConfig,
-    etl_with_features,
+    ETLPipeline,
+    run_etl_pipeline,
+    CurrencyConversionConfig,
+    ImputationConfig
 )
 
-etl_config = ETLConfig(
-    extraction=DataExtractionConfig(normalize_column_names=True),
-    validation=SchemaValidationConfig(
-        validate_schema=True,
-        require_target_column=False,
-        drop_rows_with_missing_critical_fields=True,
-        validate_schema_alignment=True,
-        schema_alignment_threshold=0.95,
+# 1. Basic usage with default configuration
+df, metrics = run_etl_pipeline(
+    source='all_stocks',
+    db_url='postgresql://user:pass@localhost/postgres',
+    return_metrics=True
+)
+
+# 2. Advanced usage with currency conversion and custom imputation
+config = ETLConfig(
+    currency_conversion=CurrencyConversionConfig(
+        enabled=True,
+        target_currency="USD",
+        suffix="_usd"
     ),
-    dtype_casting=DtypeCastingConfig(apply_dtype_casting=True, track_diagnostics=True),
-    semantic_classification=SemanticClassificationConfig(enabled=True, preserve_price_columns=True),
     imputation=ImputationConfig(
-        apply_imputation=True,
         strategy="6step",
-        knn_neighbors=5,
-        sector_column="sector",
-        reference_price_column="last_price",
-        impute_categorical_columns=True,
-        impute_datetime_columns=True,
-    ),
-    semantic_transform=SemanticTransformConfig(
-        apply_log_transforms=True,
-        log_transform_method="log1p",
-        log_transform_market_values=True,
-        exclude_ratios_from_winsorization=True,
-        exclude_percentages_from_winsorization=True,
-        exclude_counts_from_scaling=False,
-    ),
-    sanitization=DataSanitizationConfig(
-        sanitize_data=True,
-        apply_winsorization=False,
-        winsorize_lower_percentile=0.10,
-        winsorize_upper_percentile=0.90,
-    ),
-    scaling=ScalingConfig(
-        enabled=False,
-        scaler_type="robust",
-        scale_by_sector=True,
-        exclude_price_columns=True,
-    ),
-    feature_engineering=FeatureEngineeringConfig(enabled=True, preset="comprehensive"),
-    feature_selection=FeatureSelectionConfig(
-        enabled=False,
-        method="mutual_info",
-        min_importance_threshold=0.01,
-        max_correlation_threshold=0.95,
-    ),
-    financial_metrics=FinancialMetricsConfig(
-        compute_valuation_metrics=True,
-        compute_profitability_metrics=True,
-        compute_growth_metrics=True,
-        compute_leverage_metrics=True,
-        compute_target_vs_price_metrics=True,
-        compute_sector_specific_metrics=False,
-    ),
+        apply_dividend_zero_fill=True
+    )
 )
 
-df, metrics = etl_with_features(
-    source="csv",
-    data_dir="data/",
-    feature_preset="comprehensive",
-    config=etl_config,
-    return_metrics=True,
-)
-```
-
-**ETLConfig Stage Components (v1.11):**
-
-- `DataExtractionConfig`: column normalization, row limits
-- `SchemaValidationConfig`: schema/critical column checks, alignment threshold
-- `DtypeCastingConfig`: schema-aware dtype casting and diagnostics
-- `SemanticClassificationConfig`: price preservation and column categories
-- `ImputationConfig`: 6-step imputation (sector-aware KNN, price-based, categorical, datetime)
-- `SemanticTransformConfig`: log transforms and semantic exclusions for winsorization/scaling
-- `DataSanitizationConfig`: sanitization and optional winsorization bounds
-- `ScalingConfig`: scaler selection, sector-aware scaling, price exclusion
-- `FeatureEngineeringConfig`: Phase 9.3 presets/categories
-- `FeatureSelectionConfig`: mutual information/correlation thresholds
-- `FinancialMetricsConfig`: valuation/profitability/growth/leverage/target-vs-price metrics
-
-**Migration Note:**
-
-The two-step approach is deprecated:
-
-```python
-# OLD (deprecated):
-# df = run_etl_pipeline(source='csv', data_dir='data/')
-# df, metrics = run_financial_metrics_etl(df, output_dir=output_dir)
-
-# NEW (recommended):
-df, metrics = etl_with_financial_metrics(
+df, metrics = run_etl_pipeline(
     source='csv',
     data_dir='data/',
-    output_dir=output_dir
+    config=config,
+    return_metrics=True
 )
 ```
 
-**Unified ETL with Feature Engineering: `etl_with_features()`** *(NEW in v1.10)*
+**Pipeline Stages (The 12-Stage Workflow):**
 
-The `etl_with_features()` function provides a single entry point that consolidates schema.py, column_semantics.py,
-and features/api.py functionality into one unified call. This is the **recommended entry point** for complete
-ETL with semantic-aware transformations and Phase 9.3 feature engineering.
+The `ETLPipeline` executes the following stages in order:
+
+1. **Extraction**: Loading data from CSV or Database.
+2. **Dtype Casting**: Ensuring correct numeric/date/categorical types.
+3. **Semantic Classification**: Identifying roles (market, financial_statement, etc.).
+4. **Validation**: Schema integrity and critical field checks.
+5. **Row Dropping**: Removal of rows missing critical metadata.
+6. **Sanitization**: Business-rule zero fills and winsorization.
+7. **Imputation**: 6-step strategy (Zero -> Sector KNN -> Median -> Constant).
+8. **Currency Conversion (NEW)**: Historical FOREX conversion to target currency.
+9. **Semantic Transforms**: Logarithmic transformations for market values.
+10. **Scaling**: Robust, Standard, or MinMax scaling (optional).
+11. **Financial Metrics**: Computation of P/E, ROE, Growth, etc.
+12. **Feature Engineering**: Advanced Phase 9.3 domain-specific features.
+
+#### 7.5.1 Currency Conversion Module (`finance_ml/etl/currency.py`)
+
+**Added:** 2026-01-02 (v1.22)
+
+The currency conversion module provides automated FOREX conversion for monetary columns in equities data.
+
+**Key Features:**
+
+1. **Business Day Fallback (Default)**: Automatically falls back to previous business days when exchange rates are
+   unavailable (holidays, weekends, future dates)
+2. **Alternative Reference Date**: Optionally override the conversion date for all rows
+3. **Rate Caching**: Caches exchange rates to minimize API calls
+4. **Detailed Metrics**: Tracks conversion success/failure rates and fallback usage
+
+**Configuration Constants:**
+
+| Constant               | Default  | Description                                          |
+|------------------------|----------|------------------------------------------------------|
+| `MAX_FALLBACK_DAYS`    | `7`      | Maximum days to search backwards for available rates |
+| `SUPPORTED_CURRENCIES` | 30 codes | ISO 4217 currency codes supported by forex-python    |
+
+**Primary API:**
 
 ```python
-from finance_ml.ml_workflow.preprocessing.etl import etl_with_features, ETLConfig
+from finance_ml.etl.currency import (
+    CurrencyConverter,
+    convert_to_usd,
+    convert_with_fallback_date,
+    CurrencyConversionMetrics
+)
 
+# Option 1: Standard conversion with automatic fallback (RECOMMENDED)
+df_converted = convert_to_usd(df, use_fallback=True)
 
-def etl_with_features(
-        source: Literal["csv", "db", "all_stocks"],
-        data_dir: Optional[Path | str] = None,
-        db_url: Optional[str] = None,
-        feature_preset: str = "standard",
-        feature_categories: Optional[List[str]] = None,
-        config: Optional[ETLConfig] = None,
-        return_metrics: bool = True,
-        ) -> pd.DataFrame | Tuple[pd.DataFrame, ETLMetrics]:
-    """
-    Complete ETL pipeline with integrated feature engineering.
-    
-    Consolidates schema.py, column_semantics.py, and api.py functionality
-    into a single entry point (Section 8.6, Section 9.3).
-    
-    Pipeline Stages:
-    1. Extract from source (CSV or database)
-    2. Column normalization and dtype casting
-    3. Semantic column classification (market, financial_statement, balance_sheet, cash_flow, ratio, percentage, count)
-    4. 6-step imputation strategy
-    5. Semantic-aware transformations (log-transforms for market values)
-    6. Winsorization (excluding price/ratio/percentage columns)
-    7. Feature engineering (Phase 9.3 features via build_features API)
-    8. Financial metrics computation
-    9. Quality validation
-    
-    Args:
-        source: Data source ('csv', 'db', 'all_stocks')
-        data_dir: Directory for CSV files
-        db_url: Database connection URL
-        feature_preset: Feature engineering preset
-            - 'basic': Core ratios, margins, volatility, revenue CAGR
-            - 'momentum': Momentum & technical indicators only
-            - 'quality': Accounting quality and financial distress signals
-            - 'standard': Balanced feature set (default)
-            - 'comprehensive': Full advanced feature set (196 features)
-        feature_categories: Specific feature categories to engineer (optional)
-        config: Optional ETLConfig override
-        return_metrics: Whether to return ETLMetrics
-    
-    Returns:
-        DataFrame with all features, optionally with ETLMetrics
-    """
+# Option 2: Class-based with custom configuration
+converter = CurrencyConverter(
+    target_currency="USD",
+    max_fallback_days=7,
+    use_business_day_fallback=True
+)
+df_converted = converter.convert_dataframe(df)
+metrics = converter.get_metrics()
+print(metrics.summary())
+
+# Option 3: Explicit alternative date (for holiday scenarios)
+from datetime import datetime
+
+df_converted = convert_to_usd(
+    df,
+    alternative_date=datetime(2025, 12, 31)
+)
+
+# Option 3 (convenience wrapper): Auto-derive fallback date
+df_converted = convert_with_fallback_date(df, fallback_days=1)
 ```
 
-**Usage Examples:**
+**Fallback Strategy:**
 
+When exchange rates are unavailable for a specific date (e.g., holidays):
+
+1. **Step 1**: Attempt to fetch rate for the requested date
+2. **Step 2**: If `RatesNotAvailableError`, try previous calendar day
+3. **Step 3**: Skip weekends (Saturday/Sunday)
+4. **Step 4**: Skip common banking holidays (Jan 1, Dec 25, Dec 26)
+5. **Step 5**: Repeat up to `MAX_FALLBACK_DAYS` times
+6. **Step 6**: Log warning and return `None` if all attempts fail
+
+**Metrics Tracking:**
 ```python
-# Recommended: Complete ETL with comprehensive features
-from finance_ml.ml_workflow.preprocessing.etl import etl_with_features
+@dataclass
+class CurrencyConversionMetrics:
+    rows_processed: int  # Total rows in DataFrame
+    rows_converted: int  # Rows successfully converted
+    rows_failed: int  # Rows where conversion failed
+    fallback_used_count: int  # Times fallback date was used
+    unique_currencies: set  # Source currencies encountered
+    columns_converted: int  # Monetary columns converted
+```
 
-df, metrics = etl_with_features(
-        source='csv',
-        data_dir='data/',
-        feature_preset='comprehensive',
-        return_metrics=True
-        )
+**ETL Pipeline Integration:**
 
-print(metrics.summary())
-# ETL Pipeline Summary:
-#   Source: csv
-#   Duration: 2.34s
-#   Semantic Classification: ? (Price Columns: 21, Market Value: 19, Log-Transformed: 19)
-#   Feature Engineering: comprehensive (196 features added)
-
-# With custom ETLConfig for fine-grained control
-from finance_ml.ml_workflow.preprocessing.etl import etl_with_features, ETLConfig
+Currency conversion runs as **Stage 8** in the unified ETL pipeline:
+```python
+from finance_ml.etl import ETLConfig, CurrencyConversionConfig
 
 config = ETLConfig(
-        use_semantic_column_classification=True,
-        preserve_price_columns=True,  # CRITICAL: Never transform price columns
-        log_transform_market_values=True,
-        apply_feature_engineering=True,
-        feature_preset="comprehensive",
-        )
-
-df, metrics = etl_with_features(
-        source='csv',
-        data_dir='data/',
-        config=config,
-        return_metrics=True
-        )
-
-# Verify price columns were protected
-assert metrics.price_columns_count > 0, "Price columns should be detected"
-assert 'last_price' in df.columns, "last_price must be preserved"
+    currency_conversion=CurrencyConversionConfig(
+        enabled=True,
+        target_currency="USD",
+        use_business_day_fallback=True,  # Enable fallback (default)
+        max_fallback_days=7,
+        suffix="_usd"
+    )
+)
 ```
 
-**ETLConfig Semantic Attributes** *(NEW in v1.10)*:
+**Error Handling:**
 
+| Scenario                | Behavior                                   |
+|-------------------------|--------------------------------------------|
+| Holiday (Jan 1, Dec 25) | Fallback to previous business day          |
+| Weekend                 | Skip to Friday                             |
+| Future date             | Fallback to most recent available date     |
+| Unsupported currency    | Log warning, return NaN                    |
+| API error               | Log error, return NaN                      |
+| All fallbacks exhausted | Log warning with attempt count, return NaN |
+
+**Test Coverage:**
+
+Tests are located in `tests/test_currency_conversion.py`:
+
+- `test_business_day_fallback`: Validates fallback for holidays
+- `test_weekend_handling`: Validates weekend skip logic
+- `test_rate_caching`: Validates cache hit/miss behavior
+- `test_metrics_tracking`: Validates metrics accuracy
+- `test_alternative_date`: Validates Option 3 functionality
+
+**Logging:**
+
+The module uses the standard `logging` module at `finance_ml.etl.currency`:
 ```python
-@dataclass
-class ETLConfig:
-    # ... existing attributes ...
-
-    # Semantic-aware transformation flags (Section 8.5)
-    use_semantic_column_classification: bool = True  # Enable semantic classification
-    preserve_price_columns: bool = True  # CRITICAL: Never transform price columns
-    log_transform_market_values: bool = True  # Apply log-transforms to skewed columns
-    exclude_ratios_from_winsorization: bool = True  # Ratios are pre-normalized
-    exclude_percentages_from_winsorization: bool = True  # Percentages are bounded
-    exclude_counts_from_scaling: bool = False  # Optionally exclude discrete counts
-
-    # Feature engineering integration (Section 9.3)
-    apply_feature_engineering: bool = False  # Default OFF for backward compatibility
-    feature_preset: str = "standard"  # Options: "basic", "momentum", "quality", "comprehensive"
-    feature_categories: Optional[List[str]] = None  # Specific categories to engineer
+# Set log level to see fallback debug messages
+import logging
+logging.getLogger('finance_ml.etl.currency').setLevel(logging.DEBUG)
 ```
 
-**ETLMetrics Semantic Tracking** *(NEW in v1.10)*:
+**Best Practices:**
+
+1. **Always enable fallback** for production pipelines (`use_business_day_fallback=True`)
+2. **Check metrics** after conversion to identify data quality issues
+3. **Log fallback usage** to monitor API reliability
+4. **Use alternative_date** when processing historical snapshots with known date issues
+5. **Validate converted columns** have acceptable NaN rates (< 5% recommended)
+
+**Backward Compatibility:**
+
+The legacy functions in `finance_ml.ml_workflow.preprocessing.etl` are maintained for backward compatibility but
+delegate to the new modular pipeline:
+
+- `etl_with_financial_metrics()`
+- `etl_with_features()`
+- `etl_from_csv()`
+- `etl_from_database()`
+
+**ETLConfig Components:**
+
+The `ETLConfig` is composed of several specialized configuration classes:
+
+- `DataExtractionConfig`: Column normalization and row limits.
+- `SchemaValidationConfig`: Schema integrity and alignment checks.
+- `DtypeCastingConfig`: Type conversion and diagnostics.
+- `SemanticClassificationConfig`: Semantic role assignment.
+- `ImputationConfig`: 6-step imputation strategy settings.
+- `CurrencyConversionConfig (NEW)`: FOREX conversion settings.
+- `SemanticTransformConfig`: Logarithmic transformation settings.
+- `DataSanitizationConfig`: Winsorization and business-rule zero fills.
+- `ScalingConfig`: Feature scaling (Robust/Standard/MinMax).
+- `FinancialMetricsConfig`: Profitability, Growth, and Valuation metrics.
+- `FeatureEngineeringConfig`: Advanced domain-specific features.
+- `FeatureSelectionConfig`: Automated feature importance filtering.
+
+**Example: Full Pipeline with Feature Engineering**
 
 ```python
-@dataclass
-class ETLMetrics:
-    # ... existing attributes ...
-    
-    # Semantic transformation metrics
-    semantic_classification_applied: bool = False
-    price_columns_count: int = 0  # Number of protected price columns (21 total)
-    market_value_columns_count: int = 0  # Market value columns (19 total)
-    ratio_columns_count: int = 0  # Pre-normalized ratio columns
-    percentage_columns_count: int = 0  # Bounded percentage columns
-    count_columns_count: int = 0  # Discrete count columns
-    log_transformed_columns: int = 0  # Columns with log-transforms applied
-    
-    # Feature engineering metrics
-    feature_engineering_applied: bool = False
-    feature_preset_used: str = ""
-    features_added: int = 0
-    feature_categories_applied: List[str] = field(default_factory=list)
-```
+from finance_ml.etl import run_etl_pipeline, ETLConfig, FeatureEngineeringConfig
 
-**Migration from Multiple Cells to Single Entry Point:**
+config = ETLConfig(
+    feature_engineering=FeatureEngineeringConfig(
+        enabled=True,
+        preset="comprehensive"
+    )
+)
 
-```python
-# OLD (7-10 cells):
-all_stocks = load_from_csv(data_dir)
-all_stocks.columns = normalize_columns(all_stocks.columns)
-all_stocks = detect_and_cast_dtypes(all_stocks)
-all_stocks = apply_enhanced_imputation_strategy_6step(all_stocks)
-all_stocks = winsorize_by_sector(all_stocks)
-all_stocks = scale_features(all_stocks)
-all_stocks = build_features(all_stocks, preset='comprehensive')
-# ... more steps ...
-
-# NEW (1 cell - recommended):
-from finance_ml.ml_workflow.preprocessing import etl_with_features
-
-df, metrics = etl_with_features(
-        source='csv',
-        data_dir='data/',
-        feature_preset='comprehensive',
-        return_metrics=True
-        )
-
-# Verify pipeline completed successfully
-assert metrics.semantic_classification_applied, "Semantic classification should be applied"
-assert metrics.feature_engineering_applied, "Feature engineering should be applied"
-assert metrics.price_columns_count >= 21, "All 21 price columns should be protected"
+df, metrics = run_etl_pipeline(
+    source='all_stocks',
+    db_url=DB_URL,
+    config=config,
+    return_metrics=True
+)
 ```
 
 ---

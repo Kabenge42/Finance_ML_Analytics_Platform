@@ -1,26 +1,32 @@
 [
   {
     "Metric":"roe",
-    "F_Statistic": 1.0439,
-    "P_Value": 0.403029,
+    "F_Statistic": 0.9208,
+    "P_Value": 0.512522,
     "Significant":false
   },
   {
     "Metric":"price_momentum_1m",
-    "F_Statistic": 11.0854,
+    "F_Statistic": 17.0532,
     "P_Value":0.0,
     "Significant":true
   },
   {
     "Metric":"debt_to_equity",
-    "F_Statistic": 1.2261,
-    "P_Value": 0.268207,
+    "F_Statistic": 1.2717,
+    "P_Value": 0.240214,
     "Significant":false
   },
   {
     "Metric":"earnings_quality_score",
-    "F_Statistic": 7.7137,
+    "F_Statistic": 9.0474,
     "P_Value": 0.0,
     "Significant":true
+  },
+  {
+    "Metric": "surprise_momentum_score",
+    "F_Statistic": 2.1935999393,
+    "P_Value": 0.0155520001,
+    "Significant": true
   }
 ]

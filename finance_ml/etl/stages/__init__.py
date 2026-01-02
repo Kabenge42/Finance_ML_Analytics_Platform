@@ -1,6 +1,7 @@
 """ETL stages for Finance ML Analytics Platform."""
 
 from .extraction import run_extraction_stage, run_dtype_casting_stage
+from .currency import run_currency_conversion_stage
 from .feature_engineering import run_feature_engineering_stage
 from .feature_selection import run_feature_selection_stage
 from .imputation import run_imputation_stage
@@ -15,6 +16,7 @@ from .validation_schema import run_schema_alignment_validation_stage
 __all__ = [
     "run_extraction_stage",
     "run_dtype_casting_stage",
+    "run_currency_conversion_stage",
     "run_validation_stage",
     "run_row_dropping_stage",
     "run_imputation_stage",

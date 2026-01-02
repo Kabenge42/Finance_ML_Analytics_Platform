@@ -1,9 +1,9 @@
 {
-  "generated_at": "2025-12-29T18:25:49.257644",
-  "reference_date": "2025-12-29T00:00:00",
+  "generated_at": "2026-01-02T08:18:28.936545",
+  "reference_date": "2026-01-02T00:00:00",
   "data_shape": {
-    "rows": 6725,
-    "columns": 624
+    "rows": 6898,
+    "columns": 649
   },
   "phase93_coverage": {
     "Momentum & Technical": 25,
@@ -12,10 +12,10 @@
     "Quality & Risk": 20,
     "Cash Flow": 5,
     "Capital Allocation": 19,
-    "Analyst Sentiment": 10,
-    "Market Sentiment": 4,
+    "Analyst Sentiment": 9,
+    "Market Sentiment": 3,
     "Leverage & Liquidity": 8,
-    "Temporal Patterns": 13,
+    "Temporal Patterns": 8,
     "Composite Scores": 4,
     "Growth Metrics": 9,
     "Efficiency Ratios": 4,
@@ -23,7 +23,8 @@
     "Balance Sheet Dynamics": 8,
     "Revenue Forecasting": 8,
     "Earnings Quality": 23,
-    "Technical Analysis": 1
+    "Technical Analysis": 1,
+    "Dividend Reliability": 6
   },
   "artifacts": {
     "dashboards": [
@@ -60,6 +61,8 @@
       "market_movers_dashboard.html",
       "price_target_analysis.html",
       "price_target_analytics.html",
+      "revenue_forecast_skew_vs_momentum.html",
+      "surprise_momentum_distribution.html",
       "technical_valuation_dashboard.html",
       "earnings_alerts.json",
       "earnings_quality_alerts.json"
@@ -102,9 +105,14 @@
     "visualizations": [
       "analyst_recommendations_chart.html",
       "dividend_yield_distribution.html",
+      "effect_size_comparison_radar.html",
+      "enhanced_region_radar.html",
+      "enhanced_sector_radar.html",
       "financial_metrics_radar.html",
       "hypothesis_test_heatmap.html",
-      "sector_benchmarking.html"
+      "sector_benchmarking.html",
+      "statistical_benchmark_dashboard.html",
+      "statistical_analysis_results.json"
     ]
   }
 }
