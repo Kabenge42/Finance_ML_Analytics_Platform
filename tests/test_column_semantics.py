@@ -24,7 +24,7 @@ class TestColumnSemantics(unittest.TestCase):
         """Price columns should be identified and excluded from winsorization."""
         from finance_ml.ml_workflow.preprocessing.column_semantics import PRICE_COLUMNS
 
-        # Expected price columns that must be preserved (21 total)
+        # Expected price columns that must be preserved (23 total)
         expected_current = {
             "last_price",
             "price_target",
@@ -51,24 +51,26 @@ class TestColumnSemantics(unittest.TestCase):
             "52w_low_adj",
         }
 
-        expected_emas = {
+        expected_indicators = {
             "ema_20d",
             "ema_50d",
             "ema_100d",
             "ema_250d",
+            "ma_20d_simple",
+            "ma_50d_simple",
         }
 
-        expected_all = expected_current | expected_historical | expected_52w | expected_emas
+        expected_all = expected_current | expected_historical | expected_52w | expected_indicators
 
-        # PRICE_COLUMNS should contain all 21 expected price columns
+        # PRICE_COLUMNS should contain all 23 expected price columns
         self.assertTrue(
             expected_all.issubset(PRICE_COLUMNS),
             f"Missing price columns: {expected_all - PRICE_COLUMNS}",
         )
 
-        # Verify we have exactly 21 price columns
+        # Verify we have exactly 23 price columns
         self.assertEqual(
-            len(PRICE_COLUMNS), 21, f"Expected 21 price columns, found {len(PRICE_COLUMNS)}"
+            len(PRICE_COLUMNS), 23, f"Expected 23 price columns, found {len(PRICE_COLUMNS)}"
         )
 
         # Verify critical business columns are present

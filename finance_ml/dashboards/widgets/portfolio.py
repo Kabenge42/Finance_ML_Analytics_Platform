@@ -477,13 +477,15 @@ def create_dividend_sustainability_scorecard(
 
     scorecard = df[[c for c in ["ticker", "sector", "region"] if c in df.columns]].copy()
 
-    if "payout_ratio" in df.columns:
-        payout = pd.to_numeric(df["payout_ratio"], errors="coerce")
-        scorecard["payout_score"] = np.where(
-            payout <= 50,
-            25,
-            np.where(payout <= 75, 20, np.where(payout <= 100, 10, 0)),
+    payout_col = next(
+        (c for c in ["payout_ratio", "dividend_payout_ratio"] if c in df.columns), None
+    )
+    if payout_col:
+        payout = pd.to_numeric(df[payout_col], errors="coerce").astype("float64")
+        scorecard["payout_score"] = np.select(
+            [payout <= 50, payout <= 75, payout <= 100], [25, 20, 10], default=0
         )
+        scorecard.loc[payout.isna(), "payout_score"] = 0
     else:
         scorecard["payout_score"] = 0
 
@@ -493,40 +495,37 @@ def create_dividend_sustainability_scorecard(
     )
 
     if fcf_col and div_paid_col:
-        fcf = pd.to_numeric(df[fcf_col], errors="coerce")
-        div_paid = pd.to_numeric(df[div_paid_col], errors="coerce").abs()
+        fcf = pd.to_numeric(df[fcf_col], errors="coerce").astype("float64")
+        div_paid = pd.to_numeric(df[div_paid_col], errors="coerce").abs().astype("float64")
         coverage = fcf / div_paid.replace(0, np.nan)
 
-        scorecard["fcf_coverage_score"] = np.where(
-            coverage >= 2.0,
-            25,
-            np.where(
-                coverage >= 1.5, 20, np.where(coverage >= 1.0, 15, np.where(coverage >= 0.5, 5, 0))
-            ),
+        scorecard["fcf_coverage_score"] = np.select(
+            [coverage >= 2.0, coverage >= 1.5, coverage >= 1.0, coverage >= 0.5],
+            [25, 20, 15, 5],
+            default=0,
         )
+        scorecard.loc[coverage.isna(), "fcf_coverage_score"] = 0
     else:
         scorecard["fcf_coverage_score"] = 0
 
     growth_cols = [c for c in df.columns if "div" in c.lower() and "growth" in c.lower()]
     if growth_cols:
-        div_growth = pd.to_numeric(df[growth_cols[0]], errors="coerce")
-        scorecard["div_growth_score"] = np.where(
-            div_growth >= 10,
-            25,
-            np.where(
-                div_growth >= 5, 20, np.where(div_growth >= 0, 15, np.where(div_growth >= -5, 5, 0))
-            ),
+        div_growth = pd.to_numeric(df[growth_cols[0]], errors="coerce").astype("float64")
+        scorecard["div_growth_score"] = np.select(
+            [div_growth >= 10, div_growth >= 5, div_growth >= 0, div_growth >= -5],
+            [25, 20, 15, 5],
+            default=0,
         )
+        scorecard.loc[div_growth.isna(), "div_growth_score"] = 0
     else:
         scorecard["div_growth_score"] = 0
 
     if "debt_to_equity" in df.columns:
-        dte = pd.to_numeric(df["debt_to_equity"], errors="coerce")
-        scorecard["balance_sheet_score"] = np.where(
-            dte <= 0.5,
-            25,
-            np.where(dte <= 1.0, 20, np.where(dte <= 2.0, 10, 0)),
+        dte = pd.to_numeric(df["debt_to_equity"], errors="coerce").astype("float64")
+        scorecard["balance_sheet_score"] = np.select(
+            [dte <= 0.5, dte <= 1.0, dte <= 2.0], [25, 20, 10], default=0
         )
+        scorecard.loc[dte.isna(), "balance_sheet_score"] = 0
     else:
         scorecard["balance_sheet_score"] = 0
 
@@ -561,23 +560,25 @@ def create_employee_productivity_dashboard(df: pd.DataFrame, output_dir: Path) -
     sector_categories = df["sector"].astype("category") if "sector" in df.columns else None
 
     if "total_revenues_ltm" in df.columns and "full_time_employees_fq" in df.columns:
-        revenue = pd.to_numeric(df["total_revenues_ltm"], errors="coerce")
-        employees = pd.to_numeric(df["full_time_employees_fq"], errors="coerce")
-        df["revenue_per_employee"] = (revenue / employees.replace(0, np.nan)) / 1000
+        revenue = pd.to_numeric(df["total_revenues_ltm"], errors="coerce").astype("Float64")
+        employees = pd.to_numeric(df["full_time_employees_fq"], errors="coerce").astype("Float64")
+        df["revenue_per_employee"] = (revenue / employees.replace(0, pd.NA)) / 1000
 
     if "total_assets_ltm" in df.columns and "full_time_employees_fq" in df.columns:
-        assets = pd.to_numeric(df["total_assets_ltm"], errors="coerce")
-        employees = pd.to_numeric(df["full_time_employees_fq"], errors="coerce")
-        df["assets_per_employee"] = (assets / employees.replace(0, np.nan)) / 1000
+        assets = pd.to_numeric(df["total_assets_ltm"], errors="coerce").astype("Float64")
+        employees = pd.to_numeric(df["full_time_employees_fq"], errors="coerce").astype("Float64")
+        df["assets_per_employee"] = (assets / employees.replace(0, pd.NA)) / 1000
 
     emp_fq = "full_time_employees_fq"
     emp_1fy = "full_time_employees_1fy"
     if emp_fq in df.columns and emp_1fy in df.columns:
-        current = pd.to_numeric(df[emp_fq], errors="coerce")
-        prior = pd.to_numeric(df[emp_1fy], errors="coerce")
+        current = pd.to_numeric(df[emp_fq], errors="coerce").astype("Float64")
+        prior = pd.to_numeric(df[emp_1fy], errors="coerce").astype("Float64")
         with np.errstate(divide="ignore", invalid="ignore"):
-            df["employee_growth_yoy"] = ((current - prior) / prior * 100).replace(
-                [np.inf, -np.inf], np.nan
+            df["employee_growth_yoy"] = (
+                ((current - prior) / prior.replace(0, pd.NA) * 100)
+                .replace([np.inf, -np.inf], pd.NA)
+                .astype("Float64")
             )
 
     fig = make_subplots(
@@ -668,4 +669,3 @@ def create_employee_productivity_dashboard(df: pd.DataFrame, output_dir: Path) -
     }
 
     return {"figure": fig, "metrics": metrics, "output_path": output_path}
-

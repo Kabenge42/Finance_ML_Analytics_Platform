@@ -308,6 +308,64 @@ class ETLPipeline:
         logger.info(f"Extracted {len(df)} rows, {len(df.columns)} columns from all_stocks")
         return df
 
+    def _apply_semantic_transformations(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply semantic-aware transformations (log transforms)."""
+        if not self.config.semantic_classification.enabled:
+            return df
+
+        result, trans_count, skip_count = run_semantic_transformations_stage(
+            df,
+            apply_log_transforms=self.config.semantic_transform.apply_log_transforms,
+            log_transform_market_values=self.config.semantic_transform.log_transform_market_values,
+            log_transform_target_columns=self.config.semantic_transform.log_transform_target_columns,
+        )
+
+        if self.metrics:
+            self.metrics.log_transformed_columns = trans_count
+            self.metrics.log_transforms_skipped = skip_count
+
+        return result
+
+    def _get_winsorization_columns(self, df: pd.DataFrame) -> List[str]:
+        """Get columns eligible for winsorization based on semantic rules."""
+        from finance_ml.ml_workflow.preprocessing.column_semantics import get_winsorizable_columns
+
+        return get_winsorizable_columns(
+            df,
+            exclude_ratios=self.config.semantic_transform.exclude_ratios_from_winsorization,
+            exclude_percentages=self.config.semantic_transform.exclude_percentages_from_winsorization,
+        )
+
+    def _get_scaling_columns(self, df: pd.DataFrame) -> List[str]:
+        """Get columns eligible for scaling based on semantic rules."""
+        from finance_ml.ml_workflow.preprocessing.column_semantics import get_scalable_columns
+
+        return get_scalable_columns(
+            df,
+            exclude_price=self.config.scaling.exclude_price_columns,
+            exclude_counts=self.config.semantic_transform.exclude_counts_from_scaling,
+        )
+
+    def _apply_feature_engineering(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply feature engineering stage."""
+        if not self.config.feature_engineering.enabled:
+            return df
+
+        initial_cols = set(df.columns)
+        result = run_feature_engineering_stage(
+            df,
+            preset=self.config.feature_engineering.preset,
+            categories=self.config.feature_engineering.categories,
+            engineer_earnings_analytics=self.config.feature_engineering.engineer_earnings_analytics,
+        )
+
+        if self.metrics:
+            self.metrics.feature_engineering_applied = True
+            self.metrics.feature_preset_used = self.config.feature_engineering.preset
+            self.metrics.features_added = len(set(result.columns) - initial_cols)
+
+        return result
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply all transformation stages to DataFrame using modular components."""
         logger.info("Starting modular transformation pipeline")
@@ -366,40 +424,27 @@ class ETLPipeline:
 
         # Stage 5.5: Currency Conversion
         if self.config.currency_conversion.enabled:
-            result = run_currency_conversion_stage(
+            result, metrics = run_currency_conversion_stage(
                 result,
-                enabled=self.config.currency_conversion.enabled,
-                target_currency=self.config.currency_conversion.target_currency,
-                currency_column=self.config.currency_conversion.currency_column,
-                date_column=self.config.currency_conversion.date_column,
-                columns_to_convert=self.config.currency_conversion.columns_to_convert,
-                suffix=self.config.currency_conversion.suffix,
-                cache_rates=self.config.currency_conversion.cache_rates,
-                max_fallback_days=self.config.currency_conversion.max_fallback_days,
-                use_business_day_fallback=self.config.currency_conversion.use_business_day_fallback,
+                config=self.config.currency_conversion,
             )
             if self.metrics:
                 self.metrics.stages_executed.append("currency_conversion")
 
         # Stage 6: Apply semantic-aware transformations (log transforms)
-        if self.config.semantic_transform.apply_log_transforms or self.config.semantic_transform.log_transform_market_values:
-            result, trans_count, skip_count = run_semantic_transformations_stage(
-                result,
-                apply_log_transforms=self.config.semantic_transform.apply_log_transforms,
-                log_transform_market_values=self.config.semantic_transform.log_transform_market_values,
-                log_transform_target_columns=self.config.semantic_transform.log_transform_target_columns
-            )
-            if self.metrics:
-                self.metrics.log_transformed_columns = trans_count
-                self.metrics.log_transforms_skipped = skip_count
+        result = self._apply_semantic_transformations(result)
+        if self.metrics and "semantic_transformations" not in self.metrics.stages_executed:
+            if self.metrics.log_transformed_columns > 0:
                 self.metrics.stages_executed.append("semantic_transformations")
 
         # Stage 7: Apply feature scaling
         if self.config.scaling.enabled:
+            scaling_cols = self._get_scaling_columns(result)
             result = run_scaling_stage(
-                result, 
-                scaler_type=self.config.scaling.scaler_type, 
-                scale_by_sector=self.config.scaling.scale_by_sector
+                result,
+                scaler_type=self.config.scaling.scaler_type,
+                scale_by_sector=self.config.scaling.scale_by_sector,
+                columns=scaling_cols,
             )
             if self.metrics:
                 self.metrics.scaling_applied = True
@@ -428,14 +473,9 @@ class ETLPipeline:
             self.metrics.stages_executed.append("post_metrics_imputation")
 
         # Stage 9: Feature engineering
-        if self.config.feature_engineering.enabled:
-            result = run_feature_engineering_stage(
-                result, 
-                preset=self.config.feature_engineering.preset,
-                categories=self.config.feature_engineering.categories,
-                engineer_earnings_analytics=self.config.feature_engineering.engineer_earnings_analytics
-            )
-            if self.metrics:
+        result = self._apply_feature_engineering(result)
+        if self.metrics and self.metrics.feature_engineering_applied:
+            if "feature_engineering" not in self.metrics.stages_executed:
                 self.metrics.stages_executed.append("feature_engineering")
 
         # Stage 10: Automated feature selection

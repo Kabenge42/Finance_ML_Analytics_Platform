@@ -78,7 +78,7 @@ def engineer_liquidity_ratios(df: pd.DataFrame) -> pd.DataFrame:
         and "inventory" in df.columns
         and "current_liabilities" in df.columns
     ):
-        quick_assets = df["current_assets"] - df["inventory"].fillna(0)
+        quick_assets = df["current_assets"] - df["inventory"]
         result["quick_ratio"] = _safe_div(quick_assets, df["current_liabilities"])
 
     # Cash Ratio

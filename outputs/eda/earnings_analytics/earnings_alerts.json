@@ -1,60 +1,60 @@
 {
-  "timestamp": "2026-01-02T08:18:27.026288",
-  "reference_date": "2026-01-02 00:00:00",
-  "total_stocks_monitored": 6898,
+  "timestamp": "2026-01-04T10:56:09.595303",
+  "reference_date": "2026-01-04 00:00:00",
+  "total_stocks_monitored": 5780,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 3395,
-      "description": "3395 stocks with EPS surprise < -5%",
+      "count": 2177,
+      "description": "2177 stocks with EPS surprise < -5%",
       "tickers": [
-        "MLYS",
         "NVDA",
         "AAPL",
         "MSFT",
         "AVGO",
-        "APOTEA",
         "TSLA",
         "LLY",
-        "KKR",
-        "WMT"
+        "WMT",
+        "ORCL",
+        "JNJ",
+        "NFLX"
       ]
     },
     {
       "alert_type": "high_target_uncertainty",
       "severity": "low",
-      "count": 4669,
-      "description": "4669 stocks with price target spread > 25%",
+      "count": 4125,
+      "description": "4125 stocks with price target spread > 25%",
       "tickers": [
-        "MLYS",
-        "LGEINDIA",
-        "9606",
         "NVDA",
         "AAPL",
         "GOOGL",
         "MSFT",
-        "CBG",
         "AMZN",
-        "META"
+        "AVGO",
+        "META",
+        "TSLA",
+        "LLY",
+        "WMT"
       ]
     },
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 33,
-      "description": "33 stocks with elevated volatility (> q0.80) within 14 days of earnings",
+      "count": 29,
+      "description": "29 stocks with elevated volatility (> q0.80) within 14 days of earnings",
       "tickers": [
         "BMNR",
         "APLD",
+        "GNFT",
+        "FDEV",
         "UNF",
         "INSP",
         "NEOG",
         "EMEIS",
-        "OVH",
-        "BWE",
         "GFM",
-        "TFF"
+        "OVH"
       ]
     }
   ],

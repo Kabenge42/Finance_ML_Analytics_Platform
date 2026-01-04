@@ -265,159 +265,147 @@ class TestETLMetricsSemanticAttributes(unittest.TestCase):
         self.assertIn("comprehensive", summary)
 
 
+def _create_base_test_df(include_financial_columns: bool = False) -> pd.DataFrame:
+    """Create a test DataFrame with various column types.
+
+    Args:
+        include_financial_columns: If True, includes additional columns needed
+                                   for feature engineering tests.
+    """
+    np.random.seed(42)
+    data = {
+        # Price columns (should never be transformed)
+        "last_price": [100.0, 150.0, 200.0, 250.0, 300.0],
+        "price_target": [110.0, 160.0, 220.0, 270.0, 330.0],
+        # Market value columns (should be log-transformed)
+        "market_cap": [1e9, 5e9, 10e9, 50e9, 100e9],
+        "revenue": [1e8, 5e8, 1e9, 5e9, 10e9],
+        # Ratio columns (pre-normalized)
+        "p_e": [15.0, 20.0, 25.0, 30.0, 35.0],
+        "ev_ebitda": [10.0, 12.0, 14.0, 16.0, 18.0],
+        # Percentage columns (bounded)
+        "gross_margin": [30.0, 35.0, 40.0, 45.0, 50.0],
+        # Count columns (discrete)
+        "num_analysts": [5, 10, 15, 20, 25],
+        # Other columns
+        "sector": ["Tech", "Finance", "Healthcare", "Energy", "Consumer"],
+        "ticker": ["AAPL", "JPM", "JNJ", "XOM", "WMT"],
+        "unit": ["USD"] * 5,
+        "reference_date": [pd.Timestamp("2025-01-01")] * 5,
+    }
+
+    if include_financial_columns:
+        data.update(
+            {
+                "ebitda": [1e7, 5e7, 1e8, 5e8, 1e9],
+                "net_income": [5e6, 2e7, 5e7, 2e8, 5e8],
+                "total_equity": [5e8, 2e9, 5e9, 2e10, 5e10],
+                "total_assets": [1e9, 5e9, 10e9, 50e9, 100e9],
+            }
+        )
+
+    return pd.DataFrame(data)
+
+
+def _create_pipeline_with_config(**config_kwargs):
+    """Create an ETLPipeline with the given configuration and a mocked metrics object."""
+    from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
+
+    config = ETLConfig(**config_kwargs) if config_kwargs else ETLConfig()
+    pipeline = ETLPipeline(config=config)
+    pipeline.metrics = MagicMock()
+    return pipeline
+
+
 class TestETLPipelineSemanticMethods(unittest.TestCase):
     """Test ETLPipeline semantic transformation methods."""
 
     def _create_test_df(self) -> pd.DataFrame:
         """Create a test DataFrame with various column types."""
-        np.random.seed(42)
-        return pd.DataFrame(
-            {
-                # Price columns (should never be transformed)
-                "last_price": [100.0, 150.0, 200.0, 250.0, 300.0],
-                "price_target": [110.0, 160.0, 220.0, 270.0, 330.0],
-                # Market value columns (should be log-transformed)
-                "market_cap": [1e9, 5e9, 10e9, 50e9, 100e9],
-                "revenue": [1e8, 5e8, 1e9, 5e9, 10e9],
-                # Ratio columns (pre-normalized)
-                "p_e": [15.0, 20.0, 25.0, 30.0, 35.0],
-                "ev_ebitda": [10.0, 12.0, 14.0, 16.0, 18.0],
-                # Percentage columns (bounded)
-                "gross_margin": [30.0, 35.0, 40.0, 45.0, 50.0],
-                # Count columns (discrete)
-                "num_analysts": [5, 10, 15, 20, 25],
-                # Other columns
-                "sector": ["Tech", "Finance", "Healthcare", "Energy", "Consumer"],
-                "ticker": ["AAPL", "JPM", "JNJ", "XOM", "WMT"],
-            }
-        )
+        return _create_base_test_df(include_financial_columns=False)
 
     def test_pipeline_has_apply_semantic_transformations_method(self):
         """ETLPipeline should have _apply_semantic_transformations method."""
         from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline
-
         pipeline = ETLPipeline()
         self.assertTrue(hasattr(pipeline, "_apply_semantic_transformations"))
         self.assertTrue(callable(pipeline._apply_semantic_transformations))
 
     def test_apply_semantic_transformations_returns_dataframe(self):
         """_apply_semantic_transformations should return a DataFrame."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(use_semantic_column_classification=True)
-        pipeline = ETLPipeline(config=config)
-        pipeline.metrics = MagicMock()
+        pipeline = _create_pipeline_with_config(use_semantic_column_classification=True)
         df = self._create_test_df()
-
         result = pipeline._apply_semantic_transformations(df)
-
         self.assertIsInstance(result, pd.DataFrame)
 
     def test_apply_semantic_transformations_preserves_price_columns(self):
         """_apply_semantic_transformations should preserve price columns unchanged."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(
+        pipeline = _create_pipeline_with_config(
             use_semantic_column_classification=True,
             preserve_price_columns=True,
             log_transform_market_values=True,
         )
-        pipeline = ETLPipeline(config=config)
-        pipeline.metrics = MagicMock()
         df = self._create_test_df()
         original_prices = df["last_price"].copy()
-
         result = pipeline._apply_semantic_transformations(df)
-
         pd.testing.assert_series_equal(result["last_price"], original_prices)
 
     def test_apply_semantic_transformations_creates_log_columns(self):
         """_apply_semantic_transformations should create log-transformed columns for market values."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(
+        pipeline = _create_pipeline_with_config(
             use_semantic_column_classification=True,
             log_transform_market_values=True,
         )
-        pipeline = ETLPipeline(config=config)
-        pipeline.metrics = MagicMock()
         df = self._create_test_df()
-
         result = pipeline._apply_semantic_transformations(df)
-
-        # Should have log_market_cap and log_revenue columns
         self.assertIn("log_market_cap", result.columns)
         self.assertIn("log_revenue", result.columns)
 
     def test_apply_semantic_transformations_skipped_when_disabled(self):
         """_apply_semantic_transformations should skip when disabled in config."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(use_semantic_column_classification=False)
-        pipeline = ETLPipeline(config=config)
-        pipeline.metrics = MagicMock()
+        pipeline = _create_pipeline_with_config(use_semantic_column_classification=False)
         df = self._create_test_df()
-
         result = pipeline._apply_semantic_transformations(df)
-
-        # Should return unchanged DataFrame (no log columns added)
         self.assertEqual(set(result.columns), set(df.columns))
 
     def test_pipeline_has_get_winsorization_columns_method(self):
         """ETLPipeline should have _get_winsorization_columns method."""
         from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline
-
         pipeline = ETLPipeline()
         self.assertTrue(hasattr(pipeline, "_get_winsorization_columns"))
         self.assertTrue(callable(pipeline._get_winsorization_columns))
 
     def test_get_winsorization_columns_excludes_price_columns(self):
         """_get_winsorization_columns should exclude price columns."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(use_semantic_column_classification=True)
-        pipeline = ETLPipeline(config=config)
+        pipeline = _create_pipeline_with_config(use_semantic_column_classification=True)
         df = self._create_test_df()
-
         result = pipeline._get_winsorization_columns(df)
-
         self.assertNotIn("last_price", result)
         self.assertNotIn("price_target", result)
 
     def test_get_winsorization_columns_excludes_ratio_columns(self):
         """_get_winsorization_columns should exclude ratio columns when configured."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(
+        pipeline = _create_pipeline_with_config(
             use_semantic_column_classification=True,
             exclude_ratios_from_winsorization=True,
         )
-        pipeline = ETLPipeline(config=config)
         df = self._create_test_df()
-
         result = pipeline._get_winsorization_columns(df)
-
         self.assertNotIn("p_e", result)
         self.assertNotIn("ev_ebitda", result)
 
     def test_pipeline_has_get_scaling_columns_method(self):
         """ETLPipeline should have _get_scaling_columns method."""
         from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline
-
         pipeline = ETLPipeline()
         self.assertTrue(hasattr(pipeline, "_get_scaling_columns"))
         self.assertTrue(callable(pipeline._get_scaling_columns))
 
     def test_get_scaling_columns_excludes_price_columns(self):
         """_get_scaling_columns should exclude price columns."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(use_semantic_column_classification=True)
-        pipeline = ETLPipeline(config=config)
+        pipeline = _create_pipeline_with_config(use_semantic_column_classification=True)
         df = self._create_test_df()
-
         result = pipeline._get_scaling_columns(df)
-
         self.assertNotIn("last_price", result)
         self.assertNotIn("price_target", result)
 
@@ -427,83 +415,51 @@ class TestETLPipelineFeatureEngineering(unittest.TestCase):
 
     def _create_test_df(self) -> pd.DataFrame:
         """Create a test DataFrame with columns needed for feature engineering."""
-        np.random.seed(42)
-        return pd.DataFrame(
-            {
-                "last_price": [100.0, 150.0, 200.0, 250.0, 300.0],
-                "price_target": [110.0, 160.0, 220.0, 270.0, 330.0],
-                "market_cap": [1e9, 5e9, 10e9, 50e9, 100e9],
-                "revenue": [1e8, 5e8, 1e9, 5e9, 10e9],
-                "ebitda": [1e7, 5e7, 1e8, 5e8, 1e9],
-                "net_income": [5e6, 2e7, 5e7, 2e8, 5e8],
-                "total_equity": [5e8, 2e9, 5e9, 2e10, 5e10],
-                "total_assets": [1e9, 5e9, 10e9, 50e9, 100e9],
-                "sector": ["Tech", "Finance", "Healthcare", "Energy", "Consumer"],
-                "ticker": ["AAPL", "JPM", "JNJ", "XOM", "WMT"],
-            }
-        )
+        return _create_base_test_df(include_financial_columns=True)
 
     def test_pipeline_has_apply_feature_engineering_method(self):
         """ETLPipeline should have _apply_feature_engineering method."""
         from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline
-
         pipeline = ETLPipeline()
         self.assertTrue(hasattr(pipeline, "_apply_feature_engineering"))
         self.assertTrue(callable(pipeline._apply_feature_engineering))
 
     def test_apply_feature_engineering_returns_dataframe(self):
         """_apply_feature_engineering should return a DataFrame."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(apply_feature_engineering=True, feature_preset="basic")
-        pipeline = ETLPipeline(config=config)
-        pipeline.metrics = MagicMock()
+        pipeline = _create_pipeline_with_config(
+            apply_feature_engineering=True, feature_preset="basic"
+        )
         df = self._create_test_df()
-
         result = pipeline._apply_feature_engineering(df)
-
         self.assertIsInstance(result, pd.DataFrame)
 
     def test_apply_feature_engineering_skipped_when_disabled(self):
         """_apply_feature_engineering should skip when disabled in config."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(apply_feature_engineering=False)
-        pipeline = ETLPipeline(config=config)
-        pipeline.metrics = MagicMock()
+        pipeline = _create_pipeline_with_config(apply_feature_engineering=False)
         df = self._create_test_df()
-
         result = pipeline._apply_feature_engineering(df)
-
-        # Should return same DataFrame unchanged
         self.assertEqual(len(result.columns), len(df.columns))
 
     def test_apply_feature_engineering_adds_features(self):
         """_apply_feature_engineering should add new feature columns."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig
-
-        config = ETLConfig(apply_feature_engineering=True, feature_preset="basic")
-        pipeline = ETLPipeline(config=config)
-        pipeline.metrics = MagicMock()
+        pipeline = _create_pipeline_with_config(
+            apply_feature_engineering=True, feature_preset="basic"
+        )
         df = self._create_test_df()
         original_cols = len(df.columns)
-
         result = pipeline._apply_feature_engineering(df)
-
-        # Should have more columns after feature engineering
         self.assertGreater(len(result.columns), original_cols)
 
     def test_apply_feature_engineering_updates_metrics(self):
         """_apply_feature_engineering should update metrics with features added count."""
-        from finance_ml.ml_workflow.preprocessing.etl import ETLPipeline, ETLConfig, ETLMetrics
+        from finance_ml.ml_workflow.preprocessing.etl import ETLMetrics
 
-        config = ETLConfig(apply_feature_engineering=True, feature_preset="basic")
-        pipeline = ETLPipeline(config=config)
+        pipeline = _create_pipeline_with_config(
+            apply_feature_engineering=True, feature_preset="basic"
+        )
         pipeline.metrics = ETLMetrics(source_type="csv")
         df = self._create_test_df()
-
         result = pipeline._apply_feature_engineering(df)
-
         self.assertTrue(pipeline.metrics.feature_engineering_applied)
         self.assertEqual(pipeline.metrics.feature_preset_used, "basic")
         self.assertGreater(pipeline.metrics.features_added, 0)
@@ -647,6 +603,8 @@ class TestIntegrationSemanticTransformations(unittest.TestCase):
                 "p_e": np.random.uniform(10, 50, n),
                 "gross_margin": np.random.uniform(20, 60, n),
                 "num_analysts": np.random.randint(5, 30, n),
+                "unit": ["USD"] * n,
+                "reference_date": [pd.Timestamp("2025-01-01")] * n,
             }
         )
 

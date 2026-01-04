@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-01-02T08:18:28.936545",
-  "reference_date": "2026-01-02T00:00:00",
+  "generated_at": "2026-01-04T10:56:11.794440",
+  "reference_date": "2026-01-04T00:00:00",
   "data_shape": {
-    "rows": 6898,
-    "columns": 649
+    "rows": 5780,
+    "columns": 655
   },
   "phase93_coverage": {
     "Momentum & Technical": 25,
@@ -15,7 +15,7 @@
     "Analyst Sentiment": 9,
     "Market Sentiment": 3,
     "Leverage & Liquidity": 8,
-    "Temporal Patterns": 8,
+    "Temporal Patterns": 11,
     "Composite Scores": 4,
     "Growth Metrics": 9,
     "Efficiency Ratios": 4,

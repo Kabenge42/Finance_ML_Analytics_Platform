@@ -286,7 +286,9 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
     if "eps_adjustment_pct_ltm" in result.columns:
         # Lower adjustment percentage = Higher quality
         result["earnings_quality_score"] = 100 - result["eps_adjustment_pct_ltm"].clip(0, 100)
-        result["earnings_quality_warning_flag"] = (result["eps_adjustment_pct_ltm"] > 15).astype(int)
+        result["earnings_quality_warning_flag"] = (
+            (result["eps_adjustment_pct_ltm"] > 15).fillna(False).astype(int)
+        )
 
     logger.info("Engineered GAAP vs Adjusted earnings quality features")
     return result

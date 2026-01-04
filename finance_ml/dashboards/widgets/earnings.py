@@ -1,4 +1,5 @@
 """earnings.py - Dashboard widgets."""
+
 import json
 import logging
 from datetime import datetime, timedelta
@@ -14,13 +15,16 @@ from plotly.subplots import make_subplots
 from finance_ml.core.constants import PLOTLY_TEMPLATE, COLOR_PALETTE
 from finance_ml.core.schema import COLUMN_SCHEMA, PHASE93_FEATURE_CATEGORIES
 from .base import (
-    EarningsMode, resolve_reference_date, add_formatted_date_columns,
-    _write_html_artifact, _build_format_dict, _ensure_schema_dtypes,
-    EarningsAlertConfig
+    EarningsMode,
+    resolve_reference_date,
+    add_formatted_date_columns,
+    _write_html_artifact,
+    _build_format_dict,
+    _ensure_schema_dtypes,
+    EarningsAlertConfig,
 )
 
 logger = logging.getLogger(__name__)
-
 
 # Market cap columns in order of preference (role="market_value" in COLUMN_SCHEMA)
 _MARKET_CAP_COLUMNS = ["market_cap", "market_cap_usd", "market_cap_country_r"]
@@ -128,10 +132,10 @@ def _get_market_cap_column(df: pd.DataFrame) -> Optional[str]:
 
 def _validate_surprise_columns(df: pd.DataFrame) -> Dict[str, bool]:
     """Validate availability of earnings surprise columns against schema.
-    
+
     Checks for actual/estimate column pairs needed for surprise calculations.
     All columns referenced are defined in COLUMN_SCHEMA with appropriate roles.
-    
+
     Returns:
         Dict mapping metric name to boolean indicating if both columns are available.
     """
@@ -191,6 +195,7 @@ def get_category_metrics(
         _add_supplemental_metrics(result)
 
     return result
+
 
 def create_earnings_calendar_dashboard(
     df: pd.DataFrame,
@@ -366,6 +371,7 @@ def create_earnings_calendar_dashboard(
 
     return dashboard_df
 
+
 def display_earnings_dashboard(
     df: pd.DataFrame,
     mode: EarningsMode = "all",
@@ -492,6 +498,7 @@ def display_earnings_dashboard(
         logger.info("Saved earnings dashboard to %s", output_path)
 
     return styler
+
 
 def create_earnings_metrics_chart(
     df: pd.DataFrame,
@@ -642,6 +649,7 @@ def create_earnings_metrics_chart(
 
     return fig
 
+
 def create_earnings_surprise_dashboard(
     df: pd.DataFrame,
     reference_date: Optional[pd.Timestamp] = None,
@@ -693,7 +701,8 @@ def create_earnings_surprise_dashboard(
     if validate_quality:
         # Use schema-defined market_value columns for quality checks
         required_cols = [
-            col for col, meta in COLUMN_SCHEMA.items()
+            col
+            for col, meta in COLUMN_SCHEMA.items()
             if meta.get("role") == "market_value"
             and col in ["total_revenues_ltm", "ebitda_ltm", "eps_adj_ltm"]
         ]
@@ -906,6 +915,7 @@ def create_earnings_surprise_dashboard(
 
     return fig
 
+
 def create_earnings_calendar_analytics(
     df: pd.DataFrame,
     output_dir: Union[str, Path],
@@ -932,7 +942,11 @@ def create_earnings_calendar_analytics(
         logger.warning("No earnings date columns found. Falling back to engineered events.")
         return _engineer_earnings_events_from_fiscal_data(df, output_dir, reference_date)
 
-    identity_cols = [c for c in ["ticker","name","exchange", "sector","industry", "region","trading_country"] if c in df.columns]
+    identity_cols = [
+        c
+        for c in ["ticker", "name", "exchange", "sector", "industry", "region", "trading_country"]
+        if c in df.columns
+    ]
     earnings_df = df[identity_cols + available_earnings_dates].copy()
 
     for col in available_earnings_dates:
@@ -961,6 +975,7 @@ def create_earnings_calendar_analytics(
         "timeline_fig": timeline_fig,
         "heatmap_fig": heatmap_fig,
     }
+
 
 def _create_earnings_timeline_plotly(
     earnings_df: pd.DataFrame, reference_date: pd.Timestamp
@@ -1036,6 +1051,7 @@ def _create_earnings_timeline_plotly(
 
     return fig
 
+
 def _create_earnings_density_heatmap(
     earnings_df: pd.DataFrame, reference_date: pd.Timestamp
 ) -> go.Figure:
@@ -1083,6 +1099,7 @@ def _create_earnings_density_heatmap(
     fig.update_layout(height=400)
 
     return fig
+
 
 def _engineer_earnings_events_from_fiscal_data(
     df: pd.DataFrame, output_dir: Path, reference_date: pd.Timestamp
@@ -1222,6 +1239,7 @@ def create_gaap_adjusted_comparison_chart(df: pd.DataFrame, output_path: Path) -
     _write_html_artifact(fig, output_path)
     return fig
 
+
 def generate_earnings_quality_alerts(
     df: pd.DataFrame,
     config: Optional[EarningsAlertConfig] = None,
@@ -1349,13 +1367,15 @@ def generate_earnings_quality_alerts(
         and "price_target_low" in df.columns
         and "last_price" in df.columns
     ):
-        high = pd.to_numeric(df["price_target_high"], errors="coerce")
-        low = pd.to_numeric(df["price_target_low"], errors="coerce")
-        last_price = pd.to_numeric(df["last_price"], errors="coerce").replace(0, np.nan)
+        high = pd.to_numeric(df["price_target_high"], errors="coerce").astype("Float64")
+        low = pd.to_numeric(df["price_target_low"], errors="coerce").astype("Float64")
+        last_price = (
+            pd.to_numeric(df["last_price"], errors="coerce").replace(0, pd.NA).astype("Float64")
+        )
 
         with np.errstate(divide="ignore", invalid="ignore"):
             spread_pct = ((high - low) / last_price) * 100
-        spread_pct = spread_pct.replace([np.inf, -np.inf], np.nan).dropna()
+        spread_pct = spread_pct.replace([np.inf, -np.inf], pd.NA).dropna()
 
         high_spread = spread_pct[spread_pct > float(config.target_spread_threshold_pct)]
         if len(high_spread) > 0:

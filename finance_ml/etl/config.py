@@ -67,11 +67,11 @@ class SemanticTransformConfig:
 class CurrencyConversionConfig:
     """Configuration for foreign currency conversion."""
 
-    enabled: bool = True
+    enabled: bool = False
     target_currency: str = "USD"
     currency_column: str = "unit"
     date_column: str = "reference_date"
-    columns_to_convert: Optional[List[str]] = None
+    columns: Optional[List[str]] = None
     suffix: str = "_usd"
     cache_rates: bool = True
     max_fallback_days: int = 7
@@ -101,8 +101,8 @@ class ScalingConfig:
 @dataclass
 class FeatureEngineeringConfig:
     """Configuration for feature engineering."""
-    enabled: bool = True
-    preset: str = "comprehensive"
+    enabled: bool = False
+    preset: str = "standard"
     categories: Optional[List[str]] = None
     include_interactions: bool = True
     include_relative: bool = True

@@ -41,8 +41,10 @@ def engineer_dividend_reliability_features(df: pd.DataFrame) -> pd.DataFrame:
         )
         # Sustainable flag: Coverage > 1.2x and Positive FCF
         result["sustainable_dividend_flag"] = (
-            (result["fcf_dividend_coverage"] > 1.2) & (df["fcf_ltm"] > 0)
-        ).astype(int)
+            ((result["fcf_dividend_coverage"] > 1.2) & (df["fcf_ltm"] > 0))
+            .fillna(False)
+            .astype(int)
+        )
 
     # 3. Dividend Yield Stability (if multi-period yields exist)
     yield_cols = [c for c in df.columns if "div_yield" in c and "fy" in c]

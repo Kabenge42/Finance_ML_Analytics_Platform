@@ -5,7 +5,7 @@ This module defines semantic categories for financial columns to enable
 intelligent preprocessing decisions:
 
 - Price columns: Must be preserved in original units (never transform)
-  - Includes: current prices, targets, historical prices, 52w bounds, EMAs (21 total)
+  - Includes: current prices, targets, historical prices, 52w bounds, indicators (23 total)
 - Market value columns: Highly skewed, require log-transforms
 - Ratio columns: Pre-normalized financial ratios
 - Percentage columns: Bounded [0, 100]
@@ -26,6 +26,8 @@ from __future__ import annotations
 
 import logging
 from typing import Dict, List, Set
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -318,11 +320,20 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
         "ratio": set(),
         "percentage": set(),
         "count": set(),
+        "date": set(),
+        "id": set(),
+        "categorical": set(),
         "other": set(),
     }
 
     # Step 1: Existing classification logic (predefined sets)
     unclassified_cols = []
+
+    from finance_ml.core.schema import list_date_cols, list_categorical_cols
+
+    date_cols = set(list_date_cols())
+    categorical_cols = set(list_categorical_cols())
+    id_cols = {"ticker", "isin", "name", "description"}
 
     for col in df_columns:
         col_lower = col.lower().strip()
@@ -337,6 +348,12 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
             result["percentage"].add(col)
         elif col_lower in COUNT_COLUMNS:
             result["count"].add(col)
+        elif col_lower in id_cols:
+            result["id"].add(col)
+        elif col_lower in date_cols:
+            result["date"].add(col)
+        elif col_lower in categorical_cols:
+            result["categorical"].add(col)
         else:
             # Check for log-transformed columns (e.g., log_market_cap)
             if col_lower.startswith("log_"):
@@ -364,6 +381,12 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
                 result["count"].add(col)
             elif category == "PRICE":
                 result["price"].add(col)
+            elif category == "DATE":
+                result["date"].add(col)
+            elif category == "ID":
+                result["id"].add(col)
+            elif category == "CATEGORICAL":
+                result["categorical"].add(col)
             else:
                 still_unclassified.append(col)
 
@@ -382,9 +405,12 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
                     result["count"].add(col)
                 elif category == "PRICE":
                     result["price"].add(col)
+                elif category == "DATE":
+                    result["date"].add(col)
+                elif category == "ID":
+                    result["id"].add(col)
                 elif category == "CATEGORICAL":
-                    # Categorical columns go to 'other' for now
-                    result["other"].add(col)
+                    result["categorical"].add(col)
                 else:
                     result["other"].add(col)
 
@@ -395,20 +421,27 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
         f"ratio={len(result['ratio'])}, "
         f"percentage={len(result['percentage'])}, "
         f"count={len(result['count'])}, "
+        f"date={len(result['date'])}, "
+        f"id={len(result['id'])}, "
+        f"categorical={len(result['categorical'])}, "
         f"other={len(result['other'])}"
     )
 
     return result
 
 
-def get_winsorizable_columns(df_columns: List[str]) -> List[str]:
+def get_winsorizable_columns(
+    df_columns: List[str] | pd.DataFrame,
+    exclude_ratios: bool = True,
+    exclude_percentages: bool = True,
+) -> List[str]:
     """
     Return columns safe for winsorization.
 
     Excludes:
     - Price columns (must preserve original units)
-    - Ratio columns (already normalized)
-    - Percentage columns (already bounded)
+    - Ratio columns (already normalized) if exclude_ratios is True
+    - Percentage columns (already bounded) if exclude_percentages is True
     - Count columns (discrete)
 
     Includes:
@@ -416,29 +449,41 @@ def get_winsorizable_columns(df_columns: List[str]) -> List[str]:
     - Other numeric features
 
     Args:
-        df_columns: List of column names from DataFrame
+        df_columns: List of column names from DataFrame or DataFrame itself
+        exclude_ratios: Whether to exclude ratio columns
+        exclude_percentages: Whether to exclude percentage columns
 
     Returns:
         List of column names safe for winsorization
     """
+    if isinstance(df_columns, pd.DataFrame):
+        df_columns = df_columns.columns.tolist()
+
     classification = classify_columns(df_columns)
 
     # Winsorize market value and other numeric columns
-    # Exclude price, ratio, percentage, and count columns
-    winsorizable = list(classification["market_value"] | classification["other"])
+    winsorizable_set = classification["market_value"] | classification["other"]
+
+    # Add ratios/percentages if not excluded
+    if not exclude_ratios:
+        winsorizable_set |= classification["ratio"]
+    if not exclude_percentages:
+        winsorizable_set |= classification["percentage"]
+
+    winsorizable = list(winsorizable_set)
 
     logger.info(
         f"Identified {len(winsorizable)} winsorizable columns "
         f"(excluded {len(classification['price'])} price, "
-        f"{len(classification['ratio'])} ratio, "
-        f"{len(classification['percentage'])} percentage, "
+        f"{len(classification['ratio']) if exclude_ratios else 0} ratio, "
+        f"{len(classification['percentage']) if exclude_percentages else 0} percentage, "
         f"{len(classification['count'])} count columns)"
     )
 
     return winsorizable
 
 
-def get_log_transform_columns(df_columns: List[str]) -> List[str]:
+def get_log_transform_columns(df_columns: List[str] | pd.DataFrame) -> List[str]:
     """
     Return columns requiring log-transform to handle skewness.
 
@@ -453,11 +498,14 @@ def get_log_transform_columns(df_columns: List[str]) -> List[str]:
     - Columns already log-transformed (log_*)
 
     Args:
-        df_columns: List of column names from DataFrame
+        df_columns: List of column names from DataFrame or DataFrame itself
 
     Returns:
         List of column names requiring log-transform
     """
+    if isinstance(df_columns, pd.DataFrame):
+        df_columns = df_columns.columns.tolist()
+
     classification = classify_columns(df_columns)
 
     # Only transform market value columns that aren't already log-transformed
@@ -470,12 +518,15 @@ def get_log_transform_columns(df_columns: List[str]) -> List[str]:
     return log_transform
 
 
-def get_scalable_columns(df_columns: List[str]) -> List[str]:
+def get_scalable_columns(
+    df_columns: List[str] | pd.DataFrame, exclude_price: bool = True, exclude_counts: bool = True
+) -> List[str]:
     """
     Return columns safe for scaling (StandardScaler, RobustScaler, etc.).
 
     Excludes:
-    - Price columns (must preserve original units for business metric)
+    - Price columns (must preserve original units for business metric) if exclude_price is True
+    - Count columns (discrete) if exclude_counts is True
 
     Includes:
     - Market value columns (especially log-transformed versions)
@@ -483,28 +534,40 @@ def get_scalable_columns(df_columns: List[str]) -> List[str]:
     - Percentage columns
     - Other numeric features
 
-    Note: Count columns are included but may benefit from different treatment
-
     Args:
-        df_columns: List of column names from DataFrame
+        df_columns: List of column names from DataFrame or DataFrame itself
+        exclude_price: Whether to exclude price columns
+        exclude_counts: Whether to exclude count columns
 
     Returns:
         List of column names safe for scaling
     """
+    if isinstance(df_columns, pd.DataFrame):
+        df_columns = df_columns.columns.tolist()
+
     classification = classify_columns(df_columns)
 
-    # Scale everything except price columns
-    scalable = list(
+    # Base scalable set
+    scalable_set = (
         classification["market_value"]
         | classification["ratio"]
         | classification["percentage"]
-        | classification["count"]
         | classification["other"]
     )
 
+    # Add/Remove based on flags
+    if not exclude_price:
+        scalable_set |= classification["price"]
+
+    if not exclude_counts:
+        scalable_set |= classification["count"]
+
+    scalable = list(scalable_set)
+
     logger.info(
         f"Identified {len(scalable)} scalable columns "
-        f"(excluded {len(classification['price'])} price columns)"
+        f"(excluded {len(classification['price']) if exclude_price else 0} price, "
+        f"{len(classification['count']) if exclude_counts else 0} count columns)"
     )
 
     return scalable

@@ -35,7 +35,7 @@ class ETLMetrics:
     rows_output: int = 0
     columns_input: int = 0
     columns_output: int = 0
-    
+
     # Quality metrics
     quality_score: float = 1.0
     validation_score: float = 1.0
@@ -45,7 +45,7 @@ class ETLMetrics:
     errors: List[str] = field(default_factory=list)
 
     # Dtype casting metrics
-    dtype_casting_applied: bool = True
+    dtype_casting_applied: bool = False
     dtype_diagnostics: Optional[Dict[str, Any]] = None
     dtype_coercion_warnings: int = 0
     dtype_unknown_columns: int = 0
@@ -58,7 +58,7 @@ class ETLMetrics:
     date_columns_ready: bool = False
 
     # Scaling metrics
-    scaling_applied: bool = True
+    scaling_applied: bool = False
     scaler_type: Optional[str] = None
     scaled_columns_count: int = 0
     price_columns_protected: bool = True  # Always True with default settings
@@ -72,7 +72,7 @@ class ETLMetrics:
     sector_specific_metrics_added: int = 0
 
     # Semantic classification metrics (from column_semantics.py constants)
-    semantic_classification_applied: bool = True
+    semantic_classification_applied: bool = False
     price_columns_count: int = 0  # From PRICE_COLUMNS
     market_value_columns_count: int = 0  # From MARKET_VALUE_COLUMNS
     ratio_columns_count: int = 0  # From RATIO_COLUMNS
@@ -81,8 +81,8 @@ class ETLMetrics:
     log_transformed_columns: int = 0
 
     # Feature engineering metrics (Section 9.3)
-    feature_engineering_applied: bool = True
-    feature_preset_used: str = "comprehensive"
+    feature_engineering_applied: bool = False
+    feature_preset_used: str = ""
     features_added: int = 0
     feature_categories_applied: list[str] = field(default_factory=list)
 

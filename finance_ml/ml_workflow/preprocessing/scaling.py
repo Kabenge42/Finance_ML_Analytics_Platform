@@ -82,15 +82,39 @@ def scale_features(
 
     result = df.copy()
 
+    # Auto-detect numeric columns
     if columns is None:
         columns = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    # Filter to only columns that exist
+    columns = [c for c in columns if c in df.columns]
+
+    # Convert nullable integer columns to float64 before scaling
+    # This prevents "TypeError: cannot safely cast non-equivalent object to int64"
+    # when assigning float scaled values back to nullable integer columns
+    for col in columns:
+        if col in result.columns:
+            # Check if it's a numeric type (numpy or pandas)
+            col_dtype = result[col].dtype
+            if isinstance(col_dtype, pd.CategoricalDtype) or pd.api.types.is_object_dtype(
+                col_dtype
+            ):
+                # Attempt to convert object/categorical to numeric if it contains numbers
+                try:
+                    result[col] = pd.to_numeric(result[col], errors="coerce").astype("float64")
+                except (ValueError, TypeError):
+                    # Not numeric data, skip it later in the float check
+                    pass
+            elif not pd.api.types.is_float_dtype(col_dtype):
+                # Convert any other numeric type (e.g. int) to float64 for scaling
+                result[col] = result[col].astype("float64")
 
     # Apply semantic filtering using helper function for comprehensive exclusion
     if exclude_price_columns:
         # Use get_scalable_columns() for comprehensive semantic filtering
         # This automatically excludes price columns while including market_value, ratio, percentage, count, and other
         scalable = get_scalable_columns(columns)
-        scalable = [c for c in scalable if c in df.columns]
+        scalable = [c for c in scalable if c in result.columns]
         excluded_count = len(columns) - len(scalable)
         logger.info(
             f"Scaling {len(scalable)} columns, excluding {excluded_count} price columns (using semantic classification)"
@@ -115,19 +139,32 @@ def scale_features(
         logger.warning("No columns to scale after applying exclusions")
         return result
 
+    # Re-filter columns to only those that are now float
+    # This ensures the scaler receives clean float data
+    columns = [
+        c for c in columns if c in result.columns and pd.api.types.is_float_dtype(result[c].dtype)
+    ]
+
+    if not columns:
+        logger.warning("No numeric columns available for scaling after type conversion")
+        return result
+
     scaler, _ = create_scaler_pipeline(scaler_type, by_sector)
 
-    if by_sector and "sector" in df.columns:
+    if by_sector and "sector" in result.columns:
         # Sector-specific scaling
-        for sector in df["sector"].dropna().unique():
-            mask = df["sector"] == sector
-            sector_data = df.loc[mask, columns]
+        for sector in result["sector"].dropna().unique():
+            mask = result["sector"] == sector
+            sector_data = result.loc[mask, columns]
 
             if sector_data.shape[0] > 1:
-                result.loc[mask, columns] = scaler.fit_transform(sector_data)
+                # Ensure we're working with float arrays
+                scaled_values = scaler.fit_transform(sector_data.values.astype(np.float64))
+                result.loc[mask, columns] = scaled_values
     else:
         # Global scaling
-        result[columns] = scaler.fit_transform(df[columns])
+        scaled_values = scaler.fit_transform(result[columns].values.astype(np.float64))
+        result[columns] = scaled_values
 
     logger.info(f"Scaled {len(columns)} features using {scaler_type} scaler")
     return result

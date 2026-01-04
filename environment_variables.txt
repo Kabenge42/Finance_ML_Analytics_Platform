@@ -10,14 +10,14 @@
 # TensorFlow log level: 0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR
 TF_CPP_MIN_LOG_LEVEL=2
 # Python logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
-# LOG_LEVEL=INFO
+LOG_LEVEL=INFO
 
 # -----------------------------------------------------------------------------
 # Directory Paths
 # -----------------------------------------------------------------------------
-# DATA_DIR=data
-# MODEL_DIR=models
-# CACHE_DIR=.cache
+DATA_DIR=data
+MODEL_DIR=models
+CACHE_DIR=.cache
 OUTPUT_DIR=outputs
 
 # -----------------------------------------------------------------------------
@@ -27,10 +27,10 @@ OUTPUT_DIR=outputs
 # Format: postgresql+psycopg2://user:password@host:port/database
 # Example (PostgreSQL): postgresql+psycopg2://postgres:your_password@localhost:5432/postgres
 # Example (SQLite): sqlite:///equities.sqlite
-# DB_URL=postgresql+psycopg2://postgres:bItcfiTg142!@localhost:5432/postgres
+DB_URL=postgresql+psycopg2://postgres:bItcfiTg142!@localhost:5432/postgres
 # Optional: Database schema and table to read from
-#DB_SCHEMA=public
-#DB_TABLE=equities
+DB_SCHEMA=public
+DB_TABLE=equities
 
 # -----------------------------------------------------------------------------
 # External API Keys

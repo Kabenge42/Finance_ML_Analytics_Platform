@@ -228,8 +228,12 @@ def engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame:
         ).clip(0, 1)
 
         # Near 52W high/low flags
-        result["near_52w_high_flag"] = (result["pct_off_52w_high"] <= 0.05).astype(int)
-        result["near_52w_low_flag"] = (result["pct_above_52w_low"] <= 0.05).astype(int)
+        result["near_52w_high_flag"] = (
+            (result["pct_off_52w_high"] <= 0.05).fillna(False).astype(int)
+        )
+        result["near_52w_low_flag"] = (
+            (result["pct_above_52w_low"] <= 0.05).fillna(False).astype(int)
+        )
 
     # 3. Volume & Momentum Composite
     if "rel_volume" in df.columns and "price_chg_pct_1m" in df.columns:
@@ -238,8 +242,10 @@ def engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame:
     # Breakout signal: EMA crossover + near 52W high
     if "ema_crossover_20_50" in result.columns and "near_52w_high_flag" in result.columns:
         result["breakout_signal"] = (
-            (result["ema_crossover_20_50"] == 1) & (result["near_52w_high_flag"] == 1)
-        ).astype(int)
+            ((result["ema_crossover_20_50"] == 1) & (result["near_52w_high_flag"] == 1))
+            .fillna(False)
+            .astype(int)
+        )
 
     logger.info("Engineered technical analysis features (Phase 9.3 Schema 1.3)")
     return result

@@ -46,13 +46,13 @@ class TestTemporalSeasonality(unittest.TestCase):
         self.assertIn("days_to_earnings", res.columns)
         self.assertIn("earnings_report_recency", res.columns)
         self.assertIn("reporting_lag", res.columns)
-        self.assertEqual(int(res.loc[0, "days_to_earnings"]), 30)
+        self.assertEqual(int(res.loc[0, "days_to_earnings"]), 21)
         self.assertEqual(
-            int(res.loc[0, "earnings_report_recency"]), (ref - pd.Timestamp("2025-12-01")).days
+            int(res.loc[0, "earnings_report_recency"]), (ref - pd.Timestamp("2025-11-15")).days
         )
         self.assertEqual(
             int(res.loc[0, "reporting_lag"]),
-            (pd.Timestamp("2025-12-01") - pd.Timestamp("2025-11-15")).days,
+            (pd.Timestamp("2025-12-31") - pd.Timestamp("2025-11-15")).days,
         )
         # Seasonality ratios
         self.assertIn("ltm_vs_5yavg_revenue", res.columns)
@@ -62,6 +62,35 @@ class TestTemporalSeasonality(unittest.TestCase):
         )
         self.assertAlmostEqual(
             float(res.loc[0, "fq_vs_5yavg_ebitda"]), (120.0 - 100.0) / 100.0, places=6
+        )
+
+    def test_nullable_float_types(self):
+        """Verify that temporal features use nullable Float64 and handle pd.NA correctly."""
+        df = pd.DataFrame(
+            {
+                "next_earnings": [pd.Timestamp("2025-12-31"), pd.Timestamp("2025-12-31")],
+                "total_revenues_ltm": [1000.0, 1000.0],
+                "total_revenues_5yavg": [800.0, 0.0],  # Zero denominator
+                "ebitda_fq": [120.0, 0.0],
+                "ebitda_5yavgfq": [100.0, 0.0],  # Zero denominator
+                "ebitda_fq_1": [110.0, 0.0],
+            }
+        )
+        res = engineer_temporal_features(df, date_col="next_earnings")
+
+        # Check types
+        self.assertEqual(str(res["ltm_vs_5yavg_revenue"].dtype), "Float64")
+        self.assertEqual(str(res["fq_vs_5yavg_ebitda"].dtype), "Float64")
+        self.assertEqual(str(res["quarterly_volatility_score"].dtype), "Float64")
+
+        # Check NA handling
+        self.assertTrue(pd.isna(res.loc[1, "ltm_vs_5yavg_revenue"]))
+        self.assertTrue(pd.isna(res.loc[1, "fq_vs_5yavg_ebitda"]))
+        self.assertTrue(pd.isna(res.loc[1, "quarterly_volatility_score"]))
+
+        # Check non-NA value
+        self.assertAlmostEqual(
+            float(res.loc[0, "ltm_vs_5yavg_revenue"]), (1000.0 - 800.0) / 800.0, places=6
         )
 
 

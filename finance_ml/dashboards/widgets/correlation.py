@@ -164,12 +164,18 @@ def create_technical_valuation_dashboard(df: pd.DataFrame, output_dir: Path) -> 
     if "ema_20d" in df.columns and "ema_50d" in df.columns:
         df["ema_crossover_bullish"] = df["ema_20d"] > df["ema_50d"]
         with np.errstate(divide="ignore", invalid="ignore"):
-            df["ema_crossover_score"] = ((df["ema_20d"] - df["ema_50d"]) / df["ema_50d"]) * 100
+            df["ema_crossover_score"] = (
+                (df["ema_20d"].astype("Float64") - df["ema_50d"].astype("Float64"))
+                / df["ema_50d"].replace(0, pd.NA).astype("Float64")
+            ) * 100
 
     if "52w_high_adj" in df.columns and "52w_low_adj" in df.columns and "last_price" in df.columns:
         with np.errstate(divide="ignore", invalid="ignore"):
+            denom = (
+                df["52w_high_adj"].astype("Float64") - df["52w_low_adj"].astype("Float64")
+            ).replace(0, pd.NA)
             df["price_52w_position"] = (
-                (df["last_price"] - df["52w_low_adj"]) / (df["52w_high_adj"] - df["52w_low_adj"])
+                (df["last_price"].astype("Float64") - df["52w_low_adj"].astype("Float64")) / denom
             ) * 100
         df["price_52w_position"] = df["price_52w_position"].clip(0, 100)
 
@@ -380,4 +386,3 @@ def create_category_correlation_network(
     _write_html_artifact(fig, output_path)
 
     return fig
-

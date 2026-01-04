@@ -26,24 +26,24 @@ def compute_surprise(
         clip_bounds: Optional bounds to clip surprise values (default: -100% to 100%)
 
     Returns:
-        Series of surprise values
+        Series of surprise values (uses Float64 nullable type)
     """
-    actual_num = pd.to_numeric(actual, errors="coerce")
-    estimate_num = pd.to_numeric(estimate, errors="coerce")
+    actual_num = pd.to_numeric(actual, errors="coerce").astype("Float64")
+    estimate_num = pd.to_numeric(estimate, errors="coerce").astype("Float64")
 
     if mode == "pct":
         # Use absolute estimate as denominator to avoid sign issues
-        denom = estimate_num.abs().replace(0, np.nan)
+        denom = estimate_num.abs().replace(0, pd.NA)
         surprise = ((actual_num - estimate_num) / denom) * 100
     else:
         surprise = actual_num - estimate_num
 
-    # Replace inf with NaN and clip
-    surprise = surprise.replace([np.inf, -np.inf], np.nan)
+    # Replace inf with NA and clip
+    surprise = surprise.replace([np.inf, -np.inf], pd.NA)
     if clip_bounds:
         surprise = surprise.clip(lower=clip_bounds[0], upper=clip_bounds[1])
 
-    return surprise
+    return surprise.astype("Float64")
 
 
 def create_empty_state_figure(
@@ -79,12 +79,12 @@ def validate_required_columns(
 ) -> Tuple[List[str], List[str]]:
     """Validate required columns exist in DataFrame."""
     if df is None or df.empty:
-        return required_cols, []
+        return [], required_cols
 
-    missing = [c for c in required_cols if c not in df.columns]
     present = [c for c in required_cols if c in df.columns]
+    missing = [c for c in required_cols if c not in df.columns]
 
-    return missing, present
+    return present, missing
 
 
 def create_missing_columns_warning(

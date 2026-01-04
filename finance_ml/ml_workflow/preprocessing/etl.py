@@ -58,12 +58,12 @@ class ETLConfig(ModularETLConfig):
     For new code, prefer using ModularETLConfig directly from
     finance_ml.etl.config with explicit nested config objects.
     """
-    
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__()
         if kwargs:
             self._apply_legacy_overrides(kwargs)
-    
+
     def _apply_legacy_overrides(self, legacy_kwargs: Dict[str, Any]) -> None:
         """Map legacy flat arguments into nested configs for backward compatibility."""
         legacy_map = {
@@ -121,7 +121,7 @@ class ETLConfig(ModularETLConfig):
             'generate_metrics_dashboard': ('financial_metrics', 'generate_metrics_dashboard'),
             'output_subdir': ('financial_metrics', 'output_directory'),
         }
-        
+
         for legacy_key, (config_attr, attr_name) in legacy_map.items():
             if legacy_key in legacy_kwargs:
                 config_obj = getattr(self, config_attr)
@@ -154,6 +154,79 @@ class ETLConfig(ModularETLConfig):
     @validate_schema.setter
     def validate_schema(self, value: bool) -> None:
         self.validation.validate_schema = value
+
+    @property
+    def use_semantic_column_classification(self) -> bool:
+        """Whether to use semantic column classification."""
+        return self.semantic_classification.enabled
+
+    @use_semantic_column_classification.setter
+    def use_semantic_column_classification(self, value: bool) -> None:
+        self.semantic_classification.enabled = value
+
+    @property
+    def preserve_price_columns(self) -> bool:
+        """Whether to preserve price columns."""
+        return self.semantic_classification.preserve_price_columns
+
+    @preserve_price_columns.setter
+    def preserve_price_columns(self, value: bool) -> None:
+        self.semantic_classification.preserve_price_columns = value
+
+    @property
+    def log_transform_market_values(self) -> bool:
+        """Whether to log transform market values."""
+        return self.semantic_transform.log_transform_market_values
+
+    @log_transform_market_values.setter
+    def log_transform_market_values(self, value: bool) -> None:
+        self.semantic_transform.log_transform_market_values = value
+
+    @property
+    def exclude_ratios_from_winsorization(self) -> bool:
+        """Whether to exclude ratios from winsorization."""
+        return self.semantic_transform.exclude_ratios_from_winsorization
+
+    @exclude_ratios_from_winsorization.setter
+    def exclude_ratios_from_winsorization(self, value: bool) -> None:
+        self.semantic_transform.exclude_ratios_from_winsorization = value
+
+    @property
+    def exclude_percentages_from_winsorization(self) -> bool:
+        """Whether to exclude percentages from winsorization."""
+        return self.semantic_transform.exclude_percentages_from_winsorization
+
+    @exclude_percentages_from_winsorization.setter
+    def exclude_percentages_from_winsorization(self, value: bool) -> None:
+        self.semantic_transform.exclude_percentages_from_winsorization = value
+
+    @property
+    def apply_feature_engineering(self) -> bool:
+        """Whether to apply feature engineering."""
+        return self.feature_engineering.enabled
+
+    @apply_feature_engineering.setter
+    def apply_feature_engineering(self, value: bool) -> None:
+        self.feature_engineering.enabled = value
+
+    @property
+    def feature_preset(self) -> str:
+        """Feature engineering preset."""
+        return self.feature_engineering.preset
+
+    @feature_preset.setter
+    def feature_preset(self, value: str) -> None:
+        self.feature_engineering.preset = value
+
+    @property
+    def feature_categories(self) -> Optional[List[str]]:
+        """Feature engineering categories."""
+        return self.feature_engineering.categories
+
+    @feature_categories.setter
+    def feature_categories(self, value: Optional[List[str]]) -> None:
+        self.feature_engineering.categories = value
+
 
 def run_etl_pipeline(
     source: Literal['csv', 'db', 'all_stocks'],

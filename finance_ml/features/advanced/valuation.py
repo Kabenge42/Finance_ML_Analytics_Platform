@@ -157,7 +157,9 @@ def engineer_valuation_timeseries_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Valuation extreme flag (>2 std dev from mean, approximated as >200% deviation)
     if "ev_sales_vs_3y_avg" in result.columns:
-        result["valuation_extreme_flag"] = (result["ev_sales_vs_3y_avg"].abs() > 2.0).astype(int)
+        result["valuation_extreme_flag"] = (
+            (result["ev_sales_vs_3y_avg"].abs() > 2.0).fillna(False).astype(int)
+        )
 
     # 3. Forward vs Trailing Valuation
     if "ev_sales_ntm" in df.columns and "ev_sales_ltm" in df.columns:

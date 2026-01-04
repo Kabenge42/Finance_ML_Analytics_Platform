@@ -209,7 +209,9 @@ def engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame:
     # 3. Scale & Workforce Indicators
     # Large employer flag (>10,000 employees)
     if "full_time_employees_fy" in df.columns:
-        result["employee_base_scale_flag"] = (df["full_time_employees_fy"] > 10000).astype(int)
+        result["employee_base_scale_flag"] = (
+            (df["full_time_employees_fy"] > 10000).fillna(False).astype(int)
+        )
 
     # Workforce volatility (std dev of employee counts)
     if "full_time_employees_fq" in df.columns and "full_time_employees_fy" in df.columns:

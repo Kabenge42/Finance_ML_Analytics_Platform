@@ -32,18 +32,20 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     # Goodwill impairment flag (red flag if present)
     if "impairment_of_goodwill_ltm" in df.columns:
         result["has_goodwill_impairment"] = (
-            df["impairment_of_goodwill_ltm"].fillna(0) != 0
-        ).astype(int)
+            (df["impairment_of_goodwill_ltm"] != 0).fillna(False).astype(int)
+        )
         # Alias for compatibility with tests/plan wording
         result["goodwill_impairment_flag"] = result["has_goodwill_impairment"]
 
     # Asset writedown flag
     if "asset_writedown_ltm" in df.columns:
-        result["has_asset_writedown"] = (df["asset_writedown_ltm"].fillna(0) != 0).astype(int)
+        result["has_asset_writedown"] = (df["asset_writedown_ltm"] != 0).fillna(False).astype(int)
 
     # Restructuring charges flag
     if "restructuring_charges_ltm" in df.columns:
-        result["has_restructuring"] = (df["restructuring_charges_ltm"].fillna(0) != 0).astype(int)
+        result["has_restructuring"] = (
+            (df["restructuring_charges_ltm"] != 0).fillna(False).astype(int)
+        )
 
     # Aggregate exceptional items (LTM)
     if all(
@@ -55,9 +57,9 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
         ]
     ):
         exceptional_items_ltm = (
-            df["impairment_of_goodwill_ltm"].fillna(0).abs()
-            + df["asset_writedown_ltm"].fillna(0).abs()
-            + df["restructuring_charges_ltm"].fillna(0).abs()
+            df["impairment_of_goodwill_ltm"].abs()
+            + df["asset_writedown_ltm"].abs()
+            + df["restructuring_charges_ltm"].abs()
         )
         result["total_exceptional_items_ltm"] = exceptional_items_ltm
 
@@ -83,9 +85,9 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
         ]
     ):
         exceptional_items_1fy = (
-            df["impairment_of_goodwill_1fy"].fillna(0).abs()
-            + df["asset_writedown_1fy"].fillna(0).abs()
-            + df["restructuring_charges_1fy"].fillna(0).abs()
+            df["impairment_of_goodwill_1fy"].abs()
+            + df["asset_writedown_1fy"].abs()
+            + df["restructuring_charges_1fy"].abs()
         )
         if "total_exceptional_items_ltm" in result.columns:
             result["exceptional_items_trend"] = _safe_div(
@@ -132,19 +134,25 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Asset Sale Boost (Flag if gain on sale of assets > 0)
     if "gain_loss_on_sale_of_assets_ltm" in df.columns:
-        result["asset_sale_boost"] = (df["gain_loss_on_sale_of_assets_ltm"].fillna(0) > 0).astype(
-            int
+        result["asset_sale_boost"] = (
+            (df["gain_loss_on_sale_of_assets_ltm"] > 0).fillna(False).astype(int)
         )
 
     # Accounting quality score (lower is better, 0-100 scale)
     # High exceptional items, high goodwill, presence of impairments = lower quality
     quality_components = []
     if "has_goodwill_impairment" in result.columns:
-        quality_components.append(result["has_goodwill_impairment"] * 30)
+        quality_components.append(result["has_goodwill_impairment"].fillna(0) * 30)
+    if "has_restructuring" in result.columns:
+        quality_components.append(result["has_restructuring"].fillna(0) * 15)
     if "exceptional_items_to_ni_pct" in result.columns:
-        quality_components.append((result["exceptional_items_to_ni_pct"] > 10).astype(int) * 20)
+        quality_components.append(
+            (result["exceptional_items_to_ni_pct"] > 10).fillna(False).astype(int) * 20
+        )
     if "goodwill_to_assets_pct" in result.columns:
-        quality_components.append((result["goodwill_to_assets_pct"] > 20).astype(int) * 20)
+        quality_components.append(
+            (result["goodwill_to_assets_pct"] > 20).fillna(False).astype(int) * 20
+        )
 
     if quality_components:
         total_penalties = sum(quality_components)
@@ -276,59 +284,65 @@ def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
 
     # F1: Positive ROA
     if "roa" in df.columns:
-        f_score_components.append((df["roa"].fillna(0) > 0).astype(int))
+        f_score_components.append((df["roa"].fillna(0) > 0).fillna(False).astype(int))
 
     # F2: Positive Operating Cash Flow
     if "cfo_ltm" in df.columns:
-        f_score_components.append((df["cfo_ltm"].fillna(0) > 0).astype(int))
+        f_score_components.append((df["cfo_ltm"] > 0).fillna(False).astype(int))
 
     # F3: Change in ROA (positive)
     if "roa" in df.columns and "roa_previous_year" in df.columns:
         delta_roa = df["roa"].fillna(0) - df["roa_previous_year"].fillna(0)
-        f_score_components.append((delta_roa > 0).astype(int))
+        f_score_components.append((delta_roa > 0).fillna(False).astype(int))
 
     # F4: Quality of Earnings (CFO > Net Income)
     if "cfo_ltm" in df.columns and "net_income" in df.columns:
-        f_score_components.append(
-            (df["cfo_ltm"].fillna(0) > df["net_income"].fillna(0)).astype(int)
-        )
+        f_score_components.append((df["cfo_ltm"] > df["net_income"]).fillna(False).astype(int))
 
     # F5: Decrease in Leverage (Long-term debt ratio)
     if "debt_to_equity" in df.columns:
         if "debt_to_equity_previous_year" in df.columns:
             delta_lev = df["debt_to_equity"].fillna(0) - df["debt_to_equity_previous_year"].fillna(0)
-            f_score_components.append((delta_lev < 0).astype(int))
+            f_score_components.append((delta_lev < 0).fillna(False).astype(int))
         else:
-            f_score_components.append((df["debt_to_equity"].fillna(0) < 1.0).astype(int))
+            f_score_components.append(
+                (df["debt_to_equity"].fillna(0) < 1.0).fillna(False).astype(int)
+            )
 
     # F6: Increase in Liquidity (Current Ratio)
     if "current_ratio" in df.columns:
         if "current_ratio_previous_year" in df.columns:
             delta_liq = df["current_ratio"].fillna(0) - df["current_ratio_previous_year"].fillna(0)
-            f_score_components.append((delta_liq > 0).astype(int))
+            f_score_components.append((delta_liq > 0).fillna(False).astype(int))
         else:
-            f_score_components.append((df["current_ratio"].fillna(0) > 1.5).astype(int))
+            f_score_components.append(
+                (df["current_ratio"].fillna(0) > 1.5).fillna(False).astype(int)
+            )
 
     # F7: No new equity issuance (shares outstanding decreased or stable)
     if "shares_outstanding" in df.columns and "shares_outstanding_previous_year" in df.columns:
-        delta_shares = df["shares_outstanding"].fillna(0) - df["shares_outstanding_previous_year"].fillna(0)
-        f_score_components.append((delta_shares <= 0).astype(int))
+        delta_shares = df["shares_outstanding"] - df["shares_outstanding_previous_year"]
+        f_score_components.append((delta_shares <= 0).fillna(False).astype(int))
 
     # F8: Increase in Gross Margin
     if "gross_margin_pct" in df.columns:
         if "gross_margin_pct_previous_year" in df.columns:
             delta_margin = df["gross_margin_pct"].fillna(0) - df["gross_margin_pct_previous_year"].fillna(0)
-            f_score_components.append((delta_margin > 0).astype(int))
+            f_score_components.append((delta_margin > 0).fillna(False).astype(int))
         else:
-            f_score_components.append((df["gross_margin_pct"].fillna(0) > 30).astype(int))
+            f_score_components.append(
+                (df["gross_margin_pct"].fillna(0) > 30).fillna(False).astype(int)
+            )
 
     # F9: Increase in Asset Turnover
     if "asset_turnover" in df.columns:
         if "asset_turnover_previous_year" in df.columns:
             delta_turn = df["asset_turnover"].fillna(0) - df["asset_turnover_previous_year"].fillna(0)
-            f_score_components.append((delta_turn > 0).astype(int))
+            f_score_components.append((delta_turn > 0).fillna(False).astype(int))
         else:
-            f_score_components.append((df["asset_turnover"].fillna(0) > 0.5).astype(int))
+            f_score_components.append(
+                (df["asset_turnover"].fillna(0) > 0.5).fillna(False).astype(int)
+            )
 
     if f_score_components:
         result["piotroski_f_score"] = pd.concat(f_score_components, axis=1).sum(axis=1)

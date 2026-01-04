@@ -1,7 +1,7 @@
 # Finance ML Analytics Platform � Code Guidelines
 
-**Version:** 1.22  
-**Last Updated:** 2026-01-02
+**Version:** 1.23  
+**Last Updated:** 2026-01-03
 **Package Version:** 0.9.6
 **Model Version:** v9_10
 
@@ -14,6 +14,21 @@ workflow (Phase 9.1-9.8) and 7-phase Portfolio Optimization workflow.
 - **[ML Workflow Guidelines](ml_workflow_guidelines.md)**: Comprehensive guidelines for the 8-phase ML workflow with
   acceptance criteria, success metrics, and validation checkpoints for each phase. Includes critical issues analysis
   and recommended fixes.
+
+**Recent Updates (v1.23):**
+
+- **SQL-Based Zero-Fill Solution** (2026-01-03)
+    - **Implementation**: Shifted NULL-to-zero conversion from Python to the SQL data import layer.
+    - **Semantic Role Logic**: Applied `COALESCE(column, 0)` during import for columns with specific semantic roles:
+        - `financial_statement`: Missing P&L items = $0 activity.
+        - `balance_sheet`: Missing items = $0 value.
+        - `cash_flow`: Missing cash flows = $0 movement.
+        - `count`: Missing counts = 0 entities.
+        - `non_recurring`: Non-recurring exceptional items = 0 activity.
+    - **Schema Sync**: Updated `create_equities_schema.sql` with `DEFAULT 0` and `schema.py` with non-nullable dtypes (
+      `float`, `int`) for these roles.
+    - **Optimization**: Removed redundant `.fillna(0)` calls in `quality.py` and other feature engineering modules,
+      simplifying downstream code.
 
 **Recent Updates (v1.22):**
 

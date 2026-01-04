@@ -15,16 +15,16 @@ def _safe_div(numer: pd.Series | float | int, denom: pd.Series) -> pd.Series:
     if isinstance(numer, (float, int)):
         numer = pd.Series(numer, index=denom.index)
 
-    result = numer.astype(float) / denom.astype(float).replace(0, np.nan)
-    result = result.replace([np.inf, -np.inf], np.nan)
-    return result
+    result = numer.astype("Float64") / denom.astype("Float64").replace(0, pd.NA)
+    result = result.replace([np.inf, -np.inf], pd.NA)
+    return result.astype("Float64")
 
 def _ensure_float_column(df: pd.DataFrame, col_name: str) -> pd.DataFrame:
-    """Ensure a column exists and is float64 dtype to prevent TypeError on masked assignment."""
+    """Ensure a column exists and is Float64 dtype to prevent TypeError on masked assignment."""
     if col_name not in df.columns:
-        df[col_name] = pd.Series(np.nan, index=df.index, dtype="float64")
+        df[col_name] = pd.Series(pd.NA, index=df.index, dtype="Float64")
     else:
-        df[col_name] = pd.to_numeric(df[col_name], errors="coerce")
+        df[col_name] = pd.to_numeric(df[col_name], errors="coerce").astype("Float64")
     return df
 
 def engineer_nonlinear_transforms(
