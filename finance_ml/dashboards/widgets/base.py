@@ -46,12 +46,19 @@ def resolve_reference_date(
                 if ref_series.notna().any():
                     return ref_series.dropna().max().normalize()
 
-    return DEFAULT_REFERENCE_DATE
+    return pd.Timestamp.now().normalize()
+
 
 def add_formatted_date_columns(df: pd.DataFrame, date_columns: List[str]) -> List[str]:
     """Add `*_formatted` companions using the canonical date display format."""
+    cols_to_process = list(date_columns)
+    # Ensure fy_end_date and next_fy_end_date are processed if they exist
+    for extra_col in ["fy_end_date", "next_fy_end_date"]:
+        if extra_col in df.columns and extra_col not in cols_to_process:
+            cols_to_process.append(extra_col)
+
     formatted_cols: List[str] = []
-    for col in date_columns:
+    for col in cols_to_process:
         if col not in df.columns:
             continue
         series = pd.to_datetime(df[col], errors="coerce")

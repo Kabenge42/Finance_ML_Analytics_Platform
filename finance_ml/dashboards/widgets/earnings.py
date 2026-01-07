@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -26,11 +26,22 @@ from .base import (
 
 logger = logging.getLogger(__name__)
 
-# Market cap columns in order of preference (role="market_value" in COLUMN_SCHEMA)
-_MARKET_CAP_COLUMNS = ["market_cap", "market_cap_usd", "market_cap_country_r"]
+# =============================================================================
+# Market Cap Configuration
+# =============================================================================
+# Columns with role="market_value" in COLUMN_SCHEMA, ordered by preference
+_MARKET_CAP_COLUMNS: List[str] = [
+    "market_cap",
+    "market_cap_usd",
+    "market_cap_country_r",
+]
 
-# Required column pairs for earnings surprise calculations
-_EARNINGS_SURPRISE_PAIRS = {
+
+# =============================================================================
+# Earnings Surprise Configuration
+# =============================================================================
+# Column pairs: (actual_column, estimate_column)
+_EARNINGS_SURPRISE_PAIRS: Dict[str, tuple[str, str]] = {
     "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
     "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
     "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
@@ -38,32 +49,41 @@ _EARNINGS_SURPRISE_PAIRS = {
     "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
 }
 
-# Mapping of short category names to PHASE93_FEATURE_CATEGORIES keys
-_CATEGORY_SHORT_NAMES = {
-    "profitability": "Profitability",
-    "valuation": "Valuation Ratios",
-    "growth": "Growth Metrics",
-    "momentum": "Momentum & Technical",
-    "quality_risk": "Quality & Risk",
-    "cash_flow": "Cash Flow",
-    "capital_allocation": "Capital Allocation",
-    "analyst_sentiment": "Analyst Sentiment",
-    "market_sentiment": "Market Sentiment",
-    "leverage_liquidity": "Leverage & Liquidity",
-    "temporal": "Temporal Patterns",
-    "composite": "Composite Scores",
-    "growth_metrics": "Growth Metrics",
-    "efficiency": "Efficiency Ratios",
-    "productivity": "Employee Productivity",
-    "balance_sheet": "Balance Sheet Dynamics",
-    "forecasts": "Revenue Forecasting",
-    "earnings_quality": "Earnings Quality",
-    "dividends": "Dividend Reliability",
-}
 
-# Supplemental metrics by category for get_category_metrics
-_SUPPLEMENTAL_METRICS = {
-    "earnings": [
+# =============================================================================
+# Category Metrics Resolution
+# =============================================================================
+class CategoryMetricsResolver:
+    """Resolves category names to metrics from PHASE93_FEATURE_CATEGORIES.
+
+    Handles short name aliases and supplemental domain-specific metrics.
+    """
+
+    # Short name aliases mapping to PHASE93_FEATURE_CATEGORIES keys
+    _SHORT_NAME_ALIASES: Dict[str, str] = {
+        "profitability": "Profitability",
+        "valuation": "Valuation Ratios",
+        "growth": "Growth Metrics",
+        "momentum": "Momentum & Technical",
+        "quality_risk": "Quality & Risk",
+        "cash_flow": "Cash Flow",
+        "capital_allocation": "Capital Allocation",
+        "analyst_sentiment": "Analyst Sentiment",
+        "market_sentiment": "Market Sentiment",
+        "leverage_liquidity": "Leverage & Liquidity",
+        "temporal": "Temporal Patterns",
+        "composite": "Composite Scores",
+        "growth_metrics": "Growth Metrics",
+        "efficiency": "Efficiency Ratios",
+        "productivity": "Employee Productivity",
+        "balance_sheet": "Balance Sheet Dynamics",
+        "forecasts": "Revenue Forecasting",
+        "earnings_quality": "Earnings Quality",
+        "dividends": "Dividend Reliability",
+    }
+
+    # Supplemental metrics by domain
+    _SUPPLEMENTAL_EARNINGS: List[str] = [
         "net_income_adj_1fy",
         "ebitda_adj_fy",
         "ebitda_adj_1fy",
@@ -75,8 +95,9 @@ _SUPPLEMENTAL_METRICS = {
         "eps_adj_1fy",
         "eps_adj_fy",
         "eps_adj_ltm",
-    ],
-    "dividends": [
+    ]
+
+    _SUPPLEMENTAL_DIVIDENDS: List[str] = [
         "dividend_record_announce_date",
         "dividend_record_ex_date",
         "dividend_record_payable_date",
@@ -92,8 +113,9 @@ _SUPPLEMENTAL_METRICS = {
         "common_dividends_paid_fy",
         "dividends_paid",
         "dividends_paid_ltm",
-    ],
-    "earnings_quality": [
+    ]
+
+    _SUPPLEMENTAL_EARNINGS_QUALITY: List[str] = [
         "eps_surprise_pct",
         "earnings_beat_indicator",
         "eps_surprise_magnitude",
@@ -114,15 +136,94 @@ _SUPPLEMENTAL_METRICS = {
         "earnings_quality_warning_flag",
         "earnings_quality_score",
         "exceptional_items_impact_ratio",
-    ],
-}
+    ]
+
+    # Categories that receive earnings supplemental metrics
+    _EARNINGS_CATEGORIES: Set[str] = {"Profitability", "Growth Metrics"}
+
+    # Categories for dividend supplemental metrics (first match wins)
+    _DIVIDEND_CATEGORIES: List[str] = ["Dividend Reliability", "Capital Allocation"]
+
+    @classmethod
+    def resolve_name(cls, category: str) -> str:
+        """Resolve short category name to full PHASE93_FEATURE_CATEGORIES key."""
+        return cls._SHORT_NAME_ALIASES.get(category.lower(), category)
+
+    @classmethod
+    def get_metrics(
+        cls,
+        categories: List[str],
+        include_supplemental: bool = True,
+    ) -> Dict[str, List[str]]:
+        """Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
+
+        **ETL Pipeline Note:** Some metrics may have companion `*_applicable` flags
+        emitted by the ETL pipeline (Stage 8g conditional metrics handling).
+
+        Args:
+            categories: List of category names or short aliases.
+            include_supplemental: Whether to include domain-specific metrics.
+
+        Returns:
+            Dict mapping category name to list of metric column names.
+        """
+        result: Dict[str, List[str]] = {}
+
+        for cat in categories:
+            full_cat = cls.resolve_name(cat)
+            metrics = PHASE93_FEATURE_CATEGORIES.get(full_cat, []).copy()
+            result[full_cat] = metrics
+
+        if include_supplemental:
+            cls._add_supplemental_metrics(result)
+
+        return result
+
+    @classmethod
+    def _add_supplemental_metrics(cls, result: Dict[str, List[str]]) -> None:
+        """Add supplemental domain-specific metrics to category results in-place."""
+        result_keys = set(result.keys())
+
+        # Add earnings metrics to applicable categories
+        for category in cls._EARNINGS_CATEGORIES & result_keys:
+            result[category].extend(cls._SUPPLEMENTAL_EARNINGS)
+
+        # Add dividend metrics to first matching category
+        for category in cls._DIVIDEND_CATEGORIES:
+            if category in result_keys:
+                result[category].extend(cls._SUPPLEMENTAL_DIVIDENDS)
+                break
+
+        # Add earnings quality metrics
+        if "Earnings Quality" in result_keys:
+            result["Earnings Quality"].extend(cls._SUPPLEMENTAL_EARNINGS_QUALITY)
 
 
+# Public API functions (maintain backward compatibility)
+def _resolve_category_name(category: str) -> str:
+    """Resolve short category name to full PHASE93_FEATURE_CATEGORIES key."""
+    return CategoryMetricsResolver.resolve_name(category)
+
+
+def get_category_metrics(
+    categories: List[str],
+    include_supplemental: bool = True,
+) -> Dict[str, List[str]]:
+    """Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
+
+    See CategoryMetricsResolver.get_metrics for full documentation.
+    """
+    return CategoryMetricsResolver.get_metrics(categories, include_supplemental)
+
+
+# =============================================================================
+# Market Cap and Validation Utilities
+# =============================================================================
 def _get_market_cap_column(df: pd.DataFrame) -> Optional[str]:
     """Find the best available market cap column using schema metadata.
 
     Prefers columns in order of liquidity/standardization.
-    All these columns have role="market_value" in COLUMN_SCHEMA.
+    All columns have role="market_value" in COLUMN_SCHEMA.
     """
     for col in _MARKET_CAP_COLUMNS:
         if col in df.columns:
@@ -134,67 +235,14 @@ def _validate_surprise_columns(df: pd.DataFrame) -> Dict[str, bool]:
     """Validate availability of earnings surprise columns against schema.
 
     Checks for actual/estimate column pairs needed for surprise calculations.
-    All columns referenced are defined in COLUMN_SCHEMA with appropriate roles.
 
     Returns:
-        Dict mapping metric name to boolean indicating if both columns are available.
+        Dict mapping metric name to boolean indicating pair availability.
     """
     return {
         metric: (actual in df.columns and estimate in df.columns)
         for metric, (actual, estimate) in _EARNINGS_SURPRISE_PAIRS.items()
     }
-
-
-def _resolve_category_name(category: str) -> str:
-    """Resolve short category name to full PHASE93_FEATURE_CATEGORIES key."""
-    return _CATEGORY_SHORT_NAMES.get(category.lower(), category)
-
-
-def _add_supplemental_metrics(result: Dict[str, List[str]]) -> None:
-    """Add supplemental domain-specific metrics to category results in-place."""
-    # Earnings-related supplemental metrics
-    earnings_categories = {"Profitability", "Growth Metrics"}
-    for category in earnings_categories & result.keys():
-        result[category].extend(_SUPPLEMENTAL_METRICS["earnings"])
-
-    # Dividend-related supplemental metrics
-    dividend_categories = ["Dividend Reliability", "Capital Allocation"]
-    dividend_category_key = next((k for k in dividend_categories if k in result), None)
-    if dividend_category_key:
-        result[dividend_category_key].extend(_SUPPLEMENTAL_METRICS["dividends"])
-
-    # Earnings Quality supplemental metrics
-    if "Earnings Quality" in result:
-        result["Earnings Quality"].extend(_SUPPLEMENTAL_METRICS["earnings_quality"])
-
-
-def get_category_metrics(
-    categories: List[str],
-    include_supplemental: bool = True,
-) -> Dict[str, List[str]]:
-    """Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
-
-    **ETL Pipeline Note:** Some metrics may have companion `*_applicable` flags
-    emitted by the ETL pipeline (Stage 8g conditional metrics handling). These
-    flags indicate row-level applicability for the metric computations.
-
-    Args:
-        categories: List of category names from PHASE93_FEATURE_CATEGORIES or short names.
-        include_supplemental: Whether to include supplemental domain-specific metrics.
-
-    Returns:
-        Dict mapping category name to list of metric column names.
-    """
-    result = {}
-    for cat in categories:
-        full_cat = _resolve_category_name(cat)
-        metrics = PHASE93_FEATURE_CATEGORIES.get(full_cat, []).copy()
-        result[full_cat] = metrics
-
-    if include_supplemental:
-        _add_supplemental_metrics(result)
-
-    return result
 
 
 def create_earnings_calendar_dashboard(
@@ -276,10 +324,17 @@ def create_earnings_calendar_dashboard(
         "exchange",
         "sector",
         "country",
+        "trading_country",
         "industry",
         "region",
+        "income_statement_report_date",
         "next_earnings",
+        "days_to_earnings",
+        "dividend_record_announce_date",
+        "dividend_record_ex_date",
         "fy_end_date",
+        "next_fy_end_date",
+        "current_fiscal_quarter",
         "next_fiscal_quarter",
     ]
     display_cols = [
@@ -287,7 +342,10 @@ def create_earnings_calendar_dashboard(
         for c in display_cols
         if c in df.columns
         or c == "next_earnings"
+        or c == "days_to_earnings"
         or c == "fy_end_date"
+        or c == "next_fy_end_date"
+        or c == "current_fiscal_quarter"
         or c == "next_fiscal_quarter"
     ]
     if mcap_col and mcap_col not in display_cols:
@@ -432,7 +490,7 @@ def display_earnings_dashboard(
         date_columns = [
             "next_earnings",
             "income_statement_report_date",
-            "dividend_record_ex_date",
+            "fy_end_date" "next_fy_end_date",
             "fy_end",
             "_reference_date",
             "reference_date",
@@ -694,7 +752,7 @@ def create_earnings_surprise_dashboard(
         "EBITDA": "ebitda_surprise_pct",
     }
 
-    has_precomputed = use_precomputed and all(
+    has_precomputed = use_precomputed and any(
         col in df.columns for col in precomputed_surprise_cols.values()
     )
 
@@ -735,8 +793,40 @@ def create_earnings_surprise_dashboard(
         df_local = df_local.sort_values(by=mcap_col, ascending=False)
     df_local = df_local.head(int(top_n))
 
+    if df_local.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient data for surprise analysis",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
     surprise_data: List[Dict[str, float]] = []
     all_surprises: List[float] = []
+
+    # Check for Column Availability and Provide Better Error Reporting
+    col_availability = _validate_surprise_columns(df_local)
+    if not any(col_availability.values()) and not has_precomputed:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Missing required Actual/Estimate columns for surprise calculation.<br>"
+            "Ensure ETL Phase 8 and 9 enrichments are complete.",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
 
     for metric_name, (actual_col, est_col) in _EARNINGS_SURPRISE_PAIRS.items():
         # Check if precomputed surprise column is available for this metric
@@ -935,6 +1025,8 @@ def create_earnings_calendar_analytics(
         "income_statement_report_date",
         "next_earnings_date",
         "earnings_announcement_date",
+        "fy_end_date",
+        "next_fy_end_date",
     ]
     available_earnings_dates = [c for c in earnings_date_cols if c in df.columns]
 
@@ -1023,8 +1115,10 @@ def _create_earnings_timeline_plotly(
                 "exchange",
                 "region",
                 "fy_end_date",
+                "next_fy_end_date",
                 "next_earnings_when",
                 "next_fiscal_quarter",
+                "next_earnings_report",
             ]
             if c in valid_df.columns
         ],

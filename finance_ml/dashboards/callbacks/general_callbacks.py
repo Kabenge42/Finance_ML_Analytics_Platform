@@ -10,7 +10,7 @@ from finance_ml.dashboards.components import (
     validate_required_columns,
     create_missing_columns_warning,
 )
-from finance_ml.dashboards.earnings_widgets import (
+from finance_ml.dashboards.widgets import (
     get_category_metrics,
     create_category_comparison_chart,
 )

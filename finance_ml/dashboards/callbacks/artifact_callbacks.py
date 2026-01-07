@@ -8,17 +8,18 @@ from finance_ml.dashboards.components import (
 
 
 def register_artifact_callbacks(app, initial_df, generate_dashboard_artifacts):
+
     @app.callback(
         Output("artifact-dropdown", "options"),
-        Input("dashboard-tabs", "value"),
+        Input("tabs", "value"),
     )
     def _populate_artifact_dropdown(tab_value):
-        if tab_value == "tab-artifacts":
+        if tab_value == "artifacts":
             return _list_artifacts()
         return []
 
     @app.callback(
-        Output("artifact-display", "children"),
+        Output("artifact-viewer", "children"),
         Input("artifact-dropdown", "value"),
     )
     def _show_artifact(path_str):

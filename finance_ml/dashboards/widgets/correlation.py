@@ -13,7 +13,7 @@ from finance_ml.core.schema import PHASE93_FEATURE_CATEGORIES
 from .base import (
     resolve_reference_date, _write_html_artifact
 )
-from .earnings import create_earnings_calendar_dashboard
+from .earnings import create_earnings_calendar_dashboard, CategoryMetricsResolver
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +69,10 @@ def create_category_comparison_chart(
         return fig
 
     # Calculate coverage statistics per category
+    category_metrics_map = CategoryMetricsResolver.get_metrics(categories)
+
     coverage_data = []
-    for cat in categories:
-        metrics = PHASE93_FEATURE_CATEGORIES.get(cat, [])
+    for cat, metrics in category_metrics_map.items():
         available = [m for m in metrics if m in df.columns]
         non_null_counts = [
             dashboard_df[m].notna().sum() for m in available if m in dashboard_df.columns
@@ -79,7 +80,7 @@ def create_category_comparison_chart(
 
         coverage_data.append(
             {
-                "category": cat.replace("_", " ").title(),
+                "category": cat,
                 "total_metrics": len(metrics),
                 "available_metrics": len(available),
                 "coverage_pct": len(available) / len(metrics) * 100 if metrics else 0,

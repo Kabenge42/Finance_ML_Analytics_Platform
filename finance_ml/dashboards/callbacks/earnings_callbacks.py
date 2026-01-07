@@ -5,8 +5,7 @@ import logging
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
-from dash import Input, Output, State, html
-
+from dash import Input, Output, State, html, dcc
 from finance_ml.dashboards.components import (
     apply_filters,
     _coerce_list,
@@ -26,12 +25,13 @@ from finance_ml.dashboards.components.temporal_utils import (
     get_reference_date,
     compute_days_to_earnings,
 )
-from finance_ml.dashboards.earnings_widgets import (
+from finance_ml.dashboards.widgets import (
     create_earnings_surprise_dashboard,
     create_analyst_recommendation_heatmap,
     create_market_movers_dashboard,
     create_price_target_analytics,
     create_earnings_calendar_dashboard,
+    create_earnings_metrics_chart,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,6 +94,10 @@ def register_earnings_callbacks(app, initial_df):
         Input("exchange-dropdown", "value"),
         Input("style-class-dropdown", "value"),
         Input("size-class-dropdown", "value"),
+        Input("fiscal-quarter-dropdown", "value"),
+        Input("fiscal-year-dropdown", "value"),
+        Input("earnings-status-dropdown", "value"),
+        Input("earnings-report-dropdown", "value"),
     )
     def _update_earnings_figs(
         data_json,
@@ -106,6 +110,10 @@ def register_earnings_callbacks(app, initial_df):
         exchanges,
         style_classes,
         size_classes,
+        fiscal_quarters,
+        fiscal_years,
+        earnings_statuses,
+        earnings_reports,
     ):
         try:
             df = pd.read_json(data_json, orient="split") if data_json else initial_df
@@ -126,6 +134,10 @@ def register_earnings_callbacks(app, initial_df):
             exchanges=_coerce_list(exchanges),
             style_classes=_coerce_list(style_classes),
             size_classes=_coerce_list(size_classes),
+            fiscal_quarters=_coerce_list(fiscal_quarters),
+            fiscal_years=_coerce_list(fiscal_years),
+            earnings_statuses=_coerce_list(earnings_statuses),
+            earnings_reports=_coerce_list(earnings_reports),
         )
 
         if df.empty:
@@ -209,6 +221,10 @@ def register_earnings_callbacks(app, initial_df):
         Input("exchange-dropdown", "value"),
         Input("style-class-dropdown", "value"),
         Input("size-class-dropdown", "value"),
+        Input("fiscal-quarter-dropdown", "value"),
+        Input("fiscal-year-dropdown", "value"),
+        Input("earnings-status-dropdown", "value"),
+        Input("earnings-report-dropdown", "value"),
         prevent_initial_call=False,
     )
     def _update_earnings_calendar(
@@ -225,6 +241,10 @@ def register_earnings_callbacks(app, initial_df):
         exchanges,
         style_classes,
         size_classes,
+        fiscal_quarters,
+        fiscal_years,
+        earnings_statuses,
+        earnings_reports,
     ):
         """Update the interactive earnings calendar DataTable.
 
@@ -252,6 +272,10 @@ def register_earnings_callbacks(app, initial_df):
                 exchanges=_coerce_list(exchanges),
                 style_classes=_coerce_list(style_classes),
                 size_classes=_coerce_list(size_classes),
+                fiscal_quarters=_coerce_list(fiscal_quarters),
+                fiscal_years=_coerce_list(fiscal_years),
+                earnings_statuses=_coerce_list(earnings_statuses),
+                earnings_reports=_coerce_list(earnings_reports),
             )
 
         if df.empty:
@@ -278,7 +302,14 @@ def register_earnings_callbacks(app, initial_df):
                 f"{reference_date.strftime('%Y-%m-%d')}",
             )
 
-        # Sort by days_to_earnings (closest first)
+        # Sort by days_to_earnings (closest first), use earnings_report_recency if available
+        sort_col = "days_to_earnings"
+        if "earnings_report_recency" in filtered_df.columns:
+            # We want both upcoming (small positive days_to_earnings) and
+            # recent (small positive earnings_report_recency)
+            # Actually abs(days_to_earnings) is a good proxy for both
+            pass
+
         filtered_df = filtered_df.sort_values("days_to_earnings", key=abs)
 
         # Use create_earnings_calendar_dashboard for consistent column selection
@@ -369,3 +400,44 @@ def register_earnings_callbacks(app, initial_df):
             status += " | Global filters applied"
 
         return columns, data, status
+
+    @app.callback(
+        Output("ticker-drilldown-container", "style"),
+        Output("ticker-drilldown-content", "children"),
+        Input("earnings-calendar-table", "active_cell"),
+        Input("earnings-calendar-table", "data"),
+        State("equities-data-store", "data"),
+    )
+    def _update_ticker_drilldown(active_cell, table_data, data_json):
+        """Update the drilldown view when a ticker is selected in the calendar."""
+        if not active_cell or not table_data:
+            return {"display": "none"}, None
+
+        # Get the ticker from the active row
+        row_idx = active_cell.get("row", 0)
+        if row_idx >= len(table_data):
+            return {"display": "none"}, None
+
+        ticker = table_data[row_idx].get("ticker")
+        if not ticker:
+            return {"display": "none"}, None
+
+        # Get full data for this ticker
+        try:
+            df = pd.read_json(data_json, orient="split") if data_json else initial_df
+        except Exception:
+            df = initial_df
+
+        ticker_df = df[df["ticker"] == ticker].copy()
+        if ticker_df.empty:
+            return {"display": "none"}, None
+
+        # Create detailed metrics chart for this company
+        # We'll use the existing create_earnings_metrics_chart but focused on one company
+        # To make it look good for one company, we might need a specific view or just use it as is
+        fig = create_earnings_metrics_chart(
+            ticker_df, metric_category="all", top_n=1  # Show everything for drilldown
+        )
+        fig.update_layout(height=600, title=f"<b>{ticker} Analytics Detail</b>")
+
+        return {"display": "block", "marginTop": "20px"}, dcc.Graph(figure=fig)

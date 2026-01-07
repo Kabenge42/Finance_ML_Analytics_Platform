@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-01-04T10:56:09.595303",
-  "reference_date": "2026-01-04 00:00:00",
-  "total_stocks_monitored": 5780,
+  "timestamp": "2026-01-05T16:02:02.229495",
+  "reference_date": "2026-01-05 00:00:00",
+  "total_stocks_monitored": 5781,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
@@ -42,19 +42,19 @@
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 29,
-      "description": "29 stocks with elevated volatility (> q0.80) within 14 days of earnings",
+      "count": 31,
+      "description": "31 stocks with elevated volatility (> q0.80) within 14 days of earnings",
       "tickers": [
+        "KEFI",
         "BMNR",
         "APLD",
-        "GNFT",
         "FDEV",
         "UNF",
         "INSP",
         "NEOG",
         "EMEIS",
-        "GFM",
-        "OVH"
+        "OVH",
+        "OXB"
       ]
     }
   ],

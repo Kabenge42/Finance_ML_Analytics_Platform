@@ -65,3 +65,38 @@ TABLE_STYLE_TABLE = {
     "maxHeight": "500px",
     "overflowY": "auto",
 }
+
+# =============================================================================
+# Dashboard Configuration Constants
+# =============================================================================
+
+# DataTable pagination defaults
+DEFAULT_PAGE_SIZE_CALENDAR = 15
+DEFAULT_PAGE_SIZE_ALERTS = 20
+DEFAULT_PAGE_SIZE_EXPLORER = 20
+
+# Earnings calendar defaults
+DEFAULT_EARNINGS_DAYS_WINDOW = 10
+MIN_EARNINGS_DAYS_WINDOW = 3
+MAX_EARNINGS_DAYS_WINDOW = 30
+EARNINGS_DAYS_MARKS = {3: "3", 7: "7", 10: "10", 14: "14", 21: "21", 30: "30"}
+
+# Top N defaults
+DEFAULT_TOP_N = 50
+MIN_TOP_N = 10
+MAX_TOP_N = 200
+TOP_N_STEP = 10
+
+# Alert thresholds (default values for UI inputs)
+DEFAULT_EPS_MISS_THRESHOLD = 20.0
+DEFAULT_DOWNGRADE_THRESHOLD = 5.0
+DEFAULT_MIN_DOWNGRADE_PERIODS = 2
+DEFAULT_TARGET_SPREAD_THRESHOLD = 30.0
+DEFAULT_PRE_EARNINGS_WINDOW_DAYS = 7
+DEFAULT_VOLATILITY_QUANTILE = 0.75
+DEFAULT_MAX_TICKERS_PER_ALERT = 10
+
+# Explorer defaults
+DEFAULT_EXPLORER_ROW_LIMIT = 200
+EXPLORER_ROW_LIMIT_STEP = 50
+MIN_EXPLORER_ROW_LIMIT = 10

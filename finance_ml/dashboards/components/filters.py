@@ -24,6 +24,10 @@ def apply_filters(
     exchanges: Optional[Iterable[str]] = None,
     style_classes: Optional[Iterable[str]] = None,
     size_classes: Optional[Iterable[str]] = None,
+    fiscal_quarters: Optional[Iterable[str]] = None,
+    fiscal_years: Optional[Iterable[str]] = None,
+    earnings_statuses: Optional[Iterable[str]] = None,
+    earnings_reports: Optional[Iterable[str]] = None,
 ) -> pd.DataFrame:
     """Filter helper with graceful missing-column behavior."""
 
@@ -40,6 +44,10 @@ def apply_filters(
         ("exchange", exchanges),
         ("style_class", style_classes),
         ("size_class", size_classes),
+        ("fiscal_quarter", fiscal_quarters),
+        ("fiscal_year", fiscal_years),
+        ("next_earnings_status", earnings_statuses),
+        ("next_earnings_report", earnings_reports),
     ]
 
     for col, values in filters:

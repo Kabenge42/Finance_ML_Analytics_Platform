@@ -10,7 +10,23 @@ from finance_ml.ml_workflow.features.selection import select_features_auto
 logger = logging.getLogger(__name__)
 
 # Default identifier columns to preserve (ml_workflow_guidelines.md Section 8.2)
-DEFAULT_IDENTIFIER_COLUMNS = ['ticker', 'isin', 'sector', 'region', 'country', 'industry']
+DEFAULT_IDENTIFIER_COLUMNS = [
+    "ticker",
+    "name",
+    "isin",
+    "sector",
+    "region",
+    "country",
+    "trading_country",
+    "exchange",
+    "unit",
+    "industry",
+    "next_earnings",
+    "income_statement_report_date",
+    "fy_end_date",
+    "next_fy_end_date",
+    "next_fiscal_quarter",
+]
 
 
 def run_feature_selection_stage(

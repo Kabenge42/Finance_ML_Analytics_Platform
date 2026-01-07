@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-01-04T10:56:11.794440",
-  "reference_date": "2026-01-04T00:00:00",
+  "generated_at": "2026-01-05T16:02:04.611171",
+  "reference_date": "2026-01-05T00:00:00",
   "data_shape": {
-    "rows": 5780,
+    "rows": 5781,
     "columns": 655
   },
   "phase93_coverage": {

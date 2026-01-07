@@ -6,6 +6,7 @@ Run: python finance_ml/dashboards/dash_app.py
 from pathlib import Path
 import os
 from datetime import datetime
+from typing import Literal
 
 import dash
 import pandas as pd
@@ -14,6 +15,9 @@ import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, dash_table
 from flask import send_from_directory
+
+from finance_ml.dashboards.components.data_utils import load_data
+from finance_ml.dashboards.components.constants import PLOTLY_TEMPLATE
 
 try:
     from finance_ml.dashboards.artifact_registry import ARTIFACTS
@@ -651,14 +655,11 @@ app.layout = html.Div(
                                             html.Iframe(
                                                 id="efficient-frontier-iframe",
                                                 src=(
-                                                    "/assets/efficient_frontier_interactive.html"
-                                                    if (
-                                                        PROJECT_ROOT
-                                                        / "outputs"
-                                                        / "analytics"
-                                                        / "efficient_frontier_interactive.html"
-                                                    ).exists()
-                                                    else ""
+                                                    get_artifact_path(
+                                                        "analytics",
+                                                        "efficient_frontier_interactive.html",
+                                                    )
+                                                    or ""
                                                 ),
                                                 style={
                                                     "width": "100%",
@@ -694,14 +695,10 @@ app.layout = html.Div(
                                             html.Iframe(
                                                 id="risk-metrics-iframe",
                                                 src=(
-                                                    "/assets/risk_metrics_dashboard.html"
-                                                    if (
-                                                        PROJECT_ROOT
-                                                        / "outputs"
-                                                        / "analytics"
-                                                        / "risk_metrics_dashboard.html"
-                                                    ).exists()
-                                                    else ""
+                                                    get_artifact_path(
+                                                        "analytics", "risk_metrics_dashboard.html"
+                                                    )
+                                                    or ""
                                                 ),
                                                 style={
                                                     "width": "100%",
@@ -738,14 +735,11 @@ app.layout = html.Div(
                                             html.Iframe(
                                                 id="drawdown-iframe",
                                                 src=(
-                                                    "/assets/portfolio_drawdown_analysis.html"
-                                                    if (
-                                                        PROJECT_ROOT
-                                                        / "outputs"
-                                                        / "analytics"
-                                                        / "portfolio_drawdown_analysis.html"
-                                                    ).exists()
-                                                    else ""
+                                                    get_artifact_path(
+                                                        "analytics",
+                                                        "portfolio_drawdown_analysis.html",
+                                                    )
+                                                    or ""
                                                 ),
                                                 style={
                                                     "width": "100%",
@@ -823,14 +817,11 @@ app.layout = html.Div(
                                             html.Iframe(
                                                 id="multi-period-comparison-iframe",
                                                 src=(
-                                                    "/assets/portfolio_multi_period_comparison.html"
-                                                    if (
-                                                        PROJECT_ROOT
-                                                        / "outputs"
-                                                        / "analytics"
-                                                        / "portfolio_multi_period_comparison.html"
-                                                    ).exists()
-                                                    else ""
+                                                    get_artifact_path(
+                                                        "analytics",
+                                                        "portfolio_multi_period_comparison.html",
+                                                    )
+                                                    or ""
                                                 ),
                                                 style={
                                                     "width": "100%",
@@ -867,14 +858,11 @@ app.layout = html.Div(
                                             html.Iframe(
                                                 id="factor-exposure-iframe",
                                                 src=(
-                                                    "/assets/portfolio_factor_exposure_dashboard.html"
-                                                    if (
-                                                        PROJECT_ROOT
-                                                        / "outputs"
-                                                        / "analytics"
-                                                        / "portfolio_factor_exposure_dashboard.html"
-                                                    ).exists()
-                                                    else ""
+                                                    get_artifact_path(
+                                                        "analytics",
+                                                        "portfolio_factor_exposure_dashboard.html",
+                                                    )
+                                                    or ""
                                                 ),
                                                 style={
                                                     "width": "100%",
@@ -911,14 +899,11 @@ app.layout = html.Div(
                                             html.Iframe(
                                                 id="rebalance-widget-iframe",
                                                 src=(
-                                                    "/assets/portfolio_rebalance_widget.html"
-                                                    if (
-                                                        PROJECT_ROOT
-                                                        / "outputs"
-                                                        / "analytics"
-                                                        / "portfolio_rebalance_widget.html"
-                                                    ).exists()
-                                                    else ""
+                                                    get_artifact_path(
+                                                        "analytics",
+                                                        "portfolio_rebalance_widget.html",
+                                                    )
+                                                    or ""
                                                 ),
                                                 style={
                                                     "width": "100%",

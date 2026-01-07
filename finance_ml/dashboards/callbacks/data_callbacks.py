@@ -14,6 +14,7 @@ from finance_ml.dashboards.components import (
 def register_data_callbacks(
     app, data_dir, db_url, load_on_start, initial_df, load_data_csv_first
 ):
+
     @app.callback(
         Output("equities-data-store", "data"),
         Output("data-status", "children"),
@@ -25,6 +26,10 @@ def register_data_callbacks(
         Output("exchange-dropdown", "options"),
         Output("style-class-dropdown", "options"),
         Output("size-class-dropdown", "options"),
+        Output("fiscal-quarter-dropdown", "options"),
+        Output("fiscal-year-dropdown", "options"),
+        Output("earnings-status-dropdown", "options"),
+        Output("earnings-report-dropdown", "options"),
         Input("refresh-data-btn", "n_clicks"),
         prevent_initial_call=not load_on_start,
     )
@@ -50,6 +55,10 @@ def register_data_callbacks(
             _safe_options(df, "exchange"),
             _safe_options(df, "style_class"),
             _safe_options(df, "size_class"),
+            _safe_options(df, "fiscal_quarter"),
+            _safe_options(df, "fiscal_year"),
+            _safe_options(df, "next_earnings_status"),
+            _safe_options(df, "next_earnings_report"),
         )
 
     @app.callback(
@@ -65,6 +74,10 @@ def register_data_callbacks(
         Input("exchange-dropdown", "value"),
         Input("style-class-dropdown", "value"),
         Input("size-class-dropdown", "value"),
+        Input("fiscal-quarter-dropdown", "value"),
+        Input("fiscal-year-dropdown", "value"),
+        Input("earnings-status-dropdown", "value"),
+        Input("earnings-report-dropdown", "value"),
         prevent_initial_call=False,
     )
     def _update_overview(
@@ -77,6 +90,10 @@ def register_data_callbacks(
         exchanges,
         style_classes,
         size_classes,
+        fiscal_quarters,
+        fiscal_years,
+        earnings_statuses,
+        earnings_reports,
     ):
         try:
             df = pd.read_json(data_json, orient="split") if data_json else initial_df
@@ -93,6 +110,10 @@ def register_data_callbacks(
             exchanges=_coerce_list(exchanges),
             style_classes=_coerce_list(style_classes),
             size_classes=_coerce_list(size_classes),
+            fiscal_quarters=_coerce_list(fiscal_quarters),
+            fiscal_years=_coerce_list(fiscal_years),
+            earnings_statuses=_coerce_list(earnings_statuses),
+            earnings_reports=_coerce_list(earnings_reports),
         )
 
         return (

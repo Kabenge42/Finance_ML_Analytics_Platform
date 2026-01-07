@@ -7,7 +7,7 @@ from finance_ml.dashboards.components import (
 from finance_ml.dashboards.components.data_utils import (
     DEFAULT_ALERTS_PATH,
 )
-from finance_ml.dashboards.earnings_widgets import (
+from finance_ml.dashboards.widgets import (
     EarningsAlertConfig,
     generate_earnings_quality_alerts,
 )

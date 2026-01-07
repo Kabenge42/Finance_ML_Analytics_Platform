@@ -46,11 +46,13 @@ Role = Literal[
     "non_recurring",  # Non-recurring exceptional items (impairments, restructuring) - zero imputation
 ]
 
+
 class ColumnMeta(TypedDict, total=False):
     dtype: DType
     role: Role
     sql_name: Optional[str]  # Original SQL column name
     description: Optional[str]  # Column description
+
 
 # Master schema - auto-generates SQL
 # NOTE: This is a truncated version of the 555 entries.
@@ -940,6 +942,49 @@ COLUMN_SCHEMA: Dict[str, ColumnMeta] = {
         "dtype": "float",
         "role": "non_recurring",
         "sql_name": "Merger & Restructuring Charges (5YAVGFQ)",
+    },
+    # --- NEW COLUMNS: Address missing schema warnings ---
+    "r_d_expenses_ltm": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "R&D Expenses (LTM)",
+        "description": "Research and development expenses (Last Twelve Months)",
+    },
+    "merger_restructuring_charges_ltm": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Merger/Restructuring Charges (LTM)",
+        "description": "Merger and restructuring charges (Last Twelve Months) - alternate naming",
+    },
+    "merger_restructuring_charges_fq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Merger/Restructuring Charges (FQ)",
+        "description": "Merger and restructuring charges (Fiscal Quarter) - alternate naming",
+    },
+    "merger_restructuring_charges_fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Merger/Restructuring Charges (FY)",
+        "description": "Merger and restructuring charges (Fiscal Year) - alternate naming",
+    },
+    "merger_restructuring_charges_5yavgfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Merger/Restructuring Charges (5YAVGFQ)",
+        "description": "Merger and restructuring charges (5-year average FQ) - alternate naming",
+    },
+    "sga_expenses": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "SG&A Expenses",
+        "description": "Selling, general, and administrative expenses (alias)",
+    },
+    "price_target_number": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - #",
+        "description": "Number of analyst price targets (alias for price_target_num)",
     },
     "other_unusual_items_total_ltm": {
         "dtype": "float",
@@ -1918,12 +1963,14 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
     ],
 }
 
+
 def get_sql_column_name(normalized_name: str) -> str:
     """Get original SQL column name from normalized Python name."""
     meta = COLUMN_SCHEMA.get(normalized_name)
     if meta and "sql_name" in meta and meta["sql_name"]:
         return meta["sql_name"]
     return normalized_name
+
 
 def normalize_column_name(column: str) -> str:
     """Standardize column names to lowercase with underscores."""
@@ -1946,6 +1993,7 @@ def normalize_column_name(column: str) -> str:
         normalized = normalized.replace("__", "_")
     return normalized.strip("_")
 
+
 def generate_sql_schema() -> str:
     """Generate CREATE TABLE statement from COLUMN_SCHEMA."""
     lines = ["CREATE TABLE IF NOT EXISTS equities ("]
@@ -1965,10 +2013,12 @@ def generate_sql_schema() -> str:
     lines.append(");")
     return "\n".join(lines)
 
+
 def get_expected_dtype(column: str) -> str:
     """Get the expected pandas-compatible dtype string for a column."""
     meta = COLUMN_SCHEMA.get(column, {})
     return meta.get("dtype", "float")
+
 
 def list_numeric_feature_cols() -> List[str]:
     """List all numeric feature columns from COLUMN_SCHEMA."""
@@ -1992,6 +2042,7 @@ def list_numeric_feature_cols() -> List[str]:
         if meta.get("dtype") in numeric_dtypes and meta.get("role") in feature_roles
     ]
 
+
 def list_categorical_cols() -> List[str]:
     """List all categorical columns from COLUMN_SCHEMA."""
     return [
@@ -2000,6 +2051,7 @@ def list_categorical_cols() -> List[str]:
         if meta.get("dtype") == "category" or meta.get("role") == "categorical"
     ]
 
+
 def list_date_cols() -> List[str]:
     """List all date/datetime columns from COLUMN_SCHEMA."""
     return [
@@ -2007,6 +2059,7 @@ def list_date_cols() -> List[str]:
         for col, meta in COLUMN_SCHEMA.items()
         if meta.get("dtype") == "datetime64[ns]" or meta.get("role") == "date"
     ]
+
 
 def list_etl_generated_column_patterns() -> List[str]:
     """List regex patterns for columns legitimately generated during ETL."""
@@ -2020,6 +2073,7 @@ def list_etl_generated_column_patterns() -> List[str]:
         r"^fy_end_vs_isrd_days$",  # Fiscal year-end to income statement report delta
         r"^fiscal_quarter_inferred$",  # Inferred fiscal quarter label
     ]
+
 
 def list_required_schema_columns_for_etl(include_extended_financials: bool = False) -> List[str]:
     """List columns required for minimal ETL operations."""

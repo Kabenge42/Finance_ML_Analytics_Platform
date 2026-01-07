@@ -136,7 +136,9 @@ class TestEarningsWidgets(unittest.TestCase):
     def test_display_smoke(self):
         """Smoke test for display function (ensure no crash)."""
         try:
-            styler = display_earnings_dashboard(self.df)
+            # We need to ensure some data is in the 10-day window for it to return a Styler
+            # AAPL is already +2 days from base_date
+            styler = display_earnings_dashboard(self.df, reference_date=self.base_date)
             self.assertIsNotNone(styler)
         except Exception as e:
             self.fail(f"display_earnings_dashboard raised exception: {e}")

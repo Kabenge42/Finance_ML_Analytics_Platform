@@ -7,23 +7,46 @@ from .constants import FONT_FAMILY
 
 
 def _list_artifacts() -> List[Dict[str, str]]:
-    """List all available artifacts from earnings_analytics and dashboard artifacts dirs."""
+    """List all available artifacts from various outputs directories.
+
+    Scans for HTML and JSON files in standard artifact locations.
+    """
     items: List[Dict[str, str]] = []
 
-    # Include artifacts from earnings_analytics directory
-    base1 = PROJECT_ROOT / "outputs" / "eda" / "earnings_analytics"
-    if base1.exists():
-        for p in sorted(base1.glob("*")):
-            if p.suffix.lower() not in {".html", ".json"}:
-                continue
-            items.append({"label": f"[Earnings] {p.name}", "value": str(p)})
+    # Map of category label to search path
+    artifact_sources = [
+        ("Earnings", PROJECT_ROOT / "outputs" / "eda" / "earnings_analytics"),
+        ("Dashboard", ARTIFACTS_DIR),
+        ("Category", PROJECT_ROOT / "outputs" / "eda" / "dashboards" / "categories"),
+        ("Portfolio", PROJECT_ROOT / "outputs" / "portfolio"),
+        ("Analytics", PROJECT_ROOT / "outputs" / "analytics"),
+        ("Governance", PROJECT_ROOT / "outputs" / "governance"),
+        ("Safety", PROJECT_ROOT / "outputs" / "safety_rails"),
+        ("Evaluation", PROJECT_ROOT / "outputs" / "evaluation"),
+    ]
 
-    # Include artifacts from dashboard artifacts directory
-    if ARTIFACTS_DIR.exists():
-        for p in sorted(ARTIFACTS_DIR.glob("*")):
-            if p.suffix.lower() not in {".html", ".json"}:
-                continue
-            items.append({"label": f"[Dashboard] {p.name}", "value": str(p)})
+    for label, base_path in artifact_sources:
+        if base_path.exists():
+            # Recursively find all HTML and JSON files
+            for p in sorted(base_path.rglob("*")):
+                if p.suffix.lower() not in {".html", ".json"}:
+                    continue
+
+                # Create a descriptive label including subdirectories if present
+                try:
+                    rel_to_base = p.relative_to(base_path)
+                    # Convert to posix style and remove extension for display
+                    name_display = (
+                        rel_to_base.with_suffix("")
+                        .as_posix()
+                        .replace("_", " ")
+                        .replace("/", " > ")
+                        .title()
+                    )
+                except ValueError:
+                    name_display = p.stem.replace("_", " ").title()
+
+                items.append({"label": f"[{label}] {name_display}", "value": str(p)})
 
     return items
 
@@ -43,10 +66,16 @@ def _render_artifact(path_str: str) -> Any:
         )
 
     if p.suffix.lower() == ".html":
-        # For security, we should ideally serve via an iframe or sanitized component
-        # Here we just show a link or simple iframe
+        # Resolve the path relative to outputs to map to /app_assets/
+        try:
+            rel_path = p.relative_to(PROJECT_ROOT / "outputs")
+            src = f"/app_assets/{rel_path.as_posix()}"
+        except ValueError:
+            # Fallback if path is not under outputs (should not happen normally)
+            src = ""
+
         return html.Iframe(
-            src=f"/app_assets/{p.relative_to(PROJECT_ROOT / 'outputs').as_posix()}",
+            src=src,
             style={"width": "100%", "height": "800px", "border": "none"},
         )
     elif p.suffix.lower() == ".json":

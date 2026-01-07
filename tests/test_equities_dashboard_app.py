@@ -15,7 +15,7 @@ class TestEquitiesDashboardAppSmoke(unittest.TestCase):
         self.assertTrue(hasattr(app, "layout"))
 
     def test_apply_filters_graceful_missing_columns(self):
-        from finance_ml.dashboards.equities_dashboard_app import apply_filters
+        from finance_ml.dashboards.components import apply_filters
 
         df = pd.DataFrame({"ticker": ["A", "B"], "sector": ["Tech", "Banks"]})
         # Filter on a missing column should not crash and should return unmodified by that filter
@@ -24,13 +24,13 @@ class TestEquitiesDashboardAppSmoke(unittest.TestCase):
         self.assertEqual(out.iloc[0]["ticker"], "A")
 
     def test_load_alerts_payload_missing_file(self):
-        from finance_ml.dashboards.equities_dashboard_app import load_alerts_payload
+        from finance_ml.dashboards.components import load_alerts_payload
 
         payload = load_alerts_payload(path=Path("_definitely_missing_file_.json"))
         self.assertEqual(payload, {})
 
     def test_load_alerts_payload_valid_json(self):
-        from finance_ml.dashboards.equities_dashboard_app import load_alerts_payload
+        from finance_ml.dashboards.components import load_alerts_payload
 
         tmp = Path("tests") / "_tmp_alerts_payload.json"
         try:
