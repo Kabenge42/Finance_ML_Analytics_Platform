@@ -1,6 +1,7 @@
 from __future__ import annotations
 import pandas as pd
-from dash import Input, Output, State, html, callback
+from dash import Input, Output, State, html, callback, ctx
+from dash.exceptions import PreventUpdate
 from finance_ml.dashboards.components import (
     _safe_options,
     apply_filters,
@@ -31,7 +32,7 @@ def register_data_callbacks(
         Output("earnings-status-dropdown", "options"),
         Output("earnings-report-dropdown", "options"),
         Input("refresh-data-btn", "n_clicks"),
-        prevent_initial_call=not load_on_start,
+        prevent_initial_call=True,  # Only trigger on explicit button click
     )
     def _refresh_data(_n_clicks):
         df, status_summary = load_data_csv_first(
@@ -95,9 +96,17 @@ def register_data_callbacks(
         earnings_statuses,
         earnings_reports,
     ):
-        try:
-            df = pd.read_json(data_json, orient="split") if data_json else initial_df
-        except Exception:
+        # Parse data from store, with proper fallback to initial_df
+        df = pd.DataFrame()
+
+        if data_json:
+            try:
+                df = pd.read_json(data_json, orient="split")
+            except Exception:
+                pass
+
+        # Fallback to initial_df if store is empty but initial_df has data
+        if df.empty and initial_df is not None and not initial_df.empty:
             df = initial_df
 
         filtered = apply_filters(

@@ -75,23 +75,120 @@ def _write_html_artifact(fig: go.Figure, output_path: Optional[Union[str, Path]]
         fig.write_html(str(out))
         logger.info(f"Widget artifact saved to {out}")
 
-def _build_format_dict(df: pd.DataFrame, date_columns: list[str] | None = None, date_format: str = DATE_DISPLAY_FORMAT) -> dict:
-    """Build a column formatting dictionary for pandas Styler."""
-    format_dict = {}
-    if date_columns:
-        for col in date_columns:
-            if col in df.columns:
-                format_dict[col] = lambda x: x.strftime(date_format) if pd.notnull(x) else ""
-    
-    # Currency formatting for price-like columns
+
+def _build_format_dict(
+    df: pd.DataFrame,
+    date_columns: list[str] | None = None,
+    date_format: str = "%Y-%m-%d",
+) -> dict:
+    """Build schema-aware format dictionary for Pandas Styler.
+
+    Applies consistent formatting per code_guidelines.md §17.3:
+    - Dates: YYYY-MM-DD format
+    - Currency: $1,234.56
+    - Percentages: 12.34%
+    - Numbers: 2 decimal places
+    - Integers: no decimals
+
+    Args:
+        df: DataFrame to format.
+        date_columns: List of date column names.
+        date_format: strftime format for dates.
+
+    Returns:
+        Dict mapping column names to format strings or callables.
+    """
+    format_dict: dict = {}
+    date_columns = date_columns or []
+
+    # Column name patterns for classification
+    pct_patterns = (
+        "_pct",
+        "pct_",
+        "margin",
+        "yield",
+        "return",
+        "growth",
+        "surprise",
+        "roe",
+        "roa",
+        "roic",
+        "beat_",
+        "miss_",
+    )
+    currency_patterns = (
+        "price",
+        "target",
+        "market_cap",
+        "enterprise_value",
+        "revenue",
+        "ebitda",
+        "ebit",
+        "income",
+        "eps",
+        "dividend",
+        "debt",
+        "equity",
+        "assets",
+        "cash",
+        "capex",
+    )
+    ratio_patterns = (
+        "ratio",
+        "p_e",
+        "p_b",
+        "p_s",
+        "ev_",
+        "multiple",
+        "score",
+        "z_score",
+        "f_score",
+        "beta",
+    )
+    count_patterns = ("count", "num_", "days_", "streak", "analysts")
+
     for col in df.columns:
-        if any(p in col.lower() for p in ["price", "market_cap", "enterprise_value"]):
-            if "pct" not in col.lower() and "ratio" not in col.lower():
-                format_dict[col] = "${:,.2f}"
-        elif "pct" in col.lower() or "growth" in col.lower() or "margin" in col.lower():
+        col_lower = col.lower()
+
+        # Date columns
+        if col in date_columns:
+            format_dict[col] = lambda x, fmt=date_format: x.strftime(fmt) if pd.notnull(x) else "—"
+            continue
+
+        # Skip non-numeric columns
+        if not pd.api.types.is_numeric_dtype(df[col]):
+            continue
+
+        # Percentage columns: 12.34%
+        if any(p in col_lower for p in pct_patterns):
             format_dict[col] = "{:.2f}%"
-            
+            continue
+
+        # Currency/financial columns: $1,234.56 or plain with commas for large values
+        if any(p in col_lower for p in currency_patterns):
+            # Check if values are large (market cap, revenue) vs small (EPS, price)
+            max_val = df[col].abs().max() if df[col].notna().any() else 0
+            if max_val > 1_000_000:
+                format_dict[col] = "{:,.0f}"  # No decimals for large values
+            else:
+                format_dict[col] = "{:,.2f}"  # 2 decimals for prices/EPS
+            continue
+
+        # Ratio/score columns: 2 decimals
+        if any(p in col_lower for p in ratio_patterns):
+            format_dict[col] = "{:.2f}"
+            continue
+
+        # Count/integer columns: no decimals
+        if any(p in col_lower for p in count_patterns):
+            format_dict[col] = "{:,.0f}"
+            continue
+
+        # Default numeric: 2 decimals
+        format_dict[col] = "{:.2f}"
+
     return format_dict
+
 
 def _ensure_schema_dtypes(df: pd.DataFrame, date_columns: list[str] | None = None) -> pd.DataFrame:
     """Ensure dataframe columns have appropriate dtypes for visualization."""

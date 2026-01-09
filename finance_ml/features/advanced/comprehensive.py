@@ -37,6 +37,7 @@ from .temporal import engineer_temporal_features
 from .utils import engineer_nonlinear_transforms, create_feature_interactions
 from .valuation import engineer_valuation_ratios, engineer_valuation_timeseries_features
 from .dividends import engineer_dividend_reliability_features
+from .missing_coverage import engineer_all_missing_features
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,7 @@ def build_comprehensive_features(
     result = engineer_valuation_timeseries_features(result)
     result = engineer_revenue_forecast_features(result)
     result = engineer_dividend_reliability_features(result)
+    result = engineer_all_missing_features(result)
     result = engineer_employment_dynamics_features(result)
     result = engineer_estimated_vs_actual_analytics(result)
     result = engineer_gaap_vs_adjusted_analytics(result)

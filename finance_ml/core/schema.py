@@ -1546,6 +1546,392 @@ COLUMN_SCHEMA: Dict[str, ColumnMeta] = {
         "role": "feature",
         "description": "Coefficient of variation across quarterly EBITDA",
     },
+    # =========================================================================
+    # MISSING PHASE 9.3 FEATURES - Coverage Gap Fill
+    # =========================================================================
+    # Analyst Sentiment
+    "analyst_coverage_quality": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Quality score based on analyst coverage breadth and consistency",
+    },
+    "price_target_revision": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Recent price target revision percentage",
+    },
+    # Technical Analysis
+    "rsi_14d": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "14-day Relative Strength Index",
+    },
+    "rsi_30d": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "30-day Relative Strength Index",
+    },
+    "momentum_20d": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "20-day price momentum indicator",
+    },
+    # Quality & Risk
+    "distress_risk_score": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Composite financial distress probability score",
+    },
+    "altman_z_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Year-over-year change in Altman Z-Score",
+    },
+    "z_score_volatility": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Standard deviation of Altman Z-Score over time",
+    },
+    "exceptional_items_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Trend in exceptional/non-recurring items over time",
+    },
+    # Employee Productivity
+    "fte_cagr_3y_pct": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Full-time employee 3-year compound annual growth rate",
+    },
+    "fte_growth_1y_pct": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Full-time employee 1-year growth percentage",
+    },
+    "fte_growth_2y_pct": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Full-time employee 2-year growth percentage",
+    },
+    "fte_growth_3y_pct": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Full-time employee 3-year growth percentage",
+    },
+    "revenue_per_employee_1fy": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Revenue per employee from previous fiscal year",
+    },
+    "workforce_volatility_pct": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Workforce size volatility as percentage",
+    },
+    # Balance Sheet Dynamics
+    "asset_growth_rate": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year total asset growth rate",
+    },
+    "balance_sheet_expansion": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Composite balance sheet expansion indicator",
+    },
+    "current_ratio_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Trend in current ratio over time",
+    },
+    "debt_growth_rate": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year total debt growth rate",
+    },
+    "equity_growth_rate": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year total equity growth rate",
+    },
+    "earnings_retention_rate": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Proportion of earnings retained vs distributed",
+    },
+    "retained_earnings_growth": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year retained earnings growth",
+    },
+    "working_capital_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Working capital as ratio of total assets",
+    },
+    # Revenue Forecasting
+    "revenue_forecast_accuracy": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Historical accuracy of revenue forecasts",
+    },
+    # Valuation Timeseries
+    "valuation_extreme_flag": {
+        "dtype": "bool",
+        "role": "feature",
+        "description": "Flag indicating extreme valuation vs historical norms",
+    },
+    "valuation_stability_score": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Stability of valuation multiples over time",
+    },
+    "valuation_trend_consistency": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Consistency of valuation trend direction",
+    },
+    # Earnings Quality
+    "earnings_quality_score_composite": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Composite earnings quality score combining multiple factors",
+    },
+    "eps_adjustment_ratio_fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Ratio of adjusted to GAAP EPS for fiscal year",
+    },
+    # Dividend Reliability
+    "dividend_coverage_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Earnings coverage of dividend payments",
+    },
+    "dividend_growth_3y": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "3-year dividend growth rate",
+    },
+    "dividend_growth_5y": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "5-year dividend growth rate",
+    },
+    "dividend_yield_stability": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Stability of dividend yield over time",
+    },
+    "fcf_dividend_coverage": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Free cash flow coverage of dividends",
+    },
+    "payout_consistency_score": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Consistency of dividend payout ratio over time",
+    },
+    "sustainable_dividend_flag": {
+        "dtype": "bool",
+        "role": "feature",
+        "description": "Flag indicating dividend sustainability",
+    },
+    # Composite Scores
+    "value_score": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Composite value investing score",
+    },
+    "piotroski_f_score": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Piotroski F-Score (0-9 financial strength)",
+    },
+    # Efficiency Ratios
+    "inventory_turnover": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Inventory turnover ratio",
+    },
+    "receivables_turnover": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Accounts receivable turnover ratio",
+    },
+    "asset_turnover": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Asset turnover ratio",
+    },
+    # Cash Flow
+    "cfo_growth_yoy": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year cash from operations growth",
+    },
+    "cfo_to_net_income": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Cash from operations to net income ratio",
+    },
+    "fcf_margin": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Free cash flow margin (FCF/Revenue)",
+    },
+    "fcf_stability": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Stability of free cash flow over time",
+    },
+    "fcf_to_net_income": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Free cash flow to net income ratio",
+    },
+    # Leverage & Liquidity
+    "cash_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Cash ratio (cash/current liabilities)",
+    },
+    "current_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Current ratio (current assets/current liabilities)",
+    },
+    "equity_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Equity ratio (equity/total assets)",
+    },
+    "interest_coverage": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Interest coverage ratio (EBIT/interest expense)",
+    },
+    "net_debt_to_ebitda": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Net debt to EBITDA ratio",
+    },
+    "quick_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Quick ratio (liquid assets/current liabilities)",
+    },
+    "working_capital_to_sales": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Working capital as percentage of sales",
+    },
+    # Capital Allocation
+    "payout_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Dividend payout ratio",
+    },
+    "reinvestment_rate": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Rate of earnings reinvestment",
+    },
+    "retention_rate": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Earnings retention rate (1 - payout ratio)",
+    },
+    "cash_conversion_cycle": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Days in cash conversion cycle",
+    },
+    # Growth Metrics
+    "book_value_growth": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year book value growth",
+    },
+    "fcf_growth": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year free cash flow growth",
+    },
+    "operating_income_growth": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Year-over-year operating income growth",
+    },
+    # Market Sentiment
+    "beta_stability": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Stability of beta coefficient over time",
+    },
+    "short_interest_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Short interest as percentage of float",
+    },
+    "systematic_risk_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Trend in systematic risk exposure",
+    },
+    "price_range_pct": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Price range as percentage of mid-price",
+    },
+    # Valuation Ratios
+    "book_value_per_share": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Book value per share",
+    },
+    "p_b_ratio": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "description": "Price to book ratio",
+    },
+    # Temporal Patterns
+    "days_since_reference": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Days since reference date",
+    },
+    "quarter_end_flag": {
+        "dtype": "bool",
+        "role": "feature",
+        "description": "Flag indicating quarter-end proximity",
+    },
+    "month_end_flag": {
+        "dtype": "bool",
+        "role": "feature",
+        "description": "Flag indicating month-end proximity",
+    },
+    "week_of_year": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Week number within year",
+    },
+    "day_of_week": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Day of week (0=Monday)",
+    },
+    "month": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Month number (1-12)",
+    },
+    "year": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Calendar year",
+    },
 }
 
 # Phase 9.3 Feature Input Categorization (v1.13)

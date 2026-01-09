@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-01-05T16:02:04.611171",
-  "reference_date": "2026-01-05T00:00:00",
+  "generated_at": "2026-01-09T11:34:01.979659",
+  "reference_date": "2026-01-09T00:00:00",
   "data_shape": {
-    "rows": 5781,
-    "columns": 655
+    "rows": 5790,
+    "columns": 657
   },
   "phase93_coverage": {
     "Momentum & Technical": 25,
@@ -16,7 +16,7 @@
     "Market Sentiment": 3,
     "Leverage & Liquidity": 8,
     "Temporal Patterns": 11,
-    "Composite Scores": 4,
+    "Composite Scores": 5,
     "Growth Metrics": 9,
     "Efficiency Ratios": 4,
     "Employee Productivity": 18,
@@ -24,7 +24,7 @@
     "Revenue Forecasting": 8,
     "Earnings Quality": 23,
     "Technical Analysis": 1,
-    "Dividend Reliability": 6
+    "Dividend Reliability": 7
   },
   "artifacts": {
     "dashboards": [
@@ -48,19 +48,23 @@
     "by_industry": [],
     "by_exchange": [],
     "earnings_analytics": [
+      "analyst_consensus_dashboard.html",
       "analyst_recommendations.html",
       "analyst_recommendation_heatmap.html",
       "category_comparison_chart.html",
       "earnings_calendar.html",
       "earnings_density_heatmap.html",
       "earnings_metrics_profitability.html",
+      "earnings_quality_dashboard.html",
       "earnings_surprise_analysis.html",
       "earnings_surprise_dashboard.html",
       "gaap_vs_adjusted_comparison.html",
+      "leverage_liquidity_heatmap.html",
       "market_movers.html",
       "market_movers_dashboard.html",
       "price_target_analysis.html",
       "price_target_analytics.html",
+      "revenue_forecast_momentum.html",
       "revenue_forecast_skew_vs_momentum.html",
       "surprise_momentum_distribution.html",
       "technical_valuation_dashboard.html",
@@ -68,6 +72,7 @@
       "earnings_quality_alerts.json"
     ],
     "dividend_visualizations": [
+      "dividend_reliability_dashboard.html",
       "dividend_scorecard.html",
       "dividend_yield_by_sector.html",
       "dividend_yield_distribution.html",
@@ -100,6 +105,7 @@
       "eps_revision_momentum_scatter.html",
       "eps_upgrade_downgrade_distribution.html",
       "phase93_category_comparison.html",
+      "revenue_forecast_momentum.html",
       "technical_valuation_dashboard.html"
     ],
     "visualizations": [

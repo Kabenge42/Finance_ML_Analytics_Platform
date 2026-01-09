@@ -14,7 +14,169 @@ from .base import (
     resolve_reference_date, _write_html_artifact
 )
 
+# Add import for schema-driven column lists
+from finance_ml.core.schema import COLUMN_SCHEMA, list_price_cols
+
 logger = logging.getLogger(__name__)
+
+# Add new constants per Section 2 guidelines
+DIVIDEND_SUSTAINABILITY_THRESHOLDS = {
+    "excellent": 90,
+    "good": 75,
+    "moderate": 60,
+    "poor": 40,
+}
+
+
+def create_dividend_reliability_dashboard(
+    df: pd.DataFrame,
+    top_n_sectors: int = 12,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create comprehensive dividend reliability visualization.
+
+    Leverages dividend reliability metrics from analytics:
+    - dividend_reliability_score, dividend_streak (correlation: 0.94)
+    - dividend_yield_stability, fcf_dividend_coverage
+    - payout_consistency_score, sustainable_dividend_flag
+
+    Args:
+        df: DataFrame with dividend metrics.
+        top_n_sectors: Number of sectors to display.
+        output_path: Optional path to save HTML.
+
+    Returns:
+        go.Figure: Multi-panel dividend reliability dashboard.
+    """
+    # Schema-driven column detection
+    dividend_cols = {
+        "reliability": "dividend_reliability_score",
+        "streak": "dividend_streak",
+        "yield_stability": "dividend_yield_stability",
+        "fcf_coverage": "fcf_dividend_coverage",
+        "payout_consistency": "payout_consistency_score",
+        "sustainable_flag": "sustainable_dividend_flag",
+    }
+
+    available = {k: v for k, v in dividend_cols.items() if v in df.columns}
+    if len(available) < 2 or "sector" not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient dividend reliability columns",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    for col in available.values():
+        df_local[col] = pd.to_numeric(df_local[col], errors="coerce")
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Dividend Reliability Score Distribution",
+            "Reliability vs Streak (High Correlation)",
+            "Sector Dividend Sustainability",
+            "FCF Coverage Distribution",
+        ],
+        specs=[
+            [{"type": "histogram"}, {"type": "scatter"}],
+            [{"type": "bar"}, {"type": "histogram"}],
+        ],
+    )
+
+    # Panel 1: Reliability score distribution
+    if "reliability" in available:
+        fig.add_trace(
+            go.Histogram(
+                x=df_local[available["reliability"]].dropna(),
+                nbinsx=30,
+                marker_color=COLOR_PALETTE["info"],
+                name="Reliability Score",
+            ),
+            row=1,
+            col=1,
+        )
+
+    # Panel 2: Reliability vs Streak scatter (exploits 0.94 correlation)
+    if "reliability" in available and "streak" in available:
+        fig.add_trace(
+            go.Scatter(
+                x=df_local[available["streak"]],
+                y=df_local[available["reliability"]],
+                mode="markers",
+                marker=dict(
+                    size=6,
+                    color=df_local.get("sustainable_dividend_flag", 0),
+                    colorscale="RdYlGn",
+                    opacity=0.6,
+                ),
+                text=df_local.get("ticker"),
+                name="Reliability vs Streak",
+                hovertemplate="<b>%{text}</b><br>Streak: %{x}<br>Score: %{y:.1f}<extra></extra>",
+            ),
+            row=1,
+            col=2,
+        )
+
+    # Panel 3: Sector sustainability summary
+    top_sectors = df_local["sector"].value_counts().head(int(top_n_sectors)).index
+    if "sustainable_flag" in available:
+        sector_pct = (
+            df_local[df_local["sector"].isin(top_sectors)]
+            .groupby("sector")[available["sustainable_flag"]]
+            .mean()
+            * 100
+        ).sort_values(ascending=True)
+
+        colors = [
+            COLOR_PALETTE["success"] if x >= 50 else COLOR_PALETTE["danger"] for x in sector_pct
+        ]
+        fig.add_trace(
+            go.Bar(
+                x=sector_pct.values,
+                y=sector_pct.index,
+                orientation="h",
+                marker_color=colors,
+                name="% Sustainable",
+            ),
+            row=2,
+            col=1,
+        )
+
+    # Panel 4: FCF coverage distribution
+    if "fcf_coverage" in available:
+        coverage = df_local[available["fcf_coverage"]].dropna()
+        coverage_clipped = coverage.clip(-10, 20)  # Handle extremes
+        fig.add_trace(
+            go.Histogram(
+                x=coverage_clipped,
+                nbinsx=40,
+                marker_color=COLOR_PALETTE["warning"],
+                name="FCF Coverage",
+            ),
+            row=2,
+            col=2,
+        )
+        fig.add_vline(x=1.5, line_dash="dash", line_color="white", row=2, col=2)
+
+    fig.update_layout(
+        title="<b>Dividend Reliability Dashboard</b><br><sup>Based on 9 reliability metrics</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=800,
+        showlegend=False,
+    )
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
 
 def create_analyst_recommendation_heatmap(
     df: pd.DataFrame,
@@ -131,7 +293,7 @@ def create_market_movers_dashboard(
             yref="paper",
             x=0.5,
             y=0.5,
-            showarrow=False,
+            showarrow=True,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
         _write_html_artifact(fig, output_path)
@@ -152,7 +314,7 @@ def create_market_movers_dashboard(
             yref="paper",
             x=0.5,
             y=0.5,
-            showarrow=False,
+            showarrow=True,
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
         _write_html_artifact(fig, output_path)
@@ -470,85 +632,253 @@ def create_price_target_analytics(
 
     return fig
 
+
 def create_dividend_sustainability_scorecard(
-    df: pd.DataFrame, output_path: Optional[Union[str, Path]] = None
+    df: pd.DataFrame,
+    output_path: Optional[Path] = None,
 ) -> pd.DataFrame:
-    """Create comprehensive dividend sustainability scoring."""
+    """
+    Generate dividend sustainability scorecard with improved grade distribution.
 
-    scorecard = df[[c for c in ["ticker", "sector", "region"] if c in df.columns]].copy()
+    Uses percentile-based scoring for better granularity across all grades (A-F).
+    Incorporates additional dividend-related metrics from schema.py.
 
-    payout_col = next(
-        (c for c in ["payout_ratio", "dividend_payout_ratio"] if c in df.columns), None
-    )
-    if payout_col:
-        payout = pd.to_numeric(df[payout_col], errors="coerce").astype("float64")
-        scorecard["payout_score"] = np.select(
-            [payout <= 50, payout <= 75, payout <= 100], [25, 20, 10], default=0
-        )
-        scorecard.loc[payout.isna(), "payout_score"] = 0
+    Args:
+        df: DataFrame with dividend-paying stocks
+        output_path: Optional path to save CSV output
+
+    Returns:
+        DataFrame with sustainability scores and grades
+    """
+    import pandas as pd
+    import numpy as np
+
+    scorecard = df[["ticker", "sector", "region"]].copy()
+
+    # =========================================================================
+    # 1. PAYOUT SCORE (0-25 points) - Percentile-based
+    # =========================================================================
+    # Optimal payout: 20-60% range scores highest, extremes penalized
+    payout_col = "dividend_payout_ratio"
+    if payout_col in df.columns:
+        payout = pd.to_numeric(df[payout_col], errors="coerce").clip(-1, 5)  # Winsorize outliers
+
+        # Score based on proximity to optimal range (30-50%)
+        optimal_center = 0.40
+        payout_distance = np.abs(payout - optimal_center)
+
+        # Normalize: closer to optimal = higher score
+        max_distance = payout_distance.quantile(0.95)
+        payout_score = (1 - (payout_distance / max_distance).clip(0, 1)) * 25
+
+        # Penalize negative payout (losses) and extreme high payout (>100%)
+        payout_score = payout_score.where(payout >= 0, 0)
+        payout_score = payout_score.where(payout <= 1.0, payout_score * 0.5)
+
+        scorecard["payout_score"] = payout_score.fillna(0)
     else:
         scorecard["payout_score"] = 0
 
-    fcf_col = next((c for c in df.columns if "fcf" in c.lower() and "yield" not in c.lower()), None)
-    div_paid_col = next(
-        (c for c in df.columns if "dividend" in c.lower() and "paid" in c.lower()), None
-    )
+    # =========================================================================
+    # 2. FCF COVERAGE SCORE (0-20 points) - Tiered thresholds
+    # =========================================================================
+    fcf_col = "fcf_dividend_coverage"
+    if fcf_col in df.columns:
+        fcf_cov = pd.to_numeric(df[fcf_col], errors="coerce").clip(-10, 50)
 
-    if fcf_col and div_paid_col:
-        fcf = pd.to_numeric(df[fcf_col], errors="coerce").astype("float64")
-        div_paid = pd.to_numeric(df[div_paid_col], errors="coerce").abs().astype("float64")
-        coverage = fcf / div_paid.replace(0, np.nan)
+        # Tiered scoring: higher coverage = better sustainability
+        fcf_score = pd.cut(
+            fcf_cov,
+            bins=[-np.inf, 0, 1.0, 1.5, 2.0, 3.0, 5.0, np.inf],
+            labels=[0, 4, 8, 12, 16, 18, 20],
+        ).astype(float)
 
-        scorecard["fcf_coverage_score"] = np.select(
-            [coverage >= 2.0, coverage >= 1.5, coverage >= 1.0, coverage >= 0.5],
-            [25, 20, 15, 5],
-            default=0,
-        )
-        scorecard.loc[coverage.isna(), "fcf_coverage_score"] = 0
+        scorecard["fcf_coverage_score"] = fcf_score.fillna(0)
     else:
         scorecard["fcf_coverage_score"] = 0
 
-    growth_cols = [c for c in df.columns if "div" in c.lower() and "growth" in c.lower()]
-    if growth_cols:
-        div_growth = pd.to_numeric(df[growth_cols[0]], errors="coerce").astype("float64")
-        scorecard["div_growth_score"] = np.select(
-            [div_growth >= 10, div_growth >= 5, div_growth >= 0, div_growth >= -5],
-            [25, 20, 15, 5],
-            default=0,
-        )
-        scorecard.loc[div_growth.isna(), "div_growth_score"] = 0
-    else:
-        scorecard["div_growth_score"] = 0
+    # =========================================================================
+    # 3. DIVIDEND GROWTH SCORE (0-15 points) - NEW: Uses growth metrics
+    # =========================================================================
+    growth_score = pd.Series(0.0, index=df.index)
 
+    # 3-year dividend growth
+    if "dividend_growth_3y" in df.columns:
+        growth_3y = pd.to_numeric(df["dividend_growth_3y"], errors="coerce").clip(-50, 100)
+        growth_score += (growth_3y.rank(pct=True) * 7.5).fillna(0)
+
+    # 5-year dividend growth
+    if "dividend_growth_5y" in df.columns:
+        growth_5y = pd.to_numeric(df["dividend_growth_5y"], errors="coerce").clip(-50, 100)
+        growth_score += (growth_5y.rank(pct=True) * 7.5).fillna(0)
+    elif "div_yield_5yavgltm" in df.columns:
+        # Fallback: use yield stability as proxy
+        yield_5y = pd.to_numeric(df["div_yield_5yavgltm"], errors="coerce")
+        yield_current = pd.to_numeric(
+            df.get("div_yield_ltm", pd.Series(dtype=float)), errors="coerce"
+        )
+
+        # Positive yield trend = growth proxy
+        yield_trend = (yield_current - yield_5y).clip(-0.1, 0.1)
+        growth_score += (yield_trend.rank(pct=True) * 7.5).fillna(0)
+
+    scorecard["div_growth_score"] = growth_score
+
+    # =========================================================================
+    # 4. DIVIDEND STREAK SCORE (0-15 points) - Years of consecutive dividends
+    # =========================================================================
+    streak_col = "dividend_streak"
+    if streak_col in df.columns:
+        streak = pd.to_numeric(df[streak_col], errors="coerce").fillna(0)
+
+        # Tiered: 0-2 yrs = 0-3, 3-5 = 4-7, 6-10 = 8-11, 11-20 = 12-14, 20+ = 15
+        streak_score = pd.cut(
+            streak, bins=[-np.inf, 0, 2, 5, 10, 20, np.inf], labels=[0, 3, 7, 11, 14, 15]
+        ).astype(float)
+
+        scorecard["dividend_streak_score"] = streak_score.fillna(0)
+    else:
+        scorecard["dividend_streak_score"] = 0
+
+    # =========================================================================
+    # 5. BALANCE SHEET HEALTH SCORE (0-15 points) - NEW: Leverage metrics
+    # =========================================================================
+    balance_score = pd.Series(0.0, index=df.index)
+
+    # Debt-to-Equity: lower is better for dividend safety
     if "debt_to_equity" in df.columns:
-        dte = pd.to_numeric(df["debt_to_equity"], errors="coerce").astype("float64")
-        scorecard["balance_sheet_score"] = np.select(
-            [dte <= 0.5, dte <= 1.0, dte <= 2.0], [25, 20, 10], default=0
-        )
-        scorecard.loc[dte.isna(), "balance_sheet_score"] = 0
-    else:
-        scorecard["balance_sheet_score"] = 0
+        dte = pd.to_numeric(df["debt_to_equity"], errors="coerce").clip(0, 10)
+        # Invert: lower D/E = higher score
+        dte_score = ((1 - dte.rank(pct=True)) * 5).fillna(2.5)
+        balance_score += dte_score
 
-    score_cols = [
-        "payout_score",
-        "fcf_coverage_score",
-        "div_growth_score",
-        "balance_sheet_score",
+    # Interest Coverage: higher is better
+    if "interest_coverage" in df.columns:
+        int_cov = pd.to_numeric(df["interest_coverage"], errors="coerce").clip(-5, 50)
+        int_score = (int_cov.rank(pct=True) * 5).fillna(2.5)
+        balance_score += int_score
+    elif "ebit_ltm" in df.columns and "interest_expense_total_ltm" in df.columns:
+        # Calculate if not present
+        ebit = pd.to_numeric(df["ebit_ltm"], errors="coerce")
+        interest = pd.to_numeric(df["interest_expense_total_ltm"], errors="coerce").abs()
+        int_cov = (ebit / interest.replace(0, np.nan)).clip(-5, 50)
+        int_score = (int_cov.rank(pct=True) * 5).fillna(2.5)
+        balance_score += int_score
+
+    # Current Ratio: healthy liquidity
+    if "current_ratio" in df.columns:
+        curr_ratio = pd.to_numeric(df["current_ratio"], errors="coerce").clip(0, 5)
+        # Optimal around 1.5-2.0
+        cr_optimal = np.abs(curr_ratio - 1.75)
+        cr_score = ((1 - cr_optimal.rank(pct=True)) * 5).fillna(2.5)
+        balance_score += cr_score
+
+    scorecard["balance_sheet_score"] = balance_score
+
+    # =========================================================================
+    # 6. YIELD QUALITY SCORE (0-10 points) - NEW: Yield sustainability signals
+    # =========================================================================
+    yield_score = pd.Series(0.0, index=df.index)
+
+    # Dividend yield stability
+    if "dividend_yield_stability" in df.columns:
+        stability = pd.to_numeric(df["dividend_yield_stability"], errors="coerce")
+        yield_score += (stability.rank(pct=True) * 5).fillna(0)
+
+    # Payout consistency score
+    if "payout_consistency_score" in df.columns:
+        consistency = pd.to_numeric(df["payout_consistency_score"], errors="coerce").clip(0, 2)
+        yield_score += (consistency.rank(pct=True) * 5).fillna(0)
+    elif "dividend_reliability_score" in df.columns:
+        # Fallback to reliability score
+        reliability = pd.to_numeric(df["dividend_reliability_score"], errors="coerce")
+        yield_score += (reliability.rank(pct=True) * 5).fillna(0)
+
+    scorecard["yield_quality_score"] = yield_score
+
+    # =========================================================================
+    # 7. TOTAL SHAREHOLDER RETURN BONUS (0-5 points) - NEW
+    # =========================================================================
+    tsr_score = pd.Series(0.0, index=df.index)
+
+    # Include buyback yield for total shareholder return
+    if "buyback_yield_ltm" in df.columns:
+        buyback = pd.to_numeric(df["buyback_yield_ltm"], errors="coerce").clip(-0.1, 0.2)
+        # Positive buybacks = bonus points
+        tsr_score += (buyback.clip(0, None).rank(pct=True) * 2.5).fillna(0)
+
+    # Total shareholder yield if available
+    if "total_shareholder_yield" in df.columns:
+        tsy = pd.to_numeric(df["total_shareholder_yield"], errors="coerce").clip(-0.1, 0.3)
+        tsr_score += (tsy.rank(pct=True) * 2.5).fillna(0)
+
+    scorecard["shareholder_return_score"] = tsr_score
+
+    # =========================================================================
+    # COMPOSITE SCORE CALCULATION (0-100)
+    # =========================================================================
+    score_columns = [
+        "payout_score",  # 0-25
+        "fcf_coverage_score",  # 0-20
+        "div_growth_score",  # 0-15
+        "dividend_streak_score",  # 0-15
+        "balance_sheet_score",  # 0-15
+        "yield_quality_score",  # 0-10 (NEW)
+        "shareholder_return_score",  # 0-5 (NEW, total = 105, will normalize)
     ]
-    scorecard["dividend_sustainability_score"] = scorecard[score_cols].sum(axis=1)
 
-    scorecard["sustainability_grade"] = pd.cut(
-        scorecard["dividend_sustainability_score"],
-        bins=[0, 40, 60, 75, 90, 100],
-        labels=["F", "D", "C", "B", "A"],
+    # Sum all component scores
+    total_score = scorecard[score_columns].sum(axis=1)
+
+    # Normalize to 0-100 scale (max possible is 105)
+    scorecard["dividend_sustainability_score"] = (total_score / 1.05).round(1)
+
+    # =========================================================================
+    # GRADE ASSIGNMENT - Percentile-based for better distribution
+    # =========================================================================
+    # Use percentile thresholds to ensure distribution across grades
+    score_percentiles = scorecard["dividend_sustainability_score"].quantile(
+        [0.1, 0.3, 0.5, 0.75, 0.9]
     )
 
+    def assign_grade(score):
+        if pd.isna(score) or score < score_percentiles[0.1]:
+            return "F"
+        elif score < score_percentiles[0.3]:
+            return "D"
+        elif score < score_percentiles[0.5]:
+            return "C"
+        elif score < score_percentiles[0.75]:
+            return "B"
+        else:
+            return "A"
+
+    # Alternative: Fixed thresholds tuned for typical distributions
+    # Uncomment below if you prefer absolute thresholds over percentiles
+    # def assign_grade(score):
+    #     if pd.isna(score) or score < 25:
+    #         return 'F'
+    #     elif score < 40:
+    #         return 'D'
+    #     elif score < 55:
+    #         return 'C'
+    #     elif score < 70:
+    #         return 'B'
+    #     else:
+    #         return 'A'
+
+    scorecard["sustainability_grade"] = scorecard["dividend_sustainability_score"].apply(
+        assign_grade
+    )
+
+    # =========================================================================
+    # OUTPUT
+    # =========================================================================
     if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
         scorecard.to_csv(output_path, index=False)
 
     return scorecard
+
 
 def create_employee_productivity_dashboard(df: pd.DataFrame, output_dir: Path) -> Dict[str, object]:
     """Analyze employee productivity metrics and trends."""
@@ -669,3 +999,508 @@ def create_employee_productivity_dashboard(df: pd.DataFrame, output_dir: Path) -
     }
 
     return {"figure": fig, "metrics": metrics, "output_path": output_path}
+
+
+def create_leverage_liquidity_heatmap(
+    df: pd.DataFrame,
+    top_n_sectors: int = 12,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create sector-level leverage and liquidity risk heatmap.
+
+    Uses highly correlated liquidity ratios (correlation ~0.9999):
+    - cash_ratio, current_ratio, quick_ratio
+    - debt_to_assets, debt_to_equity, equity_ratio
+
+    Args:
+        df: DataFrame with leverage/liquidity metrics.
+        top_n_sectors: Number of sectors to display.
+        output_path: Optional path to save HTML.
+
+    Returns:
+        go.Figure: Heatmap of leverage/liquidity metrics by sector.
+    """
+    leverage_cols = {
+        "Current Ratio": "current_ratio",
+        "Quick Ratio": "quick_ratio",
+        "Cash Ratio": "cash_ratio",
+        "Debt/Assets": "debt_to_assets",
+        "Debt/Equity": "debt_to_equity",
+        "Interest Coverage": "interest_coverage",
+    }
+
+    available = {k: v for k, v in leverage_cols.items() if v in df.columns}
+    if len(available) < 2 or "sector" not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient leverage/liquidity columns",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    for col in available.values():
+        df_local[col] = pd.to_numeric(df_local[col], errors="coerce")
+
+    top_sectors = df_local["sector"].value_counts().head(int(top_n_sectors)).index
+
+    # Build sector median matrix
+    heatmap_data: List[Dict[str, float]] = []
+    for sector in top_sectors:
+        sector_df = df_local[df_local["sector"] == sector]
+        row: Dict[str, float] = {"Sector": str(sector)[:20]}
+        for metric_name, col in available.items():
+            median_val = sector_df[col].median()
+            # Normalize to z-score for comparability
+            global_median = df_local[col].median()
+            global_std = df_local[col].std()
+            if global_std and global_std > 0:
+                row[metric_name] = (median_val - global_median) / global_std
+            else:
+                row[metric_name] = 0.0
+        heatmap_data.append(row)
+
+    heatmap_df = pd.DataFrame(heatmap_data).set_index("Sector").fillna(0)
+
+    fig = px.imshow(
+        heatmap_df,
+        labels=dict(x="Metric", y="Sector", color="Z-Score vs Global"),
+        color_continuous_scale="RdBu_r",
+        color_continuous_midpoint=0,
+        aspect="auto",
+        text_auto=".2f",
+        title="<b>Leverage & Liquidity Risk Heatmap</b><br><sup>Sector medians vs global (z-score)</sup>",
+    )
+
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        font=dict(family="Arial, sans-serif", size=12),
+    )
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
+
+def create_analyst_consensus_dashboard(
+    df: pd.DataFrame,
+    top_n: int = 30,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create analyst consensus strength visualization.
+
+    Addresses redundant columns from analytics (correlation=1.0):
+    - price_target_range ≡ price_target_spread_pct (use one)
+    - target_price_upside_pct ≡ upside_potential (use one)
+
+    Visualizes: consensus_strength vs analyst_conviction vs upside.
+
+    Args:
+        df: DataFrame with analyst sentiment metrics.
+        top_n: Number of stocks to highlight.
+        output_path: Optional path to save HTML.
+
+    Returns:
+        go.Figure: Analyst consensus dashboard.
+    """
+    # Use canonical names, avoid duplicates per analytics
+    sentiment_cols = {
+        "consensus": "consensus_strength",
+        "conviction": "analyst_conviction",
+        "upside": "target_price_upside_pct",  # NOT upside_potential (duplicate)
+        "bullish": "analyst_bullish_pct",
+        "spread": "price_target_spread_pct",  # NOT price_target_range (duplicate)
+    }
+
+    available = {k: v for k, v in sentiment_cols.items() if v in df.columns}
+    if len(available) < 3:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient analyst sentiment columns",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    for col in available.values():
+        df_local[col] = pd.to_numeric(df_local[col], errors="coerce")
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Consensus Strength vs Conviction",
+            "High-Conviction Bullish Stocks",
+            "Upside vs Spread (Uncertainty)",
+            "Consensus Distribution by Sector",
+        ],
+    )
+
+    # Panel 1: Consensus vs Conviction scatter
+    if "consensus" in available and "conviction" in available:
+        fig.add_trace(
+            go.Scatter(
+                x=df_local[available["consensus"]],
+                y=df_local[available["conviction"]],
+                mode="markers",
+                marker=dict(
+                    size=6,
+                    color=df_local.get(available.get("upside", ""), 0),
+                    colorscale="RdYlGn",
+                    cmin=-20,
+                    cmax=50,
+                    opacity=0.6,
+                ),
+                text=df_local.get("ticker"),
+                hovertemplate="<b>%{text}</b><br>Consensus: %{x:.1f}<br>Conviction: %{y:.1f}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
+    # Panel 2: Top high-conviction bullish stocks
+    if "conviction" in available and "bullish" in available:
+        high_conviction = df_local[
+            (df_local[available["conviction"]] > 70) & (df_local[available["bullish"]] > 70)
+        ].nlargest(int(top_n), available["bullish"])
+
+        if not high_conviction.empty:
+            fig.add_trace(
+                go.Bar(
+                    x=high_conviction[available["bullish"]],
+                    y=high_conviction["ticker"],
+                    orientation="h",
+                    marker_color=COLOR_PALETTE["success"],
+                    name="Bullish %",
+                ),
+                row=1,
+                col=2,
+            )
+
+    # Panel 3: Upside vs Spread (risk/reward)
+    if "upside" in available and "spread" in available:
+        fig.add_trace(
+            go.Scatter(
+                x=df_local[available["spread"]].clip(0, 100),
+                y=df_local[available["upside"]].clip(-50, 100),
+                mode="markers",
+                marker=dict(size=5, color=COLOR_PALETTE["info"], opacity=0.5),
+                text=df_local.get("ticker"),
+                hovertemplate="<b>%{text}</b><br>Spread: %{x:.1f}%<br>Upside: %{y:.1f}%<extra></extra>",
+            ),
+            row=2,
+            col=1,
+        )
+
+    # Panel 4: Sector consensus box plot
+    if "consensus" in available and "sector" in df_local.columns:
+        for sector in df_local["sector"].value_counts().head(8).index:
+            sector_data = df_local[df_local["sector"] == sector][available["consensus"]].dropna()
+            fig.add_trace(
+                go.Box(y=sector_data, name=str(sector)[:15], boxmean=True),
+                row=2,
+                col=2,
+            )
+
+    fig.update_layout(
+        title="<b>Analyst Consensus Dashboard</b><br><sup>Sentiment metrics (deduplicated)</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=800,
+        showlegend=False,
+    )
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
+
+def create_earnings_quality_dashboard(
+    df: pd.DataFrame,
+    top_n_concerns: int = 25,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create earnings quality warning dashboard.
+
+    Based on analytics showing:
+    - 50% of stocks have earnings_quality_warning_flag=True
+    - High correlation (-0.999) between revision acceleration and surprise momentum
+
+    Args:
+        df: DataFrame with earnings quality metrics.
+        top_n_concerns: Number of concerning stocks to highlight.
+        output_path: Optional path to save HTML.
+
+    Returns:
+        go.Figure: Earnings quality dashboard.
+    """
+    quality_cols = {
+        "warning_flag": "earnings_quality_warning_flag",
+        "eps_surprise": "eps_surprise_pct",
+        "revenue_surprise": "revenue_surprise_pct",
+        "revision_accel": "estimate_revision_acceleration",
+        "eps_quality_flag": "eps_quality_flag_ltm",
+        "ebitda_adj_ratio": "ebitda_adjustment_ratio_ltm",
+    }
+
+    available = {k: v for k, v in quality_cols.items() if v in df.columns}
+    if len(available) < 2:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient earnings quality columns",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    for col in available.values():
+        if col != available.get("warning_flag") and col != available.get("eps_quality_flag"):
+            df_local[col] = pd.to_numeric(df_local[col], errors="coerce")
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Earnings Quality Warning Distribution",
+            "EPS Surprise % Distribution",
+            "Top Stocks with Quality Concerns",
+            "EBITDA Adjustment Ratio by Sector",
+        ],
+    )
+
+    # Panel 1: Warning flag bar chart
+    if "warning_flag" in available:
+        warning_counts = df_local[available["warning_flag"]].value_counts()
+        no_warning = warning_counts.get(False, warning_counts.get(0, 0))
+        warning = warning_counts.get(True, warning_counts.get(1, 0))
+        fig.add_trace(
+            go.Bar(
+                x=["No Warning", "Warning"],
+                y=[no_warning, warning],
+                marker_color=[COLOR_PALETTE["success"], COLOR_PALETTE["danger"]],
+                text=[no_warning, warning],
+                textposition="auto",
+            ),
+            row=1,
+            col=1,
+        )
+
+    # Panel 2: EPS surprise distribution
+    if "eps_surprise" in available:
+        surprise = df_local[available["eps_surprise"]].dropna().clip(-200, 200)
+        fig.add_trace(
+            go.Histogram(
+                x=surprise,
+                nbinsx=50,
+                marker_color=COLOR_PALETTE["info"],
+                name="EPS Surprise %",
+            ),
+            row=1,
+            col=2,
+        )
+        fig.add_vline(x=0, line_dash="dash", line_color="white", row=1, col=2)
+
+    # Panel 3: Top concerning stocks
+    if "warning_flag" in available and "ebitda_adj_ratio" in available:
+        concerning = df_local[df_local[available["warning_flag"]] == True].copy()
+        if not concerning.empty:
+            concerning["concern_score"] = concerning[available["ebitda_adj_ratio"]].abs()
+            top_concerns = concerning.nlargest(int(top_n_concerns), "concern_score")
+
+            fig.add_trace(
+                go.Bar(
+                    x=top_concerns["concern_score"].clip(0, 5),
+                    y=top_concerns["ticker"],
+                    orientation="h",
+                    marker_color=COLOR_PALETTE["danger"],
+                    name="Concern Score",
+                ),
+                row=2,
+                col=1,
+            )
+
+    # Panel 4: Sector adjustment ratios
+    if "ebitda_adj_ratio" in available and "sector" in df_local.columns:
+        sector_adj = (
+            df_local.groupby("sector")[available["ebitda_adj_ratio"]]
+            .median()
+            .sort_values()
+            .tail(10)
+        )
+        colors = [
+            COLOR_PALETTE["warning"] if abs(x - 1) > 0.2 else COLOR_PALETTE["success"]
+            for x in sector_adj
+        ]
+        fig.add_trace(
+            go.Bar(
+                x=sector_adj.values,
+                y=sector_adj.index,
+                orientation="h",
+                marker_color=colors,
+            ),
+            row=2,
+            col=2,
+        )
+        fig.add_vline(x=1.0, line_dash="dash", line_color="white", row=2, col=2)
+
+    fig.update_layout(
+        title="<b>Earnings Quality Dashboard</b><br><sup>~50% of stocks flagged for quality concerns</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=800,
+        showlegend=False,
+    )
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
+
+def create_revenue_forecast_momentum_chart(
+    df: pd.DataFrame,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create revenue forecasting momentum visualization.
+
+    Focuses on non-redundant metrics from analytics:
+    - eps_est_avg_rev_pct_fy1e_1m (short-term momentum)
+    - revenues_est_yoy_pct_fy1e (growth expectations)
+    - Avoids 3m/6m columns due to 0.995 correlation
+
+    Args:
+        df: DataFrame with revenue forecast metrics.
+        output_path: Optional path to save HTML.
+
+    Returns:
+        go.Figure: Revenue forecast momentum chart.
+    """
+    # Use non-redundant columns per analytics correlation analysis
+    forecast_cols = {
+        "rev_1w": "eps_est_avg_rev_pct_fy1e_1w",
+        "rev_1m": "eps_est_avg_rev_pct_fy1e_1m",
+        # Skip 3m/6m due to 0.995 correlation with each other
+        "rev_1y": "eps_est_avg_rev_pct_fy1e_1y",
+        "yoy_growth": "revenues_est_yoy_pct_fy1e",
+        # Use only fy1e estimate (0.997 corr with ntm)
+        "revenue_est": "revenues_est_avg_fy1e",
+    }
+
+    available = {k: v for k, v in forecast_cols.items() if v in df.columns}
+    if len(available) < 2:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient revenue forecast columns",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    for col in available.values():
+        df_local[col] = pd.to_numeric(df_local[col], errors="coerce")
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=[
+            "EPS Revision Momentum (1W vs 1M)",
+            "Revenue Growth Expectations by Sector",
+        ],
+    )
+
+    # Panel 1: Short-term revision momentum scatter
+    if "rev_1w" in available and "rev_1m" in available:
+        # Identify stocks with accelerating upgrades
+        df_local["revision_acceleration"] = (
+            df_local[available["rev_1m"]] - df_local[available["rev_1w"]]
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=df_local[available["rev_1w"]] * 100,
+                y=df_local[available["rev_1m"]] * 100,
+                mode="markers",
+                marker=dict(
+                    size=6,
+                    color=df_local["revision_acceleration"],
+                    colorscale="RdYlGn",
+                    cmin=-0.05,
+                    cmax=0.05,
+                    opacity=0.6,
+                    colorbar=dict(title="Acceleration"),
+                ),
+                text=df_local.get("ticker"),
+                hovertemplate="<b>%{text}</b><br>1W: %{x:.2f}%<br>1M: %{y:.2f}%<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+        # Add 45-degree reference line
+        fig.add_trace(
+            go.Scatter(
+                x=[-5, 5],
+                y=[-5, 5],
+                mode="lines",
+                line=dict(dash="dash", color="white", width=1),
+                showlegend=False,
+            ),
+            row=1,
+            col=1,
+        )
+
+    # Panel 2: Sector revenue growth expectations
+    if "yoy_growth" in available and "sector" in df_local.columns:
+        sector_growth = (
+            df_local.groupby("sector")[available["yoy_growth"]].median().sort_values().tail(12)
+        )
+        colors = [
+            (
+                COLOR_PALETTE["success"]
+                if x > 0.1
+                else COLOR_PALETTE["warning"] if x > 0 else COLOR_PALETTE["danger"]
+            )
+            for x in sector_growth
+        ]
+        fig.add_trace(
+            go.Bar(
+                x=sector_growth.values * 100,
+                y=sector_growth.index,
+                orientation="h",
+                marker_color=colors,
+            ),
+            row=1,
+            col=2,
+        )
+        fig.add_vline(x=0, line_dash="dash", line_color="white", row=1, col=2)
+
+    fig.update_layout(
+        title="<b>Revenue Forecast Momentum</b><br><sup>Non-redundant revision metrics</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=500,
+        showlegend=False,
+    )
+    fig.update_xaxes(title_text="1W Revision %", row=1, col=1)
+    fig.update_yaxes(title_text="1M Revision %", row=1, col=1)
+    fig.update_xaxes(title_text="YoY Growth %", row=1, col=2)
+
+    _write_html_artifact(fig, output_path)
+    return fig

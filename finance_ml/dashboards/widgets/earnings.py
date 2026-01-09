@@ -282,39 +282,71 @@ def create_earnings_calendar_dashboard(
 
     reference_date = resolve_reference_date(df, reference_date)
 
-    # Ensure date columns are datetime
-    date_cols = [
+    # Schema-aligned date columns for earnings calendar (ordered by preference)
+    # These columns are defined in COLUMN_SCHEMA with role="date"
+    earnings_date_candidates = [
         "next_earnings",
+        "fy_end_date",
+        "next_fy_end_date",
+        "income_statement_report_date",
         "dividend_record_ex_date",
         "dividend_record_payable_date",
         "dividend_record_announce_date",
         "dividend_record_record_date",
     ]
-    for col in date_cols:
+
+    # Ensure date columns are datetime
+    for col in earnings_date_candidates:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
 
-    # Filter logic: next_earnings within +/- N days if days_window provided
-    filtered_df = df.copy()
-    if days_window is None:
-        temporal_window = None
-    else:
-        temporal_window = timedelta(days=days_window)
+    # Determine the best available earnings date column
+    anchor_date_col = None
+    for col in earnings_date_candidates:
+        if col in df.columns and df[col].notna().any():
+            anchor_date_col = col
+            logger.info(f"Using '{col}' as anchor date column for earnings calendar")
+            break
 
-    if "next_earnings" in df.columns and temporal_window is not None:
-        mask = (filtered_df["next_earnings"] - reference_date).abs() <= temporal_window
+    filtered_df = df.copy()
+
+    # Apply temporal filtering only if we have a valid anchor column and days_window
+    if anchor_date_col is not None and days_window is not None:
+        temporal_window = timedelta(days=days_window)
+        # Calculate days difference, handling NaT values
+        date_diff = (filtered_df[anchor_date_col] - reference_date).abs()
+        mask = date_diff <= temporal_window
         filtered_df = filtered_df[mask]
 
+        logger.info(
+            f"Temporal filter applied: {mask.sum()} rows within ±{days_window} days "
+            f"(anchor: {anchor_date_col})"
+        )
+    elif anchor_date_col is None:
+        # No valid date column found - log warning but continue without temporal filter
+        logger.warning(
+            "No valid earnings date column found with non-null values. "
+            f"Checked columns: {earnings_date_candidates}. "
+            "Proceeding without temporal filtering."
+        )
+
     if filtered_df.empty:
+        logger.warning(
+            f"No companies found after filtering. Reference date: {reference_date}, "
+            f"Days window: ±{days_window}, Anchor column: {anchor_date_col}"
+        )
         return pd.DataFrame()
 
-    # Sort by Market Cap using schema-aware helper
-    mcap_col = _get_market_cap_column(df)
-
-    if mcap_col:
-        filtered_df = filtered_df.sort_values(by=mcap_col, ascending=False)
+    # Sort by next_earnings date in ascending order (soonest first)
+    if anchor_date_col and anchor_date_col in filtered_df.columns:
+        filtered_df = filtered_df.sort_values(
+            by=anchor_date_col, ascending=True, na_position="last"
+        )
 
     filtered_df = filtered_df.head(top_n)
+
+    # Get market cap column for display purposes (not for sorting)
+    mcap_col = _get_market_cap_column(filtered_df)
 
     # Define identity columns + temporal enrichments when available
     display_cols = [
@@ -412,17 +444,21 @@ def create_earnings_calendar_dashboard(
 
     dashboard_df = filtered_df[final_cols].copy()
 
-    # Add computed columns - Use reference_date for temporal consistency
-    if "next_earnings" in dashboard_df.columns:
+    # Add computed columns - Use the best available date column for days_to_earnings
+    date_col_for_days = anchor_date_col or "next_earnings"
+    if date_col_for_days in dashboard_df.columns:
         dashboard_df["days_to_earnings"] = (
-            pd.to_datetime(dashboard_df["next_earnings"], errors="coerce") - reference_date
+            pd.to_datetime(dashboard_df[date_col_for_days], errors="coerce") - reference_date
         ).dt.days
 
-        # Reorder: Put days_to_earnings near next_earnings
+        # Reorder: Put days_to_earnings near the anchor date column
         cols = list(dashboard_df.columns)
         if "days_to_earnings" in cols:
             cols.remove("days_to_earnings")
-            if "next_earnings" in cols:
+            if date_col_for_days in cols:
+                idx = cols.index(date_col_for_days) + 1
+                cols.insert(idx, "days_to_earnings")
+            elif "next_earnings" in cols:
                 idx = cols.index("next_earnings") + 1
                 cols.insert(idx, "days_to_earnings")
             dashboard_df = dashboard_df[cols]
@@ -490,10 +526,15 @@ def display_earnings_dashboard(
         date_columns = [
             "next_earnings",
             "income_statement_report_date",
-            "fy_end_date" "next_fy_end_date",
+            "fy_end_date",
+            "next_fy_end_date",
             "fy_end",
             "_reference_date",
             "reference_date",
+            "dividend_record_ex_date",
+            "dividend_record_payable_date",
+            "dividend_record_announce_date",
+            "dividend_record_record_date",
         ]
 
     # Filter to columns that exist in dashboard_df
@@ -530,22 +571,185 @@ def display_earnings_dashboard(
     if "days_to_earnings" in df_styled.columns:
         styler = styler.map(color_days, subset=["days_to_earnings"])
 
-    # Apply additional styling (background gradients for key metrics)
+    # --- Conditional Formatting for Metric/Indicator Columns (§17.3) ---
     numeric_cols = df_styled.select_dtypes(include=[np.number]).columns.tolist()
-    gradient_cols = [c for c in ["earnings_quality_score", "roe", "roa"] if c in numeric_cols]
-    if gradient_cols:
+
+    # Quality/Score metrics: higher is better (green)
+    quality_score_cols = [
+        c
+        for c in [
+            "earnings_quality_score",
+            "piotroski_f_score",
+            "altman_z_score",
+            "accounting_quality_score",
+            "dividend_reliability_score",
+        ]
+        if c in numeric_cols
+    ]
+
+    # Profitability metrics: higher is better (green)
+    profitability_cols = [
+        c
+        for c in [
+            "roe",
+            "roa",
+            "roic",
+            "gross_margin_pct",
+            "operating_margin_pct",
+            "net_margin_pct",
+            "ebitda_margin_pct",
+        ]
+        if c in numeric_cols
+    ]
+
+    # Growth metrics: higher is better (green)
+    growth_cols = [
+        c
+        for c in [
+            "revenue_growth_yoy",
+            "ebitda_growth_yoy",
+            "eps_growth_yoy",
+            "revenue_cagr_3y",
+            "eps_cagr_3y",
+        ]
+        if c in numeric_cols
+    ]
+
+    # Momentum metrics: can be positive or negative
+    momentum_cols = [
+        c
+        for c in [
+            "price_momentum_1m",
+            "price_momentum_3m",
+            "price_momentum_6m",
+            "eps_surprise_pct",
+            "revenue_surprise_pct",
+        ]
+        if c in numeric_cols
+    ]
+
+    # Valuation metrics: lower is typically better (reverse gradient)
+    valuation_cols = [
+        c
+        for c in [
+            "p_e_ltm",
+            "p_e_ntm",
+            "ev_ebitda_ltm",
+            "p_b_ratio",
+            "p_s_ratio",
+        ]
+        if c in numeric_cols
+    ]
+
+    # Dividend metrics: higher yield is better
+    dividend_cols = [
+        c
+        for c in [
+            "div_yield_ltm",
+            "div_yield_ntm",
+            "dividend_payout_ratio",
+        ]
+        if c in numeric_cols
+    ]
+
+    # Apply background gradients for identified metric columns
+    if quality_score_cols:
         styler = styler.background_gradient(
-            subset=gradient_cols,
+            subset=quality_score_cols,
+            cmap="RdYlGn",
+            vmin=0,
+            vmax=100,
+        )
+
+    if profitability_cols:
+        styler = styler.background_gradient(
+            subset=profitability_cols,
             cmap="RdYlGn",
             vmin=-50,
             vmax=50,
+        )
+
+    if growth_cols:
+        styler = styler.background_gradient(
+            subset=growth_cols,
+            cmap="RdYlGn",
+            vmin=-50,
+            vmax=50,
+        )
+
+    if momentum_cols:
+        styler = styler.background_gradient(
+            subset=momentum_cols,
+            cmap="RdYlGn",
+            vmin=-30,
+            vmax=30,
+        )
+
+    if valuation_cols:
+        # Reverse gradient: lower valuation = greener
+        styler = styler.background_gradient(
+            subset=valuation_cols,
+            cmap="RdYlGn_r",
+            vmin=0,
+            vmax=50,
+        )
+
+    if dividend_cols:
+        styler = styler.background_gradient(
+            subset=dividend_cols,
+            cmap="RdYlGn",
+            vmin=0,
+            vmax=10,
         )
 
     # Add caption with mode info
     mode_display = mode.replace("_", " ").title()
     styler = styler.set_caption(
         f"Earnings Calendar Dashboard - Mode: {mode_display} "
-        f"(Top {len(df_styled)} by Market Cap)"
+        f"(Top {len(df_styled)} by Upcoming Earnings)"
+    )
+
+    # Set table styles for unwrapped columns and maximized widths (Section 17.3)
+    styler = styler.set_table_styles(
+        [
+            # Table-level styles
+            {
+                "selector": "table",
+                "props": [
+                    ("width", "100%"),
+                    ("table-layout", "auto"),
+                    ("border-collapse", "collapse"),
+                ],
+            },
+            # Header styles: no wrap, bold
+            {
+                "selector": "th",
+                "props": [
+                    ("white-space", "nowrap"),
+                    ("font-weight", "bold"),
+                    ("text-align", "center"),
+                    ("padding", "8px 12px"),
+                    ("background-color", "#2c3e50"),
+                    ("color", "#ecf0f1"),
+                ],
+            },
+            # Cell styles: no wrap for better readability
+            {
+                "selector": "td",
+                "props": [
+                    ("white-space", "nowrap"),
+                    ("padding", "6px 10px"),
+                    ("text-align", "right"),
+                ],
+            },
+            # Left-align text columns (ticker, name, sector, etc.)
+            {
+                "selector": "td:nth-child(-n+10)",
+                "props": [
+                    ("text-align", "left"),
+                ],
+            },
+        ]
     )
 
     # Save to HTML if path provided
@@ -821,7 +1025,7 @@ def create_earnings_surprise_dashboard(
             yref="paper",
             x=0.5,
             y=0.5,
-            showarrow=False,
+            showarrow=True,
             font=dict(size=14),
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
@@ -878,7 +1082,7 @@ def create_earnings_surprise_dashboard(
             yref="paper",
             x=0.5,
             y=0.5,
-            showarrow=False,
+            showarrow=True,
             font=dict(size=16),
         )
         fig.update_layout(template=PLOTLY_TEMPLATE)
@@ -1019,19 +1223,29 @@ def create_earnings_calendar_analytics(
 
     reference_date = resolve_reference_date(df, reference_date)
 
+    # Schema-aligned earnings date columns (from COLUMN_SCHEMA with role="date")
     earnings_date_cols = [
         "next_earnings",
-        "last_earnings_date",
-        "income_statement_report_date",
-        "next_earnings_date",
-        "earnings_announcement_date",
         "fy_end_date",
         "next_fy_end_date",
+        "income_statement_report_date",
+        "last_earnings_date",
+        "next_earnings_date",
+        "earnings_announcement_date",
     ]
     available_earnings_dates = [c for c in earnings_date_cols if c in df.columns]
 
-    if not available_earnings_dates:
-        logger.warning("No earnings date columns found. Falling back to engineered events.")
+    # Check which columns have actual non-null data
+    cols_with_data = [
+        c for c in available_earnings_dates if c in df.columns and df[c].notna().any()
+    ]
+
+    if not cols_with_data:
+        logger.warning(
+            f"No earnings date columns with data found. "
+            f"Checked: {available_earnings_dates}. "
+            f"Available columns: {[c for c in df.columns if 'date' in c.lower() or 'earnings' in c.lower()]}"
+        )
         return _engineer_earnings_events_from_fiscal_data(df, output_dir, reference_date)
 
     identity_cols = [
@@ -1039,14 +1253,15 @@ def create_earnings_calendar_analytics(
         for c in ["ticker", "name", "exchange", "sector", "industry", "region", "trading_country"]
         if c in df.columns
     ]
-    earnings_df = df[identity_cols + available_earnings_dates].copy()
+    earnings_df = df[identity_cols + cols_with_data].copy()
 
-    for col in available_earnings_dates:
+    for col in cols_with_data:
         earnings_df[col] = pd.to_datetime(earnings_df[col], errors="coerce")
 
-    anchor_col = (
-        "next_earnings" if "next_earnings" in earnings_df.columns else available_earnings_dates[0]
-    )
+    # Use the first available column with data as anchor
+    anchor_col = cols_with_data[0]
+    logger.info(f"Using '{anchor_col}' as anchor for earnings analytics")
+
     earnings_df["days_to_earnings"] = (earnings_df[anchor_col] - reference_date).dt.days
 
     if days_window is not None:
@@ -1055,6 +1270,37 @@ def create_earnings_calendar_analytics(
         ]
 
     earnings_df = earnings_df.dropna(subset=["days_to_earnings"])
+
+    if earnings_df.empty:
+        logger.warning(
+            f"No earnings events within ±{days_window} days of {reference_date}. "
+            f"Consider increasing days_window or checking data quality."
+        )
+        # Return informative empty state instead of generic placeholder
+        empty_fig = go.Figure()
+        empty_fig.add_annotation(
+            text=f"No earnings events within ±{days_window} days<br>"
+            f"<sub>Reference date: {reference_date.strftime('%Y-%m-%d')}<br>"
+            f"Anchor column: {anchor_col}</sub>",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=True,
+            font=dict(size=16),
+        )
+        empty_fig.update_layout(template=PLOTLY_TEMPLATE)
+
+        _write_html_artifact(empty_fig, output_dir / "earnings_calendar.html")
+        _write_html_artifact(empty_fig, output_dir / "earnings_density_heatmap.html")
+
+        return {
+            "earnings_df": pd.DataFrame(),
+            "timeline_fig": empty_fig,
+            "heatmap_fig": empty_fig,
+            "reference_date": reference_date,
+            "anchor_column": anchor_col,
+        }
 
     timeline_fig = _create_earnings_timeline_plotly(earnings_df, reference_date)
     heatmap_fig = _create_earnings_density_heatmap(earnings_df, reference_date)
@@ -1066,6 +1312,8 @@ def create_earnings_calendar_analytics(
         "earnings_df": earnings_df,
         "timeline_fig": timeline_fig,
         "heatmap_fig": heatmap_fig,
+        "reference_date": reference_date,
+        "anchor_column": anchor_col,
     }
 
 

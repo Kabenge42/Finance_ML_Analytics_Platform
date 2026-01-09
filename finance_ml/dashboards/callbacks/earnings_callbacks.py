@@ -208,6 +208,7 @@ def register_earnings_callbacks(app, initial_df):
         Output("earnings-calendar-table", "columns"),
         Output("earnings-calendar-table", "data"),
         Output("earnings-calendar-status", "children"),
+        Output("earnings-calendar-empty-state", "style"),
         Input("equities-data-store", "data"),
         Input("earnings-calendar-mode", "value"),
         Input("earnings-calendar-days", "value"),
@@ -252,13 +253,17 @@ def register_earnings_callbacks(app, initial_df):
         by using reference_date (pd.Timestamp.now()) instead of last_updated for
         all temporal calculations, per code_guidelines.md Section 9.3.0.
         """
+        # Style dicts for empty state visibility
+        empty_state_visible = {"display": "block"}
+        empty_state_hidden = {"display": "none"}
+
         try:
             df = pd.read_json(data_json, orient="split") if data_json else initial_df
         except Exception:
             df = initial_df
 
         if df is None or df.empty:
-            return [], [], "No data available"
+            return [], [], "No data available", empty_state_visible
 
         # Apply global filters if checkbox is checked
         if should_apply_filters:
@@ -279,7 +284,7 @@ def register_earnings_callbacks(app, initial_df):
             )
 
         if df.empty:
-            return [], [], "No data after applying filters"
+            return [], [], "No data after applying filters", empty_state_visible
 
         # CRITICAL FIX: Use reference_date for temporal calculations
         # Per code_guidelines.md Section 9.3.0 Temporal Calculation Standards
@@ -300,6 +305,7 @@ def register_earnings_callbacks(app, initial_df):
                 [],
                 f"No earnings events within ±{days_window} days of "
                 f"{reference_date.strftime('%Y-%m-%d')}",
+                empty_state_visible,
             )
 
         # Sort by days_to_earnings (closest first), use earnings_report_recency if available
@@ -336,7 +342,7 @@ def register_earnings_callbacks(app, initial_df):
             calendar_df = filtered_df[available_cols].head(int(top_n) if top_n else 50)
 
         if calendar_df.empty:
-            return [], [], "No data to display"
+            return [], [], "No data to display", empty_state_visible
 
         # Ensure days_to_earnings is in the output for the DataTable
         if "days_to_earnings" not in calendar_df.columns:
@@ -399,7 +405,7 @@ def register_earnings_callbacks(app, initial_df):
         if should_apply_filters:
             status += " | Global filters applied"
 
-        return columns, data, status
+        return columns, data, status, empty_state_hidden
 
     @app.callback(
         Output("ticker-drilldown-container", "style"),

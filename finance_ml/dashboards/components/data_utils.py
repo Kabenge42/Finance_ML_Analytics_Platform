@@ -20,11 +20,13 @@ from finance_ml.dashboards.widgets import (
     create_price_target_analytics,
 )
 from finance_ml.etl.config import (
+    ETLConfig,
     DataExtractionConfig,
     SchemaValidationConfig,
     DtypeCastingConfig,
     SemanticClassificationConfig,
     ImputationConfig,
+    CurrencyConversionConfig,
     SemanticTransformConfig,
     DataSanitizationConfig,
     ScalingConfig,
@@ -32,13 +34,30 @@ from finance_ml.etl.config import (
     FeatureSelectionConfig,
     FinancialMetricsConfig,
 )
+from finance_ml.etl.pipeline import run_etl_pipeline as _run_etl_pipeline
+from finance_ml.etl.metrics import ETLMetrics
 from finance_ml.features.advanced import engineer_temporal_features
-from finance_ml.ml_workflow.preprocessing.etl import (
-    etl_with_features,
-    ETLConfig,
-)
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_db_url(db_url: Optional[str] = None) -> Optional[str]:
+    """Resolve database URL from parameter or environment variables.
+
+    Args:
+        db_url: Optional explicit database URL
+
+    Returns:
+        Resolved database URL or None if not configured
+
+    Note:
+        Checks in order: explicit parameter, DB_URL env var, DATABASE_URL env var
+    """
+    resolved = db_url or os.environ.get("DB_URL") or os.environ.get("DATABASE_URL")
+    if not resolved:
+        logger.debug("No database URL configured (DB_URL or DATABASE_URL)")
+    return resolved
+
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 DASHBOARD_ROOT = PROJECT_ROOT / "outputs" / "dashboards" / "equities_dashboard"
@@ -81,6 +100,7 @@ def _get_dashboard_etl_config() -> ETLConfig:
     return ETLConfig(
         extraction=DataExtractionConfig(
             normalize_column_names=True,
+            source_type="database",
         ),
         validation=SchemaValidationConfig(
             validate_schema=True,
@@ -105,6 +125,11 @@ def _get_dashboard_etl_config() -> ETLConfig:
             reference_price_column="last_price",
             impute_categorical_columns=True,
             impute_datetime_columns=True,  # Critical for earnings calendar
+        ),
+        currency_conversion=CurrencyConversionConfig(
+            enabled=False,
+            target_currency="USD",
+            suffix="_usd",
         ),
         semantic_transform=SemanticTransformConfig(
             apply_log_transforms=False,
@@ -262,39 +287,71 @@ def load_data_csv_first(
 ) -> Tuple[pd.DataFrame, str]:
     """Load data preferring CSV export, falling back to ETL.
 
+    Args:
+        data_dir: Directory containing CSV data files
+        db_url: Database connection URL (resolves from env if not provided)
+        feature_preset: Feature engineering preset ('comprehensive', 'basic', etc.)
+        force_etl: If True, always run ETL; if False, try cached CSV first
+
     Returns:
-        Tuple of (DataFrame, source_label) where source_label is one of:
-        'csv_export', 'etl_csv', 'etl_db' or a metrics summary.
+        Tuple of (DataFrame, source_label) where source_label describes the data source
+        and ETL metrics summary, or error message if failed.
+
+    Note:
+        DB_URL resolution happens at call time, not at module import time.
+        This ensures environment variables set after import are respected.
     """
     resolved_data_dir = data_dir or DEFAULT_DATA_DIR
-    resolved_db_url = db_url or os.getenv("DB_URL")
+    # Resolve DB URL at runtime (code_guidelines.md Section 2.2)
+    resolved_db_url = _resolve_db_url(db_url)
 
     # Fast path: load from exported CSV if it exists and is recent
     if not force_etl and DEFAULT_CSV_EXPORT_PATH.exists():
         try:
             df = pd.read_csv(DEFAULT_CSV_EXPORT_PATH)
             _validate_explorer_columns(df, "csv_export")
+            logger.info(f"Loaded {len(df):,} rows from cached CSV: {DEFAULT_CSV_EXPORT_PATH}")
             return df, "csv_export"
         except Exception as e:
             logger.warning(f"Failed to load CSV export: {e}, falling back to ETL")
 
     # Slow path: run ETL pipeline with dashboard-specific config
     try:
+        # Determine source based on available configuration
         source: Literal["csv", "db"] = "db" if resolved_db_url else "csv"
+
+        if source == "db":
+            logger.info("Loading data from database...")
+        else:
+            logger.info(f"Loading data from CSV directory: {resolved_data_dir}")
 
         # Use dashboard ETL config (mirrors etl_data_explorer.ipynb)
         etl_config = _get_dashboard_etl_config()
+        etl_config.feature_engineering.preset = feature_preset
 
-        # Phase 9.1-9.3: Unified ETL Pipeline (STANDARD Pattern)
-        df, metrics = etl_with_features(
-            source=source,
-            data_dir=resolved_data_dir,
-            db_url=resolved_db_url,
-            feature_preset=feature_preset,
-            config=etl_config,
-            return_metrics=True,
-        )
+        # Run ETL pipeline using _run_etl_pipeline (code_guidelines.md Section 7.5)
+        if source == "db" and resolved_db_url:
+            df, metrics = _run_etl_pipeline(
+                source="db",
+                db_url=resolved_db_url,
+                config=etl_config,
+                return_metrics=True,
+            )
+        else:
+            df, metrics = _run_etl_pipeline(
+                source="csv",
+                data_dir=str(resolved_data_dir),
+                config=etl_config,
+                return_metrics=True,
+            )
 
+        # Validate ETL output
+        if df is None or df.empty:
+            error_msg = "ETL returned empty DataFrame"
+            logger.error(error_msg)
+            return pd.DataFrame(), error_msg
+
+        # Apply temporal enrichments
         df, resolved_reference_date, formatted_cols = _apply_temporal_enrichments(df)
         if resolved_reference_date is not None:
             logger.info(
@@ -304,20 +361,25 @@ def load_data_csv_first(
         if formatted_cols:
             logger.debug("Formatted date columns added: %s", ", ".join(formatted_cols))
 
-        # Export to CSV for next time
+        # Export to CSV for next time (non-blocking)
         if not df.empty:
             try:
                 export_equities_data(df)
+                logger.debug(f"Exported data to {DEFAULT_CSV_EXPORT_PATH}")
             except Exception as e:
                 logger.debug(f"Non-critical: Failed to export equities data: {e}")
 
         # Return the metrics summary as the source label for the status bar
-        source_label = metrics.summary()
+        source_label = metrics.summary() if metrics else f"etl_{source}"
         _validate_explorer_columns(df, f"etl_{source}")
+
+        logger.info(f"ETL complete: {len(df):,} rows, {len(df.columns)} columns from {source}")
         return df, source_label
+
     except Exception as e:
-        logger.error(f"ETL pipeline failed during dashboard load: {e}")
-        return pd.DataFrame(), f"ETL failed: {str(e)[:50]}"
+        error_msg = f"ETL failed: {str(e)[:100]}"
+        logger.error(f"ETL pipeline failed during dashboard load: {e}", exc_info=True)
+        return pd.DataFrame(), error_msg
 
 
 def generate_dashboard_artifacts(
@@ -485,33 +547,54 @@ def load_data(
     """Consolidated data loading entry point for dashboards.
 
     Handles CSV/DB selection, ETL triggering, and temporal enrichment.
+
+    Args:
+        data_source: Data source selection ('auto', 'csv', 'db')
+        data_dir: Directory for CSV files
+        db_url: Database URL (resolves from env if not provided)
+        feature_preset: Feature engineering preset
+        limit: Optional row limit for testing
+
+    Returns:
+        DataFrame with loaded and enriched data, or empty DataFrame on failure
     """
+    # Resolve DB URL at runtime
+    resolved_db_url = _resolve_db_url(db_url)
+
     try:
         if data_source == "auto":
             df, source = load_data_csv_first(
                 data_dir=Path(data_dir) if data_dir else None,
-                db_url=db_url,
+                db_url=resolved_db_url,
                 feature_preset=feature_preset,
                 force_etl=False,
             )
         else:
             etl_config = _get_dashboard_etl_config()
             etl_config.feature_engineering.preset = feature_preset
-            result = etl_with_features(
-                source=data_source,
-                data_dir=Path(data_dir) if data_dir else DEFAULT_DATA_DIR,
-                db_url=db_url,
-                config=etl_config,
-                return_metrics=False,  # Return DataFrame only, not tuple
-            )
-            df = result
 
-        if not df.empty:
+            # Use _run_etl_pipeline with correct source parameter
+            if data_source == "db" and resolved_db_url:
+                df, _ = _run_etl_pipeline(
+                    source="db",
+                    db_url=resolved_db_url,
+                    config=etl_config,
+                    return_metrics=True,
+                )
+            else:
+                df, _ = _run_etl_pipeline(
+                    source="csv",
+                    data_dir=str(Path(data_dir) if data_dir else DEFAULT_DATA_DIR),
+                    config=etl_config,
+                    return_metrics=True,
+                )
+
+        if df is not None and not df.empty:
             df, _, _ = _apply_temporal_enrichments(df)
 
-        if limit is not None and limit > 0:
+        if limit is not None and limit > 0 and df is not None:
             return df.head(int(limit)).copy()
-        return df
+        return df if df is not None else pd.DataFrame()
     except Exception as e:
         logger.error(f"Failed to load data in load_data: {e}")
         return pd.DataFrame()

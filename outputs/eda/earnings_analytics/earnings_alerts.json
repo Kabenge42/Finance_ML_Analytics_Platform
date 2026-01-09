@@ -1,14 +1,16 @@
 {
-  "timestamp": "2026-01-05T16:02:02.229495",
-  "reference_date": "2026-01-05 00:00:00",
-  "total_stocks_monitored": 5781,
+  "timestamp": "2026-01-09T11:33:59.253258",
+  "reference_date": "2026-01-09 00:00:00",
+  "total_stocks_monitored": 5790,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 2177,
-      "description": "2177 stocks with EPS surprise < -5%",
+      "count": 2154,
+      "description": "2154 stocks with EPS surprise < -5%",
       "tickers": [
+        "SARO",
+        "SMMT",
         "NVDA",
         "AAPL",
         "MSFT",
@@ -16,45 +18,43 @@
         "TSLA",
         "LLY",
         "WMT",
-        "ORCL",
-        "JNJ",
-        "NFLX"
+        "ORCL"
       ]
     },
     {
       "alert_type": "high_target_uncertainty",
       "severity": "low",
-      "count": 4125,
-      "description": "4125 stocks with price target spread > 25%",
+      "count": 4085,
+      "description": "4085 stocks with price target spread > 25%",
       "tickers": [
-        "NVDA",
-        "AAPL",
-        "GOOGL",
-        "MSFT",
-        "AMZN",
-        "AVGO",
-        "META",
-        "TSLA",
-        "LLY",
-        "WMT"
+        "QBTS",
+        "SARO",
+        "EXENS",
+        "ASCO",
+        "RNA",
+        "ABVX",
+        "SMMT",
+        "USAR",
+        "AG1",
+        "ZAB"
       ]
     },
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 31,
-      "description": "31 stocks with elevated volatility (> q0.80) within 14 days of earnings",
+      "count": 46,
+      "description": "46 stocks with elevated volatility (> q0.80) within 14 days of earnings",
       "tickers": [
-        "KEFI",
+        "INTC",
+        "SLB",
         "BMNR",
-        "APLD",
-        "FDEV",
-        "UNF",
-        "INSP",
-        "NEOG",
-        "EMEIS",
-        "OVH",
-        "OXB"
+        "SCLP",
+        "VOES",
+        "AA",
+        "AGY",
+        "SXGC",
+        "VACN",
+        "JLP"
       ]
     }
   ],

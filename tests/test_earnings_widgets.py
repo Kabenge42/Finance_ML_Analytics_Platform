@@ -79,7 +79,7 @@ class TestEarningsWidgets(unittest.TestCase):
         self.assertNotIn("TSLA", tickers)  # NaT
 
     def test_sorting_and_top_n(self):
-        """Test that results are sorted by market cap and limited by top_n."""
+        """Test that results are sorted by next_earnings ascending and limited by top_n."""
         # Add more data to exceed top_n
         df_large = pd.concat([self.df] * 5, ignore_index=True)
         df_large["market_cap"] = range(len(df_large))  # Unique mcap
@@ -88,8 +88,9 @@ class TestEarningsWidgets(unittest.TestCase):
             df_large, reference_date=self.base_date, top_n=3
         )
         self.assertEqual(len(dashboard_df), 3)
-        # Should be sorted desc
-        self.assertTrue(dashboard_df["market_cap"].is_monotonic_decreasing)
+        # Should be sorted by next_earnings ascending (soonest first)
+        earnings_dates = pd.to_datetime(dashboard_df["next_earnings"])
+        self.assertTrue(earnings_dates.is_monotonic_increasing)
 
     def test_mode_selection(self):
         """Test column selection based on mode."""

@@ -28,6 +28,11 @@ from .portfolio import (
     create_price_target_analytics,
     create_dividend_sustainability_scorecard,
     create_employee_productivity_dashboard,
+    create_dividend_reliability_dashboard,
+    create_leverage_liquidity_heatmap,
+    create_analyst_consensus_dashboard,
+    create_earnings_quality_dashboard,
+    create_revenue_forecast_momentum_chart,
 )
 
 __all__ = [
@@ -52,4 +57,9 @@ __all__ = [
     "create_category_comparison_chart",
     "create_technical_valuation_dashboard",
     "create_category_correlation_network",
+    "create_dividend_reliability_dashboard",
+    "create_leverage_liquidity_heatmap",
+    "create_analyst_consensus_dashboard",
+    "create_earnings_quality_dashboard",
+    "create_revenue_forecast_momentum_chart",
 ]

@@ -30,6 +30,7 @@ import plotly.express as px
 from dash import dash_table, dcc, html
 from flask import send_from_directory
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from finance_ml.core.constants import (
     WINSORIZE_LOWER,
@@ -119,10 +120,7 @@ def _get_default_db_url() -> str:
 
     Returns:
         Database connection string from DB_URL or DATABASE_URL env var,
-        or a placeholder if not configured.
-
-    Raises:
-        RuntimeError: If no database URL is configured and strict mode is enabled.
+        or empty string if not configured.
     """
     db_url = os.environ.get("DB_URL") or os.environ.get("DATABASE_URL")
     if db_url:
@@ -134,6 +132,21 @@ def _get_default_db_url() -> str:
         "Set DB_URL=postgresql+psycopg2://user:password@host:port/dbname"
     )
     return ""
+
+
+def _resolve_db_url_runtime(db_url: Optional[str] = None) -> Optional[str]:
+    """Resolve database URL at runtime.
+
+    This function is called at runtime (not import time) to ensure
+    environment variables set after module import are respected.
+
+    Args:
+        db_url: Optional explicit database URL
+
+    Returns:
+        Resolved database URL or None
+    """
+    return db_url or os.environ.get("DB_URL") or os.environ.get("DATABASE_URL")
 
 
 DEFAULT_DB_URL = _get_default_db_url()
@@ -244,7 +257,7 @@ def load_from_equities_table(db_url: str) -> pd.DataFrame:
         # Verify table exists and has data
         with engine.connect() as conn:
             # Check row count first
-            count_result = conn.execute(text("SELECT COUNT(*) FROM public.equities"))
+            count_result = conn.execute(text("SELECT COUNT(*) as C FROM public.equities"))
             row_count = count_result.scalar()
 
             if row_count == 0:
@@ -255,6 +268,17 @@ def load_from_equities_table(db_url: str) -> pd.DataFrame:
         # Load all data from equities table for current date
         query = text('SELECT * FROM public.equities WHERE "Reference Date" = current_date - 1')
         df = pd.read_sql(query, engine)
+
+        # If no data for yesterday, try loading most recent data
+        if df.empty:
+            logger.warning("No data for current_date - 1, loading most recent data")
+            query = text(
+                """
+                SELECT * FROM public.equities 
+                WHERE "Reference Date" = (SELECT MAX("Reference Date") FROM public.equities)
+            """
+            )
+            df = pd.read_sql(query, engine)
 
         logger.info(f"Loaded {len(df):,} rows, {len(df.columns)} columns from equities table")
 
@@ -356,9 +380,12 @@ def get_dashboard_etl_config() -> ETLConfig:
     )
 
 
-def run_etl_pipeline(raw_data: pd.DataFrame) -> pd.DataFrame:
+def run_dashboard_etl_pipeline(raw_data: pd.DataFrame) -> pd.DataFrame:
     """
     Run the ETL transformation pipeline on raw equities data.
+
+    Note: This is a local ETL runner for the dashboard, distinct from
+    the imported run_etl_pipeline from finance_ml.etl.pipeline.
 
     Args:
         raw_data: Raw DataFrame from equities table
@@ -425,6 +452,147 @@ EST_ACTUAL_METRICS = {
     },
 }
 
+# =============================================================================
+# Constants for data size warnings
+# =============================================================================
+LARGE_DATASET_ROW_THRESHOLD = 6000
+LARGE_DATASET_COL_THRESHOLD = 300
+
+
+# =============================================================================
+# Helper functions for create_app
+# =============================================================================
+
+
+def _load_initial_data(
+    data_source: DataSource,
+    effective_db_url: Optional[str],
+    data_dir: Optional[str | Path],
+) -> tuple[pd.DataFrame, DataSource]:
+    """
+    Load initial data with proper fallback chain.
+
+    Args:
+        data_source: Requested data source ('auto', 'csv', 'db')
+        effective_db_url: Resolved database URL
+        data_dir: Directory for CSV files
+
+    Returns:
+        Tuple of (DataFrame, actual_source_used)
+    """
+    # Handle missing DB URL upfront
+    if not effective_db_url and data_source == "db":
+        logger.warning(
+            "Database source requested but no DB_URL configured. Falling back to CSV source."
+        )
+        data_source = "csv"
+
+    # Attempt database loading
+    if data_source == "db" or (data_source == "auto" and effective_db_url):
+        try:
+            logger.info("Loading data from postgres.public.equities...")
+            raw_data = load_from_equities_table(effective_db_url)
+            df = run_dashboard_etl_pipeline(raw_data)
+            logger.info(f"ETL Pipeline complete: {len(df):,} rows, {len(df.columns)} features")
+            return df, "db"
+        except SQLAlchemyError as db_error:
+            logger.warning(f"Database connection failed: {db_error}")
+            if data_source == "db":
+                # Explicit db request failed, try csv fallback
+                data_source = "csv"
+            else:
+                # Auto mode, continue to csv
+                pass
+        except (RuntimeError, ValueError) as data_error:
+            logger.warning(f"Data loading/validation failed: {data_error}")
+            data_source = "csv"
+        except pd.errors.EmptyDataError:
+            logger.warning("Database returned empty data, falling back to CSV")
+            data_source = "csv"
+        except Exception as e:
+            logger.warning(f"Unexpected error loading from database: {e}")
+            data_source = "csv"
+
+    # CSV fallback or explicit CSV request
+    try:
+        df = load_data(data_source="csv", data_dir=data_dir, db_url=None)
+
+        if df is None:
+            logger.warning("load_data returned None, using empty DataFrame")
+            return pd.DataFrame(), "none"
+
+        if df.empty:
+            logger.warning("load_data returned empty DataFrame")
+            return pd.DataFrame(), "none"
+
+        logger.info(f"Loaded {len(df):,} rows from CSV source")
+        return df, "csv"
+    except Exception as e:
+        logger.error(f"CSV loading failed: {e}")
+        return pd.DataFrame(), "none"
+
+
+def _validate_safe_path(filename: str, base_dir: Path) -> Path:
+    """
+    Validate that a filename resolves to a path within the base directory.
+
+    Args:
+        filename: User-provided filename/path
+        base_dir: Directory that must contain the resolved path
+
+    Returns:
+        Resolved safe path
+
+    Raises:
+        ValueError: If path is invalid or escapes base directory
+    """
+    from pathlib import PurePosixPath, PureWindowsPath
+
+    # Reject obviously malicious patterns
+    # Check both POSIX and Windows path interpretations
+    for path_cls in (PurePosixPath, PureWindowsPath):
+        parsed = path_cls(filename)
+        if parsed.is_absolute() or ".." in parsed.parts:
+            raise ValueError(f"Invalid path: {filename}")
+
+    # Resolve and verify containment
+    base_resolved = base_dir.resolve()
+    requested_path = (base_dir / filename).resolve()
+
+    # Use os.path.commonpath for reliable containment check
+    try:
+        common = Path(os.path.commonpath([base_resolved, requested_path]))
+        if common != base_resolved:
+            raise ValueError(f"Path escapes base directory: {filename}")
+    except ValueError:
+        # commonpath raises ValueError if paths are on different drives (Windows)
+        raise ValueError(f"Invalid path: {filename}")
+
+    return requested_path
+
+
+def _prepare_data_store(df: pd.DataFrame) -> Optional[str]:
+    """
+    Prepare DataFrame for dcc.Store with size warnings.
+
+    Args:
+        df: DataFrame to serialize
+
+    Returns:
+        JSON string or None if empty
+    """
+    if df is None or df.empty:
+        return None
+
+    row_count, col_count = df.shape
+    if row_count > LARGE_DATASET_ROW_THRESHOLD or col_count > LARGE_DATASET_COL_THRESHOLD:
+        logger.warning(
+            f"Large dataset detected ({row_count:,} rows, {col_count} columns). "
+            "Consider implementing server-side caching or pagination for better performance."
+        )
+
+    return df.to_json(orient="split")
+
 
 def create_app(
     *,
@@ -436,7 +604,7 @@ def create_app(
     """Create Dash app instance.
 
     Args:
-        data_source: Where to load data from ('auto', 'csv', 'db')
+        data_source: Where to load data from ('auto', 'csv', 'db'). Default is 'db'.
         data_dir: Directory for CSV data files
         db_url: Database connection URL (falls back to DB_URL env var)
         load_on_start: Whether to load data immediately (False for tests)
@@ -449,41 +617,13 @@ def create_app(
         Keep it False in tests to avoid running ETL.
     """
     initial_df = pd.DataFrame()
-
-    # Resolve database URL with proper precedence
-    effective_db_url = db_url or os.environ.get("DB_URL") or os.environ.get("DATABASE_URL")
-
-    if not effective_db_url and data_source == "db":
-        logger.warning(
-            "Database source requested but no DB_URL configured. " "Falling back to CSV source."
-        )
-        data_source = "csv"
+    # Resolve DB URL at runtime (code_guidelines.md Section 2.2)
+    effective_db_url = _resolve_db_url_runtime(db_url)
 
     if load_on_start:
         try:
-            # Try database-first loading with ETL pipeline (matching etl_data_explorer.ipynb)
-            if data_source == "db" or (data_source == "auto" and effective_db_url):
-                try:
-                    logger.info("Loading data from postgres.public.equities...")
-                    raw_data = load_from_equities_table(effective_db_url)
-                    initial_df = run_etl_pipeline(raw_data)
-                    logger.info(
-                        f"ETL Pipeline complete: {len(initial_df):,} rows, "
-                        f"{len(initial_df.columns)} features"
-                    )
-                except Exception as db_error:
-                    logger.warning(f"Database loading failed: {db_error}, falling back to CSV")
-                    initial_df = load_data(
-                        data_source=data_source, data_dir=data_dir, db_url=effective_db_url
-                    )
-            else:
-                initial_df = load_data(
-                    data_source=data_source, data_dir=data_dir, db_url=effective_db_url
-                )
-
-            if initial_df is None:
-                logger.warning("load_data returned None, using empty DataFrame")
-                initial_df = pd.DataFrame()
+            initial_df, actual_source = _load_initial_data(data_source, effective_db_url, data_dir)
+            logger.info(f"Initial data loaded from '{actual_source}': {len(initial_df):,} rows")
         except Exception as e:
             logger.error(f"Failed to load initial data: {e}")
             initial_df = pd.DataFrame()
@@ -501,19 +641,16 @@ def create_app(
         """Serve files from outputs directory with path traversal protection."""
         from flask import abort
 
-        # Validate filename to prevent directory traversal attacks
-        # Reject any path containing '..' or absolute paths
-        if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
-            abort(403)  # Forbidden
-
-        # Ensure the resolved path is within the outputs directory
         outputs_dir = PROJECT_ROOT / "outputs"
         try:
-            requested_path = (outputs_dir / filename).resolve()
-            if not str(requested_path).startswith(str(outputs_dir.resolve())):
-                abort(403)  # Forbidden
-        except (ValueError, OSError):
-            abort(400)  # Bad Request
+            safe_path = _validate_safe_path(filename, outputs_dir)
+            # Verify file exists before serving
+            if not safe_path.is_file():
+                abort(404)
+        except ValueError:
+            abort(403)
+        except OSError:
+            abort(400)
 
         return send_from_directory(outputs_dir, filename)
 
@@ -523,14 +660,8 @@ def create_app(
             html.H1("📈 Equities Analytics Dashboard", style={"textAlign": "center"}),
             dcc.Store(
                 id="equities-data-store",
-                # Note: For large datasets (>6000 rows, 300+ columns), consider:
-                # 1. Using storage_type='session' or 'local' for persistence
-                # 2. Implementing server-side caching with flask-caching
-                # 3. Using pagination/lazy loading for initial data
-                # Current implementation stores full DataFrame as JSON which may
-                # cause performance issues with very large datasets.
-                data=initial_df.to_json(orient="split") if not initial_df.empty else None,
-                storage_type="memory",  # Explicit default for clarity
+                data=_prepare_data_store(initial_df),
+                storage_type="memory",
             ),
             html.Div(
                 id="kpi-cards",
@@ -896,6 +1027,47 @@ def create_app(
                                                     "fontFamily": FONT_FAMILY,
                                                     "marginBottom": "5px",
                                                 },
+                                            ),
+                                            # Empty state message (shown when no data)
+                                            html.Div(
+                                                id="earnings-calendar-empty-state",
+                                                children=[
+                                                    html.Div(
+                                                        [
+                                                            html.I(
+                                                                className="fas fa-calendar-times",
+                                                                style={
+                                                                    "fontSize": "48px",
+                                                                    "marginBottom": "10px",
+                                                                },
+                                                            ),
+                                                            html.H5(
+                                                                "No Earnings Events Found",
+                                                                style={
+                                                                    "color": COLOR_PALETTE[
+                                                                        "warning"
+                                                                    ],
+                                                                },
+                                                            ),
+                                                            html.P(
+                                                                "Try adjusting the Days Window slider or "
+                                                                "check if earnings date columns are "
+                                                                "populated in your data.",
+                                                                style={
+                                                                    "color": COLOR_PALETTE[
+                                                                        "neutral"
+                                                                    ],
+                                                                    "fontSize": f"{FONT_SIZES['caption']}px",
+                                                                },
+                                                            ),
+                                                        ],
+                                                        style={
+                                                            "textAlign": "center",
+                                                            "padding": "40px",
+                                                        },
+                                                    )
+                                                ],
+                                                style={"display": "none"},  # Hidden by default
                                             ),
                                             # Earnings Calendar DataTable (code_guidelines.md Section 17.3)
                                             dash_table.DataTable(

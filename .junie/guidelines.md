@@ -1,14 +1,30 @@
 # Finance ML Analytics Platform — Development Guidelines
 
 This document provides essential information for setting up, developing, and testing the Finance ML Analytics Platform.
+It aligns with `README.md` and `docs/code_guidelines.md`.
 
 ## 1. Build/Configuration Instructions
 
 ### Prerequisites
 
-- **Python**: Version 3.12 to 3.14 is required.
-- **Operating System**: Windows is primarily supported (PowerShell scripts provided).
+- **Python**: Version 3.12, 3.13, or 3.14 is required.
+- **Operating System**: Windows (primary support via PowerShell), Linux, or macOS.
 - **Dependencies**: Managed via `requirements.txt`, `Pipfile`, and `pyproject.toml`.
+
+### Tech Stack
+
+| Category            | Technologies                                                               |
+|:--------------------|:---------------------------------------------------------------------------|
+| **Language**        | Python 3.12 / 3.13 / 3.14                                                  |
+| **Package Manager** | `pip`, `Pipfile` (pipenv), `pyproject.toml` (setuptools)                   |
+| **ML Frameworks**   | `scikit-learn`, `XGBoost`, `LightGBM`, `CatBoost`, `TensorFlow` (optional) |
+| **Data Processing** | `pandas`, `NumPy`, `SciPy`, `statsmodels`                                  |
+| **Visualization**   | `Plotly`, `Matplotlib`, `Seaborn`                                          |
+| **Dashboards**      | `Streamlit`, `Dash`                                                        |
+| **Database**        | `PostgreSQL` (psycopg2), `SQLAlchemy`, `SQLite`                            |
+| **Testing**         | `pytest`, `unittest`                                                       |
+| **Code Quality**    | `Black`, `Flake8`, `isort`, `Mypy`                                         |
+| **Utilities**       | `tqdm`, `joblib`, `numba`, `forex-python`                                  |
 
 ### Automated Environment Setup
 
@@ -44,7 +60,35 @@ If you prefer manual setup:
    pip install -r requirements.txt
    ```
 
-## 2. Testing Information
+## 2. Execution and Entry Points
+
+### Main Workflow
+
+To execute the complete 8-phase ML workflow and portfolio optimization:
+
+```powershell
+python finance_ml_analytics_platform.py
+```
+
+### CLI Entry Points
+
+The package provides several command-line entry points:
+
+| Command               | Description                                |
+|:----------------------|:-------------------------------------------|
+| `finance-ml`          | Main analysis pipeline execution           |
+| `finance-ml-analyze`  | Quick data analysis and exploration        |
+| `finance-ml-validate` | Data validation and schema alignment check |
+
+### Interactive Dashboards
+
+| Dashboard              | Run Command                                              |
+|:-----------------------|:---------------------------------------------------------|
+| **Streamlit App**      | `streamlit run finance_ml/dashboards/streamlit_app.py`   |
+| **Equities Dashboard** | `python finance_ml/dashboards/equities_dashboard_app.py` |
+| **Dash App**           | `python finance_ml/dashboards/dash_app.py`               |
+
+## 3. Testing Information
 
 ### Configuring and Running Tests
 
@@ -113,7 +157,7 @@ Ran 2 tests in 0.000s
 OK
 ```
 
-## 3. Additional Development Information
+## 4. Additional Development Information
 
 ### Code Style
 
@@ -124,23 +168,81 @@ The project follows standard Python styling conventions, enforced by:
 - **Isort**: Import sorting.
 - **Mypy**: Static type checking.
 
+### Quick Reference Card
+
+| Task                     | Code                                          |
+|:-------------------------|:----------------------------------------------|
+| **Load with ETL**        | `df, m = run_etl_pipeline(source='csv', ...)` |
+| **Normalize column**     | `normalize_column_name(col)`                  |
+| **Get column dtype**     | `get_expected_dtype('last_price')`            |
+| **List price columns**   | `list_price_cols()`                           |
+| **Build features**       | `build_features(df, preset='comprehensive')`  |
+| **Validate predictions** | `validate_predictions_schema(df)`             |
+
 ### Architecture
+
+The platform follows a structured multi-phase workflow for machine learning and portfolio optimization.
+
+#### 8-Phase ML Workflow
+
+| Phase   | Description                                      | Key Module                              |
+|:--------|:-------------------------------------------------|:----------------------------------------|
+| **9.1** | Loading and preprocessing with 6-step imputation | `finance_ml.etl`                        |
+| **9.2** | Enhanced exploratory data analysis               | `finance_ml.ml_workflow.eda`            |
+| **9.3** | Advanced feature engineering                     | `finance_ml.ml_workflow.features`       |
+| **9.4** | Multi-class event classification                 | `finance_ml.ml_workflow.classification` |
+| **9.5** | Sector-optimized regression with quantile models | `finance_ml.ml_workflow.regression`     |
+| **9.6** | Model evaluation and error analysis              | `finance_ml.ml_workflow.evaluation`     |
+| **9.7** | Identification of under/overvalued stocks        | `finance_ml.ml_workflow.analytics`      |
+| **9.8** | Comprehensive analytics and reporting            | `finance_ml.ml_workflow.reporting`      |
+
+#### 7-Phase Portfolio Optimization
+
+Implements risk-adjusted return maximization, efficient frontier visualization, and backtesting.
+
+#### Design Principles
 
 - **Unified Schema Module**: Use `finance_ml.core.schema` as the single source of truth for column definitions (
   `COLUMN_SCHEMA`).
-- **Modular Feature Engineering**: Feature functions are organized by domain in `finance_ml/features/advanced/` (
-  valuation, profitability, momentum, etc.).
+- **Modular Feature Engineering**: Feature functions are organized by domain in `finance_ml/features/advanced/`.
 - **Modular ETL**: ETL configuration and pipeline stages are decoupled in `finance_ml/etl/`.
-- **Notebook Imports**: Update Jupyter notebooks to use the new modular import patterns.
 - **Module Support**: Reusable logic is extracted into the `finance_ml/` package, with `finance_ml.core` containing
   shared constants and schema.
-- **ML Workflow**: Follows an 8-phase process (Phase 9.1–9.8) covering data loading, preprocessing, feature engineering,
-  and model evaluation.
 
-### Key Directories
+### Critical Imports
 
-- `finance_ml/`: Core library code.
-- `tests/`: Comprehensive test suite.
-- `docs/`: Detailed documentation, including `code_guidelines.md`.
-- `tools/`: Utility scripts for environment setup, data processing, and fast testing.
-- `outputs/`: Generated reports, visualizations, and model artifacts.
+```python
+# Schema
+from finance_ml.core.schema import COLUMN_SCHEMA, normalize_column_name, list_price_cols
+
+# ETL
+from finance_ml.etl import run_etl_pipeline, ETLConfig
+
+# Features
+from finance_ml.ml_workflow.features.api import build_features
+```
+
+### Project Structure
+
+```text
+Finance_Analytics_Platform/
+├── finance_ml/                 # Core Python package
+│   ├── core/                   # Shared constants and unified schema
+│   ├── etl/                    # ETL pipeline and data transformation
+│   ├── features/               # Feature engineering (advanced, basic)
+│   ├── ml_workflow/            # 8-phase ML workflow implementation
+│   │   ├── preprocessing/      # Data cleaning, imputation, scaling
+│   │   ├── eda/                # Exploratory Data Analysis
+│   │   └── models/             # Model training and evaluation
+│   ├── dashboards/             # Streamlit, Dash, and Equities dashboards
+│   └── cli.py                  # CLI entry point definitions
+├── tests/                      # Unit and integration tests
+├── tools/                      # Utility and setup scripts
+├── docs/                       # Documentation and code guidelines
+├── data/                       # Local data storage
+├── models/                     # Saved model artifacts
+├── outputs/                    # Generated reports and visualizations
+├── pyproject.toml              # Build system and project metadata
+├── Pipfile                     # Pipenv dependency management
+└── requirements.txt            # Unified dependency list
+```

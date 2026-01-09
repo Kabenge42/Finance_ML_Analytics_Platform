@@ -85,6 +85,11 @@ from .valuation import (
     engineer_valuation_ratios,
     engineer_valuation_timeseries_features,
 )
+from .missing_coverage import (
+    engineer_missing_dividend_features,
+    engineer_value_score,
+    engineer_all_missing_features,
+)
 
 # Feature Registry for Auto-discovery (Phase 9.3 v1.13)
 FEATURE_REGISTRY = {
@@ -230,6 +235,12 @@ FEATURE_REGISTRY = {
         "category": "Revenue Forecasting",
         "feature_count": 9,
     },
+    # Missing Coverage (Phase 9.3 Gap Fill)
+    "missing_coverage": {
+        "function": engineer_all_missing_features,
+        "category": "Missing Coverage",
+        "feature_count": 4,
+    },
 }
 
 
@@ -282,6 +293,10 @@ __all__ = [
     "engineer_dividend_reliability_features",
     # Revenue Forecasting
     "engineer_revenue_forecast_features",
+    # Missing Coverage
+    "engineer_missing_dividend_features",
+    "engineer_value_score",
+    "engineer_all_missing_features",
     # Sector
     "engineer_sector_specific_features",
     "engineer_sector_relative_interactions",
