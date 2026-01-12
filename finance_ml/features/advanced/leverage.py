@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
 import pandas as pd
 
 from .utils import _safe_div
 
 logger = logging.getLogger(__name__)
+
 
 def engineer_leverage_ratios(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer leverage and solvency ratios.
@@ -51,6 +53,7 @@ def engineer_leverage_ratios(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered leverage ratios")
     return result
 
+
 def engineer_liquidity_ratios(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer liquidity ratios.
 
@@ -92,6 +95,7 @@ def engineer_liquidity_ratios(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered liquidity ratios")
     return result
 
+
 def engineer_efficiency_ratios(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer efficiency and activity ratios.
 
@@ -129,6 +133,7 @@ def engineer_efficiency_ratios(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Engineered efficiency ratios")
     return result
+
 
 def engineer_balance_sheet_trends(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer balance sheet growth and liquidity trends.
@@ -207,3 +212,107 @@ def engineer_balance_sheet_trends(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Engineered balance sheet growth & liquidity trends")
     return result
+
+
+def engineer_cashflow_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer cash flow temporal pattern features (12 features)."""
+
+    result = df.copy()
+
+    fcf_cols = ["fcf_fq", "fcf_1fqfq", "fcf_2fqfq", "fcf_3fqfq", "fcf_4fqfq"]
+    available_fcf = [c for c in fcf_cols if c in df.columns]
+    if len(available_fcf) >= 2:
+        fcf_matrix = df[available_fcf].astype(float).values
+        result["fcf_quarterly_trend"] = _calculate_trend_slope(fcf_matrix)
+        result["fcf_quarterly_volatility"] = _calculate_cv(fcf_matrix)
+        result["fcf_positive_ratio"] = pd.Series(
+            (fcf_matrix > 0).sum(axis=1) / len(available_fcf), index=df.index, dtype="Float64"
+        )
+
+    cfo_cols = ["cfo_fq", "cfo_1fqfq", "cfo_2fqfq", "cfo_3fqfq", "cfo_4fqfq"]
+    available_cfo = [c for c in cfo_cols if c in df.columns]
+    if len(available_cfo) >= 2:
+        cfo_matrix = df[available_cfo].astype(float).values
+        result["cfo_quarterly_trend"] = _calculate_trend_slope(cfo_matrix)
+        if "cfo_fq" in df.columns and "cfo_4fqfq" in df.columns:
+            result["cfo_yoy_quarterly"] = _safe_pct_change(
+                df["cfo_fq"].astype(float), df["cfo_4fqfq"].astype(float)
+            )
+
+    cfi_cols = ["cfi_fq", "cfi_1fqfq", "cfi_2fqfq", "cfi_3fqfq", "cfi_4fqfq"]
+    available_cfi = [c for c in cfi_cols if c in df.columns]
+    if len(available_cfi) >= 2:
+        cfi_matrix = df[available_cfi].astype(float).values
+        result["investment_intensity_trend"] = _calculate_trend_slope(-cfi_matrix)
+
+    cfo_annual = ["cfo_fy", "cfo_1fy", "cfo_2fy", "cfo_3fy", "cfo_4fy"]
+    available_annual = [c for c in cfo_annual if c in df.columns]
+    if len(available_annual) >= 3:
+        cfo_annual_matrix = df[available_annual].astype(float).values
+        result["cfo_5y_trend"] = _calculate_trend_slope(cfo_annual_matrix)
+        cv = _calculate_cv(cfo_annual_matrix)
+        result["cfo_5y_stability"] = (1 - cv.clip(0, 1)).astype("Float64")
+
+    if "cfo_ltm" in df.columns and "total_revenues_ltm" in df.columns:
+        result["cfo_margin_current"] = _safe_div(
+            df["cfo_ltm"].astype(float), df["total_revenues_ltm"].astype(float)
+        )
+
+    if "cfo_1fy" in df.columns and "total_revenues_1fy" in df.columns:
+        cfo_margin_1fy = _safe_div(
+            df["cfo_1fy"].astype(float), df["total_revenues_1fy"].astype(float)
+        )
+        if "cfo_margin_current" in result.columns:
+            result["cfo_margin_trend"] = result["cfo_margin_current"] - cfo_margin_1fy
+
+    acq_cols = [
+        "cash_acquisitions_fq",
+        "cash_acquisitions_1fqfq",
+        "cash_acquisitions_2fqfq",
+        "cash_acquisitions_3fqfq",
+        "cash_acquisitions_4fqfq",
+    ]
+    available_acq = [c for c in acq_cols if c in df.columns]
+    if len(available_acq) >= 2:
+        acq_matrix = df[available_acq].astype(float).values
+        result["acquisition_activity_trend"] = _calculate_trend_slope(acq_matrix)
+        result["acquisition_quarters_active"] = pd.Series(
+            (acq_matrix != 0).sum(axis=1), index=df.index, dtype="Int64"
+        )
+
+    logger.info("Engineered cash flow temporal features (12 features)")
+    return result
+
+
+def _calculate_trend_slope(matrix: np.ndarray) -> pd.Series:
+    """Calculate normalized trend slope."""
+
+    n = matrix.shape[1]
+    x = np.arange(n)
+    slopes = []
+    for row in matrix:
+        valid = ~np.isnan(row)
+        if valid.sum() < 2:
+            slopes.append(np.nan)
+            continue
+        coef = np.polyfit(x[valid], row[valid], 1)
+        mean_abs = np.abs(row[valid]).mean()
+        slopes.append(coef[0] / mean_abs if mean_abs > 0 else 0)
+
+    return pd.Series(slopes, dtype="Float64")
+
+
+def _calculate_cv(matrix: np.ndarray) -> pd.Series:
+    """Calculate coefficient of variation."""
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return pd.Series(
+            np.abs(np.nanstd(matrix, axis=1) / np.nanmean(matrix, axis=1)), dtype="Float64"
+        )
+
+
+def _safe_pct_change(current: pd.Series, previous: pd.Series) -> pd.Series:
+    """Safe percentage change calculation."""
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return ((current - previous) / previous.abs().replace(0, pd.NA)).astype("Float64")

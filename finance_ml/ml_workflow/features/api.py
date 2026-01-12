@@ -26,7 +26,7 @@ Backwards compatibility:
 UPDATED: 2025-12-25
 - Added 2 new presets: revenue_forecasting, balance_sheet
 - Aligned with phase93_categories.py 21 categories (up from 17)
-- Total coverage: 290+ features across all presets
+- Total coverage: 350 features across all presets
 """
 
 from __future__ import annotations
@@ -87,7 +87,7 @@ def build_features(
         - momentum: 27 features (momentum, technical indicators, RSI, EMA crossovers)
         - quality: 45+ features (accounting quality, distress, composite scores, analyst quality)
         - standard: 80-100 features (balanced mix: valuation, profitability, growth, sentiment)
-        - comprehensive: 290+ features (all advanced features)
+        - comprehensive: 350 features (all advanced features)
         - earnings_analytics: 55+ features (earnings surprises, GAAP vs adjusted, quality flags)
         - technical_plus: 50+ features (technical analysis, valuation timeseries, market sentiment)
         - dividend_focus: 30+ features (dividend reliability, capital allocation, FCF coverage)

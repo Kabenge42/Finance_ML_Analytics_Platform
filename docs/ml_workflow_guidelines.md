@@ -1,8 +1,8 @@
 # ML Workflow Guidelines
 
-**Version**: 1.1  
-**Last Updated**: 2025-12-14  
-**Aligned with**: code_guidelines.md v1.11, ml-project-checklist.md
+**Version**: 1.2  
+**Last Updated**: 2026-01-10  
+**Aligned with**: code_guidelines.md v1.12, ml-project-checklist.md, schema.py v1.13
 
 ## Overview
 
@@ -155,29 +155,52 @@ assert (df.select_dtypes(include=[np.number]).describe().loc['count'] > 100).all
 
 **Process Definition:**
 
-- 196 features across 16 categories (Momentum, Valuation, Profitability, Quality/Risk, etc.)
+- **296 features across 21 categories** defined in `PHASE93_FEATURE_CATEGORIES` (schema.py v1.13)
+- Single Source of Truth: All feature definitions in `finance_ml.core.schema`
 - Sector-specific transformations with log-transforms for market values
 - Feature presets: basic, momentum, quality, standard, comprehensive
 
+**Feature Categories (21 total):**
+
+| Category               | Features | Category              | Features |
+|------------------------|----------|-----------------------|----------|
+| Momentum & Technical   | 25       | Valuation Ratios      | 25       |
+| Profitability          | 16       | Quality & Risk        | 18       |
+| Cash Flow              | 5        | Capital Allocation    | 23       |
+| Analyst Sentiment      | 10       | Market Sentiment      | 5        |
+| Leverage & Liquidity   | 9        | Temporal Patterns     | 17       |
+| Composite Scores       | 5        | Growth Metrics        | 9        |
+| Efficiency Ratios      | 4        | Employee Productivity | 21       |
+| Balance Sheet Dynamics | 9        | Revenue Forecasting   | 9        |
+| Earnings Quality       | 33       | Technical Analysis    | 15       |
+| Valuation Timeseries   | 16       | Dividend Reliability  | 12       |
+| Employment Dynamics    | 10       |                       |          |
+
 **Acceptance Criteria:**
 
-- ✅ ≥90% feature coverage (182/196 features)
+- ✅ ≥90% feature coverage (266/296 features)
 - ✅ No NaN introduced by feature engineering
 - ✅ Feature categories documented in `phase93_category_summary_statistics.json`
+- ✅ All features traceable to `PHASE93_FEATURE_CATEGORIES`
 
 **Success Metrics:**
 
-| Metric           | Target | Validation                     |
-|------------------|--------|--------------------------------|
-| Feature Coverage | ≥90%   | `get_phase93_coverage_stats()` |
-| New Features     | 196    | Column count delta             |
-| Execution Time   | <5s    | For 6,974 rows                 |
+| Metric           | Target | Validation                                         |
+|------------------|--------|----------------------------------------------------|
+| Feature Coverage | ≥90%   | `len(available) / len(PHASE93_FEATURE_CATEGORIES)` |
+| New Features     | 296    | Column count delta                                 |
+| Execution Time   | <5s    | For 6,974 rows                                     |
 
 **Validation Checkpoint:**
 
 ```python
-coverage_stats = get_phase93_coverage_stats(df)
-assert sum(coverage_stats.values()) / 196 >= 0.90
+from finance_ml.core.schema import PHASE93_FEATURE_CATEGORIES
+
+# Count total features across all categories
+total_features = sum(len(features) for features in PHASE93_FEATURE_CATEGORIES.values())
+available = [f for cat in PHASE93_FEATURE_CATEGORIES.values() for f in cat if f in df.columns]
+coverage = len(available) / total_features
+assert coverage >= 0.90, f"Feature coverage {coverage:.1%} below 90%"
 ```
 
 ---
@@ -186,24 +209,88 @@ assert sum(coverage_stats.values()) / 196 >= 0.90
 
 **Process Definition:**
 
-- 13 label generation methods for event classification
-- 5-class output: strong_negative, negative, neutral, positive, strong_positive
+- **19 labeling methods** defined in `LABEL_FEATURE_REGISTRY` (labels.py)
+- Each method maps to Phase 9.3 feature categories via `PHASE93_FEATURE_CATEGORIES`
+- 5-class output: 0=Strong Negative, 1=Negative, 2=Neutral, 3=Positive, 4=Strong Positive
 - Classification probabilities used as meta-features for regression
+
+**Label Feature Registry (Phase 9.4.2):**
+
+The `LABEL_FEATURE_REGISTRY` maps labeling methods to their corresponding Phase 9.3 feature categories:
+
+| Method                        | Categories                             | Features | Higher is Better |
+|-------------------------------|----------------------------------------|----------|------------------|
+| `price_momentum`              | Momentum & Technical                   | 25       | Yes              |
+| `valuation`                   | Valuation Ratios, Valuation Timeseries | 41       | No               |
+| `fundamental`                 | Profitability                          | 16       | Yes              |
+| `profitability_event`         | Profitability                          | 16       | Yes              |
+| `leverage_event`              | Leverage & Liquidity                   | 9        | No               |
+| `liquidity_event`             | Leverage & Liquidity (subset)          | 3        | Yes              |
+| `efficiency_event`            | Efficiency Ratios                      | 4        | Yes              |
+| `growth_event`                | Growth Metrics                         | 9        | Yes              |
+| `quality_event`               | Quality & Risk                         | 18       | Yes              |
+| `composite_event`             | Composite Scores                       | 5        | Yes              |
+| `cashflow_event`              | Cash Flow                              | 5        | Yes              |
+| `capital_allocation_event`    | Capital Allocation                     | 23       | Yes              |
+| `employee_productivity_event` | Employee Productivity                  | 21       | Yes              |
+| `balance_sheet_event`         | Balance Sheet Dynamics                 | 9        | Yes              |
+| `revenue_forecast_event`      | Revenue Forecasting                    | 9        | Yes              |
+| `analyst_rating`              | Analyst Sentiment                      | 10       | Yes              |
+| `market_events`               | Market Sentiment                       | 5        | Yes              |
+| `combined_signals`            | Multi-category composite               | varies   | Yes              |
+| `volatility`                  | Stability-focused                      | varies   | No               |
+
+**New Functions (Phase 9.4.2):**
+
+```python
+from finance_ml.ml_workflow.classification import (
+    # Registry and validation
+    LABEL_FEATURE_REGISTRY,
+    VALID_LABEL_METHODS,
+    get_features_for_label_method,
+    validate_label_method,
+    get_label_method_info,
+    # Quality analysis
+    analyze_label_quality,
+    # Label creation
+    create_enhanced_event_labels,
+)
+
+# Validate method before use
+validate_label_method("leverage_event")  # Raises ValueError if invalid
+
+# Get Phase 9.3 features for a method
+features = get_features_for_label_method("leverage_event")
+# Returns: ['cash_ratio', 'current_ratio', 'debt_to_assets', ...]
+
+# Get method metadata
+info = get_label_method_info("valuation")
+# Returns: {'method': 'valuation', 'description': '...', 'categories': [...], 
+#           'feature_count': 41, 'higher_is_better': False}
+
+# Analyze label quality
+quality = analyze_label_quality(df, labels, method="price_momentum")
+# Returns: {'total_samples': 6974, 'class_distribution': {...}, 
+#           'feature_coverage_pct': 92.0, 'balanced': True}
+```
 
 **Acceptance Criteria:**
 
 - ✅ All 5 probability columns generated
 - ✅ Probabilities sum to 1.0 per row
 - ✅ Classification model accuracy >60%
+- ✅ Label method validated via `validate_label_method()`
+- ✅ Feature coverage ≥80% via `analyze_label_quality()`
 - ⚠️ Cross-validation must complete without errors
 
 **Success Metrics:**
 
-| Metric        | Target        | Validation                                      |
-|---------------|---------------|-------------------------------------------------|
-| Accuracy      | >60%          | Cross-validation                                |
-| F1 Score      | 0.55-0.90     | Macro average (⚠️ F1=1.0 indicates overfitting) |
-| Class Balance | No class <10% | Distribution check                              |
+| Metric           | Target        | Validation                                        |
+|------------------|---------------|---------------------------------------------------|
+| Accuracy         | >60%          | Cross-validation                                  |
+| F1 Score         | 0.55-0.90     | Macro average (⚠️ F1=1.0 indicates overfitting)   |
+| Class Balance    | No class <10% | Distribution check                                |
+| Feature Coverage | ≥80%          | `analyze_label_quality()['feature_coverage_pct']` |
 
 **Known Issues (2025-12-14):**
 
@@ -225,8 +312,7 @@ cv_results = cross_val_score(model, X, y, cv=gkf.split(X, y, groups=sector_group
 ```
 
 ⚠️ **Overfitting Warning**: LightGBM achieved F1=1.0000 during hyperparameter optimization. Perfect scores are
-unrealistic
-for financial event classification and indicate:
+unrealistic for financial event classification and indicate:
 
 - Possible data leakage from target-related features
 - Insufficient regularization (max_depth=12 may be too deep)
@@ -235,11 +321,28 @@ for financial event classification and indicate:
 **Validation Checkpoint:**
 
 ```python
+from finance_ml.ml_workflow.classification import (
+    validate_label_method,
+    analyze_label_quality,
+    create_enhanced_event_labels,
+)
+
+# Validate method and create labels
+validate_label_method(label_method)
+labels = create_enhanced_event_labels(df, method=label_method)
+
+# Analyze label quality
+quality = analyze_label_quality(df, labels, method=label_method)
+assert quality['feature_coverage_pct'] >= 80, "Feature coverage below 80%"
+assert quality['balanced'], "Labels not balanced across classes"
+
+# Validate probability columns
 prob_cols = ['event_prob_strong_negative', 'event_prob_negative',
              'event_prob_neutral', 'event_prob_positive', 'event_prob_strong_positive']
 assert all(col in df.columns for col in prob_cols)
 assert np.allclose(df[prob_cols].sum(axis=1), 1.0, atol=0.01)
-# NEW: Overfitting check
+
+# Overfitting check
 assert f1_score < 0.95, "F1 >= 0.95 suggests overfitting - validate on held-out set"
 ```
 
@@ -474,19 +577,34 @@ MODEL_VERSION = 'v9_10'
 |-----------|-------------------------------------------|-----------|----------|
 | 9.1       | `test_etl_unified_pipeline.py`            | 63        | ≥85%     |
 | 9.3       | `test_data_types_detection.py`            | 9         | ≥80%     |
+| 9.4       | `test_classification_labels_phase94.py`   | 29        | ≥80%     |
 | 9.4       | `test_classification.py`                  | TBD       | ≥75%     |
 | 9.5       | `test_phase95_nonnegative_predictions.py` | TBD       | ≥80%     |
 | 9.6       | `test_finance_ml_eval.py`                 | TBD       | ≥75%     |
 | Portfolio | `test_portfolio_*.py`                     | 23        | ≥80%     |
 
+**Phase 9.4 Test Classes (test_classification_labels_phase94.py):**
+
+- `TestProfitabilityEventLabels` - 5 tests for profitability_event method
+- `TestLeverageEventLabels` - 4 tests for leverage_event method
+- `TestLiquidityEventLabels` - 4 tests for liquidity_event method
+- `TestEfficiencyEventLabels` - 4 tests for efficiency_event method
+- `TestGrowthEventLabels` - 4 tests for growth_event method
+- `TestQualityEventLabels` - 4 tests for quality_event method
+- `TestCompositeEventLabels` - 4 tests for composite_event method
+- `TestEventLabelsEdgeCases` - 3 tests for edge cases (empty, single-row, all-NaN)
+- `TestBackwardCompatibility` - 1 test for existing methods compatibility
+
 ---
 
 ## Document References
 
-- **Code Guidelines**: `docs/code_guidelines.md` v1.10
+- **Code Guidelines**: `docs/code_guidelines.md` v1.12
+- **Core Schema**: `finance_ml/core/schema.py` v1.13 (COLUMN_SCHEMA, PHASE93_FEATURE_CATEGORIES)
+- **Classification Labels**: `finance_ml/ml_workflow/classification/labels.py` (LABEL_FEATURE_REGISTRY)
 - **ML Project Checklist**: `reference material/ml-project-checklist.md`
 - **Phase Implementation Plans**: `docs/improvement_plan/phase_9.*.md`
-- **Test Suite**: `tests/test_*.py` (86 modules, 85+ tests)
+- **Test Suite**: `tests/test_*.py` and `test/Finance_ML_Analytics_Platform/unit/` (90+ modules, 100+ tests)
 
 ---
 

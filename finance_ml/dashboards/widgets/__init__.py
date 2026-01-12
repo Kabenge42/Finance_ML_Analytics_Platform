@@ -21,6 +21,11 @@ from .earnings import (
     analyze_earnings_quality,
     create_gaap_adjusted_comparison_chart,
     generate_earnings_quality_alerts,
+    # New v1.14 dashboard functions
+    create_price_target_dynamics_dashboard,
+    create_eps_trajectory_dashboard,
+    create_cashflow_temporal_dashboard,
+    create_fiscal_calendar_dashboard,
 )
 from .portfolio import (
     create_analyst_recommendation_heatmap,
@@ -62,4 +67,9 @@ __all__ = [
     "create_analyst_consensus_dashboard",
     "create_earnings_quality_dashboard",
     "create_revenue_forecast_momentum_chart",
+    # New v1.14 dashboard functions
+    "create_price_target_dynamics_dashboard",
+    "create_eps_trajectory_dashboard",
+    "create_cashflow_temporal_dashboard",
+    "create_fiscal_calendar_dashboard",
 ]

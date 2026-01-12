@@ -33,7 +33,6 @@ from sklearn.impute import KNNImputer
 
 from finance_ml.core.schema import (
     COLUMN_SCHEMA,
-    normalize_column_name,
     list_non_recurring_cols,
     list_knn_imputable_cols,
     list_count_cols,
@@ -456,18 +455,18 @@ def apply_ordinal_encoding(
     handle_unknown: str = "use_encoded_value",
 ) -> pd.DataFrame:
     """Apply ordinal encoding to a categorical column.
-    
+
     Preserves the natural ordering of categories (e.g., Small < Mid < Large).
-    
+
     Args:
         df: Input DataFrame
         column: Column name to encode
         categories: Ordered list of categories (lowest to highest)
         handle_unknown: Strategy for unknown values ('use_encoded_value' or 'error')
-        
+
     Returns:
         DataFrame with ordinal encoded column (original column replaced)
-        
+
     Example:
         >>> df = apply_ordinal_encoding(
         ...     df, 'size_class', ['Small', 'Mid', 'Large']
@@ -475,37 +474,41 @@ def apply_ordinal_encoding(
         >>> # Small=0, Mid=1, Large=2
     """
     from sklearn.preprocessing import OrdinalEncoder
-    
+
     result = df.copy()
-    
+
     if column not in result.columns:
         logger.warning(f"Column '{column}' not found for ordinal encoding")
         return result
-    
+
     # Handle missing values first
     missing_mask = result[column].isna()
     n_missing = missing_mask.sum()
-    
+
     if n_missing > 0:
         # Fill with middle category (most conservative)
         middle_idx = len(categories) // 2
         result.loc[missing_mask, column] = categories[middle_idx]
-        logger.info(f"Filled {n_missing} missing values in '{column}' with '{categories[middle_idx]}'")
-    
+        logger.info(
+            f"Filled {n_missing} missing values in '{column}' with '{categories[middle_idx]}'"
+        )
+
     # Apply ordinal encoding
     encoder = OrdinalEncoder(
         categories=[categories],
         handle_unknown=handle_unknown,
         unknown_value=len(categories) // 2,  # Middle value for unknowns
     )
-    
+
     # Reshape for sklearn
     values = result[[column]].values
     encoded = encoder.fit_transform(values)
     result[column] = encoded.flatten().astype(int)
-    
-    logger.info(f"Applied ordinal encoding to '{column}': {dict(zip(categories, range(len(categories))))}")
-    
+
+    logger.info(
+        f"Applied ordinal encoding to '{column}': {dict(zip(categories, range(len(categories))))}"
+    )
+
     return result
 
 
@@ -517,38 +520,38 @@ def apply_onehot_encoding(
     min_frequency: Optional[float] = 0.01,
 ) -> pd.DataFrame:
     """Apply one-hot encoding to nominal categorical columns.
-    
+
     Creates binary columns for each category. Rare categories below
     min_frequency are grouped into 'other' to prevent sparse features.
-    
+
     Args:
         df: Input DataFrame
         columns: List of columns to one-hot encode
         drop_first: Drop first category to avoid multicollinearity (default: True)
         sparse_output: Return sparse matrix (default: False for dense)
         min_frequency: Minimum frequency threshold for category inclusion
-        
+
     Returns:
         DataFrame with one-hot encoded columns (original columns removed)
-        
+
     Example:
         >>> df = apply_onehot_encoding(df, ['sector', 'region'])
         >>> # Creates: sector_Technology, sector_Healthcare, region_US, etc.
     """
     from sklearn.preprocessing import OneHotEncoder
-    
+
     result = df.copy()
     available_cols = [c for c in columns if c in result.columns]
-    
+
     if not available_cols:
         logger.warning("No specified columns found for one-hot encoding")
         return result
-    
+
     # Handle missing values
     for col in available_cols:
         if result[col].isna().any():
             result[col] = result[col].fillna("Unknown")
-    
+
     # Apply one-hot encoding
     encoder = OneHotEncoder(
         drop="first" if drop_first else None,
@@ -556,27 +559,31 @@ def apply_onehot_encoding(
         handle_unknown="ignore",
         min_frequency=min_frequency,
     )
-    
+
     encoded = encoder.fit_transform(result[available_cols])
-    
+
     # Get feature names
     if hasattr(encoder, "get_feature_names_out"):
         feature_names = encoder.get_feature_names_out(available_cols)
     else:
-        feature_names = [f"{col}_{cat}" for col, cats in zip(available_cols, encoder.categories_) for cat in cats]
-    
+        feature_names = [
+            f"{col}_{cat}" for col, cats in zip(available_cols, encoder.categories_) for cat in cats
+        ]
+
     # Convert to DataFrame
     if sparse_output:
-        encoded_df = pd.DataFrame.sparse.from_spmatrix(encoded, columns=feature_names, index=result.index)
+        encoded_df = pd.DataFrame.sparse.from_spmatrix(
+            encoded, columns=feature_names, index=result.index
+        )
     else:
         encoded_df = pd.DataFrame(encoded, columns=feature_names, index=result.index)
-    
+
     # Drop original columns and add encoded columns
     result = result.drop(columns=available_cols)
     result = pd.concat([result, encoded_df], axis=1)
-    
+
     logger.info(f"One-hot encoded {len(available_cols)} columns into {len(feature_names)} features")
-    
+
     return result
 
 
@@ -840,17 +847,17 @@ def get_knn_imputation_columns() -> List[str]:
 
 
 def impute_missing_values_knn_sector(
-        df: pd.DataFrame,
-        columns: Optional[List[str]] = None,
-        sector_column: str = "sector",
-        n_neighbors: int = 5,
+    df: pd.DataFrame,
+    columns: Optional[List[str]] = None,
+    sector_column: str = "sector",
+    n_neighbors: int = 5,
 ) -> pd.DataFrame:
     """Impute missing values using sector-aware KNN imputation.
 
     This enhanced KNN imputation performs imputation separately within each sector,
     ensuring that missing values are filled using only neighbors from the same sector.
     This preserves sector-specific characteristics and improves imputation quality.
-    
+
     Schema-aligned: Uses COLUMN_SCHEMA to ensure only numeric columns with appropriate
     roles (feature, market_value, ratio, percentage) are imputed via KNN.
 
@@ -904,15 +911,15 @@ def impute_missing_values_knn_sector(
             # Try to coerce to numeric
             result[col] = pd.to_numeric(result[col], errors="coerce")
             logger.debug(f"Pre-processing: Coerced column '{col}' to numeric")
-        
+
         # Verify dtype after potential coercion
         if pd.api.types.is_numeric_dtype(result[col]):
             numeric_columns.append(col)
         else:
             logger.debug(f"Skipping non-numeric column '{col}' (dtype: {result[col].dtype})")
-    
+
     columns = numeric_columns
-    
+
     if not columns:
         logger.warning("No numeric columns available for KNN imputation after dtype filtering")
         return result
@@ -928,7 +935,9 @@ def impute_missing_values_knn_sector(
         cols_for_knn = [c for c in columns if c in result.columns]
         imputed_values = imputer.fit_transform(result[cols_for_knn])
         result[cols_for_knn] = imputed_values
-        logger.info(f"Applied global KNN imputation (k={n_neighbors}) to {len(cols_for_knn)} columns")
+        logger.info(
+            f"Applied global KNN imputation (k={n_neighbors}) to {len(cols_for_knn)} columns"
+        )
         return result
 
     # Perform sector-aware KNN imputation
@@ -938,13 +947,13 @@ def impute_missing_values_knn_sector(
 
     for sector in sectors:
         sector_mask = result[sector_column] == sector
-        
+
         # FIX: Capture exact columns that exist at slice time
         cols_to_impute = [c for c in columns if c in result.columns]
-        
+
         # FIX: Create an explicit copy with known columns to avoid view/copy ambiguity
         sector_data = result.loc[sector_mask, cols_to_impute].copy()
-        
+
         # Verify column alignment
         if list(sector_data.columns) != cols_to_impute:
             logger.warning(
@@ -988,21 +997,19 @@ def impute_missing_values_knn_sector(
             # FIX: Store column order BEFORE numpy conversion
             impute_col_order = list(sector_data.columns)
             sector_index = sector_data.index.copy()
-            
+
             # Perform imputation
             sector_imputed = imputer.fit_transform(sector_data.values)
-            
+
             # FIX: Create DataFrame with explicit column/index alignment
             sector_imputed_df = pd.DataFrame(
-                sector_imputed, 
-                index=sector_index, 
-                columns=impute_col_order
+                sector_imputed, index=sector_index, columns=impute_col_order
             )
-            
+
             # FIX: Write back using explicit column list from imputed result
             result.loc[sector_mask, impute_col_order] = sector_imputed_df.values
             imputed_count += 1
-            
+
         except ValueError as ve:
             # Catch shape mismatch errors specifically
             error_msg = str(ve)
@@ -1034,9 +1041,9 @@ def impute_missing_values_knn_sector(
                     # FIX: Use same explicit alignment pattern
                     impute_col_order = list(missing_sector_data.columns)
                     missing_index = missing_sector_data.index.copy()
-                    
+
                     missing_imputed = imputer.fit_transform(missing_sector_data.values)
-                    
+
                     missing_imputed_df = pd.DataFrame(
                         missing_imputed,
                         index=missing_index,
@@ -1060,7 +1067,7 @@ def impute_missing_values_knn_sector(
             f"Applied sector-aware KNN imputation (k={n_neighbors}) to {imputed_count} sectors "
             f"across {len(columns)} columns"
         )
-    
+
     return result
 
 
@@ -1153,7 +1160,7 @@ def apply_price_imputation(
 
     Imputes price target columns using the current last_price as the best
     available estimate when analyst targets are missing.
-    
+
     Now uses schema-based selection to ensure 100% coverage of price-related columns.
 
     Args:
@@ -1169,7 +1176,7 @@ def apply_price_imputation(
         >>> df_imputed = apply_price_imputation(df, price_column='last_price')
     """
     from finance_ml.ml_workflow.data.schema import COLUMN_SCHEMA
-    
+
     result = df.copy()
 
     if columns is None:
@@ -1208,7 +1215,7 @@ def apply_price_imputation(
 
 
 def apply_median_imputation(
-    df: pd.DataFrame, 
+    df: pd.DataFrame,
     price_column: str = "last_price",
     priority_columns: Optional[List[str]] = None,
 ) -> pd.DataFrame:
@@ -1217,7 +1224,7 @@ def apply_median_imputation(
     Fallback imputation strategy that fills any remaining missing values
     in numerical columns with their median values. Can prioritize specific
     columns (e.g., recurring items) before general imputation.
-    
+
     IMPORTANT: Excludes zero-imputation columns to prevent overwriting zero values
     set in Step 1 (non-recurring exceptional items).
 
@@ -1252,7 +1259,7 @@ def apply_median_imputation(
             logger.info(
                 f"Median imputation: excluded {excluded} semantic price columns to preserve units"
             )
-    
+
     # CRITICAL FIX: Exclude zero-imputation columns to prevent overwriting Step 1 zeros
     zero_imputation_cols = set(get_zero_imputation_columns())
     if zero_imputation_cols:
@@ -1263,19 +1270,25 @@ def apply_median_imputation(
             logger.info(
                 f"Median imputation: excluded {excluded} zero-imputation columns to preserve Step 1 zeros"
             )
-    
+
     # Handle priority columns first if specified
     if priority_columns:
-        priority_cols = [col for col in priority_columns if col in numeric_cols and col in result.columns]
+        priority_cols = [
+            col for col in priority_columns if col in numeric_cols and col in result.columns
+        ]
         if priority_cols:
-            logger.info(f"Median imputation: processing {len(priority_cols)} priority columns first")
+            logger.info(
+                f"Median imputation: processing {len(priority_cols)} priority columns first"
+            )
             for col in priority_cols:
                 if result[col].isna().any():
                     n_missing = result[col].isna().sum()
                     median_val = result[col].median()
                     if not pd.isna(median_val):
                         result[col] = result[col].fillna(median_val)
-                        logger.debug(f"Priority median-imputed {n_missing} values in '{col}' with {median_val:.4f}")
+                        logger.debug(
+                            f"Priority median-imputed {n_missing} values in '{col}' with {median_val:.4f}"
+                        )
             # Remove priority columns from general imputation list
             numeric_cols = [col for col in numeric_cols if col not in priority_cols]
 
@@ -1649,9 +1662,7 @@ def apply_enhanced_imputation_strategy_6step(
     logger.info("Step 4: Median imputation (count columns + remaining numerics)")
     median_priority_columns = get_median_imputation_columns()  # Now schema-driven
     result = apply_median_imputation(
-        result, 
-        price_column=price_column, 
-        priority_columns=median_priority_columns
+        result, price_column=price_column, priority_columns=median_priority_columns
     )
     missing_after_step4 = result.isna().sum().sum()
     logger.info(f"After Step 4: {missing_after_step4} missing values remain")

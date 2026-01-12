@@ -64,11 +64,18 @@ from finance_ml.ml_workflow.classification.evaluation import (
     # Phase 9.4 - Probability export for regression integration
     export_classification_probabilities,
 )
-
 # Import from new submodules
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels,
     create_multilabel_event_labels,
+    # Registry and validation (Phase 9.4.2 refactoring)
+    LABEL_FEATURE_REGISTRY,
+    VALID_LABEL_METHODS,
+    get_features_for_label_method,
+    validate_label_method,
+    get_label_method_info,
+    # Quality analysis
+    analyze_label_quality,
 )
 from finance_ml.ml_workflow.classification.models import (
     # Data preparation
@@ -120,6 +127,14 @@ __all__ = [
     # Labels
     "create_enhanced_event_labels",
     "create_multilabel_event_labels",
+    # Registry and validation (Phase 9.4.2 refactoring)
+    "LABEL_FEATURE_REGISTRY",
+    "VALID_LABEL_METHODS",
+    "get_features_for_label_method",
+    "validate_label_method",
+    "get_label_method_info",
+    # Quality analysis
+    "analyze_label_quality",
     # Aliases for code_guidelines.md v1.10 API
     "create_event_labels",
     "train_event_classifier",

@@ -21,14 +21,14 @@ from .config import (
     FeatureSelectionConfig,
     FinancialMetricsConfig,
 )
-from .pipeline import ETLPipeline, run_etl_pipeline, validate_etl_output
-from .metrics import ETLMetrics
 from .currency import (
     convert_to_usd,
     CurrencyConverter,
     convert_with_fallback_date,
     CurrencyConversionMetrics,
 )
+from .metrics import ETLMetrics
+from .pipeline import ETLPipeline, run_etl_pipeline, validate_etl_output
 
 __all__ = [
     "ETLConfig",

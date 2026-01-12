@@ -100,16 +100,6 @@ def _safe_savefig(path: Path, *, dpi: int = 100, bbox_inches: str = "tight", fac
 # Mispricing Functions (Moved to analytics.mispricing)
 # ============================================================================
 
-from finance_ml.ml_workflow.analytics.mispricing import (
-    calculate_mispricing_score,
-    calculate_mispricing_from_predictions_schema,
-    calculate_risk_adjusted_mispricing,
-    calculate_risk_adjusted_mispricing_from_predictions_schema,
-    rank_undervalued_stocks,
-    rank_overvalued_stocks,
-    rank_stocks_by_sector,
-)
-
 
 def simple_eda(
     df: pd.DataFrame,
@@ -1023,7 +1013,7 @@ def create_sector_heatmap(
             return None
 
         # Create heatmap
-        with plt.style.context('dark_background'):
+        with plt.style.context("dark_background"):
             fig, ax = plt.subplots(figsize=(10, max(6, len(sector_stats) * 0.5)))
             sns.heatmap(
                 pivot_data.T,
@@ -1157,7 +1147,7 @@ def create_region_sector_heatmap(
             return None
 
         # Create heatmap
-        with plt.style.context('dark_background'):
+        with plt.style.context("dark_background"):
             fig, ax = plt.subplots(figsize=(12, max(8, len(pivot_data) * 0.6)))
             sns.heatmap(
                 pivot_data,
@@ -1215,7 +1205,7 @@ def plot_outlier_boxplots(df: pd.DataFrame, columns: list, out_path: Optional[Pa
             return None
 
         # Create figure
-        with plt.style.context('dark_background'):
+        with plt.style.context("dark_background"):
             n_cols = len(data.columns)
             n_rows = (n_cols + 2) // 3  # 3 plots per row
             fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
@@ -1285,7 +1275,7 @@ def plot_outlier_violins(df: pd.DataFrame, columns: list, out_path: Optional[Pat
             return None
 
         # Create figure
-        with plt.style.context('dark_background'):
+        with plt.style.context("dark_background"):
             n_cols = len(data.columns)
             n_rows = (n_cols + 2) // 3  # 3 plots per row
             fig, axes = plt.subplots(nrows=n_rows, ncols=3, figsize=(15, 5 * n_rows))
@@ -1385,7 +1375,7 @@ def plot_outlier_scatter(
         z_combined = np.maximum(z_x, z_y)  # Max z-score for coloring
 
         # Create figure
-        with plt.style.context('dark_background'):
+        with plt.style.context("dark_background"):
             fig, ax = plt.subplots(figsize=(10, 8))
 
             # Scatter plot with z-score coloring
@@ -2769,20 +2759,10 @@ def evaluate_with_cross_validation(model, X, y, cv_strategy="simple", groups=Non
         "cv_strategy": cv_strategy,
     }
 
+
 # ============================================================================
 # SHAP Detailed Analysis (Moved to evaluation.explainability)
 # ============================================================================
-
-from finance_ml.ml_workflow.evaluation.explainability import (
-    compute_shap_values,
-    _detect_model_type,
-    create_shap_summary_plot,
-    create_shap_waterfall_plot,
-    create_shap_dependence_plot,
-    analyze_shap_by_sector,
-    explain_with_lime,
-    compare_lime_shap_consistency,
-)
 
 
 # ============================================================================
@@ -3500,7 +3480,7 @@ def create_sector_region_performance_heatmap(
     heatmap_data = metrics_df.pivot(index=sector_col, columns=region_col, values=metric)
 
     # Create heatmap
-    with plt.style.context('dark_background'):
+    with plt.style.context("dark_background"):
         plt.figure(figsize=(10, 8))
 
         # Choose colormap based on metric (lower is better for mae/rmse/mape, higher is better for r2)
@@ -3528,7 +3508,9 @@ def create_sector_region_performance_heatmap(
         if output_path:
             output_path = Path(output_path)
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(output_path, dpi=100, bbox_inches="tight", facecolor=plt.gcf().get_facecolor())
+            plt.savefig(
+                output_path, dpi=100, bbox_inches="tight", facecolor=plt.gcf().get_facecolor()
+            )
             plt.close()
 
 
@@ -5100,7 +5082,7 @@ def compare_prediction_vs_analyst_targets(
     predicted_col: str = "predicted_price_target",
     analyst_col: str = "price_target",
     current_price_col: str = "last_price",
-) -> dict:
+) -> pd.DataFrame:
     """Compare model predictions against analyst consensus targets.
 
     Phase 9.8 TDD implementation: Calculate differences and agreement metrics
@@ -5113,7 +5095,10 @@ def compare_prediction_vs_analyst_targets(
         current_price_col: Name of current price column (default: "last_price")
 
     Returns:
-        Dictionary with comparison metrics
+        DataFrame with added comparison metrics:
+            - model_analyst_diff
+            - model_analyst_diff_pct
+            - agreement_direction
 
     Examples:
         >>> result = compare_prediction_vs_analyst_targets(df)
@@ -5130,17 +5115,7 @@ def compare_prediction_vs_analyst_targets(
     analyst_direction = result[analyst_col] > result[current_price_col]
     result["agreement_direction"] = model_direction == analyst_direction
 
-    # Calculate summary metrics
-    agreement_count = result["agreement_direction"].sum()
-    total_count = len(result)
-    agreement_rate = agreement_count / total_count if total_count > 0 else 0.0
-
-    return {
-        "comparison_df": result,
-        "agreement_rate": agreement_rate,
-        "agreement_count": int(agreement_count),
-        "total_count": total_count,
-    }
+    return result
 
 
 def calculate_directional_accuracy(
@@ -5148,7 +5123,7 @@ def calculate_directional_accuracy(
     predicted_col: str = "predicted_price_target",
     analyst_col: str = "price_target",
     current_price_col: str = "last_price",
-) -> float:
+) -> dict:
     """Calculate directional accuracy of model predictions vs analyst targets.
 
     Phase 9.8 TDD implementation: Measures how often the model and analysts
@@ -5161,7 +5136,10 @@ def calculate_directional_accuracy(
         current_price_col: Name of current price column (default: "last_price")
 
     Returns:
-        Float: Proportion of directional agreement (0.0 to 1.0)
+        Dictionary with:
+            - accuracy: Proportion of directional agreement (0.0 to 1.0)
+            - total_predictions: Total rows evaluated
+            - correct_predictions: Number of directional agreements
 
     Examples:
         >>> accuracy = calculate_directional_accuracy(df)
@@ -5170,17 +5148,25 @@ def calculate_directional_accuracy(
     total = len(df)
 
     if total == 0:
-        return 0.0
+        return {"accuracy": 0.0, "total_predictions": 0, "correct_predictions": 0}
 
     # Calculate directions
     model_direction = df[predicted_col] > df[current_price_col]
-    analyst_direction = df[analyst_col] > df[current_price_col]
+
+    if "actual_future_price" in df.columns:
+        other_direction = df["actual_future_price"] > df[current_price_col]
+    else:
+        other_direction = df[analyst_col] > df[current_price_col]
 
     # Count agreements
-    agreements = (model_direction == analyst_direction).sum()
+    agreements = (model_direction == other_direction).sum()
     accuracy = agreements / total
 
-    return float(accuracy)
+    return {
+        "accuracy": float(accuracy),
+        "total_predictions": int(total),
+        "correct_predictions": int(agreements),
+    }
 
 
 def calculate_agreement_rate(df: pd.DataFrame) -> dict:

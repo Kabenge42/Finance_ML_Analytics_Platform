@@ -31,6 +31,7 @@ __all__ = [
     "generate_metrics_dashboard",  # Added to exports
 ]
 
+
 def run_financial_metrics_stage(
     df: pd.DataFrame,
     compute_valuation: bool = True,
@@ -38,76 +39,80 @@ def run_financial_metrics_stage(
     compute_growth: bool = True,
     compute_leverage: bool = True,
     compute_target_vs_price: bool = True,
-    compute_sector_specific: bool = True
+    compute_sector_specific: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, int]]:
     """Stage 8: Compute financial metrics."""
     result = df.copy()
     stats = {}
-    
+
     initial_cols = set(result.columns)
-    
+
     if compute_valuation:
         logger.info("Stage 8a: Computing valuation metrics")
         result = compute_valuation_metrics(result)
         new_cols = set(result.columns) - initial_cols
         stats["valuation_metrics_added"] = len(new_cols)
         initial_cols = set(result.columns)
-        
+
     if compute_profitability:
         logger.info("Stage 8b: Computing profitability metrics")
         result = compute_profitability_metrics(result)
         new_cols = set(result.columns) - initial_cols
         stats["profitability_metrics_added"] = len(new_cols)
         initial_cols = set(result.columns)
-        
+
     if compute_growth:
         logger.info("Stage 8c: Computing growth metrics")
         result = compute_growth_metrics(result)
         new_cols = set(result.columns) - initial_cols
         stats["growth_metrics_added"] = len(new_cols)
         initial_cols = set(result.columns)
-        
+
     if compute_leverage:
         logger.info("Stage 8d: Computing leverage metrics")
         result = compute_leverage_metrics(result)
         new_cols = set(result.columns) - initial_cols
         stats["leverage_metrics_added"] = len(new_cols)
         initial_cols = set(result.columns)
-        
+
     if compute_target_vs_price:
         logger.info("Stage 8e: Computing target vs price metrics")
         result = compute_target_vs_price_metrics(result)
         new_cols = set(result.columns) - initial_cols
         stats["target_vs_price_metrics_added"] = len(new_cols)
         initial_cols = set(result.columns)
-        
+
     if compute_sector_specific:
         logger.info("Stage 8f: Handling sector-specific metrics")
         result = handle_sector_specific_metrics(result)
         result = compute_sector_specific_ratios(result)
         new_cols = set(result.columns) - initial_cols
         stats["sector_specific_metrics_added"] = len(new_cols)
-        
+
     return result, stats
+
 
 def run_post_metrics_imputation_stage(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
     """Stage 8g: Post-metrics imputation."""
     result = df.copy()
     missing_before = int(result.isna().sum().sum())
-    
+
     if missing_before > 0:
         logger.info(f"Stage 8g: Post-metrics imputation (missing={missing_before})")
         try:
-            result, _ = impute_computed_metrics(result, method="sector_median", sector_column="sector")
-            
+            result, _ = impute_computed_metrics(
+                result, method="sector_median", sector_column="sector"
+            )
+
             for col in [c for c in CONDITIONAL_METRICS if c in result.columns]:
                 result[f"{col}_applicable"] = result[col].notna()
                 result[col] = result[col].fillna(0)
         except Exception as e:
             logger.warning(f"Post-metrics imputation step failed: {e}")
-            
+
     missing_after = int(result.isna().sum().sum())
     return result, missing_after
+
 
 def generate_metrics_dashboard(
     df: pd.DataFrame,
@@ -162,7 +167,7 @@ def generate_metrics_dashboard(
     # =========================================================================
     # Overall Metrics (across all stocks)
     # =========================================================================
-    
+
     # Valuation metrics
     valuation_metrics = {}
     for metric_col, metric_name in [
@@ -171,11 +176,38 @@ def generate_metrics_dashboard(
         ("p_s_ratio", "p_s"),
         ("ev_ebitda_ratio", "ev_ebitda"),
         ("ev_sales_ratio", "ev_sales"),
+        ("dividend_yield", "dividend_yield"),
     ]:
         if metric_col in df.columns:
             valuation_metrics[metric_name] = compute_stats(df[metric_col])
 
     dashboard["by_sector"]["valuation"] = valuation_metrics
+
+    # Analyst Sentiment metrics
+    analyst_metrics = {}
+    for metric_col, metric_name in [
+        ("upside_potential", "upside_potential"),
+        ("consensus_strength", "consensus_strength"),
+        ("analyst_bullish_pct", "bullish_pct"),
+        ("pt_momentum_1m", "pt_momentum_1m"),
+    ]:
+        if metric_col in df.columns:
+            analyst_metrics[metric_name] = compute_stats(df[metric_col])
+
+    dashboard["by_sector"]["analyst"] = analyst_metrics
+
+    # Earnings Quality metrics
+    earnings_quality_metrics = {}
+    for metric_col, metric_name in [
+        ("eps_surprise_pct", "eps_surprise"),
+        ("revenue_surprise_pct", "revenue_surprise"),
+        ("earnings_quality_score", "quality_score"),
+        ("eps_adjustment_pct_ltm", "eps_adj_pct"),
+    ]:
+        if metric_col in df.columns:
+            earnings_quality_metrics[metric_name] = compute_stats(df[metric_col])
+
+    dashboard["by_sector"]["earnings_quality"] = earnings_quality_metrics
 
     # Profitability metrics
     profitability_metrics = {}
@@ -227,6 +259,8 @@ def generate_metrics_dashboard(
                 "profitability": {},
                 "growth": {},
                 "leverage": {},
+                "analyst": {},
+                "earnings_quality": {},
             }
 
             # Valuation by sector
@@ -234,6 +268,7 @@ def generate_metrics_dashboard(
                 ("p_e_ratio", "p_e"),
                 ("p_s_ratio", "p_s"),
                 ("ev_ebitda_ratio", "ev_ebitda"),
+                ("dividend_yield", "dividend_yield"),
             ]:
                 if metric_col in sector_df.columns:
                     sector_stats["valuation"][metric_name] = compute_stats(sector_df[metric_col])
@@ -246,7 +281,28 @@ def generate_metrics_dashboard(
                 ("operating_margin_pct", "operating_margin"),
             ]:
                 if metric_col in sector_df.columns:
-                    sector_stats["profitability"][metric_name] = compute_stats(sector_df[metric_col])
+                    sector_stats["profitability"][metric_name] = compute_stats(
+                        sector_df[metric_col]
+                    )
+
+            # Analyst metrics by sector
+            for metric_col, metric_name in [
+                ("upside_potential", "upside_potential"),
+                ("consensus_strength", "consensus_strength"),
+                ("analyst_bullish_pct", "bullish_pct"),
+            ]:
+                if metric_col in sector_df.columns:
+                    sector_stats["analyst"][metric_name] = compute_stats(sector_df[metric_col])
+
+            # Earnings Quality by sector
+            for metric_col, metric_name in [
+                ("eps_surprise_pct", "eps_surprise"),
+                ("earnings_quality_score", "quality_score"),
+            ]:
+                if metric_col in sector_df.columns:
+                    sector_stats["earnings_quality"][metric_name] = compute_stats(
+                        sector_df[metric_col]
+                    )
 
             # Growth by sector
             for metric_col, metric_name in [
@@ -300,7 +356,9 @@ def generate_metrics_dashboard(
                 ("gross_margin_pct", "gross_margin"),
             ]:
                 if metric_col in region_df.columns:
-                    region_stats["profitability"][metric_name] = compute_stats(region_df[metric_col])
+                    region_stats["profitability"][metric_name] = compute_stats(
+                        region_df[metric_col]
+                    )
 
             # Growth by region
             for metric_col, metric_name in [

@@ -14,12 +14,10 @@ Design goals: fast, deterministic, no imports/exec of target code.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import ast
 import sys
-
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 Issue = Dict[str, Any]
 

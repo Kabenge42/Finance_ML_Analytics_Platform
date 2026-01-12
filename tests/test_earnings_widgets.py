@@ -61,6 +61,9 @@ class TestEarningsWidgets(unittest.TestCase):
                 "price_momentum_1m": [0.10, -0.05, 0.02, 0.08, -0.12],
                 "volatility_1m": [0.25, 0.18, 0.30, 0.22, 0.40],
                 "rel_volume": [1.2, 0.9, 1.5, 1.1, 2.0],
+                "one_day_pct": [1.5, -2.0, 0.5, -1.0, 3.0],
+                "price_chg_pct_1m": [5.0, -3.0, 2.0, -1.5, 8.0],
+                "price_chg_pct_3m": [10.0, -5.0, 4.0, -2.0, 15.0],
                 "div_yield_ltm": [0.01, 0.02, 0.0, 0.0, 0.0],
             }
         )

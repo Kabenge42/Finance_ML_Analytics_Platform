@@ -18,7 +18,6 @@ Notes:
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Optional
 
@@ -28,6 +27,7 @@ import pandas as pd
 try:
     import plotly.graph_objects as go
     import plotly.express as px
+
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -54,16 +54,20 @@ def _write_plotly_html(fig: "go.Figure", path: Path) -> None:
         fig.write_html(str(path), include_plotlyjs="cdn")
     else:
         # Fallback to placeholder if Plotly not available
-        _write_html(path, "Visualization", "Plotly not available - install with: pip install plotly")
+        _write_html(
+            path, "Visualization", "Plotly not available - install with: pip install plotly"
+        )
 
 
 def _manifest(files: Iterable[Path]) -> Dict[str, List[str]]:
     return {"files": [str(f.name) for f in files]}
 
 
-def _create_portfolio_composition_pie(weights: pd.Series, title: str = "Portfolio Composition") -> "go.Figure":
+def _create_portfolio_composition_pie(
+    weights: pd.Series, title: str = "Portfolio Composition"
+) -> "go.Figure":
     """Create adaptive portfolio composition pie chart with dynamic sizing.
-    
+
     Features:
     - Dynamic chart sizing based on asset count (8/15/25/25+ thresholds)
     - Adaptive text display (percent+label, auto, percent only)
@@ -73,11 +77,11 @@ def _create_portfolio_composition_pie(weights: pd.Series, title: str = "Portfoli
     """
     if not PLOTLY_AVAILABLE:
         return go.Figure()
-    
+
     # Sort by weight descending
     weights = weights.sort_values(ascending=False)
     n_assets = len(weights)
-    
+
     # Dynamic sizing based on asset count
     if n_assets <= 8:
         width, height = 700, 600
@@ -103,50 +107,51 @@ def _create_portfolio_composition_pie(weights: pd.Series, title: str = "Portfoli
         textinfo = "percent"
         textfont_size = 9
         hole_size = 0.45
-    
+
     # Intelligent grouping for large portfolios
     labels = weights.index.tolist()
     values = weights.values.tolist()
-    
+
     if n_assets > 15:
         # Group small positions (<2% for 16-25, <3% for >25)
         threshold = 0.02 if n_assets <= 25 else 0.03
         min_small_count = 3 if n_assets <= 25 else 5
-        
+
         small_mask = weights < threshold
         if small_mask.sum() > min_small_count:
             large_weights = weights[~small_mask]
             small_sum = weights[small_mask].sum()
-            
+
             labels = large_weights.index.tolist() + ["Others"]
             values = large_weights.values.tolist() + [small_sum]
-    
+
     # Truncate long names for portfolios >15 holdings
     if n_assets > 15:
         labels = [str(lbl)[:40] + "..." if len(str(lbl)) > 40 else str(lbl) for lbl in labels]
-    
+
     # Pull effect for small slices (<5%)
     pull_values = [0.05 if v / sum(values) < 0.05 else 0 for v in values]
-    
-    fig = go.Figure(data=[go.Pie(
-        labels=labels,
-        values=values,
-        textposition=textposition,
-        textinfo=textinfo,
-        textfont_size=textfont_size,
-        hole=hole_size,
-        pull=pull_values,
-        marker=dict(line=dict(color='#303030', width=2)),  # Dark border
-        hovertemplate="<b>%{label}</b><br>Weight: %{value:.2%}<br>Value: %{value:.4f}<extra></extra>"
-    )])
-    
+
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=labels,
+                values=values,
+                textposition=textposition,
+                textinfo=textinfo,
+                textfont_size=textfont_size,
+                hole=hole_size,
+                pull=pull_values,
+                marker=dict(line=dict(color="#303030", width=2)),  # Dark border
+                hovertemplate="<b>%{label}</b><br>Weight: %{value:.2%}<br>Value: %{value:.4f}<extra></extra>",
+            )
+        ]
+    )
+
     # Dynamic title with actual holding count
     fig.update_layout(
         title=dict(
-            text=f"{title} ({n_assets} Holdings)",
-            x=0.5,
-            xanchor='center',
-            font=dict(size=16)
+            text=f"{title} ({n_assets} Holdings)", x=0.5, xanchor="center", font=dict(size=16)
         ),
         width=width,
         height=height,
@@ -157,12 +162,12 @@ def _create_portfolio_composition_pie(weights: pd.Series, title: str = "Portfoli
             y=0.5,
             xanchor="left",
             x=1.02,
-            font=dict(size=textfont_size)
+            font=dict(size=textfont_size),
         ),
         margin=dict(l=20, r=200, t=80, b=20),
-        template="plotly_dark"
+        template="plotly_dark",
     )
-    
+
     return fig
 
 
@@ -170,14 +175,18 @@ def _create_returns_distribution_histogram(mu: pd.Series) -> "go.Figure":
     """Create histogram of expected returns distribution."""
     if not PLOTLY_AVAILABLE:
         return go.Figure()
-    
-    fig = go.Figure(data=[go.Histogram(
-        x=mu.values,
-        nbinsx=30,
-        marker=dict(color='#375a7f', line=dict(color='#303030', width=1)),  # Primary
-        hovertemplate="Return: %{x:.2%}<br>Count: %{y}<extra></extra>"
-    )])
-    
+
+    fig = go.Figure(
+        data=[
+            go.Histogram(
+                x=mu.values,
+                nbinsx=30,
+                marker=dict(color="#375a7f", line=dict(color="#303030", width=1)),  # Primary
+                hovertemplate="Return: %{x:.2%}<br>Count: %{y}<extra></extra>",
+            )
+        ]
+    )
+
     fig.update_layout(
         title="Expected Returns Distribution",
         xaxis_title="Expected Return",
@@ -185,9 +194,9 @@ def _create_returns_distribution_histogram(mu: pd.Series) -> "go.Figure":
         width=900,
         height=600,
         showlegend=False,
-        template="plotly_dark"
+        template="plotly_dark",
     )
-    
+
     return fig
 
 
@@ -195,99 +204,110 @@ def _create_correlation_heatmap(cov: np.ndarray, asset_names: List[str]) -> "go.
     """Create correlation heatmap from covariance matrix."""
     if not PLOTLY_AVAILABLE:
         return go.Figure()
-    
+
     # Convert covariance to correlation
     std = np.sqrt(np.diag(cov))
     corr = cov / (std[:, None] * std[None, :] + 1e-12)
-    
+
     # Limit to top 50 assets for readability
     if len(asset_names) > 50:
         top_idx = np.argsort(std)[-50:]
         corr = corr[top_idx][:, top_idx]
         asset_names = [asset_names[i] for i in top_idx]
-    
-    fig = go.Figure(data=go.Heatmap(
-        z=corr,
-        x=asset_names,
-        y=asset_names,
-        colorscale='RdYlGn',
-        zmid=0,
-        zmin=-1,
-        zmax=1,
-        hovertemplate="X: %{x}<br>Y: %{y}<br>Correlation: %{z:.2f}<extra></extra>"
-    ))
-    
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=corr,
+            x=asset_names,
+            y=asset_names,
+            colorscale="RdYlGn",
+            zmid=0,
+            zmin=-1,
+            zmax=1,
+            hovertemplate="X: %{x}<br>Y: %{y}<br>Correlation: %{z:.2f}<extra></extra>",
+        )
+    )
+
     fig.update_layout(
         title=f"Correlation Heatmap (Top {len(asset_names)} Assets)",
         width=1000,
         height=900,
         xaxis=dict(tickangle=-45),
-        template="plotly_dark"
+        template="plotly_dark",
     )
-    
+
     return fig
 
 
-def _create_efficient_frontier_chart(returns: List[float], risks: List[float], 
-                                     max_sharpe_idx: int = -1) -> "go.Figure":
+def _create_efficient_frontier_chart(
+    returns: List[float], risks: List[float], max_sharpe_idx: int = -1
+) -> "go.Figure":
     """Create efficient frontier scatter plot."""
     if not PLOTLY_AVAILABLE:
         return go.Figure()
-    
+
     fig = go.Figure()
-    
+
     # Frontier points
-    fig.add_trace(go.Scatter(
-        x=risks,
-        y=returns,
-        mode='lines+markers',
-        name='Efficient Frontier',
-        line=dict(color='#375a7f', width=3),  # Primary
-        marker=dict(size=6),
-        hovertemplate="Risk: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>"
-    ))
-    
+    fig.add_trace(
+        go.Scatter(
+            x=risks,
+            y=returns,
+            mode="lines+markers",
+            name="Efficient Frontier",
+            line=dict(color="#375a7f", width=3),  # Primary
+            marker=dict(size=6),
+            hovertemplate="Risk: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>",
+        )
+    )
+
     # Highlight max Sharpe ratio point
     if max_sharpe_idx >= 0 and max_sharpe_idx < len(returns):
-        fig.add_trace(go.Scatter(
-            x=[risks[max_sharpe_idx]],
-            y=[returns[max_sharpe_idx]],
-            mode='markers',
-            name='Max Sharpe',
-            marker=dict(size=15, color='#e74c3c', symbol='star'),  # Danger/Highlight
-            hovertemplate="Max Sharpe<br>Risk: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>"
-        ))
-    
+        fig.add_trace(
+            go.Scatter(
+                x=[risks[max_sharpe_idx]],
+                y=[returns[max_sharpe_idx]],
+                mode="markers",
+                name="Max Sharpe",
+                marker=dict(size=15, color="#e74c3c", symbol="star"),  # Danger/Highlight
+                hovertemplate="Max Sharpe<br>Risk: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>",
+            )
+        )
+
     fig.update_layout(
         title="Mean-Variance Efficient Frontier",
         xaxis_title="Portfolio Risk (Volatility)",
         yaxis_title="Portfolio Return",
         width=900,
         height=600,
-        template="plotly_dark"
+        template="plotly_dark",
     )
-    
+
     return fig
 
 
-def _create_backtest_performance_chart(dates: pd.DatetimeIndex, cumulative_returns: pd.Series) -> "go.Figure":
+def _create_backtest_performance_chart(
+    dates: pd.DatetimeIndex, cumulative_returns: pd.Series
+) -> "go.Figure":
     """Create cumulative returns line chart for backtesting."""
     if not PLOTLY_AVAILABLE:
         return go.Figure()
-    
+
     fig = go.Figure()
-    
-    fig.add_trace(go.Scatter(
-        x=dates,
-        y=cumulative_returns.values,
-        mode='lines',
-        name='Portfolio',
-        line=dict(color='#375a7f', width=2),  # Primary
-        fill='tozeroy',
-        fillcolor='rgba(55, 90, 127, 0.2)',  # Primary with opacity
-        hovertemplate="Date: %{x}<br>Cumulative Return: %{y:.2%}<extra></extra>"
-    ))
-    
+
+    fig.add_trace(
+        go.Scatter(
+            x=dates,
+            y=cumulative_returns.values,
+            mode="lines",
+            name="Portfolio",
+            line=dict(color="#375a7f", width=2),  # Primary
+            fill="tozeroy",
+            fillcolor="rgba(55, 90, 127, 0.2)",  # Primary with opacity
+            hovertemplate="Date: %{x}<br>Cumulative Return: %{y:.2%}<extra></extra>",
+        )
+    )
+
     fig.update_layout(
         title="Backtest Cumulative Performance",
         xaxis_title="Date",
@@ -295,9 +315,9 @@ def _create_backtest_performance_chart(dates: pd.DatetimeIndex, cumulative_retur
         width=1000,
         height=600,
         template="plotly_dark",
-        hovermode='x unified'
+        hovermode="x unified",
     )
-    
+
     return fig
 
 
@@ -305,22 +325,26 @@ def _create_attribution_bar_chart(tickers: List[str], contributions: List[float]
     """Create horizontal bar chart for performance attribution."""
     if not PLOTLY_AVAILABLE:
         return go.Figure()
-    
+
     # Sort by contribution
-    df = pd.DataFrame({'ticker': tickers, 'contribution': contributions})
-    df = df.sort_values('contribution', ascending=True)
-    
+    df = pd.DataFrame({"ticker": tickers, "contribution": contributions})
+    df = df.sort_values("contribution", ascending=True)
+
     # Color coding: green for positive, red for negative
-    colors = ['#00bc8c' if c >= 0 else '#e74c3c' for c in df['contribution']]  # Success/Danger
-    
-    fig = go.Figure(data=[go.Bar(
-        y=df['ticker'],
-        x=df['contribution'],
-        orientation='h',
-        marker=dict(color=colors),
-        hovertemplate="<b>%{y}</b><br>Contribution: %{x:.2%}<extra></extra>"
-    )])
-    
+    colors = ["#00bc8c" if c >= 0 else "#e74c3c" for c in df["contribution"]]  # Success/Danger
+
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                y=df["ticker"],
+                x=df["contribution"],
+                orientation="h",
+                marker=dict(color=colors),
+                hovertemplate="<b>%{y}</b><br>Contribution: %{x:.2%}<extra></extra>",
+            )
+        ]
+    )
+
     fig.update_layout(
         title="Performance Attribution by Asset",
         xaxis_title="Contribution to Return",
@@ -328,9 +352,9 @@ def _create_attribution_bar_chart(tickers: List[str], contributions: List[float]
         width=900,
         height=max(500, len(tickers) * 20),  # Dynamic height
         template="plotly_dark",
-        showlegend=False
+        showlegend=False,
     )
-    
+
     return fig
 
 
@@ -338,32 +362,34 @@ def _create_risk_decomposition_waterfall(components: Dict[str, float]) -> "go.Fi
     """Create waterfall chart for risk decomposition."""
     if not PLOTLY_AVAILABLE:
         return go.Figure()
-    
+
     labels = list(components.keys())
     values = list(components.values())
-    
-    fig = go.Figure(go.Waterfall(
-        name="Risk",
-        orientation="v",
-        measure=["relative"] * (len(labels) - 1) + ["total"],
-        x=labels,
-        y=values,
-        connector={"line": {"color": "rgb(63, 63, 63)"}},
-        decreasing={"marker": {"color": "#e74c3c"}},  # Danger
-        increasing={"marker": {"color": "#00bc8c"}},  # Success
-        totals={"marker": {"color": "#375a7f"}},  # Primary
-        hovertemplate="%{x}<br>Contribution: %{y:.4f}<extra></extra>"
-    ))
-    
+
+    fig = go.Figure(
+        go.Waterfall(
+            name="Risk",
+            orientation="v",
+            measure=["relative"] * (len(labels) - 1) + ["total"],
+            x=labels,
+            y=values,
+            connector={"line": {"color": "rgb(63, 63, 63)"}},
+            decreasing={"marker": {"color": "#e74c3c"}},  # Danger
+            increasing={"marker": {"color": "#00bc8c"}},  # Success
+            totals={"marker": {"color": "#375a7f"}},  # Primary
+            hovertemplate="%{x}<br>Contribution: %{y:.4f}<extra></extra>",
+        )
+    )
+
     fig.update_layout(
         title="Risk Decomposition Waterfall",
         xaxis_title="Component",
         yaxis_title="Risk Contribution",
         width=1000,
         height=600,
-        template="plotly_dark"
+        template="plotly_dark",
     )
-    
+
     return fig
 
 
@@ -382,12 +408,8 @@ def universe_summary(df: pd.DataFrame, out_dir: Path | str) -> Dict[str, List[st
     out = _ensure_dir(Path(out_dir))
 
     # Group summaries (robust to missing columns)
-    by_sector = (
-        df.groupby("sector").size().to_dict() if "sector" in df.columns else {}
-    )
-    by_region = (
-        df.groupby("region").size().to_dict() if "region" in df.columns else {}
-    )
+    by_sector = df.groupby("sector").size().to_dict() if "sector" in df.columns else {}
+    by_region = df.groupby("region").size().to_dict() if "region" in df.columns else {}
     # Market cap buckets (if available)
     market_cap_buckets: Dict[str, int] = {}
     if "market_cap" in df.columns:
@@ -413,15 +435,17 @@ def universe_summary(df: pd.DataFrame, out_dir: Path | str) -> Dict[str, List[st
     html_path = out / "portfolio_universe_summary.html"
     filter_html = out / "portfolio_filter_explorer.html"
     json_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    
+
     # Generate interactive pie charts for sector and region distribution
     if PLOTLY_AVAILABLE and "sector" in df.columns and len(by_sector) > 0:
         sector_series = pd.Series(by_sector)
         fig = _create_portfolio_composition_pie(sector_series, "Universe by Sector")
         _write_plotly_html(fig, html_path)
     else:
-        _write_html(html_path, "Portfolio Universe Summary", "Auto-generated summary table placeholder")
-    
+        _write_html(
+            html_path, "Portfolio Universe Summary", "Auto-generated summary table placeholder"
+        )
+
     # Filter explorer remains placeholder for now
     _write_html(filter_html, "Portfolio Filter Explorer", "Interactive filter placeholder")
 
@@ -431,7 +455,9 @@ def universe_summary(df: pd.DataFrame, out_dir: Path | str) -> Dict[str, List[st
 # ------------------------------ 10.3 ------------------------------------
 
 
-def returns_risk_diagnostics(mu: pd.Series, cov: np.ndarray, out_dir: Path | str) -> Dict[str, List[str]]:
+def returns_risk_diagnostics(
+    mu: pd.Series, cov: np.ndarray, out_dir: Path | str
+) -> Dict[str, List[str]]:
     """Create expected-returns distribution and risk inputs QA artifacts.
 
     Writes:
@@ -463,14 +489,14 @@ def returns_risk_diagnostics(mu: pd.Series, cov: np.ndarray, out_dir: Path | str
     drift_html = out / "risk_drift_dashboard.html"
 
     json_path.write_text(json.dumps(diag, indent=2), encoding="utf-8")
-    
+
     # Generate interactive histogram for returns distribution
     if PLOTLY_AVAILABLE and not mu.empty:
         fig_dist = _create_returns_distribution_histogram(mu)
         _write_plotly_html(fig_dist, dist_html)
     else:
         _write_html(dist_html, "Expected Returns Distribution", "Histogram placeholder")
-    
+
     # Generate interactive correlation heatmap
     if PLOTLY_AVAILABLE and cov.shape[0] > 0:
         asset_names = mu.index.tolist()
@@ -478,7 +504,7 @@ def returns_risk_diagnostics(mu: pd.Series, cov: np.ndarray, out_dir: Path | str
         _write_plotly_html(fig_heatmap, heatmap_html)
     else:
         _write_html(heatmap_html, "Risk Correlation Heatmap", "Heatmap placeholder")
-    
+
     # Drift dashboard remains placeholder for now
     _write_html(drift_html, "Risk Drift Dashboard", "Volatility/correlation drift placeholder")
 
@@ -520,44 +546,46 @@ def frontier_and_constraints(
     else:
         df_scen["max_weight"] = [0.1, 0.15, 0.2, 0.25, 0.3]
     df_scen.to_csv(cons_csv, index=False)
-    
+
     # Generate simple efficient frontier (equal-weighted portfolios with varying number of assets)
     if PLOTLY_AVAILABLE and not mu.empty and cov.shape[0] > 1:
         n_points = 15
         returns_list = []
         risks_list = []
-        
+
         # Simple approach: vary concentration from equal-weight to concentrated
         for i in range(n_points):
             # Create weights that concentrate gradually
             alpha = i / (n_points - 1)  # 0 to 1
             n_assets = max(2, int(len(mu) * (1 - alpha * 0.8)))  # Use 100% to 20% of assets
-            
+
             # Select top assets by return
             top_assets = mu.nlargest(n_assets).index
             w = np.zeros(len(mu))
             indices = [mu.index.get_loc(asset) for asset in top_assets]
             w[indices] = 1.0 / n_assets
-            
+
             # Calculate portfolio return and risk
             port_return = float(np.dot(w, mu.values))
             port_risk = float(np.sqrt(np.maximum(0.0, w.T @ cov @ w)))
-            
+
             returns_list.append(port_return)
             risks_list.append(port_risk)
-        
+
         # Find max Sharpe (simple: max return/risk)
         sharpe_ratios = [r / (v + 1e-9) for r, v in zip(returns_list, risks_list)]
         max_sharpe_idx = int(np.argmax(sharpe_ratios))
-        
+
         fig_frontier = _create_efficient_frontier_chart(returns_list, risks_list, max_sharpe_idx)
         _write_plotly_html(fig_frontier, eff_html)
     else:
         _write_html(eff_html, "Efficient Frontier", "Mean-variance frontier placeholder")
-    
+
     _write_html(cons_html, "Constraints Sensitivity", "Sliders and scenarios placeholder")
     _write_html(tc_html, "Transaction Cost Impact", "TC impact curves placeholder")
-    tc_json.write_text(json.dumps({"assumed_tc_bps": 10, "impact": "placeholder"}, indent=2), encoding="utf-8")
+    tc_json.write_text(
+        json.dumps({"assumed_tc_bps": 10, "impact": "placeholder"}, indent=2), encoding="utf-8"
+    )
 
     return _manifest([eff_html, cons_html, cons_csv, tc_html, tc_json])
 
@@ -597,14 +625,16 @@ def risk_decomposition_dashboard(
     by_region = (
         exposures.groupby("region").size().to_dict() if "region" in exposures.columns else {}
     )
-    
+
     # Generate portfolio composition pie chart with actual holdings
     if PLOTLY_AVAILABLE and len(weights) > 0:
-        fig_composition = _create_portfolio_composition_pie(weights, "Optimized Portfolio Composition")
+        fig_composition = _create_portfolio_composition_pie(
+            weights, "Optimized Portfolio Composition"
+        )
         _write_plotly_html(fig_composition, exp_html)
     else:
         _write_html(exp_html, "Portfolio Exposures", f"Sectors: {by_sector} Regions: {by_region}")
-    
+
     # Generate risk decomposition waterfall if we have sector data
     if PLOTLY_AVAILABLE and "sector" in exposures.columns and len(by_sector) > 0:
         # Simple risk decomposition: weight contribution by sector
@@ -613,13 +643,13 @@ def risk_decomposition_dashboard(
             if ticker in exposures.index:
                 sector = exposures.loc[ticker, "sector"]
                 sector_weights[sector] = sector_weights.get(sector, 0.0) + weights[ticker]
-        
+
         sector_weights["Total"] = sum(sector_weights.values())
         fig_decomp = _create_risk_decomposition_waterfall(sector_weights)
         _write_plotly_html(fig_decomp, decomp_html)
     else:
         _write_html(decomp_html, "Risk Decomposition", "Contribution-to-risk waterfall placeholder")
-    
+
     _write_html(stress_html, "Stress Tests", "Scenarios placeholder")
 
     return _manifest([hold_csv, exp_html, decomp_html, stress_html])
@@ -653,7 +683,7 @@ def backtest_and_attribution(
     pd.DataFrame({"ticker": contrib.index, "contribution": contrib.values}).to_csv(
         attrib_csv, index=False
     )
-    
+
     # Generate interactive attribution bar chart
     if PLOTLY_AVAILABLE and len(contrib) > 0:
         tickers = contrib.index.tolist()
@@ -662,7 +692,7 @@ def backtest_and_attribution(
         _write_plotly_html(fig_attrib, attrib_html)
     else:
         _write_html(attrib_html, "Performance Attribution", "Attribution bars placeholder")
-    
+
     # Generate backtest performance chart if prices has time-series data
     if PLOTLY_AVAILABLE and isinstance(prices.index, pd.DatetimeIndex) and len(prices) > 1:
         # Compute simple portfolio returns (weighted average)
@@ -670,7 +700,7 @@ def backtest_and_attribution(
         returns = prices.pct_change().fillna(0.0)
         portfolio_returns = (returns * aligned_weights).sum(axis=1)
         cumulative_returns = (1 + portfolio_returns).cumprod() - 1
-        
+
         fig_backtest = _create_backtest_performance_chart(prices.index, cumulative_returns)
         _write_plotly_html(fig_backtest, backtest_html)
     else:

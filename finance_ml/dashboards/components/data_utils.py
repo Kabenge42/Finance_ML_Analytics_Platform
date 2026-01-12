@@ -35,7 +35,6 @@ from finance_ml.etl.config import (
     FinancialMetricsConfig,
 )
 from finance_ml.etl.pipeline import run_etl_pipeline as _run_etl_pipeline
-from finance_ml.etl.metrics import ETLMetrics
 from finance_ml.features.advanced import engineer_temporal_features
 
 logger = logging.getLogger(__name__)
@@ -67,11 +66,7 @@ DEFAULT_METADATA_PATH = DASHBOARD_ROOT / "metadata.json"
 ARTIFACTS_DIR = DASHBOARD_ROOT / "artifacts"
 ARTIFACTS_METADATA_PATH = DASHBOARD_ROOT / "artifacts_metadata.json"
 DEFAULT_ALERTS_PATH = (
-    PROJECT_ROOT
-    / "outputs"
-    / "eda"
-    / "earnings_analytics"
-    / "earnings_quality_alerts.json"
+    PROJECT_ROOT / "outputs" / "eda" / "earnings_analytics" / "earnings_quality_alerts.json"
 )
 
 DEFAULT_EXPLORER_COLUMNS = [

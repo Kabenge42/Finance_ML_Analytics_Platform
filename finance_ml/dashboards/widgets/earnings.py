@@ -1,10 +1,26 @@
-"""earnings.py - Dashboard widgets."""
+"""
+Earnings Dashboard Widgets.
+
+This module provides visualization and analysis tools for earnings-related data,
+including earnings calendars, quality analysis, surprise dashboards, and alerts.
+
+Key Functions:
+    - display_earnings_dashboard: Pandas Styler-based earnings calendar display
+    - create_earnings_calendar_dashboard: Core dashboard data preparation
+    - analyze_earnings_quality: GAAP vs Adjusted earnings analysis
+    - create_earnings_surprise_dashboard: Plotly earnings surprise visualization
+    - generate_earnings_quality_alerts: Alert generation for earnings events
+
+Schema Alignment:
+    Uses COLUMN_SCHEMA and PHASE93_FEATURE_CATEGORIES from finance_ml.core.schema
+    for consistent column references and formatting.
+"""
 
 import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Union, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -13,11 +29,14 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from finance_ml.core.constants import PLOTLY_TEMPLATE, COLOR_PALETTE
-from finance_ml.core.schema import COLUMN_SCHEMA, PHASE93_FEATURE_CATEGORIES
+from finance_ml.core.schema import (
+    COLUMN_SCHEMA,
+    PHASE93_FEATURE_CATEGORIES,
+    list_date_cols,
+)
 from .base import (
     EarningsMode,
     resolve_reference_date,
-    add_formatted_date_columns,
     _write_html_artifact,
     _build_format_dict,
     _ensure_schema_dtypes,
@@ -25,30 +44,6 @@ from .base import (
 )
 
 logger = logging.getLogger(__name__)
-
-# =============================================================================
-# Market Cap Configuration
-# =============================================================================
-# Columns with role="market_value" in COLUMN_SCHEMA, ordered by preference
-_MARKET_CAP_COLUMNS: List[str] = [
-    "market_cap",
-    "market_cap_usd",
-    "market_cap_country_r",
-]
-
-
-# =============================================================================
-# Earnings Surprise Configuration
-# =============================================================================
-# Column pairs: (actual_column, estimate_column)
-_EARNINGS_SURPRISE_PAIRS: Dict[str, tuple[str, str]] = {
-    "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
-    "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
-    "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
-    "Net Income": ("net_income_is_ltm", "net_income_adj_1fy"),
-    "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
-}
-
 
 # =============================================================================
 # Category Metrics Resolution
@@ -136,6 +131,62 @@ class CategoryMetricsResolver:
         "earnings_quality_warning_flag",
         "earnings_quality_score",
         "exceptional_items_impact_ratio",
+        # NEW v1.14 EPS Trajectory Features
+        "eps_quarterly_trend",
+        "eps_quarterly_volatility",
+        "eps_yoy_quarterly_growth",
+        "eps_qoq_growth",
+        "eps_positive_streak",
+        "eps_cagr_5y",
+        "eps_cagr_3y",
+        "eps_annual_trend",
+        "eps_vs_5y_avg",
+        "eps_growth_acceleration",
+    ]
+
+    _SUPPLEMENTAL_ANALYST: List[str] = [
+        "pt_momentum_1w",
+        "pt_momentum_1m",
+        "pt_momentum_3m",
+        "pt_momentum_6m",
+        "pt_momentum_1y",
+        "pt_acceleration_short",
+        "pt_acceleration_long",
+        "pt_consensus_convergence",
+        "analyst_coverage_change_1m",
+        "analyst_coverage_change_3m",
+        "pt_vs_price_momentum",
+        "pt_qtd_momentum",
+        "pt_ytd_momentum",
+        "pt_skew_trend",
+        "pt_high_low_spread_trend",
+    ]
+
+    _SUPPLEMENTAL_TEMPORAL: List[str] = [
+        "fiscal_year_progress",
+        "days_to_quarter_end",
+        "fiscal_half",
+        "reporting_lag_zscore",
+        "late_reporter_flag",
+        "days_since_fy_end",
+        "days_to_next_fy_end",
+        "earnings_imminent",
+        "pre_earnings_window",
+    ]
+
+    _SUPPLEMENTAL_CASH_FLOW: List[str] = [
+        "fcf_to_cfo_ratio",
+        "cfo_stability_score",
+        "fcf_stability_score",
+        "capex_to_revenue_trend",
+        "fcf_yield_momentum",
+        "cash_conversion_efficiency",
+        "operating_cash_flow_growth",
+        "fcf_cagr_3y",
+        "acquisition_intensity",
+        "dividend_cash_flow_coverage",
+        "cash_burn_rate",
+        "net_cash_flow_trend",
     ]
 
     # Categories that receive earnings supplemental metrics
@@ -198,6 +249,18 @@ class CategoryMetricsResolver:
         if "Earnings Quality" in result_keys:
             result["Earnings Quality"].extend(cls._SUPPLEMENTAL_EARNINGS_QUALITY)
 
+        # Add analyst sentiment metrics
+        if "Analyst Sentiment" in result_keys:
+            result["Analyst Sentiment"].extend(cls._SUPPLEMENTAL_ANALYST)
+
+        # Add temporal patterns metrics
+        if "Temporal Patterns" in result_keys:
+            result["Temporal Patterns"].extend(cls._SUPPLEMENTAL_TEMPORAL)
+
+        # Add cash flow metrics
+        if "Cash Flow" in result_keys:
+            result["Cash Flow"].extend(cls._SUPPLEMENTAL_CASH_FLOW)
+
 
 # Public API functions (maintain backward compatibility)
 def _resolve_category_name(category: str) -> str:
@@ -214,35 +277,6 @@ def get_category_metrics(
     See CategoryMetricsResolver.get_metrics for full documentation.
     """
     return CategoryMetricsResolver.get_metrics(categories, include_supplemental)
-
-
-# =============================================================================
-# Market Cap and Validation Utilities
-# =============================================================================
-def _get_market_cap_column(df: pd.DataFrame) -> Optional[str]:
-    """Find the best available market cap column using schema metadata.
-
-    Prefers columns in order of liquidity/standardization.
-    All columns have role="market_value" in COLUMN_SCHEMA.
-    """
-    for col in _MARKET_CAP_COLUMNS:
-        if col in df.columns:
-            return col
-    return None
-
-
-def _validate_surprise_columns(df: pd.DataFrame) -> Dict[str, bool]:
-    """Validate availability of earnings surprise columns against schema.
-
-    Checks for actual/estimate column pairs needed for surprise calculations.
-
-    Returns:
-        Dict mapping metric name to boolean indicating pair availability.
-    """
-    return {
-        metric: (actual in df.columns and estimate in df.columns)
-        for metric, (actual, estimate) in _EARNINGS_SURPRISE_PAIRS.items()
-    }
 
 
 def create_earnings_calendar_dashboard(
@@ -702,57 +736,298 @@ def display_earnings_dashboard(
             vmax=10,
         )
 
-    # Add caption with mode info
+
+# =============================================================================
+# Schema-Driven Column Configuration
+# =============================================================================
+
+
+def _get_schema_columns_by_role(role: str) -> List[str]:
+    """Get columns from COLUMN_SCHEMA matching a specific role."""
+    return [col for col, meta in COLUMN_SCHEMA.items() if meta.get("role") == role]
+
+
+def _get_market_value_columns() -> List[str]:
+    """Get market value columns from schema (replaces _MARKET_CAP_COLUMNS)."""
+    market_cols = [
+        col
+        for col, meta in COLUMN_SCHEMA.items()
+        if meta.get("role") == "market" and "market_cap" in col
+    ]
+    # Preserve preference order
+    preferred_order = ["market_cap", "market_cap_usd", "market_cap_country_r"]
+    return [c for c in preferred_order if c in market_cols] + [
+        c for c in market_cols if c not in preferred_order
+    ]
+
+
+# Schema-driven earnings date columns (role="date" with earnings semantics)
+_EARNINGS_DATE_COLUMNS: List[str] = [
+    col
+    for col in list_date_cols()
+    if any(kw in col for kw in ["earnings", "fy_end", "income_statement", "dividend"])
+]
+
+# GAAP vs Adjusted EPS column pairs from schema (role="ratio" with eps semantics)
+_GAAP_ADJUSTED_PAIRS: List[tuple[str, str]] = [
+    ("eps_gaap_est_avg_fy1e", "eps_norm_est_avg_fy1e"),
+    ("eps_gaap_est_avg_ntm", "eps_norm_est_avg_ntm"),
+    ("net_eps_basic_ltm", "eps_adj_ltm"),
+    ("net_eps_basic_fy", "eps_adj_fy"),
+    ("net_eps_basic_1fy", "eps_adj_1fy"),
+]
+
+# Earnings surprise column pairs: (actual_column, estimate_column)
+_EARNINGS_SURPRISE_PAIRS: Dict[str, tuple[str, str]] = {
+    "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
+    "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
+    "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
+    "Net Income": ("net_income_is_ltm", "net_income_adj_1fy"),
+    "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
+}
+
+
+# =============================================================================
+# Gradient Configuration (Schema-Aligned)
+# =============================================================================
+
+
+class GradientConfig(TypedDict):
+    """Configuration for background gradient styling."""
+
+    cmap: str
+    vmin: float
+    vmax: float
+
+
+# Schema-aligned metric column patterns for conditional formatting
+_METRIC_GRADIENT_CONFIG: Dict[str, tuple[List[str], GradientConfig]] = {
+    "quality_score": (
+        [
+            "earnings_quality_score",
+            "piotroski_f_score",
+            "altman_z_score",
+            "accounting_quality_score",
+            "dividend_reliability_score",
+        ],
+        {"cmap": "RdYlGn", "vmin": 0, "vmax": 100},
+    ),
+    "profitability": (
+        [
+            "roe",
+            "roa",
+            "roic",
+            "gross_margin_pct",
+            "operating_margin_pct",
+            "net_margin_pct",
+            "ebitda_margin_pct",
+        ],
+        {"cmap": "RdYlGn", "vmin": -50, "vmax": 50},
+    ),
+    "growth": (
+        [
+            "revenue_growth_yoy",
+            "ebitda_growth_yoy",
+            "eps_growth_yoy",
+            "revenue_cagr_3y",
+            "eps_cagr_3y",
+            "revenue_growth",
+            "ebitda_growth",
+        ],
+        {"cmap": "RdYlGn", "vmin": -50, "vmax": 50},
+    ),
+    "momentum": (
+        [
+            "price_momentum_1m",
+            "price_momentum_3m",
+            "price_momentum_6m",
+            "eps_surprise_pct",
+            "revenue_surprise_pct",
+        ],
+        {"cmap": "RdYlGn", "vmin": -30, "vmax": 30},
+    ),
+    "valuation": (
+        ["p_e_ltm", "p_e_ntm", "ev_ebitda_ltm", "p_b_ratio", "p_s_ratio"],
+        {"cmap": "RdYlGn_r", "vmin": 0, "vmax": 50},  # Reverse: lower is better
+    ),
+    "dividend": (
+        ["div_yield_ltm", "div_yield_ntm", "dividend_payout_ratio"],
+        {"cmap": "RdYlGn", "vmin": 0, "vmax": 10},
+    ),
+}
+
+
+# =============================================================================
+# Styling Helper Functions (Extracted for Testability)
+# =============================================================================
+
+
+def _color_days_to_earnings(val) -> str:
+    """Color-code days_to_earnings values per code_guidelines.md §17.1."""
+    if pd.isna(val):
+        return ""
+    try:
+        val_float = float(val)
+        if val_float < 0:
+            return f"color: {COLOR_PALETTE['danger']}"  # Past
+        if val_float == 0:
+            return f"background-color: {COLOR_PALETTE['warning']}; color: black"  # Today
+        if val_float > 0:
+            return f"color: {COLOR_PALETTE['success']}"  # Future
+    except (ValueError, TypeError):
+        pass
+    return ""
+
+
+def _get_default_date_columns() -> List[str]:
+    """Get default date columns for earnings dashboard from schema."""
+    schema_dates = set(list_date_cols())
+    preferred = [
+        "next_earnings",
+        "income_statement_report_date",
+        "fy_end_date",
+        "next_fy_end_date",
+        "fy_end",
+        "_reference_date",
+        "reference_date",
+        "dividend_record_ex_date",
+        "dividend_record_payable_date",
+        "dividend_record_announce_date",
+        "dividend_record_record_date",
+    ]
+    return [c for c in preferred if c in schema_dates or c.startswith("_")]
+
+
+def _apply_metric_gradients(
+    styler: "pd.io.formats.style.Styler",
+    numeric_cols: List[str],
+) -> "pd.io.formats.style.Styler":
+    """Apply schema-aligned background gradients to metric columns."""
+    for category, (column_list, config) in _METRIC_GRADIENT_CONFIG.items():
+        available_cols = [c for c in column_list if c in numeric_cols]
+        if available_cols:
+            styler = styler.background_gradient(subset=available_cols, **config)
+    return styler
+
+
+def _get_table_styles() -> List[Dict]:
+    """Get standard table styles per code_guidelines.md §17.3."""
+    return [
+        {
+            "selector": "table",
+            "props": [
+                ("width", "100%"),
+                ("table-layout", "auto"),
+                ("border-collapse", "collapse"),
+            ],
+        },
+        {
+            "selector": "th",
+            "props": [
+                ("white-space", "nowrap"),
+                ("font-weight", "bold"),
+                ("text-align", "center"),
+                ("padding", "8px 12px"),
+                ("background-color", "#2c3e50"),
+                ("color", "#ecf0f1"),
+            ],
+        },
+        {
+            "selector": "td",
+            "props": [
+                ("white-space", "nowrap"),
+                ("padding", "6px 10px"),
+                ("text-align", "right"),
+            ],
+        },
+        {
+            "selector": "td:nth-child(-n+10)",
+            "props": [("text-align", "left")],
+        },
+    ]
+
+
+# =============================================================================
+# Market Cap and Validation Utilities
+# =============================================================================
+
+
+def _get_market_cap_column(df: pd.DataFrame) -> Optional[str]:
+    """Find the best available market cap column using schema metadata."""
+    for col in _get_market_value_columns():
+        if col in df.columns:
+            return col
+    return None
+
+
+def _validate_surprise_columns(df: pd.DataFrame) -> Dict[str, bool]:
+    """Validate availability of earnings surprise columns against schema."""
+    return {
+        metric: (actual in df.columns and estimate in df.columns)
+        for metric, (actual, estimate) in _EARNINGS_SURPRISE_PAIRS.items()
+    }
+
+
+# ... existing code for CategoryMetricsResolver ...
+
+
+# =============================================================================
+# Main Dashboard Functions (Refactored)
+# =============================================================================
+
+
+def display_earnings_dashboard(
+    df: pd.DataFrame,
+    mode: EarningsMode = "all",
+    categories: Optional[List[str]] = None,
+    reference_date: Optional[pd.Timestamp] = None,
+    top_n: int = 100,
+    date_columns: Optional[List[str]] = None,
+    output_path: Optional[Union[str, Path]] = None,
+) -> Optional["pd.io.formats.style.Styler"]:
+    """
+    Displays the earnings dashboard using Pandas Styler with enhanced formatting.
+
+    Schema Alignment: Uses COLUMN_SCHEMA for column classification and
+    PHASE93_FEATURE_CATEGORIES for metric grouping.
+    """
+    dashboard_df = create_earnings_calendar_dashboard(
+        df,
+        reference_date=reference_date,
+        top_n=top_n,
+        mode=mode,
+        categories=categories,
+    )
+
+    if dashboard_df.empty:
+        logger.warning("No companies found with earnings within the specified window.")
+        return None
+
+    # Use schema-driven date columns
+    if date_columns is None:
+        date_columns = _get_default_date_columns()
+    date_columns = [c for c in date_columns if c in dashboard_df.columns]
+
+    df_styled = _ensure_schema_dtypes(dashboard_df, date_columns=date_columns)
+    format_dict = _build_format_dict(df_styled, date_columns=date_columns)
+    styler = df_styled.style.format(format_dict, na_rep="—")
+
+    # Apply days_to_earnings coloring
+    if "days_to_earnings" in df_styled.columns:
+        styler = styler.map(_color_days_to_earnings, subset=["days_to_earnings"])
+
+    # Apply schema-aligned metric gradients
+    numeric_cols = df_styled.select_dtypes(include=[np.number]).columns.tolist()
+    styler = _apply_metric_gradients(styler, numeric_cols)
+
+    # Caption and table styles
     mode_display = mode.replace("_", " ").title()
     styler = styler.set_caption(
         f"Earnings Calendar Dashboard - Mode: {mode_display} "
         f"(Top {len(df_styled)} by Upcoming Earnings)"
     )
+    styler = styler.set_table_styles(_get_table_styles())
 
-    # Set table styles for unwrapped columns and maximized widths (Section 17.3)
-    styler = styler.set_table_styles(
-        [
-            # Table-level styles
-            {
-                "selector": "table",
-                "props": [
-                    ("width", "100%"),
-                    ("table-layout", "auto"),
-                    ("border-collapse", "collapse"),
-                ],
-            },
-            # Header styles: no wrap, bold
-            {
-                "selector": "th",
-                "props": [
-                    ("white-space", "nowrap"),
-                    ("font-weight", "bold"),
-                    ("text-align", "center"),
-                    ("padding", "8px 12px"),
-                    ("background-color", "#2c3e50"),
-                    ("color", "#ecf0f1"),
-                ],
-            },
-            # Cell styles: no wrap for better readability
-            {
-                "selector": "td",
-                "props": [
-                    ("white-space", "nowrap"),
-                    ("padding", "6px 10px"),
-                    ("text-align", "right"),
-                ],
-            },
-            # Left-align text columns (ticker, name, sector, etc.)
-            {
-                "selector": "td:nth-child(-n+10)",
-                "props": [
-                    ("text-align", "left"),
-                ],
-            },
-        ]
-    )
-
-    # Save to HTML if path provided
     if output_path:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -760,6 +1035,51 @@ def display_earnings_dashboard(
         logger.info("Saved earnings dashboard to %s", output_path)
 
     return styler
+
+
+def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
+    """Analyze discrepancies between GAAP and Adjusted earnings.
+
+    Schema Alignment: Uses _GAAP_ADJUSTED_PAIRS derived from COLUMN_SCHEMA
+    for consistent column references.
+    """
+    base_cols = [
+        c
+        for c in [
+            "ticker",
+            "name",
+            "exchange",
+            "sector",
+            "region",
+            "fy_end_date",
+            "next_fiscal_quarter",
+        ]
+        if c in df.columns
+    ]
+    earnings_quality = df[base_cols].copy()
+
+    for gaap_col, adj_col in _GAAP_ADJUSTED_PAIRS:
+        if gaap_col in df.columns and adj_col in df.columns:
+            gaap_data = pd.to_numeric(df[gaap_col], errors="coerce")
+            adj_data = pd.to_numeric(df[adj_col], errors="coerce")
+
+            with np.errstate(divide="ignore", invalid="ignore"):
+                adjustment = (adj_data - gaap_data) / gaap_data.abs()
+            adjustment = adjustment.replace([np.inf, -np.inf], np.nan)
+
+            suffix = gaap_col.split("_")[-1]
+            earnings_quality[f"adj_magnitude_{suffix}"] = adjustment * 100
+            earnings_quality[f"large_adj_flag_{suffix}"] = (
+                earnings_quality[f"adj_magnitude_{suffix}"].abs() > 35
+            )
+
+    adj_cols = [c for c in earnings_quality.columns if "adj_magnitude" in c]
+    if adj_cols:
+        earnings_quality["earnings_quality_score"] = 100 - earnings_quality[adj_cols].abs().mean(
+            axis=1
+        ).clip(0, 100)
+
+    return earnings_quality
 
 
 def create_earnings_metrics_chart(
@@ -1367,6 +1687,17 @@ def _create_earnings_timeline_plotly(
                 "next_earnings_when",
                 "next_fiscal_quarter",
                 "next_earnings_report",
+                "one_day_pct",
+                "last_price",
+                "price_target",
+                "price_chg_pct_1m",
+                "price_chg_pct_3m",
+                "eps_adj_1fy",
+                "eps_adj_fy",
+                "eps_adj_ltm",
+                "net_eps_basic_ltm",
+                "net_eps_basic_fq",
+                "net_eps_basic_fy",
             ]
             if c in valid_df.columns
         ],
@@ -1469,58 +1800,6 @@ def _engineer_earnings_events_from_fiscal_data(
         "heatmap_fig": placeholder_fig,
         "reference_date": reference_date,
     }
-
-
-def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
-    """Analyze discrepancies between GAAP and Adjusted earnings."""
-
-    gaap_adj_pairs = [
-        ("eps_gaap_est_avg_fy1e", "eps_norm_est_avg_fy1e"),
-        ("eps_gaap_est_avg_ntm", "eps_norm_est_avg_ntm"),
-        ("net_eps_basic_ltm", "eps_adj_ltm"),
-        ("net_eps_basic_fy", "eps_adj_fy"),  # Separate pair for FY
-        ("net_eps_basic_1fy", "eps_adj_1fy"),  # Separate pair for 1FY
-    ]
-
-    base_cols = [
-        c
-        for c in [
-            "ticker",
-            "name",
-            "exchange",
-            "sector",
-            "region",
-            "fy_end_date",
-            "next_fiscal_quarter",
-        ]
-        if c in df.columns
-    ]
-    earnings_quality = df[base_cols].copy()
-
-    for gaap_col, adj_col in gaap_adj_pairs:
-        if gaap_col in df.columns and adj_col in df.columns:
-            gaap_data = pd.to_numeric(df[gaap_col], errors="coerce")
-            adj_data = pd.to_numeric(df[adj_col], errors="coerce")
-
-            with np.errstate(divide="ignore", invalid="ignore"):
-                adjustment = (adj_data - gaap_data) / gaap_data.abs()
-
-            adjustment = adjustment.replace([np.inf, -np.inf], np.nan)
-
-            suffix = gaap_col.split("_")[-1]
-            adjustment_col = f"adj_magnitude_{suffix}"
-            earnings_quality[adjustment_col] = adjustment * 100
-
-            flag_col = f"large_adj_flag_{suffix}"
-            earnings_quality[flag_col] = earnings_quality[adjustment_col].abs() > 35
-
-    adj_cols = [c for c in earnings_quality.columns if "adj_magnitude" in c]
-    if adj_cols:
-        earnings_quality["earnings_quality_score"] = 100 - earnings_quality[adj_cols].abs().mean(
-            axis=1
-        ).clip(0, 100)
-
-    return earnings_quality
 
 
 def create_gaap_adjusted_comparison_chart(df: pd.DataFrame, output_path: Path) -> go.Figure:
@@ -1781,3 +2060,754 @@ def generate_earnings_quality_alerts(
             json.dump(payload, f, indent=2, default=str)
 
     return payload
+
+
+# =============================================================================
+# New v1.14 Dashboard Functions
+# =============================================================================
+
+
+def create_price_target_dynamics_dashboard(
+    df: pd.DataFrame,
+    reference_date: Optional[pd.Timestamp] = None,
+    top_n: int = 50,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create interactive dashboard for price target momentum and dynamics.
+
+    Visualizes analyst price target revisions, momentum across timeframes,
+    and consensus convergence patterns.
+
+    Args:
+        df: DataFrame with price target columns (pt_momentum_*, price_target_*).
+        reference_date: Analysis reference date (defaults to today).
+        top_n: Number of stocks to analyze.
+        output_path: Optional path to save HTML output.
+
+    Returns:
+        go.Figure: Plotly figure with price target dynamics visualization.
+    """
+    reference_date = resolve_reference_date(df, reference_date)
+
+    # Price target momentum columns from schema
+    pt_momentum_cols = [
+        "pt_momentum_1w",
+        "pt_momentum_1m",
+        "pt_momentum_3m",
+        "pt_momentum_6m",
+        "pt_momentum_1y",
+    ]
+    available_momentum = [c for c in pt_momentum_cols if c in df.columns]
+
+    # Additional PT analytics columns
+    pt_analytics_cols = [
+        "pt_acceleration_short",
+        "pt_acceleration_long",
+        "pt_consensus_convergence",
+        "pt_vs_price_momentum",
+        "pt_skew_trend",
+        "pt_high_low_spread_trend",
+    ]
+    available_analytics = [c for c in pt_analytics_cols if c in df.columns]
+
+    if not available_momentum and not available_analytics:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No price target dynamics columns available.<br>"
+            "Required: pt_momentum_*, pt_acceleration_*, pt_consensus_*",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    # Sort by market cap if available
+    df_local = df.copy()
+    mcap_col = _get_market_cap_column(df_local)
+    if mcap_col:
+        df_local = df_local.sort_values(by=mcap_col, ascending=False)
+    df_local = df_local.head(top_n)
+
+    # Create subplots
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Price Target Momentum by Timeframe",
+            "PT Acceleration (Short vs Long)",
+            "Consensus Convergence Distribution",
+            "PT vs Price Momentum Scatter",
+        ],
+        specs=[
+            [{"type": "bar"}, {"type": "scatter"}],
+            [{"type": "histogram"}, {"type": "scatter"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1,
+    )
+
+    # Plot 1: Momentum by timeframe (box plot style as bars showing mean)
+    if available_momentum:
+        momentum_means = {
+            col.replace("pt_momentum_", ""): df_local[col].mean()
+            for col in available_momentum
+            if df_local[col].notna().any()
+        }
+        if momentum_means:
+            colors = [
+                COLOR_PALETTE["success"] if v > 0 else COLOR_PALETTE["danger"]
+                for v in momentum_means.values()
+            ]
+            fig.add_trace(
+                go.Bar(
+                    x=list(momentum_means.keys()),
+                    y=list(momentum_means.values()),
+                    marker_color=colors,
+                    name="Avg PT Momentum",
+                    hovertemplate="<b>%{x}</b><br>Avg Momentum: %{y:.2f}%<extra></extra>",
+                ),
+                row=1,
+                col=1,
+            )
+
+    # Plot 2: Acceleration scatter
+    if "pt_acceleration_short" in df_local.columns and "pt_acceleration_long" in df_local.columns:
+        valid_accel = df_local.dropna(subset=["pt_acceleration_short", "pt_acceleration_long"])
+        if not valid_accel.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=valid_accel["pt_acceleration_short"],
+                    y=valid_accel["pt_acceleration_long"],
+                    mode="markers",
+                    marker=dict(
+                        color=valid_accel.get("pt_momentum_1m", 0),
+                        colorscale="RdYlGn",
+                        size=8,
+                        showscale=True,
+                        colorbar=dict(title="1M Mom", x=0.45),
+                    ),
+                    text=valid_accel.get("ticker", valid_accel.index),
+                    hovertemplate="<b>%{text}</b><br>Short Accel: %{x:.2f}<br>Long Accel: %{y:.2f}<extra></extra>",
+                    name="Acceleration",
+                ),
+                row=1,
+                col=2,
+            )
+
+    # Plot 3: Consensus convergence histogram
+    if "pt_consensus_convergence" in df_local.columns:
+        convergence = df_local["pt_consensus_convergence"].dropna()
+        if len(convergence) > 0:
+            fig.add_trace(
+                go.Histogram(
+                    x=convergence,
+                    nbinsx=30,
+                    marker_color=COLOR_PALETTE["info"],
+                    name="Convergence",
+                    hovertemplate="Convergence: %{x:.2f}<br>Count: %{y}<extra></extra>",
+                ),
+                row=2,
+                col=1,
+            )
+
+    # Plot 4: PT vs Price momentum
+    if "pt_vs_price_momentum" in df_local.columns and "price_momentum_1m" in df_local.columns:
+        valid_vs = df_local.dropna(subset=["pt_vs_price_momentum", "price_momentum_1m"])
+        if not valid_vs.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=valid_vs["price_momentum_1m"],
+                    y=valid_vs["pt_vs_price_momentum"],
+                    mode="markers",
+                    marker=dict(color=COLOR_PALETTE["primary"], size=6),
+                    text=valid_vs.get("ticker", valid_vs.index),
+                    hovertemplate="<b>%{text}</b><br>Price Mom: %{x:.1f}%<br>PT vs Price: %{y:.2f}<extra></extra>",
+                    name="PT vs Price",
+                ),
+                row=2,
+                col=2,
+            )
+            # Add diagonal reference line
+            fig.add_trace(
+                go.Scatter(
+                    x=[-50, 50],
+                    y=[-50, 50],
+                    mode="lines",
+                    line=dict(dash="dash", color="white", width=1),
+                    showlegend=False,
+                ),
+                row=2,
+                col=2,
+            )
+
+    fig.update_layout(
+        title="<b>Price Target Dynamics Dashboard</b><br><sup>Analyst Revision Momentum & Consensus Patterns</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=700,
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+    )
+
+    fig.update_xaxes(title_text="Timeframe", row=1, col=1)
+    fig.update_yaxes(title_text="Avg Momentum (%)", row=1, col=1)
+    fig.update_xaxes(title_text="Short-term Acceleration", row=1, col=2)
+    fig.update_yaxes(title_text="Long-term Acceleration", row=1, col=2)
+    fig.update_xaxes(title_text="Convergence Score", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
+    fig.update_xaxes(title_text="Price Momentum (%)", row=2, col=2)
+    fig.update_yaxes(title_text="PT vs Price Momentum", row=2, col=2)
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
+
+def create_eps_trajectory_dashboard(
+    df: pd.DataFrame,
+    reference_date: Optional[pd.Timestamp] = None,
+    top_n: int = 50,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create interactive dashboard for EPS trajectory and trend analysis.
+
+    Visualizes EPS growth patterns, quarterly trends, positive streaks,
+    and year-over-year comparisons.
+
+    Args:
+        df: DataFrame with EPS trajectory columns.
+        reference_date: Analysis reference date.
+        top_n: Number of stocks to analyze.
+        output_path: Optional path to save HTML output.
+
+    Returns:
+        go.Figure: Plotly figure with EPS trajectory visualization.
+    """
+    reference_date = resolve_reference_date(df, reference_date)
+
+    # EPS trajectory columns from CategoryMetricsResolver._SUPPLEMENTAL_EARNINGS_QUALITY
+    eps_trajectory_cols = [
+        "eps_quarterly_trend",
+        "eps_quarterly_volatility",
+        "eps_yoy_quarterly_growth",
+        "eps_qoq_growth",
+        "eps_positive_streak",
+        "eps_cagr_5y",
+        "eps_cagr_3y",
+        "eps_annual_trend",
+        "eps_vs_5y_avg",
+        "eps_growth_acceleration",
+    ]
+    available_eps = [c for c in eps_trajectory_cols if c in df.columns]
+
+    if not available_eps:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No EPS trajectory columns available.<br>"
+            "Required: eps_quarterly_trend, eps_cagr_*, eps_positive_streak",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    mcap_col = _get_market_cap_column(df_local)
+    if mcap_col:
+        df_local = df_local.sort_values(by=mcap_col, ascending=False)
+    df_local = df_local.head(top_n)
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "EPS CAGR Distribution (3Y vs 5Y)",
+            "EPS Positive Streak by Sector",
+            "Quarterly Trend vs Volatility",
+            "EPS Growth Acceleration",
+        ],
+        specs=[
+            [{"type": "box"}, {"type": "bar"}],
+            [{"type": "scatter"}, {"type": "histogram"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1,
+    )
+
+    # Plot 1: EPS CAGR box plots
+    cagr_cols = [c for c in ["eps_cagr_3y", "eps_cagr_5y"] if c in df_local.columns]
+    for i, col in enumerate(cagr_cols):
+        valid_data = df_local[col].dropna()
+        if len(valid_data) > 0:
+            # Clip extreme outliers for visualization
+            clipped = valid_data.clip(-100, 200)
+            fig.add_trace(
+                go.Box(
+                    y=clipped,
+                    name=col.replace("eps_cagr_", "").upper(),
+                    marker_color=COLOR_PALETTE["success"] if "3y" in col else COLOR_PALETTE["info"],
+                    boxpoints="outliers",
+                ),
+                row=1,
+                col=1,
+            )
+
+    # Plot 2: EPS positive streak by sector
+    if "eps_positive_streak" in df_local.columns and "sector" in df_local.columns:
+        sector_streak = (
+            df_local.groupby("sector")["eps_positive_streak"].mean().sort_values(ascending=True)
+        )
+        if not sector_streak.empty:
+            fig.add_trace(
+                go.Bar(
+                    x=sector_streak.values,
+                    y=sector_streak.index,
+                    orientation="h",
+                    marker_color=COLOR_PALETTE["success"],
+                    name="Avg Streak",
+                    hovertemplate="<b>%{y}</b><br>Avg Streak: %{x:.1f} quarters<extra></extra>",
+                ),
+                row=1,
+                col=2,
+            )
+
+    # Plot 3: Quarterly trend vs volatility scatter
+    if "eps_quarterly_trend" in df_local.columns and "eps_quarterly_volatility" in df_local.columns:
+        valid_scatter = df_local.dropna(subset=["eps_quarterly_trend", "eps_quarterly_volatility"])
+        if not valid_scatter.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=valid_scatter["eps_quarterly_volatility"],
+                    y=valid_scatter["eps_quarterly_trend"],
+                    mode="markers",
+                    marker=dict(
+                        color=valid_scatter.get("eps_cagr_3y", 0),
+                        colorscale="RdYlGn",
+                        size=8,
+                        showscale=True,
+                        colorbar=dict(title="3Y CAGR", x=1.02),
+                    ),
+                    text=valid_scatter.get("ticker", valid_scatter.index),
+                    hovertemplate="<b>%{text}</b><br>Volatility: %{x:.2f}<br>Trend: %{y:.2f}<extra></extra>",
+                    name="Trend vs Vol",
+                ),
+                row=2,
+                col=1,
+            )
+
+    # Plot 4: Growth acceleration histogram
+    if "eps_growth_acceleration" in df_local.columns:
+        accel = df_local["eps_growth_acceleration"].dropna().clip(-100, 100)
+        if len(accel) > 0:
+            fig.add_trace(
+                go.Histogram(
+                    x=accel,
+                    nbinsx=40,
+                    marker_color=COLOR_PALETTE["warning"],
+                    name="Acceleration",
+                    hovertemplate="Acceleration: %{x:.1f}<br>Count: %{y}<extra></extra>",
+                ),
+                row=2,
+                col=2,
+            )
+            fig.add_vline(x=0, line_dash="dash", line_color="white", row=2, col=2)
+
+    fig.update_layout(
+        title="<b>EPS Trajectory Dashboard</b><br><sup>Earnings Growth Patterns & Momentum Analysis</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=700,
+        showlegend=False,
+    )
+
+    fig.update_yaxes(title_text="CAGR (%)", row=1, col=1)
+    fig.update_xaxes(title_text="Avg Positive Quarters", row=1, col=2)
+    fig.update_xaxes(title_text="Quarterly Volatility", row=2, col=1)
+    fig.update_yaxes(title_text="Quarterly Trend", row=2, col=1)
+    fig.update_xaxes(title_text="Growth Acceleration", row=2, col=2)
+    fig.update_yaxes(title_text="Count", row=2, col=2)
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
+
+def create_cashflow_temporal_dashboard(
+    df: pd.DataFrame,
+    reference_date: Optional[pd.Timestamp] = None,
+    top_n: int = 50,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create interactive dashboard for cash flow temporal patterns.
+
+    Visualizes CFO/FCF trends, stability scores, cash conversion efficiency,
+    and temporal cash flow dynamics.
+
+    Args:
+        df: DataFrame with cash flow columns.
+        reference_date: Analysis reference date.
+        top_n: Number of stocks to analyze.
+        output_path: Optional path to save HTML output.
+
+    Returns:
+        go.Figure: Plotly figure with cash flow temporal visualization.
+    """
+    reference_date = resolve_reference_date(df, reference_date)
+
+    # Cash flow columns from CategoryMetricsResolver._SUPPLEMENTAL_CASH_FLOW
+    cashflow_cols = [
+        "fcf_to_cfo_ratio",
+        "cfo_stability_score",
+        "fcf_stability_score",
+        "capex_to_revenue_trend",
+        "fcf_yield_momentum",
+        "cash_conversion_efficiency",
+        "operating_cash_flow_growth",
+        "fcf_cagr_3y",
+        "acquisition_intensity",
+        "dividend_cash_flow_coverage",
+        "cash_burn_rate",
+        "net_cash_flow_trend",
+        "cfo_5y_trend",
+        "fcf_quarterly_trend",
+        "cfo_quarterly_trend",
+    ]
+    available_cf = [c for c in cashflow_cols if c in df.columns]
+
+    if not available_cf:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No cash flow temporal columns available.<br>"
+            "Required: cfo_stability_score, fcf_*, cash_conversion_*",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    mcap_col = _get_market_cap_column(df_local)
+    if mcap_col:
+        df_local = df_local.sort_values(by=mcap_col, ascending=False)
+    df_local = df_local.head(top_n)
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "CFO vs FCF Stability Scores",
+            "Cash Conversion Efficiency by Sector",
+            "FCF Yield Momentum Distribution",
+            "Cash Flow Trend Indicators",
+        ],
+        specs=[
+            [{"type": "scatter"}, {"type": "bar"}],
+            [{"type": "histogram"}, {"type": "bar"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1,
+    )
+
+    # Plot 1: CFO vs FCF stability scatter
+    if "cfo_stability_score" in df_local.columns and "fcf_stability_score" in df_local.columns:
+        valid = df_local.dropna(subset=["cfo_stability_score", "fcf_stability_score"])
+        if not valid.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=valid["cfo_stability_score"],
+                    y=valid["fcf_stability_score"],
+                    mode="markers",
+                    marker=dict(
+                        color=valid.get("fcf_cagr_3y", 0),
+                        colorscale="RdYlGn",
+                        size=8,
+                        showscale=True,
+                        colorbar=dict(title="FCF CAGR", x=0.45),
+                    ),
+                    text=valid.get("ticker", valid.index),
+                    hovertemplate="<b>%{text}</b><br>CFO Stability: %{x:.2f}<br>FCF Stability: %{y:.2f}<extra></extra>",
+                    name="Stability",
+                ),
+                row=1,
+                col=1,
+            )
+
+    # Plot 2: Cash conversion by sector
+    if "cash_conversion_efficiency" in df_local.columns and "sector" in df_local.columns:
+        sector_conv = (
+            df_local.groupby("sector")["cash_conversion_efficiency"]
+            .mean()
+            .sort_values(ascending=True)
+        )
+        if not sector_conv.empty:
+            colors = [
+                COLOR_PALETTE["success"] if v > 0.5 else COLOR_PALETTE["warning"]
+                for v in sector_conv.values
+            ]
+            fig.add_trace(
+                go.Bar(
+                    x=sector_conv.values,
+                    y=sector_conv.index,
+                    orientation="h",
+                    marker_color=colors,
+                    name="Avg Conversion",
+                    hovertemplate="<b>%{y}</b><br>Conversion: %{x:.2f}<extra></extra>",
+                ),
+                row=1,
+                col=2,
+            )
+
+    # Plot 3: FCF yield momentum histogram
+    if "fcf_yield_momentum" in df_local.columns:
+        momentum = df_local["fcf_yield_momentum"].dropna().clip(-50, 50)
+        if len(momentum) > 0:
+            fig.add_trace(
+                go.Histogram(
+                    x=momentum,
+                    nbinsx=30,
+                    marker_color=COLOR_PALETTE["info"],
+                    name="FCF Yield Mom",
+                    hovertemplate="Momentum: %{x:.1f}<br>Count: %{y}<extra></extra>",
+                ),
+                row=2,
+                col=1,
+            )
+            fig.add_vline(x=0, line_dash="dash", line_color="white", row=2, col=1)
+
+    # Plot 4: Trend indicators summary
+    trend_cols = {
+        "CFO 5Y": "cfo_5y_trend",
+        "FCF Qtr": "fcf_quarterly_trend",
+        "CFO Qtr": "cfo_quarterly_trend",
+        "Net CF": "net_cash_flow_trend",
+    }
+    trend_means = {}
+    for label, col in trend_cols.items():
+        if col in df_local.columns:
+            mean_val = df_local[col].mean()
+            if pd.notna(mean_val):
+                trend_means[label] = mean_val
+
+    if trend_means:
+        colors = [
+            COLOR_PALETTE["success"] if v > 0 else COLOR_PALETTE["danger"]
+            for v in trend_means.values()
+        ]
+        fig.add_trace(
+            go.Bar(
+                x=list(trend_means.keys()),
+                y=list(trend_means.values()),
+                marker_color=colors,
+                name="Avg Trend",
+                hovertemplate="<b>%{x}</b><br>Avg Trend: %{y:.2f}<extra></extra>",
+            ),
+            row=2,
+            col=2,
+        )
+        fig.add_hline(y=0, line_dash="dash", line_color="white", row=2, col=2)
+
+    fig.update_layout(
+        title="<b>Cash Flow Temporal Dashboard</b><br><sup>CFO/FCF Stability & Trend Patterns</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=700,
+        showlegend=False,
+    )
+
+    fig.update_xaxes(title_text="CFO Stability Score", row=1, col=1)
+    fig.update_yaxes(title_text="FCF Stability Score", row=1, col=1)
+    fig.update_xaxes(title_text="Avg Conversion Efficiency", row=1, col=2)
+    fig.update_xaxes(title_text="FCF Yield Momentum", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
+    fig.update_xaxes(title_text="Trend Indicator", row=2, col=2)
+    fig.update_yaxes(title_text="Avg Trend Score", row=2, col=2)
+
+    _write_html_artifact(fig, output_path)
+    return fig
+
+
+def create_fiscal_calendar_dashboard(
+    df: pd.DataFrame,
+    reference_date: Optional[pd.Timestamp] = None,
+    top_n: int = 100,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create interactive dashboard for fiscal calendar and reporting patterns.
+
+    Visualizes fiscal year progress, reporting lag patterns, quarter-end timing,
+    and earnings announcement clustering.
+
+    Args:
+        df: DataFrame with fiscal calendar columns.
+        reference_date: Analysis reference date.
+        top_n: Number of stocks to analyze.
+        output_path: Optional path to save HTML output.
+
+    Returns:
+        go.Figure: Plotly figure with fiscal calendar visualization.
+    """
+    reference_date = resolve_reference_date(df, reference_date)
+
+    # Temporal columns from CategoryMetricsResolver._SUPPLEMENTAL_TEMPORAL
+    temporal_cols = [
+        "fiscal_year_progress",
+        "days_to_quarter_end",
+        "fiscal_half",
+        "reporting_lag_zscore",
+        "late_reporter_flag",
+        "days_since_fy_end",
+        "days_to_next_fy_end",
+        "earnings_imminent",
+        "pre_earnings_window",
+        "fiscal_quarter",
+        "current_fiscal_quarter",
+        "next_fiscal_quarter",
+    ]
+    available_temporal = [c for c in temporal_cols if c in df.columns]
+
+    if not available_temporal:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No fiscal calendar columns available.<br>"
+            "Required: fiscal_year_progress, days_to_quarter_end, fiscal_quarter",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    mcap_col = _get_market_cap_column(df_local)
+    if mcap_col:
+        df_local = df_local.sort_values(by=mcap_col, ascending=False)
+    df_local = df_local.head(top_n)
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Fiscal Year Progress Distribution",
+            "Reporting Lag by Sector",
+            "Days to Quarter End",
+            "Fiscal Quarter Distribution",
+        ],
+        specs=[
+            [{"type": "histogram"}, {"type": "bar"}],
+            [{"type": "histogram"}, {"type": "pie"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1,
+    )
+
+    # Plot 1: Fiscal year progress histogram
+    if "fiscal_year_progress" in df_local.columns:
+        progress = df_local["fiscal_year_progress"].dropna()
+        if len(progress) > 0:
+            fig.add_trace(
+                go.Histogram(
+                    x=progress,
+                    nbinsx=20,
+                    marker_color=COLOR_PALETTE["primary"],
+                    name="FY Progress",
+                    hovertemplate="Progress: %{x:.1%}<br>Count: %{y}<extra></extra>",
+                ),
+                row=1,
+                col=1,
+            )
+
+    # Plot 2: Reporting lag by sector
+    if "reporting_lag_zscore" in df_local.columns and "sector" in df_local.columns:
+        sector_lag = (
+            df_local.groupby("sector")["reporting_lag_zscore"].mean().sort_values(ascending=True)
+        )
+        if not sector_lag.empty:
+            colors = [
+                COLOR_PALETTE["danger"] if v > 1 else COLOR_PALETTE["success"]
+                for v in sector_lag.values
+            ]
+            fig.add_trace(
+                go.Bar(
+                    x=sector_lag.values,
+                    y=sector_lag.index,
+                    orientation="h",
+                    marker_color=colors,
+                    name="Avg Lag Z-Score",
+                    hovertemplate="<b>%{y}</b><br>Lag Z-Score: %{x:.2f}<extra></extra>",
+                ),
+                row=1,
+                col=2,
+            )
+
+    # Plot 3: Days to quarter end
+    if "days_to_quarter_end" in df_local.columns:
+        days_qe = df_local["days_to_quarter_end"].dropna()
+        if len(days_qe) > 0:
+            fig.add_trace(
+                go.Histogram(
+                    x=days_qe,
+                    nbinsx=30,
+                    marker_color=COLOR_PALETTE["warning"],
+                    name="Days to QE",
+                    hovertemplate="Days: %{x}<br>Count: %{y}<extra></extra>",
+                ),
+                row=2,
+                col=1,
+            )
+
+    # Plot 4: Fiscal quarter pie chart
+    quarter_col = next(
+        (c for c in ["fiscal_quarter", "current_fiscal_quarter"] if c in df_local.columns),
+        None,
+    )
+    if quarter_col:
+        quarter_counts = df_local[quarter_col].value_counts()
+        if not quarter_counts.empty:
+            fig.add_trace(
+                go.Pie(
+                    labels=quarter_counts.index.astype(str),
+                    values=quarter_counts.values,
+                    marker=dict(
+                        colors=[
+                            COLOR_PALETTE["primary"],
+                            COLOR_PALETTE["success"],
+                            COLOR_PALETTE["warning"],
+                            COLOR_PALETTE["info"],
+                        ]
+                    ),
+                    name="Quarter Dist",
+                    hovertemplate="<b>Q%{label}</b><br>Count: %{value}<br>%{percent}<extra></extra>",
+                ),
+                row=2,
+                col=2,
+            )
+
+    fig.update_layout(
+        title="<b>Fiscal Calendar Dashboard</b><br><sup>Reporting Patterns & Fiscal Year Timing</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=700,
+        showlegend=False,
+    )
+
+    fig.update_xaxes(title_text="Fiscal Year Progress (%)", row=1, col=1)
+    fig.update_yaxes(title_text="Count", row=1, col=1)
+    fig.update_xaxes(title_text="Reporting Lag Z-Score", row=1, col=2)
+    fig.update_xaxes(title_text="Days to Quarter End", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
+
+    _write_html_artifact(fig, output_path)
+    return fig

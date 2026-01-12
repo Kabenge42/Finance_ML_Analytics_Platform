@@ -12,6 +12,7 @@ from .utils import _safe_div, _ensure_float_column
 
 logger = logging.getLogger(__name__)
 
+
 def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "sector") -> pd.DataFrame:
     """Add sector-specific engineered features."""
     result = df.copy()
@@ -47,15 +48,23 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
             result.loc[financials_mask, "tangible_book_value"] = tbv.loc[financials_mask]
 
         # Price to Tangible Book Value
-        if "last_price" in df.columns and "shares_outstanding" in df.columns and "tangible_book_value" in result.columns:
+        if (
+            "last_price" in df.columns
+            and "shares_outstanding" in df.columns
+            and "tangible_book_value" in result.columns
+        ):
             market_cap = df["last_price"] * df["shares_outstanding"]
             result = _ensure_float_column(result, "p_tbv_ratio")
-            result.loc[financials_mask, "p_tbv_ratio"] = _safe_div(market_cap, result["tangible_book_value"]).loc[financials_mask]
+            result.loc[financials_mask, "p_tbv_ratio"] = _safe_div(
+                market_cap, result["tangible_book_value"]
+            ).loc[financials_mask]
 
     if energy_mask.any():
         if "capex" in df.columns and "revenue" in df.columns:
             result = _ensure_float_column(result, "capex_intensity")
-            result.loc[energy_mask, "capex_intensity"] = (_safe_div(df["capex"], df["revenue"]) * 100).loc[energy_mask]
+            result.loc[energy_mask, "capex_intensity"] = (
+                _safe_div(df["capex"], df["revenue"]) * 100
+            ).loc[energy_mask]
 
     # Size Factor Percentile (using Country Rank)
     if "market_cap_country_r" in df.columns:
@@ -77,36 +86,38 @@ def engineer_sector_specific_features(df: pd.DataFrame, sector_col: str = "secto
     logger.info("Engineered sector-specific features")
     return result
 
+
 def create_relative_value_features(
-    df: pd.DataFrame, 
-    sector_col: str = "sector", 
-    metrics: Optional[List[str]] = None
+    df: pd.DataFrame, sector_col: str = "sector", metrics: Optional[List[str]] = None
 ) -> pd.DataFrame:
     """Create features relative to sector medians/means."""
     if metrics is None:
         metrics = ["p_e_ratio", "p_b_ratio", "ev_ebitda_ratio", "roe", "roa"]
-        
+
     result = df.copy()
     valid_metrics = [m for m in metrics if m in result.columns]
-    
+
     if not valid_metrics:
         return result
-        
+
     grouped = result.groupby(sector_col)
-    
+
     for metric in valid_metrics:
         sector_median = grouped[metric].transform("median")
         sector_mean = grouped[metric].transform("mean")
         sector_std = grouped[metric].transform("std")
-        
+
         result[f"{metric}_vs_sector_median"] = df[metric] - sector_median
         result[f"{metric}_sector_zscore"] = _safe_div(df[metric] - sector_mean, sector_std)
         result[f"{metric}_sector_percentile"] = grouped[metric].rank(pct=True) * 100
-        
+
     logger.info(f"Created relative value features for {len(valid_metrics)} metrics")
     return result
 
-def engineer_sector_relative_interactions(df: pd.DataFrame, sector_col: str = "sector") -> pd.DataFrame:
+
+def engineer_sector_relative_interactions(
+    df: pd.DataFrame, sector_col: str = "sector"
+) -> pd.DataFrame:
     """Engineer interactions between features and sector medians."""
     result = df.copy()
     # Simple implementation for now

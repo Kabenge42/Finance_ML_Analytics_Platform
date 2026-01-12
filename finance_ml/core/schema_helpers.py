@@ -6,7 +6,6 @@ Provides convenient wrappers around COLUMN_SCHEMA and PHASE93_FEATURE_CATEGORIES
 from finance_ml.core.schema import (
     COLUMN_SCHEMA,
     PHASE93_FEATURE_CATEGORIES,
-    normalize_column_name,
     list_required_schema_columns_for_etl,
 )
 

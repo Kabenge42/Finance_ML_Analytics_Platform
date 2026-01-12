@@ -4,9 +4,9 @@ Currency Conversion Stage for ETL Pipeline.
 Stage 8: Converts monetary columns from local currencies to target currency.
 """
 
-from typing import Optional, Tuple
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from typing import Tuple
 
 import pandas as pd
 

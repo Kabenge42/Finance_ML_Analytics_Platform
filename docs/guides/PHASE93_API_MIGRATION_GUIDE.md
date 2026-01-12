@@ -177,7 +177,7 @@ all_stocks_features = build_features(
 - `"employment_analytics"`: Employment dynamics, productivity trends
 - `"revenue_forecasting"`: Revenue forecasts, growth metrics, analyst quality
 - `"balance_sheet"`: Balance sheet trends, leverage, liquidity
-- `"comprehensive"`: Full advanced feature set (290+ features)
+- `"comprehensive"`: Full advanced feature set (350 features)
 
 ```
 

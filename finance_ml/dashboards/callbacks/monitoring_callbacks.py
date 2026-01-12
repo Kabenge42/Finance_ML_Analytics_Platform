@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, State, html, dcc
+from dash import Input, Output, State
+
 from finance_ml.dashboards.components import (
     _monitoring_kpi_cards,
     _coerce_list,
     apply_filters,
     create_empty_state_figure,
 )
-from finance_ml.dashboards.components.constants import COLOR_PALETTE, PLOTLY_TEMPLATE
+from finance_ml.dashboards.components.constants import PLOTLY_TEMPLATE
 
 
 def register_monitoring_callbacks(app, initial_df, generate_dashboard_artifacts):

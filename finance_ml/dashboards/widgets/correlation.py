@@ -1,4 +1,5 @@
 """correlation.py - Dashboard widgets."""
+
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -10,12 +11,11 @@ from plotly.subplots import make_subplots
 
 from finance_ml.core.constants import CATEGORY_COLORS, PLOTLY_TEMPLATE, COLOR_PALETTE
 from finance_ml.core.schema import PHASE93_FEATURE_CATEGORIES
-from .base import (
-    resolve_reference_date, _write_html_artifact
-)
+from .base import resolve_reference_date, _write_html_artifact
 from .earnings import create_earnings_calendar_dashboard, CategoryMetricsResolver
 
 logger = logging.getLogger(__name__)
+
 
 def create_category_comparison_chart(
     df: pd.DataFrame,
@@ -151,7 +151,8 @@ def create_category_comparison_chart(
 
     return fig
 
-def create_technical_valuation_dashboard(df: pd.DataFrame, output_dir: Path) -> Dict[str, object]:
+
+def create_technical_valuation_dashboard(df: pd.DataFrame, output_dir: Path) -> go.Figure:
     """Create technical analysis dashboard overlaying valuation metrics."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -293,22 +294,17 @@ def create_technical_valuation_dashboard(df: pd.DataFrame, output_dir: Path) -> 
 
     output_path = output_dir / "technical_valuation_dashboard.html"
     _write_html_artifact(fig, output_path)
+    return fig
 
-    return {"figure": fig, "output_path": output_path}
 
-def create_category_correlation_network(
+CORRELATION_THRESHOLD = 0.3
+
+
+def _compute_category_scores(
     df: pd.DataFrame,
-    category_mapping: Optional[Dict[str, List[str]]],
-    output_dir: Path,
-) -> Optional[go.Figure]:
-    """Create interactive network visualization showing correlations between feature categories."""
-
-    if category_mapping is None:
-        category_mapping = PHASE93_FEATURE_CATEGORIES
-
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
+    category_mapping: Dict[str, List[str]],
+) -> Dict[str, pd.Series]:
+    """Compute normalized aggregate scores for each feature category."""
     category_scores: Dict[str, pd.Series] = {}
     for cat_name, features in category_mapping.items():
         available = [f for f in features if f in df.columns]
@@ -316,6 +312,74 @@ def create_category_correlation_network(
             cat_data = df[available].apply(pd.to_numeric, errors="coerce")
             cat_data = cat_data.apply(lambda x: (x - x.mean()) / x.std() if x.std() > 0 else x)
             category_scores[cat_name] = cat_data.mean(axis=1)
+    return category_scores
+
+
+def _build_correlation_graph(
+    corr_matrix: pd.DataFrame,
+    threshold: float = CORRELATION_THRESHOLD,
+):
+    """Build a NetworkX graph from correlation matrix with edges above threshold."""
+    import networkx as nx
+
+    G = nx.Graph()
+    for cat in corr_matrix.columns:
+        G.add_node(cat)
+
+    for i, cat1 in enumerate(corr_matrix.columns):
+        for j, cat2 in enumerate(corr_matrix.columns):
+            if i < j:
+                corr = corr_matrix.loc[cat1, cat2]
+                if abs(corr) > threshold:
+                    G.add_edge(cat1, cat2, weight=abs(corr), correlation=corr)
+    return G
+
+
+def _create_network_traces(G, pos: dict) -> tuple[list, go.Scatter]:
+    """Create Plotly traces for network edges and nodes."""
+    edge_traces = []
+    for edge in G.edges(data=True):
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        corr = edge[2]["correlation"]
+        color = "#00bc8c" if corr > 0 else "#e74c3c"
+        edge_traces.append(
+            go.Scatter(
+                x=[x0, x1, None],
+                y=[y0, y1, None],
+                mode="lines",
+                line=dict(width=abs(corr) * 5, color=color),
+                hoverinfo="none",
+            )
+        )
+
+    node_x = [pos[node][0] for node in G.nodes()]
+    node_y = [pos[node][1] for node in G.nodes()]
+    node_trace = go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode="markers+text",
+        text=list(G.nodes()),
+        textposition="top center",
+        marker=dict(size=20, color="#3498db"),
+        hoverinfo="text",
+    )
+    return edge_traces, node_trace
+
+
+def create_category_correlation_network(
+    df: pd.DataFrame,
+    category_mapping: Optional[Dict[str, List[str]]],
+    output_dir: Path,
+) -> Optional[go.Figure]:
+    """Create interactive network visualization showing correlations between feature categories."""
+    if category_mapping is None:
+        category_mapping = PHASE93_FEATURE_CATEGORIES
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    category_scores = _compute_category_scores(df, category_mapping)
 
     if len(category_scores) < 2:
         return None
@@ -329,49 +393,10 @@ def create_category_correlation_network(
         logger.warning("networkx not installed; skipping category correlation network generation")
         return None
 
-    G = nx.Graph()
-    for cat in corr_matrix.columns:
-        G.add_node(cat)
-
-    threshold = 0.3
-    for i, cat1 in enumerate(corr_matrix.columns):
-        for j, cat2 in enumerate(corr_matrix.columns):
-            if i < j:
-                corr = corr_matrix.loc[cat1, cat2]
-                if abs(corr) > threshold:
-                    G.add_edge(cat1, cat2, weight=abs(corr), correlation=corr)
-
+    G = _build_correlation_graph(corr_matrix, threshold=CORRELATION_THRESHOLD)
     pos = nx.spring_layout(G, k=2, iterations=50)
 
-    edge_traces = []
-    for edge in G.edges(data=True):
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        corr = edge[2]["correlation"]
-        color = "#00bc8c" if corr > 0 else "#e74c3c"
-
-        edge_traces.append(
-            go.Scatter(
-                x=[x0, x1, None],
-                y=[y0, y1, None],
-                mode="lines",
-                line=dict(width=abs(corr) * 5, color=color),
-                hoverinfo="none",
-            )
-        )
-
-    node_x = [pos[node][0] for node in G.nodes()]
-    node_y = [pos[node][1] for node in G.nodes()]
-
-    node_trace = go.Scatter(
-        x=node_x,
-        y=node_y,
-        mode="markers+text",
-        text=list(G.nodes()),
-        textposition="top center",
-        marker=dict(size=20, color="#3498db"),
-        hoverinfo="text",
-    )
+    edge_traces, node_trace = _create_network_traces(G, pos)
 
     fig = go.Figure(data=edge_traces + [node_trace])
     fig.update_layout(
@@ -385,5 +410,4 @@ def create_category_correlation_network(
 
     output_path = output_dir / "category_correlation_network.html"
     _write_html_artifact(fig, output_path)
-
     return fig

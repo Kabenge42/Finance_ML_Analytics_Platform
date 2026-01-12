@@ -2,8 +2,8 @@
 """Analyst rating and recommendations analytics module."""
 from datetime import datetime
 from typing import Optional
+
 import pandas as pd
-import numpy as np
 
 # Constants
 MIN_SAMPLE_SIZE = 5

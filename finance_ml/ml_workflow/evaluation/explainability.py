@@ -4,11 +4,11 @@ Explainability utilities (SHAP, LIME) extracted from analytics/eval.py.
 This module provides functions for model interpretation using SHAP and LIME.
 """
 
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import matplotlib.pyplot as plt
-from typing import Optional, Dict, List, Any, Union
 
 
 def compute_shap_values(model, X, model_type="auto", n_samples=100):

@@ -10,6 +10,7 @@ from .utils import _safe_div
 
 logger = logging.getLogger(__name__)
 
+
 def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer profitability ratios.
 
@@ -76,8 +77,12 @@ def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
 
     if "net_income_adj_ltm" in df.columns and "net_income_is_ltm" in df.columns:
         result["net_income_adjustment_ratio_ltm"] = _safe_div(
-            df["normalized_net_income_fq"].abs() if "normalized_net_income_fq" in df.columns else df["net_income_adj_ltm"].abs(), 
-            df["net_income_is_ltm"].abs()
+            (
+                df["normalized_net_income_fq"].abs()
+                if "normalized_net_income_fq" in df.columns
+                else df["net_income_adj_ltm"].abs()
+            ),
+            df["net_income_is_ltm"].abs(),
         )
 
     if "net_income_adj_fy" in df.columns and "net_income_is_fy" in df.columns:
@@ -112,6 +117,7 @@ def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Engineered profitability ratios")
     return result
+
 
 def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer margin trend features comparing current vs historical periods.
@@ -198,11 +204,7 @@ def engineer_margin_trends(df: pd.DataFrame) -> pd.DataFrame:
         ebit_adj_ratio = _safe_div(df["ebit_adj_ltm"].abs(), df["ebit_ltm"].abs())
 
     if ebitda_adj_ratio is not None or ebit_adj_ratio is not None:
-        a = (
-            ebitda_adj_ratio
-            if ebitda_adj_ratio is not None
-            else pd.Series(0.0, index=result.index)
-        )
+        a = ebitda_adj_ratio if ebitda_adj_ratio is not None else pd.Series(0.0, index=result.index)
         b = ebit_adj_ratio if ebit_adj_ratio is not None else pd.Series(0.0, index=result.index)
         score = 100.0 - 50.0 * a - 30.0 * b
         result["earnings_quality_score"] = score.clip(lower=0.0, upper=100.0)

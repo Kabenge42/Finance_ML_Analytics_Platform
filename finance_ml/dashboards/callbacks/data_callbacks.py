@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 import pandas as pd
-from dash import Input, Output, State, html, callback, ctx
-from dash.exceptions import PreventUpdate
+from dash import Input, Output
+
 from finance_ml.dashboards.components import (
     _safe_options,
     apply_filters,

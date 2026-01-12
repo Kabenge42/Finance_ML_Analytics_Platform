@@ -365,7 +365,7 @@ def cross_validate_classifier(
         you must also provide the groups parameter. If cv is a splitter object,
         it will be used directly; otherwise, a StratifiedKFold is created.
     """
-    from sklearn.model_selection import cross_validate, BaseCrossValidator
+    from sklearn.model_selection import cross_validate
 
     # Setup cross-validation strategy
     # Accept either an integer (create StratifiedKFold) or a CV splitter object

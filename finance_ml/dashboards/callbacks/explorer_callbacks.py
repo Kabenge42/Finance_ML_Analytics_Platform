@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import pandas as pd
 from dash import Input, Output, State
+
 from finance_ml.dashboards.components import (
     build_explorer_column_options,
     _coerce_list,

@@ -17,10 +17,20 @@ Architecture:
     and finance_ml_restructuring_plan.md (consolidated regression module)
 """
 
+# Constraints
+from finance_ml.ml_workflow.regression.constraints import (
+    NonNegativeRegressionWrapper,
+)
+
 # Dataset preparation
 from finance_ml.ml_workflow.regression.dataset import (
     prepare_regression_data,
     integrate_classification_features,
+)
+# I/O
+from finance_ml.ml_workflow.regression.io import (
+    save_regression_model,
+    load_regression_model,
 )
 
 # Models
@@ -31,29 +41,16 @@ from finance_ml.ml_workflow.regression.models import (
     train_stacking_regressor,
     compare_regressors,
 )
-
 # Quantile regression
 from finance_ml.ml_workflow.regression.quantile import (
     train_quantile_regressor,
 )
-
-# Constraints
-from finance_ml.ml_workflow.regression.constraints import (
-    NonNegativeRegressionWrapper,
-)
-
 # Robust helpers
 from finance_ml.ml_workflow.regression.robust import (
     winsorize_target,
     clip_predictions,
     adaptive_clip_predictions,
     enforce_non_negative,
-)
-
-# I/O
-from finance_ml.ml_workflow.regression.io import (
-    save_regression_model,
-    load_regression_model,
 )
 
 # ============================================================================

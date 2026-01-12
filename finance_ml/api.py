@@ -70,40 +70,6 @@ convenient import paths.
 
 from __future__ import annotations
 
-# NOTE: We keep imports focused and avoid pulling in heavy optional
-# dependencies here. The symbols we re-export are already imported
-# transitively when users do ``import finance_ml`` or when individual
-# submodules are used directly, so this facade does not materially
-# increase import cost.
-
-# ---------------------------------------------------------------------------
-# Data loading / preprocessing
-# ---------------------------------------------------------------------------
-
-from finance_ml.ml_workflow.preprocessing import (
-    # Data loading and normalization
-    load_from_csv,
-    load_from_db,
-    normalize_columns,
-    # High-level preprocessing pipeline (Phase 9.1)
-    prepare_phase91_data,
-)
-
-
-# ---------------------------------------------------------------------------
-# Feature engineering
-# ---------------------------------------------------------------------------
-
-from finance_ml.ml_workflow.features.api import (
-    build_features,
-    PresetName,
-)
-
-
-# ---------------------------------------------------------------------------
-# Classification
-# ---------------------------------------------------------------------------
-
 from finance_ml.ml_workflow.classification import (
     create_enhanced_event_labels,
     prepare_classification_data,
@@ -114,12 +80,6 @@ from finance_ml.ml_workflow.classification import (
     train_stacking_classifier,
     compare_classifiers,
 )
-
-
-# ---------------------------------------------------------------------------
-# Regression (core + advanced sector models / quantiles)
-# ---------------------------------------------------------------------------
-
 # Legacy-named helpers mapped to structured classification modules to avoid
 # importing deprecated ml_workflow.models (which pulls legacy internals).
 from finance_ml.ml_workflow.classification.labels import (  # noqa: E402
@@ -128,6 +88,36 @@ from finance_ml.ml_workflow.classification.labels import (  # noqa: E402
 from finance_ml.ml_workflow.classification.models import (  # noqa: E402
     fit_classifier as train_event_classifier,
 )
+from finance_ml.ml_workflow.features.api import (
+    build_features,
+    PresetName,
+)
+from finance_ml.ml_workflow.preprocessing import (
+    # Data loading and normalization
+    load_from_csv,
+    load_from_db,
+    normalize_columns,
+    # High-level preprocessing pipeline (Phase 9.1)
+    prepare_phase91_data,
+)
+
+# NOTE: We keep imports focused and avoid pulling in heavy optional
+# dependencies here. The symbols we re-export are already imported
+# transitively when users do ``import finance_ml`` or when individual
+# submodules are used directly, so this facade does not materially
+# increase import cost.
+# ---------------------------------------------------------------------------
+# Data loading / preprocessing
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Feature engineering
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classification
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Regression (core + advanced sector models / quantiles)
+# ---------------------------------------------------------------------------
 
 try:  # pragma: no cover - allow API import without full regression stack
     from finance_ml.ml_workflow.regression.dataset import (

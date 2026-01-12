@@ -3,21 +3,17 @@ Plotly Dash Dashboard for Finance ML Analytics
 Run: python finance_ml/dashboards/dash_app.py
 """
 
-from pathlib import Path
 import os
 from datetime import datetime
-from typing import Literal
+from pathlib import Path
 
 import dash
+import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, dash_table
 from flask import send_from_directory
-
-from finance_ml.dashboards.components.data_utils import load_data
-from finance_ml.dashboards.components.constants import PLOTLY_TEMPLATE
 
 try:
     from finance_ml.dashboards.artifact_registry import ARTIFACTS

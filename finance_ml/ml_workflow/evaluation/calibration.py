@@ -9,12 +9,11 @@ Functions for measuring and persisting sector-specific bias corrections:
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Optional, Union, Dict, Any
-import os
 
 import pandas as pd
-import numpy as np
 
 logger = logging.getLogger(__name__)
 

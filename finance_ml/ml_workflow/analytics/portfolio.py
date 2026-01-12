@@ -474,9 +474,17 @@ def optimize_portfolio_target_return(
     constraints = [
         {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},
         # Use inequality constraint: return must be at least (target - tolerance)
-        {"type": "ineq", "fun": lambda w: calculate_portfolio_return(w, returns) - (target_return - return_tolerance)},
+        {
+            "type": "ineq",
+            "fun": lambda w: calculate_portfolio_return(w, returns)
+            - (target_return - return_tolerance),
+        },
         # And at most (target + tolerance)
-        {"type": "ineq", "fun": lambda w: (target_return + return_tolerance) - calculate_portfolio_return(w, returns)},
+        {
+            "type": "ineq",
+            "fun": lambda w: (target_return + return_tolerance)
+            - calculate_portfolio_return(w, returns),
+        },
     ]
 
     # Bounds

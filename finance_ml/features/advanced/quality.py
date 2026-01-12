@@ -11,6 +11,7 @@ from .utils import _safe_div
 
 logger = logging.getLogger(__name__)
 
+
 def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer accounting quality and red flag features.
 
@@ -161,6 +162,7 @@ def engineer_accounting_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered accounting quality features")
     return result
 
+
 def engineer_financial_distress_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer financial distress indicators using Altman Z-Score variants.
 
@@ -230,6 +232,7 @@ def engineer_financial_distress_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered financial distress features (Altman Z-Score)")
     return result
 
+
 def engineer_cash_flow_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer cash flow quality and conversion metrics.
 
@@ -267,6 +270,7 @@ def engineer_cash_flow_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered cash flow quality features")
     return result
 
+
 def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer composite scores (quality, value, momentum) and keep within [0,100].
 
@@ -302,7 +306,9 @@ def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     # F5: Decrease in Leverage (Long-term debt ratio)
     if "debt_to_equity" in df.columns:
         if "debt_to_equity_previous_year" in df.columns:
-            delta_lev = df["debt_to_equity"].fillna(0) - df["debt_to_equity_previous_year"].fillna(0)
+            delta_lev = df["debt_to_equity"].fillna(0) - df["debt_to_equity_previous_year"].fillna(
+                0
+            )
             f_score_components.append((delta_lev < 0).fillna(False).astype(int))
         else:
             f_score_components.append(
@@ -327,7 +333,9 @@ def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     # F8: Increase in Gross Margin
     if "gross_margin_pct" in df.columns:
         if "gross_margin_pct_previous_year" in df.columns:
-            delta_margin = df["gross_margin_pct"].fillna(0) - df["gross_margin_pct_previous_year"].fillna(0)
+            delta_margin = df["gross_margin_pct"].fillna(0) - df[
+                "gross_margin_pct_previous_year"
+            ].fillna(0)
             f_score_components.append((delta_margin > 0).fillna(False).astype(int))
         else:
             f_score_components.append(
@@ -337,7 +345,9 @@ def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     # F9: Increase in Asset Turnover
     if "asset_turnover" in df.columns:
         if "asset_turnover_previous_year" in df.columns:
-            delta_turn = df["asset_turnover"].fillna(0) - df["asset_turnover_previous_year"].fillna(0)
+            delta_turn = df["asset_turnover"].fillna(0) - df["asset_turnover_previous_year"].fillna(
+                0
+            )
             f_score_components.append((delta_turn > 0).fillna(False).astype(int))
         else:
             f_score_components.append(
@@ -367,7 +377,7 @@ def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     # (Simplified for now if all columns not available)
     if all(c in df.columns for c in ["cfo_ltm", "net_income", "total_assets"]):
         accruals = _safe_div(df["net_income"] - df["cfo_ltm"], df["total_assets"])
-        result["beneish_m_score"] = accruals # This is just one component (TATA)
+        result["beneish_m_score"] = accruals  # This is just one component (TATA)
 
     # Composite scores
     scores_to_avg = []
@@ -386,6 +396,7 @@ def engineer_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered composite quality and fundamental scores")
     return result
 
+
 def engineer_capital_allocation_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer capital allocation efficiency and working capital metrics."""
     result = df.copy()
@@ -395,9 +406,12 @@ def engineer_capital_allocation_features(df: pd.DataFrame) -> pd.DataFrame:
         result["reinvestment_rate"] = _safe_div(-df["capex_ltm"], df["net_income_ltm"])
 
     # Cash conversion cycle (approximation)
-    if all(c in df.columns for c in ["inventory_ltm", "receivables_ltm", "accounts_payable_ltm", "revenue_ltm"]):
+    if all(
+        c in df.columns
+        for c in ["inventory_ltm", "receivables_ltm", "accounts_payable_ltm", "revenue_ltm"]
+    ):
         days_sales = _safe_div(df["receivables_ltm"], df["revenue_ltm"]) * 365
-        days_inventory = _safe_div(df["inventory_ltm"], df["revenue_ltm"]) * 365 # Should use COGS
+        days_inventory = _safe_div(df["inventory_ltm"], df["revenue_ltm"]) * 365  # Should use COGS
         days_payable = _safe_div(df["accounts_payable_ltm"], df["revenue_ltm"]) * 365
         result["cash_conversion_cycle"] = days_sales + days_inventory - days_payable
 

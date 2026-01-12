@@ -11,6 +11,7 @@ from .utils import _safe_div
 
 logger = logging.getLogger(__name__)
 
+
 def engineer_analyst_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer analyst quality, consensus, and price target features.
 
@@ -102,6 +103,7 @@ def engineer_analyst_quality_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered analyst quality & consensus features")
     return result
 
+
 def engineer_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer market sentiment features from short interest and betas.
 
@@ -144,3 +146,125 @@ def engineer_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Engineered market sentiment features (short interest, betas)")
     return result
+
+
+def engineer_price_target_dynamics(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer price target temporal dynamics features.
+
+    Leverages historical price target data to derive momentum, acceleration,
+    and consensus evolution features.
+
+    Features computed (15):
+    - pt_momentum_* (1w, 1m, 3m, 6m, 1y, qtd, ytd)
+    - pt_acceleration_short/long
+    - pt_consensus_convergence and pt_high_low_spread_trend
+    - analyst_coverage_change_* (1m, 3m)
+    - pt_vs_price_momentum
+    - pt_skew_trend
+
+    Args:
+        df: Input DataFrame with price target historical columns
+
+    Returns:
+        DataFrame with price target dynamics features added
+    """
+
+    result = df.copy()
+
+    # === Price Target Momentum ===
+    momentum_pairs = [
+        ("pt_momentum_1w", "price_target", "price_target_1w_ago"),
+        ("pt_momentum_1m", "price_target", "price_target_1m_ago"),
+        ("pt_momentum_3m", "price_target", "price_target_3m_ago"),
+        ("pt_momentum_6m", "price_target", "price_target_6m_ago"),
+        ("pt_momentum_1y", "price_target", "price_target_1y_ago"),
+        ("pt_qtd_momentum", "price_target", "price_target_qtd_ago"),
+        ("pt_ytd_momentum", "price_target", "price_target_ytd_ago"),
+    ]
+
+    for feature_name, current_col, prior_col in momentum_pairs:
+        if current_col in df.columns and prior_col in df.columns:
+            result[feature_name] = _safe_pct_change(
+                df[current_col].astype(float), df[prior_col].astype(float)
+            )
+
+    # === Momentum Acceleration ===
+    if "pt_momentum_1m" in result.columns and "pt_momentum_3m" in result.columns:
+        result["pt_acceleration_short"] = result["pt_momentum_1m"] - result["pt_momentum_3m"]
+
+    if "pt_momentum_3m" in result.columns and "pt_momentum_1y" in result.columns:
+        result["pt_acceleration_long"] = result["pt_momentum_3m"] - result["pt_momentum_1y"]
+
+    # === Consensus Range Evolution ===
+    spread_cols_current = [
+        "price_target_high",
+        "price_target_low",
+        "price_target_median",
+    ]
+    spread_cols_3m = [
+        "price_target_high_3m_ago",
+        "price_target_low_3m_ago",
+        "price_target_median_3m_ago",
+    ]
+
+    if all(c in df.columns for c in spread_cols_current + spread_cols_3m):
+        current_spread = _safe_div(
+            df["price_target_high"].astype(float) - df["price_target_low"].astype(float),
+            df["price_target_median"].astype(float),
+        )
+        spread_3m = _safe_div(
+            df["price_target_high_3m_ago"].astype(float)
+            - df["price_target_low_3m_ago"].astype(float),
+            df["price_target_median_3m_ago"].astype(float),
+        )
+        result["pt_consensus_convergence"] = spread_3m - current_spread
+        result["pt_high_low_spread_trend"] = current_spread - spread_3m
+
+    # === Analyst Coverage Trajectory ===
+    count_col = "price_target_count" if "price_target_count" in df.columns else "price_target_num"
+    if count_col in df.columns:
+        if "price_target_count_1m_ago" in df.columns:
+            result["analyst_coverage_change_1m"] = df[count_col].astype(float) - df[
+                "price_target_count_1m_ago"
+            ].astype(float)
+        if "price_target_count_3m_ago" in df.columns:
+            result["analyst_coverage_change_3m"] = df[count_col].astype(float) - df[
+                "price_target_count_3m_ago"
+            ].astype(float)
+
+    # === Target vs Price Momentum Divergence ===
+    if all(
+        c in df.columns
+        for c in ["price_target", "last_price", "price_target_3m_ago", "price_3m_ago"]
+    ):
+        current_ratio = _safe_div(df["price_target"].astype(float), df["last_price"].astype(float))
+        prior_ratio = _safe_div(
+            df["price_target_3m_ago"].astype(float), df["price_3m_ago"].astype(float)
+        )
+        result["pt_vs_price_momentum"] = _safe_pct_change(current_ratio, prior_ratio)
+
+    # === Skewness Trend (Mean vs Median) ===
+    if all(
+        c in df.columns
+        for c in [
+            "price_target",
+            "price_target_median",
+            "price_target_3m_ago",
+            "price_target_median_3m_ago",
+        ]
+    ):
+        current_skew = df["price_target"].astype(float) - df["price_target_median"].astype(float)
+        prior_skew = df["price_target_3m_ago"].astype(float) - df[
+            "price_target_median_3m_ago"
+        ].astype(float)
+        result["pt_skew_trend"] = current_skew - prior_skew
+
+    logger.info("Engineered price target dynamics features (15 features)")
+    return result
+
+
+def _safe_pct_change(current: pd.Series, previous: pd.Series) -> pd.Series:
+    """Calculate percentage change with safe division."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = (current - previous) / previous.abs().replace(0, pd.NA)
+    return result.astype("Float64")

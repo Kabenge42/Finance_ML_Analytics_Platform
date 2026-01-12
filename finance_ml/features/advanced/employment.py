@@ -11,6 +11,7 @@ from .utils import _safe_div
 
 logger = logging.getLogger(__name__)
 
+
 def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer employee productivity and efficiency features.
 
@@ -134,6 +135,7 @@ def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Engineered employee productivity features")
     return result
+
 
 def engineer_employment_dynamics_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer employment dynamics and growth signal features.

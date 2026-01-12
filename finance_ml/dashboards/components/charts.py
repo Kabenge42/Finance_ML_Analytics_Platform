@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from .constants import COLOR_PALETTE, FONT_FAMILY, FONT_SIZES
+from .constants import COLOR_PALETTE
 from .utils import create_empty_state_figure
 
 

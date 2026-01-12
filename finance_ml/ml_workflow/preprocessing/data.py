@@ -18,10 +18,9 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import warnings
-from pathlib import Path
 import warnings as _warnings
+from pathlib import Path
 from typing import Optional, List, TYPE_CHECKING, Any
 
 import numpy as np

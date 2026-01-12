@@ -39,6 +39,7 @@ from finance_ml.ml_workflow.preprocessing.dtypes import to_jsonable
 
 logger = logging.getLogger(__name__)
 
+
 def validate_etl_output(
     df: pd.DataFrame,
     phase: str,
@@ -244,6 +245,7 @@ class ETLPipeline:
         """
         self.config = config or ETLConfig()
         self.metrics = None
+        self.classification_cache = None
 
     def extract_from_csv(
         self,
@@ -313,16 +315,18 @@ class ETLPipeline:
         if not self.config.semantic_classification.enabled:
             return df
 
-        result, trans_count, skip_count = run_semantic_transformations_stage(
+        result, diagnostics = run_semantic_transformations_stage(
             df,
             apply_log_transforms=self.config.semantic_transform.apply_log_transforms,
             log_transform_market_values=self.config.semantic_transform.log_transform_market_values,
             log_transform_target_columns=self.config.semantic_transform.log_transform_target_columns,
+            log_transform_method=self.config.semantic_transform.log_transform_method,
+            classification_cache=self.classification_cache,
         )
 
         if self.metrics:
-            self.metrics.log_transformed_columns = trans_count
-            self.metrics.log_transforms_skipped = skip_count
+            self.metrics.log_transformed_columns = diagnostics.transformed_count
+            self.metrics.log_transforms_skipped = diagnostics.skipped_count
 
         return result
 
@@ -357,6 +361,11 @@ class ETLPipeline:
             preset=self.config.feature_engineering.preset,
             categories=self.config.feature_engineering.categories,
             engineer_earnings_analytics=self.config.feature_engineering.engineer_earnings_analytics,
+            engineer_price_target_dynamics=self.config.feature_engineering.engineer_price_target_dynamics,
+            engineer_fiscal_calendar=self.config.feature_engineering.engineer_fiscal_calendar,
+            engineer_dividend_timing=self.config.feature_engineering.engineer_dividend_timing,
+            engineer_eps_trajectory=self.config.feature_engineering.engineer_eps_trajectory,
+            engineer_cashflow_temporal=self.config.feature_engineering.engineer_cashflow_temporal,
         )
 
         if self.metrics:
@@ -372,11 +381,15 @@ class ETLPipeline:
         result = df.copy()
 
         # Stage 1: Normalize columns
-        result = run_extraction_stage(result, normalize=self.config.extraction.normalize_column_names)
+        result = run_extraction_stage(
+            result, normalize=self.config.extraction.normalize_column_names
+        )
 
         # Stage 1.5: Dtype casting
         if self.config.dtype_casting.apply_dtype_casting:
-            result, dtype_diagnostics = run_dtype_casting_stage(result, track_diagnostics=self.config.dtype_casting.track_diagnostics)
+            result, dtype_diagnostics = run_dtype_casting_stage(
+                result, track_diagnostics=self.config.dtype_casting.track_diagnostics
+            )
             if self.metrics:
                 self.metrics.dtype_casting_applied = True
                 self.metrics.dtype_diagnostics = to_jsonable(dtype_diagnostics)
@@ -385,18 +398,25 @@ class ETLPipeline:
         # Stage 1.6: Semantic Classification
         if self.config.semantic_classification.enabled:
             classification_stats = run_semantic_classification_stage(result)
+            self.classification_cache = classification_stats  # Cache for downstream stages
             if self.metrics:
                 self.metrics.price_columns_count = classification_stats["price_columns_count"]
-                self.metrics.market_value_columns_count = classification_stats["market_value_columns_count"]
+                self.metrics.market_value_columns_count = classification_stats[
+                    "market_value_columns_count"
+                ]
                 self.metrics.ratio_columns_count = classification_stats["ratio_columns_count"]
-                self.metrics.percentage_columns_count = classification_stats["percentage_columns_count"]
+                self.metrics.percentage_columns_count = classification_stats[
+                    "percentage_columns_count"
+                ]
                 self.metrics.count_columns_count = classification_stats["count_columns_count"]
                 self.metrics.semantic_classification_applied = True
                 self.metrics.stages_executed.append("semantic_classification")
 
         # Stage 2: Validate schema
         if self.config.validation.validate_schema:
-            is_valid, errors = run_validation_stage(result, require_target=self.config.validation.require_target_column)
+            is_valid, errors = run_validation_stage(
+                result, require_target=self.config.validation.require_target_column
+            )
             if not is_valid and self.metrics:
                 self.metrics.errors.extend(errors)
 
@@ -413,10 +433,10 @@ class ETLPipeline:
         # Stage 5: Apply imputation strategy
         if self.config.imputation.apply_imputation:
             result = run_imputation_stage(
-                result, 
+                result,
                 strategy=self.config.imputation.strategy,
                 sector_column=self.config.imputation.sector_column,
-                reference_price_column=self.config.imputation.reference_price_column
+                reference_price_column=self.config.imputation.reference_price_column,
             )
             if self.metrics:
                 self.metrics.imputation_strategy = self.config.imputation.strategy
@@ -458,7 +478,7 @@ class ETLPipeline:
             compute_growth=self.config.financial_metrics.compute_growth_metrics,
             compute_leverage=self.config.financial_metrics.compute_leverage_metrics,
             compute_target_vs_price=self.config.financial_metrics.compute_target_vs_price_metrics,
-            compute_sector_specific=self.config.financial_metrics.compute_sector_specific_metrics
+            compute_sector_specific=self.config.financial_metrics.compute_sector_specific_metrics,
         )
         if self.metrics:
             for k, v in metrics_stats.items():
@@ -469,7 +489,7 @@ class ETLPipeline:
         result, missing_after = run_post_metrics_imputation_stage(result)
         if self.metrics:
             self.metrics.missing_values_after_imputation = missing_after
-            self.metrics.imputation_completeness = (missing_after == 0)
+            self.metrics.imputation_completeness = missing_after == 0
             self.metrics.stages_executed.append("post_metrics_imputation")
 
         # Stage 9: Feature engineering
@@ -499,16 +519,28 @@ class ETLPipeline:
             schema_validation = run_schema_alignment_validation_stage(result)
             if self.metrics:
                 self.metrics.schema_alignment_score = schema_validation.get("alignment_score", 1.0)
-                self.metrics.unknown_columns_count = len(schema_validation.get("unknown_columns", []))
-                self.metrics.missing_expected_columns_count = len(schema_validation.get("missing_expected_columns", []))
-                self.metrics.dtype_mismatches_count = len(schema_validation.get("dtype_mismatches", {}))
-                self.metrics.recognized_columns_count = int(schema_validation.get("recognized_columns_count", 0))
-                self.metrics.allowlisted_engineered_columns_count = len(schema_validation.get("allowlisted_engineered", []))
+                self.metrics.unknown_columns_count = len(
+                    schema_validation.get("unknown_columns", [])
+                )
+                self.metrics.missing_expected_columns_count = len(
+                    schema_validation.get("missing_expected_columns", [])
+                )
+                self.metrics.dtype_mismatches_count = len(
+                    schema_validation.get("dtype_mismatches", {})
+                )
+                self.metrics.recognized_columns_count = int(
+                    schema_validation.get("recognized_columns_count", 0)
+                )
+                self.metrics.allowlisted_engineered_columns_count = len(
+                    schema_validation.get("allowlisted_engineered", [])
+                )
                 self.metrics.stages_executed.append("schema_validation")
 
         # Stage 12: Quality validation
         if self.config.validation.validate_quality:
-            quality_metrics = run_quality_validation_stage(result, validate_pipeline=self.config.validation.validate_pipeline)
+            quality_metrics = run_quality_validation_stage(
+                result, validate_pipeline=self.config.validation.validate_pipeline
+            )
             if self.metrics:
                 self.metrics.quality_score = quality_metrics.get("overall_quality_score", 0.0)
                 self.metrics.stages_executed.append("quality_validation")

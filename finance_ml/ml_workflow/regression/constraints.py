@@ -381,7 +381,6 @@ def audit_features_for_training(
         >>> if report['has_issues']:
         ...     print(f"Removed {len(report['removed_features'])} problematic features")
     """
-    import pandas as pd
 
     audit_report = {
         "original_features": len(X.columns),

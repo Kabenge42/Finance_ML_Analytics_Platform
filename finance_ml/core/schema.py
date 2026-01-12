@@ -3,11 +3,14 @@ Unified schema module - Single Source of Truth.
 
 This module is the ONLY place where column definitions exist.
 All other modules MUST import from here.
+
+Phase 9.3 Feature Input Categorization (v1.14)
+Total: 350 features across 21 categories
 """
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, TypedDict, Optional
+from typing import Any, Dict, List, Literal, TypedDict, Optional
 
 # =============================================================================
 # Type Aliases for Schema Definition
@@ -45,6 +48,20 @@ Role = Literal[
     "label",  # Classification targets (multi-label)
     "non_recurring",  # Non-recurring exceptional items (impairments, restructuring) - zero imputation
 ]
+
+
+CATEGORICAL_DEFAULT_VALUE: str = "n/a"
+NUMERIC_ZERO_DEFAULT: int = 0
+
+# Role-level default values used for ingestion alignment (SQL defaults / COALESCE)
+ROLE_DEFAULTS: Dict[Role, Any] = {
+    "categorical": CATEGORICAL_DEFAULT_VALUE,
+    "date": None,
+    "financial_statement": NUMERIC_ZERO_DEFAULT,
+    "balance_sheet": NUMERIC_ZERO_DEFAULT,
+    "cash_flow": NUMERIC_ZERO_DEFAULT,
+    "non_recurring": NUMERIC_ZERO_DEFAULT,
+}
 
 
 class ColumnMeta(TypedDict, total=False):
@@ -933,11 +950,6 @@ COLUMN_SCHEMA: Dict[str, ColumnMeta] = {
         "role": "non_recurring",
         "sql_name": "Merger & Restructuring Charges (FY)",
     },
-    "merger_and_restructuring_charges_1fy": {
-        "dtype": "float",
-        "role": "non_recurring",
-        "sql_name": "Merger & Restructuring Charges (-1FY)",
-    },
     "merger_and_restructuring_charges_5yavgfq": {
         "dtype": "float",
         "role": "non_recurring",
@@ -949,36 +961,6 @@ COLUMN_SCHEMA: Dict[str, ColumnMeta] = {
         "role": "financial_statement",
         "sql_name": "R&D Expenses (LTM)",
         "description": "Research and development expenses (Last Twelve Months)",
-    },
-    "merger_restructuring_charges_ltm": {
-        "dtype": "float",
-        "role": "non_recurring",
-        "sql_name": "Merger/Restructuring Charges (LTM)",
-        "description": "Merger and restructuring charges (Last Twelve Months) - alternate naming",
-    },
-    "merger_restructuring_charges_fq": {
-        "dtype": "float",
-        "role": "non_recurring",
-        "sql_name": "Merger/Restructuring Charges (FQ)",
-        "description": "Merger and restructuring charges (Fiscal Quarter) - alternate naming",
-    },
-    "merger_restructuring_charges_fy": {
-        "dtype": "float",
-        "role": "non_recurring",
-        "sql_name": "Merger/Restructuring Charges (FY)",
-        "description": "Merger and restructuring charges (Fiscal Year) - alternate naming",
-    },
-    "merger_restructuring_charges_5yavgfq": {
-        "dtype": "float",
-        "role": "non_recurring",
-        "sql_name": "Merger/Restructuring Charges (5YAVGFQ)",
-        "description": "Merger and restructuring charges (5-year average FQ) - alternate naming",
-    },
-    "sga_expenses": {
-        "dtype": "float",
-        "role": "financial_statement",
-        "sql_name": "SG&A Expenses",
-        "description": "Selling, general, and administrative expenses (alias)",
     },
     "price_target_number": {
         "dtype": "float",
@@ -1932,10 +1914,532 @@ COLUMN_SCHEMA: Dict[str, ColumnMeta] = {
         "role": "feature",
         "description": "Calendar year",
     },
+    "fcf_1fy": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-1FY)"},
+    "cfo_1fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFO (-1FQFQ)"},
+    "cfo_2fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFO (-2FQFQ)"},
+    "cfo_3fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFO (-3FQFQ)"},
+    "cfo_4fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFO (-4FQFQ)"},
+    "cfi_1fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFI (-1FQFQ)"},
+    "cfi_2fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFI (-2FQFQ)"},
+    "cfi_3fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFI (-3FQFQ)"},
+    "cfi_4fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFI (-4FQFQ)"},
+    "cfi_2fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFI (-2FY)"},
+    "cfi_3fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFI (-3FY)"},
+    "cfi_4fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFI (-4FY)"},
+    "fcf_1fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-1FQFQ)"},
+    "fcf_2fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-2FQFQ)"},
+    "fcf_3fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-3FQFQ)"},
+    "fcf_4fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-4FQFQ)"},
+    "cff_2fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFF (-2FY)"},
+    "cff_3fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFF (-3FY)"},
+    "cff_4fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFF (-4FY)"},
+    "cff_1fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFF (-1FQFQ)"},
+    "cff_2fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFF (-2FQFQ)"},
+    "cff_3fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFF (-3FQFQ)"},
+    "cff_4fqfq": {"dtype": "float", "role": "cash_flow", "sql_name": "CFF (-4FQFQ)"},
+    "cfo_2fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFO (-2FY)"},
+    "cfo_3fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFO (-3FY)"},
+    "cfo_4fy": {"dtype": "float", "role": "cash_flow", "sql_name": "CFO (-4FY)"},
+    "cash_acquisitions_1fqfq": {
+        "dtype": "float",
+        "role": "cash_flow",
+        "sql_name": "Cash Acquisitions (-1FQFQ)",
+    },
+    "cash_acquisitions_2fqfq": {
+        "dtype": "float",
+        "role": "cash_flow",
+        "sql_name": "Cash Acquisitions (-2FQFQ)",
+    },
+    "cash_acquisitions_3fqfq": {
+        "dtype": "float",
+        "role": "cash_flow",
+        "sql_name": "Cash Acquisitions (-3FQFQ)",
+    },
+    "cash_acquisitions_4fqfq": {
+        "dtype": "float",
+        "role": "cash_flow",
+        "sql_name": "Cash Acquisitions (-4FQFQ)",
+    },
+    "fcf_2fy": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-2FY)"},
+    "fcf_3fy": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-3FY)"},
+    "fcf_4fy": {"dtype": "float", "role": "cash_flow", "sql_name": "FCF (-4FY)"},
+    "price_target_1w_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target (1W Ago)",
+    },
+    "price_target_1m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target (1M Ago)",
+    },
+    "price_target_3m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target (3M Ago)",
+    },
+    "price_target_6m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target (6M Ago)",
+    },
+    "price_target_mtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target (MTD Ago)",
+    },
+    "price_target_qtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target (QTD Ago)",
+    },
+    "price_target_1y_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target (1Y Ago)",
+    },
+    "price_target_count_3m_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (3M Ago)",
+    },
+    "price_target_count_6m_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (6M Ago)",
+    },
+    "price_target_count_ytd_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (YTD Ago)",
+    },
+    "price_target_count_1y_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (1Y Ago)",
+    },
+    "price_target_count_1w_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (1W Ago)",
+    },
+    "price_target_count_1m_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (1M Ago)",
+    },
+    "price_target_count_mtd_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (MTD Ago)",
+    },
+    "price_target_count_qtd_ago": {
+        "dtype": "float",
+        "role": "count",
+        "sql_name": "Price Target - # (QTD Ago)",
+    },
+    "price_target_high_1w_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (1W Ago)",
+    },
+    "price_target_high_1m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (1M Ago)",
+    },
+    "price_target_high_6m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (6M Ago)",
+    },
+    "price_target_high_mtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (MTD Ago)",
+    },
+    "price_target_high_3m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (3M Ago)",
+    },
+    "price_target_high_qtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (QTD Ago)",
+    },
+    "price_target_high_1y_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (1Y Ago)",
+    },
+    "price_target_high_ytd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - High (YTD Ago)",
+    },
+    "price_target_low_1w_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (1W Ago)",
+    },
+    "price_target_low_1m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (1M Ago)",
+    },
+    "price_target_low_3m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (3M Ago)",
+    },
+    "price_target_low_6m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (6M Ago)",
+    },
+    "price_target_low_mtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (MTD Ago)",
+    },
+    "price_target_low_qtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (QTD Ago)",
+    },
+    "price_target_low_ytd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (YTD Ago)",
+    },
+    "price_target_low_1y_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Low (1Y Ago)",
+    },
+    "price_target_median_1w_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (1W Ago)",
+    },
+    "price_target_median_1m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (1M Ago)",
+    },
+    "price_target_median_3m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (3M Ago)",
+    },
+    "price_target_median_6m_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (6M Ago)",
+    },
+    "price_target_median_mtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (MTD Ago)",
+    },
+    "price_target_median_qtd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (QTD Ago)",
+    },
+    "price_target_median_ytd_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (YTD Ago)",
+    },
+    "price_target_median_1y_ago": {
+        "dtype": "float",
+        "role": "market",
+        "sql_name": "Price Target - Median (1Y Ago)",
+    },
+    # =============================================================================
+    # NEW FEATURES: Phase 9.3 v1.14 Temporal Enhancements
+    # =============================================================================
+    # --- Price Target Dynamics (Analyst Sentiment) ---
+    "pt_momentum_1w": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target momentum (1-week change %)",
+    },
+    "pt_momentum_1m": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target momentum (1-month change %)",
+    },
+    "pt_momentum_3m": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target momentum (3-month change %)",
+    },
+    "pt_momentum_6m": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target momentum (6-month change %)",
+    },
+    "pt_momentum_1y": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target momentum (1-year change %)",
+    },
+    "pt_acceleration_short": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target momentum acceleration (1M vs 3M)",
+    },
+    "pt_acceleration_long": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target momentum acceleration (3M vs 1Y)",
+    },
+    "pt_consensus_convergence": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Analyst consensus convergence (spread narrowing)",
+    },
+    "analyst_coverage_change_1m": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Change in analyst coverage count (1-month)",
+    },
+    "analyst_coverage_change_3m": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Change in analyst coverage count (3-month)",
+    },
+    "pt_vs_price_momentum": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target vs price momentum divergence",
+    },
+    "pt_qtd_momentum": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target quarter-to-date momentum",
+    },
+    "pt_ytd_momentum": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Price target year-to-date momentum",
+    },
+    "pt_skew_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Analyst estimate skewness trend (mean vs median)",
+    },
+    "pt_high_low_spread_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "High-low price target spread evolution",
+    },
+    # --- Cash Flow Temporal (Cash Flow) ---
+    "fcf_quarterly_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "FCF trend slope across last 5 quarters (normalized)",
+    },
+    "fcf_quarterly_volatility": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "FCF coefficient of variation across quarters",
+    },
+    "fcf_positive_ratio": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Ratio of positive FCF quarters (0-1)",
+    },
+    "cfo_quarterly_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "CFO trend slope across last 5 quarters",
+    },
+    "cfo_yoy_quarterly": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "CFO year-over-year quarterly growth",
+    },
+    "investment_intensity_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "CFI investment intensity trend (normalized)",
+    },
+    "cfo_5y_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "CFO 5-year trend slope",
+    },
+    "cfo_5y_stability": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "CFO 5-year stability score (1 - CV)",
+    },
+    "cfo_margin_current": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "Current CFO margin (CFO/Revenue)",
+    },
+    "cfo_margin_trend": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "CFO margin trend (current vs prior year)",
+    },
+    "acquisition_activity_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Cash acquisition activity trend",
+    },
+    "acquisition_quarters_active": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Number of quarters with acquisition activity",
+    },
+    # --- EPS Trajectory (Earnings Quality) ---
+    "eps_quarterly_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "EPS quarterly trend slope (normalized)",
+    },
+    "eps_quarterly_volatility": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "EPS quarterly coefficient of variation",
+    },
+    "eps_yoy_quarterly_growth": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "EPS year-over-year quarterly growth",
+    },
+    "eps_qoq_growth": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "EPS quarter-over-quarter growth",
+    },
+    "eps_positive_streak": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Count of positive EPS quarters (last 5)",
+    },
+    "eps_cagr_5y": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "EPS 5-year compound annual growth rate",
+    },
+    "eps_cagr_3y": {
+        "dtype": "Float64",
+        "role": "percentage",
+        "description": "EPS 3-year compound annual growth rate",
+    },
+    "eps_annual_trend": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "EPS annual trend slope (normalized)",
+    },
+    "eps_vs_5y_avg": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Current EPS vs 5-year average ratio",
+    },
+    "eps_growth_acceleration": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "EPS growth acceleration (3Y CAGR - 5Y CAGR)",
+    },
+    # --- Fiscal Calendar (Temporal Patterns) ---
+    "fiscal_year_progress": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Progress through fiscal year (0-1 scale)",
+    },
+    "days_to_quarter_end": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Days until fiscal quarter end",
+    },
+    "fiscal_half": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Fiscal half indicator (1 or 2)",
+    },
+    "reporting_lag_zscore": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Reporting lag z-score vs median",
+    },
+    "late_reporter_flag": {
+        "dtype": "boolean",
+        "role": "feature",
+        "description": "Flag for late reporting (>60 days)",
+    },
+    "days_since_fy_end": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Days since fiscal year end",
+    },
+    "days_to_next_fy_end": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Days until next fiscal year end",
+    },
+    "earnings_imminent": {
+        "dtype": "boolean",
+        "role": "feature",
+        "description": "Earnings within 14 days flag",
+    },
+    "pre_earnings_window": {
+        "dtype": "boolean",
+        "role": "feature",
+        "description": "Within 30-day pre-earnings window",
+    },
+    # --- Dividend Timing (Dividend Reliability) ---
+    "days_to_dividend_ex_date": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Days until dividend ex-date",
+    },
+    "days_to_dividend_record_date": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Days until dividend record date",
+    },
+    "days_to_dividend_payable_date": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Days until dividend payable date",
+    },
+    "approaching_ex_date": {
+        "dtype": "boolean",
+        "role": "feature",
+        "description": "Within 7 days of ex-dividend date",
+    },
+    "recently_ex_dividend": {
+        "dtype": "boolean",
+        "role": "feature",
+        "description": "Went ex-dividend within last 7 days",
+    },
+    "dividend_cycle_days": {
+        "dtype": "Int64",
+        "role": "feature",
+        "description": "Days in dividend payment cycle",
+    },
+    "dividend_cycle_position": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Position within dividend cycle (0-1)",
+    },
+    "dividend_announcement_recency": {
+        "dtype": "Float64",
+        "role": "feature",
+        "description": "Days since last dividend announcement",
+    },
 }
 
-# Phase 9.3 Feature Input Categorization (v1.13)
-# Total: 296 features across 21 categories
+# Phase 9.3 Feature Input Categorization (v1.14)
+# Total: 350 features across 21 categories
 PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
     # =========================================================================
     # MOMENTUM & TECHNICAL (25 features)
@@ -2045,7 +2549,7 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "z_score_volatility",
     ],
     # =========================================================================
-    # CASH FLOW (5 features)
+    # CASH FLOW (17 features)
     # =========================================================================
     "Cash Flow": [
         "cfo_growth_yoy",
@@ -2053,6 +2557,19 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "fcf_margin",
         "fcf_stability",
         "fcf_to_net_income",
+        # NEW: Cash Flow Temporal (12)
+        "fcf_quarterly_trend",
+        "fcf_quarterly_volatility",
+        "fcf_positive_ratio",
+        "cfo_quarterly_trend",
+        "cfo_yoy_quarterly",
+        "investment_intensity_trend",
+        "cfo_5y_trend",
+        "cfo_5y_stability",
+        "cfo_margin_current",
+        "cfo_margin_trend",
+        "acquisition_activity_trend",
+        "acquisition_quarters_active",
     ],
     # =========================================================================
     # CAPITAL ALLOCATION (23 features)
@@ -2083,7 +2600,7 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "retention_rate",
     ],
     # =========================================================================
-    # ANALYST SENTIMENT (10 features)
+    # ANALYST SENTIMENT (25 features)
     # =========================================================================
     "Analyst Sentiment": [
         "analyst_bullish_pct",
@@ -2096,6 +2613,22 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "price_target_spread_pct",
         "target_price_upside_pct",
         "upside_potential",
+        # NEW: Price Target Dynamics (15)
+        "pt_momentum_1w",
+        "pt_momentum_1m",
+        "pt_momentum_3m",
+        "pt_momentum_6m",
+        "pt_momentum_1y",
+        "pt_acceleration_short",
+        "pt_acceleration_long",
+        "pt_consensus_convergence",
+        "analyst_coverage_change_1m",
+        "analyst_coverage_change_3m",
+        "pt_vs_price_momentum",
+        "pt_qtd_momentum",
+        "pt_ytd_momentum",
+        "pt_skew_trend",
+        "pt_high_low_spread_trend",
     ],
     # =========================================================================
     # MARKET SENTIMENT (5 features)
@@ -2122,7 +2655,7 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "working_capital_to_sales",
     ],
     # =========================================================================
-    # TEMPORAL PATTERNS (17 features)
+    # TEMPORAL PATTERNS (26 features)
     # =========================================================================
     "Temporal Patterns": [
         "reference_date",
@@ -2142,6 +2675,16 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "ltm_vs_5yavg_revenue",
         "fq_vs_5yavg_ebitda",
         "quarterly_volatility_score",
+        # NEW: Fiscal Calendar (9)
+        "fiscal_year_progress",
+        "days_to_quarter_end",
+        "fiscal_half",
+        "reporting_lag_zscore",
+        "late_reporter_flag",
+        "days_since_fy_end",
+        "days_to_next_fy_end",
+        "earnings_imminent",
+        "pre_earnings_window",
     ],
     # =========================================================================
     # COMPOSITE SCORES (5 features)
@@ -2231,10 +2774,9 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "revenues_est_yoy_pct_fy1e",
     ],
     # =========================================================================
-    # EARNINGS QUALITY (33 features)
+    # EARNINGS QUALITY (43 features)
     # =========================================================================
     "Earnings Quality": [
-        # Estimated vs. Actual Analytics (11 features)
         "accelerating_upgrades_flag",
         "consensus_uncertainty_score",
         "earnings_beat_indicator",
@@ -2250,18 +2792,14 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "adjustment_consistency_score",
         "earnings_quality_score_composite",
         "earnings_quality_warning_flag",
-        "ebit_adjustment_pct_ltm",
         "ebit_adjustment_ratio_fy",
         "ebit_adjustment_ratio_ltm",
         "ebit_adjustment_spread_fy",
         "ebit_adjustment_spread_ltm",
-        "ebitda_adjustment_pct_ltm",
         "ebitda_adjustment_ratio_fy",
         "ebitda_adjustment_ratio_ltm",
         "ebitda_adjustment_spread_fy",
         "ebitda_adjustment_spread_ltm",
-        "eps_adjustment_pct_fy",
-        "eps_adjustment_pct_ltm",
         "eps_adjustment_ratio_fy",
         "eps_adjustment_ratio_ltm",
         "eps_adjustment_spread_fy",
@@ -2273,6 +2811,17 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "net_income_adjustment_ratio_ltm",
         "net_income_adjustment_spread_fy",
         "net_income_adjustment_spread_ltm",
+        # NEW: EPS Trajectory (10)
+        "eps_quarterly_trend",
+        "eps_quarterly_volatility",
+        "eps_yoy_quarterly_growth",
+        "eps_qoq_growth",
+        "eps_positive_streak",
+        "eps_cagr_5y",
+        "eps_cagr_3y",
+        "eps_annual_trend",
+        "eps_vs_5y_avg",
+        "eps_growth_acceleration",
     ],
     # =========================================================================
     # TECHNICAL ANALYSIS (15 features)
@@ -2316,7 +2865,7 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "valuation_trend_consistency",
     ],
     # =========================================================================
-    # DIVIDEND RELIABILITY (12 features)
+    # DIVIDEND RELIABILITY (20 features)
     # =========================================================================
     "Dividend Reliability": [
         "days_to_dividend",
@@ -2331,6 +2880,15 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "fcf_dividend_coverage",
         "payout_consistency_score",
         "sustainable_dividend_flag",
+        # NEW: Dividend Timing (8)
+        "days_to_dividend_ex_date",
+        "days_to_dividend_record_date",
+        "days_to_dividend_payable_date",
+        "approaching_ex_date",
+        "recently_ex_dividend",
+        "dividend_cycle_days",
+        "dividend_cycle_position",
+        "dividend_announcement_recency",
     ],
     # =========================================================================
     # EMPLOYMENT DYNAMICS (10 features)
@@ -2445,6 +3003,18 @@ def list_date_cols() -> List[str]:
         for col, meta in COLUMN_SCHEMA.items()
         if meta.get("dtype") == "datetime64[ns]" or meta.get("role") == "date"
     ]
+
+
+def get_role_default_value(role: Role) -> Any:
+    """Default fill value for a given semantic role (ingestion alignment)."""
+    return ROLE_DEFAULTS.get(role)
+
+
+def get_column_default_value(column: str) -> Any:
+    """Default fill value inferred from a column's role."""
+    meta = COLUMN_SCHEMA.get(column, {})
+    role = meta.get("role")
+    return ROLE_DEFAULTS.get(role)
 
 
 def list_etl_generated_column_patterns() -> List[str]:

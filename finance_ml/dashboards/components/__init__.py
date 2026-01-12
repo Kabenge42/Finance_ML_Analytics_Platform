@@ -1,5 +1,7 @@
 """Dashboard component utilities extracted from equities_dashboard_app."""
 
+from .artifacts import _list_artifacts, _render_artifact
+from .charts import _target_vs_price_scatter, _market_cap_distribution
 from .data_utils import (
     ARTIFACTS_DIR,
     ARTIFACTS_METADATA_PATH,
@@ -17,12 +19,14 @@ from .data_utils import (
     load_data_csv_first,
     parse_data_store,
 )
+from .earnings import create_earnings_events_chart
 from .explorer import build_explorer_column_options
 from .filters import _safe_options, apply_filters
 from .kpi_cards import _kpi_cards, _monitoring_kpi_cards
-from .charts import _target_vs_price_scatter, _market_cap_distribution
-from .earnings import create_earnings_events_chart
-from .artifacts import _list_artifacts, _render_artifact
+from .temporal_utils import (
+    get_reference_date,
+    compute_days_to_earnings,
+)
 from .utils import (
     compute_surprise,
     create_empty_state_figure,
@@ -31,10 +35,6 @@ from .utils import (
     _coerce_list,
     _severity_style,
     _alerts_to_rows,
-)
-from .temporal_utils import (
-    get_reference_date,
-    compute_days_to_earnings,
 )
 
 __all__ = [

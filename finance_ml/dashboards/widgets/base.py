@@ -5,12 +5,112 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Literal, Optional, Union
 
+
+def resolve_output_path(
+    output_path: Optional[Union[str, Path]],
+    default_filename: str,
+) -> Optional[Path]:
+    """Resolve output path to a complete file path for HTML artifacts.
+
+    Handles three input cases consistently:
+    1. None → Returns None (no file output)
+    2. Directory path → Appends default_filename
+    3. File path (with .html) → Uses as-is
+
+    This ensures callers can pass either a directory OR a complete file path,
+    following the principle of least surprise.
+
+    Args:
+        output_path: Directory path, file path, or None.
+        default_filename: Filename to use if output_path is a directory.
+            Must end with '.html'.
+
+    Returns:
+        Resolved Path object or None if output_path is None.
+
+    Raises:
+        ValueError: If default_filename doesn't end with '.html'.
+
+    Examples:
+        >>> resolve_output_path(None, "dashboard.html")
+        None
+        >>> resolve_output_path(Path("outputs/eda"), "dashboard.html")
+        PosixPath('outputs/eda/dashboard.html')
+        >>> resolve_output_path("outputs/eda/my_dashboard.html", "dashboard.html")
+        PosixPath('outputs/eda/my_dashboard.html')
+    """
+    if output_path is None:
+        return None
+
+    if not default_filename.endswith(".html"):
+        raise ValueError(f"default_filename must end with '.html': {default_filename}")
+
+    path = Path(output_path)
+
+    # Case 1: Already a complete file path (has .html extension)
+    if path.suffix.lower() == ".html":
+        return path
+
+    # Case 2: Directory path - append default filename
+    # Also handles edge case where path exists as a file without extension
+    if path.is_dir() or not path.suffix:
+        return path / default_filename
+
+    # Case 3: Has a different extension - treat as directory and append
+    # This is defensive; callers should use .html or no extension
+    return path / default_filename
+
+
+def _write_html_artifact(
+    fig,
+    output_path: Optional[Union[str, Path]],
+    default_filename: Optional[str] = None,
+) -> Optional[Path]:
+    """Write Plotly figure to HTML file with robust path handling.
+
+    Args:
+        fig: Plotly figure to save.
+        output_path: Output path (directory or file).
+        default_filename: Default filename if output_path is a directory.
+            If None, output_path must be a complete file path or None.
+
+    Returns:
+        Path where file was saved, or None if output_path was None.
+
+    Raises:
+        ValueError: If output_path is a directory but no default_filename provided.
+    """
+    if output_path is None:
+        return None
+
+    # Resolve the path
+    if default_filename:
+        resolved_path = resolve_output_path(output_path, default_filename)
+    else:
+        resolved_path = Path(output_path)
+        # Validate it looks like a file path
+        if not resolved_path.suffix:
+            raise ValueError(
+                f"output_path appears to be a directory but no default_filename provided: {output_path}"
+            )
+
+    if resolved_path is None:
+        return None
+
+    # Create parent directories (not the file itself)
+    resolved_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write the HTML
+    fig.write_html(str(resolved_path))
+    logger.info(f"Widget artifact saved to {resolved_path}")
+
+    return resolved_path
+
+
 import pandas as pd
-import plotly.graph_objects as go
 
 from finance_ml.core.constants import (
     DATE_DISPLAY_FORMAT,
-    DEFAULT_REFERENCE_DATE,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,14 +166,6 @@ def add_formatted_date_columns(df: pd.DataFrame, date_columns: List[str]) -> Lis
         df[formatted_col] = series.dt.strftime(DATE_DISPLAY_FORMAT).where(series.notna(), pd.NA)
         formatted_cols.append(formatted_col)
     return formatted_cols
-
-def _write_html_artifact(fig: go.Figure, output_path: Optional[Union[str, Path]]) -> None:
-    """Write a Plotly figure to HTML when an output path is provided."""
-    if output_path:
-        out = Path(output_path)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        fig.write_html(str(out))
-        logger.info(f"Widget artifact saved to {out}")
 
 
 def _build_format_dict(

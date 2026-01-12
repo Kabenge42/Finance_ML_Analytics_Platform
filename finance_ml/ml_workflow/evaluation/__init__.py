@@ -54,26 +54,23 @@ from finance_ml.ml_workflow.evaluation.analysis import (
     prediction_intervals,
     cross_validation_analysis,
 )
+# Phase 9.7 - Sector Bias Calibration & Metrics Persistence
+from finance_ml.ml_workflow.evaluation.calibration import (
+    estimate_sector_bias,
+    plot_metrics_by_sector_time,
+    create_sector_bias_dashboard,
+)
 from finance_ml.ml_workflow.evaluation.metrics import (
     comprehensive_regression_metrics,
     compute_metrics_by_segment,
     compute_sector_region_metrics,
 )
-
-# Phase 9.4 - Uncertainty Quantification & Conformal Calibration
-from finance_ml.ml_workflow.evaluation.uncertainty import (
-    build_quantile_diagnostics,
-    plot_interval_coverage,
-    plot_reliability_diagram,
-)
-
 # Phase 9.5 - Outlier Safety Rails & Non-Negative Constraints
 from finance_ml.ml_workflow.evaluation.safety_rails import (
     summarize_winsorization_effects,
     track_constraint_violations,
     safety_rails_sensitivity_app,
 )
-
 # Phase 9.6 - Data Split and Leakage Policy Validation
 from finance_ml.ml_workflow.evaluation.splits import (
     compute_fold_overlap,
@@ -84,12 +81,11 @@ from finance_ml.ml_workflow.evaluation.splits import (
     validate_temporal_data,
     run_fold_overlap_analysis,
 )
-
-# Phase 9.7 - Sector Bias Calibration & Metrics Persistence
-from finance_ml.ml_workflow.evaluation.calibration import (
-    estimate_sector_bias,
-    plot_metrics_by_sector_time,
-    create_sector_bias_dashboard,
+# Phase 9.4 - Uncertainty Quantification & Conformal Calibration
+from finance_ml.ml_workflow.evaluation.uncertainty import (
+    build_quantile_diagnostics,
+    plot_interval_coverage,
+    plot_reliability_diagram,
 )
 
 # Phase 9.8 - Stacking Ensemble Diagnostics & Model Governance

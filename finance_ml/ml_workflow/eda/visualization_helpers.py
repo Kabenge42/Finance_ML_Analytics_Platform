@@ -3,13 +3,13 @@
 import json
 from pathlib import Path
 from typing import Optional
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 
-from finance_ml.core.constants import PLOTLY_TEMPLATE, COLOR_PALETTE
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+from finance_ml.core.constants import PLOTLY_TEMPLATE
 
 
 def load_json_file(file_path: Path) -> Optional[dict]:

@@ -13,8 +13,8 @@ import logging
 from pathlib import Path
 from typing import Optional, Union, List, Dict, Any, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -194,8 +194,8 @@ def build_quantile_diagnostics(
     # Compute calibration error (distance from y_true to predicted median)
     if y_true_col in diagnostics_df.columns and col_p50 in diagnostics_df.columns:
         diagnostics_df["calibration_error"] = (
-            (diagnostics_df[y_true_col] - diagnostics_df[col_p50]).abs()
-        )
+            diagnostics_df[y_true_col] - diagnostics_df[col_p50]
+        ).abs()
     else:
         logger.warning(
             "calibration_error cannot be computed - missing columns %s or %s",

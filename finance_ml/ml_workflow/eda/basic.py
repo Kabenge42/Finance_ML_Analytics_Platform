@@ -17,9 +17,6 @@ Public functions:
 
 from __future__ import annotations
 
-# Thin wrapper import for descriptive stats
-from finance_ml.ml_workflow.eda.descriptive import basic_describe  # noqa: F401
-
 # Re-export quick EDA utilities (implementations currently in analytics.eval)
 from finance_ml.ml_workflow.analytics.eval import (  # noqa: E402
     simple_eda,
@@ -30,6 +27,8 @@ from finance_ml.ml_workflow.analytics.eval import (  # noqa: E402
     plot_outlier_violins,
     plot_outlier_scatter,
 )
+# Thin wrapper import for descriptive stats
+from finance_ml.ml_workflow.eda.descriptive import basic_describe  # noqa: F401
 
 __all__ = [
     "basic_describe",

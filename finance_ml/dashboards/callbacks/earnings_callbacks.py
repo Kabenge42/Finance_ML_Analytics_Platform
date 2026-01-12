@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
 from dash import Input, Output, State, html, dcc
+
 from finance_ml.dashboards.components import (
     apply_filters,
     _coerce_list,

@@ -13,6 +13,7 @@ from .utils import _safe_div
 
 logger = logging.getLogger(__name__)
 
+
 def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer price momentum and technical indicators.
 
@@ -148,6 +149,7 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered momentum & technical features")
     return result
 
+
 def engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer technical analysis features using EMA and 52-week data.
 
@@ -249,6 +251,7 @@ def engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Engineered technical analysis features (Phase 9.3 Schema 1.3)")
     return result
+
 
 def engineer_market_microstructure_features(
     df: pd.DataFrame,

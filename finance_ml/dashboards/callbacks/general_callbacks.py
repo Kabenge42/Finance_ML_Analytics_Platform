@@ -1,18 +1,14 @@
 from __future__ import annotations
+
 import pandas as pd
-from dash import Input, Output, State, html
 import plotly.express as px
+from dash import Input, Output, html
+
 from finance_ml.dashboards.components import (
-    _coerce_list,
-    apply_filters,
     compute_surprise,
     create_empty_state_figure,
     validate_required_columns,
     create_missing_columns_warning,
-)
-from finance_ml.dashboards.widgets import (
-    get_category_metrics,
-    create_category_comparison_chart,
 )
 
 # Standard metrics for Est vs Actual tab
@@ -71,9 +67,7 @@ def register_general_callbacks(app, initial_df):
             df = initial_df
 
         if df is None or df.empty:
-            empty_fig = create_empty_state_figure(
-                "Estimated vs Actual", "No data available"
-            )
+            empty_fig = create_empty_state_figure("Estimated vs Actual", "No data available")
             return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig
 
         # Get metric columns
@@ -124,9 +118,7 @@ def register_general_callbacks(app, initial_df):
             f"{metric} Surprise Distribution", "Data not available"
         )
         if actual_col in df.columns and estimate_col in df.columns:
-            surprise = compute_surprise(
-                df[actual_col], df[estimate_col], mode=surprise_method
-            )
+            surprise = compute_surprise(df[actual_col], df[estimate_col], mode=surprise_method)
             surprise_df = pd.DataFrame({"surprise": surprise})
             if segment_by in df.columns:
                 surprise_df[segment_by] = df[segment_by]
@@ -147,12 +139,7 @@ def register_general_callbacks(app, initial_df):
         adjusted_fig = create_empty_state_figure(
             f"{metric}: Adjusted vs GAAP", "Data not available"
         )
-        if (
-            adjusted_col
-            and gaap_col
-            and adjusted_col in df.columns
-            and gaap_col in df.columns
-        ):
+        if adjusted_col and gaap_col and adjusted_col in df.columns and gaap_col in df.columns:
             adj_num = pd.to_numeric(df[adjusted_col], errors="coerce")
             gaap_num = pd.to_numeric(df[gaap_col], errors="coerce")
             delta = adj_num - gaap_num
@@ -171,9 +158,7 @@ def register_general_callbacks(app, initial_df):
                 )
 
         # 4. Analyst Revisions
-        revision_fig = create_empty_state_figure(
-            f"{metric} Revision Trend", "Data not available"
-        )
+        revision_fig = create_empty_state_figure(f"{metric} Revision Trend", "Data not available")
         rev_col = metric_config.get("revisions")
         if rev_col and rev_col in df.columns:
             rev_df = df[[rev_col]].dropna()

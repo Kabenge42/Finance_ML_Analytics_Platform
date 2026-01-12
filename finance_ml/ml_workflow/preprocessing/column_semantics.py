@@ -25,7 +25,88 @@ these columns corrupts the valuation and momentum analysis.
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional, Any
+
+# Lazy initialization caches
+_PRICE_COLUMNS_CACHE: Optional[Set[str]] = None
+_MARKET_VALUE_COLUMNS_CACHE: Optional[Set[str]] = None
+_RATIO_COLUMNS_CACHE: Optional[Set[str]] = None
+_PERCENTAGE_COLUMNS_CACHE: Optional[Set[str]] = None
+_COUNT_COLUMNS_CACHE: Optional[Set[str]] = None
+
+
+def get_price_columns() -> Set[str]:
+    """Get price-related columns derived from COLUMN_SCHEMA."""
+    global _PRICE_COLUMNS_CACHE
+    if _PRICE_COLUMNS_CACHE is None:
+        from finance_ml.core.schema import list_price_cols
+
+        _PRICE_COLUMNS_CACHE = set(list_price_cols())
+    return _PRICE_COLUMNS_CACHE
+
+
+def get_market_value_columns() -> Set[str]:
+    """Get market value columns derived from COLUMN_SCHEMA."""
+    global _MARKET_VALUE_COLUMNS_CACHE
+    if _MARKET_VALUE_COLUMNS_CACHE is None:
+        from finance_ml.core.schema import COLUMN_SCHEMA
+
+        _MARKET_VALUE_COLUMNS_CACHE = {
+            col
+            for col, meta in COLUMN_SCHEMA.items()
+            if meta.get("role") in ("market", "financial_statement", "balance_sheet", "cash_flow")
+        }
+    return _MARKET_VALUE_COLUMNS_CACHE
+
+
+def get_ratio_columns() -> Set[str]:
+    """Get ratio columns derived from COLUMN_SCHEMA."""
+    global _RATIO_COLUMNS_CACHE
+    if _RATIO_COLUMNS_CACHE is None:
+        from finance_ml.core.schema import COLUMN_SCHEMA
+
+        _RATIO_COLUMNS_CACHE = {
+            col for col, meta in COLUMN_SCHEMA.items() if meta.get("role") == "ratio"
+        }
+    return _RATIO_COLUMNS_CACHE
+
+
+def get_percentage_columns() -> Set[str]:
+    """Get percentage columns derived from COLUMN_SCHEMA."""
+    global _PERCENTAGE_COLUMNS_CACHE
+    if _PERCENTAGE_COLUMNS_CACHE is None:
+        from finance_ml.core.schema import COLUMN_SCHEMA
+
+        _PERCENTAGE_COLUMNS_CACHE = {
+            col for col, meta in COLUMN_SCHEMA.items() if meta.get("role") == "percentage"
+        }
+    return _PERCENTAGE_COLUMNS_CACHE
+
+
+def get_count_columns() -> Set[str]:
+    """Get count columns derived from COLUMN_SCHEMA."""
+    global _COUNT_COLUMNS_CACHE
+    if _COUNT_COLUMNS_CACHE is None:
+        from finance_ml.core.schema import list_count_cols
+
+        _COUNT_COLUMNS_CACHE = set(list_count_cols())
+    return _COUNT_COLUMNS_CACHE
+
+
+def __getattr__(name: str) -> Any:
+    """Module-level attribute access for legacy constants."""
+    if name == "PRICE_COLUMNS":
+        return get_price_columns()
+    if name == "MARKET_VALUE_COLUMNS":
+        return get_market_value_columns()
+    if name == "RATIO_COLUMNS":
+        return get_ratio_columns()
+    if name == "PERCENTAGE_COLUMNS":
+        return get_percentage_columns()
+    if name == "COUNT_COLUMNS":
+        return get_count_columns()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 import pandas as pd
 
@@ -52,241 +133,20 @@ __all__ = [
     "SUFFIX_PATTERNS",
 ]
 
-
-# Price Columns - NEVER transform (critical for business metric)
-# These columns must remain in original dollar units for valuation analysis
-PRICE_COLUMNS: Set[str] = {
-    # Current prices and targets
-    "last_price",  # Current market price (critical)
-    "price_target",  # Analyst consensus target (critical)
-    "price_target_median",  # Median analyst target
-    "price_target_ytd_ago",  # Historical target (YTD)
-    "price_target_low",  # Low analyst target
-    "price_target_high",  # High analyst target
-    # Historical prices (for momentum calculations)
-    "price_5d_ago",  # Price 5 days ago
-    "price_1w_ago",  # Price 1 week ago
-    "price_1m_ago",  # Price 1 month ago
-    "price_3m_ago",  # Price 3 months ago
-    "price_6m_ago",  # Price 6 months ago
-    "price_1y_ago",  # Price 1 year ago
-    "price_3y_ago",  # Price 3 years ago
-    "price_5y_ago",  # Price 5 years ago
-    "price_qtd_ago",  # Price at quarter-to-date start
-    # 52-week bounds (for relative positioning)
-    "52w_high_adj",  # 52-week adjusted high
-    "52w_low_adj",  # 52-week adjusted low
-    # Exponential moving averages (technical indicators)
-    "ema_20d",  # 20-day EMA
-    "ema_50d",  # 50-day EMA
-    "ema_100d",  # 100-day EMA
-    "ema_250d",  # 250-day EMA (1-year trend proxy)
-    "ma_20d_simple",  # 20-day simple MA
-    "ma_50d_simple",  # 50-day simple MA
-}
-
+# Note: PRICE_COLUMNS, MARKET_VALUE_COLUMNS, RATIO_COLUMNS, PERCENTAGE_COLUMNS,
+# and COUNT_COLUMNS are now dynamically derived from COLUMN_SCHEMA via __getattr__.
 
 # Market Value Columns - Log-transform to handle high skewness
 # These columns typically have skewness > 2.0 and need log-transforms
 # instead of winsorization to preserve information about valid extremes
-MARKET_VALUE_COLUMNS: Set[str] = {
-    # Market capitalization and enterprise value
-    "market_cap",  # Market capitalization (highly skewed)
-    "ev",  # Enterprise value
-    "enterprise_value",  # Enterprise value (alternative name)
-    # Balance sheet items
-    "total_assets",  # Total assets
-    "total_debt",  # Total debt
-    "net_debt",  # Net debt
-    "cash_and_equivalents",  # Cash and equivalents
-    "total_equity",  # Total equity
-    "tangible_book_value",  # Tangible book value
-    # Income statement items
-    "revenue",  # Revenue (highly skewed)
-    "ebitda",  # EBITDA
-    "operating_income",  # Operating income
-    "net_income",  # Net income (can be negative)
-    "gross_profit",  # Gross profit
-    "total_revenues_fy",
-    "total_revenues_ltm",
-    "total_revenues_fq",
-    "total_revenues_1fy",
-    "total_operating_expenses_ltm",
-    "ebitda_fy",
-    "ebitda_ltm",
-    "ebitda_fq",
-    # Cash flow items
-    "operating_cash_flow",  # Operating cash flow
-    "free_cash_flow",  # Free cash flow
-    "capex",  # Capital expenditures
-}
-
 
 # Ratio Columns - Pre-normalized, may not need winsorization
 # Financial ratios are already relative metrics
-RATIO_COLUMNS: Set[str] = {
-    # Valuation ratios
-    "p_e",
-    "p_b",
-    "p_s",
-    "p_fcf",
-    "p_tbv",
-    "p_e_ntm",
-    "p_e_ltm",
-    "p_e_1fyltm",
-    "p_b_ltm",
-    "p_b_1fy",
-    "p_b_5yavg",
-    "p_tbv_ltm",
-    "ev_ebitda",
-    "ev_sales",
-    "ev_fcf",
-    "ev_ebitda_ltm",
-    "ev_ebitda_ntm",
-    "ev_ebitda_est_fy1",
-    "ev_sales_ltm",
-    "ev_sales_ntm",
-    "ev_sales_est_fy1",
-    "ev_ebitda_1fyltm",
-    "ev_ebitda_1fqltm",
-    "ev_ebitda_3yavgltm",
-    "ev_sales_1fyltm",
-    "ev_sales_2fyltm",
-    "ev_sales_3fyltm",
-    "ev_sales_3yavgltm",
-    "ev_sales_1fqltm",
-    "ev_sales_2fqltm",
-    "ev_sales_3fqltm",
-    "ev_sales_4fqltm",
-    "p_e_2fyltm",
-    "p_e_3fyltm",
-    "p_e_3yavgltm",
-    "p_e_1fqltm",
-    "p_e_2fqltm",
-    "p_e_3fqltm",
-    "p_e_0fqqoqltm",
-    "p_e_0fyyoyltm",
-    "p_e_1fyyoyltm",
-    "p_e_0fqyoyltm",
-    "p_e_est_fy1",
-    # Profitability ratios
-    "roe",
-    "roa",
-    "roic",
-    "roce",
-    "roe_ltm",
-    "roa_ltm",
-    "roic_ltm",
-    "return_on_equity_pct_fy",
-    "return_on_equity_pct_ltm",
-    "return_on_assets_roa_pct_fy",
-    "return_on_assets_roa_pct_ltm",
-    # Leverage ratios
-    "debt_equity",
-    "debt_to_equity",
-    "net_debt_ebitda",
-    "net_debt_to_ebitda",
-    "debt_to_assets",
-    "interest_coverage",
-    # Liquidity ratios
-    "current_ratio",
-    "current_ratio_fy",
-    "current_ratio_ltm",
-    "quick_ratio",
-    "cash_ratio",
-    # Efficiency ratios
-    "asset_turnover",
-    "asset_turnover_fy",
-    "asset_turnover_ltm",
-    "inventory_turnover",
-    "receivables_turnover",
-}
-
 
 # Percentage Columns - Bounded [0, 100], inappropriate for percentile capping
 # These are already normalized as percentages
-PERCENTAGE_COLUMNS: Set[str] = {
-    # Margin metrics
-    "gross_margin",
-    "operating_margin",
-    "net_margin",
-    "ebitda_margin",
-    "gross_margin_ltm",
-    "operating_margin_ltm",
-    "net_margin_ltm",
-    "ebitda_margin_ltm",
-    "gross_profit_margin_pct_fy",
-    "gross_profit_margin_pct_ltm",
-    "net_income_margin_pct_fy",
-    "net_income_margin_pct_ltm",
-    # Growth rates
-    "revenue_growth_yoy",
-    "earnings_growth_yoy",
-    "ebitda_growth_yoy",
-    "revenue_growth_3y_cagr",
-    "revenue_growth_5y_cagr",
-    "earnings_growth_3y_cagr",
-    "earnings_growth_5y_cagr",
-    "total_return_ytd",
-    "total_return_5y",
-    "total_return_10y",
-    "tot_return_pct_cagr_3y",
-    "tot_return_pct_cagr_10y",
-    "price_chg_pct_1m",
-    "price_chg_pct_3m",
-    # Volatility metrics
-    "volatility_30d",
-    "volatility_20d",
-    "volatility_3m",
-    "volatility_60d",
-    "volatility_6m",
-    "volatility_1y",
-    "beta",
-    "beta_1y",
-    "beta_2y",
-    "beta_5y",
-    # Payout ratios
-    "dividend_payout_ratio",
-    "payout_ratio",
-    "div_yield_ind",
-    "div_yield_ltm",
-    "div_yield_ttm",
-    "div_yield_ntm",
-    "div_yield_1fyind",
-    "div_yield_2fyind",
-    "div_yield_3fyind",
-    "div_yield_4fyind",
-    "div_yield_5fyind",
-    "div_yield_5yavgltm",
-    "buyback_yield_ltm",
-}
-
 
 # Count Columns - Discrete integer counts, inappropriate for continuous scaling
-COUNT_COLUMNS: Set[str] = {
-    # Analyst coverage
-    "num_analysts",
-    "num_strong_buy_ratings",
-    "num_buy_ratings",
-    "num_hold_ratings",
-    "num_sell_ratings",
-    "num_strong_sell_ratings",
-    "price_target_num",
-    "price_target_count",
-    "analyst_rating",
-    # Company metrics
-    "num_employees",
-    "num_employees_total",
-    "total_employees_fy",
-    "total_employees_fq",
-    "full_time_employees_fq",
-    "full_time_employees_fy",
-    "full_time_employees_1fy",
-    "full_time_employees_2fy",
-    "full_time_employees_3fy",
-    "dividend_streak",
-}
-
 
 def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
     """
@@ -338,15 +198,15 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
     for col in df_columns:
         col_lower = col.lower().strip()
 
-        if col_lower in PRICE_COLUMNS:
+        if col_lower in get_price_columns():
             result["price"].add(col)
-        elif col_lower in MARKET_VALUE_COLUMNS:
+        elif col_lower in get_market_value_columns():
             result["market_value"].add(col)
-        elif col_lower in RATIO_COLUMNS:
+        elif col_lower in get_ratio_columns():
             result["ratio"].add(col)
-        elif col_lower in PERCENTAGE_COLUMNS:
+        elif col_lower in get_percentage_columns():
             result["percentage"].add(col)
-        elif col_lower in COUNT_COLUMNS:
+        elif col_lower in get_count_columns():
             result["count"].add(col)
         elif col_lower in id_cols:
             result["id"].add(col)
@@ -358,7 +218,7 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
             # Check for log-transformed columns (e.g., log_market_cap)
             if col_lower.startswith("log_"):
                 base_col = col_lower[4:]  # Remove 'log_' prefix
-                if base_col in MARKET_VALUE_COLUMNS:
+                if base_col in get_market_value_columns():
                     result["market_value"].add(col)
                 else:
                     unclassified_cols.append(col)
@@ -429,7 +289,6 @@ def classify_columns(df_columns: List[str]) -> Dict[str, Set[str]]:
 
     return result
 
-
 def get_winsorizable_columns(
     df_columns: List[str] | pd.DataFrame,
     exclude_ratios: bool = True,
@@ -482,7 +341,6 @@ def get_winsorizable_columns(
 
     return winsorizable
 
-
 def get_log_transform_columns(df_columns: List[str] | pd.DataFrame) -> List[str]:
     """
     Return columns requiring log-transform to handle skewness.
@@ -516,7 +374,6 @@ def get_log_transform_columns(df_columns: List[str] | pd.DataFrame) -> List[str]
     logger.info(f"Identified {len(log_transform)} columns for log-transform")
 
     return log_transform
-
 
 def get_scalable_columns(
     df_columns: List[str] | pd.DataFrame, exclude_price: bool = True, exclude_counts: bool = True
@@ -572,11 +429,9 @@ def get_scalable_columns(
 
     return scalable
 
-
 # ============================================================================
 # Phase 9.3: Semantic Column Classification Enhancement
 # ============================================================================
-
 
 # Suffix-based classification rules
 # IMPORTANT: Order matters! More specific patterns should come before generic ones.
@@ -659,7 +514,6 @@ SUFFIX_PATTERNS = {
     ],
 }
 
-
 def classify_columns_with_patterns(columns: List[str]) -> Dict[str, str]:
     """
     Classify columns using suffix and prefix patterns.
@@ -714,7 +568,6 @@ def classify_columns_with_patterns(columns: List[str]) -> Dict[str, str]:
     )
 
     return classifications
-
 
 def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
     """
@@ -776,7 +629,22 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
                 continue
 
             # Name-based heuristics
-            if "price" in col_lower or "target" in col_lower or "ema_" in col_lower:
+            if ("price" in col_lower or "target" in col_lower or "ema_" in col_lower) and not any(
+                keyword in col_lower
+                for keyword in [
+                    "momentum",
+                    "change",
+                    "pct",
+                    "acceleration",
+                    "divergence",
+                    "convergence",
+                    "trend",
+                    "streak",
+                    "position",
+                    "ratio",
+                    "spread",
+                ]
+            ):
                 classifications[col] = "PRICE"
             elif any(
                 keyword in col_lower
@@ -812,9 +680,9 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
                 classifications[col] = "RATIO"
             elif role == "categorical":
                 classifications[col] = "CATEGORICAL"
-            elif "float" in dtype:
+            elif "float" in dtype.lower():
                 classifications[col] = "RATIO"
-            elif "int" in dtype:
+            elif "int" in dtype.lower():
                 classifications[col] = "COUNT"
             else:
                 classifications[col] = "OTHER"
@@ -827,6 +695,5 @@ def classify_columns_with_schema_fallback(columns: List[str]) -> Dict[str, str]:
 
     return classifications
 
-
 # Alias for enterprise_value
-MARKET_VALUE_COLUMNS.add("ev")
+get_market_value_columns().add("ev")

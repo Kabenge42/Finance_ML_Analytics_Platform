@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import Any, Dict, List
+
 from pathlib import Path
+from typing import Any, Dict, List
+
 from dash import html
-from .data_utils import PROJECT_ROOT, ARTIFACTS_DIR, ARTIFACTS_METADATA_PATH
+
 from .constants import FONT_FAMILY
+from .data_utils import PROJECT_ROOT, ARTIFACTS_DIR
 
 
 def _list_artifacts() -> List[Dict[str, str]]:

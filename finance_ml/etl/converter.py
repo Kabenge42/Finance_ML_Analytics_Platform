@@ -3,11 +3,11 @@ Internal Currency Converter module.
 Ported from forex-python for internal use.
 """
 
-import os
+from decimal import Decimal
+from typing import Dict, Any, Union
+
 import requests
 import simplejson as json
-from decimal import Decimal
-from typing import Optional, Dict, Any, Union
 
 
 class RatesNotAvailableError(Exception):

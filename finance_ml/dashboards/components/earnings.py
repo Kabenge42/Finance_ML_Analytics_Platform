@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 import pandas as pd
 import plotly.express as px
-from dash import html
+
 from .constants import COLOR_PALETTE, PLOTLY_TEMPLATE, PLOTLY_LAYOUT_DEFAULTS
 from .utils import create_empty_state_figure
 

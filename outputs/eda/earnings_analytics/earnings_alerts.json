@@ -1,60 +1,60 @@
 {
-  "timestamp": "2026-01-09T11:33:59.253258",
-  "reference_date": "2026-01-09 00:00:00",
-  "total_stocks_monitored": 5790,
+  "timestamp": "2026-01-10T16:11:24.538202",
+  "reference_date": "2026-01-10 00:00:00",
+  "total_stocks_monitored": 5794,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 2154,
-      "description": "2154 stocks with EPS surprise < -5%",
+      "count": 2153,
+      "description": "2153 stocks with EPS surprise < -5%",
       "tickers": [
-        "SARO",
-        "SMMT",
         "NVDA",
+        "GOOGL",
         "AAPL",
         "MSFT",
         "AVGO",
-        "TSLA",
         "LLY",
         "WMT",
-        "ORCL"
+        "ORCL",
+        "JNJ",
+        "PLTR"
       ]
     },
     {
       "alert_type": "high_target_uncertainty",
       "severity": "low",
-      "count": 4085,
-      "description": "4085 stocks with price target spread > 25%",
+      "count": 4077,
+      "description": "4077 stocks with price target spread > 25%",
       "tickers": [
-        "QBTS",
-        "SARO",
-        "EXENS",
-        "ASCO",
-        "RNA",
-        "ABVX",
-        "SMMT",
-        "USAR",
-        "AG1",
-        "ZAB"
+        "NVDA",
+        "GOOGL",
+        "AAPL",
+        "MSFT",
+        "AMZN",
+        "META",
+        "AVGO",
+        "TSLA",
+        "LLY",
+        "WMT"
       ]
     },
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 46,
-      "description": "46 stocks with elevated volatility (> q0.80) within 14 days of earnings",
+      "count": 47,
+      "description": "47 stocks with elevated volatility (> q0.80) within 14 days of earnings",
       "tickers": [
+        "KEFI",
         "INTC",
         "SLB",
+        "HAL",
+        "AA",
         "BMNR",
         "SCLP",
-        "VOES",
-        "AA",
-        "AGY",
+        "BO",
         "SXGC",
-        "VACN",
-        "JLP"
+        "VACN"
       ]
     }
   ],

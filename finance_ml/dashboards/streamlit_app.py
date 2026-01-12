@@ -3,9 +3,9 @@ Interactive Streamlit Dashboard for Finance ML Analytics
 Run: streamlit run finance_ml/dashboards/streamlit_app.py
 """
 
-from pathlib import Path
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import plotly.express as px

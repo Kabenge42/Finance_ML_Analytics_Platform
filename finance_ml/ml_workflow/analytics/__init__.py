@@ -31,49 +31,6 @@ Usage:
 from finance_ml.ml_workflow.analytics.analyst_comparison import (
     PredictionAnalystAnalytics,
 )
-
-# HTML Reports (Phase 9.7 Enhancement)
-from finance_ml.ml_workflow.analytics.html_reports import (
-    generate_enhanced_analysis_html,
-    generate_executive_summary_html,
-    generate_sector_breakdown_html,
-    generate_quality_filtered_html,
-    generate_risk_warnings_html,
-    generate_phase93_summary_html,
-)
-
-# Excel Reports (Phase 9.7 Enhancement)
-from finance_ml.ml_workflow.analytics.excel_reports import (
-    generate_enhanced_excel_report,
-    create_executive_summary_sheet,
-    create_quality_opportunities_sheet,
-    create_sector_leaders_sheet,
-    create_sector_laggards_sheet,
-    create_risk_assessment_sheet,
-    create_phase93_analysis_sheet,
-)
-
-# Report Configuration (Phase 9.7 Enhancement)
-from finance_ml.ml_workflow.analytics.report_config import (
-    HTMLReportConfig,
-    ExcelReportConfig,
-    REPORT_TOP_N_DEFAULT,
-    QUALITY_THRESHOLD_DEFAULT,
-    RISK_ZSCORE_THRESHOLD,
-    DISTRESS_SCORE_THRESHOLD,
-)
-
-# Prefer focused modules where available (ongoing decomposition)
-from finance_ml.ml_workflow.analytics.mispricing import (
-    calculate_mispricing_score,
-    calculate_mispricing_from_predictions_schema,
-    calculate_risk_adjusted_mispricing,
-    calculate_risk_adjusted_mispricing_from_predictions_schema,
-    rank_undervalued_stocks,
-    rank_overvalued_stocks,
-    rank_stocks_by_sector,
-)
-
 # Import comprehensive eval module functions
 from finance_ml.ml_workflow.analytics.eval import (
     # EDA & Visualizations
@@ -131,22 +88,41 @@ from finance_ml.ml_workflow.analytics.eval import (
     create_stratified_sector_cv,
     create_grouped_ticker_cv,
     evaluate_with_cross_validation,
-    compute_shap_values,
-    create_shap_summary_plot,
     calculate_financial_metrics_dashboard,
     generate_data_quality_alerts,
     prepare_plotly_dashboard_data,
     generate_pdf_report,
     generate_enhanced_pdf_report,
 )
+# Excel Reports (Phase 9.7 Enhancement)
+from finance_ml.ml_workflow.analytics.excel_reports import (
+    generate_enhanced_excel_report,
+    create_executive_summary_sheet,
+    create_quality_opportunities_sheet,
+    create_sector_leaders_sheet,
+    create_sector_laggards_sheet,
+    create_risk_assessment_sheet,
+    create_phase93_analysis_sheet,
+)
+# HTML Reports (Phase 9.7 Enhancement)
+from finance_ml.ml_workflow.analytics.html_reports import (
+    generate_enhanced_analysis_html,
+    generate_executive_summary_html,
+    generate_sector_breakdown_html,
+    generate_quality_filtered_html,
+    generate_risk_warnings_html,
+    generate_phase93_summary_html,
+)
+# Prefer focused modules where available (ongoing decomposition)
 from finance_ml.ml_workflow.analytics.mispricing import (
     calculate_mispricing_score,
+    calculate_mispricing_from_predictions_schema,
     calculate_risk_adjusted_mispricing,
+    calculate_risk_adjusted_mispricing_from_predictions_schema,
     rank_undervalued_stocks,
     rank_overvalued_stocks,
     rank_stocks_by_sector,
 )
-
 # Import from portfolio module (Phase 9.7)
 from finance_ml.ml_workflow.analytics.portfolio import (
     calculate_portfolio_return,
@@ -155,7 +131,15 @@ from finance_ml.ml_workflow.analytics.portfolio import (
     optimize_portfolio_max_sharpe,
     optimize_portfolio_min_volatility,
 )
-
+# Report Configuration (Phase 9.7 Enhancement)
+from finance_ml.ml_workflow.analytics.report_config import (
+    HTMLReportConfig,
+    ExcelReportConfig,
+    REPORT_TOP_N_DEFAULT,
+    QUALITY_THRESHOLD_DEFAULT,
+    RISK_ZSCORE_THRESHOLD,
+    DISTRESS_SCORE_THRESHOLD,
+)
 # Import from risk module (Phase 9.7)
 from finance_ml.ml_workflow.analytics.risk import (
     calculate_var_historical,
@@ -164,6 +148,11 @@ from finance_ml.ml_workflow.analytics.risk import (
     calculate_sortino_ratio,
     calculate_max_drawdown,
     calculate_portfolio_risk_metrics,
+)
+# Explainability helpers live in the evaluation subpackage (Phase 9.6)
+from finance_ml.ml_workflow.evaluation.explainability import (
+    compute_shap_values,
+    create_shap_summary_plot,
 )
 
 # ============================================================================

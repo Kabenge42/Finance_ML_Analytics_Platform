@@ -1,6 +1,7 @@
 """
 Core constants for the Finance ML Analytics Platform.
 """
+
 import pandas as pd
 
 # Styling

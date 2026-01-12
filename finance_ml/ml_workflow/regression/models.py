@@ -71,13 +71,11 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 # Import NonNegativeRegressionWrapper from constraints module
 from finance_ml.ml_workflow.regression.constraints import NonNegativeRegressionWrapper
 from finance_ml.ml_workflow.regression.cv import get_regression_cv_splitter
-
 # Import dataset utilities for classification feature integration
 from finance_ml.ml_workflow.regression.dataset import (
     integrate_classification_features,
     create_classification_interactions,
 )
-
 
 # Configure logger
 logger = logging.getLogger(__name__)

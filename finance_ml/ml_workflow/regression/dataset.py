@@ -9,6 +9,8 @@ Phase 9.5 - Regression Refactor
 """
 
 import logging
+import os
+from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any, Union
 
 import numpy as np
@@ -17,8 +19,6 @@ from sklearn.model_selection import train_test_split
 
 # Phase 9.9 Gap 3: shared split policy (time-series → grouped → stratified)
 from finance_ml.ml_workflow.validation.splits import create_train_test_split
-from pathlib import Path
-import os
 
 # Phase 16.4: Feature validation/pruning utilities (Phase 9.3 review)
 try:
@@ -198,16 +198,12 @@ def integrate_classification_features_into_dataframe(
     # This prevents scikit-learn TypeError about mixed column name types
     result.columns = result.columns.astype(str)
 
-    logger.debug(
-        f"Integration complete: {len(result)} rows, {len(result.columns)} total columns"
-    )
+    logger.debug(f"Integration complete: {len(result)} rows, {len(result.columns)} total columns")
 
     return result
 
 
-def integrate_classification_features(
-    df: pd.DataFrame, probabilities: np.ndarray
-) -> pd.DataFrame:
+def integrate_classification_features(df: pd.DataFrame, probabilities: np.ndarray) -> pd.DataFrame:
     """Convenience wrapper to integrate classifier probabilities into ``df``.
 
     This helper mirrors the Phase 9.9 plan API by taking the raw
@@ -315,8 +311,7 @@ def prepare_regression_data(
     classification_features = [
         col
         for col in df.columns
-        if col.startswith("event_prob_")
-        or col in ["event_class_predicted", "event_confidence"]
+        if col.startswith("event_prob_") or col in ["event_class_predicted", "event_confidence"]
     ]
 
     # Get all feature columns
@@ -441,9 +436,7 @@ def prepare_regression_data(
             fi_df = pd.read_csv(fi_path)
             # Preserve classification probability features and confidence
             keep_cols = [
-                c
-                for c in X_train.columns
-                if c.startswith("event_prob_") or c == "event_confidence"
+                c for c in X_train.columns if c.startswith("event_prob_") or c == "event_confidence"
             ]
             X_train, X_test, kept_imp = prune_low_importance_features(
                 X_train, X_test, fi_df, threshold=threshold, keep_cols=keep_cols
@@ -487,9 +480,7 @@ def prepare_regression_data(
             for bcol in existing:
                 inter_name = f"{dcol}__x__{bcol}"
                 # Multiply safely; cast to float
-                new_cols[inter_name] = d.values.astype(float) * X_in[
-                    bcol
-                ].values.astype(float)
+                new_cols[inter_name] = d.values.astype(float) * X_in[bcol].values.astype(float)
         if new_cols:
             interactions_df = pd.DataFrame(new_cols, index=X_in.index)
             X_out = pd.concat([X_in, interactions_df], axis=1)
@@ -592,9 +583,7 @@ def add_sector_interactions_for_prediction(
 
     # Check if sector column exists
     if "sector" not in df_with_sector.columns:
-        logger.warning(
-            "No 'sector' column in df_with_sector; skipping sector interactions"
-        )
+        logger.warning("No 'sector' column in df_with_sector; skipping sector interactions")
         return X
 
     # Filter base_cols to only those present in X
@@ -635,9 +624,7 @@ def add_sector_interactions_for_prediction(
         )
         return X_out
 
-    logger.warning(
-        "No sector interactions generated (empty dummies or existing features)"
-    )
+    logger.warning("No sector interactions generated (empty dummies or existing features)")
     return X
 
 
@@ -648,7 +635,6 @@ def add_sector_interactions_for_prediction(
 # Import validation utilities
 from finance_ml.ml_workflow.regression.validation import (
     detect_target_leakage_in_features,
-    TARGET_LEAKAGE_PATTERNS,
 )
 
 
@@ -878,9 +864,7 @@ def prepare_features_for_training(
 
                 apply_imputation_func = apply_enhanced_imputation_strategy_6step
             except ImportError:
-                logger.warning(
-                    "Could not import imputation function, skipping imputation"
-                )
+                logger.warning("Could not import imputation function, skipping imputation")
                 apply_imputation = False
 
     # Extract target BEFORE imputation to preserve NaN for removal
@@ -924,9 +908,7 @@ def prepare_features_for_training(
         y = y.fillna(y.median() if pd.notna(y.median()) else 0)
         logger.warning("Applied emergency fillna(0) to ensure training can proceed")
 
-    logger.info(
-        f"✓ Features prepared: {X.shape}, target: {y.shape}, zero NaN confirmed"
-    )
+    logger.info(f"✓ Features prepared: {X.shape}, target: {y.shape}, zero NaN confirmed")
 
     return X, y
 
@@ -1012,9 +994,7 @@ def extract_numeric_feature_columns(
     # Get all numeric columns
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
-    logger.info(
-        f"DataFrame analysis: {len(df.columns)} total columns, {len(numeric_cols)} numeric"
-    )
+    logger.info(f"DataFrame analysis: {len(df.columns)} total columns, {len(numeric_cols)} numeric")
 
     # Filter out excluded columns and patterns
     feature_cols = []
@@ -1039,11 +1019,7 @@ def extract_numeric_feature_columns(
     else:
         logger.debug(
             f"Feature columns: {feature_cols[:10]}"
-            + (
-                f" ... and {len(feature_cols) - 10} more"
-                if len(feature_cols) > 10
-                else ""
-            )
+            + (f" ... and {len(feature_cols) - 10} more" if len(feature_cols) > 10 else "")
         )
 
     return feature_cols
@@ -1129,9 +1105,7 @@ def train_sector_specific_models(
 
     if sector_col in df.columns:
         n_sectors = df[sector_col].nunique()
-        logger.info(
-            f"  ✓ Sector column '{sector_col}' present ({n_sectors} unique sectors)"
-        )
+        logger.info(f"  ✓ Sector column '{sector_col}' present ({n_sectors} unique sectors)")
     else:
         logger.warning(f"  ⚠ Sector column '{sector_col}' NOT FOUND")
 
@@ -1144,9 +1118,7 @@ def train_sector_specific_models(
         all_key = feature_cols.get("all_features")
         if all_key:
             actual_feature_cols = list(all_key)
-            logger.info(
-                f"  Using 'all_features' key: {len(actual_feature_cols)} features"
-            )
+            logger.info(f"  Using 'all_features' key: {len(actual_feature_cols)} features")
         else:
             combined: List[str] = []
             for key in [
@@ -1158,9 +1130,7 @@ def train_sector_specific_models(
                 if vals:
                     combined.extend(list(vals))
             actual_feature_cols = combined
-            logger.info(
-                f"  Combined feature types: {len(actual_feature_cols)} features"
-            )
+            logger.info(f"  Combined feature types: {len(actual_feature_cols)} features")
         # Deduplicate while preserving order
         before = len(actual_feature_cols)
         actual_feature_cols = list(dict.fromkeys(actual_feature_cols))
@@ -1168,9 +1138,7 @@ def train_sector_specific_models(
             logger.info(f"  After deduplication: {len(actual_feature_cols)} features")
     elif isinstance(feature_cols, list):
         actual_feature_cols = feature_cols
-        logger.info(
-            f"feature_cols is already a list: {len(actual_feature_cols)} features"
-        )
+        logger.info(f"feature_cols is already a list: {len(actual_feature_cols)} features")
     else:
         # Attempt a graceful conversion (e.g., pandas Index or numpy array)
         try:
@@ -1206,9 +1174,7 @@ def train_sector_specific_models(
     if len(actual_feature_cols) == 0:
         # Try auto-extraction fallback if enabled
         if auto_extract_fallback:
-            logger.warning(
-                "No valid features from input, attempting auto-extraction..."
-            )
+            logger.warning("No valid features from input, attempting auto-extraction...")
             actual_feature_cols = extract_numeric_feature_columns(
                 df, exclude_cols=[target_col, sector_col]
             )
@@ -1245,9 +1211,7 @@ def train_sector_specific_models(
             )
             raise ValueError(error_msg)
 
-    logger.info(
-        f"✓ Final feature count for sector regression: {len(actual_feature_cols)}"
-    )
+    logger.info(f"✓ Final feature count for sector regression: {len(actual_feature_cols)}")
 
     # ============================================================================
     # VALIDATE AND CLEAN TARGET COLUMN
@@ -1338,9 +1302,7 @@ def train_sector_specific_models(
 
     # Summary
     logger.info("=" * 60)
-    logger.info(
-        f"✓ Sector-specific training complete: {len(sector_models)}/{len(sectors)} sectors"
-    )
+    logger.info(f"✓ Sector-specific training complete: {len(sector_models)}/{len(sectors)} sectors")
     logger.info("=" * 60)
 
     results = {
@@ -1421,14 +1383,10 @@ def align_features_to_model(
         booster_names = model.get_booster().feature_names
         expected_features = [str(f) for f in booster_names] if booster_names else None
         if expected_features is None:
-            logger.warning(
-                "XGBoost model has no feature names; returning X_test unchanged"
-            )
+            logger.warning("XGBoost model has no feature names; returning X_test unchanged")
             return X_test
     else:
-        logger.warning(
-            "Model does not expose feature names; returning X_test unchanged"
-        )
+        logger.warning("Model does not expose feature names; returning X_test unchanged")
         return X_test
 
     # Normalize X_test column names to Python str for consistent comparison

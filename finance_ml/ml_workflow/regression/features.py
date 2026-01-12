@@ -9,7 +9,7 @@ lightweight way, aligned with docs/code_guidelines.md v1.4.
 from __future__ import annotations
 
 import logging
-from typing import Iterable, List, Sequence
+from typing import Sequence
 
 import pandas as pd
 

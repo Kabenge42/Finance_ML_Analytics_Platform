@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-01-11
+
+### Added
+
+- Phase 9.3 v1.14 feature engineering enhancements aligned to the canonical schema (total 350 features).
+  - New generators: `engineer_price_target_dynamics`, `engineer_fiscal_calendar_features`,
+    `engineer_dividend_timing_features`, `engineer_eps_trajectory_features`, and `engineer_cashflow_temporal_features`.
+  - COLUMN_SCHEMA expanded with 54 temporal, sentiment, earnings, and cash flow features plus category updates.
+  - FEATURE_REGISTRY and `__all__` exports updated for auto-discovery and tooling compatibility.
+  - PHASE93 feature categories refreshed with revised counts (Analyst Sentiment 25, Cash Flow 17, Temporal 26,
+    Earnings Quality 43, Dividend Reliability 20).
+
+### Testing
+
+- Added TDD suite `tests/test_feature_enhancements_v114.py` covering schema alignment, registry integration,
+  and core computations for new generators.
+
 ## [1.21.0] - 2025-12-30
 
 ### Added

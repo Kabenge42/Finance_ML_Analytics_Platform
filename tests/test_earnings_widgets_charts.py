@@ -51,6 +51,9 @@ def _df_for_dashboards(n_per_sector: int = 6) -> pd.DataFrame:
                     "price_momentum_1m": 0.10 - i * 0.02,
                     "volatility_1m": 0.15 + i * 0.01,
                     "rel_volume": 0.8 + i * 0.1,
+                    "one_day_pct": i * 0.5,
+                    "price_chg_pct_1m": i * 2.0,
+                    "price_chg_pct_3m": i * 5.0,
                     # Price target analytics
                     "price_target": last_price * (1.05 + (i % 3) * 0.05),
                     "price_target_high": last_price * 1.25,

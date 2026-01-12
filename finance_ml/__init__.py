@@ -78,9 +78,6 @@ __all__ = [
     # Core preprocessing (imported below)
     "normalize_columns",
     # Analytics (imported below)
-    "calculate_mispricing_score",
-    "rank_undervalued_stocks",
-    "rank_overvalued_stocks",
     # Evaluation (imported below)
     "comprehensive_regression_metrics",
     # Export (imported below)
@@ -109,8 +106,6 @@ __legacy_all__ = [
 ]
 
 # Many legacy imports below are optional; guard them to avoid breaking basic imports
-
-
 
 
 # Phase 9.7 Refactor: Import from analytics subpackage (guarded)
@@ -143,6 +138,7 @@ from finance_ml.features.advanced import (
     engineer_employee_productivity_features,
     build_comprehensive_features as features_build_comprehensive,
 )
+
 # Phase 9.4 Refactor: Import from new classification subpackage
 from finance_ml.ml_workflow.classification.labels import (
     create_enhanced_event_labels as classification_create_enhanced_event_labels,
@@ -151,6 +147,7 @@ from finance_ml.ml_workflow.classification.tuning import (
     optimize_classifier_hyperparameters as classification_optimize_hyperparameters,
     cross_validate_with_sector_stratification as classification_cross_validate_sector,
 )
+
 # Phase 9.6 Refactor: Import from evaluation subpackage
 from finance_ml.ml_workflow.evaluation import (
     comprehensive_regression_metrics as evaluation_comprehensive_metrics,
@@ -178,11 +175,16 @@ from finance_ml.ml_workflow.evaluation import (
     generate_model_card as evaluation_generate_model_card,
     build_lineage_json as evaluation_build_lineage_json,
 )
+
+# Backward-compatible public alias (curated in __all__)
+comprehensive_regression_metrics = evaluation_comprehensive_metrics
+
 # Phase 9.3 API: Import from features.api (public API with presets)
 from finance_ml.ml_workflow.features.api import (
     build_features,
     PresetName,
 )
+
 # Phase 9.3 Refactor: Import from new features subpackage
 from finance_ml.ml_workflow.features.core import (
     _safe_div as features_safe_div,
@@ -192,6 +194,7 @@ from finance_ml.ml_workflow.features.core import (
     engineer_revenue_cagr as features_revenue_cagr,
     build_features_and_target as features_build_features_and_target,
 )
+
 # Phase 9.3 Refactor: Import from features.selection
 from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_mutual_info as features_importance_mi,
@@ -199,6 +202,7 @@ from finance_ml.ml_workflow.features.selection import (
     calculate_feature_importance_shap as features_importance_shap,
     calculate_feature_importance_rfe as features_importance_rfe,
 )
+
 # Phase 9.1 Refactor: Import from new preprocessing subpackage
 from finance_ml.ml_workflow.preprocessing import (
     # Quality module
@@ -210,6 +214,7 @@ from finance_ml.ml_workflow.preprocessing import (
     detect_and_cast_dtypes,
     to_jsonable,
 )
+
 # Phase 9.5.0 Refactor: Import from new regression subpackage
 from finance_ml.ml_workflow.regression.constraints import (
     NonNegativeRegressionWrapper as regression_nonnegative_wrapper,
@@ -344,10 +349,6 @@ from finance_ml.ml_workflow.preprocessing.data import (
 # Import from eval module (Phase 7 TDD implementation complete)
 # Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
 from finance_ml.ml_workflow.analytics.eval import (
-    calculate_mispricing_score,
-    rank_undervalued_stocks,
-    rank_overvalued_stocks,
-    rank_stocks_by_sector,
     simple_eda,
     export_predictions_to_excel,
     export_predictions_to_csv,
@@ -389,6 +390,34 @@ from finance_ml.ml_workflow.analytics.eval import (
     create_structured_output_directory,
     generate_imputation_report,
 )
+
+# Mispricing and stock ranking are defined in the dedicated mispricing module (Phase 9.7)
+from finance_ml.ml_workflow.analytics.mispricing import (
+    calculate_mispricing_score as _calculate_mispricing_score_df,
+    calculate_risk_adjusted_mispricing,
+    rank_undervalued_stocks,
+    rank_overvalued_stocks,
+    rank_stocks_by_sector,
+)
+
+
+def calculate_mispricing_score(
+    df,
+    predicted_col: str = "predicted_price_target",
+    current_col: str = "last_price",
+):
+    """Legacy top-level helper returning a 1D mispricing score sequence.
+
+    The Phase 9.7 mispricing module returns a DataFrame with added
+    ``mispricing_pct`` / ``mispricing_score`` columns. Historically, code
+    using the package root expected a 1D sequence.
+    """
+
+    scored = _calculate_mispricing_score_df(
+        df, predicted_col=predicted_col, current_col=current_col
+    )
+    return scored["mispricing_score"].to_numpy()
+
 
 try:
     from finance_ml.ml_workflow.features import (
@@ -699,72 +728,79 @@ __legacy_exports__ = [
 # classification_enhanced functions moved to classification.tuning (Phase 9.4)
 # HAVE_CLASSIFICATION_ENHANCED is now always False
 
-# Additional exports from eval module (dashboard helpers and advanced analytics)
+# Additional legacy exports (dashboard helpers and advanced analytics)
 # Updated path: eval.py moved to analytics/eval.py (Phase 9.7)
-from finance_ml.ml_workflow.analytics.eval import (
-    calculate_risk_adjusted_mispricing,
-    plot_outlier_boxplots,
-    plot_outlier_violins,
-    plot_outlier_scatter,
-    calculate_distance_correlation,
-    comprehensive_regression_metrics,
-    compute_metrics_by_segment,
-    residual_analysis_suite,
-    error_bucketing_analysis,
-    create_stratified_sector_cv,
-    create_grouped_ticker_cv,
-    evaluate_with_cross_validation,
-    compute_shap_values,
-    create_shap_summary_plot,
-    create_shap_waterfall_plot,
-    create_shap_dependence_plot,
-    analyze_shap_by_sector,
-    explain_with_lime,
-    compare_lime_shap_consistency,
-    create_model_comparison_table,
-    statistical_model_comparison,
-    automated_model_selection,
-    generate_learning_curve,
-    plot_learning_curve,
-    generate_validation_curve,
-    plot_validation_curve,
-    diagnose_bias_variance,
-    bias_variance_decomposition,
-    plot_bias_variance,
-    identify_optimal_complexity,
-    create_expanding_window_cv,
-    create_rolling_window_cv,
-    evaluate_with_time_series_cv,
-    compute_sector_region_metrics,
-    create_sector_region_performance_heatmap,
-    plot_residuals_vs_features,
-    identify_systematic_bias_patterns,
-    analyze_residual_homoscedasticity,
-    compute_permutation_importance,
-    rank_features_by_importance,
-    feature_importance_stability_across_folds,
-    assign_valuation_category,
-    get_sector_specific_thresholds,
-    calculate_sector_zscores,
-    calculate_percentile_ranks,
-    calculate_multi_factor_score,
-    identify_sector_leaders_laggards,
-    filter_stocks_by_criteria,
-    create_valuation_scatter_plot,
-    generate_pdf_report,
-    calculate_financial_metrics_dashboard,
-    generate_data_quality_alerts,
-    prepare_plotly_dashboard_data,
-    perform_comprehensive_hypothesis_tests,
-    test_market_efficiency_hypothesis,
-    prepare_interactive_dashboard_data,
-    apply_dashboard_filters,
-    calculate_peer_comparisons,
-    perform_time_series_hypothesis_tests,
-    perform_multi_factor_anova,
-    correct_outliers_with_validation,
-    generate_enhanced_pdf_report,
-)
+try:  # pragma: no cover - optional legacy surface
+    from finance_ml.ml_workflow.analytics.eval import (
+        plot_outlier_boxplots,
+        plot_outlier_violins,
+        plot_outlier_scatter,
+        calculate_distance_correlation,
+        compute_metrics_by_segment,
+        residual_analysis_suite,
+        error_bucketing_analysis,
+        create_stratified_sector_cv,
+        create_grouped_ticker_cv,
+        evaluate_with_cross_validation,
+        create_model_comparison_table,
+        statistical_model_comparison,
+        automated_model_selection,
+        generate_learning_curve,
+        plot_learning_curve,
+        generate_validation_curve,
+        plot_validation_curve,
+        diagnose_bias_variance,
+        bias_variance_decomposition,
+        plot_bias_variance,
+        identify_optimal_complexity,
+        create_expanding_window_cv,
+        create_rolling_window_cv,
+        evaluate_with_time_series_cv,
+        compute_sector_region_metrics,
+        create_sector_region_performance_heatmap,
+        plot_residuals_vs_features,
+        identify_systematic_bias_patterns,
+        analyze_residual_homoscedasticity,
+        compute_permutation_importance,
+        rank_features_by_importance,
+        feature_importance_stability_across_folds,
+        assign_valuation_category,
+        get_sector_specific_thresholds,
+        calculate_sector_zscores,
+        calculate_percentile_ranks,
+        calculate_multi_factor_score,
+        identify_sector_leaders_laggards,
+        filter_stocks_by_criteria,
+        create_valuation_scatter_plot,
+        generate_pdf_report,
+        calculate_financial_metrics_dashboard,
+        generate_data_quality_alerts,
+        prepare_plotly_dashboard_data,
+        perform_comprehensive_hypothesis_tests,
+        test_market_efficiency_hypothesis,
+        prepare_interactive_dashboard_data,
+        apply_dashboard_filters,
+        calculate_peer_comparisons,
+        perform_time_series_hypothesis_tests,
+        perform_multi_factor_anova,
+        correct_outliers_with_validation,
+        generate_enhanced_pdf_report,
+    )
+except Exception:  # pragma: no cover
+    pass
+
+try:  # pragma: no cover - optional explainability helpers
+    from finance_ml.ml_workflow.evaluation.explainability import (
+        compute_shap_values,
+        create_shap_summary_plot,
+        create_shap_waterfall_plot,
+        create_shap_dependence_plot,
+        analyze_shap_by_sector,
+        explain_with_lime,
+        compare_lime_shap_consistency,
+    )
+except Exception:  # pragma: no cover
+    pass
 
 __legacy_exports__.extend(
     [

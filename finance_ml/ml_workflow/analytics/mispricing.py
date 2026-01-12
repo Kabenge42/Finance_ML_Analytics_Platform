@@ -10,8 +10,8 @@ Phase 9.7 - Analytics Refactor
 import logging
 from typing import Dict
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 

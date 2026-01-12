@@ -1,21 +1,19 @@
 """Foreign Currency Conversion Module for Equities Data."""
 
-from typing import List, Optional, Dict, Any, Tuple, Set, FrozenSet
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-import logging
 import json
+import logging
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import List, Optional, Dict, Any, Tuple, Set, FrozenSet
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # Use internal converter instead of forex-python
 from finance_ml.etl.converter import (
     CurrencyRates,
     RatesNotAvailableError,
-    get_rate,
-    convert,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,6 +63,7 @@ SUPPORTED_CURRENCIES: FrozenSet[str] = frozenset(
         "RUB",
     }
 )
+
 
 def find_most_recent_business_day(
     target_date: datetime, max_lookback_days: int = MAX_FALLBACK_DAYS
@@ -339,6 +338,7 @@ def convert_to_usd(
         columns_to_convert=columns,
         alternative_date=alternative_date,
     )
+
 
 def convert_with_fallback_date(
     df: pd.DataFrame,

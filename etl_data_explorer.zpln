@@ -1,0 +1,129 @@
+{
+  "paragraphs": [
+    {
+      "title": "ETL Data Explorer - Overview",
+      "text": "%md\n# ETL Data Explorer (Zeppelin)\n\nThis Zeppelin notebook mirrors the core analytics sections of `etl_data_explorer.ipynb` for the Finance ML Analytics Platform.\n\n**Goals**\n- Configuration & setup\n- Data loading + validation\n- ETL pipeline execution\n- Feature engineering\n- Analytics summaries\n\nNotes\n- Column normalization and schema utilities come from `finance_ml.core.schema` (single source of truth).\n- This notebook intentionally keeps code modular and defers heavy logic to `finance_ml` package modules.",
+      "user": "anonymous",
+      "dateCreated": "2026-01-10T17:00:00.000Z",
+      "dateUpdated": "2026-01-10T17:00:00.000Z",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorMode": "ace/mode/markdown"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "status": "READY"
+    },
+    {
+      "title": "Configuration & Setup (Validation-friendly)",
+      "text": "%python\n# ============================================================================\n# SECTION: Configuration & Setup\n# ============================================================================\n\nimport os\nimport warnings\nfrom datetime import date\nfrom pathlib import Path\n\nwarnings.filterwarnings('ignore')\n\n# ---------------------------------------------------------------------------\n# Configuration constants (align with docs/code_guidelines.md Section 8.1)\n# ---------------------------------------------------------------------------\nTARGET_COL = 'price_target'\nTARGET_COL_FALLBACK = 'last_price'\nTEST_SIZE = 0.2\nTRAIN_SIZE = 1 - TEST_SIZE\nCV_FOLDS = 5\n\nRANDOM_SEED = int(os.getenv('RANDOM_SEED', '42'))\nMODEL_VERSION = os.getenv('MODEL_VERSION', 'v9_10')\nDATE_DISPLAY_FORMAT = '%Y-%m-%d'\n\nPROJECT_ROOT = Path.cwd()\nOUTPUT_DIR = PROJECT_ROOT / 'outputs'\nOUTPUT_DIR.mkdir(parents=True, exist_ok=True)\n\n# Canonical schema utilities (single source of truth)\nfrom finance_ml.core.schema import normalize_column_name\n\nprint('ETL Data Explorer - Configuration')\nprint(f'Model Version: {MODEL_VERSION}')\nprint(f'Reference Date: {date.today().strftime(DATE_DISPLAY_FORMAT)}')\n",
+      "user": "anonymous",
+      "dateCreated": "2026-01-10T17:00:10.000Z",
+      "dateUpdated": "2026-01-10T17:00:10.000Z",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorMode": "ace/mode/python"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "status": "READY"
+    },
+    {
+      "title": "Data Loading & Validation",
+      "text": "%python\n# ============================================================================\n# SECTION: Data Loading & Validation\n# ============================================================================\n\nimport pandas as pd\n\n# Prefer the unified ETL entry point. If you want to only load (no transform),\n# use run_etl_pipeline with an appropriate config.\nfrom finance_ml.etl import run_etl_pipeline, ETLConfig\n\n# A minimal, notebook-friendly config. Adjust source/table as needed.\netl_config = ETLConfig()\n\n# Example:\n# df_raw, metrics = run_etl_pipeline(source='database', config=etl_config)\n\n# Validation helpers (kept lightweight; heavy validation lives in finance_ml)\ndef validate_non_empty(df: pd.DataFrame) -> None:\n    assert df is not None, 'DataFrame must not be None'\n    assert len(df) > 0, 'DataFrame must not be empty'\n\nprint('Ready for data loading. Configure DB_URL env var if using database source.')\n",
+      "user": "anonymous",
+      "dateCreated": "2026-01-10T17:00:20.000Z",
+      "dateUpdated": "2026-01-10T17:00:20.000Z",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorMode": "ace/mode/python"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "status": "READY"
+    },
+    {
+      "title": "ETL Pipeline Execution",
+      "text": "%python\n# ============================================================================\n# SECTION: ETL Pipeline Execution\n# ============================================================================\n\n# The unified ETL pipeline returns a transformed DataFrame and metrics.\n# Keep execution parameters centralized in constants/config (see above).\n\n# Example execution (uncomment in Zeppelin runtime):\n# df, metrics = run_etl_pipeline(source='database', config=etl_config)\n# validate_non_empty(df)\n# df.columns = [normalize_column_name(c) for c in df.columns]\n# print(metrics.summary())\n\nprint('ETL section ready. Run run_etl_pipeline(...) to produce the unified feature table.')\n",
+      "user": "anonymous",
+      "dateCreated": "2026-01-10T17:00:30.000Z",
+      "dateUpdated": "2026-01-10T17:00:30.000Z",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorMode": "ace/mode/python"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "status": "READY"
+    },
+    {
+      "title": "Feature Engineering",
+      "text": "%python\n# ============================================================================\n# SECTION: Feature Engineering\n# ============================================================================\n\n# Feature engineering API (Phase 9.3)\nfrom finance_ml.ml_workflow.features.api import build_features\n\n# Example:\n# df_features = build_features(df, preset='comprehensive')\n# validate_non_empty(df_features)\n# print(df_features.shape)\n\nprint('Feature engineering section ready (build_features).')\n",
+      "user": "anonymous",
+      "dateCreated": "2026-01-10T17:00:40.000Z",
+      "dateUpdated": "2026-01-10T17:00:40.000Z",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorMode": "ace/mode/python"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "status": "READY"
+    },
+    {
+      "title": "Analytics (Quick Summaries)",
+      "text": "%python\n# ============================================================================\n# SECTION: Analytics\n# ============================================================================\n\n# This section is intentionally lightweight and mirrors the spirit of\n# `etl_data_explorer.ipynb` analytics cells.\n#\n# Example patterns (uncomment after df_features exists):\n# - Sector distribution\n# - Missingness profile\n# - Quick metric summaries\n\n# Example:\n# if 'sector' in df_features.columns:\n#     print(df_features['sector'].value_counts().head(15))\n#\n# numeric = df_features.select_dtypes(include='number')\n# print(numeric.describe().T.head(20))\n\nprint('Analytics section ready. Provide df_features to compute summaries.')\n",
+      "user": "anonymous",
+      "dateCreated": "2026-01-10T17:00:50.000Z",
+      "dateUpdated": "2026-01-10T17:00:50.000Z",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorMode": "ace/mode/python"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "status": "READY"
+    }
+  ],
+  "name": "ETL Data Explorer",
+  "id": "",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {},
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {}
+}

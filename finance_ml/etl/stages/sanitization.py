@@ -96,24 +96,48 @@ def get_analyst_rating_zero_fill_columns() -> Set[str]:
         "num_buys_ratings",
         "num_sell_ratings",
         "num_analyst_ratings",
+        "price_target_count",
+        "price_target_count_1w_ago",
+        "price_target_count_1m_ago",
+        "price_target_count_3m_ago",
+        "price_target_count_6m_ago",
+        "price_target_count_mtd_ago",
+        "price_target_count_qtd_ago",
+        "price_target_count_ytd_ago",
+        "price_target_count_1y_ago",
     }
 
 
 def get_income_statement_zero_fill_columns() -> Set[str]:
-    """Return income statement columns that should be zero-filled when missing.
+    """Return income statement and cash flow columns that should be zero-filled when missing.
 
     Business Logic:
-        These are rare/exceptional non-recurring items where missing values 
-        typically indicate the event did not occur. Zero is the economically 
-        correct imputation.
-        
-    IMPORTANT: Excludes recurring operational items (R&D, Interest) which 
+        These are rare/exceptional non-recurring items or specific cash flow
+        line items (like acquisitions) where missing values typically indicate
+        the event did not occur. Zero is the economically correct imputation.
+
+    IMPORTANT: Excludes recurring operational items (R&D, Interest) which
     now use median imputation to prevent financial picture distortion.
 
     Returns:
-        Set of non-recurring income statement column names for zero-fill
+        Set of zero-fill candidate column names
     """
-    return set(list_non_recurring_cols())
+    cols = set(list_non_recurring_cols())
+    # Add acquisition-related cash flow items (typically 0 if missing)
+    cols.update(
+        {
+            "cash_acquisitions_ltm",
+            "cash_acquisitions_fy",
+            "cash_acquisitions_fq",
+            "cash_acquisitions_1fy",
+            "cash_acquisitions_1fqfq",
+            "cash_acquisitions_2fqfq",
+            "cash_acquisitions_3fqfq",
+            "cash_acquisitions_4fqfq",
+            "cash_acquisitions_5yavgfq",
+        }
+    )
+    return cols
 
 
 def get_balance_sheet_zero_fill_columns() -> Set[str]:

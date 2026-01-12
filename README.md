@@ -20,7 +20,8 @@ feature engineering, and reliable model evaluation, followed by a Portfolio Opti
 - **Unified Schema Module**: Single source of truth (`finance_ml.core.schema`) for 500+ financial columns, ensuring
   alignment between SQL and Python.
 - **Modular Feature Engineering**: High-performance feature generators for valuation, profitability, momentum, and
-  quality.
+  quality. Phase 9.3 v1.14 delivers 350 schema-aligned features across 21 categories, including new temporal,
+  sentiment, dividend timing, cash flow, and EPS trajectory signals.
 - **Unified ETL Pipeline**: Decoupled ETL configuration and execution handling CSV and SQL sources.
 - **Portfolio Optimization**: Risk-adjusted return maximization, efficient frontier visualization, and backtesting.
 - **Interactive Dashboards**: Streamlit and Dash applications for earnings analytics, market monitoring, and model

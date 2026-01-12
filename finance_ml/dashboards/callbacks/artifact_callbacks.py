@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import pandas as pd
 from dash import Input, Output, State
+
 from finance_ml.dashboards.components import (
     _list_artifacts,
     _render_artifact,

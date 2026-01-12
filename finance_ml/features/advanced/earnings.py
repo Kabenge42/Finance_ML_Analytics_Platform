@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
 import pandas as pd
 
 from .utils import _safe_div
 
 logger = logging.getLogger(__name__)
+
 
 def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer Estimated vs. Actual earnings analytics features.
@@ -160,6 +162,7 @@ def engineer_estimated_vs_actual_analytics(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Engineered Estimated vs. Actual analytics features (Phase 9.3)")
     return result
 
+
 def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
     """Engineer GAAP vs. Adjusted earnings quality analytics features.
 
@@ -262,9 +265,9 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
     if "ebitda_ltm" in df.columns and "ebitda_adj_ltm" in df.columns:
         result["ebitda_adjustment_spread_ltm"] = df["ebitda_adj_ltm"] - df["ebitda_ltm"]
         result["ebitda_adjustment_ratio_ltm"] = _safe_div(df["ebitda_adj_ltm"], df["ebitda_ltm"])
-        result["ebitda_adjustment_pct_ltm"] = _safe_div(
-            result["ebitda_adjustment_spread_ltm"].abs(), df["ebitda_ltm"].abs()
-        ) * 100
+        result["ebitda_adjustment_pct_ltm"] = (
+            _safe_div(result["ebitda_adjustment_spread_ltm"].abs(), df["ebitda_ltm"].abs()) * 100
+        )
 
     if "ebitda_fy" in df.columns and "ebitda_adj_fy" in df.columns:
         result["ebitda_adjustment_spread_fy"] = df["ebitda_adj_fy"] - df["ebitda_fy"]
@@ -276,9 +279,9 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
     if "ebit_ltm" in df.columns and "ebit_adj_ltm" in df.columns:
         result["ebit_adjustment_spread_ltm"] = df["ebit_adj_ltm"] - df["ebit_ltm"]
         result["ebit_adjustment_ratio_ltm"] = _safe_div(df["ebit_adj_ltm"], df["ebit_ltm"])
-        result["ebit_adjustment_pct_ltm"] = _safe_div(
-            result["ebit_adjustment_spread_ltm"].abs(), df["ebit_ltm"].abs()
-        ) * 100
+        result["ebit_adjustment_pct_ltm"] = (
+            _safe_div(result["ebit_adjustment_spread_ltm"].abs(), df["ebit_ltm"].abs()) * 100
+        )
 
     # =========================================================================
     # 5. Quality Scoring Logic
@@ -292,3 +295,124 @@ def engineer_gaap_vs_adjusted_analytics(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Engineered GAAP vs Adjusted earnings quality features")
     return result
+
+
+def engineer_eps_trajectory_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Engineer EPS trajectory features from historical data (10 features)."""
+
+    result = df.copy()
+
+    eps_q_cols = [
+        "net_eps_basic_fq",
+        "net_eps_basic_1fqfq",
+        "net_eps_basic_2fqfq",
+        "net_eps_basic_3fqfq",
+        "net_eps_basic_4fqfq",
+    ]
+    available_q_cols = [c for c in eps_q_cols if c in df.columns]
+    if len(available_q_cols) >= 2:
+        eps_q_matrix = df[available_q_cols].astype(float).values
+        result["eps_quarterly_trend"] = _calculate_normalized_trend(eps_q_matrix)
+        result["eps_quarterly_volatility"] = _calculate_cv(eps_q_matrix)
+        result["eps_positive_streak"] = pd.Series(
+            (eps_q_matrix > 0).sum(axis=1), index=df.index, dtype="Int64"
+        )
+
+    if "net_eps_basic_fq" in df.columns and "net_eps_basic_4fqfq" in df.columns:
+        result["eps_yoy_quarterly_growth"] = _safe_pct_change(
+            df["net_eps_basic_fq"].astype(float), df["net_eps_basic_4fqfq"].astype(float)
+        )
+
+    if "net_eps_basic_fq" in df.columns and "net_eps_basic_1fqfq" in df.columns:
+        result["eps_qoq_growth"] = _safe_pct_change(
+            df["net_eps_basic_fq"].astype(float), df["net_eps_basic_1fqfq"].astype(float)
+        )
+
+    eps_y_cols = [
+        "net_eps_basic_fy",
+        "net_eps_basic_1fy",
+        "net_eps_basic_2fy",
+        "net_eps_basic_3fy",
+        "net_eps_basic_4fy",
+        "net_eps_basic_5fy",
+    ]
+    available_y_cols = [c for c in eps_y_cols if c in df.columns]
+    if len(available_y_cols) >= 3:
+        eps_y_matrix = df[available_y_cols].astype(float).values
+        result["eps_annual_trend"] = _calculate_normalized_trend(eps_y_matrix)
+
+        if "net_eps_basic_fy" in df.columns and "net_eps_basic_5fy" in df.columns:
+            result["eps_cagr_5y"] = _calculate_cagr(
+                df["net_eps_basic_fy"].astype(float), df["net_eps_basic_5fy"].astype(float), 5
+            )
+
+        if "net_eps_basic_fy" in df.columns and "net_eps_basic_3fy" in df.columns:
+            result["eps_cagr_3y"] = _calculate_cagr(
+                df["net_eps_basic_fy"].astype(float), df["net_eps_basic_3fy"].astype(float), 3
+            )
+
+        eps_5y_avg = np.nanmean(eps_y_matrix, axis=1)
+        if "net_eps_basic_fy" in df.columns:
+            result["eps_vs_5y_avg"] = (
+                df["net_eps_basic_fy"].astype(float)
+                / pd.Series(eps_5y_avg, index=df.index).replace(0, pd.NA)
+                - 1
+            ).astype("Float64")
+
+    if "eps_cagr_3y" in result.columns and "eps_cagr_5y" in result.columns:
+        result["eps_growth_acceleration"] = result["eps_cagr_3y"] - result["eps_cagr_5y"]
+
+    logger.info("Engineered EPS trajectory features (10 features)")
+    return result
+
+
+def _calculate_normalized_trend(matrix: np.ndarray) -> pd.Series:
+    """Calculate normalized trend slope across time periods."""
+
+    n_periods = matrix.shape[1]
+    x = np.arange(n_periods)
+    slopes = []
+
+    for row in matrix:
+        valid_mask = ~np.isnan(row)
+        if valid_mask.sum() < 2:
+            slopes.append(np.nan)
+            continue
+        y = row[valid_mask]
+        x_valid = x[valid_mask]
+        slope = np.polyfit(x_valid, y, 1)[0]
+        mean_abs = np.abs(y).mean()
+        slopes.append(slope / mean_abs if mean_abs > 0 else 0)
+
+    return pd.Series(slopes, dtype="Float64")
+
+
+def _calculate_cv(matrix: np.ndarray) -> pd.Series:
+    """Calculate coefficient of variation for each row."""
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        means = np.nanmean(matrix, axis=1)
+        stds = np.nanstd(matrix, axis=1)
+        cv = np.abs(stds / means)
+    return pd.Series(cv, dtype="Float64")
+
+
+def _calculate_cagr(end_val: pd.Series, start_val: pd.Series, years: int) -> pd.Series:
+    """Calculate compound annual growth rate."""
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        # Use np.nan instead of pd.NA for NumPy compatibility
+        ratio = end_val / start_val.replace(0, np.nan)
+        # Convert to numpy array for ufunc operations, then back to Series
+        ratio_arr = ratio.to_numpy(dtype=float, na_value=np.nan)
+        cagr_arr = np.sign(ratio_arr) * (np.abs(ratio_arr) ** (1 / years)) - 1
+        cagr = pd.Series(cagr_arr, index=end_val.index)
+    return cagr.astype("Float64")
+
+
+def _safe_pct_change(current: pd.Series, previous: pd.Series) -> pd.Series:
+    """Calculate percentage change with safe division."""
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = (current - previous) / previous.abs().replace(0, pd.NA)
+    return result.astype("Float64")

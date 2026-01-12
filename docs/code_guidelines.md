@@ -1,8 +1,8 @@
 # Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 2.0.0  
-**Last Updated:** 2026-01-07  
-**Package Version:** 0.9.7  
+**Version:** 2.1.0  
+**Last Updated:** 2026-01-11  
+**Package Version:** 0.9.8  
 **Model Version:** v9_11
 
 These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
@@ -810,6 +810,45 @@ features_df = build_features(
 )
 ```
 
+**Phase 9.4 — Classification:**
+
+```python
+from finance_ml.ml_workflow.classification import (
+    # Label creation
+    create_enhanced_event_labels,
+    create_multilabel_event_labels,
+    # Registry and validation (Phase 9.4.2)
+    LABEL_FEATURE_REGISTRY,
+    VALID_LABEL_METHODS,
+    get_features_for_label_method,
+    validate_label_method,
+    get_label_method_info,
+    # Quality analysis
+    analyze_label_quality,
+    # Model training
+    fit_classifier,
+    prepare_classification_data,
+)
+
+# Create event labels using registry-based approach
+labels = create_enhanced_event_labels(
+    df,
+    method="price_momentum",  # See VALID_LABEL_METHODS for all options
+    use_sector_adjustment=True,
+)
+
+# Get features for a labeling method from PHASE93_FEATURE_CATEGORIES
+features = get_features_for_label_method("leverage_event")
+
+# Validate label method name
+validate_label_method("valuation")  # Raises ValueError if invalid
+
+# Analyze label quality and feature coverage
+quality_report = analyze_label_quality(df, labels, method="price_momentum")
+print(f"Feature coverage: {quality_report['feature_coverage_pct']:.1f}%")
+print(f"Class balanced: {quality_report['balanced']}")
+```
+
 **Phase 9.5 — Regression:**
 ```python
 from finance_ml.ml_workflow.regression.quantile import train_quantile_regressor
@@ -1086,16 +1125,19 @@ for category, cols in PHASE93_FEATURE_CATEGORIES.items():
 ```
 **Category Overview:**
 
-| Category             | Features | Description                          |
-|----------------------|----------|--------------------------------------|
-| Momentum & Technical | 25       | EMA crossovers, RSI, price momentum  |
-| Valuation Ratios     | 25       | P/E, P/B, EV/EBITDA, PEG             |
-| Profitability        | 16       | Margins, ROE, ROA, ROIC              |
-| Quality & Risk       | 18       | Altman Z, Piotroski F, volatility    |
-| Cash Flow            | 5        | FCF yield, OCF/Sales                 |
-| Growth Metrics       | 9        | Revenue, EBITDA, earnings growth     |
-| Earnings Quality     | 33       | Surprise analysis, GAAP vs. Adjusted |
-| ...                  | ...      | ...                                  |
+| Category             | Features | Description                            |
+|----------------------|----------|----------------------------------------|
+| Momentum & Technical | 25       | EMA crossovers, RSI, price momentum    |
+| Valuation Ratios     | 25       | P/E, P/B, EV/EBITDA, PEG               |
+| Profitability        | 16       | Margins, ROE, ROA, ROIC                |
+| Quality & Risk       | 18       | Altman Z, Piotroski F, volatility      |
+| Cash Flow            | 17       | FCF yield, OCF/Sales, temporal         |
+| Growth Metrics       | 9        | Revenue, EBITDA, earnings growth       |
+| Analyst Sentiment    | 25       | Ratings, target revisions, PT dynamics |
+| Temporal Patterns    | 26       | Seasonality, fiscal calendar, lags     |
+| Earnings Quality     | 43       | Surprise analysis, GAAP vs. Adjusted   |
+| Dividend Reliability | 20       | Coverage, growth, dividend timing      |
+| ...                  | ...      | ...                                    |
 
 **Building Features:**
 ```python
@@ -1125,17 +1167,85 @@ df_temporal = engineer_temporal_features(
 ```
 
 ### 9.5 Multi-Label Classification
-```python
-from finance_ml.ml_workflow.classification.labels import create_multilabel_event_labels
 
-labels = create_multilabel_event_labels(
+**Label Feature Registry (Phase 9.4.2):**
+
+The `LABEL_FEATURE_REGISTRY` maps labeling methods to their corresponding Phase 9.3 feature categories,
+ensuring alignment with `PHASE93_FEATURE_CATEGORIES` in `schema.py` (Single Source of Truth).
+
+```python
+from finance_ml.ml_workflow.classification import (
+    LABEL_FEATURE_REGISTRY,
+    VALID_LABEL_METHODS,
+    get_features_for_label_method,
+    get_label_method_info,
+)
+
+# Available labeling methods (19 total)
+print(VALID_LABEL_METHODS)
+# ['price_momentum', 'valuation', 'fundamental', 'profitability_event',
+#  'leverage_event', 'liquidity_event', 'efficiency_event', 'growth_event',
+#  'quality_event', 'composite_event', 'cashflow_event', 'capital_allocation_event',
+#  'employee_productivity_event', 'balance_sheet_event', 'revenue_forecast_event',
+#  'analyst_rating', 'market_events', 'combined_signals', 'volatility']
+
+# Get registry entry for a method
+registry_entry = LABEL_FEATURE_REGISTRY["leverage_event"]
+# {'categories': ['Leverage & Liquidity'],
+#  'description': 'Leverage events using 9 Leverage & Liquidity features',
+#  'higher_is_better': False,
+#  'invert_features': ['debt_to_equity', 'debt_to_assets', 'net_debt_to_ebitda']}
+
+# Get Phase 9.3 features for a labeling method
+features = get_features_for_label_method("leverage_event")
+# Returns list of feature column names from PHASE93_FEATURE_CATEGORIES
+
+# Get comprehensive method info
+info = get_label_method_info("valuation")
+# {'method': 'valuation', 'description': '...', 'categories': [...],
+#  'feature_count': 23, 'features': [...], 'higher_is_better': False}
+```
+
+**Creating Event Labels:**
+
+```python
+from finance_ml.ml_workflow.classification import (
+    create_enhanced_event_labels,
+    create_multilabel_event_labels,
+)
+
+# Single-label classification (5-class: 0=Strong Neg, 1=Neg, 2=Neutral, 3=Pos, 4=Strong Pos)
+labels = create_enhanced_event_labels(
+    df,
+    method="price_momentum",
+    use_sector_adjustment=True,
+)
+
+# Multi-label classification (binary labels per category)
+multilabels = create_multilabel_event_labels(
     df,
     categories=['valuation', 'momentum', 'quality'],
     sector_adjusted=True,
     threshold_percentile=0.6,
 )
-# Returns: label_valuation, label_momentum, label_quality (0/1)
+# Returns DataFrame with: label_valuation, label_momentum, label_quality (0/1)
 ```
+
+**Label Quality Analysis:**
+
+```python
+from finance_ml.ml_workflow.classification import analyze_label_quality
+
+# Analyze label distribution and feature coverage
+quality = analyze_label_quality(df, labels, method="leverage_event")
+
+print(f"Total samples: {quality['total_samples']}")
+print(f"Class distribution: {quality['class_distribution']}")
+print(f"Feature coverage: {quality['feature_coverage_pct']:.1f}%")
+print(f"Missing features: {quality['missing_features']}")
+print(f"Labels balanced: {quality['balanced']}")
+```
+
 ---
 
 ## 10. Data Split and Leakage Policy
@@ -1405,11 +1515,31 @@ from finance_ml.etl import run_etl_pipeline, ETLConfig
 
 # Schema utilities (Section 5)
 from finance_ml.core.schema import (
-    normalize_column_name, list_price_cols, get_expected_dtype
+    normalize_column_name, list_price_cols, get_expected_dtype,
+    PHASE93_FEATURE_CATEGORIES,
 )
 
 # Phase 9.3
 from finance_ml.features.api import build_features
+
+# Phase 9.4
+from finance_ml.ml_workflow.classification import (
+    # Label creation
+    create_enhanced_event_labels,
+    create_multilabel_event_labels,
+    # Registry and validation
+    LABEL_FEATURE_REGISTRY,
+    VALID_LABEL_METHODS,
+    get_features_for_label_method,
+    validate_label_method,
+    get_label_method_info,
+    # Quality analysis
+    analyze_label_quality,
+    # Model training
+    fit_classifier,
+    prepare_classification_data,
+    evaluate_classification,
+)
 
 # Phase 9.5
 from finance_ml.ml_workflow.regression import models, quantile
