@@ -19,7 +19,7 @@ from finance_ml.dashboards.earnings_widgets import (
     create_analyst_recommendation_heatmap,
     create_earnings_surprise_dashboard,
     create_market_movers_dashboard,
-    create_price_target_analytics,
+    create_price_target_scorecard,
     generate_earnings_quality_alerts,
 )
 from finance_ml.ml_workflow.preprocessing.etl import etl_with_features
@@ -115,10 +115,9 @@ def main() -> int:
         top_n=args.movers_top_n,
         output_path=out_dir / "market_movers_dashboard.html",
     )
-    create_price_target_analytics(
+    create_price_target_scorecard(
         df,
-        top_n_sectors=args.price_target_top_n_sectors,
-        output_path=out_dir / "price_target_analytics.html",
+        output_path=out_dir / "price_target_scorecard.csv",
     )
 
     # Alerts
@@ -143,7 +142,7 @@ def main() -> int:
     print("  - earnings_surprise_dashboard.html")
     print("  - analyst_recommendation_heatmap.html")
     print("  - market_movers_dashboard.html")
-    print("  - price_target_analytics.html")
+    print("  - price_target_scorecard.csv")
     print("  - earnings_quality_alerts.json")
 
     return 0

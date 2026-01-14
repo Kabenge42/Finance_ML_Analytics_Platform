@@ -11,7 +11,7 @@ from finance_ml.dashboards.widgets import (
     create_earnings_metrics_chart,
     create_earnings_surprise_dashboard,
     create_market_movers_dashboard,
-    create_price_target_analytics,
+    create_price_target_scorecard,
 )
 
 
@@ -118,13 +118,13 @@ class TestEarningsWidgetsCharts(unittest.TestCase):
             self.assertTrue((out_dir / "movers.html").exists())
             self.assertGreater(len(fig_movers.data), 0)
 
-            fig_targets = create_price_target_analytics(
+            df_targets = create_price_target_scorecard(
                 df,
-                top_n_sectors=2,
-                output_path=out_dir / "targets.html",
+                output_path=out_dir / "targets.csv",
             )
-            self.assertTrue((out_dir / "targets.html").exists())
-            self.assertGreater(len(fig_targets.data), 0)
+            self.assertTrue((out_dir / "targets.csv").exists())
+            self.assertIsInstance(df_targets, pd.DataFrame)
+            self.assertGreater(len(df_targets), 0)
 
 
 if __name__ == "__main__":

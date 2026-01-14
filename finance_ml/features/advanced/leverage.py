@@ -210,6 +210,34 @@ def engineer_balance_sheet_trends(df: pd.DataFrame) -> pd.DataFrame:
         )
         result["earnings_retention_rate"] = _safe_div(delta_re, df["net_income_ltm"].astype(float))
 
+    # --- Balance Sheet Stability (Current vs 5Y Average) ---
+    # Working capital stability
+    if "working_capital_ltm" in df.columns and "working_capital_5yavgfy" in df.columns:
+        result["working_capital_vs_5y_avg"] = _safe_div(
+            df["working_capital_ltm"], df["working_capital_5yavgfy"]
+        )
+
+    # Cash position stability
+    if (
+        "cash_and_equivalents_ltm" in df.columns
+        and "cash_and_equivalents_5yavgfq" in df.columns
+    ):
+        result["cash_stability_ratio"] = _safe_div(
+            df["cash_and_equivalents_ltm"], df["cash_and_equivalents_5yavgfq"]
+        )
+
+    # Inventory efficiency vs historical
+    if "inventory_ltm" in df.columns and "inventory_5yavgfq" in df.columns:
+        result["inventory_vs_5y_avg"] = _safe_div(
+            df["inventory_ltm"], df["inventory_5yavgfq"]
+        )
+
+    # Goodwill concentration stability
+    if "goodwill_ltm" in df.columns and "goodwill_5yavgfq" in df.columns:
+        result["goodwill_stability"] = _safe_div(
+            df["goodwill_ltm"], df["goodwill_5yavgfq"]
+        )
+
     logger.info("Engineered balance sheet growth & liquidity trends")
     return result
 

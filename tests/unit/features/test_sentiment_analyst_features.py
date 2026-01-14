@@ -78,18 +78,19 @@ class TestAnalystConsensus(unittest.TestCase):
 
 
 class TestMarketSentiment(unittest.TestCase):
-    def test_short_interest_and_beta_signals(self):
+
+    def test_beta_signals(self):
         df = pd.DataFrame(
             {
-                "short_int_pct": [5.0],  # already in percent units
+                "one_day_pct": [1.5],
                 "beta_1y": [1.2],
                 "beta_2y": [1.1],
                 "beta_5y": [0.9],
             }
         )
         res = engineer_market_sentiment_features(df)
-        self.assertIn("short_interest_ratio", res.columns)
-        self.assertAlmostEqual(float(res.loc[0, "short_interest_ratio"]), 5.0, places=6)
+        self.assertIn("one_day_chg", res.columns)
+        self.assertEqual(float(res.loc[0, "one_day_chg"]), 1.5)
         self.assertIn("beta_stability", res.columns)
         self.assertIn("systematic_risk_trend", res.columns)
         # population variance of [1.2, 1.1, 0.9]

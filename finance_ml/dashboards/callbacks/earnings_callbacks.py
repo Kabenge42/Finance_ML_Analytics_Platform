@@ -5,6 +5,7 @@ import logging
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 from dash import Input, Output, State, html, dcc
 
 from finance_ml.dashboards.components import (
@@ -30,7 +31,7 @@ from finance_ml.dashboards.widgets import (
     create_earnings_surprise_dashboard,
     create_analyst_recommendation_heatmap,
     create_market_movers_dashboard,
-    create_price_target_analytics,
+    create_price_target_scorecard,
     create_earnings_calendar_dashboard,
     create_earnings_metrics_chart,
 )
@@ -162,7 +163,7 @@ def register_earnings_callbacks(app, initial_df):
             create_earnings_surprise_dashboard(df),
             create_analyst_recommendation_heatmap(df),
             create_market_movers_dashboard(df),
-            create_price_target_analytics(df),
+            go.Figure(),  # Price target scorecard returns DataFrame, placeholder for Dash Graph
         )
 
     @app.callback(
@@ -195,7 +196,7 @@ def register_earnings_callbacks(app, initial_df):
                     create_analyst_recommendation_heatmap,
                 ),
                 ("market_movers_dashboard.html", create_market_movers_dashboard),
-                ("price_target_analytics.html", create_price_target_analytics),
+                ("price_target_scorecard.csv", create_price_target_scorecard),
             ]:
                 output_path = ARTIFACTS_DIR / name
                 func(df, output_path=output_path)

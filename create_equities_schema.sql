@@ -29,6 +29,476 @@ CREATE TABLE equities
     "Current Fiscal Quarter"                           TEXT    DEFAULT 'n/a',        -- categorical: Current fiscal quarter (formatted as Q4 2025)
     "Next Fiscal Quarter"                              TEXT    DEFAULT 'n/a',        -- categorical: Next fiscal quarter (formatted as Q4 2025)
     "Next Earnings (Report)"                           TEXT    DEFAULT 'n/a',        -- categorical: Next earnings report type (Full Year/Interim)
+    "Reporting Interval"                               TEXT    DEFAULT 'n/a',        -- categorical: Reporting Interval
+    "Earnings Report (Frequency)"                      TEXT    DEFAULT 'n/a',        -- categorical: Earnings Report (Frequency)
+    -- ===========================================
+    -- DATE role
+    -- ===========================================
+    "Last Updated"                                     DATE,                         -- date: Last Updated
+    "Income Statement Report Date"                     DATE,                         -- date: Income Statement Report Date
+    "Next Earnings"                                    DATE,                         -- date: Next Earnings
+    "Dividend Record (Announce Date)"                  DATE,                         -- date: Dividend Record (Announce Date)
+    "Dividend Record (Payable Date)"                   DATE,                         -- date: Dividend Record (Payable Date)
+    "Dividend Record (Record Date)"                    DATE,                         -- date: Dividend Record (Record Date)
+    "Dividend Record (Ex Date)"                        DATE,                         -- date: Dividend Record (Ex Date)
+    "Reference Date"                                   DATE    DEFAULT CURRENT_DATE, -- date: Reference Date
+    "FY End Date"                                      DATE,                         -- date: Fiscal year end date (parsed from FY End text)
+    "Next FY End Date"                                 DATE,                         -- date: Next fiscal year end date
+    "Next Income Statement Report Date"                DATE,                         -- date: Next Income Statement Report Date
+    -- ===========================================
+    -- TARGET role
+    -- ===========================================
+    "Price Target"                                     NUMERIC,                      -- target: Price Target
+    -- ===========================================
+    -- TARGET FALLBACK role
+    -- ===========================================
+    "Price Target - Median"                            NUMERIC,                      -- target_fallback: Price Target - Median
+    -- ===========================================
+    -- MARKET role
+    -- ===========================================
+    "Dividend Record (Amount)"                         NUMERIC DEFAULT 0,            -- market: Dividend amount per share
+    "Market Cap"                                       NUMERIC,                      -- market: Market capitalization
+    "Enterprise Value"                                 NUMERIC,                      -- market: Enterprise value
+    "Last Price"                                       NUMERIC,                      -- market: Last Price
+    "Price Target (YTD Ago)"                           NUMERIC,                      -- market: Price Target (YTD Ago)
+    "Price Target - Low"                               NUMERIC,                      -- market: Price Target - Low
+    "Price Target - High"                              NUMERIC,                      -- market: Price Target - High
+    "Market Cap (Country R)"                           NUMERIC,                      -- market: Market Cap (Country R)
+    "Volume (Shrs)"                                    NUMERIC DEFAULT 0,            -- market: Trading volume in shares
+    "Dividend Per Share (LTM)"                         NUMERIC DEFAULT 0,            -- market: Dividend Per Share (LTM)
+    "Price (5D Ago)"                                   NUMERIC,                      -- market: Price (5D Ago)
+    "Price (1W Ago)"                                   NUMERIC,                      -- market: Price (1W Ago)
+    "Price (1M Ago)"                                   NUMERIC,                      -- market: Price (1M Ago)
+    "Price (3M Ago)"                                   NUMERIC,                      -- market: Price (3M Ago)
+    "Price (6M Ago)"                                   NUMERIC,                      -- market: Price (6M Ago)
+    "Price (1Y Ago)"                                   NUMERIC,                      -- market: Price (1Y Ago)
+    "Price (3Y Ago)"                                   NUMERIC,                      -- market: Price (3Y Ago)
+    "Price (5Y Ago)"                                   NUMERIC,                      -- market: Price (5Y Ago)
+    "Price (QTD Ago)"                                  NUMERIC,                      -- market: Price (QTD Ago)
+    "Rel. Volume"                                      NUMERIC,                      -- market: Relative trading volume ratio
+    "52W High/Adj"                                     NUMERIC,                      -- market: 52W High/Adj
+    "52W Low/Adj"                                      NUMERIC,                      -- market: 52W Low/Adj
+    "EMA (20D)"                                        NUMERIC,                      -- market: EMA (20D)
+    "EMA (50D)"                                        NUMERIC,                      -- market: EMA (50D)
+    "EMA (100D)"                                       NUMERIC,                      -- market: EMA (100D)
+    "EMA (250D)"                                       NUMERIC,                      -- market: EMA (250D)
+    "Price Target (1W Ago)"                            NUMERIC,                      -- market: Price Target (1W Ago)
+    "Price Target (1M Ago)"                            NUMERIC,                      -- market: Price Target (1M Ago)
+    "Price Target (3M Ago)"                            NUMERIC,                      -- market: Price Target (3M Ago)
+    "Price Target (6M Ago)"                            NUMERIC,                      -- market: Price Target (6M Ago)
+    "Price Target (MTD Ago)"                           NUMERIC,                      -- market: Price Target (MTD Ago)
+    "Price Target (QTD Ago)"                           NUMERIC,                      -- market: Price Target (QTD Ago)
+    "Price Target (1Y Ago)"                            NUMERIC,                      -- market: Price Target (1Y Ago)
+    "Price Target - High (1W Ago)"                     NUMERIC,                      -- market: Price Target - High (1W Ago)
+    "Price Target - High (1M Ago)"                     NUMERIC,                      -- market: Price Target - High (1M Ago)
+    "Price Target - High (6M Ago)"                     NUMERIC,                      -- market: Price Target - High (6M Ago)
+    "Price Target - High (MTD Ago)"                    NUMERIC,                      -- market: Price Target - High (MTD Ago)
+    "Price Target - High (3M Ago)"                     NUMERIC,                      -- market: Price Target - High (3M Ago)
+    "Price Target - High (QTD Ago)"                    NUMERIC,                      -- market: Price Target - High (QTD Ago)
+    "Price Target - High (1Y Ago)"                     NUMERIC,                      -- market: Price Target - High (1Y Ago)
+    "Price Target - High (YTD Ago)"                    NUMERIC,                      -- market: Price Target - High (YTD Ago)
+    "Price Target - Low (1W Ago)"                      NUMERIC,                      -- market: Price Target - Low (1W Ago)
+    "Price Target - Low (1M Ago)"                      NUMERIC,                      -- market: Price Target - Low (1M Ago)
+    "Price Target - Low (3M Ago)"                      NUMERIC,                      -- market: Price Target - Low (3M Ago)
+    "Price Target - Low (6M Ago)"                      NUMERIC,                      -- market: Price Target - Low (6M Ago)
+    "Price Target - Low (MTD Ago)"                     NUMERIC,                      -- market: Price Target - Low (MTD Ago)
+    "Price Target - Low (QTD Ago)"                     NUMERIC,                      -- market: Price Target - Low (QTD Ago)
+    "Price Target - Low (YTD Ago)"                     NUMERIC,                      -- market: Price Target - Low (YTD Ago)
+    "Price Target - Low (1Y Ago)"                      NUMERIC,                      -- market: Price Target - Low (1Y Ago)
+    "Price Target - Median (1W Ago)"                   NUMERIC,                      -- market: Price Target - Median (1W Ago)
+    "Price Target - Median (1M Ago)"                   NUMERIC,                      -- market: Price Target - Median (1M Ago)
+    "Price Target - Median (3M Ago)"                   NUMERIC,                      -- market: Price Target - Median (3M Ago)
+    "Price Target - Median (6M Ago)"                   NUMERIC,                      -- market: Price Target - Median (6M Ago)
+    "Price Target - Median (MTD Ago)"                  NUMERIC,                      -- market: Price Target - Median (MTD Ago)
+    "Price Target - Median (QTD Ago)"                  NUMERIC,                      -- market: Price Target - Median (QTD Ago)
+    "Price Target - Median (YTD Ago)"                  NUMERIC,                      -- market: Price Target - Median (YTD Ago)
+    "Price Target - Median (1Y Ago)"                   NUMERIC,                      -- market: Price Target - Median (1Y Ago)
+    -- ===========================================
+    -- FINANCIAL STATEMENT role
+    -- ===========================================
+    "Total Revenues (FQ)"                              NUMERIC DEFAULT 0,            -- financial_statement: Total Revenues (FQ)
+    "Total Revenues (-1FY)"                            NUMERIC DEFAULT 0,            -- financial_statement: Total Revenues (-1FY)
+    "Total Revenues (FY)"                              NUMERIC DEFAULT 0,            -- financial_statement: Total revenues (Fiscal Year)
+    "Total Revenues (LTM)"                             NUMERIC DEFAULT 0,            -- financial_statement: Total revenues (Last Twelve Months)
+    "Total Operating Expenses (LTM)"                   NUMERIC DEFAULT 0,            -- financial_statement: Total Operating Expenses (LTM)
+    "Net Income/Adj. (-1FY)"                           NUMERIC DEFAULT 0,            -- financial_statement: Net Income/Adj. (-1FY)
+    "EBITDA (FQ)"                                      NUMERIC DEFAULT 0,            -- financial_statement: EBITDA (FQ)
+    "EBITDA (LTM)"                                     NUMERIC DEFAULT 0,            -- financial_statement: EBITDA (Last Twelve Months)
+    "EBITDA (FY)"                                      NUMERIC DEFAULT 0,            -- financial_statement: EBITDA (Fiscal Year)
+    "EBITDA (-1FY)"                                    NUMERIC DEFAULT 0,            -- financial_statement: EBITDA (-1FY)
+    "EBITDA/Adj. (LTM)"                                NUMERIC DEFAULT 0,            -- financial_statement: EBITDA/Adj. (LTM)
+    "EBITDA/Adj. (FY)"                                 NUMERIC DEFAULT 0,            -- financial_statement: EBITDA/Adj. (FY)
+    "EBITDA/Adj. (-1FY)"                               NUMERIC DEFAULT 0,            -- financial_statement: EBITDA/Adj. (-1FY)
+    "EBIT (FQ)"                                        NUMERIC DEFAULT 0,            -- financial_statement: EBIT (FQ)
+    "EBIT (LTM)"                                       NUMERIC DEFAULT 0,            -- financial_statement: EBIT (LTM)
+    "EBIT (FY)"                                        NUMERIC DEFAULT 0,            -- financial_statement: EBIT (FY)
+    "EBIT (-1FY)"                                      NUMERIC DEFAULT 0,            -- financial_statement: EBIT (-1FY)
+    "EBIT/Adj. (-1FY)"                                 NUMERIC DEFAULT 0,            -- financial_statement: EBIT/Adj. (-1FY)
+    "EBIT/Adj. (FY)"                                   NUMERIC DEFAULT 0,            -- financial_statement: EBIT/Adj. (FY)
+    "EBIT/Adj. (LTM)"                                  NUMERIC DEFAULT 0,            -- financial_statement: EBIT/Adj. (LTM)
+    "EBIT - Est Med (FY1E)"                            NUMERIC DEFAULT 0,            -- financial_statement: EBIT - Est Med (FY1E)
+    "EBIT - Est Med (NTM)"                             NUMERIC DEFAULT 0,            -- financial_statement: EBIT - Est Med (NTM)
+    "Net Income - (IS) (FY)"                           NUMERIC DEFAULT 0,            -- financial_statement: Net income from income statement (Fiscal Year)
+    "Net Income - (IS) (LTM)"                          NUMERIC DEFAULT 0,            -- financial_statement: Net income from income statement (Last Twelve Months)
+    "Normalized Net Income (FY)"                       NUMERIC DEFAULT 0,            -- financial_statement: Normalized Net Income (FY)
+    "Normalized Net Income (LTM)"                      NUMERIC DEFAULT 0,            -- financial_statement: Normalized Net Income (LTM)
+    "Net Income/Adj. (FY)"                             NUMERIC DEFAULT 0,            -- financial_statement: Net Income/Adj. (FY)
+    "Net Income/Adj. (LTM)"                            NUMERIC DEFAULT 0,            -- financial_statement: Net Income/Adj. (LTM)
+    "Gross Profit (LTM)"                               NUMERIC DEFAULT 0,            -- financial_statement: Gross Profit (LTM)
+    "Gross Profit (FY)"                                NUMERIC DEFAULT 0,            -- financial_statement: Gross Profit (FY)
+    "Cost Of Revenues (LTM)"                           NUMERIC DEFAULT 0,            -- financial_statement: Cost Of Revenues (LTM)
+    "Operating Income (LTM)"                           NUMERIC DEFAULT 0,            -- financial_statement: Operating Income (LTM)
+    "Operating Income (FY)"                            NUMERIC DEFAULT 0,            -- financial_statement: Operating Income (FY)
+    "R&D Expenses (LTM)"                               NUMERIC DEFAULT 0,            -- financial_statement: R&D Expenses (LTM)
+    "Interest Expense/Total (LTM)"                     NUMERIC DEFAULT 0,            -- financial_statement: Interest Expense/Total (LTM)
+    "Interest Income On Investments (LTM)"             NUMERIC DEFAULT 0,            -- financial_statement: Interest Income On Investments (LTM)
+    "Net Income - (IS) (-1FY)"                         NUMERIC DEFAULT 0,            -- financial_statement: Net Income - (IS) (-1FY)
+    "Normalized Net Income (-1FY)"                     NUMERIC DEFAULT 0,            -- financial_statement: Normalized Net Income (-1FY)
+    "Total Revenues (5YAVGFQ)"                         NUMERIC DEFAULT 0,            -- financial_statement: Total Revenues (5YAVGFQ)
+    "EBITDA (5YAVGFQ)"                                 NUMERIC DEFAULT 0,            -- financial_statement: EBITDA (5YAVGFQ)
+    "EBIT (5YAVGFQ)"                                   NUMERIC DEFAULT 0,            -- financial_statement: EBIT (5YAVGFQ)
+    "Operating Income (FQ)"                            NUMERIC DEFAULT 0,            -- financial_statement: Operating Income (FQ)
+    "Operating Income (5YAVGFQ)"                       NUMERIC DEFAULT 0,            -- financial_statement: Operating Income (5YAVGFQ)
+    "Normalized Net Income (FQ)"                       NUMERIC DEFAULT 0,            -- financial_statement: Normalized Net Income (FQ)
+    "Normalized Net Income (5YAVGFQ)"                  NUMERIC DEFAULT 0,            -- financial_statement: Normalized Net Income (5YAVGFQ)
+    "Net Income/Adj. (FQ)"                             NUMERIC DEFAULT 0,            -- financial_statement: Net Income/Adj. (FQ)
+    "Net Income/Adj. (5YAVGFQ)"                        NUMERIC DEFAULT 0,            -- financial_statement: Net Income/Adj. (5YAVGFQ)
+    "Net Income - (IS) (FQ)"                           NUMERIC DEFAULT 0,            -- financial_statement: Net Income - (IS) (FQ)
+    "Net Income - (IS) (5YAVGFQ)"                      NUMERIC DEFAULT 0,            -- financial_statement: Net Income - (IS) (5YAVGFQ)
+    "Net Income - (IS) (5YAVGLTM)"                     NUMERIC DEFAULT 0,            -- financial_statement: Net Income - (IS) (5YAVGLTM)
+    "Normalized Net Income (5YAVGLTM)"                 NUMERIC DEFAULT 0,            -- financial_statement: Normalized Net Income (5YAVGLTM)
+    "EBITDA (5YAVGLTM)"                                NUMERIC DEFAULT 0,            -- financial_statement: EBITDA (5YAVGLTM)
+    "EBIT (5YAVGLTM)"                                  NUMERIC DEFAULT 0,            -- financial_statement: EBIT (5YAVGLTM)
+    "Total Revenues (5YAVGLTM)"                        NUMERIC DEFAULT 0,            -- financial_statement: Total Revenues (5YAVGLTM)
+    "Selling General & Admin Expenses/Total (FQ)"      NUMERIC DEFAULT 0,            -- financial_statement: Selling General & Admin Expenses/Total (FQ)
+    "Selling General & Admin Expenses/Total (FY)"      NUMERIC DEFAULT 0,            -- financial_statement: Selling General & Admin Expenses/Total (FY)
+    "Selling General & Admin Expenses/Total (-1FY)"    NUMERIC DEFAULT 0,            -- financial_statement: Selling General & Admin Expenses/Total (-1FY)
+    "Selling General & Admin Expenses/Total (5YAVGFQ)" NUMERIC DEFAULT 0,            -- financial_statement: Selling General & Admin Expenses/Total (5YAVGFQ)
+    "Marketing Expenses (FQ)"                          NUMERIC DEFAULT 0,            -- financial_statement: Marketing Expenses (FQ)
+    "Marketing Expenses (FY)"                          NUMERIC DEFAULT 0,            -- financial_statement: Marketing Expenses (FY)
+    "Marketing Expenses (-1FY)"                        NUMERIC DEFAULT 0,            -- financial_statement: Marketing Expenses (-1FY)
+    "Marketing Expenses (5YAVGLTM)"                    NUMERIC DEFAULT 0,            -- financial_statement: Marketing Expenses (5YAVGLTM)
+    "Revenues - Est Avg (NTM)"                         NUMERIC DEFAULT 0,            -- financial_statement: Revenues - Est Avg (NTM)
+    "Revenues - Est Avg (FY1E)"                        NUMERIC DEFAULT 0,            -- financial_statement: Revenues - Est Avg (FY1E)
+    "Revenues - Est Med (NTM)"                         NUMERIC DEFAULT 0,            -- financial_statement: Revenues - Est Med (NTM)
+    "Revenues - Est Med (FY1E)"                        NUMERIC DEFAULT 0,            -- financial_statement: Revenues - Est Med (FY1E)
+    "EBITDA - Est Avg (NTM)"                           NUMERIC DEFAULT 0,            -- financial_statement: EBITDA - Est Avg (NTM)
+    "EBITDA - Est Avg (FY1E)"                          NUMERIC DEFAULT 0,            -- financial_statement: EBITDA - Est Avg (FY1E)
+    -- ===========================================
+    -- BALANCE SHEET role
+    -- ===========================================
+    "TBV (FY)"                                         NUMERIC DEFAULT 0,            -- balance_sheet: TBV (FY)
+    "TBV (LTM)"                                        NUMERIC DEFAULT 0,            -- balance_sheet: TBV (LTM)
+    "Total Debt (FY)"                                  NUMERIC DEFAULT 0,            -- balance_sheet: Total debt (Fiscal Year)
+    "Total Equity (FY)"                                NUMERIC DEFAULT 0,            -- balance_sheet: Total equity (Fiscal Year)
+    "Total Equity (LTM)"                               NUMERIC DEFAULT 0,            -- balance_sheet: Total Equity (LTM)
+    "Total Debt (LTM)"                                 NUMERIC DEFAULT 0,            -- balance_sheet: Total Debt (LTM)
+    "Total Assets (LTM)"                               NUMERIC DEFAULT 0,            -- balance_sheet: Total assets (Last Twelve Months)
+    "Total Assets (FY)"                                NUMERIC DEFAULT 0,            -- balance_sheet: Total assets (Fiscal Year)
+    "Inventory (LTM)"                                  NUMERIC DEFAULT 0,            -- balance_sheet: Inventory (LTM)
+    "Goodwill (FQ)"                                    NUMERIC DEFAULT 0,            -- balance_sheet: Goodwill (FQ)
+    "Goodwill (LTM)"                                   NUMERIC DEFAULT 0,            -- balance_sheet: Goodwill (LTM)
+    "Goodwill (FY)"                                    NUMERIC DEFAULT 0,            -- balance_sheet: Goodwill (FY)
+    "Goodwill (-1FY)"                                  NUMERIC DEFAULT 0,            -- balance_sheet: Goodwill (-1FY)
+    "Retained Earnings (LTM)"                          NUMERIC DEFAULT 0,            -- balance_sheet: Retained Earnings (LTM)
+    "Total Current Assets (LTM)"                       NUMERIC DEFAULT 0,            -- balance_sheet: Total Current Assets (LTM)
+    "Total Current Liabilities (LTM)"                  NUMERIC DEFAULT 0,            -- balance_sheet: Total Current Liabilities (LTM)
+    "Working Capital (LTM)"                            NUMERIC DEFAULT 0,            -- balance_sheet: Working Capital (LTM)
+    "Cash And Equivalents (LTM)"                       NUMERIC DEFAULT 0,            -- balance_sheet: Cash And Equivalents (LTM)
+    "Cash And Equivalents (FQ)"                        NUMERIC DEFAULT 0,            -- balance_sheet: Cash And Equivalents (FQ)
+    "Cash And Equivalents (FY)"                        NUMERIC DEFAULT 0,            -- balance_sheet: Cash And Equivalents (FY)
+    "Cash And Equivalents (5YAVGFQ)"                   NUMERIC DEFAULT 0,            -- balance_sheet: Cash And Equivalents (5YAVGFQ)
+    "Inventory (FQ)"                                   NUMERIC DEFAULT 0,            -- balance_sheet: Inventory (FQ)
+    "Inventory (FY)"                                   NUMERIC DEFAULT 0,            -- balance_sheet: Inventory (FY)
+    "Goodwill (5YAVGFQ)"                               NUMERIC DEFAULT 0,            -- balance_sheet: Goodwill (5YAVGFQ)
+    "Inventory (5YAVGFQ)"                              NUMERIC DEFAULT 0,            -- balance_sheet: Inventory (5YAVGFQ)
+    "Retained Earnings (FQ)"                           NUMERIC DEFAULT 0,            -- balance_sheet: Retained Earnings (FQ)
+    "Retained Earnings (FY)"                           NUMERIC DEFAULT 0,            -- balance_sheet: Retained Earnings (FY)
+    "Retained Earnings (5YAVGFQ)"                      NUMERIC DEFAULT 0,            -- balance_sheet: Retained Earnings (5YAVGFQ)
+    "Working Capital (FQ)"                             NUMERIC DEFAULT 0,            -- balance_sheet: Working Capital (FQ)
+    "Working Capital (FY)"                             NUMERIC DEFAULT 0,            -- balance_sheet: Working Capital (FY)
+    "Working Capital (5YAVGFY)"                        NUMERIC DEFAULT 0,            -- balance_sheet: Working Capital (5YAVGFY)
+    "Gross Intangible Assets (LTM)"                    NUMERIC DEFAULT 0,            -- balance_sheet: Gross Intangible Assets (LTM)
+    "Gross Intangible Assets (FY)"                     NUMERIC DEFAULT 0,            -- balance_sheet: Gross Intangible Assets (FY)
+    "Gross Intangible Assets (5YAVGFQ)"                NUMERIC DEFAULT 0,            -- balance_sheet: Gross Intangible Assets (5YAVGFQ)
+    "Accounts Receivable/Total (FY)"                   NUMERIC DEFAULT 0,            -- balance_sheet: Accounts Receivable/Total (FY)
+    "Accounts Receivable/Total (-1FY)"                 NUMERIC DEFAULT 0,            -- balance_sheet: Accounts Receivable/Total (-1FY)
+    "Accounts Receivable/Total (5YAVGFQ)"              NUMERIC DEFAULT 0,            -- balance_sheet: Accounts Receivable/Total (5YAVGFQ)
+    -- ===========================================
+    -- CASH FLOW role
+    -- ===========================================
+    "CFF (LTM)"                                        NUMERIC DEFAULT 0,            -- cash_flow: CFF (LTM)
+    "CFI (LTM)"                                        NUMERIC DEFAULT 0,            -- cash_flow: CFI (LTM)
+    "FCF (LTM)"                                        NUMERIC DEFAULT 0,            -- cash_flow: Free cash flow (Last Twelve Months)
+    "CFO (LTM)"                                        NUMERIC DEFAULT 0,            -- cash_flow: Cash from operations (Last Twelve Months)
+    "Cash Acquisitions (LTM)"                          NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (LTM)
+    "Cash Acquisitions (FY)"                           NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (FY)
+    "Cash Acquisitions (-1FY)"                         NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (-1FY)
+    "Capital Expenditure (LTM)"                        NUMERIC DEFAULT 0,            -- cash_flow: Capital expenditure (Last Twelve Months)
+    "Capital Expenditure (-1FY)"                       NUMERIC DEFAULT 0,            -- cash_flow: Capital Expenditure (-1FY)
+    "Capital Expenditure (FY)"                         NUMERIC DEFAULT 0,            -- cash_flow: Capital Expenditure (FY)
+    "CFF (FY)"                                         NUMERIC DEFAULT 0,            -- cash_flow: CFF (FY)
+    "CFF (-1FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFF (-1FY)
+    "CFI (FY)"                                         NUMERIC DEFAULT 0,            -- cash_flow: CFI (FY)
+    "CFI (-1FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFI (-1FY)
+    "CFO (FY)"                                         NUMERIC DEFAULT 0,            -- cash_flow: CFO (FY)
+    "CFO (-1FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFO (-1FY)
+    "FCF (FY)"                                         NUMERIC DEFAULT 0,            -- cash_flow: FCF (FY)
+    "FCF (-1FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: FCF (-1FY)
+    "Capital Expenditure (FQ)"                         NUMERIC DEFAULT 0,            -- cash_flow: Capital Expenditure (FQ)
+    "Capital Expenditure (5YAVGFQ)"                    NUMERIC DEFAULT 0,            -- cash_flow: Capital Expenditure (5YAVGFQ)
+    "CFF (FQ)"                                         NUMERIC DEFAULT 0,            -- cash_flow: CFF (FQ)
+    "CFI (FQ)"                                         NUMERIC DEFAULT 0,            -- cash_flow: CFI (FQ)
+    "CFO (FQ)"                                         NUMERIC DEFAULT 0,            -- cash_flow: CFO (FQ)
+    "FCF (FQ)"                                         NUMERIC DEFAULT 0,            -- cash_flow: FCF (FQ)
+    "FCF (5YAVGFQ)"                                    NUMERIC DEFAULT 0,            -- cash_flow: FCF (5YAVGFQ)
+    "Cash Acquisitions (FQ)"                           NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (FQ)
+    "Cash Acquisitions (5YAVGFQ)"                      NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (5YAVGFQ)
+    "Common Dividends Paid (LTM)"                      NUMERIC DEFAULT 0,            -- cash_flow: Common Dividends Paid (LTM)
+    "Common Dividends Paid (FY)"                       NUMERIC DEFAULT 0,            -- cash_flow: Common Dividends Paid (FY)
+    "CFO (-1FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFO (-1FQFQ)
+    "CFO (-2FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFO (-2FQFQ)
+    "CFO (-3FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFO (-3FQFQ)
+    "CFO (-4FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFO (-4FQFQ)
+    "CFI (-1FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFI (-1FQFQ)
+    "CFI (-2FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFI (-2FQFQ)
+    "CFI (-3FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFI (-3FQFQ)
+    "CFI (-4FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFI (-4FQFQ)
+    "CFI (-2FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFI (-2FY)
+    "CFI (-3FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFI (-3FY)
+    "CFI (-4FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFI (-4FY)
+    "FCF (-1FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: FCF (-1FQFQ)
+    "FCF (-2FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: FCF (-2FQFQ)
+    "FCF (-3FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: FCF (-3FQFQ)
+    "FCF (-4FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: FCF (-4FQFQ)
+    "CFF (-2FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFF (-2FY)
+    "CFF (-3FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFF (-3FY)
+    "CFF (-4FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFF (-4FY)
+    "CFF (-1FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFF (-1FQFQ)
+    "CFF (-2FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFF (-2FQFQ)
+    "CFF (-3FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFF (-3FQFQ)
+    "CFF (-4FQFQ)"                                     NUMERIC DEFAULT 0,            -- cash_flow: CFF (-4FQFQ)
+    "CFO (-2FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFO (-2FY)
+    "CFO (-3FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFO (-3FY)
+    "CFO (-4FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: CFO (-4FY)
+    "Cash Acquisitions (-1FQFQ)"                       NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (-1FQFQ)
+    "Cash Acquisitions (-2FQFQ)"                       NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (-2FQFQ)
+    "Cash Acquisitions (-3FQFQ)"                       NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (-3FQFQ)
+    "Cash Acquisitions (-4FQFQ)"                       NUMERIC DEFAULT 0,            -- cash_flow: Cash Acquisitions (-4FQFQ)
+    "FCF (-2FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: FCF (-2FY)
+    "FCF (-3FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: FCF (-3FY)
+    "FCF (-4FY)"                                       NUMERIC DEFAULT 0,            -- cash_flow: FCF (-4FY)
+    -- ===========================================
+    -- RATIO role
+    -- ===========================================
+    "P/E (NTM)"                                        NUMERIC,                      -- ratio: P/E (NTM)
+    "P/E (LTM)"                                        NUMERIC,                      -- ratio: P/E (LTM)
+    "Altman Z-Score (FY)"                              NUMERIC,                      -- ratio: Altman Z-Score (FY)
+    "Altman Z-Score (FQ)"                              NUMERIC,                      -- ratio: Altman Z-Score (FQ)
+    "Altman Z-Score (LTM)"                             NUMERIC,                      -- ratio: Altman Z-Score (LTM)
+    "P/TBV (LTM)"                                      NUMERIC,                      -- ratio: P/TBV (LTM)
+    "Return On Equity % (LTM)"                         NUMERIC,                      -- ratio: Return on equity percentage (Last Twelve Months)
+    "Return On Equity % (FY)"                          NUMERIC,                      -- ratio: Return On Equity % (FY)
+    "Current Ratio (FY)"                               NUMERIC,                      -- ratio: Current Ratio (FY)
+    "Current Ratio (LTM)"                              NUMERIC,                      -- ratio: Current Ratio (LTM)
+    "Asset Turnover (FY)"                              NUMERIC,                      -- ratio: Asset Turnover (FY)
+    "Asset Turnover (LTM)"                             NUMERIC,                      -- ratio: Asset Turnover (LTM)
+    "EPS Norm - Est Avg (NTM)"                         NUMERIC,                      -- ratio: EPS Norm - Est Avg (NTM)
+    "EPS/Adj. (-1FY)"                                  NUMERIC,                      -- ratio: EPS/Adj. (-1FY)
+    "EPS/Adj. (FY)"                                    NUMERIC,                      -- ratio: EPS/Adj. (FY)
+    "EPS/Adj. (LTM)"                                   NUMERIC,                      -- ratio: EPS/Adj. (LTM)
+    "EPS Norm - Est Avg (FY1E)"                        NUMERIC,                      -- ratio: EPS Norm - Est Avg (FY1E)
+    "Return on Assets (ROA) % (LTM)"                   NUMERIC,                      -- ratio: Return on assets percentage (Last Twelve Months)
+    "Return on Assets (ROA) % (FY)"                    NUMERIC,                      -- ratio: Return on Assets (ROA) % (FY)
+    "P/B (LTM)"                                        NUMERIC,                      -- ratio: P/B (LTM)
+    "P/B (-1FY)"                                       NUMERIC,                      -- ratio: P/B (-1FY)
+    "P/B (5YAVG)"                                      NUMERIC,                      -- ratio: P/B (5YAVG)
+    "EV/Sales (EST FY1)"                               NUMERIC,                      -- ratio: EV/Sales (EST FY1)
+    "EV/Sales (LTM)"                                   NUMERIC,                      -- ratio: EV/Sales (LTM)
+    "EV/Sales (NTM)"                                   NUMERIC,                      -- ratio: EV/Sales (NTM)
+    "EV/Sales (-1FYLTM)"                               NUMERIC,                      -- ratio: EV/Sales (-1FYLTM)
+    "EV/Sales (-2FYLTM)"                               NUMERIC,                      -- ratio: EV/Sales (-2FYLTM)
+    "EV/Sales (-3FYLTM)"                               NUMERIC,                      -- ratio: EV/Sales (-3FYLTM)
+    "EV/Sales (3YAVGLTM)"                              NUMERIC,                      -- ratio: EV/Sales (3YAVGLTM)
+    "EV/Sales (-1FQLTM)"                               NUMERIC,                      -- ratio: EV/Sales (-1FQLTM)
+    "EV/Sales (-2FQLTM)"                               NUMERIC,                      -- ratio: EV/Sales (-2FQLTM)
+    "EV/Sales (-3FQLTM)"                               NUMERIC,                      -- ratio: EV/Sales (-3FQLTM)
+    "EV/Sales (-4FQLTM)"                               NUMERIC,                      -- ratio: EV/Sales (-4FQLTM)
+    "EV/EBITDA (LTM)"                                  NUMERIC,                      -- ratio: EV/EBITDA (LTM)
+    "EV/EBITDA (NTM)"                                  NUMERIC,                      -- ratio: EV/EBITDA (NTM)
+    "EV/EBITDA (-1FYLTM)"                              NUMERIC,                      -- ratio: EV/EBITDA (-1FYLTM)
+    "EV/EBITDA (-1FQLTM)"                              NUMERIC,                      -- ratio: EV/EBITDA (-1FQLTM)
+    "EV/EBITDA (3YAVGLTM)"                             NUMERIC,                      -- ratio: EV/EBITDA (3YAVGLTM)
+    "EV/EBITDA (EST FY1)"                              NUMERIC,                      -- ratio: EV/EBITDA (EST FY1)
+    "P/E (EST FY1)"                                    NUMERIC,                      -- ratio: P/E (EST FY1)
+    "P/E (-1FYLTM)"                                    NUMERIC,                      -- ratio: P/E (-1FYLTM)
+    "P/E (-2FYLTM)"                                    NUMERIC,                      -- ratio: P/E (-2FYLTM)
+    "P/E (-3FYLTM)"                                    NUMERIC,                      -- ratio: P/E (-3FYLTM)
+    "P/E (3YAVGLTM)"                                   NUMERIC,                      -- ratio: P/E (3YAVGLTM)
+    "P/E (-1FQLTM)"                                    NUMERIC,                      -- ratio: P/E (-1FQLTM)
+    "P/E (-2FQLTM)"                                    NUMERIC,                      -- ratio: P/E (-2FQLTM)
+    "P/E (-3FQLTM)"                                    NUMERIC,                      -- ratio: P/E (-3FQLTM)
+    "P/E (5YAVGLTM)"                                   NUMERIC,                      -- ratio: P/E (5YAVGLTM)
+    "P/E (-0FQQoQLTM)"                                 NUMERIC,                      -- ratio: P/E (-0FQQoQLTM)
+    "P/E (-0FYYoYLTM)"                                 NUMERIC,                      -- ratio: P/E (-0FYYoYLTM)
+    "P/E (-1FYYoYLTM)"                                 NUMERIC,                      -- ratio: P/E (-1FYYoYLTM)
+    "P/E (-0FQYoYLTM)"                                 NUMERIC,                      -- ratio: P/E (-0FQYoYLTM)
+    "Net EPS - Basic (LTM)"                            NUMERIC,                      -- ratio: Net EPS - Basic (LTM)
+    "Net EPS - Basic (FQ)"                             NUMERIC,                      -- ratio: Net EPS - Basic (FQ)
+    "Net EPS - Basic (FY)"                             NUMERIC,                      -- ratio: Net EPS - Basic (FY)
+    "Net EPS - Basic (-1FQFQ)"                         NUMERIC,                      -- ratio: Net EPS - Basic (-1FQFQ)
+    "Net EPS - Basic (-2FQFQ)"                         NUMERIC,                      -- ratio: Net EPS - Basic (-2FQFQ)
+    "Net EPS - Basic (-3FQFQ)"                         NUMERIC,                      -- ratio: Net EPS - Basic (-3FQFQ)
+    "Net EPS - Basic (-4FQFQ)"                         NUMERIC,                      -- ratio: Net EPS - Basic (-4FQFQ)
+    "Net EPS - Basic (-1FY)"                           NUMERIC,                      -- ratio: Net EPS - Basic (-1FY)
+    "Net EPS - Basic (-2FY)"                           NUMERIC,                      -- ratio: Net EPS - Basic (-2FY)
+    "Net EPS - Basic (-3FY)"                           NUMERIC,                      -- ratio: Net EPS - Basic (-3FY)
+    "Net EPS - Basic (-4FY)"                           NUMERIC,                      -- ratio: Net EPS - Basic (-4FY)
+    "Net EPS - Basic (-5FY)"                           NUMERIC,                      -- ratio: Net EPS - Basic (-5FY)
+    "EPS GAAP - Est Avg (NTM)"                         NUMERIC,                      -- ratio: EPS GAAP - Est Avg (NTM)
+    "EPS GAAP - Est Avg (FY1E)"                        NUMERIC,                      -- ratio: EPS GAAP - Est Avg (FY1E)
+    -- ===========================================
+    -- PERCENTAGE role
+    -- ===========================================
+    "Total Return (YTD)"                               NUMERIC,                      -- percentage: Total Return (YTD)
+    "Beta (1Y)"                                        NUMERIC,                      -- percentage: Beta (1Y)
+    "Beta (2Y)"                                        NUMERIC,                      -- percentage: Beta (2Y)
+    "Beta (5Y)"                                        NUMERIC,                      -- percentage: Beta (5Y)
+    "Total Revenues/CAGR (5Y FY)"                      NUMERIC,                      -- percentage: Total Revenues/CAGR (5Y FY)
+    "Tot. Return %/CAGR (3Y)"                          NUMERIC,                      -- percentage: Tot. Return %/CAGR (3Y)
+    "Tot. Return %/CAGR (10Y)"                         NUMERIC,                      -- percentage: Tot. Return %/CAGR (10Y)
+    "Total Return (5Y)"                                NUMERIC,                      -- percentage: Total Return (5Y)
+    "Total Return (10Y)"                               NUMERIC,                      -- percentage: Total Return (10Y)
+    "Net Income Margin % (FY)"                         NUMERIC,                      -- percentage: Net Income Margin % (FY)
+    "Net Income Margin % (LTM)"                        NUMERIC,                      -- percentage: Net Income Margin % (LTM)
+    "Volatility (1M)"                                  NUMERIC,                      -- percentage: Volatility (1M)
+    "Volatility (3M)"                                  NUMERIC,                      -- percentage: Volatility (3M)
+    "Volatility (6M)"                                  NUMERIC,                      -- percentage: Volatility (6M)
+    "Volatility (1Y)"                                  NUMERIC,                      -- percentage: Volatility (1Y)
+    "Div Yield (Ind)"                                  NUMERIC DEFAULT 0,            -- percentage: Div Yield (Ind)
+    "Div Yield (LTM)"                                  NUMERIC DEFAULT 0,            -- percentage: Div Yield (LTM)
+    "Gross Profit Margin % (FY)"                       NUMERIC,                      -- percentage: Gross Profit Margin % (FY)
+    "Gross Profit Margin % (LTM)"                      NUMERIC,                      -- percentage: Gross Profit Margin % (LTM)
+    "Buyback Yield (LTM)"                              NUMERIC,                      -- percentage: Buyback Yield (LTM)
+    "Div Yield (-1FYInd)"                              NUMERIC DEFAULT 0,            -- percentage: Div Yield (-1FYInd)
+    "Div Yield (TTM)"                                  NUMERIC DEFAULT 0,            -- percentage: Div Yield (TTM)
+    "Div Yield (NTM)"                                  NUMERIC DEFAULT 0,            -- percentage: Div Yield (NTM)
+    "Div Yield (5YAVGLTM)"                             NUMERIC DEFAULT 0,            -- percentage: Div Yield (5YAVGLTM)
+    "Revenues - Est YoY % (FY1E)"                      NUMERIC,                      -- percentage: Revenues - Est YoY % (FY1E)
+    "Price Chg. % (1M)"                                NUMERIC,                      -- percentage: Price Chg. % (1M)
+    "Price Chg. % (3M)"                                NUMERIC,                      -- percentage: Price Chg. % (3M)
+    "1-Day %"                                          NUMERIC,                      -- percentage: 1-Day %
+    "EPS Est Avg Rev % (FY1E - 1W)"                    NUMERIC,                      -- percentage: EPS Est Avg Rev % (FY1E - 1W)
+    "EPS Est Avg Rev % (FY1E - 1M)"                    NUMERIC,                      -- percentage: EPS Est Avg Rev % (FY1E - 1M)
+    "EPS Est Avg Rev % (FY1E - 3M)"                    NUMERIC,                      -- percentage: EPS Est Avg Rev % (FY1E - 3M)
+    "EPS Est Avg Rev % (FY1E - 6M)"                    NUMERIC,                      -- percentage: EPS Est Avg Rev % (FY1E - 6M)
+    "EPS Est Avg Rev % (FY1E - 1Y)"                    NUMERIC,                      -- percentage: EPS Est Avg Rev % (FY1E - 1Y)
+    "Div Yield (-2FYInd)"                              NUMERIC DEFAULT 0,            -- percentage: Div Yield (-2FYInd)
+    "Div Yield (-3FYInd)"                              NUMERIC DEFAULT 0,            -- percentage: Div Yield (-3FYInd)
+    "Div Yield (-4FYInd)"                              NUMERIC DEFAULT 0,            -- percentage: Div Yield (-4FYInd)
+    "Div Yield (-5FYInd)"                              NUMERIC DEFAULT 0,            -- percentage: Div Yield (-5FYInd)
+    "EPS GAAP Est Avg Rev % (FY1E - 1M)"               NUMERIC,                      -- percentage: EPS GAAP Est Avg Rev % (FY1E - 1M)
+    "EPS GAAP Est Avg Rev % (FY1E - 3M)"               NUMERIC,                      -- percentage: EPS GAAP Est Avg Rev % (FY1E - 3M)
+    "EPS GAAP Est Avg Rev % (FY1E - 6M)"               NUMERIC,                      -- percentage: EPS GAAP Est Avg Rev % (FY1E - 6M)
+    "EPS GAAP Est Avg Rev % (FY1E - 1Y)"               NUMERIC,                      -- percentage: EPS GAAP Est Avg Rev % (FY1E - 1Y)
+    -- ===========================================
+    -- COUNT role
+    -- ===========================================
+    "Dividend Streak"                                  NUMERIC DEFAULT 0,            -- count: Consecutive years of dividend payments
+    "Price Target - #"                                 NUMERIC DEFAULT 0,            -- count: Number of analyst price targets (alias for price_target_num)
+    "Analyst Rating"                                   NUMERIC DEFAULT 0,            -- count: Analyst Rating
+    "# Strong Sell Ratings"                            NUMERIC DEFAULT 0,            -- count: # Strong Sell Ratings
+    "# Strong Buys Ratings"                            NUMERIC DEFAULT 0,            -- count: # Strong Buys Ratings
+    "# Hold Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Hold Ratings
+    "# Buys Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Buys Ratings
+    "# Sell Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Sell Ratings
+    "Shrs Out"                                         NUMERIC DEFAULT 0,            -- count: Shares outstanding
+    "Shrs Out (-1FY)"                                  NUMERIC DEFAULT 0,            -- count: Shares outstanding (previous FY)
+    "Full Time Employees (FQ)"                         NUMERIC DEFAULT 0,            -- count: Full time employees (Fiscal Quarter)
+    "Full Time Employees (FY)"                         NUMERIC DEFAULT 0,            -- count: Full time employees (Fiscal Year)
+    "Full Time Employees (-1FY)"                       NUMERIC DEFAULT 0,            -- count: Full Time Employees (-1FY)
+    "Full Time Employees (-2FY)"                       NUMERIC DEFAULT 0,            -- count: Full Time Employees (-2FY)
+    "Full Time Employees (-3FY)"                       NUMERIC DEFAULT 0,            -- count: Full Time Employees (-3FY)
+    "Avg Employees (5YAVGFY)"                          NUMERIC DEFAULT 0,            -- count: Avg Employees (5YAVGFY)
+    "EPS Norm - Est # (FY1E)"                          NUMERIC DEFAULT 0,            -- count: EPS Norm - Est # (FY1E)
+    "Price Target - # (3M Ago)"                        NUMERIC DEFAULT 0,            -- count: Price Target - # (3M Ago)
+    "Price Target - # (6M Ago)"                        NUMERIC DEFAULT 0,            -- count: Price Target - # (6M Ago)
+    "Price Target - # (YTD Ago)"                       NUMERIC DEFAULT 0,            -- count: Price Target - # (YTD Ago)
+    "Price Target - # (1Y Ago)"                        NUMERIC DEFAULT 0,            -- count: Price Target - # (1Y Ago)
+    "Price Target - # (1W Ago)"                        NUMERIC DEFAULT 0,            -- count: Price Target - # (1W Ago)
+    "Price Target - # (1M Ago)"                        NUMERIC DEFAULT 0,            -- count: Price Target - # (1M Ago)
+    "Price Target - # (MTD Ago)"                       NUMERIC DEFAULT 0,            -- count: Price Target - # (MTD Ago)
+    "Price Target - # (QTD Ago)"                       NUMERIC DEFAULT 0,            -- count: Price Target - # (QTD Ago)
+    -- ===========================================
+    -- NON RECURRING role
+    -- ===========================================
+    "Gain (Loss) On Sale Of Assets (LTM)"              NUMERIC DEFAULT 0,            -- non_recurring: Gain (Loss) On Sale Of Assets (LTM)
+    "Impairment of Goodwill (FQ)"                      NUMERIC DEFAULT 0,            -- non_recurring: Impairment of Goodwill (FQ)
+    "Impairment of Goodwill (LTM)"                     NUMERIC DEFAULT 0,            -- non_recurring: Impairment of Goodwill (LTM)
+    "Impairment of Goodwill (-1FY)"                    NUMERIC DEFAULT 0,            -- non_recurring: Impairment of Goodwill (-1FY)
+    "Impairment of Goodwill (FY)"                      NUMERIC DEFAULT 0,            -- non_recurring: Impairment of Goodwill (FY)
+    "Asset Writedown (LTM)"                            NUMERIC DEFAULT 0,            -- non_recurring: Asset Writedown (LTM)
+    "Asset Writedown (FY)"                             NUMERIC DEFAULT 0,            -- non_recurring: Asset Writedown (FY)
+    "Asset Writedown (-1FY)"                           NUMERIC DEFAULT 0,            -- non_recurring: Asset Writedown (-1FY)
+    "Restructuring Charges (LTM)"                      NUMERIC DEFAULT 0,            -- non_recurring: Restructuring Charges (LTM)
+    "Restructuring Charges (FQ)"                       NUMERIC DEFAULT 0,            -- non_recurring: Restructuring Charges (FQ)
+    "Restructuring Charges (-1FY)"                     NUMERIC DEFAULT 0,            -- non_recurring: Restructuring Charges (-1FY)
+    "Restructuring Charges (FY)"                       NUMERIC DEFAULT 0,            -- non_recurring: Restructuring Charges (FY)
+    "Merger & Restructuring Charges (LTM)"             NUMERIC DEFAULT 0,            -- non_recurring: Merger & Restructuring Charges (LTM)
+    "Other Unusual Items/Total (LTM)"                  NUMERIC DEFAULT 0,            -- non_recurring: Other Unusual Items/Total (LTM)
+    "Asset Writedown (FQ)"                             NUMERIC DEFAULT 0,            -- non_recurring: Asset Writedown (FQ)
+    "Asset Writedown (5YAVGFQ)"                        NUMERIC DEFAULT 0,            -- non_recurring: Asset Writedown (5YAVGFQ)
+    "Impairment of Goodwill (5YAVGFQ)"                 NUMERIC DEFAULT 0,            -- non_recurring: Impairment of Goodwill (5YAVGFQ)
+    "Restructuring Charges (5YAVGFQ)"                  NUMERIC DEFAULT 0,            -- non_recurring: Restructuring Charges (5YAVGFQ)
+    "Merger & Restructuring Charges (FQ)"              NUMERIC DEFAULT 0,            -- non_recurring: Merger & Restructuring Charges (FQ)
+    "Merger & Restructuring Charges (FY)"              NUMERIC DEFAULT 0,            -- non_recurring: Merger & Restructuring Charges (FY)
+    "Merger & Restructuring Charges (5YAVGFQ)"         NUMERIC DEFAULT 0,            -- non_recurring: Merger & Restructuring Charges (5YAVGFQ)
+    -- ===========================================
+    -- AUXILIARY role
+    -- ===========================================
+    "Description"                                      TEXT,                         -- auxiliary: Description
+    -- ===========================================
+    -- FEATURE role
+    -- ===========================================
+    "Fiscal Month"                                     INTEGER,                      -- feature: Months between Income Statement Report Date and FY End Date
+    "Fiscal Quarter"                                   INTEGER,                      -- feature: Fiscal quarter (1-4) from report date
+    "Fiscal Year"                                      INTEGER,                      -- feature: Fiscal year from report date
+    "Reporting Lag"                                    NUMERIC                       -- feature: Reporting Lag
+) TABLESPACE pg_default;
+
+ALTER TABLE equities
+    OWNER TO postgres;
+COMMENT ON TABLE equities IS 'Equities screening data with financial metrics and company information';
+DROP TABLE IF EXISTS equities;
+
+CREATE TABLE equities
+(
+    -- ===========================================
+    -- ID role
+    -- ===========================================
+    "Ticker"                 TEXT,                                                   -- id: Ticker
+    "ISIN"                   TEXT,                                                   -- id: ISIN
+    "Name"                   TEXT,                                                   -- id: Name
+    -- ===========================================
+    -- CATEGORICAL role
+    -- ===========================================
+    "Region"                 TEXT DEFAULT 'n/a',                                     -- categorical: Region
+    "Country"                TEXT DEFAULT 'n/a',                                     -- categorical: Country
+    "Trading Country"        TEXT DEFAULT 'n/a',                                     -- categorical: Trading Country
+    "Exchange"               TEXT DEFAULT 'n/a',                                     -- categorical: Exchange
+    "Unit"                   TEXT DEFAULT 'n/a',                                     -- categorical: Unit
+    "Sector"                 TEXT DEFAULT 'n/a',                                     -- categorical: Sector
+    "Industry"               TEXT DEFAULT 'n/a',                                     -- categorical: Industry
+    "Style Class"            TEXT DEFAULT 'n/a',                                     -- categorical: Style Class
+    "Size Class"             TEXT DEFAULT 'n/a',                                     -- categorical: Size Class
+    "FY End"                 TEXT DEFAULT 'n/a',                                     -- categorical: FY End
+    "Next Earnings (When)"   TEXT DEFAULT 'n/a',                                     -- categorical: Next Earnings (When)
+    "Next Earnings (Status)" TEXT DEFAULT 'n/a',                                     -- categorical: Next Earnings (Status)
+    "Dividend Record (Currency)"                       TEXT    DEFAULT 'n/a',        -- categorical: Dividend Record (Currency)
+    "Dividend Record (Frequency)"                      TEXT    DEFAULT 'n/a',        -- categorical: Dividend Record (Frequency)
+    "Current Fiscal Quarter"                           TEXT    DEFAULT 'n/a',        -- categorical: Current fiscal quarter (formatted as Q4 2025)
+    "Next Fiscal Quarter"                              TEXT    DEFAULT 'n/a',        -- categorical: Next fiscal quarter (formatted as Q4 2025)
+    "Next Earnings (Report)"                           TEXT    DEFAULT 'n/a',        -- categorical: Next earnings report type (Full Year/Interim)
     -- ===========================================
     -- DATE role
     -- ===========================================

@@ -89,5 +89,29 @@ def engineer_growth_metrics(df: pd.DataFrame) -> pd.DataFrame:
             result["revenue_growth_yoy"] - result["revenue_cagr_5y"]
         )
 
+    # Current vs 5Y average revenue (growth indicator)
+    if "total_revenues_ltm" in df.columns and "total_revenues_5yavgltm" in df.columns:
+        result["revenue_vs_5y_avg"] = _safe_div(
+            df["total_revenues_ltm"], df["total_revenues_5yavgltm"]
+        )
+        # Growth acceleration signal
+        result["revenue_above_5y_avg_flag"] = (
+            df["total_revenues_ltm"] > df["total_revenues_5yavgltm"] * 1.1
+        ).astype(int)
+
+    # Operating income growth
+    if "operating_income_ltm" in df.columns and "operating_income_fy" in df.columns:
+        result["operating_income_growth_yoy"] = (
+            _safe_div(
+                df["operating_income_ltm"] - df["operating_income_fy"],
+                df["operating_income_fy"].abs(),
+            )
+            * 100
+        )
+
+    # EBITDA vs 5Y growth
+    if "ebitda_ltm" in df.columns and "ebitda_5yavgltm" in df.columns:
+        result["ebitda_vs_5y_avg"] = _safe_div(df["ebitda_ltm"], df["ebitda_5yavgltm"])
+
     logger.info("Engineered growth metrics (enhanced coverage)")
     return result

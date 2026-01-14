@@ -366,6 +366,15 @@ class ETLPipeline:
             engineer_dividend_timing=self.config.feature_engineering.engineer_dividend_timing,
             engineer_eps_trajectory=self.config.feature_engineering.engineer_eps_trajectory,
             engineer_cashflow_temporal=self.config.feature_engineering.engineer_cashflow_temporal,
+            engineer_valuation_timeseries=self.config.feature_engineering.engineer_valuation_timeseries,
+            engineer_analyst_coverage=self.config.feature_engineering.engineer_analyst_coverage,
+            engineer_revenue_forecast=self.config.feature_engineering.engineer_revenue_forecast,
+            engineer_dividend_reliability=self.config.feature_engineering.engineer_dividend_reliability,
+            engineer_employment_dynamics=self.config.feature_engineering.engineer_employment_dynamics,
+            engineer_employee_productivity=self.config.feature_engineering.engineer_employee_productivity,
+            engineer_balance_sheet_trends=self.config.feature_engineering.engineer_balance_sheet_trends,
+            engineer_margin_trends=self.config.feature_engineering.engineer_margin_trends,
+            engineer_accounting_quality=self.config.feature_engineering.engineer_accounting_quality,
         )
 
         if self.metrics:

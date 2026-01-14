@@ -1,10 +1,11 @@
 """Imputation stage for ETL."""
 
 import logging
-from typing import Set
+from typing import List, Set
 
 import pandas as pd
 
+from finance_ml.core.schema import COLUMN_SCHEMA, list_count_cols, normalize_column_name
 from finance_ml.etl.stages.sanitization import (
     get_dividend_zero_fill_columns,
     get_analyst_rating_zero_fill_columns,
@@ -17,6 +18,39 @@ from finance_ml.ml_workflow.preprocessing.imputation import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_schema_aligned_columns_by_role(
+    df: pd.DataFrame,
+    roles: List[str],
+    dtypes: List[str] = None,
+) -> List[str]:
+    """Get columns from DataFrame that match specified schema roles and dtypes.
+
+    Args:
+        df: DataFrame to analyze
+        roles: List of role names to include (e.g., ['feature', 'market', 'ratio'])
+        dtypes: Optional list of dtype strings to filter by (e.g., ['float', 'Float64'])
+
+    Returns:
+        List of column names matching the criteria
+    """
+    matched_cols = []
+
+    for col in df.columns:
+        normalized = normalize_column_name(col)
+        meta = COLUMN_SCHEMA.get(normalized, {})
+        role = meta.get("role")
+
+        if role in roles:
+            if dtypes is None:
+                matched_cols.append(col)
+            else:
+                col_dtype = meta.get("dtype", "")
+                if any(dt in col_dtype for dt in dtypes):
+                    matched_cols.append(col)
+
+    return matched_cols
 
 
 def get_pre_imputation_zero_fill_columns() -> Set[str]:
@@ -36,6 +70,12 @@ def get_pre_imputation_zero_fill_columns() -> Set[str]:
     zero_cols.update(get_analyst_rating_zero_fill_columns())
     zero_cols.update(get_income_statement_zero_fill_columns())
     zero_cols.update(get_balance_sheet_zero_fill_columns())
+
+    # Add count-role columns from schema for consistent handling
+    count_columns = set(list_count_cols())
+    # Filter to analyst rating counts only (zero means no coverage)
+    analyst_count_cols = {c for c in count_columns if "num_" in c and "rating" in c}
+    zero_cols.update(analyst_count_cols)
 
     return zero_cols
 
@@ -105,31 +145,42 @@ def run_imputation_stage(
     sector_column: str = "sector",
     reference_price_column: str = "last_price",
     apply_pre_imputation_fills: bool = True,
+    use_schema_aligned_selection: bool = True,
 ) -> pd.DataFrame:
     """Stage 5: Apply imputation strategy with business-rule pre-fills.
-    
+
     This enhanced imputation stage applies business-rule zero/NA fills
     for dividend and analyst rating columns BEFORE the 6-step strategy
     to prevent distorting imputation.
-    
+
     Args:
         df: DataFrame to process
         strategy: Imputation strategy name
         sector_column: Column name for sector
         reference_price_column: Column name for reference price
         apply_pre_imputation_fills: Apply business-rule fills first (default: True)
-        
+        use_schema_aligned_selection: Use schema roles for column selection (default: True)
+
     Returns:
         DataFrame with imputed values
     """
     logger.info(f"Stage 5: Applying imputation strategy: {strategy}")
-    
+
     result = df.copy()
-    
+
     # Step 1: Apply business-rule pre-fills
     if apply_pre_imputation_fills:
         result = apply_pre_imputation_business_fills(result)
-    
+
+    # Get schema-aligned columns for KNN imputation (informational logging)
+    if use_schema_aligned_selection:
+        knn_cols = get_schema_aligned_columns_by_role(
+            result,
+            roles=["feature", "market", "ratio", "percentage", "financial_statement"],
+            dtypes=["float", "Float64"],
+        )
+        logger.info(f"Schema-aligned KNN imputation: {len(knn_cols)} columns selected")
+
     # Step 2: Apply main imputation strategy
     if strategy == "6step":
         result = apply_enhanced_imputation_strategy_6step(
@@ -146,5 +197,5 @@ def run_imputation_stage(
             sector_column=sector_column,
             price_column=reference_price_column,
         )
-    
+
     return result

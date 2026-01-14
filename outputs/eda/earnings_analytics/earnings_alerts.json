@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-01-10T16:11:24.538202",
-  "reference_date": "2026-01-10 00:00:00",
-  "total_stocks_monitored": 5794,
+  "timestamp": "2026-01-14T21:28:11.531081",
+  "reference_date": "2026-01-14 00:00:00",
+  "total_stocks_monitored": 6700,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 2153,
-      "description": "2153 stocks with EPS surprise < -5%",
+      "count": 2439,
+      "description": "2439 stocks with EPS surprise < -5%",
       "tickers": [
         "NVDA",
         "GOOGL",
         "AAPL",
         "MSFT",
         "AVGO",
+        "PHVS",
         "LLY",
         "WMT",
-        "ORCL",
         "JNJ",
         "PLTR"
       ]
@@ -24,37 +24,37 @@
     {
       "alert_type": "high_target_uncertainty",
       "severity": "low",
-      "count": 4077,
-      "description": "4077 stocks with price target spread > 25%",
+      "count": 4569,
+      "description": "4569 stocks with price target spread > 25%",
       "tickers": [
         "NVDA",
         "GOOGL",
+        "VSNT",
         "AAPL",
         "MSFT",
+        "OBCK",
         "AMZN",
-        "META",
         "AVGO",
-        "TSLA",
-        "LLY",
-        "WMT"
+        "PHVS",
+        "META"
       ]
     },
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 47,
-      "description": "47 stocks with elevated volatility (> q0.80) within 14 days of earnings",
+      "count": 73,
+      "description": "73 stocks with elevated volatility (> q0.80) within 14 days of earnings",
       "tickers": [
-        "KEFI",
+        "LRCX",
         "INTC",
-        "SLB",
+        "GEV",
+        "NOW",
+        "SCLP",
+        "CLS",
         "HAL",
         "AA",
-        "BMNR",
-        "SCLP",
-        "BO",
-        "SXGC",
-        "VACN"
+        "NXT",
+        "BMNR"
       ]
     }
   ],

@@ -4,8 +4,9 @@ Validate Phase 9.3 Feature Coverage Improvements
 This script demonstrates the coverage improvements from registry and orchestrator fixes.
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from finance_ml.ml_workflow.eda.phase93_categories import (
     PHASE93_FEATURE_CATEGORIES,
     categorize_dataframe_columns,
@@ -27,9 +28,9 @@ test_features = {
     "price_target_revision": np.random.rand(100),
     "analyst_coverage_quality": np.random.rand(100),
     # Market Sentiment features (from engineer_market_sentiment_features)
-    "short_interest_ratio": np.random.rand(100),
     "beta_stability": np.random.rand(100),
     "systematic_risk_trend": np.random.rand(100),
+    "one_day_chg": np.random.rand(100),
     # Market Microstructure features (NOW CALLED in orchestrator)
     "price_range_pct": np.random.rand(100),
     "volatility_30d": np.random.rand(100),

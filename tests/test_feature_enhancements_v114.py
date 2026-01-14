@@ -95,7 +95,7 @@ class TestCategoryAndRegistryAlignment(unittest.TestCase):
 
     def test_phase93_category_counts_and_members(self):
         expected_counts = {
-            "Analyst Sentiment": 25,
+            "Analyst Sentiment": 66,
             "Cash Flow": 17,
             "Temporal Patterns": 26,
             "Earnings Quality": 43,
@@ -183,11 +183,12 @@ class TestCategoryAndRegistryAlignment(unittest.TestCase):
 
     def test_feature_registry_and_exports_updated(self):
         expected_registry_entries = {
-            "price_target_dynamics": ("Analyst Sentiment", 15),
+            "price_target_dynamics": ("Analyst Sentiment", 35),
             "cashflow_temporal": ("Cash Flow", 12),
             "eps_trajectory": ("Earnings Quality", 10),
             "fiscal_calendar": ("Temporal Patterns", 9),
             "dividend_timing": ("Dividend Reliability", 8),
+            "analyst_coverage": ("Analyst Sentiment", 12),
         }
 
         for key, (category, feature_count) in expected_registry_entries.items():
@@ -231,8 +232,9 @@ class TestFeatureFunctionOutputs(unittest.TestCase):
                 "price_target_low_3m_ago": [95.0],
                 "price_target_median_3m_ago": [110.0],
                 "price_target_count": [10],
-                "price_target_count_1m_ago": [8],
-                "price_target_count_3m_ago": [7],
+                "price_target_num": [10],
+                "price_target_num_1m_ago": [8],
+                "price_target_num_3m_ago": [7],
                 "last_price": [100.0],
                 "price_3m_ago": [85.0],
             }

@@ -53,4 +53,40 @@ def run_feature_engineering_stage(
             logger.info("Applying cashflow temporal features")
             result = adv.engineer_cashflow_temporal_features(result)
 
+        if kwargs.get("engineer_valuation_timeseries"):
+            logger.info("Applying valuation timeseries features")
+            result = adv.engineer_valuation_timeseries_features(result)
+
+        if kwargs.get("engineer_analyst_coverage"):
+            logger.info("Applying analyst coverage features")
+            result = adv.engineer_analyst_coverage_features(result)
+
+        if kwargs.get("engineer_revenue_forecast"):
+            logger.info("Applying revenue forecast features")
+            result = adv.engineer_revenue_forecast_features(result)
+
+        if kwargs.get("engineer_dividend_reliability"):
+            logger.info("Applying dividend reliability features")
+            result = adv.engineer_dividend_reliability_features(result)
+
+        if kwargs.get("engineer_employment_dynamics"):
+            logger.info("Applying employment dynamics features")
+            result = adv.engineer_employment_dynamics_features(result)
+
+        if kwargs.get("engineer_employee_productivity"):
+            logger.info("Applying employee productivity features")
+            result = adv.engineer_employee_productivity_features(result)
+
+        if kwargs.get("engineer_balance_sheet_trends"):
+            logger.info("Applying balance sheet trends")
+            result = adv.engineer_balance_sheet_trends(result)
+
+        if kwargs.get("engineer_margin_trends"):
+            logger.info("Applying margin trends")
+            result = adv.engineer_margin_trends(result)
+
+        if kwargs.get("engineer_accounting_quality"):
+            logger.info("Applying accounting quality features")
+            result = adv.engineer_accounting_quality_features(result)
+
     return result

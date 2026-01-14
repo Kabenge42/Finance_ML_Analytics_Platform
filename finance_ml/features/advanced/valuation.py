@@ -206,5 +206,36 @@ def engineer_valuation_timeseries_features(df: pd.DataFrame) -> pd.DataFrame:
             1.0 + result["ev_sales_quarterly_volatility"]
         )
 
+    # EV/Sales quarterly trajectory
+    EV_SALES_FQ_COLS = [
+        "ev_sales_ltm",
+        "ev_sales_1fqltm",
+        "ev_sales_2fqltm",
+        "ev_sales_3fqltm",
+        "ev_sales_4fqltm",
+    ]
+    if all(c in df.columns for c in EV_SALES_FQ_COLS[:3]):
+        # Quarterly volatility
+        ev_sales_mat = df[EV_SALES_FQ_COLS[:3]].astype(float)
+        result["ev_sales_quarterly_volatility"] = ev_sales_mat.std(axis=1, ddof=0)
+
+        # Trend direction consistency
+        ev_q1_vs_q2 = np.sign(df["ev_sales_ltm"] - df["ev_sales_1fqltm"])
+        ev_q2_vs_q3 = np.sign(df["ev_sales_1fqltm"] - df["ev_sales_2fqltm"])
+        result["ev_sales_trend_consistency"] = (ev_q1_vs_q2 == ev_q2_vs_q3).astype(int)
+
+    # P/E sequential momentum
+    if "p_e_0fqqoqltm" in df.columns:
+        result["p_e_qoq_momentum"] = df["p_e_0fqqoqltm"]
+    if "p_e_0fyyoyltm" in df.columns:
+        result["p_e_yoy_momentum"] = df["p_e_0fyyoyltm"]
+
+    # P/B vs 5Y average (mean reversion signal)
+    if "p_b_ltm" in df.columns and "p_b_5yavg" in df.columns:
+        result["p_b_vs_5y_avg"] = _safe_div(df["p_b_ltm"], df["p_b_5yavg"])
+        result["p_b_mean_reversion_signal"] = (
+            df["p_b_ltm"] > df["p_b_5yavg"] * 1.2
+        ).astype(int) - (df["p_b_ltm"] < df["p_b_5yavg"] * 0.8).astype(int)
+
     logger.info("Engineered valuation time-series features (Phase 9.3 Schema 1.3)")
     return result

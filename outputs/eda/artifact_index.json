@@ -1,30 +1,37 @@
 {
-  "generated_at": "2026-01-10T16:11:27.679102",
-  "reference_date": "2026-01-10T00:00:00",
+  "generated_at": "2026-01-14T21:28:22.582963",
+  "reference_date": "2026-01-14T00:00:00",
   "data_shape": {
-    "rows": 5794,
-    "columns": 657
+    "rows": 6700,
+    "columns": 1106
   },
   "phase93_coverage": {
     "Momentum & Technical": 25,
     "Valuation Ratios": 24,
     "Profitability": 17,
     "Quality & Risk": 20,
-    "Cash Flow": 5,
+    "Cash Flow": 17,
     "Capital Allocation": 19,
-    "Analyst Sentiment": 9,
+    "Analyst Sentiment": 65,
     "Market Sentiment": 3,
     "Leverage & Liquidity": 8,
-    "Temporal Patterns": 11,
+    "Temporal Patterns": 20,
     "Composite Scores": 5,
     "Growth Metrics": 9,
     "Efficiency Ratios": 4,
     "Employee Productivity": 18,
     "Balance Sheet Dynamics": 8,
     "Revenue Forecasting": 8,
-    "Earnings Quality": 23,
+    "Earnings Quality": 29,
     "Technical Analysis": 1,
-    "Dividend Reliability": 7
+    "Dividend Reliability": 15
+  },
+  "v115_features": {
+    "price_target_dynamics": 3,
+    "eps_trajectory": 3,
+    "cashflow_temporal": 3,
+    "valuation_timeseries": 3,
+    "dividend_reliability": 3
   },
   "artifacts": {
     "dashboards": [
@@ -65,7 +72,6 @@
       "price_target_analysis.html",
       "price_target_analytics.html",
       "revenue_forecast_momentum.html",
-      "revenue_forecast_skew_vs_momentum.html",
       "surprise_momentum_distribution.html",
       "technical_valuation_dashboard.html",
       "earnings_alerts.json",
@@ -73,19 +79,15 @@
     ],
     "dividend_visualizations": [
       "dividend_reliability_dashboard.html",
-      "dividend_scorecard.html",
-      "dividend_yield_by_sector.html",
-      "dividend_yield_distribution.html",
-      "forward_dividend_yield_trend.html",
-      "shareholder_returns_comparison.html"
+      "dividend_scorecard.html"
     ],
     "employment_analytics": [
       "efficiency_by_sector.html",
-      "employee_productivity.html"
+      "employee_productivity.html",
+      "employee_productivity_dashboard.html"
     ],
     "advanced_analytics": [
       "cross_sectional_risk_heatmap.html",
-      "hypothesis_test_heatmap.html",
       "performance_attribution_sunburst.html",
       "statistical_benchmarking.html",
       "var_risk_analytics.html",
@@ -104,21 +106,46 @@
       "eps_revision_momentum_heatmap.html",
       "eps_revision_momentum_scatter.html",
       "eps_upgrade_downgrade_distribution.html",
-      "phase93_category_comparison.html",
       "revenue_forecast_momentum.html",
       "technical_valuation_dashboard.html"
     ],
     "visualizations": [
-      "analyst_recommendations_chart.html",
-      "dividend_yield_distribution.html",
       "effect_size_comparison_radar.html",
       "enhanced_region_radar.html",
       "enhanced_sector_radar.html",
-      "financial_metrics_radar.html",
-      "hypothesis_test_heatmap.html",
-      "sector_benchmarking.html",
       "statistical_benchmark_dashboard.html",
       "statistical_analysis_results.json"
+    ],
+    "price_target_dynamics": [
+      "price_target_dynamics_dashboard.html",
+      "pt_consensus_convergence.html",
+      "pt_momentum_acceleration_scatter.html",
+      "pt_momentum_sector_heatmap.html"
+    ],
+    "eps_trajectory_analytics": [
+      "eps_cagr_comparison.html",
+      "eps_cagr_comparison_dashboard.html",
+      "eps_positive_streak.html",
+      "eps_positive_streak_analysis.html",
+      "eps_trajectory_dashboard.html",
+      "eps_trend_quality_matrix.html"
+    ],
+    "cashflow_temporal_analytics": [
+      "acquisition_activity_heatmap.html",
+      "cashflow_temporal_dashboard.html",
+      "cfo_margin_trend_analysis.html",
+      "fcf_health_dashboard.html",
+      "fcf_health_matrix.html"
+    ],
+    "temporal_analytics": [
+      "dividend_cycle_distribution.html",
+      "dividend_cycle_position_analysis.html",
+      "earnings_window_analysis.html",
+      "earnings_window_summary.html",
+      "fiscal_calendar_dashboard.html",
+      "fiscal_year_progress_by_sector.html",
+      "fiscal_year_progress_dashboard.html",
+      "late_reporter_analysis.html"
     ]
   }
 }

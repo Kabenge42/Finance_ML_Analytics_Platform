@@ -129,6 +129,16 @@ class FeatureEngineeringConfig:
     engineer_dividend_timing: bool = True
     engineer_eps_trajectory: bool = True
     engineer_cashflow_temporal: bool = True
+    # NEW v1.15 granular flags
+    engineer_valuation_timeseries: bool = True
+    engineer_analyst_coverage: bool = True
+    engineer_revenue_forecast: bool = True
+    engineer_dividend_reliability: bool = True
+    engineer_employment_dynamics: bool = True
+    engineer_employee_productivity: bool = True
+    engineer_balance_sheet_trends: bool = True
+    engineer_margin_trends: bool = True
+    engineer_accounting_quality: bool = True
 
 
 @dataclass

@@ -321,9 +321,15 @@ def _get_schema_aligned_fallback(col: str) -> str:
         "size_class": "Mid",  # Mid-cap as neutral
         # CATEGORICAL: Status fields
         "next_earnings_status": "Unknown",
+        "next_earnings_report": "Unknown",  # Full Year/Interim
+        "next_earnings_when": "Unknown",  # Before/After market
         # CATEGORICAL: Dividend record
         "dividend_record_frequency": "None",
         "dividend_record_currency": "USD",  # Default to USD
+        # CATEGORICAL: Fiscal calendar
+        "fy_end": "Dec",  # Most common fiscal year end
+        "current_fiscal_quarter": "Q4",
+        "next_fiscal_quarter": "Q1",
         # Identifier columns
         "ticker": "N/A",
         "isin": "N/A",

@@ -1,18 +1,19 @@
-import unittest
 import json
 import tempfile
-from pathlib import Path
-import pandas as pd
-import numpy as np
+import unittest
 from datetime import timedelta
+from pathlib import Path
+
+import pandas as pd
 import plotly.graph_objects as go
+
 from finance_ml.dashboards.earnings_widgets import (
     create_earnings_calendar_dashboard,
     display_earnings_dashboard,
     create_earnings_surprise_dashboard,
     create_analyst_recommendation_heatmap,
     create_market_movers_dashboard,
-    create_price_target_analytics,
+    create_price_target_scorecard,
     EarningsAlertConfig,
     generate_earnings_quality_alerts,
 )
@@ -154,9 +155,9 @@ class TestEarningsWidgets(unittest.TestCase):
         )
         self.assertIsInstance(fig, go.Figure)
 
-    def test_price_target_analytics_smoke(self):
-        fig = create_price_target_analytics(self.df, top_n_sectors=5)
-        self.assertIsInstance(fig, go.Figure)
+    def test_price_target_scorecard_smoke(self):
+        df_scorecard = create_price_target_scorecard(self.df)
+        self.assertIsInstance(df_scorecard, pd.DataFrame)
 
     def test_generate_earnings_quality_alerts_threshold_customization(self):
         df_alert = pd.DataFrame(

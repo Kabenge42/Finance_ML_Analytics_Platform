@@ -13,7 +13,7 @@ of Truth (finance_ml.core.schema). All category definitions should be
 maintained ONLY in schema.py.
 
 UPDATED: 2026-01-11
-- Aligned with schema.py as Single Source of Truth (v1.14 - 350 features)
+- Aligned with schema.py as Single Source of Truth (v1.15 - 460+ features)
 - Added schema-aware helper functions
 - Added get_expected_feature_count() for validation
 """
@@ -100,7 +100,7 @@ def get_expected_feature_count() -> int:
     """
     Get the total expected feature count from PHASE93_FEATURE_CATEGORIES.
 
-    This count is derived from the schema's Single Source of Truth. (Phase 9.3 v1.14: 350)
+    This count is derived from the schema's Single Source of Truth. (Phase 9.3 v1.15: 460+)
 
     Returns:
         Total number of unique features across all Phase 9.3 categories

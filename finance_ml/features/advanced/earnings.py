@@ -362,6 +362,30 @@ def engineer_eps_trajectory_features(df: pd.DataFrame) -> pd.DataFrame:
     if "eps_cagr_3y" in result.columns and "eps_cagr_5y" in result.columns:
         result["eps_growth_acceleration"] = result["eps_cagr_3y"] - result["eps_cagr_5y"]
 
+    # Normalized vs GAAP earnings divergence
+    if "normalized_net_income_ltm" in df.columns and "net_income_is_ltm" in df.columns:
+        result["normalized_vs_gaap_spread"] = (
+            df["normalized_net_income_ltm"] - df["net_income_is_ltm"]
+        )
+        result["normalized_vs_gaap_ratio"] = _safe_div(
+            df["normalized_net_income_ltm"], df["net_income_is_ltm"]
+        )
+
+    # Forward GAAP vs adjusted EPS spread
+    if "eps_gaap_est_avg_fy1e" in df.columns and "eps_norm_est_avg_fy1e" in df.columns:
+        result["forward_eps_gaap_adjusted_spread"] = (
+            df["eps_norm_est_avg_fy1e"] - df["eps_gaap_est_avg_fy1e"]
+        )
+
+    # Earnings stability (normalized 5Y avg vs current)
+    if (
+        "normalized_net_income_ltm" in df.columns
+        and "normalized_net_income_5yavgltm" in df.columns
+    ):
+        result["earnings_stability_score"] = _safe_div(
+            df["normalized_net_income_ltm"], df["normalized_net_income_5yavgltm"]
+        )
+
     logger.info("Engineered EPS trajectory features (10 features)")
     return result
 

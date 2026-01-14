@@ -1,30 +1,30 @@
 """
 Advanced feature engineering - modular implementation.
 
-Phase 9.3 Feature Engineering Registry (v1.14)
-Total: 350 features across 21 categories
+Phase 9.3 Feature Engineering Registry (v1.15)
+Total: 460+ features across 21 categories
 
 Categories (Updated):
-- Momentum & Technical (25): EMA crossovers, RSI, 52W High/Low, price momentum
-- Valuation Ratios (25): P/E, P/B, EV/EBITDA, EV/Sales, PEG, valuation trends
-- Profitability (16): Operating margin, net margin, ROE, ROA, ROIC
-- Quality & Risk (18): Altman Z-Score, Piotroski F-Score, accruals ratio
+- Momentum & Technical (33): EMA crossovers, RSI, 52W High/Low, price momentum
+- Valuation Ratios (31): P/E, P/B, EV/EBITDA, EV/Sales, PEG, valuation trends
+- Profitability (21): Operating margin, net margin, ROE, ROA, ROIC
+- Quality & Risk (24): Altman Z-Score, Piotroski F-Score, accruals ratio
 - Cash Flow (17): FCF yield, OCF/Sales, cash conversion, temporal patterns
 - Capital Allocation (23): Buyback yield, dividend coverage, payout ratios
-- Analyst Sentiment (25): Rating changes, target revisions, PT dynamics
+- Analyst Sentiment (65+): Rating momentum, target revisions, PT dynamics, coverage trajectory
 - Market Sentiment (5): Relative strength, volume trends, beta stability
 - Leverage & Liquidity (9): Debt ratios, current ratio, interest coverage
 - Temporal Patterns (26): Seasonality, fiscal calendar, quarter-end
 - Composite Scores (5): Combined quality, value, momentum scores
-- Growth Metrics (9): Revenue growth, EBITDA growth, earnings CAGR
+- Growth Metrics (13): Revenue growth, EBITDA growth, earnings CAGR
 - Efficiency Ratios (4): Asset turnover, inventory turnover, receivables days
-- Employee Productivity (21): Revenue per employee, productivity trends
-- Balance Sheet Dynamics (9): Working capital trends, asset quality
-- Revenue Forecasting (9): Analyst estimate spreads, revision momentum
-- Earnings Quality (43): Estimated vs. Actual, GAAP vs. Adjusted, EPS trajectory
-- Technical Analysis (15): RSI, 52-week range, volume momentum
-- Valuation Timeseries (16): Multi-period valuation trends, mean reversion
-- Dividend Reliability (20): Consistency, coverage, dividend timing
+- Employee Productivity (26): Revenue per employee, productivity trends
+- Balance Sheet Dynamics (13): Working capital trends, asset quality
+- Revenue Forecasting (15): Analyst estimate spreads, revision momentum
+- Earnings Quality (47): Estimated vs. Actual, GAAP vs. Adjusted, EPS trajectory
+- Technical Analysis (18): RSI, 52-week range, volume momentum
+- Valuation Timeseries (22): Multi-period valuation trends, mean reversion
+- Dividend Reliability (26): Consistency, coverage, dividend timing
 - Employment Dynamics (10): Workforce volatility, hiring intensity
 """
 
@@ -84,6 +84,7 @@ from .sector import (
 )
 from .sentiment import (
     engineer_analyst_quality_features,
+    engineer_analyst_coverage_features,
     engineer_market_sentiment_features,
     engineer_price_target_dynamics,
 )
@@ -108,13 +109,13 @@ FEATURE_REGISTRY = {
     "valuation_timeseries": {
         "function": engineer_valuation_timeseries_features,
         "category": "Valuation Timeseries",
-        "feature_count": 16,
+        "feature_count": 22,
     },
     # Profitability
     "profitability": {
         "function": engineer_profitability_ratios,
         "category": "Profitability",
-        "feature_count": 12,
+        "feature_count": 17,
     },
     "margin_trends": {
         "function": engineer_margin_trends,
@@ -125,12 +126,12 @@ FEATURE_REGISTRY = {
     "momentum": {
         "function": engineer_momentum_features,
         "category": "Momentum & Technical",
-        "feature_count": 15,
+        "feature_count": 23,
     },
     "technical_analysis": {
         "function": engineer_technical_analysis_features,
         "category": "Technical Analysis",
-        "feature_count": 15,
+        "feature_count": 18,
     },
     "market_microstructure": {
         "function": engineer_market_microstructure_features,
@@ -141,7 +142,7 @@ FEATURE_REGISTRY = {
     "accounting_quality": {
         "function": engineer_accounting_quality_features,
         "category": "Quality & Risk",
-        "feature_count": 12,
+        "feature_count": 18,
     },
     "financial_distress": {
         "function": engineer_financial_distress_features,
@@ -182,7 +183,7 @@ FEATURE_REGISTRY = {
     "eps_trajectory": {
         "function": engineer_eps_trajectory_features,
         "category": "Earnings Quality",
-        "feature_count": 10,
+        "feature_count": 14,
     },
     # Leverage & Liquidity
     "leverage": {
@@ -203,13 +204,13 @@ FEATURE_REGISTRY = {
     "balance_sheet_trends": {
         "function": engineer_balance_sheet_trends,
         "category": "Balance Sheet Dynamics",
-        "feature_count": 9,
+        "feature_count": 13,
     },
     # Sentiment
     "analyst_quality": {
         "function": engineer_analyst_quality_features,
         "category": "Analyst Sentiment",
-        "feature_count": 10,
+        "feature_count": 16,
     },
     "market_sentiment": {
         "function": engineer_market_sentiment_features,
@@ -219,13 +220,18 @@ FEATURE_REGISTRY = {
     "price_target_dynamics": {
         "function": engineer_price_target_dynamics,
         "category": "Analyst Sentiment",
-        "feature_count": 15,
+        "feature_count": 35,
+    },
+    "analyst_coverage": {
+        "function": engineer_analyst_coverage_features,
+        "category": "Analyst Sentiment",
+        "feature_count": 12,
     },
     # Employment
     "employee_productivity": {
         "function": engineer_employee_productivity_features,
         "category": "Employee Productivity",
-        "feature_count": 21,
+        "feature_count": 26,
     },
     "employment_dynamics": {
         "function": engineer_employment_dynamics_features,
@@ -236,7 +242,7 @@ FEATURE_REGISTRY = {
     "growth_metrics": {
         "function": engineer_growth_metrics,
         "category": "Growth Metrics",
-        "feature_count": 6,
+        "feature_count": 10,
     },
     # Temporal
     "temporal": {
@@ -258,13 +264,13 @@ FEATURE_REGISTRY = {
     "dividend_reliability": {
         "function": engineer_dividend_reliability_features,
         "category": "Dividend Reliability",
-        "feature_count": 12,
+        "feature_count": 18,
     },
     # Revenue Forecasting
     "revenue_forecast": {
         "function": engineer_revenue_forecast_features,
         "category": "Revenue Forecasting",
-        "feature_count": 9,
+        "feature_count": 15,
     },
     # Missing Coverage (Phase 9.3 Gap Fill)
     "missing_coverage": {
@@ -322,6 +328,7 @@ __all__ = [
     "engineer_cashflow_temporal_features",
     # Sentiment
     "engineer_analyst_quality_features",
+    "engineer_analyst_coverage_features",
     "engineer_market_sentiment_features",
     "engineer_price_target_dynamics",
     # Employment

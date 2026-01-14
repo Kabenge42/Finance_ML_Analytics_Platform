@@ -115,6 +115,48 @@ def engineer_profitability_ratios(df: pd.DataFrame) -> pd.DataFrame:
     if "total_assets" in df.columns and "total_equity" in df.columns:
         result["equity_multiplier"] = _safe_div(df["total_assets"], df["total_equity"])
 
+    # --- Profitability Stability ---
+    # EBITDA stability vs 5Y average
+    if "ebitda_ltm" in df.columns and "ebitda_5yavgltm" in df.columns:
+        result["ebitda_vs_5y_avg"] = _safe_div(df["ebitda_ltm"], df["ebitda_5yavgltm"])
+        result["ebitda_stability_score"] = 1 - _safe_div(
+            (df["ebitda_ltm"] - df["ebitda_5yavgltm"]).abs(),
+            df["ebitda_5yavgltm"].abs(),
+        ).clip(0, 1)
+
+    # EBIT consistency
+    if "ebit_ltm" in df.columns and "ebit_5yavgltm" in df.columns:
+        result["ebit_vs_5y_avg"] = _safe_div(df["ebit_ltm"], df["ebit_5yavgltm"])
+
+    # Operating leverage trend (operating income growth vs revenue growth)
+    if all(
+        c in df.columns
+        for c in [
+            "operating_income_ltm",
+            "operating_income_fy",
+            "total_revenues_ltm",
+            "total_revenues_fy",
+        ]
+    ):
+        oi_growth = _safe_div(
+            df["operating_income_ltm"] - df["operating_income_fy"],
+            df["operating_income_fy"].abs(),
+        )
+        rev_growth = _safe_div(
+            df["total_revenues_ltm"] - df["total_revenues_fy"],
+            df["total_revenues_fy"].abs(),
+        )
+        result["operating_leverage_ratio"] = _safe_div(oi_growth, rev_growth)
+
+    # Gross margin FY vs LTM consistency
+    if (
+        "gross_profit_margin_pct_fy" in df.columns
+        and "gross_profit_margin_pct_ltm" in df.columns
+    ):
+        result["gross_margin_consistency"] = (
+            df["gross_profit_margin_pct_ltm"] - df["gross_profit_margin_pct_fy"]
+        )
+
     logger.info("Engineered profitability ratios")
     return result
 

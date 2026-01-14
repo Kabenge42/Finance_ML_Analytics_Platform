@@ -17,7 +17,7 @@ from finance_ml.dashboards.widgets import (
     create_earnings_metrics_chart,
     create_earnings_surprise_dashboard,
     create_market_movers_dashboard,
-    create_price_target_analytics,
+    create_price_target_scorecard,
 )
 from finance_ml.etl.config import (
     ETLConfig,
@@ -441,13 +441,13 @@ def generate_dashboard_artifacts(
             output_path=output_dir / artifacts["market_movers"]["file"],
         )
 
-        artifacts["price_target_analytics"] = {
-            "file": "price_target_analytics.html",
-            "title": "Price Target Analytics",
+        artifacts["price_target_scorecard"] = {
+            "file": "price_target_scorecard.csv",
+            "title": "Price Target Scorecard",
             "section": "analytics",
         }
-        create_price_target_analytics(
-            df, output_path=output_dir / artifacts["price_target_analytics"]["file"]
+        create_price_target_scorecard(
+            df, output_path=output_dir / artifacts["price_target_scorecard"]["file"]
         )
 
         # Generate Phase 9.3 category charts

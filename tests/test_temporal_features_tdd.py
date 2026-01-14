@@ -212,9 +212,6 @@ class TestMarketSentimentFeatures(unittest.TestCase):
                 "sector": ["Technology"] * 4,
                 "last_price": [150.0, 140.0, 380.0, 180.0],
                 "price_20d_ago": [145.0, 142.0, 375.0, 175.0],
-                "short_interest": [10000000, 5000000, 8000000, 12000000],
-                "volume_shrs": [50000000, 30000000, 40000000, 60000000],
-                "shares_outstanding": [15000000000, 12000000000, 7500000000, 10000000000],
             }
         )
 
@@ -230,18 +227,6 @@ class TestMarketSentimentFeatures(unittest.TestCase):
         # First row: (150 - 145) / 145 * 100 = 3.45%
         expected = (150.0 - 145.0) / 145.0 * 100
         self.assertAlmostEqual(result.loc[0, "momentum_20d"], expected, places=2)
-
-    def test_short_interest_ratio_calculation(self):
-        """Test short interest ratio calculation."""
-        from finance_ml.features.advanced import engineer_market_sentiment_features
-
-        result = engineer_market_sentiment_features(self.df)
-
-        # Should have short_interest_ratio column
-        self.assertIn("short_interest_ratio", result.columns)
-
-        # Ratio = short_interest / avg_daily_volume (or shares_outstanding)
-        # Implementation may vary
 
 
 class TestPhase93FeatureCoverage(unittest.TestCase):

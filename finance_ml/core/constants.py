@@ -60,12 +60,12 @@ CV_FOLDS = 5
 # Model Configuration
 QUANTILES = [0.1, 0.5, 0.9]
 RANDOM_SEED = 42
-MODEL_VERSION = "v9_10"
+MODEL_VERSION = "v9_11"
 
 # Preprocessing Constraints
 MIN_SECTOR_SAMPLES = 20
-WINSORIZE_LOWER = 0.01
-WINSORIZE_UPPER = 0.99
+WINSORIZE_LOWER = 0.05
+WINSORIZE_UPPER = 0.95
 
 # Sector/portfolio constraints
 MAX_SECTOR_WEIGHT = 0.25

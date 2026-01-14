@@ -140,10 +140,31 @@ def engineer_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
     if "beta_1y" in df.columns and "beta_5y" in df.columns:
         result["beta_momentum"] = df["beta_1y"].astype(float) - df["beta_5y"].astype(float)
 
-    # Volatility Term Structure (1M / 1Y)
+    # 4. Momentum & Volatility Enhancements
+    # 5-day momentum (very short-term)
+    if "last_price" in df.columns and "price_5d_ago" in df.columns:
+        result["price_momentum_5d"] = (
+            _safe_div(df["last_price"] - df["price_5d_ago"], df["price_5d_ago"]) * 100
+        )
+
+    # Volatility regime (current vs long-term)
     if "volatility_1m" in df.columns and "volatility_1y" in df.columns:
-        result["volatility_term_structure"] = _safe_div(
-            df["volatility_1m"].astype(float), df["volatility_1y"].astype(float)
+        result["volatility_regime"] = _safe_div(
+            df["volatility_1m"], df["volatility_1y"]
+        )
+        result["volatility_compression"] = df["volatility_1y"] - df["volatility_1m"]
+
+    # Volatility term structure (3M vs 6M)
+    if "volatility_3m" in df.columns and "volatility_6m" in df.columns:
+        result["volatility_term_structure"] = df["volatility_3m"] - df["volatility_6m"]
+
+    # Long-term CAGR comparison
+    if (
+        "tot_return_pct_cagr_3y" in df.columns
+        and "tot_return_pct_cagr_10y" in df.columns
+    ):
+        result["return_acceleration"] = (
+            df["tot_return_pct_cagr_3y"] - df["tot_return_pct_cagr_10y"]
         )
 
     logger.info("Engineered momentum & technical features")
@@ -248,6 +269,17 @@ def engineer_technical_analysis_features(df: pd.DataFrame) -> pd.DataFrame:
             .fillna(False)
             .astype(int)
         )
+
+    # EMA 100D position
+    if "last_price" in df.columns and "ema_100d" in df.columns:
+        result["price_vs_ema_100d"] = (
+            _safe_div(df["last_price"] - df["ema_100d"], df["ema_100d"]) * 100
+        )
+
+    # Relative volume signal
+    if "rel_volume" in df.columns:
+        result["high_volume_flag"] = (df["rel_volume"] > 1.5).astype(int)
+        result["low_volume_flag"] = (df["rel_volume"] < 0.5).astype(int)
 
     logger.info("Engineered technical analysis features (Phase 9.3 Schema 1.3)")
     return result

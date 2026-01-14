@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
 import pandas as pd
 
 from .utils import _safe_div
@@ -75,6 +76,56 @@ def engineer_dividend_reliability_features(df: pd.DataFrame) -> pd.DataFrame:
         result["dividend_growth_expectation"] = pd.to_numeric(
             df["div_yield_ntm"], errors="coerce"
         ) - pd.to_numeric(df["div_yield_ltm"], errors="coerce")
+
+    # --- Extended Dividend Yield History ---
+    # Dividend yield history columns
+    DIV_YIELD_HISTORY = [
+        "div_yield_ind",
+        "div_yield_1fyind",
+        "div_yield_2fyind",
+        "div_yield_3fyind",
+        "div_yield_4fyind",
+        "div_yield_5fyind",
+    ]
+
+    if all(c in df.columns for c in DIV_YIELD_HISTORY[:3]):
+        # Yield stability (std over last 3 years)
+        yield_mat = df[DIV_YIELD_HISTORY[:3]].astype(float)
+        result["dividend_yield_volatility"] = yield_mat.std(axis=1, ddof=0)
+
+        # Yield trend (increasing/decreasing)
+        result["dividend_yield_trend"] = (
+            df["div_yield_ind"] - df["div_yield_2fyind"]
+        ) / 2  # Annualized change
+
+    # Dividend yield vs 5Y average
+    if "div_yield_ltm" in df.columns and "div_yield_5yavgltm" in df.columns:
+        result["dividend_yield_vs_5y_avg"] = _safe_div(
+            df["div_yield_ltm"], df["div_yield_5yavgltm"]
+        )
+
+    # Payout growth (dividends paid trend)
+    if (
+        "common_dividends_paid_ltm" in df.columns
+        and "common_dividends_paid_fy" in df.columns
+    ):
+        result["dividend_payout_growth"] = _safe_div(
+            df["common_dividends_paid_ltm"] - df["common_dividends_paid_fy"],
+            df["common_dividends_paid_fy"].abs(),
+        )
+
+    # Full 5Y yield trajectory
+    if all(c in df.columns for c in DIV_YIELD_HISTORY):
+        yield_series = df[DIV_YIELD_HISTORY].astype(float)
+        # Count years with positive yield
+        result["dividend_consistency_years"] = (yield_series > 0).sum(axis=1)
+        # 5Y CAGR if start and end positive
+        mask = (df["div_yield_ind"] > 0) & (df["div_yield_5fyind"] > 0)
+        result["dividend_yield_cagr_5y"] = np.where(
+            mask,
+            (np.power(df["div_yield_ind"] / df["div_yield_5fyind"], 1 / 5) - 1) * 100,
+            np.nan,
+        )
 
     logger.info("Engineered dividend reliability features")
     return result

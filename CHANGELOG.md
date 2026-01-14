@@ -5,22 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.22.0] - 2026-01-11
+## [1.22.0] - 2026-01-12
 
 ### Added
 
-- Phase 9.3 v1.14 feature engineering enhancements aligned to the canonical schema (total 350 features).
+- Phase 9.3 v1.14 feature engineering enhancements aligned to the canonical schema (total 350
+  features) ([437fcd3](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/437fcd3111302b0de9479f17eb9756c5619082ab)).
   - New generators: `engineer_price_target_dynamics`, `engineer_fiscal_calendar_features`,
     `engineer_dividend_timing_features`, `engineer_eps_trajectory_features`, and `engineer_cashflow_temporal_features`.
   - COLUMN_SCHEMA expanded with 54 temporal, sentiment, earnings, and cash flow features plus category updates.
   - FEATURE_REGISTRY and `__all__` exports updated for auto-discovery and tooling compatibility.
-  - PHASE93 feature categories refreshed with revised counts (Analyst Sentiment 25, Cash Flow 17, Temporal 26,
-    Earnings Quality 43, Dividend Reliability 20).
+  - PHASE93 feature categories refreshed with revised counts (Analyst Sentiment 25, Cash Flow 17, Temporal 26, Earnings
+    Quality 43, Dividend Reliability 20).
+- Currency conversion stage added to ETL pipeline with support for
+  `CurrencyConversionConfig` ([e25c5ff](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/e25c5ff8135c16f89db5ee3f72635b5e3facd271)).
+- Missing feature generators implemented in
+  `finance_ml/features/advanced/` ([f99ec99](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/f99ec992502fc28c92cbe0d1187d96add95e3433)).
+
+### Changed
+
+- Refactored `etl_data_explorer.ipynb` to align column references with the canonical schema via centralized helper
+  module ([f99ec99](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/f99ec992502fc28c92cbe0d1187d96add95e3433)).
+- Comprehensive schema alignment updates to `schema.py`, `import_equities_data.sql`, and
+  `earnings.py` ([0503e02](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0503e028e6b78f114261c03970665062e3b8c2f0), [54c56d0](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/54c56d084bcc4755cffeb4a5fd68d63fcccb6b26)).
+- Revised `code_guidelines.md` and refactored
+  `equities_dashboard_app.py` ([f99ec99](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/f99ec992502fc28c92cbe0d1187d96add95e3433), [0503e02](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0503e028e6b78f114261c03970665062e3b8c2f0)).
 
 ### Testing
 
-- Added TDD suite `tests/test_feature_enhancements_v114.py` covering schema alignment, registry integration,
-  and core computations for new generators.
+- Added TDD suite `tests/test_feature_enhancements_v114.py` covering schema alignment and registry integration for Phase
+  9.3 ([437fcd3](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/437fcd3111302b0de9479f17eb9756c5619082ab)).
 
 ## [1.21.0] - 2025-12-30
 

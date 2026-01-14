@@ -41,6 +41,7 @@ from .revenue import engineer_revenue_forecast_features
 from .sector import engineer_sector_specific_features, create_relative_value_features
 from .sentiment import (
     engineer_analyst_quality_features,
+    engineer_analyst_coverage_features,
     engineer_market_sentiment_features,
     engineer_price_target_dynamics,
 )
@@ -89,6 +90,7 @@ def build_comprehensive_features(
     result = engineer_momentum_features(result)
     result = engineer_sector_specific_features(result, sector_col=sector_col)
     result = engineer_analyst_quality_features(result)
+    result = engineer_analyst_coverage_features(result)
     result = engineer_price_target_dynamics(result)
     result = engineer_market_sentiment_features(result)
     result = engineer_market_microstructure_features(result)

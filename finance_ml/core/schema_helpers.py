@@ -3,10 +3,13 @@
 Provides convenient wrappers around COLUMN_SCHEMA and PHASE93_FEATURE_CATEGORIES.
 """
 
+import pandas as pd
+
 from finance_ml.core.schema import (
     COLUMN_SCHEMA,
     PHASE93_FEATURE_CATEGORIES,
     list_required_schema_columns_for_etl,
+    normalize_column_name,
 )
 
 
@@ -191,3 +194,110 @@ def validate_columns_against_schema(df_columns: list[str]) -> dict:
         "alignment_score": alignment_score,
         "missing_required": list(required - df_cols)[:10],  # First 10
     }
+
+
+def validate_phase93_coverage(
+    df: pd.DataFrame,
+    min_coverage_pct: float = 90.0,
+    verbose: bool = True,
+) -> dict:
+    """Validate Phase 9.3 feature coverage against schema definition.
+
+    Args:
+        df: DataFrame to validate
+        min_coverage_pct: Minimum coverage percentage required
+        verbose: Print detailed report
+
+    Returns:
+        Dict with coverage stats and missing features by category
+    """
+    results = {
+        "total_defined": 0,
+        "total_present": 0,
+        "coverage_pct": 0.0,
+        "by_category": {},
+        "missing_features": [],
+        "passed": False,
+    }
+
+    for category, features in PHASE93_FEATURE_CATEGORIES.items():
+        present = [f for f in features if f in df.columns]
+        missing = [f for f in features if f not in df.columns]
+
+        results["by_category"][category] = {
+            "defined": len(features),
+            "present": len(present),
+            "coverage_pct": len(present) / len(features) * 100 if features else 0,
+            "missing": missing,
+        }
+        results["total_defined"] += len(features)
+        results["total_present"] += len(present)
+        results["missing_features"].extend(missing)
+
+    results["coverage_pct"] = (
+        results["total_present"] / results["total_defined"] * 100
+        if results["total_defined"] > 0
+        else 0
+    )
+    results["passed"] = results["coverage_pct"] >= min_coverage_pct
+
+    if verbose:
+        print(f"\n{'=' * 60}")
+        print("PHASE 9.3 FEATURE COVERAGE VALIDATION")
+        print(f"{'=' * 60}")
+        print(
+            f"Total Coverage: {results['coverage_pct']:.1f}% "
+            f"({results['total_present']}/{results['total_defined']})"
+        )
+        print(f"Status: {'✓ PASSED' if results['passed'] else '✗ FAILED'}")
+
+        if not results["passed"]:
+            print(f"\n⚠️ Categories below threshold:")
+            for cat, stats in results["by_category"].items():
+                if stats["coverage_pct"] < min_coverage_pct:
+                    missing_preview = ", ".join(stats["missing"][:3])
+                    if len(stats["missing"]) > 3:
+                        missing_preview += "..."
+                    print(
+                        f"  - {cat}: {stats['coverage_pct']:.1f}% "
+                        f"(missing: {missing_preview})"
+                    )
+
+    return results
+
+
+def get_schema_role_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Generate a summary of column roles based on COLUMN_SCHEMA.
+
+    Useful for ETL debugging and schema alignment verification.
+
+    Args:
+        df: DataFrame to analyze
+
+    Returns:
+        Summary DataFrame with role counts and coverage
+    """
+    role_stats = {}
+
+    for col in df.columns:
+        normalized = normalize_column_name(col)
+        meta = COLUMN_SCHEMA.get(normalized, {})
+        role = meta.get("role", "unknown")
+
+        if role not in role_stats:
+            role_stats[role] = {"count": 0, "columns": []}
+        role_stats[role]["count"] += 1
+        role_stats[role]["columns"].append(col)
+
+    summary = pd.DataFrame(
+        [
+            {
+                "role": role,
+                "count": stats["count"],
+                "sample_columns": ", ".join(stats["columns"][:3]),
+            }
+            for role, stats in sorted(role_stats.items(), key=lambda x: -x[1]["count"])
+        ]
+    )
+
+    return summary

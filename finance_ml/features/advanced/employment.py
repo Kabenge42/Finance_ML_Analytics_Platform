@@ -133,6 +133,53 @@ def engineer_employee_productivity_features(df: pd.DataFrame) -> pd.DataFrame:
         yoy_changes = fte_matrix.pct_change(axis=1).iloc[:, 1:]
         result["workforce_volatility_pct"] = yoy_changes.std(axis=1) * 100
 
+    # --- Workforce Dynamics (FTE Trajectory) ---
+    # 3-year FTE CAGR
+    FTE_COLS = [
+        "full_time_employees_fy",
+        "full_time_employees_1fy",
+        "full_time_employees_2fy",
+        "full_time_employees_3fy",
+    ]
+
+    if all(c in df.columns for c in FTE_COLS[:2]):
+        # 1-year growth
+        result["fte_growth_1y_pct"] = (
+            _safe_div(
+                df["full_time_employees_fy"] - df["full_time_employees_1fy"],
+                df["full_time_employees_1fy"],
+            )
+            * 100
+        )
+
+    if all(c in df.columns for c in [FTE_COLS[0], FTE_COLS[2]]):
+        # 2-year growth
+        result["fte_growth_2y_pct"] = (
+            _safe_div(
+                df["full_time_employees_fy"] - df["full_time_employees_2fy"],
+                df["full_time_employees_2fy"],
+            )
+            * 100
+        )
+
+    if all(c in df.columns for c in [FTE_COLS[0], FTE_COLS[3]]):
+        # 3-year CAGR
+        years = 3
+        ratio = _safe_div(df["full_time_employees_fy"], df["full_time_employees_3fy"])
+        result["fte_cagr_3y_pct"] = (
+            np.power(ratio.clip(lower=0.001).astype(float), 1 / years) - 1
+        ) * 100
+
+    # Workforce vs 5Y average (stability indicator)
+    if "full_time_employees_fy" in df.columns and "avg_employees_5yavgfy" in df.columns:
+        result["fte_vs_5y_avg"] = _safe_div(
+            df["full_time_employees_fy"], df["avg_employees_5yavgfy"]
+        )
+        result["workforce_stability_score"] = 1 - _safe_div(
+            (df["full_time_employees_fy"] - df["avg_employees_5yavgfy"]).abs(),
+            df["avg_employees_5yavgfy"],
+        ).clip(0, 1)
+
     logger.info("Engineered employee productivity features")
     return result
 

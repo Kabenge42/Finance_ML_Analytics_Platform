@@ -20,7 +20,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union, TypedDict
+from typing import Dict, List, Optional, Union, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -45,16 +45,13 @@ from .base import (
 
 logger = logging.getLogger(__name__)
 
+
 # =============================================================================
 # Category Metrics Resolution
 # =============================================================================
 class CategoryMetricsResolver:
-    """Resolves category names to metrics from PHASE93_FEATURE_CATEGORIES.
+    """Resolves category names to metrics from PHASE93_FEATURE_CATEGORIES."""
 
-    Handles short name aliases and supplemental domain-specific metrics.
-    """
-
-    # Short name aliases mapping to PHASE93_FEATURE_CATEGORIES keys
     _SHORT_NAME_ALIASES: Dict[str, str] = {
         "profitability": "Profitability",
         "valuation": "Valuation Ratios",
@@ -75,125 +72,28 @@ class CategoryMetricsResolver:
         "forecasts": "Revenue Forecasting",
         "earnings_quality": "Earnings Quality",
         "dividends": "Dividend Reliability",
+        # NEW: Add missing aliases for v1.15 categories
+        "technical": "Technical Analysis",
+        "valuation_ts": "Valuation Timeseries",
+        "employment": "Employment Dynamics",
     }
 
-    # Supplemental metrics by domain
-    _SUPPLEMENTAL_EARNINGS: List[str] = [
-        "net_income_adj_1fy",
-        "ebitda_adj_fy",
-        "ebitda_adj_1fy",
-        "ebit_adj_1fy",
-        "ebit_adj_fy",
-        "net_income_adj_fy",
-        "net_income_adj_fq",
-        "net_income_adj_5yavgfq",
-        "eps_adj_1fy",
-        "eps_adj_fy",
-        "eps_adj_ltm",
-    ]
-
-    _SUPPLEMENTAL_DIVIDENDS: List[str] = [
-        "dividend_record_announce_date",
-        "dividend_record_ex_date",
-        "dividend_record_payable_date",
-        "dividend_record_record_date",
-        "dividend_record_frequency",
-        "dividend_record_currency",
-        "div_yield_ltm",
-        "div_yield_ntm",
-        "div_yield_ind",
-        "div_yield_1fyind",
-        "div_yield_5yavgltm",
-        "dividend_per_share",
-        "common_dividends_paid_fy",
-        "dividends_paid",
-        "dividends_paid_ltm",
-    ]
-
-    _SUPPLEMENTAL_EARNINGS_QUALITY: List[str] = [
-        "eps_surprise_pct",
-        "earnings_beat_indicator",
-        "eps_surprise_magnitude",
-        "revenue_surprise_pct",
-        "revenue_beat_indicator",
-        "ebitda_surprise_pct",
-        "surprise_momentum_score",
-        "positive_revision_momentum",
-        "consensus_uncertainty_score",
-        "estimate_revision_acceleration",
-        "accelerating_upgrades_flag",
-        "eps_adjustment_ratio_ltm",
-        "eps_adjustment_pct_ltm",
-        "eps_quality_flag_ltm",
-        "net_income_adjustment_ratio_ltm",
-        "ebitda_adjustment_pct_ltm",
-        "adjustment_consistency_score",
-        "earnings_quality_warning_flag",
-        "earnings_quality_score",
-        "exceptional_items_impact_ratio",
-        # NEW v1.14 EPS Trajectory Features
-        "eps_quarterly_trend",
-        "eps_quarterly_volatility",
-        "eps_yoy_quarterly_growth",
-        "eps_qoq_growth",
-        "eps_positive_streak",
-        "eps_cagr_5y",
-        "eps_cagr_3y",
-        "eps_annual_trend",
-        "eps_vs_5y_avg",
-        "eps_growth_acceleration",
-    ]
-
-    _SUPPLEMENTAL_ANALYST: List[str] = [
-        "pt_momentum_1w",
-        "pt_momentum_1m",
-        "pt_momentum_3m",
-        "pt_momentum_6m",
-        "pt_momentum_1y",
-        "pt_acceleration_short",
-        "pt_acceleration_long",
-        "pt_consensus_convergence",
-        "analyst_coverage_change_1m",
-        "analyst_coverage_change_3m",
-        "pt_vs_price_momentum",
-        "pt_qtd_momentum",
-        "pt_ytd_momentum",
-        "pt_skew_trend",
-        "pt_high_low_spread_trend",
-    ]
-
-    _SUPPLEMENTAL_TEMPORAL: List[str] = [
-        "fiscal_year_progress",
-        "days_to_quarter_end",
-        "fiscal_half",
-        "reporting_lag_zscore",
-        "late_reporter_flag",
-        "days_since_fy_end",
-        "days_to_next_fy_end",
-        "earnings_imminent",
-        "pre_earnings_window",
-    ]
-
-    _SUPPLEMENTAL_CASH_FLOW: List[str] = [
-        "fcf_to_cfo_ratio",
-        "cfo_stability_score",
-        "fcf_stability_score",
-        "capex_to_revenue_trend",
-        "fcf_yield_momentum",
-        "cash_conversion_efficiency",
-        "operating_cash_flow_growth",
-        "fcf_cagr_3y",
-        "acquisition_intensity",
-        "dividend_cash_flow_coverage",
-        "cash_burn_rate",
-        "net_cash_flow_trend",
-    ]
-
-    # Categories that receive earnings supplemental metrics
-    _EARNINGS_CATEGORIES: Set[str] = {"Profitability", "Growth Metrics"}
-
-    # Categories for dividend supplemental metrics (first match wins)
-    _DIVIDEND_CATEGORIES: List[str] = ["Dividend Reliability", "Capital Allocation"]
+    # Cross-category feature supplements (features that span multiple domains)
+    _CROSS_CATEGORY_SUPPLEMENTS: Dict[str, List[str]] = {
+        "Profitability": [
+            "ebitda_vs_5y_avg",
+            "ebitda_stability_score",
+            "ebit_vs_5y_avg",
+            "operating_leverage_ratio",
+            "gross_margin_consistency",
+        ],
+        "Earnings Quality": [
+            "normalized_vs_gaap_spread",
+            "normalized_vs_gaap_ratio",
+            "forward_eps_gaap_adjusted_spread",
+            "earnings_stability_score",
+        ],
+    }
 
     @classmethod
     def resolve_name(cls, category: str) -> str:
@@ -208,12 +108,9 @@ class CategoryMetricsResolver:
     ) -> Dict[str, List[str]]:
         """Get metrics from specified PHASE93_FEATURE_CATEGORIES categories.
 
-        **ETL Pipeline Note:** Some metrics may have companion `*_applicable` flags
-        emitted by the ETL pipeline (Stage 8g conditional metrics handling).
-
         Args:
             categories: List of category names or short aliases.
-            include_supplemental: Whether to include domain-specific metrics.
+            include_supplemental: Whether to include cross-category supplements.
 
         Returns:
             Dict mapping category name to list of metric column names.
@@ -222,44 +119,20 @@ class CategoryMetricsResolver:
 
         for cat in categories:
             full_cat = cls.resolve_name(cat)
+            # Pull directly from schema - single source of truth
             metrics = PHASE93_FEATURE_CATEGORIES.get(full_cat, []).copy()
             result[full_cat] = metrics
 
         if include_supplemental:
-            cls._add_supplemental_metrics(result)
+            # Add cross-category supplements for features not yet in schema or needed across domains
+            for category, supplements in cls._CROSS_CATEGORY_SUPPLEMENTS.items():
+                if category in result:
+                    existing = set(result[category])
+                    result[category].extend(
+                        [s for s in supplements if s not in existing]
+                    )
 
         return result
-
-    @classmethod
-    def _add_supplemental_metrics(cls, result: Dict[str, List[str]]) -> None:
-        """Add supplemental domain-specific metrics to category results in-place."""
-        result_keys = set(result.keys())
-
-        # Add earnings metrics to applicable categories
-        for category in cls._EARNINGS_CATEGORIES & result_keys:
-            result[category].extend(cls._SUPPLEMENTAL_EARNINGS)
-
-        # Add dividend metrics to first matching category
-        for category in cls._DIVIDEND_CATEGORIES:
-            if category in result_keys:
-                result[category].extend(cls._SUPPLEMENTAL_DIVIDENDS)
-                break
-
-        # Add earnings quality metrics
-        if "Earnings Quality" in result_keys:
-            result["Earnings Quality"].extend(cls._SUPPLEMENTAL_EARNINGS_QUALITY)
-
-        # Add analyst sentiment metrics
-        if "Analyst Sentiment" in result_keys:
-            result["Analyst Sentiment"].extend(cls._SUPPLEMENTAL_ANALYST)
-
-        # Add temporal patterns metrics
-        if "Temporal Patterns" in result_keys:
-            result["Temporal Patterns"].extend(cls._SUPPLEMENTAL_TEMPORAL)
-
-        # Add cash flow metrics
-        if "Cash Flow" in result_keys:
-            result["Cash Flow"].extend(cls._SUPPLEMENTAL_CASH_FLOW)
 
 
 # Public API functions (maintain backward compatibility)
@@ -457,10 +330,16 @@ def create_earnings_calendar_dashboard(
         selected_categories = [mode]
     else:
         # Default to earnings mode
-        selected_categories = ["Profitability", "Growth Metrics", "Momentum & Technical"]
+        selected_categories = [
+            "Profitability",
+            "Growth Metrics",
+            "Momentum & Technical",
+        ]
 
     # Get metrics from selected categories
-    category_metrics = get_category_metrics(selected_categories, include_supplemental=True)
+    category_metrics = get_category_metrics(
+        selected_categories, include_supplemental=True
+    )
 
     # Build final columns list
     final_cols = display_cols.copy()
@@ -482,7 +361,8 @@ def create_earnings_calendar_dashboard(
     date_col_for_days = anchor_date_col or "next_earnings"
     if date_col_for_days in dashboard_df.columns:
         dashboard_df["days_to_earnings"] = (
-            pd.to_datetime(dashboard_df[date_col_for_days], errors="coerce") - reference_date
+            pd.to_datetime(dashboard_df[date_col_for_days], errors="coerce")
+            - reference_date
         ).dt.days
 
         # Reorder: Put days_to_earnings near the anchor date column
@@ -778,13 +658,39 @@ _GAAP_ADJUSTED_PAIRS: List[tuple[str, str]] = [
 ]
 
 # Earnings surprise column pairs: (actual_column, estimate_column)
-_EARNINGS_SURPRISE_PAIRS: Dict[str, tuple[str, str]] = {
-    "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
-    "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
-    "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
-    "Net Income": ("net_income_is_ltm", "net_income_adj_1fy"),
-    "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
-}
+# =============================================================================
+# SURPRISE PAIRS & ANALYTICS HELPER
+# =============================================================================
+
+
+def _get_earnings_surprise_pairs() -> Dict[str, tuple[str, str]]:
+    """Build earnings surprise column pairs from COLUMN_SCHEMA.
+
+    Returns actual/estimate column pairs for surprise calculation,
+    validated against schema definitions.
+    """
+    # Define pairs with schema-validated column names
+    pairs = {
+        "Revenue": ("total_revenues_ltm", "revenues_est_avg_ntm"),
+        "EBITDA": ("ebitda_ltm", "ebitda_est_avg_fy1e"),
+        "EBIT": ("ebit_ltm", "ebit_est_med_ntm"),
+        "Net Income": ("net_income_is_ltm", "net_income_adj_1fy"),
+        "EPS": ("eps_adj_ltm", "eps_norm_est_avg_ntm"),
+    }
+
+    # Validate all columns exist in schema
+    validated_pairs = {}
+    for metric, (actual, estimate) in pairs.items():
+        if actual in COLUMN_SCHEMA and estimate in COLUMN_SCHEMA:
+            validated_pairs[metric] = (actual, estimate)
+        else:
+            logger.debug(f"Surprise pair for {metric} not fully in schema")
+
+    return validated_pairs
+
+
+# Use at module level
+_EARNINGS_SURPRISE_PAIRS = _get_earnings_surprise_pairs()
 
 
 # =============================================================================
@@ -871,7 +777,9 @@ def _color_days_to_earnings(val) -> str:
         if val_float < 0:
             return f"color: {COLOR_PALETTE['danger']}"  # Past
         if val_float == 0:
-            return f"background-color: {COLOR_PALETTE['warning']}; color: black"  # Today
+            return (
+                f"background-color: {COLOR_PALETTE['warning']}; color: black"  # Today
+            )
         if val_float > 0:
             return f"color: {COLOR_PALETTE['success']}"  # Future
     except (ValueError, TypeError):
@@ -1075,9 +983,9 @@ def analyze_earnings_quality(df: pd.DataFrame) -> pd.DataFrame:
 
     adj_cols = [c for c in earnings_quality.columns if "adj_magnitude" in c]
     if adj_cols:
-        earnings_quality["earnings_quality_score"] = 100 - earnings_quality[adj_cols].abs().mean(
-            axis=1
-        ).clip(0, 100)
+        earnings_quality["earnings_quality_score"] = 100 - earnings_quality[
+            adj_cols
+        ].abs().mean(axis=1).clip(0, 100)
 
     return earnings_quality
 
@@ -1121,8 +1029,14 @@ def create_earnings_metrics_chart(
         df,
         reference_date=reference_date,
         top_n=top_n,
-        mode=metric_category if metric_category in PHASE93_FEATURE_CATEGORIES else "earnings",
-        categories=[metric_category] if metric_category in PHASE93_FEATURE_CATEGORIES else None,
+        mode=(
+            metric_category
+            if metric_category in PHASE93_FEATURE_CATEGORIES
+            else "earnings"
+        ),
+        categories=(
+            [metric_category] if metric_category in PHASE93_FEATURE_CATEGORIES else None
+        ),
     )
 
     if dashboard_df.empty:
@@ -1149,7 +1063,9 @@ def create_earnings_metrics_chart(
         # Fallback to any numeric columns
         numeric_cols = dashboard_df.select_dtypes(include=["float64", "int64"]).columns
         available_metrics = [
-            c for c in numeric_cols if c not in ["days_to_earnings"] and "date" not in c.lower()
+            c
+            for c in numeric_cols
+            if c not in ["days_to_earnings"] and "date" not in c.lower()
         ][:5]
 
     if not available_metrics:
@@ -1194,7 +1110,8 @@ def create_earnings_metrics_chart(
 
         # Determine color based on value sign
         colors = [
-            COLOR_PALETTE["success"] if v >= 0 else COLOR_PALETTE["danger"] for v in plot_df[metric]
+            COLOR_PALETTE["success"] if v >= 0 else COLOR_PALETTE["danger"]
+            for v in plot_df[metric]
         ]
 
         fig.add_trace(
@@ -1205,7 +1122,10 @@ def create_earnings_metrics_chart(
                 marker_color=colors,
                 name=metric.replace("_", " ").title(),
                 hovertemplate=(
-                    "<b>%{y}</b><br>" + f"{metric}: " + "%{x:.2f}<br>" + "<extra></extra>"
+                    "<b>%{y}</b><br>"
+                    + f"{metric}: "
+                    + "%{x:.2f}<br>"
+                    + "<extra></extra>"
                 ),
             ),
             row=row,
@@ -1374,7 +1294,8 @@ def create_earnings_surprise_dashboard(
 
             with np.errstate(divide="ignore", invalid="ignore"):
                 surprise_pct = (
-                    (actual[valid_mask] - estimate[valid_mask]) / estimate[valid_mask].abs()
+                    (actual[valid_mask] - estimate[valid_mask])
+                    / estimate[valid_mask].abs()
                 ) * 100
             surprise_pct = surprise_pct.replace([np.inf, -np.inf], np.nan).dropna()
 
@@ -1513,7 +1434,9 @@ def create_earnings_surprise_dashboard(
         template=PLOTLY_TEMPLATE,
         height=800,
         showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.12, xanchor="center", x=0.5),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=-0.12, xanchor="center", x=0.5
+        ),
         font=dict(family="Arial, sans-serif", size=12),
         title_font_size=20,
     )
@@ -1566,11 +1489,21 @@ def create_earnings_calendar_analytics(
             f"Checked: {available_earnings_dates}. "
             f"Available columns: {[c for c in df.columns if 'date' in c.lower() or 'earnings' in c.lower()]}"
         )
-        return _engineer_earnings_events_from_fiscal_data(df, output_dir, reference_date)
+        return _engineer_earnings_events_from_fiscal_data(
+            df, output_dir, reference_date
+        )
 
     identity_cols = [
         c
-        for c in ["ticker", "name", "exchange", "sector", "industry", "region", "trading_country"]
+        for c in [
+            "ticker",
+            "name",
+            "exchange",
+            "sector",
+            "industry",
+            "region",
+            "trading_country",
+        ]
         if c in df.columns
     ]
     earnings_df = df[identity_cols + cols_with_data].copy()
@@ -1802,7 +1735,9 @@ def _engineer_earnings_events_from_fiscal_data(
     }
 
 
-def create_gaap_adjusted_comparison_chart(df: pd.DataFrame, output_path: Path) -> go.Figure:
+def create_gaap_adjusted_comparison_chart(
+    df: pd.DataFrame, output_path: Path
+) -> go.Figure:
     """Create sector-level GAAP vs Adjusted comparison visualization."""
 
     earnings_quality = analyze_earnings_quality(df)
@@ -1914,7 +1849,9 @@ def generate_earnings_quality_alerts(
         valid = eps_actual.notna() & eps_est.notna() & (eps_est.abs() > 0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            surprise = ((eps_actual[valid] - eps_est[valid]) / eps_est[valid].abs()) * 100
+            surprise = (
+                (eps_actual[valid] - eps_est[valid]) / eps_est[valid].abs()
+            ) * 100
         surprise = surprise.replace([np.inf, -np.inf], np.nan).dropna()
 
         misses = surprise[surprise < -float(config.eps_surprise_miss_threshold_pct)]
@@ -1991,7 +1928,9 @@ def generate_earnings_quality_alerts(
         high = pd.to_numeric(df["price_target_high"], errors="coerce").astype("Float64")
         low = pd.to_numeric(df["price_target_low"], errors="coerce").astype("Float64")
         last_price = (
-            pd.to_numeric(df["last_price"], errors="coerce").replace(0, pd.NA).astype("Float64")
+            pd.to_numeric(df["last_price"], errors="coerce")
+            .replace(0, pd.NA)
+            .astype("Float64")
         )
 
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -2025,7 +1964,9 @@ def generate_earnings_quality_alerts(
         next_earnings = pd.to_datetime(df["next_earnings"], errors="coerce")
         days_to_earnings = (next_earnings - reference_date).dt.days
         vol = pd.to_numeric(df["volatility_1m"], errors="coerce")
-        vol_threshold = float(vol.quantile(float(config.pre_earnings_volatility_quantile)))
+        vol_threshold = float(
+            vol.quantile(float(config.pre_earnings_volatility_quantile))
+        )
 
         high_vol = df[
             (days_to_earnings >= 0)
@@ -2065,6 +2006,249 @@ def generate_earnings_quality_alerts(
 # =============================================================================
 # New v1.14 Dashboard Functions
 # =============================================================================
+
+
+def create_analyst_sentiment_dashboard(
+    df: pd.DataFrame,
+    reference_date: Optional[pd.Timestamp] = None,
+    top_n: int = 50,
+    output_path: Optional[Union[str, Path]] = None,
+) -> go.Figure:
+    """Create comprehensive analyst sentiment dashboard using v1.15 schema features.
+
+    Leverages the expanded Analyst Sentiment category (65+ features) including:
+    - Price target momentum across multiple timeframes
+    - Analyst coverage trajectory
+    - EPS revision patterns
+    - Consensus convergence metrics
+
+    Args:
+        df: DataFrame with analyst sentiment columns.
+        reference_date: Analysis reference date.
+        top_n: Number of stocks to analyze.
+        output_path: Optional path to save HTML output.
+
+    Returns:
+        go.Figure: Plotly figure with analyst sentiment visualization.
+    """
+    reference_date = resolve_reference_date(df, reference_date)
+
+    # Get all available Analyst Sentiment features from schema
+    analyst_features = PHASE93_FEATURE_CATEGORIES.get("Analyst Sentiment", [])
+    available_features = [f for f in analyst_features if f in df.columns]
+
+    if len(available_features) < 5:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Insufficient analyst sentiment features available.<br>"
+            f"Found {len(available_features)} of 65+ expected features.",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14),
+        )
+        fig.update_layout(template=PLOTLY_TEMPLATE)
+        _write_html_artifact(fig, output_path)
+        return fig
+
+    df_local = df.copy()
+    mcap_col = _get_market_cap_column(df_local)
+    if mcap_col:
+        df_local = df_local.sort_values(by=mcap_col, ascending=False)
+    df_local = df_local.head(top_n)
+
+    fig = make_subplots(
+        rows=2,
+        cols=3,
+        subplot_titles=[
+            "PT Momentum Heatmap",
+            "Coverage Trajectory",
+            "EPS Revision Momentum",
+            "Consensus Convergence",
+            "Rating Distribution",
+            "Sentiment Composite",
+        ],
+        specs=[
+            [{"type": "heatmap"}, {"type": "scatter"}, {"type": "bar"}],
+            [{"type": "histogram"}, {"type": "bar"}, {"type": "indicator"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.08,
+    )
+
+    # Panel 1: PT Momentum Heatmap (timeframes as columns)
+    pt_momentum_cols = [
+        ("1W", "pt_momentum_1w"),
+        ("1M", "pt_momentum_1m"),
+        ("3M", "pt_momentum_3m"),
+        ("6M", "pt_momentum_6m"),
+        ("1Y", "pt_momentum_1y"),
+    ]
+    available_pt = [
+        (label, col) for label, col in pt_momentum_cols if col in df_local.columns
+    ]
+
+    if available_pt and "sector" in df_local.columns:
+        heatmap_data = []
+        sectors = df_local["sector"].dropna().unique()[:10]
+        for sector in sectors:
+            sector_df = df_local[df_local["sector"] == sector]
+            row_data = {"Sector": str(sector)[:20]}
+            for label, col in available_pt:
+                row_data[label] = sector_df[col].mean()
+            heatmap_data.append(row_data)
+
+        if heatmap_data:
+            heatmap_df = pd.DataFrame(heatmap_data).set_index("Sector")
+            fig.add_trace(
+                go.Heatmap(
+                    z=heatmap_df.values,
+                    x=[label for label, _ in available_pt],
+                    y=heatmap_df.index.tolist(),
+                    colorscale="RdYlGn",
+                    zmid=0,
+                    hovertemplate="Sector: %{y}<br>Period: %{x}<br>Momentum: %{z:.2f}%<extra></extra>",
+                ),
+                row=1,
+                col=1,
+            )
+
+    # Panel 2: Coverage Trajectory
+    coverage_cols = [
+        "analyst_coverage_change_1m",
+        "analyst_coverage_change_3m",
+        "analyst_coverage_change_1y",
+    ]
+    available_cov = [c for c in coverage_cols if c in df_local.columns]
+    if available_cov and "analyst_coverage_acceleration" in df_local.columns:
+        valid_cov = df_local.dropna(
+            subset=[available_cov[0], "analyst_coverage_acceleration"]
+        )
+        if not valid_cov.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=valid_cov[available_cov[0]],
+                    y=valid_cov["analyst_coverage_acceleration"],
+                    mode="markers",
+                    marker=dict(
+                        color=valid_cov.get("analyst_interest_score", 50),
+                        colorscale="Viridis",
+                        size=8,
+                        showscale=True,
+                        colorbar=dict(title="Interest", x=0.65),
+                    ),
+                    text=valid_cov.get("ticker", valid_cov.index),
+                    hovertemplate="<b>%{text}</b><br>Coverage Chg: %{x:.1f}<br>Accel: %{y:.2f}<extra></extra>",
+                    name="Coverage",
+                ),
+                row=1,
+                col=2,
+            )
+
+    # Panel 3: EPS Revision Momentum
+    if "eps_revision_momentum" in df_local.columns:
+        revision_means = {}
+        if "sector" in df_local.columns:
+            revision_means = (
+                df_local.groupby("sector")["eps_revision_momentum"].mean().sort_values()
+            )
+        if revision_means is not None and len(revision_means) > 0:
+            colors = [
+                COLOR_PALETTE["success"] if v > 0 else COLOR_PALETTE["danger"]
+                for v in revision_means.values
+            ]
+            fig.add_trace(
+                go.Bar(
+                    x=revision_means.values,
+                    y=revision_means.index,
+                    orientation="h",
+                    marker_color=colors,
+                    name="EPS Rev",
+                    hovertemplate="<b>%{y}</b><br>Revision Mom: %{x:.2f}<extra></extra>",
+                ),
+                row=1,
+                col=3,
+            )
+
+    # Panel 4: Consensus Convergence Distribution
+    if "pt_consensus_convergence" in df_local.columns:
+        convergence = df_local["pt_consensus_convergence"].dropna()
+        if len(convergence) > 0:
+            fig.add_trace(
+                go.Histogram(
+                    x=convergence,
+                    nbinsx=25,
+                    marker_color=COLOR_PALETTE["info"],
+                    name="Convergence",
+                ),
+                row=2,
+                col=1,
+            )
+
+    # Panel 5: Rating Distribution
+    if "analyst_rating_normalized" in df_local.columns:
+        rating_bins = pd.cut(
+            df_local["analyst_rating_normalized"].dropna(),
+            bins=[0, 20, 40, 60, 80, 100],
+            labels=["Strong Sell", "Sell", "Hold", "Buy", "Strong Buy"],
+        )
+        rating_counts = rating_bins.value_counts().sort_index()
+        if not rating_counts.empty:
+            fig.add_trace(
+                go.Bar(
+                    x=rating_counts.index.astype(str),
+                    y=rating_counts.values,
+                    marker_color=[
+                        COLOR_PALETTE["danger"],
+                        COLOR_PALETTE["warning"],
+                        COLOR_PALETTE["neutral"],
+                        COLOR_PALETTE["info"],
+                        COLOR_PALETTE["success"],
+                    ],
+                    name="Ratings",
+                ),
+                row=2,
+                col=2,
+            )
+
+    # Panel 6: Composite Sentiment Gauge
+    sentiment_score = 50.0  # Default neutral
+    if "analyst_rating_normalized" in df_local.columns:
+        sentiment_score = df_local["analyst_rating_normalized"].mean()
+    elif "pt_momentum_1m" in df_local.columns:
+        # Derive from momentum if rating not available
+        sentiment_score = 50 + df_local["pt_momentum_1m"].clip(-50, 50).mean()
+
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=sentiment_score,
+            title={"text": "Sentiment Score", "font": {"size": 14}},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": COLOR_PALETTE["primary"]},
+                "steps": [
+                    {"range": [0, 30], "color": COLOR_PALETTE["danger"]},
+                    {"range": [30, 70], "color": COLOR_PALETTE["neutral"]},
+                    {"range": [70, 100], "color": COLOR_PALETTE["success"]},
+                ],
+            },
+        ),
+        row=2,
+        col=3,
+    )
+
+    fig.update_layout(
+        title="<b>Analyst Sentiment Dashboard</b><br><sup>Phase 9.3 v1.15 - 65+ Sentiment Features</sup>",
+        template=PLOTLY_TEMPLATE,
+        height=700,
+        showlegend=False,
+    )
+
+    _write_html_artifact(fig, output_path)
+    return fig
 
 
 def create_price_target_dynamics_dashboard(
@@ -2176,8 +2360,13 @@ def create_price_target_dynamics_dashboard(
             )
 
     # Plot 2: Acceleration scatter
-    if "pt_acceleration_short" in df_local.columns and "pt_acceleration_long" in df_local.columns:
-        valid_accel = df_local.dropna(subset=["pt_acceleration_short", "pt_acceleration_long"])
+    if (
+        "pt_acceleration_short" in df_local.columns
+        and "pt_acceleration_long" in df_local.columns
+    ):
+        valid_accel = df_local.dropna(
+            subset=["pt_acceleration_short", "pt_acceleration_long"]
+        )
         if not valid_accel.empty:
             fig.add_trace(
                 go.Scatter(
@@ -2216,7 +2405,10 @@ def create_price_target_dynamics_dashboard(
             )
 
     # Plot 4: PT vs Price momentum
-    if "pt_vs_price_momentum" in df_local.columns and "price_momentum_1m" in df_local.columns:
+    if (
+        "pt_vs_price_momentum" in df_local.columns
+        and "price_momentum_1m" in df_local.columns
+    ):
         valid_vs = df_local.dropna(subset=["pt_vs_price_momentum", "price_momentum_1m"])
         if not valid_vs.empty:
             fig.add_trace(
@@ -2250,7 +2442,9 @@ def create_price_target_dynamics_dashboard(
         template=PLOTLY_TEMPLATE,
         height=700,
         showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5
+        ),
     )
 
     fig.update_xaxes(title_text="Timeframe", row=1, col=1)
@@ -2353,7 +2547,11 @@ def create_eps_trajectory_dashboard(
                 go.Box(
                     y=clipped,
                     name=col.replace("eps_cagr_", "").upper(),
-                    marker_color=COLOR_PALETTE["success"] if "3y" in col else COLOR_PALETTE["info"],
+                    marker_color=(
+                        COLOR_PALETTE["success"]
+                        if "3y" in col
+                        else COLOR_PALETTE["info"]
+                    ),
                     boxpoints="outliers",
                 ),
                 row=1,
@@ -2363,7 +2561,9 @@ def create_eps_trajectory_dashboard(
     # Plot 2: EPS positive streak by sector
     if "eps_positive_streak" in df_local.columns and "sector" in df_local.columns:
         sector_streak = (
-            df_local.groupby("sector")["eps_positive_streak"].mean().sort_values(ascending=True)
+            df_local.groupby("sector")["eps_positive_streak"]
+            .mean()
+            .sort_values(ascending=True)
         )
         if not sector_streak.empty:
             fig.add_trace(
@@ -2380,8 +2580,13 @@ def create_eps_trajectory_dashboard(
             )
 
     # Plot 3: Quarterly trend vs volatility scatter
-    if "eps_quarterly_trend" in df_local.columns and "eps_quarterly_volatility" in df_local.columns:
-        valid_scatter = df_local.dropna(subset=["eps_quarterly_trend", "eps_quarterly_volatility"])
+    if (
+        "eps_quarterly_trend" in df_local.columns
+        and "eps_quarterly_volatility" in df_local.columns
+    ):
+        valid_scatter = df_local.dropna(
+            subset=["eps_quarterly_trend", "eps_quarterly_volatility"]
+        )
         if not valid_scatter.empty:
             fig.add_trace(
                 go.Scatter(
@@ -2520,7 +2725,10 @@ def create_cashflow_temporal_dashboard(
     )
 
     # Plot 1: CFO vs FCF stability scatter
-    if "cfo_stability_score" in df_local.columns and "fcf_stability_score" in df_local.columns:
+    if (
+        "cfo_stability_score" in df_local.columns
+        and "fcf_stability_score" in df_local.columns
+    ):
         valid = df_local.dropna(subset=["cfo_stability_score", "fcf_stability_score"])
         if not valid.empty:
             fig.add_trace(
@@ -2544,7 +2752,10 @@ def create_cashflow_temporal_dashboard(
             )
 
     # Plot 2: Cash conversion by sector
-    if "cash_conversion_efficiency" in df_local.columns and "sector" in df_local.columns:
+    if (
+        "cash_conversion_efficiency" in df_local.columns
+        and "sector" in df_local.columns
+    ):
         sector_conv = (
             df_local.groupby("sector")["cash_conversion_efficiency"]
             .mean()
@@ -2733,7 +2944,9 @@ def create_fiscal_calendar_dashboard(
     # Plot 2: Reporting lag by sector
     if "reporting_lag_zscore" in df_local.columns and "sector" in df_local.columns:
         sector_lag = (
-            df_local.groupby("sector")["reporting_lag_zscore"].mean().sort_values(ascending=True)
+            df_local.groupby("sector")["reporting_lag_zscore"]
+            .mean()
+            .sort_values(ascending=True)
         )
         if not sector_lag.empty:
             colors = [
@@ -2771,7 +2984,11 @@ def create_fiscal_calendar_dashboard(
 
     # Plot 4: Fiscal quarter pie chart
     quarter_col = next(
-        (c for c in ["fiscal_quarter", "current_fiscal_quarter"] if c in df_local.columns),
+        (
+            c
+            for c in ["fiscal_quarter", "current_fiscal_quarter"]
+            if c in df_local.columns
+        ),
         None,
     )
     if quarter_col:
