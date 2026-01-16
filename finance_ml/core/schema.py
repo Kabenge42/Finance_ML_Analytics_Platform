@@ -10,6 +10,7 @@ Total: 460+ features across 21 categories
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Literal, TypedDict, Optional
 
 # =============================================================================
@@ -69,6 +70,438 @@ class ColumnMeta(TypedDict, total=False):
     role: Role
     sql_name: Optional[str]  # Original SQL column name
     description: Optional[str]  # Column description
+
+
+# =============================================================================
+# SQL Type to Python Dtype Mapping
+# =============================================================================
+
+SQL_TYPE_TO_DTYPE: Dict[str, DType] = {
+    "text": "string",
+    "varchar": "string",
+    "character varying": "string",
+    "char": "string",
+    "integer": "Int64",
+    "int": "Int64",
+    "int4": "Int64",
+    "bigint": "Int64",
+    "int8": "Int64",
+    "smallint": "Int64",
+    "int2": "Int64",
+    "numeric": "Float64",
+    "decimal": "Float64",
+    "real": "Float64",
+    "float4": "Float64",
+    "double precision": "Float64",
+    "float8": "Float64",
+    "date": "datetime64[ns]",
+    "timestamp": "datetime64[ns]",
+    "timestamp without time zone": "datetime64[ns]",
+    "timestamp with time zone": "datetime64[ns]",
+    "boolean": "boolean",
+    "bool": "boolean",
+}
+
+
+# =============================================================================
+# Column Role Metadata - Maps SQL column names to semantic roles
+# =============================================================================
+
+# This dictionary provides the semantic metadata that cannot be inferred from SQL types
+COLUMN_ROLE_METADATA: Dict[str, Dict[str, Any]] = {
+    # ID columns
+    "Ticker": {"role": "id"},
+    "ISIN": {"role": "id"},
+    "Name": {"role": "id"},
+    "Description": {"role": "auxiliary"},
+    # Categorical columns
+    "Region": {"role": "categorical"},
+    "Country": {"role": "categorical"},
+    "Trading Country": {"role": "categorical"},
+    "Exchange": {"role": "categorical"},
+    "Unit": {"role": "categorical"},
+    "Sector": {"role": "categorical"},
+    "Industry": {"role": "categorical"},
+    "Style Class": {"role": "categorical"},
+    "Size Class": {"role": "categorical"},
+    "FY End": {"role": "categorical"},
+    "Next Earnings (When)": {"role": "categorical"},
+    "Next Earnings (Status)": {"role": "categorical"},
+    "Dividend Record (Currency)": {"role": "categorical"},
+    "Dividend Record (Frequency)": {"role": "categorical"},
+    "Current Fiscal Quarter": {"role": "categorical"},
+    "Next Fiscal Quarter": {"role": "categorical"},
+    "Next Earnings (Report)": {"role": "categorical"},
+    "Earnings Report (Frequency)": {"role": "categorical"},
+    # Date columns
+    "Last Updated": {"role": "date"},
+    "Income Statement Report Date": {"role": "date"},
+    "Next Earnings": {"role": "date"},
+    "Dividend Record (Announce Date)": {"role": "date"},
+    "Dividend Record (Payable Date)": {"role": "date"},
+    "Dividend Record (Record Date)": {"role": "date"},
+    "Dividend Record (Ex Date)": {"role": "date"},
+    "Reference Date": {"role": "date"},
+    "FY End Date": {"role": "date"},
+    "Next FY End Date": {"role": "date"},
+    "Next Income Statement Report Date": {"role": "date"},
+    # Target columns
+    "Price Target": {"role": "target"},
+    "Price Target - Median": {"role": "target_fallback"},
+    # Market columns
+    "Dividend Record (Amount)": {"role": "market"},
+    "Market Cap": {"role": "market"},
+    "Enterprise Value": {"role": "market"},
+    "Last Price": {"role": "market"},
+    "Price Target (YTD Ago)": {"role": "market"},
+    "Price Target - Low": {"role": "market"},
+    "Price Target - High": {"role": "market"},
+    "Market Cap (Country R)": {"role": "market"},
+    "Volume (Shrs)": {"role": "market"},
+    "Dividend Per Share (LTM)": {"role": "market"},
+    "Rel. Volume": {"role": "market"},
+    "52W High/Adj": {"role": "market"},
+    "52W Low/Adj": {"role": "market"},
+    "EMA (20D)": {"role": "market"},
+    "EMA (50D)": {"role": "market"},
+    "EMA (100D)": {"role": "market"},
+    "EMA (250D)": {"role": "market"},
+    # Count columns
+    "Dividend Streak": {"role": "count"},
+    "Price Target - #": {"role": "count"},
+    "Analyst Rating": {"role": "count"},
+    "# Strong Sell Ratings": {"role": "count"},
+    "# Strong Buys Ratings": {"role": "count"},
+    "# Hold Ratings": {"role": "count"},
+    "# Buys Ratings": {"role": "count"},
+    "# Sell Ratings": {"role": "count"},
+    "Shrs Out": {"role": "count"},
+    "Shrs Out (-1FY)": {"role": "count"},
+    "Full Time Employees (FQ)": {"role": "count"},
+    "Full Time Employees (FY)": {"role": "count"},
+    "Full Time Employees (-1FY)": {"role": "count"},
+    "Full Time Employees (-2FY)": {"role": "count"},
+    "Full Time Employees (-3FY)": {"role": "count"},
+    "Avg Employees (5YAVGFY)": {"role": "count"},
+    "EPS Norm - Est # (FY1E)": {"role": "count"},
+    # Feature columns
+    "Reporting Interval": {"role": "feature"},
+    "Fiscal Month": {"role": "feature"},
+    "Fiscal Quarter": {"role": "feature"},
+    "Fiscal Year": {"role": "feature"},
+    "Reporting Lag": {"role": "feature"},
+    # Percentage columns
+    "Total Return (YTD)": {"role": "percentage"},
+    "Beta (1Y)": {"role": "percentage"},
+    "Beta (2Y)": {"role": "percentage"},
+    "Beta (5Y)": {"role": "percentage"},
+    "Total Revenues/CAGR (5Y FY)": {"role": "percentage"},
+    "Tot. Return %/CAGR (3Y)": {"role": "percentage"},
+    "Tot. Return %/CAGR (10Y)": {"role": "percentage"},
+    "Total Return (5Y)": {"role": "percentage"},
+    "Total Return (10Y)": {"role": "percentage"},
+    "Net Income Margin % (FY)": {"role": "percentage"},
+    "Net Income Margin % (LTM)": {"role": "percentage"},
+    "Volatility (1M)": {"role": "percentage"},
+    "Volatility (3M)": {"role": "percentage"},
+    "Volatility (6M)": {"role": "percentage"},
+    "Volatility (1Y)": {"role": "percentage"},
+    "Div Yield (Ind)": {"role": "percentage"},
+    "Div Yield (LTM)": {"role": "percentage"},
+    "Gross Profit Margin % (FY)": {"role": "percentage"},
+    "Gross Profit Margin % (LTM)": {"role": "percentage"},
+    "Buyback Yield (LTM)": {"role": "percentage"},
+    "Div Yield (-1FYInd)": {"role": "percentage"},
+    "Div Yield (TTM)": {"role": "percentage"},
+    "Div Yield (NTM)": {"role": "percentage"},
+    "Div Yield (5YAVGLTM)": {"role": "percentage"},
+    "Revenues - Est YoY % (FY1E)": {"role": "percentage"},
+    "Price Chg. % (1M)": {"role": "percentage"},
+    "Price Chg. % (3M)": {"role": "percentage"},
+    "1-Day %": {"role": "percentage"},
+    "Div Yield (-2FYInd)": {"role": "percentage"},
+    "Div Yield (-3FYInd)": {"role": "percentage"},
+    "Div Yield (-4FYInd)": {"role": "percentage"},
+    "Div Yield (-5FYInd)": {"role": "percentage"},
+}
+
+
+def _map_sql_type_to_dtype(sql_type: str) -> DType:
+    """Map SQL type string to pandas dtype."""
+    sql_type_lower = sql_type.lower().strip()
+
+    # Handle parameterized types like varchar(255), numeric(10,2)
+    base_type = re.split(r"[\(\[]", sql_type_lower)[0].strip()
+
+    return SQL_TYPE_TO_DTYPE.get(base_type, "Float64")
+
+
+def _infer_role_from_sql_name(sql_name: str) -> Role:
+    """Infer column role from SQL column name patterns."""
+    name_lower = sql_name.lower()
+
+    # Check explicit metadata first
+    if sql_name in COLUMN_ROLE_METADATA:
+        return COLUMN_ROLE_METADATA[sql_name].get("role", "feature")
+
+    # Pattern-based inference
+    # Non-recurring items
+    if any(
+        kw in name_lower
+        for kw in ["impairment", "writedown", "restructuring", "unusual", "gain (loss)"]
+    ):
+        return "non_recurring"
+
+    # Ratio patterns
+    if any(
+        pat in name_lower
+        for pat in [
+            "p/e",
+            "p/b",
+            "p/tbv",
+            "ev/",
+            "eps",
+            "return on",
+            "current ratio",
+            "asset turnover",
+            "altman",
+        ]
+    ):
+        return "ratio"
+
+    # Cash flow patterns
+    if any(
+        kw in name_lower
+        for kw in [
+            "cfo",
+            "cfi",
+            "cff",
+            "fcf",
+            "cash acquisitions",
+            "capital expenditure",
+            "dividends paid",
+        ]
+    ):
+        return "cash_flow"
+
+    # Balance sheet patterns
+    if any(
+        kw in name_lower
+        for kw in [
+            "total assets",
+            "total equity",
+            "total debt",
+            "inventory",
+            "goodwill",
+            "retained earnings",
+            "working capital",
+            "cash and equivalents",
+            "tbv",
+            "current assets",
+            "current liabilities",
+            "intangible",
+        ]
+    ):
+        return "balance_sheet"
+
+    # Financial statement patterns
+    if any(
+        kw in name_lower
+        for kw in [
+            "revenues",
+            "ebitda",
+            "ebit",
+            "net income",
+            "gross profit",
+            "operating income",
+            "operating expenses",
+            "cost of",
+            "r&d",
+            "selling general",
+            "marketing expenses",
+            "interest expense",
+            "interest income",
+        ]
+    ):
+        return "financial_statement"
+
+    # Market data patterns
+    if any(
+        kw in name_lower
+        for kw in [
+            "price",
+            "ema",
+            "volume",
+            "market cap",
+            "enterprise value",
+            "dividend per share",
+            "52w",
+        ]
+    ):
+        return "market"
+
+    # Count patterns
+    if any(
+        kw in name_lower
+        for kw in ["# ", "num ", "employees", "shrs out", "analyst rating"]
+    ):
+        return "count"
+
+    # Percentage patterns
+    if any(
+        kw in name_lower
+        for kw in [
+            "margin %",
+            "return %",
+            "yield",
+            "volatility",
+            "beta",
+            "cagr",
+            "chg. %",
+            "day %",
+        ]
+    ):
+        return "percentage"
+
+    # Default to feature
+    return "feature"
+
+
+def get_equities_schema_from_sql(
+    connection_string: Optional[str] = None,
+    schema: str = "public",
+    table_name: str = "equities",
+) -> Dict[str, ColumnMeta]:
+    """
+    Retrieve the equities table schema from PostgreSQL and build COLUMN_SCHEMA.
+
+    Uses SQLAlchemy to introspect the database schema and maps SQL types
+    to pandas dtypes with semantic role information.
+
+    Args:
+        connection_string: SQLAlchemy connection string. If None, uses environment
+                          variable DATABASE_URL or defaults to localhost.
+        schema: Database schema name (default: 'public')
+        table_name: Table name to introspect (default: 'equities')
+
+    Returns:
+        Dictionary mapping normalized column names to ColumnMeta TypedDict
+
+    Example:
+        >>> schema = get_equities_schema_from_sql("postgresql://user:pass@localhost/db")
+        >>> schema["ticker"]
+        {'dtype': 'string', 'role': 'id', 'sql_name': 'Ticker'}
+    """
+    import os
+    from sqlalchemy import create_engine, inspect, text
+
+    # Get connection string
+    if connection_string is None:
+        connection_string = os.environ.get(
+            "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres"
+        )
+
+    engine = create_engine(connection_string)
+    inspector = inspect(engine)
+
+    # Get column information
+    columns = inspector.get_columns(table_name, schema=schema)
+
+    # Also get column comments if available
+    comments: Dict[str, str] = {}
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                    f"""
+                SELECT column_name, col_description(
+                    (SELECT oid FROM pg_class WHERE relname = :table_name),
+                    ordinal_position
+                ) as comment
+                FROM information_schema.columns
+                WHERE table_schema = :schema AND table_name = :table_name
+            """
+                ),
+                {"table_name": table_name, "schema": schema},
+            )
+            for row in result:
+                if row.comment:
+                    comments[row.column_name] = row.comment
+    except Exception:
+        pass  # Comments are optional
+
+    column_schema: Dict[str, ColumnMeta] = {}
+
+    for col in columns:
+        sql_name = col["name"]
+        sql_type = str(col["type"]).lower()
+
+        # Normalize column name for Python
+        normalized_name = normalize_column_name(sql_name)
+
+        # Map SQL type to pandas dtype
+        dtype = _map_sql_type_to_dtype(sql_type)
+
+        # Infer role from column name
+        role = _infer_role_from_sql_name(sql_name)
+
+        # Build column metadata
+        meta: ColumnMeta = {
+            "dtype": dtype,
+            "role": role,
+            "sql_name": sql_name,
+        }
+
+        # Add description if available
+        if sql_name in comments:
+            meta["description"] = comments[sql_name]
+
+        column_schema[normalized_name] = meta
+
+    return column_schema
+
+
+def refresh_column_schema_from_sql(
+    connection_string: Optional[str] = None,
+) -> Dict[str, ColumnMeta]:
+    """
+    Refresh COLUMN_SCHEMA from the database.
+
+    Call this function to update the schema after database changes.
+
+    Args:
+        connection_string: Optional SQLAlchemy connection string
+
+    Returns:
+        Updated COLUMN_SCHEMA dictionary
+    """
+    global COLUMN_SCHEMA
+    COLUMN_SCHEMA = get_equities_schema_from_sql(connection_string)
+    return COLUMN_SCHEMA
+
+
+def generate_static_schema_code(connection_string: Optional[str] = None) -> str:
+    """
+    Generate Python code for the static schema fallback.
+
+    Use this to update the _get_static_column_schema() function after
+    database schema changes.
+
+    Args:
+        connection_string: Optional SQLAlchemy connection string
+
+    Returns:
+        Python code string that can be pasted into _get_static_column_schema()
+    """
+    schema = get_equities_schema_from_sql(connection_string)
+
+    lines = ["return {"]
+    for col_name, meta in sorted(schema.items()):
+        meta_str = ", ".join(f'"{k}": "{v}"' for k, v in meta.items())
+        lines.append(f'    "{col_name}": {{{meta_str}}},')
+    lines.append("}")
+
+    return "\n".join(lines)
 
 
 # Master schema - auto-generates SQL
@@ -1328,6 +1761,529 @@ COLUMN_SCHEMA: Dict[str, ColumnMeta] = {
         "dtype": "float",
         "role": "non_recurring",
         "sql_name": "Gain (Loss) On Sale Of Assets (LTM)",
+    },
+    # --- NEW: Impairment of Goodwill Historical ---
+    "impairment_of_goodwill_1fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Impairment of Goodwill (-1FQFQ)",
+    },
+    "impairment_of_goodwill_2fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Impairment of Goodwill (-2FQFQ)",
+    },
+    "impairment_of_goodwill_3fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Impairment of Goodwill (-3FQFQ)",
+    },
+    "impairment_of_goodwill_4fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Impairment of Goodwill (-4FQFQ)",
+    },
+    "impairment_of_goodwill_2fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Impairment of Goodwill (-2FY)",
+    },
+    "impairment_of_goodwill_3fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Impairment of Goodwill (-3FY)",
+    },
+    "impairment_of_goodwill_4fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Impairment of Goodwill (-4FY)",
+    },
+    # --- NEW: Asset Writedown Historical ---
+    "asset_writedown_1fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-1FQFQ)",
+    },
+    "asset_writedown_2fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-2FQFQ)",
+    },
+    "asset_writedown_3fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-3FQFQ)",
+    },
+    "asset_writedown_4fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-4FQFQ)",
+    },
+    "asset_writedown_2fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-2FY)",
+    },
+    "asset_writedown_3fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-3FY)",
+    },
+    "asset_writedown_4fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-4FY)",
+    },
+    "asset_writedown_5fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Asset Writedown (-5FY)",
+    },
+    # --- NEW: Gain (Loss) On Sale Of Assets Historical ---
+    "gain_loss_on_sale_of_assets_fq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (FQ)",
+    },
+    "gain_loss_on_sale_of_assets_fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (FY)",
+    },
+    "gain_loss_on_sale_of_assets_1fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-1FQFQ)",
+    },
+    "gain_loss_on_sale_of_assets_2fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-2FQFQ)",
+    },
+    "gain_loss_on_sale_of_assets_3fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-3FQFQ)",
+    },
+    "gain_loss_on_sale_of_assets_4fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-4FQFQ)",
+    },
+    "gain_loss_on_sale_of_assets_1fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-1FY)",
+    },
+    "gain_loss_on_sale_of_assets_2fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-2FY)",
+    },
+    "gain_loss_on_sale_of_assets_3fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-3FY)",
+    },
+    "gain_loss_on_sale_of_assets_4fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Gain (Loss) On Sale Of Assets (-4FY)",
+    },
+    # --- NEW: Restructuring Charges Historical ---
+    "restructuring_charges_1fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Restructuring Charges (-1FQFQ)",
+    },
+    "restructuring_charges_2fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Restructuring Charges (-2FQFQ)",
+    },
+    "restructuring_charges_3fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Restructuring Charges (-3FQFQ)",
+    },
+    "restructuring_charges_4fqfq": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Restructuring Charges (-4FQFQ)",
+    },
+    "restructuring_charges_2fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Restructuring Charges (-2FY)",
+    },
+    "restructuring_charges_3fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Restructuring Charges (-3FY)",
+    },
+    "restructuring_charges_4fy": {
+        "dtype": "float",
+        "role": "non_recurring",
+        "sql_name": "Restructuring Charges (-4FY)",
+    },
+    # --- NEW: Net Income - (IS) Historical ---
+    "net_income_is_1fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income - (IS) (-1FQFQ)",
+    },
+    "net_income_is_2fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income - (IS) (-2FQFQ)",
+    },
+    "net_income_is_3fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income - (IS) (-3FQFQ)",
+    },
+    "net_income_is_4fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income - (IS) (-4FQFQ)",
+    },
+    "net_income_is_2fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income - (IS) (-2FY)",
+    },
+    "net_income_is_3fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income - (IS) (-3FY)",
+    },
+    "net_income_is_4fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income - (IS) (-4FY)",
+    },
+    # --- NEW: Normalized Net Income Historical ---
+    "normalized_net_income_1fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Normalized Net Income (-1FQFQ)",
+    },
+    "normalized_net_income_2fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Normalized Net Income (-2FQFQ)",
+    },
+    "normalized_net_income_3fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Normalized Net Income (-3FQFQ)",
+    },
+    "normalized_net_income_4fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Normalized Net Income (-4FQFQ)",
+    },
+    "normalized_net_income_2fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Normalized Net Income (-2FY)",
+    },
+    "normalized_net_income_3fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Normalized Net Income (-3FY)",
+    },
+    "normalized_net_income_4fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Normalized Net Income (-4FY)",
+    },
+    # --- NEW: Net Income/Adj. Historical ---
+    "net_income_adj_1fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income/Adj. (-1FQFQ)",
+    },
+    "net_income_adj_2fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income/Adj. (-2FQFQ)",
+    },
+    "net_income_adj_3fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income/Adj. (-3FQFQ)",
+    },
+    "net_income_adj_4fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income/Adj. (-4FQFQ)",
+    },
+    "net_income_adj_2fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income/Adj. (-2FY)",
+    },
+    "net_income_adj_3fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income/Adj. (-3FY)",
+    },
+    "net_income_adj_4fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "Net Income/Adj. (-4FY)",
+    },
+    # --- NEW: EBIT Historical ---
+    "ebit_1fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT (-1FQFQ)",
+    },
+    "ebit_2fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT (-2FQFQ)",
+    },
+    "ebit_3fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT (-3FQFQ)",
+    },
+    "ebit_4fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT (-4FQFQ)",
+    },
+    "ebit_2fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT (-2FY)",
+    },
+    "ebit_3fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT (-3FY)",
+    },
+    "ebit_4fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT (-4FY)",
+    },
+    # --- NEW: EBIT/Adj. Historical ---
+    "ebit_adj_fq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (FQ)",
+    },
+    "ebit_adj_1fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (-1FQFQ)",
+    },
+    "ebit_adj_2fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (-2FQFQ)",
+    },
+    "ebit_adj_3fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (-3FQFQ)",
+    },
+    "ebit_adj_4fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (-4FQFQ)",
+    },
+    "ebit_adj_2fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (-2FY)",
+    },
+    "ebit_adj_3fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (-3FY)",
+    },
+    "ebit_adj_4fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBIT/Adj. (-4FY)",
+    },
+    # --- NEW: EBITDA Historical ---
+    "ebitda_1fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA (-1FQFQ)",
+    },
+    "ebitda_2fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA (-2FQFQ)",
+    },
+    "ebitda_3fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA (-3FQFQ)",
+    },
+    "ebitda_4fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA (-4FQFQ)",
+    },
+    "ebitda_2fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA (-2FY)",
+    },
+    "ebitda_3fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA (-3FY)",
+    },
+    "ebitda_4fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA (-4FY)",
+    },
+    # --- NEW: EBITDA/Adj. Historical ---
+    "ebitda_adj_fq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (FQ)",
+    },
+    "ebitda_adj_1fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (-1FQFQ)",
+    },
+    "ebitda_adj_2fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (-2FQFQ)",
+    },
+    "ebitda_adj_3fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (-3FQFQ)",
+    },
+    "ebitda_adj_4fqfq": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (-4FQFQ)",
+    },
+    "ebitda_adj_2fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (-2FY)",
+    },
+    "ebitda_adj_3fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (-3FY)",
+    },
+    "ebitda_adj_4fy": {
+        "dtype": "float",
+        "role": "financial_statement",
+        "sql_name": "EBITDA/Adj. (-4FY)",
+    },
+    # --- NEW: Basic EPS - Cont Historical ---
+    "basic_eps_cont_ltm": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (LTM)",
+    },
+    "basic_eps_cont_fq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (FQ)",
+    },
+    "basic_eps_cont_fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (FY)",
+    },
+    "basic_eps_cont_1fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-1FQFQ)",
+    },
+    "basic_eps_cont_2fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-2FQFQ)",
+    },
+    "basic_eps_cont_3fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-3FQFQ)",
+    },
+    "basic_eps_cont_4fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-4FQFQ)",
+    },
+    "basic_eps_cont_1fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-1FY)",
+    },
+    "basic_eps_cont_2fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-2FY)",
+    },
+    "basic_eps_cont_3fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-3FY)",
+    },
+    "basic_eps_cont_4fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "Basic EPS - Cont (-4FY)",
+    },
+    # --- NEW: EPS/Adj. Historical ---
+    "eps_adj_fq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (FQ)",
+    },
+    "eps_adj_1fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (-1FQFQ)",
+    },
+    "eps_adj_2fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (-2FQFQ)",
+    },
+    "eps_adj_3fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (-3FQFQ)",
+    },
+    "eps_adj_4fqfq": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (-4FQFQ)",
+    },
+    "eps_adj_2fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (-2FY)",
+    },
+    "eps_adj_3fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (-3FY)",
+    },
+    "eps_adj_4fy": {
+        "dtype": "Float64",
+        "role": "ratio",
+        "sql_name": "EPS/Adj. (-4FY)",
     },
     "cost_of_revenues_ltm": {
         "dtype": "float",
@@ -3856,11 +4812,14 @@ def generate_sql_schema() -> str:
         dtype = meta.get("dtype", "float")
         sql_type = {
             "float": "NUMERIC",
+            "Float64": "NUMERIC",
             "int": "INTEGER",
+            "Int64": "INTEGER",
             "string": "TEXT",
             "category": "TEXT",
-            "datetime64[ns]": "TIMESTAMP",
-            "bool": "BOOLEAN"
+            "datetime64[ns]": "DATE",
+            "bool": "BOOLEAN",
+            "boolean": "BOOLEAN",
         }.get(dtype, "NUMERIC")
         lines.append(f'  "{sql_name}" {sql_type},')
     lines[-1] = lines[-1].rstrip(",")
@@ -3876,7 +4835,7 @@ def get_expected_dtype(column: str) -> str:
 
 def list_numeric_feature_cols() -> List[str]:
     """List all numeric feature columns from COLUMN_SCHEMA."""
-    numeric_dtypes = {"float", "int"}
+    numeric_dtypes = {"float", "Float64", "int", "Int64"}
     feature_roles = {
         "feature",
         "target",
@@ -3993,7 +4952,8 @@ def list_knn_imputable_cols() -> List[str]:
     return [
         col
         for col, meta in COLUMN_SCHEMA.items()
-        if meta.get("role") in knn_roles and meta.get("dtype") in ["float", "int", "bool"]
+        if meta.get("role") in knn_roles
+        and meta.get("dtype") in ["float", "Float64", "int", "Int64", "bool", "boolean"]
     ]
 
 
@@ -4009,7 +4969,8 @@ def list_count_cols() -> List[str]:
     return [
         col
         for col, meta in COLUMN_SCHEMA.items()
-        if meta.get("role") == "count" and meta.get("dtype") in ["float", "int"]
+        if meta.get("role") == "count"
+        and meta.get("dtype") in ["float", "Float64", "int", "Int64"]
     ]
 
 

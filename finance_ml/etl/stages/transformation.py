@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, Dict, Any, NamedTuple
 import numpy as np
 import pandas as pd
 
-from finance_ml.ml_workflow.data.schema import list_categorical_cols, list_numeric_feature_cols
+from finance_ml.core.schema import list_categorical_cols, list_numeric_feature_cols
 from finance_ml.ml_workflow.preprocessing.column_semantics import (
     classify_columns,
     get_market_value_columns,

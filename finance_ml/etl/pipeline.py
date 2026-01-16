@@ -356,25 +356,11 @@ class ETLPipeline:
             return df
 
         initial_cols = set(df.columns)
+
+        # Pass the entire config object instead of individual kwargs
         result = run_feature_engineering_stage(
             df,
-            preset=self.config.feature_engineering.preset,
-            categories=self.config.feature_engineering.categories,
-            engineer_earnings_analytics=self.config.feature_engineering.engineer_earnings_analytics,
-            engineer_price_target_dynamics=self.config.feature_engineering.engineer_price_target_dynamics,
-            engineer_fiscal_calendar=self.config.feature_engineering.engineer_fiscal_calendar,
-            engineer_dividend_timing=self.config.feature_engineering.engineer_dividend_timing,
-            engineer_eps_trajectory=self.config.feature_engineering.engineer_eps_trajectory,
-            engineer_cashflow_temporal=self.config.feature_engineering.engineer_cashflow_temporal,
-            engineer_valuation_timeseries=self.config.feature_engineering.engineer_valuation_timeseries,
-            engineer_analyst_coverage=self.config.feature_engineering.engineer_analyst_coverage,
-            engineer_revenue_forecast=self.config.feature_engineering.engineer_revenue_forecast,
-            engineer_dividend_reliability=self.config.feature_engineering.engineer_dividend_reliability,
-            engineer_employment_dynamics=self.config.feature_engineering.engineer_employment_dynamics,
-            engineer_employee_productivity=self.config.feature_engineering.engineer_employee_productivity,
-            engineer_balance_sheet_trends=self.config.feature_engineering.engineer_balance_sheet_trends,
-            engineer_margin_trends=self.config.feature_engineering.engineer_margin_trends,
-            engineer_accounting_quality=self.config.feature_engineering.engineer_accounting_quality,
+            config=self.config.feature_engineering,
         )
 
         if self.metrics:
@@ -446,6 +432,7 @@ class ETLPipeline:
                 strategy=self.config.imputation.strategy,
                 sector_column=self.config.imputation.sector_column,
                 reference_price_column=self.config.imputation.reference_price_column,
+                use_role_based_strategy=self.config.imputation.use_role_based_strategy,
             )
             if self.metrics:
                 self.metrics.imputation_strategy = self.config.imputation.strategy

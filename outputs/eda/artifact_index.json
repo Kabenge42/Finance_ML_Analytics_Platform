@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-01-14T21:28:22.582963",
-  "reference_date": "2026-01-14T00:00:00",
+  "generated_at": "2026-01-16T13:28:02.485001",
+  "reference_date": "2026-01-16T00:00:00",
   "data_shape": {
-    "rows": 6700,
-    "columns": 1106
+    "rows": 6710,
+    "columns": 1259
   },
   "phase93_coverage": {
     "Momentum & Technical": 25,

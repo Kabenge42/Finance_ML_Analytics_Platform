@@ -1,7 +1,10 @@
 """ETL configuration dataclasses - extracted from etl.py."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Literal, Any
+from typing import List, Optional, Literal, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass  # For future type hints if needed
 
 
 @dataclass
@@ -59,6 +62,11 @@ class ImputationConfig:
     apply_dividend_zero_fill: bool = True
     apply_analyst_rating_zero_fill: bool = True
     apply_financial_statement_zero_fill: bool = True
+
+    # NEW: Role-based imputation strategy (v1.20)
+    # When True, applies role-based imputation before the main strategy
+    # Roles: non_recurring, count, financial_statement, ratio, market, etc.
+    use_role_based_strategy: bool = True
 
 
 @dataclass
@@ -122,23 +130,100 @@ class FeatureEngineeringConfig:
     categories: Optional[List[str]] = None
     include_interactions: bool = True
     include_relative: bool = True
+
+    # Legacy flag (consider deprecating)
     engineer_earnings_analytics: bool = True
-    # NEW v1.14 granular flags
+
+    # Valuation
+    engineer_valuation: bool = True
+    engineer_valuation_timeseries: bool = True
+
+    # Profitability
+    engineer_profitability: bool = True
+    engineer_margin_trends: bool = True
+
+    # Momentum & Technical
+    engineer_momentum: bool = True
+    engineer_technical_analysis: bool = True
+    engineer_market_microstructure: bool = True
+
+    # Quality & Risk
+    engineer_accounting_quality: bool = True
+    engineer_financial_distress: bool = True
+    engineer_cash_flow_quality: bool = True
+    engineer_capital_allocation: bool = True
+    engineer_composite_scores: bool = True
+
+    # Earnings Quality
+    engineer_estimated_vs_actual: bool = True
+    engineer_gaap_vs_adjusted: bool = True
+    engineer_eps_trajectory: bool = True
+
+    # Leverage & Liquidity
+    engineer_leverage: bool = True
+    engineer_liquidity: bool = True
+    engineer_efficiency: bool = True
+    engineer_balance_sheet_trends: bool = True
+    engineer_cashflow_temporal: bool = True
+
+    # Sentiment
+    engineer_analyst_quality: bool = True
+    engineer_analyst_coverage: bool = True
+    engineer_market_sentiment: bool = True
     engineer_price_target_dynamics: bool = True
+
+    # Employment
+    engineer_employee_productivity: bool = True
+    engineer_employment_dynamics: bool = True
+
+    # Growth
+    engineer_growth_metrics: bool = True
+
+    # Temporal
+    engineer_temporal: bool = True
     engineer_fiscal_calendar: bool = True
     engineer_dividend_timing: bool = True
-    engineer_eps_trajectory: bool = True
-    engineer_cashflow_temporal: bool = True
-    # NEW v1.15 granular flags
-    engineer_valuation_timeseries: bool = True
-    engineer_analyst_coverage: bool = True
-    engineer_revenue_forecast: bool = True
+
+    # Dividends
     engineer_dividend_reliability: bool = True
-    engineer_employment_dynamics: bool = True
-    engineer_employee_productivity: bool = True
-    engineer_balance_sheet_trends: bool = True
-    engineer_margin_trends: bool = True
-    engineer_accounting_quality: bool = True
+
+    # Revenue Forecasting
+    engineer_revenue_forecast: bool = True
+
+    # Missing Coverage
+    engineer_missing_coverage: bool = True
+
+    def get_enabled_generators(self) -> List[str]:
+        """Return list of enabled feature generator keys matching FEATURE_REGISTRY.
+
+        Returns:
+            List of registry keys for generators that are enabled in this config.
+        """
+        from finance_ml.etl.stages.feature_engineering import (
+            CONFIG_FLAG_TO_REGISTRY_KEY,
+        )
+
+        return [
+            registry_key
+            for flag_name, registry_key in CONFIG_FLAG_TO_REGISTRY_KEY.items()
+            if getattr(self, flag_name, False)
+        ]
+
+    def get_disabled_generators(self) -> List[str]:
+        """Return list of disabled feature generator keys.
+
+        Returns:
+            List of registry keys for generators that are disabled in this config.
+        """
+        from finance_ml.etl.stages.feature_engineering import (
+            CONFIG_FLAG_TO_REGISTRY_KEY,
+        )
+
+        return [
+            registry_key
+            for flag_name, registry_key in CONFIG_FLAG_TO_REGISTRY_KEY.items()
+            if not getattr(self, flag_name, False)
+        ]
 
 
 @dataclass

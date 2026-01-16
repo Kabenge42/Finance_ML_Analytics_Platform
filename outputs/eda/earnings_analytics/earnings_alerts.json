@@ -1,60 +1,60 @@
 {
-  "timestamp": "2026-01-14T21:28:11.531081",
-  "reference_date": "2026-01-14 00:00:00",
-  "total_stocks_monitored": 6700,
+  "timestamp": "2026-01-16T13:27:51.600943",
+  "reference_date": "2026-01-16 00:00:00",
+  "total_stocks_monitored": 6710,
   "alerts": [
     {
       "alert_type": "large_earnings_miss",
       "severity": "high",
-      "count": 2439,
-      "description": "2439 stocks with EPS surprise < -5%",
+      "count": 2435,
+      "description": "2435 stocks with EPS surprise < -5%",
       "tickers": [
         "NVDA",
         "GOOGL",
         "AAPL",
         "MSFT",
         "AVGO",
-        "PHVS",
-        "LLY",
         "WMT",
+        "LLY",
         "JNJ",
+        "COST",
         "PLTR"
       ]
     },
     {
       "alert_type": "high_target_uncertainty",
       "severity": "low",
-      "count": 4569,
-      "description": "4569 stocks with price target spread > 25%",
+      "count": 4553,
+      "description": "4553 stocks with price target spread > 25%",
       "tickers": [
         "NVDA",
         "GOOGL",
-        "VSNT",
         "AAPL",
         "MSFT",
-        "OBCK",
         "AMZN",
         "AVGO",
-        "PHVS",
-        "META"
+        "META",
+        "TSLA",
+        "WMT",
+        "LLY"
       ]
     },
     {
       "alert_type": "high_volatility_pre_earnings",
       "severity": "medium",
-      "count": 73,
-      "description": "73 stocks with elevated volatility (> q0.80) within 14 days of earnings",
+      "count": 96,
+      "description": "96 stocks with elevated volatility (> q0.80) within 14 days of earnings",
       "tickers": [
         "LRCX",
         "INTC",
+        "KLAC",
         "GEV",
-        "NOW",
-        "SCLP",
+        "WDC",
+        "STX",
+        "SNDK",
         "CLS",
-        "HAL",
         "AA",
-        "NXT",
-        "BMNR"
+        "NXT"
       ]
     }
   ],

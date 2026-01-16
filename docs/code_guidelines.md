@@ -1,8 +1,8 @@
 # Finance ML Analytics Platform — Code Guidelines
 
-**Version:** 2.1.0  
-**Last Updated:** 2026-01-11  
-**Package Version:** 0.9.8  
+**Version:** 2.2.0  
+**Last Updated:** 2026-01-15  
+**Package Version:** 0.9.9  
 **Model Version:** v9_11
 
 These guidelines codify conventions for the Finance ML Analytics Platform, covering technology stack, configuration,
@@ -433,42 +433,74 @@ normalize_column_name("R&D Expenses")          # → 'r_and_d_expenses'
 
 ### 5.2 Schema Registry
 
-**Version:** 2.0 (Updated 2026-01-07)
+**Version:** 2.1 (Updated 2026-01-15)
 
-The authoritative column schema is defined in `finance_ml/core/schema.py`:
+The authoritative column schema is defined in `finance_ml/core/schema.py`. The schema uses **SQL as the single source of
+truth**, with Python metadata (dtypes and roles) mapped onto it via `get_equities_schema_from_sql()`.
 
 ```python
-from finance_ml.core.schema import COLUMN_SCHEMA
+from finance_ml.core.schema import COLUMN_SCHEMA, get_equities_schema_from_sql
 
 # COLUMN_SCHEMA is Dict[str, ColumnMeta]
 # Query current count:
-print(f"Total columns: {len(COLUMN_SCHEMA)}")  # ~599 columns
+print(f"Total columns: {len(COLUMN_SCHEMA)}")  # ~986 columns
+
+# Dynamic schema introspection from PostgreSQL
+schema = get_equities_schema_from_sql("postgresql://user:pass@localhost/db")
 ```
+
+**SQL-Driven Schema Architecture:**
+
+The schema module now supports dynamic introspection from the PostgreSQL `equities` table:
+
+- `SQL_TYPE_TO_DTYPE`: Maps SQL types (text, numeric, integer, etc.) to pandas dtypes
+- `COLUMN_ROLE_METADATA`: Provides semantic role metadata for columns
+- `_infer_role_from_sql_name()`: Pattern-based role inference for columns not in metadata
 
 **Schema Composition:**
 
 | Category             | Count | Description                             |
 |----------------------|-------|-----------------------------------------|
-| Source columns       | 330   | From CSV/SQL schema                     |
+| Source columns       | 555   | From SQL schema (equities table)        |
 | Log-transformed      | 61    | ETL-generated (log1p of market values)  |
 | Legacy aliases       | 43    | Backward compatibility (role=auxiliary) |
 | Generic base         | 36    | No time suffix                          |
 | Conditional metrics  | 34    | With `_applicable` flags                |
 | Derived ratios       | 26    | ETL semantic transforms                 |
-| Phase 9.3 composites | 4     | Quality scores                          |
+| Phase 9.3 composites | 231   | Feature engineering outputs             |
 
 ### 5.3 Schema Utility Functions
 
 All functions are imported from `finance_ml.core.schema`:
 
+**SQL Introspection Functions (NEW v2.1):**
+
+| Function                                   | Purpose                           | Returns                 |
+|--------------------------------------------|-----------------------------------|-------------------------|
+| `get_equities_schema_from_sql(conn_str)`   | Load schema from PostgreSQL       | `Dict[str, ColumnMeta]` |
+| `refresh_column_schema_from_sql(conn_str)` | Refresh COLUMN_SCHEMA from DB     | `Dict[str, ColumnMeta]` |
+| `generate_static_schema_code(conn_str)`    | Generate Python code for fallback | `str`                   |
+
+**Column Name Functions:**
+
+| Function                     | Purpose                   | Returns |
+|------------------------------|---------------------------|---------|
+| `get_sql_column_name(col)`   | Get SQL-compatible name   | `str`   |
+| `normalize_column_name(col)` | Normalize to Python name  | `str`   |
+| `generate_sql_schema()`      | Generate CREATE TABLE SQL | `str`   |
+
+**Dtype Functions:**
+
+| Function                         | Purpose                   | Returns |
+|----------------------------------|---------------------------|---------|
+| `get_expected_dtype(col)`        | Get expected pandas dtype | `DType` |
+| `get_pandas_nullable_dtype(col)` | Get nullable pandas dtype | `str`   |
+| `get_numpy_dtype(col)`           | Get numpy dtype           | `str`   |
+
+**Column Listing Functions:**
+
 | Function                                 | Purpose                        | Returns     |
 |------------------------------------------|--------------------------------|-------------|
-| `get_sql_column_name(col)`               | Get SQL-compatible name        | `str`       |
-| `normalize_column_name(col)`             | Normalize to Python name       | `str`       |
-| `generate_sql_schema()`                  | Generate CREATE TABLE SQL      | `str`       |
-| `get_expected_dtype(col)`                | Get expected pandas dtype      | `DType`     |
-| `get_pandas_nullable_dtype(col)`         | Get nullable pandas dtype      | `str`       |
-| `get_numpy_dtype(col)`                   | Get numpy dtype                | `str`       |
 | `list_numeric_feature_cols()`            | List numeric features          | `List[str]` |
 | `list_categorical_cols()`                | List categorical columns       | `List[str]` |
 | `list_date_cols()`                       | List date/datetime columns     | `List[str]` |
@@ -478,6 +510,13 @@ All functions are imported from `finance_ml.core.schema`:
 | `list_knn_imputable_cols()`              | List KNN-imputable columns     | `List[str]` |
 | `list_required_schema_columns_for_etl()` | Get required ETL columns       | `List[str]` |
 | `list_etl_generated_column_patterns()`   | Get ETL-generated patterns     | `List[str]` |
+
+**Role Default Functions:**
+
+| Function                        | Purpose                      | Returns |
+|---------------------------------|------------------------------|---------|
+| `get_role_default_value(role)`  | Get default value for role   | `Any`   |
+| `get_column_default_value(col)` | Get default value for column | `Any`   |
 
 **Usage Examples:**
 ```python
@@ -810,6 +849,43 @@ features_df = build_features(
 )
 ```
 
+**Feature Engineering via ETL Stage (Recommended):**
+
+```python
+from finance_ml.etl import FeatureEngineeringConfig
+from finance_ml.etl.stages.feature_engineering import run_feature_engineering_stage
+
+# Using config object (recommended)
+config = FeatureEngineeringConfig(
+    enabled=True,
+    preset="comprehensive",
+    engineer_valuation=True,
+    engineer_momentum=True,
+    engineer_earnings_analytics=True,
+    # ... 34 total generator flags available
+)
+
+features_df = run_feature_engineering_stage(df, config=config)
+
+# Query enabled/disabled generators
+enabled = config.get_enabled_generators()   # Returns list of registry keys
+disabled = config.get_disabled_generators() # Returns list of registry keys
+```
+
+**CONFIG_FLAG_TO_REGISTRY_KEY Mapping:**
+
+The `FeatureEngineeringConfig` flags map to `FEATURE_REGISTRY` keys:
+
+| Config Flag                   | Registry Key         | Category             |
+|-------------------------------|----------------------|----------------------|
+| `engineer_valuation`          | `valuation`          | Valuation Ratios     |
+| `engineer_momentum`           | `momentum`           | Momentum & Technical |
+| `engineer_profitability`      | `profitability`      | Profitability        |
+| `engineer_accounting_quality` | `accounting_quality` | Quality & Risk       |
+| `engineer_analyst_coverage`   | `analyst_coverage`   | Analyst Sentiment    |
+| `engineer_temporal`           | `temporal`           | Temporal Patterns    |
+| ...                           | ...                  | (34 total mappings)  |
+
 **Phase 9.4 — Classification:**
 
 ```python
@@ -888,20 +964,39 @@ predictions = predict_with_model(model, X_test, fill_missing=0.0)
 
 The ETL module provides a 12-stage pipeline:
 
-| Stage | Description               |
-|-------|---------------------------|
-| 1     | Extraction (CSV/Database) |
-| 2     | Dtype Casting             |
-| 3     | Semantic Classification   |
-| 4     | Validation                |
-| 5     | Row Dropping              |
-| 6     | Sanitization              |
-| 7     | Imputation (6-step)       |
-| 8     | Currency Conversion       |
-| 9     | Semantic Transforms       |
-| 10    | Scaling                   |
-| 11    | Financial Metrics         |
-| 12    | Feature Engineering       |
+| Stage | Description                      |
+|-------|----------------------------------|
+| 1     | Extraction (CSV/Database)        |
+| 2     | Dtype Casting                    |
+| 3     | Semantic Classification          |
+| 4     | Validation                       |
+| 5     | Row Dropping                     |
+| 6     | Sanitization                     |
+| 7     | Imputation (Role-Based + 6-step) |
+| 8     | Currency Conversion              |
+| 9     | Semantic Transforms              |
+| 10    | Scaling                          |
+| 11    | Financial Metrics                |
+| 12    | Feature Engineering              |
+
+**Role-Based Imputation Strategy (Stage 7):**
+
+The imputation stage now uses semantic column roles from `COLUMN_SCHEMA` to apply
+appropriate imputation methods for each column type:
+
+| Role                  | Method                  | Rationale                                     |
+|-----------------------|-------------------------|-----------------------------------------------|
+| `target`              | Fallback chain          | price_target → median → last_price            |
+| `non_recurring`       | Zero fill               | Missing = event didn't occur                  |
+| `count`               | Conditional zero/median | Analyst counts → zero; others → sector median |
+| `financial_statement` | Sector median           | Zero valid but missing ≠ zero                 |
+| `balance_sheet`       | Sector median           | Balance sheet items can legitimately be zero  |
+| `cash_flow`           | Sector median           | Cash flows can be negative or zero            |
+| `ratio`               | Bounded KNN             | Clip outliers (1st-99th) before imputation    |
+| `percentage`          | Bounded KNN             | Allow -100% to +500% for growth rates         |
+| `market`              | Sector KNN              | Strong correlation within sector/size         |
+| `feature`             | Sector KNN              | Engineered features use sector-aware KNN      |
+| `auxiliary`           | Global median           | Legacy/optional columns use simple median     |
 
 **Primary Interface:**
 ```python
@@ -928,8 +1023,9 @@ config = ETLConfig(
         use_business_day_fallback=True,
     ),
     imputation=ImputationConfig(
-        strategy="6step",
+        strategy="6step",  # or "role_based" for role-only imputation
         apply_dividend_zero_fill=True,
+        use_role_based_strategy=True,  # NEW: Enable role-based imputation
     ),
 )
 df, metrics = run_etl_pipeline(source='csv', data_dir='data/', config=config)
