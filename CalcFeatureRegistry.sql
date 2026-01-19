@@ -3671,15 +3671,141 @@ FROM postgres.public.equities e;
 -- Essential indexes for the equities table to improve query performance
 -- These indexes support filtering operations commonly used in feature queries
 
+-- ===========================================
+-- ID columns (primary lookups)
+-- ===========================================
 CREATE INDEX IF NOT EXISTS idx_equities_ticker ON public.equities ("Ticker");
-CREATE INDEX IF NOT EXISTS idx_equities_sector ON public.equities ("Sector");
+CREATE INDEX IF NOT EXISTS idx_equities_isin ON public.equities ("ISIN");
+CREATE INDEX IF NOT EXISTS idx_equities_name ON public.equities ("Name");
+
+-- ===========================================
+-- CATEGORICAL columns (filtering/grouping)
+-- ===========================================
 CREATE INDEX IF NOT EXISTS idx_equities_region ON public.equities ("Region");
-CREATE INDEX IF NOT EXISTS idx_equities_report_date ON public.equities ("Income Statement Report Date");
-CREATE INDEX IF NOT EXISTS idx_equities_market_cap ON public.equities ("Market Cap");
 CREATE INDEX IF NOT EXISTS idx_equities_country ON public.equities ("Country");
+CREATE INDEX IF NOT EXISTS idx_equities_trading_country ON public.equities ("Trading Country");
+CREATE INDEX IF NOT EXISTS idx_equities_exchange ON public.equities ("Exchange");
+CREATE INDEX IF NOT EXISTS idx_equities_unit ON public.equities ("Unit");
+CREATE INDEX IF NOT EXISTS idx_equities_sector ON public.equities ("Sector");
+CREATE INDEX IF NOT EXISTS idx_equities_industry ON public.equities ("Industry");
+CREATE INDEX IF NOT EXISTS idx_equities_style_class ON public.equities ("Style Class");
+CREATE INDEX IF NOT EXISTS idx_equities_size_class ON public.equities ("Size Class");
+
+-- ===========================================
+-- DATE columns (temporal queries)
+-- ===========================================
+CREATE INDEX IF NOT EXISTS idx_equities_report_date ON public.equities ("Income Statement Report Date");
+CREATE INDEX IF NOT EXISTS idx_equities_next_earnings ON public.equities ("Next Earnings");
+CREATE INDEX IF NOT EXISTS idx_equities_last_updated ON public.equities ("Last Updated");
+CREATE INDEX IF NOT EXISTS idx_equities_fy_end_date ON public.equities ("FY End Date");
+
+-- ===========================================
+-- MARKET columns (sorting/filtering by size)
+-- ===========================================
+CREATE INDEX IF NOT EXISTS idx_equities_market_cap ON public.equities ("Market Cap");
+CREATE INDEX IF NOT EXISTS idx_equities_enterprise_value ON public.equities ("Enterprise Value");
+CREATE INDEX IF NOT EXISTS idx_equities_last_price ON public.equities ("Last Price");
+
+-- ===========================================
+-- Composite indexes for common query patterns
+-- ===========================================
+CREATE INDEX IF NOT EXISTS idx_equities_sector_region ON public.equities ("Sector", "Region");
+CREATE INDEX IF NOT EXISTS idx_equities_country_sector ON public.equities ("Country", "Sector");
+CREATE INDEX IF NOT EXISTS idx_equities_industry_size ON public.equities ("Industry", "Size Class");
+CREATE INDEX IF NOT EXISTS idx_equities_region_market_cap ON public.equities ("Region", "Market Cap" DESC);
 
 -- =============================================================================
--- SECTION 13B: MATERIALIZED VIEW FOR PERFORMANCE
+-- SECTION 13B: NEW VIEWS FOR ENHANCED FEATURES
+-- =============================================================================
+
+CREATE OR REPLACE VIEW v_technical_analysis_features AS
+SELECT "Ticker"                                                      AS ticker,
+       ("EMA (20D)" - "EMA (50D)") / NULLIF("EMA (50D)", 0)          AS ema_slope_20d,
+       CASE
+           WHEN "EMA (20D)" > "EMA (50D)" AND "EMA (50D)" > "EMA (100D)"
+               AND "EMA (100D)" > "EMA (250D)" THEN 1
+           WHEN "EMA (20D)" < "EMA (50D)" AND "EMA (50D)" < "EMA (100D)"
+               AND "EMA (100D)" < "EMA (250D)" THEN -1
+           ELSE 0
+           END                                                       AS ema_trend_consistency,
+       ("Last Price" - "EMA (100D)") / NULLIF("EMA (100D)", 0) * 100 AS price_vs_ema_100d,
+       CASE
+           WHEN ("52W High/Adj" - "Last Price") / NULLIF("52W High/Adj", 0) <= 0.05
+               THEN 1
+           ELSE 0
+           END                                                       AS near_52w_high_flag,
+       CASE
+           WHEN ("Last Price" - "52W Low/Adj") / NULLIF("52W Low/Adj", 0) <= 0.05
+               THEN 1
+           ELSE 0
+           END                                                       AS near_52w_low_flag,
+       "Rel. Volume" * "Price Chg. % (1M)"                           AS volume_momentum_score,
+       CASE
+           WHEN "EMA (20D)" > "EMA (50D)"
+               AND ("52W High/Adj" - "Last Price") / NULLIF("52W High/Adj", 0) <= 0.05
+               THEN 1
+           ELSE 0
+           END                                                       AS breakout_signal,
+       CASE WHEN "Rel. Volume" > 1.5 THEN 1 ELSE 0 END               AS high_volume_flag
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_financial_distress_features AS
+SELECT "Ticker"                                                                          AS ticker,
+       GREATEST(0, LEAST(100,
+                         (("Altman Z-Score (LTM)" - 1.8) / NULLIF(3.0 - 1.8, 0) * 100))) AS distress_risk_score,
+       CASE
+           WHEN "Current Ratio (LTM)" < 1.0 THEN 30.0
+           WHEN "Current Ratio (LTM)" < 1.5 THEN 15.0
+           ELSE 0.0
+           END                                                                           AS liquidity_stress_score,
+       ("Working Capital (FQ)" - "Working Capital (FY)") /
+       NULLIF(ABS("Working Capital (FY)"), 0)                                            AS working_capital_trend,
+       "Cash And Equivalents (FQ)" /
+       NULLIF("Total Operating Expenses (LTM)" / 12.0, 0)                                AS cash_runway_months
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_price_target_dynamics AS
+SELECT "Ticker"                                                    AS ticker,
+       ("Price Target" - "Price Target (1M Ago)") / NULLIF("Price Target (1M Ago)", 0)
+                                                                   AS pt_momentum_1m,
+       ("Price Target" - "Price Target (3M Ago)") / NULLIF("Price Target (3M Ago)", 0)
+                                                                   AS pt_momentum_3m,
+       ("Price Target - Median" - "Price Target - Median (3M Ago)") /
+       NULLIF("Price Target - Median (3M Ago)", 0)                 AS pt_median_momentum_3m,
+       (("Price Target - High (3M Ago)" - "Price Target - Low (3M Ago)") /
+        NULLIF("Price Target - Median (3M Ago)", 0)) -
+       (("Price Target - High" - "Price Target - Low") /
+        NULLIF("Price Target - Median", 0))                        AS pt_consensus_convergence,
+       ("Price Target - #" - "Price Target - # (3M Ago)")::INTEGER AS analyst_coverage_change_3m
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_composite_scores AS
+SELECT "Ticker"          AS ticker,
+       (CASE WHEN "Return on Assets (ROA) % (LTM)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "CFO (LTM)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "Return on Assets (ROA) % (LTM)" > "Return on Assets (ROA) % (FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "CFO (LTM)" > "Net Income - (IS) (LTM)" THEN 1 ELSE 0 END +
+        CASE
+            WHEN "Total Debt (LTM)" / NULLIF("Total Equity (LTM)", 0) <
+                 "Total Debt (FY)" / NULLIF("Total Equity (FY)", 0) THEN 1
+            ELSE 0 END +
+        CASE WHEN "Current Ratio (LTM)" > "Current Ratio (FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "Shrs Out" <= "Shrs Out (-1FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "Gross Profit Margin % (LTM)" > "Gross Profit Margin % (FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "Asset Turnover (LTM)" > "Asset Turnover (FY)" THEN 1 ELSE 0 END
+           )::INTEGER    AS piotroski_f_score,
+       (CASE WHEN "Net EPS - Basic (FY)" > "Net EPS - Basic (-1FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "Net EPS - Basic (-1FY)" > "Net EPS - Basic (-2FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "Net EPS - Basic (-2FY)" > "Net EPS - Basic (-3FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "Net EPS - Basic (-3FY)" > "Net EPS - Basic (-4FY)" THEN 1 ELSE 0 END +
+        CASE WHEN "Net EPS - Basic (-4FY)" > "Net EPS - Basic (-5FY)" THEN 1 ELSE 0 END
+           ) / 5.0 * 100 AS eps_trajectory_score,
+       GREATEST(0, LEAST(100,
+                         50 - (("Shrs Out" - "Shrs Out (-1FY)") / NULLIF("Shrs Out (-1FY)", 0)) * 100
+                   ))    AS dilution_score
+FROM postgres.public.equities;
+-- =============================================================================
+-- SECTION 13C: MATERIALIZED VIEW FOR PERFORMANCE
 -- =============================================================================
 -- Materialized view for better performance when data doesn't change frequently
 -- Use this instead of vw_feature_registry for read-heavy workloads
@@ -3713,7 +3839,7 @@ DROP MATERIALIZED VIEW IF EXISTS mv_technical_features CASCADE;
 
 CREATE MATERIALIZED VIEW mv_technical_features AS
 SELECT *
-FROM v_technical_analysis_features;
+FROM v_technical_analysis_features;;
 
 CREATE INDEX IF NOT EXISTS idx_mv_tech_ticker ON mv_technical_features (ticker);
 CREATE INDEX IF NOT EXISTS idx_mv_tech_breakout ON mv_technical_features (breakout_signal) WHERE breakout_signal = 1;
@@ -3767,7 +3893,7 @@ $$;
 -- SELECT refresh_all_feature_materialized_views();
 
 -- =============================================================================
--- SECTION 13C: ALTERNATIVE VIEWS FOR FUNCTION INLINING
+-- SECTION 13D: ALTERNATIVE VIEWS FOR FUNCTION INLINING
 -- =============================================================================
 -- Views as alternatives to functions for better query optimization
 -- SQL-language functions with RETURNS TABLE may not inline well
@@ -3943,94 +4069,699 @@ SELECT "Ticker"                                                                 
 FROM postgres.public.equities;
 
 -- =============================================================================
--- SECTION 13D: NEW VIEWS FOR ENHANCED FEATURES
+-- SECTION 13E: ENHANCED FEATURE FUNCTIONS (NEW)
 -- =============================================================================
 
-CREATE OR REPLACE VIEW v_technical_analysis_features AS
+-- Long-Term Momentum Features (engineer_long_term_momentum_features)
+CREATE OR REPLACE FUNCTION calc_long_term_momentum_features()
+    RETURNS TABLE
+            (
+                ticker                   TEXT,
+                price_momentum_qtd       NUMERIC,
+                price_momentum_3y        NUMERIC,
+                price_momentum_5y        NUMERIC,
+                momentum_acceleration_1y NUMERIC,
+                momentum_acceleration_3y NUMERIC,
+                long_term_trend_score    NUMERIC,
+                price_vs_3y_avg          NUMERIC,
+                price_vs_5y_avg          NUMERIC,
+                momentum_consistency     NUMERIC,
+                secular_trend_flag       INTEGER
+            )
+AS
+$$
+SELECT "Ticker"                                                                AS ticker,
+       ("Last Price" - "Price (QTD Ago)") / NULLIF("Price (QTD Ago)", 0) * 100 AS price_momentum_qtd,
+       ("Last Price" - "Price (3Y Ago)") / NULLIF("Price (3Y Ago)", 0) * 100   AS price_momentum_3y,
+       ("Last Price" - "Price (5Y Ago)") / NULLIF("Price (5Y Ago)", 0) * 100   AS price_momentum_5y,
+       (POWER("Last Price" / NULLIF("Price (1Y Ago)", 0), 1.0) - 1) -
+       (POWER("Last Price" / NULLIF("Price (3Y Ago)", 0), 1.0 / 3.0) - 1)      AS momentum_acceleration_1y,
+       (POWER("Last Price" / NULLIF("Price (3Y Ago)", 0), 1.0 / 3.0) - 1) -
+       (POWER("Last Price" / NULLIF("Price (5Y Ago)", 0), 1.0 / 5.0) - 1)      AS momentum_acceleration_3y,
+       (("Last Price" - "Price (1Y Ago)") / NULLIF("Price (1Y Ago)", 0) * 0.5 +
+        ("Last Price" - "Price (3Y Ago)") / NULLIF("Price (3Y Ago)", 0) * 0.3 +
+        ("Last Price" - "Price (5Y Ago)") / NULLIF("Price (5Y Ago)", 0) * 0.2) *
+       100                                                                     AS long_term_trend_score,
+       "Last Price" / NULLIF(("Price (1Y Ago)" + "Price (3Y Ago)") / 2, 0)     AS price_vs_3y_avg,
+       "Last Price" /
+       NULLIF(("Price (1Y Ago)" + "Price (3Y Ago)" + "Price (5Y Ago)") / 3, 0) AS price_vs_5y_avg,
+       CASE
+           WHEN ("Last Price" > "Price (1M Ago)") AND ("Last Price" > "Price (3M Ago)") AND
+                ("Last Price" > "Price (1Y Ago)") AND ("Last Price" > "Price (3Y Ago)") THEN 1.0
+           WHEN ("Last Price" > "Price (1M Ago)") AND ("Last Price" > "Price (3M Ago)") AND
+                ("Last Price" > "Price (1Y Ago)") THEN 0.75
+           WHEN ("Last Price" > "Price (1M Ago)") AND ("Last Price" > "Price (3M Ago)") THEN 0.5
+           WHEN ("Last Price" > "Price (1M Ago)") THEN 0.25
+           ELSE 0
+           END                                                                 AS momentum_consistency,
+       CASE
+           WHEN POWER("Last Price" / NULLIF("Price (5Y Ago)", 0), 1.0 / 5.0) - 1 > 0.10 THEN 1
+           ELSE 0 END                                                          AS secular_trend_flag
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- Beta Risk Features (engineer_beta_risk_features)
+CREATE OR REPLACE FUNCTION calc_beta_risk_features()
+    RETURNS TABLE
+            (
+                ticker                TEXT,
+                beta_1y               NUMERIC,
+                beta_2y               NUMERIC,
+                beta_5y               NUMERIC,
+                beta_trend_short      NUMERIC,
+                beta_trend_long       NUMERIC,
+                beta_stability        NUMERIC,
+                beta_regime_change    INTEGER,
+                systematic_risk_score NUMERIC,
+                defensive_stock_flag  INTEGER,
+                high_beta_flag        INTEGER
+            )
+AS
+$$
+SELECT "Ticker"                                                            AS ticker,
+       "Beta (1Y)"                                                         AS beta_1y,
+       "Beta (2Y)"                                                         AS beta_2y,
+       "Beta (5Y)"                                                         AS beta_5y,
+       "Beta (1Y)" - "Beta (2Y)"                                           AS beta_trend_short,
+       "Beta (2Y)" - "Beta (5Y)"                                           AS beta_trend_long,
+       CASE
+           WHEN GREATEST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)") - LEAST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)") > 0
+               THEN 1.0 /
+                    (GREATEST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)") - LEAST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)"))
+           ELSE 1.0
+           END                                                             AS beta_stability,
+       CASE WHEN ABS("Beta (1Y)" - "Beta (5Y)") > 0.3 THEN 1 ELSE 0 END    AS beta_regime_change,
+       "Beta (1Y)" * 0.5 + "Beta (2Y)" * 0.3 + "Beta (5Y)" * 0.2           AS systematic_risk_score,
+       CASE
+           WHEN "Beta (1Y)" < 0.8 AND "Beta (2Y)" < 0.8 AND "Beta (5Y)" < 0.8 THEN 1
+           ELSE 0 END                                                      AS defensive_stock_flag,
+       CASE WHEN "Beta (1Y)" > 1.3 AND "Beta (2Y)" > 1.3 THEN 1 ELSE 0 END AS high_beta_flag
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- Interest Income Features (engineer_interest_income_features)
+CREATE OR REPLACE FUNCTION calc_interest_income_features()
+    RETURNS TABLE
+            (
+                ticker                     TEXT,
+                interest_income_ltm        NUMERIC,
+                interest_expense_ltm       NUMERIC,
+                net_interest_income        NUMERIC,
+                interest_coverage_ebit     NUMERIC,
+                interest_coverage_ebitda   NUMERIC,
+                interest_income_to_revenue NUMERIC,
+                net_interest_margin        NUMERIC,
+                non_operating_income_ratio NUMERIC,
+                financial_income_quality   NUMERIC,
+                interest_burden_ratio      NUMERIC
+            )
+AS
+$$
+SELECT "Ticker"                                                                AS ticker,
+       "Interest Income On Investments (LTM)"                                  AS interest_income_ltm,
+       "Interest Expense/Total (LTM)"                                          AS interest_expense_ltm,
+       "Interest Income On Investments (LTM)" - "Interest Expense/Total (LTM)" AS net_interest_income,
+       "EBIT (LTM)" / NULLIF("Interest Expense/Total (LTM)", 0)                AS interest_coverage_ebit,
+       "EBITDA (LTM)" / NULLIF("Interest Expense/Total (LTM)", 0)              AS interest_coverage_ebitda,
+       "Interest Income On Investments (LTM)" / NULLIF("Total Revenues (LTM)", 0) *
+       100                                                                     AS interest_income_to_revenue,
+       ("Interest Income On Investments (LTM)" - "Interest Expense/Total (LTM)") / NULLIF("Total Assets (LTM)", 0) *
+       100                                                                     AS net_interest_margin,
+       ("Interest Income On Investments (LTM)" + "Gain (Loss) On Sale Of Assets (LTM)") /
+       NULLIF(ABS("Net Income - (IS) (LTM)"), 0)                               AS non_operating_income_ratio,
+       "Operating Income (LTM)" / NULLIF("Operating Income (LTM)" + "Interest Income On Investments (LTM)",
+                                         0)                                    AS financial_income_quality,
+       "Interest Expense/Total (LTM)" / NULLIF("EBIT (LTM)", 0)                AS interest_burden_ratio
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- Tangible Book Features (engineer_tangible_book_features)
+CREATE OR REPLACE FUNCTION calc_tangible_book_features()
+    RETURNS TABLE
+            (
+                ticker                  TEXT,
+                tbv_fy                  NUMERIC,
+                tbv_ltm                 NUMERIC,
+                price_to_tbv            NUMERIC,
+                tbv_per_share           NUMERIC,
+                tbv_growth_yoy          NUMERIC,
+                tangible_equity_ratio   NUMERIC,
+                intangible_to_tbv_ratio NUMERIC,
+                tbv_vs_market_cap       NUMERIC,
+                net_tangible_assets     NUMERIC,
+                tbv_margin_of_safety    NUMERIC
+            )
+AS
+$$
+SELECT "Ticker"                                                                      AS ticker,
+       "TBV (FY)"                                                                    AS tbv_fy,
+       "TBV (LTM)"                                                                   AS tbv_ltm,
+       "Last Price" / NULLIF("TBV (LTM)" / NULLIF("Shrs Out", 0), 0)                 AS price_to_tbv,
+       "TBV (LTM)" / NULLIF("Shrs Out", 0)                                           AS tbv_per_share,
+       ("TBV (LTM)" - "TBV (FY)") / NULLIF(ABS("TBV (FY)"), 0) * 100                 AS tbv_growth_yoy,
+       "TBV (LTM)" / NULLIF("Total Equity (LTM)", 0)                                 AS tangible_equity_ratio,
+       ("Goodwill (LTM)" + "Gross Intangible Assets (LTM)") / NULLIF("TBV (LTM)", 0) AS intangible_to_tbv_ratio,
+       "TBV (LTM)" / NULLIF("Market Cap", 0)                                         AS tbv_vs_market_cap,
+       "TBV (LTM)" - "Total Debt (LTM)"                                              AS net_tangible_assets,
+       ("TBV (LTM)" - "Market Cap") / NULLIF("TBV (LTM)", 0) * 100                   AS tbv_margin_of_safety
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- Working Capital Deep Features (engineer_working_capital_deep_features)
+CREATE OR REPLACE FUNCTION calc_working_capital_deep_features()
+    RETURNS TABLE
+            (
+                ticker                     TEXT,
+                current_assets_ltm         NUMERIC,
+                current_liabilities_ltm    NUMERIC,
+                net_working_capital        NUMERIC,
+                working_capital_to_revenue NUMERIC,
+                working_capital_to_assets  NUMERIC,
+                current_ratio              NUMERIC,
+                quick_ratio                NUMERIC,
+                cash_ratio                 NUMERIC,
+                defensive_interval         NUMERIC,
+                working_capital_turnover   NUMERIC,
+                liquidity_score            NUMERIC,
+                working_capital_efficiency NUMERIC
+            )
+AS
+$$
+SELECT "Ticker"                                                                                          AS ticker,
+       "Total Current Assets (LTM)"                                                                      AS current_assets_ltm,
+       "Total Current Liabilities (LTM)"                                                                 AS current_liabilities_ltm,
+       "Total Current Assets (LTM)" - "Total Current Liabilities (LTM)"                                  AS net_working_capital,
+       "Working Capital (LTM)" / NULLIF("Total Revenues (LTM)", 0)                                       AS working_capital_to_revenue,
+       "Working Capital (LTM)" / NULLIF("Total Assets (LTM)", 0)                                         AS working_capital_to_assets,
+       "Total Current Assets (LTM)" /
+       NULLIF("Total Current Liabilities (LTM)", 0)                                                      AS current_ratio,
+       ("Total Current Assets (LTM)" - "Inventory (LTM)") / NULLIF("Total Current Liabilities (LTM)", 0) AS quick_ratio,
+       "Cash And Equivalents (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0)                       AS cash_ratio,
+       ("Total Current Assets (LTM)" /
+        NULLIF("Total Operating Expenses (LTM)" / 365, 0))                                               AS defensive_interval,
+       "Total Revenues (LTM)" / NULLIF("Working Capital (LTM)", 0)                                       AS working_capital_turnover,
+       GREATEST(0, LEAST(100,
+                         (CASE
+                              WHEN "Total Current Assets (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 2
+                                  THEN 40
+                              WHEN "Total Current Assets (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 1.5
+                                  THEN 30
+                              WHEN "Total Current Assets (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 1
+                                  THEN 20
+                              ELSE 0 END) +
+                         (CASE
+                              WHEN ("Total Current Assets (LTM)" - "Inventory (LTM)") /
+                                   NULLIF("Total Current Liabilities (LTM)", 0) >= 1 THEN 30
+                              ELSE 15 END) +
+                         (CASE
+                              WHEN "Cash And Equivalents (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 0.5
+                                  THEN 30
+                              WHEN "Cash And Equivalents (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 0.2
+                                  THEN 15
+                              ELSE 0 END)
+                   ))                                                                                    AS liquidity_score,
+       "Total Revenues (LTM)" / NULLIF(ABS("Working Capital (LTM)"), 0)                                  AS working_capital_efficiency
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- Unusual Items Features (engineer_unusual_items_features)
+CREATE OR REPLACE FUNCTION calc_unusual_items_features()
+    RETURNS TABLE
+            (
+                ticker                      TEXT,
+                other_unusual_items_ltm     NUMERIC,
+                total_unusual_items         NUMERIC,
+                unusual_to_revenue_ratio    NUMERIC,
+                unusual_to_ebitda_ratio     NUMERIC,
+                unusual_to_net_income_ratio NUMERIC,
+                clean_earnings_flag         INTEGER,
+                recurring_unusual_flag      INTEGER,
+                earnings_noise_score        NUMERIC,
+                quality_adjusted_ni         NUMERIC,
+                exceptional_items_impact    NUMERIC
+            )
+AS
+$$
+SELECT "Ticker"                                  AS ticker,
+       "Other Unusual Items/Total (LTM)"         AS other_unusual_items_ltm,
+       ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+       ABS("Merger & Restructuring Charges (LTM)") + ABS("Gain (Loss) On Sale Of Assets (LTM)") +
+       ABS("Other Unusual Items/Total (LTM)")    AS total_unusual_items,
+       (ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+        ABS("Other Unusual Items/Total (LTM)")) / NULLIF("Total Revenues (LTM)", 0) *
+       100                                       AS unusual_to_revenue_ratio,
+       (ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+        ABS("Other Unusual Items/Total (LTM)")) /
+       NULLIF(ABS("EBITDA (LTM)"), 0)            AS unusual_to_ebitda_ratio,
+       (ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+        ABS("Other Unusual Items/Total (LTM)")) /
+       NULLIF(ABS("Net Income - (IS) (LTM)"), 0) AS unusual_to_net_income_ratio,
+       CASE
+           WHEN ABS("Impairment of Goodwill (LTM)") < 1 AND ABS("Asset Writedown (LTM)") < 1 AND
+                ABS("Restructuring Charges (LTM)") < 1 AND ABS("Other Unusual Items/Total (LTM)") < 1 THEN 1
+           ELSE 0 END                            AS clean_earnings_flag,
+       CASE
+           WHEN (CASE WHEN ABS("Impairment of Goodwill (FY)") > 0 THEN 1 ELSE 0 END +
+                 CASE WHEN ABS("Impairment of Goodwill (-1FY)") > 0 THEN 1 ELSE 0 END +
+                 CASE WHEN ABS("Restructuring Charges (FY)") > 0 THEN 1 ELSE 0 END +
+                 CASE WHEN ABS("Restructuring Charges (-1FY)") > 0 THEN 1 ELSE 0 END) >= 3 THEN 1
+           ELSE 0 END                            AS recurring_unusual_flag,
+       LEAST(100,
+             (ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+              ABS("Other Unusual Items/Total (LTM)")) / NULLIF(ABS("Net Income - (IS) (LTM)"), 0) *
+             100)                                AS earnings_noise_score,
+       "Net Income - (IS) (LTM)" + "Impairment of Goodwill (LTM)" + "Asset Writedown (LTM)" +
+       "Restructuring Charges (LTM)"             AS quality_adjusted_ni,
+       (ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)")) /
+       NULLIF("Shrs Out", 0)                     AS exceptional_items_impact
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- Revenue Estimate Consensus Features (engineer_revenue_estimate_consensus)
+CREATE OR REPLACE FUNCTION calc_revenue_estimate_consensus()
+    RETURNS TABLE
+            (
+                ticker                 TEXT,
+                revenue_est_avg_ntm    NUMERIC,
+                revenue_est_med_ntm    NUMERIC,
+                revenue_est_avg_fy1e   NUMERIC,
+                revenue_est_med_fy1e   NUMERIC,
+                estimate_skew_ntm      NUMERIC,
+                estimate_skew_fy1e     NUMERIC,
+                consensus_confidence   NUMERIC,
+                upside_to_consensus    NUMERIC,
+                estimate_vs_actual_ltm NUMERIC,
+                forward_revenue_growth NUMERIC,
+                revenue_beat_history   NUMERIC
+            )
+AS
+$$
+SELECT "Ticker"                                AS ticker,
+       "Revenues - Est Avg (NTM)"              AS revenue_est_avg_ntm,
+       "Revenues - Est Med (NTM)"              AS revenue_est_med_ntm,
+       "Revenues - Est Avg (FY1E)"             AS revenue_est_avg_fy1e,
+       "Revenues - Est Med (FY1E)"             AS revenue_est_med_fy1e,
+       ("Revenues - Est Avg (NTM)" - "Revenues - Est Med (NTM)") / NULLIF("Revenues - Est Med (NTM)", 0) *
+       100                                     AS estimate_skew_ntm,
+       ("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)") / NULLIF("Revenues - Est Med (FY1E)", 0) *
+       100                                     AS estimate_skew_fy1e,
+       GREATEST(0, LEAST(100, 100 - ABS(("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)") /
+                                        NULLIF("Revenues - Est Med (FY1E)", 0) *
+                                        100))) AS consensus_confidence,
+       ("Revenues - Est Med (FY1E)" - "Total Revenues (LTM)") / NULLIF("Total Revenues (LTM)", 0) *
+       100                                     AS upside_to_consensus,
+       ("Total Revenues (LTM)" - "Revenues - Est Avg (FY1E)") / NULLIF("Revenues - Est Avg (FY1E)", 0) *
+       100                                     AS estimate_vs_actual_ltm,
+       ("Revenues - Est Med (NTM)" - "Total Revenues (LTM)") / NULLIF("Total Revenues (LTM)", 0) *
+       100                                     AS forward_revenue_growth,
+       CASE
+           WHEN "Total Revenues (LTM)" > "Revenues - Est Avg (FY1E)" THEN 1.0
+           ELSE 0.0 END                        AS revenue_beat_history
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+
+
+-- Cost Structure Features (engineer_cost_structure_features)
+CREATE OR REPLACE FUNCTION calc_cost_structure_features()
+    RETURNS TABLE
+            (
+                ticker                   TEXT,
+                sga_to_revenue_fq        NUMERIC,
+                sga_to_revenue_fy        NUMERIC,
+                sga_trend_yoy            NUMERIC,
+                sga_vs_5yavg             NUMERIC,
+                marketing_to_revenue_fq  NUMERIC,
+                marketing_to_revenue_fy  NUMERIC,
+                marketing_trend_yoy      NUMERIC,
+                marketing_vs_5yavg       NUMERIC,
+                operating_expense_ratio  NUMERIC,
+                cost_of_revenue_ratio    NUMERIC,
+                operating_leverage_score NUMERIC,
+                cost_efficiency_trend    NUMERIC
+            )
+AS
+$$
+SELECT "Ticker"                                                             AS ticker,
+       "Selling General & Admin Expenses/Total (FQ)" / NULLIF("Total Revenues (FQ)", 0) *
+       100                                                                  AS sga_to_revenue_fq,
+       "Selling General & Admin Expenses/Total (FY)" / NULLIF("Total Revenues (FY)", 0) *
+       100                                                                  AS sga_to_revenue_fy,
+       ("Selling General & Admin Expenses/Total (FY)" - "Selling General & Admin Expenses/Total (-1FY)") /
+       NULLIF(ABS("Selling General & Admin Expenses/Total (-1FY)"), 0) *
+       100                                                                  AS sga_trend_yoy,
+       "Selling General & Admin Expenses/Total (FQ)" /
+       NULLIF("Selling General & Admin Expenses/Total (5YAVGFQ)", 0)        AS sga_vs_5yavg,
+       "Marketing Expenses (FQ)" / NULLIF("Total Revenues (FQ)", 0) * 100   AS marketing_to_revenue_fq,
+       "Marketing Expenses (FY)" / NULLIF("Total Revenues (FY)", 0) * 100   AS marketing_to_revenue_fy,
+       ("Marketing Expenses (FY)" - "Marketing Expenses (-1FY)") / NULLIF(ABS("Marketing Expenses (-1FY)"), 0) *
+       100                                                                  AS marketing_trend_yoy,
+       ("Marketing Expenses (FY)" + "Marketing Expenses (-1FY)") / 2 /
+       NULLIF("Marketing Expenses (5YAVGLTM)", 0)                           AS marketing_vs_5yavg,
+       "Total Operating Expenses (LTM)" / NULLIF("Total Revenues (LTM)", 0) AS operating_expense_ratio,
+       "Cost Of Revenues (LTM)" / NULLIF("Total Revenues (LTM)", 0)         AS cost_of_revenue_ratio,
+       CASE
+           WHEN ABS("Total Revenues (-1FY)") > 0 AND ABS("Total Operating Expenses (LTM)") > 0
+               THEN (("Total Revenues (FY)" - "Total Revenues (-1FY)") / NULLIF(ABS("Total Revenues (-1FY)"), 0)) /
+                    NULLIF((("Selling General & Admin Expenses/Total (FY)" -
+                             "Selling General & Admin Expenses/Total (-1FY)") /
+                            NULLIF(ABS("Selling General & Admin Expenses/Total (-1FY)"), 0)), 0)
+           END                                                              AS operating_leverage_score,
+       ("Selling General & Admin Expenses/Total (-1FY)" / NULLIF("Total Revenues (-1FY)", 0)) -
+       ("Selling General & Admin Expenses/Total (FY)" /
+        NULLIF("Total Revenues (FY)", 0))                                   AS cost_efficiency_trend
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- Revenue Quarterly Features (engineer_revenue_quarterly_features)
+CREATE OR REPLACE FUNCTION calc_revenue_quarterly_features()
+    RETURNS TABLE
+            (
+                ticker                     TEXT,
+                revenue_fq                 NUMERIC,
+                revenue_ltm                NUMERIC,
+                revenue_fy                 NUMERIC,
+                revenue_1fy                NUMERIC,
+                revenue_5yavg_fq           NUMERIC,
+                revenue_5yavg_ltm          NUMERIC,
+                revenue_fq_vs_5yavg        NUMERIC,
+                revenue_ltm_vs_5yavg       NUMERIC,
+                revenue_qoq_growth         NUMERIC,
+                revenue_yoy_growth         NUMERIC,
+                revenue_quarterly_run_rate NUMERIC,
+                revenue_seasonality_factor NUMERIC
+            )
+AS
+$$
+SELECT "Ticker"                                                        AS ticker,
+       "Total Revenues (FQ)"                                           AS revenue_fq,
+       "Total Revenues (LTM)"                                          AS revenue_ltm,
+       "Total Revenues (FY)"                                           AS revenue_fy,
+       "Total Revenues (-1FY)"                                         AS revenue_1fy,
+       "Total Revenues (5YAVGFQ)"                                      AS revenue_5yavg_fq,
+       "Total Revenues (5YAVGLTM)"                                     AS revenue_5yavg_ltm,
+       "Total Revenues (FQ)" / NULLIF("Total Revenues (5YAVGFQ)", 0)   AS revenue_fq_vs_5yavg,
+       "Total Revenues (LTM)" / NULLIF("Total Revenues (5YAVGLTM)", 0) AS revenue_ltm_vs_5yavg,
+       ("Total Revenues (FQ)" * 4 - "Total Revenues (LTM)") / NULLIF("Total Revenues (LTM)", 0) *
+       100                                                             AS revenue_qoq_growth,
+       ("Total Revenues (FY)" - "Total Revenues (-1FY)") / NULLIF(ABS("Total Revenues (-1FY)"), 0) *
+       100                                                             AS revenue_yoy_growth,
+       "Total Revenues (FQ)" * 4                                       AS revenue_quarterly_run_rate,
+       "Total Revenues (FQ)" / NULLIF("Total Revenues (LTM)" / 4, 0)   AS revenue_seasonality_factor
+FROM postgres.public.equities;
+$$ LANGUAGE SQL;
+
+-- All Enhanced Features (comprehensive composite function)
+CREATE OR REPLACE FUNCTION calc_all_enhanced_features()
+    RETURNS TABLE
+            (
+                ticker                       TEXT,
+                name                         TEXT,
+                sector                       TEXT,
+                industry                     TEXT,
+                revenue_fq_vs_5yavg          NUMERIC,
+                revenue_qoq_growth           NUMERIC,
+                revenue_seasonality_factor   NUMERIC,
+                sga_to_revenue_fy            NUMERIC,
+                sga_trend_yoy                NUMERIC,
+                marketing_to_revenue_fy      NUMERIC,
+                operating_leverage_score     NUMERIC,
+                cost_efficiency_trend        NUMERIC,
+                price_to_tbv                 NUMERIC,
+                tbv_per_share                NUMERIC,
+                tangible_equity_ratio        NUMERIC,
+                tbv_margin_of_safety         NUMERIC,
+                net_interest_income          NUMERIC,
+                interest_coverage_ebitda     NUMERIC,
+                financial_income_quality     NUMERIC,
+                interest_burden_ratio        NUMERIC,
+                price_momentum_3y            NUMERIC,
+                price_momentum_5y            NUMERIC,
+                momentum_acceleration_3y     NUMERIC,
+                long_term_trend_score        NUMERIC,
+                momentum_consistency         NUMERIC,
+                secular_trend_flag           INTEGER,
+                beta_2y                      NUMERIC,
+                beta_trend_short             NUMERIC,
+                beta_trend_long              NUMERIC,
+                beta_stability               NUMERIC,
+                beta_regime_change           INTEGER,
+                systematic_risk_score        NUMERIC,
+                defensive_stock_flag         INTEGER,
+                high_beta_flag               INTEGER,
+                estimate_skew_fy1e           NUMERIC,
+                revenue_consensus_confidence NUMERIC,
+                upside_to_consensus          NUMERIC,
+                total_unusual_items          NUMERIC,
+                unusual_to_net_income_ratio  NUMERIC,
+                clean_earnings_flag          INTEGER,
+                recurring_unusual_flag       INTEGER,
+                earnings_noise_score         NUMERIC,
+                quality_adjusted_ni          NUMERIC,
+                defensive_interval           NUMERIC,
+                working_capital_turnover     NUMERIC,
+                liquidity_score              NUMERIC,
+                working_capital_efficiency   NUMERIC
+            )
+    STABLE
+    PARALLEL SAFE
+    LANGUAGE SQL
+AS
+$$
+SELECT
+    -- Identity
+    "Ticker"                                                                AS ticker,
+    "Name"                                                                  AS name,
+    "Sector"                                                                AS sector,
+    "Industry"                                                              AS industry,
+
+    -- Revenue Quarterly Features
+    "Total Revenues (FQ)" / NULLIF("Total Revenues (5YAVGFQ)", 0)           AS revenue_fq_vs_5yavg,
+    ("Total Revenues (FQ)" * 4 - "Total Revenues (LTM)") / NULLIF("Total Revenues (LTM)", 0) *
+    100                                                                     AS revenue_qoq_growth,
+    "Total Revenues (FQ)" / NULLIF("Total Revenues (LTM)" / 4, 0)           AS revenue_seasonality_factor,
+
+    -- Cost Structure Features
+    "Selling General & Admin Expenses/Total (FY)" / NULLIF("Total Revenues (FY)", 0) *
+    100                                                                     AS sga_to_revenue_fy,
+    ("Selling General & Admin Expenses/Total (FY)" - "Selling General & Admin Expenses/Total (-1FY)") /
+    NULLIF(ABS("Selling General & Admin Expenses/Total (-1FY)"), 0) *
+    100                                                                     AS sga_trend_yoy,
+    "Marketing Expenses (FY)" / NULLIF("Total Revenues (FY)", 0) * 100      AS marketing_to_revenue_fy,
+    CASE
+        WHEN ABS("Total Revenues (-1FY)") > 0 AND ABS("Total Operating Expenses (LTM)") > 0
+            THEN (("Total Revenues (FY)" - "Total Revenues (-1FY)") / NULLIF(ABS("Total Revenues (-1FY)"), 0)) /
+                 NULLIF((("Selling General & Admin Expenses/Total (FY)" -
+                          "Selling General & Admin Expenses/Total (-1FY)") /
+                         NULLIF(ABS("Selling General & Admin Expenses/Total (-1FY)"), 0)), 0)
+        END                                                                 AS operating_leverage_score,
+    ("Selling General & Admin Expenses/Total (-1FY)" / NULLIF("Total Revenues (-1FY)", 0)) -
+    ("Selling General & Admin Expenses/Total (FY)" /
+     NULLIF("Total Revenues (FY)", 0))                                      AS cost_efficiency_trend,
+
+    -- Tangible Book Features
+    "Last Price" / NULLIF("TBV (LTM)" / NULLIF("Shrs Out", 0), 0)           AS price_to_tbv,
+    "TBV (LTM)" / NULLIF("Shrs Out", 0)                                     AS tbv_per_share,
+    "TBV (LTM)" / NULLIF("Total Equity (LTM)", 0)                           AS tangible_equity_ratio,
+    ("TBV (LTM)" - "Market Cap") / NULLIF("TBV (LTM)", 0) * 100             AS tbv_margin_of_safety,
+
+    -- Interest Income Features
+    "Interest Income On Investments (LTM)" - "Interest Expense/Total (LTM)" AS net_interest_income,
+    "EBITDA (LTM)" / NULLIF("Interest Expense/Total (LTM)", 0)              AS interest_coverage_ebitda,
+    "Operating Income (LTM)" / NULLIF("Operating Income (LTM)" + "Interest Income On Investments (LTM)",
+                                      0)                                    AS financial_income_quality,
+    "Interest Expense/Total (LTM)" / NULLIF("EBIT (LTM)", 0)                AS interest_burden_ratio,
+
+    -- Long-Term Momentum Features
+    ("Last Price" - "Price (3Y Ago)") / NULLIF("Price (3Y Ago)", 0) * 100   AS price_momentum_3y,
+    ("Last Price" - "Price (5Y Ago)") / NULLIF("Price (5Y Ago)", 0) * 100   AS price_momentum_5y,
+    (POWER("Last Price" / NULLIF("Price (3Y Ago)", 0), 1.0 / 3.0) - 1) -
+    (POWER("Last Price" / NULLIF("Price (5Y Ago)", 0), 1.0 / 5.0) - 1)      AS momentum_acceleration_3y,
+    (("Last Price" - "Price (1Y Ago)") / NULLIF("Price (1Y Ago)", 0) * 0.5 +
+     ("Last Price" - "Price (3Y Ago)") / NULLIF("Price (3Y Ago)", 0) * 0.3 +
+     ("Last Price" - "Price (5Y Ago)") / NULLIF("Price (5Y Ago)", 0) * 0.2) *
+    100                                                                     AS long_term_trend_score,
+    CASE
+        WHEN ("Last Price" > "Price (1M Ago)") AND ("Last Price" > "Price (3M Ago)") AND
+             ("Last Price" > "Price (1Y Ago)") AND ("Last Price" > "Price (3Y Ago)") THEN 1.0
+        WHEN ("Last Price" > "Price (1M Ago)") AND ("Last Price" > "Price (3M Ago)") AND
+             ("Last Price" > "Price (1Y Ago)") THEN 0.75
+        WHEN ("Last Price" > "Price (1M Ago)") AND ("Last Price" > "Price (3M Ago)") THEN 0.5
+        WHEN ("Last Price" > "Price (1M Ago)") THEN 0.25
+        ELSE 0
+        END                                                                 AS momentum_consistency,
+    CASE
+        WHEN POWER("Last Price" / NULLIF("Price (5Y Ago)", 0), 1.0 / 5.0) - 1 > 0.10 THEN 1
+        ELSE 0 END                                                          AS secular_trend_flag,
+
+    -- Beta Risk Features
+    "Beta (2Y)"                                                             AS beta_2y,
+    "Beta (1Y)" - "Beta (2Y)"                                               AS beta_trend_short,
+    "Beta (2Y)" - "Beta (5Y)"                                               AS beta_trend_long,
+    CASE
+        WHEN GREATEST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)") - LEAST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)") > 0
+            THEN 1.0 / (GREATEST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)") - LEAST("Beta (1Y)", "Beta (2Y)", "Beta (5Y)"))
+        ELSE 1.0
+        END                                                                 AS beta_stability,
+    CASE WHEN ABS("Beta (1Y)" - "Beta (5Y)") > 0.3 THEN 1 ELSE 0 END        AS beta_regime_change,
+    "Beta (1Y)" * 0.5 + "Beta (2Y)" * 0.3 + "Beta (5Y)" * 0.2               AS systematic_risk_score,
+    CASE
+        WHEN "Beta (1Y)" < 0.8 AND "Beta (2Y)" < 0.8 AND "Beta (5Y)" < 0.8 THEN 1
+        ELSE 0 END                                                          AS defensive_stock_flag,
+    CASE WHEN "Beta (1Y)" > 1.3 AND "Beta (2Y)" > 1.3 THEN 1 ELSE 0 END     AS high_beta_flag,
+
+    -- Revenue Estimate Consensus
+    ("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)") / NULLIF("Revenues - Est Med (FY1E)", 0) *
+    100                                                                     AS estimate_skew_fy1e,
+    GREATEST(0, LEAST(100, 100 - ABS(("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)") /
+                                     NULLIF("Revenues - Est Med (FY1E)", 0) *
+                                     100)))                                 AS revenue_consensus_confidence,
+    ("Revenues - Est Med (FY1E)" - "Total Revenues (LTM)") / NULLIF("Total Revenues (LTM)", 0) *
+    100                                                                     AS upside_to_consensus,
+
+    -- Unusual Items Features
+    ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+    ABS("Merger & Restructuring Charges (LTM)") + ABS("Gain (Loss) On Sale Of Assets (LTM)") +
+    ABS("Other Unusual Items/Total (LTM)")                                  AS total_unusual_items,
+    (ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+     ABS("Other Unusual Items/Total (LTM)")) /
+    NULLIF(ABS("Net Income - (IS) (LTM)"), 0)                               AS unusual_to_net_income_ratio,
+    CASE
+        WHEN ABS("Impairment of Goodwill (LTM)") < 1 AND ABS("Asset Writedown (LTM)") < 1 AND
+             ABS("Restructuring Charges (LTM)") < 1 AND ABS("Other Unusual Items/Total (LTM)") < 1 THEN 1
+        ELSE 0 END                                                          AS clean_earnings_flag,
+    CASE
+        WHEN (CASE WHEN ABS("Impairment of Goodwill (FY)") > 0 THEN 1 ELSE 0 END +
+              CASE WHEN ABS("Impairment of Goodwill (-1FY)") > 0 THEN 1 ELSE 0 END +
+              CASE WHEN ABS("Restructuring Charges (FY)") > 0 THEN 1 ELSE 0 END +
+              CASE WHEN ABS("Restructuring Charges (-1FY)") > 0 THEN 1 ELSE 0 END) >= 3 THEN 1
+        ELSE 0 END                                                          AS recurring_unusual_flag,
+    LEAST(100,
+          (ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+           ABS("Other Unusual Items/Total (LTM)")) / NULLIF(ABS("Net Income - (IS) (LTM)"), 0) *
+          100)                                                              AS earnings_noise_score,
+    "Net Income - (IS) (LTM)" + "Impairment of Goodwill (LTM)" + "Asset Writedown (LTM)" +
+    "Restructuring Charges (LTM)"                                           AS quality_adjusted_ni,
+
+
+    -- Working Capital Deep Features
+    ("Total Current Assets (LTM)" /
+     NULLIF("Total Operating Expenses (LTM)" / 365, 0))                     AS defensive_interval,
+    "Total Revenues (LTM)" / NULLIF("Working Capital (LTM)", 0)             AS working_capital_turnover,
+    GREATEST(0, LEAST(100,
+                      (CASE
+                           WHEN "Total Current Assets (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 2 THEN 40
+                           WHEN "Total Current Assets (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 1.5
+                               THEN 30
+                           WHEN "Total Current Assets (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 1 THEN 20
+                           ELSE 0 END) +
+                      (CASE
+                           WHEN ("Total Current Assets (LTM)" - "Inventory (LTM)") /
+                                NULLIF("Total Current Liabilities (LTM)", 0) >= 1 THEN 30
+                           ELSE 15 END) +
+                      (CASE
+                           WHEN "Cash And Equivalents (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 0.5
+                               THEN 30
+                           WHEN "Cash And Equivalents (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0) >= 0.2
+                               THEN 15
+                           ELSE 0 END)
+                ))                                                          AS liquidity_score,
+    "Total Revenues (LTM)" / NULLIF(ABS("Working Capital (LTM)"), 0)        AS working_capital_efficiency
+
+FROM postgres.public.equities;
+$$;
+
+-- =============================================================================
+-- SECTION 13F: VIEWS FOR NEW ENHANCED FUNCTIONS
+-- =============================================================================
+
+CREATE OR REPLACE VIEW v_long_term_momentum_features AS
+SELECT "Ticker"                                                                AS ticker,
+       ("Last Price" - "Price (QTD Ago)") / NULLIF("Price (QTD Ago)", 0) * 100 AS price_momentum_qtd,
+       ("Last Price" - "Price (3Y Ago)") / NULLIF("Price (3Y Ago)", 0) * 100   AS price_momentum_3y,
+       ("Last Price" - "Price (5Y Ago)") / NULLIF("Price (5Y Ago)", 0) * 100   AS price_momentum_5y,
+       (("Last Price" - "Price (1Y Ago)") / NULLIF("Price (1Y Ago)", 0) * 0.5 +
+        ("Last Price" - "Price (3Y Ago)") / NULLIF("Price (3Y Ago)", 0) * 0.3 +
+        ("Last Price" - "Price (5Y Ago)") / NULLIF("Price (5Y Ago)", 0) * 0.2) *
+       100                                                                     AS long_term_trend_score,
+       CASE
+           WHEN POWER("Last Price" / NULLIF("Price (5Y Ago)", 0), 1.0 / 5.0) - 1 > 0.10 THEN 1
+           ELSE 0 END                                                          AS secular_trend_flag
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_beta_risk_features AS
+SELECT "Ticker"                                                                                  AS ticker,
+       "Beta (1Y)"                                                                               AS beta_1y,
+       "Beta (2Y)"                                                                               AS beta_2y,
+       "Beta (5Y)"                                                                               AS beta_5y,
+       "Beta (1Y)" - "Beta (2Y)"                                                                 AS beta_trend_short,
+       "Beta (2Y)" - "Beta (5Y)"                                                                 AS beta_trend_long,
+       "Beta (1Y)" * 0.5 + "Beta (2Y)" * 0.3 + "Beta (5Y)" * 0.2                                 AS systematic_risk_score,
+       CASE WHEN "Beta (1Y)" < 0.8 AND "Beta (2Y)" < 0.8 AND "Beta (5Y)" < 0.8 THEN 1 ELSE 0 END AS defensive_stock_flag
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_interest_income_features AS
+SELECT "Ticker"                                                                AS ticker,
+       "Interest Income On Investments (LTM)" - "Interest Expense/Total (LTM)" AS net_interest_income,
+       "EBIT (LTM)" / NULLIF("Interest Expense/Total (LTM)", 0)                AS interest_coverage_ebit,
+       "EBITDA (LTM)" / NULLIF("Interest Expense/Total (LTM)", 0)              AS interest_coverage_ebitda,
+       "Operating Income (LTM)" / NULLIF("Operating Income (LTM)" + "Interest Income On Investments (LTM)",
+                                         0)                                    AS financial_income_quality
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_tangible_book_features AS
 SELECT "Ticker"                                                      AS ticker,
-       ("EMA (20D)" - "EMA (50D)") / NULLIF("EMA (50D)", 0)          AS ema_slope_20d,
-       CASE
-           WHEN "EMA (20D)" > "EMA (50D)" AND "EMA (50D)" > "EMA (100D)"
-               AND "EMA (100D)" > "EMA (250D)" THEN 1
-           WHEN "EMA (20D)" < "EMA (50D)" AND "EMA (50D)" < "EMA (100D)"
-               AND "EMA (100D)" < "EMA (250D)" THEN -1
-           ELSE 0
-           END                                                       AS ema_trend_consistency,
-       ("Last Price" - "EMA (100D)") / NULLIF("EMA (100D)", 0) * 100 AS price_vs_ema_100d,
-       CASE
-           WHEN ("52W High/Adj" - "Last Price") / NULLIF("52W High/Adj", 0) <= 0.05
-               THEN 1
-           ELSE 0
-           END                                                       AS near_52w_high_flag,
-       CASE
-           WHEN ("Last Price" - "52W Low/Adj") / NULLIF("52W Low/Adj", 0) <= 0.05
-               THEN 1
-           ELSE 0
-           END                                                       AS near_52w_low_flag,
-       "Rel. Volume" * "Price Chg. % (1M)"                           AS volume_momentum_score,
-       CASE
-           WHEN "EMA (20D)" > "EMA (50D)"
-               AND ("52W High/Adj" - "Last Price") / NULLIF("52W High/Adj", 0) <= 0.05
-               THEN 1
-           ELSE 0
-           END                                                       AS breakout_signal,
-       CASE WHEN "Rel. Volume" > 1.5 THEN 1 ELSE 0 END               AS high_volume_flag
+       "Last Price" / NULLIF("TBV (LTM)" / NULLIF("Shrs Out", 0), 0) AS price_to_tbv,
+       "TBV (LTM)" / NULLIF("Shrs Out", 0)                           AS tbv_per_share,
+       "TBV (LTM)" / NULLIF("Total Equity (LTM)", 0)                 AS tangible_equity_ratio,
+       ("TBV (LTM)" - "Market Cap") / NULLIF("TBV (LTM)", 0) * 100   AS tbv_margin_of_safety
 FROM postgres.public.equities;
 
-CREATE OR REPLACE VIEW v_financial_distress_features AS
-SELECT "Ticker"                                                                          AS ticker,
-       GREATEST(0, LEAST(100,
-                         (("Altman Z-Score (LTM)" - 1.8) / NULLIF(3.0 - 1.8, 0) * 100))) AS distress_risk_score,
+CREATE OR REPLACE VIEW v_working_capital_deep_features AS
+SELECT "Ticker"                                                                                          AS ticker,
+       "Total Current Assets (LTM)" - "Total Current Liabilities (LTM)"                                  AS net_working_capital,
+       "Total Current Assets (LTM)" /
+       NULLIF("Total Current Liabilities (LTM)", 0)                                                      AS current_ratio,
+       ("Total Current Assets (LTM)" - "Inventory (LTM)") / NULLIF("Total Current Liabilities (LTM)", 0) AS quick_ratio,
+       "Cash And Equivalents (LTM)" / NULLIF("Total Current Liabilities (LTM)", 0)                       AS cash_ratio,
+       "Total Revenues (LTM)" / NULLIF("Working Capital (LTM)", 0)                                       AS working_capital_turnover
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_unusual_items_features AS
+SELECT "Ticker"                               AS ticker,
+       ABS("Impairment of Goodwill (LTM)") + ABS("Asset Writedown (LTM)") + ABS("Restructuring Charges (LTM)") +
+       ABS("Merger & Restructuring Charges (LTM)") + ABS("Gain (Loss) On Sale Of Assets (LTM)") +
+       ABS("Other Unusual Items/Total (LTM)") AS total_unusual_items,
        CASE
-           WHEN "Current Ratio (LTM)" < 1.0 THEN 30.0
-           WHEN "Current Ratio (LTM)" < 1.5 THEN 15.0
-           ELSE 0.0
-           END                                                                           AS liquidity_stress_score,
-       ("Working Capital (FQ)" - "Working Capital (FY)") /
-       NULLIF(ABS("Working Capital (FY)"), 0)                                            AS working_capital_trend,
-       "Cash And Equivalents (FQ)" /
-       NULLIF("Total Operating Expenses (LTM)" / 12.0, 0)                                AS cash_runway_months
+           WHEN ABS("Impairment of Goodwill (LTM)") < 1 AND ABS("Asset Writedown (LTM)") < 1 AND
+                ABS("Restructuring Charges (LTM)") < 1 AND ABS("Other Unusual Items/Total (LTM)") < 1 THEN 1
+           ELSE 0 END                         AS clean_earnings_flag
 FROM postgres.public.equities;
 
-CREATE OR REPLACE VIEW v_price_target_dynamics AS
-SELECT "Ticker"                                                    AS ticker,
-       ("Price Target" - "Price Target (1M Ago)") / NULLIF("Price Target (1M Ago)", 0)
-                                                                   AS pt_momentum_1m,
-       ("Price Target" - "Price Target (3M Ago)") / NULLIF("Price Target (3M Ago)", 0)
-                                                                   AS pt_momentum_3m,
-       ("Price Target - Median" - "Price Target - Median (3M Ago)") /
-       NULLIF("Price Target - Median (3M Ago)", 0)                 AS pt_median_momentum_3m,
-       (("Price Target - High (3M Ago)" - "Price Target - Low (3M Ago)") /
-        NULLIF("Price Target - Median (3M Ago)", 0)) -
-       (("Price Target - High" - "Price Target - Low") /
-        NULLIF("Price Target - Median", 0))                        AS pt_consensus_convergence,
-       ("Price Target - #" - "Price Target - # (3M Ago)")::INTEGER AS analyst_coverage_change_3m
+CREATE OR REPLACE VIEW v_revenue_estimate_consensus AS
+SELECT "Ticker"                                AS ticker,
+       ("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)") / NULLIF("Revenues - Est Med (FY1E)", 0) *
+       100                                     AS estimate_skew_fy1e,
+       GREATEST(0, LEAST(100, 100 - ABS(("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)") /
+                                        NULLIF("Revenues - Est Med (FY1E)", 0) *
+                                        100))) AS consensus_confidence,
+       ("Revenues - Est Med (FY1E)" - "Total Revenues (LTM)") / NULLIF("Total Revenues (LTM)", 0) *
+       100                                     AS upside_to_consensus
 FROM postgres.public.equities;
 
-CREATE OR REPLACE VIEW v_composite_scores AS
-SELECT "Ticker"          AS ticker,
-       (CASE WHEN "Return on Assets (ROA) % (LTM)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "CFO (LTM)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "Return on Assets (ROA) % (LTM)" > "Return on Assets (ROA) % (FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "CFO (LTM)" > "Net Income - (IS) (LTM)" THEN 1 ELSE 0 END +
-        CASE
-            WHEN "Total Debt (LTM)" / NULLIF("Total Equity (LTM)", 0) <
-                 "Total Debt (FY)" / NULLIF("Total Equity (FY)", 0) THEN 1
-            ELSE 0 END +
-        CASE WHEN "Current Ratio (LTM)" > "Current Ratio (FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Shrs Out" <= "Shrs Out (-1FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Gross Profit Margin % (LTM)" > "Gross Profit Margin % (FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Asset Turnover (LTM)" > "Asset Turnover (FY)" THEN 1 ELSE 0 END
-           )::INTEGER    AS piotroski_f_score,
-       (CASE WHEN "Net EPS - Basic (FY)" > "Net EPS - Basic (-1FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-1FY)" > "Net EPS - Basic (-2FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-2FY)" > "Net EPS - Basic (-3FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-3FY)" > "Net EPS - Basic (-4FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-4FY)" > "Net EPS - Basic (-5FY)" THEN 1 ELSE 0 END
-           ) / 5.0 * 100 AS eps_trajectory_score,
-       GREATEST(0, LEAST(100,
-                         50 - (("Shrs Out" - "Shrs Out (-1FY)") / NULLIF("Shrs Out (-1FY)", 0)) * 100
-                   ))    AS dilution_score
+CREATE OR REPLACE VIEW v_cost_structure_features AS
+SELECT "Ticker"                                                                               AS ticker,
+       "Selling General & Admin Expenses/Total (FY)" / NULLIF("Total Revenues (FY)", 0) * 100 AS sga_to_revenue_fy,
+       "Total Operating Expenses (LTM)" / NULLIF("Total Revenues (LTM)", 0)                   AS operating_expense_ratio,
+       "Cost Of Revenues (LTM)" / NULLIF("Total Revenues (LTM)", 0)                           AS cost_of_revenue_ratio
+FROM postgres.public.equities;
+
+CREATE OR REPLACE VIEW v_revenue_quarterly_features AS
+SELECT "Ticker"                                                      AS ticker,
+       "Total Revenues (FQ)" / NULLIF("Total Revenues (5YAVGFQ)", 0) AS revenue_fq_vs_5yavg,
+       ("Total Revenues (FQ)" * 4 - "Total Revenues (LTM)") / NULLIF("Total Revenues (LTM)", 0) *
+       100                                                           AS revenue_qoq_growth,
+       "Total Revenues (FQ)" / NULLIF("Total Revenues (LTM)" / 4, 0) AS revenue_seasonality_factor
 FROM postgres.public.equities;
 
 -- =============================================================================
@@ -4044,114 +4775,169 @@ CREATE TABLE IF NOT EXISTS feature_registry_metadata
     category          TEXT NOT NULL,
     feature_count     INTEGER,
     description       TEXT,
-    python_equivalent TEXT
+    python_equivalent TEXT,
+    updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Add index for category-based queries
+CREATE INDEX IF NOT EXISTS idx_feature_registry_category
+    ON feature_registry_metadata (category);
+
+-- Add index for python_equivalent lookups
+CREATE INDEX IF NOT EXISTS idx_feature_registry_python_equiv
+    ON feature_registry_metadata (python_equivalent);
+
+-- Wrap upsert in transaction for atomicity
+BEGIN;
+
 -- Upsert all function metadata (original + new)
-INSERT INTO feature_registry_metadata (function_name, category, feature_count, description, python_equivalent)
+INSERT INTO feature_registry_metadata (function_name, category, feature_count, description, python_equivalent,
+                                       updated_at)
 VALUES
     -- Original functions
     ('calc_valuation_features', 'Valuation Ratios', 7, 'P/E, P/B, EV/EBITDA, EV/Sales, PEG ratios',
-     'engineer_valuation_ratios'),
+     'engineer_valuation_ratios', CURRENT_TIMESTAMP),
     ('calc_valuation_timeseries_features', 'Valuation Timeseries', 11,
-     'Valuation momentum, mean reversion, forward discount', 'engineer_valuation_timeseries_features'),
+     'Valuation momentum, mean reversion, forward discount', 'engineer_valuation_timeseries_features',
+     CURRENT_TIMESTAMP),
     ('calc_momentum_features', 'Momentum & Technical', 14, 'Price momentum, EMA crossovers, 52W range, beta',
-     'engineer_momentum_features'),
+     'engineer_momentum_features', CURRENT_TIMESTAMP),
     ('calc_profitability_features', 'Profitability', 9, 'ROE, ROA, margins, ROIC, DuPont',
-     'engineer_profitability_ratios'),
+     'engineer_profitability_ratios', CURRENT_TIMESTAMP),
     ('calc_quality_features', 'Quality & Risk', 10, 'Impairments, goodwill, Z-score, liquidity',
-     'engineer_accounting_quality_features'),
+     'engineer_accounting_quality_features', CURRENT_TIMESTAMP),
     ('calc_leverage_features', 'Leverage & Liquidity', 7, 'Debt ratios, coverage, working capital',
-     'engineer_leverage_ratios'),
+     'engineer_leverage_ratios', CURRENT_TIMESTAMP),
     ('calc_sentiment_features', 'Analyst Sentiment', 10, 'Ratings, price targets, revisions',
-     'engineer_analyst_quality_features'),
+     'engineer_analyst_quality_features', CURRENT_TIMESTAMP),
     ('calc_earnings_features', 'Earnings Quality', 7, 'Surprises, adjustments, GAAP vs non-GAAP',
-     'engineer_estimated_vs_actual_analytics'),
-    ('calc_growth_features', 'Growth Metrics', 7, 'Revenue, EBITDA, FCF growth', 'engineer_growth_metrics'),
+     'engineer_estimated_vs_actual_analytics', CURRENT_TIMESTAMP),
+    ('calc_growth_features', 'Growth Metrics', 7, 'Revenue, EBITDA, FCF growth', 'engineer_growth_metrics',
+     CURRENT_TIMESTAMP),
     ('calc_dividend_features', 'Dividend Reliability', 8, 'Streak, yield, payout, coverage',
-     'engineer_dividend_reliability_features'),
+     'engineer_dividend_reliability_features', CURRENT_TIMESTAMP),
     ('calc_employment_features', 'Employee Productivity', 7, 'Per-employee metrics, FTE growth',
-     'engineer_employee_productivity_features'),
+     'engineer_employee_productivity_features', CURRENT_TIMESTAMP),
     ('calc_cashflow_features', 'Cash Flow', 7, 'CFO/NI, FCF margin, self-funding',
-     'engineer_cash_flow_quality_features'),
+     'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
     ('calc_temporal_features', 'Temporal Patterns', 7, 'Fiscal calendar, earnings timing',
-     'engineer_temporal_features'),
+     'engineer_temporal_features', CURRENT_TIMESTAMP),
     -- NEW functions
     ('calc_technical_analysis_features', 'Technical Analysis', 11,
      'EMA trends, breakout signals, volume momentum, volatility compression',
-     'engineer_technical_analysis_features'),
+     'engineer_technical_analysis_features', CURRENT_TIMESTAMP),
     ('calc_financial_distress_features', 'Financial Distress', 9,
      'Distress risk score, liquidity stress, working capital trend, cash runway',
-     'engineer_financial_distress_features'),
+     'engineer_financial_distress_features', CURRENT_TIMESTAMP),
     ('calc_accounting_quality_features', 'Accounting Quality', 7,
      'Goodwill changes, restructuring intensity, exceptional items, quality score',
-     'engineer_accounting_quality_features'),
+     'engineer_accounting_quality_features', CURRENT_TIMESTAMP),
     ('calc_price_target_dynamics', 'Price Target Dynamics', 15,
      'PT momentum (1W-1Y), consensus convergence, analyst coverage changes',
-     'engineer_price_target_dynamics'),
+     'engineer_price_target_dynamics', CURRENT_TIMESTAMP),
     ('calc_eps_trajectory_features', 'EPS Trajectory', 10,
      'EPS growth rates, CAGR, positive streak, trajectory score, stability',
-     'engineer_eps_trajectory_features'),
+     'engineer_eps_trajectory_features', CURRENT_TIMESTAMP),
     ('calc_gaap_adjusted_analytics', 'GAAP vs Adjusted', 8,
      'EPS/NI adjustment spreads and ratios, earnings quality score',
-     'engineer_gaap_vs_adjusted_analytics'),
+     'engineer_gaap_vs_adjusted_analytics', CURRENT_TIMESTAMP),
     ('calc_enhanced_cashflow_features', 'Enhanced Cash Flow', 12,
      'FCF consistency, CapEx efficiency, M&A sustainability, self-funding',
-     'engineer_cash_flow_quality_features'),
+     'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
     ('calc_composite_scores', 'Composite Scores', 4,
      'Piotroski F-Score, EPS trajectory, dilution score, quality-momentum',
-     'engineer_composite_scores'),
+     'engineer_composite_scores', CURRENT_TIMESTAMP),
     -- NEW (Phase 9.3 parity)
     ('calc_margin_trends', 'Profitability', 6,
      'Gross, operating, net, and EBITDA margin trends (LTM vs FY), expansion flag',
-     'engineer_margin_trends'),
+     'engineer_margin_trends', CURRENT_TIMESTAMP),
     ('calc_efficiency_ratios', 'Efficiency', 4,
      'Asset and inventory turnover, receivables days, working capital turns',
-     'engineer_efficiency_ratios'),
+     'engineer_efficiency_ratios', CURRENT_TIMESTAMP),
     ('calc_balance_sheet_dynamics', 'Balance Sheet', 13,
      'Cash trends, inventory/receivables vs 5Y avg, asset quality, BS strength',
-     'engineer_balance_sheet_trends'),
+     'engineer_balance_sheet_trends', CURRENT_TIMESTAMP),
     ('calc_revenue_forecast_features', 'Revenue Forecasting', 12,
      'Estimate spread, beat potential, revision trend, forward multiples',
-     'engineer_revenue_forecast_features'),
+     'engineer_revenue_forecast_features', CURRENT_TIMESTAMP),
     ('calc_employment_dynamics', 'Employment Dynamics', 10,
      'FTE growth, acceleration, hiring intensity, productivity trends',
-     'engineer_employment_dynamics_features'),
+     'engineer_employment_dynamics_features', CURRENT_TIMESTAMP),
     ('calc_dividend_timing', 'Dividend Reliability', 8,
      'Days to ex-date/payment, announcement flag, consistency, yield vs 5Y avg',
-     'engineer_dividend_timing_features'),
+     'engineer_dividend_timing_features', CURRENT_TIMESTAMP),
     ('calc_fiscal_calendar_features', 'Temporal Patterns', 9,
      'Days since report, quarter/FY end flags, earnings season, freshness score',
-     'engineer_fiscal_calendar_features'),
+     'engineer_fiscal_calendar_features', CURRENT_TIMESTAMP),
     ('calc_cashflow_temporal_features', 'Cash Flow', 12,
      'Quarterly trends (CFO/CFI/CFF/FCF), burn rate, volatility, momentum',
-     'engineer_cashflow_temporal_features'),
+     'engineer_cashflow_temporal_features', CURRENT_TIMESTAMP),
     ('calc_gaap_revision_features', 'Earnings Quality', 9,
      'GAAP EPS revision momentum (1M-1Y), spread vs normalized, acceleration',
-     'engineer_gaap_vs_adjusted_analytics'),
+     'engineer_gaap_vs_adjusted_analytics', CURRENT_TIMESTAMP),
     ('calc_extended_valuation_timeseries', 'Valuation Timeseries', 11,
      'QoQ multiple trends (EV/Sales, EV/EBITDA), mean reversion, P/B momentum',
-     'engineer_valuation_timeseries_features'),
+     'engineer_valuation_timeseries_features', CURRENT_TIMESTAMP),
     -- Comprehensive functions (Phase 9.3+)
     ('calc_ebit_ebitda_comprehensive', 'Profitability', 74,
      'Raw and adjusted EBIT/EBITDA for all periods (FQ, LTM, FY, historical), growth and margins',
-     'engineer_margin_trends'),
+     'engineer_margin_trends', CURRENT_TIMESTAMP),
     ('calc_net_income_comprehensive', 'Earnings Quality', 58,
      'GAAP, Adjusted, and Normalized Net Income for all periods, growth and quality metrics',
-     'engineer_gaap_vs_adjusted_analytics'),
+     'engineer_gaap_vs_adjusted_analytics', CURRENT_TIMESTAMP),
     ('calc_quality_features_comprehensive', 'Accounting Quality', 79,
      'Detailed impairments, writedowns, restructuring, and gain/loss across all periods',
-     'engineer_accounting_quality_features'),
+     'engineer_accounting_quality_features', CURRENT_TIMESTAMP),
     ('calc_eps_comprehensive', 'Earnings Quality', 61,
      'Basic, Continuing, and Adjusted EPS across all periods, growth, CAGR, and trajectory',
-     'engineer_eps_trajectory_features'),
+     'engineer_eps_trajectory_features', CURRENT_TIMESTAMP),
     ('calc_cashflow_comprehensive', 'Cash Flow', 78,
      'CFO, CFI, CFF, and FCF for all periods, acquisitions, CapEx, and quality metrics',
-     'engineer_cash_flow_quality_features')
+     'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
+    -- NEW Enhanced Feature Functions (feature_registry_enhancements)
+    ('calc_interest_income_features', 'Interest Income', 10,
+     'Net interest income, coverage ratios (EBIT/EBITDA), income quality, burden ratio',
+     'engineer_interest_income_features', CURRENT_TIMESTAMP),
+    ('calc_long_term_momentum_features', 'Momentum & Technical', 10,
+     '3Y/5Y momentum, CAGR acceleration, weighted trend score, consistency flag',
+     'engineer_long_term_momentum_features', CURRENT_TIMESTAMP),
+    ('calc_tangible_book_features', 'Valuation Ratios', 10,
+     'Price-to-TBV, TBV per share, tangible equity ratio, margin of safety',
+     'engineer_tangible_book_features', CURRENT_TIMESTAMP),
+    ('calc_beta_risk_features', 'Quality & Risk', 10,
+     'Multi-period betas, trend analysis, stability, regime change detection',
+     'engineer_beta_risk_features', CURRENT_TIMESTAMP),
+    ('calc_working_capital_deep_features', 'Leverage & Liquidity', 12,
+     'Current/quick/cash ratios, defensive interval, liquidity score (0-100)',
+     'engineer_working_capital_deep_features', CURRENT_TIMESTAMP),
+    ('calc_unusual_items_features', 'Earnings Quality', 10,
+     'Total unusual items, noise score, clean earnings flag, quality-adjusted NI',
+     'engineer_unusual_items_features', CURRENT_TIMESTAMP),
+    ('calc_revenue_estimate_consensus', 'Revenue Forecasting', 11,
+     'Estimate skew, consensus confidence, upside to consensus, beat history',
+     'engineer_revenue_estimate_consensus', CURRENT_TIMESTAMP),
+    ('calc_enhanced_valuation_ratios', 'Valuation Ratios', 12,
+     'PEG variants (adjusted/forward), yields (earnings/FCF/shareholder), composite score',
+     'engineer_enhanced_valuation_ratios', CURRENT_TIMESTAMP),
+    ('calc_cost_structure_features', 'Efficiency Ratios', 12,
+     'SG&A trends, marketing intensity, operating leverage, cost efficiency',
+     'engineer_cost_structure_features', CURRENT_TIMESTAMP),
+    ('calc_revenue_quarterly_features', 'Revenue Forecasting', 12,
+     'Quarterly revenue trends, seasonality factor, run rate, vs 5Y average',
+     'engineer_revenue_quarterly_features', CURRENT_TIMESTAMP),
+    ('calc_all_enhanced_features', 'Composite', 53,
+     'Comprehensive aggregation of all enhanced features across categories',
+     'engineer_all_enhanced_features', CURRENT_TIMESTAMP)
 ON CONFLICT (function_name) DO UPDATE SET category          = EXCLUDED.category,
                                           feature_count     = EXCLUDED.feature_count,
                                           description       = EXCLUDED.description,
-                                          python_equivalent = EXCLUDED.python_equivalent;
+                                          python_equivalent = EXCLUDED.python_equivalent,
+                                          updated_at        = CURRENT_TIMESTAMP;
+
+COMMIT;
+
+-- Refresh table statistics for optimal query planning
+ANALYZE feature_registry_metadata;
 
 -- =============================================================================
 -- SECTION 15: USAGE EXAMPLES

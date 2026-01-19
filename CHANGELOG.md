@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.1] - 2026-01-17
+
+### Added
+
+- SQL Feature Registry (`CalcFeatureRegistry.sql`) with SQL subquery functions that calculate features from the
+  `postgres.public.equities` table, mirroring the Python feature registry in
+  `finance_ml/features/advanced/__init__.py` ([efcb376](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/efcb376)).
+
+### Changed
+
+- Updated `create_equities_schema.sql`, `import_equities_data.sql`, and `schema.py` with schema
+  enhancements ([e3ff0a4](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/e3ff0a4)).
+- Enhanced `quality.py` with improved
+  calculations ([e3ff0a4](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/e3ff0a4)).
+
 ## [1.22.0] - 2026-01-12
 
 ### Added

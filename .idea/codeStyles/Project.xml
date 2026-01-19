@@ -2,6 +2,7 @@
   <code_scheme name="Project" version="173">
     <CsvCodeStyleSettings>
       <option name="TABULARIZE" value="true" />
+      <option name="WHITE_SPACES_OUTSIDE_QUOTES" value="true" />
     </CsvCodeStyleSettings>
     <DBN-PSQL>
       <case-options enabled="true">
