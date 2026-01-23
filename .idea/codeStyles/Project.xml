@@ -28,6 +28,15 @@
         <option name="ITERATION_ELEMENTS_WRAPPING" value="chop_down_if_not_single" />
       </formatting-settings>
     </DBN-SQL>
+    <PostgresCodeStyleSettings version="7">
+      <option name="WITH_ALIGN_AS" value="true" />
+      <option name="FROM_ALIGN_JOIN_TABLES" value="true" />
+      <option name="FROM_ALIGN_ALIASES" value="true" />
+      <option name="IMP_DECLARE_ALIGN_DEFAULT" value="true" />
+    </PostgresCodeStyleSettings>
+    <SqlCodeStyleSettings version="7">
+      <option name="WITH_ALIGN_AS" value="true" />
+    </SqlCodeStyleSettings>
     <codeStyleSettings language="csv">
       <option name="WRAP_ON_TYPING" value="-1" />
       <indentOptions>

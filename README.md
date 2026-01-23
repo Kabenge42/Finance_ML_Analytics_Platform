@@ -5,7 +5,7 @@ global regions.
 
 [![Python Version](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.22.0-green)](https://github.com/Kabenge42/Finance_ML_Analytics_Platform)
+[![Version](https://img.shields.io/badge/version-1.22.2-green)](https://github.com/Kabenge42/Finance_ML_Analytics_Platform)
 
 ## Overview
 
@@ -135,27 +135,31 @@ Useful utility scripts located in `tools/`:
 | `cleanup_environments.py`      | Cleans up virtual environments and temporary caches       |
 | `import_sqlite.py`             | Imports data into SQLite database for local development   |
 | `update_notebooks.py`          | Updates all notebooks to align with latest schema changes |
+| `extract_roles.py`             | Extracts user roles and permissions from database         |
+| `fix_csv_quoting.py`           | Fixes quoting issues in generated CSV files               |
 
 ## Environment Variables
 
 Configuration can be managed via environment variables or the `environment_variables.txt` file:
 
-| Variable                   | Description                                     | Default   |
-|:---------------------------|:------------------------------------------------|:----------|
-| `LOG_LEVEL`                | Logging verbosity (DEBUG, INFO, WARNING, ERROR) | `INFO`    |
-| `TF_CPP_MIN_LOG_LEVEL`     | TensorFlow log level (0=DEBUG to 3=ERROR)       | `2`       |
-| `DATA_DIR`                 | Directory for input data                        | `data`    |
-| `MODEL_DIR`                | Directory for saved models                      | `models`  |
-| `CACHE_DIR`                | Directory for cached files                      | `.cache`  |
-| `OUTPUT_DIR`               | Directory for generated reports and artifacts   | `outputs` |
-| `DB_URL`                   | SQLAlchemy connection URL                       | —         |
-| `DB_SCHEMA`                | Database schema name                            | `public`  |
-| `MODEL_VERSION`            | Identifier for current model version            | `v9_11`   |
-| `RANDOM_SEED`              | Random seed for reproducibility                 | `42`      |
-| `N_JOBS`                   | Number of parallel jobs (-1 for all cores)      | `-1`      |
-| `ENABLE_BENCHMARKING`      | Enable/disable benchmarking analysis            | `true`    |
-| `REPORT_FORMAT`            | Output format for reports (html, excel)         | `html`    |
-| `ENABLE_INTERACTIVE_PLOTS` | Enable interactive visualizations in reports    | `true`    |
+| Variable                   | Description                                     | Default    |
+|:---------------------------|:------------------------------------------------|:-----------|
+| `LOG_LEVEL`                | Logging verbosity (DEBUG, INFO, WARNING, ERROR) | `INFO`     |
+| `TF_CPP_MIN_LOG_LEVEL`     | TensorFlow log level (0=DEBUG to 3=ERROR)       | `2`        |
+| `DATA_DIR`                 | Directory for input data                        | `data`     |
+| `MODEL_DIR`                | Directory for saved models                      | `models`   |
+| `CACHE_DIR`                | Directory for cached files                      | `.cache`   |
+| `OUTPUT_DIR`               | Directory for generated reports and artifacts   | `outputs`  |
+| `DB_URL`                   | SQLAlchemy connection URL                       | —          |
+| `DB_SCHEMA`                | Database schema name                            | `public`   |
+| `DB_TABLE`                 | Database table name                             | `equities` |
+| `MODEL_VERSION`            | Identifier for current model version            | `v9_11`    |
+| `RANDOM_SEED`              | Random seed for reproducibility                 | `42`       |
+| `N_JOBS`                   | Number of parallel jobs (-1 for all cores)      | `-1`       |
+| `MEMORY_LIMIT`             | Maximum memory allocation for operations        | —          |
+| `ENABLE_BENCHMARKING`      | Enable/disable benchmarking analysis            | `true`     |
+| `REPORT_FORMAT`            | Output format for reports (html, pdf, excel)    | `html`     |
+| `ENABLE_INTERACTIVE_PLOTS` | Enable interactive visualizations in reports    | `true`     |
 
 ## Tests
 

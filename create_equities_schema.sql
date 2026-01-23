@@ -703,7 +703,15 @@ CREATE TABLE equities
     "Fiscal Month"                                     INTEGER,                      -- feature: Months between Income Statement Report Date and FY End Date
     "Fiscal Quarter"                                   INTEGER,                      -- feature: Fiscal quarter (1-4) from report date
     "Fiscal Year"                                      INTEGER,                      -- feature: Fiscal year from report date
-    "Reporting Lag"                                    NUMERIC                       -- feature: Reporting Lag
+    "Reporting Lag"                           NUMERIC,                               -- feature: Reporting Lag
+    -- NEW: Total Revenues Historical
+    "Total Revenues (-1FQFQ)"                 NUMERIC,                               -- financial_statement: Total Revenues (-1FQFQ)
+    "Total Revenues (-2FQFQ)"                 NUMERIC,                               -- financial_statement: Total Revenues (-2FQFQ)
+    "Total Revenues (-3FQFQ)"                 NUMERIC,                               -- financial_statement: Total Revenues (-3FQFQ)
+    "Total Revenues (-4FQFQ)"                 NUMERIC,                               -- financial_statement: Total Revenues (-4FQFQ)
+    "Total Revenues (-2FY)"                   NUMERIC,                               -- financial_statement: Total Revenues (-2FY)
+    "Total Revenues (-3FY)"                   NUMERIC,                               -- financial_statement: Total Revenues (-3FY)
+    "Total Revenues (-4FY)"                   NUMERIC                                -- financial_statement: Total Revenues (-4FY)
 ) TABLESPACE pg_default;
 
 ALTER TABLE equities

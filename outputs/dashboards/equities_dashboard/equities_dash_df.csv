@@ -1,0 +1,2 @@
+ticker,name ,sector,region,last_price,price_target,market_cap
+AAPL  ,Apple,Tech  ,US    ,150.0     ,180.0       ,2500000000000.0

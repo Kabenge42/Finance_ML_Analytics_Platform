@@ -44,7 +44,7 @@ SELECT CASE
                THEN NULL
            WHEN TRIM(input_text) ~ '^-?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'
                THEN TRIM(input_text)::NUMERIC
-           END
+           END AS result
 $$ LANGUAGE SQL IMMUTABLE
                 PARALLEL SAFE;
 
@@ -119,28 +119,143 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE
                     STRICT;
 
--- Unified fiscal date calculator returning all fiscal metrics
+-- ===================================================================
+-- HELPER FUNCTION: Convert Frequency to Interval Months
+-- ===================================================================
+-- Centralizes the mapping from frequency text to number of months
+-- Quarterly = 3, Semi-Annual = 6, Annual = 12
+
+CREATE OR REPLACE FUNCTION frequency_to_months(earnings_report_frequency TEXT)
+    RETURNS INTEGER AS
+$$
+BEGIN
+    RETURN CASE UPPER(TRIM(COALESCE(earnings_report_frequency, 'Quarterly')))
+               WHEN 'QUARTERLY' THEN 3
+               WHEN 'SEMI-ANNUALLY' THEN 6
+               WHEN 'SEMI-ANNUAL' THEN 6
+               WHEN 'ANNUALLY' THEN 12
+               WHEN 'ANNUAL' THEN 12
+               ELSE 3 -- Default to quarterly
+        END;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Convert Interval Months to Frequency Text
+-- ===================================================================
+-- Converts number of months to frequency description
+
+CREATE OR REPLACE FUNCTION months_to_frequency(interval_months INTEGER)
+    RETURNS TEXT AS
+$$
+BEGIN
+    RETURN CASE
+               WHEN interval_months <= 3 THEN 'Quarterly'
+               WHEN interval_months <= 6 THEN 'Semi-Annually'
+               WHEN interval_months <= 12 THEN 'Annually'
+               ELSE 'Quarterly' -- Default
+        END;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Calculate Reporting Interval
+-- ===================================================================
+-- Returns the reporting interval in months based on frequency
+-- Quarterly = 3, Semi-Annual = 6, Annual = 12
+
+CREATE OR REPLACE FUNCTION calculate_reporting_interval(earnings_report_frequency TEXT)
+    RETURNS INTEGER AS
+$$
+BEGIN
+    RETURN frequency_to_months(earnings_report_frequency);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Derive Earnings Report Frequency
+-- ===================================================================
+-- Derives frequency from the interval between two report dates
+-- or from the reporting interval value
+
+CREATE OR REPLACE FUNCTION derive_earnings_report_frequency(
+    income_statement_report_date DATE,
+    fy_end_date DATE
+)
+    RETURNS TEXT AS
+$$
+DECLARE
+    months_diff INTEGER;
+BEGIN
+    IF income_statement_report_date IS NULL OR fy_end_date IS NULL THEN
+        RETURN 'Quarterly'; -- Default
+    END IF;
+
+    -- Calculate months between report date and FY end
+    months_diff := ABS(
+            (EXTRACT(YEAR FROM income_statement_report_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
+                + (EXTRACT(MONTH FROM income_statement_report_date) - EXTRACT(MONTH FROM fy_end_date))
+                   );
+
+    -- Normalize to reporting period (mod 12, then check pattern)
+    months_diff := months_diff % 12;
+    IF months_diff = 0 THEN
+        months_diff := 12;
+    END IF;
+
+    -- Determine frequency based on the reporting pattern
+    -- If months align with 3-month intervals: Quarterly
+    -- If months align with 6-month intervals: Semi-Annually
+    -- If months align with 12-month intervals: Annually
+    RETURN CASE
+               WHEN months_diff IN (3, 6, 9, 12) AND months_diff % 3 = 0 AND months_diff % 6 != 0 THEN 'Quarterly'
+               WHEN months_diff IN (6, 12) AND months_diff % 6 = 0 AND months_diff != 12 THEN 'Semi-Annually'
+               ELSE 'Quarterly' -- Default for edge cases
+        END;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- Unified Fiscal Date Calculator
+-- ===================================================================
+-- Returns all fiscal metrics including frequency-aware calculations
+-- earnings_report_frequency is now a primary input that drives calculations
+
 CREATE OR REPLACE FUNCTION calculate_fiscal_info(
     reference_date DATE,
     fy_end_date DATE,
+    input_earnings_frequency TEXT DEFAULT NULL,
     OUT fiscal_month INTEGER,
     OUT fiscal_quarter INTEGER,
     OUT fiscal_year INTEGER,
     OUT next_quarter INTEGER,
     OUT next_quarter_year INTEGER,
-    OUT reporting_interval NUMERIC,
+    OUT reporting_interval INTEGER,
     OUT earnings_report_frequency TEXT,
     OUT next_earnings_report_type TEXT
 ) AS
 $$
 DECLARE
     months_since_fy_end INTEGER;
-    interval_months INTEGER;
+    interval_months   INTEGER;
+    quarter_increment INTEGER;
 BEGIN
     IF reference_date IS NULL OR fy_end_date IS NULL THEN
         RETURN;
     END IF;
 
+    -- Determine earnings frequency (use input if provided, otherwise derive)
+    IF input_earnings_frequency IS NOT NULL AND TRIM(input_earnings_frequency) != '' THEN
+        earnings_report_frequency := input_earnings_frequency;
+    ELSE
+        earnings_report_frequency := derive_earnings_report_frequency(reference_date, fy_end_date);
+    END IF;
+
+    -- Get interval months from frequency
+    interval_months := frequency_to_months(earnings_report_frequency);
+    reporting_interval := interval_months;
+
+    -- Calculate months since fiscal year end
     months_since_fy_end := (EXTRACT(YEAR FROM reference_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
         + (EXTRACT(MONTH FROM reference_date) - EXTRACT(MONTH FROM fy_end_date));
 
@@ -150,32 +265,39 @@ BEGIN
         fiscal_month := fiscal_month + 12;
     END IF;
 
-    -- Current and next quarter
+    -- Current fiscal quarter
     fiscal_quarter := CEIL(fiscal_month / 3.0)::INTEGER;
-    next_quarter := CASE WHEN fiscal_quarter = 4 THEN 1 ELSE fiscal_quarter + 1 END;
+
+    -- Calculate next quarter based on frequency
+    quarter_increment := CASE
+                             WHEN interval_months = 3 THEN 1 -- Quarterly: next quarter
+                             WHEN interval_months = 6 THEN 2 -- Semi-Annual: skip a quarter
+                             WHEN interval_months = 12 THEN 4 -- Annual: same quarter next year
+                             ELSE 1
+        END;
+
+    next_quarter := fiscal_quarter + quarter_increment;
+
+    -- Handle wrap-around for quarters > 4
+    IF next_quarter > 4 THEN
+        next_quarter := ((next_quarter - 1) % 4) + 1;
+    END IF;
 
     -- Fiscal year calculations
     fiscal_year := EXTRACT(YEAR FROM fy_end_date)::INTEGER + 1 + ((months_since_fy_end - 1) / 12);
-    next_quarter_year := CASE WHEN fiscal_quarter = 4 THEN fiscal_year + 1 ELSE fiscal_year END;
 
-    -- Reporting interval as fraction of year
-    interval_months := ABS((EXTRACT(YEAR FROM reference_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
-        + (EXTRACT(MONTH FROM reference_date) - EXTRACT(MONTH FROM fy_end_date)));
-    reporting_interval := interval_months / 12.0;
-    reporting_interval := reporting_interval - FLOOR(reporting_interval);
-    IF reporting_interval = 0 THEN
-        reporting_interval := 1.0;
+    -- Next quarter year (increments if we wrap past Q4)
+    IF fiscal_quarter + quarter_increment > 4 THEN
+        next_quarter_year := fiscal_year + ((fiscal_quarter + quarter_increment - 1) / 4);
+    ELSE
+        next_quarter_year := fiscal_year;
     END IF;
 
-    -- Derived fields (inlined from separate functions)
-    earnings_report_frequency := CASE
-                                     WHEN reporting_interval IN (0.25, 0.75) THEN 'Quarterly'
-                                     WHEN reporting_interval = 0.5 THEN 'Semi-Annually'
-                                     ELSE 'Quarterly'
-        END;
-
+    -- Determine report type based on next quarter
     next_earnings_report_type := CASE
                                      WHEN next_quarter = 4 THEN 'Full Year'
+                                     WHEN interval_months = 6 AND next_quarter IN (2, 4) THEN 'Half Year'
+                                     WHEN interval_months = 12 THEN 'Full Year'
                                      ELSE 'Interim'
         END;
 END;
@@ -185,37 +307,35 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- HELPER FUNCTION: Calculate Next Income Statement Report Date
 -- ===================================================================
 -- Calculates the next expected income statement report date based on
--- the current report date plus the reporting interval (in months)
--- Example: 2025-09-06 + 3 months (0.25 * 12) = 2025-12-06
+-- the earnings report frequency
+-- Example: 2025-09-30 + Quarterly = 2025-12-30 (+ 3 months)
+-- Example: 2025-11-30 + Semi-Annual = 2026-05-30 (+ 6 months)
+
 CREATE OR REPLACE FUNCTION calculate_next_income_statement_report_date(
     income_statement_report_date DATE,
-    reporting_interval NUMERIC
+    earnings_report_frequency TEXT
 )
     RETURNS DATE AS
 $$
 DECLARE
     interval_months INTEGER;
 BEGIN
-    IF income_statement_report_date IS NULL OR reporting_interval IS NULL THEN
+    IF income_statement_report_date IS NULL THEN
         RETURN NULL;
     END IF;
 
-    -- Convert reporting_interval (fraction of year) to months
-    -- 0.25 = 3 months, 0.5 = 6 months, 0.75 = 9 months, 1.0 = 12 months
-    interval_months := ROUND(reporting_interval * 12)::INTEGER;
-
-    -- Ensure minimum of 1 month interval
-    IF interval_months < 1 THEN
-        interval_months := 3; -- Default to quarterly
-    END IF;
+    -- Get interval months from frequency
+    interval_months := frequency_to_months(earnings_report_frequency);
 
     -- Add the interval to the report date
     RETURN (income_statement_report_date + (interval_months || ' months')::INTERVAL)::DATE;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Next fiscal year end date
 -- ===================================================================
+-- HELPER FUNCTION: Calculate Next Fiscal Year End Date
+-- ===================================================================
+
 CREATE OR REPLACE FUNCTION calculate_next_fy_end_date(fy_end_date DATE)
     RETURNS DATE AS
 $$
@@ -232,8 +352,106 @@ $$ LANGUAGE plpgsql IMMUTABLE
                     STRICT;
 
 -- ===================================================================
+-- HELPER FUNCTION: Calculate Next Fiscal Quarter
+-- ===================================================================
+-- Returns the next fiscal quarter based on current quarter and frequency
+
+CREATE OR REPLACE FUNCTION calculate_next_fiscal_quarter(
+    current_fiscal_quarter INTEGER,
+    earnings_report_frequency TEXT
+)
+    RETURNS INTEGER AS
+$$
+DECLARE
+    quarter_increment INTEGER;
+    next_quarter      INTEGER;
+    interval_months   INTEGER;
+BEGIN
+    IF current_fiscal_quarter IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    -- Get interval months and calculate quarter increment
+    interval_months := frequency_to_months(earnings_report_frequency);
+    quarter_increment := interval_months / 3;
+
+    -- Calculate next quarter with wrap-around
+    next_quarter := current_fiscal_quarter + quarter_increment;
+
+    -- Handle wrap-around (quarters 1-4)
+    IF next_quarter > 4 THEN
+        next_quarter := ((next_quarter - 1) % 4) + 1;
+    END IF;
+
+    RETURN next_quarter;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Calculate Reporting Lag
+-- ===================================================================
+-- Returns the difference in days between "Next Earnings" and
+-- "Income Statement Report Date"
+-- Also considers typical expected lags by frequency for validation
+
+CREATE OR REPLACE FUNCTION calculate_reporting_lag(
+    next_earnings DATE,
+    income_statement_report_date DATE,
+    earnings_report_frequency TEXT DEFAULT 'Quarterly'
+)
+    RETURNS INTEGER AS
+$$
+BEGIN
+    IF next_earnings IS NULL OR income_statement_report_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    -- Return actual lag in days
+    -- Typical expected lags by frequency (for reference/validation):
+    --   Quarterly: ~45 days
+    --   Semi-Annual: ~60 days
+    --   Annual: ~90 days
+    RETURN next_earnings - income_statement_report_date;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Calculate Expected Report Date
+-- ===================================================================
+-- Given a fiscal period end date and frequency, estimates when the
+-- earnings report should be released (period end + typical lag)
+
+CREATE OR REPLACE FUNCTION calculate_expected_report_date(
+    period_end_date DATE,
+    earnings_report_frequency TEXT
+)
+    RETURNS DATE AS
+$$
+DECLARE
+    expected_lag_days INTEGER;
+BEGIN
+    IF period_end_date IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    -- Typical reporting lags by frequency
+    expected_lag_days := CASE UPPER(TRIM(COALESCE(earnings_report_frequency, 'Quarterly')))
+                             WHEN 'QUARTERLY' THEN 45
+                             WHEN 'SEMI-ANNUALLY' THEN 60
+                             WHEN 'SEMI-ANNUAL' THEN 60
+                             WHEN 'ANNUALLY' THEN 90
+                             WHEN 'ANNUAL' THEN 90
+                             ELSE 45
+        END;
+
+    RETURN period_end_date + (expected_lag_days || ' days')::INTERVAL;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
 -- HELPER FUNCTION: Validate Fiscal Dates
 -- ===================================================================
+
 CREATE OR REPLACE FUNCTION validate_fiscal_dates(
     fy_end_date DATE,
     report_date DATE,
@@ -249,50 +467,25 @@ $$
 BEGIN
     -- FY End in future relative to data
     IF fy_end_date > reference_date THEN
-        RETURN QUERY SELECT 'FY End Date is in the future'::TEXT, 'WARNING'::TEXT;
+        RETURN QUERY SELECT 'FY End Date is in the future'::TEXT AS issue, 'WARNING'::TEXT AS severity;
     END IF;
 
     -- Report date before FY End (impossible)
     IF report_date IS NOT NULL AND report_date < fy_end_date - INTERVAL '1 year' THEN
-        RETURN QUERY SELECT 'Report date predates fiscal year'::TEXT, 'ERROR'::TEXT;
+        RETURN QUERY SELECT 'Report date predates fiscal year'::TEXT AS issue, 'ERROR'::TEXT AS severity;
     END IF;
 
     -- Report date too far in future
     IF report_date > reference_date + INTERVAL '1 day' THEN
-        RETURN QUERY SELECT 'Report date is in the future'::TEXT, 'WARNING'::TEXT;
+        RETURN QUERY SELECT 'Report date is in the future'::TEXT AS issue, 'WARNING'::TEXT AS severity;
     END IF;
 
     -- FY End not on month boundary
     IF fy_end_date != (DATE_TRUNC('month', fy_end_date) + INTERVAL '1 month - 1 day')::DATE THEN
-        RETURN QUERY SELECT 'FY End is not last day of month'::TEXT, 'INFO'::TEXT;
+        RETURN QUERY SELECT 'FY End is not last day of month'::TEXT AS issue, 'INFO'::TEXT AS severity;
     END IF;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
-
--- ===================================================================
--- HELPER FUNCTION: Calculate Reporting Lag
--- ===================================================================
--- Returns the difference in days between "Next Earnings" and
--- "Income Statement Report Date"
--- Positive value = Next Earnings is after Report Date
--- Negative value = Next Earnings is before Report Date
--- NULL if either date is missing
-
-CREATE OR REPLACE FUNCTION calculate_reporting_lag(
-    next_earnings DATE,
-    income_statement_report_date DATE
-)
-    RETURNS INTEGER AS
-$$
-BEGIN
-    IF next_earnings IS NULL OR income_statement_report_date IS NULL THEN
-        RETURN NULL;
-    END IF;
-
-    RETURN next_earnings - income_statement_report_date;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE
-                    STRICT;
 
 -- ===================================================================
 -- Importing US Region Data...
@@ -921,7 +1114,14 @@ CREATE TEMP TABLE screening_staging
     "Gross Intangible Assets (-1FY)"          TEXT,
     "Gross Intangible Assets (-2FY)"          TEXT,
     "Gross Intangible Assets (-3FY)"          TEXT,
-    "Gross Intangible Assets (-4FY)"          TEXT
+    "Gross Intangible Assets (-4FY)"          TEXT,
+    "Total Revenues (-1FQFQ)"                 TEXT,
+    "Total Revenues (-2FQFQ)"                 TEXT,
+    "Total Revenues (-3FQFQ)"                 TEXT,
+    "Total Revenues (-4FQFQ)"                 TEXT,
+    "Total Revenues (-2FY)"                   TEXT,
+    "Total Revenues (-3FY)"                   TEXT,
+    "Total Revenues (-4FY)"                   TEXT
 );
 -- ===================================================================
 -- DATA IMPORT EXECUTION
@@ -1163,7 +1363,10 @@ INSERT INTO equities ("Ticker", "ISIN", "Name", "Region", "Country", "Trading Co
                       "Basic EPS - Cont (-4FQFQ)", "Basic EPS - Cont (-1FY)", "Basic EPS - Cont (-2FY)",
                       "Basic EPS - Cont (-3FY)", "Basic EPS - Cont (-4FY)",
                       "EPS/Adj. (FQ)", "EPS/Adj. (-1FQFQ)", "EPS/Adj. (-2FQFQ)", "EPS/Adj. (-3FQFQ)",
-                      "EPS/Adj. (-4FQFQ)", "EPS/Adj. (-2FY)", "EPS/Adj. (-3FY)", "EPS/Adj. (-4FY)")
+                      "EPS/Adj. (-4FQFQ)", "EPS/Adj. (-2FY)", "EPS/Adj. (-3FY)", "EPS/Adj. (-4FY)",
+                      "Total Revenues (-1FQFQ)", "Total Revenues (-2FQFQ)", "Total Revenues (-3FQFQ)",
+                      "Total Revenues (-4FQFQ)", "Total Revenues (-2FY)", "Total Revenues (-3FY)",
+                      "Total Revenues (-4FY)")
 SELECT NULLIF(TRIM(s."Ticker"), '')                                              AS "Ticker",
        NULLIF(TRIM(s."ISIN"), '')                                                AS "ISIN",
        NULLIF(TRIM(s."Name"), '')                                                AS "Name",
@@ -1747,13 +1950,14 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        report_fiscal.fiscal_year                                                 AS "Fiscal Year",
        calculate_reporting_lag(
                NULLIF(TRIM(s."Next Earnings"), '')::DATE,
-               NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE
+               NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE,
+               report_fiscal.earnings_report_frequency
        )                                                                         AS "Reporting Lag",
        calculate_next_income_statement_report_date(
                NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE,
-               report_fiscal.reporting_interval
+               report_fiscal.earnings_report_frequency
        )                                                                         AS "Next Income Statement Report Date",
-       report_fiscal.reporting_interval::INTEGER                                 AS "Reporting Interval",
+       report_fiscal.reporting_interval                                          AS "Reporting Interval",
        report_fiscal.earnings_report_frequency                                   AS "Earnings Report (Frequency)",
        -- NEW: Impairment of Goodwill Historical
        COALESCE(text_to_numeric_safe(s."Impairment of Goodwill (-1FQFQ)"),
@@ -1894,7 +2098,15 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        text_to_numeric_safe(s."EPS/Adj. (-4FQFQ)")                               AS "EPS/Adj. (-4FQFQ)",
        text_to_numeric_safe(s."EPS/Adj. (-2FY)")                                 AS "EPS/Adj. (-2FY)",
        text_to_numeric_safe(s."EPS/Adj. (-3FY)")                                 AS "EPS/Adj. (-3FY)",
-       text_to_numeric_safe(s."EPS/Adj. (-4FY)")                                 AS "EPS/Adj. (-4FY)"
+       text_to_numeric_safe(s."EPS/Adj. (-4FY)")                                 AS "EPS/Adj. (-4FY)",
+       -- NEW: Total Revenues Historical
+       text_to_numeric_safe(s."Total Revenues (-1FQFQ)")                         AS "Total Revenues (-1FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-2FQFQ)")                         AS "Total Revenues (-2FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-3FQFQ)")                         AS "Total Revenues (-3FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-4FQFQ)")                         AS "Total Revenues (-4FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-2FY)")                           AS "Total Revenues (-2FY)",
+       text_to_numeric_safe(s."Total Revenues (-3FY)")                           AS "Total Revenues (-3FY)",
+       text_to_numeric_safe(s."Total Revenues (-4FY)")                           AS "Total Revenues (-4FY)"
 FROM screening_staging s,
      LATERAL (
          SELECT parse_fiscal_year_end_date(NULLIF(TRIM(s."FY End"), '')) AS fy_end_date
@@ -1903,11 +2115,12 @@ FROM screening_staging s,
          SELECT calculate_next_fy_end_date(parsed.fy_end_date) AS next_fy_end_date
          ) next_fy,
      LATERAL (
-         SELECT * FROM calculate_fiscal_info(CURRENT_DATE, parsed.fy_end_date)
+         SELECT * FROM calculate_fiscal_info(CURRENT_DATE::DATE, parsed.fy_end_date, NULL::TEXT)
          ) current_fiscal,
      LATERAL (
          SELECT *
-         FROM calculate_fiscal_info(NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE, parsed.fy_end_date)
+         FROM calculate_fiscal_info(NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE, parsed.fy_end_date,
+                                    NULL::TEXT)
          ) report_fiscal
 ON CONFLICT DO NOTHING;
 
@@ -1933,10 +2146,16 @@ DROP TABLE IF EXISTS screening_staging;
 DROP FUNCTION IF EXISTS text_to_numeric_safe(TEXT);
 DROP FUNCTION IF EXISTS text_to_date_safe(TEXT, TEXT);
 DROP FUNCTION IF EXISTS parse_fiscal_year_end_date(TEXT);
-DROP FUNCTION IF EXISTS calculate_fiscal_info(DATE, DATE);
+DROP FUNCTION IF EXISTS frequency_to_months(TEXT);
+DROP FUNCTION IF EXISTS months_to_frequency(INTEGER);
+DROP FUNCTION IF EXISTS calculate_reporting_interval(TEXT);
+DROP FUNCTION IF EXISTS derive_earnings_report_frequency(DATE, DATE);
+DROP FUNCTION IF EXISTS calculate_fiscal_info(DATE, DATE, TEXT);
+DROP FUNCTION IF EXISTS calculate_next_income_statement_report_date(DATE, TEXT);
 DROP FUNCTION IF EXISTS calculate_next_fy_end_date(DATE);
+DROP FUNCTION IF EXISTS calculate_next_fiscal_quarter(INTEGER, TEXT);
+DROP FUNCTION IF EXISTS calculate_reporting_lag(DATE, DATE, TEXT);
+DROP FUNCTION IF EXISTS calculate_expected_report_date(DATE, TEXT);
 DROP FUNCTION IF EXISTS validate_fiscal_dates(DATE, DATE, DATE);
-DROP FUNCTION IF EXISTS calculate_reporting_lag(DATE, DATE);
-DROP FUNCTION IF EXISTS calculate_next_income_statement_report_date(DATE, NUMERIC);
 
 \echo 'Import complete!'
