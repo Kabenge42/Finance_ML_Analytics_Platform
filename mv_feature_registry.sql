@@ -1387,7 +1387,7 @@ VALUES
     -- Analyst Sentiment Functions
     ('calc_sentiment_features', 'Analyst Sentiment', 10, 'Ratings, price targets, revisions, coverage quality',
      'engineer_analyst_quality_features', CURRENT_TIMESTAMP),
-    ('calc_price_target_dynamics', 'Price Target Dynamics', 15,
+    ('calc_price_target_dynamics', 'Analyst Sentiment', 15,
      'PT momentum (1W-1Y), consensus convergence, coverage changes', 'engineer_price_target_dynamics',
      CURRENT_TIMESTAMP),
 

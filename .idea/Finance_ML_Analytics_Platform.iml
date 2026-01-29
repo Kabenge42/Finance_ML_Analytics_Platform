@@ -22,7 +22,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.ipynb_checkpoints" />
     </content>
     <content url="file://$MODULE_DIR$/data" />
-    <orderEntry type="jdk" jdkName="Python 3.14 (Finance_Analytics_Platform)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.14" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="Python 3.14 interpreter library" level="application" />
   </component>
@@ -31,16 +31,23 @@
       <list>
         <option value="AiIgnore file" />
         <option value="GitIgnore file" />
+        <option value="C#" />
+        <option value="C++" />
+        <option value="ObjectiveC" />
         <option value="CSV" />
         <option value="CSV/TSV" />
         <option value="HTML" />
+        <option value="JavaScript" />
         <option value="JSON" />
         <option value="JSON5" />
         <option value="Jupyter" />
+        <option value="Kotlin" />
+        <option value="Log" />
         <option value="Markdown" />
         <option value="PowerShell" />
         <option value="PythonStub" />
         <option value="Requirements.txt" />
+        <option value="SCSS" />
         <option value="Shell Script" />
         <option value="SQL" />
         <option value="TOML" />

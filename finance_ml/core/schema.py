@@ -4853,21 +4853,120 @@ PHASE93_FEATURE_CATEGORIES: Dict[str, List[str]] = {
         "revenue_per_employee_fy",
         "revenue_per_employee_trend",
         "workforce_volatility",
-        "fte_cagr_3y_pct",
+    "fte_cagr_3y_pct",
     ],
+}
+
+
+# ===================================================================
+# COLUMN ALIASES
+# ===================================================================
+# Maps common/shorthand names to canonical normalized names.
+# Used during data ingestion and feature engineering to ensure consistency.
+ALIAS_SCHEMA: Dict[str, str] = {
+    # Core Ratios & Valuation
+    "p_e": "p_e_ltm",
+    "p_e_ratio": "p_e_ltm",
+    "p_e_forward": "p_e_ntm",
+    "p_b": "p_b_ltm",
+    "p_b_ratio": "p_b_ltm",
+    "ev_ebitda": "ev_ebitda_ltm",
+    "ev_ebitda_ratio": "ev_ebitda_ltm",
+    "dividend_yield": "div_yield_ltm",
+
+    # Financial Statements
+    "revenue": "total_revenues_ltm",
+    "revenue_ltm": "total_revenues_ltm",
+    "revenue_fy": "total_revenues_fy",
+    "ebitda": "ebitda_ltm",
+    "ebit": "ebit_ltm",
+    "net_income": "net_income_is_ltm",
+    "net_income_ltm": "net_income_is_ltm",
+    "gross_profit": "gross_profit_ltm",
+    "operating_income": "operating_income_ltm",
+    "operating_expenses": "total_operating_expenses_ltm",
+    "interest_expense": "interest_expense_total_ltm",
+    "r_d_expenses": "r_d_expenses_ltm",
+    "sga_expenses": "selling_general_and_admin_expenses_total_fy",
+    "marketing_expenses": "marketing_expenses_5yavgltm",
+
+    # Balance Sheet
+    "total_equity": "total_equity_ltm",
+    "total_assets": "total_assets_ltm",
+    "total_debt": "total_debt_ltm",
+    "inventory": "inventory_ltm",
+    "cash_and_equivalents": "cash_and_equivalents_ltm",
+    "current_assets": "total_current_assets_ltm",
+    "current_liabilities": "total_current_liabilities_ltm",
+    "working_capital": "working_capital_ltm",
+    "retained_earnings": "retained_earnings_ltm",
+    "goodwill": "goodwill_ltm",
+    "intangible_assets": "gross_intangible_assets_ltm",
+    "accounts_receivable_previous_year": "accounts_receivable_total_1fy",
+
+    # Cash Flow
+    "capex": "capital_expenditure_ltm",
+    "cfo": "cfo_ltm",
+    "operating_cash_flow": "cfo_ltm",
+    "cfi": "cfi_ltm",
+    "cff": "cff_ltm",
+    "fcf": "fcf_ltm",
+    "dividends_paid": "common_dividends_paid_fy",
+    "dividends_paid_ltm": "common_dividends_paid_ltm",
+
+    # Performance & Momentum
+    "roe": "return_on_equity_pct_ltm",
+    "roa": "return_on_assets_roa_pct_ltm",
+    "gross_margin": "gross_profit_margin_pct_ltm",
+    "price_momentum_1m": "price_chg_pct_1m",
+    "price_momentum_3m": "price_chg_pct_3m",
+    "volatility_1y_pct": "volatility_1y",
+
+    # Per Share & Estimates
+    "eps": "eps_adj_ltm",
+    "eps_surprise": "eps_surprise_pct",
+    "dividend_per_share": "dividend_per_share_ltm",
+    "employees": "avg_employees_ltm",
+    "shares_outstanding": "shrs_out",
+    "price_target_number": "price_target_count",
+
+    # Previous Year Columns (for growth)
+    "revenue_previous_year": "total_revenues_1fy",
+    "eps_previous_year": "eps_adj_1fy",
+    "ebitda_previous_year": "ebitda_1fy",
+    "total_equity_previous_year": "total_equity_fy",
+    "total_assets_previous_year": "total_assets_fy",
+    "gross_profit_previous_year": "gross_profit_fy",
+    "working_capital_1fy": "working_capital_fy",
+    "roa_previous_year": "return_on_assets_roa_pct_fy",
+    "current_ratio_previous_year": "current_ratio_fy",
+    "shares_outstanding_previous_year": "shrs_out_1fy",
+    "gross_margin_pct_previous_year": "gross_profit_margin_pct_fy",
+    "asset_turnover_previous_year": "asset_turnover_fy",
 }
 
 
 def get_sql_column_name(normalized_name: str) -> str:
     """Get original SQL column name from normalized Python name."""
-    meta = COLUMN_SCHEMA.get(normalized_name)
+    # Resolve alias first if needed
+    name = ALIAS_SCHEMA.get(normalized_name, normalized_name)
+    meta = COLUMN_SCHEMA.get(name)
     if meta and "sql_name" in meta and meta["sql_name"]:
         return meta["sql_name"]
-    return normalized_name
+    return name
 
 
-def normalize_column_name(column: str) -> str:
-    """Standardize column names to lowercase with underscores."""
+def normalize_column_name(column: str, resolve_aliases: bool = False) -> str:
+    """Standardize column names to lowercase with underscores.
+
+    Args:
+        column: Raw column name
+        resolve_aliases: If True, resolves the normalized name to its canonical version
+                         using ALIAS_SCHEMA.
+    """
+    if not isinstance(column, str):
+        column = str(column)
+
     if "R&D" in column or "r&d" in column.lower():
         column = column.replace("R&D", "RandD").replace("r&d", "randd")
 
@@ -4885,7 +4984,18 @@ def normalize_column_name(column: str) -> str:
     )
     while "__" in normalized:
         normalized = normalized.replace("__", "_")
-    return normalized.strip("_")
+
+    final_name = normalized.strip("_")
+
+    if resolve_aliases:
+        return ALIAS_SCHEMA.get(final_name, final_name)
+
+    return final_name
+
+
+def resolve_column_alias(column_name: str) -> str:
+    """Resolve a potentially normalized column name to its canonical version."""
+    return ALIAS_SCHEMA.get(column_name, column_name)
 
 
 def generate_sql_schema() -> str:

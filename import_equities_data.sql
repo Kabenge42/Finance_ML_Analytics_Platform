@@ -34,6 +34,50 @@ FROM equities;
 -- HELPER FUNCTIONS
 -- ===================================================================
 
+-- ===================================================================
+-- HELPER FUNCTION: Month Abbreviation to Number
+-- ===================================================================
+-- Converts a 3-letter month abbreviation to its numeric value (1-12)
+CREATE OR REPLACE FUNCTION month_abbrev_to_number(month_abbrev TEXT)
+    RETURNS INTEGER AS
+$$
+BEGIN
+    RETURN CASE UPPER(LEFT(TRIM(COALESCE(month_abbrev, '')), 3))
+               WHEN 'JAN' THEN 1
+               WHEN 'FEB' THEN 2
+               WHEN 'MAR' THEN 3
+               WHEN 'APR' THEN 4
+               WHEN 'MAY' THEN 5
+               WHEN 'JUN' THEN 6
+               WHEN 'JUL' THEN 7
+               WHEN 'AUG' THEN 8
+               WHEN 'SEP' THEN 9
+               WHEN 'OCT' THEN 10
+               WHEN 'NOV' THEN 11
+               WHEN 'DEC' THEN 12
+        END;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ===================================================================
+-- HELPER FUNCTION: Get Expected Reporting Lag Days
+-- ===================================================================
+-- Returns the typical number of days between period end and earnings release
+CREATE OR REPLACE FUNCTION get_expected_reporting_lag_days(earnings_report_frequency TEXT)
+    RETURNS INTEGER AS
+$$
+BEGIN
+    RETURN CASE UPPER(TRIM(COALESCE(earnings_report_frequency, 'QUARTERLY')))
+               WHEN 'QUARTERLY' THEN 45
+               WHEN 'SEMI-ANNUALLY' THEN 60
+               WHEN 'SEMI-ANNUAL' THEN 60
+               WHEN 'ANNUALLY' THEN 90
+               WHEN 'ANNUAL' THEN 90
+               ELSE 45
+        END;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
 -- Converts TEXT to NUMERIC, treating common non-numeric patterns as NULL
 CREATE OR REPLACE FUNCTION text_to_numeric_safe(input_text TEXT)
     RETURNS NUMERIC AS
@@ -67,9 +111,6 @@ $$ LANGUAGE plpgsql IMMUTABLE
 -- ===================================================================
 -- HELPER FUNCTION: Parse FY End to Date
 -- ===================================================================
--- Converts "FY End" text (e.g., "Dec 2024", "Mar 2025") to a DATE
--- Returns the last day of the specified month/year
-
 CREATE OR REPLACE FUNCTION parse_fiscal_year_end_date(fy_end_text TEXT)
     RETURNS DATE AS
 $$
@@ -77,44 +118,32 @@ DECLARE
     month_name TEXT;
     year_text  TEXT;
     month_num  INTEGER;
+    year_value INTEGER;
 BEGIN
     IF fy_end_text IS NULL OR TRIM(fy_end_text) = '' THEN
         RETURN NULL;
     END IF;
 
-    -- Handle various input formats
     fy_end_text := TRIM(fy_end_text);
-
-    -- Try "Mon YYYY" format first
     month_name := SPLIT_PART(fy_end_text, ' ', 1);
     year_text := SPLIT_PART(fy_end_text, ' ', 2);
 
-    -- Validate year is numeric and reasonable
-    IF year_text !~ '^\d{4}$' OR year_text::INTEGER < 1900 OR year_text::INTEGER > 2100 THEN
+    -- Validate year format and range
+    IF year_text !~ '^\d{4}$' THEN
         RETURN NULL;
     END IF;
 
-    month_num := CASE UPPER(LEFT(month_name, 3))
-                     WHEN 'JAN' THEN 1
-                     WHEN 'FEB' THEN 2
-                     WHEN 'MAR' THEN 3
-                     WHEN 'APR' THEN 4
-                     WHEN 'MAY' THEN 5
-                     WHEN 'JUN' THEN 6
-                     WHEN 'JUL' THEN 7
-                     WHEN 'AUG' THEN 8
-                     WHEN 'SEP' THEN 9
-                     WHEN 'OCT' THEN 10
-                     WHEN 'NOV' THEN 11
-                     WHEN 'DEC' THEN 12
-        END;
+    year_value := year_text::INTEGER;
+    IF year_value < 1900 OR year_value > 2100 THEN
+        RETURN NULL;
+    END IF;
 
+    month_num := month_abbrev_to_number(month_name);
     IF month_num IS NULL THEN
         RETURN NULL;
     END IF;
 
-    -- Last day of month using cleaner syntax
-    RETURN (MAKE_DATE(year_text::INTEGER, month_num, 1) + INTERVAL '1 month - 1 day')::DATE;
+    RETURN (MAKE_DATE(year_value, month_num, 1) + INTERVAL '1 month - 1 day')::DATE;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE
                     STRICT;
@@ -122,20 +151,37 @@ $$ LANGUAGE plpgsql IMMUTABLE
 -- ===================================================================
 -- HELPER FUNCTION: Convert Frequency to Interval Months
 -- ===================================================================
--- Centralizes the mapping from frequency text to number of months
--- Quarterly = 3, Semi-Annual = 6, Annual = 12
-
-CREATE OR REPLACE FUNCTION frequency_to_months(earnings_report_frequency TEXT)
+CREATE OR REPLACE FUNCTION frequency_to_months(
+    earnings_report_frequency TEXT,
+    fy_end_date               DATE DEFAULT NULL,
+    next_fy_end_date          DATE DEFAULT NULL
+)
     RETURNS INTEGER AS
 $$
+DECLARE
+    fy_range_months INTEGER;
 BEGIN
-    RETURN CASE UPPER(TRIM(COALESCE(earnings_report_frequency, 'Quarterly')))
-               WHEN 'QUARTERLY' THEN 3
-               WHEN 'SEMI-ANNUALLY' THEN 6
-               WHEN 'SEMI-ANNUAL' THEN 6
-               WHEN 'ANNUALLY' THEN 12
-               WHEN 'ANNUAL' THEN 12
-               ELSE 3 -- Default to quarterly
+    -- Calculate the fiscal year range in months (should always be 12)
+    IF fy_end_date IS NOT NULL AND next_fy_end_date IS NOT NULL THEN
+        fy_range_months := ((EXTRACT(YEAR FROM next_fy_end_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
+            + (EXTRACT(MONTH FROM next_fy_end_date) - EXTRACT(MONTH FROM fy_end_date)))::INTEGER;
+    ELSE
+        -- Default to standard 12-month fiscal year
+        fy_range_months := 12;
+    END IF;
+
+    -- Derive reporting interval as a divisor of the fiscal year range
+    RETURN CASE UPPER(TRIM(COALESCE(earnings_report_frequency, 'QUARTERLY')))
+        -- Quarterly: FY range / 4 reporting periods
+               WHEN 'QUARTERLY' THEN fy_range_months / 4
+        -- Semi-Annual: FY range / 2 reporting periods
+               WHEN 'SEMI-ANNUALLY' THEN fy_range_months / 2
+               WHEN 'SEMI-ANNUAL' THEN fy_range_months / 2
+        -- Annual: Full FY range (1 reporting period)
+               WHEN 'ANNUALLY' THEN fy_range_months
+               WHEN 'ANNUAL' THEN fy_range_months
+        -- Default to quarterly (FY range / 4)
+               ELSE fy_range_months / 4
         END;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -143,8 +189,6 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- ===================================================================
 -- HELPER FUNCTION: Convert Interval Months to Frequency Text
 -- ===================================================================
--- Converts number of months to frequency description
-
 CREATE OR REPLACE FUNCTION months_to_frequency(interval_months INTEGER)
     RETURNS TEXT AS
 $$
@@ -152,32 +196,14 @@ BEGIN
     RETURN CASE
                WHEN interval_months <= 3 THEN 'Quarterly'
                WHEN interval_months <= 6 THEN 'Semi-Annually'
-               WHEN interval_months <= 12 THEN 'Annually'
-               ELSE 'Quarterly' -- Default
+               ELSE 'Annually'
         END;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE;
-
--- ===================================================================
--- HELPER FUNCTION: Calculate Reporting Interval
--- ===================================================================
--- Returns the reporting interval in months based on frequency
--- Quarterly = 3, Semi-Annual = 6, Annual = 12
-
-CREATE OR REPLACE FUNCTION calculate_reporting_interval(earnings_report_frequency TEXT)
-    RETURNS INTEGER AS
-$$
-BEGIN
-    RETURN frequency_to_months(earnings_report_frequency);
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ===================================================================
 -- HELPER FUNCTION: Derive Earnings Report Frequency
 -- ===================================================================
--- Derives frequency from the interval between two report dates
--- or from the reporting interval value
-
 CREATE OR REPLACE FUNCTION derive_earnings_report_frequency(
     income_statement_report_date DATE,
     fy_end_date DATE
@@ -188,116 +214,138 @@ DECLARE
     months_diff INTEGER;
 BEGIN
     IF income_statement_report_date IS NULL OR fy_end_date IS NULL THEN
-        RETURN 'Quarterly'; -- Default
+        RETURN 'Quarterly';
     END IF;
 
-    -- Calculate months between report date and FY end
     months_diff := ABS(
             (EXTRACT(YEAR FROM income_statement_report_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
                 + (EXTRACT(MONTH FROM income_statement_report_date) - EXTRACT(MONTH FROM fy_end_date))
-                   );
+                   )::INTEGER;
 
-    -- Normalize to reporting period (mod 12, then check pattern)
-    months_diff := months_diff % 12;
-    IF months_diff = 0 THEN
-        months_diff := 12;
-    END IF;
+    -- Normalize to 1-12 range
+    months_diff := COALESCE(NULLIF(months_diff % 12, 0), 12);
 
-    -- Determine frequency based on the reporting pattern
-    -- If months align with 3-month intervals: Quarterly
-    -- If months align with 6-month intervals: Semi-Annually
-    -- If months align with 12-month intervals: Annually
+    -- Determine frequency: check if months align with semi-annual or quarterly
     RETURN CASE
-               WHEN months_diff IN (3, 6, 9, 12) AND months_diff % 3 = 0 AND months_diff % 6 != 0 THEN 'Quarterly'
-               WHEN months_diff IN (6, 12) AND months_diff % 6 = 0 AND months_diff != 12 THEN 'Semi-Annually'
-               ELSE 'Quarterly' -- Default for edge cases
+               WHEN months_diff IN (6, 12) THEN 'Semi-Annually'
+               ELSE 'Quarterly'
         END;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ===================================================================
 -- Unified Fiscal Date Calculator
+-- Derives all calculations based on FY End Date reporting ranges
 -- ===================================================================
--- Returns all fiscal metrics including frequency-aware calculations
--- earnings_report_frequency is now a primary input that drives calculations
-
 CREATE OR REPLACE FUNCTION calculate_fiscal_info(
-    reference_date DATE,
-    fy_end_date DATE,
+    reference_date           DATE,
+    fy_end_date              DATE,
     input_earnings_frequency TEXT DEFAULT NULL,
-    OUT fiscal_month INTEGER,
-    OUT fiscal_quarter INTEGER,
-    OUT fiscal_year INTEGER,
-    OUT next_quarter INTEGER,
-    OUT next_quarter_year INTEGER,
-    OUT reporting_interval INTEGER,
+    OUT fiscal_month         INTEGER,
+    OUT fiscal_quarter       INTEGER,
+    OUT fiscal_year          INTEGER,
+    OUT next_quarter         INTEGER,
+    OUT next_quarter_year    INTEGER,
+    OUT reporting_interval   INTEGER,
     OUT earnings_report_frequency TEXT,
     OUT next_earnings_report_type TEXT
 ) AS
 $$
 DECLARE
+    next_fy_end_date DATE;
+    fy_range_months  INTEGER;
     months_since_fy_end INTEGER;
-    interval_months   INTEGER;
-    quarter_increment INTEGER;
+    interval_months  INTEGER;
+    periods_per_year INTEGER;
+    current_period   INTEGER;
+    next_period      INTEGER;
 BEGIN
     IF reference_date IS NULL OR fy_end_date IS NULL THEN
         RETURN;
     END IF;
 
-    -- Determine earnings frequency (use input if provided, otherwise derive)
-    IF input_earnings_frequency IS NOT NULL AND TRIM(input_earnings_frequency) != '' THEN
-        earnings_report_frequency := input_earnings_frequency;
-    ELSE
-        earnings_report_frequency := derive_earnings_report_frequency(reference_date, fy_end_date);
-    END IF;
+    -- Calculate Next FY End Date (defines the reporting range)
+    next_fy_end_date := (fy_end_date + INTERVAL '1 year')::DATE;
 
-    -- Get interval months from frequency
-    interval_months := frequency_to_months(earnings_report_frequency);
-    reporting_interval := interval_months;
+    -- Calculate fiscal year range in months (the base for all interval calculations)
+    fy_range_months := ((EXTRACT(YEAR FROM next_fy_end_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
+        + (EXTRACT(MONTH FROM next_fy_end_date) - EXTRACT(MONTH FROM fy_end_date)))::INTEGER;
 
-    -- Calculate months since fiscal year end
-    months_since_fy_end := (EXTRACT(YEAR FROM reference_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
-        + (EXTRACT(MONTH FROM reference_date) - EXTRACT(MONTH FROM fy_end_date));
+    -- Determine earnings frequency
+    earnings_report_frequency := COALESCE(NULLIF(TRIM(input_earnings_frequency), ''),
+                                          derive_earnings_report_frequency(reference_date, fy_end_date));
 
-    -- Fiscal month (1-12)
-    fiscal_month := ((months_since_fy_end - 1) % 12) + 1;
-    IF fiscal_month <= 0 THEN
-        fiscal_month := fiscal_month + 12;
-    END IF;
-
-    -- Current fiscal quarter
-    fiscal_quarter := CEIL(fiscal_month / 3.0)::INTEGER;
-
-    -- Calculate next quarter based on frequency
-    quarter_increment := CASE
-                             WHEN interval_months = 3 THEN 1 -- Quarterly: next quarter
-                             WHEN interval_months = 6 THEN 2 -- Semi-Annual: skip a quarter
-                             WHEN interval_months = 12 THEN 4 -- Annual: same quarter next year
-                             ELSE 1
+    -- Derive interval months based on FY range
+    interval_months := CASE UPPER(TRIM(earnings_report_frequency))
+                           WHEN 'QUARTERLY' THEN fy_range_months / 4
+                           WHEN 'SEMI-ANNUALLY' THEN fy_range_months / 2
+                           WHEN 'SEMI-ANNUAL' THEN fy_range_months / 2
+                           WHEN 'ANNUALLY' THEN fy_range_months
+                           WHEN 'ANNUAL' THEN fy_range_months
+                           ELSE fy_range_months / 4
         END;
 
-    next_quarter := fiscal_quarter + quarter_increment;
+    reporting_interval := interval_months;
 
-    -- Handle wrap-around for quarters > 4
-    IF next_quarter > 4 THEN
-        next_quarter := ((next_quarter - 1) % 4) + 1;
+    -- Calculate periods per fiscal year based on the FY range
+    periods_per_year := fy_range_months / interval_months;
+
+    -- Calculate months since fiscal year end
+    months_since_fy_end := ((EXTRACT(YEAR FROM reference_date) - EXTRACT(YEAR FROM fy_end_date)) * 12
+        + (EXTRACT(MONTH FROM reference_date) - EXTRACT(MONTH FROM fy_end_date)))::INTEGER;
+
+    -- Fiscal month (1-12) derived from position within FY range
+    fiscal_month := ((months_since_fy_end - 1) % fy_range_months) + 1;
+    IF fiscal_month <= 0 THEN
+        fiscal_month := fiscal_month + fy_range_months;
     END IF;
 
-    -- Fiscal year calculations
-    fiscal_year := EXTRACT(YEAR FROM fy_end_date)::INTEGER + 1 + ((months_since_fy_end - 1) / 12);
+    -- Fiscal quarter derived from fiscal month relative to FY range
+    -- Each quarter represents (fy_range_months / 4) months
+    fiscal_quarter := CEIL(fiscal_month / (fy_range_months / 4.0))::INTEGER;
 
-    -- Next quarter year (increments if we wrap past Q4)
-    IF fiscal_quarter + quarter_increment > 4 THEN
-        next_quarter_year := fiscal_year + ((fiscal_quarter + quarter_increment - 1) / 4);
-    ELSE
-        next_quarter_year := fiscal_year;
+    -- Ensure fiscal_quarter stays within 1-4 range
+    IF fiscal_quarter > 4 THEN
+        fiscal_quarter := 4;
     END IF;
 
-    -- Determine report type based on next quarter
+    -- Calculate current reporting period within the fiscal year
+    current_period := CEIL(fiscal_month / interval_months::NUMERIC)::INTEGER;
+    IF current_period > periods_per_year THEN
+        current_period := periods_per_year;
+    END IF;
+
+    -- Calculate next reporting period
+    next_period := current_period + 1;
+    IF next_period > periods_per_year THEN
+        next_period := 1;
+    END IF;
+
+    -- Convert next_period back to quarter for output
+    -- Next quarter is derived from which reporting period we're moving to
+    next_quarter := CASE
+                        WHEN periods_per_year = 4 THEN next_period -- Quarterly
+                        WHEN periods_per_year = 2 THEN next_period * 2 -- Semi-annual (Q2 or Q4)
+                        WHEN periods_per_year = 1 THEN 4 -- Annual (always Q4/full year)
+                        ELSE ((fiscal_quarter + (interval_months / (fy_range_months / 4)) - 1) % 4) + 1
+        END;
+
+    -- Fiscal year calculations based on FY range
+    fiscal_year := EXTRACT(YEAR FROM fy_end_date)::INTEGER + 1 + ((months_since_fy_end - 1) / fy_range_months);
+
+    -- Next quarter year
+    next_quarter_year := CASE
+                             WHEN next_period = 1 AND current_period = periods_per_year THEN fiscal_year + 1
+                             ELSE fiscal_year
+        END;
+
+    -- Report type derived from reporting periods and FY range
     next_earnings_report_type := CASE
-                                     WHEN next_quarter = 4 THEN 'Full Year'
-                                     WHEN interval_months = 6 AND next_quarter IN (2, 4) THEN 'Half Year'
-                                     WHEN interval_months = 12 THEN 'Full Year'
+        -- Full year if annual reporting OR if next period completes the FY
+                                     WHEN interval_months = fy_range_months THEN 'Full Year'
+                                     WHEN next_period = periods_per_year AND periods_per_year > 1 THEN 'Full Year'
+        -- Half year for semi-annual mid-year report
+                                     WHEN interval_months = fy_range_months / 2 AND next_period = 1 THEN 'Half Year'
                                      ELSE 'Interim'
         END;
 END;
@@ -306,36 +354,24 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- ===================================================================
 -- HELPER FUNCTION: Calculate Next Income Statement Report Date
 -- ===================================================================
--- Calculates the next expected income statement report date based on
--- the earnings report frequency
--- Example: 2025-09-30 + Quarterly = 2025-12-30 (+ 3 months)
--- Example: 2025-11-30 + Semi-Annual = 2026-05-30 (+ 6 months)
-
 CREATE OR REPLACE FUNCTION calculate_next_income_statement_report_date(
     income_statement_report_date DATE,
     earnings_report_frequency TEXT
 )
     RETURNS DATE AS
 $$
-DECLARE
-    interval_months INTEGER;
 BEGIN
     IF income_statement_report_date IS NULL THEN
         RETURN NULL;
     END IF;
-
-    -- Get interval months from frequency
-    interval_months := frequency_to_months(earnings_report_frequency);
-
-    -- Add the interval to the report date
-    RETURN (income_statement_report_date + (interval_months || ' months')::INTERVAL)::DATE;
+    RETURN (income_statement_report_date +
+            (frequency_to_months(earnings_report_frequency) || ' months')::INTERVAL)::DATE;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ===================================================================
 -- HELPER FUNCTION: Calculate Next Fiscal Year End Date
 -- ===================================================================
-
 CREATE OR REPLACE FUNCTION calculate_next_fy_end_date(fy_end_date DATE)
     RETURNS DATE AS
 $$
@@ -343,9 +379,6 @@ BEGIN
     IF fy_end_date IS NULL THEN
         RETURN NULL;
     END IF;
-
-    -- Handle Feb 29 → Feb 28 transition properly
-    -- Adding '1 year' interval handles this automatically in PostgreSQL
     RETURN (fy_end_date + INTERVAL '1 year')::DATE;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE
@@ -354,48 +387,97 @@ $$ LANGUAGE plpgsql IMMUTABLE
 -- ===================================================================
 -- HELPER FUNCTION: Calculate Next Fiscal Quarter
 -- ===================================================================
--- Returns the next fiscal quarter based on current quarter and frequency
-
 CREATE OR REPLACE FUNCTION calculate_next_fiscal_quarter(
-    current_fiscal_quarter INTEGER,
-    earnings_report_frequency TEXT
+    next_earnings_date           DATE,
+    income_statement_report_date DATE,
+    fy_end_date                  DATE,
+    earnings_report_frequency    TEXT DEFAULT 'Quarterly'
 )
     RETURNS INTEGER AS
 $$
 DECLARE
-    quarter_increment INTEGER;
-    next_quarter      INTEGER;
-    interval_months   INTEGER;
+    next_fy_end_date      DATE;
+    reference_date        DATE;
+    fy_range_months       INTEGER;
+    interval_months       INTEGER;
+    months_into_fy        INTEGER;
+    next_period_end_month INTEGER;
+    fiscal_quarter        INTEGER;
 BEGIN
-    IF current_fiscal_quarter IS NULL THEN
+    -- Return NULL if essential dates are missing
+    IF fy_end_date IS NULL THEN
         RETURN NULL;
     END IF;
 
-    -- Get interval months and calculate quarter increment
-    interval_months := frequency_to_months(earnings_report_frequency);
-    quarter_increment := interval_months / 3;
-
-    -- Calculate next quarter with wrap-around
-    next_quarter := current_fiscal_quarter + quarter_increment;
-
-    -- Handle wrap-around (quarters 1-4)
-    IF next_quarter > 4 THEN
-        next_quarter := ((next_quarter - 1) % 4) + 1;
+    -- Determine the reference date: prefer Next Earnings, fallback to Income Statement + interval
+    IF next_earnings_date IS NOT NULL THEN
+        reference_date := next_earnings_date;
+    ELSIF income_statement_report_date IS NOT NULL THEN
+        -- Estimate next report date by adding the reporting interval
+        interval_months := CASE UPPER(TRIM(COALESCE(earnings_report_frequency, 'QUARTERLY')))
+                               WHEN 'QUARTERLY' THEN 3
+                               WHEN 'SEMI-ANNUALLY' THEN 6
+                               WHEN 'SEMI-ANNUAL' THEN 6
+                               WHEN 'ANNUALLY' THEN 12
+                               WHEN 'ANNUAL' THEN 12
+                               ELSE 3
+            END;
+        reference_date := (income_statement_report_date + (interval_months || ' months')::INTERVAL)::DATE;
+    ELSE
+        RETURN NULL;
     END IF;
 
-    RETURN next_quarter;
+    -- Calculate fiscal year boundaries
+    -- Determine which fiscal year the reference_date falls into
+    next_fy_end_date := fy_end_date;
+    WHILE next_fy_end_date < reference_date
+        LOOP
+            next_fy_end_date := (next_fy_end_date + INTERVAL '1 year')::DATE;
+        END LOOP;
+
+    -- The current FY end for this period is one year before next_fy_end_date
+    -- unless reference_date is exactly on or before the original fy_end_date
+    IF next_fy_end_date = fy_end_date THEN
+        -- Reference date is before/on the first FY end, use it directly
+        NULL; -- next_fy_end_date is already correct
+    END IF;
+
+    -- Fiscal year range is always 12 months
+    fy_range_months := 12;
+
+    -- Calculate months from the START of the fiscal year to the reference date
+    -- FY starts the day after the previous FY end
+    months_into_fy := (
+        (EXTRACT(YEAR FROM reference_date) - EXTRACT(YEAR FROM (next_fy_end_date - INTERVAL '1 year'))) * 12
+            + (EXTRACT(MONTH FROM reference_date) - EXTRACT(MONTH FROM (next_fy_end_date - INTERVAL '1 year')))
+        )::INTEGER;
+
+    -- Normalize to 1-12 range (months within the fiscal year)
+    months_into_fy := ((months_into_fy - 1) % 12) + 1;
+    IF months_into_fy <= 0 THEN
+        months_into_fy := months_into_fy + 12;
+    END IF;
+
+    -- Derive fiscal quarter from the fiscal month
+    -- Q1: months 1-3, Q2: months 4-6, Q3: months 7-9, Q4: months 10-12
+    fiscal_quarter := CEIL(months_into_fy / 3.0)::INTEGER;
+
+    -- Ensure quarter is within valid range
+    IF fiscal_quarter < 1 THEN
+        fiscal_quarter := 1;
+    ELSIF fiscal_quarter > 4 THEN
+        fiscal_quarter := 4;
+    END IF;
+
+    RETURN fiscal_quarter;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ===================================================================
 -- HELPER FUNCTION: Calculate Reporting Lag
 -- ===================================================================
--- Returns the difference in days between "Next Earnings" and
--- "Income Statement Report Date"
--- Also considers typical expected lags by frequency for validation
-
 CREATE OR REPLACE FUNCTION calculate_reporting_lag(
-    next_earnings DATE,
+    next_earnings             DATE,
     income_statement_report_date DATE,
     earnings_report_frequency TEXT DEFAULT 'Quarterly'
 )
@@ -405,12 +487,6 @@ BEGIN
     IF next_earnings IS NULL OR income_statement_report_date IS NULL THEN
         RETURN NULL;
     END IF;
-
-    -- Return actual lag in days
-    -- Typical expected lags by frequency (for reference/validation):
-    --   Quarterly: ~45 days
-    --   Semi-Annual: ~60 days
-    --   Annual: ~90 days
     RETURN next_earnings - income_statement_report_date;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -418,40 +494,23 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- ===================================================================
 -- HELPER FUNCTION: Calculate Expected Report Date
 -- ===================================================================
--- Given a fiscal period end date and frequency, estimates when the
--- earnings report should be released (period end + typical lag)
-
 CREATE OR REPLACE FUNCTION calculate_expected_report_date(
     period_end_date DATE,
     earnings_report_frequency TEXT
 )
     RETURNS DATE AS
 $$
-DECLARE
-    expected_lag_days INTEGER;
 BEGIN
     IF period_end_date IS NULL THEN
         RETURN NULL;
     END IF;
-
-    -- Typical reporting lags by frequency
-    expected_lag_days := CASE UPPER(TRIM(COALESCE(earnings_report_frequency, 'Quarterly')))
-                             WHEN 'QUARTERLY' THEN 45
-                             WHEN 'SEMI-ANNUALLY' THEN 60
-                             WHEN 'SEMI-ANNUAL' THEN 60
-                             WHEN 'ANNUALLY' THEN 90
-                             WHEN 'ANNUAL' THEN 90
-                             ELSE 45
-        END;
-
-    RETURN period_end_date + (expected_lag_days || ' days')::INTERVAL;
+    RETURN period_end_date + (get_expected_reporting_lag_days(earnings_report_frequency) || ' days')::INTERVAL;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ===================================================================
 -- HELPER FUNCTION: Validate Fiscal Dates
 -- ===================================================================
-
 CREATE OR REPLACE FUNCTION validate_fiscal_dates(
     fy_end_date DATE,
     report_date DATE,
@@ -465,24 +524,22 @@ CREATE OR REPLACE FUNCTION validate_fiscal_dates(
 AS
 $$
 BEGIN
-    -- FY End in future relative to data
     IF fy_end_date > reference_date THEN
-        RETURN QUERY SELECT 'FY End Date is in the future'::TEXT AS issue, 'WARNING'::TEXT AS severity;
+        RETURN QUERY SELECT 'FY End Date is in the future'::TEXT as fy_end_future, 'WARNING'::TEXT as fy_end_warning;
     END IF;
 
-    -- Report date before FY End (impossible)
     IF report_date IS NOT NULL AND report_date < fy_end_date - INTERVAL '1 year' THEN
-        RETURN QUERY SELECT 'Report date predates fiscal year'::TEXT AS issue, 'ERROR'::TEXT AS severity;
+        RETURN QUERY SELECT 'Report date predates fiscal year'::TEXT as report_date_predates,
+                            'ERROR'::TEXT                            as report_date_error;
     END IF;
 
-    -- Report date too far in future
     IF report_date > reference_date + INTERVAL '1 day' THEN
-        RETURN QUERY SELECT 'Report date is in the future'::TEXT AS issue, 'WARNING'::TEXT AS severity;
+        RETURN QUERY SELECT 'Report date is in the future'::TEXT as report_date_future,
+                            'WARNING'::TEXT                      as report_date_warning;
     END IF;
 
-    -- FY End not on month boundary
     IF fy_end_date != (DATE_TRUNC('month', fy_end_date) + INTERVAL '1 month - 1 day')::DATE THEN
-        RETURN QUERY SELECT 'FY End is not last day of month'::TEXT AS issue, 'INFO'::TEXT AS severity;
+        RETURN QUERY SELECT 'FY End is not last day of month'::TEXT as fy_end_ldm, 'INFO'::TEXT as fy_end_info;
     END IF;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -499,629 +556,629 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 DROP TABLE IF EXISTS screening_staging;
 CREATE TEMP TABLE screening_staging
 (
-    "Ticker"                                           TEXT,
-    "ISIN"                                             TEXT,
-    "Name"                                             TEXT,
-    "Description"                                      TEXT,
-    "Region"                                           TEXT,
-    "Country"                                          TEXT,
-    "Trading Country"                                  TEXT,
-    "Exchange"                                         TEXT,
-    "Unit"                                             TEXT,
-    "Sector"                                           TEXT,
-    "Industry"                                         TEXT,
-    "Style Class"                                      TEXT,
-    "Size Class"                                       TEXT,
-    "Last Updated"                                     TEXT,
-    "Income Statement Report Date"                     TEXT,
-    "FY End"                                           TEXT,
-    "Next Earnings"                                    TEXT,
-    "Next Earnings (When)"                             TEXT,
-    "Next Earnings (Status)"                           TEXT,
-    "Dividend Record (Currency)"                       TEXT,
-    "Dividend Record (Amount)"                         TEXT,
-    "Dividend Record (Frequency)"                      TEXT,
-    "Dividend Streak"                                  TEXT,
-    "Dividend Record (Announce Date)"                  TEXT,
-    "Dividend Record (Payable Date)"                   TEXT,
-    "Dividend Record (Record Date)"                    TEXT,
-    "Dividend Record (Ex Date)"                        TEXT,
-    "Market Cap"                                       TEXT,
-    "Enterprise Value"                                 TEXT,
-    "Last Price"                                       TEXT,
-    "Price Target (YTD Ago)"                           TEXT,
-    "Total Return (YTD)"                               TEXT,
-    "Price Target"                                     TEXT,
-    "Price Target - Low"                               TEXT,
-    "Price Target - Median"                            TEXT,
-    "Price Target - High"                              TEXT,
-    "Price Target - #"                                 TEXT,
-    "P/E (NTM)"                                        TEXT,
-    "P/E (LTM)"                                        TEXT,
-    "Altman Z-Score (FY)"                              TEXT,
-    "Altman Z-Score (FQ)"                              TEXT,
-    "Altman Z-Score (LTM)"                             TEXT,
-    "Beta (1Y)"                                        TEXT,
-    "Beta (2Y)"                                        TEXT,
-    "Beta (5Y)"                                        TEXT,
-    "Analyst Rating"                                   TEXT,
-    "# Strong Sell Ratings"                            TEXT,
-    "# Strong Buys Ratings"                            TEXT,
-    "# Hold Ratings"                                   TEXT,
-    "# Buys Ratings"                                   TEXT,
-    "# Sell Ratings"                                   TEXT,
-    "Total Revenues/CAGR (5Y FY)"                      TEXT,
-    "Total Revenues (FQ)"                              TEXT,
-    "Total Revenues (-1FY)"                            TEXT,
-    "Total Revenues (FY)"                              TEXT,
-    "Total Revenues (LTM)"                             TEXT,
-    "Total Operating Expenses (LTM)"                   TEXT,
-    "P/TBV (LTM)"                                      TEXT,
-    "TBV (FY)"                                         TEXT,
-    "TBV (LTM)"                                        TEXT,
-    "Market Cap (Country R)"                           TEXT,
-    "Tot. Return %/CAGR (3Y)"                          TEXT,
-    "Tot. Return %/CAGR (10Y)"                         TEXT,
-    "Total Return (5Y)"                                TEXT,
-    "Total Return (10Y)"                               TEXT,
-    "Net Income/Adj. (-1FY)"                           TEXT,
-    "CFF (LTM)"                                        TEXT,
-    "CFI (LTM)"                                        TEXT,
-    "FCF (LTM)"                                        TEXT,
-    "CFO (LTM)"                                        TEXT,
-    "EBITDA (FQ)"                                      TEXT,
-    "EBITDA (LTM)"                                     TEXT,
-    "EBITDA (FY)"                                      TEXT,
-    "EBITDA (-1FY)"                                    TEXT,
-    "EBITDA/Adj. (LTM)"                                TEXT,
-    "EBITDA/Adj. (FY)"                                 TEXT,
-    "EBITDA/Adj. (-1FY)"                               TEXT,
-    "EBIT (FQ)"                                        TEXT,
-    "EBIT (LTM)"                                       TEXT,
-    "EBIT (FY)"                                        TEXT,
-    "EBIT (-1FY)"                                      TEXT,
-    "EBIT/Adj. (-1FY)"                                 TEXT,
-    "EBIT/Adj. (FY)"                                   TEXT,
-    "EBIT/Adj. (LTM)"                                  TEXT,
-    "EBIT - Est Med (FY1E)"                            TEXT,
-    "EBIT - Est Med (NTM)"                             TEXT,
-    "Return On Equity % (LTM)"                         TEXT,
-    "Return On Equity % (FY)"                          TEXT,
-    "Net Income - (IS) (FY)"                           TEXT,
-    "Net Income - (IS) (LTM)"                          TEXT,
-    "Normalized Net Income (FY)"                       TEXT,
-    "Normalized Net Income (LTM)"                      TEXT,
-    "Net Income/Adj. (FY)"                             TEXT,
-    "Net Income/Adj. (LTM)"                            TEXT,
-    "Net Income Margin % (FY)"                         TEXT,
-    "Net Income Margin % (LTM)"                        TEXT,
-    "Volatility (1M)"                                  TEXT,
-    "Volatility (3M)"                                  TEXT,
-    "Volatility (6M)"                                  TEXT,
-    "Volatility (1Y)"                                  TEXT,
-    "Volume (Shrs)"                                    TEXT,
-    "Dividend Per Share (LTM)"                         TEXT,
-    "Div Yield (Ind)"                                  TEXT,
-    "Div Yield (LTM)"                                  TEXT,
-    "Total Debt (FY)"                                  TEXT,
-    "Total Equity (FY)"                                TEXT,
-    "Total Equity (LTM)"                               TEXT,
-    "Total Debt (LTM)"                                 TEXT,
-    "Total Assets (LTM)"                               TEXT,
-    "Total Assets (FY)"                                TEXT,
-    "Current Ratio (FY)"                               TEXT,
-    "Current Ratio (LTM)"                              TEXT,
-    "Gross Profit Margin % (FY)"                       TEXT,
-    "Gross Profit Margin % (LTM)"                      TEXT,
-    "Asset Turnover (FY)"                              TEXT,
-    "Asset Turnover (LTM)"                             TEXT,
-    "Gross Profit (LTM)"                               TEXT,
-    "Gross Profit (FY)"                                TEXT,
-    "EPS Norm - Est Avg (NTM)"                         TEXT,
-    "EPS/Adj. (-1FY)"                                  TEXT,
-    "EPS/Adj. (FY)"                                    TEXT,
-    "EPS/Adj. (LTM)"                                   TEXT,
-    "EPS Norm - Est Avg (FY1E)"                        TEXT,
-    "Gain (Loss) On Sale Of Assets (LTM)"              TEXT,
-    "Cost Of Revenues (LTM)"                           TEXT,
-    "Cash Acquisitions (LTM)"                          TEXT,
-    "Cash Acquisitions (FY)"                           TEXT,
-    "Cash Acquisitions (-1FY)"                         TEXT,
-    "Inventory (LTM)"                                  TEXT,
-    "Goodwill (FQ)"                                    TEXT,
-    "Goodwill (LTM)"                                   TEXT,
-    "Goodwill (FY)"                                    TEXT,
-    "Goodwill (-1FY)"                                  TEXT,
-    "Impairment of Goodwill (FQ)"                      TEXT,
-    "Impairment of Goodwill (LTM)"                     TEXT,
-    "Impairment of Goodwill (-1FY)"                    TEXT,
-    "Impairment of Goodwill (FY)"                      TEXT,
-    "Operating Income (LTM)"                           TEXT,
-    "Asset Writedown (LTM)"                            TEXT,
-    "Asset Writedown (FY)"                             TEXT,
-    "Asset Writedown (-1FY)"                           TEXT,
-    "Operating Income (FY)"                            TEXT,
-    "Capital Expenditure (LTM)"                        TEXT,
-    "Capital Expenditure (-1FY)"                       TEXT,
-    "Capital Expenditure (FY)"                         TEXT,
-    "Retained Earnings (LTM)"                          TEXT,
-    "Total Current Assets (LTM)"                       TEXT,
-    "Total Current Liabilities (LTM)"                  TEXT,
-    "R&D Expenses (LTM)"                               TEXT,
-    "Restructuring Charges (LTM)"                      TEXT,
-    "Restructuring Charges (FQ)"                       TEXT,
-    "Restructuring Charges (-1FY)"                     TEXT,
-    "Restructuring Charges (FY)"                       TEXT,
-    "Interest Expense/Total (LTM)"                     TEXT,
-    "Merger & Restructuring Charges (LTM)"             TEXT,
-    "Working Capital (LTM)"                            TEXT,
-    "Other Unusual Items/Total (LTM)"                  TEXT,
-    "Interest Income On Investments (LTM)"             TEXT,
-    "Buyback Yield (LTM)"                              TEXT,
-    "Return on Assets (ROA) % (LTM)"                   TEXT,
-    "Return on Assets (ROA) % (FY)"                    TEXT,
-    "Net Income - (IS) (-1FY)"                         TEXT,
-    "Normalized Net Income (-1FY)"                     TEXT,
-    "CFF (FY)"                                         TEXT,
-    "CFF (-1FY)"                                       TEXT,
-    "CFI (FY)"                                         TEXT,
-    "CFI (-1FY)"                                       TEXT,
-    "CFO (FY)"                                         TEXT,
-    "CFO (-1FY)"                                       TEXT,
-    "Div Yield (-1FYInd)"                              TEXT,
-    "FCF (FY)"                                         TEXT,
-    "FCF (-1FY)"                              TEXT,
-    "Capital Expenditure (FQ)"                         TEXT,
-    "Capital Expenditure (5YAVGFQ)"                    TEXT,
-    "CFF (FQ)"                                         TEXT,
-    "CFI (FQ)"                                         TEXT,
-    "CFO (FQ)"                                         TEXT,
-    "FCF (FQ)"                                         TEXT,
-    "Total Revenues (5YAVGFQ)"                         TEXT,
-    "EBITDA (5YAVGFQ)"                                 TEXT,
-    "EBIT (5YAVGFQ)"                                   TEXT,
-    "FCF (5YAVGFQ)"                                    TEXT,
-    "Cash Acquisitions (FQ)"                           TEXT,
-    "Cash Acquisitions (5YAVGFQ)"                      TEXT,
-    "Asset Writedown (FQ)"                             TEXT,
-    "Asset Writedown (5YAVGFQ)"                        TEXT,
-    "Impairment of Goodwill (5YAVGFQ)"                 TEXT,
-    "Operating Income (FQ)"                            TEXT,
-    "Operating Income (5YAVGFQ)"                       TEXT,
-    "P/B (LTM)"                                        TEXT,
-    "P/B (-1FY)"                                       TEXT,
-    "P/B (5YAVG)"                                      TEXT,
-    "Cash And Equivalents (LTM)"                       TEXT,
-    "Cash And Equivalents (FQ)"                        TEXT,
-    "Cash And Equivalents (FY)"                        TEXT,
-    "Cash And Equivalents (5YAVGFQ)"                   TEXT,
-    "Inventory (FQ)"                                   TEXT,
-    "Inventory (FY)"                                   TEXT,
-    "Goodwill (5YAVGFQ)"                               TEXT,
-    "Inventory (5YAVGFQ)"                              TEXT,
-    "Retained Earnings (FQ)"                           TEXT,
-    "Retained Earnings (FY)"                           TEXT,
-    "Retained Earnings (5YAVGFQ)"                      TEXT,
-    "Working Capital (FQ)"                             TEXT,
-    "Working Capital (FY)"                             TEXT,
-    "Working Capital (5YAVGFY)"                        TEXT,
-    "Div Yield (TTM)"                                  TEXT,
-    "Div Yield (NTM)"                                  TEXT,
-    "Div Yield (5YAVGLTM)"                             TEXT,
-    "Gross Intangible Assets (LTM)"                    TEXT,
-    "Gross Intangible Assets (FY)"                     TEXT,
-    "Gross Intangible Assets (5YAVGFQ)"                TEXT,
-    "Restructuring Charges (5YAVGFQ)"                  TEXT,
-    "Merger & Restructuring Charges (FQ)"              TEXT,
-    "Merger & Restructuring Charges (FY)"              TEXT,
-    "Merger & Restructuring Charges (5YAVGFQ)"         TEXT,
-    "Normalized Net Income (FQ)"                       TEXT,
-    "Normalized Net Income (5YAVGFQ)"                  TEXT,
-    "Net Income/Adj. (FQ)"                             TEXT,
-    "Net Income/Adj. (5YAVGFQ)"                        TEXT,
-    "Net Income - (IS) (FQ)"                           TEXT,
-    "Net Income - (IS) (5YAVGFQ)"                      TEXT,
-    "Net Income - (IS) (5YAVGLTM)"                     TEXT,
-    "Normalized Net Income (5YAVGLTM)"                 TEXT,
-    "EBITDA (5YAVGLTM)"                                TEXT,
-    "EBIT (5YAVGLTM)"                                  TEXT,
-    "Total Revenues (5YAVGLTM)"                        TEXT,
-    "Revenues - Est YoY % (FY1E)"                      TEXT,
-    "Price Chg. % (1M)"                                TEXT,
-    "Price Chg. % (3M)"                                TEXT,
-    "1-Day %"                                          TEXT,
-    "Price (5D Ago)"                                   TEXT,
-    "Price (1W Ago)"                                   TEXT,
-    "Price (1M Ago)"                                   TEXT,
-    "Price (3M Ago)"                                   TEXT,
-    "Price (6M Ago)"                                   TEXT,
-    "Price (1Y Ago)"                                   TEXT,
-    "Price (3Y Ago)"                                   TEXT,
-    "Price (5Y Ago)"                                   TEXT,
-    "Price (QTD Ago)"                                  TEXT,
-    "Rel. Volume"                                      TEXT,
-    "Shrs Out"                                         TEXT,
-    "Shrs Out (-1FY)"                                  TEXT,
-    "Common Dividends Paid (LTM)"                      TEXT,
-    "Common Dividends Paid (FY)"                       TEXT,
-    "Selling General & Admin Expenses/Total (FQ)"      TEXT,
-    "Selling General & Admin Expenses/Total (FY)"      TEXT,
-    "Selling General & Admin Expenses/Total (-1FY)"    TEXT,
-    "Selling General & Admin Expenses/Total (5YAVGFQ)" TEXT,
-    "Accounts Receivable/Total (FY)"                   TEXT,
-    "Accounts Receivable/Total (-1FY)"                 TEXT,
-    "Accounts Receivable/Total (5YAVGFQ)"              TEXT,
-    "Marketing Expenses (FQ)"                          TEXT,
-    "Marketing Expenses (FY)"                          TEXT,
-    "Marketing Expenses (-1FY)"                        TEXT,
-    "Marketing Expenses (5YAVGLTM)"                    TEXT,
-    "Revenues - Est Avg (NTM)"                         TEXT,
-    "Revenues - Est Avg (FY1E)"                        TEXT,
-    "Revenues - Est Med (NTM)"                         TEXT,
-    "Revenues - Est Med (FY1E)"                        TEXT,
-    "EV/Sales (EST FY1)"                               TEXT,
-    "EV/Sales (LTM)"                                   TEXT,
-    "EV/Sales (NTM)"                                   TEXT,
-    "EV/Sales (-1FYLTM)"                               TEXT,
-    "EV/Sales (-2FYLTM)"                               TEXT,
-    "EV/Sales (-3FYLTM)"                               TEXT,
-    "EV/Sales (3YAVGLTM)"                              TEXT,
-    "EV/Sales (-1FQLTM)"                               TEXT,
-    "EV/Sales (-2FQLTM)"                               TEXT,
-    "EV/Sales (-3FQLTM)"                               TEXT,
-    "EV/Sales (-4FQLTM)"                               TEXT,
-    "52W High/Adj"                                     TEXT,
-    "52W Low/Adj"                                      TEXT,
-    "EMA (20D)"                                        TEXT,
-    "EMA (50D)"                                        TEXT,
-    "EMA (100D)"                                       TEXT,
-    "EMA (250D)"                                       TEXT,
-    "EV/EBITDA (LTM)"                                  TEXT,
-    "EV/EBITDA (NTM)"                                  TEXT,
-    "EV/EBITDA (-1FYLTM)"                              TEXT,
-    "EV/EBITDA (-1FQLTM)"                              TEXT,
-    "EV/EBITDA (3YAVGLTM)"                             TEXT,
-    "EV/EBITDA (EST FY1)"                              TEXT,
-    "P/E (EST FY1)"                                    TEXT,
-    "P/E (-1FYLTM)"                                    TEXT,
-    "P/E (-2FYLTM)"                                    TEXT,
-    "P/E (-3FYLTM)"                                    TEXT,
-    "P/E (3YAVGLTM)"                                   TEXT,
-    "P/E (-1FQLTM)"                                    TEXT,
-    "P/E (-2FQLTM)"                                    TEXT,
-    "P/E (-3FQLTM)"                                    TEXT,
-    "P/E (5YAVGLTM)"                                   TEXT,
-    "P/E (-0FQQoQLTM)"                                 TEXT,
-    "P/E (-0FYYoYLTM)"                                 TEXT,
-    "P/E (-1FYYoYLTM)"                                 TEXT,
-    "P/E (-0FQYoYLTM)"                                 TEXT,
-    "Full Time Employees (FQ)"                         TEXT,
-    "Full Time Employees (FY)"                         TEXT,
-    "Full Time Employees (-1FY)"                       TEXT,
-    "Full Time Employees (-2FY)"                       TEXT,
-    "Full Time Employees (-3FY)"                       TEXT,
-    "Avg Employees (5YAVGFY)"                          TEXT,
-    "Net EPS - Basic (LTM)"                            TEXT,
-    "Net EPS - Basic (FQ)"                             TEXT,
-    "Net EPS - Basic (FY)"                             TEXT,
-    "Net EPS - Basic (-1FQFQ)"                         TEXT,
-    "Net EPS - Basic (-2FQFQ)"                         TEXT,
-    "Net EPS - Basic (-3FQFQ)"                         TEXT,
-    "Net EPS - Basic (-4FQFQ)"                         TEXT,
-    "Net EPS - Basic (-1FY)"                           TEXT,
-    "Net EPS - Basic (-2FY)"                           TEXT,
-    "Net EPS - Basic (-3FY)"                           TEXT,
-    "Net EPS - Basic (-4FY)"                           TEXT,
-    "Net EPS - Basic (-5FY)"                           TEXT,
-    "EPS Est Avg Rev % (FY1E - 1W)"                    TEXT,
-    "EPS Est Avg Rev % (FY1E - 1M)"                    TEXT,
-    "EPS Est Avg Rev % (FY1E - 3M)"                    TEXT,
-    "EPS Est Avg Rev % (FY1E - 6M)"                    TEXT,
-    "EPS Est Avg Rev % (FY1E - 1Y)"                    TEXT,
-    "Div Yield (-2FYInd)"                              TEXT,
-    "Div Yield (-3FYInd)"                              TEXT,
-    "Div Yield (-4FYInd)"                              TEXT,
-    "Div Yield (-5FYInd)"                              TEXT,
-    "EBITDA - Est Avg (NTM)"                           TEXT,
-    "EBITDA - Est Avg (FY1E)"                          TEXT,
-    "EPS GAAP - Est Avg (NTM)"                         TEXT,
-    "EPS GAAP - Est Avg (FY1E)"                        TEXT,
-    "EPS GAAP Est Avg Rev % (FY1E - 1M)"               TEXT,
-    "EPS GAAP Est Avg Rev % (FY1E - 3M)"               TEXT,
-    "EPS GAAP Est Avg Rev % (FY1E - 6M)"               TEXT,
-    "EPS GAAP Est Avg Rev % (FY1E - 1Y)"               TEXT,
-    "EPS Norm - Est # (FY1E)"                 TEXT,
-    "CFO (-1FQFQ)"                            TEXT,
-    "CFO (-2FQFQ)"                            TEXT,
-    "CFO (-3FQFQ)"                            TEXT,
-    "CFO (-4FQFQ)"                            TEXT,
-    "CFI (-1FQFQ)"                            TEXT,
-    "CFI (-2FQFQ)"                            TEXT,
-    "CFI (-3FQFQ)"                            TEXT,
-    "CFI (-4FQFQ)"                            TEXT,
-    "CFI (-2FY)"                              TEXT,
-    "CFI (-3FY)"                              TEXT,
-    "CFI (-4FY)"                              TEXT,
-    "FCF (-1FQFQ)"                            TEXT,
-    "FCF (-2FQFQ)"                            TEXT,
-    "FCF (-3FQFQ)"                            TEXT,
-    "FCF (-4FQFQ)"                            TEXT,
-    "CFF (-2FY)"                              TEXT,
-    "CFF (-3FY)"                              TEXT,
-    "CFF (-4FY)"                              TEXT,
-    "CFF (-1FQFQ)"                            TEXT,
-    "CFF (-2FQFQ)"                            TEXT,
-    "CFF (-3FQFQ)"                            TEXT,
-    "CFF (-4FQFQ)"                            TEXT,
-    "CFO (-2FY)"                              TEXT,
-    "CFO (-3FY)"                              TEXT,
-    "CFO (-4FY)"                              TEXT,
-    "Cash Acquisitions (-1FQFQ)"              TEXT,
-    "Cash Acquisitions (-2FQFQ)"              TEXT,
-    "Cash Acquisitions (-3FQFQ)"              TEXT,
-    "Cash Acquisitions (-4FQFQ)"              TEXT,
-    "FCF (-2FY)"                              TEXT,
-    "FCF (-3FY)"                              TEXT,
-    "FCF (-4FY)"                              TEXT,
-    "Price Target (1W Ago)"                   TEXT,
-    "Price Target (1M Ago)"                   TEXT,
-    "Price Target (3M Ago)"                   TEXT,
-    "Price Target (6M Ago)"                   TEXT,
-    "Price Target (MTD Ago)"                  TEXT,
-    "Price Target (QTD Ago)"                  TEXT,
-    "Price Target (1Y Ago)"                   TEXT,
-    "Price Target - # (3M Ago)"               TEXT,
-    "Price Target - # (6M Ago)"               TEXT,
-    "Price Target - # (YTD Ago)"              TEXT,
-    "Price Target - # (1Y Ago)"               TEXT,
-    "Price Target - # (1W Ago)"               TEXT,
-    "Price Target - # (1M Ago)"               TEXT,
-    "Price Target - # (MTD Ago)"              TEXT,
-    "Price Target - # (QTD Ago)"              TEXT,
-    "Price Target - High (1W Ago)"            TEXT,
-    "Price Target - High (1M Ago)"            TEXT,
-    "Price Target - High (6M Ago)"            TEXT,
-    "Price Target - High (MTD Ago)"           TEXT,
-    "Price Target - High (3M Ago)"            TEXT,
-    "Price Target - High (QTD Ago)"           TEXT,
-    "Price Target - High (1Y Ago)"            TEXT,
-    "Price Target - High (YTD Ago)"           TEXT,
-    "Price Target - Low (1W Ago)"             TEXT,
-    "Price Target - Low (1M Ago)"             TEXT,
-    "Price Target - Low (3M Ago)"             TEXT,
-    "Price Target - Low (6M Ago)"             TEXT,
-    "Price Target - Low (MTD Ago)"            TEXT,
-    "Price Target - Low (QTD Ago)"            TEXT,
-    "Price Target - Low (YTD Ago)"            TEXT,
-    "Price Target - Low (1Y Ago)"             TEXT,
-    "Price Target - Median (1W Ago)"          TEXT,
-    "Price Target - Median (1M Ago)"          TEXT,
-    "Price Target - Median (3M Ago)"          TEXT,
-    "Price Target - Median (6M Ago)"          TEXT,
-    "Price Target - Median (MTD Ago)"         TEXT,
-    "Price Target - Median (QTD Ago)"         TEXT,
-    "Price Target - Median (YTD Ago)"         TEXT,
-    "Price Target - Median (1Y Ago)"          TEXT,
-    "Impairment of Goodwill (-1FQFQ)"         TEXT,
-    "Impairment of Goodwill (-2FQFQ)"         TEXT,
-    "Impairment of Goodwill (-3FQFQ)"         TEXT,
-    "Impairment of Goodwill (-4FQFQ)"         TEXT,
-    "Impairment of Goodwill (-2FY)"           TEXT,
-    "Impairment of Goodwill (-3FY)"           TEXT,
-    "Impairment of Goodwill (-4FY)"           TEXT,
-    "Asset Writedown (-1FQFQ)"                TEXT,
-    "Asset Writedown (-2FQFQ)"                TEXT,
-    "Asset Writedown (-3FQFQ)"                TEXT,
-    "Asset Writedown (-4FQFQ)"                TEXT,
-    "Asset Writedown (-2FY)"                  TEXT,
-    "Asset Writedown (-3FY)"                  TEXT,
-    "Asset Writedown (-4FY)"                  TEXT,
-    "Asset Writedown (-5FY)"                  TEXT,
-    "Gain (Loss) On Sale Of Assets (FQ)"      TEXT,
-    "Gain (Loss) On Sale Of Assets (FY)"      TEXT,
-    "Gain (Loss) On Sale Of Assets (-1FQFQ)"  TEXT,
-    "Gain (Loss) On Sale Of Assets (-2FQFQ)"  TEXT,
-    "Gain (Loss) On Sale Of Assets (-3FQFQ)"  TEXT,
-    "Gain (Loss) On Sale Of Assets (-4FQFQ)"  TEXT,
-    "Gain (Loss) On Sale Of Assets (-1FY)"    TEXT,
-    "Gain (Loss) On Sale Of Assets (-2FY)"    TEXT,
-    "Gain (Loss) On Sale Of Assets (-3FY)"    TEXT,
-    "Gain (Loss) On Sale Of Assets (-4FY)"    TEXT,
-    "Restructuring Charges (-1FQFQ)"          TEXT,
-    "Restructuring Charges (-2FQFQ)"          TEXT,
-    "Restructuring Charges (-3FQFQ)"          TEXT,
-    "Restructuring Charges (-4FQFQ)"          TEXT,
-    "Restructuring Charges (-2FY)"            TEXT,
-    "Restructuring Charges (-3FY)"            TEXT,
-    "Restructuring Charges (-4FY)"            TEXT,
-    "Net Income - (IS) (-1FQFQ)"              TEXT,
-    "Net Income - (IS) (-2FQFQ)"              TEXT,
-    "Net Income - (IS) (-3FQFQ)"              TEXT,
-    "Net Income - (IS) (-4FQFQ)"              TEXT,
-    "Net Income - (IS) (-2FY)"                TEXT,
-    "Net Income - (IS) (-3FY)"                TEXT,
-    "Net Income - (IS) (-4FY)"                TEXT,
-    "Normalized Net Income (-1FQFQ)"          TEXT,
-    "Normalized Net Income (-2FQFQ)"          TEXT,
-    "Normalized Net Income (-3FQFQ)"          TEXT,
-    "Normalized Net Income (-4FQFQ)"          TEXT,
-    "Normalized Net Income (-2FY)"            TEXT,
-    "Normalized Net Income (-3FY)"            TEXT,
-    "Normalized Net Income (-4FY)"            TEXT,
-    "Net Income/Adj. (-1FQFQ)"                TEXT,
-    "Net Income/Adj. (-2FQFQ)"                TEXT,
-    "Net Income/Adj. (-3FQFQ)"                TEXT,
-    "Net Income/Adj. (-4FQFQ)"                TEXT,
-    "Net Income/Adj. (-2FY)"                  TEXT,
-    "Net Income/Adj. (-3FY)"                  TEXT,
-    "Net Income/Adj. (-4FY)"                  TEXT,
-    "EBIT (-1FQFQ)"                           TEXT,
-    "EBIT (-2FQFQ)"                           TEXT,
-    "EBIT (-3FQFQ)"                           TEXT,
-    "EBIT (-4FQFQ)"                           TEXT,
-    "EBIT (-2FY)"                             TEXT,
-    "EBIT (-3FY)"                             TEXT,
-    "EBIT (-4FY)"                             TEXT,
-    "EBIT/Adj. (FQ)"                          TEXT,
-    "EBIT/Adj. (-1FQFQ)"                      TEXT,
-    "EBIT/Adj. (-2FQFQ)"                      TEXT,
-    "EBIT/Adj. (-3FQFQ)"                      TEXT,
-    "EBIT/Adj. (-4FQFQ)"                      TEXT,
-    "EBIT/Adj. (-2FY)"                        TEXT,
-    "EBIT/Adj. (-3FY)"                        TEXT,
-    "EBIT/Adj. (-4FY)"                        TEXT,
-    "EBITDA (-1FQFQ)"                         TEXT,
-    "EBITDA (-2FQFQ)"                         TEXT,
-    "EBITDA (-3FQFQ)"                         TEXT,
-    "EBITDA (-4FQFQ)"                         TEXT,
-    "EBITDA (-2FY)"                           TEXT,
-    "EBITDA (-4FY)"                           TEXT,
-    "EBITDA (-3FY)"                           TEXT,
-    "EBITDA/Adj. (FQ)"                        TEXT,
-    "EBITDA/Adj. (-1FQFQ)"                    TEXT,
-    "EBITDA/Adj. (-2FQFQ)"                    TEXT,
-    "EBITDA/Adj. (-3FQFQ)"                    TEXT,
-    "EBITDA/Adj. (-4FQFQ)"                    TEXT,
-    "EBITDA/Adj. (-2FY)"                      TEXT,
-    "EBITDA/Adj. (-3FY)"                      TEXT,
-    "EBITDA/Adj. (-4FY)"                      TEXT,
-    "Basic EPS - Cont (LTM)"                  TEXT,
-    "Basic EPS - Cont (FQ)"                   TEXT,
-    "Basic EPS - Cont (FY)"                   TEXT,
-    "Basic EPS - Cont (-1FQFQ)"               TEXT,
-    "Basic EPS - Cont (-2FQFQ)"               TEXT,
-    "Basic EPS - Cont (-4FQFQ)"               TEXT,
-    "Basic EPS - Cont (-3FQFQ)"               TEXT,
-    "Basic EPS - Cont (-1FY)"                 TEXT,
-    "Basic EPS - Cont (-2FY)"                 TEXT,
-    "Basic EPS - Cont (-3FY)"                 TEXT,
-    "Basic EPS - Cont (-4FY)"                 TEXT,
-    "EPS/Adj. (FQ)"                           TEXT,
-    "EPS/Adj. (-1FQFQ)"                       TEXT,
-    "EPS/Adj. (-3FQFQ)"                       TEXT,
-    "EPS/Adj. (-4FQFQ)"                       TEXT,
-    "EPS/Adj. (-2FQFQ)"                       TEXT,
-    "EPS/Adj. (-2FY)"                         TEXT,
-    "EPS/Adj. (-3FY)"                         TEXT,
-    "EPS/Adj. (-4FY)"                         TEXT,
-    "Cash Acquisitions (-2FY)"                TEXT,
-    "Cash Acquisitions (-3FY)"                TEXT,
-    "Cash Acquisitions (-4FY)"                TEXT,
-    "Capital Expenditure (-1FQFQ)"            TEXT,
-    "Capital Expenditure (-3FQFQ)"            TEXT,
-    "Capital Expenditure (-4FQFQ)"            TEXT,
-    "Capital Expenditure (-2FQFQ)"            TEXT,
-    "Capital Expenditure (-2FY)"              TEXT,
-    "Capital Expenditure (-3FY)"              TEXT,
-    "Capital Expenditure (-4FY)"              TEXT,
-    "Working Capital (-1FQ)"                  TEXT,
-    "Working Capital (-2FQ)"                  TEXT,
-    "Working Capital (-3FQ)"                  TEXT,
-    "Working Capital (-4FQ)"                  TEXT,
-    "Working Capital (-1FY)"                  TEXT,
-    "Working Capital (-2FY)"                  TEXT,
-    "Working Capital (-3FY)"                  TEXT,
-    "Working Capital (-4FY)"                  TEXT,
-    "Total Debt (FQ)"                         TEXT,
-    "Total Debt (-1FQ)"                       TEXT,
-    "Total Debt (-2FQ)"                       TEXT,
-    "Total Debt (-3FQ)"                       TEXT,
-    "Total Debt (-4FQ)"                       TEXT,
-    "Total Debt (-1FY)"                       TEXT,
-    "Total Debt (-2FY)"                       TEXT,
-    "Total Debt (-3FY)"                       TEXT,
-    "Total Debt (-4FY)"                       TEXT,
-    "Total Assets (FQ)"                       TEXT,
-    "Total Assets (-1FQ)"                     TEXT,
-    "Total Assets (-2FQ)"                     TEXT,
-    "Total Assets (-3FQ)"                     TEXT,
-    "Total Assets (-4FQ)"                     TEXT,
-    "Total Assets (-1FY)"                     TEXT,
-    "Total Assets (-2FY)"                     TEXT,
-    "Total Assets (-3FY)"                     TEXT,
-    "Total Assets (-4FY)"                     TEXT,
-    "Gross Profit (FQ)"                       TEXT,
-    "Gross Profit (-1FQFQ)"                   TEXT,
-    "Gross Profit (-3FQFQ)"                   TEXT,
-    "Gross Profit (-4FQFQ)"                   TEXT,
-    "Gross Profit (-2FQFQ)"                   TEXT,
-    "Gross Profit (-1FY)"                     TEXT,
-    "Gross Profit (-2FY)"                     TEXT,
-    "Gross Profit (-3FY)"                     TEXT,
-    "Gross Profit (-4FY)"                     TEXT,
-    "Inventory (-1FQ)"                        TEXT,
-    "Inventory (-3FQ)"                        TEXT,
-    "Inventory (-4FQ)"                        TEXT,
-    "Inventory (-2FQ)"                        TEXT,
-    "Inventory (-1FY)"                        TEXT,
-    "Inventory (-2FY)"                        TEXT,
-    "Inventory (-4FY)"                        TEXT,
-    "Inventory (-3FY)"                        TEXT,
-    "Goodwill (-1FQ)"                         TEXT,
-    "Goodwill (-4FQ)"                         TEXT,
-    "Goodwill (-2FQ)"                         TEXT,
-    "Goodwill (-3FQ)"                         TEXT,
-    "Goodwill (-2FY)"                         TEXT,
-    "Goodwill (-3FY)"                         TEXT,
-    "Goodwill (-4FY)"                         TEXT,
-    "Operating Income (-1FQFQ)"               TEXT,
-    "Operating Income (-3FQFQ)"               TEXT,
-    "Operating Income (-4FQFQ)"               TEXT,
-    "Operating Income (-2FQFQ)"               TEXT,
-    "Operating Income (-1FY)"                 TEXT,
-    "Operating Income (-2FY)"                 TEXT,
-    "Operating Income (-4FY)"                 TEXT,
-    "Operating Income (-3FY)"                 TEXT,
-    "Retained Earnings (-1FQ)"                TEXT,
-    "Retained Earnings (-2FQ)"                TEXT,
-    "Retained Earnings (-3FQ)"                TEXT,
-    "Retained Earnings (-4FQ)"                TEXT,
-    "Retained Earnings (-1FY)"                TEXT,
-    "Retained Earnings (-2FY)"                TEXT,
-    "Retained Earnings (-3FY)"                TEXT,
-    "Retained Earnings (-4FY)"                TEXT,
-    "R&D Expenses (FQ)"                       TEXT,
-    "R&D Expenses (FY)"                       TEXT,
-    "R&D Expenses (-1FQFQ)"                   TEXT,
-    "R&D Expenses (-2FQFQ)"                   TEXT,
-    "R&D Expenses (-3FQFQ)"                   TEXT,
-    "R&D Expenses (-4FQFQ)"                   TEXT,
-    "R&D Expenses (-1FY)"                     TEXT,
-    "R&D Expenses (-2FY)"                     TEXT,
-    "R&D Expenses (-4FY)"                     TEXT,
-    "R&D Expenses (-3FY)"                     TEXT,
-    "Merger & Restructuring Charges (-1FQFQ)" TEXT,
-    "Merger & Restructuring Charges (-3FQFQ)" TEXT,
-    "Merger & Restructuring Charges (-4FQFQ)" TEXT,
-    "Merger & Restructuring Charges (-2FQFQ)" TEXT,
-    "Merger & Restructuring Charges (-1FY)"   TEXT,
-    "Merger & Restructuring Charges (-3FY)"   TEXT,
-    "Merger & Restructuring Charges (-4FY)"   TEXT,
-    "Merger & Restructuring Charges (-2FY)"   TEXT,
-    "Cash And Equivalents (-1FQ)"             TEXT,
-    "Cash And Equivalents (-3FQ)"             TEXT,
-    "Cash And Equivalents (-4FQ)"             TEXT,
-    "Cash And Equivalents (-2FQ)"             TEXT,
-    "Cash And Equivalents (-1FY)"             TEXT,
-    "Cash And Equivalents (-2FY)"             TEXT,
-    "Cash And Equivalents (-3FY)"             TEXT,
-    "Cash And Equivalents (-4FY)"             TEXT,
-    "Gross Intangible Assets (FQ)"            TEXT,
-    "Gross Intangible Assets (-1FQ)"          TEXT,
-    "Gross Intangible Assets (-3FQ)"          TEXT,
-    "Gross Intangible Assets (-4FQ)"          TEXT,
-    "Gross Intangible Assets (-2FQ)"          TEXT,
-    "Gross Intangible Assets (-1FY)"          TEXT,
-    "Gross Intangible Assets (-2FY)"          TEXT,
-    "Gross Intangible Assets (-3FY)"          TEXT,
-    "Gross Intangible Assets (-4FY)"          TEXT,
-    "Total Revenues (-1FQFQ)"                 TEXT,
-    "Total Revenues (-2FQFQ)"                 TEXT,
-    "Total Revenues (-3FQFQ)"                 TEXT,
-    "Total Revenues (-4FQFQ)"                 TEXT,
-    "Total Revenues (-2FY)"                   TEXT,
-    "Total Revenues (-3FY)"                   TEXT,
-    "Total Revenues (-4FY)"                   TEXT
+    "Ticker"                                           TEXT, -- alias: ticker
+    "ISIN"                                             TEXT, -- alias: isin
+    "Name"                                             TEXT, -- alias: name
+    "Description"                                      TEXT, -- alias: description
+    "Region"                                           TEXT, -- alias: region
+    "Country"                                          TEXT, -- alias: country
+    "Trading Country"                                  TEXT, -- alias: trading_country
+    "Exchange"                                         TEXT, -- alias: exchange
+    "Unit"                                             TEXT, -- alias: unit
+    "Sector"                                           TEXT, -- alias: sector
+    "Industry"                                         TEXT, -- alias: industry
+    "Style Class"                                      TEXT, -- alias: style_class
+    "Size Class"                                       TEXT, -- alias: size_class
+    "Last Updated"                                     TEXT, -- alias: last_updated
+    "Income Statement Report Date"                     TEXT, -- alias: income_statement_report_date
+    "FY End"                                           TEXT, -- alias: fy_end
+    "Next Earnings"                                    TEXT, -- alias: next_earnings
+    "Next Earnings (When)"                             TEXT, -- alias: next_earnings_when
+    "Next Earnings (Status)"                           TEXT, -- alias: next_earnings_status
+    "Dividend Record (Currency)"                       TEXT, -- alias: dividend_record_currency
+    "Dividend Record (Amount)"                         TEXT, -- alias: dividend_record_amount
+    "Dividend Record (Frequency)"                      TEXT, -- alias: dividend_record_frequency
+    "Dividend Streak"                                  TEXT, -- alias: dividend_streak
+    "Dividend Record (Announce Date)"                  TEXT, -- alias: dividend_record_announce_date
+    "Dividend Record (Payable Date)"                   TEXT, -- alias: dividend_record_payable_date
+    "Dividend Record (Record Date)"                    TEXT, -- alias: dividend_record_record_date
+    "Dividend Record (Ex Date)"                        TEXT, -- alias: dividend_record_ex_date
+    "Market Cap"                                       TEXT, -- alias: market_cap
+    "Enterprise Value"                                 TEXT, -- alias: enterprise_value
+    "Last Price"                                       TEXT, -- alias: last_price
+    "Price Target (YTD Ago)"                           TEXT, -- alias: price_target_ytd_ago
+    "Total Return (YTD)"                               TEXT, -- alias: total_return_ytd
+    "Price Target"                                     TEXT, -- alias: price_target
+    "Price Target - Low"                               TEXT, -- alias: price_target_low
+    "Price Target - Median"                            TEXT, -- alias: price_target_median
+    "Price Target - High"                              TEXT, -- alias: price_target_high
+    "Price Target - #"                                 TEXT, -- alias: price_target_count
+    "P/E (NTM)"                                        TEXT, -- alias: p_e_ntm
+    "P/E (LTM)"                                        TEXT, -- alias: p_e_ltm
+    "Altman Z-Score (FY)"                              TEXT, -- alias: altman_z_score_fy
+    "Altman Z-Score (FQ)"                              TEXT, -- alias: altman_z_score_fq
+    "Altman Z-Score (LTM)"                             TEXT, -- alias: altman_z_score_ltm
+    "Beta (1Y)"                                        TEXT, -- alias: beta_1y
+    "Beta (2Y)"                                        TEXT, -- alias: beta_2y
+    "Beta (5Y)"                                        TEXT, -- alias: beta_5y
+    "Analyst Rating"                                   TEXT, -- alias: analyst_rating
+    "# Strong Sell Ratings"                            TEXT, -- alias: num_strong_sell_ratings
+    "# Strong Buys Ratings"                            TEXT, -- alias: num_strong_buys_ratings
+    "# Hold Ratings"                                   TEXT, -- alias: num_hold_ratings
+    "# Buys Ratings"                                   TEXT, -- alias: num_buys_ratings
+    "# Sell Ratings"                                   TEXT, -- alias: num_sell_ratings
+    "Total Revenues/CAGR (5Y FY)"                      TEXT, -- alias: total_revenues_cagr_5y_fy
+    "Total Revenues (FQ)"                              TEXT, -- alias: total_revenues_fq
+    "Total Revenues (-1FY)"                            TEXT, -- alias: total_revenues_1fy
+    "Total Revenues (FY)"                              TEXT, -- alias: total_revenues_fy
+    "Total Revenues (LTM)"                             TEXT, -- alias: total_revenues_ltm
+    "Total Operating Expenses (LTM)"                   TEXT, -- alias: total_operating_expenses_ltm
+    "P/TBV (LTM)"                                      TEXT, -- alias: p_tbv_ltm
+    "TBV (FY)"                                         TEXT, -- alias: tbv_fy
+    "TBV (LTM)"                                        TEXT, -- alias: tbv_ltm
+    "Market Cap (Country R)"                           TEXT, -- alias: market_cap_country_r
+    "Tot. Return %/CAGR (3Y)"                          TEXT, -- alias: tot_return_pct_cagr_3y
+    "Tot. Return %/CAGR (10Y)"                         TEXT, -- alias: tot_return_pct_cagr_10y
+    "Total Return (5Y)"                                TEXT, -- alias: total_return_5y
+    "Total Return (10Y)"                               TEXT, -- alias: total_return_10y
+    "Net Income/Adj. (-1FY)"                           TEXT, -- alias: net_income_adj_1fy
+    "CFF (LTM)"                                        TEXT, -- alias: cff_ltm
+    "CFI (LTM)"                                        TEXT, -- alias: cfi_ltm
+    "FCF (LTM)"                                        TEXT, -- alias: fcf_ltm
+    "CFO (LTM)"                                        TEXT, -- alias: cfo_ltm
+    "EBITDA (FQ)"                                      TEXT, -- alias: ebitda_fq
+    "EBITDA (LTM)"                                     TEXT, -- alias: ebitda_ltm
+    "EBITDA (FY)"                                      TEXT, -- alias: ebitda_fy
+    "EBITDA (-1FY)"                                    TEXT, -- alias: ebitda_1fy
+    "EBITDA/Adj. (LTM)"                                TEXT, -- alias: ebitda_adj_ltm
+    "EBITDA/Adj. (FY)"                                 TEXT, -- alias: ebitda_adj_fy
+    "EBITDA/Adj. (-1FY)"                               TEXT, -- alias: ebitda_adj_1fy
+    "EBIT (FQ)"                                        TEXT, -- alias: ebit_fq
+    "EBIT (LTM)"                                       TEXT, -- alias: ebit_ltm
+    "EBIT (FY)"                                        TEXT, -- alias: ebit_fy
+    "EBIT (-1FY)"                                      TEXT, -- alias: ebit_1fy
+    "EBIT/Adj. (-1FY)"                                 TEXT, -- alias: ebit_adj_1fy
+    "EBIT/Adj. (FY)"                                   TEXT, -- alias: ebit_adj_fy
+    "EBIT/Adj. (LTM)"                                  TEXT, -- alias: ebit_adj_ltm
+    "EBIT - Est Med (FY1E)"                            TEXT, -- alias: ebit_est_med_fy1e
+    "EBIT - Est Med (NTM)"                             TEXT, -- alias: ebit_est_med_ntm
+    "Return On Equity % (LTM)"                         TEXT, -- alias: return_on_equity_pct_ltm
+    "Return On Equity % (FY)"                          TEXT, -- alias: return_on_equity_pct_fy
+    "Net Income - (IS) (FY)"                           TEXT, -- alias: net_income_is_fy
+    "Net Income - (IS) (LTM)"                          TEXT, -- alias: net_income_is_ltm
+    "Normalized Net Income (FY)"                       TEXT, -- alias: normalized_net_income_fy
+    "Normalized Net Income (LTM)"                      TEXT, -- alias: normalized_net_income_ltm
+    "Net Income/Adj. (FY)"                             TEXT, -- alias: net_income_adj_fy
+    "Net Income/Adj. (LTM)"                            TEXT, -- alias: net_income_adj_ltm
+    "Net Income Margin % (FY)"                         TEXT, -- alias: net_income_margin_pct_fy
+    "Net Income Margin % (LTM)"                        TEXT, -- alias: net_income_margin_pct_ltm
+    "Volatility (1M)"                                  TEXT, -- alias: volatility_1m
+    "Volatility (3M)"                                  TEXT, -- alias: volatility_3m
+    "Volatility (6M)"                                  TEXT, -- alias: volatility_6m
+    "Volatility (1Y)"                                  TEXT, -- alias: volatility_1y
+    "Volume (Shrs)"                                    TEXT, -- alias: volume_shrs
+    "Dividend Per Share (LTM)"                         TEXT, -- alias: dividend_per_share_ltm
+    "Div Yield (Ind)"                                  TEXT, -- alias: div_yield_ind
+    "Div Yield (LTM)"                                  TEXT, -- alias: div_yield_ltm
+    "Total Debt (FY)"                                  TEXT, -- alias: total_debt_fy
+    "Total Equity (FY)"                                TEXT, -- alias: total_equity_fy
+    "Total Equity (LTM)"                               TEXT, -- alias: total_equity_ltm
+    "Total Debt (LTM)"                                 TEXT, -- alias: total_debt_ltm
+    "Total Assets (LTM)"                               TEXT, -- alias: total_assets_ltm
+    "Total Assets (FY)"                                TEXT, -- alias: total_assets_fy
+    "Current Ratio (FY)"                               TEXT, -- alias: current_ratio_fy
+    "Current Ratio (LTM)"                              TEXT, -- alias: current_ratio_ltm
+    "Gross Profit Margin % (FY)"                       TEXT, -- alias: gross_profit_margin_pct_fy
+    "Gross Profit Margin % (LTM)"                      TEXT, -- alias: gross_profit_margin_pct_ltm
+    "Asset Turnover (FY)"                              TEXT, -- alias: asset_turnover_fy
+    "Asset Turnover (LTM)"                             TEXT, -- alias: asset_turnover_ltm
+    "Gross Profit (LTM)"                               TEXT, -- alias: gross_profit_ltm
+    "Gross Profit (FY)"                                TEXT, -- alias: gross_profit_fy
+    "EPS Norm - Est Avg (NTM)"                         TEXT, -- alias: eps_norm_est_avg_ntm
+    "EPS/Adj. (-1FY)"                                  TEXT, -- alias: eps_adj_1fy
+    "EPS/Adj. (FY)"                                    TEXT, -- alias: eps_adj_fy
+    "EPS/Adj. (LTM)"                                   TEXT, -- alias: eps_adj_ltm
+    "EPS Norm - Est Avg (FY1E)"                        TEXT, -- alias: eps_norm_est_avg_fy1e
+    "Gain (Loss) On Sale Of Assets (LTM)"              TEXT, -- alias: gain_loss_on_sale_of_assets_ltm
+    "Cost Of Revenues (LTM)"                           TEXT, -- alias: cost_of_revenues_ltm
+    "Cash Acquisitions (LTM)"                          TEXT, -- alias: cash_acquisitions_ltm
+    "Cash Acquisitions (FY)"                           TEXT, -- alias: cash_acquisitions_fy
+    "Cash Acquisitions (-1FY)"                         TEXT, -- alias: cash_acquisitions_1fy
+    "Inventory (LTM)"                                  TEXT, -- alias: inventory_ltm
+    "Goodwill (FQ)"                                    TEXT, -- alias: goodwill_fq
+    "Goodwill (LTM)"                                   TEXT, -- alias: goodwill_ltm
+    "Goodwill (FY)"                                    TEXT, -- alias: goodwill_fy
+    "Goodwill (-1FY)"                                  TEXT, -- alias: goodwill_1fy
+    "Impairment of Goodwill (FQ)"                      TEXT, -- alias: impairment_of_goodwill_fq
+    "Impairment of Goodwill (LTM)"                     TEXT, -- alias: impairment_of_goodwill_ltm
+    "Impairment of Goodwill (-1FY)"                    TEXT, -- alias: impairment_of_goodwill_1fy
+    "Impairment of Goodwill (FY)"                      TEXT, -- alias: impairment_of_goodwill_fy
+    "Operating Income (LTM)"                           TEXT, -- alias: operating_income_ltm
+    "Asset Writedown (LTM)"                            TEXT, -- alias: asset_writedown_ltm
+    "Asset Writedown (FY)"                             TEXT, -- alias: asset_writedown_fy
+    "Asset Writedown (-1FY)"                           TEXT, -- alias: asset_writedown_1fy
+    "Operating Income (FY)"                            TEXT, -- alias: operating_income_fy
+    "Capital Expenditure (LTM)"                        TEXT, -- alias: capital_expenditure_ltm
+    "Capital Expenditure (-1FY)"                       TEXT, -- alias: capital_expenditure_1fy
+    "Capital Expenditure (FY)"                         TEXT, -- alias: capital_expenditure_fy
+    "Retained Earnings (LTM)"                          TEXT, -- alias: retained_earnings_ltm
+    "Total Current Assets (LTM)"                       TEXT, -- alias: total_current_assets_ltm
+    "Total Current Liabilities (LTM)"                  TEXT, -- alias: total_current_liabilities_ltm
+    "R&D Expenses (LTM)"                               TEXT, -- alias: randd_expenses_ltm
+    "Restructuring Charges (LTM)"                      TEXT, -- alias: restructuring_charges_ltm
+    "Restructuring Charges (FQ)"                       TEXT, -- alias: restructuring_charges_fq
+    "Restructuring Charges (-1FY)"                     TEXT, -- alias: restructuring_charges_1fy
+    "Restructuring Charges (FY)"                       TEXT, -- alias: restructuring_charges_fy
+    "Interest Expense/Total (LTM)"                     TEXT, -- alias: interest_expense_total_ltm
+    "Merger & Restructuring Charges (LTM)"             TEXT, -- alias: merger_and_restructuring_charges_ltm
+    "Working Capital (LTM)"                            TEXT, -- alias: working_capital_ltm
+    "Other Unusual Items/Total (LTM)"                  TEXT, -- alias: other_unusual_items_total_ltm
+    "Interest Income On Investments (LTM)"             TEXT, -- alias: interest_income_on_investments_ltm
+    "Buyback Yield (LTM)"                              TEXT, -- alias: buyback_yield_ltm
+    "Return on Assets (ROA) % (LTM)"                   TEXT, -- alias: return_on_assets_roa_pct_ltm
+    "Return on Assets (ROA) % (FY)"                    TEXT, -- alias: return_on_assets_roa_pct_fy
+    "Net Income - (IS) (-1FY)"                         TEXT, -- alias: net_income_is_1fy
+    "Normalized Net Income (-1FY)"                     TEXT, -- alias: normalized_net_income_1fy
+    "CFF (FY)"                                         TEXT, -- alias: cff_fy
+    "CFF (-1FY)"                                       TEXT, -- alias: cff_1fy
+    "CFI (FY)"                                         TEXT, -- alias: cfi_fy
+    "CFI (-1FY)"                                       TEXT, -- alias: cfi_1fy
+    "CFO (FY)"                                         TEXT, -- alias: cfo_fy
+    "CFO (-1FY)"                                       TEXT, -- alias: cfo_1fy
+    "Div Yield (-1FYInd)"                              TEXT, -- alias: div_yield_1fyind
+    "FCF (FY)"                                         TEXT, -- alias: fcf_fy
+    "FCF (-1FY)"                                       TEXT, -- alias: fcf_1fy
+    "Capital Expenditure (FQ)"                         TEXT, -- alias: capital_expenditure_fq
+    "Capital Expenditure (5YAVGFQ)"                    TEXT, -- alias: capital_expenditure_5yavgfq
+    "CFF (FQ)"                                         TEXT, -- alias: cff_fq
+    "CFI (FQ)"                                         TEXT, -- alias: cfi_fq
+    "CFO (FQ)"                                         TEXT, -- alias: cfo_fq
+    "FCF (FQ)"                                         TEXT, -- alias: fcf_fq
+    "Total Revenues (5YAVGFQ)"                         TEXT, -- alias: total_revenues_5yavgfq
+    "EBITDA (5YAVGFQ)"                                 TEXT, -- alias: ebitda_5yavgfq
+    "EBIT (5YAVGFQ)"                                   TEXT, -- alias: ebit_5yavgfq
+    "FCF (5YAVGFQ)"                                    TEXT, -- alias: fcf_5yavgfq
+    "Cash Acquisitions (FQ)"                           TEXT, -- alias: cash_acquisitions_fq
+    "Cash Acquisitions (5YAVGFQ)"                      TEXT, -- alias: cash_acquisitions_5yavgfq
+    "Asset Writedown (FQ)"                             TEXT, -- alias: asset_writedown_fq
+    "Asset Writedown (5YAVGFQ)"                        TEXT, -- alias: asset_writedown_5yavgfq
+    "Impairment of Goodwill (5YAVGFQ)"                 TEXT, -- alias: impairment_of_goodwill_5yavgfq
+    "Operating Income (FQ)"                            TEXT, -- alias: operating_income_fq
+    "Operating Income (5YAVGFQ)"                       TEXT, -- alias: operating_income_5yavgfq
+    "P/B (LTM)"                                        TEXT, -- alias: p_b_ltm
+    "P/B (-1FY)"                                       TEXT, -- alias: p_b_1fy
+    "P/B (5YAVG)"                                      TEXT, -- alias: p_b_5yavg
+    "Cash And Equivalents (LTM)"                       TEXT, -- alias: cash_and_equivalents_ltm
+    "Cash And Equivalents (FQ)"                        TEXT, -- alias: cash_and_equivalents_fq
+    "Cash And Equivalents (FY)"                        TEXT, -- alias: cash_and_equivalents_fy
+    "Cash And Equivalents (5YAVGFQ)"                   TEXT, -- alias: cash_and_equivalents_5yavgfq
+    "Inventory (FQ)"                                   TEXT, -- alias: inventory_fq
+    "Inventory (FY)"                                   TEXT, -- alias: inventory_fy
+    "Goodwill (5YAVGFQ)"                               TEXT, -- alias: goodwill_5yavgfq
+    "Inventory (5YAVGFQ)"                              TEXT, -- alias: inventory_5yavgfq
+    "Retained Earnings (FQ)"                           TEXT, -- alias: retained_earnings_fq
+    "Retained Earnings (FY)"                           TEXT, -- alias: retained_earnings_fy
+    "Retained Earnings (5YAVGFQ)"                      TEXT, -- alias: retained_earnings_5yavgfq
+    "Working Capital (FQ)"                             TEXT, -- alias: working_capital_fq
+    "Working Capital (FY)"                             TEXT, -- alias: working_capital_fy
+    "Working Capital (5YAVGFY)"                        TEXT, -- alias: working_capital_5yavgfy
+    "Div Yield (TTM)"                                  TEXT, -- alias: div_yield_ttm
+    "Div Yield (NTM)"                                  TEXT, -- alias: div_yield_ntm
+    "Div Yield (5YAVGLTM)"                             TEXT, -- alias: div_yield_5yavgltm
+    "Gross Intangible Assets (LTM)"                    TEXT, -- alias: gross_intangible_assets_ltm
+    "Gross Intangible Assets (FY)"                     TEXT, -- alias: gross_intangible_assets_fy
+    "Gross Intangible Assets (5YAVGFQ)"                TEXT, -- alias: gross_intangible_assets_5yavgfq
+    "Restructuring Charges (5YAVGFQ)"                  TEXT, -- alias: restructuring_charges_5yavgfq
+    "Merger & Restructuring Charges (FQ)"              TEXT, -- alias: merger_and_restructuring_charges_fq
+    "Merger & Restructuring Charges (FY)"              TEXT, -- alias: merger_and_restructuring_charges_fy
+    "Merger & Restructuring Charges (5YAVGFQ)"         TEXT, -- alias: merger_and_restructuring_charges_5yavgfq
+    "Normalized Net Income (FQ)"                       TEXT, -- alias: normalized_net_income_fq
+    "Normalized Net Income (5YAVGFQ)"                  TEXT, -- alias: normalized_net_income_5yavgfq
+    "Net Income/Adj. (FQ)"                             TEXT, -- alias: net_income_adj_fq
+    "Net Income/Adj. (5YAVGFQ)"                        TEXT, -- alias: net_income_adj_5yavgfq
+    "Net Income - (IS) (FQ)"                           TEXT, -- alias: net_income_is_fq
+    "Net Income - (IS) (5YAVGFQ)"                      TEXT, -- alias: net_income_is_5yavgfq
+    "Net Income - (IS) (5YAVGLTM)"                     TEXT, -- alias: net_income_is_5yavgltm
+    "Normalized Net Income (5YAVGLTM)"                 TEXT, -- alias: normalized_net_income_5yavgltm
+    "EBITDA (5YAVGLTM)"                                TEXT, -- alias: ebitda_5yavgltm
+    "EBIT (5YAVGLTM)"                                  TEXT, -- alias: ebit_5yavgltm
+    "Total Revenues (5YAVGLTM)"                        TEXT, -- alias: total_revenues_5yavgltm
+    "Revenues - Est YoY % (FY1E)"                      TEXT, -- alias: revenues_est_yoy_pct_fy1e
+    "Price Chg. % (1M)"                                TEXT, -- alias: price_chg_pct_1m
+    "Price Chg. % (3M)"                                TEXT, -- alias: price_chg_pct_3m
+    "1-Day %"                                          TEXT, -- alias: one_day_pct
+    "Price (5D Ago)"                                   TEXT, -- alias: price_5d_ago
+    "Price (1W Ago)"                                   TEXT, -- alias: price_1w_ago
+    "Price (1M Ago)"                                   TEXT, -- alias: price_1m_ago
+    "Price (3M Ago)"                                   TEXT, -- alias: price_3m_ago
+    "Price (6M Ago)"                                   TEXT, -- alias: price_6m_ago
+    "Price (1Y Ago)"                                   TEXT, -- alias: price_1y_ago
+    "Price (3Y Ago)"                                   TEXT, -- alias: price_3y_ago
+    "Price (5Y Ago)"                                   TEXT, -- alias: price_5y_ago
+    "Price (QTD Ago)"                                  TEXT, -- alias: price_qtd_ago
+    "Rel. Volume"                                      TEXT, -- alias: rel_volume
+    "Shrs Out"                                         TEXT, -- alias: shares_outstanding
+    "Shrs Out (-1FY)"                                  TEXT, -- alias: shrs_out_1fy
+    "Common Dividends Paid (LTM)"                      TEXT, -- alias: common_dividends_paid_ltm
+    "Common Dividends Paid (FY)"                       TEXT, -- alias: common_dividends_paid_fy
+    "Selling General & Admin Expenses/Total (FQ)"      TEXT, -- alias: selling_general_and_admin_expenses_total_fq
+    "Selling General & Admin Expenses/Total (FY)"      TEXT, -- alias: selling_general_and_admin_expenses_total_fy
+    "Selling General & Admin Expenses/Total (-1FY)"    TEXT, -- alias: selling_general_and_admin_expenses_total_1fy
+    "Selling General & Admin Expenses/Total (5YAVGFQ)" TEXT, -- alias: selling_general_and_admin_expenses_total_5yavgfq
+    "Accounts Receivable/Total (FY)"                   TEXT, -- alias: accounts_receivable_total_fy
+    "Accounts Receivable/Total (-1FY)"                 TEXT, -- alias: accounts_receivable_total_1fy
+    "Accounts Receivable/Total (5YAVGFQ)"              TEXT, -- alias: accounts_receivable_total_5yavgfq
+    "Marketing Expenses (FQ)"                          TEXT, -- alias: marketing_expenses_fq
+    "Marketing Expenses (FY)"                          TEXT, -- alias: marketing_expenses_fy
+    "Marketing Expenses (-1FY)"                        TEXT, -- alias: marketing_expenses_1fy
+    "Marketing Expenses (5YAVGLTM)"                    TEXT, -- alias: marketing_expenses_5yavgltm
+    "Revenues - Est Avg (NTM)"                         TEXT, -- alias: revenues_est_avg_ntm
+    "Revenues - Est Avg (FY1E)"                        TEXT, -- alias: revenues_est_avg_fy1e
+    "Revenues - Est Med (NTM)"                         TEXT, -- alias: revenues_est_med_ntm
+    "Revenues - Est Med (FY1E)"                        TEXT, -- alias: revenues_est_med_fy1e
+    "EV/Sales (EST FY1)"                               TEXT, -- alias: ev_sales_est_fy1
+    "EV/Sales (LTM)"                                   TEXT, -- alias: ev_sales_ltm
+    "EV/Sales (NTM)"                                   TEXT, -- alias: ev_sales_ntm
+    "EV/Sales (-1FYLTM)"                               TEXT, -- alias: ev_sales_1fyltm
+    "EV/Sales (-2FYLTM)"                               TEXT, -- alias: ev_sales_2fyltm
+    "EV/Sales (-3FYLTM)"                               TEXT, -- alias: ev_sales_3fyltm
+    "EV/Sales (3YAVGLTM)"                              TEXT, -- alias: ev_sales_3yavgltm
+    "EV/Sales (-1FQLTM)"                               TEXT, -- alias: ev_sales_1fqltm
+    "EV/Sales (-2FQLTM)"                               TEXT, -- alias: ev_sales_2fqltm
+    "EV/Sales (-3FQLTM)"                               TEXT, -- alias: ev_sales_3fqltm
+    "EV/Sales (-4FQLTM)"                               TEXT, -- alias: ev_sales_4fqltm
+    "52W High/Adj"                                     TEXT, -- alias: 52w_high_adj
+    "52W Low/Adj"                                      TEXT, -- alias: 52w_low_adj
+    "EMA (20D)"                                        TEXT, -- alias: ema_20d
+    "EMA (50D)"                                        TEXT, -- alias: ema_50d
+    "EMA (100D)"                                       TEXT, -- alias: ema_100d
+    "EMA (250D)"                                       TEXT, -- alias: ema_250d
+    "EV/EBITDA (LTM)"                                  TEXT, -- alias: ev_ebitda_ltm
+    "EV/EBITDA (NTM)"                                  TEXT, -- alias: ev_ebitda_ntm
+    "EV/EBITDA (-1FYLTM)"                              TEXT, -- alias: ev_ebitda_1fyltm
+    "EV/EBITDA (-1FQLTM)"                              TEXT, -- alias: ev_ebitda_1fqltm
+    "EV/EBITDA (3YAVGLTM)"                             TEXT, -- alias: ev_ebitda_3yavgltm
+    "EV/EBITDA (EST FY1)"                              TEXT, -- alias: ev_ebitda_est_fy1
+    "P/E (EST FY1)"                                    TEXT, -- alias: p_e_est_fy1
+    "P/E (-1FYLTM)"                                    TEXT, -- alias: p_e_1fyltm
+    "P/E (-2FYLTM)"                                    TEXT, -- alias: p_e_2fyltm
+    "P/E (-3FYLTM)"                                    TEXT, -- alias: p_e_3fyltm
+    "P/E (3YAVGLTM)"                                   TEXT, -- alias: p_e_3yavgltm
+    "P/E (-1FQLTM)"                                    TEXT, -- alias: p_e_1fqltm
+    "P/E (-2FQLTM)"                                    TEXT, -- alias: p_e_2fqltm
+    "P/E (-3FQLTM)"                                    TEXT, -- alias: p_e_3fqltm
+    "P/E (5YAVGLTM)"                                   TEXT, -- alias: p_e_5yavgltm
+    "P/E (-0FQQoQLTM)"                                 TEXT, -- alias: p_e_0fqqoqltm
+    "P/E (-0FYYoYLTM)"                                 TEXT, -- alias: p_e_0fyyoyltm
+    "P/E (-1FYYoYLTM)"                                 TEXT, -- alias: p_e_1fyyoyltm
+    "P/E (-0FQYoYLTM)"                                 TEXT, -- alias: p_e_0fqyoyltm
+    "Full Time Employees (FQ)"                         TEXT, -- alias: full_time_employees_fq
+    "Full Time Employees (FY)"                         TEXT, -- alias: full_time_employees_fy
+    "Full Time Employees (-1FY)"                       TEXT, -- alias: full_time_employees_1fy
+    "Full Time Employees (-2FY)"                       TEXT, -- alias: full_time_employees_2fy
+    "Full Time Employees (-3FY)"                       TEXT, -- alias: full_time_employees_3fy
+    "Avg Employees (5YAVGFY)"                          TEXT, -- alias: avg_employees_5yavgfy
+    "Net EPS - Basic (LTM)"                            TEXT, -- alias: net_eps_basic_ltm
+    "Net EPS - Basic (FQ)"                             TEXT, -- alias: net_eps_basic_fq
+    "Net EPS - Basic (FY)"                             TEXT, -- alias: net_eps_basic_fy
+    "Net EPS - Basic (-1FQFQ)"                         TEXT, -- alias: net_eps_basic_1fqfq
+    "Net EPS - Basic (-2FQFQ)"                         TEXT, -- alias: net_eps_basic_2fqfq
+    "Net EPS - Basic (-3FQFQ)"                         TEXT, -- alias: net_eps_basic_3fqfq
+    "Net EPS - Basic (-4FQFQ)"                         TEXT, -- alias: net_eps_basic_4fqfq
+    "Net EPS - Basic (-1FY)"                           TEXT, -- alias: net_eps_basic_1fy
+    "Net EPS - Basic (-2FY)"                           TEXT, -- alias: net_eps_basic_2fy
+    "Net EPS - Basic (-3FY)"                           TEXT, -- alias: net_eps_basic_3fy
+    "Net EPS - Basic (-4FY)"                           TEXT, -- alias: net_eps_basic_4fy
+    "Net EPS - Basic (-5FY)"                           TEXT, -- alias: net_eps_basic_5fy
+    "EPS Est Avg Rev % (FY1E - 1W)"                    TEXT, -- alias: eps_est_avg_rev_pct_fy1e_1w
+    "EPS Est Avg Rev % (FY1E - 1M)"                    TEXT, -- alias: eps_est_avg_rev_pct_fy1e_1m
+    "EPS Est Avg Rev % (FY1E - 3M)"                    TEXT, -- alias: eps_est_avg_rev_pct_fy1e_3m
+    "EPS Est Avg Rev % (FY1E - 6M)"                    TEXT, -- alias: eps_est_avg_rev_pct_fy1e_6m
+    "EPS Est Avg Rev % (FY1E - 1Y)"                    TEXT, -- alias: eps_est_avg_rev_pct_fy1e_1y
+    "Div Yield (-2FYInd)"                              TEXT, -- alias: div_yield_2fyind
+    "Div Yield (-3FYInd)"                              TEXT, -- alias: div_yield_3fyind
+    "Div Yield (-4FYInd)"                              TEXT, -- alias: div_yield_4fyind
+    "Div Yield (-5FYInd)"                              TEXT, -- alias: div_yield_5fyind
+    "EBITDA - Est Avg (NTM)"                           TEXT, -- alias: ebitda_est_avg_ntm
+    "EBITDA - Est Avg (FY1E)"                          TEXT, -- alias: ebitda_est_avg_fy1e
+    "EPS GAAP - Est Avg (NTM)"                         TEXT, -- alias: eps_gaap_est_avg_ntm
+    "EPS GAAP - Est Avg (FY1E)"                        TEXT, -- alias: eps_gaap_est_avg_fy1e
+    "EPS GAAP Est Avg Rev % (FY1E - 1M)"               TEXT, -- alias: eps_gaap_est_avg_rev_pct_fy1e_1m
+    "EPS GAAP Est Avg Rev % (FY1E - 3M)"               TEXT, -- alias: eps_gaap_est_avg_rev_pct_fy1e_3m
+    "EPS GAAP Est Avg Rev % (FY1E - 6M)"               TEXT, -- alias: eps_gaap_est_avg_rev_pct_fy1e_6m
+    "EPS GAAP Est Avg Rev % (FY1E - 1Y)"               TEXT, -- alias: eps_gaap_est_avg_rev_pct_fy1e_1y
+    "EPS Norm - Est # (FY1E)"                          TEXT, -- alias: eps_norm_est_num_fy1e
+    "CFO (-1FQFQ)"                                     TEXT, -- alias: cfo_1fqfq
+    "CFO (-2FQFQ)"                                     TEXT, -- alias: cfo_2fqfq
+    "CFO (-3FQFQ)"                                     TEXT, -- alias: cfo_3fqfq
+    "CFO (-4FQFQ)"                                     TEXT, -- alias: cfo_4fqfq
+    "CFI (-1FQFQ)"                                     TEXT, -- alias: cfi_1fqfq
+    "CFI (-2FQFQ)"                                     TEXT, -- alias: cfi_2fqfq
+    "CFI (-3FQFQ)"                                     TEXT, -- alias: cfi_3fqfq
+    "CFI (-4FQFQ)"                                     TEXT, -- alias: cfi_4fqfq
+    "CFI (-2FY)"                                       TEXT, -- alias: cfi_2fy
+    "CFI (-3FY)"                                       TEXT, -- alias: cfi_3fy
+    "CFI (-4FY)"                                       TEXT, -- alias: cfi_4fy
+    "FCF (-1FQFQ)"                                     TEXT, -- alias: fcf_1fqfq
+    "FCF (-2FQFQ)"                                     TEXT, -- alias: fcf_2fqfq
+    "FCF (-3FQFQ)"                                     TEXT, -- alias: fcf_3fqfq
+    "FCF (-4FQFQ)"                                     TEXT, -- alias: fcf_4fqfq
+    "CFF (-2FY)"                                       TEXT, -- alias: cff_2fy
+    "CFF (-3FY)"                                       TEXT, -- alias: cff_3fy
+    "CFF (-4FY)"                                       TEXT, -- alias: cff_4fy
+    "CFF (-1FQFQ)"                                     TEXT, -- alias: cff_1fqfq
+    "CFF (-2FQFQ)"                                     TEXT, -- alias: cff_2fqfq
+    "CFF (-3FQFQ)"                                     TEXT, -- alias: cff_3fqfq
+    "CFF (-4FQFQ)"                                     TEXT, -- alias: cff_4fqfq
+    "CFO (-2FY)"                                       TEXT, -- alias: cfo_2fy
+    "CFO (-3FY)"                                       TEXT, -- alias: cfo_3fy
+    "CFO (-4FY)"                                       TEXT, -- alias: cfo_4fy
+    "Cash Acquisitions (-1FQFQ)"                       TEXT, -- alias: cash_acquisitions_1fqfq
+    "Cash Acquisitions (-2FQFQ)"                       TEXT, -- alias: cash_acquisitions_2fqfq
+    "Cash Acquisitions (-3FQFQ)"                       TEXT, -- alias: cash_acquisitions_3fqfq
+    "Cash Acquisitions (-4FQFQ)"                       TEXT, -- alias: cash_acquisitions_4fqfq
+    "FCF (-2FY)"                                       TEXT, -- alias: fcf_2fy
+    "FCF (-3FY)"                                       TEXT, -- alias: fcf_3fy
+    "FCF (-4FY)"                                       TEXT, -- alias: fcf_4fy
+    "Price Target (1W Ago)"                            TEXT, -- alias: price_target_1w_ago
+    "Price Target (1M Ago)"                            TEXT, -- alias: price_target_1m_ago
+    "Price Target (3M Ago)"                            TEXT, -- alias: price_target_3m_ago
+    "Price Target (6M Ago)"                            TEXT, -- alias: price_target_6m_ago
+    "Price Target (MTD Ago)"                           TEXT, -- alias: price_target_mtd_ago
+    "Price Target (QTD Ago)"                           TEXT, -- alias: price_target_qtd_ago
+    "Price Target (1Y Ago)"                            TEXT, -- alias: price_target_1y_ago
+    "Price Target - # (3M Ago)"                        TEXT, -- alias: price_target_num_3m_ago
+    "Price Target - # (6M Ago)"                        TEXT, -- alias: price_target_num_6m_ago
+    "Price Target - # (YTD Ago)"                       TEXT, -- alias: price_target_num_ytd_ago
+    "Price Target - # (1Y Ago)"                        TEXT, -- alias: price_target_num_1y_ago
+    "Price Target - # (1W Ago)"                        TEXT, -- alias: price_target_num_1w_ago
+    "Price Target - # (1M Ago)"                        TEXT, -- alias: price_target_num_1m_ago
+    "Price Target - # (MTD Ago)"                       TEXT, -- alias: price_target_num_mtd_ago
+    "Price Target - # (QTD Ago)"                       TEXT, -- alias: price_target_num_qtd_ago
+    "Price Target - High (1W Ago)"                     TEXT, -- alias: price_target_high_1w_ago
+    "Price Target - High (1M Ago)"                     TEXT, -- alias: price_target_high_1m_ago
+    "Price Target - High (6M Ago)"                     TEXT, -- alias: price_target_high_6m_ago
+    "Price Target - High (MTD Ago)"                    TEXT, -- alias: price_target_high_mtd_ago
+    "Price Target - High (3M Ago)"                     TEXT, -- alias: price_target_high_3m_ago
+    "Price Target - High (QTD Ago)"                    TEXT, -- alias: price_target_high_qtd_ago
+    "Price Target - High (1Y Ago)"                     TEXT, -- alias: price_target_high_1y_ago
+    "Price Target - High (YTD Ago)"                    TEXT, -- alias: price_target_high_ytd_ago
+    "Price Target - Low (1W Ago)"                      TEXT, -- alias: price_target_low_1w_ago
+    "Price Target - Low (1M Ago)"                      TEXT, -- alias: price_target_low_1m_ago
+    "Price Target - Low (3M Ago)"                      TEXT, -- alias: price_target_low_3m_ago
+    "Price Target - Low (6M Ago)"                      TEXT, -- alias: price_target_low_6m_ago
+    "Price Target - Low (MTD Ago)"                     TEXT, -- alias: price_target_low_mtd_ago
+    "Price Target - Low (QTD Ago)"                     TEXT, -- alias: price_target_low_qtd_ago
+    "Price Target - Low (YTD Ago)"                     TEXT, -- alias: price_target_low_ytd_ago
+    "Price Target - Low (1Y Ago)"                      TEXT, -- alias: price_target_low_1y_ago
+    "Price Target - Median (1W Ago)"                   TEXT, -- alias: price_target_median_1w_ago
+    "Price Target - Median (1M Ago)"                   TEXT, -- alias: price_target_median_1m_ago
+    "Price Target - Median (3M Ago)"                   TEXT, -- alias: price_target_median_3m_ago
+    "Price Target - Median (6M Ago)"                   TEXT, -- alias: price_target_median_6m_ago
+    "Price Target - Median (MTD Ago)"                  TEXT, -- alias: price_target_median_mtd_ago
+    "Price Target - Median (QTD Ago)"                  TEXT, -- alias: price_target_median_qtd_ago
+    "Price Target - Median (YTD Ago)"                  TEXT, -- alias: price_target_median_ytd_ago
+    "Price Target - Median (1Y Ago)"                   TEXT, -- alias: price_target_median_1y_ago
+    "Impairment of Goodwill (-1FQFQ)"                  TEXT, -- alias: impairment_of_goodwill_1fqfq
+    "Impairment of Goodwill (-2FQFQ)"                  TEXT, -- alias: impairment_of_goodwill_2fqfq
+    "Impairment of Goodwill (-3FQFQ)"                  TEXT, -- alias: impairment_of_goodwill_3fqfq
+    "Impairment of Goodwill (-4FQFQ)"                  TEXT, -- alias: impairment_of_goodwill_4fqfq
+    "Impairment of Goodwill (-2FY)"                    TEXT, -- alias: impairment_of_goodwill_2fy
+    "Impairment of Goodwill (-3FY)"                    TEXT, -- alias: impairment_of_goodwill_3fy
+    "Impairment of Goodwill (-4FY)"                    TEXT, -- alias: impairment_of_goodwill_4fy
+    "Asset Writedown (-1FQFQ)"                         TEXT, -- alias: asset_writedown_1fqfq
+    "Asset Writedown (-2FQFQ)"                         TEXT, -- alias: asset_writedown_2fqfq
+    "Asset Writedown (-3FQFQ)"                         TEXT, -- alias: asset_writedown_3fqfq
+    "Asset Writedown (-4FQFQ)"                         TEXT, -- alias: asset_writedown_4fqfq
+    "Asset Writedown (-2FY)"                           TEXT, -- alias: asset_writedown_2fy
+    "Asset Writedown (-3FY)"                           TEXT, -- alias: asset_writedown_3fy
+    "Asset Writedown (-4FY)"                           TEXT, -- alias: asset_writedown_4fy
+    "Asset Writedown (-5FY)"                           TEXT, -- alias: asset_writedown_5fy
+    "Gain (Loss) On Sale Of Assets (FQ)"               TEXT, -- alias: gain_loss_on_sale_of_assets_fq
+    "Gain (Loss) On Sale Of Assets (FY)"               TEXT, -- alias: gain_loss_on_sale_of_assets_fy
+    "Gain (Loss) On Sale Of Assets (-1FQFQ)"           TEXT, -- alias: gain_loss_on_sale_of_assets_1fqfq
+    "Gain (Loss) On Sale Of Assets (-2FQFQ)"           TEXT, -- alias: gain_loss_on_sale_of_assets_2fqfq
+    "Gain (Loss) On Sale Of Assets (-3FQFQ)"           TEXT, -- alias: gain_loss_on_sale_of_assets_3fqfq
+    "Gain (Loss) On Sale Of Assets (-4FQFQ)"           TEXT, -- alias: gain_loss_on_sale_of_assets_4fqfq
+    "Gain (Loss) On Sale Of Assets (-1FY)"             TEXT, -- alias: gain_loss_on_sale_of_assets_1fy
+    "Gain (Loss) On Sale Of Assets (-2FY)"             TEXT, -- alias: gain_loss_on_sale_of_assets_2fy
+    "Gain (Loss) On Sale Of Assets (-3FY)"             TEXT, -- alias: gain_loss_on_sale_of_assets_3fy
+    "Gain (Loss) On Sale Of Assets (-4FY)"             TEXT, -- alias: gain_loss_on_sale_of_assets_4fy
+    "Restructuring Charges (-1FQFQ)"                   TEXT, -- alias: restructuring_charges_1fqfq
+    "Restructuring Charges (-2FQFQ)"                   TEXT, -- alias: restructuring_charges_2fqfq
+    "Restructuring Charges (-3FQFQ)"                   TEXT, -- alias: restructuring_charges_3fqfq
+    "Restructuring Charges (-4FQFQ)"                   TEXT, -- alias: restructuring_charges_4fqfq
+    "Restructuring Charges (-2FY)"                     TEXT, -- alias: restructuring_charges_2fy
+    "Restructuring Charges (-3FY)"                     TEXT, -- alias: restructuring_charges_3fy
+    "Restructuring Charges (-4FY)"                     TEXT, -- alias: restructuring_charges_4fy
+    "Net Income - (IS) (-1FQFQ)"                       TEXT, -- alias: net_income_is_1fqfq
+    "Net Income - (IS) (-2FQFQ)"                       TEXT, -- alias: net_income_is_2fqfq
+    "Net Income - (IS) (-3FQFQ)"                       TEXT, -- alias: net_income_is_3fqfq
+    "Net Income - (IS) (-4FQFQ)"                       TEXT, -- alias: net_income_is_4fqfq
+    "Net Income - (IS) (-2FY)"                         TEXT, -- alias: net_income_is_2fy
+    "Net Income - (IS) (-3FY)"                         TEXT, -- alias: net_income_is_3fy
+    "Net Income - (IS) (-4FY)"                         TEXT, -- alias: net_income_is_4fy
+    "Normalized Net Income (-1FQFQ)"                   TEXT, -- alias: normalized_net_income_1fqfq
+    "Normalized Net Income (-2FQFQ)"                   TEXT, -- alias: normalized_net_income_2fqfq
+    "Normalized Net Income (-3FQFQ)"                   TEXT, -- alias: normalized_net_income_3fqfq
+    "Normalized Net Income (-4FQFQ)"                   TEXT, -- alias: normalized_net_income_4fqfq
+    "Normalized Net Income (-2FY)"                     TEXT, -- alias: normalized_net_income_2fy
+    "Normalized Net Income (-3FY)"                     TEXT, -- alias: normalized_net_income_3fy
+    "Normalized Net Income (-4FY)"                     TEXT, -- alias: normalized_net_income_4fy
+    "Net Income/Adj. (-1FQFQ)"                         TEXT, -- alias: net_income_adj_1fqfq
+    "Net Income/Adj. (-2FQFQ)"                         TEXT, -- alias: net_income_adj_2fqfq
+    "Net Income/Adj. (-3FQFQ)"                         TEXT, -- alias: net_income_adj_3fqfq
+    "Net Income/Adj. (-4FQFQ)"                         TEXT, -- alias: net_income_adj_4fqfq
+    "Net Income/Adj. (-2FY)"                           TEXT, -- alias: net_income_adj_2fy
+    "Net Income/Adj. (-3FY)"                           TEXT, -- alias: net_income_adj_3fy
+    "Net Income/Adj. (-4FY)"                           TEXT, -- alias: net_income_adj_4fy
+    "EBIT (-1FQFQ)"                                    TEXT, -- alias: ebit_1fqfq
+    "EBIT (-2FQFQ)"                                    TEXT, -- alias: ebit_2fqfq
+    "EBIT (-3FQFQ)"                                    TEXT, -- alias: ebit_3fqfq
+    "EBIT (-4FQFQ)"                                    TEXT, -- alias: ebit_4fqfq
+    "EBIT (-2FY)"                                      TEXT, -- alias: ebit_2fy
+    "EBIT (-3FY)"                                      TEXT, -- alias: ebit_3fy
+    "EBIT (-4FY)"                                      TEXT, -- alias: ebit_4fy
+    "EBIT/Adj. (FQ)"                                   TEXT, -- alias: ebit_adj_fq
+    "EBIT/Adj. (-1FQFQ)"                               TEXT, -- alias: ebit_adj_1fqfq
+    "EBIT/Adj. (-2FQFQ)"                               TEXT, -- alias: ebit_adj_2fqfq
+    "EBIT/Adj. (-3FQFQ)"                               TEXT, -- alias: ebit_adj_3fqfq
+    "EBIT/Adj. (-4FQFQ)"                               TEXT, -- alias: ebit_adj_4fqfq
+    "EBIT/Adj. (-2FY)"                                 TEXT, -- alias: ebit_adj_2fy
+    "EBIT/Adj. (-3FY)"                                 TEXT, -- alias: ebit_adj_3fy
+    "EBIT/Adj. (-4FY)"                                 TEXT, -- alias: ebit_adj_4fy
+    "EBITDA (-1FQFQ)"                                  TEXT, -- alias: ebitda_1fqfq
+    "EBITDA (-2FQFQ)"                                  TEXT, -- alias: ebitda_2fqfq
+    "EBITDA (-3FQFQ)"                                  TEXT, -- alias: ebitda_3fqfq
+    "EBITDA (-4FQFQ)"                                  TEXT, -- alias: ebitda_4fqfq
+    "EBITDA (-2FY)"                                    TEXT, -- alias: ebitda_2fy
+    "EBITDA (-4FY)"                                    TEXT, -- alias: ebitda_4fy
+    "EBITDA (-3FY)"                                    TEXT, -- alias: ebitda_3fy
+    "EBITDA/Adj. (FQ)"                                 TEXT, -- alias: ebitda_adj_fq
+    "EBITDA/Adj. (-1FQFQ)"                             TEXT, -- alias: ebitda_adj_1fqfq
+    "EBITDA/Adj. (-2FQFQ)"                             TEXT, -- alias: ebitda_adj_2fqfq
+    "EBITDA/Adj. (-3FQFQ)"                             TEXT, -- alias: ebitda_adj_3fqfq
+    "EBITDA/Adj. (-4FQFQ)"                             TEXT, -- alias: ebitda_adj_4fqfq
+    "EBITDA/Adj. (-2FY)"                               TEXT, -- alias: ebitda_adj_2fy
+    "EBITDA/Adj. (-3FY)"                               TEXT, -- alias: ebitda_adj_3fy
+    "EBITDA/Adj. (-4FY)"                               TEXT, -- alias: ebitda_adj_4fy
+    "Basic EPS - Cont (LTM)"                           TEXT, -- alias: basic_eps_cont_ltm
+    "Basic EPS - Cont (FQ)"                            TEXT, -- alias: basic_eps_cont_fq
+    "Basic EPS - Cont (FY)"                            TEXT, -- alias: basic_eps_cont_fy
+    "Basic EPS - Cont (-1FQFQ)"                        TEXT, -- alias: basic_eps_cont_1fqfq
+    "Basic EPS - Cont (-2FQFQ)"                        TEXT, -- alias: basic_eps_cont_2fqfq
+    "Basic EPS - Cont (-4FQFQ)"                        TEXT, -- alias: basic_eps_cont_4fqfq
+    "Basic EPS - Cont (-3FQFQ)"                        TEXT, -- alias: basic_eps_cont_3fqfq
+    "Basic EPS - Cont (-1FY)"                          TEXT, -- alias: basic_eps_cont_1fy
+    "Basic EPS - Cont (-2FY)"                          TEXT, -- alias: basic_eps_cont_2fy
+    "Basic EPS - Cont (-3FY)"                          TEXT, -- alias: basic_eps_cont_3fy
+    "Basic EPS - Cont (-4FY)"                          TEXT, -- alias: basic_eps_cont_4fy
+    "EPS/Adj. (FQ)"                                    TEXT, -- alias: eps_adj_fq
+    "EPS/Adj. (-1FQFQ)"                                TEXT, -- alias: eps_adj_1fqfq
+    "EPS/Adj. (-3FQFQ)"                                TEXT, -- alias: eps_adj_3fqfq
+    "EPS/Adj. (-4FQFQ)"                                TEXT, -- alias: eps_adj_4fqfq
+    "EPS/Adj. (-2FQFQ)"                                TEXT, -- alias: eps_adj_2fqfq
+    "EPS/Adj. (-2FY)"                                  TEXT, -- alias: eps_adj_2fy
+    "EPS/Adj. (-3FY)"                                  TEXT, -- alias: eps_adj_3fy
+    "EPS/Adj. (-4FY)"                                  TEXT, -- alias: eps_adj_4fy
+    "Cash Acquisitions (-2FY)"                         TEXT, -- alias: cash_acquisitions_2fy
+    "Cash Acquisitions (-3FY)"                         TEXT, -- alias: cash_acquisitions_3fy
+    "Cash Acquisitions (-4FY)"                         TEXT, -- alias: cash_acquisitions_4fy
+    "Capital Expenditure (-1FQFQ)"                     TEXT, -- alias: capital_expenditure_1fqfq
+    "Capital Expenditure (-3FQFQ)"                     TEXT, -- alias: capital_expenditure_3fqfq
+    "Capital Expenditure (-4FQFQ)"                     TEXT, -- alias: capital_expenditure_4fqfq
+    "Capital Expenditure (-2FQFQ)"                     TEXT, -- alias: capital_expenditure_2fqfq
+    "Capital Expenditure (-2FY)"                       TEXT, -- alias: capital_expenditure_2fy
+    "Capital Expenditure (-3FY)"                       TEXT, -- alias: capital_expenditure_3fy
+    "Capital Expenditure (-4FY)"                       TEXT, -- alias: capital_expenditure_4fy
+    "Working Capital (-1FQ)"                           TEXT, -- alias: working_capital_1fq
+    "Working Capital (-2FQ)"                           TEXT, -- alias: working_capital_2fq
+    "Working Capital (-3FQ)"                           TEXT, -- alias: working_capital_3fq
+    "Working Capital (-4FQ)"                           TEXT, -- alias: working_capital_4fq
+    "Working Capital (-1FY)"                           TEXT, -- alias: working_capital_1fy
+    "Working Capital (-2FY)"                           TEXT, -- alias: working_capital_2fy
+    "Working Capital (-3FY)"                           TEXT, -- alias: working_capital_3fy
+    "Working Capital (-4FY)"                           TEXT, -- alias: working_capital_4fy
+    "Total Debt (FQ)"                                  TEXT, -- alias: total_debt_fq
+    "Total Debt (-1FQ)"                                TEXT, -- alias: total_debt_1fq
+    "Total Debt (-2FQ)"                                TEXT, -- alias: total_debt_2fq
+    "Total Debt (-3FQ)"                                TEXT, -- alias: total_debt_3fq
+    "Total Debt (-4FQ)"                                TEXT, -- alias: total_debt_4fq
+    "Total Debt (-1FY)"                                TEXT, -- alias: total_debt_1fy
+    "Total Debt (-2FY)"                                TEXT, -- alias: total_debt_2fy
+    "Total Debt (-3FY)"                                TEXT, -- alias: total_debt_3fy
+    "Total Debt (-4FY)"                                TEXT, -- alias: total_debt_4fy
+    "Total Assets (FQ)"                                TEXT, -- alias: total_assets_fq
+    "Total Assets (-1FQ)"                              TEXT, -- alias: total_assets_1fq
+    "Total Assets (-2FQ)"                              TEXT, -- alias: total_assets_2fq
+    "Total Assets (-3FQ)"                              TEXT, -- alias: total_assets_3fq
+    "Total Assets (-4FQ)"                              TEXT, -- alias: total_assets_4fq
+    "Total Assets (-1FY)"                              TEXT, -- alias: total_assets_1fy
+    "Total Assets (-2FY)"                              TEXT, -- alias: total_assets_2fy
+    "Total Assets (-3FY)"                              TEXT, -- alias: total_assets_3fy
+    "Total Assets (-4FY)"                              TEXT, -- alias: total_assets_4fy
+    "Gross Profit (FQ)"                                TEXT, -- alias: gross_profit_fq
+    "Gross Profit (-1FQFQ)"                            TEXT, -- alias: gross_profit_1fqfq
+    "Gross Profit (-3FQFQ)"                            TEXT, -- alias: gross_profit_3fqfq
+    "Gross Profit (-4FQFQ)"                            TEXT, -- alias: gross_profit_4fqfq
+    "Gross Profit (-2FQFQ)"                            TEXT, -- alias: gross_profit_2fqfq
+    "Gross Profit (-1FY)"                              TEXT, -- alias: gross_profit_1fy
+    "Gross Profit (-2FY)"                              TEXT, -- alias: gross_profit_2fy
+    "Gross Profit (-3FY)"                              TEXT, -- alias: gross_profit_3fy
+    "Gross Profit (-4FY)"                              TEXT, -- alias: gross_profit_4fy
+    "Inventory (-1FQ)"                                 TEXT, -- alias: inventory_1fq
+    "Inventory (-3FQ)"                                 TEXT, -- alias: inventory_3fq
+    "Inventory (-4FQ)"                                 TEXT, -- alias: inventory_4fq
+    "Inventory (-2FQ)"                                 TEXT, -- alias: inventory_2fq
+    "Inventory (-1FY)"                                 TEXT, -- alias: inventory_1fy
+    "Inventory (-2FY)"                                 TEXT, -- alias: inventory_2fy
+    "Inventory (-4FY)"                                 TEXT, -- alias: inventory_4fy
+    "Inventory (-3FY)"                                 TEXT, -- alias: inventory_3fy
+    "Goodwill (-1FQ)"                                  TEXT, -- alias: goodwill_1fq
+    "Goodwill (-4FQ)"                                  TEXT, -- alias: goodwill_4fq
+    "Goodwill (-2FQ)"                                  TEXT, -- alias: goodwill_2fq
+    "Goodwill (-3FQ)"                                  TEXT, -- alias: goodwill_3fq
+    "Goodwill (-2FY)"                                  TEXT, -- alias: goodwill_2fy
+    "Goodwill (-3FY)"                                  TEXT, -- alias: goodwill_3fy
+    "Goodwill (-4FY)"                                  TEXT, -- alias: goodwill_4fy
+    "Operating Income (-1FQFQ)"                        TEXT, -- alias: operating_income_1fqfq
+    "Operating Income (-3FQFQ)"                        TEXT, -- alias: operating_income_3fqfq
+    "Operating Income (-4FQFQ)"                        TEXT, -- alias: operating_income_4fqfq
+    "Operating Income (-2FQFQ)"                        TEXT, -- alias: operating_income_2fqfq
+    "Operating Income (-1FY)"                          TEXT, -- alias: operating_income_1fy
+    "Operating Income (-2FY)"                          TEXT, -- alias: operating_income_2fy
+    "Operating Income (-4FY)"                          TEXT, -- alias: operating_income_4fy
+    "Operating Income (-3FY)"                          TEXT, -- alias: operating_income_3fy
+    "Retained Earnings (-1FQ)"                         TEXT, -- alias: retained_earnings_1fq
+    "Retained Earnings (-2FQ)"                         TEXT, -- alias: retained_earnings_2fq
+    "Retained Earnings (-3FQ)"                         TEXT, -- alias: retained_earnings_3fq
+    "Retained Earnings (-4FQ)"                         TEXT, -- alias: retained_earnings_4fq
+    "Retained Earnings (-1FY)"                         TEXT, -- alias: retained_earnings_1fy
+    "Retained Earnings (-2FY)"                         TEXT, -- alias: retained_earnings_2fy
+    "Retained Earnings (-3FY)"                         TEXT, -- alias: retained_earnings_3fy
+    "Retained Earnings (-4FY)"                         TEXT, -- alias: retained_earnings_4fy
+    "R&D Expenses (FQ)"                                TEXT, -- alias: randd_expenses_fq
+    "R&D Expenses (FY)"                                TEXT, -- alias: randd_expenses_fy
+    "R&D Expenses (-1FQFQ)"                            TEXT, -- alias: randd_expenses_1fqfq
+    "R&D Expenses (-2FQFQ)"                            TEXT, -- alias: randd_expenses_2fqfq
+    "R&D Expenses (-3FQFQ)"                            TEXT, -- alias: randd_expenses_3fqfq
+    "R&D Expenses (-4FQFQ)"                            TEXT, -- alias: randd_expenses_4fqfq
+    "R&D Expenses (-1FY)"                              TEXT, -- alias: randd_expenses_1fy
+    "R&D Expenses (-2FY)"                              TEXT, -- alias: randd_expenses_2fy
+    "R&D Expenses (-4FY)"                              TEXT, -- alias: randd_expenses_4fy
+    "R&D Expenses (-3FY)"                              TEXT, -- alias: randd_expenses_3fy
+    "Merger & Restructuring Charges (-1FQFQ)"          TEXT, -- alias: merger_and_restructuring_charges_1fqfq
+    "Merger & Restructuring Charges (-3FQFQ)"          TEXT, -- alias: merger_and_restructuring_charges_3fqfq
+    "Merger & Restructuring Charges (-4FQFQ)"          TEXT, -- alias: merger_and_restructuring_charges_4fqfq
+    "Merger & Restructuring Charges (-2FQFQ)"          TEXT, -- alias: merger_and_restructuring_charges_2fqfq
+    "Merger & Restructuring Charges (-1FY)"            TEXT, -- alias: merger_and_restructuring_charges_1fy
+    "Merger & Restructuring Charges (-3FY)"            TEXT, -- alias: merger_and_restructuring_charges_3fy
+    "Merger & Restructuring Charges (-4FY)"            TEXT, -- alias: merger_and_restructuring_charges_4fy
+    "Merger & Restructuring Charges (-2FY)"            TEXT, -- alias: merger_and_restructuring_charges_2fy
+    "Cash And Equivalents (-1FQ)"                      TEXT, -- alias: cash_and_equivalents_1fq
+    "Cash And Equivalents (-3FQ)"                      TEXT, -- alias: cash_and_equivalents_3fq
+    "Cash And Equivalents (-4FQ)"                      TEXT, -- alias: cash_and_equivalents_4fq
+    "Cash And Equivalents (-2FQ)"                      TEXT, -- alias: cash_and_equivalents_2fq
+    "Cash And Equivalents (-1FY)"                      TEXT, -- alias: cash_and_equivalents_1fy
+    "Cash And Equivalents (-2FY)"                      TEXT, -- alias: cash_and_equivalents_2fy
+    "Cash And Equivalents (-3FY)"                      TEXT, -- alias: cash_and_equivalents_3fy
+    "Cash And Equivalents (-4FY)"                      TEXT, -- alias: cash_and_equivalents_4fy
+    "Gross Intangible Assets (FQ)"                     TEXT, -- alias: gross_intangible_assets_fq
+    "Gross Intangible Assets (-1FQ)"                   TEXT, -- alias: gross_intangible_assets_1fq
+    "Gross Intangible Assets (-3FQ)"                   TEXT, -- alias: gross_intangible_assets_3fq
+    "Gross Intangible Assets (-4FQ)"                   TEXT, -- alias: gross_intangible_assets_4fq
+    "Gross Intangible Assets (-2FQ)"                   TEXT, -- alias: gross_intangible_assets_2fq
+    "Gross Intangible Assets (-1FY)"                   TEXT, -- alias: gross_intangible_assets_1fy
+    "Gross Intangible Assets (-2FY)"                   TEXT, -- alias: gross_intangible_assets_2fy
+    "Gross Intangible Assets (-3FY)"                   TEXT, -- alias: gross_intangible_assets_3fy
+    "Gross Intangible Assets (-4FY)"                   TEXT, -- alias: gross_intangible_assets_4fy
+    "Total Revenues (-1FQFQ)"                          TEXT, -- alias: total_revenues_1fqfq
+    "Total Revenues (-2FQFQ)"                          TEXT, -- alias: total_revenues_2fqfq
+    "Total Revenues (-3FQFQ)"                          TEXT, -- alias: total_revenues_3fqfq
+    "Total Revenues (-4FQFQ)"                          TEXT, -- alias: total_revenues_4fqfq
+    "Total Revenues (-2FY)"                            TEXT, -- alias: total_revenues_2fy
+    "Total Revenues (-3FY)"                            TEXT, -- alias: total_revenues_3fy
+    "Total Revenues (-4FY)"                            TEXT  -- alias: total_revenues_4fy
 );
 -- ===================================================================
 -- DATA IMPORT EXECUTION
@@ -1151,225 +1208,646 @@ SELECT 'Total rows in staging:' AS info, COUNT(*) AS count
 FROM screening_staging;
 
 TRUNCATE TABLE equities;
-INSERT INTO equities ("Ticker", "ISIN", "Name", "Region", "Country", "Trading Country", "Exchange", "Unit", "Sector",
-                      "Industry", "Style Class", "Size Class", "FY End", "Next Earnings (When)",
-                      "Next Earnings (Status)", "Dividend Record (Currency)", "Dividend Record (Frequency)",
-                      "Current Fiscal Quarter", "Next Fiscal Quarter", "Next Earnings (Report)", "Last Updated",
-                      "Income Statement Report Date", "Next Earnings", "Dividend Record (Announce Date)",
-                      "Dividend Record (Payable Date)", "Dividend Record (Record Date)", "Dividend Record (Ex Date)",
-                      "Reference Date", "FY End Date", "Next FY End Date", "Price Target", "Price Target - Median",
-                      "Dividend Record (Amount)", "Market Cap", "Enterprise Value", "Last Price",
-                      "Price Target (YTD Ago)", "Price Target - Low", "Price Target - High", "Market Cap (Country R)",
-                      "Volume (Shrs)", "Dividend Per Share (LTM)", "Price (5D Ago)", "Price (1W Ago)", "Price (1M Ago)",
-                      "Price (3M Ago)", "Price (6M Ago)", "Price (1Y Ago)", "Price (3Y Ago)", "Price (5Y Ago)",
-                      "Price (QTD Ago)", "Rel. Volume", "52W High/Adj", "52W Low/Adj", "EMA (20D)", "EMA (50D)",
-                      "EMA (100D)", "EMA (250D)", "Price Target (1W Ago)", "Price Target (1M Ago)",
-                      "Price Target (3M Ago)", "Price Target (6M Ago)", "Price Target (MTD Ago)",
-                      "Price Target (QTD Ago)", "Price Target (1Y Ago)", "Price Target - High (1W Ago)",
-                      "Price Target - High (1M Ago)", "Price Target - High (6M Ago)", "Price Target - High (MTD Ago)",
-                      "Price Target - High (3M Ago)", "Price Target - High (QTD Ago)", "Price Target - High (1Y Ago)",
-                      "Price Target - High (YTD Ago)", "Price Target - Low (1W Ago)", "Price Target - Low (1M Ago)",
-                      "Price Target - Low (3M Ago)", "Price Target - Low (6M Ago)", "Price Target - Low (MTD Ago)",
-                      "Price Target - Low (QTD Ago)", "Price Target - Low (YTD Ago)", "Price Target - Low (1Y Ago)",
-                      "Price Target - Median (1W Ago)", "Price Target - Median (1M Ago)",
-                      "Price Target - Median (3M Ago)", "Price Target - Median (6M Ago)",
-                      "Price Target - Median (MTD Ago)", "Price Target - Median (QTD Ago)",
-                      "Price Target - Median (YTD Ago)", "Price Target - Median (1Y Ago)", "Total Revenues (FQ)",
-                      "Total Revenues (-1FY)", "Total Revenues (FY)", "Total Revenues (LTM)",
-                      "Total Operating Expenses (LTM)", "Net Income/Adj. (-1FY)", "EBITDA (FQ)", "EBITDA (LTM)",
-                      "EBITDA (FY)", "EBITDA (-1FY)", "EBITDA/Adj. (LTM)", "EBITDA/Adj. (FY)", "EBITDA/Adj. (-1FY)",
-                      "EBIT (FQ)", "EBIT (LTM)", "EBIT (FY)", "EBIT (-1FY)", "EBIT/Adj. (-1FY)", "EBIT/Adj. (FY)",
-                      "EBIT/Adj. (LTM)", "EBIT - Est Med (FY1E)", "EBIT - Est Med (NTM)", "Net Income - (IS) (FY)",
-                      "Net Income - (IS) (LTM)", "Normalized Net Income (FY)", "Normalized Net Income (LTM)",
-                      "Net Income/Adj. (FY)", "Net Income/Adj. (LTM)", "Gross Profit (LTM)", "Gross Profit (FY)",
-                      "Cost Of Revenues (LTM)", "Operating Income (LTM)", "Operating Income (FY)", "R&D Expenses (LTM)",
-                      "Interest Expense/Total (LTM)", "Interest Income On Investments (LTM)",
-                      "Net Income - (IS) (-1FY)", "Normalized Net Income (-1FY)", "Total Revenues (5YAVGFQ)",
-                      "EBITDA (5YAVGFQ)", "EBIT (5YAVGFQ)", "Operating Income (FQ)", "Operating Income (5YAVGFQ)",
-                      "Normalized Net Income (FQ)", "Normalized Net Income (5YAVGFQ)", "Net Income/Adj. (FQ)",
-                      "Net Income/Adj. (5YAVGFQ)", "Net Income - (IS) (FQ)", "Net Income - (IS) (5YAVGFQ)",
-                      "Net Income - (IS) (5YAVGLTM)", "Normalized Net Income (5YAVGLTM)", "EBITDA (5YAVGLTM)",
-                      "EBIT (5YAVGLTM)", "Total Revenues (5YAVGLTM)", "Selling General & Admin Expenses/Total (FQ)",
-                      "Selling General & Admin Expenses/Total (FY)", "Selling General & Admin Expenses/Total (-1FY)",
-                      "Selling General & Admin Expenses/Total (5YAVGFQ)",
-                      "Marketing Expenses (FQ)",
-                      "Marketing Expenses (FY)", "Marketing Expenses (-1FY)", "Marketing Expenses (5YAVGLTM)",
-                      "Revenues - Est Avg (NTM)", "Revenues - Est Avg (FY1E)", "Revenues - Est Med (NTM)",
-                      "Revenues - Est Med (FY1E)", "EBITDA - Est Avg (NTM)", "EBITDA - Est Avg (FY1E)", "TBV (FY)",
-                      "TBV (LTM)", "Total Debt (FY)", "Total Equity (FY)", "Total Equity (LTM)", "Total Debt (LTM)",
-                      "Total Assets (LTM)", "Total Assets (FY)", "Inventory (LTM)", "Goodwill (FQ)", "Goodwill (LTM)",
-                      "Goodwill (FY)", "Goodwill (-1FY)", "Retained Earnings (LTM)", "Total Current Assets (LTM)",
-                      "Total Current Liabilities (LTM)", "Working Capital (LTM)", "Cash And Equivalents (LTM)",
-                      "Cash And Equivalents (FQ)", "Cash And Equivalents (FY)", "Cash And Equivalents (5YAVGFQ)",
-                      "Inventory (FQ)", "Inventory (FY)", "Goodwill (5YAVGFQ)", "Inventory (5YAVGFQ)",
-                      "Retained Earnings (FQ)", "Retained Earnings (FY)", "Retained Earnings (5YAVGFQ)",
-                      "Working Capital (FQ)", "Working Capital (FY)", "Working Capital (5YAVGFY)",
-                      "Gross Intangible Assets (LTM)", "Gross Intangible Assets (FY)",
-                      "Gross Intangible Assets (5YAVGFQ)", "Accounts Receivable/Total (FY)",
-                      "Accounts Receivable/Total (-1FY)", "Accounts Receivable/Total (5YAVGFQ)", "CFF (LTM)",
-                      "CFI (LTM)", "FCF (LTM)", "CFO (LTM)", "Cash Acquisitions (LTM)", "Cash Acquisitions (FY)",
-                      "Cash Acquisitions (-1FY)", "Capital Expenditure (LTM)", "Capital Expenditure (-1FY)",
-                      "Capital Expenditure (FY)", "CFF (FY)", "CFF (-1FY)", "CFI (FY)", "CFI (-1FY)", "CFO (FY)",
-                      "CFO (-1FY)", "FCF (FY)", "FCF (-1FY)", "Capital Expenditure (FQ)",
-                      "Capital Expenditure (5YAVGFQ)", "CFF (FQ)", "CFI (FQ)", "CFO (FQ)", "FCF (FQ)", "FCF (5YAVGFQ)",
-                      "Cash Acquisitions (FQ)", "Cash Acquisitions (5YAVGFQ)", "Common Dividends Paid (LTM)",
-                      "Common Dividends Paid (FY)", "CFO (-1FQFQ)", "CFO (-2FQFQ)", "CFO (-3FQFQ)", "CFO (-4FQFQ)",
-                      "CFI (-1FQFQ)", "CFI (-2FQFQ)", "CFI (-3FQFQ)", "CFI (-4FQFQ)", "CFI (-2FY)", "CFI (-3FY)",
-                      "CFI (-4FY)", "FCF (-1FQFQ)", "FCF (-2FQFQ)", "FCF (-3FQFQ)", "FCF (-4FQFQ)", "CFF (-2FY)",
-                      "CFF (-3FY)", "CFF (-4FY)", "CFF (-1FQFQ)", "CFF (-2FQFQ)", "CFF (-3FQFQ)", "CFF (-4FQFQ)",
-                      "CFO (-2FY)", "CFO (-3FY)", "CFO (-4FY)", "Cash Acquisitions (-1FQFQ)",
-                      "Cash Acquisitions (-2FQFQ)", "Cash Acquisitions (-3FQFQ)", "Cash Acquisitions (-4FQFQ)",
-                      "FCF (-2FY)", "FCF (-3FY)", "FCF (-4FY)",
-    -- NEW: Cash Acquisitions Historical (FY)
-                      "Cash Acquisitions (-2FY)", "Cash Acquisitions (-3FY)", "Cash Acquisitions (-4FY)",
-    -- NEW: Capital Expenditure Historical
-                      "Capital Expenditure (-1FQFQ)", "Capital Expenditure (-2FQFQ)", "Capital Expenditure (-3FQFQ)",
-                      "Capital Expenditure (-4FQFQ)", "Capital Expenditure (-2FY)", "Capital Expenditure (-3FY)",
-                      "Capital Expenditure (-4FY)",
-    -- NEW: Working Capital Historical
-                      "Working Capital (-1FQ)", "Working Capital (-2FQ)", "Working Capital (-3FQ)",
-                      "Working Capital (-4FQ)", "Working Capital (-1FY)", "Working Capital (-2FY)",
-                      "Working Capital (-3FY)", "Working Capital (-4FY)",
-    -- NEW: Total Debt Historical
-                      "Total Debt (FQ)", "Total Debt (-1FQ)", "Total Debt (-2FQ)", "Total Debt (-3FQ)",
-                      "Total Debt (-4FQ)", "Total Debt (-1FY)", "Total Debt (-2FY)", "Total Debt (-3FY)",
-                      "Total Debt (-4FY)",
-    -- NEW: Total Assets Historical
-                      "Total Assets (FQ)", "Total Assets (-1FQ)", "Total Assets (-2FQ)", "Total Assets (-3FQ)",
-                      "Total Assets (-4FQ)", "Total Assets (-1FY)", "Total Assets (-2FY)", "Total Assets (-3FY)",
-                      "Total Assets (-4FY)",
-    -- NEW: Gross Profit Historical
-                      "Gross Profit (FQ)", "Gross Profit (-1FQFQ)", "Gross Profit (-2FQFQ)", "Gross Profit (-3FQFQ)",
-                      "Gross Profit (-4FQFQ)", "Gross Profit (-1FY)", "Gross Profit (-2FY)", "Gross Profit (-3FY)",
-                      "Gross Profit (-4FY)",
-    -- NEW: Inventory Historical
-                      "Inventory (-1FQ)", "Inventory (-2FQ)", "Inventory (-3FQ)", "Inventory (-4FQ)",
-                      "Inventory (-1FY)", "Inventory (-2FY)", "Inventory (-3FY)", "Inventory (-4FY)",
-    -- NEW: Goodwill Historical
-                      "Goodwill (-1FQ)", "Goodwill (-2FQ)", "Goodwill (-3FQ)", "Goodwill (-4FQ)",
-                      "Goodwill (-2FY)", "Goodwill (-3FY)", "Goodwill (-4FY)",
-    -- NEW: Operating Income Historical
-                      "Operating Income (-1FQFQ)", "Operating Income (-2FQFQ)", "Operating Income (-3FQFQ)",
-                      "Operating Income (-4FQFQ)", "Operating Income (-1FY)", "Operating Income (-2FY)",
-                      "Operating Income (-3FY)", "Operating Income (-4FY)",
-    -- NEW: Retained Earnings Historical
-                      "Retained Earnings (-1FQ)", "Retained Earnings (-2FQ)", "Retained Earnings (-3FQ)",
-                      "Retained Earnings (-4FQ)", "Retained Earnings (-1FY)", "Retained Earnings (-2FY)",
-                      "Retained Earnings (-3FY)", "Retained Earnings (-4FY)",
-    -- NEW: R&D Expenses Historical
-                      "R&D Expenses (FQ)", "R&D Expenses (FY)", "R&D Expenses (-1FQFQ)", "R&D Expenses (-2FQFQ)",
-                      "R&D Expenses (-3FQFQ)", "R&D Expenses (-4FQFQ)", "R&D Expenses (-1FY)", "R&D Expenses (-2FY)",
-                      "R&D Expenses (-3FY)", "R&D Expenses (-4FY)",
-    -- NEW: Merger & Restructuring Charges Historical
-                      "Merger & Restructuring Charges (-1FQFQ)", "Merger & Restructuring Charges (-2FQFQ)",
-                      "Merger & Restructuring Charges (-3FQFQ)", "Merger & Restructuring Charges (-4FQFQ)",
-                      "Merger & Restructuring Charges (-1FY)", "Merger & Restructuring Charges (-2FY)",
-                      "Merger & Restructuring Charges (-3FY)", "Merger & Restructuring Charges (-4FY)",
-    -- NEW: Cash And Equivalents Historical
-                      "Cash And Equivalents (-1FQ)", "Cash And Equivalents (-2FQ)", "Cash And Equivalents (-3FQ)",
-                      "Cash And Equivalents (-4FQ)", "Cash And Equivalents (-1FY)", "Cash And Equivalents (-2FY)",
-                      "Cash And Equivalents (-3FY)", "Cash And Equivalents (-4FY)",
-    -- NEW: Gross Intangible Assets Historical
-                      "Gross Intangible Assets (FQ)", "Gross Intangible Assets (-1FQ)",
-                      "Gross Intangible Assets (-2FQ)",
-                      "Gross Intangible Assets (-3FQ)", "Gross Intangible Assets (-4FQ)",
-                      "Gross Intangible Assets (-1FY)",
-                      "Gross Intangible Assets (-2FY)", "Gross Intangible Assets (-3FY)",
-                      "Gross Intangible Assets (-4FY)",
-    -- Continue with existing columns
-                      "P/E (NTM)", "P/E (LTM)",
-                      "Altman Z-Score (FY)",
-                      "Altman Z-Score (FQ)", "Altman Z-Score (LTM)", "P/TBV (LTM)", "Return On Equity % (LTM)",
-                      "Return On Equity % (FY)", "Current Ratio (FY)", "Current Ratio (LTM)", "Asset Turnover (FY)",
-                      "Asset Turnover (LTM)", "EPS Norm - Est Avg (NTM)", "EPS/Adj. (-1FY)", "EPS/Adj. (FY)",
-                      "EPS/Adj. (LTM)", "EPS Norm - Est Avg (FY1E)", "Return on Assets (ROA) % (LTM)",
-                      "Return on Assets (ROA) % (FY)", "P/B (LTM)", "P/B (-1FY)", "P/B (5YAVG)", "EV/Sales (EST FY1)",
-                      "EV/Sales (LTM)", "EV/Sales (NTM)", "EV/Sales (-1FYLTM)", "EV/Sales (-2FYLTM)",
-                      "EV/Sales (-3FYLTM)", "EV/Sales (3YAVGLTM)", "EV/Sales (-1FQLTM)", "EV/Sales (-2FQLTM)",
-                      "EV/Sales (-3FQLTM)", "EV/Sales (-4FQLTM)", "EV/EBITDA (LTM)", "EV/EBITDA (NTM)",
-                      "EV/EBITDA (-1FYLTM)", "EV/EBITDA (-1FQLTM)", "EV/EBITDA (3YAVGLTM)", "EV/EBITDA (EST FY1)",
-                      "P/E (EST FY1)", "P/E (-1FYLTM)", "P/E (-2FYLTM)", "P/E (-3FYLTM)", "P/E (3YAVGLTM)",
-                      "P/E (-1FQLTM)", "P/E (-2FQLTM)", "P/E (-3FQLTM)", "P/E (5YAVGLTM)", "P/E (-0FQQoQLTM)",
-                      "P/E (-0FYYoYLTM)", "P/E (-1FYYoYLTM)", "P/E (-0FQYoYLTM)", "Net EPS - Basic (LTM)",
-                      "Net EPS - Basic (FQ)", "Net EPS - Basic (FY)", "Net EPS - Basic (-1FQFQ)",
-                      "Net EPS - Basic (-2FQFQ)", "Net EPS - Basic (-3FQFQ)", "Net EPS - Basic (-4FQFQ)",
-                      "Net EPS - Basic (-1FY)", "Net EPS - Basic (-2FY)", "Net EPS - Basic (-3FY)",
-                      "Net EPS - Basic (-4FY)", "Net EPS - Basic (-5FY)", "EPS GAAP - Est Avg (NTM)",
-                      "EPS GAAP - Est Avg (FY1E)", "Total Return (YTD)", "Beta (1Y)", "Beta (2Y)", "Beta (5Y)",
-                      "Total Revenues/CAGR (5Y FY)", "Tot. Return %/CAGR (3Y)", "Tot. Return %/CAGR (10Y)",
-                      "Total Return (5Y)", "Total Return (10Y)", "Net Income Margin % (FY)",
-                      "Net Income Margin % (LTM)", "Volatility (1M)", "Volatility (3M)", "Volatility (6M)",
-                      "Volatility (1Y)", "Div Yield (Ind)", "Div Yield (LTM)",
-                      "Gross Profit Margin % (FY)",
-                      "Gross Profit Margin % (LTM)", "Buyback Yield (LTM)", "Div Yield (-1FYInd)", "Div Yield (TTM)",
-                      "Div Yield (NTM)", "Div Yield (5YAVGLTM)", "Revenues - Est YoY % (FY1E)", "Price Chg. % (1M)",
-                      "Price Chg. % (3M)", "1-Day %", "EPS Est Avg Rev % (FY1E - 1W)", "EPS Est Avg Rev % (FY1E - 1M)",
-                      "EPS Est Avg Rev % (FY1E - 3M)", "EPS Est Avg Rev % (FY1E - 6M)", "EPS Est Avg Rev % (FY1E - 1Y)",
-                      "Div Yield (-2FYInd)", "Div Yield (-3FYInd)", "Div Yield (-4FYInd)", "Div Yield (-5FYInd)",
-                      "EPS GAAP Est Avg Rev % (FY1E - 1M)", "EPS GAAP Est Avg Rev % (FY1E - 3M)",
-                      "EPS GAAP Est Avg Rev % (FY1E - 6M)", "EPS GAAP Est Avg Rev % (FY1E - 1Y)", "Dividend Streak",
-                      "Price Target - #", "Analyst Rating", "# Strong Sell Ratings", "# Strong Buys Ratings",
-                      "# Hold Ratings", "# Buys Ratings", "# Sell Ratings", "Shrs Out", "Shrs Out (-1FY)",
-                      "Full Time Employees (FQ)", "Full Time Employees (FY)", "Full Time Employees (-1FY)",
-                      "Full Time Employees (-2FY)", "Full Time Employees (-3FY)", "Avg Employees (5YAVGFY)",
-                      "EPS Norm - Est # (FY1E)", "Price Target - # (3M Ago)", "Price Target - # (6M Ago)",
-                      "Price Target - # (YTD Ago)", "Price Target - # (1Y Ago)", "Price Target - # (1W Ago)",
-                      "Price Target - # (1M Ago)", "Price Target - # (MTD Ago)", "Price Target - # (QTD Ago)",
-                      "Gain (Loss) On Sale Of Assets (LTM)", "Impairment of Goodwill (FQ)",
-                      "Impairment of Goodwill (LTM)", "Impairment of Goodwill (-1FY)", "Impairment of Goodwill (FY)",
-                      "Asset Writedown (LTM)", "Asset Writedown (FY)", "Asset Writedown (-1FY)",
-                      "Restructuring Charges (LTM)", "Restructuring Charges (FQ)", "Restructuring Charges (-1FY)",
-                      "Restructuring Charges (FY)", "Merger & Restructuring Charges (LTM)",
-                      "Other Unusual Items/Total (LTM)", "Asset Writedown (FQ)", "Asset Writedown (5YAVGFQ)",
-                      "Impairment of Goodwill (5YAVGFQ)", "Restructuring Charges (5YAVGFQ)",
-                      "Merger & Restructuring Charges (FQ)", "Merger & Restructuring Charges (FY)",
-                      "Merger & Restructuring Charges (5YAVGFQ)", "Description", "Fiscal Month", "Fiscal Quarter",
-                      "Fiscal Year", "Reporting Lag", "Next Income Statement Report Date", "Reporting Interval",
-                      "Earnings Report (Frequency)",
-    -- NEW COLUMNS
-                      "Impairment of Goodwill (-1FQFQ)", "Impairment of Goodwill (-2FQFQ)",
-                      "Impairment of Goodwill (-3FQFQ)", "Impairment of Goodwill (-4FQFQ)",
-                      "Impairment of Goodwill (-2FY)", "Impairment of Goodwill (-3FY)", "Impairment of Goodwill (-4FY)",
-                      "Asset Writedown (-1FQFQ)", "Asset Writedown (-2FQFQ)", "Asset Writedown (-3FQFQ)",
-                      "Asset Writedown (-4FQFQ)", "Asset Writedown (-2FY)", "Asset Writedown (-3FY)",
-                      "Asset Writedown (-4FY)", "Asset Writedown (-5FY)",
-                      "Gain (Loss) On Sale Of Assets (FQ)", "Gain (Loss) On Sale Of Assets (FY)",
-                      "Gain (Loss) On Sale Of Assets (-1FQFQ)", "Gain (Loss) On Sale Of Assets (-2FQFQ)",
-                      "Gain (Loss) On Sale Of Assets (-3FQFQ)", "Gain (Loss) On Sale Of Assets (-4FQFQ)",
-                      "Gain (Loss) On Sale Of Assets (-1FY)", "Gain (Loss) On Sale Of Assets (-2FY)",
-                      "Gain (Loss) On Sale Of Assets (-3FY)", "Gain (Loss) On Sale Of Assets (-4FY)",
-                      "Restructuring Charges (-1FQFQ)", "Restructuring Charges (-2FQFQ)",
-                      "Restructuring Charges (-3FQFQ)", "Restructuring Charges (-4FQFQ)",
-                      "Restructuring Charges (-2FY)", "Restructuring Charges (-3FY)", "Restructuring Charges (-4FY)",
-                      "Net Income - (IS) (-1FQFQ)", "Net Income - (IS) (-2FQFQ)", "Net Income - (IS) (-3FQFQ)",
-                      "Net Income - (IS) (-4FQFQ)", "Net Income - (IS) (-2FY)", "Net Income - (IS) (-3FY)",
-                      "Net Income - (IS) (-4FY)",
-                      "Normalized Net Income (-1FQFQ)", "Normalized Net Income (-2FQFQ)",
-                      "Normalized Net Income (-3FQFQ)", "Normalized Net Income (-4FQFQ)",
-                      "Normalized Net Income (-2FY)", "Normalized Net Income (-3FY)", "Normalized Net Income (-4FY)",
-                      "Net Income/Adj. (-1FQFQ)", "Net Income/Adj. (-2FQFQ)", "Net Income/Adj. (-3FQFQ)",
-                      "Net Income/Adj. (-4FQFQ)", "Net Income/Adj. (-2FY)", "Net Income/Adj. (-3FY)",
-                      "Net Income/Adj. (-4FY)",
-                      "EBIT (-1FQFQ)", "EBIT (-2FQFQ)", "EBIT (-3FQFQ)", "EBIT (-4FQFQ)",
-                      "EBIT (-2FY)", "EBIT (-3FY)", "EBIT (-4FY)",
-                      "EBIT/Adj. (FQ)", "EBIT/Adj. (-1FQFQ)", "EBIT/Adj. (-2FQFQ)", "EBIT/Adj. (-3FQFQ)",
-                      "EBIT/Adj. (-4FQFQ)", "EBIT/Adj. (-2FY)", "EBIT/Adj. (-3FY)", "EBIT/Adj. (-4FY)",
-                      "EBITDA (-1FQFQ)", "EBITDA (-2FQFQ)", "EBITDA (-3FQFQ)", "EBITDA (-4FQFQ)",
-                      "EBITDA (-2FY)", "EBITDA (-3FY)", "EBITDA (-4FY)",
-                      "EBITDA/Adj. (FQ)", "EBITDA/Adj. (-1FQFQ)", "EBITDA/Adj. (-2FQFQ)", "EBITDA/Adj. (-3FQFQ)",
-                      "EBITDA/Adj. (-4FQFQ)", "EBITDA/Adj. (-2FY)", "EBITDA/Adj. (-3FY)", "EBITDA/Adj. (-4FY)",
-                      "Basic EPS - Cont (LTM)", "Basic EPS - Cont (FQ)", "Basic EPS - Cont (FY)",
-                      "Basic EPS - Cont (-1FQFQ)", "Basic EPS - Cont (-2FQFQ)", "Basic EPS - Cont (-3FQFQ)",
-                      "Basic EPS - Cont (-4FQFQ)", "Basic EPS - Cont (-1FY)", "Basic EPS - Cont (-2FY)",
-                      "Basic EPS - Cont (-3FY)", "Basic EPS - Cont (-4FY)",
-                      "EPS/Adj. (FQ)", "EPS/Adj. (-1FQFQ)", "EPS/Adj. (-2FQFQ)", "EPS/Adj. (-3FQFQ)",
-                      "EPS/Adj. (-4FQFQ)", "EPS/Adj. (-2FY)", "EPS/Adj. (-3FY)", "EPS/Adj. (-4FY)",
-                      "Total Revenues (-1FQFQ)", "Total Revenues (-2FQFQ)", "Total Revenues (-3FQFQ)",
-                      "Total Revenues (-4FQFQ)", "Total Revenues (-2FY)", "Total Revenues (-3FY)",
-                      "Total Revenues (-4FY)")
+INSERT INTO equities ("Ticker", -- alias: ticker
+                      "ISIN", -- alias: isin
+                      "Name", -- alias: name
+                      "Description", -- alias: description
+                      "Region", -- alias: region
+                      "Country", -- alias: country
+                      "Trading Country", -- alias: trading_country
+                      "Exchange", -- alias: exchange
+                      "Unit", -- alias: unit
+                      "Sector", -- alias: sector
+                      "Industry", -- alias: industry
+                      "Style Class", -- alias: style_class
+                      "Size Class", -- alias: size_class
+                      "FY End", -- alias: fy_end
+                      "Next Earnings (When)", -- alias: next_earnings_when
+                      "Next Earnings (Status)", -- alias: next_earnings_status
+                      "Dividend Record (Currency)", -- alias: dividend_record_currency
+                      "Dividend Record (Frequency)", -- alias: dividend_record_frequency
+                      "Current Fiscal Quarter", -- alias: current_fiscal_quarter
+                      "Next Fiscal Quarter", -- alias: next_fiscal_quarter
+                      "Next Earnings (Report)", -- alias: next_earnings_report
+                      "Reporting Interval", -- alias: reporting_interval
+                      "Earnings Report (Frequency)", -- alias: earnings_report_frequency
+                      "Last Updated", -- alias: last_updated
+                      "Income Statement Report Date", -- alias: income_statement_report_date
+                      "Next Earnings", -- alias: next_earnings
+                      "Dividend Record (Announce Date)", -- alias: dividend_record_announce_date
+                      "Dividend Record (Payable Date)", -- alias: dividend_record_payable_date
+                      "Dividend Record (Record Date)", -- alias: dividend_record_record_date
+                      "Dividend Record (Ex Date)", -- alias: dividend_record_ex_date
+                      "Reference Date", -- alias: reference_date
+                      "FY End Date", -- alias: fy_end_date
+                      "Next FY End Date", -- alias: next_fy_end_date
+                      "Next Income Statement Report Date", -- alias: next_income_statement_report_date
+                      "Price Target", -- alias: price_target
+                      "Price Target - Median", -- alias: price_target_median
+                      "Dividend Record (Amount)", -- alias: dividend_record_amount
+                      "Market Cap", -- alias: market_cap
+                      "Enterprise Value", -- alias: enterprise_value
+                      "Last Price", -- alias: last_price
+                      "Price Target (YTD Ago)", -- alias: price_target_ytd_ago
+                      "Price Target - Low", -- alias: price_target_low
+                      "Price Target - High", -- alias: price_target_high
+                      "Market Cap (Country R)", -- alias: market_cap_country_r
+                      "Volume (Shrs)", -- alias: volume_shrs
+                      "Dividend Per Share (LTM)", -- alias: dividend_per_share_ltm
+                      "Price (5D Ago)", -- alias: price_5d_ago
+                      "Price (1W Ago)", -- alias: price_1w_ago
+                      "Price (1M Ago)", -- alias: price_1m_ago
+                      "Price (3M Ago)", -- alias: price_3m_ago
+                      "Price (6M Ago)", -- alias: price_6m_ago
+                      "Price (1Y Ago)", -- alias: price_1y_ago
+                      "Price (3Y Ago)", -- alias: price_3y_ago
+                      "Price (5Y Ago)", -- alias: price_5y_ago
+                      "Price (QTD Ago)", -- alias: price_qtd_ago
+                      "Rel. Volume", -- alias: rel_volume
+                      "52W High/Adj", -- alias: 52w_high_adj
+                      "52W Low/Adj", -- alias: 52w_low_adj
+                      "EMA (20D)", -- alias: ema_20d
+                      "EMA (50D)", -- alias: ema_50d
+                      "EMA (100D)", -- alias: ema_100d
+                      "EMA (250D)", -- alias: ema_250d
+                      "Price Target (1W Ago)", -- alias: price_target_1w_ago
+                      "Price Target (1M Ago)", -- alias: price_target_1m_ago
+                      "Price Target (3M Ago)", -- alias: price_target_3m_ago
+                      "Price Target (6M Ago)", -- alias: price_target_6m_ago
+                      "Price Target (MTD Ago)", -- alias: price_target_mtd_ago
+                      "Price Target (QTD Ago)", -- alias: price_target_qtd_ago
+                      "Price Target (1Y Ago)", -- alias: price_target_1y_ago
+                      "Price Target - High (1W Ago)", -- alias: price_target_high_1w_ago
+                      "Price Target - High (1M Ago)", -- alias: price_target_high_1m_ago
+                      "Price Target - High (6M Ago)", -- alias: price_target_high_6m_ago
+                      "Price Target - High (MTD Ago)", -- alias: price_target_high_mtd_ago
+                      "Price Target - High (3M Ago)", -- alias: price_target_high_3m_ago
+                      "Price Target - High (QTD Ago)", -- alias: price_target_high_qtd_ago
+                      "Price Target - High (1Y Ago)", -- alias: price_target_high_1y_ago
+                      "Price Target - High (YTD Ago)", -- alias: price_target_high_ytd_ago
+                      "Price Target - Low (1W Ago)", -- alias: price_target_low_1w_ago
+                      "Price Target - Low (1M Ago)", -- alias: price_target_low_1m_ago
+                      "Price Target - Low (3M Ago)", -- alias: price_target_low_3m_ago
+                      "Price Target - Low (6M Ago)", -- alias: price_target_low_6m_ago
+                      "Price Target - Low (MTD Ago)", -- alias: price_target_low_mtd_ago
+                      "Price Target - Low (QTD Ago)", -- alias: price_target_low_qtd_ago
+                      "Price Target - Low (YTD Ago)", -- alias: price_target_low_ytd_ago
+                      "Price Target - Low (1Y Ago)", -- alias: price_target_low_1y_ago
+                      "Price Target - Median (1W Ago)", -- alias: price_target_median_1w_ago
+                      "Price Target - Median (1M Ago)", -- alias: price_target_median_1m_ago
+                      "Price Target - Median (3M Ago)", -- alias: price_target_median_3m_ago
+                      "Price Target - Median (6M Ago)", -- alias: price_target_median_6m_ago
+                      "Price Target - Median (MTD Ago)", -- alias: price_target_median_mtd_ago
+                      "Price Target - Median (QTD Ago)", -- alias: price_target_median_qtd_ago
+                      "Price Target - Median (YTD Ago)", -- alias: price_target_median_ytd_ago
+                      "Price Target - Median (1Y Ago)", -- alias: price_target_median_1y_ago
+                      "Total Revenues (FQ)", -- alias: total_revenues_fq
+                      "Total Revenues (-1FY)", -- alias: total_revenues_1fy
+                      "Total Revenues (FY)", -- alias: total_revenues_fy
+                      "Total Revenues (LTM)", -- alias: total_revenues_ltm
+                      "Total Operating Expenses (LTM)", -- alias: total_operating_expenses_ltm
+                      "Net Income/Adj. (-1FY)", -- alias: net_income_adj_1fy
+                      "EBITDA (FQ)", -- alias: ebitda_fq
+                      "EBITDA (LTM)", -- alias: ebitda_ltm
+                      "EBITDA (FY)", -- alias: ebitda_fy
+                      "EBITDA (-1FY)", -- alias: ebitda_1fy
+                      "EBITDA/Adj. (LTM)", -- alias: ebitda_adj_ltm
+                      "EBITDA/Adj. (FY)", -- alias: ebitda_adj_fy
+                      "EBITDA/Adj. (-1FY)", -- alias: ebitda_adj_1fy
+                      "EBIT (FQ)", -- alias: ebit_fq
+                      "EBIT (LTM)", -- alias: ebit_ltm
+                      "EBIT (FY)", -- alias: ebit_fy
+                      "EBIT (-1FY)", -- alias: ebit_1fy
+                      "EBIT/Adj. (-1FY)", -- alias: ebit_adj_1fy
+                      "EBIT/Adj. (FY)", -- alias: ebit_adj_fy
+                      "EBIT/Adj. (LTM)", -- alias: ebit_adj_ltm
+                      "EBIT - Est Med (FY1E)", -- alias: ebit_est_med_fy1e
+                      "EBIT - Est Med (NTM)", -- alias: ebit_est_med_ntm
+                      "Net Income - (IS) (FY)", -- alias: net_income_is_fy
+                      "Net Income - (IS) (LTM)", -- alias: net_income_is_ltm
+                      "Normalized Net Income (FY)", -- alias: normalized_net_income_fy
+                      "Normalized Net Income (LTM)", -- alias: normalized_net_income_ltm
+                      "Net Income/Adj. (FY)", -- alias: net_income_adj_fy
+                      "Net Income/Adj. (LTM)", -- alias: net_income_adj_ltm
+                      "Gross Profit (LTM)", -- alias: gross_profit_ltm
+                      "Gross Profit (FY)", -- alias: gross_profit_fy
+                      "Cost Of Revenues (LTM)", -- alias: cost_of_revenues_ltm
+                      "Operating Income (LTM)", -- alias: operating_income_ltm
+                      "Operating Income (FY)", -- alias: operating_income_fy
+                      "R&D Expenses (LTM)", -- alias: randd_expenses_ltm
+                      "Interest Expense/Total (LTM)", -- alias: interest_expense_total_ltm
+                      "Interest Income On Investments (LTM)", -- alias: interest_income_on_investments_ltm
+                      "Net Income - (IS) (-1FY)", -- alias: net_income_is_1fy
+                      "Normalized Net Income (-1FY)", -- alias: normalized_net_income_1fy
+                      "Total Revenues (5YAVGFQ)", -- alias: total_revenues_5yavgfq
+                      "EBITDA (5YAVGFQ)", -- alias: ebitda_5yavgfq
+                      "EBIT (5YAVGFQ)", -- alias: ebit_5yavgfq
+                      "Operating Income (FQ)", -- alias: operating_income_fq
+                      "Operating Income (5YAVGFQ)", -- alias: operating_income_5yavgfq
+                      "Normalized Net Income (FQ)", -- alias: normalized_net_income_fq
+                      "Normalized Net Income (5YAVGFQ)", -- alias: normalized_net_income_5yavgfq
+                      "Net Income/Adj. (FQ)", -- alias: net_income_adj_fq
+                      "Net Income/Adj. (5YAVGFQ)", -- alias: net_income_adj_5yavgfq
+                      "Net Income - (IS) (FQ)", -- alias: net_income_is_fq
+                      "Net Income - (IS) (5YAVGFQ)", -- alias: net_income_is_5yavgfq
+                      "Net Income - (IS) (5YAVGLTM)", -- alias: net_income_is_5yavgltm
+                      "Normalized Net Income (5YAVGLTM)", -- alias: normalized_net_income_5yavgltm
+                      "EBITDA (5YAVGLTM)", -- alias: ebitda_5yavgltm
+                      "EBIT (5YAVGLTM)", -- alias: ebit_5yavgltm
+                      "Total Revenues (5YAVGLTM)", -- alias: total_revenues_5yavgltm
+                      "Selling General & Admin Expenses/Total (FQ)", -- alias: selling_general_and_admin_expenses_total_fq
+                      "Selling General & Admin Expenses/Total (FY)", -- alias: selling_general_and_admin_expenses_total_fy
+                      "Selling General & Admin Expenses/Total (-1FY)", -- alias: selling_general_and_admin_expenses_total_1fy
+                      "Selling General & Admin Expenses/Total (5YAVGFQ)", -- alias: selling_general_and_admin_expenses_total_5yavgfq
+                      "Marketing Expenses (FQ)", -- alias: marketing_expenses_fq
+                      "Marketing Expenses (FY)", -- alias: marketing_expenses_fy
+                      "Marketing Expenses (-1FY)", -- alias: marketing_expenses_1fy
+                      "Marketing Expenses (5YAVGLTM)", -- alias: marketing_expenses_5yavgltm
+                      "Revenues - Est Avg (NTM)", -- alias: revenues_est_avg_ntm
+                      "Revenues - Est Avg (FY1E)", -- alias: revenues_est_avg_fy1e
+                      "Revenues - Est Med (NTM)", -- alias: revenues_est_med_ntm
+                      "Revenues - Est Med (FY1E)", -- alias: revenues_est_med_fy1e
+                      "EBITDA - Est Avg (NTM)", -- alias: ebitda_est_avg_ntm
+                      "EBITDA - Est Avg (FY1E)", -- alias: ebitda_est_avg_fy1e
+                      "Total Revenues (-1FQFQ)", -- alias: total_revenues_1fqfq
+                      "Total Revenues (-2FQFQ)", -- alias: total_revenues_2fqfq
+                      "Total Revenues (-3FQFQ)", -- alias: total_revenues_3fqfq
+                      "Total Revenues (-4FQFQ)", -- alias: total_revenues_4fqfq
+                      "Total Revenues (-2FY)", -- alias: total_revenues_2fy
+                      "Total Revenues (-3FY)", -- alias: total_revenues_3fy
+                      "Total Revenues (-4FY)", -- alias: total_revenues_4fy
+                      "Gross Profit (FQ)", -- alias: gross_profit_fq
+                      "Gross Profit (-1FQFQ)", -- alias: gross_profit_1fqfq
+                      "Gross Profit (-2FQFQ)", -- alias: gross_profit_2fqfq
+                      "Gross Profit (-3FQFQ)", -- alias: gross_profit_3fqfq
+                      "Gross Profit (-4FQFQ)", -- alias: gross_profit_4fqfq
+                      "Gross Profit (-1FY)", -- alias: gross_profit_1fy
+                      "Gross Profit (-2FY)", -- alias: gross_profit_2fy
+                      "Gross Profit (-3FY)", -- alias: gross_profit_3fy
+                      "Gross Profit (-4FY)", -- alias: gross_profit_4fy
+                      "Operating Income (-1FQFQ)", -- alias: operating_income_1fqfq
+                      "Operating Income (-2FQFQ)", -- alias: operating_income_2fqfq
+                      "Operating Income (-3FQFQ)", -- alias: operating_income_3fqfq
+                      "Operating Income (-4FQFQ)", -- alias: operating_income_4fqfq
+                      "Operating Income (-1FY)", -- alias: operating_income_1fy
+                      "Operating Income (-2FY)", -- alias: operating_income_2fy
+                      "Operating Income (-3FY)", -- alias: operating_income_3fy
+                      "Operating Income (-4FY)", -- alias: operating_income_4fy
+                      "R&D Expenses (FQ)", -- alias: randd_expenses_fq
+                      "R&D Expenses (FY)", -- alias: randd_expenses_fy
+                      "R&D Expenses (-1FQFQ)", -- alias: randd_expenses_1fqfq
+                      "R&D Expenses (-2FQFQ)", -- alias: randd_expenses_2fqfq
+                      "R&D Expenses (-3FQFQ)", -- alias: randd_expenses_3fqfq
+                      "R&D Expenses (-4FQFQ)", -- alias: randd_expenses_4fqfq
+                      "R&D Expenses (-1FY)", -- alias: randd_expenses_1fy
+                      "R&D Expenses (-2FY)", -- alias: randd_expenses_2fy
+                      "R&D Expenses (-3FY)", -- alias: randd_expenses_3fy
+                      "R&D Expenses (-4FY)", -- alias: randd_expenses_4fy
+                      "Net Income - (IS) (-1FQFQ)", -- alias: net_income_is_1fqfq
+                      "Net Income - (IS) (-2FQFQ)", -- alias: net_income_is_2fqfq
+                      "Net Income - (IS) (-3FQFQ)", -- alias: net_income_is_3fqfq
+                      "Net Income - (IS) (-4FQFQ)", -- alias: net_income_is_4fqfq
+                      "Net Income - (IS) (-2FY)", -- alias: net_income_is_2fy
+                      "Net Income - (IS) (-3FY)", -- alias: net_income_is_3fy
+                      "Net Income - (IS) (-4FY)", -- alias: net_income_is_4fy
+                      "Normalized Net Income (-1FQFQ)", -- alias: normalized_net_income_1fqfq
+                      "Normalized Net Income (-2FQFQ)", -- alias: normalized_net_income_2fqfq
+                      "Normalized Net Income (-3FQFQ)", -- alias: normalized_net_income_3fqfq
+                      "Normalized Net Income (-4FQFQ)", -- alias: normalized_net_income_4fqfq
+                      "Normalized Net Income (-2FY)", -- alias: normalized_net_income_2fy
+                      "Normalized Net Income (-3FY)", -- alias: normalized_net_income_3fy
+                      "Normalized Net Income (-4FY)", -- alias: normalized_net_income_4fy
+                      "Net Income/Adj. (-1FQFQ)", -- alias: net_income_adj_1fqfq
+                      "Net Income/Adj. (-2FQFQ)", -- alias: net_income_adj_2fqfq
+                      "Net Income/Adj. (-3FQFQ)", -- alias: net_income_adj_3fqfq
+                      "Net Income/Adj. (-4FQFQ)", -- alias: net_income_adj_4fqfq
+                      "Net Income/Adj. (-2FY)", -- alias: net_income_adj_2fy
+                      "Net Income/Adj. (-3FY)", -- alias: net_income_adj_3fy
+                      "Net Income/Adj. (-4FY)", -- alias: net_income_adj_4fy
+                      "EBIT (-1FQFQ)", -- alias: ebit_1fqfq
+                      "EBIT (-2FQFQ)", -- alias: ebit_2fqfq
+                      "EBIT (-3FQFQ)", -- alias: ebit_3fqfq
+                      "EBIT (-4FQFQ)", -- alias: ebit_4fqfq
+                      "EBIT (-2FY)", -- alias: ebit_2fy
+                      "EBIT (-3FY)", -- alias: ebit_3fy
+                      "EBIT (-4FY)", -- alias: ebit_4fy
+                      "EBIT/Adj. (FQ)", -- alias: ebit_adj_fq
+                      "EBIT/Adj. (-1FQFQ)", -- alias: ebit_adj_1fqfq
+                      "EBIT/Adj. (-2FQFQ)", -- alias: ebit_adj_2fqfq
+                      "EBIT/Adj. (-3FQFQ)", -- alias: ebit_adj_3fqfq
+                      "EBIT/Adj. (-4FQFQ)", -- alias: ebit_adj_4fqfq
+                      "EBIT/Adj. (-2FY)", -- alias: ebit_adj_2fy
+                      "EBIT/Adj. (-3FY)", -- alias: ebit_adj_3fy
+                      "EBIT/Adj. (-4FY)", -- alias: ebit_adj_4fy
+                      "EBITDA (-1FQFQ)", -- alias: ebitda_1fqfq
+                      "EBITDA (-2FQFQ)", -- alias: ebitda_2fqfq
+                      "EBITDA (-3FQFQ)", -- alias: ebitda_3fqfq
+                      "EBITDA (-4FQFQ)", -- alias: ebitda_4fqfq
+                      "EBITDA (-2FY)", -- alias: ebitda_2fy
+                      "EBITDA (-3FY)", -- alias: ebitda_3fy
+                      "EBITDA (-4FY)", -- alias: ebitda_4fy
+                      "EBITDA/Adj. (FQ)", -- alias: ebitda_adj_fq
+                      "EBITDA/Adj. (-1FQFQ)", -- alias: ebitda_adj_1fqfq
+                      "EBITDA/Adj. (-2FQFQ)", -- alias: ebitda_adj_2fqfq
+                      "EBITDA/Adj. (-3FQFQ)", -- alias: ebitda_adj_3fqfq
+                      "EBITDA/Adj. (-4FQFQ)", -- alias: ebitda_adj_4fqfq
+                      "EBITDA/Adj. (-2FY)", -- alias: ebitda_adj_2fy
+                      "EBITDA/Adj. (-3FY)", -- alias: ebitda_adj_3fy
+                      "EBITDA/Adj. (-4FY)", -- alias: ebitda_adj_4fy
+                      "TBV (FY)", -- alias: tbv_fy
+                      "TBV (LTM)", -- alias: tbv_ltm
+                      "Total Debt (FY)", -- alias: total_debt_fy
+                      "Total Equity (FY)", -- alias: total_equity_fy
+                      "Total Equity (LTM)", -- alias: total_equity_ltm
+                      "Total Debt (LTM)", -- alias: total_debt_ltm
+                      "Total Assets (LTM)", -- alias: total_assets_ltm
+                      "Total Assets (FY)", -- alias: total_assets_fy
+                      "Inventory (LTM)", -- alias: inventory_ltm
+                      "Goodwill (FQ)", -- alias: goodwill_fq
+                      "Goodwill (LTM)", -- alias: goodwill_ltm
+                      "Goodwill (FY)", -- alias: goodwill_fy
+                      "Goodwill (-1FY)", -- alias: goodwill_1fy
+                      "Retained Earnings (LTM)", -- alias: retained_earnings_ltm
+                      "Total Current Assets (LTM)", -- alias: total_current_assets_ltm
+                      "Total Current Liabilities (LTM)", -- alias: total_current_liabilities_ltm
+                      "Working Capital (LTM)", -- alias: working_capital_ltm
+                      "Cash And Equivalents (LTM)", -- alias: cash_and_equivalents_ltm
+                      "Cash And Equivalents (FQ)", -- alias: cash_and_equivalents_fq
+                      "Cash And Equivalents (FY)", -- alias: cash_and_equivalents_fy
+                      "Cash And Equivalents (5YAVGFQ)", -- alias: cash_and_equivalents_5yavgfq
+                      "Inventory (FQ)", -- alias: inventory_fq
+                      "Inventory (FY)", -- alias: inventory_fy
+                      "Goodwill (5YAVGFQ)", -- alias: goodwill_5yavgfq
+                      "Inventory (5YAVGFQ)", -- alias: inventory_5yavgfq
+                      "Retained Earnings (FQ)", -- alias: retained_earnings_fq
+                      "Retained Earnings (FY)", -- alias: retained_earnings_fy
+                      "Retained Earnings (5YAVGFQ)", -- alias: retained_earnings_5yavgfq
+                      "Working Capital (FQ)", -- alias: working_capital_fq
+                      "Working Capital (FY)", -- alias: working_capital_fy
+                      "Working Capital (5YAVGFY)", -- alias: working_capital_5yavgfy
+                      "Gross Intangible Assets (LTM)", -- alias: gross_intangible_assets_ltm
+                      "Gross Intangible Assets (FY)", -- alias: gross_intangible_assets_fy
+                      "Gross Intangible Assets (5YAVGFQ)", -- alias: gross_intangible_assets_5yavgfq
+                      "Accounts Receivable/Total (FY)", -- alias: accounts_receivable_total_fy
+                      "Accounts Receivable/Total (-1FY)", -- alias: accounts_receivable_total_1fy
+                      "Accounts Receivable/Total (5YAVGFQ)", -- alias: accounts_receivable_total_5yavgfq
+                      "Working Capital (-1FQ)", -- alias: working_capital_1fq
+                      "Working Capital (-2FQ)", -- alias: working_capital_2fq
+                      "Working Capital (-3FQ)", -- alias: working_capital_3fq
+                      "Working Capital (-4FQ)", -- alias: working_capital_4fq
+                      "Working Capital (-1FY)", -- alias: working_capital_1fy
+                      "Working Capital (-2FY)", -- alias: working_capital_2fy
+                      "Working Capital (-3FY)", -- alias: working_capital_3fy
+                      "Working Capital (-4FY)", -- alias: working_capital_4fy
+                      "Total Debt (FQ)", -- alias: total_debt_fq
+                      "Total Debt (-1FQ)", -- alias: total_debt_1fq
+                      "Total Debt (-2FQ)", -- alias: total_debt_2fq
+                      "Total Debt (-3FQ)", -- alias: total_debt_3fq
+                      "Total Debt (-4FQ)", -- alias: total_debt_4fq
+                      "Total Debt (-1FY)", -- alias: total_debt_1fy
+                      "Total Debt (-2FY)", -- alias: total_debt_2fy
+                      "Total Debt (-3FY)", -- alias: total_debt_3fy
+                      "Total Debt (-4FY)", -- alias: total_debt_4fy
+                      "Total Assets (FQ)", -- alias: total_assets_fq
+                      "Total Assets (-1FQ)", -- alias: total_assets_1fq
+                      "Total Assets (-2FQ)", -- alias: total_assets_2fq
+                      "Total Assets (-3FQ)", -- alias: total_assets_3fq
+                      "Total Assets (-4FQ)", -- alias: total_assets_4fq
+                      "Total Assets (-1FY)", -- alias: total_assets_1fy
+                      "Total Assets (-2FY)", -- alias: total_assets_2fy
+                      "Total Assets (-3FY)", -- alias: total_assets_3fy
+                      "Total Assets (-4FY)", -- alias: total_assets_4fy
+                      "Inventory (-1FQ)", -- alias: inventory_1fq
+                      "Inventory (-2FQ)", -- alias: inventory_2fq
+                      "Inventory (-3FQ)", -- alias: inventory_3fq
+                      "Inventory (-4FQ)", -- alias: inventory_4fq
+                      "Inventory (-1FY)", -- alias: inventory_1fy
+                      "Inventory (-2FY)", -- alias: inventory_2fy
+                      "Inventory (-3FY)", -- alias: inventory_3fy
+                      "Inventory (-4FY)", -- alias: inventory_4fy
+                      "Goodwill (-1FQ)", -- alias: goodwill_1fq
+                      "Goodwill (-2FQ)", -- alias: goodwill_2fq
+                      "Goodwill (-3FQ)", -- alias: goodwill_3fq
+                      "Goodwill (-4FQ)", -- alias: goodwill_4fq
+                      "Goodwill (-2FY)", -- alias: goodwill_2fy
+                      "Goodwill (-3FY)", -- alias: goodwill_3fy
+                      "Goodwill (-4FY)", -- alias: goodwill_4fy
+                      "Retained Earnings (-1FQ)", -- alias: retained_earnings_1fq
+                      "Retained Earnings (-2FQ)", -- alias: retained_earnings_2fq
+                      "Retained Earnings (-3FQ)", -- alias: retained_earnings_3fq
+                      "Retained Earnings (-4FQ)", -- alias: retained_earnings_4fq
+                      "Retained Earnings (-1FY)", -- alias: retained_earnings_1fy
+                      "Retained Earnings (-2FY)", -- alias: retained_earnings_2fy
+                      "Retained Earnings (-3FY)", -- alias: retained_earnings_3fy
+                      "Retained Earnings (-4FY)", -- alias: retained_earnings_4fy
+                      "Cash And Equivalents (-1FQ)", -- alias: cash_and_equivalents_1fq
+                      "Cash And Equivalents (-2FQ)", -- alias: cash_and_equivalents_2fq
+                      "Cash And Equivalents (-3FQ)", -- alias: cash_and_equivalents_3fq
+                      "Cash And Equivalents (-4FQ)", -- alias: cash_and_equivalents_4fq
+                      "Cash And Equivalents (-1FY)", -- alias: cash_and_equivalents_1fy
+                      "Cash And Equivalents (-2FY)", -- alias: cash_and_equivalents_2fy
+                      "Cash And Equivalents (-3FY)", -- alias: cash_and_equivalents_3fy
+                      "Cash And Equivalents (-4FY)", -- alias: cash_and_equivalents_4fy
+                      "Gross Intangible Assets (FQ)", -- alias: gross_intangible_assets_fq
+                      "Gross Intangible Assets (-1FQ)", -- alias: gross_intangible_assets_1fq
+                      "Gross Intangible Assets (-2FQ)", -- alias: gross_intangible_assets_2fq
+                      "Gross Intangible Assets (-3FQ)", -- alias: gross_intangible_assets_3fq
+                      "Gross Intangible Assets (-4FQ)", -- alias: gross_intangible_assets_4fq
+                      "Gross Intangible Assets (-1FY)", -- alias: gross_intangible_assets_1fy
+                      "Gross Intangible Assets (-2FY)", -- alias: gross_intangible_assets_2fy
+                      "Gross Intangible Assets (-3FY)", -- alias: gross_intangible_assets_3fy
+                      "Gross Intangible Assets (-4FY)", -- alias: gross_intangible_assets_4fy
+                      "CFF (LTM)", -- alias: cff_ltm
+                      "CFI (LTM)", -- alias: cfi_ltm
+                      "FCF (LTM)", -- alias: fcf_ltm
+                      "CFO (LTM)", -- alias: cfo_ltm
+                      "Cash Acquisitions (LTM)", -- alias: cash_acquisitions_ltm
+                      "Cash Acquisitions (FY)", -- alias: cash_acquisitions_fy
+                      "Cash Acquisitions (-1FY)", -- alias: cash_acquisitions_1fy
+                      "Capital Expenditure (LTM)", -- alias: capital_expenditure_ltm
+                      "Capital Expenditure (-1FY)", -- alias: capital_expenditure_1fy
+                      "Capital Expenditure (FY)", -- alias: capital_expenditure_fy
+                      "CFF (FY)", -- alias: cff_fy
+                      "CFF (-1FY)", -- alias: cff_1fy
+                      "CFI (FY)", -- alias: cfi_fy
+                      "CFI (-1FY)", -- alias: cfi_1fy
+                      "CFO (FY)", -- alias: cfo_fy
+                      "CFO (-1FY)", -- alias: cfo_1fy
+                      "FCF (FY)", -- alias: fcf_fy
+                      "FCF (-1FY)", -- alias: fcf_1fy
+                      "Capital Expenditure (FQ)", -- alias: capital_expenditure_fq
+                      "Capital Expenditure (5YAVGFQ)", -- alias: capital_expenditure_5yavgfq
+                      "CFF (FQ)", -- alias: cff_fq
+                      "CFI (FQ)", -- alias: cfi_fq
+                      "CFO (FQ)", -- alias: cfo_fq
+                      "FCF (FQ)", -- alias: fcf_fq
+                      "FCF (5YAVGFQ)", -- alias: fcf_5yavgfq
+                      "Cash Acquisitions (FQ)", -- alias: cash_acquisitions_fq
+                      "Cash Acquisitions (5YAVGFQ)", -- alias: cash_acquisitions_5yavgfq
+                      "Common Dividends Paid (LTM)", -- alias: common_dividends_paid_ltm
+                      "Common Dividends Paid (FY)", -- alias: common_dividends_paid_fy
+                      "CFO (-1FQFQ)", -- alias: cfo_1fqfq
+                      "CFO (-2FQFQ)", -- alias: cfo_2fqfq
+                      "CFO (-3FQFQ)", -- alias: cfo_3fqfq
+                      "CFO (-4FQFQ)", -- alias: cfo_4fqfq
+                      "CFI (-1FQFQ)", -- alias: cfi_1fqfq
+                      "CFI (-2FQFQ)", -- alias: cfi_2fqfq
+                      "CFI (-3FQFQ)", -- alias: cfi_3fqfq
+                      "CFI (-4FQFQ)", -- alias: cfi_4fqfq
+                      "CFI (-2FY)", -- alias: cfi_2fy
+                      "CFI (-3FY)", -- alias: cfi_3fy
+                      "CFI (-4FY)", -- alias: cfi_4fy
+                      "FCF (-1FQFQ)", -- alias: fcf_1fqfq
+                      "FCF (-2FQFQ)", -- alias: fcf_2fqfq
+                      "FCF (-3FQFQ)", -- alias: fcf_3fqfq
+                      "FCF (-4FQFQ)", -- alias: fcf_4fqfq
+                      "CFF (-2FY)", -- alias: cff_2fy
+                      "CFF (-3FY)", -- alias: cff_3fy
+                      "CFF (-4FY)", -- alias: cff_4fy
+                      "CFF (-1FQFQ)", -- alias: cff_1fqfq
+                      "CFF (-2FQFQ)", -- alias: cff_2fqfq
+                      "CFF (-3FQFQ)", -- alias: cff_3fqfq
+                      "CFF (-4FQFQ)", -- alias: cff_4fqfq
+                      "CFO (-2FY)", -- alias: cfo_2fy
+                      "CFO (-3FY)", -- alias: cfo_3fy
+                      "CFO (-4FY)", -- alias: cfo_4fy
+                      "Cash Acquisitions (-1FQFQ)", -- alias: cash_acquisitions_1fqfq
+                      "Cash Acquisitions (-2FQFQ)", -- alias: cash_acquisitions_2fqfq
+                      "Cash Acquisitions (-3FQFQ)", -- alias: cash_acquisitions_3fqfq
+                      "Cash Acquisitions (-4FQFQ)", -- alias: cash_acquisitions_4fqfq
+                      "FCF (-2FY)", -- alias: fcf_2fy
+                      "FCF (-3FY)", -- alias: fcf_3fy
+                      "FCF (-4FY)", -- alias: fcf_4fy
+                      "Cash Acquisitions (-2FY)", -- alias: cash_acquisitions_2fy
+                      "Cash Acquisitions (-3FY)", -- alias: cash_acquisitions_3fy
+                      "Cash Acquisitions (-4FY)", -- alias: cash_acquisitions_4fy
+                      "Capital Expenditure (-1FQFQ)", -- alias: capital_expenditure_1fqfq
+                      "Capital Expenditure (-2FQFQ)", -- alias: capital_expenditure_2fqfq
+                      "Capital Expenditure (-3FQFQ)", -- alias: capital_expenditure_3fqfq
+                      "Capital Expenditure (-4FQFQ)", -- alias: capital_expenditure_4fqfq
+                      "Capital Expenditure (-2FY)", -- alias: capital_expenditure_2fy
+                      "Capital Expenditure (-3FY)", -- alias: capital_expenditure_3fy
+                      "Capital Expenditure (-4FY)", -- alias: capital_expenditure_4fy
+                      "P/E (NTM)", -- alias: p_e_ntm
+                      "P/E (LTM)", -- alias: p_e_ltm
+                      "Altman Z-Score (FY)", -- alias: altman_z_score_fy
+                      "Altman Z-Score (FQ)", -- alias: altman_z_score_fq
+                      "Altman Z-Score (LTM)", -- alias: altman_z_score_ltm
+                      "P/TBV (LTM)", -- alias: p_tbv_ltm
+                      "Return On Equity % (LTM)", -- alias: return_on_equity_pct_ltm
+                      "Return On Equity % (FY)", -- alias: return_on_equity_pct_fy
+                      "Current Ratio (FY)", -- alias: current_ratio_fy
+                      "Current Ratio (LTM)", -- alias: current_ratio_ltm
+                      "Asset Turnover (FY)", -- alias: asset_turnover_fy
+                      "Asset Turnover (LTM)", -- alias: asset_turnover_ltm
+                      "EPS Norm - Est Avg (NTM)", -- alias: eps_norm_est_avg_ntm
+                      "EPS/Adj. (-1FY)", -- alias: eps_adj_1fy
+                      "EPS/Adj. (FY)", -- alias: eps_adj_fy
+                      "EPS/Adj. (LTM)", -- alias: eps_adj_ltm
+                      "EPS Norm - Est Avg (FY1E)", -- alias: eps_norm_est_avg_fy1e
+                      "Return on Assets (ROA) % (LTM)", -- alias: return_on_assets_roa_pct_ltm
+                      "Return on Assets (ROA) % (FY)", -- alias: return_on_assets_roa_pct_fy
+                      "P/B (LTM)", -- alias: p_b_ltm
+                      "P/B (-1FY)", -- alias: p_b_1fy
+                      "P/B (5YAVG)", -- alias: p_b_5yavg
+                      "EV/Sales (EST FY1)", -- alias: ev_sales_est_fy1
+                      "EV/Sales (LTM)", -- alias: ev_sales_ltm
+                      "EV/Sales (NTM)", -- alias: ev_sales_ntm
+                      "EV/Sales (-1FYLTM)", -- alias: ev_sales_1fyltm
+                      "EV/Sales (-2FYLTM)", -- alias: ev_sales_2fyltm
+                      "EV/Sales (-3FYLTM)", -- alias: ev_sales_3fyltm
+                      "EV/Sales (3YAVGLTM)", -- alias: ev_sales_3yavgltm
+                      "EV/Sales (-1FQLTM)", -- alias: ev_sales_1fqltm
+                      "EV/Sales (-2FQLTM)", -- alias: ev_sales_2fqltm
+                      "EV/Sales (-3FQLTM)", -- alias: ev_sales_3fqltm
+                      "EV/Sales (-4FQLTM)", -- alias: ev_sales_4fqltm
+                      "EV/EBITDA (LTM)", -- alias: ev_ebitda_ltm
+                      "EV/EBITDA (NTM)", -- alias: ev_ebitda_ntm
+                      "EV/EBITDA (-1FYLTM)", -- alias: ev_ebitda_1fyltm
+                      "EV/EBITDA (-1FQLTM)", -- alias: ev_ebitda_1fqltm
+                      "EV/EBITDA (3YAVGLTM)", -- alias: ev_ebitda_3yavgltm
+                      "EV/EBITDA (EST FY1)", -- alias: ev_ebitda_est_fy1
+                      "P/E (EST FY1)", -- alias: p_e_est_fy1
+                      "P/E (-1FYLTM)", -- alias: p_e_1fyltm
+                      "P/E (-2FYLTM)", -- alias: p_e_2fyltm
+                      "P/E (-3FYLTM)", -- alias: p_e_3fyltm
+                      "P/E (3YAVGLTM)", -- alias: p_e_3yavgltm
+                      "P/E (-1FQLTM)", -- alias: p_e_1fqltm
+                      "P/E (-2FQLTM)", -- alias: p_e_2fqltm
+                      "P/E (-3FQLTM)", -- alias: p_e_3fqltm
+                      "P/E (5YAVGLTM)", -- alias: p_e_5yavgltm
+                      "P/E (-0FQQoQLTM)", -- alias: p_e_0fqqoqltm
+                      "P/E (-0FYYoYLTM)", -- alias: p_e_0fyyoyltm
+                      "P/E (-1FYYoYLTM)", -- alias: p_e_1fyyoyltm
+                      "P/E (-0FQYoYLTM)", -- alias: p_e_0fqyoyltm
+                      "Net EPS - Basic (LTM)", -- alias: net_eps_basic_ltm
+                      "Net EPS - Basic (FQ)", -- alias: net_eps_basic_fq
+                      "Net EPS - Basic (FY)", -- alias: net_eps_basic_fy
+                      "Net EPS - Basic (-1FQFQ)", -- alias: net_eps_basic_1fqfq
+                      "Net EPS - Basic (-2FQFQ)", -- alias: net_eps_basic_2fqfq
+                      "Net EPS - Basic (-3FQFQ)", -- alias: net_eps_basic_3fqfq
+                      "Net EPS - Basic (-4FQFQ)", -- alias: net_eps_basic_4fqfq
+                      "Net EPS - Basic (-1FY)", -- alias: net_eps_basic_1fy
+                      "Net EPS - Basic (-2FY)", -- alias: net_eps_basic_2fy
+                      "Net EPS - Basic (-3FY)", -- alias: net_eps_basic_3fy
+                      "Net EPS - Basic (-4FY)", -- alias: net_eps_basic_4fy
+                      "Net EPS - Basic (-5FY)", -- alias: net_eps_basic_5fy
+                      "EPS GAAP - Est Avg (NTM)", -- alias: eps_gaap_est_avg_ntm
+                      "EPS GAAP - Est Avg (FY1E)", -- alias: eps_gaap_est_avg_fy1e
+                      "Basic EPS - Cont (LTM)", -- alias: basic_eps_cont_ltm
+                      "Basic EPS - Cont (FQ)", -- alias: basic_eps_cont_fq
+                      "Basic EPS - Cont (FY)", -- alias: basic_eps_cont_fy
+                      "Basic EPS - Cont (-1FQFQ)", -- alias: basic_eps_cont_1fqfq
+                      "Basic EPS - Cont (-2FQFQ)", -- alias: basic_eps_cont_2fqfq
+                      "Basic EPS - Cont (-3FQFQ)", -- alias: basic_eps_cont_3fqfq
+                      "Basic EPS - Cont (-4FQFQ)", -- alias: basic_eps_cont_4fqfq
+                      "Basic EPS - Cont (-1FY)", -- alias: basic_eps_cont_1fy
+                      "Basic EPS - Cont (-2FY)", -- alias: basic_eps_cont_2fy
+                      "Basic EPS - Cont (-3FY)", -- alias: basic_eps_cont_3fy
+                      "Basic EPS - Cont (-4FY)", -- alias: basic_eps_cont_4fy
+                      "EPS/Adj. (FQ)", -- alias: eps_adj_fq
+                      "EPS/Adj. (-1FQFQ)", -- alias: eps_adj_1fqfq
+                      "EPS/Adj. (-2FQFQ)", -- alias: eps_adj_2fqfq
+                      "EPS/Adj. (-3FQFQ)", -- alias: eps_adj_3fqfq
+                      "EPS/Adj. (-4FQFQ)", -- alias: eps_adj_4fqfq
+                      "EPS/Adj. (-2FY)", -- alias: eps_adj_2fy
+                      "EPS/Adj. (-3FY)", -- alias: eps_adj_3fy
+                      "EPS/Adj. (-4FY)", -- alias: eps_adj_4fy
+                      "Total Return (YTD)", -- alias: total_return_ytd
+                      "Beta (1Y)", -- alias: beta_1y
+                      "Beta (2Y)", -- alias: beta_2y
+                      "Beta (5Y)", -- alias: beta_5y
+                      "Total Revenues/CAGR (5Y FY)", -- alias: total_revenues_cagr_5y_fy
+                      "Tot. Return %/CAGR (3Y)", -- alias: tot_return_pct_cagr_3y
+                      "Tot. Return %/CAGR (10Y)", -- alias: tot_return_pct_cagr_10y
+                      "Total Return (5Y)", -- alias: total_return_5y
+                      "Total Return (10Y)", -- alias: total_return_10y
+                      "Net Income Margin % (FY)", -- alias: net_income_margin_pct_fy
+                      "Net Income Margin % (LTM)", -- alias: net_income_margin_pct_ltm
+                      "Volatility (1M)", -- alias: volatility_1m
+                      "Volatility (3M)", -- alias: volatility_3m
+                      "Volatility (6M)", -- alias: volatility_6m
+                      "Volatility (1Y)", -- alias: volatility_1y
+                      "Div Yield (Ind)", -- alias: div_yield_ind
+                      "Div Yield (LTM)", -- alias: div_yield_ltm
+                      "Gross Profit Margin % (FY)", -- alias: gross_profit_margin_pct_fy
+                      "Gross Profit Margin % (LTM)", -- alias: gross_profit_margin_pct_ltm
+                      "Buyback Yield (LTM)", -- alias: buyback_yield_ltm
+                      "Div Yield (-1FYInd)", -- alias: div_yield_1fyind
+                      "Div Yield (TTM)", -- alias: div_yield_ttm
+                      "Div Yield (NTM)", -- alias: div_yield_ntm
+                      "Div Yield (5YAVGLTM)", -- alias: div_yield_5yavgltm
+                      "Revenues - Est YoY % (FY1E)", -- alias: revenues_est_yoy_pct_fy1e
+                      "Price Chg. % (1M)", -- alias: price_chg_pct_1m
+                      "Price Chg. % (3M)", -- alias: price_chg_pct_3m
+                      "1-Day %", -- alias: one_day_pct
+                      "EPS Est Avg Rev % (FY1E - 1W)", -- alias: eps_est_avg_rev_pct_fy1e_1w
+                      "EPS Est Avg Rev % (FY1E - 1M)", -- alias: eps_est_avg_rev_pct_fy1e_1m
+                      "EPS Est Avg Rev % (FY1E - 3M)", -- alias: eps_est_avg_rev_pct_fy1e_3m
+                      "EPS Est Avg Rev % (FY1E - 6M)", -- alias: eps_est_avg_rev_pct_fy1e_6m
+                      "EPS Est Avg Rev % (FY1E - 1Y)", -- alias: eps_est_avg_rev_pct_fy1e_1y
+                      "Div Yield (-2FYInd)", -- alias: div_yield_2fyind
+                      "Div Yield (-3FYInd)", -- alias: div_yield_3fyind
+                      "Div Yield (-4FYInd)", -- alias: div_yield_4fyind
+                      "Div Yield (-5FYInd)", -- alias: div_yield_5fyind
+                      "EPS GAAP Est Avg Rev % (FY1E - 1M)", -- alias: eps_gaap_est_avg_rev_pct_fy1e_1m
+                      "EPS GAAP Est Avg Rev % (FY1E - 3M)", -- alias: eps_gaap_est_avg_rev_pct_fy1e_3m
+                      "EPS GAAP Est Avg Rev % (FY1E - 6M)", -- alias: eps_gaap_est_avg_rev_pct_fy1e_6m
+                      "EPS GAAP Est Avg Rev % (FY1E - 1Y)", -- alias: eps_gaap_est_avg_rev_pct_fy1e_1y
+                      "Dividend Streak", -- alias: dividend_streak
+                      "Price Target - #", -- alias: price_target_count
+                      "Analyst Rating", -- alias: analyst_rating
+                      "# Strong Sell Ratings", -- alias: num_strong_sell_ratings
+                      "# Strong Buys Ratings", -- alias: num_strong_buys_ratings
+                      "# Hold Ratings", -- alias: num_hold_ratings
+                      "# Buys Ratings", -- alias: num_buys_ratings
+                      "# Sell Ratings", -- alias: num_sell_ratings
+                      "Shrs Out", -- alias: shares_outstanding
+                      "Shrs Out (-1FY)", -- alias: shrs_out_1fy
+                      "Full Time Employees (FQ)", -- alias: full_time_employees_fq
+                      "Full Time Employees (FY)", -- alias: full_time_employees_fy
+                      "Full Time Employees (-1FY)", -- alias: full_time_employees_1fy
+                      "Full Time Employees (-2FY)", -- alias: full_time_employees_2fy
+                      "Full Time Employees (-3FY)", -- alias: full_time_employees_3fy
+                      "Avg Employees (5YAVGFY)", -- alias: avg_employees_5yavgfy
+                      "EPS Norm - Est # (FY1E)", -- alias: eps_norm_est_num_fy1e
+                      "Price Target - # (3M Ago)", -- alias: price_target_num_3m_ago
+                      "Price Target - # (6M Ago)", -- alias: price_target_num_6m_ago
+                      "Price Target - # (YTD Ago)", -- alias: price_target_num_ytd_ago
+                      "Price Target - # (1Y Ago)", -- alias: price_target_num_1y_ago
+                      "Price Target - # (1W Ago)", -- alias: price_target_num_1w_ago
+                      "Price Target - # (1M Ago)", -- alias: price_target_num_1m_ago
+                      "Price Target - # (MTD Ago)", -- alias: price_target_num_mtd_ago
+                      "Price Target - # (QTD Ago)", -- alias: price_target_num_qtd_ago
+                      "Gain (Loss) On Sale Of Assets (LTM)", -- alias: gain_loss_on_sale_of_assets_ltm
+                      "Impairment of Goodwill (FQ)", -- alias: impairment_of_goodwill_fq
+                      "Impairment of Goodwill (LTM)", -- alias: impairment_of_goodwill_ltm
+                      "Impairment of Goodwill (-1FY)", -- alias: impairment_of_goodwill_1fy
+                      "Impairment of Goodwill (FY)", -- alias: impairment_of_goodwill_fy
+                      "Asset Writedown (LTM)", -- alias: asset_writedown_ltm
+                      "Asset Writedown (FY)", -- alias: asset_writedown_fy
+                      "Asset Writedown (-1FY)", -- alias: asset_writedown_1fy
+                      "Restructuring Charges (LTM)", -- alias: restructuring_charges_ltm
+                      "Restructuring Charges (FQ)", -- alias: restructuring_charges_fq
+                      "Restructuring Charges (-1FY)", -- alias: restructuring_charges_1fy
+                      "Restructuring Charges (FY)", -- alias: restructuring_charges_fy
+                      "Merger & Restructuring Charges (LTM)", -- alias: merger_and_restructuring_charges_ltm
+                      "Other Unusual Items/Total (LTM)", -- alias: other_unusual_items_total_ltm
+                      "Asset Writedown (FQ)", -- alias: asset_writedown_fq
+                      "Asset Writedown (5YAVGFQ)", -- alias: asset_writedown_5yavgfq
+                      "Impairment of Goodwill (5YAVGFQ)", -- alias: impairment_of_goodwill_5yavgfq
+                      "Restructuring Charges (5YAVGFQ)", -- alias: restructuring_charges_5yavgfq
+                      "Merger & Restructuring Charges (FQ)", -- alias: merger_and_restructuring_charges_fq
+                      "Merger & Restructuring Charges (FY)", -- alias: merger_and_restructuring_charges_fy
+                      "Merger & Restructuring Charges (5YAVGFQ)", -- alias: merger_and_restructuring_charges_5yavgfq
+                      "Merger & Restructuring Charges (-1FQFQ)", -- alias: merger_and_restructuring_charges_1fqfq
+                      "Merger & Restructuring Charges (-2FQFQ)", -- alias: merger_and_restructuring_charges_2fqfq
+                      "Merger & Restructuring Charges (-3FQFQ)", -- alias: merger_and_restructuring_charges_3fqfq
+                      "Merger & Restructuring Charges (-4FQFQ)", -- alias: merger_and_restructuring_charges_4fqfq
+                      "Merger & Restructuring Charges (-1FY)", -- alias: merger_and_restructuring_charges_1fy
+                      "Merger & Restructuring Charges (-2FY)", -- alias: merger_and_restructuring_charges_2fy
+                      "Merger & Restructuring Charges (-3FY)", -- alias: merger_and_restructuring_charges_3fy
+                      "Merger & Restructuring Charges (-4FY)", -- alias: merger_and_restructuring_charges_4fy
+                      "Impairment of Goodwill (-1FQFQ)", -- alias: impairment_of_goodwill_1fqfq
+                      "Impairment of Goodwill (-2FQFQ)", -- alias: impairment_of_goodwill_2fqfq
+                      "Impairment of Goodwill (-3FQFQ)", -- alias: impairment_of_goodwill_3fqfq
+                      "Impairment of Goodwill (-4FQFQ)", -- alias: impairment_of_goodwill_4fqfq
+                      "Impairment of Goodwill (-2FY)", -- alias: impairment_of_goodwill_2fy
+                      "Impairment of Goodwill (-3FY)", -- alias: impairment_of_goodwill_3fy
+                      "Impairment of Goodwill (-4FY)", -- alias: impairment_of_goodwill_4fy
+                      "Asset Writedown (-1FQFQ)", -- alias: asset_writedown_1fqfq
+                      "Asset Writedown (-2FQFQ)", -- alias: asset_writedown_2fqfq
+                      "Asset Writedown (-3FQFQ)", -- alias: asset_writedown_3fqfq
+                      "Asset Writedown (-4FQFQ)", -- alias: asset_writedown_4fqfq
+                      "Asset Writedown (-2FY)", -- alias: asset_writedown_2fy
+                      "Asset Writedown (-3FY)", -- alias: asset_writedown_3fy
+                      "Asset Writedown (-4FY)", -- alias: asset_writedown_4fy
+                      "Asset Writedown (-5FY)", -- alias: asset_writedown_5fy
+                      "Gain (Loss) On Sale Of Assets (FQ)", -- alias: gain_loss_on_sale_of_assets_fq
+                      "Gain (Loss) On Sale Of Assets (FY)", -- alias: gain_loss_on_sale_of_assets_fy
+                      "Gain (Loss) On Sale Of Assets (-1FQFQ)", -- alias: gain_loss_on_sale_of_assets_1fqfq
+                      "Gain (Loss) On Sale Of Assets (-2FQFQ)", -- alias: gain_loss_on_sale_of_assets_2fqfq
+                      "Gain (Loss) On Sale Of Assets (-3FQFQ)", -- alias: gain_loss_on_sale_of_assets_3fqfq
+                      "Gain (Loss) On Sale Of Assets (-4FQFQ)", -- alias: gain_loss_on_sale_of_assets_4fqfq
+                      "Gain (Loss) On Sale Of Assets (-1FY)", -- alias: gain_loss_on_sale_of_assets_1fy
+                      "Gain (Loss) On Sale Of Assets (-2FY)", -- alias: gain_loss_on_sale_of_assets_2fy
+                      "Gain (Loss) On Sale Of Assets (-3FY)", -- alias: gain_loss_on_sale_of_assets_3fy
+                      "Gain (Loss) On Sale Of Assets (-4FY)", -- alias: gain_loss_on_sale_of_assets_4fy
+                      "Restructuring Charges (-1FQFQ)", -- alias: restructuring_charges_1fqfq
+                      "Restructuring Charges (-2FQFQ)", -- alias: restructuring_charges_2fqfq
+                      "Restructuring Charges (-3FQFQ)", -- alias: restructuring_charges_3fqfq
+                      "Restructuring Charges (-4FQFQ)", -- alias: restructuring_charges_4fqfq
+                      "Restructuring Charges (-2FY)", -- alias: restructuring_charges_2fy
+                      "Restructuring Charges (-3FY)", -- alias: restructuring_charges_3fy
+                      "Restructuring Charges (-4FY)", -- alias: restructuring_charges_4fy
+                      "Fiscal Month", -- alias: fiscal_month
+                      "Fiscal Quarter", -- alias: fiscal_quarter
+                      "Fiscal Year", -- alias: fiscal_year
+                      "Reporting Lag") -- alias: reporting_lag
 SELECT NULLIF(TRIM(s."Ticker"), '')                                              AS "Ticker",
        NULLIF(TRIM(s."ISIN"), '')                                                AS "ISIN",
        NULLIF(TRIM(s."Name"), '')                                                AS "Name",
+       NULLIF(TRIM(s."Description"), '')                                   AS "Description",
        COALESCE(NULLIF(TRIM(s."Region"), ''), 'n/a')                             AS "Region",
        COALESCE(NULLIF(TRIM(s."Country"), ''), 'n/a')                            AS "Country",
        COALESCE(NULLIF(TRIM(s."Trading Country"), ''), 'n/a')                    AS "Trading Country",
@@ -1385,9 +1863,15 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(NULLIF(TRIM(s."Dividend Record (Currency)"), ''), 'n/a')         AS "Dividend Record (Currency)",
        COALESCE(NULLIF(TRIM(s."Dividend Record (Frequency)"), ''), 'n/a')        AS "Dividend Record (Frequency)",
        'Q' || current_fiscal.fiscal_quarter || ' ' || current_fiscal.fiscal_year AS "Current Fiscal Quarter",
-       'Q' || report_fiscal.next_quarter || ' ' ||
-       report_fiscal.next_quarter_year                                           AS "Next Fiscal Quarter",
+       'Q' || calculate_next_fiscal_quarter(
+               NULLIF(TRIM(s."Next Earnings"), '')::DATE,
+               NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE,
+               parsed.fy_end_date,
+               report_fiscal.earnings_report_frequency
+              ) || ' ' || report_fiscal.next_quarter_year                  AS "Next Fiscal Quarter",
        report_fiscal.next_earnings_report_type                                   AS "Next Earnings (Report)",
+       report_fiscal.reporting_interval                                    AS "Reporting Interval",
+       report_fiscal.earnings_report_frequency                             AS "Earnings Report (Frequency)",
        NULLIF(TRIM(s."Last Updated"), '')::DATE                                  AS "Last Updated",
        NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE                  AS "Income Statement Report Date",
        NULLIF(TRIM(s."Next Earnings"), '')::DATE                                 AS "Next Earnings",
@@ -1398,6 +1882,10 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        CURRENT_DATE                                                              AS "Reference Date",
        parsed.fy_end_date                                                        AS "FY End Date",
        next_fy.next_fy_end_date                                                  AS "Next FY End Date",
+       calculate_next_income_statement_report_date(
+               NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE,
+               report_fiscal.earnings_report_frequency
+       )                                                                   AS "Next Income Statement Report Date",
        text_to_numeric_safe(s."Price Target")                                    AS "Price Target",
        text_to_numeric_safe(s."Price Target - Median")                           AS "Price Target - Median",
        COALESCE(text_to_numeric_safe(s."Dividend Record (Amount)"), 0)           AS "Dividend Record (Amount)",
@@ -1534,6 +2022,106 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."Revenues - Est Med (FY1E)"), 0)          AS "Revenues - Est Med (FY1E)",
        COALESCE(text_to_numeric_safe(s."EBITDA - Est Avg (NTM)"), 0)             AS "EBITDA - Est Avg (NTM)",
        COALESCE(text_to_numeric_safe(s."EBITDA - Est Avg (FY1E)"), 0)            AS "EBITDA - Est Avg (FY1E)",
+       -- NEW: Total Revenues Historical
+       text_to_numeric_safe(s."Total Revenues (-1FQFQ)")                   AS "Total Revenues (-1FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-2FQFQ)")                   AS "Total Revenues (-2FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-3FQFQ)")                   AS "Total Revenues (-3FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-4FQFQ)")                   AS "Total Revenues (-4FQFQ)",
+       text_to_numeric_safe(s."Total Revenues (-2FY)")                     AS "Total Revenues (-2FY)",
+       text_to_numeric_safe(s."Total Revenues (-3FY)")                     AS "Total Revenues (-3FY)",
+       text_to_numeric_safe(s."Total Revenues (-4FY)")                     AS "Total Revenues (-4FY)",
+       -- NEW: Gross Profit Historical
+       COALESCE(text_to_numeric_safe(s."Gross Profit (FQ)"), 0)            AS "Gross Profit (FQ)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-1FQFQ)"), 0)        AS "Gross Profit (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-2FQFQ)"), 0)        AS "Gross Profit (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-3FQFQ)"), 0)        AS "Gross Profit (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-4FQFQ)"), 0)        AS "Gross Profit (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-1FY)"), 0)          AS "Gross Profit (-1FY)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-2FY)"), 0)          AS "Gross Profit (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-3FY)"), 0)          AS "Gross Profit (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Gross Profit (-4FY)"), 0)          AS "Gross Profit (-4FY)",
+       -- NEW: Operating Income Historical
+       COALESCE(text_to_numeric_safe(s."Operating Income (-1FQFQ)"), 0)    AS "Operating Income (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Operating Income (-2FQFQ)"), 0)    AS "Operating Income (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Operating Income (-3FQFQ)"), 0)    AS "Operating Income (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Operating Income (-4FQFQ)"), 0)    AS "Operating Income (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Operating Income (-1FY)"), 0)      AS "Operating Income (-1FY)",
+       COALESCE(text_to_numeric_safe(s."Operating Income (-2FY)"), 0)      AS "Operating Income (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Operating Income (-3FY)"), 0)      AS "Operating Income (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Operating Income (-4FY)"), 0)      AS "Operating Income (-4FY)",
+       -- NEW: R&D Expenses Historical
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (FQ)"), 0)            AS "R&D Expenses (FQ)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (FY)"), 0)            AS "R&D Expenses (FY)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-1FQFQ)"), 0)        AS "R&D Expenses (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-2FQFQ)"), 0)        AS "R&D Expenses (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-3FQFQ)"), 0)        AS "R&D Expenses (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-4FQFQ)"), 0)        AS "R&D Expenses (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-1FY)"), 0)          AS "R&D Expenses (-1FY)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-2FY)"), 0)          AS "R&D Expenses (-2FY)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-3FY)"), 0)          AS "R&D Expenses (-3FY)",
+       COALESCE(text_to_numeric_safe(s."R&D Expenses (-4FY)"), 0)          AS "R&D Expenses (-4FY)",
+       -- NEW: Net Income - (IS) Historical
+       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-1FQFQ)"), 0)   AS "Net Income - (IS) (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-2FQFQ)"), 0)   AS "Net Income - (IS) (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-3FQFQ)"), 0)   AS "Net Income - (IS) (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-4FQFQ)"), 0)   AS "Net Income - (IS) (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-2FY)"), 0)     AS "Net Income - (IS) (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-3FY)"), 0)     AS "Net Income - (IS) (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-4FY)"), 0)     AS "Net Income - (IS) (-4FY)",
+       -- NEW: Normalized Net Income Historical
+       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-1FQFQ)"),
+                0)                                                         AS "Normalized Net Income (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-2FQFQ)"),
+                0)                                                         AS "Normalized Net Income (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-3FQFQ)"),
+                0)                                                         AS "Normalized Net Income (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-4FQFQ)"),
+                0)                                                         AS "Normalized Net Income (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-2FY)"), 0) AS "Normalized Net Income (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-3FY)"), 0) AS "Normalized Net Income (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-4FY)"), 0) AS "Normalized Net Income (-4FY)",
+       -- NEW: Net Income/Adj. Historical
+       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-1FQFQ)"), 0)     AS "Net Income/Adj. (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-2FQFQ)"), 0)     AS "Net Income/Adj. (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-3FQFQ)"), 0)     AS "Net Income/Adj. (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-4FQFQ)"), 0)     AS "Net Income/Adj. (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-2FY)"), 0)       AS "Net Income/Adj. (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-3FY)"), 0)       AS "Net Income/Adj. (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-4FY)"), 0)       AS "Net Income/Adj. (-4FY)",
+       -- NEW: EBIT Historical
+       COALESCE(text_to_numeric_safe(s."EBIT (-1FQFQ)"), 0)                AS "EBIT (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT (-2FQFQ)"), 0)                AS "EBIT (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT (-3FQFQ)"), 0)                AS "EBIT (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT (-4FQFQ)"), 0)                AS "EBIT (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT (-2FY)"), 0)                  AS "EBIT (-2FY)",
+       COALESCE(text_to_numeric_safe(s."EBIT (-3FY)"), 0)                  AS "EBIT (-3FY)",
+       COALESCE(text_to_numeric_safe(s."EBIT (-4FY)"), 0)                  AS "EBIT (-4FY)",
+       -- NEW: EBIT/Adj. Historical
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (FQ)"), 0)               AS "EBIT/Adj. (FQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-1FQFQ)"), 0)           AS "EBIT/Adj. (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-2FQFQ)"), 0)           AS "EBIT/Adj. (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-3FQFQ)"), 0)           AS "EBIT/Adj. (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-4FQFQ)"), 0)           AS "EBIT/Adj. (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-2FY)"), 0)             AS "EBIT/Adj. (-2FY)",
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-3FY)"), 0)             AS "EBIT/Adj. (-3FY)",
+       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-4FY)"), 0)             AS "EBIT/Adj. (-4FY)",
+       -- NEW: EBITDA Historical
+       COALESCE(text_to_numeric_safe(s."EBITDA (-1FQFQ)"), 0)              AS "EBITDA (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA (-2FQFQ)"), 0)              AS "EBITDA (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA (-3FQFQ)"), 0)              AS "EBITDA (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA (-4FQFQ)"), 0)              AS "EBITDA (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA (-2FY)"), 0)                AS "EBITDA (-2FY)",
+       COALESCE(text_to_numeric_safe(s."EBITDA (-3FY)"), 0)                AS "EBITDA (-3FY)",
+       COALESCE(text_to_numeric_safe(s."EBITDA (-4FY)"), 0)                AS "EBITDA (-4FY)",
+       -- NEW: EBITDA/Adj. Historical
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (FQ)"), 0)             AS "EBITDA/Adj. (FQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-1FQFQ)"), 0)         AS "EBITDA/Adj. (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-2FQFQ)"), 0)         AS "EBITDA/Adj. (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-3FQFQ)"), 0)         AS "EBITDA/Adj. (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-4FQFQ)"), 0)         AS "EBITDA/Adj. (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-2FY)"), 0)           AS "EBITDA/Adj. (-2FY)",
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-3FY)"), 0)           AS "EBITDA/Adj. (-3FY)",
+       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-4FY)"), 0)           AS "EBITDA/Adj. (-4FY)",
        COALESCE(text_to_numeric_safe(s."TBV (FY)"), 0)                           AS "TBV (FY)",
        COALESCE(text_to_numeric_safe(s."TBV (LTM)"), 0)                          AS "TBV (LTM)",
        COALESCE(text_to_numeric_safe(s."Total Debt (FY)"), 0)                    AS "Total Debt (FY)",
@@ -1578,80 +2166,6 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
                 0)                                                               AS "Accounts Receivable/Total (-1FY)",
        COALESCE(text_to_numeric_safe(s."Accounts Receivable/Total (5YAVGFQ)"),
                 0)                                                               AS "Accounts Receivable/Total (5YAVGFQ)",
-       COALESCE(text_to_numeric_safe(s."CFF (LTM)"), 0)                          AS "CFF (LTM)",
-       COALESCE(text_to_numeric_safe(s."CFI (LTM)"), 0)                          AS "CFI (LTM)",
-       COALESCE(text_to_numeric_safe(s."FCF (LTM)"), 0)                          AS "FCF (LTM)",
-       COALESCE(text_to_numeric_safe(s."CFO (LTM)"), 0)                          AS "CFO (LTM)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (LTM)"), 0)            AS "Cash Acquisitions (LTM)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (FY)"), 0)             AS "Cash Acquisitions (FY)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-1FY)"), 0)           AS "Cash Acquisitions (-1FY)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (LTM)"), 0)          AS "Capital Expenditure (LTM)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-1FY)"), 0)         AS "Capital Expenditure (-1FY)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (FY)"), 0)           AS "Capital Expenditure (FY)",
-       COALESCE(text_to_numeric_safe(s."CFF (FY)"), 0)                           AS "CFF (FY)",
-       COALESCE(text_to_numeric_safe(s."CFF (-1FY)"), 0)                         AS "CFF (-1FY)",
-       COALESCE(text_to_numeric_safe(s."CFI (FY)"), 0)                           AS "CFI (FY)",
-       COALESCE(text_to_numeric_safe(s."CFI (-1FY)"), 0)                         AS "CFI (-1FY)",
-       COALESCE(text_to_numeric_safe(s."CFO (FY)"), 0)                           AS "CFO (FY)",
-       COALESCE(text_to_numeric_safe(s."CFO (-1FY)"), 0)                         AS "CFO (-1FY)",
-       COALESCE(text_to_numeric_safe(s."FCF (FY)"), 0)                           AS "FCF (FY)",
-       COALESCE(text_to_numeric_safe(s."FCF (-1FY)"), 0)                         AS "FCF (-1FY)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (FQ)"), 0)           AS "Capital Expenditure (FQ)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (5YAVGFQ)"),
-                0)                                                               AS "Capital Expenditure (5YAVGFQ)",
-       COALESCE(text_to_numeric_safe(s."CFF (FQ)"), 0)                           AS "CFF (FQ)",
-       COALESCE(text_to_numeric_safe(s."CFI (FQ)"), 0)                           AS "CFI (FQ)",
-       COALESCE(text_to_numeric_safe(s."CFO (FQ)"), 0)                           AS "CFO (FQ)",
-       COALESCE(text_to_numeric_safe(s."FCF (FQ)"), 0)                           AS "FCF (FQ)",
-       COALESCE(text_to_numeric_safe(s."FCF (5YAVGFQ)"), 0)                      AS "FCF (5YAVGFQ)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (FQ)"), 0)             AS "Cash Acquisitions (FQ)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (5YAVGFQ)"), 0)        AS "Cash Acquisitions (5YAVGFQ)",
-       COALESCE(text_to_numeric_safe(s."Common Dividends Paid (LTM)"), 0)        AS "Common Dividends Paid (LTM)",
-       COALESCE(text_to_numeric_safe(s."Common Dividends Paid (FY)"), 0)         AS "Common Dividends Paid (FY)",
-       COALESCE(text_to_numeric_safe(s."CFO (-1FQFQ)"), 0)                       AS "CFO (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFO (-2FQFQ)"), 0)                       AS "CFO (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFO (-3FQFQ)"), 0)                       AS "CFO (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFO (-4FQFQ)"), 0)                       AS "CFO (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFI (-1FQFQ)"), 0)                       AS "CFI (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFI (-2FQFQ)"), 0)                       AS "CFI (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFI (-3FQFQ)"), 0)                       AS "CFI (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFI (-4FQFQ)"), 0)                       AS "CFI (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFI (-2FY)"), 0)                         AS "CFI (-2FY)",
-       COALESCE(text_to_numeric_safe(s."CFI (-3FY)"), 0)                         AS "CFI (-3FY)",
-       COALESCE(text_to_numeric_safe(s."CFI (-4FY)"), 0)                         AS "CFI (-4FY)",
-       COALESCE(text_to_numeric_safe(s."FCF (-1FQFQ)"), 0)                       AS "FCF (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."FCF (-2FQFQ)"), 0)                       AS "FCF (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."FCF (-3FQFQ)"), 0)                       AS "FCF (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."FCF (-4FQFQ)"), 0)                       AS "FCF (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFF (-2FY)"), 0)                         AS "CFF (-2FY)",
-       COALESCE(text_to_numeric_safe(s."CFF (-3FY)"), 0)                         AS "CFF (-3FY)",
-       COALESCE(text_to_numeric_safe(s."CFF (-4FY)"), 0)                         AS "CFF (-4FY)",
-       COALESCE(text_to_numeric_safe(s."CFF (-1FQFQ)"), 0)                       AS "CFF (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFF (-2FQFQ)"), 0)                       AS "CFF (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFF (-3FQFQ)"), 0)                       AS "CFF (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFF (-4FQFQ)"), 0)                       AS "CFF (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."CFO (-2FY)"), 0)                         AS "CFO (-2FY)",
-       COALESCE(text_to_numeric_safe(s."CFO (-3FY)"), 0)                         AS "CFO (-3FY)",
-       COALESCE(text_to_numeric_safe(s."CFO (-4FY)"), 0)                         AS "CFO (-4FY)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-1FQFQ)"), 0)         AS "Cash Acquisitions (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-2FQFQ)"), 0)         AS "Cash Acquisitions (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-3FQFQ)"), 0)         AS "Cash Acquisitions (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-4FQFQ)"), 0)         AS "Cash Acquisitions (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."FCF (-2FY)"), 0)                         AS "FCF (-2FY)",
-       COALESCE(text_to_numeric_safe(s."FCF (-3FY)"), 0)                         AS "FCF (-3FY)",
-       COALESCE(text_to_numeric_safe(s."FCF (-4FY)"), 0)                         AS "FCF (-4FY)",
-       -- NEW: Cash Acquisitions Historical (FY)
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-2FY)"), 0)           AS "Cash Acquisitions (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-3FY)"), 0)           AS "Cash Acquisitions (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-4FY)"), 0)           AS "Cash Acquisitions (-4FY)",
-       -- NEW: Capital Expenditure Historical
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-1FQFQ)"), 0)       AS "Capital Expenditure (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-2FQFQ)"), 0)       AS "Capital Expenditure (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-3FQFQ)"), 0)       AS "Capital Expenditure (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-4FQFQ)"), 0)       AS "Capital Expenditure (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-2FY)"), 0)         AS "Capital Expenditure (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-3FY)"), 0)         AS "Capital Expenditure (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-4FY)"), 0)         AS "Capital Expenditure (-4FY)",
        -- NEW: Working Capital Historical
        COALESCE(text_to_numeric_safe(s."Working Capital (-1FQ)"), 0)             AS "Working Capital (-1FQ)",
        COALESCE(text_to_numeric_safe(s."Working Capital (-2FQ)"), 0)             AS "Working Capital (-2FQ)",
@@ -1681,16 +2195,6 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."Total Assets (-2FY)"), 0)                AS "Total Assets (-2FY)",
        COALESCE(text_to_numeric_safe(s."Total Assets (-3FY)"), 0)                AS "Total Assets (-3FY)",
        COALESCE(text_to_numeric_safe(s."Total Assets (-4FY)"), 0)                AS "Total Assets (-4FY)",
-       -- NEW: Gross Profit Historical
-       COALESCE(text_to_numeric_safe(s."Gross Profit (FQ)"), 0)                  AS "Gross Profit (FQ)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-1FQFQ)"), 0)              AS "Gross Profit (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-2FQFQ)"), 0)              AS "Gross Profit (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-3FQFQ)"), 0)              AS "Gross Profit (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-4FQFQ)"), 0)              AS "Gross Profit (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-1FY)"), 0)                AS "Gross Profit (-1FY)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-2FY)"), 0)                AS "Gross Profit (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-3FY)"), 0)                AS "Gross Profit (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Gross Profit (-4FY)"), 0)                AS "Gross Profit (-4FY)",
        -- NEW: Inventory Historical
        COALESCE(text_to_numeric_safe(s."Inventory (-1FQ)"), 0)                   AS "Inventory (-1FQ)",
        COALESCE(text_to_numeric_safe(s."Inventory (-2FQ)"), 0)                   AS "Inventory (-2FQ)",
@@ -1708,15 +2212,6 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."Goodwill (-2FY)"), 0)                    AS "Goodwill (-2FY)",
        COALESCE(text_to_numeric_safe(s."Goodwill (-3FY)"), 0)                    AS "Goodwill (-3FY)",
        COALESCE(text_to_numeric_safe(s."Goodwill (-4FY)"), 0)                    AS "Goodwill (-4FY)",
-       -- NEW: Operating Income Historical
-       COALESCE(text_to_numeric_safe(s."Operating Income (-1FQFQ)"), 0)          AS "Operating Income (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Operating Income (-2FQFQ)"), 0)          AS "Operating Income (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Operating Income (-3FQFQ)"), 0)          AS "Operating Income (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Operating Income (-4FQFQ)"), 0)          AS "Operating Income (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Operating Income (-1FY)"), 0)            AS "Operating Income (-1FY)",
-       COALESCE(text_to_numeric_safe(s."Operating Income (-2FY)"), 0)            AS "Operating Income (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Operating Income (-3FY)"), 0)            AS "Operating Income (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Operating Income (-4FY)"), 0)            AS "Operating Income (-4FY)",
        -- NEW: Retained Earnings Historical
        COALESCE(text_to_numeric_safe(s."Retained Earnings (-1FQ)"), 0)           AS "Retained Earnings (-1FQ)",
        COALESCE(text_to_numeric_safe(s."Retained Earnings (-2FQ)"), 0)           AS "Retained Earnings (-2FQ)",
@@ -1726,34 +2221,6 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."Retained Earnings (-2FY)"), 0)           AS "Retained Earnings (-2FY)",
        COALESCE(text_to_numeric_safe(s."Retained Earnings (-3FY)"), 0)           AS "Retained Earnings (-3FY)",
        COALESCE(text_to_numeric_safe(s."Retained Earnings (-4FY)"), 0)           AS "Retained Earnings (-4FY)",
-       -- NEW: R&D Expenses Historical
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (FQ)"), 0)                  AS "R&D Expenses (FQ)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (FY)"), 0)                  AS "R&D Expenses (FY)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-1FQFQ)"), 0)              AS "R&D Expenses (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-2FQFQ)"), 0)              AS "R&D Expenses (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-3FQFQ)"), 0)              AS "R&D Expenses (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-4FQFQ)"), 0)              AS "R&D Expenses (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-1FY)"), 0)                AS "R&D Expenses (-1FY)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-2FY)"), 0)                AS "R&D Expenses (-2FY)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-3FY)"), 0)                AS "R&D Expenses (-3FY)",
-       COALESCE(text_to_numeric_safe(s."R&D Expenses (-4FY)"), 0)                AS "R&D Expenses (-4FY)",
-       -- NEW: Merger & Restructuring Charges Historical
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-1FQFQ)"),
-                0)                                                               AS "Merger & Restructuring Charges (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-2FQFQ)"),
-                0)                                                               AS "Merger & Restructuring Charges (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-3FQFQ)"),
-                0)                                                               AS "Merger & Restructuring Charges (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-4FQFQ)"),
-                0)                                                               AS "Merger & Restructuring Charges (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-1FY)"),
-                0)                                                               AS "Merger & Restructuring Charges (-1FY)",
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-2FY)"),
-                0)                                                               AS "Merger & Restructuring Charges (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-3FY)"),
-                0)                                                               AS "Merger & Restructuring Charges (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-4FY)"),
-                0)                                                               AS "Merger & Restructuring Charges (-4FY)",
        -- NEW: Cash And Equivalents Historical
        COALESCE(text_to_numeric_safe(s."Cash And Equivalents (-1FQ)"), 0)        AS "Cash And Equivalents (-1FQ)",
        COALESCE(text_to_numeric_safe(s."Cash And Equivalents (-2FQ)"), 0)        AS "Cash And Equivalents (-2FQ)",
@@ -1781,6 +2248,80 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
                 0)                                                               AS "Gross Intangible Assets (-3FY)",
        COALESCE(text_to_numeric_safe(s."Gross Intangible Assets (-4FY)"),
                 0)                                                               AS "Gross Intangible Assets (-4FY)",
+       COALESCE(text_to_numeric_safe(s."CFF (LTM)"), 0)                    AS "CFF (LTM)",
+       COALESCE(text_to_numeric_safe(s."CFI (LTM)"), 0)                    AS "CFI (LTM)",
+       COALESCE(text_to_numeric_safe(s."FCF (LTM)"), 0)                    AS "FCF (LTM)",
+       COALESCE(text_to_numeric_safe(s."CFO (LTM)"), 0)                    AS "CFO (LTM)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (LTM)"), 0)      AS "Cash Acquisitions (LTM)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (FY)"), 0)       AS "Cash Acquisitions (FY)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-1FY)"), 0)     AS "Cash Acquisitions (-1FY)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (LTM)"), 0)    AS "Capital Expenditure (LTM)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-1FY)"), 0)   AS "Capital Expenditure (-1FY)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (FY)"), 0)     AS "Capital Expenditure (FY)",
+       COALESCE(text_to_numeric_safe(s."CFF (FY)"), 0)                     AS "CFF (FY)",
+       COALESCE(text_to_numeric_safe(s."CFF (-1FY)"), 0)                   AS "CFF (-1FY)",
+       COALESCE(text_to_numeric_safe(s."CFI (FY)"), 0)                     AS "CFI (FY)",
+       COALESCE(text_to_numeric_safe(s."CFI (-1FY)"), 0)                   AS "CFI (-1FY)",
+       COALESCE(text_to_numeric_safe(s."CFO (FY)"), 0)                     AS "CFO (FY)",
+       COALESCE(text_to_numeric_safe(s."CFO (-1FY)"), 0)                   AS "CFO (-1FY)",
+       COALESCE(text_to_numeric_safe(s."FCF (FY)"), 0)                     AS "FCF (FY)",
+       COALESCE(text_to_numeric_safe(s."FCF (-1FY)"), 0)                   AS "FCF (-1FY)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (FQ)"), 0)     AS "Capital Expenditure (FQ)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (5YAVGFQ)"),
+                0)                                                         AS "Capital Expenditure (5YAVGFQ)",
+       COALESCE(text_to_numeric_safe(s."CFF (FQ)"), 0)                     AS "CFF (FQ)",
+       COALESCE(text_to_numeric_safe(s."CFI (FQ)"), 0)                     AS "CFI (FQ)",
+       COALESCE(text_to_numeric_safe(s."CFO (FQ)"), 0)                     AS "CFO (FQ)",
+       COALESCE(text_to_numeric_safe(s."FCF (FQ)"), 0)                     AS "FCF (FQ)",
+       COALESCE(text_to_numeric_safe(s."FCF (5YAVGFQ)"), 0)                AS "FCF (5YAVGFQ)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (FQ)"), 0)       AS "Cash Acquisitions (FQ)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (5YAVGFQ)"), 0)  AS "Cash Acquisitions (5YAVGFQ)",
+       COALESCE(text_to_numeric_safe(s."Common Dividends Paid (LTM)"), 0)  AS "Common Dividends Paid (LTM)",
+       COALESCE(text_to_numeric_safe(s."Common Dividends Paid (FY)"), 0)   AS "Common Dividends Paid (FY)",
+       COALESCE(text_to_numeric_safe(s."CFO (-1FQFQ)"), 0)                 AS "CFO (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFO (-2FQFQ)"), 0)                 AS "CFO (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFO (-3FQFQ)"), 0)                 AS "CFO (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFO (-4FQFQ)"), 0)                 AS "CFO (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFI (-1FQFQ)"), 0)                 AS "CFI (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFI (-2FQFQ)"), 0)                 AS "CFI (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFI (-3FQFQ)"), 0)                 AS "CFI (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFI (-4FQFQ)"), 0)                 AS "CFI (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFI (-2FY)"), 0)                   AS "CFI (-2FY)",
+       COALESCE(text_to_numeric_safe(s."CFI (-3FY)"), 0)                   AS "CFI (-3FY)",
+       COALESCE(text_to_numeric_safe(s."CFI (-4FY)"), 0)                   AS "CFI (-4FY)",
+       COALESCE(text_to_numeric_safe(s."FCF (-1FQFQ)"), 0)                 AS "FCF (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."FCF (-2FQFQ)"), 0)                 AS "FCF (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."FCF (-3FQFQ)"), 0)                 AS "FCF (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."FCF (-4FQFQ)"), 0)                 AS "FCF (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFF (-2FY)"), 0)                   AS "CFF (-2FY)",
+       COALESCE(text_to_numeric_safe(s."CFF (-3FY)"), 0)                   AS "CFF (-3FY)",
+       COALESCE(text_to_numeric_safe(s."CFF (-4FY)"), 0)                   AS "CFF (-4FY)",
+       COALESCE(text_to_numeric_safe(s."CFF (-1FQFQ)"), 0)                 AS "CFF (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFF (-2FQFQ)"), 0)                 AS "CFF (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFF (-3FQFQ)"), 0)                 AS "CFF (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFF (-4FQFQ)"), 0)                 AS "CFF (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."CFO (-2FY)"), 0)                   AS "CFO (-2FY)",
+       COALESCE(text_to_numeric_safe(s."CFO (-3FY)"), 0)                   AS "CFO (-3FY)",
+       COALESCE(text_to_numeric_safe(s."CFO (-4FY)"), 0)                   AS "CFO (-4FY)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-1FQFQ)"), 0)   AS "Cash Acquisitions (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-2FQFQ)"), 0)   AS "Cash Acquisitions (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-3FQFQ)"), 0)   AS "Cash Acquisitions (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-4FQFQ)"), 0)   AS "Cash Acquisitions (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."FCF (-2FY)"), 0)                   AS "FCF (-2FY)",
+       COALESCE(text_to_numeric_safe(s."FCF (-3FY)"), 0)                   AS "FCF (-3FY)",
+       COALESCE(text_to_numeric_safe(s."FCF (-4FY)"), 0)                   AS "FCF (-4FY)",
+       -- NEW: Cash Acquisitions Historical (FY)
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-2FY)"), 0)     AS "Cash Acquisitions (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-3FY)"), 0)     AS "Cash Acquisitions (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Cash Acquisitions (-4FY)"), 0)     AS "Cash Acquisitions (-4FY)",
+       -- NEW: Capital Expenditure Historical
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-1FQFQ)"), 0) AS "Capital Expenditure (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-2FQFQ)"), 0) AS "Capital Expenditure (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-3FQFQ)"), 0) AS "Capital Expenditure (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-4FQFQ)"), 0) AS "Capital Expenditure (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-2FY)"), 0)   AS "Capital Expenditure (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-3FY)"), 0)   AS "Capital Expenditure (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Capital Expenditure (-4FY)"), 0)   AS "Capital Expenditure (-4FY)",
        -- Continue with existing P/E columns
        text_to_numeric_safe(s."P/E (NTM)")                                       AS "P/E (NTM)",
        text_to_numeric_safe(s."P/E (LTM)")                                       AS "P/E (LTM)",
@@ -1848,6 +2389,27 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        text_to_numeric_safe(s."Net EPS - Basic (-5FY)")                          AS "Net EPS - Basic (-5FY)",
        text_to_numeric_safe(s."EPS GAAP - Est Avg (NTM)")                        AS "EPS GAAP - Est Avg (NTM)",
        text_to_numeric_safe(s."EPS GAAP - Est Avg (FY1E)")                       AS "EPS GAAP - Est Avg (FY1E)",
+       -- NEW: Basic EPS - Cont Historical
+       text_to_numeric_safe(s."Basic EPS - Cont (LTM)")                    AS "Basic EPS - Cont (LTM)",
+       text_to_numeric_safe(s."Basic EPS - Cont (FQ)")                     AS "Basic EPS - Cont (FQ)",
+       text_to_numeric_safe(s."Basic EPS - Cont (FY)")                     AS "Basic EPS - Cont (FY)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-1FQFQ)")                 AS "Basic EPS - Cont (-1FQFQ)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-2FQFQ)")                 AS "Basic EPS - Cont (-2FQFQ)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-3FQFQ)")                 AS "Basic EPS - Cont (-3FQFQ)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-4FQFQ)")                 AS "Basic EPS - Cont (-4FQFQ)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-1FY)")                   AS "Basic EPS - Cont (-1FY)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-2FY)")                   AS "Basic EPS - Cont (-2FY)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-3FY)")                   AS "Basic EPS - Cont (-3FY)",
+       text_to_numeric_safe(s."Basic EPS - Cont (-4FY)")                   AS "Basic EPS - Cont (-4FY)",
+       -- NEW: EPS/Adj. Historical
+       text_to_numeric_safe(s."EPS/Adj. (FQ)")                             AS "EPS/Adj. (FQ)",
+       text_to_numeric_safe(s."EPS/Adj. (-1FQFQ)")                         AS "EPS/Adj. (-1FQFQ)",
+       text_to_numeric_safe(s."EPS/Adj. (-2FQFQ)")                         AS "EPS/Adj. (-2FQFQ)",
+       text_to_numeric_safe(s."EPS/Adj. (-3FQFQ)")                         AS "EPS/Adj. (-3FQFQ)",
+       text_to_numeric_safe(s."EPS/Adj. (-4FQFQ)")                         AS "EPS/Adj. (-4FQFQ)",
+       text_to_numeric_safe(s."EPS/Adj. (-2FY)")                           AS "EPS/Adj. (-2FY)",
+       text_to_numeric_safe(s."EPS/Adj. (-3FY)")                           AS "EPS/Adj. (-3FY)",
+       text_to_numeric_safe(s."EPS/Adj. (-4FY)")                           AS "EPS/Adj. (-4FY)",
        text_to_numeric_safe(s."Total Return (YTD)")                              AS "Total Return (YTD)",
        text_to_numeric_safe(s."Beta (1Y)")                                       AS "Beta (1Y)",
        text_to_numeric_safe(s."Beta (2Y)")                                       AS "Beta (2Y)",
@@ -1944,21 +2506,23 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
                 0)                                                               AS "Merger & Restructuring Charges (FY)",
        COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (5YAVGFQ)"),
                 0)                                                               AS "Merger & Restructuring Charges (5YAVGFQ)",
-       NULLIF(TRIM(s."Description"), '')                                         AS "Description",
-       report_fiscal.fiscal_month                                                AS "Fiscal Month",
-       report_fiscal.fiscal_quarter                                              AS "Fiscal Quarter",
-       report_fiscal.fiscal_year                                                 AS "Fiscal Year",
-       calculate_reporting_lag(
-               NULLIF(TRIM(s."Next Earnings"), '')::DATE,
-               NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE,
-               report_fiscal.earnings_report_frequency
-       )                                                                         AS "Reporting Lag",
-       calculate_next_income_statement_report_date(
-               NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE,
-               report_fiscal.earnings_report_frequency
-       )                                                                         AS "Next Income Statement Report Date",
-       report_fiscal.reporting_interval                                          AS "Reporting Interval",
-       report_fiscal.earnings_report_frequency                                   AS "Earnings Report (Frequency)",
+       -- NEW: Merger & Restructuring Charges Historical
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-1FQFQ)"),
+                0)                                                         AS "Merger & Restructuring Charges (-1FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-2FQFQ)"),
+                0)                                                         AS "Merger & Restructuring Charges (-2FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-3FQFQ)"),
+                0)                                                         AS "Merger & Restructuring Charges (-3FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-4FQFQ)"),
+                0)                                                         AS "Merger & Restructuring Charges (-4FQFQ)",
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-1FY)"),
+                0)                                                         AS "Merger & Restructuring Charges (-1FY)",
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-2FY)"),
+                0)                                                         AS "Merger & Restructuring Charges (-2FY)",
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-3FY)"),
+                0)                                                         AS "Merger & Restructuring Charges (-3FY)",
+       COALESCE(text_to_numeric_safe(s."Merger & Restructuring Charges (-4FY)"),
+                0)                                                         AS "Merger & Restructuring Charges (-4FY)",
        -- NEW: Impairment of Goodwill Historical
        COALESCE(text_to_numeric_safe(s."Impairment of Goodwill (-1FQFQ)"),
                 0)                                                               AS "Impairment of Goodwill (-1FQFQ)",
@@ -2016,97 +2580,14 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."Restructuring Charges (-2FY)"), 0)       AS "Restructuring Charges (-2FY)",
        COALESCE(text_to_numeric_safe(s."Restructuring Charges (-3FY)"), 0)       AS "Restructuring Charges (-3FY)",
        COALESCE(text_to_numeric_safe(s."Restructuring Charges (-4FY)"), 0)       AS "Restructuring Charges (-4FY)",
-       -- NEW: Net Income - (IS) Historical
-       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-1FQFQ)"), 0)         AS "Net Income - (IS) (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-2FQFQ)"), 0)         AS "Net Income - (IS) (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-3FQFQ)"), 0)         AS "Net Income - (IS) (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-4FQFQ)"), 0)         AS "Net Income - (IS) (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-2FY)"), 0)           AS "Net Income - (IS) (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-3FY)"), 0)           AS "Net Income - (IS) (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Net Income - (IS) (-4FY)"), 0)           AS "Net Income - (IS) (-4FY)",
-       -- NEW: Normalized Net Income Historical
-       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-1FQFQ)"),
-                0)                                                               AS "Normalized Net Income (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-2FQFQ)"),
-                0)                                                               AS "Normalized Net Income (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-3FQFQ)"),
-                0)                                                               AS "Normalized Net Income (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-4FQFQ)"),
-                0)                                                               AS "Normalized Net Income (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-2FY)"), 0)       AS "Normalized Net Income (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-3FY)"), 0)       AS "Normalized Net Income (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Normalized Net Income (-4FY)"), 0)       AS "Normalized Net Income (-4FY)",
-       -- NEW: Net Income/Adj. Historical
-       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-1FQFQ)"), 0)           AS "Net Income/Adj. (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-2FQFQ)"), 0)           AS "Net Income/Adj. (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-3FQFQ)"), 0)           AS "Net Income/Adj. (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-4FQFQ)"), 0)           AS "Net Income/Adj. (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-2FY)"), 0)             AS "Net Income/Adj. (-2FY)",
-       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-3FY)"), 0)             AS "Net Income/Adj. (-3FY)",
-       COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-4FY)"), 0)             AS "Net Income/Adj. (-4FY)",
-       -- NEW: EBIT Historical
-       COALESCE(text_to_numeric_safe(s."EBIT (-1FQFQ)"), 0)                      AS "EBIT (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT (-2FQFQ)"), 0)                      AS "EBIT (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT (-3FQFQ)"), 0)                      AS "EBIT (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT (-4FQFQ)"), 0)                      AS "EBIT (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT (-2FY)"), 0)                        AS "EBIT (-2FY)",
-       COALESCE(text_to_numeric_safe(s."EBIT (-3FY)"), 0)                        AS "EBIT (-3FY)",
-       COALESCE(text_to_numeric_safe(s."EBIT (-4FY)"), 0)                        AS "EBIT (-4FY)",
-       -- NEW: EBIT/Adj. Historical
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (FQ)"), 0)                     AS "EBIT/Adj. (FQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-1FQFQ)"), 0)                 AS "EBIT/Adj. (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-2FQFQ)"), 0)                 AS "EBIT/Adj. (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-3FQFQ)"), 0)                 AS "EBIT/Adj. (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-4FQFQ)"), 0)                 AS "EBIT/Adj. (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-2FY)"), 0)                   AS "EBIT/Adj. (-2FY)",
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-3FY)"), 0)                   AS "EBIT/Adj. (-3FY)",
-       COALESCE(text_to_numeric_safe(s."EBIT/Adj. (-4FY)"), 0)                   AS "EBIT/Adj. (-4FY)",
-       -- NEW: EBITDA Historical
-       COALESCE(text_to_numeric_safe(s."EBITDA (-1FQFQ)"), 0)                    AS "EBITDA (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA (-2FQFQ)"), 0)                    AS "EBITDA (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA (-3FQFQ)"), 0)                    AS "EBITDA (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA (-4FQFQ)"), 0)                    AS "EBITDA (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA (-2FY)"), 0)                      AS "EBITDA (-2FY)",
-       COALESCE(text_to_numeric_safe(s."EBITDA (-3FY)"), 0)                      AS "EBITDA (-3FY)",
-       COALESCE(text_to_numeric_safe(s."EBITDA (-4FY)"), 0)                      AS "EBITDA (-4FY)",
-       -- NEW: EBITDA/Adj. Historical
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (FQ)"), 0)                   AS "EBITDA/Adj. (FQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-1FQFQ)"), 0)               AS "EBITDA/Adj. (-1FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-2FQFQ)"), 0)               AS "EBITDA/Adj. (-2FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-3FQFQ)"), 0)               AS "EBITDA/Adj. (-3FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-4FQFQ)"), 0)               AS "EBITDA/Adj. (-4FQFQ)",
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-2FY)"), 0)                 AS "EBITDA/Adj. (-2FY)",
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-3FY)"), 0)                 AS "EBITDA/Adj. (-3FY)",
-       COALESCE(text_to_numeric_safe(s."EBITDA/Adj. (-4FY)"), 0)                 AS "EBITDA/Adj. (-4FY)",
-       -- NEW: Basic EPS - Cont Historical
-       text_to_numeric_safe(s."Basic EPS - Cont (LTM)")                          AS "Basic EPS - Cont (LTM)",
-       text_to_numeric_safe(s."Basic EPS - Cont (FQ)")                           AS "Basic EPS - Cont (FQ)",
-       text_to_numeric_safe(s."Basic EPS - Cont (FY)")                           AS "Basic EPS - Cont (FY)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-1FQFQ)")                       AS "Basic EPS - Cont (-1FQFQ)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-2FQFQ)")                       AS "Basic EPS - Cont (-2FQFQ)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-3FQFQ)")                       AS "Basic EPS - Cont (-3FQFQ)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-4FQFQ)")                       AS "Basic EPS - Cont (-4FQFQ)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-1FY)")                         AS "Basic EPS - Cont (-1FY)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-2FY)")                         AS "Basic EPS - Cont (-2FY)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-3FY)")                         AS "Basic EPS - Cont (-3FY)",
-       text_to_numeric_safe(s."Basic EPS - Cont (-4FY)")                         AS "Basic EPS - Cont (-4FY)",
-       -- NEW: EPS/Adj. Historical
-       text_to_numeric_safe(s."EPS/Adj. (FQ)")                                   AS "EPS/Adj. (FQ)",
-       text_to_numeric_safe(s."EPS/Adj. (-1FQFQ)")                               AS "EPS/Adj. (-1FQFQ)",
-       text_to_numeric_safe(s."EPS/Adj. (-2FQFQ)")                               AS "EPS/Adj. (-2FQFQ)",
-       text_to_numeric_safe(s."EPS/Adj. (-3FQFQ)")                               AS "EPS/Adj. (-3FQFQ)",
-       text_to_numeric_safe(s."EPS/Adj. (-4FQFQ)")                               AS "EPS/Adj. (-4FQFQ)",
-       text_to_numeric_safe(s."EPS/Adj. (-2FY)")                                 AS "EPS/Adj. (-2FY)",
-       text_to_numeric_safe(s."EPS/Adj. (-3FY)")                                 AS "EPS/Adj. (-3FY)",
-       text_to_numeric_safe(s."EPS/Adj. (-4FY)")                                 AS "EPS/Adj. (-4FY)",
-       -- NEW: Total Revenues Historical
-       text_to_numeric_safe(s."Total Revenues (-1FQFQ)")                         AS "Total Revenues (-1FQFQ)",
-       text_to_numeric_safe(s."Total Revenues (-2FQFQ)")                         AS "Total Revenues (-2FQFQ)",
-       text_to_numeric_safe(s."Total Revenues (-3FQFQ)")                         AS "Total Revenues (-3FQFQ)",
-       text_to_numeric_safe(s."Total Revenues (-4FQFQ)")                         AS "Total Revenues (-4FQFQ)",
-       text_to_numeric_safe(s."Total Revenues (-2FY)")                           AS "Total Revenues (-2FY)",
-       text_to_numeric_safe(s."Total Revenues (-3FY)")                           AS "Total Revenues (-3FY)",
-       text_to_numeric_safe(s."Total Revenues (-4FY)")                           AS "Total Revenues (-4FY)"
+       report_fiscal.fiscal_month                                          AS "Fiscal Month",
+       report_fiscal.fiscal_quarter                                        AS "Fiscal Quarter",
+       report_fiscal.fiscal_year                                           AS "Fiscal Year",
+       calculate_reporting_lag(
+               NULLIF(TRIM(s."Next Earnings"), '')::DATE,
+               NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE,
+               report_fiscal.earnings_report_frequency
+       )                                                                   AS "Reporting Lag"
 FROM screening_staging s,
      LATERAL (
          SELECT parse_fiscal_year_end_date(NULLIF(TRIM(s."FY End"), '')) AS fy_end_date
@@ -2145,10 +2626,11 @@ LIMIT 10;
 DROP TABLE IF EXISTS screening_staging;
 DROP FUNCTION IF EXISTS text_to_numeric_safe(TEXT);
 DROP FUNCTION IF EXISTS text_to_date_safe(TEXT, TEXT);
+DROP FUNCTION IF EXISTS month_abbrev_to_number(TEXT);
+DROP FUNCTION IF EXISTS get_expected_reporting_lag_days(TEXT);
 DROP FUNCTION IF EXISTS parse_fiscal_year_end_date(TEXT);
 DROP FUNCTION IF EXISTS frequency_to_months(TEXT);
 DROP FUNCTION IF EXISTS months_to_frequency(INTEGER);
-DROP FUNCTION IF EXISTS calculate_reporting_interval(TEXT);
 DROP FUNCTION IF EXISTS derive_earnings_report_frequency(DATE, DATE);
 DROP FUNCTION IF EXISTS calculate_fiscal_info(DATE, DATE, TEXT);
 DROP FUNCTION IF EXISTS calculate_next_income_statement_report_date(DATE, TEXT);

@@ -482,12 +482,16 @@ def get_key_features_by_category(
 
 
 def get_feature_aliases() -> dict[str, str]:
-    """Get feature aliases from COLUMN_SCHEMA.
+    """Get feature aliases from ALIAS_SCHEMA in central schema.
 
-    Returns mapping of verbose column names to their short aliases.
+    Returns mapping of verbose/canonical column names to their short aliases.
+    Note: ALIAS_SCHEMA is defined as alias -> canonical, so this returns
+    canonical -> short_alias where applicable for reporting.
     """
-    # Define canonical short names mapped from schema entries
-    alias_patterns = {
+
+    # Reverse ALIAS_SCHEMA to get canonical -> common_name for some key features
+    # This is used for display purposes in reports/dashboards
+    display_mapping = {
         "return_on_equity_pct_ltm": "roe",
         "return_on_assets_roa_pct_ltm": "roa",
         "p_e_ltm": "p_e_ratio",
@@ -503,13 +507,7 @@ def get_feature_aliases() -> dict[str, str]:
         "net_income_is_ltm": "net_income",
     }
 
-    # Build from schema where aliases exist
-    mapping = {}
-    for col_name in COLUMN_SCHEMA.keys():
-        if col_name in alias_patterns:
-            mapping[col_name] = alias_patterns[col_name]
-
-    return mapping
+    return display_mapping
 
 
 def get_key_summary_columns() -> list[str]:

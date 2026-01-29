@@ -35,7 +35,15 @@
       <option name="IMP_DECLARE_ALIGN_DEFAULT" value="true" />
     </PostgresCodeStyleSettings>
     <SqlCodeStyleSettings version="7">
+      <option name="CUSTOM_TYPE_CASE" value="0" />
+      <option name="ALIAS_CASE" value="4" />
+      <option name="BUILT_IN_CASE" value="0" />
+      <option name="ORIGINAL_CASE" value="true" />
       <option name="WITH_ALIGN_AS" value="true" />
+      <option name="FROM_ALIGN_JOIN_TABLES" value="true" />
+      <option name="FROM_ALIGN_ALIASES" value="true" />
+      <option name="ROUTINE_ARG_ALIGN_TYPES" value="true" />
+      <option name="IMP_DECLARE_ALIGN_DEFAULT" value="true" />
     </SqlCodeStyleSettings>
     <codeStyleSettings language="csv">
       <option name="WRAP_ON_TYPING" value="-1" />

@@ -434,83 +434,17 @@ def normalize_columns(df: pd.DataFrame, preserve_schema: bool = True) -> pd.Data
 
         # Add column aliases for commonly used generic names
         # These create additional columns with simplified names pointing to the most relevant variant
-        column_aliases = {
-            # Existing aliases
-            "p_e": "p_e_ltm",  # Default P/E to Last Twelve Months
-            "revenue": "total_revenues_ltm",  # Default revenue to LTM
-            "ebitda": "ebitda_ltm",  # Default EBITDA to LTM
-            "net_income": "net_income_is_ltm",  # Default net income to Income Statement LTM
-            "p_b": "p_b_ltm",  # Default P/B to LTM
-            "ev_ebitda": None,  # Not directly available, would need to be calculated
-            "gross_margin": "gross_profit_margin_pct_ltm",  # Gross margin percentage LTM
-            # Phase 9.3 Enhancement: Additional commonly used aliases
-            "eps": "eps_adj_ltm",  # Earnings per share (adjusted, LTM)
-            "total_equity": "total_equity_ltm",  # Total equity (LTM)
-            "total_assets": "total_assets_ltm",  # Total assets (LTM)
-            "total_debt": "total_debt_ltm",  # Total debt (LTM)
-            "inventory": "inventory_ltm",  # Inventory (LTM)
-            "capex": "capital_expenditure_ltm",  # Capital expenditure (LTM)
-            "cash_and_equivalents": "cash_and_equivalents_ltm",  # Cash and equivalents (LTM)
-            "current_assets": "total_current_assets_ltm",  # Current assets (LTM)
-            "current_liabilities": "total_current_liabilities_ltm",  # Current liabilities (LTM)
-            "working_capital": "working_capital_ltm",  # Working capital (LTM)
-            "retained_earnings": "retained_earnings_ltm",  # Retained earnings (LTM)
-            "cfo": "cfo_ltm",  # Cash flow from operations (LTM)
-            "cfi": "cfi_ltm",  # Cash flow from investing (LTM)
-            "cff": "cff_ltm",  # Cash flow from financing (LTM)
-            "fcf": "fcf_ltm",  # Free cash flow (LTM)
-            "ebit": "ebit_ltm",  # EBIT (LTM)
-            "gross_profit": "gross_profit_ltm",  # Gross profit (LTM)
-            "operating_income": "operating_income_ltm",  # Operating income (LTM)
-            "interest_expense": "interest_expense_total_ltm",  # Interest expense (LTM)
-            "r_d_expenses": "r_d_expenses_ltm",  # R&D expenses (LTM)
-            "goodwill": "goodwill_ltm",  # Goodwill (LTM)
-            "intangible_assets": "gross_intangible_assets_ltm",  # Intangible assets (LTM)
-            "net_debt": None,  # Calculated as total_debt - cash_and_equivalents
-            "book_value_per_share": None,  # Calculated as total_equity / shares_outstanding
-            "dividend_per_share": "dividend_per_share_ltm",  # Dividend per share (LTM)
-            "employees": "avg_employees_ltm",  # Average employees (LTM)
-            "shares_outstanding": "shrs_out",  # Shares outstanding (maps to existing column)
-            "operating_expenses": "total_operating_expenses_ltm",  # Operating expenses (LTM)
-            "operating_cash_flow": "cfo_ltm",  # Operating cash flow (alias for CFO)
-            "sga_expenses": "selling_general_and_admin_expenses_total_fy",  # SG&A expenses (FY - most recent)
-            "marketing_expenses": "marketing_expenses_5yavgltm",  # Marketing expenses (5Y average LTM)
-            "depreciation_amortization": None,  # Not directly available in base columns
-            "depreciation_amortization_ltm": None,  # Not directly available
-            "dividends_paid": "common_dividends_paid_fy",  # Common dividends paid (FY)
-            "dividends_paid_ltm": "common_dividends_paid_ltm",  # Common dividends paid (LTM)
-            "share_repurchases_ltm": None,  # Not directly available
-            "price_target_number": "price_target_count",  # Number of analyst price targets
-            "net_income_ltm": "net_income_is_ltm",  # Net income LTM (alias)
-            "volatility_1y_pct": "volatility_1y",  # Volatility 1Y percentage
-            "analyst_rating_change": None,  # Not directly available (would be calculated)
-            # Previous year columns (for YoY growth calculations)
-            "revenue_previous_year": "total_revenues_1fy",  # Revenue -1FY
-            "eps_previous_year": "eps_adj_1fy",  # EPS -1FY
-            "ebitda_previous_year": "ebitda_1fy",  # EBITDA -1FY
-            "total_equity_previous_year": "total_equity_fy",  # Total equity FY (proxy for -1FY)
-            "total_assets_previous_year": "total_assets_fy",  # Total assets FY (proxy for -1FY)
-            "gross_profit_previous_year": "gross_profit_fy",  # Gross profit FY (proxy for -1FY)
-            "revenue_fy": "total_revenues_fy",  # Revenue FY (fiscal year)
-            "working_capital_1fy": "working_capital_fy",  # Working capital FY (proxy for -1FY)
-            "accounts_receivable_previous_year": "accounts_receivable_total_1fy",  # Accounts receivable -1FY
-            "roa_previous_year": "return_on_assets_roa_pct_fy",  # ROA FY (proxy for -1FY)
-            "debt_to_equity_previous_year": None,  # Would need to be calculated
-            "current_ratio_previous_year": "current_ratio_fy",  # Current ratio FY (proxy for -1FY)
-            "shares_outstanding_previous_year": "shrs_out_1fy",  # Shares outstanding -1FY
-            "gross_margin_pct_previous_year": "gross_profit_margin_pct_fy",  # Gross margin FY (proxy for -1FY)
-            "asset_turnover_previous_year": "asset_turnover_fy",  # Asset turnover FY (proxy for -1FY)
-        }
+        from finance_ml.core.schema import ALIAS_SCHEMA
 
-        for alias, source_col in column_aliases.items():
+        for alias, source_col in ALIAS_SCHEMA.items():
             if source_col and source_col in df.columns and alias not in df.columns:
                 df[alias] = df[source_col]
 
     else:
         # Use canonical normalization from schema module
-        from finance_ml.ml_workflow.data.schema import normalize_column_name
+        from finance_ml.core.schema import normalize_column_name
 
-        df.columns = [normalize_column_name(col) for col in df.columns]
+        df.columns = [normalize_column_name(col, resolve_aliases=True) for col in df.columns]
 
     return df
 
