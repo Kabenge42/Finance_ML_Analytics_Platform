@@ -27,37 +27,39 @@ create function calc_working_capital_temporal(p_isin text DEFAULT NULL::text)
     language sql
 as
 $$
-SELECT "ISIN"                                                              AS isin,
+SELECT "ISIN"                                                                                    AS isin,
        -- Current values
-       "Working Capital (FQ)"                                              AS wc_fq,
-       "Working Capital (FY)"                                              AS wc_fy,
-       "Working Capital (LTM)"                                             AS wc_ltm,
-       "Working Capital (5YAVGFY)"                                         AS wc_5yavgfy,
+       "Working Capital (FQ)"                                                                    AS wc_fq,
+       "Working Capital (FY)"                                                                    AS wc_fy,
+       "Working Capital (LTM)"                                                                   AS wc_ltm,
+       "Working Capital (5YAVGFY)"                                                               AS wc_5yavgfy,
        -- Quarterly historical
-       "Working Capital (-1FQ)"                                            AS wc_1fq,
-       "Working Capital (-2FQ)"                                            AS wc_2fq,
-       "Working Capital (-3FQ)"                                            AS wc_3fq,
-       "Working Capital (-4FQ)"                                            AS wc_4fq,
+       "Working Capital (-1FQ)"                                                                  AS wc_1fq,
+       "Working Capital (-2FQ)"                                                                  AS wc_2fq,
+       "Working Capital (-3FQ)"                                                                  AS wc_3fq,
+       "Working Capital (-4FQ)"                                                                  AS wc_4fq,
        -- Yearly historical
-       "Working Capital (-1FY)"                                            AS wc_1fy,
-       "Working Capital (-2FY)"                                            AS wc_2fy,
-       "Working Capital (-3FY)"                                            AS wc_3fy,
-       "Working Capital (-4FY)"                                            AS wc_4fy,
+       "Working Capital (-1FY)"                                                                  AS wc_1fy,
+       "Working Capital (-2FY)"                                                                  AS wc_2fy,
+       "Working Capital (-3FY)"                                                                  AS wc_3fy,
+       "Working Capital (-4FY)"                                                                  AS wc_4fy,
        -- Trend metrics
-       pct_change("Working Capital (FQ)", "Working Capital (-1FQ)")        AS wc_qoq_change,
-       pct_change("Working Capital (FY)", "Working Capital (-1FY)")        AS wc_yoy_change,
-       pct_change("Working Capital (FQ)", "Working Capital (-4FQ)")        AS wc_4q_trend,
-       safe_divide("Working Capital (FQ)", "Working Capital (5YAVGFY)")    AS wc_vs_5y_avg,
+       pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-1FQ)"::NUMERIC)            AS wc_qoq_change,
+       pct_change("Working Capital (FY)"::NUMERIC, "Working Capital (-1FY)"::NUMERIC)            AS wc_yoy_change,
+       pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-4FQ)"::NUMERIC)            AS wc_4q_trend,
+       public.safe_divide("Working Capital (FQ)"::NUMERIC, "Working Capital (5YAVGFY)"::NUMERIC) AS wc_vs_5y_avg,
        (CASE WHEN "Working Capital (FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Working Capital (-1FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Working Capital (-2FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Working Capital (-3FQ)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "Working Capital (-4FQ)" > 0 THEN 1 ELSE 0 END)::INTEGER AS wc_positive_quarters,
+        CASE
+            WHEN "Working Capital (-4FQ)" > 0 THEN 1
+            ELSE 0 END)::INTEGER                                                                 AS wc_positive_quarters,
        CASE
            WHEN "Working Capital (FQ)" > "Working Capital (-1FQ)"
                AND "Working Capital (-1FQ)" > "Working Capital (-2FQ)"
                THEN 1
-           ELSE 0 END                                                      AS wc_improving_flag,
+           ELSE 0 END                                                                            AS wc_improving_flag,
        -- Volatility: coefficient of variation across quarters
        (ABS("Working Capital (FQ)" - "Working Capital (-1FQ)") +
         ABS("Working Capital (-1FQ)" - "Working Capital (-2FQ)") +
@@ -65,7 +67,7 @@ SELECT "ISIN"                                                              AS is
         ABS("Working Capital (-3FQ)" - "Working Capital (-4FQ)")) /
        NULLIF(ABS(("Working Capital (FQ)" + "Working Capital (-1FQ)" +
                    "Working Capital (-2FQ)" + "Working Capital (-3FQ)" +
-                   "Working Capital (-4FQ)") / 5.0), 0)                    AS wc_volatility
+                   "Working Capital (-4FQ)") / 5.0), 0)                                          AS wc_volatility
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;

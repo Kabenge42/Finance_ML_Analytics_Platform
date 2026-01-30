@@ -19,18 +19,18 @@ create function calc_valuation_timeseries_features(p_isin text DEFAULT NULL::tex
     language sql
 as
 $$
-SELECT "ISIN"                                                       AS isin,
-       calc_change_ratio("EV/Sales (LTM)", "EV/Sales (-1FYLTM)")    AS ev_sales_trend_1y,
-       calc_change_ratio("EV/EBITDA (LTM)", "EV/EBITDA (-1FYLTM)")  AS ev_ebitda_momentum,
-       calc_change_ratio("P/E (LTM)", "P/E (-1FYLTM)")              AS p_e_momentum_yoy,
-       calc_change_ratio("P/E (LTM)", "P/E (-1FQLTM)")              AS p_e_momentum_qoq,
-       calc_change_ratio("EV/Sales (LTM)", "EV/Sales (3YAVGLTM)")   AS ev_sales_vs_3y_avg,
-       calc_change_ratio("EV/EBITDA (LTM)", "EV/EBITDA (3YAVGLTM)") AS ev_ebitda_vs_3y_avg,
-       calc_change_ratio("P/E (LTM)", "P/E (3YAVGLTM)")             AS p_e_vs_3y_avg,
-       calc_change_ratio("EV/Sales (NTM)", "EV/Sales (LTM)")        AS ev_sales_forward_discount,
-       calc_change_ratio("EV/EBITDA (NTM)", "EV/EBITDA (LTM)")      AS ev_ebitda_forward_discount,
-       calc_change_ratio("P/E (EST FY1)", "P/E (LTM)")              AS p_e_forward_discount,
-       safe_divide("P/B (LTM)", "P/B (5YAVG)")                      AS p_b_vs_5y_avg
+SELECT "ISIN"                                                                         AS isin,
+       calc_change_ratio("EV/Sales (LTM)"::NUMERIC, "EV/Sales (-1FYLTM)"::NUMERIC)    AS ev_sales_trend_1y,
+       calc_change_ratio("EV/EBITDA (LTM)"::NUMERIC, "EV/EBITDA (-1FYLTM)"::NUMERIC)  AS ev_ebitda_momentum,
+       calc_change_ratio("P/E (LTM)"::NUMERIC, "P/E (-1FYLTM)"::NUMERIC)              AS p_e_momentum_yoy,
+       calc_change_ratio("P/E (LTM)"::NUMERIC, "P/E (-1FQLTM)"::NUMERIC)              AS p_e_momentum_qoq,
+       calc_change_ratio("EV/Sales (LTM)"::NUMERIC, "EV/Sales (3YAVGLTM)"::NUMERIC)   AS ev_sales_vs_3y_avg,
+       calc_change_ratio("EV/EBITDA (LTM)"::NUMERIC, "EV/EBITDA (3YAVGLTM)"::NUMERIC) AS ev_ebitda_vs_3y_avg,
+       calc_change_ratio("P/E (LTM)"::NUMERIC, "P/E (3YAVGLTM)"::NUMERIC)             AS p_e_vs_3y_avg,
+       calc_change_ratio("EV/Sales (NTM)"::NUMERIC, "EV/Sales (LTM)"::NUMERIC)        AS ev_sales_forward_discount,
+       calc_change_ratio("EV/EBITDA (NTM)"::NUMERIC, "EV/EBITDA (LTM)"::NUMERIC)      AS ev_ebitda_forward_discount,
+       calc_change_ratio("P/E (EST FY1)"::NUMERIC, "P/E (LTM)"::NUMERIC)              AS p_e_forward_discount,
+       public.safe_divide("P/B (LTM)"::NUMERIC, "P/B (5YAVG)"::NUMERIC)               AS p_b_vs_5y_avg
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;

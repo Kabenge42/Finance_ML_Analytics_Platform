@@ -924,7 +924,7 @@ SELECT
                  ELSE -15 END) +
             (CASE WHEN e."Net Income - (IS) (FY)" > e."Net Income - (IS) (-1FY)" THEN 10 ELSE -5 END) +
             (CASE WHEN e."Net Income - (IS) (-1FY)" > e."Net Income - (IS) (-2FY)" THEN 5 ELSE -5 END)
-    )                                                                                                  AS earnings_quality_composite_comp,
+    ) AS earnings_quality_composite,
     -- NEW: Quarterly trends
     pct_change(e."Net Income - (IS) (FQ)",
                e."Net Income - (IS) (-1FQFQ)")                                                         AS net_income_qoq_growth,
