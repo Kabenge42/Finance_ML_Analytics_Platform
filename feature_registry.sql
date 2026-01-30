@@ -15,17 +15,21 @@
 -- =============================================================================
 
 -- Safe division helper (avoids division by zero)
-CREATE OR REPLACE FUNCTION safe_divide(numerator NUMERIC, denominator NUMERIC)
+CREATE OR REPLACE FUNCTION safe_divide(
+    numerator   NUMERIC,
+    denominator NUMERIC
+)
     RETURNS NUMERIC
     IMMUTABLE
     PARALLEL SAFE
+    LANGUAGE SQL
 AS
 $$
 SELECT numerator / NULLIF(denominator, 0) AS result;
-$$ LANGUAGE SQL;
+$$;
 
 -- Percentage change helper
-CREATE OR REPLACE FUNCTION pct_change(current_val NUMERIC, previous_val NUMERIC)
+CREATE OR REPLACE FUNCTION public.pct_change(current_val NUMERIC, previous_val NUMERIC)
     RETURNS NUMERIC
     IMMUTABLE
     PARALLEL SAFE
@@ -35,7 +39,7 @@ SELECT (current_val - previous_val) / NULLIF(previous_val, 0) * 100 AS result;
 $$ LANGUAGE SQL;
 
 -- Momentum/change ratio helper (without percentage multiplier)
-CREATE OR REPLACE FUNCTION calc_change_ratio(current_val NUMERIC, previous_val NUMERIC)
+CREATE OR REPLACE FUNCTION public.calc_change_ratio(current_val NUMERIC, previous_val NUMERIC)
     RETURNS NUMERIC
     IMMUTABLE
     PARALLEL SAFE
@@ -45,7 +49,7 @@ SELECT (current_val - previous_val) / NULLIF(previous_val, 0) AS result;
 $$ LANGUAGE SQL;
 
 -- Score clamping helper (constrains value between 0 and 100)
-CREATE OR REPLACE FUNCTION clamp_score(val NUMERIC, min_val NUMERIC DEFAULT 0, max_val NUMERIC DEFAULT 100)
+CREATE OR REPLACE FUNCTION public.clamp_score(val NUMERIC, min_val NUMERIC DEFAULT 0, max_val NUMERIC DEFAULT 100)
     RETURNS NUMERIC
     IMMUTABLE
     PARALLEL SAFE
@@ -55,7 +59,7 @@ SELECT GREATEST(min_val, LEAST(max_val, val)) AS result;
 $$ LANGUAGE SQL;
 
 -- EMA crossover signal helper
-CREATE OR REPLACE FUNCTION ema_crossover_signal(fast_ema NUMERIC, slow_ema NUMERIC)
+CREATE OR REPLACE FUNCTION public.ema_crossover_signal(fast_ema NUMERIC, slow_ema NUMERIC)
     RETURNS INTEGER
     IMMUTABLE
     PARALLEL SAFE
@@ -67,6 +71,24 @@ SELECT CASE
            ELSE 0
            END AS result;
 $$ LANGUAGE SQL;
+
+-- =============================================================================
+-- IDENTIFIER COLUMNS FROM CALCULATED_FEATURES_REGISTRY
+-- =============================================================================
+-- This view selects identifier columns based on the registry configuration
+-- Used as the base for all feature views to ensure consistent identifier ordering
+
+CREATE OR REPLACE VIEW vw_identifier_columns AS
+SELECT e."ISIN"            AS isin,
+       e."Industry"        AS industry,
+       e."Trading Country" AS trading_country,
+       e."Region"          AS region,
+       e."Name"            AS name,
+       e."Country"         AS country,
+       e."Ticker"          AS ticker,
+       e."Sector"          AS sector,
+       e."Exchange"        AS exchange
+FROM postgres.public.equities e;
 
 -- =============================================================================
 -- SECTION 1: VALUATION FEATURES (OPTIMIZED)
@@ -87,22 +109,22 @@ CREATE OR REPLACE FUNCTION calc_valuation_features(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"            AS isin,
-       "P/E (LTM)"       AS p_e_ratio,
-       "P/B (LTM)"       AS p_b_ratio,
-       "EV/EBITDA (LTM)" AS ev_ebitda_ratio,
-       "EV/Sales (LTM)"  AS ev_sales_ratio,
-       "Div Yield (LTM)" AS dividend_yield,
+SELECT "ISIN"                     AS isin,
+       "P/E (LTM)"::NUMERIC       AS p_e_ratio,
+       "P/B (LTM)"::NUMERIC       AS p_b_ratio,
+       "EV/EBITDA (LTM)"::NUMERIC AS ev_ebitda_ratio,
+       "EV/Sales (LTM)"::NUMERIC  AS ev_sales_ratio,
+       "Div Yield (LTM)"::NUMERIC AS dividend_yield,
        CASE
            WHEN "Net EPS - Basic (FY)" > 0 AND "Net EPS - Basic (-3FY)" > 0
-               THEN safe_divide(
-                   "P/E (LTM)",
-                   (POWER(
-                            safe_divide("Net EPS - Basic (FY)", "Net EPS - Basic (-3FY)"),
-                            1.0 / 3.0
-                    ) - 1) * 100
+               THEN public.safe_divide(
+                   "P/E (LTM)"::NUMERIC,
+                   ((POWER(
+                             public.safe_divide("Net EPS - Basic (FY)"::NUMERIC, "Net EPS - Basic (-3FY)"::NUMERIC),
+                             (1.0 / 3.0)::NUMERIC
+                     ) - 1) * 100)::NUMERIC
                     )
-           END           AS peg_ratio
+           END                    AS peg_ratio
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -128,18 +150,20 @@ CREATE OR REPLACE FUNCTION calc_valuation_timeseries_features(p_isin TEXT DEFAUL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                       AS isin,
-       calc_change_ratio("EV/Sales (LTM)", "EV/Sales (-1FYLTM)")    AS ev_sales_trend_1y,
-       calc_change_ratio("EV/EBITDA (LTM)", "EV/EBITDA (-1FYLTM)")  AS ev_ebitda_momentum,
-       calc_change_ratio("P/E (LTM)", "P/E (-1FYLTM)")              AS p_e_momentum_yoy,
-       calc_change_ratio("P/E (LTM)", "P/E (-1FQLTM)")              AS p_e_momentum_qoq,
-       calc_change_ratio("EV/Sales (LTM)", "EV/Sales (3YAVGLTM)")   AS ev_sales_vs_3y_avg,
-       calc_change_ratio("EV/EBITDA (LTM)", "EV/EBITDA (3YAVGLTM)") AS ev_ebitda_vs_3y_avg,
-       calc_change_ratio("P/E (LTM)", "P/E (3YAVGLTM)")             AS p_e_vs_3y_avg,
-       calc_change_ratio("EV/Sales (NTM)", "EV/Sales (LTM)")        AS ev_sales_forward_discount,
-       calc_change_ratio("EV/EBITDA (NTM)", "EV/EBITDA (LTM)")      AS ev_ebitda_forward_discount,
-       calc_change_ratio("P/E (EST FY1)", "P/E (LTM)")              AS p_e_forward_discount,
-       safe_divide("P/B (LTM)", "P/B (5YAVG)")                      AS p_b_vs_5y_avg
+SELECT "ISIN"                                                                                AS isin,
+       public.calc_change_ratio("EV/Sales (LTM)"::NUMERIC, "EV/Sales (-1FYLTM)"::NUMERIC)    AS ev_sales_trend_1y,
+       public.calc_change_ratio("EV/EBITDA (LTM)"::NUMERIC, "EV/EBITDA (-1FYLTM)"::NUMERIC)  AS ev_ebitda_momentum,
+       public.calc_change_ratio("P/E (LTM)"::NUMERIC, "P/E (-1FYLTM)"::NUMERIC)              AS p_e_momentum_yoy,
+       public.calc_change_ratio("P/E (LTM)"::NUMERIC, "P/E (-1FQLTM)"::NUMERIC)              AS p_e_momentum_qoq,
+       public.calc_change_ratio("EV/Sales (LTM)"::NUMERIC, "EV/Sales (3YAVGLTM)"::NUMERIC)   AS ev_sales_vs_3y_avg,
+       public.calc_change_ratio("EV/EBITDA (LTM)"::NUMERIC, "EV/EBITDA (3YAVGLTM)"::NUMERIC) AS ev_ebitda_vs_3y_avg,
+       public.calc_change_ratio("P/E (LTM)"::NUMERIC, "P/E (3YAVGLTM)"::NUMERIC)             AS p_e_vs_3y_avg,
+       public.calc_change_ratio("EV/Sales (NTM)"::NUMERIC,
+                                "EV/Sales (LTM)"::NUMERIC)                                   AS ev_sales_forward_discount,
+       public.calc_change_ratio("EV/EBITDA (NTM)"::NUMERIC,
+                                "EV/EBITDA (LTM)"::NUMERIC)                                  AS ev_ebitda_forward_discount,
+       public.calc_change_ratio("P/E (EST FY1)"::NUMERIC, "P/E (LTM)"::NUMERIC)              AS p_e_forward_discount,
+       public.safe_divide("P/B (LTM)"::NUMERIC, "P/B (5YAVG)"::NUMERIC)                      AS p_b_vs_5y_avg
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -220,22 +244,25 @@ CREATE OR REPLACE FUNCTION calc_momentum_features(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                           AS isin,
-       pct_change("Last Price", "Price (1M Ago)")                       AS price_momentum_1m,
-       pct_change("Last Price", "Price (3M Ago)")                       AS price_momentum_3m,
-       pct_change("Last Price", "Price (6M Ago)")                       AS price_momentum_6m,
-       pct_change("Last Price", "Price (1Y Ago)")                       AS price_momentum_1y,
-       pct_change("Last Price", "Price (5D Ago)")                       AS price_momentum_5d,
-       ema_crossover_signal("EMA (20D)", "EMA (50D)")                   AS ema_crossover_20_50,
-       ema_crossover_signal("EMA (50D)", "EMA (250D)")                  AS ema_crossover_50_250,
-       calc_change_ratio("Last Price", "EMA (20D)")                     AS price_vs_ema_20d,
-       calc_change_ratio("Last Price", "EMA (250D)")                    AS price_vs_ema_250d,
-       calc_change_ratio("52W High/Adj" - "Last Price", "52W High/Adj") AS pct_off_52w_high,
-       calc_change_ratio("Last Price" - "52W Low/Adj", "52W Low/Adj")   AS pct_above_52w_low,
-       clamp_score(safe_divide("Last Price" - "52W Low/Adj",
-                               "52W High/Adj" - "52W Low/Adj"), 0, 1)   AS range_52w_position,
-       "Beta (1Y)" - "Beta (5Y)"                                        AS beta_momentum,
-       safe_divide("Volatility (1M)", "Volatility (1Y)")                AS volatility_regime
+SELECT "ISIN"                                                                     AS isin,
+       public.pct_change("Last Price"::NUMERIC, "Price (1M Ago)"::NUMERIC)        AS price_momentum_1m,
+       public.pct_change("Last Price"::NUMERIC, "Price (3M Ago)"::NUMERIC)        AS price_momentum_3m,
+       public.pct_change("Last Price"::NUMERIC, "Price (6M Ago)"::NUMERIC)        AS price_momentum_6m,
+       public.pct_change("Last Price"::NUMERIC, "Price (1Y Ago)"::NUMERIC)        AS price_momentum_1y,
+       public.pct_change("Last Price"::NUMERIC, "Price (5D Ago)"::NUMERIC)        AS price_momentum_5d,
+       public.ema_crossover_signal("EMA (20D)"::NUMERIC, "EMA (50D)"::NUMERIC)    AS ema_crossover_20_50,
+       public.ema_crossover_signal("EMA (50D)"::NUMERIC, "EMA (250D)"::NUMERIC)   AS ema_crossover_50_250,
+       public.calc_change_ratio("Last Price"::NUMERIC, "EMA (20D)"::NUMERIC)      AS price_vs_ema_20d,
+       public.calc_change_ratio("Last Price"::NUMERIC, "EMA (250D)"::NUMERIC)     AS price_vs_ema_250d,
+       public.calc_change_ratio(("52W High/Adj"::NUMERIC - "Last Price"::NUMERIC),
+                                "52W High/Adj"::NUMERIC)                          AS pct_off_52w_high,
+       public.calc_change_ratio(("Last Price"::NUMERIC - "52W Low/Adj"::NUMERIC),
+                                "52W Low/Adj"::NUMERIC)                           AS pct_above_52w_low,
+       public.clamp_score(public.safe_divide(("Last Price"::NUMERIC - "52W Low/Adj"::NUMERIC),
+                                             ("52W High/Adj"::NUMERIC - "52W Low/Adj"::NUMERIC)), 0,
+                          1)                                                      AS range_52w_position,
+       "Beta (1Y)"::NUMERIC - "Beta (5Y)"::NUMERIC                                AS beta_momentum,
+       public.safe_divide("Volatility (1M)"::NUMERIC, "Volatility (1Y)"::NUMERIC) AS volatility_regime
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2061,56 +2088,63 @@ CREATE OR REPLACE FUNCTION calc_net_income_comprehensive(p_isin TEXT DEFAULT NUL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                 AS isin,
+SELECT "ISIN"                                                                                          AS isin,
        -- Base values
-       "Net Income - (IS) (FQ)"                                               AS net_income_is_fq,
-       "Net Income - (IS) (LTM)"                                              AS net_income_is_ltm,
-       "Net Income - (IS) (FY)"                                               AS net_income_is_fy,
-       "Net Income/Adj. (LTM)"                                                AS net_income_adj_ltm,
-       "Normalized Net Income (LTM)"                                          AS normalized_ni_ltm,
+       "Net Income - (IS) (FQ)"                                                                        AS net_income_is_fq,
+       "Net Income - (IS) (LTM)"                                                                       AS net_income_is_ltm,
+       "Net Income - (IS) (FY)"                                                                        AS net_income_is_fy,
+       "Net Income/Adj. (LTM)"                                                                         AS net_income_adj_ltm,
+       "Normalized Net Income (LTM)"                                                                   AS normalized_ni_ltm,
        -- Extended quarterly historical
-       "Net Income - (IS) (-1FQFQ)"                                           AS net_income_is_1fqfq,
-       "Net Income - (IS) (-2FQFQ)"                                           AS net_income_is_2fqfq,
-       "Net Income - (IS) (-3FQFQ)"                                           AS net_income_is_3fqfq,
-       "Net Income - (IS) (-4FQFQ)"                                           AS net_income_is_4fqfq,
+       "Net Income - (IS) (-1FQFQ)"                                                                    AS net_income_is_1fqfq,
+       "Net Income - (IS) (-2FQFQ)"                                                                    AS net_income_is_2fqfq,
+       "Net Income - (IS) (-3FQFQ)"                                                                    AS net_income_is_3fqfq,
+       "Net Income - (IS) (-4FQFQ)"                                                                    AS net_income_is_4fqfq,
        -- Extended yearly historical
-       "Net Income - (IS) (-1FY)"                                             AS net_income_is_1fy,
-       "Net Income - (IS) (-2FY)"                                             AS net_income_is_2fy,
-       "Net Income - (IS) (-3FY)"                                             AS net_income_is_3fy,
-       "Net Income - (IS) (-4FY)"                                             AS net_income_is_4fy,
+       "Net Income - (IS) (-1FY)"                                                                      AS net_income_is_1fy,
+       "Net Income - (IS) (-2FY)"                                                                      AS net_income_is_2fy,
+       "Net Income - (IS) (-3FY)"                                                                      AS net_income_is_3fy,
+       "Net Income - (IS) (-4FY)"                                                                      AS net_income_is_4fy,
        -- 5-year averages
-       "Net Income - (IS) (5YAVGFQ)"                                          AS net_income_is_5yavgfq,
-       "Net Income - (IS) (5YAVGLTM)"                                         AS net_income_is_5yavgltm,
-       "Normalized Net Income (5YAVGFQ)"                                      AS normalized_ni_5yavgfq,
-       "Normalized Net Income (5YAVGLTM)"                                     AS normalized_ni_5yavgltm,
+       "Net Income - (IS) (5YAVGFQ)"                                                                   AS net_income_is_5yavgfq,
+       "Net Income - (IS) (5YAVGLTM)"                                                                  AS net_income_is_5yavgltm,
+       "Normalized Net Income (5YAVGFQ)"                                                               AS normalized_ni_5yavgfq,
+       "Normalized Net Income (5YAVGLTM)"                                                              AS normalized_ni_5yavgltm,
        -- Derived metrics
-       pct_change("Net Income - (IS) (FY)", "Net Income - (IS) (-1FY)")       AS net_income_growth_yoy,
-       "Net Income Margin % (LTM)"                                            AS net_income_margin_ltm,
-       safe_divide("Net Income/Adj. (LTM)", "Net Income - (IS) (LTM)")        AS ni_adjustment_ratio,
+       public.pct_change("Net Income - (IS) (FY)"::NUMERIC,
+                         "Net Income - (IS) (-1FY)"::NUMERIC)                                          AS net_income_growth_yoy,
+       "Net Income Margin % (LTM)"::NUMERIC                                                            AS net_income_margin_ltm,
+       public.safe_divide("Net Income/Adj. (LTM)"::NUMERIC,
+                          "Net Income - (IS) (LTM)"::NUMERIC)                                          AS ni_adjustment_ratio,
        (CASE WHEN "Net Income - (IS) (FY)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Net Income - (IS) (-1FY)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Net Income - (IS) (-2FY)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Net Income - (IS) (-3FY)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "Net Income - (IS) (-4FY)" > 0 THEN 1 ELSE 0 END)::INTEGER  AS net_income_positive_years,
-       clamp_score(
+        CASE
+            WHEN "Net Income - (IS) (-4FY)" > 0 THEN 1
+            ELSE 0 END)::INTEGER                                                                       AS net_income_positive_years,
+       public.clamp_score(
                50 +
                (CASE WHEN "Net Income - (IS) (FY)" > 0 THEN 10 ELSE -10 END) +
                (CASE WHEN "Net Income - (IS) (-1FY)" > 0 THEN 5 ELSE -5 END) +
                (CASE WHEN "Net Income - (IS) (-2FY)" > 0 THEN 5 ELSE -5 END) +
                (CASE
-                    WHEN ABS(safe_divide("Net Income/Adj. (LTM)" - "Net Income - (IS) (LTM)",
-                                         "Net Income - (IS) (LTM)")) < 0.10 THEN 15
+                    WHEN ABS(public.safe_divide(("Net Income/Adj. (LTM)"::NUMERIC - "Net Income - (IS) (LTM)"::NUMERIC),
+                                                "Net Income - (IS) (LTM)"::NUMERIC)) < 0.10 THEN 15
                     ELSE -15 END) +
                (CASE WHEN "Net Income - (IS) (FY)" > "Net Income - (IS) (-1FY)" THEN 10 ELSE -5 END) +
                (CASE WHEN "Net Income - (IS) (-1FY)" > "Net Income - (IS) (-2FY)" THEN 5 ELSE -5 END)
-       )                                                                      AS earnings_quality_composite,
+       )                                                                                               AS earnings_quality_composite,
        -- Quarterly trends
-       pct_change("Net Income - (IS) (FQ)", "Net Income - (IS) (-1FQFQ)")     AS net_income_qoq_growth,
-       pct_change("Net Income - (IS) (FQ)", "Net Income - (IS) (-4FQFQ)")     AS net_income_yoy_quarterly,
+       public.pct_change("Net Income - (IS) (FQ)"::NUMERIC,
+                         "Net Income - (IS) (-1FQFQ)"::NUMERIC)                                        AS net_income_qoq_growth,
+       public.pct_change("Net Income - (IS) (FQ)"::NUMERIC,
+                         "Net Income - (IS) (-4FQFQ)"::NUMERIC)                                        AS net_income_yoy_quarterly,
        -- vs 5Y averages
-       safe_divide("Net Income - (IS) (LTM)", "Net Income - (IS) (5YAVGLTM)") AS net_income_vs_5y_avg,
-       safe_divide("Normalized Net Income (LTM)", "Normalized Net Income (5YAVGLTM)")
-                                                                              AS normalized_ni_vs_5y_avg
+       public.safe_divide("Net Income - (IS) (LTM)"::NUMERIC,
+                          "Net Income - (IS) (5YAVGLTM)"::NUMERIC)                                     AS net_income_vs_5y_avg,
+       public.safe_divide("Normalized Net Income (LTM)"::NUMERIC, "Normalized Net Income (5YAVGLTM)"::NUMERIC)
+                                                                                                       AS normalized_ni_vs_5y_avg
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2140,19 +2174,24 @@ CREATE OR REPLACE FUNCTION calc_total_revenues_temporal(p_isin TEXT DEFAULT NULL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                   AS isin,
-       "Total Revenues (FQ)"                                                    AS revenue_fq,
-       "Total Revenues (LTM)"                                                   AS revenue_ltm,
-       "Total Revenues (FY)"                                                    AS revenue_fy,
-       "Total Revenues (-1FY)"                                                  AS revenue_1fy,
-       "Total Revenues (5YAVGFQ)"                                               AS revenue_5yavgfq,
-       "Total Revenues (5YAVGLTM)"                                              AS revenue_5yavgltm,
-       pct_change("Total Revenues (FY)", "Total Revenues (-1FY)")               AS revenue_growth_yoy,
-       safe_divide("Total Revenues (FQ)", "Total Revenues (5YAVGFQ)")           AS revenue_vs_5y_avg_fq,
-       safe_divide("Total Revenues (LTM)", "Total Revenues (5YAVGLTM)")         AS revenue_vs_5y_avg_ltm,
-       safe_divide("Total Revenues (FQ)" - "Total Revenues (5YAVGFQ)", "Total Revenues (5YAVGFQ)") * 100
-                                                                                AS revenue_fq_vs_avg,
-       calc_change_ratio("Total Revenues (LTM)", "Total Revenues (-1FY)") * 100 AS revenue_momentum
+SELECT "ISIN"                                                                                            AS isin,
+       "Total Revenues (FQ)"                                                                             AS revenue_fq,
+       "Total Revenues (LTM)"                                                                            AS revenue_ltm,
+       "Total Revenues (FY)"                                                                             AS revenue_fy,
+       "Total Revenues (-1FY)"                                                                           AS revenue_1fy,
+       "Total Revenues (5YAVGFQ)"                                                                        AS revenue_5yavgfq,
+       "Total Revenues (5YAVGLTM)"                                                                       AS revenue_5yavgltm,
+       public.pct_change("Total Revenues (FY)"::NUMERIC,
+                         "Total Revenues (-1FY)"::NUMERIC)                                               AS revenue_growth_yoy,
+       public.safe_divide("Total Revenues (FQ)"::NUMERIC,
+                          "Total Revenues (5YAVGFQ)"::NUMERIC)                                           AS revenue_vs_5y_avg_fq,
+       public.safe_divide("Total Revenues (LTM)"::NUMERIC,
+                          "Total Revenues (5YAVGLTM)"::NUMERIC)                                          AS revenue_vs_5y_avg_ltm,
+       public.safe_divide(("Total Revenues (FQ)"::NUMERIC - "Total Revenues (5YAVGFQ)"::NUMERIC),
+                          "Total Revenues (5YAVGFQ)"::NUMERIC) * 100
+                                                                                                         AS revenue_fq_vs_avg,
+       public.calc_change_ratio("Total Revenues (LTM)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) *
+       100                                                                                               AS revenue_momentum
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2190,37 +2229,39 @@ CREATE OR REPLACE FUNCTION calc_working_capital_temporal(p_isin TEXT DEFAULT NUL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                              AS isin,
+SELECT "ISIN"                                                                                    AS isin,
        -- Current values
-       "Working Capital (FQ)"                                              AS wc_fq,
-       "Working Capital (FY)"                                              AS wc_fy,
-       "Working Capital (LTM)"                                             AS wc_ltm,
-       "Working Capital (5YAVGFY)"                                         AS wc_5yavgfy,
+       "Working Capital (FQ)"                                                                    AS wc_fq,
+       "Working Capital (FY)"                                                                    AS wc_fy,
+       "Working Capital (LTM)"                                                                   AS wc_ltm,
+       "Working Capital (5YAVGFY)"                                                               AS wc_5yavgfy,
        -- Quarterly historical
-       "Working Capital (-1FQ)"                                            AS wc_1fq,
-       "Working Capital (-2FQ)"                                            AS wc_2fq,
-       "Working Capital (-3FQ)"                                            AS wc_3fq,
-       "Working Capital (-4FQ)"                                            AS wc_4fq,
+       "Working Capital (-1FQ)"                                                                  AS wc_1fq,
+       "Working Capital (-2FQ)"                                                                  AS wc_2fq,
+       "Working Capital (-3FQ)"                                                                  AS wc_3fq,
+       "Working Capital (-4FQ)"                                                                  AS wc_4fq,
        -- Yearly historical
-       "Working Capital (-1FY)"                                            AS wc_1fy,
-       "Working Capital (-2FY)"                                            AS wc_2fy,
-       "Working Capital (-3FY)"                                            AS wc_3fy,
-       "Working Capital (-4FY)"                                            AS wc_4fy,
+       "Working Capital (-1FY)"                                                                  AS wc_1fy,
+       "Working Capital (-2FY)"                                                                  AS wc_2fy,
+       "Working Capital (-3FY)"                                                                  AS wc_3fy,
+       "Working Capital (-4FY)"                                                                  AS wc_4fy,
        -- Trend metrics
-       pct_change("Working Capital (FQ)", "Working Capital (-1FQ)")        AS wc_qoq_change,
-       pct_change("Working Capital (FY)", "Working Capital (-1FY)")        AS wc_yoy_change,
-       pct_change("Working Capital (FQ)", "Working Capital (-4FQ)")        AS wc_4q_trend,
-       safe_divide("Working Capital (FQ)", "Working Capital (5YAVGFY)")    AS wc_vs_5y_avg,
+       public.pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-1FQ)"::NUMERIC)     AS wc_qoq_change,
+       public.pct_change("Working Capital (FY)"::NUMERIC, "Working Capital (-1FY)"::NUMERIC)     AS wc_yoy_change,
+       public.pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-4FQ)"::NUMERIC)     AS wc_4q_trend,
+       public.safe_divide("Working Capital (FQ)"::NUMERIC, "Working Capital (5YAVGFY)"::NUMERIC) AS wc_vs_5y_avg,
        (CASE WHEN "Working Capital (FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Working Capital (-1FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Working Capital (-2FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Working Capital (-3FQ)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "Working Capital (-4FQ)" > 0 THEN 1 ELSE 0 END)::INTEGER AS wc_positive_quarters,
+        CASE
+            WHEN "Working Capital (-4FQ)" > 0 THEN 1
+            ELSE 0 END)::INTEGER                                                                 AS wc_positive_quarters,
        CASE
            WHEN "Working Capital (FQ)" > "Working Capital (-1FQ)"
                AND "Working Capital (-1FQ)" > "Working Capital (-2FQ)"
                THEN 1
-           ELSE 0 END                                                      AS wc_improving_flag,
+           ELSE 0 END                                                                            AS wc_improving_flag,
        -- Volatility: coefficient of variation across quarters
        (ABS("Working Capital (FQ)" - "Working Capital (-1FQ)") +
         ABS("Working Capital (-1FQ)" - "Working Capital (-2FQ)") +
@@ -2228,7 +2269,7 @@ SELECT "ISIN"                                                              AS is
         ABS("Working Capital (-3FQ)" - "Working Capital (-4FQ)")) /
        NULLIF(ABS(("Working Capital (FQ)" + "Working Capital (-1FQ)" +
                    "Working Capital (-2FQ)" + "Working Capital (-3FQ)" +
-                   "Working Capital (-4FQ)") / 5.0), 0)                    AS wc_volatility
+                   "Working Capital (-4FQ)") / 5.0), 0)                                          AS wc_volatility
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2264,36 +2305,38 @@ CREATE OR REPLACE FUNCTION calc_total_debt_temporal(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                           AS isin,
+SELECT "ISIN"                                                                         AS isin,
        -- Current values
-       "Total Debt (FQ)"                                                AS debt_fq,
-       "Total Debt (FY)"                                                AS debt_fy,
-       "Total Debt (LTM)"                                               AS debt_ltm,
+       "Total Debt (FQ)"                                                              AS debt_fq,
+       "Total Debt (FY)"                                                              AS debt_fy,
+       "Total Debt (LTM)"                                                             AS debt_ltm,
        -- Quarterly historical
-       "Total Debt (-1FQ)"                                              AS debt_1fq,
-       "Total Debt (-2FQ)"                                              AS debt_2fq,
-       "Total Debt (-3FQ)"                                              AS debt_3fq,
-       "Total Debt (-4FQ)"                                              AS debt_4fq,
+       "Total Debt (-1FQ)"                                                            AS debt_1fq,
+       "Total Debt (-2FQ)"                                                            AS debt_2fq,
+       "Total Debt (-3FQ)"                                                            AS debt_3fq,
+       "Total Debt (-4FQ)"                                                            AS debt_4fq,
        -- Yearly historical
-       "Total Debt (-1FY)"                                              AS debt_1fy,
-       "Total Debt (-2FY)"                                              AS debt_2fy,
-       "Total Debt (-3FY)"                                              AS debt_3fy,
-       "Total Debt (-4FY)"                                              AS debt_4fy,
+       "Total Debt (-1FY)"                                                            AS debt_1fy,
+       "Total Debt (-2FY)"                                                            AS debt_2fy,
+       "Total Debt (-3FY)"                                                            AS debt_3fy,
+       "Total Debt (-4FY)"                                                            AS debt_4fy,
        -- Trend metrics
-       pct_change("Total Debt (FQ)", "Total Debt (-1FQ)")               AS debt_qoq_change,
-       pct_change("Total Debt (FY)", "Total Debt (-1FY)")               AS debt_yoy_change,
-       pct_change("Total Debt (FQ)", "Total Debt (-4FQ)")               AS debt_4q_trend,
+       public.pct_change("Total Debt (FQ)"::NUMERIC, "Total Debt (-1FQ)"::NUMERIC)    AS debt_qoq_change,
+       public.pct_change("Total Debt (FY)"::NUMERIC, "Total Debt (-1FY)"::NUMERIC)    AS debt_yoy_change,
+       public.pct_change("Total Debt (FQ)"::NUMERIC, "Total Debt (-4FQ)"::NUMERIC)    AS debt_4q_trend,
        CASE
            WHEN "Total Debt (-3FY)" > 0
-               THEN (POWER(safe_divide("Total Debt (FY)", "Total Debt (-3FY)"), 1.0 / 3.0) - 1) * 100
-           END                                                          AS debt_3y_cagr,
+               THEN
+               (POWER(public.safe_divide("Total Debt (FY)"::NUMERIC, "Total Debt (-3FY)"::NUMERIC), 1.0 / 3.0) - 1) *
+               100
+           END                                                                        AS debt_3y_cagr,
        CASE
            WHEN "Total Debt (FQ)" < "Total Debt (-1FQ)"
                AND "Total Debt (-1FQ)" < "Total Debt (-2FQ)"
                THEN 1
-           ELSE 0 END                                                   AS debt_deleveraging,
-       safe_divide("Total Debt (FY)", "Total Equity (FY)") -
-       safe_divide("Total Debt (-1FY)", NULLIF("Total Equity (FY)", 0)) AS debt_to_equity_trend
+           ELSE 0 END                                                                 AS debt_deleveraging,
+       public.safe_divide("Total Debt (FY)"::NUMERIC, "Total Equity (FY)"::NUMERIC) -
+       public.safe_divide("Total Debt (-1FY)"::NUMERIC, "Total Equity (FY)"::NUMERIC) AS debt_to_equity_trend
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2328,34 +2371,37 @@ CREATE OR REPLACE FUNCTION calc_total_assets_temporal(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                   AS isin,
-       "Total Assets (FQ)"                                      AS assets_fq,
-       "Total Assets (FY)"                                      AS assets_fy,
-       "Total Assets (LTM)"                                     AS assets_ltm,
-       "Total Assets (-1FQ)"                                    AS assets_1fq,
-       "Total Assets (-2FQ)"                                    AS assets_2fq,
-       "Total Assets (-3FQ)"                                    AS assets_3fq,
-       "Total Assets (-4FQ)"                                    AS assets_4fq,
-       "Total Assets (-1FY)"                                    AS assets_1fy,
-       "Total Assets (-2FY)"                                    AS assets_2fy,
-       "Total Assets (-3FY)"                                    AS assets_3fy,
-       "Total Assets (-4FY)"                                    AS assets_4fy,
-       pct_change("Total Assets (FQ)", "Total Assets (-1FQ)")   AS assets_qoq_growth,
-       pct_change("Total Assets (FY)", "Total Assets (-1FY)")   AS assets_yoy_growth,
+SELECT "ISIN"                                                                            AS isin,
+       "Total Assets (FQ)"                                                               AS assets_fq,
+       "Total Assets (FY)"                                                               AS assets_fy,
+       "Total Assets (LTM)"                                                              AS assets_ltm,
+       "Total Assets (-1FQ)"                                                             AS assets_1fq,
+       "Total Assets (-2FQ)"                                                             AS assets_2fq,
+       "Total Assets (-3FQ)"                                                             AS assets_3fq,
+       "Total Assets (-4FQ)"                                                             AS assets_4fq,
+       "Total Assets (-1FY)"                                                             AS assets_1fy,
+       "Total Assets (-2FY)"                                                             AS assets_2fy,
+       "Total Assets (-3FY)"                                                             AS assets_3fy,
+       "Total Assets (-4FY)"                                                             AS assets_4fy,
+       public.pct_change("Total Assets (FQ)"::NUMERIC, "Total Assets (-1FQ)"::NUMERIC)   AS assets_qoq_growth,
+       public.pct_change("Total Assets (FY)"::NUMERIC, "Total Assets (-1FY)"::NUMERIC)   AS assets_yoy_growth,
        CASE
            WHEN "Total Assets (-3FY)" > 0
-               THEN (POWER(safe_divide("Total Assets (FY)", "Total Assets (-3FY)"), 1.0 / 3.0) - 1) * 100
-           END                                                  AS assets_3y_cagr,
+               THEN
+               (POWER(public.safe_divide("Total Assets (FY)"::NUMERIC, "Total Assets (-3FY)"::NUMERIC), 1.0 / 3.0) -
+                1) *
+               100
+           END                                                                           AS assets_3y_cagr,
        -- Growth acceleration: recent growth vs historical
-       pct_change("Total Assets (FY)", "Total Assets (-1FY)") -
-       pct_change("Total Assets (-1FY)", "Total Assets (-2FY)") AS asset_growth_accel,
+       public.pct_change("Total Assets (FY)"::NUMERIC, "Total Assets (-1FY)"::NUMERIC) -
+       public.pct_change("Total Assets (-1FY)"::NUMERIC, "Total Assets (-2FY)"::NUMERIC) AS asset_growth_accel,
        -- Stability flag: growing consistently
        CASE
            WHEN "Total Assets (FY)" >= "Total Assets (-1FY)"
                AND "Total Assets (-1FY)" >= "Total Assets (-2FY)"
                AND "Total Assets (-2FY)" >= "Total Assets (-3FY)"
                THEN 1
-           ELSE 0 END                                           AS asset_base_stable
+           ELSE 0 END                                                                    AS asset_base_stable
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2391,32 +2437,38 @@ CREATE OR REPLACE FUNCTION calc_gross_profit_temporal(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                   AS isin,
-       "Gross Profit (FQ)"                                                      AS gp_fq,
-       "Gross Profit (FY)"                                                      AS gp_fy,
-       "Gross Profit (LTM)"                                                     AS gp_ltm,
-       "Gross Profit (-1FQFQ)"                                                  AS gp_1fqfq,
-       "Gross Profit (-2FQFQ)"                                                  AS gp_2fqfq,
-       "Gross Profit (-3FQFQ)"                                                  AS gp_3fqfq,
-       "Gross Profit (-4FQFQ)"                                                  AS gp_4fqfq,
-       "Gross Profit (-1FY)"                                                    AS gp_1fy,
-       "Gross Profit (-2FY)"                                                    AS gp_2fy,
-       "Gross Profit (-3FY)"                                                    AS gp_3fy,
-       "Gross Profit (-4FY)"                                                    AS gp_4fy,
-       pct_change("Gross Profit (FQ)", "Gross Profit (-1FQFQ)")                 AS gp_qoq_growth,
-       pct_change("Gross Profit (FY)", "Gross Profit (-1FY)")                   AS gp_yoy_growth,
-       safe_divide("Gross Profit (FQ)", "Total Revenues (FQ)") * 100            AS gp_margin_fq,
-       (safe_divide("Gross Profit (FQ)", "Total Revenues (FQ)") -
-        safe_divide("Gross Profit (-4FQFQ)", "Total Revenues (5YAVGFQ)")) * 100 AS gp_margin_trend,
+SELECT "ISIN"                                                                                            AS isin,
+       "Gross Profit (FQ)"                                                                               AS gp_fq,
+       "Gross Profit (FY)"                                                                               AS gp_fy,
+       "Gross Profit (LTM)"                                                                              AS gp_ltm,
+       "Gross Profit (-1FQFQ)"                                                                           AS gp_1fqfq,
+       "Gross Profit (-2FQFQ)"                                                                           AS gp_2fqfq,
+       "Gross Profit (-3FQFQ)"                                                                           AS gp_3fqfq,
+       "Gross Profit (-4FQFQ)"                                                                           AS gp_4fqfq,
+       "Gross Profit (-1FY)"                                                                             AS gp_1fy,
+       "Gross Profit (-2FY)"                                                                             AS gp_2fy,
+       "Gross Profit (-3FY)"                                                                             AS gp_3fy,
+       "Gross Profit (-4FY)"                                                                             AS gp_4fy,
+       public.pct_change("Gross Profit (FQ)"::NUMERIC,
+                         "Gross Profit (-1FQFQ)"::NUMERIC)                                               AS gp_qoq_growth,
+       public.pct_change("Gross Profit (FY)"::NUMERIC,
+                         "Gross Profit (-1FY)"::NUMERIC)                                                 AS gp_yoy_growth,
+       public.safe_divide("Gross Profit (FQ)"::NUMERIC, "Total Revenues (FQ)"::NUMERIC) *
+       100                                                                                               AS gp_margin_fq,
+       (public.safe_divide("Gross Profit (FQ)"::NUMERIC, "Total Revenues (FQ)"::NUMERIC) -
+        public.safe_divide("Gross Profit (-4FQFQ)"::NUMERIC, "Total Revenues (5YAVGFQ)"::NUMERIC)) *
+       100                                                                                               AS gp_margin_trend,
        (CASE WHEN "Gross Profit (FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Gross Profit (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Gross Profit (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Gross Profit (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "Gross Profit (-4FQFQ)" > 0 THEN 1 ELSE 0 END)::INTEGER       AS gp_positive_quarters,
+        CASE
+            WHEN "Gross Profit (-4FQFQ)" > 0 THEN 1
+            ELSE 0 END)::INTEGER                                                                         AS gp_positive_quarters,
        CASE
            WHEN "Gross Profit Margin % (LTM)" > "Gross Profit Margin % (FY)"
                THEN 1
-           ELSE 0 END                                                           AS gp_margin_expansion
+           ELSE 0 END                                                                                    AS gp_margin_expansion
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2589,53 +2641,59 @@ CREATE OR REPLACE FUNCTION calc_eps_continuing_features(p_isin TEXT DEFAULT NULL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                           AS isin,
+SELECT "ISIN"                                                                                    AS isin,
        -- Current period values
-       "Basic EPS - Cont (LTM)"                                         AS eps_cont_ltm,
-       "Basic EPS - Cont (FQ)"                                          AS eps_cont_fq,
-       "Basic EPS - Cont (FY)"                                          AS eps_cont_fy,
+       "Basic EPS - Cont (LTM)"                                                                  AS eps_cont_ltm,
+       "Basic EPS - Cont (FQ)"                                                                   AS eps_cont_fq,
+       "Basic EPS - Cont (FY)"                                                                   AS eps_cont_fy,
        -- Historical FQ
-       "Basic EPS - Cont (-1FQFQ)"                                      AS eps_cont_1fqfq,
-       "Basic EPS - Cont (-2FQFQ)"                                      AS eps_cont_2fqfq,
-       "Basic EPS - Cont (-3FQFQ)"                                      AS eps_cont_3fqfq,
-       "Basic EPS - Cont (-4FQFQ)"                                      AS eps_cont_4fqfq,
+       "Basic EPS - Cont (-1FQFQ)"                                                               AS eps_cont_1fqfq,
+       "Basic EPS - Cont (-2FQFQ)"                                                               AS eps_cont_2fqfq,
+       "Basic EPS - Cont (-3FQFQ)"                                                               AS eps_cont_3fqfq,
+       "Basic EPS - Cont (-4FQFQ)"                                                               AS eps_cont_4fqfq,
        -- Historical FY
-       "Basic EPS - Cont (-1FY)"                                        AS eps_cont_1fy,
-       "Basic EPS - Cont (-2FY)"                                        AS eps_cont_2fy,
-       "Basic EPS - Cont (-3FY)"                                        AS eps_cont_3fy,
-       "Basic EPS - Cont (-4FY)"                                        AS eps_cont_4fy,
+       "Basic EPS - Cont (-1FY)"                                                                 AS eps_cont_1fy,
+       "Basic EPS - Cont (-2FY)"                                                                 AS eps_cont_2fy,
+       "Basic EPS - Cont (-3FY)"                                                                 AS eps_cont_3fy,
+       "Basic EPS - Cont (-4FY)"                                                                 AS eps_cont_4fy,
        -- QoQ growth
-       pct_change("Basic EPS - Cont (FQ)", "Basic EPS - Cont (-1FQFQ)") AS eps_cont_qoq_growth,
+       public.pct_change("Basic EPS - Cont (FQ)"::NUMERIC, "Basic EPS - Cont (-1FQFQ)"::NUMERIC) AS eps_cont_qoq_growth,
        -- YoY growth
-       pct_change("Basic EPS - Cont (FY)", "Basic EPS - Cont (-1FY)")   AS eps_cont_yoy_growth,
+       public.pct_change("Basic EPS - Cont (FY)"::NUMERIC, "Basic EPS - Cont (-1FY)"::NUMERIC)   AS eps_cont_yoy_growth,
        -- 3-year CAGR
        CASE
            WHEN "Basic EPS - Cont (-3FY)" > 0 AND "Basic EPS - Cont (FY)" > 0
-               THEN (POWER("Basic EPS - Cont (FY)" / NULLIF("Basic EPS - Cont (-3FY)", 0), 1.0 / 3.0) - 1) * 100
-           END                                                          AS eps_cont_cagr_3y,
+               THEN
+               (POWER("Basic EPS - Cont (FY)"::NUMERIC / NULLIF("Basic EPS - Cont (-3FY)"::NUMERIC, 0), 1.0 / 3.0) -
+                1) * 100
+           END                                                                                   AS eps_cont_cagr_3y,
        -- Continuing vs Total EPS ratio (how much comes from continuing ops)
-       safe_divide("Basic EPS - Cont (LTM)", "Net EPS - Basic (LTM)")   AS eps_cont_vs_total_eps,
+       public.safe_divide("Basic EPS - Cont (LTM)"::NUMERIC,
+                          "Net EPS - Basic (LTM)"::NUMERIC)                                      AS eps_cont_vs_total_eps,
        -- Positive streak count
        (CASE WHEN "Basic EPS - Cont (FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Basic EPS - Cont (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Basic EPS - Cont (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Basic EPS - Cont (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Basic EPS - Cont (-4FQFQ)" > 0 THEN 1 ELSE 0 END)::INTEGER
-                                                                        AS eps_cont_positive_streak,
+                                                                                                 AS eps_cont_positive_streak,
        -- Trajectory score (improving trend = higher score)
        (CASE WHEN "Basic EPS - Cont (FY)" > "Basic EPS - Cont (-1FY)" THEN 1 ELSE 0 END +
         CASE WHEN "Basic EPS - Cont (-1FY)" > "Basic EPS - Cont (-2FY)" THEN 1 ELSE 0 END +
         CASE WHEN "Basic EPS - Cont (-2FY)" > "Basic EPS - Cont (-3FY)" THEN 1 ELSE 0 END +
         CASE WHEN "Basic EPS - Cont (-3FY)" > "Basic EPS - Cont (-4FY)" THEN 1 ELSE 0 END
-           ) / 4.0 * 100                                                AS eps_cont_trajectory_score,
+           ) / 4.0 *
+       100                                                                                       AS eps_cont_trajectory_score,
        -- Discontinued operations impact (difference between total and continuing)
        (("Net EPS - Basic (LTM)" - "Basic EPS - Cont (LTM)") /
-        NULLIF(ABS("Net EPS - Basic (LTM)"), 0)) * 100                  AS discontinued_ops_impact,
+        NULLIF(ABS("Net EPS - Basic (LTM)"), 0)) *
+       100                                                                                       AS discontinued_ops_impact,
        -- Core earnings stability score
-       clamp_score(
-               100 - ABS(pct_change("Basic EPS - Cont (FQ)", "Basic EPS - Cont (-4FQFQ)") -
-                         pct_change("Basic EPS - Cont (-1FQFQ)", "Basic EPS - Cont (-4FQFQ)")) * 0.5
-       )                                                                AS core_earnings_stability
+       public.clamp_score(
+               100 - ABS(public.pct_change("Basic EPS - Cont (FQ)"::NUMERIC, "Basic EPS - Cont (-4FQFQ)"::NUMERIC) -
+                         public.pct_change("Basic EPS - Cont (-1FQFQ)"::NUMERIC,
+                                           "Basic EPS - Cont (-4FQFQ)"::NUMERIC)) * 0.5
+       )                                                                                         AS core_earnings_stability
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2766,39 +2824,50 @@ CREATE OR REPLACE FUNCTION calc_cost_structure_features(p_isin TEXT DEFAULT NULL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                      AS isin,
-       safe_divide("Cost Of Revenues (LTM)", "Total Revenues (LTM)") * 100         AS cogs_to_revenue,
-       safe_divide("Total Operating Expenses (LTM)", "Total Revenues (LTM)") * 100 AS opex_to_revenue,
-       safe_divide("Selling General & Admin Expenses/Total (FY)", "Total Revenues (FY)") * 100
-                                                                                   AS sga_to_revenue,
-       safe_divide("R&D Expenses (LTM)", "Total Revenues (LTM)") * 100             AS rnd_to_revenue,
-       safe_divide("Interest Expense/Total (LTM)", "Total Revenues (LTM)") * 100   AS interest_to_revenue,
+SELECT "ISIN"                                                                                               AS isin,
+       public.safe_divide("Cost Of Revenues (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
+       100                                                                                                  AS cogs_to_revenue,
+       public.safe_divide("Total Operating Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
+       100                                                                                                  AS opex_to_revenue,
+       public.safe_divide("Selling General & Admin Expenses/Total (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) * 100
+                                                                                                            AS sga_to_revenue,
+       public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
+       100                                                                                                  AS rnd_to_revenue,
+       public.safe_divide("Interest Expense/Total (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
+       100                                                                                                  AS interest_to_revenue,
        -- SG&A trend using available FY columns
-       (safe_divide("Selling General & Admin Expenses/Total (FY)", "Total Revenues (FY)") -
-        safe_divide("Selling General & Admin Expenses/Total (-1FY)", "Total Revenues (-1FY)")) * 100
-                                                                                   AS sga_trend_yoy,
+       (public.safe_divide("Selling General & Admin Expenses/Total (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) -
+        public.safe_divide("Selling General & Admin Expenses/Total (-1FY)"::NUMERIC,
+                           "Total Revenues (-1FY)"::NUMERIC)) * 100
+                                                                                                            AS sga_trend_yoy,
        CASE
-           WHEN calc_change_ratio("Total Revenues (FY)", "Total Revenues (-1FY)") > 0
-               THEN safe_divide(
-                   calc_change_ratio("Operating Income (FY)", "Operating Income (-1FY)"),
-                   calc_change_ratio("Total Revenues (FY)", "Total Revenues (-1FY)")
+           WHEN public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) > 0
+               THEN public.safe_divide(
+                   public.calc_change_ratio("Operating Income (FY)"::NUMERIC, "Operating Income (-1FY)"::NUMERIC),
+                   public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)
                     )
-           END                                                                     AS operating_leverage_proxy,
-       clamp_score(
-               100 - safe_divide("Cost Of Revenues (LTM)", "Total Revenues (LTM)") * 100 * 0.5 -
-               safe_divide("Total Operating Expenses (LTM)", "Total Revenues (LTM)") * 100 * 0.3
-       )                                                                           AS cost_efficiency_score,
+           END                                                                                              AS operating_leverage_proxy,
+       public.clamp_score(
+               100 -
+               public.safe_divide("Cost Of Revenues (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) * 100 * 0.5 -
+               public.safe_divide("Total Operating Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) * 100 *
+               0.3
+       )                                                                                                    AS cost_efficiency_score,
        -- NEW: Marketing efficiency metrics using schema columns
-       safe_divide("Marketing Expenses (FY)", "Total Revenues (FY)") * 100         AS marketing_to_revenue,
-       pct_change("Marketing Expenses (FY)", "Marketing Expenses (-1FY)")          AS marketing_trend_yoy,
-       safe_divide("Marketing Expenses (FY)", "Marketing Expenses (5YAVGLTM)")     AS marketing_vs_5y_avg,
+       public.safe_divide("Marketing Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) *
+       100                                                                                                  AS marketing_to_revenue,
+       public.pct_change("Marketing Expenses (FY)"::NUMERIC,
+                         "Marketing Expenses (-1FY)"::NUMERIC)                                              AS marketing_trend_yoy,
+       public.safe_divide("Marketing Expenses (FY)"::NUMERIC,
+                          "Marketing Expenses (5YAVGLTM)"::NUMERIC)                                         AS marketing_vs_5y_avg,
        -- NEW: SG&A vs 5Y average
-       safe_divide("Selling General & Admin Expenses/Total (FQ)",
-                   "Selling General & Admin Expenses/Total (5YAVGFQ)")             AS sga_vs_5y_avg,
+       public.safe_divide("Selling General & Admin Expenses/Total (FQ)"::NUMERIC,
+                          "Selling General & Admin Expenses/Total (5YAVGFQ)"::NUMERIC)                      AS sga_vs_5y_avg,
        -- NEW: SG&A efficiency trend (lower ratio = better efficiency)
-       (safe_divide("Selling General & Admin Expenses/Total (-1FY)", "Total Revenues (-1FY)") -
-        safe_divide("Selling General & Admin Expenses/Total (FY)", "Total Revenues (FY)")) * 100
-                                                                                   AS sga_efficiency_trend
+       (public.safe_divide("Selling General & Admin Expenses/Total (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) -
+        public.safe_divide("Selling General & Admin Expenses/Total (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC)) *
+       100
+                                                                                                            AS sga_efficiency_trend
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2906,29 +2975,29 @@ CREATE OR REPLACE FUNCTION calc_long_term_momentum_features(p_isin TEXT DEFAULT 
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                     AS isin,
-       pct_change("Last Price", "Price (1Y Ago)") AS price_momentum_1y,
-       pct_change("Last Price", "Price (3Y Ago)") AS price_momentum_3y,
-       pct_change("Last Price", "Price (5Y Ago)") AS price_momentum_5y,
+SELECT "ISIN"                                                              AS isin,
+       public.pct_change("Last Price"::NUMERIC, "Price (1Y Ago)"::NUMERIC) AS price_momentum_1y,
+       public.pct_change("Last Price"::NUMERIC, "Price (3Y Ago)"::NUMERIC) AS price_momentum_3y,
+       public.pct_change("Last Price"::NUMERIC, "Price (5Y Ago)"::NUMERIC) AS price_momentum_5y,
        -- Weighted trend score using available periods (1Y: 50%, 3Y: 30%, 5Y: 20%)
-       (COALESCE(pct_change("Last Price", "Price (1Y Ago)"), 0) * 0.50 +
-        COALESCE(pct_change("Last Price", "Price (3Y Ago)"), 0) * 0.30 +
-        COALESCE(pct_change("Last Price", "Price (5Y Ago)"), 0) * 0.20) / 100
-                                                  AS long_term_trend_score,
-       pct_change("Last Price", "EMA (250D)")     AS price_vs_ema_250d,
+       (COALESCE(public.pct_change("Last Price"::NUMERIC, "Price (1Y Ago)"::NUMERIC), 0) * 0.50 +
+        COALESCE(public.pct_change("Last Price"::NUMERIC, "Price (3Y Ago)"::NUMERIC), 0) * 0.30 +
+        COALESCE(public.pct_change("Last Price"::NUMERIC, "Price (5Y Ago)"::NUMERIC), 0) * 0.20) / 100
+                                                                           AS long_term_trend_score,
+       public.pct_change("Last Price"::NUMERIC, "EMA (250D)"::NUMERIC)     AS price_vs_ema_250d,
        CASE
-           WHEN calc_change_ratio("52W High/Adj" - "Last Price", "52W High/Adj") <= 0.10
-               AND calc_change_ratio("Last Price", "Price (3Y Ago)") > 0.5
+           WHEN public.calc_change_ratio("52W High/Adj"::NUMERIC - "Last Price", "52W High/Adj"::NUMERIC) <= 0.10
+               AND public.calc_change_ratio("Last Price"::NUMERIC, "Price (3Y Ago)"::NUMERIC) > 0.5
                THEN 1
            ELSE 0
-           END                                    AS multi_year_high_flag,
+           END                                                             AS multi_year_high_flag,
        CASE
-           WHEN calc_change_ratio("Last Price", "Price (3Y Ago)") > 0.20
-               AND calc_change_ratio("Last Price", "Price (1Y Ago)") > 0
+           WHEN public.calc_change_ratio("Last Price"::NUMERIC, "Price (3Y Ago)"::NUMERIC) > 0.20
+               AND public.calc_change_ratio("Last Price"::NUMERIC, "Price (1Y Ago)"::NUMERIC) > 0
                AND "EMA (50D)" > "EMA (250D)"
                THEN 1
            ELSE 0
-           END                                    AS secular_trend_flag
+           END                                                             AS secular_trend_flag
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2956,22 +3025,23 @@ CREATE OR REPLACE FUNCTION calc_revenue_estimate_consensus(p_isin TEXT DEFAULT N
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                           AS isin,
-       "Revenues - Est Avg (FY1E)"                                      AS revenue_est_avg_fy1e,
-       "Revenues - Est Med (FY1E)"                                      AS revenue_est_med_fy1e,
-       "Revenues - Est Avg (NTM)"                                       AS revenue_est_avg_ntm,
-       "Revenues - Est Med (NTM)"                                       AS revenue_est_med_ntm,
+SELECT "ISIN"                                                                                    AS isin,
+       "Revenues - Est Avg (FY1E)"                                                               AS revenue_est_avg_fy1e,
+       "Revenues - Est Med (FY1E)"                                                               AS revenue_est_med_fy1e,
+       "Revenues - Est Avg (NTM)"                                                                AS revenue_est_avg_ntm,
+       "Revenues - Est Med (NTM)"                                                                AS revenue_est_med_ntm,
        -- Difference between avg and median as proxy for estimate dispersion
-       safe_divide("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)",
-                   "Revenues - Est Med (FY1E)") * 100                   AS revenue_avg_med_diff_pct,
+       public.safe_divide("Revenues - Est Avg (FY1E)"::NUMERIC - "Revenues - Est Med (FY1E)",
+                          "Revenues - Est Med (FY1E)"::NUMERIC) *
+       100                                                                                       AS revenue_avg_med_diff_pct,
        -- Consensus strength: closer avg to median = stronger consensus
-       clamp_score(
-               100 - ABS(safe_divide("Revenues - Est Avg (FY1E)" - "Revenues - Est Med (FY1E)",
-                                     "Revenues - Est Med (FY1E)") * 100) * 2
-       )                                                                AS revenue_consensus_strength,
-       "Revenues - Est YoY % (FY1E)"                                    AS revenue_revision_trend,
+       public.clamp_score(
+               100 - ABS(public.safe_divide("Revenues - Est Avg (FY1E)"::NUMERIC - "Revenues - Est Med (FY1E)",
+                                            "Revenues - Est Med (FY1E)"::NUMERIC) * 100) * 2
+       )                                                                                         AS revenue_consensus_strength,
+       "Revenues - Est YoY % (FY1E)"                                                             AS revenue_revision_trend,
        -- Compare estimate to current revenue
-       safe_divide("Revenues - Est Avg (FY1E)", "Total Revenues (LTM)") AS revenue_vs_current
+       public.safe_divide("Revenues - Est Avg (FY1E)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) AS revenue_vs_current
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3035,82 +3105,91 @@ CREATE OR REPLACE FUNCTION calc_revenue_quarterly_features(p_isin TEXT DEFAULT N
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                     AS isin,
+SELECT "ISIN"                                                                                    AS isin,
        -- Base revenue values
-       "Total Revenues (FQ)"                                                      AS revenue_fq,
-       "Total Revenues (FY)"                                                      AS revenue_fy,
-       "Total Revenues (LTM)"                                                     AS revenue_ltm,
-       "Total Revenues (5YAVGLTM)"                                                AS revenue_5y_avg,
+       "Total Revenues (FQ)"                                                                     AS revenue_fq,
+       "Total Revenues (FY)"                                                                     AS revenue_fy,
+       "Total Revenues (LTM)"                                                                    AS revenue_ltm,
+       "Total Revenues (5YAVGLTM)"                                                               AS revenue_5y_avg,
        -- Quarterly historical values
-       "Total Revenues (-1FQFQ)"                                                  AS revenue_1fqfq,
-       "Total Revenues (-2FQFQ)"                                                  AS revenue_2fqfq,
-       "Total Revenues (-3FQFQ)"                                                  AS revenue_3fqfq,
-       "Total Revenues (-4FQFQ)"                                                  AS revenue_4fqfq,
+       "Total Revenues (-1FQFQ)"                                                                 AS revenue_1fqfq,
+       "Total Revenues (-2FQFQ)"                                                                 AS revenue_2fqfq,
+       "Total Revenues (-3FQFQ)"                                                                 AS revenue_3fqfq,
+       "Total Revenues (-4FQFQ)"                                                                 AS revenue_4fqfq,
        -- Extended yearly historical
-       "Total Revenues (-1FY)"                                                    AS revenue_1fy,
-       "Total Revenues (-2FY)"                                                    AS revenue_2fy,
-       "Total Revenues (-3FY)"                                                    AS revenue_3fy,
-       "Total Revenues (-4FY)"                                                    AS revenue_4fy,
+       "Total Revenues (-1FY)"                                                                   AS revenue_1fy,
+       "Total Revenues (-2FY)"                                                                   AS revenue_2fy,
+       "Total Revenues (-3FY)"                                                                   AS revenue_3fy,
+       "Total Revenues (-4FY)"                                                                   AS revenue_4fy,
        -- Year-over-year growth using FY data
-       pct_change("Total Revenues (FY)", "Total Revenues (-1FY)")                 AS revenue_yoy_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)       AS revenue_yoy_growth,
        -- Current vs 5-year average
-       safe_divide("Total Revenues (LTM)", "Total Revenues (5YAVGLTM)")           AS revenue_vs_5y_avg,
+       public.safe_divide("Total Revenues (LTM)"::NUMERIC, "Total Revenues (5YAVGLTM)"::NUMERIC) AS revenue_vs_5y_avg,
        -- LTM vs FY comparison
-       safe_divide("Total Revenues (LTM)", "Total Revenues (FY)")                 AS revenue_ltm_vs_fy,
+       public.safe_divide("Total Revenues (LTM)"::NUMERIC, "Total Revenues (FY)"::NUMERIC)       AS revenue_ltm_vs_fy,
        -- FQ vs 5-year average FQ
-       safe_divide("Total Revenues (FQ)", "Total Revenues (5YAVGFQ)")             AS revenue_fq_vs_5y_avg_fq,
+       public.safe_divide("Total Revenues (FQ)"::NUMERIC,
+                          "Total Revenues (5YAVGFQ)"::NUMERIC)                                   AS revenue_fq_vs_5y_avg_fq,
        -- Quarterly momentum: QoQ growth rates
-       pct_change("Total Revenues (FQ)", "Total Revenues (-1FQFQ)")               AS revenue_qoq_growth,
-       pct_change("Total Revenues (-1FQFQ)", "Total Revenues (-2FQFQ)")           AS revenue_qoq_2q,
-       pct_change("Total Revenues (-2FQFQ)", "Total Revenues (-3FQFQ)")           AS revenue_qoq_3q,
-       pct_change("Total Revenues (-3FQFQ)", "Total Revenues (-4FQFQ)")           AS revenue_qoq_4q,
+       public.pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-1FQFQ)"::NUMERIC)     AS revenue_qoq_growth,
+       public.pct_change("Total Revenues (-1FQFQ)"::NUMERIC, "Total Revenues (-2FQFQ)"::NUMERIC) AS revenue_qoq_2q,
+       public.pct_change("Total Revenues (-2FQFQ)"::NUMERIC, "Total Revenues (-3FQFQ)"::NUMERIC) AS revenue_qoq_3q,
+       public.pct_change("Total Revenues (-3FQFQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC) AS revenue_qoq_4q,
        -- YoY quarterly comparison (current FQ vs same quarter last year)
-       pct_change("Total Revenues (FQ)", "Total Revenues (-4FQFQ)")               AS revenue_yoy_quarterly,
+       public.pct_change("Total Revenues (FQ)"::NUMERIC,
+                         "Total Revenues (-4FQFQ)"::NUMERIC)                                     AS revenue_yoy_quarterly,
        -- Multi-year growth rates
-       pct_change("Total Revenues (FY)", "Total Revenues (-2FY)")                 AS revenue_2y_growth,
-       pct_change("Total Revenues (FY)", "Total Revenues (-3FY)")                 AS revenue_3y_growth,
-       pct_change("Total Revenues (FY)", "Total Revenues (-4FY)")                 AS revenue_4y_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-2FY)"::NUMERIC)       AS revenue_2y_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC)       AS revenue_3y_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC)       AS revenue_4y_growth,
        -- CAGR calculations
        CASE
            WHEN "Total Revenues (-3FY)" > 0 AND "Total Revenues (FY)" > 0
-               THEN (POWER(safe_divide("Total Revenues (FY)", "Total Revenues (-3FY)"), 1.0 / 3.0) - 1) * 100
-           END                                                                    AS revenue_cagr_3y,
+               THEN
+               (POWER(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC), 1.0 / 3.0) -
+                1) *
+               100
+           END                                                                                   AS revenue_cagr_3y,
        CASE
            WHEN "Total Revenues (-4FY)" > 0 AND "Total Revenues (FY)" > 0
-               THEN (POWER(safe_divide("Total Revenues (FY)", "Total Revenues (-4FY)"), 1.0 / 4.0) - 1) * 100
-           END                                                                    AS revenue_cagr_4y,
+               THEN
+               (POWER(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC), 1.0 / 4.0) -
+                1) *
+               100
+           END                                                                                   AS revenue_cagr_4y,
        -- Quarterly trend: FQ vs 4 quarters ago
-       pct_change("Total Revenues (FQ)", "Total Revenues (-4FQFQ)")               AS revenue_4q_trend,
+       public.pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC)     AS revenue_4q_trend,
        -- Trailing 4-quarter average
        ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
-        "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") / 4.0              AS revenue_4q_avg,
+        "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") / 4.0                             AS revenue_4q_avg,
        -- FQ vs trailing 4Q average
-       safe_divide("Total Revenues (FQ)",
+       public.safe_divide("Total Revenues (FQ)"::NUMERIC,
                    ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
-                    "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") / 4.0) AS revenue_fq_vs_4q_avg,
+                    "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
+                   4.0)                                                                          AS revenue_fq_vs_4q_avg,
        -- Growth flag: 1 if growing YoY
        CASE
            WHEN "Total Revenues (FY)" > "Total Revenues (-1FY)" THEN 1
            ELSE 0
-           END                                                                    AS revenue_growth_flag,
+           END                                                                                   AS revenue_growth_flag,
        -- Revenue stability: how close LTM is to 5Y average
-       clamp_score(
-               100 - ABS(safe_divide("Total Revenues (LTM)" - "Total Revenues (5YAVGLTM)",
-                                     "Total Revenues (5YAVGLTM)")) * 100
-       )                                                                          AS revenue_stability_score,
+       public.clamp_score(
+               100 - ABS(public.safe_divide("Total Revenues (LTM)"::NUMERIC - "Total Revenues (5YAVGLTM)",
+                                            "Total Revenues (5YAVGLTM)"::NUMERIC)) * 100
+       )                                                                                         AS revenue_stability_score,
        -- Accelerating growth flag: recent growth > historical growth
        CASE
-           WHEN pct_change("Total Revenues (FY)", "Total Revenues (-1FY)") >
-                pct_change("Total Revenues (-1FY)", "Total Revenues (-2FY)")
+           WHEN public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) >
+                public.pct_change("Total Revenues (-1FY)"::NUMERIC, "Total Revenues (-2FY)"::NUMERIC)
                THEN 1
            ELSE 0
-           END                                                                    AS revenue_accelerating_flag,
+           END                                                                                   AS revenue_accelerating_flag,
        -- Positive QoQ streak count
        (CASE WHEN "Total Revenues (FQ)" > "Total Revenues (-1FQFQ)" THEN 1 ELSE 0 END +
         CASE WHEN "Total Revenues (-1FQFQ)" > "Total Revenues (-2FQFQ)" THEN 1 ELSE 0 END +
         CASE WHEN "Total Revenues (-2FQFQ)" > "Total Revenues (-3FQFQ)" THEN 1 ELSE 0 END +
         CASE WHEN "Total Revenues (-3FQFQ)" > "Total Revenues (-4FQFQ)" THEN 1 ELSE 0 END)::INTEGER
-                                                                                  AS revenue_positive_qoq_streak
+                                                                                                 AS revenue_positive_qoq_streak
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3142,29 +3221,28 @@ CREATE OR REPLACE FUNCTION calc_tangible_book_features(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                AS isin,
+SELECT "ISIN"                                                                                 AS isin,
        -- Use native TBV columns from schema (more accurate than calculation)
-       "TBV (FY)"                                                            AS tangible_book_value_fy,
-       "TBV (LTM)"                                                           AS tangible_book_value_ltm,
+       "TBV (FY)"                                                                             AS tangible_book_value_fy,
+       "TBV (LTM)"                                                                            AS tangible_book_value_ltm,
        -- Per share using native TBV
-       "TBV (LTM)" / NULLIF("Shrs Out", 0)                                   AS tangible_book_per_share,
+       "TBV (LTM)" / NULLIF("Shrs Out", 0)                                                    AS tangible_book_per_share,
        -- P/TBV using native column (already in schema as P/TBV (LTM))
-       "P/TBV (LTM)"                                                         AS price_to_tangible_book,
+       "P/TBV (LTM)"                                                                          AS price_to_tangible_book,
        -- Tangible equity ratio using native TBV
-       "TBV (LTM)" / NULLIF("Total Assets (LTM)", 0) * 100                   AS tangible_equity_ratio,
+       "TBV (LTM)" / NULLIF("Total Assets (LTM)", 0) * 100                                    AS tangible_equity_ratio,
        COALESCE("Gross Intangible Assets (LTM)", 0) / NULLIF("Total Equity (LTM)", 0) * 100
-                                                                             AS intangibles_to_equity,
-       COALESCE("Goodwill (LTM)", 0) / NULLIF("Total Equity (LTM)", 0) * 100 AS goodwill_to_equity,
+                                                                                              AS intangibles_to_equity,
+       COALESCE("Goodwill (LTM)", 0) / NULLIF("Total Equity (LTM)", 0) * 100                  AS goodwill_to_equity,
        GREATEST(0, LEAST(100,
                          100 - (COALESCE("Goodwill (LTM)", 0) + COALESCE("Gross Intangible Assets (LTM)", 0)) /
                                NULLIF("Total Assets (LTM)", 0) * 100
-                   ))                                                        AS tangible_asset_quality,
+                   ))                                                                         AS tangible_asset_quality,
        -- NEW: TBV growth (FY to LTM)
-       pct_change("TBV (LTM)", "TBV (FY)")                                   AS tbv_yoy_growth,
+       public.pct_change("TBV (LTM)"::NUMERIC, "TBV (FY)"::NUMERIC)                           AS tbv_yoy_growth,
        -- Validation: compare native TBV to calculated (should be ~1.0)
-       safe_divide("TBV (LTM)",
-                   "Total Equity (LTM)" - COALESCE("Goodwill (LTM)", 0) -
-                   COALESCE("Gross Intangible Assets (LTM)", 0))             AS tbv_vs_calculated
+       public.safe_divide("TBV (LTM)"::NUMERIC, "Total Equity (LTM)"::NUMERIC - COALESCE("Goodwill (LTM)", 0) -
+                                                COALESCE("Gross Intangible Assets (LTM)", 0)) AS tbv_vs_calculated
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3211,50 +3289,50 @@ CREATE OR REPLACE FUNCTION calc_inventory_temporal_features(p_isin TEXT DEFAULT 
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                          AS isin,
+SELECT "ISIN"                                                                                AS isin,
        -- Current values
-       "Inventory (LTM)"                                               AS inventory_ltm,
-       "Inventory (FQ)"                                                AS inventory_fq,
-       "Inventory (FY)"                                                AS inventory_fy,
+       "Inventory (LTM)"                                                                     AS inventory_ltm,
+       "Inventory (FQ)"                                                                      AS inventory_fq,
+       "Inventory (FY)"                                                                      AS inventory_fy,
        -- Quarterly historical
-       "Inventory (-1FQ)"                                              AS inventory_1fq,
-       "Inventory (-2FQ)"                                              AS inventory_2fq,
-       "Inventory (-3FQ)"                                              AS inventory_3fq,
-       "Inventory (-4FQ)"                                              AS inventory_4fq,
+       "Inventory (-1FQ)"                                                                    AS inventory_1fq,
+       "Inventory (-2FQ)"                                                                    AS inventory_2fq,
+       "Inventory (-3FQ)"                                                                    AS inventory_3fq,
+       "Inventory (-4FQ)"                                                                    AS inventory_4fq,
        -- Yearly historical
-       "Inventory (-1FY)"                                              AS inventory_1fy,
-       "Inventory (-2FY)"                                              AS inventory_2fy,
-       "Inventory (-3FY)"                                              AS inventory_3fy,
-       "Inventory (-4FY)"                                              AS inventory_4fy,
+       "Inventory (-1FY)"                                                                    AS inventory_1fy,
+       "Inventory (-2FY)"                                                                    AS inventory_2fy,
+       "Inventory (-3FY)"                                                                    AS inventory_3fy,
+       "Inventory (-4FY)"                                                                    AS inventory_4fy,
        -- Trend metrics
-       pct_change("Inventory (FQ)", "Inventory (-1FQ)")                AS inventory_qoq_change,
-       pct_change("Inventory (FY)", "Inventory (-1FY)")                AS inventory_yoy_change,
-       pct_change("Inventory (FQ)", "Inventory (-4FQ)")                AS inventory_4q_trend,
-       safe_divide("Inventory (FQ)", "Inventory (5YAVGFQ)")            AS inventory_vs_5y_avg,
+       public.pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-1FQ)"::NUMERIC)             AS inventory_qoq_change,
+       public.pct_change("Inventory (FY)"::NUMERIC, "Inventory (-1FY)"::NUMERIC)             AS inventory_yoy_change,
+       public.pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-4FQ)"::NUMERIC)             AS inventory_4q_trend,
+       public.safe_divide("Inventory (FQ)"::NUMERIC, "Inventory (5YAVGFQ)"::NUMERIC)         AS inventory_vs_5y_avg,
        -- Efficiency metrics
-       "Inventory (LTM)" / NULLIF("Cost Of Revenues (LTM)" / 365.0, 0) AS inventory_days,
-       "Cost Of Revenues (LTM)" / NULLIF("Inventory (LTM)", 0)         AS inventory_turnover,
-       safe_divide("Inventory (LTM)", "Total Revenues (LTM)") * 100    AS inventory_to_revenue,
-       safe_divide("Inventory (LTM)", "Total Assets (LTM)") * 100      AS inventory_to_assets,
+       "Inventory (LTM)" / NULLIF("Cost Of Revenues (LTM)" / 365.0, 0)                       AS inventory_days,
+       "Cost Of Revenues (LTM)" / NULLIF("Inventory (LTM)", 0)                               AS inventory_turnover,
+       public.safe_divide("Inventory (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) * 100 AS inventory_to_revenue,
+       public.safe_divide("Inventory (LTM)"::NUMERIC, "Total Assets (LTM)"::NUMERIC) * 100   AS inventory_to_assets,
        -- Inventory buildup flag (rising faster than revenue)
        CASE
-           WHEN pct_change("Inventory (FQ)", "Inventory (-4FQ)") >
-                pct_change("Total Revenues (FQ)", "Total Revenues (-4FQFQ)") + 10
+           WHEN public.pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-4FQ)"::NUMERIC) >
+                public.pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC) + 10
                THEN 1
-           ELSE 0 END                                                  AS inventory_buildup_flag,
+           ELSE 0 END                                                                        AS inventory_buildup_flag,
        -- Inventory reduction flag (declining)
        CASE
            WHEN "Inventory (FQ)" < "Inventory (-1FQ)"
                AND "Inventory (-1FQ)" < "Inventory (-2FQ)"
                THEN 1
-           ELSE 0 END                                                  AS inventory_reduction_flag,
+           ELSE 0 END                                                                        AS inventory_reduction_flag,
        -- Volatility (coefficient of variation)
        (ABS("Inventory (FQ)" - "Inventory (-1FQ)") +
         ABS("Inventory (-1FQ)" - "Inventory (-2FQ)") +
         ABS("Inventory (-2FQ)" - "Inventory (-3FQ)") +
         ABS("Inventory (-3FQ)" - "Inventory (-4FQ)")) /
        NULLIF(ABS(("Inventory (FQ)" + "Inventory (-1FQ)" + "Inventory (-2FQ)" +
-                   "Inventory (-3FQ)" + "Inventory (-4FQ)") / 5.0), 0) AS inventory_volatility
+                   "Inventory (-3FQ)" + "Inventory (-4FQ)") / 5.0), 0)                       AS inventory_volatility
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3299,53 +3377,55 @@ CREATE OR REPLACE FUNCTION calc_goodwill_temporal_features(p_isin TEXT DEFAULT N
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                        AS isin,
+SELECT "ISIN"                                                                                 AS isin,
        -- Current values
-       "Goodwill (FQ)"                                               AS goodwill_fq,
-       "Goodwill (LTM)"                                              AS goodwill_ltm,
-       "Goodwill (FY)"                                               AS goodwill_fy,
+       "Goodwill (FQ)"                                                                        AS goodwill_fq,
+       "Goodwill (LTM)"                                                                       AS goodwill_ltm,
+       "Goodwill (FY)"                                                                        AS goodwill_fy,
        -- Quarterly historical
-       "Goodwill (-1FQ)"                                             AS goodwill_1fq,
-       "Goodwill (-2FQ)"                                             AS goodwill_2fq,
-       "Goodwill (-3FQ)"                                             AS goodwill_3fq,
-       "Goodwill (-4FQ)"                                             AS goodwill_4fq,
+       "Goodwill (-1FQ)"                                                                      AS goodwill_1fq,
+       "Goodwill (-2FQ)"                                                                      AS goodwill_2fq,
+       "Goodwill (-3FQ)"                                                                      AS goodwill_3fq,
+       "Goodwill (-4FQ)"                                                                      AS goodwill_4fq,
        -- Yearly historical
-       "Goodwill (-1FY)"                                             AS goodwill_1fy,
-       "Goodwill (-2FY)"                                             AS goodwill_2fy,
-       "Goodwill (-3FY)"                                             AS goodwill_3fy,
-       "Goodwill (-4FY)"                                             AS goodwill_4fy,
+       "Goodwill (-1FY)"                                                                      AS goodwill_1fy,
+       "Goodwill (-2FY)"                                                                      AS goodwill_2fy,
+       "Goodwill (-3FY)"                                                                      AS goodwill_3fy,
+       "Goodwill (-4FY)"                                                                      AS goodwill_4fy,
        -- Trend metrics
-       pct_change("Goodwill (FQ)", "Goodwill (-1FQ)")                AS goodwill_qoq_change,
-       pct_change("Goodwill (FY)", "Goodwill (-1FY)")                AS goodwill_yoy_change,
-       pct_change("Goodwill (FY)", "Goodwill (-3FY)")                AS goodwill_3y_growth,
-       safe_divide("Goodwill (FQ)", "Goodwill (5YAVGFQ)")            AS goodwill_vs_5y_avg,
+       public.pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC)                AS goodwill_qoq_change,
+       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-1FY)"::NUMERIC)                AS goodwill_yoy_change,
+       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC)                AS goodwill_3y_growth,
+       public.safe_divide("Goodwill (FQ)"::NUMERIC, "Goodwill (5YAVGFQ)"::NUMERIC)            AS goodwill_vs_5y_avg,
        -- Recent acquisition flag (goodwill increased significantly)
        CASE
-           WHEN pct_change("Goodwill (FQ)", "Goodwill (-1FQ)") > 20
+           WHEN public.pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC) > 20
                THEN 1
-           ELSE 0 END                                                AS recent_acquisition_flag,
+           ELSE 0 END                                                                         AS recent_acquisition_flag,
        -- Goodwill accumulation rate (avg annual increase)
        CASE
            WHEN "Goodwill (-3FY)" > 0
-               THEN (POWER(safe_divide("Goodwill (FY)", "Goodwill (-3FY)"), 1.0 / 3.0) - 1) * 100
-           END                                                       AS goodwill_accumulation_rate,
+               THEN (POWER(public.safe_divide("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC), 1.0 / 3.0) - 1) *
+                    100
+           END                                                                                AS goodwill_accumulation_rate,
        -- Goodwill to assets trend (increasing concentration risk)
-       (safe_divide("Goodwill (FY)", "Total Assets (FY)") -
-        safe_divide("Goodwill (-1FY)", "Total Assets (-1FY)")) * 100 AS goodwill_to_assets_trend,
+       (public.safe_divide("Goodwill (FY)"::NUMERIC, "Total Assets (FY)"::NUMERIC) -
+        public.safe_divide("Goodwill (-1FY)"::NUMERIC, "Total Assets (-1FY)"::NUMERIC)) *
+       100                                                                                    AS goodwill_to_assets_trend,
        -- Impairment risk score (high goodwill + declining earnings = risk)
        CASE
            WHEN "Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0) > 0.25
                AND "Net Income - (IS) (FY)" < "Net Income - (IS) (-1FY)"
-               THEN clamp_score(
+               THEN public.clamp_score(
                    ("Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0)) * 200 +
-                   ABS(pct_change("Net Income - (IS) (FY)", "Net Income - (IS) (-1FY)")) * 0.5
+                   ABS(public.pct_change("Net Income - (IS) (FY)"::NUMERIC, "Net Income - (IS) (-1FY)"::NUMERIC)) * 0.5
                     )
-           ELSE clamp_score(
+           ELSE public.clamp_score(
                    ("Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0)) * 100
                 )
-           END                                                       AS impairment_risk_score,
+           END                                                                                AS impairment_risk_score,
        -- Goodwill concentration (relative to equity)
-       safe_divide("Goodwill (LTM)", "Total Equity (LTM)") * 100     AS goodwill_concentration
+       public.safe_divide("Goodwill (LTM)"::NUMERIC, "Total Equity (LTM)"::NUMERIC) * 100     AS goodwill_concentration
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3394,62 +3474,68 @@ CREATE OR REPLACE FUNCTION calc_rnd_temporal_features(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                              AS isin,
+SELECT "ISIN"                                                                                       AS isin,
        -- Current values
-       "R&D Expenses (LTM)"                                                AS rnd_ltm,
-       "R&D Expenses (FQ)"                                                 AS rnd_fq,
-       "R&D Expenses (FY)"                                                 AS rnd_fy,
+       "R&D Expenses (LTM)"                                                                         AS rnd_ltm,
+       "R&D Expenses (FQ)"                                                                          AS rnd_fq,
+       "R&D Expenses (FY)"                                                                          AS rnd_fy,
        -- Quarterly historical
-       "R&D Expenses (-1FQFQ)"                                             AS rnd_1fqfq,
-       "R&D Expenses (-2FQFQ)"                                             AS rnd_2fqfq,
-       "R&D Expenses (-3FQFQ)"                                             AS rnd_3fqfq,
-       "R&D Expenses (-4FQFQ)"                                             AS rnd_4fqfq,
+       "R&D Expenses (-1FQFQ)"                                                                      AS rnd_1fqfq,
+       "R&D Expenses (-2FQFQ)"                                                                      AS rnd_2fqfq,
+       "R&D Expenses (-3FQFQ)"                                                                      AS rnd_3fqfq,
+       "R&D Expenses (-4FQFQ)"                                                                      AS rnd_4fqfq,
        -- Yearly historical
-       "R&D Expenses (-1FY)"                                               AS rnd_1fy,
-       "R&D Expenses (-2FY)"                                               AS rnd_2fy,
-       "R&D Expenses (-3FY)"                                               AS rnd_3fy,
-       "R&D Expenses (-4FY)"                                               AS rnd_4fy,
+       "R&D Expenses (-1FY)"                                                                        AS rnd_1fy,
+       "R&D Expenses (-2FY)"                                                                        AS rnd_2fy,
+       "R&D Expenses (-3FY)"                                                                        AS rnd_3fy,
+       "R&D Expenses (-4FY)"                                                                        AS rnd_4fy,
        -- Intensity metrics (R&D / Revenue)
-       safe_divide("R&D Expenses (LTM)", "Total Revenues (LTM)") * 100     AS rnd_intensity_ltm,
-       safe_divide("R&D Expenses (FY)", "Total Revenues (FY)") * 100       AS rnd_intensity_fy,
+       public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
+       100                                                                                          AS rnd_intensity_ltm,
+       public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) * 100       AS rnd_intensity_fy,
        -- Intensity trend (increasing R&D commitment)
-       (safe_divide("R&D Expenses (FY)", "Total Revenues (FY)") -
-        safe_divide("R&D Expenses (-1FY)", "Total Revenues (-1FY)")) * 100 AS rnd_intensity_trend,
+       (public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) -
+        public.safe_divide("R&D Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)) *
+       100                                                                                          AS rnd_intensity_trend,
        -- Growth metrics
-       pct_change("R&D Expenses (FQ)", "R&D Expenses (-1FQFQ)")            AS rnd_qoq_growth,
-       pct_change("R&D Expenses (FY)", "R&D Expenses (-1FY)")              AS rnd_yoy_growth,
+       public.pct_change("R&D Expenses (FQ)"::NUMERIC, "R&D Expenses (-1FQFQ)"::NUMERIC)            AS rnd_qoq_growth,
+       public.pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC)              AS rnd_yoy_growth,
        CASE
            WHEN "R&D Expenses (-3FY)" > 0 AND "R&D Expenses (FY)" > 0
-               THEN (POWER(safe_divide("R&D Expenses (FY)", "R&D Expenses (-3FY)"), 1.0 / 3.0) - 1) * 100
-           END                                                             AS rnd_cagr_3y,
+               THEN
+               (POWER(public.safe_divide("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-3FY)"::NUMERIC), 1.0 / 3.0) -
+                1) *
+               100
+           END                                                                                      AS rnd_cagr_3y,
        -- Efficiency metrics
-       safe_divide("R&D Expenses (FY)", "Full Time Employees (FY)")        AS rnd_per_employee,
-       safe_divide("R&D Expenses (LTM)", "Gross Profit (LTM)") * 100       AS rnd_to_gross_profit,
+       public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Full Time Employees (FY)"::NUMERIC)        AS rnd_per_employee,
+       public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Gross Profit (LTM)"::NUMERIC) *
+       100                                                                                          AS rnd_to_gross_profit,
        -- R&D ROI proxy: revenue growth relative to R&D spend
        CASE
            WHEN "R&D Expenses (-1FY)" > 0
-               THEN safe_divide(
-                   pct_change("Total Revenues (FY)", "Total Revenues (-1FY)"),
-                   safe_divide("R&D Expenses (-1FY)", "Total Revenues (-1FY)") * 100
+               THEN public.safe_divide(
+                   public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC),
+                   public.safe_divide("R&D Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) * 100
                     )
-           END                                                             AS rnd_roi_proxy,
+           END                                                                                      AS rnd_roi_proxy,
        -- R&D increasing flag (4 consecutive quarterly increases)
        CASE
            WHEN "R&D Expenses (FQ)" > "R&D Expenses (-1FQFQ)"
                AND "R&D Expenses (-1FQFQ)" > "R&D Expenses (-2FQFQ)"
                AND "R&D Expenses (-2FQFQ)" > "R&D Expenses (-3FQFQ)"
                THEN 1
-           ELSE 0 END                                                      AS rnd_increasing_flag,
+           ELSE 0 END                                                                               AS rnd_increasing_flag,
        -- R&D cut flag (significant decline may signal distress)
        CASE
-           WHEN pct_change("R&D Expenses (FY)", "R&D Expenses (-1FY)") < -15
+           WHEN public.pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC) < -15
                THEN 1
-           ELSE 0 END                                                      AS rnd_cut_flag,
+           ELSE 0 END                                                                               AS rnd_cut_flag,
        -- High R&D intensity flag (tech/pharma typical >10%)
        CASE
-           WHEN safe_divide("R&D Expenses (LTM)", "Total Revenues (LTM)") > 0.10
+           WHEN public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) > 0.10
                THEN 1
-           ELSE 0 END                                                      AS high_rnd_intensity_flag
+           ELSE 0 END                                                                               AS high_rnd_intensity_flag
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3489,20 +3575,20 @@ SELECT "ISIN"                                     AS isin,
        COALESCE("Asset Writedown (LTM)", 0) +
        COALESCE("Restructuring Charges (LTM)", 0) AS total_unusual_items,
        -- Unusual items as % of revenue
-       safe_divide(
+       public.safe_divide(
                ABS(COALESCE("Other Unusual Items/Total (LTM)", 0) +
                    COALESCE("Impairment of Goodwill (LTM)", 0) +
                    COALESCE("Asset Writedown (LTM)", 0) +
                    COALESCE("Restructuring Charges (LTM)", 0)),
-               "Total Revenues (LTM)"
+               "Total Revenues (LTM)"::NUMERIC
        ) * 100                                    AS unusual_items_to_revenue,
        -- Unusual items as % of EBITDA
-       safe_divide(
+       public.safe_divide(
                ABS(COALESCE("Other Unusual Items/Total (LTM)", 0) +
                    COALESCE("Impairment of Goodwill (LTM)", 0) +
                    COALESCE("Asset Writedown (LTM)", 0) +
                    COALESCE("Restructuring Charges (LTM)", 0)),
-               ABS("EBITDA (LTM)")
+               ABS("EBITDA (LTM)")::NUMERIC
        ) * 100                                    AS unusual_items_to_ebitda,
        -- Flag if any unusual items present
        CASE
@@ -3513,13 +3599,13 @@ SELECT "ISIN"                                     AS isin,
                THEN 1
            ELSE 0 END                             AS has_unusual_items_flag,
        -- Earnings quality impact (higher = better quality, less impacted by unusual items)
-       clamp_score(
-               100 - safe_divide(
+       public.clamp_score(
+               100 - public.safe_divide(
                              ABS(COALESCE("Other Unusual Items/Total (LTM)", 0) +
                                  COALESCE("Impairment of Goodwill (LTM)", 0) +
                                  COALESCE("Asset Writedown (LTM)", 0) +
                                  COALESCE("Restructuring Charges (LTM)", 0)),
-                             ABS("Net Income - (IS) (LTM)")
+                             ABS("Net Income - (IS) (LTM)")::NUMERIC
                      ) * 100
        )                                          AS earnings_quality_impact
 FROM postgres.public.equities
@@ -3605,6 +3691,1557 @@ WHERE p_isin IS NULL
 $$ LANGUAGE SQL;
 
 -- =============================================================================
+-- REFACTORED FEATURE VIEWS WITH STANDARDIZED IDENTIFIER COLUMNS
+-- Based on calculated_features_registry structure
+-- =============================================================================
+
+-- =============================================================================
+-- 1. vw_features_valuation_ratios (REFACTORED)
+-- Source functions: calc_valuation_features, calc_tangible_book_features,
+--                   calc_valuation_timeseries_features, calc_extended_valuation_timeseries
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_valuation_ratios AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS (from calculated_features_registry category='Identifier')
+    -- Source: vw_identifier_columns -> equities table
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- VALUATION FEATURES (calc_valuation_features)
+    -- Source columns: P/E (LTM), P/B (LTM), EV/EBITDA (LTM), EV/Sales (LTM),
+    --                 Div Yield (LTM), Net EPS - Basic (FY), Net EPS - Basic (-3FY)
+    -- =========================================================================
+    vf.p_e_ratio,
+    vf.p_b_ratio,
+    vf.ev_ebitda_ratio,
+    vf.ev_sales_ratio,
+    vf.dividend_yield,
+    vf.peg_ratio,
+
+    -- =========================================================================
+    -- VALUATION TIMESERIES (calc_valuation_timeseries_features)
+    -- Source columns: EV/Sales (LTM), EV/Sales (-1FYLTM), EV/EBITDA (LTM),
+    --                 EV/EBITDA (-1FYLTM), P/E (LTM), P/E (-1FYLTM), etc.
+    -- =========================================================================
+    vts.ev_sales_trend_1y,
+    vts.ev_ebitda_momentum,
+    vts.p_e_momentum_yoy,
+    vts.p_e_momentum_qoq,
+    vts.ev_sales_vs_3y_avg,
+    vts.ev_ebitda_vs_3y_avg,
+    vts.p_e_vs_3y_avg,
+    vts.ev_sales_forward_discount,
+    vts.ev_ebitda_forward_discount,
+    vts.p_e_forward_discount,
+    vts.p_b_vs_5y_avg,
+
+    -- =========================================================================
+    -- EXTENDED VALUATION TIMESERIES (calc_extended_valuation_timeseries)
+    -- Source columns: EV/Sales (-1FQLTM), P/E (5YAVGLTM), P/B (-1FY), P/E (EST FY1)
+    -- =========================================================================
+    evt.ev_sales_qoq_1q,
+    evt.ev_sales_qoq_2q,
+    evt.ev_sales_qoq_3q,
+    evt.ev_sales_qoq_4q,
+    evt.p_e_vs_5y_avg,
+    evt.p_e_percentile_proxy,
+    evt.valuation_mean_reversion,
+    evt.ev_ebitda_qoq_trend,
+    evt.p_b_momentum_yoy,
+    evt.valuation_compression,
+    evt.forward_pe_premium,
+
+    -- =========================================================================
+    -- TANGIBLE BOOK FEATURES (calc_tangible_book_features)
+    -- Source columns: TBV (FY), TBV (LTM), P/TBV (LTM), Total Equity (LTM),
+    --                 Goodwill (LTM), Gross Intangible Assets (LTM), Total Assets (LTM)
+    -- =========================================================================
+    tb.tangible_book_value_fy,
+    tb.tangible_book_value_ltm,
+    tb.tangible_book_per_share,
+    tb.price_to_tangible_book,
+    tb.tangible_equity_ratio,
+    tb.intangibles_to_equity,
+    tb.goodwill_to_equity,
+    tb.tangible_asset_quality,
+    tb.tbv_yoy_growth,
+    tb.tbv_vs_calculated
+
+FROM vw_identifier_columns                              id
+         LEFT JOIN calc_valuation_features()            vf USING (isin)
+         LEFT JOIN calc_valuation_timeseries_features() vts USING (isin)
+         LEFT JOIN calc_extended_valuation_timeseries() evt USING (isin)
+         LEFT JOIN calc_tangible_book_features()        tb USING (isin);
+
+COMMENT ON VIEW vw_features_valuation_ratios IS
+    'Valuation metrics including P/E, P/B, EV/EBITDA, tangible book value, and timeseries analysis.
+    Source functions: calc_valuation_features, calc_valuation_timeseries_features,
+    calc_extended_valuation_timeseries, calc_tangible_book_features';
+
+
+-- =============================================================================
+-- 2. vw_features_momentum (NEW)
+-- Source functions: calc_momentum_features, calc_long_term_momentum_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_momentum AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- MOMENTUM FEATURES (calc_momentum_features)
+    -- Source columns: Last Price, Price (1M/3M/6M/1Y/5D Ago), EMA (20D/50D/250D),
+    --                 52W High/Adj, 52W Low/Adj, Beta (1Y/5Y), Volatility (1M/1Y)
+    -- =========================================================================
+    mf.price_momentum_1m,
+    mf.price_momentum_3m,
+    mf.price_momentum_6m,
+    mf.price_momentum_1y,
+    mf.price_momentum_5d,
+    mf.ema_crossover_20_50,
+    mf.ema_crossover_50_250,
+    mf.price_vs_ema_20d,
+    mf.price_vs_ema_250d,
+    mf.pct_off_52w_high,
+    mf.pct_above_52w_low,
+    mf.range_52w_position,
+    mf.beta_momentum,
+    mf.volatility_regime,
+
+    -- =========================================================================
+    -- LONG TERM MOMENTUM FEATURES (calc_long_term_momentum_features)
+    -- Source columns: Last Price, Price (1Y/3Y/5Y Ago), EMA (250D), 52W High/Adj
+    -- =========================================================================
+    ltm.price_momentum_1y AS price_momentum_1y_long,
+    ltm.price_momentum_3y,
+    ltm.price_momentum_5y,
+    ltm.long_term_trend_score,
+    ltm.price_vs_ema_250d AS price_vs_ema_250d_long,
+    ltm.multi_year_high_flag,
+    ltm.secular_trend_flag
+
+FROM vw_identifier_columns                            id
+         LEFT JOIN calc_momentum_features()           mf USING (isin)
+         LEFT JOIN calc_long_term_momentum_features() ltm USING (isin);
+
+COMMENT ON VIEW vw_features_momentum IS
+    'Price momentum and trend indicators across multiple timeframes.
+    Source functions: calc_momentum_features, calc_long_term_momentum_features';
+
+
+-- =============================================================================
+-- 3. vw_features_technical_analysis (REFACTORED)
+-- Source functions: calc_technical_analysis_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_technical_analysis AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- TECHNICAL ANALYSIS FEATURES (calc_technical_analysis_features)
+    -- Source columns: EMA (20D/50D/100D/250D), Last Price, 52W High/Adj,
+    --                 52W Low/Adj, Rel. Volume, Price Chg. % (1M),
+    --                 Volatility (1M/3M/6M/1Y)
+    -- =========================================================================
+    ta.ema_slope_20d,
+    ta.ema_trend_consistency,
+    ta.price_vs_ema_100d,
+    ta.near_52w_high_flag,
+    ta.near_52w_low_flag,
+    ta.volume_momentum_score,
+    ta.breakout_signal,
+    ta.high_volume_flag,
+    ta.low_volume_flag,
+    ta.volatility_compression,
+    ta.volatility_term_structure
+
+FROM vw_identifier_columns                            id
+         LEFT JOIN calc_technical_analysis_features() ta USING (isin);
+
+COMMENT ON VIEW vw_features_technical_analysis IS
+    'Technical analysis indicators including EMA trends, volume signals, and volatility patterns.
+    Source function: calc_technical_analysis_features';
+
+
+-- =============================================================================
+-- 4. vw_features_profitability (REFACTORED)
+-- Source functions: calc_profitability_features, calc_margin_trends,
+--                   calc_ebit_ebitda_comprehensive, calc_gross_profit_temporal
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_profitability AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- PROFITABILITY FEATURES (calc_profitability_features)
+    -- Source columns: Return On Equity % (LTM), Return on Assets (ROA) % (LTM),
+    --                 Gross Profit Margin % (LTM), Operating Income (LTM),
+    --                 Total Revenues (LTM), Net Income Margin % (LTM), EBITDA (LTM),
+    --                 Net Income - (IS) (LTM), Total Equity (LTM), Total Debt (LTM),
+    --                 R&D Expenses (LTM), Total Assets (LTM)
+    -- =========================================================================
+    pf.roe,
+    pf.roa,
+    pf.gross_margin_pct,
+    pf.operating_margin_pct,
+    pf.net_margin_pct,
+    pf.ebitda_margin_pct,
+    pf.roic,
+    pf.rnd_intensity,
+    pf.equity_multiplier,
+
+    -- =========================================================================
+    -- MARGIN TRENDS (calc_margin_trends)
+    -- Source columns: Gross Profit Margin % (LTM/FY), Operating Income (LTM/FY),
+    --                 Total Revenues (LTM/FY), Net Income Margin % (LTM/FY),
+    --                 EBITDA (LTM/FY)
+    -- =========================================================================
+    mt.gross_margin_trend_yoy,
+    mt.operating_margin_trend,
+    mt.net_margin_trend_yoy,
+    mt.ebitda_margin_trend,
+    mt.margin_expansion_flag,
+    mt.margin_stability_score,
+
+    -- =========================================================================
+    -- EBIT/EBITDA COMPREHENSIVE (calc_ebit_ebitda_comprehensive)
+    -- Source columns: EBIT (FQ/LTM/FY/-1FY/-2FY/-3FY/-4FY/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/5YAVGFQ/5YAVGLTM),
+    --                 EBITDA (same periods), EBIT/Adj., EBITDA/Adj., Total Revenues (LTM)
+    -- =========================================================================
+    eec.ebit_fq,
+    eec.ebit_ltm,
+    eec.ebit_fy,
+    eec.ebit_1fy,
+    eec.ebit_2fy,
+    eec.ebit_3fy,
+    eec.ebit_4fy,
+    eec.ebitda_fq,
+    eec.ebitda_ltm,
+    eec.ebitda_fy,
+    eec.ebitda_1fy,
+    eec.ebitda_2fy,
+    eec.ebitda_3fy,
+    eec.ebitda_4fy,
+    eec.ebit_5yavgfq,
+    eec.ebit_5yavgltm,
+    eec.ebitda_5yavgfq,
+    eec.ebitda_5yavgltm,
+    eec.ebit_adj_fq,
+    eec.ebit_adj_ltm,
+    eec.ebit_adj_fy,
+    eec.ebitda_adj_fq,
+    eec.ebitda_adj_ltm,
+    eec.ebitda_adj_fy,
+    eec.ebit_growth_yoy,
+    eec.ebitda_growth_yoy,
+    eec.ebit_margin_ltm,
+    eec.ebitda_margin_ltm,
+    eec.ebit_positive_years,
+    eec.ebitda_positive_years,
+    eec.ebit_qoq_growth,
+    eec.ebitda_qoq_growth,
+    eec.ebit_cagr_3y,
+    eec.ebitda_cagr_3y,
+    eec.ebit_vs_5y_avg,
+    eec.ebitda_vs_5y_avg,
+
+    -- =========================================================================
+    -- GROSS PROFIT TEMPORAL (calc_gross_profit_temporal)
+    -- Source columns: Gross Profit (FQ/FY/LTM/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/-1FY/-2FY/-3FY/-4FY),
+    --                 Total Revenues (FQ/5YAVGFQ), Gross Profit Margin % (LTM/FY)
+    -- =========================================================================
+    gpt.gp_fq,
+    gpt.gp_fy,
+    gpt.gp_ltm,
+    gpt.gp_1fqfq,
+    gpt.gp_2fqfq,
+    gpt.gp_3fqfq,
+    gpt.gp_4fqfq,
+    gpt.gp_1fy,
+    gpt.gp_2fy,
+    gpt.gp_3fy,
+    gpt.gp_4fy,
+    gpt.gp_qoq_growth,
+    gpt.gp_yoy_growth,
+    gpt.gp_margin_fq,
+    gpt.gp_margin_trend,
+    gpt.gp_positive_quarters,
+    gpt.gp_margin_expansion
+
+FROM vw_identifier_columns                          id
+         LEFT JOIN calc_profitability_features()    pf USING (isin)
+         LEFT JOIN calc_margin_trends()             mt USING (isin)
+         LEFT JOIN calc_ebit_ebitda_comprehensive() eec USING (isin)
+         LEFT JOIN calc_gross_profit_temporal()     gpt USING (isin);
+
+COMMENT ON VIEW vw_features_profitability IS
+    'Profitability metrics including ROE, ROA, margins, EBIT/EBITDA comprehensive analysis.
+    Source functions: calc_profitability_features, calc_margin_trends,
+    calc_ebit_ebitda_comprehensive, calc_gross_profit_temporal';
+
+
+-- =============================================================================
+-- 5. vw_features_earnings (NEW)
+-- Source functions: calc_earnings_features, calc_eps_trajectory_features,
+--                   calc_eps_comprehensive, calc_eps_continuing_features,
+--                   calc_gaap_adjusted_analytics, calc_gaap_revision_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_earnings AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- EARNINGS FEATURES (calc_earnings_features)
+    -- Source columns: EPS/Adj. (LTM), EPS Norm - Est Avg (FY1E), Total Revenues (LTM),
+    --                 Revenues - Est Avg (FY1E), Net EPS - Basic (LTM/FQ/FY/-1FY/-4FQFQ),
+    --                 EPS GAAP - Est Avg (FY1E), EBITDA/Adj. (LTM), EBITDA (LTM)
+    -- =========================================================================
+    ef.eps_surprise_pct,
+    ef.revenue_surprise_pct,
+    ef.eps_adjustment_ratio,
+    ef.gaap_adj_eps_gap_pct,
+    ef.ebitda_adjustment_ratio,
+    ef.eps_quarterly_trend,
+    ef.eps_yoy_growth,
+
+    -- =========================================================================
+    -- EPS TRAJECTORY FEATURES (calc_eps_trajectory_features)
+    -- Source columns: Net EPS - Basic (FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/FY/-1FY/-2FY/-3FY/-4FY/-5FY)
+    -- =========================================================================
+    etf.eps_qoq_growth,
+    etf.eps_yoy_quarterly,
+    etf.eps_positive_streak,
+    etf.eps_cagr_3y,
+    etf.eps_cagr_5y,
+    etf.eps_growth_accel,
+    etf.eps_vs_5y_avg,
+    etf.eps_improvement_count,
+    etf.eps_trajectory_score,
+    etf.eps_stability,
+
+    -- =========================================================================
+    -- EPS COMPREHENSIVE (calc_eps_comprehensive)
+    -- Source columns: Net EPS - Basic (FQ/LTM/FY/-1FY/-2FY/-3FY/-4FY/-5FY),
+    --                 EPS/Adj. (LTM), EPS Norm - Est Avg (FY1E)
+    -- =========================================================================
+    ec.eps_basic_fq,
+    ec.eps_basic_ltm,
+    ec.eps_basic_fy,
+    ec.eps_adj_ltm,
+    ec.eps_norm_est_fy1e,
+    ec.eps_growth_yoy       AS eps_growth_yoy_comp,
+    ec.eps_cagr_3y          AS eps_cagr_3y_comp,
+    ec.eps_adjustment_ratio AS eps_adjustment_ratio_comp,
+    ec.eps_positive_years,
+    ec.eps_trajectory_score AS eps_trajectory_score_comp,
+
+    -- =========================================================================
+    -- EPS CONTINUING FEATURES (calc_eps_continuing_features)
+    -- Source columns: Basic EPS - Cont (LTM/FQ/FY/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/-1FY/-2FY/-3FY/-4FY),
+    --                 Net EPS - Basic (LTM)
+    -- =========================================================================
+    ecf.eps_cont_ltm,
+    ecf.eps_cont_fq,
+    ecf.eps_cont_fy,
+    ecf.eps_cont_1fqfq,
+    ecf.eps_cont_2fqfq,
+    ecf.eps_cont_3fqfq,
+    ecf.eps_cont_4fqfq,
+    ecf.eps_cont_1fy,
+    ecf.eps_cont_2fy,
+    ecf.eps_cont_3fy,
+    ecf.eps_cont_4fy,
+    ecf.eps_cont_qoq_growth,
+    ecf.eps_cont_yoy_growth,
+    ecf.eps_cont_cagr_3y,
+    ecf.eps_cont_vs_total_eps,
+    ecf.eps_cont_positive_streak,
+    ecf.eps_cont_trajectory_score,
+    ecf.discontinued_ops_impact,
+    ecf.core_earnings_stability,
+
+    -- =========================================================================
+    -- GAAP ADJUSTED ANALYTICS (calc_gaap_adjusted_analytics)
+    -- Source columns: EPS/Adj., Net EPS - Basic, Net Income/Adj., Net Income - (IS),
+    --                 EBITDA/Adj., EBITDA, EBIT/Adj., EBIT (multiple periods),
+    --                 EPS Norm - Est Avg (FY1E), EPS GAAP - Est Avg (FY1E)
+    -- =========================================================================
+    gaa.eps_adjustment_spread_ltm,
+    gaa.eps_adjustment_spread_fy,
+    gaa.eps_adjustment_pct,
+    gaa.net_income_adjustment_ratio_ltm,
+    gaa.net_income_adjustment_ratio_fy,
+    gaa.net_income_adjustment_pct,
+    gaa.ebitda_adjustment_pct_ltm,
+    gaa.ebitda_adjustment_pct_fy,
+    gaa.ebit_adjustment_pct_ltm,
+    gaa.ebit_adjustment_pct_fy,
+    gaa.earnings_quality_score,
+    gaa.earnings_quality_warning,
+    gaa.forward_eps_gaap_adj_spread,
+
+    -- =========================================================================
+    -- GAAP REVISION FEATURES (calc_gaap_revision_features)
+    -- Source columns: EPS GAAP Est Avg Rev % (FY1E - 1M/3M/6M/1Y),
+    --                 EPS Est Avg Rev % (FY1E - 1M/3M)
+    -- =========================================================================
+    grf.gaap_revision_momentum,
+    grf.gaap_revision_1m,
+    grf.gaap_revision_3m,
+    grf.gaap_revision_6m,
+    grf.gaap_revision_1y,
+    grf.gaap_vs_norm_revision_spread,
+    grf.gaap_revision_acceleration,
+    grf.gaap_positive_revision_flag,
+    grf.revision_quality_divergence
+
+FROM vw_identifier_columns                        id
+         LEFT JOIN calc_earnings_features()       ef USING (isin)
+         LEFT JOIN calc_eps_trajectory_features() etf USING (isin)
+         LEFT JOIN calc_eps_comprehensive()       ec USING (isin)
+         LEFT JOIN calc_eps_continuing_features() ecf USING (isin)
+         LEFT JOIN calc_gaap_adjusted_analytics() gaa USING (isin)
+         LEFT JOIN calc_gaap_revision_features()  grf USING (isin);
+
+COMMENT ON VIEW vw_features_earnings IS
+    'Earnings metrics including EPS analysis, GAAP adjustments, and revision trends.
+    Source functions: calc_earnings_features, calc_eps_trajectory_features, calc_eps_comprehensive,
+    calc_eps_continuing_features, calc_gaap_adjusted_analytics, calc_gaap_revision_features';
+
+
+-- =============================================================================
+-- 6. vw_features_growth (NEW)
+-- Source functions: calc_growth_features, calc_revenue_forecast_features,
+--                   calc_revenue_quarterly_features, calc_total_revenues_temporal
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_growth AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- GROWTH FEATURES (calc_growth_features)
+    -- Source columns: Total Revenues (FY/-1FY/LTM/5YAVGLTM), EBITDA (FY/-1FY),
+    --                 Operating Income (LTM/FY), FCF (LTM/FY),
+    --                 Total Revenues/CAGR (5Y FY), Revenues - Est YoY % (FY1E)
+    -- =========================================================================
+    gf.revenue_growth_yoy,
+    gf.ebitda_growth_yoy,
+    gf.operating_income_growth,
+    gf.fcf_growth,
+    gf.revenue_cagr_5y,
+    gf.forward_revenue_growth,
+    gf.revenue_vs_5y_avg,
+
+    -- =========================================================================
+    -- REVENUE FORECAST FEATURES (calc_revenue_forecast_features)
+    -- Source columns: Revenues - Est Avg (FY1E/NTM), Revenues - Est Med (FY1E),
+    --                 Total Revenues (LTM/FY), EBITDA (LTM), EBITDA - Est Avg (FY1E),
+    --                 Enterprise Value, EPS Norm - Est # (FY1E), EBIT - Est Med (FY1E/NTM),
+    --                 Revenues - Est YoY % (FY1E), Total Revenues/CAGR (5Y FY)
+    -- =========================================================================
+    rff.revenue_est_spread,
+    rff.revenue_beat_potential,
+    rff.revenue_est_revision_trend,
+    rff.ebitda_est_vs_actual,
+    rff.forward_revenue_multiple,
+    rff.revenue_estimate_count,
+    rff.revenue_guidance_gap,
+    rff.consensus_revenue_growth,
+    rff.ebit_estimate_spread,
+    rff.forward_ebitda_margin,
+    rff.revenue_acceleration,
+    rff.estimate_confidence_score,
+
+    -- =========================================================================
+    -- REVENUE QUARTERLY FEATURES (calc_revenue_quarterly_features)
+    -- Source columns: Total Revenues (FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/FY/-1FY/-2FY/-3FY/-4FY/LTM/5YAVGLTM/5YAVGFQ)
+    -- =========================================================================
+    rqf.revenue_fq,
+    rqf.revenue_fy,
+    rqf.revenue_ltm,
+    rqf.revenue_5y_avg,
+    rqf.revenue_1fqfq,
+    rqf.revenue_2fqfq,
+    rqf.revenue_3fqfq,
+    rqf.revenue_4fqfq,
+    rqf.revenue_1fy,
+    rqf.revenue_2fy,
+    rqf.revenue_3fy,
+    rqf.revenue_4fy,
+    rqf.revenue_yoy_growth AS revenue_yoy_growth_qf,
+    rqf.revenue_vs_5y_avg  AS revenue_vs_5y_avg_qf,
+    rqf.revenue_ltm_vs_fy,
+    rqf.revenue_fq_vs_5y_avg_fq,
+    rqf.revenue_qoq_growth,
+    rqf.revenue_qoq_2q,
+    rqf.revenue_qoq_3q,
+    rqf.revenue_qoq_4q,
+    rqf.revenue_yoy_quarterly,
+    rqf.revenue_2y_growth,
+    rqf.revenue_3y_growth,
+    rqf.revenue_4y_growth,
+    rqf.revenue_cagr_3y,
+    rqf.revenue_cagr_4y,
+    rqf.revenue_4q_trend,
+    rqf.revenue_4q_avg,
+    rqf.revenue_fq_vs_4q_avg,
+    rqf.revenue_growth_flag,
+    rqf.revenue_stability_score,
+    rqf.revenue_accelerating_flag,
+    rqf.revenue_positive_qoq_streak,
+
+    -- =========================================================================
+    -- TOTAL REVENUES TEMPORAL (calc_total_revenues_temporal)
+    -- Source columns: Total Revenues (FQ/LTM/FY/-1FY/5YAVGFQ/5YAVGLTM)
+    -- =========================================================================
+    trt.revenue_fq         AS revenue_fq_temp,
+    trt.revenue_ltm        AS revenue_ltm_temp,
+    trt.revenue_fy         AS revenue_fy_temp,
+    trt.revenue_1fy        AS revenue_1fy_temp,
+    trt.revenue_5yavgfq,
+    trt.revenue_5yavgltm,
+    trt.revenue_growth_yoy AS revenue_growth_yoy_temp,
+    trt.revenue_vs_5y_avg_fq,
+    trt.revenue_vs_5y_avg_ltm,
+    trt.revenue_fq_vs_avg,
+    trt.revenue_momentum
+
+FROM vw_identifier_columns                           id
+         LEFT JOIN calc_growth_features()            gf USING (isin)
+         LEFT JOIN calc_revenue_forecast_features()  rff USING (isin)
+         LEFT JOIN calc_revenue_quarterly_features() rqf USING (isin)
+         LEFT JOIN calc_total_revenues_temporal()    trt USING (isin);
+
+COMMENT ON VIEW vw_features_growth IS
+    'Growth metrics including revenue, EBITDA, FCF growth rates and forecasts.
+    Source functions: calc_growth_features, calc_revenue_forecast_features,
+    calc_revenue_quarterly_features, calc_total_revenues_temporal';
+
+
+-- =============================================================================
+-- 7. vw_features_quality_risk (REFACTORED)
+-- Source functions: calc_quality_features, calc_beta_risk_features,
+--                   calc_financial_distress_features, calc_accounting_quality_features,
+--                   calc_quality_features_comprehensive
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_quality_risk AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- QUALITY FEATURES (calc_quality_features)
+    -- Source columns: Impairment of Goodwill (LTM), Asset Writedown (LTM),
+    --                 Restructuring Charges (LTM), Goodwill (LTM), Total Assets (LTM),
+    --                 Gross Intangible Assets (LTM), EBITDA (LTM), Altman Z-Score (LTM/FY),
+    --                 Current Ratio (LTM), Total Current Assets (LTM), Inventory (LTM),
+    --                 Total Current Liabilities (LTM)
+    -- =========================================================================
+    qf.has_goodwill_impairment,
+    qf.has_asset_writedown,
+    qf.has_restructuring,
+    qf.goodwill_to_assets_pct,
+    qf.intangible_intensity,
+    qf.exceptional_items_to_ebitda,
+    qf.altman_z_score,
+    qf.altman_z_trend,
+    qf.current_ratio,
+    qf.quick_ratio,
+
+    -- =========================================================================
+    -- BETA RISK FEATURES (calc_beta_risk_features)
+    -- Source columns: Beta (1Y), Beta (5Y)
+    -- =========================================================================
+    br.beta_1y,
+    br.beta_5y,
+    br.beta_spread,
+    br.beta_trend,
+    br.high_beta_flag,
+    br.low_beta_flag,
+    br.beta_stability_score,
+
+    -- =========================================================================
+    -- FINANCIAL DISTRESS FEATURES (calc_financial_distress_features)
+    -- Source columns: Altman Z-Score (LTM), Current Ratio (LTM), Working Capital (FQ/FY),
+    --                 Cash And Equivalents (FQ), Total Operating Expenses (LTM),
+    --                 Retained Earnings (FQ/FY)
+    -- =========================================================================
+    fdf.distress_risk_score,
+    fdf.liquidity_stress_score,
+    fdf.working_capital_trend,
+    fdf.cash_runway_months,
+    fdf.combined_distress_score,
+    fdf.wc_deteriorating_flag,
+    fdf.retained_earnings_growth,
+    fdf.accumulated_deficit_flag,
+    fdf.adequate_cash_buffer,
+
+    -- =========================================================================
+    -- ACCOUNTING QUALITY FEATURES (calc_accounting_quality_features)
+    -- Source columns: Goodwill (LTM/-1FY), Restructuring Charges (LTM), Total Assets (LTM),
+    --                 Impairment of Goodwill (FQ), Asset Writedown (FQ), Restructuring Charges (FQ),
+    --                 Merger & Restructuring Charges (LTM), Market Cap,
+    --                 Interest Income On Investments (LTM), Net Income - (IS) (LTM),
+    --                 Gain (Loss) On Sale Of Assets (LTM)
+    -- =========================================================================
+    aqf.goodwill_change_rate,
+    aqf.restructuring_intensity,
+    aqf.exceptional_items_frequency,
+    aqf.merger_impact_ratio,
+    aqf.non_operating_income_share,
+    aqf.asset_sale_boost,
+    aqf.accounting_quality_score,
+
+    -- =========================================================================
+    -- QUALITY FEATURES COMPREHENSIVE (calc_quality_features_comprehensive)
+    -- Source columns: Impairment of Goodwill (LTM/FY/-1FY/-2FY/-3FY/-4FY),
+    --                 Asset Writedown (LTM/FY/-1FY/-2FY/-3FY/-4FY),
+    --                 Restructuring Charges (LTM/FY/-1FY/-2FY/-3FY/-4FY), EBITDA (LTM)
+    -- =========================================================================
+    qfc.goodwill_impairment_ltm,
+    qfc.asset_writedown_ltm,
+    qfc.restructuring_ltm,
+    qfc.has_goodwill_impairment_ltm,
+    qfc.goodwill_impairment_frequency,
+    qfc.asset_writedown_frequency,
+    qfc.restructuring_frequency,
+    qfc.exceptional_items_total_ltm,
+    qfc.exceptional_items_to_ebitda AS exceptional_items_to_ebitda_comp,
+    qfc.quality_issues_count_5y,
+    qfc.accounting_quality_score    AS accounting_quality_score_comp
+
+FROM vw_identifier_columns                               id
+         LEFT JOIN calc_quality_features()               qf USING (isin)
+         LEFT JOIN calc_beta_risk_features()             br USING (isin)
+         LEFT JOIN calc_financial_distress_features()    fdf USING (isin)
+         LEFT JOIN calc_accounting_quality_features()    aqf USING (isin)
+         LEFT JOIN calc_quality_features_comprehensive() qfc USING (isin);
+
+COMMENT ON VIEW vw_features_quality_risk IS
+    'Quality and risk metrics including accounting quality, financial distress, and beta analysis.
+    Source functions: calc_quality_features, calc_beta_risk_features, calc_financial_distress_features,
+    calc_accounting_quality_features, calc_quality_features_comprehensive';
+
+
+-- =============================================================================
+-- 8. vw_features_leverage_liquidity (REFACTORED)
+-- Source functions: calc_leverage_features, calc_efficiency_ratios,
+--                   calc_balance_sheet_dynamics, calc_working_capital_temporal,
+--                   calc_total_debt_temporal, calc_working_capital_deep_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_leverage_liquidity AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- LEVERAGE FEATURES (calc_leverage_features)
+    -- Source columns: Total Debt (LTM), Total Equity (LTM), Total Assets (LTM),
+    --                 EBIT (LTM), Interest Expense/Total (LTM), Current Ratio (LTM),
+    --                 Cash And Equivalents (LTM), Total Current Liabilities (LTM),
+    --                 Working Capital (LTM)
+    -- =========================================================================
+    lf.debt_to_equity,
+    lf.debt_to_assets,
+    lf.equity_ratio,
+    lf.interest_coverage,
+    lf.current_ratio,
+    lf.cash_ratio,
+    lf.working_capital_ratio,
+
+    -- =========================================================================
+    -- EFFICIENCY RATIOS (calc_efficiency_ratios)
+    -- Source columns: Total Revenues (LTM/FY), Total Assets (LTM),
+    --                 Cost Of Revenues (LTM), Inventory (LTM),
+    --                 Accounts Receivable/Total (FY), Working Capital (LTM)
+    -- =========================================================================
+    er.asset_turnover,
+    er.inventory_turnover,
+    er.receivables_days,
+    er.working_capital_turns,
+
+    -- =========================================================================
+    -- BALANCE SHEET DYNAMICS (calc_balance_sheet_dynamics)
+    -- Source columns: Cash And Equivalents (LTM/FQ/FY/5YAVGFQ), Total Assets (LTM),
+    --                 Inventory (FQ/FY/5YAVGFQ), Accounts Receivable/Total (FY/-1FY/5YAVGFQ),
+    --                 Working Capital (FQ/5YAVGFY), Retained Earnings (FQ/5YAVGFQ),
+    --                 Gross Intangible Assets (FY/5YAVGFQ), Goodwill (LTM),
+    --                 Total Equity (LTM), Current Ratio (LTM), Total Debt (LTM), EBITDA (LTM)
+    -- =========================================================================
+    bsd.cash_to_assets_pct,
+    bsd.cash_change_qoq,
+    bsd.cash_vs_5y_avg,
+    bsd.inventory_change_yoy,
+    bsd.inventory_vs_5y_avg,
+    bsd.receivables_change_yoy,
+    bsd.receivables_vs_5y_avg,
+    bsd.working_capital_vs_5y_avg,
+    bsd.retained_earnings_vs_5y,
+    bsd.intangibles_growth_flag,
+    bsd.asset_quality_score,
+    bsd.balance_sheet_strength,
+    bsd.debt_maturity_risk,
+
+    -- =========================================================================
+    -- WORKING CAPITAL TEMPORAL (calc_working_capital_temporal)
+    -- Source columns: Working Capital (FQ/FY/LTM/5YAVGFY/-1FQ/-2FQ/-3FQ/-4FQ/-1FY/-2FY/-3FY/-4FY)
+    -- =========================================================================
+    wct.wc_fq,
+    wct.wc_fy,
+    wct.wc_ltm,
+    wct.wc_5yavgfy,
+    wct.wc_1fq,
+    wct.wc_2fq,
+    wct.wc_3fq,
+    wct.wc_4fq,
+    wct.wc_1fy,
+    wct.wc_2fy,
+    wct.wc_3fy,
+    wct.wc_4fy,
+    wct.wc_qoq_change,
+    wct.wc_yoy_change,
+    wct.wc_4q_trend,
+    wct.wc_vs_5y_avg,
+    wct.wc_positive_quarters,
+    wct.wc_improving_flag,
+    wct.wc_volatility,
+
+    -- =========================================================================
+    -- TOTAL DEBT TEMPORAL (calc_total_debt_temporal)
+    -- Source columns: Total Debt (FQ/FY/LTM/-1FQ/-2FQ/-3FQ/-4FQ/-1FY/-2FY/-3FY/-4FY),
+    --                 Total Equity (FY)
+    -- =========================================================================
+    tdt.debt_fq,
+    tdt.debt_fy,
+    tdt.debt_ltm,
+    tdt.debt_1fq,
+    tdt.debt_2fq,
+    tdt.debt_3fq,
+    tdt.debt_4fq,
+    tdt.debt_1fy,
+    tdt.debt_2fy,
+    tdt.debt_3fy,
+    tdt.debt_4fy,
+    tdt.debt_qoq_change,
+    tdt.debt_yoy_change,
+    tdt.debt_4q_trend,
+    tdt.debt_3y_cagr,
+    tdt.debt_deleveraging,
+    tdt.debt_to_equity_trend,
+
+    -- =========================================================================
+    -- WORKING CAPITAL DEEP FEATURES (calc_working_capital_deep_features)
+    -- Source columns: Working Capital (LTM/FQ/FY/-1FY), Total Revenues (LTM),
+    --                 Total Assets (LTM), Current Ratio (LTM)
+    -- =========================================================================
+    wcd.working_capital_ltm AS wc_ltm_deep,
+    wcd.working_capital_fq  AS wc_fq_deep,
+    wcd.working_capital_fy  AS wc_fy_deep,
+    wcd.wc_to_revenue,
+    wcd.wc_to_assets,
+    wcd.wc_change_qoq       AS wc_change_qoq_deep,
+    wcd.wc_change_yoy       AS wc_change_yoy_deep,
+    wcd.days_working_capital,
+    wcd.wc_efficiency_score,
+    wcd.negative_wc_flag,
+    wcd.wc_improvement_flag AS wc_improvement_flag_deep
+
+FROM vw_identifier_columns                              id
+         LEFT JOIN calc_leverage_features()             lf USING (isin)
+         LEFT JOIN calc_efficiency_ratios()             er USING (isin)
+         LEFT JOIN calc_balance_sheet_dynamics()        bsd USING (isin)
+         LEFT JOIN calc_working_capital_temporal()      wct USING (isin)
+         LEFT JOIN calc_total_debt_temporal()           tdt USING (isin)
+         LEFT JOIN calc_working_capital_deep_features() wcd USING (isin);
+
+COMMENT ON VIEW vw_features_leverage_liquidity IS
+    'Leverage and liquidity metrics including debt ratios, working capital, and balance sheet dynamics.
+    Source functions: calc_leverage_features, calc_efficiency_ratios, calc_balance_sheet_dynamics,
+    calc_working_capital_temporal, calc_total_debt_temporal, calc_working_capital_deep_features';
+
+
+-- =============================================================================
+-- 9. vw_features_analyst_sentiment (REFACTORED)
+-- Source functions: calc_sentiment_features, calc_price_target_dynamics
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_analyst_sentiment AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- SENTIMENT FEATURES (calc_sentiment_features)
+    -- Source columns: # Strong Buys Ratings, # Buys Ratings, # Hold Ratings,
+    --                 # Sell Ratings, # Strong Sell Ratings, Price Target - Median,
+    --                 Last Price, Price Target - High, Price Target - Low,
+    --                 Price Target, Price Target (1M/3M Ago), EPS Est Avg Rev % (FY1E - 1W/1M/3M/6M/1Y),
+    --                 Analyst Rating, Price Target - #, Market Cap
+    -- =========================================================================
+    sf.analyst_bullish_pct,
+    sf.analyst_bearish_pct,
+    sf.analyst_neutral_pct,
+    sf.analyst_conviction,
+    sf.upside_potential,
+    sf.price_target_spread_pct,
+    sf.price_target_revision_1m,
+    sf.price_target_revision_3m,
+    sf.eps_revision_momentum,
+    sf.analyst_rating_normalized,
+    sf.analyst_coverage_quality,
+
+    -- =========================================================================
+    -- PRICE TARGET DYNAMICS (calc_price_target_dynamics)
+    -- Source columns: Price Target, Price Target (1W/1M/3M/6M/1Y Ago),
+    --                 Price Target - Median, Price Target - Median (1M/3M Ago),
+    --                 Price Target - High (3M Ago), Price Target - Low (3M Ago),
+    --                 Price Target - #, Price Target - # (1M/3M/6M/1Y Ago),
+    --                 Last Price, Price (3M Ago)
+    -- =========================================================================
+    ptd.pt_momentum_1w,
+    ptd.pt_momentum_1m,
+    ptd.pt_momentum_3m,
+    ptd.pt_momentum_6m,
+    ptd.pt_momentum_1y,
+    ptd.pt_median_momentum_1m,
+    ptd.pt_median_momentum_3m,
+    ptd.pt_acceleration_short,
+    ptd.pt_acceleration_long,
+    ptd.pt_consensus_convergence,
+    ptd.analyst_coverage_change_1m,
+    ptd.analyst_coverage_change_3m,
+    ptd.analyst_coverage_change_1y,
+    ptd.pt_vs_price_momentum,
+    ptd.analyst_coverage_trend
+
+FROM vw_identifier_columns                      id
+         LEFT JOIN calc_sentiment_features()    sf USING (isin)
+         LEFT JOIN calc_price_target_dynamics() ptd USING (isin);
+
+COMMENT ON VIEW vw_features_analyst_sentiment IS
+    'Analyst sentiment metrics including ratings distribution and price target dynamics.
+    Source functions: calc_sentiment_features, calc_price_target_dynamics';
+
+
+-- =============================================================================
+-- 10. vw_features_dividends (NEW)
+-- Source functions: calc_dividend_features, calc_dividend_timing,
+--                   calc_dividend_yield_comprehensive
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_dividends AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- DIVIDEND FEATURES (calc_dividend_features)
+    -- Source columns: Dividend Streak, Div Yield (LTM/NTM), Common Dividends Paid (LTM),
+    --                 Net Income/Adj. (LTM), FCF (LTM), Buyback Yield (LTM)
+    -- =========================================================================
+    df.dividend_streak,
+    df.dividend_yield_ltm,
+    df.dividend_yield_ntm,
+    df.dividend_payout_ratio,
+    df.fcf_dividend_coverage,
+    df.buyback_yield,
+    df.total_shareholder_yield,
+    df.dividend_growth_expectation,
+
+    -- =========================================================================
+    -- DIVIDEND TIMING (calc_dividend_timing)
+    -- Source columns: Dividend Record (Ex Date/Payable Date/Announce Date/Frequency),
+    --                 Dividend Streak, Div Yield (Ind/-1FYInd/LTM/5YAVGLTM)
+    -- =========================================================================
+    dt.days_since_ex_date,
+    dt.days_to_payment,
+    dt.dividend_announced_flag,
+    dt.ex_date_approaching_flag,
+    dt.dividend_frequency_score,
+    dt.dividend_consistency,
+    dt.recent_dividend_change,
+    dt.dividend_yield_vs_5y_avg,
+
+    -- =========================================================================
+    -- DIVIDEND YIELD COMPREHENSIVE (calc_dividend_yield_comprehensive)
+    -- Source columns: Div Yield (LTM/NTM/Ind/-1FYInd/5YAVGLTM), Dividend Streak,
+    --                 FCF (LTM), Common Dividends Paid (LTM)
+    -- =========================================================================
+    dyc.div_yield_ltm,
+    dyc.div_yield_ntm,
+    dyc.div_yield_ind,
+    dyc.div_yield_1fy_ind,
+    dyc.div_yield_5y_avg,
+    dyc.div_yield_vs_5y_avg,
+    dyc.div_yield_growth_expected,
+    dyc.dividend_streak AS dividend_streak_comp,
+    dyc.high_yield_flag,
+    dyc.sustainable_dividend_flag
+
+FROM vw_identifier_columns                             id
+         LEFT JOIN calc_dividend_features()            df USING (isin)
+         LEFT JOIN calc_dividend_timing()              dt USING (isin)
+         LEFT JOIN calc_dividend_yield_comprehensive() dyc USING (isin);
+
+COMMENT ON VIEW vw_features_dividends IS
+    'Dividend metrics including yield, payout ratios, timing, and sustainability.
+    Source functions: calc_dividend_features, calc_dividend_timing, calc_dividend_yield_comprehensive';
+
+
+-- =============================================================================
+-- 11. vw_features_employment (NEW)
+-- Source functions: calc_employment_features, calc_employment_dynamics
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_employment AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- EMPLOYMENT FEATURES (calc_employment_features)
+    -- Source columns: Full Time Employees (FY/-1FY/-3FY), Total Revenues (FY),
+    --                 Normalized Net Income (FY), EBITDA (FY), Total Assets (FY),
+    --                 Avg Employees (5YAVGFY)
+    -- =========================================================================
+    ef.revenue_per_employee,
+    ef.profit_per_employee,
+    ef.ebitda_per_employee,
+    ef.assets_per_employee,
+    ef.fte_growth_1y_pct,
+    ef.fte_growth_3y_pct,
+    ef.workforce_stability,
+
+    -- =========================================================================
+    -- EMPLOYMENT DYNAMICS (calc_employment_dynamics)
+    -- Source columns: Full Time Employees (FY/-1FY/-2FY/-3FY),
+    --                 Total Revenues (FY/-1FY)
+    -- =========================================================================
+    ed.fte_growth_2y_pct,
+    ed.fte_acceleration,
+    ed.workforce_volatility,
+    ed.hiring_intensity,
+    ed.productivity_trend,
+    ed.headcount_vs_revenue,
+    ed.workforce_efficiency_gain,
+    ed.layoff_risk_flag,
+    ed.rapid_hiring_flag,
+    ed.sustainable_growth_flag
+
+FROM vw_identifier_columns                    id
+         LEFT JOIN calc_employment_features() ef USING (isin)
+         LEFT JOIN calc_employment_dynamics() ed USING (isin);
+
+COMMENT ON VIEW vw_features_employment IS
+    'Employment metrics including productivity, workforce trends, and efficiency.
+    Source functions: calc_employment_features, calc_employment_dynamics';
+
+
+-- =============================================================================
+-- 12. vw_features_cashflow (NEW)
+-- Source functions: calc_cashflow_features, calc_enhanced_cashflow_features,
+--                   calc_cashflow_temporal_features, calc_cashflow_comprehensive
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_cashflow AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- CASHFLOW FEATURES (calc_cashflow_features)
+    -- Source columns: CFO (LTM/-1FY), FCF (LTM/FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ),
+    --                 Net Income - (IS) (LTM), Total Revenues (LTM), CFI (LTM),
+    --                 Cash Acquisitions (FQ/-1FQFQ/-2FQFQ/-3FQFQ)
+    -- =========================================================================
+    cf.cfo_to_net_income,
+    cf.fcf_to_net_income,
+    cf.fcf_margin,
+    cf.cfo_growth_yoy,
+    cf.fcf_positive_ratio,
+    cf.acquisition_intensity,
+    cf.self_funding_ratio,
+
+    -- =========================================================================
+    -- ENHANCED CASHFLOW FEATURES (calc_enhanced_cashflow_features)
+    -- Source columns: FCF (FY/-1FY/-2FY/-3FY/-4FY/LTM/FQ/-4FQFQ),
+    --                 Capital Expenditure (FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/5YAVGFQ/FY/-1FY/-2FY/-3FY/LTM),
+    --                 CFO (LTM), CFI (LTM), CFF (LTM), Net Income - (IS) (LTM),
+    --                 Cash Acquisitions (FQ/-1FQFQ/-2FQFQ/-3FQFQ/FY/-1FY/-2FY/-3FY/5YAVGFQ/LTM),
+    --                 Total Assets (LTM), Total Revenues (FY/-1FY)
+    -- =========================================================================
+    ecf.fcf_positive_years,
+    ecf.fcf_always_positive,
+    ecf.capex_vs_5y_avg,
+    ecf.underinvestment_flag,
+    ecf.cfo_share_of_cf,
+    ecf.cfi_share_of_cf,
+    ecf.cff_share_of_cf,
+    ecf.self_funding_flag,
+    ecf.acquisition_to_fcf,
+    ecf.sustainable_ma_flag,
+    ecf.fcf_4q_improvement,
+    ecf.cash_flow_quality_score,
+    ecf.capex_yoy_growth,
+    ecf.capex_qoq_growth,
+    ecf.capex_3y_trend,
+    ecf.capex_volatility,
+    ecf.capex_acceleration,
+    ecf.capex_cut_flag,
+    ecf.overinvestment_flag,
+    ecf.acquisitions_yoy_growth,
+    ecf.acquisitions_vs_5y_avg,
+    ecf.acquisitions_ltm_total,
+    ecf.ma_intensity_score,
+    ecf.serial_acquirer_flag,
+    ecf.acquisition_pause_flag,
+    ecf.total_investment_to_cfo,
+    ecf.organic_vs_inorganic,
+    ecf.investment_efficiency,
+
+    -- =========================================================================
+    -- CASHFLOW TEMPORAL FEATURES (calc_cashflow_temporal_features)
+    -- Source columns: CFO (FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/LTM),
+    --                 CFI (FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/LTM),
+    --                 CFF (FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/LTM),
+    --                 FCF (FQ/-4FQFQ/LTM), Cash And Equivalents (FQ)
+    -- =========================================================================
+    ctf.cfo_quarterly_trend,
+    ctf.cfo_yoy_quarterly,
+    ctf.cfi_quarterly_trend,
+    ctf.cff_quarterly_trend,
+    ctf.fcf_quarterly_trend,
+    ctf.cfo_positive_quarters,
+    ctf.cfi_negative_quarters,
+    ctf.cff_pattern_score,
+    ctf.cash_burn_rate,
+    ctf.cf_volatility_score,
+    ctf.operating_cf_momentum,
+    ctf.financing_dependency,
+
+    -- =========================================================================
+    -- CASHFLOW COMPREHENSIVE (calc_cashflow_comprehensive)
+    -- Source columns: CFO (FQ/LTM/FY/-1FY/-2FY/-3FY/-4FY), FCF (FQ/LTM/FY/-1FY/-2FY/-3FY/-4FY),
+    --                 Net Income - (IS) (LTM), Total Revenues (LTM), Market Cap, CFI (LTM)
+    -- =========================================================================
+    cc.cfo_fq,
+    cc.cfo_ltm,
+    cc.cfo_fy,
+    cc.fcf_fq,
+    cc.fcf_ltm,
+    cc.fcf_fy,
+    cc.cfo_growth_yoy          AS cfo_growth_yoy_comp,
+    cc.fcf_growth_yoy,
+    cc.cfo_to_net_income       AS cfo_to_net_income_comp,
+    cc.fcf_margin              AS fcf_margin_comp,
+    cc.fcf_yield,
+    cc.cfo_positive_years,
+    cc.fcf_positive_years      AS fcf_positive_years_comp,
+    cc.cash_flow_quality_score AS cash_flow_quality_score_comp
+
+FROM vw_identifier_columns                           id
+         LEFT JOIN calc_cashflow_features()          cf USING (isin)
+         LEFT JOIN calc_enhanced_cashflow_features() ecf USING (isin)
+         LEFT JOIN calc_cashflow_temporal_features() ctf USING (isin)
+         LEFT JOIN calc_cashflow_comprehensive()     cc USING (isin);
+
+COMMENT ON VIEW vw_features_cashflow IS
+    'Cash flow metrics including CFO, FCF, CapEx analysis, and cash flow quality.
+    Source functions: calc_cashflow_features, calc_enhanced_cashflow_features,
+    calc_cashflow_temporal_features, calc_cashflow_comprehensive';
+
+
+-- =============================================================================
+-- 13. vw_features_temporal (NEW)
+-- Source functions: calc_temporal_features, calc_fiscal_calendar_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_temporal AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- TEMPORAL FEATURES (calc_temporal_features)
+    -- Source columns: Fiscal Quarter, Fiscal Month, Fiscal Year, Next Earnings,
+    --                 Income Statement Report Date, Reporting Lag
+    -- =========================================================================
+    tf.fiscal_quarter,
+    tf.fiscal_month,
+    tf.fiscal_year,
+    tf.days_to_earnings,
+    tf.earnings_report_recency,
+    tf.reporting_lag,
+    tf.fiscal_year_progress,
+
+    -- =========================================================================
+    -- FISCAL CALENDAR FEATURES (calc_fiscal_calendar_features)
+    -- Source columns: Income Statement Report Date, FY End Date, Next Earnings
+    -- =========================================================================
+    fcf.days_since_last_report,
+    fcf.days_to_fy_end,
+    fcf.is_quarter_end_month,
+    fcf.is_fy_end_month,
+    fcf.earnings_season_flag,
+    fcf.pre_earnings_window,
+    fcf.post_earnings_window,
+    fcf.reporting_freshness_score,
+    fcf.fiscal_quarter_progress
+
+FROM vw_identifier_columns                         id
+         LEFT JOIN calc_temporal_features()        tf USING (isin)
+         LEFT JOIN calc_fiscal_calendar_features() fcf USING (isin);
+
+COMMENT ON VIEW vw_features_temporal IS
+    'Temporal and fiscal calendar features for earnings timing and seasonality.
+    Source functions: calc_temporal_features, calc_fiscal_calendar_features';
+
+
+-- =============================================================================
+-- 14. vw_features_balance_sheet (NEW)
+-- Source functions: calc_total_assets_temporal, calc_inventory_temporal_features,
+--                   calc_goodwill_temporal_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_balance_sheet AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- TOTAL ASSETS TEMPORAL (calc_total_assets_temporal)
+    -- Source columns: Total Assets (FQ/-1FQ/-2FQ/-3FQ/-4FQ/FY/-1FY/-2FY/-3FY/-4FY/LTM)
+    -- =========================================================================
+    tat.assets_fq,
+    tat.assets_fy,
+    tat.assets_ltm,
+    tat.assets_1fq,
+    tat.assets_2fq,
+    tat.assets_3fq,
+    tat.assets_4fq,
+    tat.assets_1fy,
+    tat.assets_2fy,
+    tat.assets_3fy,
+    tat.assets_4fy,
+    tat.assets_qoq_growth,
+    tat.assets_yoy_growth,
+    tat.assets_3y_cagr,
+    tat.asset_growth_accel,
+    tat.asset_base_stable,
+
+    -- =========================================================================
+    -- INVENTORY TEMPORAL FEATURES (calc_inventory_temporal_features)
+    -- Source columns: Inventory (LTM/FQ/FY/-1FQ/-2FQ/-3FQ/-4FQ/-1FY/-2FY/-3FY/-4FY/5YAVGFQ),
+    --                 Cost Of Revenues (LTM), Total Revenues (LTM/FQ/-4FQFQ), Total Assets (LTM)
+    -- =========================================================================
+    itf.inventory_ltm,
+    itf.inventory_fq,
+    itf.inventory_fy,
+    itf.inventory_1fq,
+    itf.inventory_2fq,
+    itf.inventory_3fq,
+    itf.inventory_4fq,
+    itf.inventory_1fy,
+    itf.inventory_2fy,
+    itf.inventory_3fy,
+    itf.inventory_4fy,
+    itf.inventory_qoq_change,
+    itf.inventory_yoy_change,
+    itf.inventory_4q_trend,
+    itf.inventory_vs_5y_avg,
+    itf.inventory_days,
+    itf.inventory_turnover,
+    itf.inventory_to_revenue,
+    itf.inventory_to_assets,
+    itf.inventory_buildup_flag,
+    itf.inventory_reduction_flag,
+    itf.inventory_volatility,
+
+    -- =========================================================================
+    -- GOODWILL TEMPORAL FEATURES (calc_goodwill_temporal_features)
+    -- Source columns: Goodwill (FQ/-1FQ/-2FQ/-3FQ/-4FQ/LTM/FY/-1FY/-2FY/-3FY/-4FY/5YAVGFQ),
+    --                 Total Assets (FY/-1FY/LTM), Net Income - (IS) (FY/-1FY), Total Equity (LTM)
+    -- =========================================================================
+    gtf.goodwill_fq,
+    gtf.goodwill_ltm,
+    gtf.goodwill_fy,
+    gtf.goodwill_1fq,
+    gtf.goodwill_2fq,
+    gtf.goodwill_3fq,
+    gtf.goodwill_4fq,
+    gtf.goodwill_1fy,
+    gtf.goodwill_2fy,
+    gtf.goodwill_3fy,
+    gtf.goodwill_4fy,
+    gtf.goodwill_qoq_change,
+    gtf.goodwill_yoy_change,
+    gtf.goodwill_3y_growth,
+    gtf.goodwill_vs_5y_avg,
+    gtf.recent_acquisition_flag,
+    gtf.goodwill_accumulation_rate,
+    gtf.goodwill_to_assets_trend,
+    gtf.impairment_risk_score,
+    gtf.goodwill_concentration
+
+FROM vw_identifier_columns                            id
+         LEFT JOIN calc_total_assets_temporal()       tat USING (isin)
+         LEFT JOIN calc_inventory_temporal_features() itf USING (isin)
+         LEFT JOIN calc_goodwill_temporal_features()  gtf USING (isin);
+
+COMMENT ON VIEW vw_features_balance_sheet IS
+    'Balance sheet temporal analysis including assets, inventory, and goodwill trends.
+    Source functions: calc_total_assets_temporal, calc_inventory_temporal_features, calc_goodwill_temporal_features';
+
+
+-- =============================================================================
+-- 15. vw_features_cost_structure (NEW)
+-- Source functions: calc_cost_structure_features, calc_rnd_temporal_features,
+--                   calc_interest_income_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_cost_structure AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- COST STRUCTURE FEATURES (calc_cost_structure_features)
+    -- Source columns: Cost Of Revenues (LTM), Total Operating Expenses (LTM),
+    --                 Selling General & Admin Expenses/Total (FY/-1FY/FQ/5YAVGFQ),
+    --                 R&D Expenses (LTM), Interest Expense/Total (LTM),
+    --                 Total Revenues (LTM/FY/-1FY), Operating Income (FY/-1FY),
+    --                 Marketing Expenses (FY/-1FY/5YAVGLTM)
+    -- =========================================================================
+    csf.cogs_to_revenue,
+    csf.opex_to_revenue,
+    csf.sga_to_revenue,
+    csf.rnd_to_revenue,
+    csf.interest_to_revenue,
+    csf.sga_trend_yoy,
+    csf.operating_leverage_proxy,
+    csf.cost_efficiency_score,
+    csf.marketing_to_revenue,
+    csf.marketing_trend_yoy,
+    csf.marketing_vs_5y_avg,
+    csf.sga_vs_5y_avg,
+    csf.sga_efficiency_trend,
+
+    -- =========================================================================
+    -- R&D TEMPORAL FEATURES (calc_rnd_temporal_features)
+    -- Source columns: R&D Expenses (LTM/FQ/FY/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/-1FY/-2FY/-3FY/-4FY),
+    --                 Total Revenues (LTM/FY/-1FY), Full Time Employees (FY), Gross Profit (LTM)
+    -- =========================================================================
+    rtf.rnd_ltm,
+    rtf.rnd_fq,
+    rtf.rnd_fy,
+    rtf.rnd_1fqfq,
+    rtf.rnd_2fqfq,
+    rtf.rnd_3fqfq,
+    rtf.rnd_4fqfq,
+    rtf.rnd_1fy,
+    rtf.rnd_2fy,
+    rtf.rnd_3fy,
+    rtf.rnd_4fy,
+    rtf.rnd_intensity_ltm,
+    rtf.rnd_intensity_fy,
+    rtf.rnd_intensity_trend,
+    rtf.rnd_qoq_growth,
+    rtf.rnd_yoy_growth,
+    rtf.rnd_cagr_3y,
+    rtf.rnd_per_employee,
+    rtf.rnd_to_gross_profit,
+    rtf.rnd_roi_proxy,
+    rtf.rnd_increasing_flag,
+    rtf.rnd_cut_flag,
+    rtf.high_rnd_intensity_flag,
+
+    -- =========================================================================
+    -- INTEREST INCOME FEATURES (calc_interest_income_features)
+    -- Source columns: Interest Income On Investments (LTM), Interest Expense/Total (LTM),
+    --                 EBIT (LTM), Total Revenues (LTM), Total Assets (LTM)
+    -- =========================================================================
+    iif.interest_income_ltm,
+    iif.interest_expense_ltm,
+    iif.net_interest_income,
+    iif.interest_coverage_ratio,
+    iif.interest_income_to_revenue,
+    iif.interest_expense_to_revenue,
+    iif.net_interest_margin_proxy
+
+FROM vw_identifier_columns                         id
+         LEFT JOIN calc_cost_structure_features()  csf USING (isin)
+         LEFT JOIN calc_rnd_temporal_features()    rtf USING (isin)
+         LEFT JOIN calc_interest_income_features() iif USING (isin);
+
+COMMENT ON VIEW vw_features_cost_structure IS
+    'Cost structure metrics including SG&A, R&D intensity, and interest analysis.
+    Source functions: calc_cost_structure_features, calc_rnd_temporal_features, calc_interest_income_features';
+
+
+-- =============================================================================
+-- 16. vw_features_composite_scores (NEW)
+-- Source functions: calc_composite_scores, calc_net_income_comprehensive
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_composite_scores AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- COMPOSITE SCORES (calc_composite_scores)
+    -- Source columns: Return on Assets (ROA) % (LTM/FY), CFO (LTM), Net Income - (IS) (LTM),
+    --                 Total Debt (LTM/FY), Total Equity (LTM/FY), Current Ratio (LTM/FY),
+    --                 Shrs Out, Shrs Out (-1FY), Gross Profit Margin % (LTM/FY),
+    --                 Asset Turnover (LTM/FY), Net EPS - Basic (FY/-1FY/-2FY/-3FY/-4FY/-5FY),
+    --                 Return On Equity % (LTM), Last Price, Price (3M Ago), Total Revenues (FY/-1FY)
+    -- =========================================================================
+    cs.piotroski_f_score,
+    cs.eps_trajectory_score,
+    cs.dilution_score,
+    cs.quality_momentum_score,
+
+    -- =========================================================================
+    -- NET INCOME COMPREHENSIVE (calc_net_income_comprehensive)
+    -- Source columns: Net Income - (IS) (FQ/LTM/FY/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/-1FY/-2FY/-3FY/-4FY/5YAVGFQ/5YAVGLTM),
+    --                 Net Income/Adj. (LTM), Normalized Net Income (LTM/5YAVGFQ/5YAVGLTM),
+    --                 Net Income Margin % (LTM)
+    -- =========================================================================
+    nic.net_income_is_fq,
+    nic.net_income_is_ltm,
+    nic.net_income_is_fy,
+    nic.net_income_adj_ltm,
+    nic.normalized_ni_ltm,
+    nic.net_income_is_1fqfq,
+    nic.net_income_is_2fqfq,
+    nic.net_income_is_3fqfq,
+    nic.net_income_is_4fqfq,
+    nic.net_income_is_1fy,
+    nic.net_income_is_2fy,
+    nic.net_income_is_3fy,
+    nic.net_income_is_4fy,
+    nic.net_income_is_5yavgfq,
+    nic.net_income_is_5yavgltm,
+    nic.normalized_ni_5yavgfq,
+    nic.normalized_ni_5yavgltm,
+    nic.net_income_growth_yoy,
+    nic.net_income_margin_ltm,
+    nic.ni_adjustment_ratio,
+    nic.net_income_positive_years,
+    nic.earnings_quality_composite,
+    nic.net_income_qoq_growth,
+    nic.net_income_yoy_quarterly,
+    nic.net_income_vs_5y_avg,
+    nic.normalized_ni_vs_5y_avg
+
+FROM vw_identifier_columns                         id
+         LEFT JOIN calc_composite_scores()         cs USING (isin)
+         LEFT JOIN calc_net_income_comprehensive() nic USING (isin);
+
+COMMENT ON VIEW vw_features_composite_scores IS
+    'Composite scoring metrics including Piotroski F-Score and earnings quality.
+    Source functions: calc_composite_scores, calc_net_income_comprehensive';
+
+
+-- =============================================================================
+-- 17. vw_features_unusual_items (NEW)
+-- Source function: calc_unusual_items_features
+-- =============================================================================
+CREATE OR REPLACE VIEW vw_features_unusual_items AS
+SELECT
+    -- =========================================================================
+    -- IDENTIFIER COLUMNS
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- =========================================================================
+    -- UNUSUAL ITEMS FEATURES (calc_unusual_items_features)
+    -- Source columns: Other Unusual Items/Total (LTM), Impairment of Goodwill (LTM),
+    --                 Asset Writedown (LTM), Restructuring Charges (LTM),
+    --                 Total Revenues (LTM), EBITDA (LTM), Net Income - (IS) (LTM)
+    -- =========================================================================
+    uif.other_unusual_items_ltm,
+    uif.impairment_goodwill_ltm,
+    uif.asset_writedown_ltm,
+    uif.restructuring_charges_ltm,
+    uif.total_unusual_items,
+    uif.unusual_items_to_revenue,
+    uif.unusual_items_to_ebitda,
+    uif.has_unusual_items_flag,
+    uif.earnings_quality_impact
+
+FROM vw_identifier_columns                       id
+         LEFT JOIN calc_unusual_items_features() uif USING (isin);
+
+COMMENT ON VIEW vw_features_unusual_items IS
+    'Non-recurring and unusual items analysis for earnings quality assessment.
+    Source function: calc_unusual_items_features';
+
+-- =============================================================================
 -- UNIFIED MATERIALIZED VIEW AND FEATURE REGISTRY
 -- Integrates all feature calculation functions from CalcFinancialFeaturesSql.sql
 -- =============================================================================
@@ -3617,1504 +5254,1075 @@ DROP MATERIALIZED VIEW IF EXISTS mv_all_stock_features CASCADE;
 
 CREATE MATERIALIZED VIEW mv_all_stock_features AS
 SELECT
-    -- Identifier
-    e."ISIN"                                                                                           AS isin,
-    e."Ticker"                                                                                         AS ticker,
-    e."Name"                                                                                           AS name,
-    e."Region"                                                                                         AS region,
-    e."Country"                                                                                        AS country,
-    e."Trading Country"                                                                                AS trading_country,
-    e."Exchange"                                                                                       AS exchange,
-    e."Sector"                                                                                         AS sector,
-    e."Industry"                                                                                       AS industry,
+    -- =========================================================================
+    -- SECTION 0: IDENTIFIER COLUMNS (from calculated_features_registry)
+    -- Source: vw_identifier_columns -> equities table
+    -- =========================================================================
+    id.isin,
+    id.ticker,
+    id.name,
+    id.industry,
+    id.sector,
+    id.trading_country,
+    id.region,
+    id.country,
+    id.exchange,
+
+    -- Reference metadata from equities
     e."Last Updated"                      AS last_updated,
+    e."Reference Date"                    AS reference_date,
     e."FY End Date"                       AS fy_end_date,
     e."Next FY End Date"                  AS next_fy_end_date,
-    e."Next Earnings"                                                                                  as next_earnings,
-    e."Next Earnings (When)"                                                                           AS next_earnings_when,
-    e."Next Earnings (Status)"                                                                         AS next_earnings_status,
+    e."Next Earnings"                     AS next_earnings,
+    e."Next Earnings (When)"              AS next_earnings_when,
+    e."Next Earnings (Status)"            AS next_earnings_status,
     e."Income Statement Report Date"      AS income_statement_report_date,
     e."Next Income Statement Report Date" AS next_income_statement_report_date,
-    e."Next Earnings (Report)"            AS next_earnings_report,
-    e."Earnings Report (Frequency)"       AS earnings_report_frequency,
-    e."Current Fiscal Quarter"                                                                         AS current_fiscal_quarter,
-    e."Next Fiscal Quarter"                                                                            AS next_fiscal_quarter,
-    e."Dividend Record (Currency)"                                                                     AS dividend_record_currency,
-    e."Dividend Record (Amount)"                                                                       AS dividend_record_amount,
-    e."Dividend Record (Frequency)"                                                                    AS dividend_record_frequency,
-    e."Market Cap"                                                                                     AS market_cap,
-    e."Enterprise Value"                                                                               AS enterprise_value,
-    e."Last Price"                                                                                     AS last_price,
+    e."Market Cap"                        AS market_cap,
+    e."Enterprise Value"                  AS enterprise_value,
+    e."Last Price"                        AS last_price,
+    e."Price Target"                      AS price_target,
+    e."Price Target - Median"             AS price_target_median,
+    e."Price Target (YTD Ago)"            AS price_target_ytd_ago,
     e."Price Target - Low"                AS price_target_low,
     e."Price Target - High"               AS price_target_high,
-    e."Price Target - High (1W Ago)"      AS price_target_high_1w_ago,
-    e."Price Target - High (1M Ago)"      AS price_target_high_1m_ago,
-    e."Price Target - High (6M Ago)"      AS price_target_high_6m_ago,
-    e."Price Target - High (MTD Ago)"     AS price_target_high_mtd_ago,
-    e."Price Target - High (3M Ago)"      AS price_target_high_3m_ago,
-    e."Price Target - High (QTD Ago)"     AS price_target_high_qtd_ago,
-    e."Price Target - High (1Y Ago)"      AS price_target_high_1y_ago,
-    e."Price Target - High (YTD Ago)"     AS price_target_high_ytd_ago,
-    e."Price Target - Low (1W Ago)"       AS price_target_low_1w_ago,
-    e."Price Target - Low (1M Ago)"       AS price_target_low_1m_ago,
-    e."Price Target - Low (3M Ago)"       AS price_target_low_3m_ago,
-    e."Price Target - Low (6M Ago)"       AS price_target_low_6m_ago,
-    e."Price Target - Low (MTD Ago)"      AS price_target_low_mtd_ago,
-    e."Price Target - Low (QTD Ago)"      AS price_target_low_qtd_ago,
-    e."Price Target - Low (YTD Ago)"      AS price_target_low_ytd_ago,
-    e."Price Target - Low (1Y Ago)"       AS price_target_low_1y_ago,
-    e."Price Target - Median (1W Ago)"    AS price_target_median_1w_ago,
-    e."Price Target - Median (1M Ago)"    AS price_target_median_1m_ago,
-    e."Price Target - Median (3M Ago)"    AS price_target_median_3m_ago,
-    e."Price Target - Median (6M Ago)"    AS price_target_median_6m_ago,
-    e."Price Target - Median (MTD Ago)"   AS price_target_median_mtd_ago,
-    e."Price Target - Median (QTD Ago)"   AS price_target_median_qtd_ago,
-    e."Price Target - Median (YTD Ago)"   AS price_target_median_ytd_ago,
-    e."Price Target - Median (1Y Ago)"    AS price_target_median_1y_ago,
-    e."Price Target - #"                  AS price_target_count,
-    e."Price Target - # (3M Ago)"         AS price_target_count_3m_ago,
-    e."Price Target - # (6M Ago)"         AS price_target_count_6m_ago,
-    e."Price Target - # (YTD Ago)"        AS price_target_count_ytd_ago,
-    e."Price Target - # (1Y Ago)"         AS price_target_count_1y_ago,
-    e."Price Target - # (1W Ago)"         AS price_target_count_1w_ago,
-    e."Price Target - # (1M Ago)"         AS price_target_count_1m_ago,
-    e."Price Target - # (MTD Ago)"        AS price_target_count_mtd_ago,
-    e."Price Target - # (QTD Ago)"        AS price_target_count_qtd_ago,
-    -- =========================================================================
-    -- VALUATION FEATURES (calc_valuation_features)
-    -- =========================================================================
-    e."P/E (LTM)"                                                                                      AS p_e_ratio,
-    e."P/B (LTM)"                                                                                      AS p_b_ratio,
-    e."EV/EBITDA (LTM)"                                                                                AS ev_ebitda_ratio,
-    e."EV/Sales (LTM)"                                                                                 AS ev_sales_ratio,
-    e."Div Yield (LTM)"                                                                                AS dividend_yield,
-    CASE
-        WHEN e."Total Revenues/CAGR (5Y FY)" > 0
-            THEN safe_divide(e."P/E (LTM)", e."Total Revenues/CAGR (5Y FY)")
-        END                                                                                            AS peg_ratio,
+    e."Volume (Shrs)"                     AS volume_shrs,
+    e."Shrs Out"                          AS shares_outstanding,
 
     -- =========================================================================
-    -- VALUATION TIMESERIES FEATURES (calc_valuation_timeseries_features)
+    -- SECTION 1: VALUATION RATIOS (vw_features_valuation_ratios)
+    -- Source: calc_valuation_features, calc_valuation_timeseries_features,
+    --         calc_extended_valuation_timeseries, calc_tangible_book_features
     -- =========================================================================
-    calc_change_ratio(e."EV/Sales (LTM)", e."EV/Sales (-1FYLTM)")                                      AS ev_sales_trend_1y,
-    calc_change_ratio(e."EV/EBITDA (LTM)", e."EV/EBITDA (-1FYLTM)")                                    AS ev_ebitda_momentum,
-    calc_change_ratio(e."P/E (LTM)", e."P/E (-1FYLTM)")                                                AS p_e_momentum_yoy,
-    calc_change_ratio(e."P/E (LTM)", e."P/E (-1FQLTM)")                                                AS p_e_momentum_qoq,
-    calc_change_ratio(e."EV/Sales (LTM)", e."EV/Sales (3YAVGLTM)")                                     AS ev_sales_vs_3y_avg,
-    calc_change_ratio(e."EV/EBITDA (LTM)", e."EV/EBITDA (3YAVGLTM)")                                   AS ev_ebitda_vs_3y_avg,
-    calc_change_ratio(e."P/E (LTM)", e."P/E (3YAVGLTM)")                                               AS p_e_vs_3y_avg,
-    calc_change_ratio(e."EV/Sales (NTM)", e."EV/Sales (LTM)")                                          AS ev_sales_forward_discount,
-    calc_change_ratio(e."EV/EBITDA (NTM)", e."EV/EBITDA (LTM)")                                        AS ev_ebitda_forward_discount,
-    calc_change_ratio(e."P/E (EST FY1)", e."P/E (LTM)")                                                AS p_e_forward_discount,
-    safe_divide(e."P/B (LTM)", e."P/B (5YAVG)")                                                        AS p_b_vs_5y_avg,
+    -- calc_valuation_features
+    vf.p_e_ratio,
+    vf.p_b_ratio,
+    vf.ev_ebitda_ratio,
+    vf.ev_sales_ratio,
+    vf.dividend_yield                     AS valuation_dividend_yield,
+    vf.peg_ratio,
+
+    -- calc_valuation_timeseries_features
+    vts.ev_sales_trend_1y,
+    vts.ev_ebitda_momentum,
+    vts.p_e_momentum_yoy,
+    vts.p_e_momentum_qoq,
+    vts.ev_sales_vs_3y_avg,
+    vts.ev_ebitda_vs_3y_avg,
+    vts.p_e_vs_3y_avg,
+    vts.ev_sales_forward_discount,
+    vts.ev_ebitda_forward_discount,
+    vts.p_e_forward_discount,
+    vts.p_b_vs_5y_avg,
+
+    -- calc_extended_valuation_timeseries
+    evt.ev_sales_qoq_1q,
+    evt.ev_sales_qoq_2q,
+    evt.ev_sales_qoq_3q,
+    evt.ev_sales_qoq_4q,
+    evt.p_e_vs_5y_avg,
+    evt.p_e_percentile_proxy,
+    evt.valuation_mean_reversion,
+    evt.ev_ebitda_qoq_trend,
+    evt.p_b_momentum_yoy,
+    evt.valuation_compression,
+    evt.forward_pe_premium,
+
+    -- calc_tangible_book_features
+    tb.tangible_book_value_fy,
+    tb.tangible_book_value_ltm,
+    tb.tangible_book_per_share,
+    tb.price_to_tangible_book,
+    tb.tangible_equity_ratio,
+    tb.intangibles_to_equity,
+    tb.goodwill_to_equity,
+    tb.tangible_asset_quality,
+    tb.tbv_yoy_growth,
+    tb.tbv_vs_calculated,
 
     -- =========================================================================
-    -- EXTENDED VALUATION TIMESERIES (calc_extended_valuation_timeseries)
+    -- SECTION 2: MOMENTUM (vw_features_momentum)
+    -- Source: calc_momentum_features, calc_long_term_momentum_features
     -- =========================================================================
-    (e."EV/Sales (LTM)" - e."EV/Sales (-1FQLTM)") /
-    NULLIF(e."EV/Sales (-1FQLTM)", 0)                                                                  AS ev_sales_qoq_1q,
-    (e."P/E (LTM)" - e."P/E (5YAVGLTM)") / NULLIF(e."P/E (5YAVGLTM)", 0)                               AS p_e_vs_5y_avg_ext,
-    (e."P/B (LTM)" - e."P/B (-1FY)") / NULLIF(e."P/B (-1FY)", 0)                                       AS p_b_momentum_yoy,
-    (e."P/E (EST FY1)" - e."P/E (LTM)") / NULLIF(ABS(e."P/E (LTM)"), 0) *
-    100                                                                                                AS forward_pe_premium,
+    -- calc_momentum_features
+    mf.price_momentum_1m,
+    mf.price_momentum_3m,
+    mf.price_momentum_6m,
+    mf.price_momentum_1y,
+    mf.price_momentum_5d,
+    mf.ema_crossover_20_50,
+    mf.ema_crossover_50_250,
+    mf.price_vs_ema_20d,
+    mf.price_vs_ema_250d,
+    mf.pct_off_52w_high,
+    mf.pct_above_52w_low,
+    mf.range_52w_position,
+    mf.beta_momentum,
+    mf.volatility_regime,
+
+    -- calc_long_term_momentum_features
+    ltm.price_momentum_3y,
+    ltm.price_momentum_5y,
+    ltm.long_term_trend_score,
+    ltm.multi_year_high_flag,
+    ltm.secular_trend_flag,
 
     -- =========================================================================
-    -- MOMENTUM FEATURES (calc_momentum_features)
+    -- SECTION 3: TECHNICAL ANALYSIS (vw_features_technical_analysis)
+    -- Source: calc_technical_analysis_features
     -- =========================================================================
-    pct_change(e."Last Price", e."Price (1M Ago)")                                                     AS price_momentum_1m,
-    pct_change(e."Last Price", e."Price (3M Ago)")                                                     AS price_momentum_3m,
-    pct_change(e."Last Price", e."Price (6M Ago)")                                                     AS price_momentum_6m,
-    pct_change(e."Last Price", e."Price (1Y Ago)")                                                     AS price_momentum_1y,
-    pct_change(e."Last Price", e."Price (5D Ago)")                                                     AS price_momentum_5d,
-    ema_crossover_signal(e."EMA (20D)", e."EMA (50D)")                                                 AS ema_crossover_20_50,
-    ema_crossover_signal(e."EMA (50D)", e."EMA (250D)")                                                AS ema_crossover_50_250,
-    calc_change_ratio(e."Last Price", e."EMA (20D)")                                                   AS price_vs_ema_20d,
-    calc_change_ratio(e."Last Price", e."EMA (250D)")                                                  AS price_vs_ema_250d,
-    calc_change_ratio(e."52W High/Adj" - e."Last Price",
-                      e."52W High/Adj")                                                                AS pct_off_52w_high,
-    calc_change_ratio(e."Last Price" - e."52W Low/Adj", e."52W Low/Adj")                               AS pct_above_52w_low,
-    clamp_score(safe_divide(e."Last Price" - e."52W Low/Adj", e."52W High/Adj" - e."52W Low/Adj"), 0,
-                1)                                                                                     AS range_52w_position,
-    e."Beta (1Y)" - e."Beta (5Y)"                                                                      AS beta_momentum,
-    safe_divide(e."Volatility (1M)", e."Volatility (1Y)")                                              AS volatility_regime,
+    ta.ema_slope_20d,
+    ta.ema_trend_consistency,
+    ta.price_vs_ema_100d,
+    ta.near_52w_high_flag,
+    ta.near_52w_low_flag,
+    ta.volume_momentum_score,
+    ta.breakout_signal,
+    ta.high_volume_flag,
+    ta.low_volume_flag,
+    ta.volatility_compression,
+    ta.volatility_term_structure,
 
     -- =========================================================================
-    -- TECHNICAL ANALYSIS FEATURES (calc_technical_analysis_features)
+    -- SECTION 4: PROFITABILITY (vw_features_profitability)
+    -- Source: calc_profitability_features, calc_margin_trends,
+    --         calc_ebit_ebitda_comprehensive, calc_gross_profit_temporal
     -- =========================================================================
-    (e."EMA (20D)" - e."EMA (50D)") / NULLIF(e."EMA (50D)", 0)                                         AS ema_slope_20d,
-    CASE
-        WHEN e."EMA (20D)" > e."EMA (50D)" AND e."EMA (50D)" > e."EMA (100D)" AND e."EMA (100D)" > e."EMA (250D)" THEN 1
-        WHEN e."EMA (20D)" < e."EMA (50D)" AND e."EMA (50D)" < e."EMA (100D)" AND e."EMA (100D)" < e."EMA (250D)" THEN -1
-        ELSE 0
-        END                                                                                            AS ema_trend_consistency,
-    (e."Last Price" - e."EMA (100D)") / NULLIF(e."EMA (100D)", 0) * 100                                AS price_vs_ema_100d,
-    CASE
-        WHEN (e."52W High/Adj" - e."Last Price") / NULLIF(e."52W High/Adj", 0) <= 0.05 THEN 1
-        ELSE 0 END                                                                                     AS near_52w_high_flag,
-    CASE
-        WHEN (e."Last Price" - e."52W Low/Adj") / NULLIF(e."52W Low/Adj", 0) <= 0.05 THEN 1
-        ELSE 0 END                                                                                     AS near_52w_low_flag,
-    e."Rel. Volume" * e."Price Chg. % (1M)"                                                            AS volume_momentum_score,
-    CASE
-        WHEN e."EMA (20D)" > e."EMA (50D)" AND (e."52W High/Adj" - e."Last Price") / NULLIF(e."52W High/Adj", 0) <= 0.05
-            THEN 1
-        ELSE 0
-        END                                                                                            AS breakout_signal,
-    CASE WHEN e."Rel. Volume" > 1.5 THEN 1 ELSE 0 END                                                  AS high_volume_flag,
-    CASE WHEN e."Rel. Volume" < 0.5 THEN 1 ELSE 0 END                                                  AS low_volume_flag,
-    e."Volatility (1Y)" - e."Volatility (1M)"                                                          AS volatility_compression,
-    e."Volatility (3M)" - e."Volatility (6M)"                                                          AS volatility_term_structure,
+    -- calc_profitability_features
+    pf.roe,
+    pf.roa,
+    pf.gross_margin_pct,
+    pf.operating_margin_pct,
+    pf.net_margin_pct,
+    pf.ebitda_margin_pct,
+    pf.roic,
+    pf.rnd_intensity,
+    pf.equity_multiplier,
+
+    -- calc_margin_trends
+    mt.gross_margin_trend_yoy,
+    mt.operating_margin_trend,
+    mt.net_margin_trend_yoy,
+    mt.ebitda_margin_trend,
+    mt.margin_expansion_flag,
+    mt.margin_stability_score,
+
+    -- calc_ebit_ebitda_comprehensive
+    eec.ebit_fq,
+    eec.ebit_ltm,
+    eec.ebit_fy,
+    eec.ebit_1fy,
+    eec.ebit_2fy,
+    eec.ebit_3fy,
+    eec.ebit_4fy,
+    eec.ebit_1fqfq,
+    eec.ebit_2fqfq,
+    eec.ebit_3fqfq,
+    eec.ebit_4fqfq,
+    eec.ebit_5yavgfq,
+    eec.ebit_5yavgltm,
+    eec.ebit_adj_fq,
+    eec.ebit_adj_ltm,
+    eec.ebit_adj_fy,
+    eec.ebitda_fq,
+    eec.ebitda_ltm,
+    eec.ebitda_fy,
+    eec.ebitda_1fy,
+    eec.ebitda_2fy,
+    eec.ebitda_3fy,
+    eec.ebitda_4fy,
+    eec.ebitda_1fqfq,
+    eec.ebitda_2fqfq,
+    eec.ebitda_3fqfq,
+    eec.ebitda_4fqfq,
+    eec.ebitda_5yavgfq,
+    eec.ebitda_5yavgltm,
+    eec.ebitda_adj_fq,
+    eec.ebitda_adj_ltm,
+    eec.ebitda_adj_fy,
+    eec.ebit_growth_yoy,
+    eec.ebitda_growth_yoy,
+    eec.ebit_margin_ltm,
+    eec.ebitda_margin_ltm,
+    eec.ebit_positive_years,
+    eec.ebitda_positive_years,
+    eec.ebit_qoq_growth,
+    eec.ebitda_qoq_growth,
+    eec.ebit_cagr_3y,
+    eec.ebitda_cagr_3y,
+    eec.ebit_vs_5y_avg,
+    eec.ebitda_vs_5y_avg,
+
+    -- calc_gross_profit_temporal
+    gpt.gp_fq,
+    gpt.gp_fy,
+    gpt.gp_ltm,
+    gpt.gp_1fqfq,
+    gpt.gp_2fqfq,
+    gpt.gp_3fqfq,
+    gpt.gp_4fqfq,
+    gpt.gp_1fy,
+    gpt.gp_2fy,
+    gpt.gp_3fy,
+    gpt.gp_4fy,
+    gpt.gp_qoq_growth,
+    gpt.gp_yoy_growth,
+    gpt.gp_margin_fq,
+    gpt.gp_margin_trend,
+    gpt.gp_positive_quarters,
+    gpt.gp_margin_expansion,
 
     -- =========================================================================
-    -- PROFITABILITY FEATURES (calc_profitability_features)
+    -- SECTION 5: EARNINGS (vw_features_earnings)
+    -- Source: calc_earnings_features, calc_eps_trajectory_features,
+    --         calc_eps_comprehensive, calc_eps_continuing_features,
+    --         calc_gaap_adjusted_analytics, calc_gaap_revision_features
     -- =========================================================================
-    e."Return On Equity % (LTM)"                                                                       AS roe,
-    e."Return on Assets (ROA) % (LTM)"                                                                 AS roa,
-    e."Gross Profit Margin % (LTM)"                                                                    AS gross_margin_pct,
-    e."Operating Income (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) * 100                             AS operating_margin_pct,
-    e."Net Income Margin % (LTM)"                                                                      AS net_margin_pct,
-    e."EBITDA (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) * 100                                       AS ebitda_margin_pct,
-    e."Net Income - (IS) (LTM)" / NULLIF(e."Total Equity (LTM)" + e."Total Debt (LTM)", 0) *
-    100                                                                                                AS roic,
-    e."R&D Expenses (LTM)" / NULLIF(e."Total Revenues (LTM)", 0)                                       AS rnd_intensity,
-    e."Total Assets (LTM)" / NULLIF(e."Total Equity (LTM)", 0)                                         AS equity_multiplier,
+    -- calc_earnings_features
+    ef.eps_surprise_pct,
+    ef.revenue_surprise_pct,
+    ef.eps_adjustment_ratio,
+    ef.gaap_adj_eps_gap_pct,
+    ef.ebitda_adjustment_ratio,
+    ef.eps_quarterly_trend,
+    ef.eps_yoy_growth,
+
+    -- calc_eps_trajectory_features
+    etf.eps_qoq_growth,
+    etf.eps_yoy_quarterly,
+    etf.eps_positive_streak,
+    etf.eps_cagr_3y,
+    etf.eps_cagr_5y,
+    etf.eps_growth_accel,
+    etf.eps_vs_5y_avg,
+    etf.eps_improvement_count,
+    etf.eps_trajectory_score,
+    etf.eps_stability,
+
+    -- calc_eps_comprehensive
+    ec.eps_basic_fq,
+    ec.eps_basic_ltm,
+    ec.eps_basic_fy,
+    ec.eps_adj_ltm,
+    ec.eps_norm_est_fy1e,
+    ec.eps_positive_years,
+
+    -- calc_eps_continuing_features
+    ecf.eps_cont_ltm,
+    ecf.eps_cont_fq,
+    ecf.eps_cont_fy,
+    ecf.eps_cont_1fqfq,
+    ecf.eps_cont_2fqfq,
+    ecf.eps_cont_3fqfq,
+    ecf.eps_cont_4fqfq,
+    ecf.eps_cont_1fy,
+    ecf.eps_cont_2fy,
+    ecf.eps_cont_3fy,
+    ecf.eps_cont_4fy,
+    ecf.eps_cont_qoq_growth,
+    ecf.eps_cont_yoy_growth,
+    ecf.eps_cont_cagr_3y,
+    ecf.eps_cont_vs_total_eps,
+    ecf.eps_cont_positive_streak,
+    ecf.eps_cont_trajectory_score,
+    ecf.discontinued_ops_impact,
+    ecf.core_earnings_stability,
+
+    -- calc_gaap_adjusted_analytics
+    gaa.eps_adjustment_spread_ltm,
+    gaa.eps_adjustment_spread_fy,
+    gaa.eps_adjustment_spread_1fy,
+    gaa.eps_adjustment_spread_fq,
+    gaa.eps_adjustment_spread_1fqfq,
+    gaa.eps_adjustment_spread_2fqfq,
+    gaa.eps_adjustment_spread_3fqfq,
+    gaa.eps_adjustment_spread_4fqfq,
+    gaa.eps_adjustment_spread_2fy,
+    gaa.eps_adjustment_spread_3fy,
+    gaa.eps_adjustment_spread_4fy,
+    gaa.eps_adjustment_pct,
+    gaa.net_income_adjustment_ratio_ltm,
+    gaa.net_income_adjustment_ratio_fy,
+    gaa.net_income_adjustment_ratio_1fy,
+    gaa.net_income_adjustment_ratio_fq,
+    gaa.net_income_adjustment_ratio_5yavgfq,
+    gaa.net_income_adjustment_ratio_1fqfq,
+    gaa.net_income_adjustment_ratio_2fqfq,
+    gaa.net_income_adjustment_ratio_3fqfq,
+    gaa.net_income_adjustment_ratio_4fqfq,
+    gaa.net_income_adjustment_ratio_2fy,
+    gaa.net_income_adjustment_ratio_3fy,
+    gaa.net_income_adjustment_ratio_4fy,
+    gaa.net_income_adjustment_pct,
+    gaa.ebitda_adjustment_pct_ltm,
+    gaa.ebitda_adjustment_pct_fy,
+    gaa.ebitda_adjustment_pct_1fy,
+    gaa.ebitda_adjustment_pct_fq,
+    gaa.ebitda_adjustment_pct_1fqfq,
+    gaa.ebitda_adjustment_pct_2fqfq,
+    gaa.ebitda_adjustment_pct_3fqfq,
+    gaa.ebitda_adjustment_pct_4fqfq,
+    gaa.ebitda_adjustment_pct_2fy,
+    gaa.ebitda_adjustment_pct_3fy,
+    gaa.ebitda_adjustment_pct_4fy,
+    gaa.ebit_adjustment_pct_ltm,
+    gaa.ebit_adjustment_pct_fy,
+    gaa.ebit_adjustment_pct_1fy,
+    gaa.ebit_adjustment_pct_fq,
+    gaa.ebit_adjustment_pct_1fqfq,
+    gaa.ebit_adjustment_pct_2fqfq,
+    gaa.ebit_adjustment_pct_3fqfq,
+    gaa.ebit_adjustment_pct_4fqfq,
+    gaa.ebit_adjustment_pct_2fy,
+    gaa.ebit_adjustment_pct_3fy,
+    gaa.ebit_adjustment_pct_4fy,
+    gaa.earnings_quality_score,
+    gaa.earnings_quality_warning,
+    gaa.forward_eps_gaap_adj_spread,
+
+    -- calc_gaap_revision_features
+    grf.gaap_revision_momentum,
+    grf.gaap_revision_1m,
+    grf.gaap_revision_3m,
+    grf.gaap_revision_6m,
+    grf.gaap_revision_1y,
+    grf.gaap_vs_norm_revision_spread,
+    grf.gaap_revision_acceleration,
+    grf.gaap_positive_revision_flag,
+    grf.revision_quality_divergence,
 
     -- =========================================================================
-    -- MARGIN TRENDS (calc_margin_trends)
+    -- SECTION 6: GROWTH (vw_features_growth)
+    -- Source: calc_growth_features, calc_revenue_forecast_features,
+    --         calc_revenue_quarterly_features, calc_total_revenues_temporal
     -- =========================================================================
-    (e."Gross Profit Margin % (LTM)" - e."Gross Profit Margin % (FY)")                                 AS gross_margin_trend_yoy,
-    ((e."Operating Income (LTM)" / NULLIF(e."Total Revenues (LTM)", 0)) -
-     (e."Operating Income (FY)" / NULLIF(e."Total Revenues (FY)", 0))) *
-    100                                                                                                AS operating_margin_trend,
-    (e."Net Income Margin % (LTM)" - e."Net Income Margin % (FY)")                                     AS net_margin_trend_yoy,
-    ((e."EBITDA (LTM)" / NULLIF(e."Total Revenues (LTM)", 0)) -
-     (e."EBITDA (FY)" / NULLIF(e."Total Revenues (FY)", 0))) *
-    100                                                                                                AS ebitda_margin_trend,
-    CASE
-        WHEN e."Gross Profit Margin % (LTM)" > e."Gross Profit Margin % (FY)"
-            AND e."Net Income Margin % (LTM)" > e."Net Income Margin % (FY)"
-            AND (e."EBITDA (LTM)" / NULLIF(e."Total Revenues (LTM)", 0)) >
-                (e."EBITDA (FY)" / NULLIF(e."Total Revenues (FY)", 0))
-            THEN 1
-        ELSE 0
-        END                                                                                            AS margin_expansion_flag,
+    -- calc_growth_features
+    gf.revenue_growth_yoy,
+    gf.ebitda_growth_yoy                  AS growth_ebitda_growth_yoy,
+    gf.operating_income_growth,
+    gf.fcf_growth,
+    gf.revenue_cagr_5y,
+    gf.forward_revenue_growth,
+    gf.revenue_vs_5y_avg,
+
+    -- calc_revenue_forecast_features
+    rff.revenue_est_spread,
+    rff.revenue_beat_potential,
+    rff.revenue_est_revision_trend,
+    rff.ebitda_est_vs_actual,
+    rff.forward_revenue_multiple,
+    rff.revenue_estimate_count,
+    rff.revenue_guidance_gap,
+    rff.consensus_revenue_growth,
+    rff.ebit_estimate_spread,
+    rff.forward_ebitda_margin,
+    rff.revenue_acceleration,
+    rff.estimate_confidence_score,
+
+    -- calc_revenue_quarterly_features
+    rqf.revenue_fq,
+    rqf.revenue_fy,
+    rqf.revenue_ltm,
+    rqf.revenue_5y_avg,
+    rqf.revenue_1fqfq,
+    rqf.revenue_2fqfq,
+    rqf.revenue_3fqfq,
+    rqf.revenue_4fqfq,
+    rqf.revenue_1fy,
+    rqf.revenue_2fy,
+    rqf.revenue_3fy,
+    rqf.revenue_4fy,
+    rqf.revenue_qoq_growth,
+    rqf.revenue_qoq_2q,
+    rqf.revenue_qoq_3q,
+    rqf.revenue_qoq_4q,
+    rqf.revenue_yoy_quarterly,
+    rqf.revenue_2y_growth,
+    rqf.revenue_3y_growth,
+    rqf.revenue_4y_growth,
+    rqf.revenue_cagr_3y,
+    rqf.revenue_cagr_4y,
+    rqf.revenue_4q_trend,
+    rqf.revenue_4q_avg,
+    rqf.revenue_fq_vs_4q_avg,
+    rqf.revenue_growth_flag,
+    rqf.revenue_stability_score,
+    rqf.revenue_accelerating_flag,
+    rqf.revenue_positive_qoq_streak,
+
+    -- calc_total_revenues_temporal
+    trt.revenue_5yavgfq,
+    trt.revenue_5yavgltm,
+    trt.revenue_vs_5y_avg_fq,
+    trt.revenue_vs_5y_avg_ltm,
+    trt.revenue_fq_vs_avg,
+    trt.revenue_momentum,
 
     -- =========================================================================
-    -- QUALITY & RISK FEATURES (calc_quality_features)
+    -- SECTION 7: QUALITY & RISK (vw_features_quality_risk)
+    -- Source: calc_quality_features, calc_beta_risk_features,
+    --         calc_financial_distress_features, calc_accounting_quality_features,
+    --         calc_quality_features_comprehensive
     -- =========================================================================
-    CASE WHEN e."Impairment of Goodwill (LTM)" <> 0 THEN 1 ELSE 0 END                                  AS has_goodwill_impairment,
-    CASE WHEN e."Asset Writedown (LTM)" <> 0 THEN 1 ELSE 0 END                                         AS has_asset_writedown,
-    CASE WHEN e."Restructuring Charges (LTM)" <> 0 THEN 1 ELSE 0 END                                   AS has_restructuring,
-    e."Goodwill (LTM)" / NULLIF(e."Total Assets (LTM)", 0) * 100                                       AS goodwill_to_assets_pct,
-    e."Gross Intangible Assets (LTM)" / NULLIF(e."Total Assets (LTM)", 0)                              AS intangible_intensity,
-    (ABS(e."Impairment of Goodwill (LTM)") + ABS(e."Asset Writedown (LTM)") + ABS(e."Restructuring Charges (LTM)")) /
-    NULLIF(ABS(e."EBITDA (LTM)"), 0)                                                                   AS exceptional_items_to_ebitda,
-    e."Altman Z-Score (LTM)"                                                                           AS altman_z_score,
-    e."Altman Z-Score (FY)" - e."Altman Z-Score (LTM)"                                                 AS altman_z_trend,
-    e."Current Ratio (LTM)"                                                                            AS current_ratio,
-    (e."Total Current Assets (LTM)" - e."Inventory (LTM)") /
-    NULLIF(e."Total Current Liabilities (LTM)", 0)                                                     AS quick_ratio,
+    -- calc_quality_features
+    qf.has_goodwill_impairment,
+    qf.has_asset_writedown,
+    qf.has_restructuring,
+    qf.goodwill_to_assets_pct,
+    qf.intangible_intensity,
+    qf.exceptional_items_to_ebitda,
+    qf.altman_z_score,
+    qf.altman_z_trend,
+    qf.current_ratio,
+    qf.quick_ratio,
+
+    -- calc_beta_risk_features
+    br.beta_1y,
+    br.beta_5y,
+    br.beta_spread,
+    br.beta_trend,
+    br.high_beta_flag,
+    br.low_beta_flag,
+    br.beta_stability_score,
+
+    -- calc_financial_distress_features
+    fdf.distress_risk_score,
+    fdf.liquidity_stress_score,
+    fdf.working_capital_trend,
+    fdf.cash_runway_months,
+    fdf.combined_distress_score,
+    fdf.wc_deteriorating_flag,
+    fdf.retained_earnings_growth,
+    fdf.accumulated_deficit_flag,
+    fdf.adequate_cash_buffer,
+
+    -- calc_accounting_quality_features
+    aqf.goodwill_change_rate,
+    aqf.restructuring_intensity,
+    aqf.exceptional_items_frequency,
+    aqf.merger_impact_ratio,
+    aqf.non_operating_income_share,
+    aqf.asset_sale_boost,
+    aqf.accounting_quality_score,
+
+    -- calc_quality_features_comprehensive
+    qfc.goodwill_impairment_ltm,
+    qfc.asset_writedown_ltm,
+    qfc.restructuring_ltm,
+    qfc.has_goodwill_impairment_ltm,
+    qfc.goodwill_impairment_frequency,
+    qfc.asset_writedown_frequency,
+    qfc.restructuring_frequency,
+    qfc.exceptional_items_total_ltm,
+    qfc.quality_issues_count_5y,
 
     -- =========================================================================
-    -- FINANCIAL DISTRESS FEATURES (calc_financial_distress_features)
+    -- SECTION 8: LEVERAGE & LIQUIDITY (vw_features_leverage_liquidity)
+    -- Source: calc_leverage_features, calc_efficiency_ratios,
+    --         calc_balance_sheet_dynamics, calc_working_capital_temporal,
+    --         calc_total_debt_temporal, calc_working_capital_deep_features
     -- =========================================================================
-    GREATEST(0, LEAST(100,
-                      ((e."Altman Z-Score (LTM)" - 1.8) / NULLIF(3.0 - 1.8, 0) * 100)))                AS distress_risk_score,
-    CASE
-        WHEN e."Current Ratio (LTM)" < 1.0 THEN 30.0
-        WHEN e."Current Ratio (LTM)" < 1.5 THEN 15.0
-        ELSE 0.0
-        END                                                                                            AS liquidity_stress_score,
-    (e."Working Capital (FQ)" - e."Working Capital (FY)") /
-    NULLIF(ABS(e."Working Capital (FY)"), 0)                                                           AS working_capital_trend,
-    e."Cash And Equivalents (FQ)" /
-    NULLIF(e."Total Operating Expenses (LTM)" / 12.0, 0)                                               AS cash_runway_months,
-    CASE WHEN e."Retained Earnings (FQ)" < 0 THEN 1 ELSE 0 END                                         AS accumulated_deficit_flag,
-    CASE
-        WHEN e."Cash And Equivalents (FQ)" / NULLIF(e."Total Operating Expenses (LTM)" / 12.0, 0) > 6 THEN 1
-        ELSE 0
-        END                                                                                            AS adequate_cash_buffer,
+    -- calc_leverage_features
+    lf.debt_to_equity,
+    lf.debt_to_assets,
+    lf.equity_ratio,
+    lf.interest_coverage,
+    lf.cash_ratio,
+    lf.working_capital_ratio,
+
+    -- calc_efficiency_ratios
+    er.asset_turnover,
+    er.inventory_turnover,
+    er.receivables_days,
+    er.working_capital_turns,
+
+    -- calc_balance_sheet_dynamics
+    bsd.cash_to_assets_pct,
+    bsd.cash_change_qoq,
+    bsd.cash_vs_5y_avg,
+    bsd.inventory_change_yoy,
+    bsd.inventory_vs_5y_avg,
+    bsd.receivables_change_yoy,
+    bsd.receivables_vs_5y_avg,
+    bsd.working_capital_vs_5y_avg,
+    bsd.retained_earnings_vs_5y,
+    bsd.intangibles_growth_flag,
+    bsd.asset_quality_score,
+    bsd.balance_sheet_strength,
+    bsd.debt_maturity_risk,
+
+    -- calc_working_capital_temporal
+    wct.wc_fq,
+    wct.wc_fy,
+    wct.wc_ltm,
+    wct.wc_5yavgfy,
+    wct.wc_1fq,
+    wct.wc_2fq,
+    wct.wc_3fq,
+    wct.wc_4fq,
+    wct.wc_1fy,
+    wct.wc_2fy,
+    wct.wc_3fy,
+    wct.wc_4fy,
+    wct.wc_qoq_change,
+    wct.wc_yoy_change,
+    wct.wc_4q_trend,
+    wct.wc_vs_5y_avg,
+    wct.wc_positive_quarters,
+    wct.wc_improving_flag,
+    wct.wc_volatility,
+
+    -- calc_total_debt_temporal
+    tdt.debt_fq,
+    tdt.debt_fy,
+    tdt.debt_ltm,
+    tdt.debt_1fq,
+    tdt.debt_2fq,
+    tdt.debt_3fq,
+    tdt.debt_4fq,
+    tdt.debt_1fy,
+    tdt.debt_2fy,
+    tdt.debt_3fy,
+    tdt.debt_4fy,
+    tdt.debt_qoq_change,
+    tdt.debt_yoy_change,
+    tdt.debt_4q_trend,
+    tdt.debt_3y_cagr,
+    tdt.debt_deleveraging,
+    tdt.debt_to_equity_trend,
+
+    -- calc_working_capital_deep_features
+    wcd.wc_to_revenue,
+    wcd.wc_to_assets,
+    wcd.days_working_capital,
+    wcd.wc_efficiency_score,
+    wcd.negative_wc_flag,
 
     -- =========================================================================
-    -- ACCOUNTING QUALITY FEATURES (calc_accounting_quality_features)
+    -- SECTION 9: ANALYST SENTIMENT (vw_features_analyst_sentiment)
+    -- Source: calc_sentiment_features, calc_price_target_dynamics
     -- =========================================================================
-    (e."Goodwill (LTM)" - e."Goodwill (-1FY)") /
-    NULLIF(e."Goodwill (-1FY)", 0)                                                                     AS goodwill_change_rate,
-    e."Restructuring Charges (LTM)" / NULLIF(e."Total Assets (LTM)", 0)                                AS restructuring_intensity,
-    (CASE WHEN ABS(e."Impairment of Goodwill (FQ)") > 0 THEN 1 ELSE 0 END +
-     CASE WHEN ABS(e."Asset Writedown (FQ)") > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN ABS(e."Restructuring Charges (FQ)") > 0 THEN 1
-         ELSE 0 END)                                                                                   AS exceptional_items_frequency,
-    e."Merger & Restructuring Charges (LTM)" / NULLIF(e."Market Cap", 0)                               AS merger_impact_ratio,
-    e."Interest Income On Investments (LTM)" /
-    NULLIF(ABS(e."Net Income - (IS) (LTM)"), 0)                                                        AS non_operating_income_share,
-    CASE WHEN e."Gain (Loss) On Sale Of Assets (LTM)" > 0 THEN 1 ELSE 0 END                            AS asset_sale_boost,
-    GREATEST(0, LEAST(100,
-                      100 -
-                      (CASE WHEN e."Impairment of Goodwill (LTM)" <> 0 THEN 25 ELSE 0 END) -
-                      (CASE WHEN e."Asset Writedown (LTM)" <> 0 THEN 10 ELSE 0 END) -
-                      (CASE WHEN e."Restructuring Charges (LTM)" <> 0 THEN 15 ELSE 0 END) -
-                      (CASE WHEN e."Goodwill (LTM)" / NULLIF(e."Total Assets (LTM)", 0) > 0.30 THEN 15 ELSE 0 END) -
-                      (CASE
-                           WHEN (ABS(e."Impairment of Goodwill (LTM)") + ABS(e."Asset Writedown (LTM)") +
-                                 ABS(e."Restructuring Charges (LTM)")) /
-                                NULLIF(ABS(e."Net Income - (IS) (LTM)"), 0) > 0.10 THEN 15
-                           ELSE 0 END)
-                ))                                                                                     AS accounting_quality_score,
+    -- calc_sentiment_features
+    sf.analyst_bullish_pct,
+    sf.analyst_bearish_pct,
+    sf.analyst_neutral_pct,
+    sf.analyst_conviction,
+    sf.upside_potential,
+    sf.price_target_spread_pct,
+    sf.price_target_revision_1m,
+    sf.price_target_revision_3m,
+    sf.eps_revision_momentum,
+    sf.analyst_rating_normalized,
+    sf.analyst_coverage_quality,
+
+    -- calc_price_target_dynamics
+    ptd.pt_momentum_1w,
+    ptd.pt_momentum_1m,
+    ptd.pt_momentum_3m,
+    ptd.pt_momentum_6m,
+    ptd.pt_momentum_1y,
+    ptd.pt_median_momentum_1m,
+    ptd.pt_median_momentum_3m,
+    ptd.pt_acceleration_short,
+    ptd.pt_acceleration_long,
+    ptd.pt_consensus_convergence,
+    ptd.analyst_coverage_change_1m,
+    ptd.analyst_coverage_change_3m,
+    ptd.analyst_coverage_change_1y,
+    ptd.pt_vs_price_momentum,
+    ptd.analyst_coverage_trend,
 
     -- =========================================================================
-    -- LEVERAGE & LIQUIDITY FEATURES (calc_leverage_features)
+    -- SECTION 10: DIVIDENDS (vw_features_dividends)
+    -- Source: calc_dividend_features, calc_dividend_timing,
+    --         calc_dividend_yield_comprehensive
     -- =========================================================================
-    e."Total Debt (LTM)" / NULLIF(e."Total Equity (LTM)", 0)                                           AS debt_to_equity,
-    e."Total Debt (LTM)" / NULLIF(e."Total Assets (LTM)", 0)                                           AS debt_to_assets,
-    e."Total Equity (LTM)" / NULLIF(e."Total Assets (LTM)", 0)                                         AS equity_ratio,
-    e."EBIT (LTM)" / NULLIF(e."Interest Expense/Total (LTM)", 0)                                       AS interest_coverage,
-    e."Cash And Equivalents (LTM)" /
-    NULLIF(e."Total Current Liabilities (LTM)", 0)                                                     AS cash_ratio,
-    e."Working Capital (LTM)" / NULLIF(e."Total Assets (LTM)", 0)                                      AS working_capital_ratio,
+    -- calc_dividend_features
+    df.dividend_streak,
+    df.dividend_yield_ltm,
+    df.dividend_yield_ntm,
+    df.dividend_payout_ratio,
+    df.fcf_dividend_coverage,
+    df.buyback_yield,
+    df.total_shareholder_yield,
+    df.dividend_growth_expectation,
+
+    -- calc_dividend_timing
+    dt.days_since_ex_date,
+    dt.days_to_payment,
+    dt.dividend_announced_flag,
+    dt.ex_date_approaching_flag,
+    dt.dividend_frequency_score,
+    dt.dividend_consistency,
+    dt.recent_dividend_change,
+    dt.dividend_yield_vs_5y_avg,
+
+    -- calc_dividend_yield_comprehensive
+    dyc.div_yield_ltm,
+    dyc.div_yield_ntm,
+    dyc.div_yield_ind,
+    dyc.div_yield_1fy_ind,
+    dyc.div_yield_5y_avg,
+    dyc.div_yield_vs_5y_avg,
+    dyc.div_yield_growth_expected,
+    dyc.high_yield_flag,
+    dyc.sustainable_dividend_flag,
 
     -- =========================================================================
-    -- EFFICIENCY RATIOS (calc_efficiency_ratios)
+    -- SECTION 11: EMPLOYMENT (vw_features_employment)
+    -- Source: calc_employment_features, calc_employment_dynamics
     -- =========================================================================
-    e."Total Revenues (LTM)" / NULLIF(e."Total Assets (LTM)", 0)                                       AS asset_turnover,
-    e."Cost Of Revenues (LTM)" / NULLIF(e."Inventory (LTM)", 0)                                        AS inventory_turnover,
-    (e."Accounts Receivable/Total (FY)" /
-     NULLIF(e."Total Revenues (FY)" / 365.0, 0))                                                       AS receivables_days,
-    e."Total Revenues (LTM)" / NULLIF(e."Working Capital (LTM)", 0)                                    AS working_capital_turns,
+    -- calc_employment_features
+    emf.revenue_per_employee,
+    emf.profit_per_employee,
+    emf.ebitda_per_employee,
+    emf.assets_per_employee,
+    emf.fte_growth_1y_pct,
+    emf.fte_growth_3y_pct,
+    emf.workforce_stability,
+
+    -- calc_employment_dynamics
+    ed.fte_growth_2y_pct,
+    ed.fte_acceleration,
+    ed.workforce_volatility,
+    ed.hiring_intensity,
+    ed.productivity_trend,
+    ed.headcount_vs_revenue,
+    ed.workforce_efficiency_gain,
+    ed.layoff_risk_flag,
+    ed.rapid_hiring_flag,
+    ed.sustainable_growth_flag,
 
     -- =========================================================================
-    -- BALANCE SHEET DYNAMICS (calc_balance_sheet_dynamics)
+    -- SECTION 12: CASH FLOW (vw_features_cashflow)
+    -- Source: calc_cashflow_features, calc_enhanced_cashflow_features,
+    --         calc_cashflow_temporal_features, calc_cashflow_comprehensive
     -- =========================================================================
-    e."Cash And Equivalents (LTM)" / NULLIF(e."Total Assets (LTM)", 0) *
-    100                                                                                                AS cash_to_assets_pct,
-    (e."Cash And Equivalents (FQ)" - e."Cash And Equivalents (FY)") /
-    NULLIF(ABS(e."Cash And Equivalents (FY)"), 0)                                                      AS cash_change_qoq,
-    e."Cash And Equivalents (FQ)" /
-    NULLIF(e."Cash And Equivalents (5YAVGFQ)", 0)                                                      AS cash_vs_5y_avg,
-    (e."Inventory (FY)" - e."Inventory (FQ)") /
-    NULLIF(ABS(e."Inventory (FQ)"), 0)                                                                 AS inventory_change_yoy,
-    e."Inventory (FQ)" / NULLIF(e."Inventory (5YAVGFQ)", 0)                                            AS inventory_vs_5y_avg,
-    e."Working Capital (FQ)" / NULLIF(e."Working Capital (5YAVGFY)", 0)                                AS working_capital_vs_5y_avg,
-    e."Retained Earnings (FQ)" /
-    NULLIF(e."Retained Earnings (5YAVGFQ)", 0)                                                         AS retained_earnings_vs_5y,
-    CASE
-        WHEN e."Gross Intangible Assets (FY)" / NULLIF(e."Gross Intangible Assets (5YAVGFQ)", 0) > 1.5 THEN 1
-        ELSE 0 END                                                                                     AS intangibles_growth_flag,
-    GREATEST(0, LEAST(100,
-                      50 + (e."Cash And Equivalents (LTM)" / NULLIF(e."Total Assets (LTM)", 0) * 100) -
-                      (e."Goodwill (LTM)" / NULLIF(e."Total Assets (LTM)", 0) * 100)
-                ))                                                                                     AS asset_quality_score,
-    GREATEST(0, LEAST(100,
-                      (CASE
-                           WHEN e."Cash And Equivalents (LTM)" / NULLIF(e."Total Assets (LTM)", 0) > 0.10 THEN 25
-                           ELSE 0 END) +
-                      (CASE WHEN e."Total Equity (LTM)" / NULLIF(e."Total Assets (LTM)", 0) > 0.40 THEN 25 ELSE 0 END) +
-                      (CASE WHEN e."Working Capital (LTM)" > 0 THEN 25 ELSE 0 END) +
-                      (CASE WHEN e."Current Ratio (LTM)" > 1.5 THEN 25 ELSE 0 END)
-                ))                                                                                     AS balance_sheet_strength,
-    e."Total Debt (LTM)" / NULLIF(e."EBITDA (LTM)", 0)                                                 AS debt_maturity_risk,
+    -- calc_cashflow_features
+    cf.cfo_to_net_income,
+    cf.fcf_to_net_income,
+    cf.fcf_margin,
+    cf.cfo_growth_yoy,
+    cf.fcf_positive_ratio,
+    cf.acquisition_intensity,
+    cf.self_funding_ratio,
+
+    -- calc_enhanced_cashflow_features
+    ecff.fcf_positive_years,
+    ecff.fcf_always_positive,
+    ecff.capex_vs_5y_avg,
+    ecff.underinvestment_flag,
+    ecff.cfo_share_of_cf,
+    ecff.cfi_share_of_cf,
+    ecff.cff_share_of_cf,
+    ecff.self_funding_flag,
+    ecff.acquisition_to_fcf,
+    ecff.sustainable_ma_flag,
+    ecff.fcf_4q_improvement,
+    ecff.cash_flow_quality_score,
+    ecff.capex_yoy_growth,
+    ecff.capex_qoq_growth,
+    ecff.capex_3y_trend,
+    ecff.capex_volatility,
+    ecff.capex_acceleration,
+    ecff.capex_cut_flag,
+    ecff.overinvestment_flag,
+    ecff.acquisitions_yoy_growth,
+    ecff.acquisitions_vs_5y_avg,
+    ecff.acquisitions_ltm_total,
+    ecff.ma_intensity_score,
+    ecff.serial_acquirer_flag,
+    ecff.acquisition_pause_flag,
+    ecff.total_investment_to_cfo,
+    ecff.organic_vs_inorganic,
+    ecff.investment_efficiency,
+
+    -- calc_cashflow_temporal_features
+    ctf.cfo_quarterly_trend,
+    ctf.cfo_yoy_quarterly,
+    ctf.cfi_quarterly_trend,
+    ctf.cff_quarterly_trend,
+    ctf.fcf_quarterly_trend,
+    ctf.cfo_positive_quarters,
+    ctf.cfi_negative_quarters,
+    ctf.cff_pattern_score,
+    ctf.cash_burn_rate,
+    ctf.cf_volatility_score,
+    ctf.operating_cf_momentum,
+    ctf.financing_dependency,
+
+    -- calc_cashflow_comprehensive
+    cc.cfo_fq,
+    cc.cfo_ltm,
+    cc.cfo_fy,
+    cc.fcf_fq,
+    cc.fcf_ltm,
+    cc.fcf_fy,
+    cc.fcf_growth_yoy,
+    cc.fcf_yield,
+    cc.cfo_positive_years,
+    cc.fcf_positive_years                 AS fcf_positive_years_comp,
 
     -- =========================================================================
-    -- ANALYST SENTIMENT FEATURES (calc_sentiment_features)
+    -- SECTION 13: TEMPORAL (vw_features_temporal)
+    -- Source: calc_temporal_features, calc_fiscal_calendar_features
     -- =========================================================================
-    CASE
-        WHEN (e."# Strong Buys Ratings" + e."# Buys Ratings" + e."# Hold Ratings" + e."# Sell Ratings" +
-              e."# Strong Sell Ratings") > 0
-            THEN (e."# Strong Buys Ratings" + e."# Buys Ratings") /
-                 NULLIF(e."# Strong Buys Ratings" + e."# Buys Ratings" + e."# Hold Ratings" + e."# Sell Ratings" +
-                        e."# Strong Sell Ratings", 0) * 100
-        END                                                                                            AS analyst_bullish_pct,
-    CASE
-        WHEN (e."# Strong Buys Ratings" + e."# Buys Ratings" + e."# Hold Ratings" + e."# Sell Ratings" +
-              e."# Strong Sell Ratings") > 0
-            THEN (e."# Sell Ratings" + e."# Strong Sell Ratings") /
-                 NULLIF(e."# Strong Buys Ratings" + e."# Buys Ratings" + e."# Hold Ratings" + e."# Sell Ratings" +
-                        e."# Strong Sell Ratings", 0) * 100
-        END                                                                                            AS analyst_bearish_pct,
-    -- NEW: Neutral sentiment (Hold ratings percentage)
-    CASE
-        WHEN (e."# Strong Buys Ratings" + e."# Buys Ratings" + e."# Hold Ratings" + e."# Sell Ratings" +
-              e."# Strong Sell Ratings") > 0
-            THEN e."# Hold Ratings" /
-                 NULLIF(e."# Strong Buys Ratings" + e."# Buys Ratings" + e."# Hold Ratings" + e."# Sell Ratings" +
-                        e."# Strong Sell Ratings", 0) * 100
-        END                                                                                            AS analyst_neutral_pct,
-    (e."Price Target - Median" - e."Last Price") / NULLIF(e."Last Price", 0) *
-    100                                                                                                AS upside_potential,
-    (e."Price Target - High" - e."Price Target - Low") / NULLIF(e."Price Target - Median", 0) *
-    100                                                                                                AS price_target_spread_pct,
-    (e."Price Target" - e."Price Target (1M Ago)") /
-    NULLIF(e."Price Target (1M Ago)", 0)                                                               AS price_target_revision_1m,
-    (e."Price Target" - e."Price Target (3M Ago)") /
-    NULLIF(e."Price Target (3M Ago)", 0)                                                               AS price_target_revision_3m,
-    COALESCE(e."EPS Est Avg Rev % (FY1E - 1W)", 0) * 0.30 +
-    COALESCE(e."EPS Est Avg Rev % (FY1E - 1M)", 0) * 0.25 +
-    COALESCE(e."EPS Est Avg Rev % (FY1E - 3M)", 0) * 0.20 +
-    COALESCE(e."EPS Est Avg Rev % (FY1E - 6M)", 0) * 0.15 +
-    COALESCE(e."EPS Est Avg Rev % (FY1E - 1Y)", 0) *
-    0.10                                                                                               AS eps_revision_momentum,
-    (e."Analyst Rating" - 1) * 25                                                                      AS analyst_rating_normalized,
-    e."Price Target - #" / NULLIF(LN(1 + e."Market Cap"), 0)                                           AS analyst_coverage_quality,
+    -- calc_temporal_features
+    tf.fiscal_quarter,
+    tf.fiscal_month,
+    tf.fiscal_year,
+    tf.days_to_earnings,
+    tf.earnings_report_recency,
+    tf.reporting_lag,
+    tf.fiscal_year_progress,
+
+    -- calc_fiscal_calendar_features
+    fcf.days_since_last_report,
+    fcf.days_to_fy_end,
+    fcf.is_quarter_end_month,
+    fcf.is_fy_end_month,
+    fcf.earnings_season_flag,
+    fcf.pre_earnings_window,
+    fcf.post_earnings_window,
+    fcf.reporting_freshness_score,
+    fcf.fiscal_quarter_progress,
 
     -- =========================================================================
-    -- PRICE TARGET DYNAMICS (calc_price_target_dynamics)
+    -- SECTION 14: BALANCE SHEET (vw_features_balance_sheet)
+    -- Source: calc_total_assets_temporal, calc_inventory_temporal_features,
+    --         calc_goodwill_temporal_features
     -- =========================================================================
-    (e."Price Target" - e."Price Target (1W Ago)") /
-    NULLIF(e."Price Target (1W Ago)", 0)                                                               AS pt_momentum_1w,
-    (e."Price Target" - e."Price Target (1M Ago)") /
-    NULLIF(e."Price Target (1M Ago)", 0)                                                               AS pt_momentum_1m,
-    (e."Price Target" - e."Price Target (3M Ago)") /
-    NULLIF(e."Price Target (3M Ago)", 0)                                                               AS pt_momentum_3m,
-    (e."Price Target" - e."Price Target (6M Ago)") /
-    NULLIF(e."Price Target (6M Ago)", 0)                                                               AS pt_momentum_6m,
-    (e."Price Target" - e."Price Target (1Y Ago)") /
-    NULLIF(e."Price Target (1Y Ago)", 0)                                                               AS pt_momentum_1y,
-    (e."Price Target - #" - e."Price Target - # (1M Ago)")::INTEGER                                    AS analyst_coverage_change_1m,
-    (e."Price Target - #" - e."Price Target - # (3M Ago)")::INTEGER                                    AS analyst_coverage_change_3m,
-    (e."Price Target - #" - e."Price Target - # (1Y Ago)")::INTEGER                                    AS analyst_coverage_change_1y,
+    -- calc_total_assets_temporal
+    tat.assets_fq,
+    tat.assets_fy,
+    tat.assets_ltm,
+    tat.assets_1fq,
+    tat.assets_2fq,
+    tat.assets_3fq,
+    tat.assets_4fq,
+    tat.assets_1fy,
+    tat.assets_2fy,
+    tat.assets_3fy,
+    tat.assets_4fy,
+    tat.assets_qoq_growth,
+    tat.assets_yoy_growth,
+    tat.assets_3y_cagr,
+    tat.asset_growth_accel,
+    tat.asset_base_stable,
+
+    -- calc_inventory_temporal_features
+    itf.inventory_ltm,
+    itf.inventory_fq,
+    itf.inventory_fy,
+    itf.inventory_1fq,
+    itf.inventory_2fq,
+    itf.inventory_3fq,
+    itf.inventory_4fq,
+    itf.inventory_1fy,
+    itf.inventory_2fy,
+    itf.inventory_3fy,
+    itf.inventory_4fy,
+    itf.inventory_qoq_change,
+    itf.inventory_yoy_change,
+    itf.inventory_4q_trend,
+    itf.inventory_vs_5y_avg               AS inventory_vs_5y_avg_itf,
+    itf.inventory_days,
+    itf.inventory_turnover                AS inventory_turnover_itf,
+    itf.inventory_to_revenue,
+    itf.inventory_to_assets,
+    itf.inventory_buildup_flag,
+    itf.inventory_reduction_flag,
+    itf.inventory_volatility,
+
+    -- calc_goodwill_temporal_features
+    gtf.goodwill_fq,
+    gtf.goodwill_ltm,
+    gtf.goodwill_fy,
+    gtf.goodwill_1fq,
+    gtf.goodwill_2fq,
+    gtf.goodwill_3fq,
+    gtf.goodwill_4fq,
+    gtf.goodwill_1fy,
+    gtf.goodwill_2fy,
+    gtf.goodwill_3fy,
+    gtf.goodwill_4fy,
+    gtf.goodwill_qoq_change,
+    gtf.goodwill_yoy_change,
+    gtf.goodwill_3y_growth,
+    gtf.goodwill_vs_5y_avg,
+    gtf.recent_acquisition_flag,
+    gtf.goodwill_accumulation_rate,
+    gtf.goodwill_to_assets_trend,
+    gtf.impairment_risk_score,
+    gtf.goodwill_concentration,
 
     -- =========================================================================
-    -- EARNINGS FEATURES (calc_earnings_features)
+    -- SECTION 15: COST STRUCTURE (vw_features_cost_structure)
+    -- Source: calc_cost_structure_features, calc_rnd_temporal_features,
+    --         calc_interest_income_features
     -- =========================================================================
-    CASE
-        WHEN ABS(e."EPS Norm - Est Avg (FY1E)") > 0
-            THEN (e."EPS/Adj. (LTM)" - e."EPS Norm - Est Avg (FY1E)") / NULLIF(ABS(e."EPS Norm - Est Avg (FY1E)"), 0) *
-                 100
-        END                                                                                            AS eps_surprise_pct,
-    CASE
-        WHEN ABS(e."Revenues - Est Avg (FY1E)") > 0
-            THEN
-            (e."Total Revenues (LTM)" - e."Revenues - Est Avg (FY1E)") / NULLIF(ABS(e."Revenues - Est Avg (FY1E)"), 0) *
-            100
-        END                                                                                            AS revenue_surprise_pct,
-    e."EPS/Adj. (LTM)" / NULLIF(e."Net EPS - Basic (LTM)", 0)                                          AS eps_adjustment_ratio,
-    CASE
-        WHEN ABS(e."EPS Norm - Est Avg (FY1E)") > 0
-            THEN (e."EPS GAAP - Est Avg (FY1E)" - e."EPS Norm - Est Avg (FY1E)") /
-                 NULLIF(ABS(e."EPS Norm - Est Avg (FY1E)"), 0) * 100
-        END                                                                                            AS gaap_adj_eps_gap_pct,
-    e."EBITDA/Adj. (LTM)" / NULLIF(e."EBITDA (LTM)", 0)                                                AS ebitda_adjustment_ratio,
-    CASE
-        WHEN ABS(e."Net EPS - Basic (-4FQFQ)") > 0
-            THEN (e."Net EPS - Basic (FQ)" - e."Net EPS - Basic (-4FQFQ)") /
-                 NULLIF(ABS(e."Net EPS - Basic (-4FQFQ)"), 0)
-        END                                                                                            AS eps_quarterly_trend,
-    CASE
-        WHEN ABS(e."Net EPS - Basic (-1FY)") > 0
-            THEN (e."Net EPS - Basic (FY)" - e."Net EPS - Basic (-1FY)") / NULLIF(ABS(e."Net EPS - Basic (-1FY)"), 0) *
-                 100
-        END                                                                                            AS eps_yoy_growth,
+    -- calc_cost_structure_features
+    csf.cogs_to_revenue,
+    csf.opex_to_revenue,
+    csf.sga_to_revenue,
+    csf.rnd_to_revenue,
+    csf.interest_to_revenue,
+    csf.sga_trend_yoy,
+    csf.operating_leverage_proxy,
+    csf.cost_efficiency_score,
+    csf.marketing_to_revenue,
+    csf.marketing_trend_yoy,
+    csf.marketing_vs_5y_avg,
+    csf.sga_vs_5y_avg,
+    csf.sga_efficiency_trend,
+
+    -- calc_rnd_temporal_features
+    rtf.rnd_ltm,
+    rtf.rnd_fq,
+    rtf.rnd_fy,
+    rtf.rnd_1fqfq,
+    rtf.rnd_2fqfq,
+    rtf.rnd_3fqfq,
+    rtf.rnd_4fqfq,
+    rtf.rnd_1fy,
+    rtf.rnd_2fy,
+    rtf.rnd_3fy,
+    rtf.rnd_4fy,
+    rtf.rnd_intensity_ltm,
+    rtf.rnd_intensity_fy,
+    rtf.rnd_intensity_trend,
+    rtf.rnd_qoq_growth,
+    rtf.rnd_yoy_growth,
+    rtf.rnd_cagr_3y,
+    rtf.rnd_per_employee,
+    rtf.rnd_to_gross_profit,
+    rtf.rnd_roi_proxy,
+    rtf.rnd_increasing_flag,
+    rtf.rnd_cut_flag,
+    rtf.high_rnd_intensity_flag,
+
+    -- calc_interest_income_features
+    iif.interest_income_ltm,
+    iif.interest_expense_ltm,
+    iif.net_interest_income,
+    iif.interest_coverage_ratio,
+    iif.interest_income_to_revenue,
+    iif.interest_expense_to_revenue,
+    iif.net_interest_margin_proxy,
 
     -- =========================================================================
-    -- EPS TRAJECTORY FEATURES (calc_eps_trajectory_features)
+    -- SECTION 16: COMPOSITE SCORES (vw_features_composite_scores)
+    -- Source: calc_composite_scores, calc_net_income_comprehensive
     -- =========================================================================
-    CASE
-        WHEN ABS(e."Net EPS - Basic (-1FQFQ)") > 0
-            THEN
-            (e."Net EPS - Basic (FQ)" - e."Net EPS - Basic (-1FQFQ)") / NULLIF(ABS(e."Net EPS - Basic (-1FQFQ)"), 0) *
-            100
-        END                                                                                            AS eps_qoq_growth,
-    CASE
-        WHEN ABS(e."Net EPS - Basic (-4FQFQ)") > 0
-            THEN
-            (e."Net EPS - Basic (FQ)" - e."Net EPS - Basic (-4FQFQ)") / NULLIF(ABS(e."Net EPS - Basic (-4FQFQ)"), 0) *
-            100
-        END                                                                                            AS eps_yoy_quarterly,
-    (CASE WHEN e."Net EPS - Basic (FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."Net EPS - Basic (-4FQFQ)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS eps_positive_streak,
-    CASE
-        WHEN e."Net EPS - Basic (-3FY)" > 0 AND e."Net EPS - Basic (FY)" > 0
-            THEN (POWER(e."Net EPS - Basic (FY)" / NULLIF(e."Net EPS - Basic (-3FY)", 0), 1.0 / 3.0) - 1) * 100
-        END                                                                                            AS eps_cagr_3y,
-    CASE
-        WHEN e."Net EPS - Basic (-5FY)" > 0 AND e."Net EPS - Basic (FY)" > 0
-            THEN (POWER(e."Net EPS - Basic (FY)" / NULLIF(e."Net EPS - Basic (-5FY)", 0), 1.0 / 5.0) - 1) * 100
-        END                                                                                            AS eps_cagr_5y,
-    (CASE WHEN e."Net EPS - Basic (FY)" > e."Net EPS - Basic (-1FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-1FY)" > e."Net EPS - Basic (-2FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-2FY)" > e."Net EPS - Basic (-3FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-3FY)" > e."Net EPS - Basic (-4FY)" THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."Net EPS - Basic (-4FY)" > e."Net EPS - Basic (-5FY)" THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS eps_improvement_count,
-    (CASE WHEN e."Net EPS - Basic (FY)" > e."Net EPS - Basic (-1FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-1FY)" > e."Net EPS - Basic (-2FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-2FY)" > e."Net EPS - Basic (-3FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-3FY)" > e."Net EPS - Basic (-4FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Net EPS - Basic (-4FY)" > e."Net EPS - Basic (-5FY)" THEN 1 ELSE 0 END
-        ) / 5.0 *
-    100                                                                                                AS eps_trajectory_score,
+    -- calc_composite_scores
+    cs.piotroski_f_score,
+    cs.eps_trajectory_score               AS composite_eps_trajectory_score,
+    cs.dilution_score,
+    cs.quality_momentum_score,
 
+    -- calc_net_income_comprehensive
+    nic.net_income_is_fq,
+    nic.net_income_is_ltm,
+    nic.net_income_is_fy,
+    nic.net_income_adj_ltm,
+    nic.normalized_ni_ltm,
+    nic.net_income_is_1fqfq,
+    nic.net_income_is_2fqfq,
+    nic.net_income_is_3fqfq,
+    nic.net_income_is_4fqfq,
+    nic.net_income_is_1fy,
+    nic.net_income_is_2fy,
+    nic.net_income_is_3fy,
+    nic.net_income_is_4fy,
+    nic.net_income_is_5yavgfq,
+    nic.net_income_is_5yavgltm,
+    nic.normalized_ni_5yavgfq,
+    nic.normalized_ni_5yavgltm,
+    nic.net_income_growth_yoy,
+    nic.net_income_margin_ltm,
+    nic.ni_adjustment_ratio,
+    nic.net_income_positive_years,
+    nic.earnings_quality_composite,
+    nic.net_income_qoq_growth,
+    nic.net_income_yoy_quarterly,
+    nic.net_income_vs_5y_avg,
+    nic.normalized_ni_vs_5y_avg,
 
     -- =========================================================================
-    -- GAAP ADJUSTED ANALYTICS (calc_gaap_adjusted_analytics) - ENHANCED
+    -- SECTION 17: UNUSUAL ITEMS (vw_features_unusual_items)
+    -- Source: calc_unusual_items_features
     -- =========================================================================
-    -- EPS Adjustment Spreads
-    e."EPS/Adj. (LTM)" - e."Net EPS - Basic (LTM)"                                                     AS eps_adjustment_spread_ltm,
-    e."EPS/Adj. (FY)" - e."Net EPS - Basic (FY)"                                                       AS eps_adjustment_spread_fy,
-    e."EPS/Adj. (-1FY)" - e."Net EPS - Basic (-1FY)"                                                   AS eps_adjustment_spread_1fy,
-    e."EPS/Adj. (FQ)" - e."Net EPS - Basic (FQ)"                                                       AS eps_adjustment_spread_fq,
-    e."EPS/Adj. (-1FQFQ)" - e."Net EPS - Basic (-1FQFQ)"                                               AS eps_adjustment_spread_1fqfq,
-    e."EPS/Adj. (-2FQFQ)" - e."Net EPS - Basic (-2FQFQ)"                                               AS eps_adjustment_spread_2fqfq,
-    e."EPS/Adj. (-3FQFQ)" - e."Net EPS - Basic (-3FQFQ)"                                               AS eps_adjustment_spread_3fqfq,
-    e."EPS/Adj. (-4FQFQ)" - e."Net EPS - Basic (-4FQFQ)"                                               AS eps_adjustment_spread_4fqfq,
-    e."EPS/Adj. (-2FY)" - e."Net EPS - Basic (-2FY)"                                                   AS eps_adjustment_spread_2fy,
-    e."EPS/Adj. (-3FY)" - e."Net EPS - Basic (-3FY)"                                                   AS eps_adjustment_spread_3fy,
-    e."EPS/Adj. (-4FY)" - e."Net EPS - Basic (-4FY)"                                                   AS eps_adjustment_spread_4fy,
-    (e."EPS/Adj. (LTM)" - e."Net EPS - Basic (LTM)") / NULLIF(ABS(e."Net EPS - Basic (LTM)"), 0) *
-    100                                                                                                AS eps_adjustment_pct,
-
-    -- Net Income Adjustment Ratios
-    e."Net Income/Adj. (LTM)" / NULLIF(e."Net Income - (IS) (LTM)", 0)                                 AS net_income_adjustment_ratio_ltm,
-    e."Net Income/Adj. (FY)" / NULLIF(e."Net Income - (IS) (FY)", 0)                                   AS net_income_adjustment_ratio_fy,
-    e."Net Income/Adj. (-1FY)" / NULLIF(e."Net Income - (IS) (-1FY)", 0)                               AS net_income_adjustment_ratio_1fy,
-    e."Net Income/Adj. (FQ)" / NULLIF(e."Net Income - (IS) (FQ)", 0)                                   AS net_income_adjustment_ratio_fq,
-    e."Net Income/Adj. (5YAVGFQ)" /
-    NULLIF(e."Net Income - (IS) (5YAVGFQ)", 0)                                                         AS net_income_adjustment_ratio_5yavgfq,
-    e."Net Income/Adj. (-1FQFQ)" /
-    NULLIF(e."Net Income - (IS) (-1FQFQ)", 0)                                                          AS net_income_adjustment_ratio_1fqfq,
-    e."Net Income/Adj. (-2FQFQ)" /
-    NULLIF(e."Net Income - (IS) (-2FQFQ)", 0)                                                          AS net_income_adjustment_ratio_2fqfq,
-    e."Net Income/Adj. (-3FQFQ)" /
-    NULLIF(e."Net Income - (IS) (-3FQFQ)", 0)                                                          AS net_income_adjustment_ratio_3fqfq,
-    e."Net Income/Adj. (-4FQFQ)" /
-    NULLIF(e."Net Income - (IS) (-4FQFQ)", 0)                                                          AS net_income_adjustment_ratio_4fqfq,
-    e."Net Income/Adj. (-2FY)" / NULLIF(e."Net Income - (IS) (-2FY)", 0)                               AS net_income_adjustment_ratio_2fy,
-    e."Net Income/Adj. (-3FY)" / NULLIF(e."Net Income - (IS) (-3FY)", 0)                               AS net_income_adjustment_ratio_3fy,
-    e."Net Income/Adj. (-4FY)" / NULLIF(e."Net Income - (IS) (-4FY)", 0)                               AS net_income_adjustment_ratio_4fy,
-    (e."Net Income/Adj. (LTM)" - e."Net Income - (IS) (LTM)") / NULLIF(ABS(e."Net Income - (IS) (LTM)"), 0) *
-    100                                                                                                AS net_income_adjustment_pct,
-
-    -- EBITDA Adjustment Percentages
-    (e."EBITDA/Adj. (LTM)" - e."EBITDA (LTM)") / NULLIF(ABS(e."EBITDA (LTM)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_ltm,
-    (e."EBITDA/Adj. (FY)" - e."EBITDA (FY)") / NULLIF(ABS(e."EBITDA (FY)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_fy,
-    (e."EBITDA/Adj. (-1FY)" - e."EBITDA (-1FY)") / NULLIF(ABS(e."EBITDA (-1FY)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_1fy,
-    (e."EBITDA/Adj. (FQ)" - e."EBITDA (FQ)") / NULLIF(ABS(e."EBITDA (FQ)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_fq,
-    (e."EBITDA/Adj. (-1FQFQ)" - e."EBITDA (-1FQFQ)") / NULLIF(ABS(e."EBITDA (-1FQFQ)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_1fqfq,
-    (e."EBITDA/Adj. (-2FQFQ)" - e."EBITDA (-2FQFQ)") / NULLIF(ABS(e."EBITDA (-2FQFQ)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_2fqfq,
-    (e."EBITDA/Adj. (-3FQFQ)" - e."EBITDA (-3FQFQ)") / NULLIF(ABS(e."EBITDA (-3FQFQ)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_3fqfq,
-    (e."EBITDA/Adj. (-4FQFQ)" - e."EBITDA (-4FQFQ)") / NULLIF(ABS(e."EBITDA (-4FQFQ)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_4fqfq,
-    (e."EBITDA/Adj. (-2FY)" - e."EBITDA (-2FY)") / NULLIF(ABS(e."EBITDA (-2FY)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_2fy,
-    (e."EBITDA/Adj. (-3FY)" - e."EBITDA (-3FY)") / NULLIF(ABS(e."EBITDA (-3FY)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_3fy,
-    (e."EBITDA/Adj. (-4FY)" - e."EBITDA (-4FY)") / NULLIF(ABS(e."EBITDA (-4FY)"), 0) *
-    100                                                                                                AS ebitda_adjustment_pct_4fy,
-
-    -- EBIT Adjustment Percentages
-    (e."EBIT/Adj. (LTM)" - e."EBIT (LTM)") / NULLIF(ABS(e."EBIT (LTM)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_ltm,
-    (e."EBIT/Adj. (FY)" - e."EBIT (FY)") / NULLIF(ABS(e."EBIT (FY)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_fy,
-    (e."EBIT/Adj. (-1FY)" - e."EBIT (-1FY)") / NULLIF(ABS(e."EBIT (-1FY)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_1fy,
-    (e."EBIT/Adj. (FQ)" - e."EBIT (FQ)") / NULLIF(ABS(e."EBIT (FQ)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_fq,
-    (e."EBIT/Adj. (-1FQFQ)" - e."EBIT (-1FQFQ)") / NULLIF(ABS(e."EBIT (-1FQFQ)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_1fqfq,
-    (e."EBIT/Adj. (-2FQFQ)" - e."EBIT (-2FQFQ)") / NULLIF(ABS(e."EBIT (-2FQFQ)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_2fqfq,
-    (e."EBIT/Adj. (-3FQFQ)" - e."EBIT (-3FQFQ)") / NULLIF(ABS(e."EBIT (-3FQFQ)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_3fqfq,
-    (e."EBIT/Adj. (-4FQFQ)" - e."EBIT (-4FQFQ)") / NULLIF(ABS(e."EBIT (-4FQFQ)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_4fqfq,
-    (e."EBIT/Adj. (-2FY)" - e."EBIT (-2FY)") / NULLIF(ABS(e."EBIT (-2FY)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_2fy,
-    (e."EBIT/Adj. (-3FY)" - e."EBIT (-3FY)") / NULLIF(ABS(e."EBIT (-3FY)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_3fy,
-    (e."EBIT/Adj. (-4FY)" - e."EBIT (-4FY)") / NULLIF(ABS(e."EBIT (-4FY)"), 0) *
-    100                                                                                                AS ebit_adjustment_pct_4fy,
-
-    -- Quality Scores
-    GREATEST(0, LEAST(100, 100 - ABS((e."EPS/Adj. (LTM)" - e."Net EPS - Basic (LTM)") /
-                                     NULLIF(ABS(e."Net EPS - Basic (LTM)"), 0) *
-                                     100)))                                                            AS earnings_quality_score,
-    CASE
-        WHEN ABS((e."EPS/Adj. (LTM)" - e."Net EPS - Basic (LTM)") / NULLIF(ABS(e."Net EPS - Basic (LTM)"), 0) * 100) >
-             15 THEN 1
-        ELSE 0
-        END                                                                                            AS earnings_quality_warning,
-    e."EPS Norm - Est Avg (FY1E)" - e."EPS GAAP - Est Avg (FY1E)"                                      AS forward_eps_gaap_adj_spread,
+    uif.other_unusual_items_ltm,
+    uif.impairment_goodwill_ltm,
+    uif.asset_writedown_ltm               AS unusual_asset_writedown_ltm,
+    uif.restructuring_charges_ltm,
+    uif.total_unusual_items,
+    uif.unusual_items_to_revenue,
+    uif.unusual_items_to_ebitda,
+    uif.has_unusual_items_flag,
+    uif.earnings_quality_impact,
 
     -- =========================================================================
-    -- GAAP REVISION FEATURES (calc_gaap_revision_features)
+    -- METADATA: Timestamp for refresh tracking
     -- =========================================================================
-    COALESCE(e."EPS GAAP Est Avg Rev % (FY1E - 1M)", 0) * 0.35 +
-    COALESCE(e."EPS GAAP Est Avg Rev % (FY1E - 3M)", 0) * 0.30 +
-    COALESCE(e."EPS GAAP Est Avg Rev % (FY1E - 6M)", 0) * 0.20 +
-    COALESCE(e."EPS GAAP Est Avg Rev % (FY1E - 1Y)", 0) *
-    0.15                                                                                               AS gaap_revision_momentum,
-    e."EPS GAAP Est Avg Rev % (FY1E - 1M)"                                                             AS gaap_revision_1m,
-    e."EPS GAAP Est Avg Rev % (FY1E - 3M)"                                                             AS gaap_revision_3m,
-    e."EPS GAAP Est Avg Rev % (FY1E - 6M)"                                                             AS gaap_revision_6m,
-    e."EPS GAAP Est Avg Rev % (FY1E - 1Y)"                                                             AS gaap_revision_1y,
-    e."EPS Est Avg Rev % (FY1E - 3M)" -
-    e."EPS GAAP Est Avg Rev % (FY1E - 3M)"                                                             AS gaap_vs_norm_revision_spread,
-    e."EPS GAAP Est Avg Rev % (FY1E - 1M)" -
-    e."EPS GAAP Est Avg Rev % (FY1E - 6M)"                                                             AS gaap_revision_acceleration,
-    CASE
-        WHEN e."EPS GAAP Est Avg Rev % (FY1E - 1M)" > 0 AND e."EPS GAAP Est Avg Rev % (FY1E - 3M)" > 0 AND
-             e."EPS GAAP Est Avg Rev % (FY1E - 6M)" > 0 THEN 1
-        ELSE 0
-        END                                                                                            AS gaap_positive_revision_flag,
+    CURRENT_TIMESTAMP                     AS feature_calculated_at
 
-    -- =========================================================================
-    -- GROWTH FEATURES (calc_growth_features)
-    -- =========================================================================
-    CASE
-        WHEN ABS(e."Total Revenues (-1FY)") > 0
-            THEN (e."Total Revenues (FY)" - e."Total Revenues (-1FY)") / NULLIF(ABS(e."Total Revenues (-1FY)"), 0) * 100
-        END                                                                                            AS revenue_growth_yoy,
-    CASE
-        WHEN ABS(e."EBITDA (-1FY)") > 0
-            THEN (e."EBITDA (FY)" - e."EBITDA (-1FY)") / NULLIF(ABS(e."EBITDA (-1FY)"), 0) * 100
-        END                                                                                            AS ebitda_growth_yoy,
-    CASE
-        WHEN ABS(e."Operating Income (FY)") > 0
-            THEN (e."Operating Income (LTM)" - e."Operating Income (FY)") / NULLIF(ABS(e."Operating Income (FY)"), 0) *
-                 100
-        END                                                                                            AS operating_income_growth,
-    CASE
-        WHEN ABS(e."FCF (FY)") > 0
-            THEN (e."FCF (LTM)" - e."FCF (FY)") / NULLIF(ABS(e."FCF (FY)"), 0) * 100
-        END                                                                                            AS fcf_growth,
-    e."Total Revenues/CAGR (5Y FY)"                                                                    AS revenue_cagr_5y,
-    e."Revenues - Est YoY % (FY1E)"                                                                    AS forward_revenue_growth,
-    e."Total Revenues (LTM)" / NULLIF(e."Total Revenues (5YAVGLTM)", 0)                                AS revenue_vs_5y_avg,
+FROM vw_identifier_columns                               id
+-- Base equities for reference columns
+         JOIN      postgres.public.equities              e ON id.isin = e."ISIN"
 
-    -- =========================================================================
-    -- REVENUE FORECAST FEATURES (calc_revenue_forecast_features)
-    -- =========================================================================
-    (e."Revenues - Est Avg (FY1E)" - e."Revenues - Est Med (FY1E)") / NULLIF(e."Revenues - Est Med (FY1E)", 0) *
-    100                                                                                                AS revenue_est_spread,
-    (e."Total Revenues (LTM)" - e."Revenues - Est Avg (FY1E)") / NULLIF(ABS(e."Revenues - Est Avg (FY1E)"), 0) *
-    100                                                                                                AS revenue_beat_potential,
-    e."Revenues - Est YoY % (FY1E)"                                                                    AS revenue_est_revision_trend,
-    (e."EBITDA (LTM)" - e."EBITDA - Est Avg (FY1E)") / NULLIF(ABS(e."EBITDA - Est Avg (FY1E)"), 0) *
-    100                                                                                                AS ebitda_est_vs_actual,
-    e."Enterprise Value" / NULLIF(e."Revenues - Est Avg (FY1E)", 0)                                    AS forward_revenue_multiple,
-    e."EPS Norm - Est # (FY1E)"                                                                        AS revenue_estimate_count,
-    (e."Revenues - Est Avg (NTM)" - e."Revenues - Est Avg (FY1E)") / NULLIF(ABS(e."Revenues - Est Avg (FY1E)"), 0) *
-    100                                                                                                AS revenue_guidance_gap,
-    (e."Revenues - Est Avg (FY1E)" - e."Total Revenues (FY)") / NULLIF(ABS(e."Total Revenues (FY)"), 0) *
-    100                                                                                                AS consensus_revenue_growth,
-    e."EBITDA - Est Avg (FY1E)" / NULLIF(e."Revenues - Est Avg (FY1E)", 0) *
-    100                                                                                                AS forward_ebitda_margin,
-    e."Revenues - Est YoY % (FY1E)" - e."Total Revenues/CAGR (5Y FY)"                                  AS revenue_acceleration,
-    GREATEST(0, LEAST(100, 100 - ABS((e."Revenues - Est Avg (FY1E)" - e."Revenues - Est Med (FY1E)") /
-                                     NULLIF(e."Revenues - Est Med (FY1E)", 0) *
-                                     100)))                                                            AS estimate_confidence_score,
+-- Section 1: Valuation Ratios
+         LEFT JOIN calc_valuation_features()             vf ON id.isin = vf.isin
+         LEFT JOIN calc_valuation_timeseries_features()  vts ON id.isin = vts.isin
+         LEFT JOIN calc_extended_valuation_timeseries()  evt ON id.isin = evt.isin
+         LEFT JOIN calc_tangible_book_features()         tb ON id.isin = tb.isin
 
-    -- =========================================================================
-    -- DIVIDEND FEATURES (calc_dividend_features)
-    -- =========================================================================
-    e."Dividend Streak"::INTEGER                                                                       AS dividend_streak,
-    e."Div Yield (LTM)"                                                                                AS dividend_yield_ltm,
-    e."Div Yield (NTM)"                                                                                AS dividend_yield_ntm,
-    ABS(e."Common Dividends Paid (LTM)") /
-    NULLIF(e."Net Income/Adj. (LTM)", 0)                                                               AS dividend_payout_ratio,
-    CASE
-        WHEN ABS(e."Common Dividends Paid (LTM)") > 0
-            THEN e."FCF (LTM)" / NULLIF(ABS(e."Common Dividends Paid (LTM)"), 0)
-        END                                                                                            AS fcf_dividend_coverage,
-    e."Buyback Yield (LTM)"                                                                            AS buyback_yield,
-    COALESCE(e."Buyback Yield (LTM)", 0) +
-    COALESCE(e."Div Yield (LTM)", 0)                                                                   AS total_shareholder_yield,
-    e."Div Yield (NTM)" - e."Div Yield (LTM)"                                                          AS dividend_growth_expectation,
+-- Section 2: Momentum
+         LEFT JOIN calc_momentum_features()              mf ON id.isin = mf.isin
+         LEFT JOIN calc_long_term_momentum_features()    ltm ON id.isin = ltm.isin
 
-    -- =========================================================================
-    -- DIVIDEND TIMING (calc_dividend_timing)
-    -- =========================================================================
-    (CURRENT_DATE - e."Dividend Record (Ex Date)")::INTEGER                                            AS days_since_ex_date,
-    (e."Dividend Record (Payable Date)" - CURRENT_DATE)::INTEGER                                       AS days_to_payment,
-    CASE
-        WHEN (CURRENT_DATE - e."Dividend Record (Announce Date)") <= 30 THEN 1
-        ELSE 0 END                                                                                     AS dividend_announced_flag,
-    CASE
-        WHEN (e."Dividend Record (Ex Date)" - CURRENT_DATE) BETWEEN 0 AND 14 THEN 1
-        ELSE 0 END                                                                                     AS ex_date_approaching_flag,
-    CASE e."Dividend Record (Frequency)"
-        WHEN 'Quarterly' THEN 4
-        WHEN 'Semi-Annual' THEN 2
-        WHEN 'Annual' THEN 1
-        WHEN 'Monthly' THEN 12
-        ELSE 0
-        END                                                                                            AS dividend_frequency_score,
-    LEAST(1.0, e."Dividend Streak"::NUMERIC / 10.0)                                                    AS dividend_consistency,
-    e."Div Yield (LTM)" / NULLIF(e."Div Yield (5YAVGLTM)", 0)                                          AS dividend_yield_vs_5y_avg,
+-- Section 3: Technical Analysis
+         LEFT JOIN calc_technical_analysis_features()    ta ON id.isin = ta.isin
 
-    -- =========================================================================
-    -- EMPLOYMENT FEATURES (calc_employment_features)
-    -- =========================================================================
-    CASE
-        WHEN e."Full Time Employees (FY)" > 0
-            THEN e."Total Revenues (FY)" / NULLIF(e."Full Time Employees (FY)", 0) END                 AS revenue_per_employee,
-    CASE
-        WHEN e."Full Time Employees (FY)" > 0 THEN e."Normalized Net Income (FY)" /
-                                                   NULLIF(e."Full Time Employees (FY)", 0) END         AS profit_per_employee,
-    CASE
-        WHEN e."Full Time Employees (FY)" > 0
-            THEN e."EBITDA (FY)" / NULLIF(e."Full Time Employees (FY)", 0) END                         AS ebitda_per_employee,
-    CASE
-        WHEN e."Full Time Employees (FY)" > 0
-            THEN e."Total Assets (FY)" / NULLIF(e."Full Time Employees (FY)", 0) END                   AS assets_per_employee,
-    CASE
-        WHEN e."Full Time Employees (-1FY)" > 0 THEN (e."Full Time Employees (FY)" - e."Full Time Employees (-1FY)") /
-                                                     NULLIF(e."Full Time Employees (-1FY)", 0) *
-                                                     100 END                                           AS fte_growth_1y_pct,
-    CASE
-        WHEN e."Full Time Employees (-3FY)" > 0 THEN (e."Full Time Employees (FY)" - e."Full Time Employees (-3FY)") /
-                                                     NULLIF(e."Full Time Employees (-3FY)", 0) *
-                                                     100 END                                           AS fte_growth_3y_pct,
-    CASE
-        WHEN e."Avg Employees (5YAVGFY)" > 0
-            THEN e."Full Time Employees (FY)" / NULLIF(e."Avg Employees (5YAVGFY)", 0) END             AS workforce_stability,
+-- Section 4: Profitability
+         LEFT JOIN calc_profitability_features()         pf ON id.isin = pf.isin
+         LEFT JOIN calc_margin_trends()                  mt ON id.isin = mt.isin
+         LEFT JOIN calc_ebit_ebitda_comprehensive()      eec ON id.isin = eec.isin
+         LEFT JOIN calc_gross_profit_temporal()          gpt ON id.isin = gpt.isin
 
-    -- =========================================================================
-    -- EMPLOYMENT DYNAMICS (calc_employment_dynamics)
-    -- =========================================================================
-    CASE
-        WHEN e."Full Time Employees (-2FY)" > 0 THEN (e."Full Time Employees (FY)" - e."Full Time Employees (-2FY)") /
-                                                     NULLIF(e."Full Time Employees (-2FY)", 0) *
-                                                     100 END                                           AS fte_growth_2y_pct,
-    CASE
-        WHEN e."Full Time Employees (FY)" < e."Full Time Employees (-1FY)" AND
-             e."Total Revenues (FY)" < e."Total Revenues (-1FY)" THEN 1
-        ELSE 0
-        END                                                                                            AS layoff_risk_flag,
-    CASE
-        WHEN (e."Full Time Employees (FY)" - e."Full Time Employees (-1FY)") /
-             NULLIF(e."Full Time Employees (-1FY)", 0) > 0.20 THEN 1
-        ELSE 0
-        END                                                                                            AS rapid_hiring_flag,
-    CASE
-        WHEN (e."Total Revenues (FY)" - e."Total Revenues (-1FY)") / NULLIF(ABS(e."Total Revenues (-1FY)"), 0) >
-             (e."Full Time Employees (FY)" - e."Full Time Employees (-1FY)") / NULLIF(e."Full Time Employees (-1FY)", 0)
-            AND (e."Full Time Employees (FY)" - e."Full Time Employees (-1FY)") > 0 THEN 1
-        ELSE 0
-        END                                                                                            AS sustainable_growth_flag,
+-- Section 5: Earnings
+         LEFT JOIN calc_earnings_features()              ef ON id.isin = ef.isin
+         LEFT JOIN calc_eps_trajectory_features()        etf ON id.isin = etf.isin
+         LEFT JOIN calc_eps_comprehensive()              ec ON id.isin = ec.isin
+         LEFT JOIN calc_eps_continuing_features()        ecf ON id.isin = ecf.isin
+         LEFT JOIN calc_gaap_adjusted_analytics()        gaa ON id.isin = gaa.isin
+         LEFT JOIN calc_gaap_revision_features()         grf ON id.isin = grf.isin
 
-    -- =========================================================================
-    -- CASH FLOW FEATURES (calc_cashflow_features)
-    -- =========================================================================
-    e."CFO (LTM)" / NULLIF(e."Net Income - (IS) (LTM)", 0)                                             AS cfo_to_net_income,
-    e."FCF (LTM)" / NULLIF(e."Net Income - (IS) (LTM)", 0)                                             AS fcf_to_net_income,
-    e."FCF (LTM)" / NULLIF(e."Total Revenues (LTM)", 0)                                                AS fcf_margin,
-    (e."CFO (LTM)" - e."CFO (-1FY)") / NULLIF(e."CFO (-1FY)", 0)                                       AS cfo_growth_yoy,
-    (CASE WHEN e."FCF (FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."FCF (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."FCF (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."FCF (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."FCF (-4FQFQ)" > 0 THEN 1 ELSE 0 END) /
-    5.0                                                                                                AS fcf_positive_ratio,
-    ABS(COALESCE(e."Cash Acquisitions (FQ)", 0)) + ABS(COALESCE(e."Cash Acquisitions (-1FQFQ)", 0)) +
-    ABS(COALESCE(e."Cash Acquisitions (-2FQFQ)", 0)) +
-    ABS(COALESCE(e."Cash Acquisitions (-3FQFQ)", 0))                                                   AS acquisition_intensity,
-    CASE
-        WHEN ABS(e."CFI (LTM)") > 0
-            THEN e."CFO (LTM)" / NULLIF(ABS(e."CFI (LTM)"), 0) END                                     AS self_funding_ratio,
+-- Section 6: Growth
+         LEFT JOIN calc_growth_features()                gf ON id.isin = gf.isin
+         LEFT JOIN calc_revenue_forecast_features()      rff ON id.isin = rff.isin
+         LEFT JOIN calc_revenue_quarterly_features()     rqf ON id.isin = rqf.isin
+         LEFT JOIN calc_total_revenues_temporal()        trt ON id.isin = trt.isin
 
-    -- =========================================================================
-    -- ENHANCED CASHFLOW FEATURES (calc_enhanced_cashflow_features)
-    -- =========================================================================
-    (CASE WHEN e."FCF (FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."FCF (-1FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."FCF (-2FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."FCF (-3FY)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."FCF (-4FY)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS fcf_positive_years,
-    CASE
-        WHEN e."FCF (FY)" > 0 AND e."FCF (-1FY)" > 0 AND e."FCF (-2FY)" > 0 AND e."FCF (-3FY)" > 0 AND
-             e."FCF (-4FY)" > 0 THEN 1
-        ELSE 0
-        END                                                                                            AS fcf_always_positive,
-    ABS(e."Capital Expenditure (FQ)") /
-    NULLIF(ABS(e."Capital Expenditure (5YAVGFQ)"), 0)                                                  AS capex_vs_5y_avg,
-    CASE
-        WHEN ABS(e."Capital Expenditure (FQ)") / NULLIF(ABS(e."Capital Expenditure (5YAVGFQ)"), 0) < 0.7 THEN 1
-        ELSE 0 END                                                                                     AS underinvestment_flag,
-    ABS(e."CFO (LTM)") / NULLIF(ABS(e."CFO (LTM)") + ABS(e."CFI (LTM)") + ABS(e."CFF (LTM)"),
-                                0)                                                                     AS cfo_share_of_cf,
-    ABS(e."CFI (LTM)") / NULLIF(ABS(e."CFO (LTM)") + ABS(e."CFI (LTM)") + ABS(e."CFF (LTM)"),
-                                0)                                                                     AS cfi_share_of_cf,
-    ABS(e."CFF (LTM)") / NULLIF(ABS(e."CFO (LTM)") + ABS(e."CFI (LTM)") + ABS(e."CFF (LTM)"),
-                                0)                                                                     AS cff_share_of_cf,
-    CASE
-        WHEN e."CFO (LTM)" / NULLIF(ABS(e."CFI (LTM)"), 0) > 1 THEN 1
-        ELSE 0 END                                                                                     AS self_funding_flag,
-    (e."FCF (FQ)" - e."FCF (-4FQFQ)") /
-    NULLIF(ABS(e."FCF (-4FQFQ)"), 0)                                                                   AS fcf_4q_improvement,
-    (CASE WHEN e."CFO (LTM)" / NULLIF(e."Net Income - (IS) (LTM)", 0) > 1 THEN 25 ELSE 0 END +
-     CASE
-         WHEN e."FCF (FY)" > 0 AND e."FCF (-1FY)" > 0 AND e."FCF (-2FY)" > 0 AND e."FCF (-3FY)" > 0 AND
-              e."FCF (-4FY)" > 0 THEN 25
-         ELSE 0 END +
-     CASE WHEN e."CFO (LTM)" > ABS(e."CFI (LTM)") THEN 25 ELSE 0 END +
-     CASE
-         WHEN e."FCF (LTM)" > 0 THEN 25
-         ELSE 0 END)::NUMERIC                                                                          AS cash_flow_quality_score,
-    (ABS(COALESCE(e."Cash Acquisitions (FQ)", 0)) +
-     ABS(COALESCE(e."Cash Acquisitions (-1FQFQ)", 0)) +
-     ABS(COALESCE(e."Cash Acquisitions (-2FQFQ)", 0)) +
-     ABS(COALESCE(e."Cash Acquisitions (-3FQFQ)", 0))) /
-    NULLIF(ABS(e."FCF (LTM)"), 0)                                                                      AS acquisition_to_fcf,
-    CASE
-        WHEN (ABS(COALESCE(e."Cash Acquisitions (FQ)", 0)) +
-              ABS(COALESCE(e."Cash Acquisitions (-1FQFQ)", 0)) +
-              ABS(COALESCE(e."Cash Acquisitions (-2FQFQ)", 0)) +
-              ABS(COALESCE(e."Cash Acquisitions (-3FQFQ)", 0))) /
-             NULLIF(ABS(e."FCF (LTM)"), 0) < 0.5
-            THEN 1
-        ELSE 0
-        END                                                                                            AS sustainable_ma_flag,
-    (ABS(e."Capital Expenditure (FY)") - ABS(e."Capital Expenditure (-1FY)")) /
-    NULLIF(ABS(e."Capital Expenditure (-1FY)"), 0) *
-    100                                                                                                AS capex_yoy_growth,
-    (ABS(e."Capital Expenditure (FQ)") - ABS(e."Capital Expenditure (-1FQFQ)")) /
-    NULLIF(ABS(e."Capital Expenditure (-1FQFQ)"), 0) *
-    100                                                                                                AS capex_qoq_growth,
-    (ABS(e."Capital Expenditure (FY)") - ABS(e."Capital Expenditure (-3FY)")) /
-    NULLIF(ABS(e."Capital Expenditure (-3FY)"), 0) *
-    100                                                                                                AS capex_3y_trend,
-    (ABS(ABS(e."Capital Expenditure (FQ)") - ABS(e."Capital Expenditure (-1FQFQ)")) +
-     ABS(ABS(e."Capital Expenditure (-1FQFQ)") - ABS(e."Capital Expenditure (-2FQFQ)")) +
-     ABS(ABS(e."Capital Expenditure (-2FQFQ)") - ABS(e."Capital Expenditure (-3FQFQ)")) +
-     ABS(ABS(e."Capital Expenditure (-3FQFQ)") - ABS(e."Capital Expenditure (-4FQFQ)"))) /
-    NULLIF((ABS(e."Capital Expenditure (FQ)") + ABS(e."Capital Expenditure (-1FQFQ)") +
-            ABS(e."Capital Expenditure (-2FQFQ)") + ABS(e."Capital Expenditure (-3FQFQ)") +
-            ABS(e."Capital Expenditure (-4FQFQ)")) / 5.0,
-           0)                                                                                          AS capex_volatility,
-    CASE
-        WHEN ABS(e."Capital Expenditure (FY)") > ABS(e."Capital Expenditure (-1FY)")
-            AND ABS(e."Capital Expenditure (-1FY)") > ABS(e."Capital Expenditure (-2FY)")
-            THEN 1
-        ELSE 0
-        END                                                                                            AS capex_acceleration,
-    CASE
-        WHEN (ABS(e."Capital Expenditure (FY)") - ABS(e."Capital Expenditure (-1FY)")) /
-             NULLIF(ABS(e."Capital Expenditure (-1FY)"), 0) < -0.25
-            THEN 1
-        ELSE 0
-        END                                                                                            AS capex_cut_flag,
-    CASE
-        WHEN ABS(e."Capital Expenditure (FQ)") / NULLIF(ABS(e."Capital Expenditure (5YAVGFQ)"), 0) > 1.5
-            THEN 1
-        ELSE 0
-        END                                                                                            AS overinvestment_flag,
-    (ABS(COALESCE(e."Cash Acquisitions (FY)", 0)) - ABS(COALESCE(e."Cash Acquisitions (-1FY)", 0))) /
-    NULLIF(ABS(COALESCE(e."Cash Acquisitions (-1FY)", 0)), 0) *
-    100                                                                                                AS acquisitions_yoy_growth,
-    ABS(COALESCE(e."Cash Acquisitions (FQ)", 0)) /
-    NULLIF(ABS(COALESCE(e."Cash Acquisitions (5YAVGFQ)", 0)), 0)                                       AS acquisitions_vs_5y_avg,
-    ABS(COALESCE(e."Cash Acquisitions (LTM)", 0))                                                      AS acquisitions_ltm_total,
-    ABS(COALESCE(e."Cash Acquisitions (LTM)", 0)) /
-    NULLIF(e."Total Assets (LTM)", 0) *
-    100                                                                                                AS ma_intensity_score,
-    CASE
-        WHEN (CASE WHEN ABS(COALESCE(e."Cash Acquisitions (FY)", 0)) > 0 THEN 1 ELSE 0 END +
-              CASE WHEN ABS(COALESCE(e."Cash Acquisitions (-1FY)", 0)) > 0 THEN 1 ELSE 0 END +
-              CASE WHEN ABS(COALESCE(e."Cash Acquisitions (-2FY)", 0)) > 0 THEN 1 ELSE 0 END +
-              CASE WHEN ABS(COALESCE(e."Cash Acquisitions (-3FY)", 0)) > 0 THEN 1 ELSE 0 END) >= 3
-            THEN 1
-        ELSE 0
-        END                                                                                            AS serial_acquirer_flag,
-    CASE
-        WHEN ABS(COALESCE(e."Cash Acquisitions (FY)", 0)) = 0
-            AND (ABS(COALESCE(e."Cash Acquisitions (-1FY)", 0)) > 0
-                OR ABS(COALESCE(e."Cash Acquisitions (-2FY)", 0)) > 0)
-            THEN 1
-        ELSE 0
-        END                                                                                            AS acquisition_pause_flag,
-    (ABS(COALESCE(e."Capital Expenditure (LTM)", 0)) + ABS(COALESCE(e."Cash Acquisitions (LTM)", 0))) /
-    NULLIF(ABS(e."CFO (LTM)"), 0)                                                                      AS total_investment_to_cfo,
-    ABS(COALESCE(e."Capital Expenditure (LTM)", 0)) /
-    NULLIF(ABS(COALESCE(e."Cash Acquisitions (LTM)", 0)), 0)                                           AS organic_vs_inorganic,
-    CASE
-        WHEN (ABS(COALESCE(e."Capital Expenditure (-1FY)", 0)) + ABS(COALESCE(e."Cash Acquisitions (-1FY)", 0))) > 0
-            THEN (e."Total Revenues (FY)" - e."Total Revenues (-1FY)") /
-                 NULLIF(ABS(COALESCE(e."Capital Expenditure (-1FY)", 0)) +
-                        ABS(COALESCE(e."Cash Acquisitions (-1FY)", 0)), 0)
-        END                                                                                            AS investment_efficiency,
+-- Section 7: Quality & Risk
+         LEFT JOIN calc_quality_features()               qf ON id.isin = qf.isin
+         LEFT JOIN calc_beta_risk_features()             br ON id.isin = br.isin
+         LEFT JOIN calc_financial_distress_features()    fdf ON id.isin = fdf.isin
+         LEFT JOIN calc_accounting_quality_features()    aqf ON id.isin = aqf.isin
+         LEFT JOIN calc_quality_features_comprehensive() qfc ON id.isin = qfc.isin
 
-    -- =========================================================================
-    -- CASHFLOW TEMPORAL FEATURES (calc_cashflow_temporal_features)
-    -- =========================================================================
-    (e."CFO (FQ)" - e."CFO (-4FQFQ)") / NULLIF(ABS(e."CFO (-4FQFQ)"), 0) *
-    100                                                                                                AS cfo_quarterly_trend,
-    (e."CFI (FQ)" - e."CFI (-4FQFQ)") / NULLIF(ABS(e."CFI (-4FQFQ)"), 0) *
-    100                                                                                                AS cfi_quarterly_trend,
-    (e."CFF (FQ)" - e."CFF (-4FQFQ)") / NULLIF(ABS(e."CFF (-4FQFQ)"), 0) *
-    100                                                                                                AS cff_quarterly_trend,
-    (e."FCF (FQ)" - e."FCF (-4FQFQ)") / NULLIF(ABS(e."FCF (-4FQFQ)"), 0) *
-    100                                                                                                AS fcf_quarterly_trend,
-    (CASE WHEN e."CFO (FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."CFO (-4FQFQ)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS cfo_positive_quarters,
-    (CASE WHEN e."CFI (FQ)" < 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFI (-1FQFQ)" < 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFI (-2FQFQ)" < 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFI (-3FQFQ)" < 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."CFI (-4FQFQ)" < 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS cfi_negative_quarters,
-    CASE
-        WHEN e."FCF (LTM)" < 0 THEN ABS(e."FCF (LTM)") / NULLIF(e."Cash And Equivalents (FQ)", 0) / 12.0
-        ELSE 0 END                                                                                     AS cash_burn_rate,
-    ABS(e."CFF (LTM)") / NULLIF(ABS(e."CFO (LTM)"), 0)                                                 AS financing_dependency,
+-- Section 8: Leverage & Liquidity
+         LEFT JOIN calc_leverage_features()              lf ON id.isin = lf.isin
+         LEFT JOIN calc_efficiency_ratios()              er ON id.isin = er.isin
+         LEFT JOIN calc_balance_sheet_dynamics()         bsd ON id.isin = bsd.isin
+         LEFT JOIN calc_working_capital_temporal()       wct ON id.isin = wct.isin
+         LEFT JOIN calc_total_debt_temporal()            tdt ON id.isin = tdt.isin
+         LEFT JOIN calc_working_capital_deep_features()  wcd ON id.isin = wcd.isin
 
-    -- =========================================================================
-    -- TEMPORAL FEATURES (calc_temporal_features)
-    -- =========================================================================
-    e."Fiscal Quarter"                                                                                 AS fiscal_quarter,
-    e."Fiscal Month"                                                                                   AS fiscal_month,
-    e."Fiscal Year"                                                                                    AS fiscal_year,
-    (e."Next Earnings" - CURRENT_DATE)::INTEGER                                                        AS days_to_earnings,
-    (CURRENT_DATE - e."Income Statement Report Date")::INTEGER                                         AS earnings_report_recency,
-    e."Reporting Lag"                                                                                  AS reporting_lag,
-    e."Fiscal Month" / 12.0                                                                            AS fiscal_year_progress,
+-- Section 9: Analyst Sentiment
+         LEFT JOIN calc_sentiment_features()             sf ON id.isin = sf.isin
+         LEFT JOIN calc_price_target_dynamics()          ptd ON id.isin = ptd.isin
 
-    -- =========================================================================
-    -- FISCAL CALENDAR FEATURES (calc_fiscal_calendar_features)
-    -- =========================================================================
-    (CURRENT_DATE - e."Income Statement Report Date")::INTEGER                                         AS days_since_last_report,
-    (e."FY End Date" - CURRENT_DATE)::INTEGER                                                          AS days_to_fy_end,
-    CASE
-        WHEN EXTRACT(MONTH FROM CURRENT_DATE) IN (3, 6, 9, 12) THEN 1
-        ELSE 0 END                                                                                     AS is_quarter_end_month,
-    CASE
-        WHEN EXTRACT(MONTH FROM CURRENT_DATE) = EXTRACT(MONTH FROM e."FY End Date") THEN 1
-        ELSE 0 END                                                                                     AS is_fy_end_month,
-    CASE
-        WHEN EXTRACT(MONTH FROM CURRENT_DATE) IN (1, 2, 4, 5, 7, 8, 10, 11) THEN 1
-        ELSE 0 END                                                                                     AS earnings_season_flag,
-    CASE
-        WHEN (e."Next Earnings" - CURRENT_DATE) BETWEEN 0 AND 14 THEN 1
-        ELSE 0 END                                                                                     AS pre_earnings_window,
-    CASE
-        WHEN (CURRENT_DATE - e."Income Statement Report Date") BETWEEN 0 AND 7 THEN 1
-        ELSE 0 END                                                                                     AS post_earnings_window,
-    GREATEST(0, LEAST(100, 100 -
-                           ((CURRENT_DATE - e."Income Statement Report Date")::NUMERIC / 90.0 * 100))) AS reporting_freshness_score,
+-- Section 10: Dividends
+         LEFT JOIN calc_dividend_features()              df ON id.isin = df.isin
+         LEFT JOIN calc_dividend_timing()                dt ON id.isin = dt.isin
+         LEFT JOIN calc_dividend_yield_comprehensive()   dyc ON id.isin = dyc.isin
 
-    -- =========================================================================
-    -- COMPOSITE SCORES (calc_composite_scores)
-    -- =========================================================================
-    (CASE WHEN e."Return on Assets (ROA) % (LTM)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (LTM)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Return on Assets (ROA) % (LTM)" > e."Return on Assets (ROA) % (FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (LTM)" > e."Net Income - (IS) (LTM)" THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."Total Debt (LTM)" / NULLIF(e."Total Equity (LTM)", 0) <
-              e."Total Debt (FY)" / NULLIF(e."Total Equity (FY)", 0) THEN 1
-         ELSE 0 END +
-     CASE WHEN e."Current Ratio (LTM)" > e."Current Ratio (FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Shrs Out" <= e."Shrs Out (-1FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Gross Profit Margin % (LTM)" > e."Gross Profit Margin % (FY)" THEN 1 ELSE 0 END +
-     CASE WHEN e."Asset Turnover (LTM)" > e."Asset Turnover (FY)" THEN 1 ELSE 0 END
-        )::INTEGER                                                                                     AS piotroski_f_score,
-    GREATEST(0, LEAST(100, 50 - ((e."Shrs Out" - e."Shrs Out (-1FY)") / NULLIF(e."Shrs Out (-1FY)", 0)) *
-                                100))                                                                  AS dilution_score,
+-- Section 11: Employment
+         LEFT JOIN calc_employment_features()            emf ON id.isin = emf.isin
+         LEFT JOIN calc_employment_dynamics()            ed ON id.isin = ed.isin
 
-    -- =========================================================================
-    -- EBIT/EBITDA COMPREHENSIVE (calc_ebit_ebitda_comprehensive)
-    -- =========================================================================
-    e."EBIT (FQ)"                                                                                      AS ebit_fq,
-    e."EBIT (LTM)"                                                                                     AS ebit_ltm,
-    e."EBIT (FY)"                                                                                      AS ebit_fy,
-    e."EBIT (-1FY)"                                                                                    AS ebit_1fy,
-    e."EBITDA (FQ)"                                                                                    AS ebitda_fq,
-    e."EBITDA (LTM)"                                                                                   AS ebitda_ltm,
-    e."EBITDA (FY)"                                                                                    AS ebitda_fy,
-    e."EBITDA (-1FY)"                                                                                  AS ebitda_1fy,
-    -- NEW: Extended historical FY
-    e."EBIT (-2FY)"                                                                                    AS ebit_2fy,
-    e."EBIT (-3FY)"                                                                                    AS ebit_3fy,
-    e."EBIT (-4FY)"                                                                                    AS ebit_4fy,
-    e."EBITDA (-2FY)"                                                                                  AS ebitda_2fy,
-    e."EBITDA (-3FY)"                                                                                  AS ebitda_3fy,
-    e."EBITDA (-4FY)"                                                                                  AS ebitda_4fy,
-    -- NEW: Quarterly historical
-    e."EBIT (-1FQFQ)"                                                                                  AS ebit_1fqfq,
-    e."EBIT (-2FQFQ)"                                                                                  AS ebit_2fqfq,
-    e."EBIT (-3FQFQ)"                                                                                  AS ebit_3fqfq,
-    e."EBIT (-4FQFQ)"                                                                                  AS ebit_4fqfq,
-    e."EBITDA (-1FQFQ)"                                                                                AS ebitda_1fqfq,
-    e."EBITDA (-2FQFQ)"                                                                                AS ebitda_2fqfq,
-    e."EBITDA (-3FQFQ)"                                                                                AS ebitda_3fqfq,
-    e."EBITDA (-4FQFQ)"                                                                                AS ebitda_4fqfq,
-    -- NEW: 5-year averages
-    e."EBIT (5YAVGFQ)"                                                                                 AS ebit_5yavgfq,
-    e."EBIT (5YAVGLTM)"                                                                                AS ebit_5yavgltm,
-    e."EBITDA (5YAVGFQ)"                                                                               AS ebitda_5yavgfq,
-    e."EBITDA (5YAVGLTM)"                                                                              AS ebitda_5yavgltm,
-    -- NEW: Adjusted variants
-    e."EBIT/Adj. (FQ)"                                                                                 AS ebit_adj_fq,
-    e."EBIT/Adj. (LTM)"                                                                                AS ebit_adj_ltm,
-    e."EBIT/Adj. (FY)"                                                                                 AS ebit_adj_fy,
-    e."EBITDA/Adj. (FQ)"                                                                               AS ebitda_adj_fq,
-    e."EBITDA/Adj. (LTM)"                                                                              AS ebitda_adj_ltm,
-    e."EBITDA/Adj. (FY)"                                                                               AS ebitda_adj_fy,
-    -- Derived metrics
-    (e."EBIT (FY)" - e."EBIT (-1FY)") / NULLIF(ABS(e."EBIT (-1FY)"), 0) *
-    100                                                                                                AS ebit_growth_yoy,
-    (e."EBITDA (FY)" - e."EBITDA (-1FY)") / NULLIF(ABS(e."EBITDA (-1FY)"), 0) *
-    100                                                                                                AS ebitda_growth_yoy_comp,
-    e."EBIT (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) * 100                                         AS ebit_margin_ltm,
-    e."EBITDA (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) * 100                                       AS ebitda_margin_ltm,
-    (CASE WHEN e."EBIT (FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."EBIT (-1FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."EBIT (-2FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."EBIT (-3FY)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."EBIT (-4FY)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS ebit_positive_years,
-    (CASE WHEN e."EBITDA (FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."EBITDA (-1FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."EBITDA (-2FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."EBITDA (-3FY)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."EBITDA (-4FY)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS ebitda_positive_years,
-    -- NEW: Quarterly momentum
-    (e."EBIT (FQ)" - e."EBIT (-1FQFQ)") / NULLIF(ABS(e."EBIT (-1FQFQ)"), 0) *
-    100                                                                                                AS ebit_qoq_growth,
-    (e."EBITDA (FQ)" - e."EBITDA (-1FQFQ)") / NULLIF(ABS(e."EBITDA (-1FQFQ)"), 0) * 100
-                                                                                                       AS ebitda_qoq_growth,
-    -- NEW: Multi-year CAGR (3-year)
-    CASE
-        WHEN e."EBIT (-3FY)" > 0 AND e."EBIT (FY)" > 0
-            THEN (POWER(e."EBIT (FY)" / NULLIF(e."EBIT (-3FY)", 0), 1.0 / 3.0) - 1) * 100
-        END                                                                                            AS ebit_cagr_3y,
-    CASE
-        WHEN e."EBITDA (-3FY)" > 0 AND e."EBITDA (FY)" > 0
-            THEN (POWER(e."EBITDA (FY)" / NULLIF(e."EBITDA (-3FY)", 0), 1.0 / 3.0) - 1) * 100
-        END                                                                                            AS ebitda_cagr_3y,
-    -- NEW: vs 5Y average
-    e."EBIT (LTM)" / NULLIF(e."EBIT (5YAVGLTM)", 0)                                                    AS ebit_vs_5y_avg,
-    e."EBITDA (LTM)" / NULLIF(e."EBITDA (5YAVGLTM)", 0)                                                AS ebitda_vs_5y_avg,
+-- Section 12: Cash Flow
+         LEFT JOIN calc_cashflow_features()              cf ON id.isin = cf.isin
+         LEFT JOIN calc_enhanced_cashflow_features()     ecff ON id.isin = ecff.isin
+         LEFT JOIN calc_cashflow_temporal_features()     ctf ON id.isin = ctf.isin
+         LEFT JOIN calc_cashflow_comprehensive()         cc ON id.isin = cc.isin
 
-    -- =========================================================================
-    -- NET INCOME COMPREHENSIVE (calc_net_income_comprehensive)
-    -- =========================================================================
-    e."Net Income - (IS) (FQ)"                                                                         AS net_income_is_fq,
-    e."Net Income - (IS) (LTM)"                                                                        AS net_income_is_ltm,
-    e."Net Income - (IS) (FY)"                                                                         AS net_income_is_fy,
-    e."Net Income/Adj. (LTM)"                                                                          AS net_income_adj_ltm,
-    e."Normalized Net Income (LTM)"                                                                    AS normalized_ni_ltm,
-    -- NEW: Extended quarterly historical
-    e."Net Income - (IS) (-1FQFQ)"                                                                     AS net_income_is_1fqfq,
-    e."Net Income - (IS) (-2FQFQ)"                                                                     AS net_income_is_2fqfq,
-    e."Net Income - (IS) (-3FQFQ)"                                                                     AS net_income_is_3fqfq,
-    e."Net Income - (IS) (-4FQFQ)"                                                                     AS net_income_is_4fqfq,
-    -- NEW: Extended yearly historical
-    e."Net Income - (IS) (-1FY)"                                                                       AS net_income_is_1fy,
-    e."Net Income - (IS) (-2FY)"                                                                       AS net_income_is_2fy,
-    e."Net Income - (IS) (-3FY)"                                                                       AS net_income_is_3fy,
-    e."Net Income - (IS) (-4FY)"                                                                       AS net_income_is_4fy,
-    -- NEW: 5-year averages
-    e."Net Income - (IS) (5YAVGFQ)"                                                                    AS net_income_is_5yavgfq,
-    e."Net Income - (IS) (5YAVGLTM)"                                                                   AS net_income_is_5yavgltm,
-    e."Normalized Net Income (5YAVGFQ)"                                                                AS normalized_ni_5yavgfq,
-    e."Normalized Net Income (5YAVGLTM)"                                                               AS normalized_ni_5yavgltm,
-    -- Derived metrics
-    pct_change(e."Net Income - (IS) (FY)", e."Net Income - (IS) (-1FY)")                               AS net_income_growth_yoy,
-    e."Net Income Margin % (LTM)"                                                                      AS net_income_margin_ltm,
-    safe_divide(e."Net Income/Adj. (LTM)", e."Net Income - (IS) (LTM)")                                AS ni_adjustment_ratio,
-    (CASE WHEN e."Net Income - (IS) (FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Net Income - (IS) (-1FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Net Income - (IS) (-2FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Net Income - (IS) (-3FY)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."Net Income - (IS) (-4FY)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS net_income_positive_years,
-    clamp_score(
-            50 +
-            (CASE WHEN e."Net Income - (IS) (FY)" > 0 THEN 10 ELSE -10 END) +
-            (CASE WHEN e."Net Income - (IS) (-1FY)" > 0 THEN 5 ELSE -5 END) +
-            (CASE WHEN e."Net Income - (IS) (-2FY)" > 0 THEN 5 ELSE -5 END) +
-            (CASE
-                 WHEN ABS(safe_divide(e."Net Income/Adj. (LTM)" - e."Net Income - (IS) (LTM)",
-                                      e."Net Income - (IS) (LTM)")) < 0.10 THEN 15
-                 ELSE -15 END) +
-            (CASE WHEN e."Net Income - (IS) (FY)" > e."Net Income - (IS) (-1FY)" THEN 10 ELSE -5 END) +
-            (CASE WHEN e."Net Income - (IS) (-1FY)" > e."Net Income - (IS) (-2FY)" THEN 5 ELSE -5 END)
-    )                                                                                                  AS earnings_quality_composite_comp,
-    -- NEW: Quarterly trends
-    pct_change(e."Net Income - (IS) (FQ)",
-               e."Net Income - (IS) (-1FQFQ)")                                                         AS net_income_qoq_growth,
-    pct_change(e."Net Income - (IS) (FQ)",
-               e."Net Income - (IS) (-4FQFQ)")                                                         AS net_income_yoy_quarterly,
-    -- vs 5Y averages
-    safe_divide(e."Net Income - (IS) (LTM)",
-                e."Net Income - (IS) (5YAVGLTM)")                                                      AS net_income_vs_5y_avg,
-    safe_divide(e."Normalized Net Income (LTM)",
-                e."Normalized Net Income (5YAVGLTM)")                                                  AS normalized_ni_vs_5y_avg,
+-- Section 13: Temporal
+         LEFT JOIN calc_temporal_features()              tf ON id.isin = tf.isin
+         LEFT JOIN calc_fiscal_calendar_features()       fcf ON id.isin = fcf.isin
 
-    -- =========================================================================
-    -- CASHFLOW COMPREHENSIVE (calc_cashflow_comprehensive)
-    -- =========================================================================
-    e."CFO (FQ)"                                                                                       AS cfo_fq,
-    e."CFO (LTM)"                                                                                      AS cfo_ltm,
-    e."CFO (FY)"                                                                                       AS cfo_fy,
-    e."FCF (FQ)"                                                                                       AS fcf_fq,
-    e."FCF (LTM)"                                                                                      AS fcf_ltm,
-    e."FCF (FY)"                                                                                       AS fcf_fy,
-    (e."CFO (FY)" - e."CFO (-1FY)") / NULLIF(ABS(e."CFO (-1FY)"), 0) *
-    100                                                                                                AS cfo_growth_yoy_comp,
-    (e."FCF (FY)" - e."FCF (-1FY)") / NULLIF(ABS(e."FCF (-1FY)"), 0) *
-    100                                                                                                AS fcf_growth_yoy,
-    e."FCF (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) * 100                                          AS fcf_margin_pct,
-    e."FCF (LTM)" / NULLIF(e."Market Cap", 0) * 100                                                    AS fcf_yield,
-    (CASE WHEN e."CFO (FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (-1FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (-2FY)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."CFO (-3FY)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."CFO (-4FY)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS cfo_positive_years,
+-- Section 14: Balance Sheet
+         LEFT JOIN calc_total_assets_temporal()          tat ON id.isin = tat.isin
+         LEFT JOIN calc_inventory_temporal_features()    itf ON id.isin = itf.isin
+         LEFT JOIN calc_goodwill_temporal_features()     gtf ON id.isin = gtf.isin
 
-    -- =========================================================================
-    -- BETA RISK FEATURES (calc_beta_risk_features)
-    -- =========================================================================
-    e."Beta (1Y)"                                                                                      AS beta_1y,
-    e."Beta (5Y)"                                                                                      AS beta_5y,
-    e."Beta (1Y)" - e."Beta (5Y)"                                                                      AS beta_spread,
-    (e."Beta (1Y)" - e."Beta (5Y)") / NULLIF(ABS(e."Beta (5Y)"), 0) *
-    100                                                                                                AS beta_trend,
-    CASE WHEN e."Beta (1Y)" > 1.5 THEN 1 ELSE 0 END                                                    AS high_beta_flag,
-    CASE WHEN e."Beta (1Y)" < 0.5 THEN 1 ELSE 0 END                                                    AS low_beta_flag,
-    GREATEST(0,
-             LEAST(100, 100 - ABS(e."Beta (1Y)" - e."Beta (5Y)") * 50))                                AS beta_stability_score,
+-- Section 15: Cost Structure
+         LEFT JOIN calc_cost_structure_features()        csf ON id.isin = csf.isin
+         LEFT JOIN calc_rnd_temporal_features()          rtf ON id.isin = rtf.isin
+         LEFT JOIN calc_interest_income_features()       iif ON id.isin = iif.isin
 
-    -- =========================================================================
-    -- COST STRUCTURE FEATURES (calc_cost_structure_features)
-    -- =========================================================================
-    safe_divide(e."Cost Of Revenues (LTM)", e."Total Revenues (LTM)") *
-    100                                                                                                AS cogs_to_revenue,
-    safe_divide(e."Total Operating Expenses (LTM)", e."Total Revenues (LTM)") *
-    100                                                                                                AS opex_to_revenue,
-    safe_divide(e."Selling General & Admin Expenses/Total (FY)", e."Total Revenues (FY)") *
-    100                                                                                                AS sga_to_revenue,
-    safe_divide(e."R&D Expenses (LTM)", e."Total Revenues (LTM)") * 100                                AS rnd_to_revenue,
-    safe_divide(e."Interest Expense/Total (LTM)", e."Total Revenues (LTM)") *
-    100                                                                                                AS interest_to_revenue,
+-- Section 16: Composite Scores
+         LEFT JOIN calc_composite_scores()               cs ON id.isin = cs.isin
+         LEFT JOIN calc_net_income_comprehensive()       nic ON id.isin = nic.isin
 
-    -- =========================================================================
-    -- INTEREST INCOME FEATURES (calc_interest_income_features)
-    -- =========================================================================
-    e."Interest Income On Investments (LTM)"                                                           AS interest_income_ltm,
-    e."Interest Expense/Total (LTM)"                                                                   AS interest_expense_ltm,
-    COALESCE(e."Interest Income On Investments (LTM)", 0) -
-    COALESCE(e."Interest Expense/Total (LTM)", 0)                                                      AS net_interest_income,
-    e."EBIT (LTM)" / NULLIF(e."Interest Expense/Total (LTM)", 0)                                       AS interest_coverage_ratio,
-    e."Interest Income On Investments (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) *
-    100                                                                                                AS interest_income_to_revenue,
-    e."Interest Expense/Total (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) *
-    100                                                                                                AS interest_expense_to_revenue,
+-- Section 17: Unusual Items
+         LEFT JOIN calc_unusual_items_features()         uif ON id.isin = uif.isin;
 
-    -- =========================================================================
-    -- LONG TERM MOMENTUM FEATURES (calc_long_term_momentum_features)
-    -- =========================================================================
-    pct_change(e."Last Price", e."Price (3Y Ago)")                                                     AS price_momentum_3y,
-    pct_change(e."Last Price", e."Price (5Y Ago)")                                                     AS price_momentum_5y,
-    (COALESCE(pct_change(e."Last Price", e."Price (1Y Ago)"), 0) * 0.50 +
-     COALESCE(pct_change(e."Last Price", e."Price (3Y Ago)"), 0) * 0.30 +
-     COALESCE(pct_change(e."Last Price", e."Price (5Y Ago)"), 0) * 0.20) /
-    100                                                                                                AS long_term_trend_score,
-    CASE
-        WHEN calc_change_ratio(e."52W High/Adj" - e."Last Price", e."52W High/Adj") <= 0.10
-            AND calc_change_ratio(e."Last Price", e."Price (3Y Ago)") > 0.5 THEN 1
-        ELSE 0
-        END                                                                                            AS multi_year_high_flag,
-    CASE
-        WHEN calc_change_ratio(e."Last Price", e."Price (3Y Ago)") > 0.20
-            AND calc_change_ratio(e."Last Price", e."Price (1Y Ago)") > 0
-            AND e."EMA (50D)" > e."EMA (250D)" THEN 1
-        ELSE 0
-        END                                                                                            AS secular_trend_flag,
+-- =============================================================================
+-- INDEXES FOR OPTIMIZED QUERYING
+-- =============================================================================
+CREATE UNIQUE INDEX idx_mv_all_stock_features_isin
+    ON mv_all_stock_features (isin);
 
-    -- =========================================================================
-    -- TANGIBLE BOOK FEATURES (calc_tangible_book_features)
-    -- =========================================================================
-    e."Total Equity (LTM)" - COALESCE(e."Goodwill (LTM)", 0) -
-    COALESCE(e."Gross Intangible Assets (LTM)", 0)                                                     AS tangible_book_value,
-    (e."Total Equity (LTM)" - COALESCE(e."Goodwill (LTM)", 0) - COALESCE(e."Gross Intangible Assets (LTM)", 0)) /
-    NULLIF(e."Shrs Out", 0)                                                                            AS tangible_book_per_share,
-    e."Last Price" * e."Shrs Out" /
-    NULLIF(e."Total Equity (LTM)" - COALESCE(e."Goodwill (LTM)", 0) - COALESCE(e."Gross Intangible Assets (LTM)", 0),
-           0)                                                                                          AS price_to_tangible_book,
-    (e."Total Equity (LTM)" - COALESCE(e."Goodwill (LTM)", 0) - COALESCE(e."Gross Intangible Assets (LTM)", 0)) /
-    NULLIF(e."Total Assets (LTM)", 0) *
-    100                                                                                                AS tangible_equity_ratio,
-    COALESCE(e."Gross Intangible Assets (LTM)", 0) / NULLIF(e."Total Equity (LTM)", 0) *
-    100                                                                                                AS intangibles_to_equity,
-    COALESCE(e."Goodwill (LTM)", 0) / NULLIF(e."Total Equity (LTM)", 0) *
-    100                                                                                                AS goodwill_to_equity,
+CREATE INDEX idx_mv_all_stock_features_ticker
+    ON mv_all_stock_features (ticker);
 
-    -- =========================================================================
-    -- WORKING CAPITAL DEEP FEATURES (calc_working_capital_deep_features)
-    -- =========================================================================
-    e."Working Capital (LTM)"                                                                          AS working_capital_ltm,
-    e."Working Capital (FQ)"                                                                           AS working_capital_fq,
-    e."Working Capital (FY)"                                                                           AS working_capital_fy,
-    e."Working Capital (LTM)" / NULLIF(e."Total Revenues (LTM)", 0) * 100                              AS wc_to_revenue,
-    e."Working Capital (LTM)" / NULLIF(e."Total Assets (LTM)", 0) * 100                                AS wc_to_assets,
-    (e."Working Capital (FQ)" - e."Working Capital (FY)") / NULLIF(ABS(e."Working Capital (FY)"), 0) *
-    100                                                                                                AS wc_change_qoq,
-    (e."Working Capital (FY)" - e."Working Capital (-1FY)") / NULLIF(ABS(e."Working Capital (-1FY)"), 0) *
-    100                                                                                                AS wc_change_yoy,
-    e."Working Capital (LTM)" /
-    NULLIF(e."Total Revenues (LTM)" / 365.0, 0)                                                        AS days_working_capital,
-    CASE WHEN e."Working Capital (LTM)" < 0 THEN 1 ELSE 0 END                                          AS negative_wc_flag,
-    CASE
-        WHEN e."Working Capital (FQ)" > e."Working Capital (FY)" AND
-             e."Working Capital (FY)" > e."Working Capital (-1FY)" THEN 1
-        ELSE 0 END                                                                                     AS wc_improvement_flag,
+CREATE INDEX idx_mv_all_stock_features_sector_industry
+    ON mv_all_stock_features (sector, industry);
 
-    -- =========================================================================
-    -- UNUSUAL ITEMS FEATURES (calc_unusual_items_features)
-    -- =========================================================================
-    e."Other Unusual Items/Total (LTM)"                                                                AS other_unusual_items_ltm,
-    COALESCE(e."Other Unusual Items/Total (LTM)", 0) + COALESCE(e."Impairment of Goodwill (LTM)", 0) +
-    COALESCE(e."Asset Writedown (LTM)", 0) +
-    COALESCE(e."Restructuring Charges (LTM)", 0)                                                       AS total_unusual_items,
-    safe_divide(
-            ABS(COALESCE(e."Other Unusual Items/Total (LTM)", 0) + COALESCE(e."Impairment of Goodwill (LTM)", 0) +
-                COALESCE(e."Asset Writedown (LTM)", 0) + COALESCE(e."Restructuring Charges (LTM)", 0)),
-            e."Total Revenues (LTM)"
-    ) *
-    100                                                                                                AS unusual_items_to_revenue,
-    safe_divide(
-            ABS(COALESCE(e."Other Unusual Items/Total (LTM)", 0) + COALESCE(e."Impairment of Goodwill (LTM)", 0) +
-                COALESCE(e."Asset Writedown (LTM)", 0) + COALESCE(e."Restructuring Charges (LTM)", 0)),
-            ABS(e."EBITDA (LTM)")
-    ) *
-    100                                                                                                AS unusual_items_to_ebitda,
-    CASE
-        WHEN
-            ABS(COALESCE(e."Other Unusual Items/Total (LTM)", 0)) + ABS(COALESCE(e."Impairment of Goodwill (LTM)", 0)) +
-            ABS(COALESCE(e."Asset Writedown (LTM)", 0)) + ABS(COALESCE(e."Restructuring Charges (LTM)", 0)) > 0 THEN 1
-        ELSE 0
-        END                                                                                            AS has_unusual_items_flag,
+CREATE INDEX idx_mv_all_stock_features_region_country
+    ON mv_all_stock_features (region, country, trading_country);
 
-    -- =========================================================================
-    -- REVENUE ESTIMATE CONSENSUS (calc_revenue_estimate_consensus)
-    -- =========================================================================
-    e."Revenues - Est Avg (FY1E)"                                                                      AS revenue_est_avg_fy1e,
-    e."Revenues - Est Med (FY1E)"                                                                      AS revenue_est_med_fy1e,
-    e."Revenues - Est Avg (NTM)"                                                                       AS revenue_est_avg_ntm,
-    e."Revenues - Est Med (NTM)"                                                                       AS revenue_est_med_ntm,
-    safe_divide(e."Revenues - Est Avg (FY1E)" - e."Revenues - Est Med (FY1E)", e."Revenues - Est Med (FY1E)") *
-    100                                                                                                AS revenue_avg_med_diff_pct,
-    clamp_score(100 - ABS(safe_divide(e."Revenues - Est Avg (FY1E)" - e."Revenues - Est Med (FY1E)",
-                                      e."Revenues - Est Med (FY1E)") * 100) *
-                      2)                                                                               AS revenue_consensus_strength,
-    safe_divide(e."Revenues - Est Avg (FY1E)", e."Total Revenues (LTM)")                               AS revenue_vs_current,
+CREATE INDEX idx_mv_all_stock_features_exchange
+    ON mv_all_stock_features (exchange);
 
-    -- =========================================================================
-    -- REVENUE QUARTERLY FEATURES (calc_revenue_quarterly_features)
-    -- =========================================================================
-    e."Total Revenues (FQ)"                                                                            AS revenue_fq,
-    e."Total Revenues (-1FQFQ)"                                                                        AS revenue_1fq,
-    e."Total Revenues (-2FQFQ)"                                                                        AS revenue_2fq,
-    e."Total Revenues (-3FQFQ)"                                                                        as revenue_3q,
-    e."Total Revenues (-4FQFQ)"                                                                        as revenue_4q,
-    e."Total Revenues (FY)"                                                                            AS revenue_fy,
-    e."Total Revenues (-1FY)"                                                                          AS revenue_1fy,
-    e."Total Revenues (-2FY)"                                                                          AS revenue_2fy,
-    e."Total Revenues (-3FY)"                                                                          AS revenue_3fy,
-    e."Total Revenues (-4FY)"                                                                          AS revenue_4fy,
-    e."Total Revenues (LTM)"                                                                           AS revenue_ltm,
-    e."Total Revenues (5YAVGLTM)"                                                                      AS revenue_5y_avg,
-    pct_change(e."Total Revenues (FY)", e."Total Revenues (-1FY)")                                     AS revenue_yoy_growth,
-    pct_change(e."Total Revenues (-1FY)", e."Total Revenues (-2FY)")                                   AS revenue_1fy_vs_2fy,
-    pct_change(e."Total Revenues (-2FY)", e."Total Revenues (-3FY)")                                   AS revenue_2fy_vs_3fy,
-    pct_change(e."Total Revenues (-3FY)", e."Total Revenues (-4FY)")                                   AS revenue_3fy_vs_4fy,
-    CASE
-        WHEN e."Total Revenues (FY)" > e."Total Revenues (-1FY)" THEN 1
-        ELSE 0 END                                                                                     AS revenue_growth_flag,
+CREATE INDEX idx_mv_all_stock_features_market_cap
+    ON mv_all_stock_features (market_cap DESC NULLS LAST);
 
-    -- =========================================================================
-    -- REVENUE TEMPORAL (calc_total_revenues_temporal)
-    -- =========================================================================
-    e."Total Revenues (5YAVGFQ)"                                                                       AS revenue_5yavgfq,
-    e."Total Revenues (5YAVGLTM)"                                                                      AS revenue_5yavgltm,
-    pct_change(e."Total Revenues (FY)", e."Total Revenues (-1FY)")                                     AS revenue_growth_yoy_temp,
-    safe_divide(e."Total Revenues (FQ)", e."Total Revenues (5YAVGFQ)")                                 AS revenue_vs_5y_avg_fq_temp,
-    safe_divide(e."Total Revenues (LTM)", e."Total Revenues (5YAVGLTM)")                               AS revenue_vs_5y_avg_ltm_temp,
-    safe_divide(e."Total Revenues (FQ)" - e."Total Revenues (5YAVGFQ)", e."Total Revenues (5YAVGFQ)") *
-    100                                                                                                AS revenue_fq_vs_avg_temp,
-    calc_change_ratio(e."Total Revenues (LTM)", e."Total Revenues (-1FY)") *
-    100                                                                                                AS revenue_momentum_temp,
+-- =============================================================================
+-- COMMENT ON MATERIALIZED VIEW
+-- =============================================================================
+COMMENT ON MATERIALIZED VIEW mv_all_stock_features IS
+    'Unified materialized view containing all calculated stock features.
+    Covers 17 feature categories from 54 calc_* functions:
+    1. Valuation Ratios (4 functions)
+    2. Momentum (2 functions)
+    3. Technical Analysis (1 function)
+    4. Profitability (4 functions)
+    5. Earnings (6 functions)
+    6. Growth (4 functions)
+    7. Quality & Risk (5 functions)
+    8. Leverage & Liquidity (6 functions)
+    9. Analyst Sentiment (2 functions)
+    10. Dividends (3 functions)
+    11. Employment (2 functions)
+    12. Cash Flow (4 functions)
+    13. Temporal (2 functions)
+    14. Balance Sheet (3 functions)
+    15. Cost Structure (3 functions)
+    16. Composite Scores (2 functions)
+    17. Unusual Items (1 function)
 
-    -- =========================================================================
-    -- WORKING CAPITAL TEMPORAL (calc_working_capital_temporal)
-    -- =========================================================================
-    e."Working Capital (FQ)"                                                                           AS wc_fq_temp,
-    e."Working Capital (FY)"                                                                           AS wc_fy_temp,
-    e."Working Capital (LTM)"                                                                          AS wc_ltm_temp,
-    e."Working Capital (5YAVGFY)"                                                                      AS wc_5yavgfy,
-    e."Working Capital (-1FQ)"                                                                         AS wc_1fq,
-    e."Working Capital (-2FQ)"                                                                         AS wc_2fq,
-    e."Working Capital (-3FQ)"                                                                         AS wc_3fq,
-    e."Working Capital (-4FQ)"                                                                         AS wc_4fq,
-    e."Working Capital (-1FY)"                                                                         AS wc_1fy,
-    e."Working Capital (-2FY)"                                                                         AS wc_2fy,
-    e."Working Capital (-3FY)"                                                                         AS wc_3fy,
-    e."Working Capital (-4FY)"                                                                         AS wc_4fy,
-    pct_change(e."Working Capital (FQ)", e."Working Capital (-1FQ)")                                   AS wc_qoq_change,
-    pct_change(e."Working Capital (FY)", e."Working Capital (-1FY)")                                   AS wc_yoy_change,
-    pct_change(e."Working Capital (FQ)", e."Working Capital (-4FQ)")                                   AS wc_4q_trend,
-    safe_divide(e."Working Capital (FQ)", e."Working Capital (5YAVGFY)")                               AS wc_vs_5y_avg_temp,
-    (CASE WHEN e."Working Capital (FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Working Capital (-1FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Working Capital (-2FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Working Capital (-3FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."Working Capital (-4FQ)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS wc_positive_quarters,
-    CASE
-        WHEN e."Working Capital (FQ)" > e."Working Capital (-1FQ)"
-            AND e."Working Capital (-1FQ)" > e."Working Capital (-2FQ)"
-            THEN 1
-        ELSE 0 END                                                                                     AS wc_improving_flag_temp,
-    (ABS(e."Working Capital (FQ)" - e."Working Capital (-1FQ)") +
-     ABS(e."Working Capital (-1FQ)" - e."Working Capital (-2FQ)") +
-     ABS(e."Working Capital (-2FQ)" - e."Working Capital (-3FQ)") +
-     ABS(e."Working Capital (-3FQ)" - e."Working Capital (-4FQ)")) /
-    NULLIF(ABS((e."Working Capital (FQ)" + e."Working Capital (-1FQ)" +
-                e."Working Capital (-2FQ)" + e."Working Capital (-3FQ)" +
-                e."Working Capital (-4FQ)") / 5.0), 0)                                                 AS wc_volatility,
+    Refresh with: REFRESH MATERIALIZED VIEW CONCURRENTLY mv_all_stock_features;';
 
-    -- =========================================================================
-    -- TOTAL DEBT TEMPORAL (calc_total_debt_temporal)
-    -- =========================================================================
-    e."Total Debt (FQ)"                                                                                AS debt_fq,
-    e."Total Debt (FY)"                                                                                AS debt_fy,
-    e."Total Debt (LTM)"                                                                               AS debt_ltm,
-    e."Total Debt (-1FQ)"                                                                              AS debt_1fq,
-    e."Total Debt (-2FQ)"                                                                              AS debt_2fq,
-    e."Total Debt (-3FQ)"                                                                              AS debt_3fq,
-    e."Total Debt (-4FQ)"                                                                              AS debt_4fq,
-    e."Total Debt (-1FY)"                                                                              AS debt_1fy_temp,
-    e."Total Debt (-2FY)"                                                                              AS debt_2fy,
-    e."Total Debt (-3FY)"                                                                              AS debt_3fy,
-    e."Total Debt (-4FY)"                                                                              AS debt_4fy,
-    pct_change(e."Total Debt (FQ)", e."Total Debt (-1FQ)")                                             AS debt_qoq_change,
-    pct_change(e."Total Debt (FY)", e."Total Debt (-1FY)")                                             AS debt_yoy_change,
-    pct_change(e."Total Debt (FQ)", e."Total Debt (-4FQ)")                                             AS debt_4q_trend,
-    CASE
-        WHEN e."Total Debt (-3FY)" > 0
-            THEN (POWER(safe_divide(e."Total Debt (FY)", e."Total Debt (-3FY)"), 1.0 / 3.0) - 1) * 100
-        END                                                                                            AS debt_3y_cagr,
-    CASE
-        WHEN e."Total Debt (FQ)" < e."Total Debt (-1FQ)"
-            AND e."Total Debt (-1FQ)" < e."Total Debt (-2FQ)"
-            THEN 1
-        ELSE 0 END                                                                                     AS debt_deleveraging,
-    safe_divide(e."Total Debt (FY)", e."Total Equity (FY)") -
-    safe_divide(e."Total Debt (-1FY)",
-                NULLIF(e."Total Equity (FY)", 0))                                                      AS debt_to_equity_trend,
+-- =============================================================================
+-- REFRESH FUNCTION
+-- =============================================================================
+CREATE OR REPLACE FUNCTION refresh_all_stock_features()
+    RETURNS void
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_all_stock_features;
+    RAISE NOTICE 'mv_all_stock_features refreshed at %', NOW();
+END;
+$$;
 
-    -- =========================================================================
-    -- TOTAL ASSETS TEMPORAL (calc_total_assets_temporal)
-    -- =========================================================================
-    e."Total Assets (FQ)"                                                                              AS assets_fq,
-    e."Total Assets (FY)"                                                                              AS assets_fy,
-    e."Total Assets (LTM)"                                                                             AS assets_ltm_temp,
-    e."Total Assets (-1FQ)"                                                                            AS assets_1fq,
-    e."Total Assets (-2FQ)"                                                                            AS assets_2fq,
-    e."Total Assets (-3FQ)"                                                                            AS assets_3fq,
-    e."Total Assets (-4FQ)"                                                                            AS assets_4fq,
-    e."Total Assets (-1FY)"                                                                            AS assets_1fy,
-    e."Total Assets (-2FY)"                                                                            AS assets_2fy,
-    e."Total Assets (-3FY)"                                                                            AS assets_3fy,
-    e."Total Assets (-4FY)"                                                                            AS assets_4fy,
-    pct_change(e."Total Assets (FQ)", e."Total Assets (-1FQ)")                                         AS assets_qoq_growth,
-    pct_change(e."Total Assets (FY)", e."Total Assets (-1FY)")                                         AS assets_yoy_growth,
-    CASE
-        WHEN e."Total Assets (-3FY)" > 0
-            THEN (POWER(safe_divide(e."Total Assets (FY)", e."Total Assets (-3FY)"), 1.0 / 3.0) - 1) * 100
-        END                                                                                            AS assets_3y_cagr,
-    pct_change(e."Total Assets (FY)", e."Total Assets (-1FY)") -
-    pct_change(e."Total Assets (-1FY)", e."Total Assets (-2FY)")                                       AS asset_growth_accel,
-    CASE
-        WHEN e."Total Assets (FY)" >= e."Total Assets (-1FY)"
-            AND e."Total Assets (-1FY)" >= e."Total Assets (-2FY)"
-            AND e."Total Assets (-2FY)" >= e."Total Assets (-3FY)"
-            THEN 1
-        ELSE 0 END                                                                                     AS asset_base_stable,
-
-    -- =========================================================================
-    -- GROSS PROFIT TEMPORAL (calc_gross_profit_temporal)
-    -- =========================================================================
-    e."Gross Profit (FQ)"                                                                              AS gp_fq,
-    e."Gross Profit (FY)"                                                                              AS gp_fy,
-    e."Gross Profit (LTM)"                                                                             AS gp_ltm_temp,
-    e."Gross Profit (-1FQFQ)"                                                                          AS gp_1fqfq,
-    e."Gross Profit (-2FQFQ)"                                                                          AS gp_2fqfq,
-    e."Gross Profit (-3FQFQ)"                                                                          AS gp_3fqfq,
-    e."Gross Profit (-4FQFQ)"                                                                          AS gp_4fqfq,
-    e."Gross Profit (-1FY)"                                                                            AS gp_1fy,
-    e."Gross Profit (-2FY)"                                                                            AS gp_2fy,
-    e."Gross Profit (-3FY)"                                                                            AS gp_3fy,
-    e."Gross Profit (-4FY)"                                                                            AS gp_4fy,
-    pct_change(e."Gross Profit (FQ)", e."Gross Profit (-1FQFQ)")                                       AS gp_qoq_growth,
-    pct_change(e."Gross Profit (FY)", e."Gross Profit (-1FY)")                                         AS gp_yoy_growth,
-    safe_divide(e."Gross Profit (FQ)", e."Total Revenues (FQ)") * 100                                  AS gp_margin_fq,
-    (safe_divide(e."Gross Profit (FQ)", e."Total Revenues (FQ)") -
-     safe_divide(e."Gross Profit (-4FQFQ)", e."Total Revenues (5YAVGFQ)")) *
-    100                                                                                                AS gp_margin_trend,
-    (CASE WHEN e."Gross Profit (FQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Gross Profit (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Gross Profit (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE WHEN e."Gross Profit (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
-     CASE
-         WHEN e."Gross Profit (-4FQFQ)" > 0 THEN 1
-         ELSE 0 END)::INTEGER                                                                          AS gp_positive_quarters,
-    CASE
-        WHEN e."Gross Profit Margin % (LTM)" > e."Gross Profit Margin % (FY)"
-            THEN 1
-        ELSE 0 END                                                                                     AS gp_margin_expansion_temp,
-
-    -- =========================================================================
-    -- DIVIDEND YIELD COMPREHENSIVE (calc_dividend_yield_comprehensive)
-    -- =========================================================================
-    e."Div Yield (Ind)"                                                                                AS div_yield_ind,
-    e."Div Yield (-1FYInd)"                                                                            AS div_yield_1fy_ind,
-    e."Div Yield (5YAVGLTM)"                                                                           AS div_yield_5y_avg,
-    e."Div Yield (LTM)" / NULLIF(e."Div Yield (5YAVGLTM)", 0)                                          AS div_yield_vs_5y_avg,
-    (e."Div Yield (NTM)" - e."Div Yield (LTM)") / NULLIF(e."Div Yield (LTM)", 0) *
-    100                                                                                                AS div_yield_growth_expected,
-    CASE WHEN e."Div Yield (LTM)" > 4 THEN 1 ELSE 0 END                                                AS high_yield_flag,
-    CASE
-        WHEN e."Div Yield (LTM)" > 0
-            AND e."FCF (LTM)" > ABS(COALESCE(e."Common Dividends Paid (LTM)", 0))
-            AND e."Dividend Streak" >= 5 THEN 1
-        ELSE 0
-        END                                                                                            AS sustainable_dividend_flag,
-
-    -- =========================================================================
-    -- EPS CONTINUING FEATURES (calc_eps_continuing_features) - NEW
-    -- =========================================================================
-    e."Basic EPS - Cont (LTM)"                                                                         AS eps_cont_ltm,
-    e."Basic EPS - Cont (FQ)"                                                                          AS eps_cont_fq,
-    e."Basic EPS - Cont (FY)"                                                                          AS eps_cont_fy,
-    e."Basic EPS - Cont (-1FY)"                                                                        AS eps_cont_1fy,
-    e."Basic EPS - Cont (-2FY)"                                                                        AS eps_cont_2fy,
-    e."Basic EPS - Cont (-3FY)"                                                                        AS eps_cont_3fy,
-    e."Basic EPS - Cont (-4FY)"                                                                        AS eps_cont_4fy,
-    pct_change(e."Basic EPS - Cont (FQ)", e."Basic EPS - Cont (-1FQFQ)")                               AS eps_cont_qoq_growth,
-    pct_change(e."Basic EPS - Cont (FY)", e."Basic EPS - Cont (-1FY)")                                 AS eps_cont_yoy_growth,
-    safe_divide(e."Basic EPS - Cont (LTM)", e."Net EPS - Basic (LTM)")                                 AS eps_cont_vs_total_eps,
-    ((e."Net EPS - Basic (LTM)" - e."Basic EPS - Cont (LTM)") /
-     NULLIF(ABS(e."Net EPS - Basic (LTM)"), 0)) *
-    100                                                                                                AS discontinued_ops_impact,
-
-    -- =========================================================================
-    -- R&D TEMPORAL FEATURES (calc_rnd_temporal_features) - NEW
-    -- =========================================================================
-    e."R&D Expenses (FQ)"                                                                              AS rnd_fq,
-    e."R&D Expenses (FY)"                                                                              AS rnd_fy,
-    e."R&D Expenses (-1FY)"                                                                            AS rnd_1fy,
-    e."R&D Expenses (-2FY)"                                                                            AS rnd_2fy,
-    e."R&D Expenses (-3FY)"                                                                            AS rnd_3fy,
-    e."R&D Expenses (-4FY)"                                                                            AS rnd_4fy,
-    safe_divide(e."R&D Expenses (LTM)", e."Total Revenues (LTM)") * 100                                AS rnd_intensity_ltm,
-    pct_change(e."R&D Expenses (FY)", e."R&D Expenses (-1FY)")                                         AS rnd_yoy_growth,
-    safe_divide(e."R&D Expenses (FY)", e."Full Time Employees (FY)")                                   AS rnd_per_employee,
-    CASE
-        WHEN safe_divide(e."R&D Expenses (LTM)", e."Total Revenues (LTM)") > 0.10
-            THEN 1
-        ELSE 0 END                                                                                     AS high_rnd_intensity_flag,
-
-    -- =========================================================================
-    -- INVENTORY TEMPORAL FEATURES (calc_inventory_temporal_features) - NEW
-    -- =========================================================================
-    e."Inventory (-1FQ)"                                                                               AS inventory_1fq,
-    e."Inventory (-2FQ)"                                                                               AS inventory_2fq,
-    e."Inventory (-3FQ)"                                                                               AS inventory_3fq,
-    e."Inventory (-4FQ)"                                                                               AS inventory_4fq,
-    e."Inventory (-1FY)"                                                                               AS inventory_1fy,
-    e."Inventory (-2FY)"                                                                               AS inventory_2fy,
-    e."Inventory (-3FY)"                                                                               AS inventory_3fy,
-    e."Inventory (-4FY)"                                                                               AS inventory_4fy,
-    pct_change(e."Inventory (FQ)", e."Inventory (-1FQ)")                                               AS inventory_qoq_change,
-    pct_change(e."Inventory (FY)", e."Inventory (-1FY)")                                               AS inventory_yoy_change,
-    e."Inventory (LTM)" / NULLIF(e."Cost Of Revenues (LTM)" / 365.0, 0)                                AS inventory_days,
-    e."Cost Of Revenues (LTM)" / NULLIF(e."Inventory (LTM)", 0)                                        AS inventory_turnover_mv,
-
-    -- =========================================================================
-    -- GOODWILL TEMPORAL FEATURES (calc_goodwill_temporal_features) - NEW
-    -- =========================================================================
-    e."Goodwill (-1FQ)"                                                                                AS goodwill_1fq,
-    e."Goodwill (-2FQ)"                                                                                AS goodwill_2fq,
-    e."Goodwill (-3FQ)"                                                                                AS goodwill_3fq,
-    e."Goodwill (-4FQ)"                                                                                AS goodwill_4fq,
-    e."Goodwill (-1FY)"                                                                                AS goodwill_1fy,
-    e."Goodwill (-2FY)"                                                                                AS goodwill_2fy,
-    e."Goodwill (-3FY)"                                                                                AS goodwill_3fy,
-    e."Goodwill (-4FY)"                                                                                AS goodwill_4fy,
-    pct_change(e."Goodwill (FQ)", e."Goodwill (-1FQ)")                                                 AS goodwill_qoq_change,
-    pct_change(e."Goodwill (FY)", e."Goodwill (-1FY)")                                                 AS goodwill_yoy_change,
-    pct_change(e."Goodwill (FY)", e."Goodwill (-3FY)")                                                 AS goodwill_3y_growth,
-    safe_divide(e."Goodwill (LTM)", e."Total Equity (LTM)") * 100                                      AS goodwill_concentration,
-    CASE
-        WHEN pct_change(e."Goodwill (FQ)", e."Goodwill (-1FQ)") > 20
-            THEN 1
-        ELSE 0 END                                                                                     AS recent_acquisition_flag,
-
-    -- =========================================================================
-    -- MARKETING EXPENSES FEATURES (calc_cost_structure_features) - ENHANCED
-    -- =========================================================================
-    safe_divide(e."Marketing Expenses (FY)", e."Total Revenues (FY)") *
-    100                                                                                                AS marketing_to_revenue,
-    pct_change(e."Marketing Expenses (FY)",
-               e."Marketing Expenses (-1FY)")                                                          AS marketing_trend_yoy,
-    safe_divide(e."Marketing Expenses (FY)",
-                e."Marketing Expenses (5YAVGLTM)")                                                     AS marketing_vs_5y_avg,
-    safe_divide(e."Selling General & Admin Expenses/Total (FQ)",
-                e."Selling General & Admin Expenses/Total (5YAVGFQ)")                                  AS sga_vs_5y_avg,
-
-    -- =========================================================================
-    -- TBV ENHANCED FEATURES (calc_tangible_book_features) - ENHANCED
-    -- =========================================================================
-    e."TBV (FY)"                                                                                       AS tangible_book_value_fy,
-    e."TBV (LTM)"                                                                                      AS tangible_book_value_ltm,
-    pct_change(e."TBV (LTM)", e."TBV (FY)")                                                            AS tbv_yoy_growth,
-
-    -- =========================================================================
-    -- METADATA
-    -- =========================================================================
-    CURRENT_TIMESTAMP                                                                                  AS calculated_at
-
-FROM postgres.public.equities e;
-
--- Create indexes on the materialized view for common query patterns
-CREATE INDEX IF NOT EXISTS idx_mv_all_stock_features_isin ON mv_all_stock_features (isin);
-CREATE INDEX IF NOT EXISTS idx_mv_all_stock_features_ticker ON mv_all_stock_features (ticker);
-CREATE INDEX IF NOT EXISTS idx_mv_all_stock_features_piotroski ON mv_all_stock_features (piotroski_f_score);
-CREATE INDEX IF NOT EXISTS idx_mv_all_stock_features_quality ON mv_all_stock_features (accounting_quality_score);
-CREATE INDEX IF NOT EXISTS idx_mv_all_stock_features_momentum ON mv_all_stock_features (price_momentum_1y);
+COMMENT ON FUNCTION refresh_all_stock_features() IS
+    'Refreshes the mv_all_stock_features materialized view concurrently (non-blocking).
+    Call periodically after equities table updates.';
 
 -- =============================================================================
 -- SECTION 2: FEATURE REGISTRY METADATA TABLE (ENHANCED)
@@ -6079,6 +7287,7 @@ REFRESH MATERIALIZED VIEW mv_all_stock_features;
 -- Add a unique index for concurrent refresh capability
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_all_stock_features_isin_unique
     ON mv_all_stock_features (isin);
+
 
 
 

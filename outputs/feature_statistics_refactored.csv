@@ -1,0 +1,6 @@
+count,mean             ,median,std               ,min ,max ,q25 ,q75 ,positive_pct,missing_pct,category        ,feature
+5    ,39.38000000000001,32.1  ,16.594487036362406,25.3,65.8,28.5,45.2,100.0       ,0.0        ,Valuation Ratios,p_e_ratio
+5    ,6.8              ,7.0   ,1.3038404810405297,5.0 ,8.0 ,6.0 ,8.0 ,100.0       ,0.0        ,Quality & Risk  ,piotroski_f_score
+5    ,78.0             ,82.0  ,11.157956802210698,60.0,88.0,75.0,85.0,100.0       ,0.0        ,Quality & Risk  ,distress_risk_score
+5    ,70.6             ,75.0  ,10.4546640309481  ,55.0,80.0,65.0,78.0,100.0       ,0.0        ,Earnings Quality,eps_trajectory_score
+5    ,4.4              ,5.0   ,0.8944271909999159,3.0 ,5.0 ,4.0 ,5.0 ,100.0       ,0.0        ,Cash Flow       ,fcf_positive_years

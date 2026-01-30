@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
@@ -7,7 +8,7 @@
   <component name="ProjectResources">
     <xml-schema-version>XMLSchema_1_1</xml-schema-version>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_25" project-jdk-name="Python 3.14" project-jdk-type="Python SDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_25" project-jdk-name="Python 3.14 (Finance_Analytics_Platform)" project-jdk-type="Python SDK">
     <output url="file://$PROJECT_DIR$" />
   </component>
   <component name="PyCharmDSProjectLayout">
@@ -21,6 +22,19 @@
   </component>
   <component name="PythonCompatibilityInspectionAdvertiser">
     <option name="version" value="3" />
+  </component>
+  <component name="RMarkdownSettings">
+    <option name="renderProfiles">
+      <map>
+        <entry key="file://$PROJECT_DIR$/reference material/market_analytics_enhancements.rmd">
+          <value>
+            <RMarkdownRenderProfile>
+              <option name="outputDirectoryUrl" value="file://$PROJECT_DIR$/reference material" />
+            </RMarkdownRenderProfile>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="RuffConfiguration">
     <option name="enabled" value="true" />

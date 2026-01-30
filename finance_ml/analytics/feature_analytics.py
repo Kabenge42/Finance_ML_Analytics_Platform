@@ -1,0 +1,1347 @@
+"""
+Feature Analytics Module.
+
+This module provides interactive visualizations, probabilistic models,
+and statistical analytics for financial feature analysis based on the
+feature_analytics.ipynb notebook enhancements.
+
+Functions:
+    - load_feature_data_from_db: Load feature data from PostgreSQL database
+    - backfill_feature_columns: Normalize and backfill missing columns
+    - create_interactive_momentum_dashboard: Interactive Plotly momentum analysis
+    - create_interactive_valuation_heatmap: Interactive valuation heatmap by industry
+    - create_leverage_liquidity_quadrant: Leverage vs liquidity quadrant analysis
+    - monte_carlo_price_target_simulation: Monte Carlo fair value simulation
+    - bayesian_earnings_beat_model: Bayesian earnings beat probability
+    - analyze_distress_distribution: Distress risk distribution analysis
+    - create_composite_quality_score: Multi-factor quality scoring
+    - create_summary_dashboard: KPI summary dashboard
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Optional, TYPE_CHECKING
+
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import scipy.stats as stats
+from plotly.graph_objs import Figure
+from plotly.subplots import make_subplots
+
+# Optional import for database access
+if TYPE_CHECKING:
+    from sqlalchemy import Engine
+
+try:
+    from sqlalchemy import create_engine
+except ImportError:  # pragma: no cover
+    create_engine = None  # type: ignore
+
+# Dark theme for Plotly
+PLOTLY_TEMPLATE = "plotly_dark"
+px.defaults.template = PLOTLY_TEMPLATE
+
+
+def load_feature_data_from_db(
+    db_url: Optional[str] = None,
+    earnings_date_filter: str = "2026-01-01",
+    limit: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Load feature data from PostgreSQL database materialized view.
+
+    Loads data from public.mv_all_stock_features with optional filtering
+    by next_earnings date. This function replicates the SQL query from
+    feature_analytics.ipynb notebook.
+
+    Parameters
+    ----------
+    db_url : str, optional
+        SQLAlchemy database URL (e.g., postgresql+psycopg2://user:pass@host:5432/postgres)
+        If None, reads from DB_URL environment variable
+    earnings_date_filter : str, default "2026-01-01"
+        Filter stocks with next_earnings >= this date (ISO format: YYYY-MM-DD)
+    limit : int, optional
+        Maximum number of rows to return
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with feature data from mv_all_stock_features
+
+    Raises
+    ------
+    ImportError
+        If SQLAlchemy or psycopg2 not available
+    ValueError
+        If db_url is not provided and DB_URL environment variable is not set
+
+    Examples
+    --------
+    >>> # Load from environment variable
+    >>> df = load_feature_data_from_db()
+    >>>
+    >>> # Load with explicit URL
+    >>> db_url = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
+    >>> df = load_feature_data_from_db(db_url=db_url)
+    >>>
+    >>> # Load with custom date filter
+    >>> df = load_feature_data_from_db()
+    """
+    if create_engine is None:
+        raise ImportError(
+            "SQLAlchemy not available. Install psycopg2-binary and SQLAlchemy to use database loading."
+        )
+
+    # Resolve database URL
+    if db_url is None:
+        db_url = os.environ.get("DB_URL")
+        if db_url is None:
+            raise ValueError(
+                "db_url parameter not provided and DB_URL environment variable not set. "
+                "Please provide a database URL or set the DB_URL environment variable."
+            )
+
+    # Resolve schema from environment, default to public
+    schema = os.environ.get("DB_SCHEMA", "public")
+    view_name = "mv_all_stock_features"
+    view_ref = f"{schema}.{view_name}"
+
+    logging.info(
+        "Loading feature data from %s (view: %s, earnings_date_filter: %s)",
+        db_url.split("@")[-1] if "@" in db_url else db_url,  # Hide credentials in log
+        view_ref,
+        earnings_date_filter,
+    )
+
+    # Create SQLAlchemy engine
+    engine = create_engine(db_url)
+
+    # Build SQL query matching the notebook
+    base_query = f"""
+        SELECT *
+        FROM {view_ref}
+        WHERE next_earnings >= DATE '{earnings_date_filter}'
+        ORDER BY next_earnings
+    """
+
+    # Apply limit if specified
+    if limit is not None:
+        query = f"{base_query} LIMIT {int(limit)}"
+    else:
+        query = base_query
+
+    # Execute query and load into DataFrame
+    df = pd.read_sql(query, engine)
+
+    logging.info("Loaded %d rows from %s", len(df), view_ref)
+
+    return df
+
+
+def backfill_feature_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalize and backfill missing feature columns.
+
+    This function replicates the data normalization and backfill logic
+    from feature_analytics.ipynb notebook to ensure compatibility with
+    visualization functions.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame loaded from database
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with backfilled columns
+
+    Notes
+    -----
+    Backfill operations:
+    - analyst_neutral_pct: Calculated from bullish and bearish percentages
+    - inventory_turnover_mv: Mapped from inventory_turnover
+    - inventory_days: Calculated from inventory_turnover_mv
+    - rnd_intensity_ltm: Mapped from rnd_intensity or rnd_to_revenue
+    - tangible_book_value_ltm: Mapped from tangible_book_value
+    - goodwill_concentration: Mapped from goodwill_to_equity or goodwill_to_assets_pct
+    - industry: Mapped from sector if missing
+    """
+    df = df.copy()
+
+    # Backfill analyst_neutral_pct if missing but components exist
+    if "analyst_neutral_pct" not in df.columns:
+        bullish = df.get("analyst_bullish_pct")
+        bearish = df.get("analyst_bearish_pct")
+        if bullish is not None and bearish is not None:
+            neutral = 100 - bullish - bearish
+            df["analyst_neutral_pct"] = neutral.clip(lower=0, upper=100)
+            logging.info("Backfilled analyst_neutral_pct from bullish/bearish percentages")
+
+    # Map inventory_turnover to expected column name
+    if "inventory_turnover_mv" not in df.columns:
+        if "inventory_turnover" in df.columns:
+            df["inventory_turnover_mv"] = df["inventory_turnover"]
+            logging.info("Mapped inventory_turnover to inventory_turnover_mv")
+
+    # Calculate inventory_days from turnover
+    if "inventory_days" not in df.columns:
+        turnover_col = df.get("inventory_turnover_mv")
+        if turnover_col is not None:
+            turnover = turnover_col.replace(0, pd.NA)
+            df["inventory_days"] = 365 / turnover
+            logging.info("Calculated inventory_days from inventory_turnover_mv")
+
+    # Map R&D intensity columns
+    if "rnd_intensity_ltm" not in df.columns:
+        for src_col in ["rnd_intensity", "rnd_to_revenue"]:
+            if src_col in df.columns:
+                df["rnd_intensity_ltm"] = df[src_col]
+                logging.info("Mapped %s to rnd_intensity_ltm", src_col)
+                break
+
+    # Map tangible book value columns
+    if "tangible_book_value_ltm" not in df.columns:
+        if "tangible_book_value" in df.columns:
+            df["tangible_book_value_ltm"] = df["tangible_book_value"]
+            logging.info("Mapped tangible_book_value to tangible_book_value_ltm")
+
+    # Map goodwill concentration
+    if "goodwill_concentration" not in df.columns:
+        for src_col in ["goodwill_to_equity", "goodwill_to_assets_pct"]:
+            if src_col in df.columns:
+                df["goodwill_concentration"] = df[src_col]
+                logging.info("Mapped %s to goodwill_concentration", src_col)
+                break
+
+    # Ensure industry column exists (prefer industry over sector)
+    if "industry" not in df.columns and "sector" in df.columns:
+        df["industry"] = df["sector"]
+        logging.info("Mapped sector to industry")
+
+    logging.info("Backfill complete. Total columns: %d", len(df.columns))
+
+    return df
+
+
+def safe_get_column(df: pd.DataFrame, *column_names: str, default=None):
+    """
+    Safely retrieve a column from DataFrame, trying multiple possible names.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Source DataFrame
+    column_names : str
+        One or more column names to try (in order of preference)
+    default : any
+        Default value if no column is found
+
+    Returns
+    -------
+    pd.Series or default
+        The first matching column or the default value
+    """
+    for name in column_names:
+        if name in df.columns:
+            return df[name]
+    return default
+
+
+def ensure_subplot_data(
+    fig: go.Figure, row: int, col: int, has_data: bool, placeholder_text: str = "No data available"
+) -> None:
+    """
+    Add placeholder annotation if subplot has no data.
+
+    Parameters
+    ----------
+    fig : go.Figure
+        Plotly figure to modify
+    row : int
+        Subplot row (1-indexed)
+    col : int
+        Subplot column (1-indexed)
+    has_data : bool
+        Whether the subplot has valid data
+    placeholder_text : str
+        Text to display if no data
+    """
+    if not has_data:
+        # Calculate approximate position for annotation
+        x_pos = (col - 0.5) / 2
+        y_pos = 1 - (row - 0.5) / 2
+        fig.add_annotation(
+            text=placeholder_text,
+            x=x_pos,
+            y=y_pos,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=12, color="gray"),
+            bgcolor="rgba(0,0,0,0.5)",
+            borderpad=4,
+        )
+
+
+def create_interactive_momentum_dashboard(df: pd.DataFrame) -> Figure:
+    """
+    Create an interactive momentum analysis dashboard with hover details.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing momentum columns:
+        - price_momentum_1m, price_momentum_3m, price_momentum_6m
+        - range_52w_position
+        - ticker, name, industry
+
+    Returns
+    -------
+    Figure
+        Plotly Figure with 4 subplot panels:
+        1. Momentum distribution by period
+        2. 3-Month momentum by industry
+        3. 52-Week range position
+        4. Short vs medium-term momentum scatter
+    """
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Momentum Distribution by Period",
+            "3-Month Momentum by Industry",
+            "52-Week Range Position",
+            "Short vs Medium-Term Momentum",
+        ],
+        specs=[
+            [{"type": "histogram"}, {"type": "box"}],
+            [{"type": "histogram"}, {"type": "scatter"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.10,
+    )
+
+    momentum_cols = ["price_momentum_1m", "price_momentum_3m", "price_momentum_6m"]
+    colors = ["#3498db", "#e74c3c", "#2ecc71"]
+    labels = ["1-Month", "3-Month", "6-Month"]
+
+    # Panel 1: Overlaid momentum histograms
+    panel1_has_data = False
+    for col, color, label in zip(momentum_cols, colors, labels):
+        if col in df.columns:
+            data = df[col].dropna().clip(-50, 100)
+            if len(data) > 0:
+                panel1_has_data = True
+                fig.add_trace(
+                    go.Histogram(x=data, name=label, marker_color=color, opacity=0.6, nbinsx=50),
+                    row=1,
+                    col=1,
+                )
+
+    # Add placeholder if no data for panel 1
+    if not panel1_has_data:
+        fig.add_trace(
+            go.Histogram(x=[0], name="No Data", marker_color="#adb5bd", opacity=0.3),
+            row=1,
+            col=1,
+        )
+        fig.add_annotation(
+            text="No momentum data available",
+            x=0.25,
+            y=0.75,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=12, color="gray"),
+        )
+
+    # Panel 2: Box plot by industry (interactive)
+    panel2_has_data = False
+    if "industry" in df.columns and "price_momentum_3m" in df.columns:
+        valid_data = df.dropna(subset=["industry", "price_momentum_3m"])
+        if len(valid_data) > 0:
+            panel2_has_data = True
+            fig.add_trace(
+                go.Box(
+                    x=valid_data["industry"],
+                    y=valid_data["price_momentum_3m"].clip(-50, 100),
+                    marker_color="#3498db",
+                    name="3M Momentum",
+                    boxpoints="outliers",
+                ),
+                row=1,
+                col=2,
+            )
+
+    if not panel2_has_data:
+        fig.add_trace(
+            go.Box(x=["N/A"], y=[0], marker_color="#adb5bd", name="No Data"),
+            row=1,
+            col=2,
+        )
+
+    # Panel 3: 52-week range position
+    panel3_has_data = False
+    if "range_52w_position" in df.columns:
+        range_data = df["range_52w_position"].dropna()
+        if len(range_data) > 0:
+            panel3_has_data = True
+            fig.add_trace(
+                go.Histogram(
+                    x=range_data,
+                    nbinsx=30,
+                    marker_color="#9b59b6",
+                    name="52W Position",
+                    hovertemplate="Position: %{x:.2f}<br>Count: %{y}<extra></extra>",
+                ),
+                row=2,
+                col=1,
+            )
+            fig.add_vline(
+                x=range_data.median(),
+                line_dash="dash",
+                line_color="#e74c3c",
+                annotation_text=f"Median: {range_data.median():.2f}",
+                row=2,
+                col=1,
+            )
+
+    if not panel3_has_data:
+        fig.add_trace(
+            go.Histogram(x=[0.5], name="No Data", marker_color="#adb5bd", opacity=0.3),
+            row=2,
+            col=1,
+        )
+
+    # Panel 4: Scatter with hover details
+    panel4_has_data = False
+    if "price_momentum_1m" in df.columns and "price_momentum_6m" in df.columns:
+        valid_mask = df["price_momentum_1m"].notna() & df["price_momentum_6m"].notna()
+        scatter_cols = ["price_momentum_1m", "price_momentum_6m"]
+        optional_cols = ["ticker", "name", "industry"]
+        available_cols = scatter_cols + [c for c in optional_cols if c in df.columns]
+
+        scatter_df = df.loc[valid_mask, available_cols].copy()
+        scatter_df["price_momentum_1m"] = scatter_df["price_momentum_1m"].clip(-50, 100)
+        scatter_df["price_momentum_6m"] = scatter_df["price_momentum_6m"].clip(-50, 200)
+
+        if len(scatter_df) > 0:
+            panel4_has_data = True
+            # Build hover template dynamically based on available columns
+            hover_parts = []
+            customdata_cols = []
+            if "ticker" in scatter_df.columns:
+                hover_parts.append("<b>%{text}</b>")
+            if "name" in scatter_df.columns:
+                hover_parts.append("%{customdata[0]}")
+                customdata_cols.append("name")
+            if "industry" in scatter_df.columns:
+                idx = len(customdata_cols)
+                hover_parts.append(f"Industry: %{{customdata[{idx}]}}")
+                customdata_cols.append("industry")
+            hover_parts.extend(["1M: %{x:.1f}%", "6M: %{y:.1f}%"])
+
+            customdata = (
+                np.stack([scatter_df[c] for c in customdata_cols], axis=-1)
+                if customdata_cols
+                else None
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=scatter_df["price_momentum_1m"],
+                    y=scatter_df["price_momentum_6m"],
+                    mode="markers",
+                    marker=dict(size=5, opacity=0.4, color="#3498db"),
+                    text=scatter_df.get("ticker", None),
+                    customdata=customdata,
+                    hovertemplate="<br>".join(hover_parts) + "<extra></extra>",
+                    name="Stocks",
+                ),
+                row=2,
+                col=2,
+            )
+
+            # Reference lines for scatter
+            fig.add_hline(y=0, line_dash="dot", line_color="gray", opacity=0.5, row=2, col=2)
+            fig.add_vline(x=0, line_dash="dot", line_color="gray", opacity=0.5, row=2, col=2)
+
+    if not panel4_has_data:
+        fig.add_trace(
+            go.Scatter(
+                x=[0], y=[0], mode="markers", marker=dict(size=10, color="#adb5bd"), name="No Data"
+            ),
+            row=2,
+            col=2,
+        )
+
+    fig.update_layout(
+        height=800,
+        title_text="📈 Interactive Momentum Analysis Dashboard",
+        template=PLOTLY_TEMPLATE,
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+
+    fig.update_xaxes(title_text="Momentum (%)", row=1, col=1)
+    fig.update_xaxes(title_text="Industry", tickangle=-45, row=1, col=2)
+    fig.update_xaxes(title_text="52W Range Position", row=2, col=1)
+    fig.update_xaxes(title_text="1-Month Momentum (%)", row=2, col=2)
+    fig.update_yaxes(title_text="6-Month Momentum (%)", row=2, col=2)
+
+    return fig
+
+
+def create_interactive_valuation_heatmap(df: pd.DataFrame) -> Figure:
+    """
+    Create an interactive valuation heatmap with click-to-filter capability.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing valuation columns:
+        - p_e_ratio, p_b_ratio, ev_ebitda_ratio, ev_sales_ratio
+        - industry
+
+    Returns
+    -------
+    Figure
+        Plotly Figure with heatmap showing median valuation metrics by industry
+    """
+    valuation_cols = ["p_e_ratio", "p_b_ratio", "ev_ebitda_ratio", "ev_sales_ratio"]
+    val_labels = ["P/E", "P/B", "EV/EBITDA", "EV/Sales"]
+
+    # Filter out null industries
+    df_filtered = df[df["industry"].notna()] if "industry" in df.columns else df
+    sectors = sorted(df_filtered["industry"].dropna().unique())
+
+    # Build heatmap data
+    heatmap_data = []
+    hover_text = []
+
+    for sector in sectors:
+        sector_df = df_filtered[df_filtered["industry"] == sector]
+        row_vals = []
+        row_hover = []
+        for col, label in zip(valuation_cols, val_labels):
+            if col in sector_df.columns:
+                median_val = sector_df[col].median()
+                count = sector_df[col].notna().sum()
+                q25 = sector_df[col].quantile(0.25)
+                q75 = sector_df[col].quantile(0.75)
+            else:
+                median_val = 0
+                count = 0
+                q25 = 0
+                q75 = 0
+            row_vals.append(median_val if pd.notna(median_val) else 0)
+            row_hover.append(
+                f"<b>{sector}</b><br>{label}: {median_val:.1f}<br>"
+                + f"IQR: [{q25:.1f}, {q75:.1f}]<br>N={count}"
+            )
+        heatmap_data.append(row_vals)
+        hover_text.append(row_hover)
+
+    heatmap_array = np.array(heatmap_data)
+
+    # Normalize for color scale
+    min_vals = heatmap_array.min(axis=0)
+    max_vals = heatmap_array.max(axis=0)
+    heatmap_norm = (heatmap_array - min_vals) / (max_vals - min_vals + 1e-10)
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=heatmap_norm,
+            x=val_labels,
+            y=sectors,
+            text=np.round(heatmap_array, 1),
+            texttemplate="%{text}",
+            textfont={"size": 10},
+            customdata=hover_text,
+            hovertemplate="%{customdata}<extra></extra>",
+            colorscale="RdYlGn_r",
+            colorbar=dict(title="Relative<br>Valuation"),
+        )
+    )
+
+    fig.update_layout(
+        title="📊 Median Valuation Metrics by Industry<br><sup>Green=Cheaper, Red=Expensive (Normalized)</sup>",
+        height=max(600, len(sectors) * 25),
+        template=PLOTLY_TEMPLATE,
+        xaxis_title="Valuation Metric",
+        yaxis_title="Industry",
+    )
+
+    return fig
+
+
+def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
+    """
+    Interactive quadrant analysis of leverage vs liquidity with distress coloring.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing:
+        - debt_to_equity, current_ratio, distress_risk_score
+        - ticker, name, industry
+
+    Returns
+    -------
+    Figure
+        Plotly Figure with scatter plot showing leverage vs liquidity quadrants
+    """
+    required_cols = [
+        "ticker",
+        "name",
+        "industry",
+        "debt_to_equity",
+        "current_ratio",
+        "distress_risk_score",
+    ]
+    available_cols = [c for c in required_cols if c in df.columns]
+
+    plot_df = df[available_cols].dropna().copy()
+
+    if "debt_to_equity" in plot_df.columns:
+        plot_df["debt_to_equity"] = plot_df["debt_to_equity"].clip(0, 3)
+    if "current_ratio" in plot_df.columns:
+        plot_df["current_ratio"] = plot_df["current_ratio"].clip(0, 5)
+
+    fig = px.scatter(
+        plot_df,
+        x="debt_to_equity",
+        y="current_ratio",
+        color="distress_risk_score" if "distress_risk_score" in plot_df.columns else None,
+        color_continuous_scale="RdYlGn",
+        hover_data=(
+            ["ticker", "name", "industry"]
+            if all(c in plot_df.columns for c in ["ticker", "name", "industry"])
+            else None
+        ),
+        title="📉 Leverage vs Liquidity Quadrant Analysis",
+        labels={
+            "debt_to_equity": "Debt-to-Equity Ratio",
+            "current_ratio": "Current Ratio (Liquidity)",
+            "distress_risk_score": "Distress Risk Score",
+        },
+        height=650,
+    )
+
+    # Add quadrant lines
+    fig.add_hline(
+        y=1.5, line_dash="dash", line_color="#2ecc71", annotation_text="Healthy Liquidity (CR=1.5)"
+    )
+    fig.add_vline(
+        x=1.0, line_dash="dash", line_color="#e74c3c", annotation_text="High Leverage (D/E=1)"
+    )
+
+    # Add quadrant labels
+    fig.add_annotation(
+        x=0.3, y=4.5, text="✅ Low Risk", showarrow=False, font=dict(size=14, color="#2ecc71")
+    )
+    fig.add_annotation(
+        x=2.5, y=0.5, text="⚠️ High Risk", showarrow=False, font=dict(size=14, color="#e74c3c")
+    )
+    fig.add_annotation(
+        x=2.5, y=4.5, text="🔄 Mixed", showarrow=False, font=dict(size=12, color="#f39c12")
+    )
+    fig.add_annotation(
+        x=0.3, y=0.5, text="💧 Illiquid", showarrow=False, font=dict(size=12, color="#3498db")
+    )
+
+    fig.update_traces(marker=dict(size=6, opacity=0.6))
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+
+    return fig
+
+
+def monte_carlo_price_target_simulation(
+    df: pd.DataFrame,
+    n_simulations: int = 10000,
+    confidence_level: float = 0.95,
+    max_stocks: int = 500,
+) -> pd.DataFrame:
+    """
+    Monte Carlo simulation of price targets based on analyst spread.
+
+    Uses the analyst price target range (high/low/median) to model
+    uncertainty and generate probabilistic fair value estimates.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing:
+        - ticker, name, industry, last_price
+        - price_target, price_target_high, price_target_low, price_target_median
+    n_simulations : int, default 10000
+        Number of Monte Carlo simulations per stock
+    confidence_level : float, default 0.95
+        Confidence level for VaR calculation
+    max_stocks : int, default 100
+        Maximum number of stocks to simulate (for performance)
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with simulation results including:
+        - ticker, name, industry, last_price
+        - expected_upside_pct, upside_std, var_5_pct
+        - prob_positive_upside, risk_reward_ratio
+    """
+    np.random.seed(42)
+
+    results = []
+
+    required_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
+    valid_df = df.dropna(subset=required_cols)
+
+    for _, row in valid_df.head(max_stocks).iterrows():
+        pt_low = row["price_target_low"]
+        pt_high = row["price_target_high"]
+        pt_median = row.get("price_target_median", row["price_target"])
+        last_price = row["last_price"]
+
+        if pt_high <= pt_low or last_price <= 0:
+            continue
+
+        # Model price target as triangular distribution (low, mode=median, high)
+        simulated_pts = np.random.triangular(pt_low, pt_median, pt_high, n_simulations)
+
+        # Calculate simulated upside
+        simulated_upside = (simulated_pts - last_price) / last_price * 100
+
+        # Statistics
+        var_5 = np.percentile(simulated_upside, 5)
+        expected_upside = np.mean(simulated_upside)
+        upside_std = np.std(simulated_upside)
+        prob_positive = (simulated_upside > 0).mean() * 100
+
+        results.append(
+            {
+                "ticker": row.get("ticker", ""),
+                "name": row.get("name", ""),
+                "industry": row.get("industry", ""),
+                "last_price": last_price,
+                "pt_median": pt_median,
+                "pt_spread": pt_high - pt_low,
+                "expected_upside_pct": expected_upside,
+                "upside_std": upside_std,
+                "var_5_pct": var_5,  # 5% Value at Risk
+                "prob_positive_upside": prob_positive,
+                "risk_reward_ratio": expected_upside / upside_std if upside_std > 0 else 0,
+            }
+        )
+
+    return pd.DataFrame(results)
+
+
+def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataFrame:
+    """
+    Bayesian model for earnings beat probability.
+
+    Uses EPS positive streak as prior evidence and updates posterior
+    based on recent performance.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing:
+        - ticker, name, industry
+        - eps_positive_streak (number of positive quarters in last n_total)
+    n_total : int, default 5
+        Total number of quarters in the observation window
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with Bayesian model results:
+        - ticker, name, industry, eps_positive_streak
+        - posterior_beat_prob, model_confidence, map_estimate
+    """
+    # Prior: Uniform belief across probability grid
+    p_grid = np.arange(0.1, 1.0, 0.1)  # 9 parameter values
+    uniform_prior = 1 / len(p_grid)
+
+    results = []
+
+    streak_col = "eps_positive_streak"
+    if streak_col not in df.columns:
+        return pd.DataFrame()
+
+    for _, row in df.dropna(subset=[streak_col]).iterrows():
+        n_beats = int(row[streak_col])
+        n_beats = min(n_beats, n_total)  # Cap at n_total
+
+        # Compute likelihood: P(data | p) = p^k * (1-p)^(n-k)
+        likelihoods = p_grid**n_beats * (1 - p_grid) ** (n_total - n_beats)
+
+        # Unnormalized posterior
+        posterior_unnorm = uniform_prior * likelihoods
+
+        # Normalize
+        posterior = posterior_unnorm / posterior_unnorm.sum()
+
+        # Posterior predictive: P(beat next quarter) = sum(p * posterior(p))
+        prob_beat_next = np.sum(p_grid * posterior)
+
+        # Confidence (inverse entropy proxy)
+        entropy = -np.sum(posterior * np.log(posterior + 1e-10))
+        confidence = 1 - entropy / np.log(len(p_grid))
+
+        results.append(
+            {
+                "ticker": row.get("ticker", ""),
+                "name": row.get("name", ""),
+                "industry": row.get("industry", ""),
+                "eps_positive_streak": n_beats,
+                "posterior_beat_prob": prob_beat_next,
+                "model_confidence": confidence,
+                "map_estimate": p_grid[np.argmax(posterior)],  # Maximum a posteriori
+            }
+        )
+
+    return pd.DataFrame(results)
+
+
+def analyze_distress_distribution(df: pd.DataFrame) -> Figure:
+    """
+    Analyze distress risk score distribution with tail risk metrics.
+
+    Uses concepts from MCMC sampling to understand distribution shape.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing:
+        - distress_risk_score
+        - industry
+
+    Returns
+    -------
+    Figure
+        Plotly Figure with 4 panels:
+        1. Distress risk score distribution with fitted normal
+        2. Empirical CDF
+        3. Q-Q plot vs normal
+        4. Tail risk by industry
+    """
+    distress_data = df["distress_risk_score"].dropna()
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Distress Risk Score Distribution",
+            "Empirical CDF",
+            "Q-Q Plot vs Normal",
+            "Tail Risk by Industry",
+        ],
+        specs=[
+            [{"type": "histogram"}, {"type": "scatter"}],
+            [{"type": "scatter"}, {"type": "bar"}],
+        ],
+    )
+
+    # Panel 1: Histogram with fitted distribution
+    fig.add_trace(
+        go.Histogram(
+            x=distress_data,
+            nbinsx=50,
+            name="Observed",
+            marker_color="#3498db",
+            opacity=0.7,
+            histnorm="probability density",
+        ),
+        row=1,
+        col=1,
+    )
+
+    # Fit normal for comparison
+    mu, std = distress_data.mean(), distress_data.std()
+    x_range = np.linspace(0, 100, 100)
+    normal_pdf = stats.norm.pdf(x_range, mu, std)
+    fig.add_trace(
+        go.Scatter(
+            x=x_range,
+            y=normal_pdf,
+            mode="lines",
+            name="Normal Fit",
+            line=dict(color="#e74c3c", dash="dash"),
+        ),
+        row=1,
+        col=1,
+    )
+
+    # Panel 2: Empirical CDF
+    sorted_data = np.sort(distress_data)
+    ecdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+    fig.add_trace(
+        go.Scatter(x=sorted_data, y=ecdf, mode="lines", name="ECDF", line=dict(color="#00bc8c")),
+        row=1,
+        col=2,
+    )
+    # Add risk thresholds
+    fig.add_vline(
+        x=30, line_dash="dot", line_color="#e74c3c", row=1, col=2, annotation_text="High Risk (<30)"
+    )
+    fig.add_vline(
+        x=70, line_dash="dot", line_color="#2ecc71", row=1, col=2, annotation_text="Low Risk (>70)"
+    )
+
+    # Panel 3: Q-Q Plot
+    theoretical_quantiles = stats.norm.ppf(np.linspace(0.01, 0.99, 100))
+    empirical_quantiles = np.percentile(distress_data, np.linspace(1, 99, 100))
+    fig.add_trace(
+        go.Scatter(
+            x=theoretical_quantiles,
+            y=empirical_quantiles,
+            mode="markers",
+            marker=dict(size=4, color="#9b59b6"),
+            name="Q-Q",
+        ),
+        row=2,
+        col=1,
+    )
+    # Reference line
+    fig.add_trace(
+        go.Scatter(
+            x=[-3, 3],
+            y=[mu - 3 * std, mu + 3 * std],
+            mode="lines",
+            line=dict(dash="dash", color="white"),
+            name="Normal Ref",
+        ),
+        row=2,
+        col=1,
+    )
+
+    # Panel 4: Tail risk by industry (% below 30)
+    if "industry" in df.columns:
+        tail_risk = (
+            df.groupby("industry")
+            .apply(lambda x: (x["distress_risk_score"] < 30).mean() * 100, include_groups=False)
+            .sort_values(ascending=False)
+        )
+
+        fig.add_trace(
+            go.Bar(
+                x=tail_risk.values[:15],
+                y=tail_risk.index[:15],
+                orientation="h",
+                marker_color="#e74c3c",
+                name="High Risk %",
+            ),
+            row=2,
+            col=2,
+        )
+
+    fig.update_layout(
+        height=800,
+        title_text="📉 Financial Distress Risk Distribution Analysis",
+        template=PLOTLY_TEMPLATE,
+        showlegend=True,
+    )
+
+    # Summary statistics annotation
+    var_5 = distress_data.quantile(0.05)
+    var_1 = distress_data.quantile(0.01)
+    high_risk_pct = (distress_data < 30).mean() * 100
+
+    fig.add_annotation(
+        x=0.02,
+        y=0.98,
+        xref="paper",
+        yref="paper",
+        text=f"<b>Risk Metrics</b><br>"
+        + f"VaR(5%): {var_5:.1f}<br>"
+        + f"VaR(1%): {var_1:.1f}<br>"
+        + f"High Risk (<30): {high_risk_pct:.1f}%",
+        showarrow=False,
+        align="left",
+        bgcolor="rgba(0,0,0,0.7)",
+        bordercolor="white",
+        borderwidth=1,
+    )
+
+    return fig
+
+
+def create_composite_quality_score(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a composite quality score combining multiple factors with probabilistic normalization.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing quality factor columns:
+        - piotroski_f_score, earnings_quality_composite_comp
+        - cash_flow_quality_score, distress_risk_score
+        - accounting_quality_score, dilution_score
+        - beta_stability_score, long_term_trend_score, eps_trajectory_score
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with composite scores:
+        - ticker, name, industry, market_cap
+        - composite_quality_score (0-100)
+        - quality_tier (Low, Below Avg, Above Avg, High)
+        Sorted by composite_quality_score descending
+    """
+    # Define factor weights by category
+    factor_weights = {
+        "piotroski_f_score": 0.15,
+        "earnings_quality_composite_comp": 0.15,
+        "cash_flow_quality_score": 0.12,
+        "distress_risk_score": 0.12,
+        "accounting_quality_score": 0.10,
+        "dilution_score": 0.08,
+        "beta_stability_score": 0.08,
+        "long_term_trend_score": 0.10,
+        "eps_trajectory_score": 0.10,
+    }
+
+    # Select base columns
+    base_cols = ["ticker", "name", "industry", "market_cap"]
+    available_base = [c for c in base_cols if c in df.columns]
+    result_df = df[available_base].copy()
+
+    # Normalize each factor to 0-100 percentile rank
+    for factor, weight in factor_weights.items():
+        if factor in df.columns:
+            # Percentile rank (0-100)
+            result_df[f"{factor}_pctl"] = df[factor].rank(pct=True) * 100
+        else:
+            result_df[f"{factor}_pctl"] = 50  # Neutral if missing
+
+    # Compute weighted composite score
+    composite = np.zeros(len(result_df))
+    total_weight = 0
+
+    for factor, weight in factor_weights.items():
+        pctl_col = f"{factor}_pctl"
+        if pctl_col in result_df.columns:
+            valid_mask = result_df[pctl_col].notna()
+            composite[valid_mask] += result_df.loc[valid_mask, pctl_col] * weight
+            total_weight += weight
+
+    result_df["composite_quality_score"] = (
+        composite / total_weight if total_weight > 0 else composite
+    )
+
+    # Add probability interpretation
+    result_df["quality_tier"] = pd.cut(
+        result_df["composite_quality_score"],
+        bins=[0, 30, 50, 70, 100],
+        labels=["Low", "Below Avg", "Above Avg", "High"],
+    )
+
+    # Drop percentile columns for cleaner output
+    pctl_cols = [c for c in result_df.columns if c.endswith("_pctl")]
+    result_df = result_df.drop(columns=pctl_cols)
+
+    return result_df.sort_values("composite_quality_score", ascending=False).reset_index(drop=True)
+
+
+def create_summary_dashboard(df: pd.DataFrame) -> Figure:
+    """
+    Create a KPI summary dashboard using Plotly indicators.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing various financial metrics
+
+    Returns
+    -------
+    Figure
+        Plotly Figure with 8 KPI indicator panels
+    """
+    fig = make_subplots(
+        rows=2,
+        cols=4,
+        specs=[[{"type": "indicator"}] * 4, [{"type": "indicator"}] * 4],
+        subplot_titles=[
+            "Total Stocks",
+            "Avg P/E",
+            "Median Upside",
+            "High Quality %",
+            "Profitable %",
+            "Strong F-Score",
+            "Bullish Sentiment",
+            "Low Distress %",
+        ],
+    )
+
+    # Row 1 indicators
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=len(df),
+            number={"suffix": "", "font": {"size": 40}},
+            title={"text": "Stocks Analyzed"},
+        ),
+        row=1,
+        col=1,
+    )
+
+    pe_median = df["p_e_ratio"].median() if "p_e_ratio" in df.columns else 0
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=pe_median,
+            number={"suffix": "x", "font": {"size": 40}},
+            title={"text": "Median P/E"},
+        ),
+        row=1,
+        col=2,
+    )
+
+    upside_median = df["upside_potential"].median() if "upside_potential" in df.columns else 0
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=upside_median,
+            number={"suffix": "%", "font": {"size": 40}},
+            title={"text": "Median Upside"},
+        ),
+        row=1,
+        col=3,
+    )
+
+    high_quality_pct = (
+        (df["earnings_quality_composite_comp"] > 70).mean() * 100
+        if "earnings_quality_composite_comp" in df.columns
+        else 0
+    )
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=high_quality_pct,
+            number={"suffix": "%", "font": {"size": 40}},
+            title={"text": "High Quality"},
+        ),
+        row=1,
+        col=4,
+    )
+
+    # Row 2 indicators
+    profitable_pct = (
+        (df["net_margin_pct"] > 0).mean() * 100 if "net_margin_pct" in df.columns else 0
+    )
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=profitable_pct,
+            number={"suffix": "%", "font": {"size": 40}},
+            title={"text": "Profitable"},
+        ),
+        row=2,
+        col=1,
+    )
+
+    strong_fscore_pct = (
+        (df["piotroski_f_score"] >= 7).mean() * 100 if "piotroski_f_score" in df.columns else 0
+    )
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=strong_fscore_pct,
+            number={"suffix": "%", "font": {"size": 40}},
+            title={"text": "Strong F-Score"},
+        ),
+        row=2,
+        col=2,
+    )
+
+    bullish_avg = df["analyst_bullish_pct"].mean() if "analyst_bullish_pct" in df.columns else 0
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=bullish_avg,
+            number={"suffix": "%", "font": {"size": 40}},
+            title={"text": "Avg Bullish %"},
+        ),
+        row=2,
+        col=3,
+    )
+
+    low_distress_pct = (
+        (df["distress_risk_score"] >= 70).mean() * 100 if "distress_risk_score" in df.columns else 0
+    )
+    fig.add_trace(
+        go.Indicator(
+            mode="number",
+            value=low_distress_pct,
+            number={"suffix": "%", "font": {"size": 40}},
+            title={"text": "Low Distress"},
+        ),
+        row=2,
+        col=4,
+    )
+
+    fig.update_layout(
+        height=400,
+        title_text="📊 Feature Analytics Summary Dashboard",
+        template=PLOTLY_TEMPLATE,
+    )
+
+    return fig
+
+
+def main():
+    """
+    Main execution function demonstrating feature analytics workflow.
+
+    This function demonstrates the complete workflow:
+    1. Load feature data from database
+    2. Backfill missing columns
+    3. Generate analytics visualizations
+    4. Export results
+
+    The workflow replicates the feature_analytics.ipynb notebook functionality.
+    """
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    print("=" * 80)
+    print("Feature Analytics - Database Loading and Visualization")
+    print("=" * 80)
+    print()
+
+    # Step 1: Load data from database
+    print("Step 1: Loading feature data from database...")
+    try:
+        df = load_feature_data_from_db(earnings_date_filter="2026-01-01")
+        print(f"✓ Loaded {len(df)} stocks with {len(df.columns)} features")
+        print(f"  Date range: {df['next_earnings'].min()} to {df['next_earnings'].max()}")
+    except Exception as e:
+        print(f"✗ Error loading data: {e}")
+        print("\nPlease ensure:")
+        print("  1. PostgreSQL is running")
+        print("  2. DB_URL environment variable is set")
+        print("  3. mv_all_stock_features view exists")
+        return
+
+    print()
+
+    # Step 2: Backfill missing columns
+    print("Step 2: Backfilling missing columns...")
+    df = backfill_feature_columns(df)
+    print(f"✓ Backfill complete. Total columns: {len(df.columns)}")
+    print()
+
+    # Step 3: Generate visualizations
+    print("Step 3: Generating analytics visualizations...")
+
+    try:
+        # Summary dashboard
+        print("  - Creating summary dashboard...")
+        fig_summary = create_summary_dashboard(df)
+        output_dir = "outputs"
+        os.makedirs(output_dir, exist_ok=True)
+        fig_summary.write_html(f"{output_dir}/feature_analytics_summary.html")
+        print(f"    ✓ Saved to {output_dir}/feature_analytics_summary.html")
+
+        # Momentum dashboard
+        print("  - Creating momentum dashboard...")
+        fig_momentum = create_interactive_momentum_dashboard(df)
+        fig_momentum.write_html(f"{output_dir}/feature_analytics_momentum.html")
+        print(f"    ✓ Saved to {output_dir}/feature_analytics_momentum.html")
+
+        # Valuation heatmap
+        if "industry" in df.columns:
+            print("  - Creating valuation heatmap...")
+            fig_valuation = create_interactive_valuation_heatmap(df)
+            fig_valuation.write_html(f"{output_dir}/feature_analytics_valuation.html")
+            print(f"    ✓ Saved to {output_dir}/feature_analytics_valuation.html")
+
+        # Leverage-liquidity quadrant
+        if all(col in df.columns for col in ["debt_to_equity", "current_ratio"]):
+            print("  - Creating leverage-liquidity quadrant...")
+            fig_leverage = create_leverage_liquidity_quadrant(df)
+            fig_leverage.write_html(f"{output_dir}/feature_analytics_leverage.html")
+            print(f"    ✓ Saved to {output_dir}/feature_analytics_leverage.html")
+
+        # Distress distribution
+        if "distress_risk_score" in df.columns:
+            print("  - Creating distress distribution analysis...")
+            fig_distress = analyze_distress_distribution(df)
+            fig_distress.write_html(f"{output_dir}/feature_analytics_distress.html")
+            print(f"    ✓ Saved to {output_dir}/feature_analytics_distress.html")
+
+    except Exception as e:
+        print(f"  ✗ Error generating visualizations: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+    print()
+
+    # Step 4: Generate advanced analytics
+    print("Step 4: Generating advanced analytics...")
+
+    try:
+        # Monte Carlo simulation
+        required_mc_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
+        if all(col in df.columns for col in required_mc_cols):
+            print("  - Running Monte Carlo price target simulation...")
+            mc_results = monte_carlo_price_target_simulation(df, max_stocks=50)
+            if len(mc_results) > 0:
+                mc_results.to_csv(f"{output_dir}/monte_carlo_simulation.csv", index=False)
+                print(
+                    f"    ✓ Saved {len(mc_results)} simulations to {output_dir}/monte_carlo_simulation.csv"
+                )
+                print(f"    Top 5 by risk-reward ratio:")
+                top5 = mc_results.nlargest(5, "risk_reward_ratio")[
+                    ["ticker", "name", "expected_upside_pct", "risk_reward_ratio"]
+                ]
+                print(top5.to_string(index=False))
+
+        # Bayesian earnings model
+        if "eps_positive_streak" in df.columns:
+            print("  - Running Bayesian earnings beat model...")
+            bayesian_results = bayesian_earnings_beat_model(df)
+            if len(bayesian_results) > 0:
+                bayesian_results.to_csv(f"{output_dir}/bayesian_earnings_model.csv", index=False)
+                print(
+                    f"    ✓ Saved {len(bayesian_results)} predictions to {output_dir}/bayesian_earnings_model.csv"
+                )
+
+        # Composite quality score
+        print("  - Creating composite quality scores...")
+        quality_scores = create_composite_quality_score(df)
+        quality_scores.to_csv(f"{output_dir}/composite_quality_scores.csv", index=False)
+        print(
+            f"    ✓ Saved {len(quality_scores)} scores to {output_dir}/composite_quality_scores.csv"
+        )
+        print(f"    Top 10 highest quality stocks:")
+        top10 = quality_scores.head(10)[
+            ["ticker", "name", "composite_quality_score", "quality_tier"]
+        ]
+        print(top10.to_string(index=False))
+
+    except Exception as e:
+        print(f"  ✗ Error generating advanced analytics: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+    print()
+    print("=" * 80)
+    print("Feature Analytics Complete!")
+    print(f"All outputs saved to: {output_dir}/")
+    print("=" * 80)
+
+
+if __name__ == "__main__":
+    main()

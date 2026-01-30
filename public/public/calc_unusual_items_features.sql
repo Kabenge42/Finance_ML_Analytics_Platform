@@ -28,20 +28,20 @@ SELECT "ISIN"                                     AS isin,
        COALESCE("Asset Writedown (LTM)", 0) +
        COALESCE("Restructuring Charges (LTM)", 0) AS total_unusual_items,
        -- Unusual items as % of revenue
-       safe_divide(
+       public.safe_divide(
                ABS(COALESCE("Other Unusual Items/Total (LTM)", 0) +
                    COALESCE("Impairment of Goodwill (LTM)", 0) +
                    COALESCE("Asset Writedown (LTM)", 0) +
                    COALESCE("Restructuring Charges (LTM)", 0)),
-               "Total Revenues (LTM)"
+               "Total Revenues (LTM)"::NUMERIC
        ) * 100                                    AS unusual_items_to_revenue,
        -- Unusual items as % of EBITDA
-       safe_divide(
+       public.safe_divide(
                ABS(COALESCE("Other Unusual Items/Total (LTM)", 0) +
                    COALESCE("Impairment of Goodwill (LTM)", 0) +
                    COALESCE("Asset Writedown (LTM)", 0) +
                    COALESCE("Restructuring Charges (LTM)", 0)),
-               ABS("EBITDA (LTM)")
+               ABS("EBITDA (LTM)")::NUMERIC
        ) * 100                                    AS unusual_items_to_ebitda,
        -- Flag if any unusual items present
        CASE
@@ -53,12 +53,12 @@ SELECT "ISIN"                                     AS isin,
            ELSE 0 END                             AS has_unusual_items_flag,
        -- Earnings quality impact (higher = better quality, less impacted by unusual items)
        clamp_score(
-               100 - safe_divide(
+               100 - public.safe_divide(
                              ABS(COALESCE("Other Unusual Items/Total (LTM)", 0) +
                                  COALESCE("Impairment of Goodwill (LTM)", 0) +
                                  COALESCE("Asset Writedown (LTM)", 0) +
                                  COALESCE("Restructuring Charges (LTM)", 0)),
-                             ABS("Net Income - (IS) (LTM)")
+                             ABS("Net Income - (IS) (LTM)")::NUMERIC
                      ) * 100
        )                                          AS earnings_quality_impact
 FROM postgres.public.equities
