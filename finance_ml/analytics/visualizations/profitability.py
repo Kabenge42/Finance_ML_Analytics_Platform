@@ -14,12 +14,15 @@ Feature Categories leveraged (from market_analytics.py):
 
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+# Dark theme for Plotly (consistent with feature_analytics.py)
+PLOTLY_TEMPLATE = "plotly_dark"
 
 
 def create_margin_waterfall_chart(
@@ -68,7 +71,7 @@ def create_margin_waterfall_chart(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Margin Waterfall Chart - No Data")
+        fig.update_layout(title="Margin Waterfall Chart - No Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Get values for the waterfall
@@ -146,6 +149,7 @@ def create_margin_waterfall_chart(
         yaxis_title="Margin (%)",
         showlegend=False,
         height=500,
+        template=PLOTLY_TEMPLATE,
     )
 
     return fig
@@ -188,7 +192,9 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="DuPont Decomposition - Insufficient Data")
+        fig.update_layout(
+            title="DuPont Decomposition - Insufficient Data", template=PLOTLY_TEMPLATE
+        )
         return fig
 
     # Prepare data
@@ -317,7 +323,12 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
         col=2,
     )
 
-    fig.update_layout(title="DuPont ROE Decomposition Dashboard", height=700, showlegend=False)
+    fig.update_layout(
+        title="DuPont ROE Decomposition Dashboard",
+        height=700,
+        showlegend=False,
+        template=PLOTLY_TEMPLATE,
+    )
 
     fig.update_xaxes(title_text="Net Margin (%)", row=1, col=1)
     fig.update_yaxes(title_text="ROE (%)", row=1, col=1)
@@ -375,7 +386,7 @@ def create_profitability_quadrant(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Profitability Quadrant - Missing Data")
+        fig.update_layout(title="Profitability Quadrant - Missing Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Prepare data
@@ -512,6 +523,7 @@ def create_profitability_quadrant(
         yaxis_title=f"{y_metric.upper()} (%)",
         height=600,
         showlegend=False,
+        template=PLOTLY_TEMPLATE,
     )
 
     return fig
@@ -555,7 +567,7 @@ def create_margin_trend_heatmap(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Margin Trend Heatmap - Missing Data")
+        fig.update_layout(title="Margin Trend Heatmap - Missing Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Calculate statistics by group
@@ -587,7 +599,9 @@ def create_margin_trend_heatmap(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Margin Trend Heatmap - Insufficient Data")
+        fig.update_layout(
+            title="Margin Trend Heatmap - Insufficient Data", template=PLOTLY_TEMPLATE
+        )
         return fig
 
     # Create heatmap data
@@ -626,6 +640,7 @@ def create_margin_trend_heatmap(
         xaxis_title="Metric",
         yaxis_title=group_col.title(),
         height=max(400, len(stats) * 25 + 100),
+        template=PLOTLY_TEMPLATE,
     )
 
     return fig

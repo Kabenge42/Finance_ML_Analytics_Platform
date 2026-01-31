@@ -14,8 +14,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Default Plotly template
-PLOTLY_TEMPLATE = "plotly_white"
+# Dark theme for Plotly (consistent with feature_analytics.py)
+PLOTLY_TEMPLATE = "plotly_dark"
 
 
 # =============================================================================
@@ -770,5 +770,172 @@ def create_ma_intensity_histogram(
         nbins=nbins,
         marginal="box",
     )
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+    return fig
+
+
+# =============================================================================
+# Multi-Category & Advanced Visualizations
+# =============================================================================
+
+
+def create_valuation_violin_plot(
+    df: pd.DataFrame,
+    metric: str = "p_e_ratio",
+    group_by: str = "industry",
+    max_val: Optional[float] = 100.0,
+) -> go.Figure:
+    """
+    Create violin plot for valuation metrics across different groups.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame
+    metric : str, default "p_e_ratio"
+        Valuation metric to plot
+    group_by : str, default "industry"
+        Grouping column
+    max_val : float, optional
+        Maximum value to show (to filter outliers)
+
+    Returns
+    -------
+    go.Figure
+        Plotly violin plot figure
+    """
+    df_plot = df.copy()
+    if max_val is not None and metric in df_plot.columns:
+        df_plot = df_plot[df_plot[metric] <= max_val]
+
+    fig = px.violin(
+        df_plot,
+        x=group_by,
+        y=metric,
+        color=group_by,
+        box=True,
+        points="all",
+        hover_data=["ticker", "name"],
+        title=f"{metric.replace('_', ' ').title()} Distribution by {group_by.title()}",
+    )
+    fig.update_layout(template=PLOTLY_TEMPLATE, showlegend=False)
+    fig.update_xaxes(tickangle=45)
+    return fig
+
+
+def create_quality_risk_radar_chart(
+    df: pd.DataFrame,
+    ticker: str,
+    metrics: Optional[list[str]] = None,
+) -> go.Figure:
+    """
+    Create radar chart for a specific stock's quality and risk metrics.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame
+    ticker : str
+        Ticker symbol to highlight
+    metrics : list, optional
+        List of metrics for radar axes. Defaults to key quality scores.
+
+    Returns
+    -------
+    go.Figure
+        Plotly radar chart figure
+    """
+    if metrics is None:
+        metrics = [
+            "piotroski_f_score",
+            "distress_risk_score",
+            "eps_trajectory_score",
+            "earnings_quality_score",
+            "cash_flow_quality_score",
+        ]
+
+    # Filter for the specific ticker
+    stock_data = df[df["ticker"] == ticker]
+    if stock_data.empty:
+        fig = go.Figure()
+        fig.add_annotation(text=f"Ticker {ticker} not found", showarrow=False)
+        return fig
+
+    # Prepare values (normalized to 0-100 where needed)
+    values = []
+    for m in metrics:
+        val = stock_data[m].iloc[0] if m in stock_data.columns else 0
+        if m == "piotroski_f_score":
+            val = (val / 9) * 100
+        values.append(val)
+
+    # Close the radar loop
+    metrics_label = [m.replace("_", " ").title() for m in metrics]
+    metrics_label.append(metrics_label[0])
+    values.append(values[0])
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatterpolar(
+            r=values,
+            theta=metrics_label,
+            fill="toself",
+            name=ticker,
+            line_color="cyan",
+        )
+    )
+
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 100]),
+        ),
+        showlegend=True,
+        title=f"Quality & Risk Radar: {ticker}",
+        template=PLOTLY_TEMPLATE,
+    )
+
+    return fig
+
+
+def create_leverage_liquidity_bubble_chart(
+    df: pd.DataFrame,
+    size_col: str = "market_cap",
+    color_by: str = "industry",
+) -> go.Figure:
+    """
+    Create bubble chart of leverage vs liquidity.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame
+    size_col : str, default "market_cap"
+        Column for bubble size
+    color_by : str, default "industry"
+        Column for bubble color
+
+    Returns
+    -------
+    go.Figure
+        Plotly bubble chart
+    """
+    fig = px.scatter(
+        df,
+        x="current_ratio",
+        y="debt_to_equity",
+        size=size_col,
+        color=color_by,
+        hover_data=["ticker", "name"],
+        title="Leverage (D/E) vs Liquidity (Current Ratio)",
+        labels={
+            "current_ratio": "Current Ratio (Liquidity)",
+            "debt_to_equity": "Debt to Equity (Leverage)",
+        },
+    )
+
+    # Add reference lines for healthy levels
+    fig.add_vline(x=1.5, line_dash="dash", line_color="green", annotation_text="Healthy Liquidity")
+    fig.add_hline(y=1.0, line_dash="dash", line_color="red", annotation_text="High Leverage")
+
     fig.update_layout(template=PLOTLY_TEMPLATE)
     return fig

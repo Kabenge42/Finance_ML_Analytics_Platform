@@ -126,6 +126,10 @@ try:
         create_capex_growth_scatter,
         create_investment_efficiency_boxplot,
         create_ma_intensity_histogram,
+        # Advanced/Multi-Category
+        create_valuation_violin_plot,
+        create_quality_risk_radar_chart,
+        create_leverage_liquidity_bubble_chart,
     )
 
     _category_exports = [
@@ -149,6 +153,9 @@ try:
         "create_capex_growth_scatter",
         "create_investment_efficiency_boxplot",
         "create_ma_intensity_histogram",
+        "create_valuation_violin_plot",
+        "create_quality_risk_radar_chart",
+        "create_leverage_liquidity_bubble_chart",
     ]
 except ImportError:
     _category_exports = []

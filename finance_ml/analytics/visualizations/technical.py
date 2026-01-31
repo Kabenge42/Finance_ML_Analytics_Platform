@@ -15,12 +15,13 @@ Feature Categories leveraged (from market_analytics.py lines 92-102):
 
 from __future__ import annotations
 
-from typing import Optional, List
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+# Dark theme for Plotly (consistent with feature_analytics.py)
+PLOTLY_TEMPLATE = "plotly_dark"
 
 
 def create_momentum_ribbon_chart(
@@ -71,7 +72,7 @@ def create_momentum_ribbon_chart(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Momentum Ribbon Chart - No Data")
+        fig.update_layout(title="Momentum Ribbon Chart - No Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Prepare data
@@ -124,7 +125,7 @@ def create_momentum_ribbon_chart(
         )
 
     # Add zero line
-    fig.add_hline(y=0, line_dash="solid", line_color="black", line_width=1)
+    fig.add_hline(y=0, line_dash="solid", line_color="white", line_width=1)
 
     fig.update_layout(
         title="Momentum Ribbon Chart - Multi-Period Comparison",
@@ -134,6 +135,7 @@ def create_momentum_ribbon_chart(
         height=500,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         xaxis_tickangle=-45,
+        template=PLOTLY_TEMPLATE,
     )
 
     return fig
@@ -175,7 +177,7 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="52-Week Range Distribution - No Data")
+        fig.update_layout(title="52-Week Range Distribution - No Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Create subplots
@@ -264,7 +266,12 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
             col=2,
         )
 
-    fig.update_layout(title="52-Week Range Position Analysis", height=700, showlegend=False)
+    fig.update_layout(
+        title="52-Week Range Position Analysis",
+        height=700,
+        showlegend=False,
+        template=PLOTLY_TEMPLATE,
+    )
 
     fig.update_xaxes(title_text="Range Position", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
@@ -317,7 +324,7 @@ def create_trend_strength_matrix(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Trend Strength Matrix - Missing Data")
+        fig.update_layout(title="Trend Strength Matrix - Missing Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Calculate statistics by group
@@ -357,7 +364,9 @@ def create_trend_strength_matrix(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Trend Strength Matrix - Insufficient Data")
+        fig.update_layout(
+            title="Trend Strength Matrix - Insufficient Data", template=PLOTLY_TEMPLATE
+        )
         return fig
 
     # Create heatmap data
@@ -404,6 +413,7 @@ def create_trend_strength_matrix(
         xaxis_title="Metric",
         yaxis_title=group_col.title(),
         height=max(400, len(stats) * 25 + 100),
+        template=PLOTLY_TEMPLATE,
     )
 
     return fig
@@ -454,7 +464,7 @@ def create_momentum_divergence_scatter(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Momentum Divergence - Missing Data")
+        fig.update_layout(title="Momentum Divergence - Missing Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Prepare data
@@ -513,7 +523,7 @@ def create_momentum_divergence_scatter(
             x=[min_val, max_val],
             y=[min_val, max_val],
             mode="lines",
-            line=dict(dash="dash", color="black", width=1),
+            line=dict(dash="dash", color="white", width=1),
             name="No Divergence",
             showlegend=True,
         ),
@@ -537,12 +547,13 @@ def create_momentum_divergence_scatter(
     # Add vertical lines for divergence thresholds
     fig.add_vline(x=10, line_dash="dash", line_color="green", row=1, col=2)
     fig.add_vline(x=-10, line_dash="dash", line_color="red", row=1, col=2)
-    fig.add_vline(x=0, line_dash="solid", line_color="black", row=1, col=2)
+    fig.add_vline(x=0, line_dash="solid", line_color="white", row=1, col=2)
 
     fig.update_layout(
         title="Momentum Divergence Analysis",
         height=500,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        template=PLOTLY_TEMPLATE,
     )
 
     fig.update_xaxes(title_text=f"Long-term ({long_term_col})", row=1, col=1)

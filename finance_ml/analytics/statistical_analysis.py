@@ -12,7 +12,7 @@ This module provides advanced statistical analysis including:
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -59,6 +59,7 @@ def bayesian_category_analysis(
     """
     results = {}
 
+    # Iterates features; computes and stores posterior statistics
     for feature in features:
         if feature not in df.columns:
             continue
@@ -274,6 +275,7 @@ def hierarchical_mcmc_by_sector(
     global_mean = global_data.mean()
     global_std = global_data.std()
 
+    # Computes sector‑level shrinkage toward global mean
     for sector in sectors:
         sector_data = df[df[sector_col] == sector][feature].dropna().values
         if len(sector_data) < 30:
@@ -337,6 +339,7 @@ def fit_distributions_by_category(
 
     results = {}
 
+    # Fits distributions; simulates scenarios; calculates risk metrics
     for feature in features:
         if feature not in df.columns:
             continue

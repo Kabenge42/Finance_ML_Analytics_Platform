@@ -2121,8 +2121,8 @@ SANOMA    ,Sanoma Oyj                                                           
 ILMN      ,Illumina Inc.                                                                          ,Life Sciences Tools and Services                     ,22872.63     ,56.44009037083203      ,Above Avg
 AEP       ,American Electric Power Company Inc.                                                   ,Electric Utilities                                   ,63669.41     ,56.43650669990652      ,Above Avg
 ATB       ,Antibiotice S.A.                                                                       ,Pharmaceuticals                                      ,369.65       ,56.4350264880025       ,Above Avg
-NOVN      ,Novartis AG                                                                            ,Pharmaceuticals                                      ,285728.61    ,56.422639451542544     ,Above Avg
 PPA       ,Piraeus Port Authority S.A.                                                            ,Transportation Infrastructure                        ,1203.7       ,56.422639451542544     ,Above Avg
+NOVN      ,Novartis AG                                                                            ,Pharmaceuticals                                      ,285728.61    ,56.422639451542544     ,Above Avg
 OTH       ,One Tech Holding S.A.                                                                  ,Electrical Equipment                                 ,256.96       ,56.42147086319726      ,Above Avg
 1898      ,China Coal Energy Company Limited                                                      ,Oil Gas and Consumable Fuels                         ,23983.84     ,56.41882206294797      ,Above Avg
 BIOGB     ,BioGaia AB (publ)                                                                      ,Biotechnology                                        ,1268.01      ,56.418666251168595     ,Above Avg
@@ -2171,8 +2171,8 @@ TIMECOM   ,TIME dotCom Berhad                                                   
 9649      ,Jamjoom Fashion Trading Company                                                        ,Specialty Retail                                     ,322.73       ,56.16695232159551      ,Above Avg
 REJLB     ,Rejlers AB (publ)                                                                      ,Professional Services                                ,462.82       ,56.16562792147087      ,Above Avg
 FMG       ,Fortescue Ltd                                                                          ,Metals and Mining                                    ,46782.71     ,56.16508258024307      ,Above Avg
-MDLN      ,Medline Inc.                                                                           ,Health Care Equipment and Supplies                   ,59169.14     ,56.16110937986912      ,Above Avg
 7769      ,Hon. Precision Inc.                                                                    ,Semiconductors and Semiconductor Equipment           ,21505.58     ,56.16110937986912      ,Above Avg
+MDLN      ,Medline Inc.                                                                           ,Health Care Equipment and Supplies                   ,59169.14     ,56.16110937986912      ,Above Avg
 DRX       ,Drax Group plc                                                                         ,Independent Power and Renewable Electricity Producers,4208.28      ,56.15822686195077      ,Above Avg
 ADUS      ,Addus HomeCare Corporation                                                             ,Health Care Providers and Services                   ,1856.76      ,56.15308507323155      ,Above Avg
 BIJ       ,Bijou Brigitte modische Accessoires Aktiengesellschaft                                 ,Textiles Apparel and Luxury Goods                    ,404.65       ,56.14942349641633      ,Above Avg
@@ -2333,8 +2333,8 @@ DEME      ,DEME Group NV                                                        
 857       ,PetroChina Company Limited                                                             ,Oil Gas and Consumable Fuels                         ,279181.55    ,55.34130570271113      ,Above Avg
 SJVN      ,SJVN Limited                                                                           ,Electric Utilities                                   ,3097.99      ,55.34107198504207      ,Above Avg
 WEC       ,WEC Energy Group Inc.                                                                  ,Multi-Utilities                                      ,35915.74     ,55.34099407915239      ,Above Avg
-728       ,China Telecom Corporation Limited                                                      ,Diversified Telecommunication Services               ,76006.34     ,55.33889062013089      ,Above Avg
 688548    ,Guangzhou Guanggang Gases & Energy Co.Ltd.                                             ,Chemicals                                            ,3825.33      ,55.33889062013089      ,Above Avg
+728       ,China Telecom Corporation Limited                                                      ,Diversified Telecommunication Services               ,76006.34     ,55.33889062013089      ,Above Avg
 301301    ,Yili Chuanning Biotechnology Co.Ltd.                                                   ,Biotechnology                                        ,3533.86      ,55.32151760673108      ,Above Avg
 GL9       ,Glanbia plc                                                                            ,Food Products                                        ,4729.66      ,55.32081645372391      ,Above Avg
 COROMANDEL,Coromandel International Limited                                                       ,Chemicals                                            ,7223.58      ,55.31949205359926      ,Above Avg
@@ -2403,8 +2403,8 @@ CNQ       ,Canadian Natural Resources Limited                                   
 532343    ,TVS Motor Company Limited                                                              ,Automobiles                                          ,18895.72     ,54.946322842006865     ,Above Avg
 300433    ,Lens Technology Co. Ltd.                                                               ,Electronic Equipment Instruments and Components      ,28011.41     ,54.9360392645684       ,Above Avg
 APTV      ,Aptiv PLC                                                                              ,Automobile Components                                ,17033.54     ,54.930741664069814     ,Above Avg
-SFBT      ,Société de Fabrication des Boissons de Tunisie Société Anonyme                         ,Beverages                                            ,1298.73      ,54.92637893424743      ,Above Avg
 5741      ,UACJ Corporation                                                                       ,Metals and Mining                                    ,2931.54      ,54.92637893424743      ,Above Avg
+SFBT      ,Société de Fabrication des Boissons de Tunisie Société Anonyme                         ,Beverages                                            ,1298.73      ,54.92637893424743      ,Above Avg
 BJRI      ,BJ's Restaurants Inc.                                                                  ,Hotels Restaurants and Leisure                       ,881.11       ,54.925599875350585     ,Above Avg
 RIPLEY    ,Ripley Corp S.A.                                                                       ,Broadline Retail                                     ,994.68       ,54.912823309442196     ,Above Avg
 SL        ,Sanlorenzo S.p.A.                                                                      ,Leisure Products                                     ,1368.94      ,54.89513867248365      ,Above Avg
@@ -2918,8 +2918,8 @@ CIVI      ,Civitas Resources Inc.                                               
 EA        ,Electronic Arts Inc.                                                                   ,Entertainment                                        ,50866.06     ,52.43806481770023      ,Above Avg
 A001040   ,CJ Corporation                                                                         ,Industrial Conglomerates                             ,4513.83      ,52.43518229978187      ,Above Avg
 3899      ,CIMC Enric Holdings Limited                                                            ,Machinery                                            ,2989.56      ,52.43401371143659      ,Above Avg
-603899    ,Shanghai M&G Stationery Inc.                                                           ,Commercial Services and Supplies                     ,3723.38      ,52.43268931131194      ,Above Avg
 603737    ,SKSHU Paint Co.Ltd.                                                                    ,Chemicals                                            ,6146.36      ,52.43268931131194      ,Above Avg
+603899    ,Shanghai M&G Stationery Inc.                                                           ,Commercial Services and Supplies                     ,3723.38      ,52.43268931131194      ,Above Avg
 HEM       ,Hemnet Group AB (publ)                                                                 ,Interactive Media and Services                       ,1666.54      ,52.42482081645374      ,Above Avg
 REY       ,Reply S.p.A.                                                                           ,IT Services                                          ,4845.73      ,52.42108133374884      ,Above Avg
 PAX       ,Paxman AB (publ)                                                                       ,Health Care Equipment and Supplies                   ,130.59       ,52.416406980367725     ,Above Avg
@@ -3866,8 +3866,8 @@ SNP       ,OMV Petrom S.A.                                                      
 000703    ,Hengyi Petrochemical Co. Ltd.                                                          ,Chemicals                                            ,5785.6       ,47.07307572452478      ,Below Avg
 601016    ,CECEP Wind-power Corporation Co.Ltd.                                                   ,Independent Power and Renewable Electricity Producers,2929.13      ,47.06762231224682      ,Below Avg
 AMGN      ,Amgen Inc.                                                                             ,Biotechnology                                        ,184666.56    ,47.06629791212217      ,Below Avg
-IOSP      ,Innospec Inc.                                                                          ,Chemicals                                            ,2017.14      ,47.060377064506085     ,Below Avg
 MDB       ,MongoDB Inc.                                                                           ,IT Services                                          ,30442.15     ,47.060377064506085     ,Below Avg
+IOSP      ,Innospec Inc.                                                                          ,Chemicals                                            ,2017.14      ,47.060377064506085     ,Below Avg
 REP       ,Repsol S.A.                                                                            ,Oil Gas and Consumable Fuels                         ,21466.98     ,47.05858522904332      ,Below Avg
 METC      ,Ramaco Resources Inc.                                                                  ,Metals and Mining                                    ,1238.26      ,47.03669367404177      ,Below Avg
 CG        ,Centerra Gold Inc.                                                                     ,Metals and Mining                                    ,3935.1       ,47.03170769710191      ,Below Avg
@@ -4112,8 +4112,8 @@ CNC       ,Centene Corporation                                                  
 600754    ,Shanghai Jin Jiang International Hotels Co. Ltd.                                       ,Hotels Restaurants and Leisure                       ,3737.21      ,45.61701464630727      ,Below Avg
 QQ        ,QinetiQ Group plc                                                                      ,Aerospace and Defense                                ,3687.29      ,45.60976939856654      ,Below Avg
 ACC       ,ACC Limited                                                                            ,Construction Materials                               ,3431.14      ,45.60431598628856      ,Below Avg
-LTTS      ,L&T Technology Services Limited                                                        ,Professional Services                                ,4333.66      ,45.604004362729825     ,Below Avg
 601677    ,Henan Mingtai Al.Industrial Co.Ltd.                                                    ,Metals and Mining                                    ,3178.61      ,45.604004362729825     ,Below Avg
+LTTS      ,L&T Technology Services Limited                                                        ,Professional Services                                ,4333.66      ,45.604004362729825     ,Below Avg
 SAN       ,Sanofi                                                                                 ,Pharmaceuticals                                      ,111323.24    ,45.60236833904643      ,Below Avg
 9508      ,Kyushu Electric Power Company Incorporated                                             ,Electric Utilities                                   ,5262.99      ,45.594266126519166     ,Below Avg
 WAY       ,Waystar Holding Corp.                                                                  ,Health Care Technology                               ,5110.07      ,45.58304767840449      ,Below Avg
@@ -4161,8 +4161,8 @@ SGO       ,Compagnie de Saint-Gobain S.A.                                       
 RSW       ,Renishaw plc                                                                           ,Electronic Equipment Instruments and Components      ,3731.94      ,45.27625428482394      ,Below Avg
 300413    ,Mango Excellent Media Co. Ltd.                                                         ,Entertainment                                        ,6954.62      ,45.27251480211904      ,Below Avg
 5938      ,LIXIL Corporation                                                                      ,Building Products                                    ,3354.72      ,45.26269866001871      ,Below Avg
-MTIE      ,MM Group for Industry and International Trade S.A.E.                                   ,Distributors                                         ,293.15       ,45.23932689311313      ,Below Avg
 TERN      ,Terns Pharmaceuticals Inc.                                                             ,Pharmaceuticals                                      ,3719.84      ,45.23932689311313      ,Below Avg
+MTIE      ,MM Group for Industry and International Trade S.A.E.                                   ,Distributors                                         ,293.15       ,45.23932689311313      ,Below Avg
 300432    ,Fulin Precision Co. Ltd.                                                               ,Automobile Components                                ,4286.7       ,45.23504206918044      ,Below Avg
 A000150   ,Doosan Corporation                                                                     ,Industrial Conglomerates                             ,9880.0       ,45.21221564350265      ,Below Avg
 PWO       ,PWO AG                                                                                 ,Automobile Components                                ,100.81       ,45.20980056092241      ,Below Avg
@@ -4203,8 +4203,8 @@ A036570   ,NCSOFT Corporation                                                   
 576       ,Zhejiang Expressway Co. Ltd.                                                           ,Transportation Infrastructure                        ,5662.84      ,45.01978809598006      ,Below Avg
 A277810   ,Rainbow Robotics Co.Ltd.                                                               ,Machinery                                            ,10292.49     ,45.00545341227797      ,Below Avg
 JSWINFRA  ,JSW Infrastructure Limited                                                             ,Transportation Infrastructure                        ,5876.45      ,44.99711748208165      ,Below Avg
-552       ,China Communications Services Corporation Limited                                      ,Construction and Engineering                         ,4232.76      ,44.98005609224058      ,Below Avg
 PL        ,Planet Labs PBC                                                                        ,Professional Services                                ,8566.89      ,44.98005609224058      ,Below Avg
+552       ,China Communications Services Corporation Limited                                      ,Construction and Engineering                         ,4232.76      ,44.98005609224058      ,Below Avg
 546       ,Fufeng Group Limited                                                                   ,Chemicals                                            ,2775.44      ,44.9767840448738       ,Below Avg
 SONACOMS  ,Sona BLW Precision Forgings Limited                                                    ,Automobile Components                                ,3344.3       ,44.97468058585229      ,Below Avg
 VIVA      ,Viva Wine Group AB                                                                     ,Beverages                                            ,344.75       ,44.971953879713304     ,Below Avg
@@ -4241,8 +4241,8 @@ MXHN      ,MAX Automation SE                                                    
 600089    ,TBEA Co. Ltd.                                                                          ,Electrical Equipment                                 ,20014.52     ,44.77531941414772      ,Below Avg
 CTOS      ,Custom Truck One Source Inc.                                                           ,Trading Companies and Distributors                   ,1431.86      ,44.773995014023065     ,Below Avg
 FE        ,FirstEnergy Corp.                                                                      ,Electric Utilities                                   ,27340.91     ,44.766593954502966     ,Below Avg
-FCC       ,Fomento de Construcciones y Contratas S.A.                                             ,Commercial Services and Supplies                     ,6238.16      ,44.759114989093185     ,Below Avg
 SGI       ,Somnigroup International Inc.                                                          ,Household Durables                                   ,18916.88     ,44.759114989093185     ,Below Avg
+FCC       ,Fomento de Construcciones y Contratas S.A.                                             ,Commercial Services and Supplies                     ,6238.16      ,44.759114989093185     ,Below Avg
 2784      ,Alfresa Holdings Corporation                                                           ,Health Care Providers and Services                   ,2928.99      ,44.75023371766907      ,Below Avg
 TNXT      ,Tinexta S.p.A.                                                                         ,Professional Services                                ,826.82       ,44.75015581177938      ,Below Avg
 TSG       ,Tsogo Sun Limited                                                                      ,Hotels Restaurants and Leisure                       ,518.6        ,44.739248987223434     ,Below Avg
@@ -4617,8 +4617,8 @@ OLA       ,Orla Mining Ltd.                                                     
 IMCR      ,Immunocore Holdings plc                                                                ,Biotechnology                                        ,1667.5       ,42.329386101589286     ,Below Avg
 E7        ,E7 Group PJSC                                                                          ,Commercial Services and Supplies                     ,587.58       ,42.32424431287006      ,Below Avg
 5110      ,Sumitomo Rubber Industries Ltd.                                                        ,Automobile Components                                ,4251.07      ,42.31364911187286      ,Below Avg
-AKRBP     ,Aker BP ASA                                                                            ,Oil Gas and Consumable Fuels                         ,18703.1      ,42.30328762854472      ,Below Avg
 7309      ,Shimano Inc.                                                                           ,Leisure Products                                     ,9659.18      ,42.30328762854472      ,Below Avg
+AKRBP     ,Aker BP ASA                                                                            ,Oil Gas and Consumable Fuels                         ,18703.1      ,42.30328762854472      ,Below Avg
 AEHR      ,Aehr Test Systems Inc.                                                                 ,Semiconductors and Semiconductor Equipment           ,823.26       ,42.30313181676536      ,Below Avg
 PRGS      ,Progress Software Corporation                                                          ,Software                                             ,1672.33      ,42.30305391087567      ,Below Avg
 AN        ,AutoNation Inc.                                                                        ,Specialty Retail                                     ,7552.29      ,42.298301651604866     ,Below Avg
@@ -4814,8 +4814,8 @@ TRIG      ,The Renewables Infrastructure Group Limited                          
 RAL       ,Ralliant Corporation                                                                   ,Electronic Equipment Instruments and Components      ,6074.59      ,40.992676846369584     ,Below Avg
 300223    ,Ingenic Semiconductor Co.Ltd.                                                          ,Semiconductors and Semiconductor Equipment           ,9533.44      ,40.9735899033967       ,Below Avg
 HROW      ,Harrow Inc.                                                                            ,Pharmaceuticals                                      ,1552.98      ,40.95372390152696      ,Below Avg
-300624    ,Wondershare Technology Group Co. Ltd.                                                  ,Software                                             ,2581.41      ,40.9297288875039       ,Below Avg
 BN4       ,Keppel Ltd.                                                                            ,Industrial Conglomerates                             ,15789.34     ,40.9297288875039       ,Below Avg
+300624    ,Wondershare Technology Group Co. Ltd.                                                  ,Software                                             ,2581.41      ,40.9297288875039       ,Below Avg
 300661    ,SG Micro Corp                                                                          ,Semiconductors and Semiconductor Equipment           ,6711.51      ,40.91235587410409      ,Below Avg
 688521    ,VeriSilicon Microelectronics (Shanghai) Co. Ltd.                                       ,Semiconductors and Semiconductor Equipment           ,15849.16     ,40.90690246182613      ,Below Avg
 NOMD      ,Nomad Foods Limited                                                                    ,Food Products                                        ,1840.41      ,40.90511062636335      ,Below Avg
@@ -5342,8 +5342,8 @@ LSPD      ,Lightspeed Commerce Inc.                                             
 285A      ,Kioxia Holdings Corporation                                                            ,Semiconductors and Semiconductor Equipment           ,68432.77     ,36.70387971330633      ,Below Avg
 688005    ,Ningbo Ronbay New Energy Technology Co.Ltd.                                            ,Electrical Equipment                                 ,3168.22      ,36.70356808974759      ,Below Avg
 HPQ       ,HP Inc.                                                                                ,Technology Hardware Storage and Peripherals          ,17799.72     ,36.6770800872546       ,Below Avg
-TMCV      ,Tata Motors Limited                                                                    ,Machinery                                            ,18847.63     ,36.66944531006544      ,Below Avg
 ENH       ,SED Energy Holdings Plc                                                                ,Energy Equipment and Services                        ,625.34       ,36.66944531006544      ,Below Avg
+TMCV      ,Tata Motors Limited                                                                    ,Machinery                                            ,18847.63     ,36.66944531006544      ,Below Avg
 OLPX      ,Olaplex Holdings Inc.                                                                  ,Personal Care Products                               ,1034.64      ,36.66360236833905      ,Below Avg
 ONCO      ,Oncopeptides AB (publ)                                                                 ,Biotechnology                                        ,91.63        ,36.66149890931755      ,Below Avg
 TISG      ,The Italian Sea Group S.p.A.                                                           ,Leisure Products                                     ,271.02       ,36.661109379869124     ,Below Avg

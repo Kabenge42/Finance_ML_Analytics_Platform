@@ -17,12 +17,15 @@ Usage:
 from __future__ import annotations
 
 import logging
+import os
 import warnings
+from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
+from sqlalchemy import create_engine, text
 
 # Import refactored modules
 from finance_ml.analytics.data_utils import (
@@ -42,6 +45,8 @@ from finance_ml.analytics.screening import (
     screen_value_opportunities,
     screen_growth_momentum,
     screen_financial_health,
+    screen_garp_opportunities,
+    screen_high_yield_safe_dividends,
 )
 from finance_ml.analytics.statistical_analysis import (
     bayesian_category_analysis,
@@ -64,7 +69,12 @@ from finance_ml.analytics.visualizations.category_charts import (
     create_goodwill_concentration_boxplot,
     # CapEx & Investment
     create_capex_growth_scatter,
+    # New Advanced Charts
+    create_valuation_violin_plot,
+    create_quality_risk_radar_chart,
+    create_leverage_liquidity_bubble_chart,
 )
+
 # Profitability visualizations
 from finance_ml.analytics.visualizations.profitability import (
     create_margin_waterfall_chart,
@@ -92,121 +102,200 @@ pd.set_option("display.float_format", "{:.2f}".format)
 px.defaults.template = PLOTLY_TEMPLATE
 
 
-# Feature Category Definitions
-FEATURE_CATEGORIES = {
-    "Valuation Ratios": [
-        "p_e_ratio",
-        "p_b_ratio",
-        "ev_ebitda_ratio",
-        "ev_sales_ratio",
-        "dividend_yield",
-        "peg_ratio",
-        "price_to_tangible_book",
-        "tangible_book_value_ltm",
-    ],
-    "Momentum & Technical": [
-        "price_momentum_1m",
-        "price_momentum_3m",
-        "price_momentum_6m",
-        "price_momentum_1y",
-        "price_momentum_3y",
-        "price_momentum_5y",
-        "range_52w_position",
-        "long_term_trend_score",
-        "secular_trend_flag",
-    ],
-    "Profitability": [
-        "roe",
-        "roa",
-        "gross_margin_pct",
-        "operating_margin_pct",
-        "net_margin_pct",
-        "ebitda_margin_pct",
-        "roic",
-        "net_margin_trend_yoy",
-    ],
-    "Quality & Risk": [
-        "piotroski_f_score",
-        "distress_risk_score",
-        "altman_z_score",
-        "accounting_quality_score",
-        "earnings_quality_composite",
-        "cash_flow_quality_score",
-        "beta_stability_score",
-    ],
-    "Leverage & Liquidity": [
-        "debt_to_equity",
-        "current_ratio",
-        "quick_ratio",
-        "interest_coverage_ratio",
-        "cash_ratio",
-        "working_capital_ratio",
-        "debt_deleveraging",
-    ],
-    "Analyst Sentiment": [
-        "analyst_bullish_pct",
-        "analyst_neutral_pct",
-        "analyst_bearish_pct",
-        "upside_potential",
-        "analyst_rating_normalized",
-        "eps_revision_momentum",
-    ],
-    "Earnings Quality": [
-        "eps_surprise_pct",
-        "eps_adjustment_ratio",
-        "gaap_adj_eps_gap_pct",
-        "eps_trajectory_score",
-        "earnings_quality_score",
-        "gaap_revision_momentum",
-    ],
-    "Growth Metrics": [
-        "revenue_growth_yoy",
-        "ebitda_growth_yoy",
-        "eps_yoy_growth",
-        "fcf_growth_yoy",
-        "revenue_cagr_5y",
-    ],
-    "Cash Flow": [
-        "fcf_positive_years",
-        "fcf_margin",
-        "fcf_yield",
-        "cfo_to_net_income",
-        "self_funding_ratio",
-        "cash_flow_quality_score",
-    ],
-    "Dividend Features": [
-        "dividend_streak",
-        "dividend_yield_ltm",
-        "dividend_payout_ratio",
-        "fcf_dividend_coverage",
-        "total_shareholder_yield",
-    ],
-    "R&D Investment": [
-        "rnd_intensity_ltm",
-        "rnd_yoy_growth",
-        "rnd_per_employee",
-        "high_rnd_intensity_flag",
-    ],
-    "Inventory Temporal": [
-        "inventory_days",
-        "inventory_turnover_mv",
-        "inventory_yoy_change",
-        "inventory_buildup_flag",
-    ],
-    "Goodwill & M&A": [
-        "goodwill_concentration",
-        "goodwill_3y_growth",
-        "recent_acquisition_flag",
-        "impairment_risk_score",
-    ],
-    "CapEx & Investment": [
-        "capex_yoy_growth",
-        "capex_vs_5y_avg",
-        "acquisitions_ltm_total",
-        "ma_intensity_score",
-        "investment_efficiency",
-    ],
-}
+def load_feature_categories_from_db(connection_string: str = None) -> dict[str, list[str]]:
+    """
+    Load feature categories from the calculated_features_registry table.
+
+    Returns:
+        Dictionary mapping category names to lists of feature aliases.
+    """
+    if connection_string is None:
+        # Use your project's database connection configuration
+        connection_string = os.environ.get(
+            "DB_URL", "postgresql://user:password@localhost:5432/postgres"
+        )
+
+    query = text("""
+        SELECT category, feature_alias
+        FROM public.calculated_features_registry
+        ORDER BY category, feature_alias
+    """)
+
+    try:
+        engine = create_engine(connection_string)
+        with engine.connect() as conn:
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+        categories = defaultdict(list)
+        for row in rows:
+            category, feature_alias = row[0], row[1]
+            categories[category].append(feature_alias)
+
+        logging.info(f"Loaded {len(categories)} feature categories from database")
+        return dict(categories)
+
+    except Exception as e:
+        logging.warning(f"Could not load categories from database: {e}")
+        logging.warning("Falling back to hardcoded FEATURE_CATEGORIES")
+        return _get_fallback_feature_categories()
+
+
+def _get_fallback_feature_categories() -> dict[str, list[str]]:
+    """Fallback hardcoded categories if database is unavailable."""
+    return {
+        "Valuation Ratios": [
+            "p_e_ratio",
+            "p_b_ratio",
+            "ev_ebitda_ratio",
+            "ev_sales_ratio",
+            "dividend_yield",
+            "peg_ratio",
+            "price_to_tangible_book",
+            "tangible_book_value_ltm",
+        ],
+        "Momentum & Technical": [
+            "price_momentum_1m",
+            "price_momentum_3m",
+            "price_momentum_6m",
+            "price_momentum_1y",
+            "price_momentum_3y",
+            "price_momentum_5y",
+            "range_52w_position",
+            "long_term_trend_score",
+            "secular_trend_flag",
+        ],
+        "Profitability": [
+            "roe",
+            "roa",
+            "gross_margin_pct",
+            "operating_margin_pct",
+            "net_margin_pct",
+            "ebitda_margin_pct",
+            "roic",
+            "net_margin_trend_yoy",
+        ],
+        "Quality & Risk": [
+            "piotroski_f_score",
+            "distress_risk_score",
+            "altman_z_score",
+            "accounting_quality_score",
+            "earnings_quality_composite",
+            "cash_flow_quality_score",
+            "beta_stability_score",
+        ],
+        "Leverage & Liquidity": [
+            "debt_to_equity",
+            "current_ratio",
+            "quick_ratio",
+            "interest_coverage_ratio",
+            "cash_ratio",
+            "working_capital_ratio",
+            "debt_deleveraging",
+        ],
+        "Analyst Sentiment": [
+            "analyst_bullish_pct",
+            "analyst_neutral_pct",
+            "analyst_bearish_pct",
+            "upside_potential",
+            "analyst_rating_normalized",
+            "eps_revision_momentum",
+        ],
+        "Earnings Quality": [
+            "eps_surprise_pct",
+            "eps_adjustment_ratio",
+            "gaap_adj_eps_gap_pct",
+            "eps_trajectory_score",
+            "earnings_quality_score",
+            "gaap_revision_momentum",
+        ],
+        "Growth Metrics": [
+            "revenue_growth_yoy",
+            "ebitda_growth_yoy",
+            "eps_yoy_growth",
+            "fcf_growth_yoy",
+            "revenue_cagr_5y",
+        ],
+        "Cash Flow": [
+            "fcf_positive_years",
+            "fcf_margin",
+            "fcf_yield",
+            "cfo_to_net_income",
+            "self_funding_ratio",
+            "cash_flow_quality_score",
+        ],
+        "Dividend Features": [
+            "dividend_streak",
+            "dividend_yield_ltm",
+            "dividend_payout_ratio",
+            "fcf_dividend_coverage",
+            "total_shareholder_yield",
+        ],
+        "R&D Investment": [
+            "rnd_intensity_ltm",
+            "rnd_yoy_growth",
+            "rnd_per_employee",
+            "high_rnd_intensity_flag",
+        ],
+        "Inventory Temporal": [
+            "inventory_days",
+            "inventory_turnover_mv",
+            "inventory_yoy_change",
+            "inventory_buildup_flag",
+        ],
+        "Goodwill & M&A": [
+            "goodwill_concentration",
+            "goodwill_3y_growth",
+            "recent_acquisition_flag",
+            "impairment_risk_score",
+        ],
+        "CapEx & Investment": [
+            "capex_yoy_growth",
+            "capex_vs_5y_avg",
+            "acquisitions_ltm_total",
+            "ma_intensity_score",
+            "investment_efficiency",
+        ],
+    }
+
+
+def compare_registry_with_local(
+    db_categories: dict[str, list[str]], local_categories: dict[str, list[str]]
+) -> dict:
+    """
+    Compare database registry with local/fallback categories.
+    Useful for identifying missing features or new additions.
+    """
+    report = {
+        "categories_only_in_db": [],
+        "categories_only_in_local": [],
+        "features_only_in_db": {},
+        "features_only_in_local": {},
+    }
+
+    db_cats = set(db_categories.keys())
+    local_cats = set(local_categories.keys())
+
+    report["categories_only_in_db"] = list(db_cats - local_cats)
+    report["categories_only_in_local"] = list(local_cats - db_cats)
+
+    for cat in db_cats & local_cats:
+        db_features = set(db_categories[cat])
+        local_features = set(local_categories[cat])
+
+        only_in_db = db_features - local_features
+        only_in_local = local_features - db_features
+
+        if only_in_db:
+            report["features_only_in_db"][cat] = list(only_in_db)
+        if only_in_local:
+            report["features_only_in_local"][cat] = list(only_in_local)
+
+    return report
+
+
+# Load categories dynamically at module level (with fallback)
+FEATURE_CATEGORIES = load_feature_categories_from_db()
 
 
 def main():
@@ -231,6 +320,14 @@ def main():
         # Backfill missing columns
         df = backfill_feature_columns(df)
         print(f"✓ Backfilled features, now have {len(df.columns)} columns")
+
+        # Compare registry with fallback to identify drift
+        fallback = _get_fallback_feature_categories()
+        diff_report = compare_registry_with_local(FEATURE_CATEGORIES, fallback)
+        if diff_report["features_only_in_db"]:
+            print("   📌 New features in registry (not in fallback):")
+            for cat, feats in diff_report["features_only_in_db"].items():
+                print(f"      {cat}: {feats}")
 
     except Exception as e:
         print(f"⚠️  Could not load from database: {e}")
@@ -333,6 +430,16 @@ def main():
         healthy_stocks = screen_financial_health(df, min_distress_score=80)
         print(f"   ✓ Financial health screen: {len(healthy_stocks)} stocks")
 
+    # GARP opportunities
+    if "peg_ratio" in df.columns:
+        garp_stocks = screen_garp_opportunities(df)
+        print(f"   ✓ GARP screen: {len(garp_stocks)} stocks")
+
+    # High-yield safe dividends
+    if "dividend_yield" in df.columns or "dividend_yield_ltm" in df.columns:
+        safe_div_stocks = screen_high_yield_safe_dividends(df)
+        print(f"   ✓ High-yield safe dividend screen: {len(safe_div_stocks)} stocks")
+
     print()
 
     # ========================================================================
@@ -341,7 +448,7 @@ def main():
     print("📊 Step 5: Generating visualizations...")
     print("-" * 80)
 
-    output_dir = Path("outputs")
+    output_dir = Path("outputs/analytics")
     output_dir.mkdir(exist_ok=True)
 
     try:
@@ -357,21 +464,21 @@ def main():
         ):
             print("   Creating momentum dashboard...")
             fig = create_interactive_momentum_dashboard(df)
-            fig.write_html(output_dir / "momentum_dashboard_refactored.html")
-            print("   ✓ Saved: outputs/momentum_dashboard_refactored.html")
+            fig.write_html(output_dir / "momentum_dashboard.html")
+            print("   ✓ Saved: outputs/momentum_dashboard.html")
 
         # Valuation heatmap
         if "p_e_ratio" in df.columns and "industry" in df.columns:
             print("   Creating valuation heatmap...")
             fig = create_interactive_valuation_heatmap(df)
-            fig.write_html(output_dir / "valuation_heatmap_refactored.html")
-            print("   ✓ Saved: outputs/valuation_heatmap_refactored.html")
+            fig.write_html(output_dir / "valuation_heatmap.html")
+            print("   ✓ Saved: outputs/valuation_heatmap.html")
 
         # Summary dashboard
         print("   Creating summary dashboard...")
         fig = create_summary_dashboard(df)
-        fig.write_html(output_dir / "summary_dashboard_refactored.html")
-        print("   ✓ Saved: outputs/summary_dashboard_refactored.html")
+        fig.write_html(output_dir / "summary_dashboard.html")
+        print("   ✓ Saved: outputs/summary_dashboard.html")
 
         # --- New Category-Specific Visualizations ---
 
@@ -459,6 +566,26 @@ def main():
             fig.write_html(output_dir / "capex_growth.html")
             print("   ✓ Saved: outputs/capex_growth.html")
 
+        # --- New Enhanced Visualizations ---
+        if "p_e_ratio" in df.columns:
+            print("   Creating valuation violin plot...")
+            fig = create_valuation_violin_plot(df)
+            fig.write_html(output_dir / "valuation_violin.html")
+            print("   ✓ Saved: outputs/valuation_violin.html")
+
+        if all(col in df.columns for col in ["current_ratio", "debt_to_equity"]):
+            print("   Creating leverage vs liquidity bubble chart...")
+            fig = create_leverage_liquidity_bubble_chart(df)
+            fig.write_html(output_dir / "leverage_liquidity_bubble.html")
+            print("   ✓ Saved: outputs/leverage_liquidity_bubble.html")
+
+        if len(df) > 0:
+            ticker = df.iloc[0]["ticker"]
+            print(f"   Creating quality radar chart for {ticker}...")
+            fig = create_quality_risk_radar_chart(df, ticker)
+            fig.write_html(output_dir / f"quality_radar_{ticker}.html")
+            print(f"   ✓ Saved: outputs/quality_radar_{ticker}.html")
+
     except Exception as e:
         print(f"   ⚠️  Visualization error: {e}")
 
@@ -483,13 +610,13 @@ def main():
 
     if stats_data:
         stats_df = pd.DataFrame(stats_data)
-        stats_df.to_csv(output_dir / "feature_statistics_refactored.csv", index=False)
-        print(f"   ✓ Saved: outputs/feature_statistics_refactored.csv ({len(stats_df)} features)")
+        stats_df.to_csv(output_dir / "feature_statistics.csv", index=False)
+        print(f"   ✓ Saved: outputs/feature_statistics.csv ({len(stats_df)} features)")
 
     # Export screened stocks
     if "quality_stocks" in locals() and len(quality_stocks) > 0:
-        quality_stocks.to_csv(output_dir / "quality_stocks_refactored.csv", index=False)
-        print(f"   ✓ Saved: outputs/quality_stocks_refactored.csv ({len(quality_stocks)} stocks)")
+        quality_stocks.to_csv(output_dir / "quality_stocks.csv", index=False)
+        print(f"   ✓ Saved: outputs/quality_stocks.csv ({len(quality_stocks)} stocks)")
 
     print()
 

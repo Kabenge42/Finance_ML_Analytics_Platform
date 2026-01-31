@@ -36,14 +36,238 @@ from plotly.subplots import make_subplots
 if TYPE_CHECKING:
     pass
 
+from collections import defaultdict
+
 try:
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
 except ImportError:  # pragma: no cover
     create_engine = None  # type: ignore
+    text = None  # type: ignore
 
 # Dark theme for Plotly
 PLOTLY_TEMPLATE = "plotly_dark"
 px.defaults.template = PLOTLY_TEMPLATE
+
+
+def load_feature_categories_from_db(
+    connection_string: Optional[str] = None,
+) -> dict[str, list[str]]:
+    """
+    Load feature categories from the calculated_features_registry table.
+
+    Parameters
+    ----------
+    connection_string : str, optional
+        Database connection string. If None, reads from DB_URL environment variable.
+
+    Returns
+    -------
+    dict[str, list[str]]
+        Dictionary mapping category names to lists of feature aliases.
+    """
+    if connection_string is None:
+        connection_string = os.environ.get(
+            "DB_URL", "postgresql://user:password@localhost:5432/postgres"
+        )
+
+    if create_engine is None or text is None:
+        logging.warning("SQLAlchemy not available, using fallback feature categories")
+        return _get_fallback_feature_categories()
+
+    query = text("""
+        SELECT category, feature_alias
+        FROM public.calculated_features_registry
+        ORDER BY category, feature_alias
+    """)
+
+    try:
+        engine = create_engine(connection_string)
+        with engine.connect() as conn:
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+        categories = defaultdict(list)
+        for row in rows:
+            category, feature_alias = row[0], row[1]
+            categories[category].append(feature_alias)
+
+        logging.info(f"Loaded {len(categories)} feature categories from database")
+        return dict(categories)
+
+    except Exception as e:
+        logging.warning(f"Could not load categories from database: {e}")
+        logging.warning("Falling back to hardcoded FEATURE_CATEGORIES")
+        return _get_fallback_feature_categories()
+
+
+def _get_fallback_feature_categories() -> dict[str, list[str]]:
+    """Fallback hardcoded categories if database is unavailable."""
+    return {
+        "Valuation Ratios": [
+            "p_e_ratio",
+            "p_b_ratio",
+            "ev_ebitda_ratio",
+            "ev_sales_ratio",
+            "dividend_yield",
+            "peg_ratio",
+            "price_to_tangible_book",
+            "tangible_book_value_ltm",
+        ],
+        "Momentum & Technical": [
+            "price_momentum_1m",
+            "price_momentum_3m",
+            "price_momentum_6m",
+            "price_momentum_1y",
+            "price_momentum_3y",
+            "price_momentum_5y",
+            "range_52w_position",
+            "long_term_trend_score",
+            "secular_trend_flag",
+        ],
+        "Profitability": [
+            "roe",
+            "roa",
+            "gross_margin_pct",
+            "operating_margin_pct",
+            "net_margin_pct",
+            "ebitda_margin_pct",
+            "roic",
+            "net_margin_trend_yoy",
+        ],
+        "Quality & Risk": [
+            "piotroski_f_score",
+            "distress_risk_score",
+            "altman_z_score",
+            "accounting_quality_score",
+            "earnings_quality_composite",
+            "cash_flow_quality_score",
+            "beta_stability_score",
+        ],
+        "Leverage & Liquidity": [
+            "debt_to_equity",
+            "current_ratio",
+            "quick_ratio",
+            "interest_coverage_ratio",
+            "cash_ratio",
+            "working_capital_ratio",
+            "debt_deleveraging",
+        ],
+        "Analyst Sentiment": [
+            "analyst_bullish_pct",
+            "analyst_neutral_pct",
+            "analyst_bearish_pct",
+            "upside_potential",
+            "analyst_rating_normalized",
+            "eps_revision_momentum",
+        ],
+        "Earnings Quality": [
+            "eps_surprise_pct",
+            "eps_adjustment_ratio",
+            "gaap_adj_eps_gap_pct",
+            "eps_trajectory_score",
+            "earnings_quality_score",
+            "gaap_revision_momentum",
+        ],
+        "Growth Metrics": [
+            "revenue_growth_yoy",
+            "ebitda_growth_yoy",
+            "eps_yoy_growth",
+            "fcf_growth_yoy",
+            "revenue_cagr_5y",
+        ],
+        "Cash Flow": [
+            "fcf_positive_years",
+            "fcf_margin",
+            "fcf_yield",
+            "cfo_to_net_income",
+            "self_funding_ratio",
+            "cash_flow_quality_score",
+        ],
+        "Dividend Features": [
+            "dividend_streak",
+            "dividend_yield_ltm",
+            "dividend_payout_ratio",
+            "fcf_dividend_coverage",
+            "total_shareholder_yield",
+        ],
+        "R&D Investment": [
+            "rnd_intensity_ltm",
+            "rnd_yoy_growth",
+            "rnd_per_employee",
+            "high_rnd_intensity_flag",
+        ],
+        "Inventory Temporal": [
+            "inventory_days",
+            "inventory_turnover_mv",
+            "inventory_yoy_change",
+            "inventory_buildup_flag",
+        ],
+        "Goodwill & M&A": [
+            "goodwill_concentration",
+            "goodwill_3y_growth",
+            "recent_acquisition_flag",
+            "impairment_risk_score",
+        ],
+        "CapEx & Investment": [
+            "capex_yoy_growth",
+            "capex_vs_5y_avg",
+            "acquisitions_ltm_total",
+            "ma_intensity_score",
+            "investment_efficiency",
+        ],
+    }
+
+
+def compare_registry_with_local(
+    db_categories: dict[str, list[str]], local_categories: dict[str, list[str]]
+) -> dict:
+    """
+    Compare database registry with local/fallback categories.
+
+    Useful for identifying missing features or new additions.
+
+    Parameters
+    ----------
+    db_categories : dict[str, list[str]]
+        Categories loaded from database
+    local_categories : dict[str, list[str]]
+        Local/fallback categories
+
+    Returns
+    -------
+    dict
+        Report with categories and features only in db or local
+    """
+    report = {
+        "categories_only_in_db": [],
+        "categories_only_in_local": [],
+        "features_only_in_db": {},
+        "features_only_in_local": {},
+    }
+
+    db_cats = set(db_categories.keys())
+    local_cats = set(local_categories.keys())
+
+    report["categories_only_in_db"] = list(db_cats - local_cats)
+    report["categories_only_in_local"] = list(local_cats - db_cats)
+
+    for cat in db_cats & local_cats:
+        db_features = set(db_categories[cat])
+        local_features = set(local_categories[cat])
+
+        only_in_db = db_features - local_features
+        only_in_local = local_features - db_features
+
+        if only_in_db:
+            report["features_only_in_db"][cat] = list(only_in_db)
+        if only_in_local:
+            report["features_only_in_local"][cat] = list(only_in_local)
+
+    return report
+
+
+# Load categories dynamically at module level (with fallback)
+FEATURE_CATEGORIES = load_feature_categories_from_db()
 
 
 def load_feature_data_from_db(
@@ -1248,7 +1472,7 @@ def main():
         # Summary dashboard
         print("  - Creating summary dashboard...")
         fig_summary = create_summary_dashboard(df)
-        output_dir = "outputs"
+        output_dir = "outputs/analytics"
         os.makedirs(output_dir, exist_ok=True)
         fig_summary.write_html(f"{output_dir}/feature_analytics_summary.html")
         print(f"    ✓ Saved to {output_dir}/feature_analytics_summary.html")
@@ -1296,7 +1520,7 @@ def main():
         required_mc_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
         if all(col in df.columns for col in required_mc_cols):
             print("  - Running Monte Carlo price target simulation...")
-            mc_results = monte_carlo_price_target_simulation(df, max_stocks=50)
+            mc_results = monte_carlo_price_target_simulation(df, max_stocks=2000)
             if len(mc_results) > 0:
                 mc_results.to_csv(f"{output_dir}/monte_carlo_simulation.csv", index=False)
                 print(

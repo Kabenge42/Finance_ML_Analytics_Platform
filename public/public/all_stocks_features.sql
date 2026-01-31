@@ -427,7 +427,7 @@ create table all_stocks_features
     net_income_margin_ltm               numeric,
     ni_adjustment_ratio                 numeric,
     net_income_positive_years           integer,
-    earnings_quality_composite_comp     numeric,
+    earnings_quality_composite numeric,
     net_income_qoq_growth               numeric,
     net_income_yoy_quarterly            numeric,
     net_income_vs_5y_avg                numeric,

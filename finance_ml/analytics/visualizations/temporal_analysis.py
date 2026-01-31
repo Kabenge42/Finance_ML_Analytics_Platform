@@ -21,6 +21,9 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+# Dark theme for Plotly (consistent with feature_analytics.py)
+PLOTLY_TEMPLATE = "plotly_dark"
+
 
 def create_earnings_calendar_heatmap(
     df: pd.DataFrame,
@@ -62,7 +65,7 @@ def create_earnings_calendar_heatmap(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Earnings Calendar - No Data")
+        fig.update_layout(title="Earnings Calendar - No Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Prepare data
@@ -81,7 +84,7 @@ def create_earnings_calendar_heatmap(
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Earnings Calendar - No Valid Dates")
+        fig.update_layout(title="Earnings Calendar - No Valid Dates", template=PLOTLY_TEMPLATE)
         return fig
 
     # Extract date components
@@ -217,7 +220,9 @@ def create_earnings_calendar_heatmap(
             col=2,
         )
 
-    fig.update_layout(title="Earnings Calendar Analysis", height=700, showlegend=False)
+    fig.update_layout(
+        title="Earnings Calendar Analysis", height=700, showlegend=False, template=PLOTLY_TEMPLATE
+    )
 
     fig.update_xaxes(title_text="Day of Week", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
@@ -266,7 +271,7 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Inventory Cycle Analysis - No Data")
+        fig.update_layout(title="Inventory Cycle Analysis - No Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Create subplots
@@ -383,7 +388,9 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
             col=2,
         )
 
-    fig.update_layout(title="Inventory Cycle Analysis", height=700, showlegend=False)
+    fig.update_layout(
+        title="Inventory Cycle Analysis", height=700, showlegend=False, template=PLOTLY_TEMPLATE
+    )
 
     fig.update_xaxes(title_text="Inventory Days", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
@@ -431,7 +438,7 @@ def create_fcf_trajectory_chart(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="FCF Trajectory - No Data")
+        fig.update_layout(title="FCF Trajectory - No Data", template=PLOTLY_TEMPLATE)
         return fig
 
     # Create subplots
@@ -540,7 +547,12 @@ def create_fcf_trajectory_chart(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
         # Add zero line
         fig.add_vline(x=0, line_dash="solid", line_color="black", row=2, col=2)
 
-    fig.update_layout(title="Free Cash Flow Trajectory Analysis", height=700, showlegend=False)
+    fig.update_layout(
+        title="Free Cash Flow Trajectory Analysis",
+        height=700,
+        showlegend=False,
+        template=PLOTLY_TEMPLATE,
+    )
 
     fig.update_xaxes(title_text="FCF Positive Years", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
@@ -594,7 +606,7 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
                 showarrow=False,
                 font=dict(size=16),
             )
-            fig.update_layout(title="Dividend Streak Timeline - No Data")
+            fig.update_layout(title="Dividend Streak Timeline - No Data", template=PLOTLY_TEMPLATE)
             return fig
 
     # Filter stocks with dividends
@@ -611,7 +623,9 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
             showarrow=False,
             font=dict(size=16),
         )
-        fig.update_layout(title="Dividend Streak Timeline - No Dividend Stocks")
+        fig.update_layout(
+            title="Dividend Streak Timeline - No Dividend Stocks", template=PLOTLY_TEMPLATE
+        )
         return fig
 
     # Create subplots
@@ -780,7 +794,10 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
             )
 
     fig.update_layout(
-        title="Dividend Streak & Sustainability Analysis", height=700, showlegend=False
+        title="Dividend Streak & Sustainability Analysis",
+        height=700,
+        showlegend=False,
+        template=PLOTLY_TEMPLATE,
     )
 
     fig.update_xaxes(title_text="Dividend Streak (Years)", row=1, col=1)

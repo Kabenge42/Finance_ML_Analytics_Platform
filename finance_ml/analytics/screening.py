@@ -504,3 +504,110 @@ def create_sector_relative_ranking(
     result["sector_percentile"] = result.groupby(sector_col)[metric].rank(pct=True) * 100
 
     return result
+
+
+def screen_garp_opportunities(
+    df: pd.DataFrame,
+    max_peg_ratio: float = 1.2,
+    min_eps_growth: float = 10.0,
+    max_pe_ratio: float = 35.0,
+    min_quality_score: float = 50.0,
+) -> pd.DataFrame:
+    """
+    Screen for Growth at a Reasonable Price (GARP) opportunities.
+
+    Combines growth criteria with valuation (PEG ratio) and quality.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame
+    max_peg_ratio : float, default 1.2
+        Maximum Price/Earnings to Growth ratio
+    min_eps_growth : float, default 10.0
+        Minimum expected or historical EPS growth (%)
+    max_pe_ratio : float, default 35.0
+        Maximum P/E ratio to avoid extreme valuations
+    min_quality_score : float, default 50.0
+        Minimum composite quality score (0-100)
+
+    Returns
+    -------
+    pd.DataFrame
+        GARP opportunities sorted by PEG ratio
+    """
+    mask = pd.Series([True] * len(df), index=df.index)
+
+    # Growth criteria
+    growth_col = "eps_yoy_growth" if "eps_yoy_growth" in df.columns else "revenue_growth_yoy"
+    if growth_col in df.columns:
+        mask &= df[growth_col] >= min_eps_growth
+
+    # Valuation criteria
+    if "peg_ratio" in df.columns:
+        mask &= (df["peg_ratio"] > 0) & (df["peg_ratio"] <= max_peg_ratio)
+
+    if "p_e_ratio" in df.columns:
+        mask &= (df["p_e_ratio"] > 0) & (df["p_e_ratio"] <= max_pe_ratio)
+
+    # Quality criteria
+    if "piotroski_f_score" in df.columns:
+        mask &= df["piotroski_f_score"] >= (min_quality_score / 10)
+
+    result = df[mask].copy()
+
+    if "peg_ratio" in result.columns:
+        result = result.sort_values("peg_ratio")
+
+    return result
+
+
+def screen_high_yield_safe_dividends(
+    df: pd.DataFrame,
+    min_yield: float = 3.0,
+    max_payout: float = 70.0,
+    min_distress_score: float = 70.0,
+    min_fcf_coverage: float = 1.1,
+) -> pd.DataFrame:
+    """
+    Screen for high-yielding dividends that are well-covered and safe.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame
+    min_yield : float, default 3.0
+        Minimum dividend yield (%)
+    max_payout : float, default 70.0
+        Maximum dividend payout ratio (%)
+    min_distress_score : float, default 70.0
+        Minimum financial health score (higher = safer)
+    min_fcf_coverage : float, default 1.1
+        Minimum FCF dividend coverage
+
+    Returns
+    -------
+    pd.DataFrame
+        Safe high-yield stocks sorted by yield
+    """
+    mask = pd.Series([True] * len(df), index=df.index)
+
+    yield_col = "dividend_yield_ltm" if "dividend_yield_ltm" in df.columns else "dividend_yield"
+    if yield_col in df.columns:
+        mask &= df[yield_col] >= min_yield
+
+    if "dividend_payout_ratio" in df.columns:
+        mask &= df["dividend_payout_ratio"] <= max_payout
+
+    if "distress_risk_score" in df.columns:
+        mask &= df["distress_risk_score"] >= min_distress_score
+
+    if "fcf_dividend_coverage" in df.columns:
+        mask &= df["fcf_dividend_coverage"] >= min_fcf_coverage
+
+    result = df[mask].copy()
+
+    if yield_col in result.columns:
+        result = result.sort_values(yield_col, ascending=False)
+
+    return result
