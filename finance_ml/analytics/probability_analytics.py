@@ -107,6 +107,23 @@ class ModelConfidenceResult:
     overall_confidence: float
 
 
+@dataclass(frozen=True)
+class PriorParameters:
+    """Immutable container for Beta distribution prior parameters."""
+
+    alpha: float
+    beta: float
+
+    @property
+    def expected_beat_rate(self) -> float:
+        """Calculate the expected beat rate from prior parameters."""
+        return self.alpha / (self.alpha + self.beta)
+
+    def as_tuple(self) -> tuple[float, float]:
+        """Return parameters as (alpha, beta) tuple."""
+        return (self.alpha, self.beta)
+
+
 # =============================================================================
 # BAYESIAN EARNINGS BEAT PROBABILITY MODEL
 # =============================================================================
