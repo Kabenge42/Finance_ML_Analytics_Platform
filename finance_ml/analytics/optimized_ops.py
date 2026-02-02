@@ -15,7 +15,6 @@ Dependencies:
 from __future__ import annotations
 
 import hashlib
-from functools import lru_cache
 from typing import Optional, Tuple, Dict, Any
 
 import numpy as np
@@ -31,6 +30,34 @@ except ImportError:
 
     # Create dummy decorators
     def jit(*args, **kwargs):
+        """
+        Dummy JIT decorator fallback when numba is not available.
+
+        This function mimics the numba.jit decorator interface but returns
+        the original function unchanged. It allows code using @jit decorators
+        to run without numba installed, albeit without JIT compilation benefits.
+
+        Parameters
+        ----------
+        *args : tuple
+            Positional arguments passed to the decorator (ignored).
+        **kwargs : dict
+            Keyword arguments passed to the decorator (ignored).
+
+        Returns
+        -------
+        Callable
+            A decorator that returns the original function unchanged.
+
+        Examples
+        --------
+        >>> @jit(nopython=True)
+        ... def my_func(x):
+        ...     return x * 2
+        >>> my_func(5)  # Runs without JIT compilation
+        10
+        """
+
         def decorator(func):
             return func
 

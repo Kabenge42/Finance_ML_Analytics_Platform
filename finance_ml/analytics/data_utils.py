@@ -11,7 +11,6 @@ import logging
 import os
 from typing import Optional, TYPE_CHECKING
 
-import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -21,6 +20,72 @@ try:
     from sqlalchemy import create_engine
 except ImportError:  # pragma: no cover
     create_engine = None  # type: ignore
+
+
+def get_analytics_engine() -> "Engine":
+    """
+    Create SQLAlchemy engine for analytics database.
+
+    Returns
+    -------
+    Engine
+        SQLAlchemy engine for analytics exports
+    """
+    if create_engine is None:
+        raise ImportError("SQLAlchemy not available.")
+
+    db_url = os.environ.get("DB_URL")
+    if not db_url:
+        raise ValueError("DB_URL environment variable not set.")
+
+    return create_engine(db_url)
+
+
+def export_to_analytics_db(
+    df: pd.DataFrame,
+    table_name: str,
+    if_exists: str = "replace",
+) -> int | None:
+    """
+    Export DataFrame to PostgreSQL analytics schema.
+
+    Replaces CSV exports with database table exports using the
+    DB_URL and DB_ANALYTICS_SCHEMA environment variables.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to export
+    table_name : str
+        Target table name (without schema prefix)
+    if_exists : str, default "replace"
+        Behavior when table exists: 'fail', 'replace', 'append', 'delete_rows'
+
+    Returns
+    -------
+    int or None
+        Number of rows affected
+
+    Examples
+    --------
+    >>> export_to_analytics_db(feature_stats_df, "feature_statistics")
+    >>> export_to_analytics_db(mc_results, "monte_carlo_simulation", if_exists="append")
+    """
+    engine = get_analytics_engine()
+    schema = os.environ.get("DB_ANALYTICS_SCHEMA", "analytics")
+
+    logging.info("Exporting %d rows to %s.%s", len(df), schema, table_name)
+
+    result = df.to_sql(
+        name=table_name,
+        con=engine,
+        schema=schema,
+        if_exists=if_exists,
+        index=False,
+    )
+
+    logging.info("Export complete: %s.%s", schema, table_name)
+    return result
 
 
 def load_feature_data_from_db(
@@ -44,7 +109,7 @@ def load_feature_data_from_db(
     limit : int, optional
         Maximum number of rows to return
     schema : str, optional
-        Database schema name. If None, reads from DB_SCHEMA environment variable
+        Database schema name. If None, reads from DB_EQUITIES_SCHEMA environment variable
         or defaults to 'public'
 
     Returns
@@ -80,7 +145,7 @@ def load_feature_data_from_db(
 
     # Resolve schema
     if schema is None:
-        schema = os.environ.get("DB_SCHEMA", "public")
+        schema = os.environ.get("DB_EQUITIES_SCHEMA", "public")
 
     view_name = "mv_all_stock_features"
     view_ref = f"{schema}.{view_name}"

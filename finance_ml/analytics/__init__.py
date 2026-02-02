@@ -40,6 +40,7 @@ from finance_ml.analytics.feature_analytics import (
     safe_get_column,
     _get_fallback_feature_categories,
 )
+
 # Performance optimizations
 from finance_ml.analytics.optimized_ops import (
     dataframe_hash,
@@ -50,6 +51,7 @@ from finance_ml.analytics.optimized_ops import (
     vectorized_percentile_rank,
     get_optimization_status,
 )
+
 # Screening functions
 from finance_ml.analytics.screening import (
     create_enhanced_screener,
@@ -63,6 +65,7 @@ from finance_ml.analytics.screening import (
     screen_garp_opportunities,
     screen_high_yield_safe_dividends,
 )
+
 # Statistical analysis
 from finance_ml.analytics.statistical_analysis import (
     bayesian_category_analysis,
@@ -78,6 +81,26 @@ from finance_ml.analytics.statistical_analysis import (
     fit_gaussian_copula,
     parallel_mcmc_chains,
 )
+
+# Probability Analytics (NEW)
+try:
+    from finance_ml.analytics.probability_analytics import (
+        EarningsBeatProbabilityModel,
+        EPSStreakAnalyzer,
+        ModelConfidenceEstimator,
+        BeatProbabilityResult,
+        BeatProbabilityEstimate,
+        EPSStreakResult,
+        ModelConfidenceResult,
+        create_earnings_probability_dashboard,
+        create_confidence_calibration_chart,
+        create_eps_streak_analysis_chart,
+        export_probability_analytics_results,
+    )
+
+    _PROBABILITY_ANALYTICS_AVAILABLE = True
+except ImportError:
+    _PROBABILITY_ANALYTICS_AVAILABLE = False
 
 __all__ = [
     # Feature analytics
@@ -113,6 +136,18 @@ __all__ = [
     "kalman_momentum_filter",
     "fit_gaussian_copula",
     "parallel_mcmc_chains",
+    # Probability Analytics
+    "EarningsBeatProbabilityModel",
+    "EPSStreakAnalyzer",
+    "ModelConfidenceEstimator",
+    "BeatProbabilityResult",
+    "BeatProbabilityEstimate",
+    "EPSStreakResult",
+    "ModelConfidenceResult",
+    "create_earnings_probability_dashboard",
+    "create_confidence_calibration_chart",
+    "create_eps_streak_analysis_chart",
+    "export_probability_analytics_results",
     # Screening
     "create_enhanced_screener",
     "screen_earnings_quality",

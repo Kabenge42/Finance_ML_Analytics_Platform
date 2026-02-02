@@ -660,7 +660,7 @@ pip install -e .
 
 ```bash
 export DB_URL="postgresql+psycopg2://user:pass@host:5432/db"
-export DB_SCHEMA="public"
+export DB_EQUITIES_SCHEMA="public"
 ```
 
 **Issue**: Missing features in DataFrame

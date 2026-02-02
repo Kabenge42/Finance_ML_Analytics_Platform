@@ -29,8 +29,9 @@ OUTPUT_DIR=outputs
 # Example (SQLite): sqlite:///equities.sqlite
 DB_URL=postgresql+psycopg2://postgres:bItcfiTg142!@localhost:5432/postgres
 # Optional: Database schema and table to read from
-DB_SCHEMA=public
+DB_EQUITIES_SCHEMA=public
 DB_TABLE=equities
+DB_ANALYTICS_SCHEMA=analytics
 
 # -----------------------------------------------------------------------------
 # External API Keys

@@ -210,7 +210,7 @@ Configuration can be managed via environment variables or the `environment_varia
 | `CACHE_DIR`                | Directory for cached files                      | `.cache`   |
 | `OUTPUT_DIR`               | Directory for generated reports and artifacts   | `outputs`  |
 | `DB_URL`                   | SQLAlchemy connection URL                       | —          |
-| `DB_SCHEMA`                | Database schema name                            | `public`   |
+| `DB_EQUITIES_SCHEMA`                | Database schema name                            | `public`   |
 | `DB_TABLE`                 | Database table name                             | `equities` |
 | `MODEL_VERSION`            | Identifier for current model version            | `v9_11`    |
 | `RANDOM_SEED`              | Random seed for reproducibility                 | `42`       |

@@ -158,7 +158,7 @@ class FinanceMLConfig:
 
     # Database configuration
     db_url: Optional[str] = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
-    db_schema: str = "public"
+    DB_EQUITIES_SCHEMA: str = "public"
     db_table: str = "equities"
 
     # Model configuration
@@ -193,7 +193,7 @@ class FinanceMLConfig:
             cache_dir=Path(os.getenv("CACHE_DIR", ".cache")),
             output_dir=Path(os.getenv("OUTPUT_DIR", "outputs")),
             db_url=os.getenv("DB_URL"),
-            db_schema=os.getenv("DB_SCHEMA", "public"),
+            DB_EQUITIES_SCHEMA=os.getenv("DB_EQUITIES_SCHEMA", "public"),
             db_table=os.getenv("DB_TABLE", "equities"),
             model_version=os.getenv("MODEL_VERSION", "v9_10"),
             random_seed=int(os.getenv("RANDOM_SEED", "42")),
@@ -282,7 +282,7 @@ class FinanceMLConfig:
             os.environ["DB_URL"] = self.db_url
 
         os.environ["DB_TABLE"] = self.db_table
-        os.environ["DB_SCHEMA"] = self.db_schema
+        os.environ["DB_EQUITIES_SCHEMA"] = self.DB_EQUITIES_SCHEMA
         os.environ["MODEL_VERSION"] = self.model_version
         os.environ["RANDOM_SEED"] = str(self.random_seed)
         os.environ["N_JOBS"] = str(self.n_jobs)

@@ -542,7 +542,7 @@ def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
       - import_equities_data.sql
 
     Environment overrides:
-      - DB_SCHEMA (default: 'public')
+      - DB_EQUITIES_SCHEMA (default: 'public')
       - DB_TABLE (default: 'equities')
 
     Args:
@@ -555,6 +555,7 @@ def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
     Raises:
         ImportError: If SQLAlchemy not available
     """
+
     if create_engine is None:
         raise ImportError(
             "SQLAlchemy not available. Install psycopg2-binary and SQLAlchemy or use CSV data source."
@@ -564,7 +565,7 @@ def load_from_db(db_url: str, limit: Optional[int] = None) -> pd.DataFrame:
     assert callable(create_engine), "create_engine must be callable"
 
     # Resolve schema and table from environment, default to public.equities
-    schema = os.environ.get("DB_SCHEMA", "public")
+    schema = os.environ.get("DB_EQUITIES_SCHEMA", "public")
     table = os.environ.get("DB_TABLE", "equities")
     # Fully qualified table reference
     table_ref = f"{schema}.{table}"
@@ -594,7 +595,7 @@ def load_from_all_stocks(db_url: str, limit: Optional[int] = None) -> pd.DataFra
     primary key (Ticker, Region) and includes all regions in a single table.
 
     Environment overrides:
-      - DB_SCHEMA (default: 'public')
+      - DB_EQUITIES_SCHEMA (default: 'public')
       - DB_ALL_STOCKS_TABLE (default: 'all_stocks')
 
     Args:
@@ -629,7 +630,7 @@ def load_from_all_stocks(db_url: str, limit: Optional[int] = None) -> pd.DataFra
     assert callable(create_engine), "create_engine must be callable"
 
     # Resolve schema and table from environment
-    schema = os.environ.get("DB_SCHEMA", "public")
+    schema = os.environ.get("DB_EQUITIES_SCHEMA", "public")
     table = os.environ.get("DB_ALL_STOCKS_TABLE", "all_stocks")
     # Fully qualified table reference
     table_ref = f"{schema}.{table}"

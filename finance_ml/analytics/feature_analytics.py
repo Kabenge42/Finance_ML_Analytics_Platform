@@ -38,6 +38,12 @@ if TYPE_CHECKING:
 
 from collections import defaultdict
 
+from finance_ml.analytics.data_utils import (
+    load_feature_data_from_db,
+    backfill_feature_columns,
+    export_to_analytics_db,
+)
+
 try:
     from sqlalchemy import create_engine, text
 except ImportError:  # pragma: no cover
@@ -331,7 +337,7 @@ def load_feature_data_from_db(
             )
 
     # Resolve schema from environment, default to public
-    schema = os.environ.get("DB_SCHEMA", "public")
+    schema = os.environ.get("DB_EQUITIES_SCHEMA", "public")
     view_name = "mv_all_stock_features"
     view_ref = f"{schema}.{view_name}"
 
@@ -753,6 +759,7 @@ def create_interactive_valuation_heatmap(df: pd.DataFrame) -> Figure:
         sector_df = df_filtered[df_filtered["industry"] == sector]
         row_vals = []
         row_hover = []
+        # Computes median, IQR, and count for each sector
         for col, label in zip(valuation_cols, val_labels):
             if col in sector_df.columns:
                 median_val = sector_df[col].median()
@@ -890,7 +897,7 @@ def monte_carlo_price_target_simulation(
     df: pd.DataFrame,
     n_simulations: int = 10000,
     confidence_level: float = 0.95,
-    max_stocks: int = 500,
+    max_stocks: int = 2000,
 ) -> pd.DataFrame:
     """
     Monte Carlo simulation of price targets based on analyst spread.
@@ -908,7 +915,11 @@ def monte_carlo_price_target_simulation(
         Number of Monte Carlo simulations per stock
     confidence_level : float, default 0.95
         Confidence level for VaR calculation
-    max_stocks : int, default 100
+    max_stocks : int, default 2000
+        Maximum number of stocks to simulate (for performance)
+    confidence_level : float, default 0.95
+        Confidence level for VaR calculation
+    max_stocks : int, default 1000
         Maximum number of stocks to simulate (for performance)
 
     Returns
@@ -951,7 +962,10 @@ def monte_carlo_price_target_simulation(
             {
                 "ticker": row.get("ticker", ""),
                 "name": row.get("name", ""),
+                "sector": row.get("sector", ""),
                 "industry": row.get("industry", ""),
+                "country": row.get("country", ""),
+                "exchange": row.get("exchange", ""),
                 "last_price": last_price,
                 "pt_median": pt_median,
                 "pt_spread": pt_high - pt_low,
@@ -1234,7 +1248,17 @@ def create_composite_quality_score(df: pd.DataFrame) -> pd.DataFrame:
     }
 
     # Select base columns
-    base_cols = ["ticker", "name", "industry", "market_cap"]
+    base_cols = [
+        "ticker",
+        "name",
+        "sector",
+        "industry",
+        "exchange",
+        "market_cap",
+        "enterprise_value",
+        "last_price",
+        "price_target",
+    ]
     available_base = [c for c in base_cols if c in df.columns]
     result_df = df[available_base].copy()
 
@@ -1522,9 +1546,9 @@ def main():
             print("  - Running Monte Carlo price target simulation...")
             mc_results = monte_carlo_price_target_simulation(df, max_stocks=2000)
             if len(mc_results) > 0:
-                mc_results.to_csv(f"{output_dir}/monte_carlo_simulation.csv", index=False)
+                export_to_analytics_db(mc_results, "monte_carlo_simulation")
                 print(
-                    f"    ✓ Saved {len(mc_results)} simulations to {output_dir}/monte_carlo_simulation.csv"
+                    f"    ✓ Exported {len(mc_results)} simulations to analytics.monte_carlo_simulation"
                 )
                 print(f"    Top 5 by risk-reward ratio:")
                 top5 = mc_results.nlargest(5, "risk_reward_ratio")[
@@ -1537,20 +1561,18 @@ def main():
             print("  - Running Bayesian earnings beat model...")
             bayesian_results = bayesian_earnings_beat_model(df)
             if len(bayesian_results) > 0:
-                bayesian_results.to_csv(f"{output_dir}/bayesian_earnings_model.csv", index=False)
+                export_to_analytics_db(bayesian_results, "bayesian_earnings_model")
                 print(
-                    f"    ✓ Saved {len(bayesian_results)} predictions to {output_dir}/bayesian_earnings_model.csv"
+                    f"    ✓ Exported {len(bayesian_results)} predictions to analytics.bayesian_earnings_model"
                 )
 
         # Composite quality score
         print("  - Creating composite quality scores...")
         quality_scores = create_composite_quality_score(df)
-        quality_scores.to_csv(f"{output_dir}/composite_quality_scores.csv", index=False)
-        print(
-            f"    ✓ Saved {len(quality_scores)} scores to {output_dir}/composite_quality_scores.csv"
-        )
-        print(f"    Top 10 highest quality stocks:")
-        top10 = quality_scores.head(10)[
+        export_to_analytics_db(quality_scores, "composite_quality_scores")
+        print(f"    ✓ Exported {len(quality_scores)} scores to analytics.composite_quality_scores")
+        print(f"    Top 100 highest quality stocks:")
+        top10 = quality_scores.head(100)[
             ["ticker", "name", "composite_quality_score", "quality_tier"]
         ]
         print(top10.to_string(index=False))

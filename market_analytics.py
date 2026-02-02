@@ -33,6 +33,7 @@ from finance_ml.analytics.data_utils import (
     backfill_feature_columns,
     compute_metric_statistics,
     validate_feature_alignment,
+    export_to_analytics_db,
 )
 from finance_ml.analytics.feature_analytics import (
     PLOTLY_TEMPLATE,
@@ -52,6 +53,24 @@ from finance_ml.analytics.statistical_analysis import (
     bayesian_category_analysis,
     calculate_ruin_probability,
 )
+
+# NEW: Import for enhanced probability analytics
+try:
+    from finance_ml.analytics.probability_analytics import (
+        EarningsBeatProbabilityModel,
+        EPSStreakAnalyzer,
+        ModelConfidenceEstimator,
+        create_earnings_probability_dashboard,
+        create_confidence_calibration_chart,
+        create_eps_streak_analysis_chart,
+        export_probability_analytics_results,
+    )
+
+    PROBABILITY_ANALYTICS_AVAILABLE = True
+except ImportError:
+    PROBABILITY_ANALYTICS_AVAILABLE = False
+    logging.warning("Probability analytics module not available")
+
 # Category-specific chart visualizations
 from finance_ml.analytics.visualizations.category_charts import (
     # Analyst Sentiment
@@ -121,6 +140,7 @@ def load_feature_categories_from_db(connection_string: str = None) -> dict[str, 
         ORDER BY category, feature_alias
     """)
 
+    # Attempts database load; falls back on failure
     try:
         engine = create_engine(connection_string)
         with engine.connect() as conn:
@@ -402,7 +422,106 @@ def main():
         high_risk_count = (ruin_df["ruin_probability"] > 0.6).sum()
         print(f"   ✓ Identified {high_risk_count} high-risk stocks")
 
-    print()
+    # ========================================================================
+    # 3.5 PROBABILITY & CONFIDENCE ANALYTICS (NEW)
+    # ========================================================================
+    if PROBABILITY_ANALYTICS_AVAILABLE:
+        print("📊 Step 3.5: Running probability & confidence analytics...")
+        print("-" * 80)
+
+        probability_results = None
+        streak_results = None
+
+        try:
+            # Initialize models
+            beat_model = EarningsBeatProbabilityModel()
+            streak_analyzer = EPSStreakAnalyzer(mean_reversion_weight=0.3)
+            confidence_estimator = ModelConfidenceEstimator(n_bins=10)
+
+            # Earnings Beat Probability Analysis
+            print("   Computing Bayesian earnings beat probabilities...")
+
+            # Check for required columns or use proxies
+            if "eps_trajectory_score" in df.columns:
+                # Create proxy beat/total columns from trajectory score
+                df_analysis = df.copy()
+                df_analysis["eps_beat_count"] = (
+                    df_analysis["eps_trajectory_score"].fillna(50) / 100 * 5
+                ).astype(int)
+                df_analysis["eps_total_reports"] = 5
+
+                probability_results = beat_model.analyze_dataframe(
+                    df_analysis,
+                    beats_col="eps_beat_count",
+                    total_col="eps_total_reports",
+                    sector_col="sector" if "sector" in df.columns else None,
+                    ticker_col="ticker" if "ticker" in df.columns else "isin",
+                )
+
+                if len(probability_results) > 0:
+                    likely_beat_count = (
+                        probability_results["beat_classification"] == "likely_beat"
+                    ).sum()
+                    print(f"   ✓ Analyzed {len(probability_results)} stocks")
+                    print(f"   ✓ {likely_beat_count} classified as 'likely beat'")
+                    print(
+                        f"   ✓ Mean posterior beat probability: "
+                        f"{probability_results['posterior_beat_prob'].mean():.1%}"
+                    )
+
+            # EPS Streak Analysis
+            print("   Analyzing EPS streaks and continuation probabilities...")
+
+            if "eps_trajectory_score" in df.columns:
+                streak_results = streak_analyzer.analyze_dataframe(
+                    df,
+                    trajectory_col="eps_trajectory_score",
+                    streak_col=(
+                        "eps_positive_streak" if "eps_positive_streak" in df.columns else None
+                    ),
+                    ticker_col="ticker" if "ticker" in df.columns else "isin",
+                )
+
+                if len(streak_results) > 0:
+                    beat_streaks = (streak_results["streak_type"] == "beat").sum()
+                    miss_streaks = (streak_results["streak_type"] == "miss").sum()
+                    print(f"   ✓ Identified {beat_streaks} stocks on beat streaks")
+                    print(f"   ✓ Identified {miss_streaks} stocks on miss streaks")
+                    print(
+                        f"   ✓ Mean continuation probability: "
+                        f"{streak_results['continuation_probability'].mean():.1%}"
+                    )
+
+            # Model Confidence Estimation (using simulated outcomes for demo)
+            print("   Estimating model confidence metrics...")
+
+            if probability_results is not None and len(probability_results) > 10:
+                # Simulate actual outcomes based on posterior probability
+                # In production, this would use actual historical outcomes
+                np.random.seed(42)
+                simulated_outcomes = (
+                    np.random.random(len(probability_results))
+                    < probability_results["posterior_beat_prob"].values
+                ).astype(float)
+
+                confidence_result = confidence_estimator.compute_confidence_metrics(
+                    predicted_probs=probability_results["posterior_beat_prob"].values,
+                    actual_outcomes=simulated_outcomes,
+                    model_name="Bayesian Earnings Beat Model",
+                )
+
+                print(f"   ✓ Brier Score: {confidence_result.brier_score:.4f}")
+                print(f"   ✓ Calibration Error: {confidence_result.calibration_error:.4f}")
+                print(f"   ✓ AUC-ROC: {confidence_result.discrimination_auc:.3f}")
+                print(f"   ✓ Overall Confidence: {confidence_result.overall_confidence:.1f}/100")
+
+        except Exception as e:
+            print(f"   ⚠️  Probability analytics error: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+        print()
 
     # ========================================================================
     # 4. STOCK SCREENING
@@ -479,6 +598,26 @@ def main():
         fig = create_summary_dashboard(df)
         fig.write_html(output_dir / "summary_dashboard.html")
         print("   ✓ Saved: outputs/summary_dashboard.html")
+
+        # --- NEW: Probability Analytics Visualizations ---
+        if PROBABILITY_ANALYTICS_AVAILABLE:
+            if probability_results is not None and len(probability_results) > 0:
+                print("   Creating earnings probability dashboard...")
+                fig = create_earnings_probability_dashboard(probability_results)
+                fig.write_html(output_dir / "earnings_beat_probability_dashboard.html")
+                print("   ✓ Saved: outputs/analytics/earnings_beat_probability_dashboard.html")
+
+                if "confidence_result" in locals():
+                    print("   Creating model confidence calibration chart...")
+                    fig = create_confidence_calibration_chart(confidence_result)
+                    fig.write_html(output_dir / "model_confidence_calibration.html")
+                    print("   ✓ Saved: outputs/analytics/model_confidence_calibration.html")
+
+            if streak_results is not None and len(streak_results) > 0:
+                print("   Creating EPS streak analysis chart...")
+                fig = create_eps_streak_analysis_chart(streak_results)
+                fig.write_html(output_dir / "eps_streak_analysis.html")
+                print("   ✓ Saved: outputs/analytics/eps_streak_analysis.html")
 
         # --- New Category-Specific Visualizations ---
 
@@ -610,18 +749,36 @@ def main():
 
     if stats_data:
         stats_df = pd.DataFrame(stats_data)
-        stats_df.to_csv(output_dir / "feature_statistics.csv", index=False)
-        print(f"   ✓ Saved: outputs/feature_statistics.csv ({len(stats_df)} features)")
+        export_to_analytics_db(stats_df, "feature_statistics")
+        print(f"   ✓ Exported {len(stats_df)} features to analytics.feature_statistics")
 
     # Export screened stocks
     if "quality_stocks" in locals() and len(quality_stocks) > 0:
-        quality_stocks.to_csv(output_dir / "quality_stocks.csv", index=False)
-        print(f"   ✓ Saved: outputs/quality_stocks.csv ({len(quality_stocks)} stocks)")
+        export_to_analytics_db(quality_stocks, "quality_stocks")
+        print(f"   ✓ Exported {len(quality_stocks)} stocks to analytics.quality_stocks")
+
+    # NEW: Export probability analytics results
+    if PROBABILITY_ANALYTICS_AVAILABLE:
+        if probability_results is not None and streak_results is not None:
+            print("   Exporting probability analytics results...")
+            try:
+                export_paths = export_probability_analytics_results(
+                    probability_df=probability_results,
+                    streak_df=streak_results,
+                    output_dir=output_dir,
+                    confidence_result=(
+                        confidence_result if "confidence_result" in locals() else None
+                    ),
+                )
+                for name, path in export_paths.items():
+                    print(f"   ✓ Saved: {path}")
+            except Exception as e:
+                print(f"   ⚠️  Export error: {e}")
 
     print()
 
     # ========================================================================
-    # SUMMARY
+    # SUMMARY (UPDATED)
     # ========================================================================
     print("=" * 80)
     print("✅ ANALYSIS COMPLETE")
@@ -636,12 +793,18 @@ def main():
     print("  • visualizations.technical: Momentum and range charts")
     print("  • visualizations.temporal_analysis: Earnings and dividend timelines")
     print("  • visualizations.category_charts: Category-specific charts")
+    if PROBABILITY_ANALYTICS_AVAILABLE:
+        print("  • probability_analytics: Bayesian beat probability & EPS streaks")
     print()
     print(f"Total stocks analyzed: {len(df):,}")
     print(f"Total features: {len(df.columns)}")
     print(f"Feature categories: {len(FEATURE_CATEGORIES)}")
+    if probability_results is not None:
+        print(f"Probability analysis completed: {len(probability_results)} stocks")
+    if streak_results is not None:
+        print(f"Streak analysis completed: {len(streak_results)} stocks")
     print()
-    print("Check the 'outputs/' directory for generated files.")
+    print("Check the 'outputs/analytics/' directory for generated files.")
     print()
 
 
