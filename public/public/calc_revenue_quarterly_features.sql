@@ -58,7 +58,7 @@ SELECT "ISIN"                                                                   
        "Total Revenues (-3FY)"                                                                   AS revenue_3fy,
        "Total Revenues (-4FY)"                                                                   AS revenue_4fy,
        -- Year-over-year growth using FY data
-       pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)              AS revenue_yoy_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)       AS revenue_yoy_growth,
        -- Current vs 5-year average
        public.safe_divide("Total Revenues (LTM)"::NUMERIC, "Total Revenues (5YAVGLTM)"::NUMERIC) AS revenue_vs_5y_avg,
        -- LTM vs FY comparison
@@ -67,17 +67,17 @@ SELECT "ISIN"                                                                   
        public.safe_divide("Total Revenues (FQ)"::NUMERIC,
                           "Total Revenues (5YAVGFQ)"::NUMERIC)                                   AS revenue_fq_vs_5y_avg_fq,
        -- Quarterly momentum: QoQ growth rates
-       pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-1FQFQ)"::NUMERIC)            AS revenue_qoq_growth,
-       pct_change("Total Revenues (-1FQFQ)"::NUMERIC, "Total Revenues (-2FQFQ)"::NUMERIC)        AS revenue_qoq_2q,
-       pct_change("Total Revenues (-2FQFQ)"::NUMERIC, "Total Revenues (-3FQFQ)"::NUMERIC)        AS revenue_qoq_3q,
-       pct_change("Total Revenues (-3FQFQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC)        AS revenue_qoq_4q,
+       public.pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-1FQFQ)"::NUMERIC)     AS revenue_qoq_growth,
+       public.pct_change("Total Revenues (-1FQFQ)"::NUMERIC, "Total Revenues (-2FQFQ)"::NUMERIC) AS revenue_qoq_2q,
+       public.pct_change("Total Revenues (-2FQFQ)"::NUMERIC, "Total Revenues (-3FQFQ)"::NUMERIC) AS revenue_qoq_3q,
+       public.pct_change("Total Revenues (-3FQFQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC) AS revenue_qoq_4q,
        -- YoY quarterly comparison (current FQ vs same quarter last year)
-       pct_change("Total Revenues (FQ)"::NUMERIC,
-                  "Total Revenues (-4FQFQ)"::NUMERIC)                                            AS revenue_yoy_quarterly,
+       public.pct_change("Total Revenues (FQ)"::NUMERIC,
+                         "Total Revenues (-4FQFQ)"::NUMERIC)                                     AS revenue_yoy_quarterly,
        -- Multi-year growth rates
-       pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-2FY)"::NUMERIC)              AS revenue_2y_growth,
-       pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC)              AS revenue_3y_growth,
-       pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC)              AS revenue_4y_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-2FY)"::NUMERIC)       AS revenue_2y_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC)       AS revenue_3y_growth,
+       public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC)       AS revenue_4y_growth,
        -- CAGR calculations
        CASE
            WHEN "Total Revenues (-3FY)" > 0 AND "Total Revenues (FY)" > 0
@@ -94,7 +94,7 @@ SELECT "ISIN"                                                                   
                100
            END                                                                                   AS revenue_cagr_4y,
        -- Quarterly trend: FQ vs 4 quarters ago
-       pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC)            AS revenue_4q_trend,
+       public.pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC)     AS revenue_4q_trend,
        -- Trailing 4-quarter average
        ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
         "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") / 4.0                             AS revenue_4q_avg,
@@ -109,14 +109,14 @@ SELECT "ISIN"                                                                   
            ELSE 0
            END                                                                                   AS revenue_growth_flag,
        -- Revenue stability: how close LTM is to 5Y average
-       clamp_score(
+       public.clamp_score(
                100 - ABS(public.safe_divide("Total Revenues (LTM)"::NUMERIC - "Total Revenues (5YAVGLTM)",
                                             "Total Revenues (5YAVGLTM)"::NUMERIC)) * 100
        )                                                                                         AS revenue_stability_score,
        -- Accelerating growth flag: recent growth > historical growth
        CASE
-           WHEN pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) >
-                pct_change("Total Revenues (-1FY)"::NUMERIC, "Total Revenues (-2FY)"::NUMERIC)
+           WHEN public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) >
+                public.pct_change("Total Revenues (-1FY)"::NUMERIC, "Total Revenues (-2FY)"::NUMERIC)
                THEN 1
            ELSE 0
            END                                                                                   AS revenue_accelerating_flag,

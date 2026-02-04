@@ -28,14 +28,18 @@ SELECT
     e."FY End Date"                       AS fy_end_date,
     e."Next FY End Date"                  AS next_fy_end_date,
     e."Next Earnings"                     AS next_earnings,
-    e."Next Earnings (When)"              AS next_earnings_when,
-    e."Next Earnings (Status)"            AS next_earnings_status,
     e."Income Statement Report Date"      AS income_statement_report_date,
     e."Next Income Statement Report Date" AS next_income_statement_report_date,
     e."Market Cap"                        AS market_cap,
     e."Enterprise Value"                  AS enterprise_value,
     e."Last Price"                        AS last_price,
+    e."Price Target"           AS price_target,
+    e."Price Target - Low"     AS price_target_low,
+    e."Price Target - High"    AS price_target_high,
+    e."Price Target - Median"  AS price_target_median,
+    e."Price Target (YTD Ago)" AS price_target_ytd_ago,
     e."Shrs Out"                          AS shares_outstanding,
+    e."Volume (Shrs)"          AS volume_shrs,
 
     -- =========================================================================
     -- SECTION 1: VALUATION RATIOS (vw_features_valuation_ratios)
@@ -949,6 +953,7 @@ FROM vw_identifier_columns                               id
 -- Section 6: Growth
          LEFT JOIN calc_growth_features()                gf ON id.isin = gf.isin
          LEFT JOIN calc_revenue_forecast_features()      rff ON id.isin = rff.isin
+         LEFT JOIN calc_revenue_estimate_consensus() rec ON id.isin = rec.isin
          LEFT JOIN calc_revenue_quarterly_features()     rqf ON id.isin = rqf.isin
          LEFT JOIN calc_total_revenues_temporal()        trt ON id.isin = trt.isin
 
@@ -1012,21 +1017,6 @@ FROM vw_identifier_columns                               id
 -- =============================================================================
 CREATE UNIQUE INDEX idx_mv_all_stock_features_isin
     ON mv_all_stock_features (isin);
-
-CREATE INDEX idx_mv_all_stock_features_ticker
-    ON mv_all_stock_features (ticker);
-
-CREATE INDEX idx_mv_all_stock_features_sector_industry
-    ON mv_all_stock_features (sector, industry);
-
-CREATE INDEX idx_mv_all_stock_features_region_country
-    ON mv_all_stock_features (region, country, trading_country);
-
-CREATE INDEX idx_mv_all_stock_features_exchange
-    ON mv_all_stock_features (exchange);
-
-CREATE INDEX idx_mv_all_stock_features_market_cap
-    ON mv_all_stock_features (market_cap DESC NULLS LAST);
 
 -- =============================================================================
 -- COMMENT ON MATERIALIZED VIEW

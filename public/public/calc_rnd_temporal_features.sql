@@ -55,8 +55,8 @@ SELECT "ISIN"                                                                   
         public.safe_divide("R&D Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)) *
        100                                                                                          AS rnd_intensity_trend,
        -- Growth metrics
-       pct_change("R&D Expenses (FQ)"::NUMERIC, "R&D Expenses (-1FQFQ)"::NUMERIC)                   AS rnd_qoq_growth,
-       pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC)                     AS rnd_yoy_growth,
+       public.pct_change("R&D Expenses (FQ)"::NUMERIC, "R&D Expenses (-1FQFQ)"::NUMERIC)            AS rnd_qoq_growth,
+       public.pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC)              AS rnd_yoy_growth,
        CASE
            WHEN "R&D Expenses (-3FY)" > 0 AND "R&D Expenses (FY)" > 0
                THEN
@@ -72,7 +72,7 @@ SELECT "ISIN"                                                                   
        CASE
            WHEN "R&D Expenses (-1FY)" > 0
                THEN public.safe_divide(
-                   pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC),
+                   public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC),
                    public.safe_divide("R&D Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) * 100
                     )
            END                                                                                      AS rnd_roi_proxy,
@@ -85,7 +85,7 @@ SELECT "ISIN"                                                                   
            ELSE 0 END                                                                               AS rnd_increasing_flag,
        -- R&D cut flag (significant decline may signal distress)
        CASE
-           WHEN pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC) < -15
+           WHEN public.pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC) < -15
                THEN 1
            ELSE 0 END                                                                               AS rnd_cut_flag,
        -- High R&D intensity flag (tech/pharma typical >10%)

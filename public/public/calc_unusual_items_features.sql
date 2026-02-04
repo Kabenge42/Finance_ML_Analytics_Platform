@@ -52,7 +52,7 @@ SELECT "ISIN"                                     AS isin,
                THEN 1
            ELSE 0 END                             AS has_unusual_items_flag,
        -- Earnings quality impact (higher = better quality, less impacted by unusual items)
-       clamp_score(
+       public.clamp_score(
                100 - public.safe_divide(
                              ABS(COALESCE("Other Unusual Items/Total (LTM)", 0) +
                                  COALESCE("Impairment of Goodwill (LTM)", 0) +

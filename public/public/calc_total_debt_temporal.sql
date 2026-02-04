@@ -41,9 +41,9 @@ SELECT "ISIN"                                                                   
        "Total Debt (-3FY)"                                                            AS debt_3fy,
        "Total Debt (-4FY)"                                                            AS debt_4fy,
        -- Trend metrics
-       pct_change("Total Debt (FQ)"::NUMERIC, "Total Debt (-1FQ)"::NUMERIC)           AS debt_qoq_change,
-       pct_change("Total Debt (FY)"::NUMERIC, "Total Debt (-1FY)"::NUMERIC)           AS debt_yoy_change,
-       pct_change("Total Debt (FQ)"::NUMERIC, "Total Debt (-4FQ)"::NUMERIC)           AS debt_4q_trend,
+       public.pct_change("Total Debt (FQ)"::NUMERIC, "Total Debt (-1FQ)"::NUMERIC) AS debt_qoq_change,
+       public.pct_change("Total Debt (FY)"::NUMERIC, "Total Debt (-1FY)"::NUMERIC) AS debt_yoy_change,
+       public.pct_change("Total Debt (FQ)"::NUMERIC, "Total Debt (-4FQ)"::NUMERIC) AS debt_4q_trend,
        CASE
            WHEN "Total Debt (-3FY)" > 0
                THEN

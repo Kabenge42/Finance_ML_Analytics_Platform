@@ -38,13 +38,13 @@ SELECT "ISIN"                                                                   
                            "Total Revenues (-1FY)"::NUMERIC)) * 100
                                                                                                             AS sga_trend_yoy,
        CASE
-           WHEN calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) > 0
+           WHEN public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) > 0
                THEN public.safe_divide(
-                   calc_change_ratio("Operating Income (FY)"::NUMERIC, "Operating Income (-1FY)"::NUMERIC),
-                   calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)
+                   public.calc_change_ratio("Operating Income (FY)"::NUMERIC, "Operating Income (-1FY)"::NUMERIC),
+                   public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)
                     )
            END                                                                                              AS operating_leverage_proxy,
-       clamp_score(
+       public.clamp_score(
                100 -
                public.safe_divide("Cost Of Revenues (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) * 100 * 0.5 -
                public.safe_divide("Total Operating Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) * 100 *
@@ -53,8 +53,8 @@ SELECT "ISIN"                                                                   
        -- NEW: Marketing efficiency metrics using schema columns
        public.safe_divide("Marketing Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) *
        100                                                                                                  AS marketing_to_revenue,
-       pct_change("Marketing Expenses (FY)"::NUMERIC,
-                  "Marketing Expenses (-1FY)"::NUMERIC)                                                     AS marketing_trend_yoy,
+       public.pct_change("Marketing Expenses (FY)"::NUMERIC,
+                         "Marketing Expenses (-1FY)"::NUMERIC)                                              AS marketing_trend_yoy,
        public.safe_divide("Marketing Expenses (FY)"::NUMERIC,
                           "Marketing Expenses (5YAVGLTM)"::NUMERIC)                                         AS marketing_vs_5y_avg,
        -- NEW: SG&A vs 5Y average

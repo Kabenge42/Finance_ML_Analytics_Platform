@@ -46,9 +46,9 @@ SELECT "ISIN"                                                                   
        "Inventory (-3FY)"                                                                    AS inventory_3fy,
        "Inventory (-4FY)"                                                                    AS inventory_4fy,
        -- Trend metrics
-       pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-1FQ)"::NUMERIC)                    AS inventory_qoq_change,
-       pct_change("Inventory (FY)"::NUMERIC, "Inventory (-1FY)"::NUMERIC)                    AS inventory_yoy_change,
-       pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-4FQ)"::NUMERIC)                    AS inventory_4q_trend,
+       public.pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-1FQ)"::NUMERIC)             AS inventory_qoq_change,
+       public.pct_change("Inventory (FY)"::NUMERIC, "Inventory (-1FY)"::NUMERIC)             AS inventory_yoy_change,
+       public.pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-4FQ)"::NUMERIC)             AS inventory_4q_trend,
        public.safe_divide("Inventory (FQ)"::NUMERIC, "Inventory (5YAVGFQ)"::NUMERIC)         AS inventory_vs_5y_avg,
        -- Efficiency metrics
        "Inventory (LTM)" / NULLIF("Cost Of Revenues (LTM)" / 365.0, 0)                       AS inventory_days,
@@ -57,8 +57,8 @@ SELECT "ISIN"                                                                   
        public.safe_divide("Inventory (LTM)"::NUMERIC, "Total Assets (LTM)"::NUMERIC) * 100   AS inventory_to_assets,
        -- Inventory buildup flag (rising faster than revenue)
        CASE
-           WHEN pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-4FQ)"::NUMERIC) >
-                pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC) + 10
+           WHEN public.pct_change("Inventory (FQ)"::NUMERIC, "Inventory (-4FQ)"::NUMERIC) >
+                public.pct_change("Total Revenues (FQ)"::NUMERIC, "Total Revenues (-4FQFQ)"::NUMERIC) + 10
                THEN 1
            ELSE 0 END                                                                        AS inventory_buildup_flag,
        -- Inventory reduction flag (declining)

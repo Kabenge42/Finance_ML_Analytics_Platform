@@ -44,13 +44,13 @@ SELECT "ISIN"                                                                   
        "Goodwill (-3FY)"                                                                      AS goodwill_3fy,
        "Goodwill (-4FY)"                                                                      AS goodwill_4fy,
        -- Trend metrics
-       pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC)                       AS goodwill_qoq_change,
-       pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-1FY)"::NUMERIC)                       AS goodwill_yoy_change,
-       pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC)                       AS goodwill_3y_growth,
+       public.pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC)                AS goodwill_qoq_change,
+       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-1FY)"::NUMERIC)                AS goodwill_yoy_change,
+       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC)                AS goodwill_3y_growth,
        public.safe_divide("Goodwill (FQ)"::NUMERIC, "Goodwill (5YAVGFQ)"::NUMERIC)            AS goodwill_vs_5y_avg,
        -- Recent acquisition flag (goodwill increased significantly)
        CASE
-           WHEN pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC) > 20
+           WHEN public.pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC) > 20
                THEN 1
            ELSE 0 END                                                                         AS recent_acquisition_flag,
        -- Goodwill accumulation rate (avg annual increase)
@@ -67,11 +67,11 @@ SELECT "ISIN"                                                                   
        CASE
            WHEN "Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0) > 0.25
                AND "Net Income - (IS) (FY)" < "Net Income - (IS) (-1FY)"
-               THEN clamp_score(
+               THEN public.clamp_score(
                    ("Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0)) * 200 +
-                   ABS(pct_change("Net Income - (IS) (FY)"::NUMERIC, "Net Income - (IS) (-1FY)"::NUMERIC)) * 0.5
+                   ABS(public.pct_change("Net Income - (IS) (FY)"::NUMERIC, "Net Income - (IS) (-1FY)"::NUMERIC)) * 0.5
                     )
-           ELSE clamp_score(
+           ELSE public.clamp_score(
                    ("Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0)) * 100
                 )
            END                                                                                AS impairment_risk_score,

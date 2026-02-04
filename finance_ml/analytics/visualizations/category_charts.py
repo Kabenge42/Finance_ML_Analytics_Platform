@@ -610,7 +610,7 @@ def create_goodwill_impairment_scatter(
     size_col: str = "market_cap",
 ) -> go.Figure:
     """
-    Create scatter plot of goodwill 3Y growth vs impairment risk score.
+    Create scatter plot of goodwill concentration vs impairment risk score.
 
     Parameters
     ----------
@@ -624,14 +624,15 @@ def create_goodwill_impairment_scatter(
     go.Figure
         Plotly scatter figure
     """
+
     fig = px.scatter(
         df,
-        x="goodwill_3y_growth",
+        x="goodwill_concentration",
         y="impairment_risk_score",
         color="recent_acquisition_flag",
         size=size_col,
         hover_data=["ticker", "name", "goodwill_concentration"],
-        title="Goodwill 3Y Growth vs Impairment Risk Score",
+        title="Goodwill Concentration vs Impairment Risk Score",
     )
     fig.update_layout(template=PLOTLY_TEMPLATE)
     return fig
@@ -816,6 +817,7 @@ def create_valuation_violin_plot(
         box=True,
         points="all",
         hover_data=["ticker", "name"],
+        height=1000,
         title=f"{metric.replace('_', ' ').title()} Distribution by {group_by.title()}",
     )
     fig.update_layout(template=PLOTLY_TEMPLATE, showlegend=False)

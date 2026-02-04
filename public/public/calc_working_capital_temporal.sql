@@ -44,9 +44,9 @@ SELECT "ISIN"                                                                   
        "Working Capital (-3FY)"                                                                  AS wc_3fy,
        "Working Capital (-4FY)"                                                                  AS wc_4fy,
        -- Trend metrics
-       pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-1FQ)"::NUMERIC)            AS wc_qoq_change,
-       pct_change("Working Capital (FY)"::NUMERIC, "Working Capital (-1FY)"::NUMERIC)            AS wc_yoy_change,
-       pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-4FQ)"::NUMERIC)            AS wc_4q_trend,
+       public.pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-1FQ)"::NUMERIC) AS wc_qoq_change,
+       public.pct_change("Working Capital (FY)"::NUMERIC, "Working Capital (-1FY)"::NUMERIC) AS wc_yoy_change,
+       public.pct_change("Working Capital (FQ)"::NUMERIC, "Working Capital (-4FQ)"::NUMERIC) AS wc_4q_trend,
        public.safe_divide("Working Capital (FQ)"::NUMERIC, "Working Capital (5YAVGFY)"::NUMERIC) AS wc_vs_5y_avg,
        (CASE WHEN "Working Capital (FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Working Capital (-1FQ)" > 0 THEN 1 ELSE 0 END +

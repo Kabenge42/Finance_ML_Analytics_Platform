@@ -670,6 +670,3 @@ create index idx_equities_name
 create index idx_equities_fiscal
     on equities ("Fiscal Year", "Fiscal Quarter", "Income Statement Report Date");
 
-create index idx_equities_market_cap
-    on equities ("Market Cap" desc);
-

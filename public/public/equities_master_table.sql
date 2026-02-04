@@ -14,12 +14,6 @@ comment on table equities_master_table is 'Metadata table documenting all column
 alter table equities_master_table
     owner to postgres;
 
-create index idx_equities_master_table_role
-    on equities_master_table (role);
-
-create index idx_equities_master_table_ddl
-    on equities_master_table (ddl_equivalent);
-
 create index equities_master_table_column_alias_index
     on equities_master_table (column_alias) include (role, column_name);
 

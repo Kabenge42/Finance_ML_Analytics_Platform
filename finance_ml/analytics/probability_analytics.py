@@ -62,6 +62,11 @@ class BeatProbabilityResult:
     """Result container for earnings beat probability analysis."""
 
     ticker: str
+    name: str
+    sector: str
+    industry: str
+    country: str
+    exchange: str
     prior_alpha: float
     prior_beta: float
     posterior_alpha: float
@@ -82,6 +87,11 @@ class EPSStreakResult:
     """Result container for EPS streak analysis."""
 
     ticker: str
+    name: str
+    sector: str
+    industry: str
+    country: str
+    exchange: str
     current_streak: int
     streak_type: str  # 'beat', 'miss', 'meet'
     max_streak_beat: int
@@ -158,7 +168,7 @@ class EarningsBeatProbabilityModel:
         self,
         prior_alpha: float = 2.0,
         prior_beta: float = 2.0,
-        sector_priors: Optional[dict[str, tuple[float, float]]] = None,
+        sector_priors: Optional[dict[str, PriorParameters]] = None,
     ):
         """
         Initialize the earnings beat probability model.
@@ -166,39 +176,38 @@ class EarningsBeatProbabilityModel:
         Args:
             prior_alpha: Alpha parameter for Beta prior (default: 2.0 for mild optimism)
             prior_beta: Beta parameter for Beta prior (default: 2.0 for symmetry)
-            sector_priors: Optional dict mapping sectors to (alpha, beta) tuples
+            sector_priors: Optional dict mapping sectors to PriorParameters
                           for sector-specific priors based on historical patterns
         """
-        self.prior_alpha = prior_alpha
-        self.prior_beta = prior_beta
-        self.sector_priors = sector_priors or self._default_sector_priors()
+        self.default_prior = PriorParameters(prior_alpha, prior_beta)
+        self.sector_priors = sector_priors or self._create_default_sector_priors()
 
-    def _default_sector_priors(self) -> dict[str, tuple[float, float]]:
+    def _create_default_sector_priors(self) -> dict[str, PriorParameters]:
         """
-        Default sector-specific priors based on typical beat rates.
+        Create default sector-specific priors based on typical beat rates.
 
         Technology tends to have higher beat rates (~70%), while
         cyclical sectors like Energy have more variable outcomes.
         """
         return {
-            "Information Technology": (3.5, 1.5),  # ~70% prior beat rate
-            "Health Care": (3.0, 1.5),  # ~67% prior beat rate
-            "Consumer Discretionary": (2.5, 1.5),  # ~63% prior beat rate
-            "Industrials": (2.5, 1.5),  # ~63% prior beat rate
-            "Financials": (2.5, 2.0),  # ~56% prior beat rate
-            "Consumer Staples": (2.5, 2.0),  # ~56% prior beat rate
-            "Materials": (2.0, 2.0),  # ~50% prior beat rate
-            "Energy": (2.0, 2.5),  # ~44% prior beat rate
-            "Utilities": (2.0, 2.0),  # ~50% prior beat rate
-            "Communication Services": (3.0, 1.5),  # ~67% prior beat rate
-            "Real Estate": (2.0, 2.0),  # ~50% prior beat rate
+            "Information Technology": PriorParameters(3.5, 1.5),  # ~70% prior beat rate
+            "Health Care": PriorParameters(3.0, 1.5),  # ~67% prior beat rate
+            "Consumer Discretionary": PriorParameters(2.5, 1.5),  # ~63% prior beat rate
+            "Industrials": PriorParameters(2.5, 1.5),  # ~63% prior beat rate
+            "Financials": PriorParameters(2.5, 2.0),  # ~56% prior beat rate
+            "Consumer Staples": PriorParameters(2.5, 2.0),  # ~56% prior beat rate
+            "Materials": PriorParameters(2.0, 2.0),  # ~50% prior beat rate
+            "Energy": PriorParameters(2.0, 2.5),  # ~44% prior beat rate
+            "Utilities": PriorParameters(2.0, 2.0),  # ~50% prior beat rate
+            "Communication Services": PriorParameters(3.0, 1.5),  # ~67% prior beat rate
+            "Real Estate": PriorParameters(2.0, 2.0),  # ~50% prior beat rate
         }
 
     def _get_prior_parameters(
         self,
         sector: Optional[str],
         use_sector_prior: bool,
-    ) -> tuple[float, float]:
+    ) -> PriorParameters:
         """
         Get the appropriate prior parameters based on sector.
 
@@ -207,11 +216,12 @@ class EarningsBeatProbabilityModel:
             use_sector_prior: Whether to use sector-specific priors
 
         Returns:
-            Tuple of (alpha, beta) prior parameters
+            PriorParameters for the given sector or default
         """
-        if use_sector_prior and sector and sector in self.sector_priors:
-            return self.sector_priors[sector]
-        return self.prior_alpha, self.prior_beta
+        if not use_sector_prior or not sector:
+            return self.default_prior
+
+        return self.sector_priors.get(sector, self.default_prior)
 
     def _compute_posterior_statistics(
         self,
@@ -233,6 +243,25 @@ class EarningsBeatProbabilityModel:
         posterior_std = np.sqrt((alpha * beta) / (total**2 * (total + 1)))
         return posterior_mean, posterior_std
 
+    def _compute_single_credible_interval(
+        self,
+        distribution: stats.rv_continuous,
+        lower_quantile: float,
+        upper_quantile: float,
+    ) -> tuple[float, float]:
+        """
+        Compute a single credible interval from posterior distribution.
+
+        Args:
+            distribution: Scipy Beta distribution object
+            lower_quantile: Lower quantile (e.g., 0.05 for 90% CI)
+            upper_quantile: Upper quantile (e.g., 0.95 for 90% CI)
+
+        Returns:
+            Tuple of (lower_bound, upper_bound)
+        """
+        return (distribution.ppf(lower_quantile), distribution.ppf(upper_quantile))
+
     def _compute_credible_intervals(
         self,
         distribution: stats.rv_continuous,
@@ -246,22 +275,24 @@ class EarningsBeatProbabilityModel:
         Returns:
             Tuple of (ci_90, ci_95) where each is a (lower, upper) tuple
         """
-        ci_90 = (
-            distribution.ppf(self.CI_90_LOWER_QUANTILE),
-            distribution.ppf(self.CI_90_UPPER_QUANTILE),
+        ci_90 = self._compute_single_credible_interval(
+            distribution,
+            self.CI_90_LOWER_QUANTILE,
+            self.CI_90_UPPER_QUANTILE,
         )
-        ci_95 = (
-            distribution.ppf(self.CI_95_LOWER_QUANTILE),
-            distribution.ppf(self.CI_95_UPPER_QUANTILE),
+        ci_95 = self._compute_single_credible_interval(
+            distribution,
+            self.CI_95_LOWER_QUANTILE,
+            self.CI_95_UPPER_QUANTILE,
         )
         return ci_90, ci_95
 
     def _compute_confidence_score(self, alpha: float, beta: float) -> float:
         """
-        Compute confidence score based on posterior concentration.
+        Compute confidence score based on effective sample size.
 
-        Higher α + β means more concentrated posterior, indicating
-        more data and thus higher confidence in the estimate.
+        The confidence score reflects how much data supports the posterior
+        estimate, normalized to a 0-1 scale.
 
         Args:
             alpha: Posterior alpha parameter
@@ -270,8 +301,9 @@ class EarningsBeatProbabilityModel:
         Returns:
             Confidence score between 0 and 1
         """
-        effective_sample_size = alpha + beta - 2  # Subtract prior pseudo-counts
-        return min(1.0, effective_sample_size / self.CONFIDENCE_NORMALIZATION_FACTOR)
+        effective_sample_size = alpha + beta - 2  # Subtract prior contribution
+        confidence = min(1.0, effective_sample_size / self.CONFIDENCE_NORMALIZATION_FACTOR)
+        return max(0.0, confidence)
 
     def compute_posterior(
         self,
@@ -293,7 +325,8 @@ class EarningsBeatProbabilityModel:
             Tuple of (posterior_alpha, posterior_beta)
         """
         n_misses = n_total - n_beats
-        alpha, beta = self._get_prior_parameters(sector, use_sector_prior)
+        prior = self._get_prior_parameters(sector, use_sector_prior)
+        alpha, beta = prior.alpha, prior.beta
 
         # Conjugate update: posterior = Beta(α + beats, β + misses)
         posterior_alpha = alpha + n_beats
@@ -348,6 +381,7 @@ class EarningsBeatProbabilityModel:
         total_col: str = "eps_total_reports",
         sector_col: str = "sector",
         ticker_col: str = "ticker",
+        name_col: str = "name",
     ) -> pd.DataFrame:
         """
         Analyze earnings beat probabilities for entire DataFrame.
@@ -358,6 +392,7 @@ class EarningsBeatProbabilityModel:
             total_col: Column name for total report counts
             sector_col: Column name for sector
             ticker_col: Column name for ticker
+            name_col: Column name for company name
 
         Returns:
             DataFrame with probability analysis results
@@ -370,6 +405,7 @@ class EarningsBeatProbabilityModel:
             n_total = row.get(total_col, 0)
             sector = row.get(sector_col, None)
             ticker = row.get(ticker_col, "UNKNOWN")
+            name = row.get(name_col, "UNKNOWN")
 
             if pd.isna(n_beats) or pd.isna(n_total) or n_total == 0:
                 # Use proxy from EPS trajectory if available
@@ -399,6 +435,7 @@ class EarningsBeatProbabilityModel:
             results.append(
                 {
                     "ticker": ticker,
+                    "name": name,
                     "sector": sector,
                     "historical_beats": n_beats,
                     "total_reports": n_total,
@@ -445,6 +482,12 @@ class EPSStreakAnalyzer:
         eps_trajectory_score: float,
         eps_positive_streak: Optional[int] = None,
         eps_improvement_count: Optional[int] = None,
+        ticker: str = "",
+        name: str = "",
+        sector: str = "",
+        industry: str = "",
+        country: str = "",
+        exchange: str = "",
     ) -> EPSStreakResult:
         """
         Compute streak analysis from trajectory score and related metrics.
@@ -453,6 +496,12 @@ class EPSStreakAnalyzer:
             eps_trajectory_score: EPS trajectory score (0-100)
             eps_positive_streak: Number of positive EPS quarters
             eps_improvement_count: Number of YoY improvements
+            ticker: Ticker symbol
+            name: Company name
+            sector: Sector
+            industry: Industry
+            country: Country
+            exchange: Exchange
 
         Returns:
             EPSStreakResult with analysis
@@ -505,7 +554,12 @@ class EPSStreakAnalyzer:
             expected_next = "beat" if streak_type == "miss" else "miss"
 
         return EPSStreakResult(
-            ticker="",  # Set by caller
+            ticker=ticker,
+            name=name,
+            sector=sector,
+            industry=industry,
+            country=country,
+            exchange=exchange,
             current_streak=current_streak,
             streak_type=streak_type,
             max_streak_beat=max(current_streak if streak_type == "beat" else 0, 0),
@@ -519,10 +573,15 @@ class EPSStreakAnalyzer:
     def analyze_dataframe(
         self,
         df: pd.DataFrame,
+        ticker_col: str = "ticker",
         trajectory_col: str = "eps_trajectory_score",
         streak_col: str = "eps_positive_streak",
         improvement_col: str = "eps_improvement_count",
-        ticker_col: str = "ticker",
+        name_col: str = "name",
+        sector_col: str = "sector",
+        industry_col: str = "industry",
+        country_col: str = "country",
+        exchange_col: str = "exchange",
     ) -> pd.DataFrame:
         """
         Analyze EPS streaks for entire DataFrame.
@@ -533,6 +592,11 @@ class EPSStreakAnalyzer:
             streak_col: Column for positive streak count
             improvement_col: Column for improvement count
             ticker_col: Column for ticker
+            name_col: Column for company name
+            sector_col: Column for sector
+            industry_col: Column for industry
+            country_col: Column for country
+            exchange_col: Column for exchange
 
         Returns:
             DataFrame with streak analysis
@@ -544,6 +608,11 @@ class EPSStreakAnalyzer:
             streak = row.get(streak_col, None)
             improvement = row.get(improvement_col, None)
             ticker = row.get(ticker_col, "UNKNOWN")
+            name = row.get(name_col, "")
+            sector = row.get(sector_col, "")
+            industry = row.get(industry_col, "")
+            country = row.get(country_col, "")
+            exchange = row.get(exchange_col, "")
 
             if trajectory is None or pd.isna(trajectory):
                 continue
@@ -552,11 +621,22 @@ class EPSStreakAnalyzer:
                 eps_trajectory_score=trajectory,
                 eps_positive_streak=streak,
                 eps_improvement_count=improvement,
+                ticker=ticker,
+                name=name,
+                sector=sector,
+                industry=industry,
+                country=country,
+                exchange=exchange,
             )
 
             results.append(
                 {
                     "ticker": ticker,
+                    "name": name,
+                    "sector": sector,
+                    "industry": industry,
+                    "country": country,
+                    "exchange": exchange,
                     "current_streak": result.current_streak,
                     "streak_type": result.streak_type,
                     "continuation_probability": result.streak_continuation_prob,

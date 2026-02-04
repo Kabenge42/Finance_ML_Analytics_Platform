@@ -36,7 +36,7 @@ SELECT "ISIN"                                                                   
                                NULLIF("Total Assets (LTM)", 0) * 100
                    ))                                                                         AS tangible_asset_quality,
        -- NEW: TBV growth (FY to LTM)
-       pct_change("TBV (LTM)"::NUMERIC, "TBV (FY)"::NUMERIC)                                  AS tbv_yoy_growth,
+       public.pct_change("TBV (LTM)"::NUMERIC, "TBV (FY)"::NUMERIC) AS tbv_yoy_growth,
        -- Validation: compare native TBV to calculated (should be ~1.0)
        public.safe_divide("TBV (LTM)"::NUMERIC, "Total Equity (LTM)"::NUMERIC - COALESCE("Goodwill (LTM)", 0) -
                                                 COALESCE("Gross Intangible Assets (LTM)", 0)) AS tbv_vs_calculated

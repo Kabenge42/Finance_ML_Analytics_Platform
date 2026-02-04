@@ -4163,9 +4163,10 @@ COMMENT ON VIEW vw_features_earnings IS
 
 
 -- =============================================================================
--- 6. vw_features_growth (NEW)
+-- 6. vw_features_growth (REFACTORED)
 -- Source functions: calc_growth_features, calc_revenue_forecast_features,
---                   calc_revenue_quarterly_features, calc_total_revenues_temporal
+--                   calc_revenue_quarterly_features, calc_total_revenues_temporal,
+--                   calc_revenue_estimate_consensus
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_growth AS
 SELECT
@@ -4198,10 +4199,9 @@ SELECT
 
     -- =========================================================================
     -- REVENUE FORECAST FEATURES (calc_revenue_forecast_features)
-    -- Source columns: Revenues - Est Avg (FY1E/NTM), Revenues - Est Med (FY1E),
-    --                 Total Revenues (LTM/FY), EBITDA (LTM), EBITDA - Est Avg (FY1E),
-    --                 Enterprise Value, EPS Norm - Est # (FY1E), EBIT - Est Med (FY1E/NTM),
-    --                 Revenues - Est YoY % (FY1E), Total Revenues/CAGR (5Y FY)
+    -- Source columns: Revenues - Est Avg/Med (FY1E/NTM), Total Revenues (LTM/FY),
+    --                 EBITDA - Est Avg (FY1E), Enterprise Value, EPS Norm - Est # (FY1E),
+    --                 EBIT - Est Med (FY1E/NTM), Total Revenues/CAGR (5Y FY)
     -- =========================================================================
     rff.revenue_est_spread,
     rff.revenue_beat_potential,
@@ -4217,8 +4217,22 @@ SELECT
     rff.estimate_confidence_score,
 
     -- =========================================================================
+    -- REVENUE ESTIMATE CONSENSUS (calc_revenue_estimate_consensus)
+    -- Source columns: Revenues - Est Avg (FY1E/NTM), Revenues - Est Med (FY1E/NTM),
+    --                 Revenues - Est YoY % (FY1E), Total Revenues (LTM)
+    -- =========================================================================
+    rec.revenue_est_avg_fy1e,
+    rec.revenue_est_med_fy1e,
+    rec.revenue_est_avg_ntm,
+    rec.revenue_est_med_ntm,
+    rec.revenue_avg_med_diff_pct,
+    rec.revenue_consensus_strength,
+    rec.revenue_revision_trend AS revenue_revision_trend_rec,
+    rec.revenue_vs_current,
+
+    -- =========================================================================
     -- REVENUE QUARTERLY FEATURES (calc_revenue_quarterly_features)
-    -- Source columns: Total Revenues (FQ/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/FY/-1FY/-2FY/-3FY/-4FY/LTM/5YAVGLTM/5YAVGFQ)
+    -- Source columns: Total Revenues (FQ/FY/LTM/5YAVGLTM/-1FQFQ/-2FQFQ/-3FQFQ/-4FQFQ/-1FY/-2FY/-3FY/-4FY)
     -- =========================================================================
     rqf.revenue_fq,
     rqf.revenue_fy,
@@ -4232,10 +4246,6 @@ SELECT
     rqf.revenue_2fy,
     rqf.revenue_3fy,
     rqf.revenue_4fy,
-    rqf.revenue_yoy_growth AS revenue_yoy_growth_qf,
-    rqf.revenue_vs_5y_avg  AS revenue_vs_5y_avg_qf,
-    rqf.revenue_ltm_vs_fy,
-    rqf.revenue_fq_vs_5y_avg_fq,
     rqf.revenue_qoq_growth,
     rqf.revenue_qoq_2q,
     rqf.revenue_qoq_3q,
@@ -4256,15 +4266,10 @@ SELECT
 
     -- =========================================================================
     -- TOTAL REVENUES TEMPORAL (calc_total_revenues_temporal)
-    -- Source columns: Total Revenues (FQ/LTM/FY/-1FY/5YAVGFQ/5YAVGLTM)
+    -- Source columns: Total Revenues (5YAVGFQ/5YAVGLTM/FQ/LTM)
     -- =========================================================================
-    trt.revenue_fq         AS revenue_fq_temp,
-    trt.revenue_ltm        AS revenue_ltm_temp,
-    trt.revenue_fy         AS revenue_fy_temp,
-    trt.revenue_1fy        AS revenue_1fy_temp,
     trt.revenue_5yavgfq,
     trt.revenue_5yavgltm,
-    trt.revenue_growth_yoy AS revenue_growth_yoy_temp,
     trt.revenue_vs_5y_avg_fq,
     trt.revenue_vs_5y_avg_ltm,
     trt.revenue_fq_vs_avg,
@@ -4273,13 +4278,14 @@ SELECT
 FROM vw_identifier_columns                           id
          LEFT JOIN calc_growth_features()            gf USING (isin)
          LEFT JOIN calc_revenue_forecast_features()  rff USING (isin)
+         LEFT JOIN calc_revenue_estimate_consensus() rec USING (isin)
          LEFT JOIN calc_revenue_quarterly_features() rqf USING (isin)
          LEFT JOIN calc_total_revenues_temporal()    trt USING (isin);
 
 COMMENT ON VIEW vw_features_growth IS
     'Growth metrics including revenue, EBITDA, FCF growth rates and forecasts.
     Source functions: calc_growth_features, calc_revenue_forecast_features,
-    calc_revenue_quarterly_features, calc_total_revenues_temporal';
+    calc_revenue_estimate_consensus, calc_revenue_quarterly_features, calc_total_revenues_temporal';
 
 
 -- =============================================================================
@@ -5269,13 +5275,9 @@ SELECT
     id.exchange,
 
     -- Reference metadata from equities
-    e."Last Updated"                      AS last_updated,
-    e."Reference Date"                    AS reference_date,
     e."FY End Date"                       AS fy_end_date,
     e."Next FY End Date"                  AS next_fy_end_date,
     e."Next Earnings"                     AS next_earnings,
-    e."Next Earnings (When)"              AS next_earnings_when,
-    e."Next Earnings (Status)"            AS next_earnings_status,
     e."Income Statement Report Date"      AS income_statement_report_date,
     e."Next Income Statement Report Date" AS next_income_statement_report_date,
     e."Market Cap"                        AS market_cap,
@@ -6201,6 +6203,7 @@ FROM vw_identifier_columns                               id
 -- Section 6: Growth
          LEFT JOIN calc_growth_features()                gf ON id.isin = gf.isin
          LEFT JOIN calc_revenue_forecast_features()      rff ON id.isin = rff.isin
+         LEFT JOIN calc_revenue_estimate_consensus() rec ON id.isin = rec.isin
          LEFT JOIN calc_revenue_quarterly_features()     rqf ON id.isin = rqf.isin
          LEFT JOIN calc_total_revenues_temporal()        trt ON id.isin = trt.isin
 
@@ -6291,7 +6294,7 @@ COMMENT ON MATERIALIZED VIEW mv_all_stock_features IS
     3. Technical Analysis (1 function)
     4. Profitability (4 functions)
     5. Earnings (6 functions)
-    6. Growth (4 functions)
+    6. Growth (5 functions)
     7. Quality & Risk (5 functions)
     8. Leverage & Liquidity (6 functions)
     9. Analyst Sentiment (2 functions)
@@ -7284,9 +7287,7 @@ $$ LANGUAGE SQL STABLE;
 -- Initial refresh of the materialized view
 REFRESH MATERIALIZED VIEW mv_all_stock_features;
 
--- Add a unique index for concurrent refresh capability
-CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_all_stock_features_isin_unique
-    ON mv_all_stock_features (isin);
+
 
 
 

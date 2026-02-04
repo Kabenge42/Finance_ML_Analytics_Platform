@@ -72,20 +72,24 @@ def load_feature_categories_from_db(
         Dictionary mapping category names to lists of feature aliases.
     """
     if connection_string is None:
-        connection_string = os.environ.get(
-            "DB_URL", "postgresql://user:password@localhost:5432/postgres"
-        )
+        connection_string = os.environ.get("DB_URL")
+
+    # If no connection string is available, use fallback immediately
+    if not connection_string:
+        logging.info("DB_URL not configured, using fallback feature categories")
+        return _get_fallback_feature_categories()
 
     if create_engine is None or text is None:
         logging.warning("SQLAlchemy not available, using fallback feature categories")
         return _get_fallback_feature_categories()
 
     query = text("""
-        SELECT category, feature_alias
-        FROM public.calculated_features_registry
-        ORDER BY category, feature_alias
-    """)
+                 SELECT category, feature_alias
+                 FROM public.calculated_features_registry
+                 ORDER BY category, feature_alias
+                 """)
 
+    # Attempts to load feature categories from database
     try:
         engine = create_engine(connection_string)
         with engine.connect() as conn:
@@ -527,7 +531,8 @@ def create_interactive_momentum_dashboard(df: pd.DataFrame) -> Figure:
     ----------
     df : pd.DataFrame
         DataFrame containing momentum columns:
-        - price_momentum_1m, price_momentum_3m, price_momentum_6m
+        - price_momentum_1m, price_momentum_3m, price_momentum_6m, price_momentum_1y
+        - price_momentum_5d, price_momentum_3y, price_momentum_5y, pt_vs_price_momentum
         - range_52w_position
         - ticker, name, industry
 
@@ -535,7 +540,7 @@ def create_interactive_momentum_dashboard(df: pd.DataFrame) -> Figure:
     -------
     Figure
         Plotly Figure with 4 subplot panels:
-        1. Momentum distribution by period
+        1. Momentum distribution by period (all 8 momentum columns)
         2. 3-Month momentum by industry
         3. 52-Week range position
         4. Short vs medium-term momentum scatter
@@ -557,9 +562,37 @@ def create_interactive_momentum_dashboard(df: pd.DataFrame) -> Figure:
         horizontal_spacing=0.10,
     )
 
-    momentum_cols = ["price_momentum_1m", "price_momentum_3m", "price_momentum_6m"]
-    colors = ["#3498db", "#e74c3c", "#2ecc71"]
-    labels = ["1-Month", "3-Month", "6-Month"]
+    # All available momentum columns from mv_all_stock_features
+    momentum_cols = [
+        "price_momentum_5d",
+        "price_momentum_1m",
+        "price_momentum_3m",
+        "price_momentum_6m",
+        "price_momentum_1y",
+        "price_momentum_3y",
+        "price_momentum_5y",
+        "pt_vs_price_momentum",
+    ]
+    colors = [
+        "#1abc9c",  # 5-Day - teal
+        "#3498db",  # 1-Month - blue
+        "#e74c3c",  # 3-Month - red
+        "#2ecc71",  # 6-Month - green
+        "#9b59b6",  # 1-Year - purple
+        "#f39c12",  # 3-Year - orange
+        "#e91e63",  # 5-Year - pink
+        "#00bcd4",  # PT vs Price - cyan
+    ]
+    labels = [
+        "5-Day",
+        "1-Month",
+        "3-Month",
+        "6-Month",
+        "1-Year",
+        "3-Year",
+        "5-Year",
+        "PT vs Price",
+    ]
 
     # Panel 1: Overlaid momentum histograms
     panel1_has_data = False
@@ -964,6 +997,7 @@ def monte_carlo_price_target_simulation(
                 "name": row.get("name", ""),
                 "sector": row.get("sector", ""),
                 "industry": row.get("industry", ""),
+                "region": row.get("region", ""),
                 "country": row.get("country", ""),
                 "exchange": row.get("exchange", ""),
                 "last_price": last_price,
@@ -1037,7 +1071,11 @@ def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataF
             {
                 "ticker": row.get("ticker", ""),
                 "name": row.get("name", ""),
+                "sector": row.get("sector", ""),
                 "industry": row.get("industry", ""),
+                "region": row.get("region", ""),
+                "country": row.get("country", ""),
+                "exchange": row.get("exchange", ""),
                 "eps_positive_streak": n_beats,
                 "posterior_beat_prob": prob_beat_next,
                 "model_confidence": confidence,
@@ -1253,11 +1291,22 @@ def create_composite_quality_score(df: pd.DataFrame) -> pd.DataFrame:
         "name",
         "sector",
         "industry",
+        "region",
+        "country",
         "exchange",
         "market_cap",
         "enterprise_value",
         "last_price",
         "price_target",
+        "piotroski_f_score",
+        "earnings_quality_composite",
+        "cash_flow_quality_score",
+        "distress_risk_score",
+        "accounting_quality_score",
+        "dilution_score",
+        "beta_stability_score",
+        "long_term_trend_score",
+        "eps_trajectory_score",
     ]
     available_base = [c for c in base_cols if c in df.columns]
     result_df = df[available_base].copy()

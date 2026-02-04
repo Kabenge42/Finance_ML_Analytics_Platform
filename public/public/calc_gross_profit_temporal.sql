@@ -37,10 +37,10 @@ SELECT "ISIN"                                                                   
        "Gross Profit (-2FY)"                                                                             AS gp_2fy,
        "Gross Profit (-3FY)"                                                                             AS gp_3fy,
        "Gross Profit (-4FY)"                                                                             AS gp_4fy,
-       pct_change("Gross Profit (FQ)"::NUMERIC,
-                  "Gross Profit (-1FQFQ)"::NUMERIC)                                                      AS gp_qoq_growth,
-       pct_change("Gross Profit (FY)"::NUMERIC,
-                  "Gross Profit (-1FY)"::NUMERIC)                                                        AS gp_yoy_growth,
+       public.pct_change("Gross Profit (FQ)"::NUMERIC,
+                         "Gross Profit (-1FQFQ)"::NUMERIC) AS gp_qoq_growth,
+       public.pct_change("Gross Profit (FY)"::NUMERIC,
+                         "Gross Profit (-1FY)"::NUMERIC)   AS gp_yoy_growth,
        public.safe_divide("Gross Profit (FQ)"::NUMERIC, "Total Revenues (FQ)"::NUMERIC) *
        100                                                                                               AS gp_margin_fq,
        (public.safe_divide("Gross Profit (FQ)"::NUMERIC, "Total Revenues (FQ)"::NUMERIC) -

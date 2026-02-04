@@ -26,7 +26,7 @@ SELECT "ISIN"                                                                   
                           "Revenues - Est Med (FY1E)"::NUMERIC) *
        100                                                                                       AS revenue_avg_med_diff_pct,
        -- Consensus strength: closer avg to median = stronger consensus
-       clamp_score(
+       public.clamp_score(
                100 - ABS(public.safe_divide("Revenues - Est Avg (FY1E)"::NUMERIC - "Revenues - Est Med (FY1E)",
                                             "Revenues - Est Med (FY1E)"::NUMERIC) * 100) * 2
        )                                                                                         AS revenue_consensus_strength,

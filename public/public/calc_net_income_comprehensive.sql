@@ -57,8 +57,8 @@ SELECT "ISIN"                                                                   
        "Normalized Net Income (5YAVGFQ)"                                                               AS normalized_ni_5yavgfq,
        "Normalized Net Income (5YAVGLTM)"                                                              AS normalized_ni_5yavgltm,
        -- Derived metrics
-       pct_change("Net Income - (IS) (FY)"::NUMERIC,
-                  "Net Income - (IS) (-1FY)"::NUMERIC)                                                 AS net_income_growth_yoy,
+       public.pct_change("Net Income - (IS) (FY)"::NUMERIC,
+                         "Net Income - (IS) (-1FY)"::NUMERIC)                                          AS net_income_growth_yoy,
        "Net Income Margin % (LTM)"::NUMERIC                                                            AS net_income_margin_ltm,
        public.safe_divide("Net Income/Adj. (LTM)"::NUMERIC,
                           "Net Income - (IS) (LTM)"::NUMERIC)                                          AS ni_adjustment_ratio,
@@ -69,7 +69,7 @@ SELECT "ISIN"                                                                   
         CASE
             WHEN "Net Income - (IS) (-4FY)" > 0 THEN 1
             ELSE 0 END)::INTEGER                                                                       AS net_income_positive_years,
-       clamp_score(
+       public.clamp_score(
                50 +
                (CASE WHEN "Net Income - (IS) (FY)" > 0 THEN 10 ELSE -10 END) +
                (CASE WHEN "Net Income - (IS) (-1FY)" > 0 THEN 5 ELSE -5 END) +
@@ -82,10 +82,10 @@ SELECT "ISIN"                                                                   
                (CASE WHEN "Net Income - (IS) (-1FY)" > "Net Income - (IS) (-2FY)" THEN 5 ELSE -5 END)
        )                                                                                               AS earnings_quality_composite,
        -- Quarterly trends
-       pct_change("Net Income - (IS) (FQ)"::NUMERIC,
-                  "Net Income - (IS) (-1FQFQ)"::NUMERIC)                                               AS net_income_qoq_growth,
-       pct_change("Net Income - (IS) (FQ)"::NUMERIC,
-                  "Net Income - (IS) (-4FQFQ)"::NUMERIC)                                               AS net_income_yoy_quarterly,
+       public.pct_change("Net Income - (IS) (FQ)"::NUMERIC,
+                         "Net Income - (IS) (-1FQFQ)"::NUMERIC)                                        AS net_income_qoq_growth,
+       public.pct_change("Net Income - (IS) (FQ)"::NUMERIC,
+                         "Net Income - (IS) (-4FQFQ)"::NUMERIC)                                        AS net_income_yoy_quarterly,
        -- vs 5Y averages
        public.safe_divide("Net Income - (IS) (LTM)"::NUMERIC,
                           "Net Income - (IS) (5YAVGLTM)"::NUMERIC)                                     AS net_income_vs_5y_avg,
