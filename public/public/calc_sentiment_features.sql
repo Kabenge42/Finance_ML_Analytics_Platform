@@ -21,34 +21,35 @@ as
 $$
 SELECT "ISIN"                                                                   AS isin,
        CASE
-           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                  "# Sell Ratings" + "# Strong Sell Ratings") > 0
                THEN ("# Strong Buys Ratings" + "# Buys Ratings") /
                     NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
                            "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
            END                                                                  AS analyst_bullish_pct,
        CASE
-           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                  "# Sell Ratings" + "# Strong Sell Ratings") > 0
                THEN ("# Sell Ratings" + "# Strong Sell Ratings") /
-                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                            "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
            END                                                                  AS analyst_bearish_pct,
        -- NEW: Neutral sentiment (Hold ratings)
        CASE
-           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                  "# Sell Ratings" + "# Strong Sell Ratings") > 0
                THEN "# Hold Ratings" /
-                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                            "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
            END                                                                  AS analyst_neutral_pct,
        ABS(
                CASE
-                   WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                   WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                          "# Sell Ratings" + "# Strong Sell Ratings") > 0
                        THEN (("# Strong Buys Ratings" + "# Buys Ratings") -
                              ("# Sell Ratings" + "# Strong Sell Ratings")) /
                             NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                                   "# No Opinion Ratings" +
                                    "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
                    END
        )                                                                        AS analyst_conviction,
@@ -72,5 +73,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_sentiment_features(text) owner to postgres;
+alter function calc_sentiment_features(unknown) owner to postgres;
 

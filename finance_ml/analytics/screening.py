@@ -353,6 +353,83 @@ def screen_dividend_quality(
     return result
 
 
+def screen_valuation_reversion_candidates(
+    df: pd.DataFrame,
+    min_discount_pct: float = 20.0,
+    min_quality_score: float = 50.0,
+    max_distress_risk: float = 40.0,
+) -> pd.DataFrame:
+    """
+    Find stocks trading at a deep discount to their 3-year historical mean
+    while maintaining stable fundamental scores.
+
+    Features: p_e_vs_3y_avg, ev_ebitda_vs_3y_avg, p_b_momentum_yoy
+    """
+    mask = pd.Series([True] * len(df), index=df.index)
+
+    # Valuation discount criteria (e.g., P/E is 20% below 3Y average)
+    if "p_e_vs_3y_avg" in df.columns:
+        mask &= df["p_e_vs_3y_avg"] <= (100 - min_discount_pct)
+
+    if "ev_ebitda_vs_3y_avg" in df.columns:
+        # If both exist, maybe one is enough or both
+        mask &= df["ev_ebitda_vs_3y_avg"] <= (100 - min_discount_pct)
+
+    # Quality filter
+    if "piotroski_f_score" in df.columns:
+        mask &= df["piotroski_f_score"] >= (min_quality_score / 10)
+
+    # Safety filter
+    if "distress_risk_score" in df.columns:
+        mask &= df["distress_risk_score"] >= (100 - max_distress_risk)
+
+    result = df[mask].copy()
+
+    # Sort by discount
+    sort_col = "p_e_vs_3y_avg" if "p_e_vs_3y_avg" in result.columns else "ev_ebitda_vs_3y_avg"
+    if sort_col in result.columns:
+        result = result.sort_values(sort_col)
+
+    return result
+
+
+def screen_integrity_filtered_growth(
+    df: pd.DataFrame,
+    min_revenue_growth: float = 15.0,
+    min_accounting_quality: float = 60.0,
+    max_dilution_score: float = 40.0,
+) -> pd.DataFrame:
+    """
+    Growth portfolio filter that excludes companies with low accounting quality
+    or high dilution.
+
+    Features: accounting_quality_score, dilution_score, merger_impact_ratio
+    """
+    mask = pd.Series([True] * len(df), index=df.index)
+
+    # Growth
+    if "revenue_growth_yoy" in df.columns:
+        mask &= df["revenue_growth_yoy"] >= min_revenue_growth
+
+    # Integrity filters
+    if "accounting_quality_score" in df.columns:
+        mask &= df["accounting_quality_score"] >= min_accounting_quality
+
+    if "dilution_score" in df.columns:
+        mask &= df["dilution_score"] <= max_dilution_score
+
+    if "merger_impact_ratio" in df.columns:
+        # High merger impact might mask organic growth issues
+        mask &= df["merger_impact_ratio"] <= 30.0
+
+    result = df[mask].copy()
+
+    if "accounting_quality_score" in result.columns:
+        result = result.sort_values("accounting_quality_score", ascending=False)
+
+    return result
+
+
 def screen_financial_health(
     df: pd.DataFrame,
     min_distress_score: float = 70,
@@ -400,11 +477,17 @@ def screen_financial_health(
     if "current_ratio" in df.columns:
         mask &= df["current_ratio"] >= min_current_ratio
 
-    if "interest_coverage_ratio" in df.columns:
-        mask &= df["interest_coverage_ratio"] >= min_interest_coverage
+    # Align with feature registry: interest_coverage (not interest_coverage_ratio)
+    interest_col = (
+        "interest_coverage" if "interest_coverage" in df.columns else "interest_coverage_ratio"
+    )
+    if interest_col in df.columns:
+        mask &= df[interest_col] >= min_interest_coverage
 
-    if require_positive_wc and "working_capital_ltm" in df.columns:
-        mask &= df["working_capital_ltm"] > 0
+    # Align with feature registry: wc_ltm (not working_capital_ltm)
+    wc_col = "wc_ltm" if "wc_ltm" in df.columns else "working_capital_ltm"
+    if require_positive_wc and wc_col in df.columns:
+        mask &= df[wc_col] > 0
 
     result = df[mask].copy()
 
@@ -415,7 +498,7 @@ def screen_financial_health(
 
 
 def rank_stocks_by_composite_score(
-    df: pd.DataFrame, weights: Optional[dict] = None
+    df: pd.DataFrame, weights: Optional[dict] = None, export: bool = False
 ) -> pd.DataFrame:
     """
     Rank stocks by composite quality score with customizable weights.
@@ -463,6 +546,16 @@ def rank_stocks_by_composite_score(
             result["composite_score"] += normalized.fillna(50) * weight
 
     result = result.sort_values("composite_score", ascending=False)
+
+    if export:
+        try:
+            from finance_ml.analytics.data_utils import export_to_analytics_db
+
+            export_cols = ["ticker", "name", "sector", "industry", "composite_score"]
+            available = [c for c in export_cols if c in result.columns]
+            export_to_analytics_db(result[available], "composite_scores_statistics")
+        except Exception:
+            pass
 
     return result
 

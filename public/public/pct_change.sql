@@ -7,5 +7,5 @@ $$
 SELECT (current_val - previous_val) / NULLIF(previous_val, 0) * 100 AS result;
 $$;
 
-alter function pct_change(numeric, numeric) owner to postgres;
+alter function pct_change(unknown, unknown) owner to postgres;
 

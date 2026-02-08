@@ -602,6 +602,7 @@ CREATE TABLE equities
     "# Hold Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Hold Ratings | alias: num_hold_ratings
     "# Buys Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Buys Ratings | alias: num_buys_ratings
     "# Sell Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Sell Ratings | alias: num_sell_ratings
+    "# No Opinion Ratings"                    NUMERIC DEFAULT 0,                     -- count: # No Opinion Ratings | alias: num_no_opinion_ratings
     "Shrs Out"                                         NUMERIC DEFAULT 0,            -- count: Shares outstanding | alias: shares_outstanding
     "Shrs Out (-1FY)"                                  NUMERIC DEFAULT 0,            -- count: Shares outstanding (previous FY) | alias: shrs_out_1fy
     "Full Time Employees (FQ)"                         NUMERIC DEFAULT 0,            -- count: Full time employees (Fiscal Quarter) | alias: full_time_employees_fq

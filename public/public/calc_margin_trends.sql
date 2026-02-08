@@ -38,5 +38,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_margin_trends(text) owner to postgres;
+alter function calc_margin_trends(unknown) owner to postgres;
 

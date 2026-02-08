@@ -558,6 +558,7 @@ create table equities
     "# Hold Ratings"                                   numeric default 0,
     "# Buys Ratings"                                   numeric default 0,
     "# Sell Ratings"                                   numeric default 0,
+    "# No Opinion Ratings"                    numeric default 0,
     "Shrs Out"                                         numeric default 0,
     "Shrs Out (-1FY)"                                  numeric default 0,
     "Full Time Employees (FQ)"                         numeric default 0,
@@ -658,9 +659,6 @@ comment on table equities is 'Equities screening data with financial metrics and
 alter table equities
     owner to postgres;
 
-create index idx_equities_geography
-    on equities ("Region", "Country", "Exchange");
-
 create index idx_equities_classification
     on equities ("Sector", "Industry", "Size Class", "Style Class");
 
@@ -669,4 +667,13 @@ create index idx_equities_name
 
 create index idx_equities_fiscal
     on equities ("Fiscal Year", "Fiscal Quarter", "Income Statement Report Date");
+
+create index idx_equities_market_cap
+    on equities ("Market Cap" desc);
+
+create index idx_equities_geography
+    on equities ("Region", "Country");
+
+create index idx_equities_exchange
+    on equities ("Exchange", "Trading Country");
 

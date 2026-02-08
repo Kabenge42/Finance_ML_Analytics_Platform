@@ -18,6 +18,22 @@ import plotly.graph_objects as go
 PLOTLY_TEMPLATE = "plotly_dark"
 
 
+def _no_data(title: str) -> go.Figure:
+    """Return a placeholder figure when required columns are missing."""
+    fig = go.Figure()
+    fig.add_annotation(
+        text="No data available",
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0.5,
+        showarrow=False,
+        font=dict(size=16),
+    )
+    fig.update_layout(title=title, template=PLOTLY_TEMPLATE)
+    return fig
+
+
 # =============================================================================
 # Analyst Sentiment Visualizations
 # =============================================================================
@@ -45,10 +61,13 @@ def create_analyst_sentiment_histogram(
     go.Figure
         Plotly figure with histogram and marginal box plot
     """
+    if "analyst_bullish_pct" not in df.columns:
+        return _no_data("Analyst Bullish Percentage - No Data")
+
     fig = px.histogram(
         df,
         x="analyst_bullish_pct",
-        color=color_by,
+        color=color_by if color_by in df.columns else None,
         title="Analyst Bullish Percentage Distribution by Industry",
         nbins=nbins,
         marginal="box",
@@ -82,20 +101,24 @@ def create_analyst_upside_scatter(
     go.Figure
         Plotly scatter figure
     """
+    if "analyst_rating_normalized" not in df.columns or "upside_potential" not in df.columns:
+        return _no_data("Analyst Rating vs Upside Potential - No Data")
+
     fig = px.scatter(
         df,
         x="analyst_rating_normalized",
         y="upside_potential",
-        color=color_by,
-        size=size_col,
+        color=color_by if color_by in df.columns else None,
+        size=size_col if size_col in df.columns else None,
         hover_data=["ticker", "name"],
         title="Analyst Rating vs Upside Potential",
     )
     fig.update_layout(
-        width=1200,
-        height=700,
+        width=1000,
+        height=800,
         yaxis=dict(range=[None, max_upside]),
         template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
     return fig
 
@@ -127,10 +150,13 @@ def create_eps_surprise_histogram(
     go.Figure
         Plotly figure with histogram and marginal violin plot
     """
+    if "eps_surprise_pct" not in df.columns:
+        return _no_data("EPS Surprise Distribution - No Data")
+
     fig = px.histogram(
         df,
         x="eps_surprise_pct",
-        color=color_by,
+        color=color_by if color_by in df.columns else None,
         title="EPS Surprise Distribution by Industry",
         nbins=nbins,
         marginal="violin",
@@ -158,12 +184,15 @@ def create_eps_trajectory_scatter(
     go.Figure
         Plotly scatter figure with color scale
     """
+    if "eps_trajectory_score" not in df.columns or "gaap_adj_eps_gap_pct" not in df.columns:
+        return _no_data("EPS Trajectory vs GAAP Adjustment Gap - No Data")
+
     fig = px.scatter(
         df,
         x="eps_trajectory_score",
         y="gaap_adj_eps_gap_pct",
-        color="earnings_quality_score",
-        size=size_col,
+        color="earnings_quality_score" if "earnings_quality_score" in df.columns else None,
+        size=size_col if size_col in df.columns else None,
         hover_data=["ticker", "name"],
         title="EPS Trajectory vs GAAP Adjustment Gap",
         color_continuous_scale="RdYlGn",
@@ -253,13 +282,19 @@ def create_revenue_vs_eps_growth_scatter(
     go.Figure
         Plotly scatter figure with reference lines
     """
+    x_col = "revenue_yoy_growth" if "revenue_yoy_growth" in df.columns else "revenue_growth_yoy"
+    y_col = "eps_yoy_growth" if "eps_yoy_growth" in df.columns else "eps_growth_yoy"
+    if x_col not in df.columns or y_col not in df.columns:
+        return _no_data("Revenue Growth vs EPS Growth - No Data")
+
+    hover = [c for c in ["ticker", "name", "revenue_cagr_5y"] if c in df.columns]
     fig = px.scatter(
         df,
-        x="revenue_growth_yoy",
-        y="eps_yoy_growth",
-        color=color_by,
-        size=size_col,
-        hover_data=["ticker", "name", "revenue_cagr_5y"],
+        x=x_col,
+        y=y_col,
+        color=color_by if color_by in df.columns else None,
+        size=size_col if size_col in df.columns else None,
+        hover_data=hover if hover else None,
         title="Revenue Growth vs EPS Growth (YoY)",
     )
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
@@ -292,13 +327,16 @@ def create_fcf_margin_yield_scatter(
     go.Figure
         Plotly scatter figure with color scale
     """
+    if "fcf_margin" not in df.columns or "fcf_yield" not in df.columns:
+        return _no_data("FCF Margin vs FCF Yield - No Data")
+
     fig = px.scatter(
         df,
         x="fcf_margin",
         y="fcf_yield",
-        color="fcf_positive_years",
-        size=size_col,
-        hover_data=["ticker", "name", "self_funding_ratio"],
+        color="fcf_positive_years" if "fcf_positive_years" in df.columns else None,
+        size=size_col if size_col in df.columns else None,
+        hover_data=[c for c in ["ticker", "name", "self_funding_ratio"] if c in df.columns] or None,
         title="FCF Margin vs FCF Yield (colored by FCF Positive Years)",
         color_continuous_scale="Greens",
     )
@@ -325,12 +363,15 @@ def create_cash_flow_quality_boxplot(
     go.Figure
         Plotly box plot figure
     """
+    if "cash_flow_quality_score" not in df.columns:
+        return _no_data("Cash Flow Quality Score - No Data")
+
     fig = px.box(
         df,
-        x=group_by,
+        x=group_by if group_by in df.columns else None,
         y="cash_flow_quality_score",
         title="Cash Flow Quality Score by Industry",
-        color=group_by,
+        color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
     fig.update_layout(template=PLOTLY_TEMPLATE)
@@ -361,21 +402,26 @@ def create_dividend_yield_payout_scatter(
     go.Figure
         Plotly scatter figure with color scale
     """
+    if "dividend_payout_ratio" not in df.columns or "dividend_yield_ltm" not in df.columns:
+        return _no_data("Dividend Yield vs Payout Ratio - No Data")
+
     fig = px.scatter(
         df,
         x="dividend_payout_ratio",
         y="dividend_yield_ltm",
-        color="dividend_streak",
-        size=size_col,
-        hover_data=["ticker", "name", "fcf_dividend_coverage"],
+        color="dividend_streak" if "dividend_streak" in df.columns else None,
+        size=size_col if size_col in df.columns else None,
+        hover_data=[c for c in ["ticker", "name", "fcf_dividend_coverage"] if c in df.columns]
+        or None,
         title="Dividend Yield vs Payout Ratio (colored by Dividend Streak)",
         color_continuous_scale="Blues",
     )
     fig.update_layout(
-        height=500,
+        height=600,
+        width=1000,
         title_font_size=16,
         template=PLOTLY_TEMPLATE,
-        margin=dict(l=60, r=40, t=80, b=60),
+        margin=dict(l=80, r=40, t=60, b=60),
         xaxis_title="Dividend Payout Ratio",
         yaxis_title="Dividend Yield (LTM)",
     )
@@ -404,19 +450,23 @@ def create_shareholder_yield_histogram(
     go.Figure
         Plotly figure with histogram and marginal box plot
     """
+    if "total_shareholder_yield" not in df.columns:
+        return _no_data("Total Shareholder Yield - No Data")
+
     fig = px.histogram(
         df,
         x="total_shareholder_yield",
-        color=color_by,
+        color=color_by if color_by in df.columns else None,
         title="Total Shareholder Yield Distribution by Industry",
         nbins=nbins,
         marginal="box",
     )
     fig.update_layout(
-        height=550,
+        height=600,
+        width=1000,
         title_font_size=16,
         template=PLOTLY_TEMPLATE,
-        margin=dict(l=60, r=40, t=80, b=60),
+        margin=dict(l=80, r=40, t=60, b=60),
         xaxis_title="Total Shareholder Yield (%)",
         yaxis_title="Count",
         legend=dict(
@@ -454,12 +504,15 @@ def create_rnd_intensity_boxplot(
     go.Figure
         Plotly box plot figure
     """
+    if "rnd_intensity_ltm" not in df.columns:
+        return _no_data("R&D Intensity - No Data")
+
     fig = px.box(
         df,
-        x=group_by,
+        x=group_by if group_by in df.columns else None,
         y="rnd_intensity_ltm",
         title="R&D Intensity by Industry",
-        color=group_by,
+        color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
     fig.update_layout(template=PLOTLY_TEMPLATE)
@@ -485,12 +538,15 @@ def create_rnd_intensity_growth_scatter(
     go.Figure
         Plotly scatter figure
     """
+    if "rnd_intensity_ltm" not in df.columns or "rnd_yoy_growth" not in df.columns:
+        return _no_data("R&D Intensity vs YoY Growth - No Data")
+
     fig = px.scatter(
         df,
         x="rnd_intensity_ltm",
         y="rnd_yoy_growth",
-        color="high_rnd_intensity_flag",
-        size=size_col,
+        color="high_rnd_intensity_flag" if "high_rnd_intensity_flag" in df.columns else None,
+        size=size_col if size_col in df.columns else None,
         hover_data=["ticker", "name", "rnd_per_employee"],
         title="R&D Intensity vs YoY R&D Growth",
     )
@@ -520,6 +576,9 @@ def create_rnd_per_employee_histogram(
     go.Figure
         Plotly histogram figure
     """
+    if "rnd_per_employee" not in df.columns:
+        return _no_data("R&D per Employee - No Data")
+
     df_filtered = df[df["rnd_per_employee"].notna()]
     fig = px.histogram(
         df_filtered,
@@ -556,13 +615,26 @@ def create_inventory_days_turnover_scatter(
     go.Figure
         Plotly scatter figure
     """
+    if "inventory_days" not in df.columns:
+        return _no_data("Inventory Days vs Turnover - No Data")
+
+    # Resolve inventory_turnover column (MV uses inventory_turnover_itf)
+    turnover_col = None
+    for candidate in ["inventory_turnover_itf", "inventory_turnover", "inventory_turnover_mv"]:
+        if candidate in df.columns:
+            turnover_col = candidate
+            break
+    if turnover_col is None:
+        return _no_data("Inventory Days vs Turnover - No Data")
+
     fig = px.scatter(
         df,
         x="inventory_days",
-        y="inventory_turnover",
-        color="inventory_buildup_flag",
-        size=size_col,
-        hover_data=["ticker", "name", "inventory_yoy_change"],
+        y=turnover_col,
+        color="inventory_buildup_flag" if "inventory_buildup_flag" in df.columns else None,
+        size=size_col if size_col in df.columns else None,
+        hover_data=[c for c in ["ticker", "name", "inventory_yoy_change"] if c in df.columns]
+        or None,
         title="Inventory Days vs Turnover (flagged for buildup)",
     )
     fig.update_layout(template=PLOTLY_TEMPLATE)
@@ -593,12 +665,15 @@ def create_goodwill_concentration_boxplot(
     go.Figure
         Plotly box plot figure
     """
+    if "goodwill_concentration" not in df.columns:
+        return _no_data("Goodwill Concentration - No Data")
+
     fig = px.box(
         df,
-        x=group_by,
+        x=group_by if group_by in df.columns else None,
         y="goodwill_concentration",
         title="Goodwill Concentration by Industry",
-        color=group_by,
+        color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
     fig.update_layout(template=PLOTLY_TEMPLATE)
@@ -624,13 +699,15 @@ def create_goodwill_impairment_scatter(
     go.Figure
         Plotly scatter figure
     """
+    if "goodwill_concentration" not in df.columns or "impairment_risk_score" not in df.columns:
+        return _no_data("Goodwill vs Impairment Risk - No Data")
 
     fig = px.scatter(
         df,
         x="goodwill_concentration",
         y="impairment_risk_score",
-        color="recent_acquisition_flag",
-        size=size_col,
+        color="recent_acquisition_flag" if "recent_acquisition_flag" in df.columns else None,
+        size=size_col if size_col in df.columns else None,
         hover_data=["ticker", "name", "goodwill_concentration"],
         title="Goodwill Concentration vs Impairment Risk Score",
     )
@@ -657,10 +734,13 @@ def create_acquisition_activity_histogram(
     go.Figure
         Plotly histogram figure
     """
+    if "recent_acquisition_flag" not in df.columns:
+        return _no_data("Acquisition Activity - No Data")
+
     fig = px.histogram(
         df,
         x="recent_acquisition_flag",
-        color=color_by,
+        color=color_by if color_by in df.columns else None,
         title="Recent Acquisition Activity by Industry",
         barmode="group",
     )
@@ -695,12 +775,15 @@ def create_capex_growth_scatter(
     go.Figure
         Plotly scatter figure with reference lines
     """
+    if "capex_yoy_growth" not in df.columns or "capex_vs_5y_avg" not in df.columns:
+        return _no_data("CapEx Growth vs 5Y Average - No Data")
+
     fig = px.scatter(
         df,
         x="capex_yoy_growth",
         y="capex_vs_5y_avg",
-        color=color_by,
-        size=size_col,
+        color=color_by if color_by in df.columns else None,
+        size=size_col if size_col in df.columns else None,
         hover_data=["ticker", "name", "investment_efficiency"],
         title="CapEx YoY Growth vs 5Y Average Comparison",
     )
@@ -729,12 +812,15 @@ def create_investment_efficiency_boxplot(
     go.Figure
         Plotly box plot figure
     """
+    if "investment_efficiency" not in df.columns:
+        return _no_data("Investment Efficiency - No Data")
+
     fig = px.box(
         df,
-        x=group_by,
+        x=group_by if group_by in df.columns else None,
         y="investment_efficiency",
         title="Investment Efficiency by Industry",
-        color=group_by,
+        color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
     fig.update_layout(template=PLOTLY_TEMPLATE)
@@ -763,10 +849,13 @@ def create_ma_intensity_histogram(
     go.Figure
         Plotly figure with histogram and marginal box plot
     """
+    if "ma_intensity_score" not in df.columns:
+        return _no_data("M&A Intensity Score - No Data")
+
     fig = px.histogram(
         df,
         x="ma_intensity_score",
-        color=color_by,
+        color=color_by if color_by in df.columns else None,
         title="M&A Intensity Score Distribution by Industry",
         nbins=nbins,
         marginal="box",
@@ -805,6 +894,9 @@ def create_valuation_violin_plot(
     go.Figure
         Plotly violin plot figure
     """
+    if metric not in df.columns:
+        return _no_data(f"{metric.replace('_', ' ').title()} - No Data")
+
     df_plot = df.copy()
     if max_val is not None and metric in df_plot.columns:
         df_plot = df_plot[df_plot[metric] <= max_val]
@@ -818,6 +910,7 @@ def create_valuation_violin_plot(
         points="all",
         hover_data=["ticker", "name"],
         height=1000,
+        width=2000,
         title=f"{metric.replace('_', ' ').title()} Distribution by {group_by.title()}",
     )
     fig.update_layout(template=PLOTLY_TEMPLATE, showlegend=False)
@@ -921,12 +1014,15 @@ def create_leverage_liquidity_bubble_chart(
     go.Figure
         Plotly bubble chart
     """
+    if "current_ratio" not in df.columns or "debt_to_equity" not in df.columns:
+        return _no_data("Leverage vs Liquidity - No Data")
+
     fig = px.scatter(
         df,
         x="current_ratio",
         y="debt_to_equity",
-        size=size_col,
-        color=color_by,
+        size=size_col if size_col in df.columns else None,
+        color=color_by if color_by in df.columns else None,
         hover_data=["ticker", "name"],
         title="Leverage (D/E) vs Liquidity (Current Ratio)",
         labels={
@@ -941,3 +1037,310 @@ def create_leverage_liquidity_bubble_chart(
 
     fig.update_layout(template=PLOTLY_TEMPLATE)
     return fig
+
+
+def create_productivity_quadrant(
+    df: pd.DataFrame,
+    size_col: str = "market_cap",
+    color_by: str = "industry",
+) -> go.Figure:
+    """
+    Scatter plot mapping revenue_per_employee against ebitda_per_employee.
+    """
+    x_col = "revenue_per_employee"
+    y_col = "ebitda_per_employee"
+
+    if x_col not in df.columns or y_col not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Productivity metrics missing", showarrow=False)
+        return fig
+
+    fig = px.scatter(
+        df,
+        x=x_col,
+        y=y_col,
+        size=size_col if size_col in df.columns else None,
+        color=color_by if color_by in df.columns else None,
+        hover_data=["ticker", "name"],
+        title="Employee Productivity Quadrant",
+        labels={
+            x_col: "Revenue per Employee",
+            y_col: "EBITDA per Employee",
+        },
+    )
+
+    # Add sector benchmarks (medians)
+    if color_by in df.columns:
+        x_median = df[x_col].median()
+        y_median = df[y_col].median()
+        fig.add_vline(
+            x=x_median, line_dash="dot", line_color="gray", annotation_text="Market Median Rev"
+        )
+        fig.add_hline(
+            y=y_median, line_dash="dot", line_color="gray", annotation_text="Market Median EBITDA"
+        )
+
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+    return fig
+
+
+def create_accounting_quality_breakdown(
+    df: pd.DataFrame,
+    ticker: str,
+) -> go.Figure:
+    """
+    Radar chart showing the sub-components of the accounting_quality_score.
+    """
+    components = [
+        "accruals_quality_score",
+        "non_operating_income_share",  # Note: lower is better for quality
+        "gaap_adj_eps_gap_pct",  # Note: lower is better for quality
+        "asset_sale_boost",  # Note: lower is better for quality
+        "exceptional_items_frequency",  # Note: lower is better for quality
+    ]
+
+    stock_data = df[df["ticker"] == ticker]
+    if stock_data.empty:
+        fig = go.Figure()
+        fig.add_annotation(text=f"Ticker {ticker} not found", showarrow=False)
+        return fig
+
+    values = []
+    labels = []
+    for comp in components:
+        if comp in stock_data.columns:
+            val = stock_data[comp].iloc[0]
+            # Normalize so that higher = better quality
+            if comp == "accruals_quality_score":
+                score = val
+            elif comp == "non_operating_income_share":
+                score = max(0, 100 - val)
+            elif comp == "gaap_adj_eps_gap_pct":
+                score = max(0, 100 - abs(val))
+            elif comp == "asset_sale_boost":
+                score = max(0, 100 - val)
+            elif comp == "exceptional_items_frequency":
+                score = max(0, 100 - (val * 10))
+            else:
+                score = 50
+
+            values.append(score)
+            labels.append(comp.replace("_", " ").title())
+
+    if not values:
+        fig = go.Figure()
+        fig.add_annotation(text="No accounting quality components available", showarrow=False)
+        return fig
+
+    # Close radar
+    labels.append(labels[0])
+    values.append(values[0])
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatterpolar(r=values, theta=labels, fill="toself", name=ticker, line_color="gold")
+    )
+
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        title=f"Accounting Quality Breakdown: {ticker}",
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+def create_valuation_range_visual(
+    df: pd.DataFrame,
+    ticker: str,
+    metric: str = "p_e_ratio",
+) -> go.Figure:
+    """
+    Chart showing the current valuation relative to its historical 3-year and 5-year ranges.
+    """
+    stock_data = df[df["ticker"] == ticker]
+    if stock_data.empty:
+        fig = go.Figure()
+        fig.add_annotation(text=f"Ticker {ticker} not found", showarrow=False)
+        return fig
+
+    current = stock_data[metric].iloc[0] if metric in stock_data.columns else None
+
+    # Try to find historical range columns
+    # Based on naming convention in calculated_features_registry.sql or similar
+    # p_e_3y_min, p_e_3y_max, p_e_5y_min, p_e_5y_max
+    prefix = metric.replace("_ratio", "")
+    min_3y = stock_data.get(f"{prefix}_3y_min", pd.Series([None])).iloc[0]
+    max_3y = stock_data.get(f"{prefix}_3y_max", pd.Series([None])).iloc[0]
+    min_5y = stock_data.get(f"{prefix}_5y_min", pd.Series([None])).iloc[0]
+    max_5y = stock_data.get(f"{prefix}_5y_max", pd.Series([None])).iloc[0]
+
+    if current is None or (min_3y is None and min_5y is None):
+        # Fallback if specific min/max columns don't exist
+        # Maybe we can use p_e_vs_3y_avg to infer some range if it's the only thing available
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"Historical range data for {metric} not available", showarrow=False
+        )
+        return fig
+
+    fig = go.Figure()
+
+    # 5Y range bar
+    if min_5y is not None and max_5y is not None:
+        fig.add_trace(
+            go.Bar(
+                name="5Y Range",
+                x=[max_5y - min_5y],
+                y=[metric.upper()],
+                base=min_5y,
+                orientation="h",
+                marker_color="rgba(100, 100, 100, 0.3)",
+                showlegend=True,
+            )
+        )
+
+    # 3Y range bar
+    if min_3y is not None and max_3y is not None:
+        fig.add_trace(
+            go.Bar(
+                name="3Y Range",
+                x=[max_3y - min_3y],
+                y=[metric.upper()],
+                base=min_3y,
+                orientation="h",
+                marker_color="rgba(100, 100, 255, 0.5)",
+                showlegend=True,
+            )
+        )
+
+    # Current value marker
+    fig.add_trace(
+        go.Scatter(
+            name="Current",
+            x=[current],
+            y=[metric.upper()],
+            mode="markers",
+            marker=dict(color="red", size=15, symbol="diamond"),
+            showlegend=True,
+        )
+    )
+
+    fig.update_layout(
+        title=f"{metric.replace('_', ' ').title()} Historical Range: {ticker}",
+        template=PLOTLY_TEMPLATE,
+        xaxis_title="Valuation Multiple",
+        yaxis=dict(showticklabels=False),
+        barmode="overlay",
+    )
+
+    return fig
+
+
+def create_balance_sheet_composition_chart(
+    df: pd.DataFrame,
+    group_by: str = "industry",
+) -> go.Figure:
+    """Create stacked bar chart of balance sheet composition by industry."""
+    import plotly.express as px
+
+    bs_cols = ["total_assets", "total_liabilities", "total_equity"]
+    available = [c for c in bs_cols if c in df.columns]
+
+    if not available or group_by not in df.columns:
+        return px.bar(title="Balance Sheet data not available")
+
+    agg_df = df.groupby(group_by)[available].mean().reset_index()
+
+    fig = px.bar(
+        agg_df,
+        x=group_by,
+        y=available,
+        title="Balance Sheet Composition by Industry",
+        barmode="stack",
+    )
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+    return fig
+
+
+def create_cost_structure_breakdown(
+    df: pd.DataFrame,
+    ticker: str,
+) -> go.Figure:
+    """Create cost structure breakdown chart for a specific company."""
+    import plotly.graph_objects as go
+
+    cost_cols = ["cogs_pct", "sga_pct", "rnd_pct", "other_opex_pct"]
+    available = [c for c in cost_cols if c in df.columns]
+
+    company = df[df["ticker"] == ticker]
+    if company.empty or not available:
+        fig = go.Figure()
+        fig.add_annotation(text=f"No data for {ticker}")
+        return fig
+
+    values = [company[c].iloc[0] for c in available]
+
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=available,
+                values=values,
+                hole=0.4,
+                title=f"{ticker} Cost Structure",
+            )
+        ]
+    )
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+    return fig
+
+
+def create_unusual_items_heatmap(
+    df: pd.DataFrame,
+    max_companies: int = 50,
+) -> go.Figure:
+    """Create heatmap of unusual items flags across companies."""
+    import plotly.express as px
+
+    unusual_cols = [c for c in df.columns if "unusual" in c.lower() or "special" in c.lower()]
+
+    if not unusual_cols:
+        return px.imshow([[0]], title="No unusual items columns found")
+
+    subset = df[["ticker"] + unusual_cols].head(max_companies)
+    subset = subset.set_index("ticker")
+
+    fig = px.imshow(
+        subset.values,
+        x=unusual_cols,
+        y=subset.index,
+        title="Unusual Items Detection Heatmap",
+        color_continuous_scale="RdYlGn_r",
+    )
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+    return fig
+
+
+# Import from sister module for the registry
+try:
+    from .technical import create_momentum_divergence_scatter
+except ImportError:
+    # Fallback if technical module is not yet ready or being restructured
+    def create_momentum_divergence_scatter(*args, **kwargs):
+        return go.Figure().add_annotation(text="Momentum Divergence Scatter Not Available")
+
+
+# Dictionary mapping views to their primary visualization functions
+VIEW_VISUALIZATION_REGISTRY = {
+    "vw_features_valuation_ratios": [
+        ("valuation_violin", create_valuation_violin_plot),
+        ("valuation_range", create_valuation_range_visual),
+    ],
+    "vw_features_momentum": [
+        ("momentum_scatter", create_momentum_divergence_scatter),
+    ],
+    "vw_features_analyst_sentiment": [
+        ("sentiment_histogram", create_analyst_sentiment_histogram),
+        ("upside_scatter", create_analyst_upside_scatter),
+    ],
+    # ... add mappings for other views
+}

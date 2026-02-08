@@ -42,5 +42,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_total_revenues_temporal(text) owner to postgres;
+alter function calc_total_revenues_temporal(unknown) owner to postgres;
 

@@ -80,14 +80,15 @@ $$ LANGUAGE SQL;
 
 CREATE OR REPLACE VIEW vw_identifier_columns AS
 SELECT e."ISIN"            AS isin,
-       e."Industry"        AS industry,
-       e."Trading Country" AS trading_country,
-       e."Region"          AS region,
-       e."Name"            AS name,
-       e."Country"         AS country,
        e."Ticker"          AS ticker,
+       e."Name"            AS name,
+       e."Region"          AS region,
+       e."Country"         AS country,
+       e."Trading Country" AS trading_country,
+       e."Exchange"        AS exchange,
        e."Sector"          AS sector,
-       e."Exchange"        AS exchange
+       e."Industry"        AS industry
+
 FROM postgres.public.equities e;
 
 -- =============================================================================
@@ -190,28 +191,24 @@ CREATE OR REPLACE FUNCTION calc_extended_valuation_timeseries(p_isin TEXT DEFAUL
 AS
 $$
 SELECT "ISIN"                                                                      AS isin,
-       ("EV/Sales (LTM)" - "EV/Sales (-1FQLTM)") / NULLIF("EV/Sales (-1FQLTM)", 0) AS ev_sales_qoq_1q,
-       ("EV/Sales (-1FQLTM)" - "EV/Sales (-2FQLTM)") / NULLIF("EV/Sales (-2FQLTM)", 0)
-                                                                                   AS ev_sales_qoq_2q,
-       ("EV/Sales (-2FQLTM)" - "EV/Sales (-3FQLTM)") / NULLIF("EV/Sales (-3FQLTM)", 0)
-                                                                                   AS ev_sales_qoq_3q,
-       ("EV/Sales (-3FQLTM)" - "EV/Sales (-4FQLTM)") / NULLIF("EV/Sales (-4FQLTM)", 0)
-                                                                                   AS ev_sales_qoq_4q,
-       ("P/E (LTM)" - "P/E (5YAVGLTM)") / NULLIF("P/E (5YAVGLTM)", 0)              AS p_e_vs_5y_avg,
+       public.calc_change_ratio("EV/Sales (LTM)", "EV/Sales (-1FQLTM)")            AS ev_sales_qoq_1q,
+       public.calc_change_ratio("EV/Sales (-1FQLTM)", "EV/Sales (-2FQLTM)")        AS ev_sales_qoq_2q,
+       public.calc_change_ratio("EV/Sales (-2FQLTM)", "EV/Sales (-3FQLTM)")        AS ev_sales_qoq_3q,
+       public.calc_change_ratio("EV/Sales (-3FQLTM)", "EV/Sales (-4FQLTM)")        AS ev_sales_qoq_4q,
+       public.calc_change_ratio("P/E (LTM)", "P/E (5YAVGLTM)")                     AS p_e_vs_5y_avg,
        CASE
            WHEN "P/E (LTM)" IS NOT NULL AND "P/E (3YAVGLTM)" IS NOT NULL
                THEN ("P/E (LTM)" - "P/E (3YAVGLTM)") / NULLIF(ABS("P/E (3YAVGLTM)") * 0.5, 0)
            END                                                                     AS p_e_percentile_proxy,
-       (("P/E (LTM)" - "P/E (3YAVGLTM)") / NULLIF("P/E (3YAVGLTM)", 0) +
-        ("EV/Sales (LTM)" - "EV/Sales (3YAVGLTM)") / NULLIF("EV/Sales (3YAVGLTM)", 0) +
-        ("EV/EBITDA (LTM)" - "EV/EBITDA (3YAVGLTM)") / NULLIF("EV/EBITDA (3YAVGLTM)", 0)) / 3.0
+       (public.calc_change_ratio("P/E (LTM)", "P/E (3YAVGLTM)") +
+        public.calc_change_ratio("EV/Sales (LTM)", "EV/Sales (3YAVGLTM)") +
+        public.calc_change_ratio("EV/EBITDA (LTM)", "EV/EBITDA (3YAVGLTM)")) / 3.0
                                                                                    AS valuation_mean_reversion,
-       ("EV/EBITDA (LTM)" - "EV/EBITDA (-1FQLTM)") / NULLIF("EV/EBITDA (-1FQLTM)", 0)
-                                                                                   AS ev_ebitda_qoq_trend,
-       ("P/B (LTM)" - "P/B (-1FY)") / NULLIF("P/B (-1FY)", 0)                      AS p_b_momentum_yoy,
-       (("P/E (LTM)" / NULLIF("P/E (3YAVGLTM)", 0)) +
-        ("EV/EBITDA (LTM)" / NULLIF("EV/EBITDA (3YAVGLTM)", 0))) / 2.0 - 1.0       AS valuation_compression,
-       ("P/E (EST FY1)" - "P/E (LTM)") / NULLIF(ABS("P/E (LTM)"), 0) * 100         AS forward_pe_premium
+       public.calc_change_ratio("EV/EBITDA (LTM)", "EV/EBITDA (-1FQLTM)")          AS ev_ebitda_qoq_trend,
+       public.calc_change_ratio("P/B (LTM)", "P/B (-1FY)")                         AS p_b_momentum_yoy,
+       (public.safe_divide("P/E (LTM)", "P/E (3YAVGLTM)") +
+        public.safe_divide("EV/EBITDA (LTM)", "EV/EBITDA (3YAVGLTM)")) / 2.0 - 1.0 AS valuation_compression,
+       public.calc_change_ratio("P/E (EST FY1)", "P/E (LTM)") * 100                AS forward_pe_premium
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -346,16 +343,17 @@ CREATE OR REPLACE FUNCTION calc_profitability_features(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                                 AS isin,
-       "Return On Equity % (LTM)"                                                             AS roe,
-       "Return on Assets (ROA) % (LTM)"                                                       AS roa,
-       "Gross Profit Margin % (LTM)"                                                          AS gross_margin_pct,
-       "Operating Income (LTM)" / NULLIF("Total Revenues (LTM)", 0) * 100                     AS operating_margin_pct,
-       "Net Income Margin % (LTM)"                                                            AS net_margin_pct,
-       "EBITDA (LTM)" / NULLIF("Total Revenues (LTM)", 0) * 100                               AS ebitda_margin_pct,
-       "Net Income - (IS) (LTM)" / NULLIF("Total Equity (LTM)" + "Total Debt (LTM)", 0) * 100 AS roic,
-       "R&D Expenses (LTM)" / NULLIF("Total Revenues (LTM)", 0)                               AS rnd_intensity,
-       "Total Assets (LTM)" / NULLIF("Total Equity (LTM)", 0)                                 AS equity_multiplier
+SELECT "ISIN"                                                             AS isin,
+       "Return On Equity % (LTM)"                                         AS roe,
+       "Return on Assets (ROA) % (LTM)"                                   AS roa,
+       "Gross Profit Margin % (LTM)"                                      AS gross_margin_pct,
+       "Operating Income (LTM)" / NULLIF("Total Revenues (LTM)", 0) * 100 AS operating_margin_pct,
+       "Net Income Margin % (LTM)"                                        AS net_margin_pct,
+       "EBITDA (LTM)" / NULLIF("Total Revenues (LTM)", 0) * 100           AS ebitda_margin_pct,
+       "EBIT (LTM)" * (1 - 0.25) / NULLIF("Total Equity (LTM)" + "Total Debt (LTM)" - "Cash And Equivalents (LTM)", 0) *
+       100                                                                AS roic,
+       "R&D Expenses (LTM)" / NULLIF("Total Revenues (LTM)", 0)           AS rnd_intensity,
+       "Total Assets (LTM)" / NULLIF("Total Equity (LTM)", 0)             AS equity_multiplier
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -682,34 +680,35 @@ AS
 $$
 SELECT "ISIN"                                                                   AS isin,
        CASE
-           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                  "# Sell Ratings" + "# Strong Sell Ratings") > 0
                THEN ("# Strong Buys Ratings" + "# Buys Ratings") /
                     NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
                            "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
            END                                                                  AS analyst_bullish_pct,
        CASE
-           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                  "# Sell Ratings" + "# Strong Sell Ratings") > 0
                THEN ("# Sell Ratings" + "# Strong Sell Ratings") /
-                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                            "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
            END                                                                  AS analyst_bearish_pct,
        -- NEW: Neutral sentiment (Hold ratings)
        CASE
-           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+           WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                  "# Sell Ratings" + "# Strong Sell Ratings") > 0
                THEN "# Hold Ratings" /
-                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                    NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                            "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
            END                                                                  AS analyst_neutral_pct,
        ABS(
                CASE
-                   WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                   WHEN ("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" + "# No Opinion Ratings" +
                          "# Sell Ratings" + "# Strong Sell Ratings") > 0
                        THEN (("# Strong Buys Ratings" + "# Buys Ratings") -
                              ("# Sell Ratings" + "# Strong Sell Ratings")) /
                             NULLIF("# Strong Buys Ratings" + "# Buys Ratings" + "# Hold Ratings" +
+                                   "# No Opinion Ratings" +
                                    "# Sell Ratings" + "# Strong Sell Ratings", 0) * 100
                    END
        )                                                                        AS analyst_conviction,
@@ -913,7 +912,37 @@ SELECT "ISIN"                                                                AS 
         CASE WHEN "Net EPS - Basic (-3FY)" > "Net EPS - Basic (-4FY)" THEN 1 ELSE 0 END +
         CASE WHEN "Net EPS - Basic (-4FY)" > "Net EPS - Basic (-5FY)" THEN 1 ELSE 0 END
            ) / 5.0 * 100                                                     AS eps_trajectory_score,
-       NULL::NUMERIC                                                         AS eps_stability
+       CASE
+           WHEN ABS(("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" + "Net EPS - Basic (-2FY)" +
+                     "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0) > 0
+               THEN 1.0 - LEAST(1.0,
+                                SQRT(
+                                        (POWER("Net EPS - Basic (FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-1FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-2FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-3FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-4FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2)
+                                            ) / 5.0
+                                ) / NULLIF(ABS(("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                "Net EPS - Basic (-2FY)" +
+                                                "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0), 0)
+                          )
+           END AS eps_stability -- 0 = chaotic, 1 = perfectly stable
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -1846,20 +1875,26 @@ $$ LANGUAGE SQL;
 -- SECTION 13: COMPOSITE SCORES (OPTIMIZED)
 -- =============================================================================
 
-CREATE OR REPLACE FUNCTION calc_composite_scores(p_isin TEXT DEFAULT NULL)
+-- Drop composite wrapper FIRST (it depends on the sub-functions)
+DROP FUNCTION IF EXISTS calc_composite_scores(TEXT) CASCADE;
+
+-- Drop and recreate atomic functions to ensure clean state
+DROP FUNCTION IF EXISTS calc_piotroski_f_score(TEXT);
+DROP FUNCTION IF EXISTS calc_shareholder_dilution_features(TEXT);
+DROP FUNCTION IF EXISTS calc_quality_momentum_composite(TEXT);
+
+-- Decomposed from calc_composite_scores: Piotroski F-Score (standalone)
+CREATE OR REPLACE FUNCTION calc_piotroski_f_score(p_isin TEXT DEFAULT NULL)
     RETURNS TABLE
             (
-                isin                   TEXT,
-                piotroski_f_score      INTEGER,
-                eps_trajectory_score   NUMERIC,
-                dilution_score         NUMERIC,
-                quality_momentum_score NUMERIC
+                isin              TEXT,
+                piotroski_f_score INTEGER
             )
     STABLE
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"            AS isin,
+SELECT "ISIN"         AS isin,
        (CASE WHEN "Return on Assets (ROA) % (LTM)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "CFO (LTM)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Return on Assets (ROA) % (LTM)" > "Return on Assets (ROA) % (FY)" THEN 1 ELSE 0 END +
@@ -1872,16 +1907,44 @@ SELECT "ISIN"            AS isin,
         CASE WHEN "Shrs Out" <= "Shrs Out (-1FY)" THEN 1 ELSE 0 END +
         CASE WHEN "Gross Profit Margin % (LTM)" > "Gross Profit Margin % (FY)" THEN 1 ELSE 0 END +
         CASE WHEN "Asset Turnover (LTM)" > "Asset Turnover (FY)" THEN 1 ELSE 0 END
-           )::INTEGER    AS piotroski_f_score,
-       (CASE WHEN "Net EPS - Basic (FY)" > "Net EPS - Basic (-1FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-1FY)" > "Net EPS - Basic (-2FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-2FY)" > "Net EPS - Basic (-3FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-3FY)" > "Net EPS - Basic (-4FY)" THEN 1 ELSE 0 END +
-        CASE WHEN "Net EPS - Basic (-4FY)" > "Net EPS - Basic (-5FY)" THEN 1 ELSE 0 END
-           ) / 5.0 * 100 AS eps_trajectory_score,
+           )::INTEGER AS piotroski_f_score
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- Decomposed from calc_composite_scores: Shareholder Dilution (standalone)
+CREATE OR REPLACE FUNCTION calc_shareholder_dilution_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin           TEXT,
+                dilution_score NUMERIC
+            )
+    STABLE
+    PARALLEL SAFE
+AS
+$$
+SELECT "ISIN"         AS isin,
        GREATEST(0, LEAST(100,
                          50 - (("Shrs Out" - "Shrs Out (-1FY)") / NULLIF("Shrs Out (-1FY)", 0)) * 100
-                   ))    AS dilution_score,
+                   )) AS dilution_score
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- Decomposed from calc_composite_scores: Quality Momentum Composite (standalone)
+CREATE OR REPLACE FUNCTION calc_quality_momentum_composite(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                   TEXT,
+                quality_momentum_score NUMERIC
+            )
+    STABLE
+    PARALLEL SAFE
+AS
+$$
+SELECT "ISIN" AS isin,
        (((CASE WHEN "CFO (LTM)" / NULLIF("Net Income - (IS) (LTM)", 0) > 1 THEN 25 ELSE 0 END +
           CASE WHEN "Return On Equity % (LTM)" > 15 THEN 25 ELSE 0 END +
           CASE WHEN "Total Debt (LTM)" / NULLIF("Total Equity (LTM)", 0) < 1 THEN 25 ELSE 0 END +
@@ -1897,11 +1960,39 @@ SELECT "ISIN"            AS isin,
                   NULLIF(ABS("Total Revenues (-1FY)"), 0) * 100 > 0 THEN 50
              ELSE 25
              END * 0.30)
-           )             AS quality_momentum_score
+           )  AS quality_momentum_score
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$ LANGUAGE SQL;
+
+-- Retained for backward compatibility, delegates to atomic functions
+-- Note: eps_trajectory_score removed (single source of truth: calc_eps_trajectory_features)
+-- Uses plpgsql to avoid SQL-inlining resolution issues with sub-function calls
+CREATE OR REPLACE FUNCTION calc_composite_scores(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                   TEXT,
+                piotroski_f_score      INTEGER,
+                dilution_score         NUMERIC,
+                quality_momentum_score NUMERIC
+            )
+    STABLE
+    PARALLEL SAFE
+    LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    RETURN QUERY
+        SELECT p.isin,
+               p.piotroski_f_score,
+               d.dilution_score,
+               q.quality_momentum_score
+        FROM public.calc_piotroski_f_score(p_isin)                      p
+                 JOIN public.calc_shareholder_dilution_features(p_isin) d ON p.isin = d.isin
+                 JOIN public.calc_quality_momentum_composite(p_isin)    q ON p.isin = q.isin;
+END;
+$$;
 
 -- =============================================================================
 -- SECTION 14: COMPREHENSIVE FUNCTIONS (OPTIMIZED WITH MATERIALIZED VIEWS)
@@ -2088,41 +2179,41 @@ CREATE OR REPLACE FUNCTION calc_net_income_comprehensive(p_isin TEXT DEFAULT NUL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                                          AS isin,
+SELECT "ISIN"                                                      AS isin,
        -- Base values
-       "Net Income - (IS) (FQ)"                                                                        AS net_income_is_fq,
-       "Net Income - (IS) (LTM)"                                                                       AS net_income_is_ltm,
-       "Net Income - (IS) (FY)"                                                                        AS net_income_is_fy,
-       "Net Income/Adj. (LTM)"                                                                         AS net_income_adj_ltm,
-       "Normalized Net Income (LTM)"                                                                   AS normalized_ni_ltm,
+       "Net Income - (IS) (FQ)"                                    AS net_income_is_fq,
+       "Net Income - (IS) (LTM)"                                   AS net_income_is_ltm,
+       "Net Income - (IS) (FY)"                                    AS net_income_is_fy,
+       "Net Income/Adj. (LTM)"                                     AS net_income_adj_ltm,
+       "Normalized Net Income (LTM)"                               AS normalized_ni_ltm,
        -- Extended quarterly historical
-       "Net Income - (IS) (-1FQFQ)"                                                                    AS net_income_is_1fqfq,
-       "Net Income - (IS) (-2FQFQ)"                                                                    AS net_income_is_2fqfq,
-       "Net Income - (IS) (-3FQFQ)"                                                                    AS net_income_is_3fqfq,
-       "Net Income - (IS) (-4FQFQ)"                                                                    AS net_income_is_4fqfq,
+       "Net Income - (IS) (-1FQFQ)"                                AS net_income_is_1fqfq,
+       "Net Income - (IS) (-2FQFQ)"                                AS net_income_is_2fqfq,
+       "Net Income - (IS) (-3FQFQ)"                                AS net_income_is_3fqfq,
+       "Net Income - (IS) (-4FQFQ)"                                AS net_income_is_4fqfq,
        -- Extended yearly historical
-       "Net Income - (IS) (-1FY)"                                                                      AS net_income_is_1fy,
-       "Net Income - (IS) (-2FY)"                                                                      AS net_income_is_2fy,
-       "Net Income - (IS) (-3FY)"                                                                      AS net_income_is_3fy,
-       "Net Income - (IS) (-4FY)"                                                                      AS net_income_is_4fy,
+       "Net Income - (IS) (-1FY)"                                  AS net_income_is_1fy,
+       "Net Income - (IS) (-2FY)"                                  AS net_income_is_2fy,
+       "Net Income - (IS) (-3FY)"                                  AS net_income_is_3fy,
+       "Net Income - (IS) (-4FY)"                                  AS net_income_is_4fy,
        -- 5-year averages
-       "Net Income - (IS) (5YAVGFQ)"                                                                   AS net_income_is_5yavgfq,
-       "Net Income - (IS) (5YAVGLTM)"                                                                  AS net_income_is_5yavgltm,
-       "Normalized Net Income (5YAVGFQ)"                                                               AS normalized_ni_5yavgfq,
-       "Normalized Net Income (5YAVGLTM)"                                                              AS normalized_ni_5yavgltm,
+       "Net Income - (IS) (5YAVGFQ)"                               AS net_income_is_5yavgfq,
+       "Net Income - (IS) (5YAVGLTM)"                              AS net_income_is_5yavgltm,
+       "Normalized Net Income (5YAVGFQ)"                           AS normalized_ni_5yavgfq,
+       "Normalized Net Income (5YAVGLTM)"                          AS normalized_ni_5yavgltm,
        -- Derived metrics
        public.pct_change("Net Income - (IS) (FY)"::NUMERIC,
-                         "Net Income - (IS) (-1FY)"::NUMERIC)                                          AS net_income_growth_yoy,
-       "Net Income Margin % (LTM)"::NUMERIC                                                            AS net_income_margin_ltm,
+                         "Net Income - (IS) (-1FY)"::NUMERIC)      AS net_income_growth_yoy,
+       "Net Income Margin % (LTM)"::NUMERIC                        AS net_income_margin_ltm,
        public.safe_divide("Net Income/Adj. (LTM)"::NUMERIC,
-                          "Net Income - (IS) (LTM)"::NUMERIC)                                          AS ni_adjustment_ratio,
+                          "Net Income - (IS) (LTM)"::NUMERIC)      AS ni_adjustment_ratio,
        (CASE WHEN "Net Income - (IS) (FY)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Net Income - (IS) (-1FY)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Net Income - (IS) (-2FY)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Net Income - (IS) (-3FY)" > 0 THEN 1 ELSE 0 END +
         CASE
             WHEN "Net Income - (IS) (-4FY)" > 0 THEN 1
-            ELSE 0 END)::INTEGER                                                                       AS net_income_positive_years,
+            ELSE 0 END)::INTEGER                                   AS net_income_positive_years,
        public.clamp_score(
                50 +
                (CASE WHEN "Net Income - (IS) (FY)" > 0 THEN 10 ELSE -10 END) +
@@ -2134,17 +2225,17 @@ SELECT "ISIN"                                                                   
                     ELSE -15 END) +
                (CASE WHEN "Net Income - (IS) (FY)" > "Net Income - (IS) (-1FY)" THEN 10 ELSE -5 END) +
                (CASE WHEN "Net Income - (IS) (-1FY)" > "Net Income - (IS) (-2FY)" THEN 5 ELSE -5 END)
-       )                                                                                               AS earnings_quality_composite,
+       )                                                           AS earnings_quality_composite,
        -- Quarterly trends
        public.pct_change("Net Income - (IS) (FQ)"::NUMERIC,
-                         "Net Income - (IS) (-1FQFQ)"::NUMERIC)                                        AS net_income_qoq_growth,
+                         "Net Income - (IS) (-1FQFQ)"::NUMERIC)    AS net_income_qoq_growth,
        public.pct_change("Net Income - (IS) (FQ)"::NUMERIC,
-                         "Net Income - (IS) (-4FQFQ)"::NUMERIC)                                        AS net_income_yoy_quarterly,
+                         "Net Income - (IS) (-4FQFQ)"::NUMERIC)    AS net_income_yoy_quarterly,
        -- vs 5Y averages
        public.safe_divide("Net Income - (IS) (LTM)"::NUMERIC,
-                          "Net Income - (IS) (5YAVGLTM)"::NUMERIC)                                     AS net_income_vs_5y_avg,
+                          "Net Income - (IS) (5YAVGLTM)"::NUMERIC) AS net_income_vs_5y_avg,
        public.safe_divide("Normalized Net Income (LTM)"::NUMERIC, "Normalized Net Income (5YAVGLTM)"::NUMERIC)
-                                                                                                       AS normalized_ni_vs_5y_avg
+                                                                   AS normalized_ni_vs_5y_avg
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2174,24 +2265,24 @@ CREATE OR REPLACE FUNCTION calc_total_revenues_temporal(p_isin TEXT DEFAULT NULL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                                            AS isin,
-       "Total Revenues (FQ)"                                                                             AS revenue_fq,
-       "Total Revenues (LTM)"                                                                            AS revenue_ltm,
-       "Total Revenues (FY)"                                                                             AS revenue_fy,
-       "Total Revenues (-1FY)"                                                                           AS revenue_1fy,
-       "Total Revenues (5YAVGFQ)"                                                                        AS revenue_5yavgfq,
-       "Total Revenues (5YAVGLTM)"                                                                       AS revenue_5yavgltm,
+SELECT "ISIN"                                                   AS isin,
+       "Total Revenues (FQ)"                                    AS revenue_fq,
+       "Total Revenues (LTM)"                                   AS revenue_ltm,
+       "Total Revenues (FY)"                                    AS revenue_fy,
+       "Total Revenues (-1FY)"                                  AS revenue_1fy,
+       "Total Revenues (5YAVGFQ)"                               AS revenue_5yavgfq,
+       "Total Revenues (5YAVGLTM)"                              AS revenue_5yavgltm,
        public.pct_change("Total Revenues (FY)"::NUMERIC,
-                         "Total Revenues (-1FY)"::NUMERIC)                                               AS revenue_growth_yoy,
+                         "Total Revenues (-1FY)"::NUMERIC)      AS revenue_growth_yoy,
        public.safe_divide("Total Revenues (FQ)"::NUMERIC,
-                          "Total Revenues (5YAVGFQ)"::NUMERIC)                                           AS revenue_vs_5y_avg_fq,
+                          "Total Revenues (5YAVGFQ)"::NUMERIC)  AS revenue_vs_5y_avg_fq,
        public.safe_divide("Total Revenues (LTM)"::NUMERIC,
-                          "Total Revenues (5YAVGLTM)"::NUMERIC)                                          AS revenue_vs_5y_avg_ltm,
+                          "Total Revenues (5YAVGLTM)"::NUMERIC) AS revenue_vs_5y_avg_ltm,
        public.safe_divide(("Total Revenues (FQ)"::NUMERIC - "Total Revenues (5YAVGFQ)"::NUMERIC),
                           "Total Revenues (5YAVGFQ)"::NUMERIC) * 100
-                                                                                                         AS revenue_fq_vs_avg,
+                                                                AS revenue_fq_vs_avg,
        public.calc_change_ratio("Total Revenues (LTM)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) *
-       100                                                                                               AS revenue_momentum
+       100                                                      AS revenue_momentum
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2437,38 +2528,38 @@ CREATE OR REPLACE FUNCTION calc_gross_profit_temporal(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                                            AS isin,
-       "Gross Profit (FQ)"                                                                               AS gp_fq,
-       "Gross Profit (FY)"                                                                               AS gp_fy,
-       "Gross Profit (LTM)"                                                                              AS gp_ltm,
-       "Gross Profit (-1FQFQ)"                                                                           AS gp_1fqfq,
-       "Gross Profit (-2FQFQ)"                                                                           AS gp_2fqfq,
-       "Gross Profit (-3FQFQ)"                                                                           AS gp_3fqfq,
-       "Gross Profit (-4FQFQ)"                                                                           AS gp_4fqfq,
-       "Gross Profit (-1FY)"                                                                             AS gp_1fy,
-       "Gross Profit (-2FY)"                                                                             AS gp_2fy,
-       "Gross Profit (-3FY)"                                                                             AS gp_3fy,
-       "Gross Profit (-4FY)"                                                                             AS gp_4fy,
+SELECT "ISIN"                                              AS isin,
+       "Gross Profit (FQ)"                                 AS gp_fq,
+       "Gross Profit (FY)"                                 AS gp_fy,
+       "Gross Profit (LTM)"                                AS gp_ltm,
+       "Gross Profit (-1FQFQ)"                             AS gp_1fqfq,
+       "Gross Profit (-2FQFQ)"                             AS gp_2fqfq,
+       "Gross Profit (-3FQFQ)"                             AS gp_3fqfq,
+       "Gross Profit (-4FQFQ)"                             AS gp_4fqfq,
+       "Gross Profit (-1FY)"                               AS gp_1fy,
+       "Gross Profit (-2FY)"                               AS gp_2fy,
+       "Gross Profit (-3FY)"                               AS gp_3fy,
+       "Gross Profit (-4FY)"                               AS gp_4fy,
        public.pct_change("Gross Profit (FQ)"::NUMERIC,
-                         "Gross Profit (-1FQFQ)"::NUMERIC)                                               AS gp_qoq_growth,
+                         "Gross Profit (-1FQFQ)"::NUMERIC) AS gp_qoq_growth,
        public.pct_change("Gross Profit (FY)"::NUMERIC,
-                         "Gross Profit (-1FY)"::NUMERIC)                                                 AS gp_yoy_growth,
+                         "Gross Profit (-1FY)"::NUMERIC)   AS gp_yoy_growth,
        public.safe_divide("Gross Profit (FQ)"::NUMERIC, "Total Revenues (FQ)"::NUMERIC) *
-       100                                                                                               AS gp_margin_fq,
+       100                                                 AS gp_margin_fq,
        (public.safe_divide("Gross Profit (FQ)"::NUMERIC, "Total Revenues (FQ)"::NUMERIC) -
         public.safe_divide("Gross Profit (-4FQFQ)"::NUMERIC, "Total Revenues (5YAVGFQ)"::NUMERIC)) *
-       100                                                                                               AS gp_margin_trend,
+       100                                                 AS gp_margin_trend,
        (CASE WHEN "Gross Profit (FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Gross Profit (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Gross Profit (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Gross Profit (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE
             WHEN "Gross Profit (-4FQFQ)" > 0 THEN 1
-            ELSE 0 END)::INTEGER                                                                         AS gp_positive_quarters,
+            ELSE 0 END)::INTEGER                           AS gp_positive_quarters,
        CASE
            WHEN "Gross Profit Margin % (LTM)" > "Gross Profit Margin % (FY)"
                THEN 1
-           ELSE 0 END                                                                                    AS gp_margin_expansion
+           ELSE 0 END                                      AS gp_margin_expansion
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2824,50 +2915,50 @@ CREATE OR REPLACE FUNCTION calc_cost_structure_features(p_isin TEXT DEFAULT NULL
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                                               AS isin,
+SELECT "ISIN"                                                                          AS isin,
        public.safe_divide("Cost Of Revenues (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
-       100                                                                                                  AS cogs_to_revenue,
+       100                                                                             AS cogs_to_revenue,
        public.safe_divide("Total Operating Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
-       100                                                                                                  AS opex_to_revenue,
+       100                                                                             AS opex_to_revenue,
        public.safe_divide("Selling General & Admin Expenses/Total (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) * 100
-                                                                                                            AS sga_to_revenue,
+                                                                                       AS sga_to_revenue,
        public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
-       100                                                                                                  AS rnd_to_revenue,
+       100                                                                             AS rnd_to_revenue,
        public.safe_divide("Interest Expense/Total (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
-       100                                                                                                  AS interest_to_revenue,
+       100                                                                             AS interest_to_revenue,
        -- SG&A trend using available FY columns
        (public.safe_divide("Selling General & Admin Expenses/Total (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) -
         public.safe_divide("Selling General & Admin Expenses/Total (-1FY)"::NUMERIC,
                            "Total Revenues (-1FY)"::NUMERIC)) * 100
-                                                                                                            AS sga_trend_yoy,
+                                                                                       AS sga_trend_yoy,
        CASE
            WHEN public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) > 0
                THEN public.safe_divide(
                    public.calc_change_ratio("Operating Income (FY)"::NUMERIC, "Operating Income (-1FY)"::NUMERIC),
                    public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)
                     )
-           END                                                                                              AS operating_leverage_proxy,
+           END                                                                         AS operating_leverage_proxy,
        public.clamp_score(
                100 -
                public.safe_divide("Cost Of Revenues (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) * 100 * 0.5 -
                public.safe_divide("Total Operating Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) * 100 *
                0.3
-       )                                                                                                    AS cost_efficiency_score,
+       )                                                                               AS cost_efficiency_score,
        -- NEW: Marketing efficiency metrics using schema columns
        public.safe_divide("Marketing Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) *
-       100                                                                                                  AS marketing_to_revenue,
+       100                                                                             AS marketing_to_revenue,
        public.pct_change("Marketing Expenses (FY)"::NUMERIC,
-                         "Marketing Expenses (-1FY)"::NUMERIC)                                              AS marketing_trend_yoy,
+                         "Marketing Expenses (-1FY)"::NUMERIC)                         AS marketing_trend_yoy,
        public.safe_divide("Marketing Expenses (FY)"::NUMERIC,
-                          "Marketing Expenses (5YAVGLTM)"::NUMERIC)                                         AS marketing_vs_5y_avg,
+                          "Marketing Expenses (5YAVGLTM)"::NUMERIC)                    AS marketing_vs_5y_avg,
        -- NEW: SG&A vs 5Y average
        public.safe_divide("Selling General & Admin Expenses/Total (FQ)"::NUMERIC,
-                          "Selling General & Admin Expenses/Total (5YAVGFQ)"::NUMERIC)                      AS sga_vs_5y_avg,
+                          "Selling General & Admin Expenses/Total (5YAVGFQ)"::NUMERIC) AS sga_vs_5y_avg,
        -- NEW: SG&A efficiency trend (lower ratio = better efficiency)
        (public.safe_divide("Selling General & Admin Expenses/Total (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) -
         public.safe_divide("Selling General & Admin Expenses/Total (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC)) *
        100
-                                                                                                            AS sga_efficiency_trend
+                                                                                       AS sga_efficiency_trend
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -2962,14 +3053,21 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION calc_long_term_momentum_features(p_isin TEXT DEFAULT NULL)
     RETURNS TABLE
             (
-                isin                  TEXT,
-                price_momentum_1y     NUMERIC,
-                price_momentum_3y     NUMERIC,
-                price_momentum_5y     NUMERIC,
-                long_term_trend_score NUMERIC,
-                price_vs_ema_250d     NUMERIC,
-                multi_year_high_flag  INTEGER,
-                secular_trend_flag    INTEGER
+                isin                     TEXT,
+                price_momentum_1y        NUMERIC,
+                price_momentum_3y        NUMERIC,
+                price_momentum_5y        NUMERIC,
+                long_term_trend_score    NUMERIC,
+                price_vs_ema_250d        NUMERIC,
+                multi_year_high_flag     INTEGER,
+                secular_trend_flag       INTEGER,
+                total_return_ytd         NUMERIC,
+                total_return_5y          NUMERIC,
+                total_return_10y         NUMERIC,
+                return_cagr_3y           NUMERIC,
+                return_cagr_10y          NUMERIC,
+                return_vs_price_momentum NUMERIC,
+                return_consistency_score NUMERIC
             )
     STABLE
     PARALLEL SAFE
@@ -2997,7 +3095,15 @@ SELECT "ISIN"                                                              AS is
                AND "EMA (50D)" > "EMA (250D)"
                THEN 1
            ELSE 0
-           END                                                             AS secular_trend_flag
+           END                                                          AS secular_trend_flag,
+       "Total Return (YTD)"                                             AS total_return_ytd,
+       "Total Return (5Y)"                                              AS total_return_5y,
+       "Total Return (10Y)"                                             AS total_return_10y,
+       "Tot. Return %/CAGR (3Y)"                                        AS return_cagr_3y,
+       "Tot. Return %/CAGR (10Y)"                                       AS return_cagr_10y,
+       "Tot. Return %/CAGR (3Y)" - public.pct_change("Last Price"::NUMERIC, "Price (3Y Ago)"::NUMERIC)
+                                                                        AS return_vs_price_momentum,
+       public.safe_divide("Tot. Return %/CAGR (3Y)", "Volatility (1Y)") AS return_consistency_score
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3164,9 +3270,9 @@ SELECT "ISIN"                                                                   
         "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") / 4.0                             AS revenue_4q_avg,
        -- FQ vs trailing 4Q average
        public.safe_divide("Total Revenues (FQ)"::NUMERIC,
-                   ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
-                    "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
-                   4.0)                                                                          AS revenue_fq_vs_4q_avg,
+                          ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
+                           "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
+                          4.0) AS revenue_fq_vs_4q_avg,
        -- Growth flag: 1 if growing YoY
        CASE
            WHEN "Total Revenues (FY)" > "Total Revenues (-1FY)" THEN 1
@@ -3377,41 +3483,41 @@ CREATE OR REPLACE FUNCTION calc_goodwill_temporal_features(p_isin TEXT DEFAULT N
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                                 AS isin,
+SELECT "ISIN"                                                                             AS isin,
        -- Current values
-       "Goodwill (FQ)"                                                                        AS goodwill_fq,
-       "Goodwill (LTM)"                                                                       AS goodwill_ltm,
-       "Goodwill (FY)"                                                                        AS goodwill_fy,
+       "Goodwill (FQ)"                                                                    AS goodwill_fq,
+       "Goodwill (LTM)"                                                                   AS goodwill_ltm,
+       "Goodwill (FY)"                                                                    AS goodwill_fy,
        -- Quarterly historical
-       "Goodwill (-1FQ)"                                                                      AS goodwill_1fq,
-       "Goodwill (-2FQ)"                                                                      AS goodwill_2fq,
-       "Goodwill (-3FQ)"                                                                      AS goodwill_3fq,
-       "Goodwill (-4FQ)"                                                                      AS goodwill_4fq,
+       "Goodwill (-1FQ)"                                                                  AS goodwill_1fq,
+       "Goodwill (-2FQ)"                                                                  AS goodwill_2fq,
+       "Goodwill (-3FQ)"                                                                  AS goodwill_3fq,
+       "Goodwill (-4FQ)"                                                                  AS goodwill_4fq,
        -- Yearly historical
-       "Goodwill (-1FY)"                                                                      AS goodwill_1fy,
-       "Goodwill (-2FY)"                                                                      AS goodwill_2fy,
-       "Goodwill (-3FY)"                                                                      AS goodwill_3fy,
-       "Goodwill (-4FY)"                                                                      AS goodwill_4fy,
+       "Goodwill (-1FY)"                                                                  AS goodwill_1fy,
+       "Goodwill (-2FY)"                                                                  AS goodwill_2fy,
+       "Goodwill (-3FY)"                                                                  AS goodwill_3fy,
+       "Goodwill (-4FY)"                                                                  AS goodwill_4fy,
        -- Trend metrics
-       public.pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC)                AS goodwill_qoq_change,
-       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-1FY)"::NUMERIC)                AS goodwill_yoy_change,
-       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC)                AS goodwill_3y_growth,
-       public.safe_divide("Goodwill (FQ)"::NUMERIC, "Goodwill (5YAVGFQ)"::NUMERIC)            AS goodwill_vs_5y_avg,
+       public.pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC)            AS goodwill_qoq_change,
+       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-1FY)"::NUMERIC)            AS goodwill_yoy_change,
+       public.pct_change("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC)            AS goodwill_3y_growth,
+       public.safe_divide("Goodwill (FQ)"::NUMERIC, "Goodwill (5YAVGFQ)"::NUMERIC)        AS goodwill_vs_5y_avg,
        -- Recent acquisition flag (goodwill increased significantly)
        CASE
            WHEN public.pct_change("Goodwill (FQ)"::NUMERIC, "Goodwill (-1FQ)"::NUMERIC) > 20
                THEN 1
-           ELSE 0 END                                                                         AS recent_acquisition_flag,
+           ELSE 0 END                                                                     AS recent_acquisition_flag,
        -- Goodwill accumulation rate (avg annual increase)
        CASE
            WHEN "Goodwill (-3FY)" > 0
                THEN (POWER(public.safe_divide("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC), 1.0 / 3.0) - 1) *
                     100
-           END                                                                                AS goodwill_accumulation_rate,
+           END                                                                            AS goodwill_accumulation_rate,
        -- Goodwill to assets trend (increasing concentration risk)
        (public.safe_divide("Goodwill (FY)"::NUMERIC, "Total Assets (FY)"::NUMERIC) -
         public.safe_divide("Goodwill (-1FY)"::NUMERIC, "Total Assets (-1FY)"::NUMERIC)) *
-       100                                                                                    AS goodwill_to_assets_trend,
+       100                                                                                AS goodwill_to_assets_trend,
        -- Impairment risk score (high goodwill + declining earnings = risk)
        CASE
            WHEN "Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0) > 0.25
@@ -3423,9 +3529,9 @@ SELECT "ISIN"                                                                   
            ELSE public.clamp_score(
                    ("Goodwill (LTM)" / NULLIF("Total Assets (LTM)", 0)) * 100
                 )
-           END                                                                                AS impairment_risk_score,
+           END                                                                            AS impairment_risk_score,
        -- Goodwill concentration (relative to equity)
-       public.safe_divide("Goodwill (LTM)"::NUMERIC, "Total Equity (LTM)"::NUMERIC) * 100     AS goodwill_concentration
+       public.safe_divide("Goodwill (LTM)"::NUMERIC, "Total Equity (LTM)"::NUMERIC) * 100 AS goodwill_concentration
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3474,43 +3580,43 @@ CREATE OR REPLACE FUNCTION calc_rnd_temporal_features(p_isin TEXT DEFAULT NULL)
     PARALLEL SAFE
 AS
 $$
-SELECT "ISIN"                                                                                       AS isin,
+SELECT "ISIN"                                                                                 AS isin,
        -- Current values
-       "R&D Expenses (LTM)"                                                                         AS rnd_ltm,
-       "R&D Expenses (FQ)"                                                                          AS rnd_fq,
-       "R&D Expenses (FY)"                                                                          AS rnd_fy,
+       "R&D Expenses (LTM)"                                                                   AS rnd_ltm,
+       "R&D Expenses (FQ)"                                                                    AS rnd_fq,
+       "R&D Expenses (FY)"                                                                    AS rnd_fy,
        -- Quarterly historical
-       "R&D Expenses (-1FQFQ)"                                                                      AS rnd_1fqfq,
-       "R&D Expenses (-2FQFQ)"                                                                      AS rnd_2fqfq,
-       "R&D Expenses (-3FQFQ)"                                                                      AS rnd_3fqfq,
-       "R&D Expenses (-4FQFQ)"                                                                      AS rnd_4fqfq,
+       "R&D Expenses (-1FQFQ)"                                                                AS rnd_1fqfq,
+       "R&D Expenses (-2FQFQ)"                                                                AS rnd_2fqfq,
+       "R&D Expenses (-3FQFQ)"                                                                AS rnd_3fqfq,
+       "R&D Expenses (-4FQFQ)"                                                                AS rnd_4fqfq,
        -- Yearly historical
-       "R&D Expenses (-1FY)"                                                                        AS rnd_1fy,
-       "R&D Expenses (-2FY)"                                                                        AS rnd_2fy,
-       "R&D Expenses (-3FY)"                                                                        AS rnd_3fy,
-       "R&D Expenses (-4FY)"                                                                        AS rnd_4fy,
+       "R&D Expenses (-1FY)"                                                                  AS rnd_1fy,
+       "R&D Expenses (-2FY)"                                                                  AS rnd_2fy,
+       "R&D Expenses (-3FY)"                                                                  AS rnd_3fy,
+       "R&D Expenses (-4FY)"                                                                  AS rnd_4fy,
        -- Intensity metrics (R&D / Revenue)
        public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) *
-       100                                                                                          AS rnd_intensity_ltm,
-       public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) * 100       AS rnd_intensity_fy,
+       100                                                                                    AS rnd_intensity_ltm,
+       public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) * 100 AS rnd_intensity_fy,
        -- Intensity trend (increasing R&D commitment)
        (public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) -
         public.safe_divide("R&D Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)) *
-       100                                                                                          AS rnd_intensity_trend,
+       100                                                                                    AS rnd_intensity_trend,
        -- Growth metrics
-       public.pct_change("R&D Expenses (FQ)"::NUMERIC, "R&D Expenses (-1FQFQ)"::NUMERIC)            AS rnd_qoq_growth,
-       public.pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC)              AS rnd_yoy_growth,
+       public.pct_change("R&D Expenses (FQ)"::NUMERIC, "R&D Expenses (-1FQFQ)"::NUMERIC)      AS rnd_qoq_growth,
+       public.pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC)        AS rnd_yoy_growth,
        CASE
            WHEN "R&D Expenses (-3FY)" > 0 AND "R&D Expenses (FY)" > 0
                THEN
                (POWER(public.safe_divide("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-3FY)"::NUMERIC), 1.0 / 3.0) -
                 1) *
                100
-           END                                                                                      AS rnd_cagr_3y,
+           END                                                                                AS rnd_cagr_3y,
        -- Efficiency metrics
-       public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Full Time Employees (FY)"::NUMERIC)        AS rnd_per_employee,
+       public.safe_divide("R&D Expenses (FY)"::NUMERIC, "Full Time Employees (FY)"::NUMERIC)  AS rnd_per_employee,
        public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Gross Profit (LTM)"::NUMERIC) *
-       100                                                                                          AS rnd_to_gross_profit,
+       100                                                                                    AS rnd_to_gross_profit,
        -- R&D ROI proxy: revenue growth relative to R&D spend
        CASE
            WHEN "R&D Expenses (-1FY)" > 0
@@ -3518,24 +3624,24 @@ SELECT "ISIN"                                                                   
                    public.pct_change("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC),
                    public.safe_divide("R&D Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) * 100
                     )
-           END                                                                                      AS rnd_roi_proxy,
+           END                                                                                AS rnd_roi_proxy,
        -- R&D increasing flag (4 consecutive quarterly increases)
        CASE
            WHEN "R&D Expenses (FQ)" > "R&D Expenses (-1FQFQ)"
                AND "R&D Expenses (-1FQFQ)" > "R&D Expenses (-2FQFQ)"
                AND "R&D Expenses (-2FQFQ)" > "R&D Expenses (-3FQFQ)"
                THEN 1
-           ELSE 0 END                                                                               AS rnd_increasing_flag,
+           ELSE 0 END                                                                         AS rnd_increasing_flag,
        -- R&D cut flag (significant decline may signal distress)
        CASE
            WHEN public.pct_change("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-1FY)"::NUMERIC) < -15
                THEN 1
-           ELSE 0 END                                                                               AS rnd_cut_flag,
+           ELSE 0 END                                                                         AS rnd_cut_flag,
        -- High R&D intensity flag (tech/pharma typical >10%)
        CASE
            WHEN public.safe_divide("R&D Expenses (LTM)"::NUMERIC, "Total Revenues (LTM)"::NUMERIC) > 0.10
                THEN 1
-           ELSE 0 END                                                                               AS high_rnd_intensity_flag
+           ELSE 0 END                                                                         AS high_rnd_intensity_flag
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3659,6 +3765,278 @@ SELECT "ISIN"                                                              AS is
                THEN 1
            ELSE 0
            END                                                             AS wc_improvement_flag
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: VOLATILITY SURFACE FEATURES (NEW)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_volatility_surface_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                      TEXT,
+                vol_1m                    NUMERIC,
+                vol_3m                    NUMERIC,
+                vol_6m                    NUMERIC,
+                vol_1y                    NUMERIC,
+                vol_term_spread_short     NUMERIC,
+                vol_term_spread_long      NUMERIC,
+                vol_ratio_3m_1y           NUMERIC,
+                vol_hump                  NUMERIC,
+                beta_1y                   NUMERIC,
+                beta_2y                   NUMERIC,
+                beta_5y                   NUMERIC,
+                beta_term_structure       NUMERIC,
+                beta_convexity            NUMERIC,
+                realized_vs_implied_proxy NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Volatility (1M)",
+       "Volatility (3M)",
+       "Volatility (6M)",
+       "Volatility (1Y)",
+       "Volatility (3M)" - "Volatility (1M)",
+       "Volatility (1Y)" - "Volatility (6M)",
+       public.safe_divide("Volatility (3M)", "Volatility (1Y)"),
+       "Volatility (6M)" - ("Volatility (3M)" + "Volatility (1Y)") / 2.0,
+       "Beta (1Y)",
+       "Beta (2Y)",
+       "Beta (5Y)",
+       public.calc_change_ratio("Beta (1Y)", "Beta (5Y)"),
+       "Beta (2Y)" - ("Beta (1Y)" + "Beta (5Y)") / 2.0,
+       public.safe_divide("Volatility (1M)", "Volatility (1Y)")
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: FORWARD CONSENSUS FEATURES (NEW)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_forward_consensus_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                         TEXT,
+                pe_ntm                       NUMERIC,
+                pe_est_fy1                   NUMERIC,
+                pe_forward_discount          NUMERIC,
+                eps_gaap_vs_norm_ntm         NUMERIC,
+                eps_gaap_vs_norm_fy1e        NUMERIC,
+                forward_adjustment_trend     NUMERIC,
+                ebitda_est_ntm               NUMERIC,
+                ebitda_est_fy1e              NUMERIC,
+                ev_ebitda_est_fy1            NUMERIC,
+                ebitda_forward_growth        NUMERIC,
+                earnings_revision_divergence NUMERIC,
+                forward_pe_vs_sector_proxy   NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "P/E (NTM)",
+       "P/E (EST FY1)",
+       public.calc_change_ratio("P/E (NTM)", "P/E (LTM)"),
+       "EPS GAAP - Est Avg (NTM)" - "EPS Norm - Est Avg (NTM)",
+       "EPS GAAP - Est Avg (FY1E)" - "EPS Norm - Est Avg (FY1E)",
+       ("EPS GAAP - Est Avg (FY1E)" - "EPS Norm - Est Avg (FY1E)") -
+       ("EPS/Adj. (LTM)" - "Net EPS - Basic (LTM)"),
+       "EBITDA - Est Avg (NTM)",
+       "EBITDA - Est Avg (FY1E)",
+       "EV/EBITDA (EST FY1)",
+       public.calc_change_ratio("EBITDA - Est Avg (FY1E)", "EBITDA (LTM)"),
+       ("EPS Est Avg Rev % (FY1E - 3M)" - "EPS GAAP Est Avg Rev % (FY1E - 3M)") -
+       ("EPS Est Avg Rev % (FY1E - 1M)" - "EPS GAAP Est Avg Rev % (FY1E - 1M)"),
+       public.calc_change_ratio("P/E (NTM)", "P/E (3YAVGLTM)")
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: PRICE TARGET ACHIEVEMENT FEATURES (NEW)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_price_target_achievement_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                       TEXT,
+                pt_achievement_1y          NUMERIC,
+                pt_accuracy_1y             NUMERIC,
+                pt_optimism_bias           NUMERIC,
+                pt_range_hit_rate          NUMERIC,
+                pt_median_vs_mean_spread   NUMERIC,
+                pt_high_low_convergence_1y NUMERIC,
+                analyst_count_stability    NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       CASE
+           WHEN "Price Target (1Y Ago)" > 0 AND "Last Price" >= "Price Target (1Y Ago)" THEN 1.0
+           WHEN "Price Target (1Y Ago)" > 0 THEN
+               public.safe_divide("Last Price", "Price Target (1Y Ago)")
+           END,
+       ABS("Last Price" - "Price Target (1Y Ago)") / NULLIF(ABS("Price Target (1Y Ago)"), 0),
+       ("Price Target (1Y Ago)" - "Last Price") / NULLIF(ABS("Price Target (1Y Ago)"), 0),
+       CASE
+           WHEN "Last Price" BETWEEN "Price Target - Low (1Y Ago)" AND "Price Target - High (1Y Ago)"
+               THEN 1.0
+           ELSE 0.0
+           END,
+       ("Price Target" - "Price Target - Median") / NULLIF("Price Target - Median", 0),
+       (("Price Target - High" - "Price Target - Low") / NULLIF("Price Target - Median", 0)) -
+       (("Price Target - High (1Y Ago)" - "Price Target - Low (1Y Ago)") / NULLIF("Price Target - Median (1Y Ago)", 0)),
+       public.safe_divide("Price Target - #",
+                          ("Price Target - # (1Y Ago)" + "Price Target - # (6M Ago)" + "Price Target - # (3M Ago)") /
+                          3.0)
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: DIVIDEND HISTORY FEATURES (NEW)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_dividend_history_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                     TEXT,
+                div_yield_2fy            NUMERIC,
+                div_yield_3fy            NUMERIC,
+                div_yield_4fy            NUMERIC,
+                div_yield_5fy            NUMERIC,
+                div_yield_trend_3y       NUMERIC,
+                div_yield_volatility     NUMERIC,
+                div_yield_declining_flag INTEGER,
+                div_yield_mean_5y        NUMERIC,
+                div_yield_vs_5y_mean     NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Div Yield (-2FYInd)",
+       "Div Yield (-3FYInd)",
+       "Div Yield (-4FYInd)",
+       "Div Yield (-5FYInd)",
+       ("Div Yield (Ind)" - "Div Yield (-3FYInd)") / 3.0,
+       GREATEST("Div Yield (Ind)", "Div Yield (-1FYInd)", "Div Yield (-2FYInd)",
+                "Div Yield (-3FYInd)", "Div Yield (-4FYInd)") -
+       LEAST("Div Yield (Ind)", "Div Yield (-1FYInd)", "Div Yield (-2FYInd)",
+             "Div Yield (-3FYInd)", "Div Yield (-4FYInd)"),
+       CASE
+           WHEN "Div Yield (Ind)" < "Div Yield (-1FYInd)"
+               AND "Div Yield (-1FYInd)" < "Div Yield (-2FYInd)"
+               AND "Div Yield (-2FYInd)" < "Div Yield (-3FYInd)" THEN 1
+           ELSE 0 END,
+       (COALESCE("Div Yield (Ind)", 0) + COALESCE("Div Yield (-1FYInd)", 0) +
+        COALESCE("Div Yield (-2FYInd)", 0) + COALESCE("Div Yield (-3FYInd)", 0) +
+        COALESCE("Div Yield (-4FYInd)", 0)) /
+       NULLIF((CASE WHEN "Div Yield (Ind)" IS NOT NULL THEN 1 ELSE 0 END +
+               CASE WHEN "Div Yield (-1FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
+               CASE WHEN "Div Yield (-2FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
+               CASE WHEN "Div Yield (-3FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
+               CASE WHEN "Div Yield (-4FYInd)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC, 0),
+       public.calc_change_ratio("Div Yield (Ind)",
+                                (COALESCE("Div Yield (Ind)", 0) + COALESCE("Div Yield (-1FYInd)", 0) +
+                                 COALESCE("Div Yield (-2FYInd)", 0) + COALESCE("Div Yield (-3FYInd)", 0) +
+                                 COALESCE("Div Yield (-4FYInd)", 0)) /
+                                NULLIF((CASE WHEN "Div Yield (Ind)" IS NOT NULL THEN 1 ELSE 0 END +
+                                        CASE WHEN "Div Yield (-1FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
+                                        CASE WHEN "Div Yield (-2FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
+                                        CASE WHEN "Div Yield (-3FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
+                                        CASE WHEN "Div Yield (-4FYInd)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC, 0))
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: SIZE & LIQUIDITY FEATURES (NEW)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_size_liquidity_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                 TEXT,
+                market_cap           NUMERIC,
+                market_cap_country_r NUMERIC,
+                log_market_cap       NUMERIC,
+                volume_shrs          NUMERIC,
+                relative_volume      NUMERIC,
+                shares_outstanding   NUMERIC,
+                daily_turnover_ratio NUMERIC,
+                size_class           TEXT,
+                style_class          TEXT,
+                liquidity_score      NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Market Cap",
+       "Market Cap (Country R)",
+       LN(GREATEST("Market Cap", 1)),
+       "Volume (Shrs)",
+       "Rel. Volume",
+       "Shrs Out",
+       public.safe_divide("Volume (Shrs)", "Shrs Out"),
+       "Size Class",
+       "Style Class",
+       "Volume (Shrs)" * COALESCE("Rel. Volume", 1) / NULLIF(LN(GREATEST("Market Cap", 1)), 0)
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: INVESTMENT INCOME TEMPORAL FEATURES (NEW)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_investment_income_temporal(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                         TEXT,
+                inv_income_ltm               NUMERIC,
+                inv_income_fq                NUMERIC,
+                inv_income_fy                NUMERIC,
+                inv_income_qoq_growth        NUMERIC,
+                inv_income_yoy_growth        NUMERIC,
+                inv_income_to_revenue        NUMERIC,
+                inv_income_trend_3y          NUMERIC,
+                inv_income_positive_quarters INTEGER,
+                financial_company_proxy      INTEGER
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Interest And Investment Income (LTM)",
+       "Interest And Investment Income (FQ)",
+       "Interest And Investment Income (FY)",
+       public.calc_change_ratio("Interest And Investment Income (FQ)",
+                                "Interest And Investment Income (-1FQFQ)"),
+       public.calc_change_ratio("Interest And Investment Income (FY)",
+                                "Interest And Investment Income (-1FY)"),
+       public.safe_divide("Interest And Investment Income (LTM)", "Total Revenues (LTM)"),
+       CASE
+           WHEN "Interest And Investment Income (-3FY)" > 0 AND "Interest And Investment Income (FY)" > 0
+               THEN (POWER(public.safe_divide("Interest And Investment Income (FY)",
+                                              "Interest And Investment Income (-3FY)"), 1.0 / 3.0) - 1) * 100
+           END,
+       (CASE WHEN "Interest And Investment Income (FQ)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "Interest And Investment Income (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "Interest And Investment Income (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "Interest And Investment Income (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "Interest And Investment Income (-4FQFQ)" > 0 THEN 1 ELSE 0 END)::INTEGER,
+       CASE
+           WHEN public.safe_divide("Interest And Investment Income (LTM)", "Total Revenues (LTM)") > 0.2
+               THEN 1
+           ELSE 0 END
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -5159,7 +5537,7 @@ SELECT
     --                 Return On Equity % (LTM), Last Price, Price (3M Ago), Total Revenues (FY/-1FY)
     -- =========================================================================
     cs.piotroski_f_score,
-    cs.eps_trajectory_score,
+    etf.eps_trajectory_score,
     cs.dilution_score,
     cs.quality_momentum_score,
 
@@ -5198,6 +5576,7 @@ SELECT
 
 FROM vw_identifier_columns                         id
          LEFT JOIN calc_composite_scores()         cs USING (isin)
+         LEFT JOIN calc_eps_trajectory_features() etf USING (isin)
          LEFT JOIN calc_net_income_comprehensive() nic USING (isin);
 
 COMMENT ON VIEW vw_features_composite_scores IS
@@ -6118,7 +6497,7 @@ SELECT
     -- =========================================================================
     -- calc_composite_scores
     cs.piotroski_f_score,
-    cs.eps_trajectory_score               AS composite_eps_trajectory_score,
+    etf.eps_trajectory_score AS composite_eps_trajectory_score,
     cs.dilution_score,
     cs.quality_momentum_score,
 
@@ -7249,18 +7628,6 @@ COMMIT;
 ANALYZE feature_registry_metadata;
 ANALYZE calculated_features_registry;
 
--- =============================================================================
--- SECTION 3: UTILITY FUNCTIONS FOR MATERIALIZED VIEW
--- =============================================================================
-
--- Function to refresh the materialized view
-CREATE OR REPLACE FUNCTION refresh_all_stock_features()
-    RETURNS VOID AS
-$$
-BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_all_stock_features;
-END;
-$$ LANGUAGE plpgsql;
 
 -- Function to get feature count summary by category
 CREATE OR REPLACE FUNCTION get_feature_registry_summary()
@@ -7280,12 +7647,7 @@ GROUP BY category
 ORDER BY total_features DESC;
 $$ LANGUAGE SQL STABLE;
 
--- =============================================================================
--- SECTION 4: REFRESH MATERIALIZED VIEW
--- =============================================================================
 
--- Initial refresh of the materialized view
-REFRESH MATERIALIZED VIEW mv_all_stock_features;
 
 
 

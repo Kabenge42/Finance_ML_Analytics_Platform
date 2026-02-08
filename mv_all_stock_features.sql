@@ -4,6 +4,23 @@
 -- Standardized identifier column ordering per calculated_features_registry
 -- =============================================================================
 
+-- Pre-flight check: ensure prerequisite functions exist
+DO
+$$
+    BEGIN
+        -- Verify critical helper functions exist
+        IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'safe_divide') THEN
+            RAISE EXCEPTION 'Required function safe_divide() does not exist. Run feature_registry.sql first.';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'calc_piotroski_f_score') THEN
+            RAISE EXCEPTION 'Required function calc_piotroski_f_score() does not exist. Run feature_registry.sql first.';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'pct_change') THEN
+            RAISE EXCEPTION 'Required function pct_change() does not exist. Run feature_registry.sql first.';
+        END IF;
+    END
+$$;
+
 DROP MATERIALIZED VIEW IF EXISTS mv_all_stock_features CASCADE;
 
 CREATE MATERIALIZED VIEW mv_all_stock_features AS
@@ -868,7 +885,6 @@ SELECT
     -- =========================================================================
     -- calc_composite_scores
     cs.piotroski_f_score,
-    cs.eps_trajectory_score               AS composite_eps_trajectory_score,
     cs.dilution_score,
     cs.quality_momentum_score,
 

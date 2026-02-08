@@ -1,14 +1,21 @@
 create function calc_long_term_momentum_features(p_isin text DEFAULT NULL::text)
     returns TABLE
             (
-                isin                  text,
-                price_momentum_1y     numeric,
-                price_momentum_3y     numeric,
-                price_momentum_5y     numeric,
-                long_term_trend_score numeric,
-                price_vs_ema_250d     numeric,
-                multi_year_high_flag  integer,
-                secular_trend_flag    integer
+                isin                     text,
+                price_momentum_1y        numeric,
+                price_momentum_3y        numeric,
+                price_momentum_5y        numeric,
+                long_term_trend_score    numeric,
+                price_vs_ema_250d        numeric,
+                multi_year_high_flag     integer,
+                secular_trend_flag       integer,
+                total_return_ytd         numeric,
+                total_return_5y          numeric,
+                total_return_10y         numeric,
+                return_cagr_3y           numeric,
+                return_cagr_10y          numeric,
+                return_vs_price_momentum numeric,
+                return_consistency_score numeric
             )
     stable
     parallel safe
@@ -37,11 +44,19 @@ SELECT "ISIN"                                                              AS is
                AND "EMA (50D)" > "EMA (250D)"
                THEN 1
            ELSE 0
-           END                                                             AS secular_trend_flag
+           END                                                          AS secular_trend_flag,
+       "Total Return (YTD)"                                             AS total_return_ytd,
+       "Total Return (5Y)"                                              AS total_return_5y,
+       "Total Return (10Y)"                                             AS total_return_10y,
+       "Tot. Return %/CAGR (3Y)"                                        AS return_cagr_3y,
+       "Tot. Return %/CAGR (10Y)"                                       AS return_cagr_10y,
+       "Tot. Return %/CAGR (3Y)" - public.pct_change("Last Price"::NUMERIC, "Price (3Y Ago)"::NUMERIC)
+                                                                        AS return_vs_price_momentum,
+       public.safe_divide("Tot. Return %/CAGR (3Y)", "Volatility (1Y)") AS return_consistency_score
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_long_term_momentum_features(text) owner to postgres;
+alter function calc_long_term_momentum_features(unknown) owner to postgres;
 

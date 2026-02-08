@@ -14,24 +14,32 @@ original code.
 finance_ml/analytics/
 ├── __init__.py                 # Package exports (128 lines)
 ├── data_utils.py               # Data loading and preprocessing (300 lines)
-├── statistical_analysis.py     # Advanced statistical methods (1031 lines)
-├── screening.py                # Stock screening functions (504 lines)
-├── feature_analytics.py        # Visualization dashboards (1288 lines)
+├── statistical_analysis.py     # Advanced statistical methods (1282 lines)
+├── screening.py                # Stock screening functions (691 lines)
+├── feature_analytics.py        # Visualization dashboards (1644 lines)
+├── probability_analytics.py    # Probability models (1827 lines)
 ├── optimized_ops.py            # Performance optimizations (622 lines)
 └── visualizations/
-    ├── __init__.py             # Visualization package exports (99 lines)
-    ├── profitability.py        # Margin and profitability charts (561 lines)
-    ├── technical.py            # Technical analysis charts (561 lines)
-    └── temporal_analysis.py    # Time series analysis (769 lines)
+    ├── __init__.py             # Visualization package exports (257 lines)
+    ├── profitability.py        # Margin and profitability charts (647 lines)
+    ├── technical.py            # Technical analysis charts (565 lines)
+    ├── temporal_analysis.py    # Time series analysis (769 lines)
+    ├── category_charts.py      # Category-specific charts
+    ├── valuation.py            # Valuation analysis charts (669 lines) [NEW]
+    ├── earnings_quality.py     # Earnings quality charts (658 lines) [NEW]
+    ├── quality_risk.py         # Quality & risk charts (852 lines) [NEW]
+    └── growth_analysis.py      # Growth metrics charts (631 lines) [NEW]
 
-market_analytics.py             # Main demonstration script (422 lines)
+market_analytics.py             # Main demonstration script (935 lines)
 ```
 
 ### Total Lines of Code
 
 - **Original**: 5208 lines (monolithic)
-- **Refactored**: ~6285 lines (modular, reusable, with enhanced features)
-- **Enhancement**: +107% additional functionality through new visualization, statistical, and optimization modules
+- **Refactored**: ~10,500+ lines (modular, reusable, with enhanced features)
+- **Enhancement**: +100% additional functionality through new visualization, statistical, and optimization modules
+- **New Visualization Modules**: 4 modules with 21 new visualization functions covering valuation, earnings quality,
+  quality/risk, and growth analysis
 
 ---
 
@@ -304,7 +312,148 @@ dividend_fig = create_dividend_streak_timeline(df)
 
 ---
 
-### 8. Enhanced Statistical Methods (New in `statistical_analysis.py`)
+### 8. `visualizations/valuation.py` (New)
+
+**Purpose**: Comprehensive valuation ratio analysis and visualization
+
+**Key Functions**:
+
+- `create_valuation_multiples_comparison()` - Spider/radar chart comparing P/E, P/B, EV/EBITDA vs sector median
+- `create_valuation_distribution_dashboard()` - Multi-panel violin plots for valuation metrics by sector
+- `create_relative_valuation_matrix()` - Heatmap of Z-scores identifying cheap/expensive sectors
+- `create_valuation_vs_growth_quadrant()` - PEG-style scatter with quadrants (cheap+growing, expensive+slow)
+- `create_historical_valuation_percentile()` - Distribution showing current valuations vs historical ranges
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.valuation import (
+   create_valuation_multiples_comparison,
+   create_valuation_vs_growth_quadrant,
+   create_relative_valuation_matrix
+)
+
+# Radar chart for specific stock vs sector
+radar_fig = create_valuation_multiples_comparison(df, ticker='AAPL')
+radar_fig.write_html("outputs/valuation_radar.html")
+
+# PEG-style quadrant analysis
+quadrant_fig = create_valuation_vs_growth_quadrant(df)
+quadrant_fig.show()
+
+# Sector valuation heatmap
+matrix_fig = create_relative_valuation_matrix(df, group_col='industry')
+```
+
+---
+
+### 9. `visualizations/earnings_quality.py` (New)
+
+**Purpose**: Deep-dive earnings quality and predictability analysis
+
+**Key Functions**:
+
+- `create_earnings_surprise_dashboard()` - Multi-panel: surprise distribution, beat rate by sector
+- `create_eps_trajectory_analysis()` - Trajectory score with improvement counts and streak analysis
+- `create_earnings_quality_decomposition()` - Waterfall: accruals ratio, cash conversion, persistence
+- `create_beat_rate_heatmap()` - Historical beat rates by sector
+- `create_earnings_consistency_matrix()` - eps_positive_streak vs eps_improvement_count by sector
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.earnings_quality import (
+   create_earnings_surprise_dashboard,
+   create_eps_trajectory_analysis,
+   create_earnings_quality_decomposition
+)
+
+# Earnings surprise analysis
+surprise_fig = create_earnings_surprise_dashboard(df)
+surprise_fig.write_html("outputs/earnings_surprise.html")
+
+# EPS trajectory for top performers
+trajectory_fig = create_eps_trajectory_analysis(df, top_n=30)
+trajectory_fig.show()
+
+# Quality decomposition for specific stock
+quality_fig = create_earnings_quality_decomposition(df, ticker='MSFT')
+```
+
+---
+
+### 10. `visualizations/quality_risk.py` (New)
+
+**Purpose**: Comprehensive quality scoring and risk assessment visualization
+
+**Key Functions**:
+
+- `create_piotroski_fscore_breakdown()` - F-Score distribution with pass/fail indicators
+- `create_altman_zscore_distribution()` - Distribution with distress zones (safe/gray/distress)
+- `create_quality_risk_quadrant()` - Piotroski F-Score vs Altman Z-Score scatter
+- `create_beneish_mscore_analysis()` - M-Score with manipulation probability zones
+- `create_risk_tier_sunburst()` - Sector → Industry → Risk Tier hierarchy
+- `create_distress_early_warning_dashboard()` - Companies approaching distress thresholds
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.quality_risk import (
+   create_piotroski_fscore_breakdown,
+   create_altman_zscore_distribution,
+   create_quality_risk_quadrant
+)
+
+# F-Score analysis
+fscore_fig = create_piotroski_fscore_breakdown(df, ticker='AAPL')
+fscore_fig.write_html("outputs/fscore_analysis.html")
+
+# Z-Score distribution with risk zones
+zscore_fig = create_altman_zscore_distribution(df, group_col='industry')
+zscore_fig.show()
+
+# Quality vs Risk quadrant
+quadrant_fig = create_quality_risk_quadrant(df)
+```
+
+---
+
+### 11. `visualizations/growth_analysis.py` (New)
+
+**Purpose**: Comprehensive growth metrics analysis similar to profitability.py structure
+
+**Key Functions**:
+
+- `create_growth_waterfall_chart()` - Revenue → EBITDA → EPS growth decomposition
+- `create_growth_consistency_matrix()` - Growth metrics consistency (YoY, 3Y CAGR, 5Y CAGR) by sector
+- `create_growth_vs_profitability_quadrant()` - BCG-style: Revenue growth vs ROE with margin bubble
+- `create_growth_acceleration_chart()` - Growth acceleration (current vs historical) ranked
+- `create_sustainable_growth_analysis()` - SGR = ROE × Retention Rate analysis by sector
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.growth_analysis import (
+   create_growth_waterfall_chart,
+   create_growth_vs_profitability_quadrant,
+   create_growth_acceleration_chart
+)
+
+# Growth decomposition waterfall
+waterfall_fig = create_growth_waterfall_chart(df, ticker='GOOGL')
+waterfall_fig.write_html("outputs/growth_waterfall.html")
+
+# BCG-style growth vs profitability
+bcg_fig = create_growth_vs_profitability_quadrant(df)
+bcg_fig.show()
+
+# Growth acceleration analysis
+accel_fig = create_growth_acceleration_chart(df, top_n=25)
+```
+
+---
+
+### 12. Enhanced Statistical Methods (New in `statistical_analysis.py`)
 
 **Purpose**: Advanced time series filtering, dependency modeling, and parallel MCMC
 
@@ -455,11 +604,11 @@ FEATURE_CATEGORIES = {
     'Leverage & Liquidity': ['debt_to_equity', 'current_ratio', ...],
     'Analyst Sentiment': ['analyst_bullish_pct', 'upside_potential', ...],
     'Earnings Quality': ['eps_surprise_pct', 'eps_adjustment_ratio', ...],
-    'Growth Metrics': ['revenue_growth_yoy', 'ebitda_growth_yoy', ...],
+   'Growth Metrics': ['revenue_yoy_growth', 'ebitda_growth_yoy', ...],
     'Cash Flow': ['fcf_positive_years', 'fcf_margin', 'fcf_yield', ...],
     'Dividend Features': ['dividend_streak', 'dividend_yield_ltm', ...],
     'R&D Investment': ['rnd_intensity_ltm', 'rnd_yoy_growth', ...],
-    'Inventory Temporal': ['inventory_days', 'inventory_turnover_mv', ...],
+   'Inventory Temporal': ['inventory_days', 'inventory_turnover_itf', ...],
     'Goodwill & M&A': ['goodwill_concentration', 'goodwill_3y_growth', ...],
     'CapEx & Investment': ['capex_yoy_growth', 'capex_vs_5y_avg', ...],
 }
@@ -714,24 +863,96 @@ df = backfill_feature_columns(df)
 - `finance_ml/analytics/visualizations/technical.py` - Technical analysis
 - `finance_ml/analytics/visualizations/temporal_analysis.py` - Time series
 
+### Visualization Modules (New in v2.1)
+
+- `finance_ml/analytics/visualizations/valuation.py` - Valuation ratio analysis (669 lines)
+- `finance_ml/analytics/visualizations/earnings_quality.py` - Earnings quality charts (658 lines)
+- `finance_ml/analytics/visualizations/quality_risk.py` - Quality & risk assessment (852 lines)
+- `finance_ml/analytics/visualizations/growth_analysis.py` - Growth metrics analysis (631 lines)
+
 ### Test Files
 
 - `tests/test_screening.py` - Screening function tests
 - `tests/test_data_utils.py` - Data utility tests
 - `tests/test_statistical_analysis.py` - Statistical method tests
 - `tests/test_market_analytics_integration.py` - Integration tests
-- `tests/test_visualizations.py` - Visualization tests
+- `tests/test_visualizations.py` - Visualization tests (31 tests)
+- `tests/test_visualizations_valuation.py` - Valuation visualization tests (19 tests)
+- `tests/test_visualizations_earnings_quality.py` - Earnings quality tests (17 tests)
+- `tests/test_visualizations_quality_risk.py` - Quality & risk tests (17 tests)
+- `tests/test_visualizations_growth_analysis.py` - Growth analysis tests (15 tests)
 - `tests/test_enhanced_statistics.py` - Enhanced statistics tests
 
 ### Main Script
 
-- `market_analytics.py` - Main demonstration script
+- `market_analytics.py` - Main demonstration script (1074 lines, updated with new visualizations)
+
+### Jupyter Notebooks (Updated in v2.1)
+
+- `feature_analytics.ipynb` - Feature analytics notebook (209 cells, updated with new visualizations)
+- `financial_market_statistical_analysis.ipynb` - Statistical analysis notebook (900 lines, updated with new
+  visualizations)
 
 ### Documentation
 
 - `README.md` - Project overview
 - `docs/code_guidelines.md` - Coding standards
 - `docs/improvement_plan/market_analysis_refactoring_guide.md` - This document
+
+---
+
+## Integration Summary (v2.1)
+
+The following scripts and notebooks have been updated to integrate the new visualization modules:
+
+### Scripts Updated
+
+| Script                                      | Changes                                                                                 |
+|---------------------------------------------|-----------------------------------------------------------------------------------------|
+| `finance_ml/analytics/feature_analytics.py` | Added imports for 21 new visualization functions; main() generates 18 additional charts |
+| `market_analytics.py`                       | Added imports for 21 new visualization functions; generates 21 additional charts        |
+
+### Notebooks Updated
+
+| Notebook                                      | Changes                                                            |
+|-----------------------------------------------|--------------------------------------------------------------------|
+| `feature_analytics.ipynb`                     | Added 37 new import lines; 22 new visualization cells              |
+| `financial_market_statistical_analysis.ipynb` | Added 37 new import lines; 22 new visualization cells in Section 6 |
+
+### New Visualizations Available
+
+#### Valuation Analysis (5 functions)
+
+- `create_valuation_multiples_comparison()` - Spider/radar chart vs sector median
+- `create_valuation_distribution_dashboard()` - Multi-panel violin plots
+- `create_relative_valuation_matrix()` - Z-score heatmap by industry
+- `create_valuation_vs_growth_quadrant()` - PEG-style scatter analysis
+- `create_historical_valuation_percentile()` - Distribution with percentile markers
+
+#### Earnings Quality (5 functions)
+
+- `create_earnings_surprise_dashboard()` - Multi-panel surprise analysis
+- `create_eps_trajectory_analysis()` - Trajectory score visualization
+- `create_earnings_quality_decomposition()` - Waterfall decomposition
+- `create_beat_rate_heatmap()` - Beat rates by sector
+- `create_earnings_consistency_matrix()` - Streak vs improvement matrix
+
+#### Quality & Risk (6 functions)
+
+- `create_piotroski_fscore_breakdown()` - F-Score distribution
+- `create_altman_zscore_distribution()` - Z-Score with distress zones
+- `create_quality_risk_quadrant()` - F-Score vs Z-Score scatter
+- `create_beneish_mscore_analysis()` - M-Score manipulation analysis
+- `create_risk_tier_sunburst()` - Hierarchical risk visualization
+- `create_distress_early_warning_dashboard()` - Early warning system
+
+#### Growth Analysis (5 functions)
+
+- `create_growth_waterfall_chart()` - Growth decomposition
+- `create_growth_consistency_matrix()` - Consistency by sector
+- `create_growth_vs_profitability_quadrant()` - BCG-style analysis
+- `create_growth_acceleration_chart()` - Acceleration ranking
+- `create_sustainable_growth_analysis()` - SGR analysis
 
 ---
 
@@ -746,6 +967,76 @@ For questions or issues with the refactored code:
 
 ---
 
-**Last Updated**: 2026-01-30
-**Version**: 2.0.0
-**Status**: Production Ready (Enhanced)
+**Last Updated**: 2026-02-08
+**Version**: 2.2.0
+**Status**: Production Ready (Column Alignment & Data Guard Improvements)
+
+---
+
+## Changelog (v2.2.0)
+
+### Column Name Alignment (MV Schema Sync)
+
+All visualization modules and dependent scripts/notebooks have been updated to use the correct
+materialized view (`mv_all_stock_features`) column names:
+
+| Old Name                                                        | New Name                                                                        | Affected Modules                                        |
+|-----------------------------------------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------|
+| `revenue_growth_yoy`                                            | `revenue_yoy_growth`                                                            | `growth_analysis.py`, `market_analytics.py`, notebooks  |
+| `revenue_growth_3y_cagr`                                        | `revenue_cagr_3y`                                                               | `growth_analysis.py`                                    |
+| `revenue_growth_5y_cagr`                                        | `revenue_cagr_5y`                                                               | `growth_analysis.py`                                    |
+| `eps_growth_3y_cagr`                                            | `eps_cagr_3y`                                                                   | `growth_analysis.py`                                    |
+| `net_income_growth`                                             | `net_income_growth_yoy`                                                         | `growth_analysis.py`                                    |
+| `inventory_turnover_mv`                                         | `inventory_turnover_itf`                                                        | `temporal_analysis.py`, `category_charts.py`, notebooks |
+| `beneish_m_score`                                               | `accounting_quality_score` (fallback)                                           | `quality_risk.py`                                       |
+| `eps_beat_count` / `eps_total_reports`                          | `eps_positive_years` / `eps_positive_streak`                                    | `earnings_quality.py`                                   |
+| `accruals_ratio`, `cash_earnings_ratio`, `earnings_persistence` | `earnings_quality_composite`, `ni_adjustment_ratio`, `accounting_quality_score` | `earnings_quality.py`                                   |
+
+### Earnings Quality Decomposition Remap
+
+`create_earnings_quality_decomposition()` now uses columns actually present in the MV:
+
+- `earnings_quality_composite`, `ni_adjustment_ratio`, `eps_adjustment_ratio`,
+  `accounting_quality_score`, `earnings_quality_impact`
+
+### Beat Rate & Consistency Remap
+
+`create_beat_rate_heatmap()` and `create_earnings_consistency_matrix()` now use:
+
+- `eps_positive_years`, `eps_positive_streak`, `eps_improvement_count`, `eps_trajectory_score`
+
+### Beneish M-Score Fallback
+
+`create_beneish_mscore_analysis()` now falls back through:
+`beneish_m_score` → `accounting_quality_score` → `accruals_quality`
+with adaptive thresholds and labels per resolved column.
+
+### Shared Utilities (`_shared.py`)
+
+New shared module `finance_ml/analytics/visualizations/_shared.py` provides:
+
+- `PLOTLY_TEMPLATE`, `COLORS` — centralized constants
+- `MV_COLUMN_ALIASES` — canonical alias map for MV column resolution
+- `resolve_column(df, logical_name)` — resolve logical column names to actual DataFrame columns
+- `create_no_data_figure(title)` — DRY replacement for per-module `_create_no_data_figure()`
+
+### Data Guard Clauses (`category_charts.py`)
+
+All 23+ functions in `category_charts.py` now include column-existence checks
+and return graceful "No Data" placeholder figures instead of raising `ValueError`.
+
+### Files Updated
+
+| File                                                       | Changes                                                      |
+|------------------------------------------------------------|--------------------------------------------------------------|
+| `finance_ml/analytics/visualizations/earnings_quality.py`  | Remapped decomposition, beat rate, consistency to MV columns |
+| `finance_ml/analytics/visualizations/growth_analysis.py`   | Fixed all growth metric column names                         |
+| `finance_ml/analytics/visualizations/quality_risk.py`      | Added M-Score fallback chain                                 |
+| `finance_ml/analytics/visualizations/temporal_analysis.py` | Fixed inventory turnover column                              |
+| `finance_ml/analytics/visualizations/category_charts.py`   | Added data guard clauses to all functions                    |
+| `finance_ml/analytics/visualizations/profitability.py`     | Added `total_asset_turnover` fallback for DuPont             |
+| `finance_ml/analytics/visualizations/_shared.py`           | New shared utilities module                                  |
+| `finance_ml/analytics/visualizations/__init__.py`          | Exports shared utilities                                     |
+| `market_analytics.py`                                      | Updated metric references                                    |
+| `feature_analytics.ipynb`                                  | Updated metric references                                    |
+| `financial_market_statistical_analysis.ipynb`              | Updated metric references                                    |

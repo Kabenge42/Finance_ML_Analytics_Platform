@@ -1,9 +1,9 @@
 metric                           ,value
 Total Stocks Analyzed            ,6419.0
-Mean Posterior Beat Probability  ,0.5689781068447199
-Median Posterior Beat Probability,0.5789473684210527
-Stocks Classified as Likely Beat ,4303.0
-Mean Confidence Score            ,0.36563327621124786
-Mean Streak Length               ,3.679545100482941
-Stocks with Beat Streak          ,5681.0
-Stocks with Miss Streak          ,738.0
+Mean Posterior Beat Probability  ,0.5390851601379545
+Median Posterior Beat Probability,0.55
+Stocks Classified as Likely Beat ,3659.0
+Mean Confidence Score            ,0.3865360648076024
+Mean Streak Length               ,3.662408474840318
+Stocks with Beat Streak          ,5664.0
+Stocks with Miss Streak          ,755.0

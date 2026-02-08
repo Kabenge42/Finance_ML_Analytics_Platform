@@ -18,7 +18,7 @@ SELECT id.isin,
        id.country,
        id.exchange,
        cs.piotroski_f_score,
-       cs.eps_trajectory_score,
+       etf.eps_trajectory_score,
        cs.dilution_score,
        cs.quality_momentum_score,
        nic.net_income_is_fq,
@@ -48,8 +48,12 @@ SELECT id.isin,
        nic.net_income_vs_5y_avg,
        nic.normalized_ni_vs_5y_avg
 FROM vw_identifier_columns                         id
-         LEFT JOIN calc_composite_scores()         cs(isin, piotroski_f_score, eps_trajectory_score, dilution_score,
-                                                      quality_momentum_score) USING (isin)
+         LEFT JOIN calc_composite_scores()        cs(isin, piotroski_f_score, dilution_score, quality_momentum_score)
+                   USING (isin)
+         LEFT JOIN calc_eps_trajectory_features() etf(isin, eps_qoq_growth, eps_yoy_quarterly, eps_positive_streak,
+                                                      eps_cagr_3y, eps_cagr_5y, eps_growth_accel, eps_vs_5y_avg,
+                                                      eps_improvement_count, eps_trajectory_score, eps_stability)
+                   USING (isin)
          LEFT JOIN calc_net_income_comprehensive() nic(isin, net_income_is_fq, net_income_is_ltm, net_income_is_fy,
                                                        net_income_adj_ltm, normalized_ni_ltm, net_income_is_1fqfq,
                                                        net_income_is_2fqfq, net_income_is_3fqfq, net_income_is_4fqfq,

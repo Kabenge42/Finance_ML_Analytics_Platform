@@ -11,5 +11,5 @@ SELECT CASE
            END AS result;
 $$;
 
-alter function ema_crossover_signal(numeric, numeric) owner to postgres;
+alter function ema_crossover_signal(unknown, unknown) owner to postgres;
 

@@ -57,5 +57,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_fiscal_calendar_features(text) owner to postgres;
+alter function calc_fiscal_calendar_features(unknown) owner to postgres;
 

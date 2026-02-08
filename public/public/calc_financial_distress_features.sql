@@ -56,5 +56,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_financial_distress_features(text) owner to postgres;
+alter function calc_financial_distress_features(unknown) owner to postgres;
 

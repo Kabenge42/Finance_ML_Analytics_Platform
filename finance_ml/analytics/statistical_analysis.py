@@ -12,6 +12,7 @@ This module provides advanced statistical analysis including:
 
 from __future__ import annotations
 
+import logging
 from typing import Tuple
 
 import numpy as np
@@ -535,6 +536,10 @@ def calculate_conditional_probabilities(
             if len(data) < 100:
                 continue
 
+            # Skip non-numeric features – median/comparison not meaningful
+            if not pd.api.types.is_numeric_dtype(data[feature]):
+                continue
+
             median_val = data[feature].median()
 
             # P(Distress | Feature > Median)
@@ -654,6 +659,11 @@ def kalman_filter_price_target(
         results.append(
             {
                 "ticker": row.get("ticker", str(idx)),
+                "name": row.get("name", ""),
+                "sector": row.get("sector", ""),
+                "industry": row.get("industry", ""),
+                "country": row.get("country", ""),
+                "exchange": row.get("exchange", ""),
                 "kalman_estimate": x_est,
                 "kalman_variance": p_est,
                 "kalman_gain": kalman_gain,
@@ -1021,3 +1031,330 @@ def _calculate_gelman_rubin(chains: list) -> float:
     var_hat = (1 - 1 / n) * W + B / n
 
     return float(np.sqrt(var_hat / W))
+
+
+def analyze_employee_productivity_frontier(
+    df: pd.DataFrame, sector_col: str = "industry"
+) -> pd.DataFrame:
+    """
+    Identify companies with superior human capital efficiency using industry-adjusted rankings.
+
+    Features: profit_per_employee, ebitda_per_employee, revenue_per_employee, workforce_stability
+    """
+    metrics = ["profit_per_employee", "ebitda_per_employee", "revenue_per_employee"]
+
+    # Filter for available metrics
+    available_metrics = [m for m in metrics if m in df.columns]
+    if not available_metrics:
+        return df
+
+    result = df.copy()
+
+    # Calculate industry-adjusted scores
+    for metric in available_metrics:
+        # Normalize by sector (z-score)
+        result[f"{metric}_sector_z"] = result.groupby(sector_col)[metric].transform(
+            lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0
+        )
+
+    # Calculate productivity frontier score (average of available z-scores)
+    z_cols = [f"{m}_sector_z" for m in available_metrics]
+    result["productivity_frontier_score"] = result[z_cols].mean(axis=1)
+
+    # Add workforce stability if available
+    if "workforce_stability" in df.columns:
+        result["productivity_frontier_score"] += result["workforce_stability"] / 100
+
+    # Rank companies
+    result["productivity_rank"] = result.groupby(sector_col)["productivity_frontier_score"].rank(
+        ascending=False
+    )
+
+    return result
+
+
+def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Detects accounting anomalies in a given DataFrame using specific financial features.
+
+    This function analyzes a set of pre-defined financial features to identify accounting
+    anomalies. It calculates Z-scores for each feature and combines them into an overall
+    accounting anomaly score. The anomaly score is then normalized to a scale of 0-100.
+
+    :param df: The input DataFrame containing financial data. Expected to include some or
+        all of the following columns:
+        - exceptional_items_frequency
+        - non_operating_income_share
+        - gaap_adj_eps_gap_pct
+        - asset_sale_boost
+        - ebitda_adjustment_ratio
+        - eps_adjustment_ratio
+        - exceptional_items_to_ebitda
+        - restructuring_intensity
+        - goodwill_change_rate
+
+
+    :return: A DataFrame similar to the input but with the following additional columns:
+        - accounting_anomaly_score: The overall anomaly score normalized to a scale of 0-100.
+        - {feature}_z: The absolute Z-score for each available feature (e.g., exceptional_items_frequency_z).
+        If no relevant features are present in the input, the function returns the original DataFrame unchanged.
+    """
+    features = [
+        "exceptional_items_frequency",
+        "non_operating_income_share",
+        "gaap_adj_eps_gap_pct",
+        "asset_sale_boost",
+        "ebitda_adjustment_ratio",
+        "eps_adjustment_ratio",
+        "exceptional_items_to_ebitda",
+        "restructuring_intensity",
+        "goodwill_change_rate",
+    ]
+
+    available = [f for f in features if f in df.columns]
+    if not available:
+        return df
+
+    result = df.copy()
+    result["accounting_anomaly_score"] = 0
+
+    for feat in available:
+        data = result[feat].dropna()
+        if len(data) > 10:
+            # Fit a normal distribution and find outliers (3 sigma)
+            mean, std = stats.norm.fit(data)
+            z_scores = (result[feat] - mean) / std
+            result[f"{feat}_z"] = z_scores.abs()
+            result["accounting_anomaly_score"] += result[f"{feat}_z"].fillna(0)
+
+    # Normalize score to 0-100
+    max_score = result["accounting_anomaly_score"].max()
+    if max_score > 0:
+        result["accounting_anomaly_score"] = (result["accounting_anomaly_score"] / max_score) * 100
+
+    return result
+
+
+def analyze_reporting_lag_sentiment(df: pd.DataFrame) -> dict:
+    """
+    Test the "bad news travels slow" hypothesis: relationship between reporting_lag and earnings misses.
+
+    Features: reporting_lag, eps_surprise_pct, days_to_earnings
+    """
+    if "reporting_lag" not in df.columns or "eps_surprise_pct" not in df.columns:
+        return {
+            "correlation": 0,
+            "p_value": 1.0,
+            "hypothesis_confirmed": False,
+            "sample_size": 0,
+        }
+
+    data = df[["reporting_lag", "eps_surprise_pct"]].dropna()
+    if len(data) < 5:
+        return {
+            "correlation": 0,
+            "p_value": 1.0,
+            "hypothesis_confirmed": False,
+            "sample_size": len(data),
+        }
+
+    corr, p_val = stats.spearmanr(data["reporting_lag"], data["eps_surprise_pct"])
+
+    # If correlation is negative and significant, hypothesis is confirmed
+    # (Higher lag correlated with lower (negative) surprise)
+    confirmed = corr < -0.1 and p_val < 0.05
+
+    return {
+        "correlation": float(corr),
+        "p_value": float(p_val),
+        "hypothesis_confirmed": bool(confirmed),
+        "sample_size": int(len(data)),
+    }
+
+
+def run_category_probability_analytics(
+    df: pd.DataFrame,
+    category_name: str,
+    features: list[str],
+    n_simulations: int = 10000,
+) -> dict:
+    """
+    Run comprehensive probability analytics for a feature category.
+
+    Combines Bayesian analysis, distribution fitting, and conditional
+    probability calculations for all features in a category.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame with feature data
+    category_name : str
+        Name of the feature category (e.g., "Valuation Ratios")
+    features : list[str]
+        List of feature column names in this category
+    n_simulations : int, default 10000
+        Number of Monte Carlo simulations
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - 'bayesian_results': Posterior distributions per feature
+        - 'distribution_fits': Best-fit distributions with parameters
+        - 'conditional_probs': P(Distress | Feature) analysis
+        - 'summary_statistics': Descriptive statistics
+    """
+    available_features = [f for f in features if f in df.columns]
+
+    results = {
+        "category": category_name,
+        "features_analyzed": len(available_features),
+        "bayesian_results": {},
+        "distribution_fits": {},
+        "conditional_probs": {},
+        "summary_statistics": {},
+    }
+
+    # 1. Bayesian parameter estimation
+    bayesian = bayesian_category_analysis(df, category_name, available_features)
+    results["bayesian_results"] = bayesian
+
+    # 2. Distribution fitting
+    dist_fits = fit_distributions_by_category(df, category_name, available_features, n_simulations)
+    results["distribution_fits"] = dist_fits
+
+    # 3. Conditional probabilities (if distress_risk_score available)
+    if "distress_risk_score" in df.columns:
+        cond_probs = calculate_conditional_probabilities(df, {category_name: available_features})
+        results["conditional_probs"] = cond_probs
+
+    # 4. Summary statistics
+    for feat in available_features:
+        data = pd.to_numeric(df[feat], errors="coerce").dropna()
+        if len(data) > 0:
+            results["summary_statistics"][feat] = {
+                "mean": float(data.mean()),
+                "median": float(data.median()),
+                "std": float(data.std()),
+                "skewness": float(data.skew()),
+                "kurtosis": float(data.kurtosis()),
+            }
+
+    return results
+
+
+def run_all_views_probability_analytics(
+    views_dict: dict[str, pd.DataFrame],
+    view_category_mapping: dict[str, str],
+) -> dict[str, dict]:
+    """
+    Run probability analytics for all feature views.
+
+    Parameters
+    ----------
+    views_dict : dict[str, pd.DataFrame]
+        Dictionary of DataFrames keyed by view name
+    view_category_mapping : dict[str, str]
+        Mapping from view name to category name
+
+    Returns
+    -------
+    dict[str, dict]
+        Analytics results for each view
+    """
+    from finance_ml.analytics.data_utils import get_identifier_cols_set
+
+    all_results = {}
+    identifier_cols = get_identifier_cols_set()
+
+    for view_name, df_view in views_dict.items():
+        if df_view.empty:
+            continue
+
+        category_name = view_category_mapping.get(view_name, view_name)
+        feature_cols = [c for c in df_view.columns if c not in identifier_cols]
+
+        logging.info("Running analytics for %s (%d features)", category_name, len(feature_cols))
+
+        results = run_category_probability_analytics(df_view, category_name, feature_cols)
+        all_results[view_name] = results
+
+    return all_results
+
+
+def export_probability_view_results(
+    df: pd.DataFrame,
+    view_name: str,
+    feature_cols: list[str],
+    identifier_cols: list[str] | None = None,
+) -> int | None:
+    """
+    Export per-feature probability metrics to analytics prob_vw_features_* tables.
+
+    Computes percentile, z-score, and P(above median) for each feature
+    and writes to the corresponding analytics table in long format.
+    Uses standardized identifier columns from vw_identifier_columns.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Source DataFrame with feature data
+    view_name : str
+        Source view name (e.g., 'vw_features_earnings')
+    feature_cols : list[str]
+        Feature columns to compute probabilities for
+    identifier_cols : list[str], optional
+        Identifier columns to include. If None, loads from
+        vw_identifier_columns via data_utils.
+
+    Returns
+    -------
+    int or None
+        Number of rows exported
+    """
+    from scipy import stats as sp_stats
+
+    from finance_ml.analytics.data_utils import export_to_analytics_db, load_identifier_columns
+
+    if identifier_cols is None:
+        identifier_cols = load_identifier_columns()
+
+    available_ids = [c for c in identifier_cols if c in df.columns]
+    rows = []
+
+    for feat in feature_cols:
+        if feat not in df.columns:
+            continue
+        data = pd.to_numeric(df[feat], errors="coerce")
+        valid = data.dropna()
+        if len(valid) < 10:
+            continue
+
+        median_val = valid.median()
+        mean_val = valid.mean()
+        std_val = valid.std()
+
+        for idx in df.index:
+            val = data.loc[idx]
+            if pd.isna(val):
+                continue
+            row = {c: df.loc[idx, c] for c in available_ids if c in df.columns}
+            row["feature"] = feat
+            row["value"] = float(val)
+            row["percentile"] = float(sp_stats.percentileofscore(valid, val))
+            row["z_score"] = float((val - mean_val) / std_val) if std_val > 0 else 0.0
+            row["prob_above_median"] = 1.0 if val > median_val else 0.0
+            rows.append(row)
+
+    if not rows:
+        return 0
+
+    result_df = pd.DataFrame(rows)
+
+    # Reorder columns: identifier cols first, then metric cols
+    id_cols_ordered = [c for c in identifier_cols if c in result_df.columns]
+    metric_cols = [c for c in result_df.columns if c not in id_cols_ordered]
+    result_df = result_df[id_cols_ordered + metric_cols]
+
+    table_name = f"prob_{view_name}"
+    return export_to_analytics_db(result_df, table_name)

@@ -20,9 +20,9 @@ Functions:
 
 from __future__ import annotations
 
-import logging
 import os
-from typing import Optional, TYPE_CHECKING
+import logging
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -32,459 +32,57 @@ import scipy.stats as stats
 from plotly.graph_objs import Figure
 from plotly.subplots import make_subplots
 
-# Optional import for database access
-if TYPE_CHECKING:
-    pass
-
-from collections import defaultdict
-
 from finance_ml.analytics.data_utils import (
     load_feature_data_from_db,
     backfill_feature_columns,
     export_to_analytics_db,
+    safe_get_column,
+    load_feature_categories_from_db,
+    _get_fallback_feature_categories,
+    compare_registry_with_local,
 )
 
-try:
-    from sqlalchemy import create_engine, text
-except ImportError:  # pragma: no cover
-    create_engine = None  # type: ignore
-    text = None  # type: ignore
+from finance_ml.analytics.visualizations.valuation import (
+    create_valuation_multiples_comparison,
+    create_valuation_distribution_dashboard,
+    create_relative_valuation_matrix,
+    create_valuation_vs_growth_quadrant,
+    create_historical_valuation_percentile,
+)
+from finance_ml.analytics.visualizations.earnings_quality import (
+    create_earnings_surprise_dashboard,
+    create_eps_trajectory_analysis,
+    create_earnings_quality_decomposition,
+    create_beat_rate_heatmap,
+    create_earnings_consistency_matrix,
+)
+from finance_ml.analytics.visualizations.quality_risk import (
+    create_piotroski_fscore_breakdown,
+    create_altman_zscore_distribution,
+    create_quality_risk_quadrant,
+    create_beneish_mscore_analysis,
+    create_risk_tier_sunburst,
+    create_distress_early_warning_dashboard,
+)
+from finance_ml.analytics.visualizations.growth_analysis import (
+    create_growth_waterfall_chart,
+    create_growth_consistency_matrix,
+    create_growth_vs_profitability_quadrant,
+    create_growth_acceleration_chart,
+    create_sustainable_growth_analysis,
+)
 
 # Dark theme for Plotly
 PLOTLY_TEMPLATE = "plotly_dark"
 px.defaults.template = PLOTLY_TEMPLATE
 
-
-def load_feature_categories_from_db(
-    connection_string: Optional[str] = None,
-) -> dict[str, list[str]]:
-    """
-    Load feature categories from the calculated_features_registry table.
-
-    Parameters
-    ----------
-    connection_string : str, optional
-        Database connection string. If None, reads from DB_URL environment variable.
-
-    Returns
-    -------
-    dict[str, list[str]]
-        Dictionary mapping category names to lists of feature aliases.
-    """
-    if connection_string is None:
-        connection_string = os.environ.get("DB_URL")
-
-    # If no connection string is available, use fallback immediately
-    if not connection_string:
-        logging.info("DB_URL not configured, using fallback feature categories")
-        return _get_fallback_feature_categories()
-
-    if create_engine is None or text is None:
-        logging.warning("SQLAlchemy not available, using fallback feature categories")
-        return _get_fallback_feature_categories()
-
-    query = text("""
-                 SELECT category, feature_alias
-                 FROM public.calculated_features_registry
-                 ORDER BY category, feature_alias
-                 """)
-
-    # Attempts to load feature categories from database
-    try:
-        engine = create_engine(connection_string)
-        with engine.connect() as conn:
-            result = conn.execute(query)
-            rows = result.fetchall()
-
-        categories = defaultdict(list)
-        for row in rows:
-            category, feature_alias = row[0], row[1]
-            categories[category].append(feature_alias)
-
-        logging.info(f"Loaded {len(categories)} feature categories from database")
-        return dict(categories)
-
-    except Exception as e:
-        logging.warning(f"Could not load categories from database: {e}")
-        logging.warning("Falling back to hardcoded FEATURE_CATEGORIES")
-        return _get_fallback_feature_categories()
-
-
-def _get_fallback_feature_categories() -> dict[str, list[str]]:
-    """Fallback hardcoded categories if database is unavailable."""
-    return {
-        "Valuation Ratios": [
-            "p_e_ratio",
-            "p_b_ratio",
-            "ev_ebitda_ratio",
-            "ev_sales_ratio",
-            "dividend_yield",
-            "peg_ratio",
-            "price_to_tangible_book",
-            "tangible_book_value_ltm",
-        ],
-        "Momentum & Technical": [
-            "price_momentum_1m",
-            "price_momentum_3m",
-            "price_momentum_6m",
-            "price_momentum_1y",
-            "price_momentum_3y",
-            "price_momentum_5y",
-            "range_52w_position",
-            "long_term_trend_score",
-            "secular_trend_flag",
-        ],
-        "Profitability": [
-            "roe",
-            "roa",
-            "gross_margin_pct",
-            "operating_margin_pct",
-            "net_margin_pct",
-            "ebitda_margin_pct",
-            "roic",
-            "net_margin_trend_yoy",
-        ],
-        "Quality & Risk": [
-            "piotroski_f_score",
-            "distress_risk_score",
-            "altman_z_score",
-            "accounting_quality_score",
-            "earnings_quality_composite",
-            "cash_flow_quality_score",
-            "beta_stability_score",
-        ],
-        "Leverage & Liquidity": [
-            "debt_to_equity",
-            "current_ratio",
-            "quick_ratio",
-            "interest_coverage_ratio",
-            "cash_ratio",
-            "working_capital_ratio",
-            "debt_deleveraging",
-        ],
-        "Analyst Sentiment": [
-            "analyst_bullish_pct",
-            "analyst_neutral_pct",
-            "analyst_bearish_pct",
-            "upside_potential",
-            "analyst_rating_normalized",
-            "eps_revision_momentum",
-        ],
-        "Earnings Quality": [
-            "eps_surprise_pct",
-            "eps_adjustment_ratio",
-            "gaap_adj_eps_gap_pct",
-            "eps_trajectory_score",
-            "earnings_quality_score",
-            "gaap_revision_momentum",
-        ],
-        "Growth Metrics": [
-            "revenue_growth_yoy",
-            "ebitda_growth_yoy",
-            "eps_yoy_growth",
-            "fcf_growth_yoy",
-            "revenue_cagr_5y",
-        ],
-        "Cash Flow": [
-            "fcf_positive_years",
-            "fcf_margin",
-            "fcf_yield",
-            "cfo_to_net_income",
-            "self_funding_ratio",
-            "cash_flow_quality_score",
-        ],
-        "Dividend Features": [
-            "dividend_streak",
-            "dividend_yield_ltm",
-            "dividend_payout_ratio",
-            "fcf_dividend_coverage",
-            "total_shareholder_yield",
-        ],
-        "R&D Investment": [
-            "rnd_intensity_ltm",
-            "rnd_yoy_growth",
-            "rnd_per_employee",
-            "high_rnd_intensity_flag",
-        ],
-        "Inventory Temporal": [
-            "inventory_days",
-            "inventory_turnover_mv",
-            "inventory_yoy_change",
-            "inventory_buildup_flag",
-        ],
-        "Goodwill & M&A": [
-            "goodwill_concentration",
-            "goodwill_3y_growth",
-            "recent_acquisition_flag",
-            "impairment_risk_score",
-        ],
-        "CapEx & Investment": [
-            "capex_yoy_growth",
-            "capex_vs_5y_avg",
-            "acquisitions_ltm_total",
-            "ma_intensity_score",
-            "investment_efficiency",
-        ],
-    }
-
-
-def compare_registry_with_local(
-    db_categories: dict[str, list[str]], local_categories: dict[str, list[str]]
-) -> dict:
-    """
-    Compare database registry with local/fallback categories.
-
-    Useful for identifying missing features or new additions.
-
-    Parameters
-    ----------
-    db_categories : dict[str, list[str]]
-        Categories loaded from database
-    local_categories : dict[str, list[str]]
-        Local/fallback categories
-
-    Returns
-    -------
-    dict
-        Report with categories and features only in db or local
-    """
-    report = {
-        "categories_only_in_db": [],
-        "categories_only_in_local": [],
-        "features_only_in_db": {},
-        "features_only_in_local": {},
-    }
-
-    db_cats = set(db_categories.keys())
-    local_cats = set(local_categories.keys())
-
-    report["categories_only_in_db"] = list(db_cats - local_cats)
-    report["categories_only_in_local"] = list(local_cats - db_cats)
-
-    for cat in db_cats & local_cats:
-        db_features = set(db_categories[cat])
-        local_features = set(local_categories[cat])
-
-        only_in_db = db_features - local_features
-        only_in_local = local_features - db_features
-
-        if only_in_db:
-            report["features_only_in_db"][cat] = list(only_in_db)
-        if only_in_local:
-            report["features_only_in_local"][cat] = list(only_in_local)
-
-    return report
-
-
 # Load categories dynamically at module level (with fallback)
 FEATURE_CATEGORIES = load_feature_categories_from_db()
 
 
-def load_feature_data_from_db(
-    db_url: Optional[str] = None,
-    earnings_date_filter: str = "2026-01-01",
-    limit: Optional[int] = None,
-) -> pd.DataFrame:
-    """
-    Load feature data from PostgreSQL database materialized view.
-
-    Loads data from public.mv_all_stock_features with optional filtering
-    by next_earnings date. This function replicates the SQL query from
-    feature_analytics.ipynb notebook.
-
-    Parameters
-    ----------
-    db_url : str, optional
-        SQLAlchemy database URL (e.g., postgresql+psycopg2://user:pass@host:5432/postgres)
-        If None, reads from DB_URL environment variable
-    earnings_date_filter : str, default "2026-01-01"
-        Filter stocks with next_earnings >= this date (ISO format: YYYY-MM-DD)
-    limit : int, optional
-        Maximum number of rows to return
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with feature data from mv_all_stock_features
-
-    Raises
-    ------
-    ImportError
-        If SQLAlchemy or psycopg2 not available
-    ValueError
-        If db_url is not provided and DB_URL environment variable is not set
-
-    Examples
-    --------
-    >>> # Load from environment variable
-    >>> df = load_feature_data_from_db()
-    >>>
-    >>> # Load with explicit URL
-    >>> db_url = "postgresql+psycopg2://postgres:@localhost:5432/postgres"
-    >>> df = load_feature_data_from_db(db_url=db_url)
-    >>>
-    >>> # Load with custom date filter
-    >>> df = load_feature_data_from_db()
-    """
-    if create_engine is None:
-        raise ImportError(
-            "SQLAlchemy not available. Install psycopg2-binary and SQLAlchemy to use database loading."
-        )
-
-    # Resolve database URL
-    if db_url is None:
-        db_url = os.environ.get("DB_URL")
-        if db_url is None:
-            raise ValueError(
-                "db_url parameter not provided and DB_URL environment variable not set. "
-                "Please provide a database URL or set the DB_URL environment variable."
-            )
-
-    # Resolve schema from environment, default to public
-    schema = os.environ.get("DB_EQUITIES_SCHEMA", "public")
-    view_name = "mv_all_stock_features"
-    view_ref = f"{schema}.{view_name}"
-
-    logging.info(
-        "Loading feature data from %s (view: %s, earnings_date_filter: %s)",
-        db_url.split("@")[-1] if "@" in db_url else db_url,  # Hide credentials in log
-        view_ref,
-        earnings_date_filter,
-    )
-
-    # Create SQLAlchemy engine
-    engine = create_engine(db_url)
-
-    # Build SQL query matching the notebook
-    base_query = f"""
-        SELECT *
-        FROM {view_ref}
-        WHERE next_earnings >= DATE '{earnings_date_filter}'
-        ORDER BY next_earnings
-    """
-
-    # Apply limit if specified
-    if limit is not None:
-        query = f"{base_query} LIMIT {int(limit)}"
-    else:
-        query = base_query
-
-    # Execute query and load into DataFrame
-    df = pd.read_sql(query, engine)
-
-    logging.info("Loaded %d rows from %s", len(df), view_ref)
-
-    return df
-
-
-def backfill_feature_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Normalize and backfill missing feature columns.
-
-    This function replicates the data normalization and backfill logic
-    from feature_analytics.ipynb notebook to ensure compatibility with
-    visualization functions.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame loaded from database
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with backfilled columns
-
-    Notes
-    -----
-    Backfill operations:
-    - analyst_neutral_pct: Calculated from bullish and bearish percentages
-    - inventory_turnover_mv: Mapped from inventory_turnover
-    - inventory_days: Calculated from inventory_turnover_mv
-    - rnd_intensity_ltm: Mapped from rnd_intensity or rnd_to_revenue
-    - tangible_book_value_ltm: Mapped from tangible_book_value
-    - goodwill_concentration: Mapped from goodwill_to_equity or goodwill_to_assets_pct
-    - industry: Mapped from sector if missing
-    """
-    df = df.copy()
-
-    # Backfill analyst_neutral_pct if missing but components exist
-    if "analyst_neutral_pct" not in df.columns:
-        bullish = df.get("analyst_bullish_pct")
-        bearish = df.get("analyst_bearish_pct")
-        if bullish is not None and bearish is not None:
-            neutral = 100 - bullish - bearish
-            df["analyst_neutral_pct"] = neutral.clip(lower=0, upper=100)
-            logging.info("Backfilled analyst_neutral_pct from bullish/bearish percentages")
-
-    # Map inventory_turnover to expected column name
-    if "inventory_turnover_mv" not in df.columns:
-        if "inventory_turnover" in df.columns:
-            df["inventory_turnover_mv"] = df["inventory_turnover"]
-            logging.info("Mapped inventory_turnover to inventory_turnover_mv")
-
-    # Calculate inventory_days from turnover
-    if "inventory_days" not in df.columns:
-        turnover_col = df.get("inventory_turnover_mv")
-        if turnover_col is not None:
-            turnover = turnover_col.replace(0, pd.NA)
-            df["inventory_days"] = 365 / turnover
-            logging.info("Calculated inventory_days from inventory_turnover_mv")
-
-    # Map R&D intensity columns
-    if "rnd_intensity_ltm" not in df.columns:
-        for src_col in ["rnd_intensity", "rnd_to_revenue"]:
-            if src_col in df.columns:
-                df["rnd_intensity_ltm"] = df[src_col]
-                logging.info("Mapped %s to rnd_intensity_ltm", src_col)
-                break
-
-    # Map tangible book value columns
-    if "tangible_book_value_ltm" not in df.columns:
-        if "tangible_book_value" in df.columns:
-            df["tangible_book_value_ltm"] = df["tangible_book_value"]
-            logging.info("Mapped tangible_book_value to tangible_book_value_ltm")
-
-    # Map goodwill concentration
-    if "goodwill_concentration" not in df.columns:
-        for src_col in ["goodwill_to_equity", "goodwill_to_assets_pct"]:
-            if src_col in df.columns:
-                df["goodwill_concentration"] = df[src_col]
-                logging.info("Mapped %s to goodwill_concentration", src_col)
-                break
-
-    # Ensure industry column exists (prefer industry over sector)
-    if "industry" not in df.columns and "sector" in df.columns:
-        df["industry"] = df["sector"]
-        logging.info("Mapped sector to industry")
-
-    logging.info("Backfill complete. Total columns: %d", len(df.columns))
-
-    return df
-
-
-def safe_get_column(df: pd.DataFrame, *column_names: str, default=None):
-    """
-    Safely retrieve a column from DataFrame, trying multiple possible names.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Source DataFrame
-    column_names : str
-        One or more column names to try (in order of preference)
-    default : any
-        Default value if no column is found
-
-    Returns
-    -------
-    pd.Series or default
-        The first matching column or the default value
-    """
-    for name in column_names:
-        if name in df.columns:
-            return df[name]
-    return default
+# NOTE: load_feature_data_from_db, backfill_feature_columns, safe_get_column,
+# load_feature_categories_from_db, _get_fallback_feature_categories, and
+# compare_registry_with_local are imported from data_utils.py (canonical source).
 
 
 def ensure_subplot_data(
@@ -1576,6 +1174,108 @@ def main():
             fig_distress = analyze_distress_distribution(df)
             fig_distress.write_html(f"{output_dir}/feature_analytics_distress.html")
             print(f"    ✓ Saved to {output_dir}/feature_analytics_distress.html")
+
+        # --- NEW: Valuation Analysis Visualizations ---
+        print("  - Creating valuation analysis visualizations...")
+
+        # Valuation distribution dashboard
+        fig_val_dist = create_valuation_distribution_dashboard(df)
+        fig_val_dist.write_html(f"{output_dir}/valuation_distribution_dashboard.html")
+        print(f"    ✓ Saved valuation_distribution_dashboard.html")
+
+        # Relative valuation matrix
+        fig_val_matrix = create_relative_valuation_matrix(df)
+        fig_val_matrix.write_html(f"{output_dir}/relative_valuation_matrix.html")
+        print(f"    ✓ Saved relative_valuation_matrix.html")
+
+        # Valuation vs growth quadrant
+        fig_val_growth = create_valuation_vs_growth_quadrant(df)
+        fig_val_growth.write_html(f"{output_dir}/valuation_vs_growth_quadrant.html")
+        print(f"    ✓ Saved valuation_vs_growth_quadrant.html")
+
+        # Historical valuation percentile
+        fig_val_pct = create_historical_valuation_percentile(df)
+        fig_val_pct.write_html(f"{output_dir}/historical_valuation_percentile.html")
+        print(f"    ✓ Saved historical_valuation_percentile.html")
+
+        # --- NEW: Earnings Quality Visualizations ---
+        print("  - Creating earnings quality visualizations...")
+
+        # Earnings surprise dashboard
+        fig_earn_surprise = create_earnings_surprise_dashboard(df)
+        fig_earn_surprise.write_html(f"{output_dir}/earnings_surprise_dashboard.html")
+        print(f"    ✓ Saved earnings_surprise_dashboard.html")
+
+        # EPS trajectory analysis
+        fig_eps_traj = create_eps_trajectory_analysis(df)
+        fig_eps_traj.write_html(f"{output_dir}/eps_trajectory_analysis.html")
+        print(f"    ✓ Saved eps_trajectory_analysis.html")
+
+        # Beat rate heatmap
+        fig_beat_rate = create_beat_rate_heatmap(df)
+        fig_beat_rate.write_html(f"{output_dir}/beat_rate_heatmap.html")
+        print(f"    ✓ Saved beat_rate_heatmap.html")
+
+        # Earnings consistency matrix
+        fig_earn_consist = create_earnings_consistency_matrix(df)
+        fig_earn_consist.write_html(f"{output_dir}/earnings_consistency_matrix.html")
+        print(f"    ✓ Saved earnings_consistency_matrix.html")
+
+        # --- NEW: Quality & Risk Visualizations ---
+        print("  - Creating quality & risk visualizations...")
+
+        # Piotroski F-Score breakdown
+        fig_fscore = create_piotroski_fscore_breakdown(df)
+        fig_fscore.write_html(f"{output_dir}/piotroski_fscore_breakdown.html")
+        print(f"    ✓ Saved piotroski_fscore_breakdown.html")
+
+        # Altman Z-Score distribution
+        fig_zscore = create_altman_zscore_distribution(df)
+        fig_zscore.write_html(f"{output_dir}/altman_zscore_distribution.html")
+        print(f"    ✓ Saved altman_zscore_distribution.html")
+
+        # Quality-Risk quadrant
+        fig_qr_quad = create_quality_risk_quadrant(df)
+        fig_qr_quad.write_html(f"{output_dir}/quality_risk_quadrant.html")
+        print(f"    ✓ Saved quality_risk_quadrant.html")
+
+        # Beneish M-Score analysis
+        fig_mscore = create_beneish_mscore_analysis(df)
+        fig_mscore.write_html(f"{output_dir}/beneish_mscore_analysis.html")
+        print(f"    ✓ Saved beneish_mscore_analysis.html")
+
+        # Risk tier sunburst
+        fig_risk_sun = create_risk_tier_sunburst(df)
+        fig_risk_sun.write_html(f"{output_dir}/risk_tier_sunburst.html")
+        print(f"    ✓ Saved risk_tier_sunburst.html")
+
+        # Distress early warning dashboard
+        fig_distress_warn = create_distress_early_warning_dashboard(df)
+        fig_distress_warn.write_html(f"{output_dir}/distress_early_warning_dashboard.html")
+        print(f"    ✓ Saved distress_early_warning_dashboard.html")
+
+        # --- NEW: Growth Analysis Visualizations ---
+        print("  - Creating growth analysis visualizations...")
+
+        # Growth consistency matrix
+        fig_growth_consist = create_growth_consistency_matrix(df)
+        fig_growth_consist.write_html(f"{output_dir}/growth_consistency_matrix.html")
+        print(f"    ✓ Saved growth_consistency_matrix.html")
+
+        # Growth vs profitability quadrant
+        fig_growth_prof = create_growth_vs_profitability_quadrant(df)
+        fig_growth_prof.write_html(f"{output_dir}/growth_vs_profitability_quadrant.html")
+        print(f"    ✓ Saved growth_vs_profitability_quadrant.html")
+
+        # Growth acceleration chart
+        fig_growth_accel = create_growth_acceleration_chart(df)
+        fig_growth_accel.write_html(f"{output_dir}/growth_acceleration_chart.html")
+        print(f"    ✓ Saved growth_acceleration_chart.html")
+
+        # Sustainable growth analysis
+        fig_sust_growth = create_sustainable_growth_analysis(df)
+        fig_sust_growth.write_html(f"{output_dir}/sustainable_growth_analysis.html")
+        print(f"    ✓ Saved sustainable_growth_analysis.html")
 
     except Exception as e:
         print(f"  ✗ Error generating visualizations: {e}")

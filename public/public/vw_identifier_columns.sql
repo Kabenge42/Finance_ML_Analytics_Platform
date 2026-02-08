@@ -1,13 +1,13 @@
-create view vw_identifier_columns (isin, industry, trading_country, region, name, country, ticker, sector, exchange) as
+create view vw_identifier_columns (isin, ticker, name, region, country, trading_country, exchange, sector, industry) as
 SELECT "ISIN"            AS isin,
-       "Industry"        AS industry,
-       "Trading Country" AS trading_country,
-       "Region"          AS region,
-       "Name"            AS name,
-       "Country"         AS country,
        "Ticker"          AS ticker,
+       "Name"            AS name,
+       "Region"          AS region,
+       "Country"         AS country,
+       "Trading Country" AS trading_country,
+       "Exchange"        AS exchange,
        "Sector"          AS sector,
-       "Exchange"        AS exchange
+       "Industry"        AS industry
 FROM equities e;
 
 alter table vw_identifier_columns

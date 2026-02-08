@@ -354,10 +354,16 @@ def fast_monte_carlo_simulation(
         var_5 < 0, expected_upside / np.abs(var_5 + 1e-6), expected_upside / (upside_std + 1e-6)
     )
 
-    # Build result DataFrame
-    result = pd.DataFrame(
+    # Build result DataFrame with identifier columns
+    result_data: dict = {
+        "ticker": df["ticker"].values if "ticker" in df.columns else range(len(df)),
+    }
+    for id_col in ("name", "sector", "industry", "country", "exchange"):
+        if id_col in df.columns:
+            result_data[id_col] = df[id_col].values
+
+    result_data.update(
         {
-            "ticker": df["ticker"].values if "ticker" in df.columns else range(len(df)),
             "expected_upside": expected_upside,
             "upside_std": upside_std,
             "var_5_pct": var_5,
@@ -365,6 +371,7 @@ def fast_monte_carlo_simulation(
             "risk_reward_ratio": risk_reward,
         }
     )
+    result = pd.DataFrame(result_data)
 
     # Add original price data
     result["last_price"] = last_price

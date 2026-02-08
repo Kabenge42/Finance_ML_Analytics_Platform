@@ -7,5 +7,5 @@ $$
 SELECT GREATEST(min_val, LEAST(max_val, val)) AS result;
 $$;
 
-alter function clamp_score(numeric, numeric, numeric) owner to postgres;
+alter function clamp_score(unknown, unknown, unknown) owner to postgres;
 

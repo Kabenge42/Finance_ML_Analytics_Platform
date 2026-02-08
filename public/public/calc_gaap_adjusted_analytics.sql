@@ -153,5 +153,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_gaap_adjusted_analytics(text) owner to postgres;
+alter function calc_gaap_adjusted_analytics(unknown) owner to postgres;
 

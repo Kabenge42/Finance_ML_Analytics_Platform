@@ -43,7 +43,10 @@ FROM vw_identifier_columns                            id
                                                          beta_momentum, volatility_regime) USING (isin)
          LEFT JOIN calc_long_term_momentum_features() ltm(isin, price_momentum_1y, price_momentum_3y, price_momentum_5y,
                                                           long_term_trend_score, price_vs_ema_250d,
-                                                          multi_year_high_flag, secular_trend_flag) USING (isin);
+                                                          multi_year_high_flag, secular_trend_flag, total_return_ytd,
+                                                          total_return_5y, total_return_10y, return_cagr_3y,
+                                                          return_cagr_10y, return_vs_price_momentum,
+                                                          return_consistency_score) USING (isin);
 
 comment on view vw_features_momentum is 'Price momentum and trend indicators across multiple timeframes.
     Source functions: calc_momentum_features, calc_long_term_momentum_features';

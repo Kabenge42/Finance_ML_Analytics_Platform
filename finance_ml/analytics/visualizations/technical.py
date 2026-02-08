@@ -182,15 +182,21 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
 
     # Create subplots
     fig = make_subplots(
-        rows=2,
-        cols=2,
+        rows=4,
+        cols=1,
         subplot_titles=(
             "Overall Distribution",
             "Distribution by Sector",
             "Overbought/Oversold Analysis",
             "Range Position vs Momentum",
         ),
-        specs=[[{"type": "histogram"}, {"type": "box"}], [{"type": "bar"}, {"type": "scatter"}]],
+        specs=[
+            [{"type": "histogram"}],
+            [{"type": "box"}],
+            [{"type": "bar"}],
+            [{"type": "scatter"}],
+        ],
+        vertical_spacing=0.08,
     )
 
     # 1. Overall histogram
@@ -220,8 +226,8 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
                     go.Box(
                         y=sector_data, name=sector[:15], boxpoints="outliers"  # Truncate long names
                     ),
-                    row=1,
-                    col=2,
+                    row=2,
+                    col=1,
                 )
 
     # 3. Overbought/Oversold bar chart
@@ -239,7 +245,7 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
                 text=[f"{oversold}", f"{neutral}", f"{overbought}"],
                 textposition="auto",
             ),
-            row=2,
+            row=3,
             col=1,
         )
 
@@ -262,23 +268,25 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
                 ),
                 name="Stocks",
             ),
-            row=2,
-            col=2,
+            row=4,
+            col=1,
         )
 
     fig.update_layout(
         title="52-Week Range Position Analysis",
-        height=700,
+        height=1400,
+        width=1000,
         showlegend=False,
         template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     fig.update_xaxes(title_text="Range Position", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
-    fig.update_yaxes(title_text="Range Position", row=1, col=2)
-    fig.update_yaxes(title_text="% of Stocks", row=2, col=1)
-    fig.update_xaxes(title_text="52W Range Position", row=2, col=2)
-    fig.update_yaxes(title_text="1M Momentum (%)", row=2, col=2)
+    fig.update_yaxes(title_text="Range Position", row=2, col=1)
+    fig.update_yaxes(title_text="% of Stocks", row=3, col=1)
+    fig.update_xaxes(title_text="52W Range Position", row=4, col=1)
+    fig.update_yaxes(title_text="1M Momentum (%)", row=4, col=1)
 
     return fig
 
@@ -480,10 +488,10 @@ def create_momentum_divergence_scatter(
 
     # Create figure
     fig = make_subplots(
-        rows=1,
-        cols=2,
+        rows=2,
+        cols=1,
         subplot_titles=("Short-term vs Long-term Momentum", "Divergence Distribution"),
-        column_widths=[0.65, 0.35],
+        vertical_spacing=0.12,
     )
 
     # 1. Scatter plot
@@ -540,25 +548,27 @@ def create_momentum_divergence_scatter(
             opacity=0.7,
             name="Divergence",
         ),
-        row=1,
-        col=2,
+        row=2,
+        col=1,
     )
 
     # Add vertical lines for divergence thresholds
-    fig.add_vline(x=10, line_dash="dash", line_color="green", row=1, col=2)
-    fig.add_vline(x=-10, line_dash="dash", line_color="red", row=1, col=2)
-    fig.add_vline(x=0, line_dash="solid", line_color="white", row=1, col=2)
+    fig.add_vline(x=10, line_dash="dash", line_color="green", row=2, col=1)
+    fig.add_vline(x=-10, line_dash="dash", line_color="red", row=2, col=1)
+    fig.add_vline(x=0, line_dash="solid", line_color="white", row=2, col=1)
 
     fig.update_layout(
         title="Momentum Divergence Analysis",
-        height=500,
+        height=800,
+        width=1000,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     fig.update_xaxes(title_text=f"Long-term ({long_term_col})", row=1, col=1)
     fig.update_yaxes(title_text=f"Short-term ({short_term_col})", row=1, col=1)
-    fig.update_xaxes(title_text="Divergence (Short - Long)", row=1, col=2)
-    fig.update_yaxes(title_text="Count", row=1, col=2)
+    fig.update_xaxes(title_text="Divergence (Short - Long)", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
 
     return fig

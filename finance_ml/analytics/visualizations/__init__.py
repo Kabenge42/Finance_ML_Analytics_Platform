@@ -18,6 +18,15 @@ specialized visualization functions as needed.
 
 from __future__ import annotations
 
+# Shared utilities (constants, helpers, column resolver)
+from ._shared import (
+    PLOTLY_TEMPLATE,
+    COLORS,
+    MV_COLUMN_ALIASES,
+    resolve_column,
+    create_no_data_figure,
+)
+
 # Import key visualization functions from parent module
 try:
     from ..feature_analytics import (
@@ -94,6 +103,94 @@ try:
 except ImportError:
     _temporal_exports = []
 
+# Import valuation visualization functions
+try:
+    from .valuation import (
+        create_valuation_multiples_comparison,
+        create_valuation_distribution_dashboard,
+        create_relative_valuation_matrix,
+        create_valuation_vs_growth_quadrant,
+        create_historical_valuation_percentile,
+    )
+
+    _valuation_exports = [
+        "create_valuation_multiples_comparison",
+        "create_valuation_distribution_dashboard",
+        "create_relative_valuation_matrix",
+        "create_valuation_vs_growth_quadrant",
+        "create_historical_valuation_percentile",
+    ]
+except ImportError:
+    _valuation_exports = []
+
+# Import earnings quality visualization functions
+try:
+    from .earnings_quality import (
+        create_earnings_surprise_dashboard,
+        create_eps_trajectory_analysis,
+        create_earnings_quality_decomposition,
+        create_beat_rate_heatmap,
+        create_earnings_consistency_matrix,
+        create_revision_momentum_chart,
+        create_gaap_divergence_plot,
+        create_enhanced_beat_probability_dashboard,
+    )
+
+    _earnings_quality_exports = [
+        "create_earnings_surprise_dashboard",
+        "create_eps_trajectory_analysis",
+        "create_earnings_quality_decomposition",
+        "create_beat_rate_heatmap",
+        "create_earnings_consistency_matrix",
+        "create_revision_momentum_chart",
+        "create_gaap_divergence_plot",
+        "create_enhanced_beat_probability_dashboard",
+    ]
+except ImportError:
+    _earnings_quality_exports = []
+
+# Import quality risk visualization functions
+try:
+    from .quality_risk import (
+        create_piotroski_fscore_breakdown,
+        create_altman_zscore_distribution,
+        create_quality_risk_quadrant,
+        create_beneish_mscore_analysis,
+        create_risk_tier_sunburst,
+        create_distress_early_warning_dashboard,
+    )
+
+    _quality_risk_exports = [
+        "create_piotroski_fscore_breakdown",
+        "create_altman_zscore_distribution",
+        "create_quality_risk_quadrant",
+        "create_beneish_mscore_analysis",
+        "create_risk_tier_sunburst",
+        "create_distress_early_warning_dashboard",
+    ]
+except ImportError:
+    _quality_risk_exports = []
+
+# Import growth analysis visualization functions
+try:
+    from .growth_analysis import (
+        create_growth_waterfall_chart,
+        create_growth_consistency_matrix,
+        create_growth_vs_profitability_quadrant,
+        create_growth_acceleration_chart,
+        create_sustainable_growth_analysis,
+    )
+
+    _growth_analysis_exports = [
+        "create_growth_waterfall_chart",
+        "create_growth_consistency_matrix",
+        "create_growth_vs_profitability_quadrant",
+        "create_growth_acceleration_chart",
+        "create_sustainable_growth_analysis",
+    ]
+except ImportError:
+    _growth_analysis_exports = []
+
 # Import category-specific chart functions
 try:
     from .category_charts import (
@@ -160,11 +257,25 @@ try:
 except ImportError:
     _category_exports = []
 
+# Shared exports
+_shared_exports = [
+    "PLOTLY_TEMPLATE",
+    "COLORS",
+    "MV_COLUMN_ALIASES",
+    "resolve_column",
+    "create_no_data_figure",
+]
+
 # Combine all exports
 __all__ = (
-    _parent_exports
+    _shared_exports
+    + _parent_exports
     + _profitability_exports
     + _technical_exports
     + _temporal_exports
+    + _valuation_exports
+    + _earnings_quality_exports
+    + _quality_risk_exports
+    + _growth_analysis_exports
     + _category_exports
 )

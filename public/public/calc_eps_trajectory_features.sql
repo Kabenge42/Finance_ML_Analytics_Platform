@@ -69,11 +69,41 @@ SELECT "ISIN"                                                                AS 
         CASE WHEN "Net EPS - Basic (-3FY)" > "Net EPS - Basic (-4FY)" THEN 1 ELSE 0 END +
         CASE WHEN "Net EPS - Basic (-4FY)" > "Net EPS - Basic (-5FY)" THEN 1 ELSE 0 END
            ) / 5.0 * 100                                                     AS eps_trajectory_score,
-       NULL::NUMERIC                                                         AS eps_stability
+       CASE
+           WHEN ABS(("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" + "Net EPS - Basic (-2FY)" +
+                     "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0) > 0
+               THEN 1.0 - LEAST(1.0,
+                                SQRT(
+                                        (POWER("Net EPS - Basic (FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-1FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-2FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-3FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2) +
+                                         POWER("Net EPS - Basic (-4FY)" -
+                                               (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                 "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
+                                                 "Net EPS - Basic (-4FY)") / 5.0), 2)
+                                            ) / 5.0
+                                ) / NULLIF(ABS(("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
+                                                "Net EPS - Basic (-2FY)" +
+                                                "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0), 0)
+                          )
+           END AS eps_stability -- 0 = chaotic, 1 = perfectly stable
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_eps_trajectory_features(text) owner to postgres;
+alter function calc_eps_trajectory_features(unknown) owner to postgres;
 

@@ -50,11 +50,57 @@ class BeatProbabilityEstimate(TypedDict):
     credible_interval_95: tuple[float, float]
     prob_exceeds_threshold: float
     confidence_score: float
+    # NEW: Interpretability enhancements
+    prior_influence_pct: float  # How much prior vs data drove the result
+    effective_sample_size: float  # Statistical power indicator
+    classification_confidence: str  # 'High', 'Medium', 'Low'
 
 
 # =============================================================================
 # DATA CLASSES FOR STRUCTURED RESULTS
 # =============================================================================
+
+
+@dataclass
+class CreditRiskResult:
+    """Result container for credit risk probability analysis."""
+
+    ticker: str
+    name: str
+    sector: str
+    distress_probability: float
+    liquidity_stress_score: float
+    cash_runway_months: float
+    altman_z_score: float
+    risk_level: str  # 'Low', 'Medium', 'High', 'Distressed'
+    confidence_interval: tuple[float, float]
+
+
+@dataclass
+class DividendSafetyResult:
+    """Result container for dividend safety analysis."""
+
+    ticker: str
+    name: str
+    dividend_cut_probability: float
+    fcf_dividend_coverage: float
+    payout_ratio: float
+    dividend_streak: int
+    safety_score: float
+    risk_category: str  # 'Safe', 'Borderline', 'At Risk'
+
+
+@dataclass
+class PriceTargetResult:
+    """Result container for price target achievement analysis."""
+
+    ticker: str
+    name: str
+    achievement_probability: float
+    upside_potential: float
+    price_target_spread_pct: float
+    analyst_rating_normalized: float
+    expected_return_prob_weighted: float
 
 
 @dataclass
@@ -80,6 +126,19 @@ class BeatProbabilityResult:
     confidence_score: float
     historical_beat_rate: float
     n_observations: int
+    # Forward estimate fields
+    eps_norm_est_ntm: Optional[float] = None
+    eps_norm_est_fy1e: Optional[float] = None
+    eps_gaap_est_ntm: Optional[float] = None
+    eps_gaap_est_fy1e: Optional[float] = None
+    revision_momentum_score: Optional[float] = None
+    gaap_norm_spread: Optional[float] = None
+    # Next earnings context
+    next_earnings_status: Optional[str] = None
+    # Analyst coverage
+    analyst_count: Optional[int] = None
+    # Dynamic total derived from non-null reported EPS
+    dynamic_total_reports: Optional[int] = None
 
 
 @dataclass
@@ -129,9 +188,316 @@ class PriorParameters:
         """Calculate the expected beat rate from prior parameters."""
         return self.alpha / (self.alpha + self.beta)
 
+    @property
+    def mode(self) -> float | None:
+        """Calculate the mode (most likely value) of the distribution."""
+        if self.alpha > 1 and self.beta > 1:
+            return (self.alpha - 1) / (self.alpha + self.beta - 2)
+        return None  # Mode undefined for alpha <= 1 or beta <= 1
+
+    @property
+    def variance(self) -> float:
+        """Calculate the variance of the distribution."""
+        total = self.alpha + self.beta
+        return (self.alpha * self.beta) / (total**2 * (total + 1))
+
+    @property
+    def concentration(self) -> float:
+        """Return concentration parameter (higher = more confident prior)."""
+        return self.alpha + self.beta
+
     def as_tuple(self) -> tuple[float, float]:
         """Return parameters as (alpha, beta) tuple."""
         return (self.alpha, self.beta)
+
+    def strength_description(self) -> str:
+        """Human-readable description of prior strength."""
+        concentration = self.concentration
+        if concentration < 4:
+            return "Weak (data-driven)"
+        elif concentration < 10:
+            return "Moderate"
+        else:
+            return "Strong (informative)"
+
+
+# =============================================================================
+# REPORTED EPS HISTORY & FORWARD ESTIMATE SIGNALS
+# =============================================================================
+
+
+@dataclass
+class ReportedEPSHistory:
+    """Actual reported EPS data for quarterly and annual periods.
+
+    Fields follow the naming convention from the equities schema:
+    - eps_basic_fq: most recent fiscal quarter
+    - eps_basic_1fqfq: one quarter ago, etc.
+    - eps_basic_fy: most recent fiscal year
+    - eps_basic_1fy: one year ago, etc.
+    """
+
+    # Quarterly Net EPS - Basic (newest first)
+    eps_basic_fq: Optional[float] = None
+    eps_basic_1fqfq: Optional[float] = None
+    eps_basic_2fqfq: Optional[float] = None
+    eps_basic_3fqfq: Optional[float] = None
+    eps_basic_4fqfq: Optional[float] = None
+
+    # Annual Net EPS - Basic (newest first)
+    eps_basic_fy: Optional[float] = None
+    eps_basic_1fy: Optional[float] = None
+    eps_basic_2fy: Optional[float] = None
+    eps_basic_3fy: Optional[float] = None
+    eps_basic_4fy: Optional[float] = None
+    eps_basic_5fy: Optional[float] = None
+
+    # Adjusted EPS
+    eps_adj_fy: Optional[float] = None
+    eps_adj_1fy: Optional[float] = None
+    eps_adj_ltm: Optional[float] = None
+    eps_adj_fq: Optional[float] = None
+    eps_adj_1fqfq: Optional[float] = None
+    eps_adj_2fqfq: Optional[float] = None
+    eps_adj_3fqfq: Optional[float] = None
+    eps_adj_4fqfq: Optional[float] = None
+
+    # Continuing EPS
+    eps_cont_fq: Optional[float] = None
+    eps_cont_1fqfq: Optional[float] = None
+    eps_cont_2fqfq: Optional[float] = None
+    eps_cont_3fqfq: Optional[float] = None
+    eps_cont_4fqfq: Optional[float] = None
+
+    @property
+    def quarterly_series(self) -> list[float]:
+        """Return non-None quarterly EPS values, newest first."""
+        fields = [
+            self.eps_basic_fq,
+            self.eps_basic_1fqfq,
+            self.eps_basic_2fqfq,
+            self.eps_basic_3fqfq,
+            self.eps_basic_4fqfq,
+        ]
+        return [v for v in fields if v is not None]
+
+    @property
+    def annual_series(self) -> list[float]:
+        """Return non-None annual EPS values, newest first."""
+        fields = [
+            self.eps_basic_fy,
+            self.eps_basic_1fy,
+            self.eps_basic_2fy,
+            self.eps_basic_3fy,
+            self.eps_basic_4fy,
+            self.eps_basic_5fy,
+        ]
+        return [v for v in fields if v is not None]
+
+    def count_yoy_improvements(self) -> tuple[int, int]:
+        """Count year-over-year improvements in annual EPS.
+
+        Compares each consecutive pair (newer vs older).
+        Returns (n_beats, n_total) where n_total is the number of
+        consecutive pairs available.
+        """
+        series = self.annual_series
+        if len(series) < 2:
+            return (0, 0)
+        n_beats = 0
+        n_total = len(series) - 1
+        for i in range(n_total):
+            if series[i] > series[i + 1]:
+                n_beats += 1
+        return (n_beats, n_total)
+
+    def quarterly_beat_streak(self) -> int:
+        """Count consecutive positive EPS quarters from most recent."""
+        streak = 0
+        for v in self.quarterly_series:
+            if v > 0:
+                streak += 1
+            else:
+                break
+        return streak
+
+    def count_quarterly_beats_vs_estimate(self, estimate: Optional[float]) -> tuple[int, int]:
+        """Count how many quarterly actuals exceeded a forward estimate.
+
+        Args:
+            estimate: Forward EPS estimate to compare against.
+
+        Returns:
+            (n_beats, n_total) tuple.
+        """
+        if estimate is None:
+            return (0, 0)
+        series = self.quarterly_series
+        if not series:
+            return (0, 0)
+        n_beats = sum(1 for v in series if v > estimate)
+        return (n_beats, len(series))
+
+    @property
+    def total_reports_count(self) -> int:
+        """Total number of non-null reported EPS observations across all series.
+
+        Counts unique non-null entries across quarterly basic, annual basic,
+        adjusted, and continuing EPS fields to dynamically derive the total
+        number of available data points for historical beat rate calculations.
+        """
+        all_fields = [
+            # Quarterly basic
+            self.eps_basic_fq,
+            self.eps_basic_1fqfq,
+            self.eps_basic_2fqfq,
+            self.eps_basic_3fqfq,
+            self.eps_basic_4fqfq,
+            # Annual basic
+            self.eps_basic_fy,
+            self.eps_basic_1fy,
+            self.eps_basic_2fy,
+            self.eps_basic_3fy,
+            self.eps_basic_4fy,
+            self.eps_basic_5fy,
+            # Adjusted
+            self.eps_adj_fy,
+            self.eps_adj_1fy,
+            self.eps_adj_ltm,
+            self.eps_adj_fq,
+            self.eps_adj_1fqfq,
+            self.eps_adj_2fqfq,
+            self.eps_adj_3fqfq,
+            self.eps_adj_4fqfq,
+            # Continuing
+            self.eps_cont_fq,
+            self.eps_cont_1fqfq,
+            self.eps_cont_2fqfq,
+            self.eps_cont_3fqfq,
+            self.eps_cont_4fqfq,
+        ]
+        return sum(1 for v in all_fields if v is not None)
+
+    @property
+    def annual_reports_count(self) -> int:
+        """Count of non-null annual EPS observations (basic series only)."""
+        return len(self.annual_series)
+
+    @property
+    def quarterly_reports_count(self) -> int:
+        """Count of non-null quarterly EPS observations (basic series only)."""
+        return len(self.quarterly_series)
+
+
+@dataclass
+class ForwardEstimateSignals:
+    """Forward-looking analyst estimate and revision signals.
+
+    Captures consensus EPS estimates (Normalized and GAAP) plus
+    revision percentages across multiple time horizons.
+    """
+
+    # Consensus estimates
+    eps_norm_ntm: Optional[float] = None
+    eps_norm_fy1e: Optional[float] = None
+    eps_gaap_ntm: Optional[float] = None
+    eps_gaap_fy1e: Optional[float] = None
+
+    # Normalized revision percentages
+    revision_1w: Optional[float] = None
+    revision_1m: Optional[float] = None
+    revision_3m: Optional[float] = None
+    revision_6m: Optional[float] = None
+    revision_1y: Optional[float] = None
+
+    # GAAP revision percentages
+    gaap_revision_1m: Optional[float] = None
+    gaap_revision_3m: Optional[float] = None
+    gaap_revision_6m: Optional[float] = None
+    gaap_revision_1y: Optional[float] = None
+
+    # Coverage
+    analyst_count: Optional[int] = None
+
+    # Recency weights for revision momentum (1W most important)
+    _REVISION_WEIGHTS: dict[str, float] = field(
+        default_factory=lambda: {
+            "revision_1w": 0.35,
+            "revision_1m": 0.30,
+            "revision_3m": 0.20,
+            "revision_6m": 0.10,
+            "revision_1y": 0.05,
+        },
+        init=False,
+        repr=False,
+    )
+
+    @property
+    def revision_momentum_score(self) -> float:
+        """Compute a 0-100 momentum score from revision data.
+
+        Uses recency-weighted scoring: each available revision contributes
+        its weight toward 100 (positive) or 0 (negative).
+        Returns 50.0 when no revision data is available.
+        """
+        available = []
+        for field_name, weight in self._REVISION_WEIGHTS.items():
+            val = getattr(self, field_name)
+            if val is not None:
+                available.append((val, weight))
+        if not available:
+            return 50.0
+        # Renormalize weights to sum to 1
+        total_weight = sum(w for _, w in available)
+        score = 0.0
+        for val, weight in available:
+            normalized_w = weight / total_weight
+            # Map: positive revision → 100, negative → 0
+            score += normalized_w * (100.0 if val > 0 else (50.0 if val == 0 else 0.0))
+        return score
+
+    @property
+    def revision_trend_short(self) -> Optional[float]:
+        """Short-term revision acceleration: 1W - 1M."""
+        if self.revision_1w is not None and self.revision_1m is not None:
+            return self.revision_1w - self.revision_1m
+        return None
+
+    @property
+    def revision_trend_medium(self) -> Optional[float]:
+        """Medium-term revision acceleration: 1M - 3M."""
+        if self.revision_1m is not None and self.revision_3m is not None:
+            return self.revision_1m - self.revision_3m
+        return None
+
+    @property
+    def gaap_norm_spread(self) -> Optional[float]:
+        """GAAP-vs-Norm divergence as percentage of Norm estimate.
+
+        Returns (GAAP - Norm) / Norm * 100. Negative means GAAP < Norm
+        (potential accounting quality concern).
+        """
+        if self.eps_gaap_fy1e is not None and self.eps_norm_fy1e is not None:
+            if self.eps_norm_fy1e != 0:
+                return (self.eps_gaap_fy1e - self.eps_norm_fy1e) / self.eps_norm_fy1e * 100.0
+        return None
+
+    @property
+    def has_sufficient_data(self) -> bool:
+        """Check if enough forward data is available for enhanced analysis.
+
+        Requires at least a FY1E estimate and one revision data point.
+        """
+        has_estimate = self.eps_norm_fy1e is not None
+        revision_fields = [
+            self.revision_1w,
+            self.revision_1m,
+            self.revision_3m,
+            self.revision_6m,
+            self.revision_1y,
+        ]
+        has_revision = any(v is not None for v in revision_fields)
+        return has_estimate and has_revision
 
 
 # =============================================================================
@@ -453,6 +819,345 @@ class EarningsBeatProbabilityModel:
 
         return pd.DataFrame(results)
 
+    # -----------------------------------------------------------------
+    # Enhanced: Three-layer evidence fusion
+    # -----------------------------------------------------------------
+
+    # GAAP divergence threshold (%) below which no penalty is applied
+    GAAP_DIVERGENCE_THRESHOLD = 20.0
+    # Maximum pseudo-observations added by revision momentum
+    MAX_REVISION_PSEUDO_OBS = 3.0
+
+    def compute_forward_adjusted_beat_probability(
+        self,
+        reported_history: ReportedEPSHistory,
+        forward_signals: ForwardEstimateSignals,
+        sector: Optional[str] = None,
+    ) -> BeatProbabilityEstimate:
+        """Compute beat probability fusing historical, revision, and GAAP quality layers.
+
+        Layer 1 – Historical beats from actual reported EPS (YoY improvements).
+        Layer 2 – Revision momentum converted to pseudo-observations.
+        Layer 3 – GAAP-vs-Norm divergence penalty (shrinks toward prior).
+
+        Args:
+            reported_history: Actual reported EPS data.
+            forward_signals: Forward-looking analyst signals.
+            sector: Optional sector for sector-specific prior.
+
+        Returns:
+            BeatProbabilityEstimate dict with full posterior statistics.
+        """
+        prior = self._get_prior_parameters(sector, use_sector_prior=True)
+
+        # --- Layer 1: Historical beat counting ---
+        n_beats, n_total = reported_history.count_yoy_improvements()
+        if n_total == 0:
+            # Fallback to quarterly streak as pseudo-observations
+            streak = reported_history.quarterly_beat_streak()
+            # Dynamically derive total from non-null quarterly data
+            n_total = reported_history.quarterly_reports_count
+            n_beats = min(streak, n_total)
+
+        # If still zero, use the full non-null count as a last resort
+        if n_total == 0:
+            n_total = reported_history.total_reports_count
+
+        # --- Layer 2: Revision momentum pseudo-observations ---
+        momentum = forward_signals.revision_momentum_score  # 0-100
+        # Convert to pseudo beat fraction and scale
+        pseudo_beat_frac = momentum / 100.0
+        pseudo_n = self.MAX_REVISION_PSEUDO_OBS if forward_signals.has_sufficient_data else 0.0
+        pseudo_beats = pseudo_beat_frac * pseudo_n
+        pseudo_misses = pseudo_n - pseudo_beats
+
+        # --- Posterior before GAAP penalty ---
+        post_alpha = prior.alpha + n_beats + pseudo_beats
+        post_beta = prior.beta + (n_total - n_beats) + pseudo_misses
+
+        # --- Layer 3: GAAP quality guard ---
+        spread = forward_signals.gaap_norm_spread
+        if spread is not None and abs(spread) > self.GAAP_DIVERGENCE_THRESHOLD:
+            # Proportional shrinkage toward prior mean
+            excess = abs(spread) - self.GAAP_DIVERGENCE_THRESHOLD
+            # penalty_factor in (0, 1]; larger excess → stronger shrinkage
+            penalty_factor = min(1.0, excess / 100.0)
+            # Also penalise divergent GAAP revisions vs norm revisions
+            if (
+                forward_signals.gaap_revision_1m is not None
+                and forward_signals.revision_1m is not None
+            ):
+                rev_sign_mismatch = (
+                    forward_signals.revision_1m > 0 and forward_signals.gaap_revision_1m < 0
+                )
+                if rev_sign_mismatch:
+                    penalty_factor = min(1.0, penalty_factor + 0.15)
+
+            # Shrink posterior toward prior by blending
+            prior_total = prior.alpha + prior.beta
+            post_total = post_alpha + post_beta
+            data_alpha = post_alpha - prior.alpha
+            data_beta = post_beta - prior.beta
+            post_alpha = prior.alpha + data_alpha * (1 - penalty_factor)
+            post_beta = prior.beta + data_beta * (1 - penalty_factor)
+
+        # --- Compute statistics ---
+        posterior_mean, posterior_std = self._compute_posterior_statistics(post_alpha, post_beta)
+        dist = stats.beta(post_alpha, post_beta)
+        ci_90, ci_95 = self._compute_credible_intervals(dist)
+        prob_exceeds = 1 - dist.cdf(0.5)
+        confidence_score = self._compute_confidence_score(post_alpha, post_beta)
+
+        # Prior influence
+        prior_total = prior.alpha + prior.beta
+        post_total = post_alpha + post_beta
+        prior_influence = prior_total / post_total * 100.0
+
+        effective_sample = post_total - prior_total
+
+        # Classification confidence
+        if confidence_score >= 0.6:
+            classification_confidence = "High"
+        elif confidence_score >= 0.3:
+            classification_confidence = "Medium"
+        else:
+            classification_confidence = "Low"
+
+        return {
+            "posterior_alpha": post_alpha,
+            "posterior_beta": post_beta,
+            "posterior_mean": posterior_mean,
+            "posterior_std": posterior_std,
+            "credible_interval_90": ci_90,
+            "credible_interval_95": ci_95,
+            "prob_exceeds_threshold": prob_exceeds,
+            "confidence_score": confidence_score,
+            "prior_influence_pct": prior_influence,
+            "effective_sample_size": effective_sample,
+            "classification_confidence": classification_confidence,
+        }
+
+    # -----------------------------------------------------------------
+    # Enhanced DataFrame analysis
+    # -----------------------------------------------------------------
+
+    # Column mappings from equities table to dataclass fields
+    _FORWARD_COL_MAP: dict[str, str] = {
+        "eps_norm_est_avg_ntm": "eps_norm_ntm",
+        "eps_norm_est_avg_fy1e": "eps_norm_fy1e",
+        "eps_gaap_est_avg_ntm": "eps_gaap_ntm",
+        "eps_gaap_est_avg_fy1e": "eps_gaap_fy1e",
+        "eps_est_avg_rev_pct_fy1e_1w": "revision_1w",
+        "eps_est_avg_rev_pct_fy1e_1m": "revision_1m",
+        "eps_est_avg_rev_pct_fy1e_3m": "revision_3m",
+        "eps_est_avg_rev_pct_fy1e_6m": "revision_6m",
+        "eps_est_avg_rev_pct_fy1e_1y": "revision_1y",
+        "eps_gaap_est_avg_rev_pct_fy1e_1m": "gaap_revision_1m",
+        "eps_gaap_est_avg_rev_pct_fy1e_3m": "gaap_revision_3m",
+        "eps_gaap_est_avg_rev_pct_fy1e_6m": "gaap_revision_6m",
+        "eps_gaap_est_avg_rev_pct_fy1e_1y": "gaap_revision_1y",
+        "eps_norm_est_num_fy1e": "analyst_count",
+    }
+
+    _HISTORY_COL_MAP: dict[str, str] = {
+        "net_eps_basic_fq": "eps_basic_fq",
+        "net_eps_basic_1fqfq": "eps_basic_1fqfq",
+        "net_eps_basic_2fqfq": "eps_basic_2fqfq",
+        "net_eps_basic_3fqfq": "eps_basic_3fqfq",
+        "net_eps_basic_4fqfq": "eps_basic_4fqfq",
+        "net_eps_basic_fy": "eps_basic_fy",
+        "net_eps_basic_1fy": "eps_basic_1fy",
+        "net_eps_basic_2fy": "eps_basic_2fy",
+        "net_eps_basic_3fy": "eps_basic_3fy",
+        "net_eps_basic_4fy": "eps_basic_4fy",
+        "net_eps_basic_5fy": "eps_basic_5fy",
+        "eps_adj_ltm": "eps_adj_ltm",
+        "eps_adj_fy": "eps_adj_fy",
+        "eps_adj_1fy": "eps_adj_1fy",
+        "eps_adj_fq": "eps_adj_fq",
+        "eps_adj_1fqfq": "eps_adj_1fqfq",
+        "eps_adj_2fqfq": "eps_adj_2fqfq",
+        "eps_adj_3fqfq": "eps_adj_3fqfq",
+        "eps_adj_4fqfq": "eps_adj_4fqfq",
+        "eps_cont_fq": "eps_cont_fq",
+        "eps_cont_1fqfq": "eps_cont_1fqfq",
+        "eps_cont_2fqfq": "eps_cont_2fqfq",
+        "eps_cont_3fqfq": "eps_cont_3fqfq",
+        "eps_cont_4fqfq": "eps_cont_4fqfq",
+    }
+
+    def _row_to_forward_signals(self, row: pd.Series) -> Optional[ForwardEstimateSignals]:
+        """Extract ForwardEstimateSignals from a DataFrame row."""
+        kwargs: dict = {}
+        any_present = False
+        for df_col, field_name in self._FORWARD_COL_MAP.items():
+            val = row.get(df_col)
+            if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                kwargs[field_name] = int(val) if field_name == "analyst_count" else float(val)
+                any_present = True
+        if not any_present:
+            return None
+        return ForwardEstimateSignals(**kwargs)
+
+    def _row_to_history(self, row: pd.Series) -> ReportedEPSHistory:
+        """Extract ReportedEPSHistory from a DataFrame row."""
+        kwargs: dict = {}
+        for df_col, field_name in self._HISTORY_COL_MAP.items():
+            val = row.get(df_col)
+            if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                kwargs[field_name] = float(val)
+        return ReportedEPSHistory(**kwargs)
+
+    def analyze_dataframe_enhanced(
+        self,
+        df: pd.DataFrame,
+        sector_col: str = "sector",
+        ticker_col: str = "ticker",
+        name_col: str = "name",
+    ) -> pd.DataFrame:
+        """Analyze earnings beat probabilities using enhanced three-layer fusion.
+
+        Falls back to trajectory-proxy method when forward data is unavailable.
+
+        Args:
+            df: DataFrame with equities data.
+            sector_col: Column name for sector.
+            ticker_col: Column name for ticker.
+            name_col: Column name for company name.
+
+        Returns:
+            DataFrame with enriched probability analysis results.
+        """
+        results = []
+
+        for _, row in df.iterrows():
+            ticker = row.get(ticker_col, "UNKNOWN")
+            name = row.get(name_col, "UNKNOWN")
+            sector = row.get(sector_col, None)
+
+            forward_signals = self._row_to_forward_signals(row)
+            history = self._row_to_history(row)
+
+            if forward_signals is not None:
+                # Enhanced path
+                prob_result = self.compute_forward_adjusted_beat_probability(
+                    reported_history=history,
+                    forward_signals=forward_signals,
+                    sector=sector,
+                )
+                n_beats, n_total = history.count_yoy_improvements()
+                # Dynamically derive total_reports from non-null reported data
+                dynamic_total = history.total_reports_count
+                # Use the larger of YoY pair count and dynamic count for beat rate
+                effective_total = max(n_total, dynamic_total) if dynamic_total > 0 else n_total
+                historical_beat_rate = n_beats / effective_total if effective_total > 0 else 0.0
+
+                beat_classification = (
+                    "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
+                )
+                results.append(
+                    {
+                        "ticker": ticker,
+                        "name": name,
+                        "sector": sector,
+                        "industry": row.get("industry", ""),
+                        "country": row.get("country", ""),
+                        "exchange": row.get("exchange", ""),
+                        "historical_beats": n_beats,
+                        "total_reports": effective_total,
+                        "dynamic_total_reports": dynamic_total,
+                        "historical_beat_rate": historical_beat_rate,
+                        "posterior_beat_prob": prob_result["posterior_mean"],
+                        "posterior_std": prob_result["posterior_std"],
+                        "ci_90_lower": prob_result["credible_interval_90"][0],
+                        "ci_90_upper": prob_result["credible_interval_90"][1],
+                        "ci_95_lower": prob_result["credible_interval_95"][0],
+                        "ci_95_upper": prob_result["credible_interval_95"][1],
+                        "confidence_score": prob_result["confidence_score"],
+                        "prior_influence_pct": prob_result["prior_influence_pct"],
+                        "effective_sample_size": prob_result["effective_sample_size"],
+                        "classification_confidence": prob_result["classification_confidence"],
+                        "beat_classification": beat_classification,
+                        "revision_momentum_score": forward_signals.revision_momentum_score,
+                        "gaap_norm_spread": forward_signals.gaap_norm_spread,
+                        "revision_trend_short": forward_signals.revision_trend_short,
+                        "revision_trend_medium": forward_signals.revision_trend_medium,
+                        "eps_norm_est_fy1e": forward_signals.eps_norm_fy1e,
+                        "eps_norm_est_ntm": forward_signals.eps_norm_ntm,
+                        "eps_gaap_est_ntm": forward_signals.eps_gaap_ntm,
+                        "eps_gaap_est_fy1e": forward_signals.eps_gaap_fy1e,
+                        "analyst_count": forward_signals.analyst_count,
+                        "next_earnings_status": row.get("next_earnings_status", None),
+                        "quarterly_beat_streak": history.quarterly_beat_streak(),
+                        "data_source": "forward_enhanced",
+                    }
+                )
+            elif "eps_trajectory_score" in df.columns and not pd.isna(
+                row.get("eps_trajectory_score")
+            ):
+                # Trajectory proxy fallback
+                trajectory = row["eps_trajectory_score"]
+                # Dynamically derive total from non-null reported data
+                dynamic_total = history.total_reports_count
+                n_total = dynamic_total if dynamic_total > 0 else 5
+                n_beats = int(trajectory / 100 * n_total)
+                prob_result = self.compute_beat_probability(n_beats, n_total, sector)
+                beat_classification = (
+                    "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
+                )
+                confidence_score = prob_result["confidence_score"]
+                if confidence_score >= 0.6:
+                    classification_confidence = "High"
+                elif confidence_score >= 0.3:
+                    classification_confidence = "Medium"
+                else:
+                    classification_confidence = "Low"
+
+                prior = self._get_prior_parameters(sector, True)
+                prior_total = prior.alpha + prior.beta
+                post_total = prob_result["posterior_alpha"] + prob_result["posterior_beta"]
+
+                results.append(
+                    {
+                        "ticker": ticker,
+                        "name": name,
+                        "sector": sector,
+                        "industry": row.get("industry", ""),
+                        "country": row.get("country", ""),
+                        "exchange": row.get("exchange", ""),
+                        "historical_beats": n_beats,
+                        "total_reports": n_total,
+                        "dynamic_total_reports": dynamic_total,
+                        "historical_beat_rate": n_beats / n_total if n_total > 0 else 0.0,
+                        "posterior_beat_prob": prob_result["posterior_mean"],
+                        "posterior_std": prob_result["posterior_std"],
+                        "ci_90_lower": prob_result["credible_interval_90"][0],
+                        "ci_90_upper": prob_result["credible_interval_90"][1],
+                        "ci_95_lower": prob_result["credible_interval_95"][0],
+                        "ci_95_upper": prob_result["credible_interval_95"][1],
+                        "confidence_score": confidence_score,
+                        "prior_influence_pct": prior_total / post_total * 100.0,
+                        "effective_sample_size": post_total - prior_total,
+                        "classification_confidence": classification_confidence,
+                        "beat_classification": beat_classification,
+                        "revision_momentum_score": None,
+                        "gaap_norm_spread": None,
+                        "revision_trend_short": None,
+                        "revision_trend_medium": None,
+                        "eps_norm_est_fy1e": None,
+                        "eps_norm_est_ntm": None,
+                        "eps_gaap_est_ntm": None,
+                        "eps_gaap_est_fy1e": None,
+                        "analyst_count": None,
+                        "next_earnings_status": row.get("next_earnings_status", None),
+                        "quarterly_beat_streak": None,
+                        "data_source": "trajectory_proxy",
+                    }
+                )
+            # else: skip row with no data
+
+        return pd.DataFrame(results)
+
 
 # =============================================================================
 # EPS STREAK ANALYZER
@@ -488,6 +1193,8 @@ class EPSStreakAnalyzer:
         industry: str = "",
         country: str = "",
         exchange: str = "",
+        reported_history: Optional[ReportedEPSHistory] = None,
+        forward_signals: Optional[ForwardEstimateSignals] = None,
     ) -> EPSStreakResult:
         """
         Compute streak analysis from trajectory score and related metrics.
@@ -502,14 +1209,27 @@ class EPSStreakAnalyzer:
             industry: Industry
             country: Country
             exchange: Exchange
+            reported_history: Optional actual reported EPS data for dynamic counts
+            forward_signals: Optional forward estimate signals for probability refinement
 
         Returns:
             EPSStreakResult with analysis
         """
+        # --- Dynamically derive streak from reported history if available ---
+        if reported_history is not None and reported_history.quarterly_reports_count > 0:
+            dynamic_streak = reported_history.quarterly_beat_streak()
+            dynamic_total = reported_history.quarterly_reports_count
+        else:
+            dynamic_streak = None
+            dynamic_total = 0
+
         # Estimate current streak from available metrics
         if eps_positive_streak is not None and not pd.isna(eps_positive_streak):
             current_streak = int(eps_positive_streak)
             streak_type = "beat" if current_streak > 0 else "miss"
+        elif dynamic_streak is not None and dynamic_streak > 0:
+            current_streak = dynamic_streak
+            streak_type = "beat"
         elif eps_trajectory_score is not None and not pd.isna(eps_trajectory_score):
             # Infer from trajectory score
             if eps_trajectory_score >= 80:
@@ -538,14 +1258,37 @@ class EPSStreakAnalyzer:
 
         continuation_prob = base_continuation * (decay_factor ** abs(current_streak))
 
+        # --- Forward estimate adjustment ---
+        # If revision momentum is positive and streak is a beat, boost continuation
+        if forward_signals is not None and forward_signals.has_sufficient_data:
+            momentum = forward_signals.revision_momentum_score  # 0-100
+            # Positive momentum reinforces beat streaks, undermines miss streaks
+            momentum_adjustment = (momentum - 50.0) / 200.0  # Range: -0.25 to +0.25
+            if streak_type == "beat":
+                continuation_prob += momentum_adjustment
+            elif streak_type == "miss":
+                continuation_prob -= momentum_adjustment
+
+            # GAAP-Norm spread: large divergence reduces confidence in continuation
+            spread = forward_signals.gaap_norm_spread
+            if spread is not None and abs(spread) > 20.0:
+                continuation_prob -= min(0.10, abs(spread) / 500.0)
+
+            continuation_prob = max(0.05, min(0.95, continuation_prob))
+
         # Apply mean reversion adjustment
         mean_reversion_prob = 1 - continuation_prob
         mean_reversion_prob = mean_reversion_prob * (
             1 - self.mean_reversion_weight
         ) + self.mean_reversion_weight * (1 - continuation_prob)
 
-        # Confidence based on streak length (longer streaks = less confidence in continuation)
+        # Confidence based on streak length and data availability
         confidence = max(0.3, 1 - abs(current_streak) * 0.1)
+        # Boost confidence if we have more dynamic data points
+        if dynamic_total > 3:
+            confidence = min(1.0, confidence + 0.1)
+        if forward_signals is not None and forward_signals.has_sufficient_data:
+            confidence = min(1.0, confidence + 0.05)
 
         # Expected next outcome
         if continuation_prob > 0.5:
@@ -586,6 +1329,9 @@ class EPSStreakAnalyzer:
         """
         Analyze EPS streaks for entire DataFrame.
 
+        Now dynamically derives total_reports from non-null reported EPS data
+        and incorporates forward estimate signals when available.
+
         Args:
             df: DataFrame with EPS data
             trajectory_col: Column for trajectory score
@@ -601,6 +1347,17 @@ class EPSStreakAnalyzer:
         Returns:
             DataFrame with streak analysis
         """
+        # Check if forward/history columns are available
+        has_history_cols = any(
+            col in df.columns for col in EarningsBeatProbabilityModel._HISTORY_COL_MAP
+        )
+        has_forward_cols = any(
+            col in df.columns for col in EarningsBeatProbabilityModel._FORWARD_COL_MAP
+        )
+
+        # Create a temporary model instance for column mapping helpers
+        _model = EarningsBeatProbabilityModel()
+
         results = []
 
         for _, row in df.iterrows():
@@ -617,6 +1374,18 @@ class EPSStreakAnalyzer:
             if trajectory is None or pd.isna(trajectory):
                 continue
 
+            # Build reported history and forward signals when columns exist
+            reported_history = None
+            forward_signals = None
+            dynamic_total = 0
+
+            if has_history_cols:
+                reported_history = _model._row_to_history(row)
+                dynamic_total = reported_history.total_reports_count
+
+            if has_forward_cols:
+                forward_signals = _model._row_to_forward_signals(row)
+
             result = self.compute_streak_from_trajectory(
                 eps_trajectory_score=trajectory,
                 eps_positive_streak=streak,
@@ -627,7 +1396,18 @@ class EPSStreakAnalyzer:
                 industry=industry,
                 country=country,
                 exchange=exchange,
+                reported_history=reported_history,
+                forward_signals=forward_signals,
             )
+
+            # Historical beat rate from dynamically derived total
+            n_beats_yoy, n_total_yoy = (
+                reported_history.count_yoy_improvements()
+                if reported_history is not None
+                else (0, 0)
+            )
+            effective_total = max(n_total_yoy, dynamic_total) if dynamic_total > 0 else n_total_yoy
+            historical_beat_rate = n_beats_yoy / effective_total if effective_total > 0 else 0.0
 
             results.append(
                 {
@@ -643,6 +1423,14 @@ class EPSStreakAnalyzer:
                     "mean_reversion_probability": result.mean_reversion_prob,
                     "expected_next_outcome": result.expected_next_outcome,
                     "prediction_confidence": result.confidence_level,
+                    "dynamic_total_reports": dynamic_total,
+                    "historical_beat_rate": historical_beat_rate,
+                    "revision_momentum_score": (
+                        forward_signals.revision_momentum_score
+                        if forward_signals is not None
+                        else None
+                    ),
+                    "next_earnings_status": row.get("next_earnings_status", None),
                 }
             )
 
@@ -819,6 +1607,381 @@ class ModelConfidenceEstimator:
         }
 
 
+class CreditRiskProbabilityModel:
+    """
+    Bayesian framework to estimate likelihood of financial distress.
+
+    Enhanced features: altman_z_score, altman_z_trend, liquidity_stress_score,
+    cash_runway_months, accumulated_deficit_flag, combined_distress_score,
+    wc_deteriorating_flag, debt_deleveraging, interest_coverage, quick_ratio,
+    beta_stability_score
+    """
+
+    def __init__(
+        self,
+        distress_threshold: float = 1.81,
+        prior_alpha: float = 2.0,
+        prior_beta: float = 3.0,  # Slightly pessimistic prior
+    ):
+        self.distress_threshold = distress_threshold
+        self.prior_alpha = prior_alpha
+        self.prior_beta = prior_beta
+
+    def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Analyze dataframe for credit risk with enhanced features."""
+        results = []
+
+        for _, row in df.iterrows():
+            # Core distress indicators
+            z_score = row.get("altman_z_score", 3.0)
+            z_trend = row.get("altman_z_trend", 0)  # NEW: Z-score trajectory
+            liquidity_stress = row.get("liquidity_stress_score", 50)
+            cash_runway = row.get("cash_runway_months", 24)
+            accumulated_deficit = row.get("accumulated_deficit_flag", 0)
+
+            # NEW: Additional risk factors from views
+            combined_distress = row.get("combined_distress_score", 50)
+            wc_deteriorating = row.get("wc_deteriorating_flag", 0)
+            debt_deleveraging = row.get("debt_deleveraging", 0)  # Negative = more debt
+            interest_coverage = row.get("interest_coverage", 5.0)
+            quick_ratio = row.get("quick_ratio", 1.5)
+            beta_stability = row.get("beta_stability_score", 50)
+
+            # Bayesian-style probability estimation with enhanced inputs
+            # Prior based on Z-Score zones
+            if z_score < 1.81:
+                base_prob = 0.75
+            elif z_score < 2.67:  # Grey zone
+                base_prob = 0.35
+            elif z_score < 3.0:
+                base_prob = 0.15
+            else:
+                base_prob = 0.05
+
+            # Evidence-based adjustments
+            adjustments = 0.0
+
+            # Z-score trend (deteriorating = higher risk)
+            if z_trend < -0.5:
+                adjustments += 0.15
+            elif z_trend > 0.5:
+                adjustments -= 0.05
+
+            # Liquidity stress
+            if liquidity_stress > 70:
+                adjustments += 0.12
+            elif liquidity_stress < 30:
+                adjustments -= 0.05
+
+            # Cash runway
+            if cash_runway < 6:
+                adjustments += 0.18
+            elif cash_runway < 12:
+                adjustments += 0.08
+            elif cash_runway > 24:
+                adjustments -= 0.03
+
+            # Working capital deterioration
+            if wc_deteriorating == 1:
+                adjustments += 0.10
+
+            # Debt trends
+            if debt_deleveraging is not None and debt_deleveraging < -0.1:
+                adjustments += 0.08  # Increasing debt burden
+
+            # Interest coverage
+            if interest_coverage is not None and interest_coverage < 1.5:
+                adjustments += 0.15
+            elif interest_coverage is not None and interest_coverage < 3.0:
+                adjustments += 0.05
+
+            # Quick ratio
+            if quick_ratio is not None and quick_ratio < 0.8:
+                adjustments += 0.10
+
+            if accumulated_deficit == 1:
+                adjustments += 0.08
+
+            prob = min(0.99, max(0.01, base_prob + adjustments))
+
+            # Compute confidence interval width based on data completeness
+            data_points = sum(
+                [
+                    1
+                    for v in [
+                        z_score,
+                        liquidity_stress,
+                        cash_runway,
+                        interest_coverage,
+                        quick_ratio,
+                    ]
+                    if v is not None and not pd.isna(v)
+                ]
+            )
+            ci_width = 0.15 - (data_points * 0.02)  # Narrower CI with more data
+
+            risk_level = "Low"
+            if prob > 0.7:
+                risk_level = "Distressed"
+            elif prob > 0.5:
+                risk_level = "High"
+            elif prob > 0.3:
+                risk_level = "Medium"
+
+            results.append(
+                {
+                    "ticker": row.get("ticker", "N/A"),
+                    "name": row.get("name", "N/A"),
+                    "sector": row.get("sector", "N/A"),
+                    "industry": row.get("industry", "N/A"),
+                    "country": row.get("country", "N/A"),
+                    "exchange": row.get("exchange", "N/A"),
+                    "distress_probability": prob,
+                    "liquidity_stress_score": liquidity_stress,
+                    "cash_runway_months": cash_runway,
+                    "altman_z_score": z_score,
+                    "altman_z_trend": z_trend,
+                    "interest_coverage": interest_coverage,
+                    "quick_ratio": quick_ratio,
+                    "risk_level": risk_level,
+                    "confidence_interval": (
+                        max(0, prob - ci_width),
+                        min(1, prob + ci_width),
+                    ),
+                    "data_quality_score": data_points / 5.0,  # NEW: Transparency metric
+                }
+            )
+
+        return pd.DataFrame(results)
+
+
+class DividendCutProbabilityModel:
+    """
+    Identify high-yield stocks where distribution is likely to be reduced.
+
+    Enhanced features: fcf_dividend_coverage, dividend_payout_ratio, dividend_streak,
+    dividend_growth_expectation, sustainable_dividend_flag, dividend_consistency,
+    dividend_yield_vs_5y_avg, recent_dividend_change
+    """
+
+    def __init__(self, high_payout_threshold: float = 0.9, min_coverage: float = 1.2):
+        self.high_payout_threshold = high_payout_threshold
+        self.min_coverage = min_coverage
+
+    def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        results = []
+        for _, row in df.iterrows():
+            # Core dividend metrics
+            fcf_coverage = row.get("fcf_dividend_coverage", 2.0)
+            payout_ratio = row.get("dividend_payout_ratio", 50)
+            streak = row.get("dividend_streak", 10)
+            growth_exp = row.get("dividend_growth_expectation", 0)
+
+            # NEW: Enhanced metrics from vw_features_dividends
+            sustainable_flag = row.get("sustainable_dividend_flag", 1)
+            consistency = row.get("dividend_consistency", 0.8)
+            yield_vs_5y = row.get("dividend_yield_vs_5y_avg", 1.0)
+            recent_change = row.get("recent_dividend_change", 0)
+            high_yield_flag = row.get("high_yield_flag", 0)
+
+            # Base probability with more granular assessment
+            prob = 0.05  # Low base rate for established dividend payers
+
+            # FCF coverage is the strongest predictor
+            if fcf_coverage is not None and not pd.isna(fcf_coverage):
+                if fcf_coverage < 0.5:
+                    prob += 0.45
+                elif fcf_coverage < 1.0:
+                    prob += 0.30
+                elif fcf_coverage < 1.2:
+                    prob += 0.15
+                elif fcf_coverage > 2.0:
+                    prob -= 0.03
+
+            # Payout ratio stress
+            if payout_ratio is not None and not pd.isna(payout_ratio):
+                if payout_ratio > 100:
+                    prob += 0.25  # Paying from reserves
+                elif payout_ratio > 90:
+                    prob += 0.15
+                elif payout_ratio > 75:
+                    prob += 0.05
+
+            # Streak provides historical reliability signal
+            if streak is not None:
+                if streak < 2:
+                    prob += 0.10
+                elif streak >= 10:
+                    prob -= 0.05  # Dividend aristocrat effect
+                elif streak >= 5:
+                    prob -= 0.02
+
+            # NEW: Sustainability flag from comprehensive calc
+            if sustainable_flag == 0:
+                prob += 0.12
+
+            # NEW: Consistency score
+            if consistency is not None and consistency < 0.5:
+                prob += 0.10
+
+            # NEW: Yield vs historical average (abnormally high = warning)
+            if yield_vs_5y is not None and yield_vs_5y > 1.5:
+                prob += 0.08  # Price has dropped, yield spiked
+
+            # NEW: Recent dividend changes
+            if recent_change is not None and recent_change < -10:
+                prob += 0.15  # Already cutting
+
+            # Negative growth expectation
+            if growth_exp is not None and growth_exp < -5:
+                prob += 0.12
+
+            prob = min(0.95, max(0.03, prob))
+
+            risk_cat = "Safe"
+            if prob > 0.6:
+                risk_cat = "At Risk"
+            elif prob > 0.35:
+                risk_cat = "Borderline"
+            elif prob > 0.15:
+                risk_cat = "Monitor"
+
+            results.append(
+                {
+                    "ticker": row.get("ticker", "N/A"),
+                    "name": row.get("name", "N/A"),
+                    "sector": row.get("sector", "N/A"),
+                    "industry": row.get("industry", "N/A"),
+                    "country": row.get("country", "N/A"),
+                    "exchange": row.get("exchange", "N/A"),
+                    "dividend_cut_probability": prob,
+                    "fcf_dividend_coverage": fcf_coverage,
+                    "payout_ratio": payout_ratio,
+                    "dividend_streak": streak,
+                    "dividend_consistency": consistency,
+                    "yield_vs_5y_avg": yield_vs_5y,
+                    "sustainable_flag": sustainable_flag,
+                    "safety_score": 100 * (1 - prob),
+                    "risk_category": risk_cat,
+                }
+            )
+        return pd.DataFrame(results)
+
+
+class PriceTargetAchievementModel:
+    """
+    Estimates probability of reaching consensus price target.
+
+    Enhanced features: upside_potential, price_target_spread_pct, pt_momentum_1m,
+    analyst_rating_normalized, pt_consensus_convergence, analyst_conviction,
+    pt_acceleration_short, eps_revision_momentum, analyst_coverage_trend
+    """
+
+    def __init__(self, time_horizon_months: int = 12):
+        self.time_horizon_months = time_horizon_months
+
+    def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        results = []
+        for _, row in df.iterrows():
+            # Core metrics
+            upside = row.get("upside_potential", 10)
+            spread = row.get("price_target_spread_pct", 20)
+            pt_momentum = row.get("pt_momentum_1m", 0)
+            rating = row.get("analyst_rating_normalized", 50)
+
+            # NEW: Enhanced analyst sentiment features
+            conviction = row.get("analyst_conviction", 50)
+            consensus_convergence = row.get("pt_consensus_convergence", 0)
+            pt_accel = row.get("pt_acceleration_short", 0)
+            eps_revision = row.get("eps_revision_momentum", 0)
+            coverage_trend = row.get("analyst_coverage_trend", 0)
+            bullish_pct = row.get("analyst_bullish_pct", 50)
+
+            # Base probability - inversely related to upside magnitude
+            if upside is None or pd.isna(upside):
+                base_prob = 0.5
+            elif upside <= 0:
+                base_prob = 0.85  # Already at/above target
+            elif upside < 10:
+                base_prob = 0.70
+            elif upside < 20:
+                base_prob = 0.55
+            elif upside < 30:
+                base_prob = 0.40
+            elif upside < 50:
+                base_prob = 0.25
+            else:
+                base_prob = 0.15
+
+            adjustments = 0.0
+
+            # PT momentum signals conviction strengthening
+            if pt_momentum is not None and pt_momentum > 0.05:
+                adjustments += 0.08
+            elif pt_momentum is not None and pt_momentum < -0.05:
+                adjustments -= 0.10
+
+            # Strong analyst consensus (low spread)
+            if spread is not None and spread < 15:
+                adjustments += 0.08
+            elif spread is not None and spread > 40:
+                adjustments -= 0.08
+
+            # NEW: Analyst conviction score
+            if conviction is not None and conviction > 70:
+                adjustments += 0.07
+            elif conviction is not None and conviction < 30:
+                adjustments -= 0.05
+
+            # NEW: Consensus converging (analysts agreeing)
+            if consensus_convergence is not None and consensus_convergence > 0:
+                adjustments += 0.05
+
+            # NEW: PT acceleration (momentum building)
+            if pt_accel is not None and pt_accel > 0.02:
+                adjustments += 0.06
+
+            # NEW: EPS revisions supporting the price target
+            if eps_revision is not None and eps_revision > 5:
+                adjustments += 0.08
+            elif eps_revision is not None and eps_revision < -5:
+                adjustments -= 0.10
+
+            # NEW: Growing analyst coverage = more attention
+            if coverage_trend is not None and coverage_trend > 0:
+                adjustments += 0.03
+
+            # Rating strength
+            if rating is not None and rating > 75:
+                adjustments += 0.05
+
+            prob = min(0.90, max(0.05, base_prob + adjustments))
+
+            results.append(
+                {
+                    "ticker": row.get("ticker", "N/A"),
+                    "name": row.get("name", "N/A"),
+                    "sector": row.get("sector", "N/A"),
+                    "industry": row.get("industry", "N/A"),
+                    "country": row.get("country", "N/A"),
+                    "exchange": row.get("exchange", "N/A"),
+                    "achievement_probability": prob,
+                    "upside_potential": upside,
+                    "price_target_spread_pct": spread,
+                    "analyst_conviction": conviction,
+                    "eps_revision_momentum": eps_revision,
+                    "analyst_rating_normalized": rating,
+                    "expected_return_prob_weighted": (upside or 0) * prob,
+                    "confidence_level": (
+                        "High"
+                        if spread and spread < 20
+                        else "Medium" if spread and spread < 35 else "Low"
+                    ),
+                }
+            )
+        return pd.DataFrame(results)
+
+
 # =============================================================================
 # VISUALIZATION FUNCTIONS
 # =============================================================================
@@ -831,26 +1994,57 @@ def create_earnings_probability_dashboard(
     """
     Create comprehensive dashboard for earnings beat probabilities.
 
+    Supports both legacy output (from analyze_dataframe) and enhanced output
+    (from analyze_dataframe_enhanced) with revision momentum and GAAP divergence
+    columns. When enhanced columns are present, additional panels are shown.
+
     Args:
         probability_df: DataFrame from EarningsBeatProbabilityModel.analyze_dataframe
+            or analyze_dataframe_enhanced
         title: Dashboard title
 
     Returns:
         Plotly Figure with probability analysis dashboard
     """
-    fig = make_subplots(
-        rows=2,
-        cols=2,
-        subplot_titles=(
+    # Detect enhanced columns
+    has_momentum = "revision_momentum_score" in probability_df.columns
+    has_spread = "gaap_norm_spread" in probability_df.columns
+    has_streak = "quarterly_beat_streak" in probability_df.columns
+    is_enhanced = has_momentum or has_spread
+
+    if is_enhanced:
+        n_rows = 3
+        subplot_titles = (
             "Posterior Beat Probability Distribution",
             "Confidence Score by Sector",
             "Historical vs Posterior Beat Rate",
             "Probability Classification",
-        ),
-        specs=[
+            "Revision Momentum vs P(Beat)" if has_momentum else "Beat Streak Distribution",
+            "GAAP-Norm Spread vs P(Beat)" if has_spread else "Beat Streak Distribution",
+        )
+        specs = [
             [{"type": "histogram"}, {"type": "bar"}],
             [{"type": "scatter"}, {"type": "pie"}],
-        ],
+            [{"type": "scatter"}, {"type": "scatter"}],
+        ]
+    else:
+        n_rows = 2
+        subplot_titles = (
+            "Posterior Beat Probability Distribution",
+            "Confidence Score by Sector",
+            "Historical vs Posterior Beat Rate",
+            "Probability Classification",
+        )
+        specs = [
+            [{"type": "histogram"}, {"type": "bar"}],
+            [{"type": "scatter"}, {"type": "pie"}],
+        ]
+
+    fig = make_subplots(
+        rows=n_rows,
+        cols=2,
+        subplot_titles=subplot_titles,
+        specs=specs,
         vertical_spacing=0.12,
         horizontal_spacing=0.1,
     )
@@ -945,10 +2139,102 @@ def create_earnings_probability_dashboard(
             col=2,
         )
 
+    # 5. Enhanced panel: Revision momentum vs posterior (row 3, col 1)
+    if is_enhanced and has_momentum:
+        plot_df = probability_df[["revision_momentum_score", "posterior_beat_prob"]].dropna()
+        if len(plot_df) > 0:
+            fig.add_trace(
+                go.Scatter(
+                    x=plot_df["revision_momentum_score"],
+                    y=plot_df["posterior_beat_prob"],
+                    mode="markers",
+                    name="Momentum vs P(Beat)",
+                    marker=dict(
+                        size=8,
+                        color=colors["secondary"],
+                        opacity=0.6,
+                    ),
+                    text=(
+                        probability_df.loc[plot_df.index, "ticker"]
+                        if "ticker" in probability_df.columns
+                        else None
+                    ),
+                    hovertemplate=(
+                        "<b>%{text}</b><br>"
+                        "Momentum: %{x:.0f}<br>"
+                        "P(Beat): %{y:.1%}<extra></extra>"
+                    ),
+                ),
+                row=3,
+                col=1,
+            )
+    elif is_enhanced and has_streak:
+        streak_data = probability_df["quarterly_beat_streak"].dropna()
+        if len(streak_data) > 0:
+            streak_counts = streak_data.value_counts().sort_index()
+            fig.add_trace(
+                go.Bar(
+                    x=streak_counts.index.astype(str),
+                    y=streak_counts.values,
+                    name="Beat Streak",
+                    marker_color=colors["accent"],
+                ),
+                row=3,
+                col=1,
+            )
+
+    # 6. Enhanced panel: GAAP spread vs posterior (row 3, col 2)
+    if is_enhanced and has_spread:
+        plot_df = probability_df[["gaap_norm_spread", "posterior_beat_prob"]].dropna()
+        if len(plot_df) > 0:
+            abs_spread = plot_df["gaap_norm_spread"].abs()
+            fig.add_trace(
+                go.Scatter(
+                    x=plot_df["gaap_norm_spread"],
+                    y=plot_df["posterior_beat_prob"],
+                    mode="markers",
+                    name="GAAP Spread vs P(Beat)",
+                    marker=dict(
+                        size=8,
+                        color=abs_spread,
+                        colorscale="YlOrRd",
+                        showscale=False,
+                        opacity=0.7,
+                    ),
+                    text=(
+                        probability_df.loc[plot_df.index, "ticker"]
+                        if "ticker" in probability_df.columns
+                        else None
+                    ),
+                    hovertemplate=(
+                        "<b>%{text}</b><br>"
+                        "Spread: %{x:.1f}%<br>"
+                        "P(Beat): %{y:.1%}<extra></extra>"
+                    ),
+                ),
+                row=3,
+                col=2,
+            )
+    elif is_enhanced and has_streak:
+        streak_data = probability_df["quarterly_beat_streak"].dropna()
+        if len(streak_data) > 0:
+            streak_counts = streak_data.value_counts().sort_index()
+            fig.add_trace(
+                go.Bar(
+                    x=streak_counts.index.astype(str),
+                    y=streak_counts.values,
+                    name="Beat Streak",
+                    marker_color=colors["accent"],
+                ),
+                row=3,
+                col=2,
+            )
+
     # Update layout
+    height = 1000 if is_enhanced else 700
     fig.update_layout(
         title=dict(text=title, font=dict(size=24, color="#1A2332")),
-        height=700,
+        height=height,
         showlegend=False,
         template="plotly_dark",
         font=dict(family="Inter, sans-serif"),
@@ -960,6 +2246,14 @@ def create_earnings_probability_dashboard(
     fig.update_xaxes(title_text="Confidence Score", row=1, col=2)
     fig.update_xaxes(title_text="Historical Beat Rate", row=2, col=1)
     fig.update_yaxes(title_text="Posterior Beat Probability", row=2, col=1)
+
+    if is_enhanced:
+        if has_momentum:
+            fig.update_xaxes(title_text="Revision Momentum (0-100)", row=3, col=1)
+            fig.update_yaxes(title_text="Posterior P(Beat)", row=3, col=1)
+        if has_spread:
+            fig.update_xaxes(title_text="GAAP-Norm Spread %", row=3, col=2)
+            fig.update_yaxes(title_text="Posterior P(Beat)", row=3, col=2)
 
     return fig
 
@@ -1147,32 +2441,169 @@ def create_eps_streak_analysis_chart(
     return fig
 
 
+class CategoryProbabilityAnalyzer:
+    """
+    Probability analyzer for a specific feature category/view.
+
+    Provides Bayesian estimation, confidence intervals, and
+    probability distributions for all features in a category.
+    """
+
+    def __init__(self, category_name: str, prior_alpha: float = 2.0, prior_beta: float = 2.0):
+        self.category_name = category_name
+        self.prior_alpha = prior_alpha
+        self.prior_beta = prior_beta
+
+    def analyze_view(
+        self,
+        df: pd.DataFrame,
+        feature_cols: list[str],
+    ) -> pd.DataFrame:
+        """
+        Analyze all features in a view and return probability metrics.
+
+        Returns DataFrame with probability estimates per stock per feature.
+        """
+        results = []
+        identifier_cols = ["isin", "ticker", "name", "industry", "sector"]
+        id_data = df[[c for c in identifier_cols if c in df.columns]].copy()
+
+        for feat in feature_cols:
+            if feat not in df.columns:
+                continue
+
+            data = pd.to_numeric(df[feat], errors="coerce")
+            if data.dropna().empty:
+                continue
+
+            # Calculate percentile rank as probability proxy
+            percentile = data.rank(pct=True)
+
+            # Bayesian credible intervals
+            mean_val = data.mean()
+            std_val = data.std()
+
+            feat_results = id_data.copy()
+            feat_results["feature"] = feat
+            feat_results["value"] = data
+            feat_results["percentile"] = percentile
+            feat_results["z_score"] = (data - mean_val) / std_val if std_val > 0 else 0
+            feat_results["prob_above_median"] = (percentile > 0.5).astype(float)
+
+            results.append(feat_results)
+
+        if not results:
+            return pd.DataFrame()
+
+        return pd.concat(results, ignore_index=True)
+
+
+def create_view_probability_dashboard(
+    view_df: pd.DataFrame,
+    view_name: str,
+    category_name: str,
+) -> "go.Figure":
+    """
+    Create interactive probability dashboard for a feature view.
+
+    Parameters
+    ----------
+    view_df : pd.DataFrame
+        DataFrame from a specific vw_features view
+    view_name : str
+        Name of the view (e.g., "vw_features_momentum")
+    category_name : str
+        Display name for the category
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure with probability distributions
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    from finance_ml.analytics.data_utils import get_identifier_cols_set
+
+    identifier_cols = get_identifier_cols_set()
+
+    feature_cols = [c for c in view_df.columns if c not in identifier_cols][:6]  # Top 6
+
+    n_features = len(feature_cols)
+    if n_features == 0:
+        fig = go.Figure()
+        fig.add_annotation(text="No features available", x=0.5, y=0.5)
+        return fig
+
+    rows = (n_features + 1) // 2
+    fig = make_subplots(rows=rows, cols=2, subplot_titles=[f"{feat}" for feat in feature_cols])
+
+    for idx, feat in enumerate(feature_cols):
+        row = (idx // 2) + 1
+        col = (idx % 2) + 1
+
+        data = pd.to_numeric(view_df[feat], errors="coerce").dropna()
+        if len(data) > 10:
+            fig.add_trace(
+                go.Histogram(x=data, name=feat, showlegend=False, nbinsx=30),
+                row=row,
+                col=col,
+            )
+
+    fig.update_layout(
+        title=f"{category_name} - Probability Distributions",
+        height=300 * rows,
+        showlegend=False,
+    )
+
+    return fig
+
+
 def export_probability_analytics_results(
     probability_df: pd.DataFrame,
     streak_df: pd.DataFrame,
     output_dir: Path,
     confidence_result: Optional[ModelConfidenceResult] = None,
+    credit_risk_df: Optional[pd.DataFrame] = None,
+    dividend_safety_df: Optional[pd.DataFrame] = None,
+    price_target_df: Optional[pd.DataFrame] = None,
 ) -> dict:
     """
     Export all probability analytics results to database and files.
+
+    Uses standardized identifier columns from vw_identifier_columns to
+    build each output table with consistent identifier ordering.
 
     Args:
         probability_df: DataFrame with probability analysis
         streak_df: DataFrame with streak analysis
         output_dir: Output directory path
         confidence_result: Optional confidence metrics
+        credit_risk_df: Optional credit risk analysis results
+        dividend_safety_df: Optional dividend safety analysis results
+        price_target_df: Optional price target achievement results
 
     Returns:
         Dictionary with export information
     """
+    from finance_ml.analytics.data_utils import load_identifier_columns
+
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    identifier_cols = load_identifier_columns()
     exports = {}
+
+    def _reorder_with_identifiers(df: pd.DataFrame) -> pd.DataFrame:
+        """Reorder DataFrame columns: identifier cols first, then the rest."""
+        id_cols = [c for c in identifier_cols if c in df.columns]
+        other_cols = [c for c in df.columns if c not in id_cols]
+        return df[id_cols + other_cols]
 
     # 1. Export probability analysis to database
     try:
-        export_to_analytics_db(probability_df, "earnings_probability_analysis")
+        ordered_prob = _reorder_with_identifiers(probability_df)
+        export_to_analytics_db(ordered_prob, "earnings_probability_analysis")
         exports["probability_analysis_db"] = "analytics.earnings_probability_analysis"
     except Exception as e:
         logger.error(f"Failed to export probability analysis to database: {e}")
@@ -1184,7 +2615,8 @@ def export_probability_analytics_results(
 
     # 2. Export streak analysis to database
     try:
-        export_to_analytics_db(streak_df, "eps_streak_analysis")
+        ordered_streak = _reorder_with_identifiers(streak_df)
+        export_to_analytics_db(ordered_streak, "eps_streak_analysis")
         exports["streak_analysis_db"] = "analytics.eps_streak_analysis"
     except Exception as e:
         logger.error(f"Failed to export streak analysis to database: {e}")
@@ -1253,6 +2685,45 @@ def export_probability_analytics_results(
     summary_path = output_dir / "probability_analytics_summary.csv"
     summary_df.to_csv(summary_path, index=False)
     exports["summary_csv"] = str(summary_path)
+
+    # 5. Export credit risk results
+    if credit_risk_df is not None and len(credit_risk_df) > 0:
+        try:
+            ordered_credit = _reorder_with_identifiers(credit_risk_df)
+            export_to_analytics_db(ordered_credit, "credit_risk_analysis")
+            exports["credit_risk_db"] = "analytics.credit_risk_analysis"
+        except Exception as e:
+            logger.error(f"Failed to export credit risk analysis to database: {e}")
+
+        credit_path = output_dir / "credit_risk_analysis.csv"
+        credit_risk_df.to_csv(credit_path, index=False)
+        exports["credit_risk_csv"] = str(credit_path)
+
+    # 6. Export dividend safety results
+    if dividend_safety_df is not None and len(dividend_safety_df) > 0:
+        try:
+            ordered_div = _reorder_with_identifiers(dividend_safety_df)
+            export_to_analytics_db(ordered_div, "dividend_safety_analysis")
+            exports["dividend_safety_db"] = "analytics.dividend_safety_analysis"
+        except Exception as e:
+            logger.error(f"Failed to export dividend safety analysis to database: {e}")
+
+        div_path = output_dir / "dividend_safety_analysis.csv"
+        dividend_safety_df.to_csv(div_path, index=False)
+        exports["dividend_safety_csv"] = str(div_path)
+
+    # 7. Export price target achievement results
+    if price_target_df is not None and len(price_target_df) > 0:
+        try:
+            ordered_pt = _reorder_with_identifiers(price_target_df)
+            export_to_analytics_db(ordered_pt, "price_target_achievement")
+            exports["price_target_db"] = "analytics.price_target_achievement"
+        except Exception as e:
+            logger.error(f"Failed to export price target analysis to database: {e}")
+
+        pt_path = output_dir / "price_target_achievement.csv"
+        price_target_df.to_csv(pt_path, index=False)
+        exports["price_target_csv"] = str(pt_path)
 
     logger.info(f"Exported probability analytics results to database and {output_dir}")
     return exports

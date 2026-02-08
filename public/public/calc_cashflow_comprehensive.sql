@@ -56,5 +56,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_cashflow_comprehensive(text) owner to postgres;
+alter function calc_cashflow_comprehensive(unknown) owner to postgres;
 

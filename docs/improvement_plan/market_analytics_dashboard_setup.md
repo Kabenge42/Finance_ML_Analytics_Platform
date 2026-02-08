@@ -1,14 +1,14 @@
-Global Equity Research Dashboard
+Global Equity Analytics Dashboard
 
 Hero Section:
 
-- Title: "Global Equity Research Dashboard"
+- Title: "Global Equity Analytics Dashboard"
 - Description: "Comprehensive financial analysis platform for 650 global equities, featuring valuation metrics, earnings
   quality, cash flow analysis, and analyst sentiment to support investment decision-making across multiple sectors and
   regions."
 - Logo: "https://dash.plotly.com/assets/images/plotly_logo_dark.png"
 - Tags: Data Updated (dynamically populated with timestamp or "2026-02-01"), Created by (Plotly Studio), Data Source (
-  Global Equity Research Dashboard data)
+  Global Equity Analytics Dashboard data)
 - Refresh Button: Icon button with refresh icon that triggers data refresh when clicked
 
 Components:

@@ -22,5 +22,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_efficiency_ratios(text) owner to postgres;
+alter function calc_efficiency_ratios(unknown) owner to postgres;
 

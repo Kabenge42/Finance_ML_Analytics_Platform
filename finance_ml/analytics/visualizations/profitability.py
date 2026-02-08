@@ -201,6 +201,8 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
     plot_df = df.copy()
 
     # Calculate asset turnover proxy if not available
+    if "asset_turnover" not in plot_df.columns and "total_asset_turnover" in plot_df.columns:
+        plot_df["asset_turnover"] = plot_df["total_asset_turnover"]
     if "asset_turnover" not in plot_df.columns:
         if "roa" in plot_df.columns and "net_margin_pct" in plot_df.columns:
             # Asset Turnover ≈ ROA / Net Margin
@@ -225,15 +227,16 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
 
     # Create subplots
     fig = make_subplots(
-        rows=2,
-        cols=2,
+        rows=4,
+        cols=1,
         subplot_titles=(
             "ROE vs Net Margin",
             "ROE Components Distribution",
             "Leverage vs Profitability",
             "DuPont Factor Contribution",
         ),
-        specs=[[{"type": "scatter"}, {"type": "box"}], [{"type": "scatter"}, {"type": "bar"}]],
+        specs=[[{"type": "scatter"}], [{"type": "box"}], [{"type": "scatter"}], [{"type": "bar"}]],
+        vertical_spacing=0.08,
     )
 
     # 1. ROE vs Net Margin scatter
@@ -267,8 +270,8 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
                     name=comp.replace("_", " ").title(),
                     boxpoints="outliers",
                 ),
-                row=1,
-                col=2,
+                row=2,
+                col=1,
             )
 
     # 3. Leverage vs Profitability
@@ -289,7 +292,7 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
                 hovertemplate="<b>%{text}</b><br>Leverage: %{x:.2f}<br>ROA: %{y:.1f}%<extra></extra>",
                 name="ROA vs Leverage",
             ),
-            row=2,
+            row=3,
             col=1,
         )
 
@@ -319,22 +322,24 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
             text=[f"{c:.1f}%" for c in contributions],
             textposition="auto",
         ),
-        row=2,
-        col=2,
+        row=4,
+        col=1,
     )
 
     fig.update_layout(
         title="DuPont ROE Decomposition Dashboard",
-        height=700,
+        height=1400,
+        width=1000,
         showlegend=False,
         template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     fig.update_xaxes(title_text="Net Margin (%)", row=1, col=1)
     fig.update_yaxes(title_text="ROE (%)", row=1, col=1)
-    fig.update_xaxes(title_text="Equity Multiplier", row=2, col=1)
-    fig.update_yaxes(title_text="ROA (%)", row=2, col=1)
-    fig.update_yaxes(title_text="Contribution (%)", row=2, col=2)
+    fig.update_xaxes(title_text="Equity Multiplier", row=3, col=1)
+    fig.update_yaxes(title_text="ROA (%)", row=3, col=1)
+    fig.update_yaxes(title_text="Contribution (%)", row=4, col=1)
 
     return fig
 

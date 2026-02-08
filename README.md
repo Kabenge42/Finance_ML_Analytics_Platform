@@ -13,10 +13,6 @@ The Finance ML Analytics Platform is a robust solution for financial data analys
 portfolio optimization. It implements a structured **8-Phase ML Workflow** (Phases 9.1–9.8) to ensure data quality,
 advanced feature engineering, and reliable model evaluation, followed by a **7-Phase Portfolio Optimization** module.
 
-The platform has been enhanced with a refactored **Market Analytics** implementation (`finance_ml.analytics`), providing
-modular, high-performance tools for Bayesian statistical analysis, multi-factor screening, and interactive
-visualizations.
-
 ### Key Features
 
 - **8-Phase ML Workflow**: Covers data ingestion, preprocessing (winsorization, 6-step imputation), exploratory data
@@ -26,8 +22,8 @@ visualizations.
   Efficient Frontier), backtesting, and interactive dashboards.
 - **Advanced Market Analytics**: Modular implementation for Bayesian parameter estimation, MCMC sampling, Kalman
   filtering, and multi-factor screening.
-- **Unified Schema Module**: Single source of truth (`finance_ml.core.schema`) for 500+ financial columns, ensuring
-  strict alignment between SQL databases and Python data structures.
+- **Unified Schema Module**: Single source of truth for 500+ financial columns, ensuring strict alignment between SQL
+  databases and Python data structures.
 - **Advanced Feature Engineering**: Delivers 350+ schema-aligned features across 21 categories, including price
   dynamics, fiscal calendar, dividend timing, EPS trajectory, and cash flow temporal signals.
 - **Flexible ETL Pipeline**: Decoupled configuration handling multiple data sources (CSV, SQL) with built-in currency
@@ -37,18 +33,18 @@ visualizations.
 
 ## Tech Stack
 
-| Category            | Technologies                                                                                 |
-|:--------------------|:---------------------------------------------------------------------------------------------|
-| **Language**        | Python 3.12 / 3.13 / 3.14                                                                    |
-| **Package Manager** | `pip`, `Pipfile` (pipenv), `pyproject.toml` (setuptools)                                     |
-| **ML Frameworks**   | `scikit-learn`, `XGBoost`, `LightGBM`, `CatBoost`, `Optuna`, `SHAP`, `TensorFlow` (optional) |
-| **Data Processing** | `pandas`, `NumPy`, `SciPy`, `statsmodels`, `numba`, `imbalanced-learn`                       |
-| **Visualization**   | `Plotly`, `Matplotlib`, `Seaborn`                                                            |
-| **Dashboards**      | `Streamlit`, `Dash`                                                                          |
-| **Database**        | `PostgreSQL` (psycopg2), `SQLAlchemy`, `SQLite`                                              |
-| **Testing**         | `pytest`, `unittest`                                                                         |
-| **Code Quality**    | `Black`, `Flake8`, `isort`, `Mypy`                                                           |
-| **Utilities**       | `tqdm`, `joblib`, `xlsxwriter`, `psutil`                                                     |
+| Category            | Technologies                                                                      |
+|:--------------------|:----------------------------------------------------------------------------------|
+| **Language**        | Python 3.12 / 3.13 / 3.14                                                         |
+| **Package Manager** | `pip`, `pipenv` (`Pipfile`), `setuptools` (`pyproject.toml`)                      |
+| **ML Frameworks**   | `scikit-learn`, `XGBoost`, `LightGBM`, `CatBoost`, `Optuna`, `SHAP`, `TensorFlow` |
+| **Data Processing** | `pandas`, `NumPy`, `SciPy`, `statsmodels`, `numba`, `imbalanced-learn`            |
+| **Visualization**   | `Plotly`, `Matplotlib`, `Seaborn`                                                 |
+| **Dashboards**      | `Streamlit`, `Dash`                                                               |
+| **Database**        | `PostgreSQL` (`psycopg2`), `SQLAlchemy`, `SQLite`                                 |
+| **Testing**         | `pytest`, `unittest`                                                              |
+| **Code Quality**    | `Black`, `Flake8`, `isort`, `Mypy`                                                |
+| **Utilities**       | `tqdm`, `joblib`, `xlsxwriter`, `psutil`                                          |
 
 ## Requirements
 
@@ -82,14 +78,14 @@ environment variables.
    ```
 3. **(Optional) Install development and dashboard tools:**
    ```powershell
-   pip install -e ".[dev,dashboards,database]"
+   pip install -e ".[dev,dashboards,database,performance,tensorflow]"
    ```
 
 ## Execution & Entry Points
 
 ### CLI Entry Points
 
-The package provides several command-line entry points:
+The package provides several command-line entry points (defined in `pyproject.toml`):
 
 | Command               | Description                                          |
 |:----------------------|:-----------------------------------------------------|
@@ -124,37 +120,31 @@ Key notebooks for experimentation and exploration:
 
 ## Market Analytics Implementation
 
-The market analytics logic has been refactored into a modular structure within `finance_ml.analytics`. This architecture
-improves maintainability, performance, and reusability.
+The market analytics logic has been refactored into a modular structure within `finance_ml.analytics`.
 
 ### Module Architecture
 
 - **`data_utils`**: Data loading from PostgreSQL/materialized views, backfilling feature columns, and schema validation.
-- **`statistical_analysis`**: Advanced methods including Bayesian parameter estimation, MCMC (Metropolis-Hastings,
-  Student-t), Hierarchical Bayesian modeling, and Kalman filtering.
+- **`statistical_analysis`**: Advanced methods including Bayesian parameter estimation, MCMC, and Kalman filtering.
+- **`probability_analytics`**: Bayesian earnings beat probability models, credit risk, and dividend safety analysis.
 - **`screening`**: Multi-factor stock screening (Quality, Value, Growth, Momentum, Dividends) and composite ranking.
 - **`feature_analytics`**: Core interactive Plotly dashboards and price target simulations.
-- **`optimized_ops`**: Performance-critical operations using Numba-acceleration (Monte Carlo) and vectorized
-  computations.
 - **`visualizations/`**: Category-specific charting modules (Profitability, Technical, Temporal Analysis).
-
-For more details, see [Market Analytics Refactoring Guide](docs/improvement_plan/market_analysis_refactoring_guide.md).
 
 ## Scripts & Utilities
 
 Useful utility scripts located in `tools/`:
 
-| Script                         | Purpose                                               |
-|:-------------------------------|:------------------------------------------------------|
-| `setup_environment.py`         | Full environment and dependency setup                 |
-| `run_fast_tests.py`            | Quick verification of utility modules                 |
-| `run_earnings_monitor.py`      | Monitors and visualizes company earnings events       |
-| `setup_dashboard_assets.py`    | Syncs pipeline results with dashboard interface       |
-| `load_equities_data.py`        | Loads and processes equities data into the system     |
-| `validate_schema_alignment.py` | Validates SQL/Python schema alignment                 |
-| `import_sqlite.py`             | Imports data into SQLite for local development        |
-| `update_notebooks.py`          | Updates notebooks to align with latest schema changes |
-| `cleanup_environments.py`      | Cleans up virtual environments and temporary caches   |
+| Script                         | Purpose                                             |
+|:-------------------------------|:----------------------------------------------------|
+| `setup_environment.py`         | Full environment and dependency setup               |
+| `run_fast_tests.py`            | Quick verification of utility modules               |
+| `run_earnings_monitor.py`      | Monitors and visualizes company earnings events     |
+| `setup_dashboard_assets.py`    | Syncs pipeline results with dashboard interface     |
+| `load_equities_data.py`        | Loads and processes equities data into the system   |
+| `validate_schema_alignment.py` | Validates SQL/Python schema alignment               |
+| `import_sqlite.py`             | Imports data into SQLite for local development      |
+| `cleanup_environments.py`      | Cleans up virtual environments and temporary caches |
 
 ## Environment Variables
 
@@ -194,15 +184,19 @@ Finance_Analytics_Platform/
 │   ├── core/                   # Shared constants and unified schema
 │   ├── etl/                    # ETL pipeline and data transformation
 │   ├── features/               # Feature engineering (advanced, basic)
+│   ├── analytics/              # Modular market analytics implementation
+│   │   ├── statistical_analysis.py
+│   │   ├── probability_analytics.py
+│   │   ├── screening.py
+│   │   └── visualizations/     # Specialized charting modules
 │   ├── ml_workflow/            # 8-phase ML workflow implementation
 │   │   ├── preprocessing/      # Data cleaning, imputation, scaling
 │   │   ├── eda/                # Exploratory Data Analysis
-│   │   ├── models/             # Model training and evaluation
-│   │   └── analytics/          # Phase 9.7 stock selection and mispricing
-│   ├── analytics/              # NEW: Modular market analytics implementation
-│   │   ├── statistical_analysis.py
-│   │   ├── screening.py
-│   │   └── visualizations/     # Specialized charting modules
+│   │   ├── classification/     # Phase 9.4 Classification
+│   │   ├── regression/         # Phase 9.5 Regression
+│   │   ├── evaluation/         # Phase 9.6 Model Evaluation
+│   │   ├── analytics/          # Phase 9.7 Stock selection and mispricing
+│   │   └── reporting/          # Phase 9.8 Reporting and export
 │   └── dashboards/             # Streamlit, Dash, and Equities dashboards
 ├── tests/                      # Unit, integration, and regression tests
 ├── tools/                      # Utility and setup scripts
@@ -225,4 +219,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] **Real-time Data**: Implement WebSocket support for live market data ingestion.
 - [ ] **API Documentation**: Generate and host KDoc-style API documentation.
 - [ ] **REST API**: Develop a FastAPI wrapper for the screening and analytics modules.
+- [ ] **CLI Fix**: Resolve non-existent `finance_ml.ml_workflow.models` imports in `finance_ml/cli.py`.
 - [ ] **Test Coverage**: Increase coverage for the new `finance_ml.analytics` sub-modules.

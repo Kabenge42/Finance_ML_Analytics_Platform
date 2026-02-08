@@ -105,15 +105,16 @@ def create_earnings_calendar_heatmap(
 
     # Create subplots
     fig = make_subplots(
-        rows=2,
-        cols=2,
+        rows=4,
+        cols=1,
         subplot_titles=(
             "Earnings by Day of Week",
             "Earnings by Month",
             "Daily Earnings Count Timeline",
             "Quality Score Distribution by Week",
         ),
-        specs=[[{"type": "bar"}, {"type": "bar"}], [{"type": "scatter"}, {"type": "heatmap"}]],
+        specs=[[{"type": "bar"}], [{"type": "bar"}], [{"type": "scatter"}], [{"type": "heatmap"}]],
+        vertical_spacing=0.07,
     )
 
     # 1. Earnings by day of week
@@ -155,8 +156,8 @@ def create_earnings_calendar_heatmap(
             marker_color="rgb(50, 171, 96)",
             name="By Month",
         ),
-        row=1,
-        col=2,
+        row=2,
+        col=1,
     )
 
     # 3. Timeline of daily earnings
@@ -179,7 +180,7 @@ def create_earnings_calendar_heatmap(
             line=dict(color="rgba(55, 128, 191, 0.5)"),
             name="Daily Count",
         ),
-        row=2,
+        row=3,
         col=1,
     )
 
@@ -198,8 +199,8 @@ def create_earnings_calendar_heatmap(
                 showscale=True,
                 colorbar=dict(title="Quality", x=1.0, y=0.2, len=0.3),
             ),
-            row=2,
-            col=2,
+            row=4,
+            col=1,
         )
     else:
         # Show count heatmap instead
@@ -216,27 +217,32 @@ def create_earnings_calendar_heatmap(
                 showscale=True,
                 colorbar=dict(title="Count", x=1.0, y=0.2, len=0.3),
             ),
-            row=2,
-            col=2,
+            row=4,
+            col=1,
         )
 
     fig.update_layout(
-        title="Earnings Calendar Analysis", height=700, showlegend=False, template=PLOTLY_TEMPLATE
+        title="Earnings Calendar Analysis",
+        height=1600,
+        width=1000,
+        showlegend=False,
+        template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     fig.update_xaxes(title_text="Day of Week", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
-    fig.update_xaxes(title_text="Month", row=1, col=2)
-    fig.update_yaxes(title_text="Count", row=1, col=2)
-    fig.update_xaxes(title_text="Date", row=2, col=1)
-    fig.update_yaxes(title_text="Earnings Count", row=2, col=1)
+    fig.update_xaxes(title_text="Month", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
+    fig.update_xaxes(title_text="Date", row=3, col=1)
+    fig.update_yaxes(title_text="Earnings Count", row=3, col=1)
 
     return fig
 
 
 def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry") -> go.Figure:
     """
-    Time series of inventory_days and inventory_turnover_mv trends.
+    Time series of inventory_days and inventory_turnover_itf trends.
 
     Flags inventory_buildup_flag anomalies.
 
@@ -257,7 +263,7 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
     >>> fig = create_inventory_cycle_analysis(df)
     >>> fig.show()
     """
-    inventory_cols = ["inventory_days", "inventory_turnover_mv", "inventory_yoy_change"]
+    inventory_cols = ["inventory_days", "inventory_turnover_itf", "inventory_yoy_change"]
     available_cols = [col for col in inventory_cols if col in df.columns]
 
     if not available_cols:
@@ -276,15 +282,21 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
 
     # Create subplots
     fig = make_subplots(
-        rows=2,
-        cols=2,
+        rows=4,
+        cols=1,
         subplot_titles=(
             "Inventory Days Distribution",
             "Inventory Turnover by Sector",
             "Inventory YoY Change",
             "Buildup Flag Analysis",
         ),
-        specs=[[{"type": "histogram"}, {"type": "box"}], [{"type": "scatter"}, {"type": "bar"}]],
+        specs=[
+            [{"type": "histogram"}],
+            [{"type": "box"}],
+            [{"type": "scatter"}],
+            [{"type": "bar"}],
+        ],
+        vertical_spacing=0.07,
     )
 
     # 1. Inventory days histogram
@@ -305,14 +317,14 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
         )
 
     # 2. Inventory turnover by sector
-    if "inventory_turnover_mv" in df.columns and group_col in df.columns:
+    if "inventory_turnover_itf" in df.columns and group_col in df.columns:
         sectors = df[group_col].dropna().unique()[:8]
         for sector in sectors:
-            sector_data = df[df[group_col] == sector]["inventory_turnover_mv"].dropna()
+            sector_data = df[df[group_col] == sector]["inventory_turnover_itf"].dropna()
             sector_data = sector_data[sector_data.between(0, 50)]  # Filter outliers
             if len(sector_data) > 5:
                 fig.add_trace(
-                    go.Box(y=sector_data, name=sector[:12], boxpoints="outliers"), row=1, col=2
+                    go.Box(y=sector_data, name=sector[:12], boxpoints="outliers"), row=2, col=1
                 )
 
     # 3. Inventory YoY change scatter
@@ -347,7 +359,7 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
                     ),
                     name="Stocks",
                 ),
-                row=2,
+                row=3,
                 col=1,
             )
 
@@ -365,8 +377,8 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
                 textposition="auto",
                 name="Buildup %",
             ),
-            row=2,
-            col=2,
+            row=4,
+            col=1,
         )
     elif "inventory_yoy_change" in df.columns and group_col in df.columns:
         # Show average YoY change by sector instead
@@ -384,21 +396,26 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
                 textposition="auto",
                 name="Avg YoY Change",
             ),
-            row=2,
-            col=2,
+            row=4,
+            col=1,
         )
 
     fig.update_layout(
-        title="Inventory Cycle Analysis", height=700, showlegend=False, template=PLOTLY_TEMPLATE
+        title="Inventory Cycle Analysis",
+        height=1600,
+        width=1000,
+        showlegend=False,
+        template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     fig.update_xaxes(title_text="Inventory Days", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
-    fig.update_yaxes(title_text="Turnover Ratio", row=1, col=2)
-    fig.update_xaxes(title_text="Inventory Days", row=2, col=1)
-    fig.update_yaxes(title_text="YoY Change (%)", row=2, col=1)
-    fig.update_xaxes(title_text="Sector", tickangle=-45, row=2, col=2)
-    fig.update_yaxes(title_text="% with Buildup", row=2, col=2)
+    fig.update_yaxes(title_text="Turnover Ratio", row=2, col=1)
+    fig.update_xaxes(title_text="Inventory Days", row=3, col=1)
+    fig.update_yaxes(title_text="YoY Change (%)", row=3, col=1)
+    fig.update_xaxes(title_text="Sector", tickangle=-45, row=4, col=1)
+    fig.update_yaxes(title_text="% with Buildup", row=4, col=1)
 
     return fig
 
@@ -443,8 +460,8 @@ def create_fcf_trajectory_chart(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
 
     # Create subplots
     fig = make_subplots(
-        rows=2,
-        cols=2,
+        rows=4,
+        cols=1,
         subplot_titles=(
             "FCF Positive Years Distribution",
             "Top Stocks by FCF Streak",
@@ -452,9 +469,12 @@ def create_fcf_trajectory_chart(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
             "FCF Growth Distribution",
         ),
         specs=[
-            [{"type": "histogram"}, {"type": "bar"}],
-            [{"type": "scatter"}, {"type": "histogram"}],
+            [{"type": "histogram"}],
+            [{"type": "bar"}],
+            [{"type": "scatter"}],
+            [{"type": "histogram"}],
         ],
+        vertical_spacing=0.07,
     )
 
     # 1. FCF positive years distribution
@@ -487,8 +507,8 @@ def create_fcf_trajectory_chart(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
             textposition="auto",
             name="FCF Streak",
         ),
-        row=1,
-        col=2,
+        row=2,
+        col=1,
     )
 
     # 3. FCF Margin vs FCF Yield scatter
@@ -519,13 +539,13 @@ def create_fcf_trajectory_chart(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
                 ),
                 name="Stocks",
             ),
-            row=2,
+            row=3,
             col=1,
         )
 
         # Add quadrant lines
-        fig.add_hline(y=0, line_dash="dash", line_color="gray", row=2, col=1)
-        fig.add_vline(x=0, line_dash="dash", line_color="gray", row=2, col=1)
+        fig.add_hline(y=0, line_dash="dash", line_color="gray", row=3, col=1)
+        fig.add_vline(x=0, line_dash="dash", line_color="gray", row=3, col=1)
 
     # 4. FCF Growth distribution
     if "fcf_growth_yoy" in df.columns:
@@ -540,28 +560,30 @@ def create_fcf_trajectory_chart(df: pd.DataFrame, top_n: int = 30) -> go.Figure:
                 opacity=0.7,
                 name="FCF Growth",
             ),
-            row=2,
-            col=2,
+            row=4,
+            col=1,
         )
 
         # Add zero line
-        fig.add_vline(x=0, line_dash="solid", line_color="black", row=2, col=2)
+        fig.add_vline(x=0, line_dash="solid", line_color="black", row=4, col=1)
 
     fig.update_layout(
         title="Free Cash Flow Trajectory Analysis",
-        height=700,
+        height=1400,
+        width=1000,
         showlegend=False,
         template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     fig.update_xaxes(title_text="FCF Positive Years", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
-    fig.update_xaxes(title_text="Stock", tickangle=-45, row=1, col=2)
-    fig.update_yaxes(title_text="FCF Years", row=1, col=2)
-    fig.update_xaxes(title_text="FCF Margin (%)", row=2, col=1)
-    fig.update_yaxes(title_text="FCF Yield (%)", row=2, col=1)
-    fig.update_xaxes(title_text="FCF Growth YoY (%)", row=2, col=2)
-    fig.update_yaxes(title_text="Count", row=2, col=2)
+    fig.update_xaxes(title_text="Stock", tickangle=-45, row=2, col=1)
+    fig.update_yaxes(title_text="FCF Years", row=2, col=1)
+    fig.update_xaxes(title_text="FCF Margin (%)", row=3, col=1)
+    fig.update_yaxes(title_text="FCF Yield (%)", row=3, col=1)
+    fig.update_xaxes(title_text="FCF Growth YoY (%)", row=4, col=1)
+    fig.update_yaxes(title_text="Count", row=4, col=1)
 
     return fig
 
@@ -630,8 +652,8 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
 
     # Create subplots
     fig = make_subplots(
-        rows=2,
-        cols=2,
+        rows=4,
+        cols=1,
         subplot_titles=(
             "Dividend Streak Distribution",
             "Top Dividend Aristocrats",
@@ -639,9 +661,12 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
             "Dividend Sustainability Matrix",
         ),
         specs=[
-            [{"type": "histogram"}, {"type": "bar"}],
-            [{"type": "scatter"}, {"type": "heatmap"}],
+            [{"type": "histogram"}],
+            [{"type": "bar"}],
+            [{"type": "scatter"}],
+            [{"type": "heatmap"}],
         ],
+        vertical_spacing=0.07,
     )
 
     # 1. Dividend streak distribution
@@ -687,8 +712,8 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
             textposition="auto",
             name="Streak",
         ),
-        row=1,
-        col=2,
+        row=2,
+        col=1,
     )
 
     # 3. Yield vs Payout Ratio scatter
@@ -725,19 +750,19 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
                 ),
                 name="Stocks",
             ),
-            row=2,
+            row=3,
             col=1,
         )
 
         # Add sustainability threshold lines
-        fig.add_vline(x=80, line_dash="dash", line_color="orange", row=2, col=1)
+        fig.add_vline(x=80, line_dash="dash", line_color="orange", row=3, col=1)
         fig.add_annotation(
             x=80,
             y=plot_data[yield_col].max(),
             text="Sustainability Threshold",
             showarrow=False,
             font=dict(size=10, color="orange"),
-            row=2,
+            row=3,
             col=1,
         )
 
@@ -789,22 +814,24 @@ def create_dividend_streak_timeline(df: pd.DataFrame, top_n: int = 30) -> go.Fig
                     textfont={"size": 9},
                     showscale=False,
                 ),
-                row=2,
-                col=2,
+                row=4,
+                col=1,
             )
 
     fig.update_layout(
         title="Dividend Streak & Sustainability Analysis",
-        height=700,
+        height=1400,
+        width=1000,
         showlegend=False,
         template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     fig.update_xaxes(title_text="Dividend Streak (Years)", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=1)
-    fig.update_xaxes(title_text="Stock", tickangle=-45, row=1, col=2)
-    fig.update_yaxes(title_text="Streak (Years)", row=1, col=2)
-    fig.update_xaxes(title_text="Payout Ratio (%)", row=2, col=1)
-    fig.update_yaxes(title_text="Dividend Yield (%)", row=2, col=1)
+    fig.update_xaxes(title_text="Stock", tickangle=-45, row=2, col=1)
+    fig.update_yaxes(title_text="Streak (Years)", row=2, col=1)
+    fig.update_xaxes(title_text="Payout Ratio (%)", row=3, col=1)
+    fig.update_yaxes(title_text="Dividend Yield (%)", row=3, col=1)
 
     return fig

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- EQUITIES SCHEMA METADATA TABLE
 -- =============================================================================
-
+DROP TABLE IF EXISTS equities_schema_metadata CASCADE;
 -- Create a metadata table documenting available Equities schema columns
 CREATE TABLE IF NOT EXISTS equities_schema_metadata
 (
@@ -1367,6 +1367,8 @@ VALUES
      CURRENT_TIMESTAMP),
     ('# Buys Ratings', 'num_buys_ratings', 'count', 1, 'Number of buy ratings', 'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
     ('# Sell Ratings', 'num_sell_ratings', 'count', 1, 'Number of sell ratings', 'NUMERIC DEFAULT 0',
+     CURRENT_TIMESTAMP),
+    ('# No Opinion Ratings', 'num_no_opinion_ratings', 'count', 1, 'Number of no opinion ratings', 'NUMERIC DEFAULT 0',
      CURRENT_TIMESTAMP),
     ('Shrs Out', 'shares_outstanding', 'count', 1, 'Shares outstanding', 'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
     ('Shrs Out (-1FY)', 'shrs_out_1fy', 'count', 1, 'Shares outstanding previous fiscal year', 'NUMERIC DEFAULT 0',

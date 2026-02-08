@@ -607,6 +607,7 @@ CREATE TEMP TABLE screening_staging
     "# Hold Ratings"                                   TEXT, -- alias: num_hold_ratings
     "# Buys Ratings"                                   TEXT, -- alias: num_buys_ratings
     "# Sell Ratings"                                   TEXT, -- alias: num_sell_ratings
+    "# No Opinion Ratings" TEXT,                             -- alias: num_no_opinion_ratings
     "Total Revenues/CAGR (5Y FY)"                      TEXT, -- alias: total_revenues_cagr_5y_fy
     "Total Revenues (FQ)"                              TEXT, -- alias: total_revenues_fq
     "Total Revenues (-1FY)"                            TEXT, -- alias: total_revenues_1fy
@@ -1773,6 +1774,7 @@ INSERT INTO equities ("Ticker", -- alias: ticker
                       "# Hold Ratings", -- alias: num_hold_ratings
                       "# Buys Ratings", -- alias: num_buys_ratings
                       "# Sell Ratings", -- alias: num_sell_ratings
+                      "# No Opinion Ratings", -- alias: num_no_opinion_ratings
                       "Shrs Out", -- alias: shares_outstanding
                       "Shrs Out (-1FY)", -- alias: shrs_out_1fy
                       "Full Time Employees (FQ)", -- alias: full_time_employees_fq
@@ -2481,6 +2483,7 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."# Hold Ratings"), 0)                     AS "# Hold Ratings",
        COALESCE(text_to_numeric_safe(s."# Buys Ratings"), 0)                     AS "# Buys Ratings",
        COALESCE(text_to_numeric_safe(s."# Sell Ratings"), 0)                     AS "# Sell Ratings",
+       COALESCE(text_to_numeric_safe(s."# No Opinion Ratings"), 0) AS "# No Opinion Ratings",
        COALESCE(text_to_numeric_safe(s."Shrs Out"), 0)                           AS "Shrs Out",
        COALESCE(text_to_numeric_safe(s."Shrs Out (-1FY)"), 0)                    AS "Shrs Out (-1FY)",
        COALESCE(text_to_numeric_safe(s."Full Time Employees (FQ)"), 0)           AS "Full Time Employees (FQ)",

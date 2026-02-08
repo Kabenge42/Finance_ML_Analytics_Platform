@@ -100,9 +100,9 @@ SELECT "ISIN"                                                                   
         "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") / 4.0                             AS revenue_4q_avg,
        -- FQ vs trailing 4Q average
        public.safe_divide("Total Revenues (FQ)"::NUMERIC,
-                   ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
-                    "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
-                   4.0)                                                                          AS revenue_fq_vs_4q_avg,
+                          ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
+                           "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
+                          4.0) AS revenue_fq_vs_4q_avg,
        -- Growth flag: 1 if growing YoY
        CASE
            WHEN "Total Revenues (FY)" > "Total Revenues (-1FY)" THEN 1
@@ -131,5 +131,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_revenue_quarterly_features(text) owner to postgres;
+alter function calc_revenue_quarterly_features(unknown) owner to postgres;
 
