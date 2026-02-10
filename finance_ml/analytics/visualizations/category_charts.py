@@ -72,7 +72,12 @@ def create_analyst_sentiment_histogram(
         nbins=nbins,
         marginal="box",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -115,7 +120,7 @@ def create_analyst_upside_scatter(
     )
     fig.update_layout(
         width=1000,
-        height=800,
+        height=600,
         yaxis=dict(range=[None, max_upside]),
         template=PLOTLY_TEMPLATE,
         margin=dict(l=80, r=40, t=60, b=60),
@@ -161,7 +166,12 @@ def create_eps_surprise_histogram(
         nbins=nbins,
         marginal="violin",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -197,7 +207,12 @@ def create_eps_trajectory_scatter(
         title="EPS Trajectory vs GAAP Adjustment Gap",
         color_continuous_scale="RdYlGn",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -256,7 +271,12 @@ def create_growth_correlation_heatmap(
         zmin=-1,
         zmax=1,
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -299,7 +319,12 @@ def create_revenue_vs_eps_growth_scatter(
     )
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
     fig.add_vline(x=0, line_dash="dash", line_color="gray")
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -340,7 +365,12 @@ def create_fcf_margin_yield_scatter(
         title="FCF Margin vs FCF Yield (colored by FCF Positive Years)",
         color_continuous_scale="Greens",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -374,7 +404,12 @@ def create_cash_flow_quality_boxplot(
         color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -515,7 +550,12 @@ def create_rnd_intensity_boxplot(
         color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -550,7 +590,12 @@ def create_rnd_intensity_growth_scatter(
         hover_data=["ticker", "name", "rnd_per_employee"],
         title="R&D Intensity vs YoY R&D Growth",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -587,7 +632,12 @@ def create_rnd_per_employee_histogram(
         nbins=nbins,
         title="R&D per Employee Distribution by Industry",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -637,7 +687,12 @@ def create_inventory_days_turnover_scatter(
         or None,
         title="Inventory Days vs Turnover (flagged for buildup)",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -676,7 +731,12 @@ def create_goodwill_concentration_boxplot(
         color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -711,7 +771,12 @@ def create_goodwill_impairment_scatter(
         hover_data=["ticker", "name", "goodwill_concentration"],
         title="Goodwill Concentration vs Impairment Risk Score",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -744,7 +809,12 @@ def create_acquisition_activity_histogram(
         title="Recent Acquisition Activity by Industry",
         barmode="group",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -789,7 +859,12 @@ def create_capex_growth_scatter(
     )
     fig.add_hline(y=1, line_dash="dash", line_color="gray", annotation_text="5Y Avg")
     fig.add_vline(x=0, line_dash="dash", line_color="gray")
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -823,7 +898,12 @@ def create_investment_efficiency_boxplot(
         color=group_by if group_by in df.columns else None,
     )
     fig.update_xaxes(tickangle=45)
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -860,7 +940,12 @@ def create_ma_intensity_histogram(
         nbins=nbins,
         marginal="box",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -913,7 +998,13 @@ def create_valuation_violin_plot(
         width=2000,
         title=f"{metric.replace('_', ' ').title()} Distribution by {group_by.title()}",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE, showlegend=False)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        showlegend=False,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     fig.update_xaxes(tickangle=45)
     return fig
 
@@ -1035,7 +1126,12 @@ def create_leverage_liquidity_bubble_chart(
     fig.add_vline(x=1.5, line_dash="dash", line_color="green", annotation_text="Healthy Liquidity")
     fig.add_hline(y=1.0, line_dash="dash", line_color="red", annotation_text="High Leverage")
 
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -1080,7 +1176,12 @@ def create_productivity_quadrant(
             y=y_median, line_dash="dot", line_color="gray", annotation_text="Market Median EBITDA"
         )
 
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -1258,7 +1359,12 @@ def create_balance_sheet_composition_chart(
         title="Balance Sheet Composition by Industry",
         barmode="stack",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -1290,7 +1396,12 @@ def create_cost_structure_breakdown(
             )
         ]
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 
@@ -1316,7 +1427,12 @@ def create_unusual_items_heatmap(
         title="Unusual Items Detection Heatmap",
         color_continuous_scale="RdYlGn_r",
     )
-    fig.update_layout(template=PLOTLY_TEMPLATE)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        width=1000,
+        margin=dict(l=80, r=40, t=60, b=60),
+    )
     return fig
 
 

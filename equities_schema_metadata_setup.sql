@@ -14,19 +14,6 @@ CREATE TABLE IF NOT EXISTS equities_schema_metadata
     updated_at     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE equities_schema_metadata
-    ADD COLUMN IF NOT EXISTS column_alias TEXT;
-
-ALTER TABLE equities_schema_metadata
-    ALTER COLUMN column_alias SET DEFAULT 'n/a';
-
-UPDATE equities_schema_metadata
-SET column_alias = 'n/a'
-WHERE column_alias IS NULL;
-
-ALTER TABLE equities_schema_metadata
-    ALTER COLUMN column_alias SET DEFAULT 'n/a';
-
 -- Add index for role-based queries
 CREATE INDEX IF NOT EXISTS idx_equities_schema_metadata_role
     ON equities_schema_metadata (role);

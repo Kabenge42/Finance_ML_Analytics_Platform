@@ -281,12 +281,12 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
         margin=dict(l=80, r=40, t=60, b=60),
     )
 
-    fig.update_xaxes(title_text="Range Position", row=1, col=1)
-    fig.update_yaxes(title_text="Count", row=1, col=1)
-    fig.update_yaxes(title_text="Range Position", row=2, col=1)
-    fig.update_yaxes(title_text="% of Stocks", row=3, col=1)
-    fig.update_xaxes(title_text="52W Range Position", row=4, col=1)
-    fig.update_yaxes(title_text="1M Momentum (%)", row=4, col=1)
+    fig.update_xaxes(title_text="Range Position", row=1, col=1, tickfont=dict(size=11))
+    fig.update_yaxes(title_text="Count", row=1, col=1, tickfont=dict(size=11))
+    fig.update_yaxes(title_text="Range Position", row=2, col=1, tickfont=dict(size=11))
+    fig.update_yaxes(title_text="% of Stocks", row=3, col=1, tickfont=dict(size=11))
+    fig.update_xaxes(title_text="52W Range Position", row=4, col=1, tickfont=dict(size=11))
+    fig.update_yaxes(title_text="1M Momentum (%)", row=4, col=1, tickfont=dict(size=11))
 
     return fig
 
@@ -421,7 +421,9 @@ def create_trend_strength_matrix(
         xaxis_title="Metric",
         yaxis_title=group_col.title(),
         height=max(400, len(stats) * 25 + 100),
+        width=1000,
         template=PLOTLY_TEMPLATE,
+        margin=dict(l=80, r=40, t=60, b=60),
     )
 
     return fig

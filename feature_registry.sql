@@ -87,7 +87,33 @@ SELECT e."ISIN"            AS isin,
        e."Trading Country" AS trading_country,
        e."Exchange"        AS exchange,
        e."Sector"          AS sector,
-       e."Industry"        AS industry
+       e."Industry"                          AS industry,
+
+       -- CATEGORICAL columns from equities_schema_metadata
+       e."Dividend Record (Frequency)"       AS dividend_record_frequency,
+       e."Earnings Report (Frequency)"       AS earnings_report_frequency,
+       e."FY End"                            AS fy_end,
+       e."Next Earnings (Report)"            AS next_earnings_report,
+       e."Next Earnings (Status)"            AS next_earnings_status,
+       e."Next Earnings (When)"              AS next_earnings_when,
+       e."Next Fiscal Quarter"               AS next_fiscal_quarter,
+       e."Reporting Interval"                AS reporting_interval,
+       e."Size Class"                        AS size_class,
+       e."Style Class"                       AS style_class,
+       e."Unit"                              AS unit,
+
+       -- DATE columns from equities_schema_metadata
+       e."Dividend Record (Announce Date)"   AS dividend_record_announce_date,
+       e."Dividend Record (Ex Date)"         AS dividend_record_ex_date,
+       e."Dividend Record (Payable Date)"    AS dividend_record_payable_date,
+       e."Dividend Record (Record Date)"     AS dividend_record_record_date,
+       e."FY End Date"                       AS fy_end_date,
+       e."Income Statement Report Date"      AS income_statement_report_date,
+       e."Last Updated"                      AS last_updated,
+       e."Next Earnings"                     AS next_earnings,
+       e."Next FY End Date"                  AS next_fy_end_date,
+       e."Next Income Statement Report Date" AS next_income_statement_report_date,
+       e."Reference Date"                    AS reference_date
 
 FROM postgres.public.equities e;
 

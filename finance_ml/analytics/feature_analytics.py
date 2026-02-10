@@ -527,8 +527,8 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
 def monte_carlo_price_target_simulation(
     df: pd.DataFrame,
     n_simulations: int = 10000,
-    confidence_level: float = 0.95,
-    max_stocks: int = 2000,
+    confidence_level: float = 0.99,
+    max_stocks: int = 10000,
 ) -> pd.DataFrame:
     """
     Monte Carlo simulation of price targets based on analyst spread.
@@ -1293,7 +1293,7 @@ def main():
         required_mc_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
         if all(col in df.columns for col in required_mc_cols):
             print("  - Running Monte Carlo price target simulation...")
-            mc_results = monte_carlo_price_target_simulation(df, max_stocks=2000)
+            mc_results = monte_carlo_price_target_simulation(df, max_stocks=10000)
             if len(mc_results) > 0:
                 export_to_analytics_db(mc_results, "monte_carlo_simulation")
                 print(

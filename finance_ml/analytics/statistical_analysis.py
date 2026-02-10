@@ -573,6 +573,94 @@ def calculate_conditional_probabilities(
 # =============================================================================
 
 
+def monte_carlo_price_target_simulation(
+    df: pd.DataFrame,
+    n_simulations: int = 10000,
+    max_stocks: int = 10000,
+    confidence_level: float = 0.99,
+) -> pd.DataFrame:
+    """
+    Monte Carlo simulation of price targets based on analyst spread.
+
+    Uses the analyst price target range (high/low/median) to model
+    uncertainty and generate probabilistic fair value estimates.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing:
+        - ticker, name, industry, last_price
+        - price_target, price_target_high, price_target_low, price_target_median
+    n_simulations : int, default 10000
+        Number of Monte Carlo simulations per stock
+    confidence_level : float, default 0.95
+        Confidence level for VaR calculation
+    max_stocks : int, default 2000
+        Maximum number of stocks to simulate (for performance)
+    confidence_level : float, default 0.95
+        Confidence level for VaR calculation
+    max_stocks : int, default 1000
+        Maximum number of stocks to simulate (for performance)
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with simulation results including:
+        - ticker, name, industry, last_price
+        - expected_upside_pct, upside_std, var_5_pct
+        - prob_positive_upside, risk_reward_ratio
+    """
+    np.random.seed(42)
+
+    results = []
+
+    required_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
+    valid_df = df.dropna(subset=required_cols)
+
+    for _, row in valid_df.head().iterrows():
+        pt_low = row["price_target_low"]
+        pt_high = row["price_target_high"]
+        pt_median = row.get("price_target_median", row["price_target"])
+        last_price = row["last_price"]
+
+        if pt_high <= pt_low or last_price <= 0:
+            continue
+
+        # Model price target as triangular distribution (low, mode=median, high)
+        simulated_pts = np.random.triangular(pt_low, pt_median, pt_high, n_simulations)
+
+        # Calculate simulated upside
+        simulated_upside = (simulated_pts - last_price) / last_price * 100
+
+        # Statistics
+        var_5 = np.percentile(simulated_upside, 5)
+        expected_upside = np.mean(simulated_upside)
+        upside_std = np.std(simulated_upside)
+        prob_positive = (simulated_upside > 0).mean() * 100
+
+        results.append(
+            {
+                "ticker": row.get("ticker", ""),
+                "name": row.get("name", ""),
+                "sector": row.get("sector", ""),
+                "industry": row.get("industry", ""),
+                "region": row.get("region", ""),
+                "country": row.get("country", ""),
+                "exchange": row.get("exchange", ""),
+                "last_price": last_price,
+                "pt_median": pt_median,
+                "pt_spread": pt_high - pt_low,
+                "expected_upside_pct": expected_upside,
+                "upside_std": upside_std,
+                "var_5_pct": var_5,  # 5% Value at Risk
+                "prob_positive_upside": prob_positive,
+                "risk_reward_ratio": expected_upside / upside_std if upside_std > 0 else 0,
+            }
+        )
+
+    return pd.DataFrame(results)
+
+
 def kalman_filter_price_target(
     df: pd.DataFrame,
     observation_col: str = "last_price",

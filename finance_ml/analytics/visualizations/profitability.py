@@ -335,11 +335,11 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
         margin=dict(l=80, r=40, t=60, b=60),
     )
 
-    fig.update_xaxes(title_text="Net Margin (%)", row=1, col=1)
-    fig.update_yaxes(title_text="ROE (%)", row=1, col=1)
-    fig.update_xaxes(title_text="Equity Multiplier", row=3, col=1)
-    fig.update_yaxes(title_text="ROA (%)", row=3, col=1)
-    fig.update_yaxes(title_text="Contribution (%)", row=4, col=1)
+    fig.update_xaxes(title_text="Net Margin (%)", row=1, col=1, tickfont=dict(size=11))
+    fig.update_yaxes(title_text="ROE (%)", row=1, col=1, tickfont=dict(size=11))
+    fig.update_xaxes(title_text="Equity Multiplier", row=3, col=1, tickfont=dict(size=11))
+    fig.update_yaxes(title_text="ROA (%)", row=3, col=1, tickfont=dict(size=11))
+    fig.update_yaxes(title_text="Contribution (%)", row=4, col=1, tickfont=dict(size=11))
 
     return fig
 

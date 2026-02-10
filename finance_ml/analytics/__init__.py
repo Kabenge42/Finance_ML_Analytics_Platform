@@ -86,6 +86,7 @@ from finance_ml.analytics.statistical_analysis import (
     calculate_ruin_probability,
     calculate_conditional_probabilities,
     # Enhanced methods
+    monte_carlo_price_target_simulation,
     kalman_filter_price_target,
     kalman_momentum_filter,
     fit_gaussian_copula,
