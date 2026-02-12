@@ -1,21 +1,49 @@
 """
 Category-specific visualization functions for feature analytics.
-
 This module provides reusable chart functions for various feature categories
 including analyst sentiment, earnings quality, growth metrics, cash flow,
 dividend features, R&D investment, inventory, goodwill & M&A, and CapEx.
 """
-
 from __future__ import annotations
-
 from typing import Optional
-
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
 
-# Dark theme for Plotly (consistent with feature_analytics.py)
-PLOTLY_TEMPLATE = "plotly_dark"
+# =============================================================================
+# Layout defaults & helpers
+# =============================================================================
+_DEFAULT_HEIGHT = 600
+_DEFAULT_WIDTH = 1000
+_DEFAULT_MARGIN = dict(l=80, r=40, t=60, b=60)
+
+
+def _apply_default_layout(
+    fig: go.Figure,
+    *,
+    title: str | None = None,
+    height: int = _DEFAULT_HEIGHT,
+    width: int = _DEFAULT_WIDTH,
+    **extra_layout,
+) -> go.Figure:
+    """Apply the standard chart layout (template, size, margin) to *fig*."""
+    layout_kwargs = dict(
+        template=PLOTLY_TEMPLATE,
+        height=height,
+        width=width,
+        margin=_DEFAULT_MARGIN,
+    )
+    if title is not None:
+        layout_kwargs["title"] = title
+    layout_kwargs.update(extra_layout)
+    fig.update_layout(**layout_kwargs)
+    return fig
+
+
+def _col_or_none(df: pd.DataFrame, col: str) -> str | None:
+    """Return *col* if it exists in *df*, otherwise ``None``."""
+    return col if col in df.columns else None
 
 
 def _no_data(title: str) -> go.Figure:
@@ -30,9 +58,8 @@ def _no_data(title: str) -> go.Figure:
         showarrow=False,
         font=dict(size=16),
     )
-    fig.update_layout(title=title, template=PLOTLY_TEMPLATE)
+    _apply_default_layout(fig, title=title)
     return fig
-
 
 # =============================================================================
 # Analyst Sentiment Visualizations
@@ -67,17 +94,12 @@ def create_analyst_sentiment_histogram(
     fig = px.histogram(
         df,
         x="analyst_bullish_pct",
-        color=color_by if color_by in df.columns else None,
+        color=_col_or_none(df, color_by),
         title="Analyst Bullish Percentage Distribution by Industry",
         nbins=nbins,
         marginal="box",
     )
-    fig.update_layout(
-        template=PLOTLY_TEMPLATE,
-        height=600,
-        width=1000,
-        margin=dict(l=80, r=40, t=60, b=60),
-    )
+    _apply_default_layout(fig)
     return fig
 
 
@@ -85,7 +107,7 @@ def create_analyst_upside_scatter(
     df: pd.DataFrame,
     color_by: str = "industry",
     size_col: str = "market_cap",
-    max_upside: float = 1000,
+    max_upside: float = 500,
 ) -> go.Figure:
     """
     Create scatter plot of analyst rating vs upside potential.
@@ -98,7 +120,7 @@ def create_analyst_upside_scatter(
         Column to use for color grouping
     size_col : str, default "market_cap"
         Column to use for marker size
-    max_upside : float, default 1000
+    max_upside : float, default 500
         Maximum y-axis value for upside potential
 
     Returns
@@ -113,18 +135,12 @@ def create_analyst_upside_scatter(
         df,
         x="analyst_rating_normalized",
         y="upside_potential",
-        color=color_by if color_by in df.columns else None,
-        size=size_col if size_col in df.columns else None,
+        color=_col_or_none(df, color_by),
+        size=_col_or_none(df, size_col),
         hover_data=["ticker", "name"],
         title="Analyst Rating vs Upside Potential",
     )
-    fig.update_layout(
-        width=1000,
-        height=600,
-        yaxis=dict(range=[None, max_upside]),
-        template=PLOTLY_TEMPLATE,
-        margin=dict(l=80, r=40, t=60, b=60),
-    )
+    _apply_default_layout(fig, yaxis=dict(range=[None, max_upside]))
     return fig
 
 
@@ -161,17 +177,12 @@ def create_eps_surprise_histogram(
     fig = px.histogram(
         df,
         x="eps_surprise_pct",
-        color=color_by if color_by in df.columns else None,
+        color=_col_or_none(df, color_by),
         title="EPS Surprise Distribution by Industry",
         nbins=nbins,
         marginal="violin",
     )
-    fig.update_layout(
-        template=PLOTLY_TEMPLATE,
-        height=600,
-        width=1000,
-        margin=dict(l=80, r=40, t=60, b=60),
-    )
+    _apply_default_layout(fig)
     return fig
 
 
@@ -201,24 +212,27 @@ def create_eps_trajectory_scatter(
         df,
         x="eps_trajectory_score",
         y="gaap_adj_eps_gap_pct",
-        color="earnings_quality_score" if "earnings_quality_score" in df.columns else None,
-        size=size_col if size_col in df.columns else None,
+        color=_col_or_none(df, "earnings_quality_score"),
+        size=_col_or_none(df, size_col),
         hover_data=["ticker", "name"],
         title="EPS Trajectory vs GAAP Adjustment Gap",
         color_continuous_scale="RdYlGn",
     )
-    fig.update_layout(
-        template=PLOTLY_TEMPLATE,
-        height=600,
-        width=1000,
-        margin=dict(l=80, r=40, t=60, b=60),
-    )
+    _apply_default_layout(fig)
     return fig
 
 
 # =============================================================================
 # Growth Metrics Visualizations
 # =============================================================================
+
+_DEFAULT_GROWTH_COLS = [
+    "revenue_growth_yoy",
+    "ebitda_growth_yoy",
+    "eps_yoy_growth",
+    "fcf_growth_yoy",
+    "revenue_cagr_5y",
+]
 
 
 def create_growth_correlation_heatmap(
@@ -241,26 +255,11 @@ def create_growth_correlation_heatmap(
         Plotly heatmap figure
     """
     if growth_cols is None:
-        growth_cols = [
-            "revenue_growth_yoy",
-            "ebitda_growth_yoy",
-            "eps_yoy_growth",
-            "fcf_growth_yoy",
-            "revenue_cagr_5y",
-        ]
+        growth_cols = _DEFAULT_GROWTH_COLS
 
     available_cols = [col for col in growth_cols if col in df.columns]
     if not available_cols:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No growth columns available",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-        )
-        return fig
+        return _no_data("Growth Metrics Correlation - No Data")
 
     growth_corr = df[available_cols].corr()
     fig = px.imshow(
@@ -271,12 +270,7 @@ def create_growth_correlation_heatmap(
         zmin=-1,
         zmax=1,
     )
-    fig.update_layout(
-        template=PLOTLY_TEMPLATE,
-        height=600,
-        width=1000,
-        margin=dict(l=80, r=40, t=60, b=60),
-    )
+    _apply_default_layout(fig)
     return fig
 
 

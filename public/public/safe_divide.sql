@@ -7,5 +7,5 @@ $$
 SELECT numerator / NULLIF(denominator, 0) AS result;
 $$;
 
-alter function safe_divide(unknown, unknown) owner to postgres;
+alter function safe_divide(numeric, numeric) owner to postgres;
 

@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
+from dataclasses import dataclass, field
+from pathlib import Path
 
 import pandas as pd
 
@@ -219,8 +221,171 @@ def export_to_analytics_db(
     return result
 
 
+@dataclass
+class ExportConfig:
+    """
+    Configuration for DataFrame export operations.
+
+    Centralises settings for database, CSV, and JSON exports so that
+    callers can build a single config object and pass it to any of the
+    ``export_to_*`` helpers.
+
+    Parameters
+    ----------
+    table_name : str
+        Logical name used as the DB table name or the base file name.
+    if_exists : str, default "replace"
+        Behaviour when a DB table already exists: 'fail', 'replace',
+        'append', or 'delete_rows'.
+    output_dir : str, default "outputs/analytics/views"
+        Base directory for file-based exports (CSV / JSON).
+    orient : str, default "records"
+        Pandas ``to_json`` *orient* parameter.
+    json_indent : int, default 2
+        Indentation level for JSON output.
+    csv_sep : str, default ","
+        Column separator for CSV output.
+    include_index : bool, default False
+        Whether to persist the DataFrame index.
+
+    Examples
+    --------
+    >>> cfg = ExportConfig(table_name="feature_statistics")
+    >>> export_to_db(df, cfg)
+    >>> export_to_csv(df, cfg)
+    >>> export_to_json(df, cfg)
+    """
+
+    table_name: str = ""
+    if_exists: str = "replace"
+    output_dir: str = "outputs/analytics/views"
+    orient: str = "records"
+    json_indent: int = 2
+    csv_sep: str = ","
+    include_index: bool = False
+
+
+def export_to_db(
+    df: pd.DataFrame,
+    config: ExportConfig | None = None,
+    table_name: str | None = None,
+    if_exists: str = "replace",
+) -> int | None:
+    """
+    Export DataFrame to the PostgreSQL analytics schema.
+
+    Thin wrapper around :func:`export_to_analytics_db` that also accepts
+    an :class:`ExportConfig`.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to export.
+    config : ExportConfig, optional
+        Export configuration. Values in *config* are used as defaults and
+        can be overridden by the explicit keyword arguments.
+    table_name : str, optional
+        Target table name (without schema prefix). Overrides
+        ``config.table_name`` when provided.
+    if_exists : str, default "replace"
+        Behaviour when the table exists.
+
+    Returns
+    -------
+    int or None
+        Number of rows affected.
+    """
+    cfg = config or ExportConfig()
+    resolved_table = table_name or cfg.table_name
+    if not resolved_table:
+        raise ValueError("table_name must be provided either directly or via ExportConfig.")
+    resolved_if_exists = if_exists if table_name else cfg.if_exists
+
+    return export_to_analytics_db(df, resolved_table, if_exists=resolved_if_exists)
+
+
+def export_to_csv(
+    df: pd.DataFrame,
+    config: ExportConfig | None = None,
+    table_name: str | None = None,
+    output_dir: str | None = None,
+) -> Path:
+    """
+    Export DataFrame to a CSV file.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to export.
+    config : ExportConfig, optional
+        Export configuration.
+    table_name : str, optional
+        Base file name (without extension). Overrides ``config.table_name``.
+    output_dir : str, optional
+        Target directory. Overrides ``config.output_dir``.
+
+    Returns
+    -------
+    Path
+        Path to the written CSV file.
+    """
+    cfg = config or ExportConfig()
+    resolved_name = table_name or cfg.table_name
+    if not resolved_name:
+        raise ValueError("table_name must be provided either directly or via ExportConfig.")
+    resolved_dir = Path(output_dir or cfg.output_dir)
+
+    resolved_dir.mkdir(parents=True, exist_ok=True)
+    file_path = resolved_dir / f"{resolved_name}.csv"
+
+    df.to_csv(file_path, sep=cfg.csv_sep, index=cfg.include_index)
+    logging.info("Exported %d rows to %s", len(df), file_path)
+    return file_path
+
+
+def export_to_json(
+    df: pd.DataFrame,
+    config: ExportConfig | None = None,
+    table_name: str | None = None,
+    output_dir: str | None = None,
+) -> Path:
+    """
+    Export DataFrame to a JSON file.
+
+    The default output directory is ``outputs/analytics/views``.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to export.
+    config : ExportConfig, optional
+        Export configuration.
+    table_name : str, optional
+        Base file name (without extension). Overrides ``config.table_name``.
+    output_dir : str, optional
+        Target directory. Overrides ``config.output_dir``.
+
+    Returns
+    -------
+    Path
+        Path to the written JSON file.
+    """
+    cfg = config or ExportConfig()
+    resolved_name = table_name or cfg.table_name
+    if not resolved_name:
+        raise ValueError("table_name must be provided either directly or via ExportConfig.")
+    resolved_dir = Path(output_dir or cfg.output_dir)
+
+    resolved_dir.mkdir(parents=True, exist_ok=True)
+    file_path = resolved_dir / f"{resolved_name}.json"
+
+    df.to_json(file_path, orient=cfg.orient, indent=cfg.json_indent, default_handler=str)
+    logging.info("Exported %d rows to %s", len(df), file_path)
+    return file_path
+
+
 _VIEW_NAME = "mv_all_stock_features"
-_EARNINGS_LOOKAHEAD_DAYS = 365
+_EARNINGS_LOOKAHEAD_DAYS = 20
 
 
 def _resolve_db_url(db_url: Optional[str]) -> str:
@@ -1589,6 +1754,86 @@ def _get_fallback_feature_categories() -> dict[str, list[str]]:
             "investment_efficiency",
         ],
     }
+
+
+def validate_feature_registry_alignment(
+    db_url: Optional[str] = None,
+    schema: str = "public",
+) -> dict[str, Any]:
+    """
+    Cross-validate calculated_features_registry against equities_schema_metadata.
+
+    Checks that every ``primary_source_col`` in the feature registry
+    has a corresponding entry in ``equities_schema_metadata``, and that
+    every ``source_function`` maps to ``feature_registry_metadata``.
+
+    Parameters
+    ----------
+    db_url : str, optional
+        Database URL. Falls back to DB_URL env var.
+    schema : str
+        Database schema.
+
+    Returns
+    -------
+    dict
+        Validation report with keys:
+        - orphan_source_cols: features whose primary_source_col is missing
+        - orphan_functions: features whose source_function has no metadata
+        - category_coverage: dict of category → feature count
+        - total_features: int
+    """
+    if create_engine is None or text is None:
+        return {"error": "SQLAlchemy not available"}
+
+    url = db_url or os.environ.get("DB_URL")
+    if not url:
+        return {"error": "DB_URL not configured"}
+
+    engine = create_engine(url)
+
+    try:
+        with engine.connect() as conn:
+            # All feature registry entries
+            features = pd.read_sql(
+                f"SELECT feature_key, category, source_function, primary_source_col "
+                f"FROM {schema}.calculated_features_registry",
+                conn,
+            )
+            # All equities metadata column aliases
+            eq_cols = pd.read_sql(
+                f"SELECT column_alias FROM {schema}.equities_schema_metadata",
+                conn,
+            )
+            # All function metadata
+            fn_meta = pd.read_sql(
+                f"SELECT function_name FROM {schema}.feature_registry_metadata",
+                conn,
+            )
+
+        eq_col_set = set(eq_cols["column_alias"].dropna())
+        fn_set = set(fn_meta["function_name"].dropna())
+
+        orphan_cols = features[
+            features["primary_source_col"].notna()
+            & ~features["primary_source_col"].isin(eq_col_set)
+        ][["feature_key", "primary_source_col"]].to_dict("records")
+
+        orphan_fns = features[
+            features["source_function"].notna() & ~features["source_function"].isin(fn_set)
+        ][["feature_key", "source_function"]].to_dict("records")
+
+        category_coverage = features.groupby("category").size().to_dict()
+
+        return {
+            "orphan_source_cols": orphan_cols,
+            "orphan_functions": orphan_fns,
+            "category_coverage": category_coverage,
+            "total_features": len(features),
+        }
+    except Exception as e:
+        logging.warning("Feature registry validation failed: %s", e)
+        return {"error": str(e)}
 
 
 def compare_registry_with_local(

@@ -62,5 +62,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_total_debt_temporal(unknown) owner to postgres;
+alter function calc_total_debt_temporal(text) owner to postgres;
 

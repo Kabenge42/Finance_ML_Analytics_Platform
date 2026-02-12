@@ -47,5 +47,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_working_capital_deep_features(unknown) owner to postgres;
+alter function calc_working_capital_deep_features(text) owner to postgres;
 

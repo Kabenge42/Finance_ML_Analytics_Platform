@@ -28,5 +28,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_piotroski_f_score(unknown) owner to postgres;
+alter function calc_piotroski_f_score(text) owner to postgres;
 

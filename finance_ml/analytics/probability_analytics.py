@@ -29,7 +29,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy import stats
 
-from finance_ml.analytics.data_utils import export_to_analytics_db
+from finance_ml.analytics.data_utils import export_to_analytics_db, load_identifier_columns
 
 logger = logging.getLogger(__name__)
 
@@ -792,6 +792,7 @@ class EarningsBeatProbabilityModel:
                 continue
 
             prob_result = self.compute_beat_probability(n_beats, n_total, sector)
+            prior = self._get_prior_parameters(sector, use_sector_prior=True)
 
             # Determine classification based on posterior mean vs default threshold
             beat_classification = (
@@ -806,6 +807,10 @@ class EarningsBeatProbabilityModel:
                     "historical_beats": n_beats,
                     "total_reports": n_total,
                     "historical_beat_rate": n_beats / n_total,
+                    "prior_alpha": prior.alpha,
+                    "prior_beta": prior.beta,
+                    "posterior_alpha": prob_result["posterior_alpha"],
+                    "posterior_beta": prob_result["posterior_beta"],
                     "posterior_beat_prob": prob_result["posterior_mean"],
                     "posterior_std": prob_result["posterior_std"],
                     "ci_90_lower": prob_result["credible_interval_90"][0],
@@ -1095,6 +1100,7 @@ class EarningsBeatProbabilityModel:
             elif "eps_trajectory_score" in df.columns and not pd.isna(
                 row.get("eps_trajectory_score")
             ):
+                prior = self._get_prior_parameters(sector, True)
                 # Trajectory proxy fallback
                 trajectory = row["eps_trajectory_score"]
                 # Dynamically derive total from non-null reported data
@@ -1129,6 +1135,10 @@ class EarningsBeatProbabilityModel:
                         "total_reports": n_total,
                         "dynamic_total_reports": dynamic_total,
                         "historical_beat_rate": n_beats / n_total if n_total > 0 else 0.0,
+                        "prior_alpha": prior.alpha,
+                        "prior_beta": prior.beta,
+                        "posterior_alpha": prob_result["posterior_alpha"],
+                        "posterior_beta": prob_result["posterior_beta"],
                         "posterior_beat_prob": prob_result["posterior_mean"],
                         "posterior_std": prob_result["posterior_std"],
                         "ci_90_lower": prob_result["credible_interval_90"][0],
@@ -2465,7 +2475,7 @@ class CategoryProbabilityAnalyzer:
         Returns DataFrame with probability estimates per stock per feature.
         """
         results = []
-        identifier_cols = ["isin", "ticker", "name", "industry", "sector"]
+        identifier_cols = load_identifier_columns()
         id_data = df[[c for c in identifier_cols if c in df.columns]].copy()
 
         for feat in feature_cols:

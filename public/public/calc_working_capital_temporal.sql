@@ -73,5 +73,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_working_capital_temporal(unknown) owner to postgres;
+alter function calc_working_capital_temporal(text) owner to postgres;
 

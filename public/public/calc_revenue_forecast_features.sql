@@ -47,5 +47,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_revenue_forecast_features(unknown) owner to postgres;
+alter function calc_revenue_forecast_features(text) owner to postgres;
 

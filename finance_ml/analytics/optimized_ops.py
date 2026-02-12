@@ -657,8 +657,14 @@ def get_optimization_status() -> dict:
     dict
         Dictionary with optimization feature availability
     """
+    try:
+        from finance_ml.analytics.inference_schema import ARVIZ_AVAILABLE as _arviz
+    except ImportError:
+        _arviz = False
+
     return {
         "numba_available": NUMBA_AVAILABLE,
+        "arviz_available": _arviz,
         "db_cache_size": len(_db_cache),
         "stats_cache_size": len(_stats_cache),
         "parallel_available": True,  # joblib is always available

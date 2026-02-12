@@ -23,5 +23,5 @@ BEGIN
 END;
 $$;
 
-alter function calc_composite_scores(unknown) owner to postgres;
+alter function calc_composite_scores(text) owner to postgres;
 

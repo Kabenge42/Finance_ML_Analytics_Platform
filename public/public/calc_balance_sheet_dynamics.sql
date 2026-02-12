@@ -57,5 +57,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_balance_sheet_dynamics(unknown) owner to postgres;
+alter function calc_balance_sheet_dynamics(text) owner to postgres;
 

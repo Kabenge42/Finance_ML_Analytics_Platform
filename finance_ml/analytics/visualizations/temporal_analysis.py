@@ -21,9 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# Dark theme for Plotly (consistent with feature_analytics.py)
-PLOTLY_TEMPLATE = "plotly_dark"
-
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
 
 def create_earnings_calendar_heatmap(
     df: pd.DataFrame,

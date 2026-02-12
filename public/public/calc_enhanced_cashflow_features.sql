@@ -189,5 +189,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_enhanced_cashflow_features(unknown) owner to postgres;
+alter function calc_enhanced_cashflow_features(text) owner to postgres;
 

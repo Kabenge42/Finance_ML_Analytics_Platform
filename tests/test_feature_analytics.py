@@ -341,7 +341,7 @@ class TestBayesianEarningsBeatModel:
 
 
 class TestDistressDistributionAnalysis:
-    """Tests for analyze_distress_distribution function."""
+    """Tests for analyze_distress_distribution_legacy function."""
 
     def test_returns_plotly_figure(self, sample_stock_features_df):
         """Function should return a Plotly Figure object."""

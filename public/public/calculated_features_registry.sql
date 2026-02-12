@@ -9,7 +9,9 @@ create table calculated_features_registry
             references feature_registry_metadata,
     description        text,
     source_columns     text[],
-    primary_source_col text,
+    primary_source_col text
+        constraint equities_column_name_fk
+            references equities_schema_metadata,
     calculation_type   text,
     data_type          text,
     updated_at         timestamp default CURRENT_TIMESTAMP

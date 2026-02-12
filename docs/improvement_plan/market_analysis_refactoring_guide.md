@@ -967,9 +967,56 @@ For questions or issues with the refactored code:
 
 ---
 
-**Last Updated**: 2026-02-08
-**Version**: 2.2.0
-**Status**: Production Ready (Column Alignment & Data Guard Improvements)
+**Last Updated**: 2026-02-11
+**Version**: 2.3.0
+**Status**: Production Ready (DRY Identifier Columns Refactoring)
+
+---
+
+## Changelog (v2.3.0)
+
+### DRY Identifier Columns Refactoring (`feature_registry.sql`)
+
+All 17 `vw_features_*` views and the `mv_all_stock_features` materialized view have been refactored
+to inherit identifier columns from `vw_identifier_columns` via `id.*` instead of hardcoding 9 columns
+(`isin`, `ticker`, `name`, `industry`, `sector`, `trading_country`, `region`, `country`, `exchange`).
+
+| What changed                                   | Before                                                                        | After                                                                                      |
+|------------------------------------------------|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Identifier columns in 17 `vw_features_*` views | Hardcoded 9 columns (`id.isin, id.ticker, ...`)                               | `id.*` — inherits all 31 columns from `vw_identifier_columns`                              |
+| Identifier columns in `mv_all_stock_features`  | Hardcoded 9 identifier columns + separate `e.` selects for dates/categoricals | `id.*` — all identifier, categorical, and date columns from single source                  |
+| Single source of truth                         | `vw_identifier_columns` defined but not fully utilized                        | `vw_identifier_columns` is the **sole** source for all identifier/categorical/date columns |
+| Adding a new identifier column                 | Required editing 17 views + 1 MV                                              | Edit only `vw_identifier_columns` — all views inherit automatically                        |
+
+### Materialized View Duplicate Column Removal
+
+Duplicate date columns that overlap with `vw_identifier_columns` have been removed from the
+`mv_all_stock_features` materialized view:
+
+- `e."FY End Date"` → already provided as `fy_end_date` via `id.*`
+- `e."Next FY End Date"` → already provided as `next_fy_end_date` via `id.*`
+- `e."Next Earnings"` → already provided as `next_earnings` via `id.*`
+- `e."Income Statement Report Date"` → already provided as `income_statement_report_date` via `id.*`
+- `e."Next Income Statement Report Date"` → already provided as `next_income_statement_report_date` via `id.*`
+
+Non-overlapping equities columns (`market_cap`, `enterprise_value`, `last_price`, price targets,
+`volume_shrs`, `shares_outstanding`) are retained as explicit selects from `e.`.
+
+### Python Analytics Alignment
+
+- `probability_analytics.py`: Replaced hardcoded 5-column identifier list in
+  `ViewProbabilityAnalyzer.analyze_view()` with `load_identifier_columns()` from `data_utils`.
+- All other analytics modules (`data_utils.py`, `statistical_analysis.py`, `screening.py`,
+  `feature_analytics.py`, `optimized_ops.py`, `market_analytics.py`) already use the dynamic
+  `load_identifier_columns()` / `get_identifier_cols_set()` utilities and required no changes.
+
+### Files Updated
+
+| File                                                         | Changes                                                             |
+|--------------------------------------------------------------|---------------------------------------------------------------------|
+| `feature_registry.sql`                                       | 17 views + 1 MV refactored to use `id.*`; section header updated    |
+| `finance_ml/analytics/probability_analytics.py`              | Replaced hardcoded identifier list with `load_identifier_columns()` |
+| `docs/improvement_plan/market_analysis_refactoring_guide.md` | Updated version to 2.3.0; added this changelog                      |
 
 ---
 

@@ -18,7 +18,9 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from scipy import stats
-
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 def bayesian_category_analysis(
     df: pd.DataFrame,
@@ -1410,6 +1412,7 @@ def export_probability_view_results(
     available_ids = [c for c in identifier_cols if c in df.columns]
     rows = []
 
+    # Computes and appends feature statistics for each valid value
     for feat in feature_cols:
         if feat not in df.columns:
             continue
@@ -1446,3 +1449,262 @@ def export_probability_view_results(
 
     table_name = f"prob_{view_name}"
     return export_to_analytics_db(result_df, table_name)
+
+
+def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataFrame:
+    """
+    Bayesian model for earnings beat probability.
+
+    Uses EPS positive streak as prior evidence and updates posterior
+    based on recent performance.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing:
+        - ticker, name, industry
+        - eps_positive_streak (number of positive quarters in last n_total)
+    n_total : int, default 5
+        Total number of quarters in the observation window
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with Bayesian model results:
+        - ticker, name, industry, eps_positive_streak
+        - posterior_beat_prob, model_confidence, map_estimate
+    """
+    # Prior: Uniform belief across probability grid
+    p_grid = np.arange(0.1, 1.0, 0.1)  # 9 parameter values
+    uniform_prior = 1 / len(p_grid)
+
+    results = []
+
+    streak_col = "eps_positive_streak"
+    if streak_col not in df.columns:
+        return pd.DataFrame()
+
+    for _, row in df.dropna(subset=[streak_col]).iterrows():
+        n_beats = int(row[streak_col])
+        n_beats = min(n_beats, n_total)  # Cap at n_total
+
+        # Compute likelihood: P(data | p) = p^k * (1-p)^(n-k)
+        likelihoods = p_grid**n_beats * (1 - p_grid) ** (n_total - n_beats)
+
+        # Unnormalized posterior
+        posterior_unnorm = uniform_prior * likelihoods
+
+        # Normalize
+        posterior = posterior_unnorm / posterior_unnorm.sum()
+
+        # Posterior predictive: P(beat next quarter) = sum(p * posterior(p))
+        prob_beat_next = np.sum(p_grid * posterior)
+
+        # Confidence (inverse entropy proxy)
+        entropy = -np.sum(posterior * np.log(posterior + 1e-10))
+        confidence = 1 - entropy / np.log(len(p_grid))
+
+        results.append(
+            {
+                "ticker": row.get("ticker", ""),
+                "name": row.get("name", ""),
+                "sector": row.get("sector", ""),
+                "industry": row.get("industry", ""),
+                "region": row.get("region", ""),
+                "country": row.get("country", ""),
+                "exchange": row.get("exchange", ""),
+                "eps_positive_streak": n_beats,
+                "posterior_beat_prob": prob_beat_next,
+                "model_confidence": confidence,
+                "map_estimate": p_grid[np.argmax(posterior)],  # Maximum a posteriori
+            }
+        )
+
+    return pd.DataFrame(results)
+
+
+def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
+    """
+    Analyze distress risk score distribution with tail risk metrics.
+
+    Uses concepts from MCMC sampling to understand distribution shape.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing:
+        - distress_risk_score
+        - industry
+
+    Returns
+    -------
+    Figure
+        Plotly Figure with 4 panels:
+        1. Distress risk score distribution with fitted normal
+        2. Empirical CDF
+        3. Q-Q plot vs normal
+        4. Tail risk by industry
+    """
+    distress_data = df["distress_risk_score"].dropna()
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            "Distress Risk Score Distribution",
+            "Empirical CDF",
+            "Q-Q Plot vs Normal",
+            "Tail Risk by Industry",
+        ],
+        specs=[
+            [{"type": "histogram"}, {"type": "scatter"}],
+            [{"type": "scatter"}, {"type": "bar"}],
+        ],
+    )
+
+    # Panel 1: Histogram with fitted distribution
+    fig.add_trace(
+        go.Histogram(
+            x=distress_data,
+            nbinsx=50,
+            name="Observed",
+            marker_color="#3498db",
+            opacity=0.7,
+            histnorm="probability density",
+        ),
+        row=1,
+        col=1,
+    )
+
+    # Fit normal for comparison
+    mu, std = distress_data.mean(), distress_data.std()
+    x_range = np.linspace(0, 100, 100)
+    normal_pdf = stats.norm.pdf(x_range, mu, std)
+    fig.add_trace(
+        go.Scatter(
+            x=x_range,
+            y=normal_pdf,
+            mode="lines",
+            name="Normal Fit",
+            line=dict(color="#e74c3c", dash="dash"),
+        ),
+        row=1,
+        col=1,
+    )
+
+    # Panel 2: Empirical CDF
+    sorted_data = np.sort(distress_data)
+    ecdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+    fig.add_trace(
+        go.Scatter(x=sorted_data, y=ecdf, mode="lines", name="ECDF", line=dict(color="#00bc8c")),
+        row=1,
+        col=2,
+    )
+    # Add risk thresholds
+    fig.add_vline(
+        x=30, line_dash="dot", line_color="#e74c3c", row=1, col=2, annotation_text="High Risk (<30)"
+    )
+    fig.add_vline(
+        x=70, line_dash="dot", line_color="#2ecc71", row=1, col=2, annotation_text="Low Risk (>70)"
+    )
+
+    # Panel 3: Q-Q Plot
+    theoretical_quantiles = stats.norm.ppf(np.linspace(0.01, 0.99, 100))
+    empirical_quantiles = np.percentile(distress_data, np.linspace(1, 99, 100))
+    fig.add_trace(
+        go.Scatter(
+            x=theoretical_quantiles,
+            y=empirical_quantiles,
+            mode="markers",
+            marker=dict(size=4, color="#9b59b6"),
+            name="Q-Q",
+        ),
+        row=2,
+        col=1,
+    )
+    # Reference line
+    fig.add_trace(
+        go.Scatter(
+            x=[-3, 3],
+            y=[mu - 3 * std, mu + 3 * std],
+            mode="lines",
+            line=dict(dash="dash", color="white"),
+            name="Normal Ref",
+        ),
+        row=2,
+        col=1,
+    )
+
+    # Panel 4: Tail risk by industry (% below 30)
+    if "industry" in df.columns:
+        tail_risk = (
+            df.groupby("industry")
+            .apply(lambda x: (x["distress_risk_score"] < 30).mean() * 100, include_groups=False)
+            .sort_values(ascending=False)
+        )
+
+        fig.add_trace(
+            go.Bar(
+                x=tail_risk.values[:15],
+                y=tail_risk.index[:15],
+                orientation="h",
+                marker_color="#e74c3c",
+                name="High Risk %",
+            ),
+            row=2,
+            col=2,
+        )
+
+    fig.update_layout(
+        height=800,
+        title_text="📉 Financial Distress Risk Distribution Analysis",
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+    )
+
+    # Compute tail risk metrics
+    var_5 = np.percentile(distress_data, 5)
+    var_1 = np.percentile(distress_data, 1)
+    high_risk_pct = (distress_data < 30).mean() * 100
+
+    # Add annotations
+    fig.add_annotation(
+        xref="paper",
+        yref="paper",
+        x=1.08,
+        y=1.0,
+        text=f"μ={mu:.1f}, σ={std:.1f}",
+        showarrow=False,
+        font=dict(size=12),
+    )
+
+    fig.add_annotation(
+        xref="paper",
+        yref="paper",
+        x=1.08,
+        y=0.9,
+        text=f"VaR(5%): {var_5:.1f}",
+        showarrow=False,
+        font=dict(size=12),
+    )
+
+    fig.add_annotation(
+        xref="paper",
+        yref="paper",
+        x=1.08,
+        y=0.8,
+        text=f"VaR(1%): {var_1:.1f}",
+        showarrow=False,
+        font=dict(size=12),
+    )
+
+    fig.add_annotation(
+        xref="paper",
+        yref="paper",
+        x=1.08,
+        y=0.7,
+        text=f"High Risk (<30): {high_risk_pct:.1f}%",
+        showarrow=False,
+        font=dict(size=12),
+    )
+
+    return fig

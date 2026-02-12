@@ -58,5 +58,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_long_term_momentum_features(unknown) owner to postgres;
+alter function calc_long_term_momentum_features(text) owner to postgres;
 

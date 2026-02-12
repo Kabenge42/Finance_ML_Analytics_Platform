@@ -7,5 +7,5 @@ $$
 SELECT (current_val - previous_val) / NULLIF(previous_val, 0) AS result;
 $$;
 
-alter function calc_change_ratio(unknown, unknown) owner to postgres;
+alter function calc_change_ratio(numeric, numeric) owner to postgres;
 

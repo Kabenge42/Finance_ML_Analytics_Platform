@@ -22,6 +22,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import scipy.stats as stats
+from plotly.graph_objs import Figure
+from plotly.subplots import make_subplots
 from sqlalchemy import create_engine, text
 
 # --- Data utilities ---
@@ -33,6 +37,10 @@ from finance_ml.analytics.data_utils import (
     export_to_analytics_db,
     load_identifier_columns,
     get_identifier_cols_set,
+    ExportConfig,
+    export_to_db,
+    export_to_csv,
+    export_to_json,
 )
 
 # --- Feature analytics dashboards ---
@@ -90,6 +98,19 @@ from finance_ml.analytics.optimized_ops import (
     get_optimization_status,
     dataframe_hash,
 )
+
+# --- InferenceData schema (ArviZ / xarray bridge) ---
+try:
+    from finance_ml.analytics.inference_schema import (
+        ARVIZ_AVAILABLE,
+        build_beat_probability_inference_data,
+        build_credit_risk_inference_data,
+        build_monte_carlo_inference_data,
+        build_category_analysis_inference_data,
+        summarize_inference_data,
+    )
+except ImportError:
+    ARVIZ_AVAILABLE = False
 
 # --- Probability analytics (optional) ---
 try:
@@ -1444,6 +1465,9 @@ def main():
     print(
         f"   Parallel:       {'✓ Available' if opt_status['parallel_available'] else '✗ Sequential'}"
     )
+    print(
+        f"   ArviZ:          {'✓ Available' if opt_status.get('arviz_available') else '✗ Not installed'}"
+    )
     print(f"   DB Cache:       {opt_status['db_cache_size']} entries")
     print(f"   Stats Cache:    {opt_status['stats_cache_size']} entries")
     print()
@@ -1617,12 +1641,44 @@ def main():
         if bayesian_results:
             print(f"   ✓ Analyzed {len(bayesian_results)} profitability metrics")
 
+            # Build InferenceData for Bayesian category analysis
+            if ARVIZ_AVAILABLE:
+                try:
+                    idata_cat = build_category_analysis_inference_data(
+                        bayesian_results,
+                        df,
+                        "Profitability",
+                        profitability_features,
+                    )
+                    cat_summary = summarize_inference_data(idata_cat)
+                    print(
+                        f"   ✓ InferenceData (category): {cat_summary.get('n_chains', 0)} chains × {cat_summary.get('n_draws', 0)} draws"
+                    )
+                except Exception as e:
+                    logging.warning("InferenceData (category) build failed: %s", e)
+
     # --- NEW: Fast ruin probability (optimized_ops) replaces statistical_analysis ---
     if all(col in df.columns for col in ["market_cap", "distress_risk_score"]):
         print("   Calculating investor's ruin probabilities (Numba-accelerated)...")
         ruin_df = fast_ruin_probability(df, n_simulations=2000, n_days=252)
         high_risk_count = (ruin_df["ruin_probability"] > 0.6).sum()
         print(f"   ✓ Identified {high_risk_count} high-risk stocks ({len(ruin_df)} analyzed)")
+
+        # Build InferenceData for credit risk / ruin probability
+        if ARVIZ_AVAILABLE:
+            try:
+                idata_ruin = build_credit_risk_inference_data(
+                    ruin_df,
+                    df,
+                    n_posterior_samples=2000,
+                    n_chains=4,
+                )
+                ruin_summary = summarize_inference_data(idata_ruin)
+                print(
+                    f"   ✓ InferenceData (credit risk): {ruin_summary.get('n_chains', 0)} chains × {ruin_summary.get('n_draws', 0)} draws"
+                )
+            except Exception as e:
+                logging.warning("InferenceData (credit risk) build failed: %s", e)
 
         # Also keep analytical ruin for comparison
         ruin_analytical = calculate_ruin_probability(df)
@@ -1645,6 +1701,21 @@ def main():
                     ["ticker", "name", "expected_upside_pct", "risk_reward_ratio"]
                 ]
                 print(top5.to_string(index=False))
+
+                # Build InferenceData for Monte Carlo simulation
+                if ARVIZ_AVAILABLE:
+                    try:
+                        idata_mc = build_monte_carlo_inference_data(
+                            mc_results,
+                            df,
+                            n_simulations=10000,
+                        )
+                        mc_summary = summarize_inference_data(idata_mc)
+                        print(
+                            f"    ✓ InferenceData (MC): {mc_summary.get('n_draws', 0)} simulations × {mc_summary.get('n_equities', 0)} equities"
+                        )
+                    except Exception as e:
+                        logging.warning("InferenceData (MC) build failed: %s", e)
 
     # --- NEW: Vectorized z-scores and percentile ranks (optimized_ops) ---
     print("   Computing vectorized z-scores and percentile ranks...")
@@ -1829,6 +1900,23 @@ def main():
                     for src, cnt in source_counts.items():
                         print(f"     Data source '{src}': {cnt} stocks")
 
+                # Build InferenceData for beat probability
+                if ARVIZ_AVAILABLE:
+                    try:
+                        idata_beat = build_beat_probability_inference_data(
+                            probability_results,
+                            df,
+                            n_posterior_samples=4000,
+                            n_chains=4,
+                        )
+                        beat_summary = summarize_inference_data(idata_beat)
+                        print(f"   ✓ InferenceData (beat prob): {beat_summary.get('groups', [])}")
+                        if beat_summary.get("r_hat"):
+                            for var, rhat_val in beat_summary["r_hat"].items():
+                                print(f"     R-hat ({var}): {rhat_val:.4f}")
+                    except Exception as e:
+                        logging.warning("InferenceData (beat prob) build failed: %s", e)
+
             # EPS Streak Analysis
             print("   Analyzing EPS streaks and continuation probabilities...")
 
@@ -1892,6 +1980,26 @@ def main():
             print(f"   ✓ Credit Risk analysis complete ({len(credit_results)} stocks)")
             print(f"   ✓ Dividend Cut analysis complete ({len(dividend_results)} stocks)")
             print(f"   ✓ Price Target achievement analysis complete ({len(pt_results)} stocks)")
+
+            # Build InferenceData for credit risk model results
+            if (
+                ARVIZ_AVAILABLE
+                and len(credit_results) > 0
+                and "ruin_probability" in credit_results.columns
+            ):
+                try:
+                    idata_credit = build_credit_risk_inference_data(
+                        credit_results,
+                        df,
+                        n_posterior_samples=4000,
+                        n_chains=4,
+                    )
+                    credit_summary = summarize_inference_data(idata_credit)
+                    print(
+                        f"   ✓ InferenceData (credit model): {credit_summary.get('n_chains', 0)} chains × {credit_summary.get('n_draws', 0)} draws"
+                    )
+                except Exception as e:
+                    logging.warning("InferenceData (credit model) build failed: %s", e)
 
             # --- FIX: Export ALL probability results including credit/dividend/PT ---
             if probability_results is not None and streak_results is not None:
@@ -2303,27 +2411,54 @@ def main():
 
     if stats_data:
         stats_df = _reorder_with_identifiers(pd.DataFrame(stats_data))
-        export_to_analytics_db(stats_df, "feature_statistics")
+        stats_cfg = ExportConfig(table_name="feature_statistics")
+        export_to_db(stats_df, stats_cfg)
+        export_to_csv(stats_df, stats_cfg)
+        export_to_json(stats_df, stats_cfg)
         print(f"   ✓ Exported {len(stats_df)} features to analytics.feature_statistics")
 
-    # Export screened stocks
-    if "quality_stocks" in locals() and len(quality_stocks) > 0:
-        export_to_analytics_db(_reorder_with_identifiers(quality_stocks), "quality_stocks")
-        print(f"   ✓ Exported {len(quality_stocks)} stocks to analytics.quality_stocks")
+    # Export screened stocks (all screening results from Step 6)
+    screening_exports = {
+        "quality_stocks": "quality_stocks",
+        "value_stocks": "value_stocks",
+        "growth_stocks": "growth_stocks",
+        "healthy_stocks": "healthy_stocks",
+        "garp_stocks": "garp_stocks",
+        "safe_div_stocks": "safe_dividend_stocks",
+        "reversion_stocks": "valuation_reversion_stocks",
+        "growth_integrity_stocks": "integrity_filtered_growth_stocks",
+        "eq_stocks": "earnings_quality_stocks",
+        "dq_stocks": "dividend_quality_stocks",
+    }
+
+    for var_name, table in screening_exports.items():
+        # Exports dataframes to database, CSV, and JSON formats
+        if var_name in locals() and len(locals()[var_name]) > 0:
+            screen_cfg = ExportConfig(table_name=table)
+            screen_df = _reorder_with_identifiers(locals()[var_name])
+            export_to_db(screen_df, screen_cfg)
+            export_to_csv(screen_df, screen_cfg)
+            export_to_json(screen_df, screen_cfg)
+            print(f"   ✓ Exported {len(screen_df)} stocks to analytics.{table}")
 
     # --- NEW: Export composite scores ---
     if "ranked_df" in locals() and "composite_score" in ranked_df.columns:
         export_cols = ["composite_score"]
         id_cols_present = [c for c in identifier_cols if c in ranked_df.columns]
         available = id_cols_present + [c for c in export_cols if c in ranked_df.columns]
-        export_to_analytics_db(ranked_df[available].head(200), "composite_quality_scores")
+        composite_cfg = ExportConfig(table_name="composite_quality_scores")
+        export_to_db(ranked_df[available].head(200), composite_cfg)
+        export_to_csv(ranked_df[available].head(200), composite_cfg)
+        export_to_json(ranked_df[available].head(200), composite_cfg)
         print(f"   ✓ Exported top 200 composite scores to analytics.composite_quality_scores")
 
     # --- NEW: Export Kalman-filtered price targets ---
     if "kalman_pt" in locals() and len(kalman_pt) > 0:
-        export_to_analytics_db(
-            _reorder_with_identifiers(kalman_pt), "kalman_filtered_price_targets"
-        )
+        kalman_cfg = ExportConfig(table_name="kalman_filtered_price_targets")
+        kalman_df = _reorder_with_identifiers(kalman_pt)
+        export_to_db(kalman_df, kalman_cfg)
+        export_to_csv(kalman_df, kalman_cfg)
+        export_to_json(kalman_df, kalman_cfg)
         print(f"   ✓ Exported {len(kalman_pt)} Kalman-filtered targets")
 
     print()
@@ -2341,6 +2476,8 @@ def main():
     print("  • screening: Multi-factor stock screening (12 screeners)")
     print("  • feature_analytics: Interactive visualizations")
     print("  • optimized_ops: Numba MC, fast ruin, vectorized stats, caching")
+    if ARVIZ_AVAILABLE:
+        print("  • inference_schema: ArviZ InferenceData schema bridge (xarray/NetCDF)")
     print("  • visualizations.profitability: Margin and DuPont analysis")
     print("  • visualizations.technical: Momentum and range charts")
     print("  • visualizations.temporal_analysis: Earnings and dividend timelines")

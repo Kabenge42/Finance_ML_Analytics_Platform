@@ -4095,8 +4095,11 @@ WHERE p_isin IS NULL
 $$ LANGUAGE SQL;
 
 -- =============================================================================
--- REFACTORED FEATURE VIEWS WITH STANDARDIZED IDENTIFIER COLUMNS
--- Based on calculated_features_registry structure
+-- FEATURE VIEWS - REFACTORED TO USE vw_identifier_columns DIRECTLY
+-- =============================================================================
+-- All identifier columns (ISIN, Ticker, Name, Region, Country, Trading Country,
+-- Exchange, Sector, Industry, CATEGORICAL columns, DATE columns) are now
+-- inherited from vw_identifier_columns via id.* instead of hardcoded selection.
 -- =============================================================================
 
 -- =============================================================================
@@ -4105,20 +4108,7 @@ $$ LANGUAGE SQL;
 --                   calc_valuation_timeseries_features, calc_extended_valuation_timeseries
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_valuation_ratios AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS (from calculated_features_registry category='Identifier')
-    -- Source: vw_identifier_columns -> equities table
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- VALUATION FEATURES (calc_valuation_features)
@@ -4189,6 +4179,7 @@ FROM vw_identifier_columns                              id
 
 COMMENT ON VIEW vw_features_valuation_ratios IS
     'Valuation metrics including P/E, P/B, EV/EBITDA, tangible book value, and timeseries analysis.
+    Identifier columns inherited from vw_identifier_columns.
     Source functions: calc_valuation_features, calc_valuation_timeseries_features,
     calc_extended_valuation_timeseries, calc_tangible_book_features';
 
@@ -4198,19 +4189,7 @@ COMMENT ON VIEW vw_features_valuation_ratios IS
 -- Source functions: calc_momentum_features, calc_long_term_momentum_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_momentum AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- MOMENTUM FEATURES (calc_momentum_features)
@@ -4258,19 +4237,7 @@ COMMENT ON VIEW vw_features_momentum IS
 -- Source functions: calc_technical_analysis_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_technical_analysis AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- TECHNICAL ANALYSIS FEATURES (calc_technical_analysis_features)
@@ -4304,19 +4271,7 @@ COMMENT ON VIEW vw_features_technical_analysis IS
 --                   calc_ebit_ebitda_comprehensive, calc_gross_profit_temporal
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_profitability AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- PROFITABILITY FEATURES (calc_profitability_features)
@@ -4433,19 +4388,7 @@ COMMENT ON VIEW vw_features_profitability IS
 --                   calc_gaap_adjusted_analytics, calc_gaap_revision_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_earnings AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- EARNINGS FEATURES (calc_earnings_features)
@@ -4573,19 +4516,7 @@ COMMENT ON VIEW vw_features_earnings IS
 --                   calc_revenue_estimate_consensus
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_growth AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- GROWTH FEATURES (calc_growth_features)
@@ -4699,19 +4630,7 @@ COMMENT ON VIEW vw_features_growth IS
 --                   calc_quality_features_comprehensive
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_quality_risk AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- QUALITY FEATURES (calc_quality_features)
@@ -4814,19 +4733,7 @@ COMMENT ON VIEW vw_features_quality_risk IS
 --                   calc_total_debt_temporal, calc_working_capital_deep_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_leverage_liquidity AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- LEVERAGE FEATURES (calc_leverage_features)
@@ -4959,19 +4866,7 @@ COMMENT ON VIEW vw_features_leverage_liquidity IS
 -- Source functions: calc_sentiment_features, calc_price_target_dynamics
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_analyst_sentiment AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- SENTIMENT FEATURES (calc_sentiment_features)
@@ -5032,19 +4927,7 @@ COMMENT ON VIEW vw_features_analyst_sentiment IS
 --                   calc_dividend_yield_comprehensive
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_dividends AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- DIVIDEND FEATURES (calc_dividend_features)
@@ -5105,19 +4988,7 @@ COMMENT ON VIEW vw_features_dividends IS
 -- Source functions: calc_employment_features, calc_employment_dynamics
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_employment AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- EMPLOYMENT FEATURES (calc_employment_features)
@@ -5164,19 +5035,7 @@ COMMENT ON VIEW vw_features_employment IS
 --                   calc_cashflow_temporal_features, calc_cashflow_comprehensive
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_cashflow AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- CASHFLOW FEATURES (calc_cashflow_features)
@@ -5286,19 +5145,7 @@ COMMENT ON VIEW vw_features_cashflow IS
 -- Source functions: calc_temporal_features, calc_fiscal_calendar_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_temporal AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- TEMPORAL FEATURES (calc_temporal_features)
@@ -5342,19 +5189,7 @@ COMMENT ON VIEW vw_features_temporal IS
 --                   calc_goodwill_temporal_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_balance_sheet AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- TOTAL ASSETS TEMPORAL (calc_total_assets_temporal)
@@ -5447,19 +5282,7 @@ COMMENT ON VIEW vw_features_balance_sheet IS
 --                   calc_interest_income_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_cost_structure AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- COST STRUCTURE FEATURES (calc_cost_structure_features)
@@ -5540,19 +5363,7 @@ COMMENT ON VIEW vw_features_cost_structure IS
 -- Source functions: calc_composite_scores, calc_net_income_comprehensive
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_composite_scores AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- COMPOSITE SCORES (calc_composite_scores)
@@ -5615,19 +5426,7 @@ COMMENT ON VIEW vw_features_composite_scores IS
 -- Source function: calc_unusual_items_features
 -- =============================================================================
 CREATE OR REPLACE VIEW vw_features_unusual_items AS
-SELECT
-    -- =========================================================================
-    -- IDENTIFIER COLUMNS
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
     -- =========================================================================
     -- UNUSUAL ITEMS FEATURES (calc_unusual_items_features)
@@ -5664,27 +5463,9 @@ COMMENT ON VIEW vw_features_unusual_items IS
 DROP MATERIALIZED VIEW IF EXISTS mv_all_stock_features CASCADE;
 
 CREATE MATERIALIZED VIEW mv_all_stock_features AS
-SELECT
-    -- =========================================================================
-    -- SECTION 0: IDENTIFIER COLUMNS (from calculated_features_registry)
-    -- Source: vw_identifier_columns -> equities table
-    -- =========================================================================
-    id.isin,
-    id.ticker,
-    id.name,
-    id.industry,
-    id.sector,
-    id.trading_country,
-    id.region,
-    id.country,
-    id.exchange,
+SELECT id.*,
 
-    -- Reference metadata from equities
-    e."FY End Date"                       AS fy_end_date,
-    e."Next FY End Date"                  AS next_fy_end_date,
-    e."Next Earnings"                     AS next_earnings,
-    e."Income Statement Report Date"      AS income_statement_report_date,
-    e."Next Income Statement Report Date" AS next_income_statement_report_date,
+       -- Reference columns from equities (not in vw_identifier_columns)
     e."Market Cap"                        AS market_cap,
     e."Enterprise Value"                  AS enterprise_value,
     e."Last Price"                        AS last_price,

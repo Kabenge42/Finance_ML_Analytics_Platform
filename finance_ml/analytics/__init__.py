@@ -6,7 +6,7 @@ and statistical analytics for financial feature analysis.
 
 Modules:
 - feature_analytics: Core visualization dashboards
-- data_utils: Data loading and preprocessing
+- data_utils: Data loading, preprocessing, and standardized exports
 - statistical_analysis: Bayesian, MCMC, and advanced statistics
 - screening: Stock screening and filtering
 - optimized_ops: Performance-optimized operations
@@ -14,6 +14,14 @@ Modules:
   - profitability: Margin and profitability charts
   - technical: Technical analysis charts
   - temporal_analysis: Time series analysis
+
+Export Framework:
+The new ExportConfig class centralizes all export settings (database, CSV, JSON)
+for consistent handling across the analytics pipeline. All export functions
+accept ExportConfig for unified configuration:
+  - export_to_db(): PostgreSQL analytics schema
+  - export_to_csv(): Comma-separated values to outputs/analytics/views
+  - export_to_json(): JSON format with configurable orientation/indentation
 """
 
 # Feature category management (canonical source: data_utils)
@@ -34,19 +42,22 @@ from finance_ml.analytics.data_utils import (
     compare_registry_with_local,
     load_identifier_columns,
     get_identifier_cols_set,
+    # NEW: Export configuration and functions
+    ExportConfig,
+    export_to_db,
+    export_to_csv,
+    export_to_json,
 )
+
 from finance_ml.analytics.feature_analytics import (
     PLOTLY_TEMPLATE,
     FEATURE_CATEGORIES,
-    analyze_distress_distribution,
-    bayesian_earnings_beat_model,
     create_composite_quality_score,
     create_interactive_momentum_dashboard,
     create_interactive_valuation_heatmap,
     create_leverage_liquidity_quadrant,
     create_summary_dashboard,
     ensure_subplot_data,
-    monte_carlo_price_target_simulation,
 )
 
 # Performance optimizations
@@ -59,6 +70,23 @@ from finance_ml.analytics.optimized_ops import (
     vectorized_percentile_rank,
     get_optimization_status,
 )
+
+# InferenceData schema (ArviZ / xarray bridge)
+try:
+    from finance_ml.analytics.inference_schema import (
+        ARVIZ_AVAILABLE,
+        EquityCoordinates,
+        FeatureCoordinates,
+        build_beat_probability_inference_data,
+        build_credit_risk_inference_data,
+        build_monte_carlo_inference_data,
+        build_category_analysis_inference_data,
+        load_equity_coordinates_from_db,
+        load_feature_coordinates_from_db,
+        summarize_inference_data,
+    )
+except ImportError:
+    ARVIZ_AVAILABLE = False
 
 # Screening functions
 from finance_ml.analytics.screening import (
@@ -87,6 +115,8 @@ from finance_ml.analytics.statistical_analysis import (
     calculate_conditional_probabilities,
     # Enhanced methods
     monte_carlo_price_target_simulation,
+    bayesian_earnings_beat_model,
+    analyze_distress_distribution,
     kalman_filter_price_target,
     kalman_momentum_filter,
     fit_gaussian_copula,
@@ -94,9 +124,9 @@ from finance_ml.analytics.statistical_analysis import (
     analyze_employee_productivity_frontier,
     detect_accounting_anomalies,
     analyze_reporting_lag_sentiment,
-    run_category_probability_analytics,  # NEW
-    run_all_views_probability_analytics,  # NEW
-    export_probability_view_results,  # NEW
+    run_category_probability_analytics,
+    run_all_views_probability_analytics,
+    export_probability_view_results,
 )
 
 # Probability Analytics (NEW)
@@ -108,6 +138,7 @@ try:
         PriceTargetAchievementModel,
         EPSStreakAnalyzer,
         ModelConfidenceEstimator,
+        CategoryProbabilityAnalyzer,
         BeatProbabilityResult,
         BeatProbabilityEstimate,
         EPSStreakResult,
@@ -121,6 +152,7 @@ try:
         create_earnings_probability_dashboard,
         create_confidence_calibration_chart,
         create_eps_streak_analysis_chart,
+        create_view_probability_dashboard,
         export_probability_analytics_results,
     )
 
@@ -145,7 +177,7 @@ __all__ = [
     "create_summary_dashboard",
     "safe_get_column",
     "ensure_subplot_data",
-    # Data utilities
+    # Data utilities + NEW: Export config and functions
     "load_identifier_columns",
     "get_identifier_cols_set",
     "load_feature_data_from_db",
@@ -158,6 +190,10 @@ __all__ = [
     "get_view_feature_cols",
     "export_view_analytics_results",
     "VW_FEATURES_VIEWS",
+    "ExportConfig",
+    "export_to_db",
+    "export_to_csv",
+    "export_to_json",
     # Statistical analysis
     "bayesian_category_analysis",
     "metropolis_hastings_sampler",
@@ -180,6 +216,7 @@ __all__ = [
     "PriceTargetAchievementModel",
     "EPSStreakAnalyzer",
     "ModelConfidenceEstimator",
+    "CategoryProbabilityAnalyzer",
     "BeatProbabilityResult",
     "BeatProbabilityEstimate",
     "EPSStreakResult",
@@ -193,6 +230,7 @@ __all__ = [
     "create_earnings_probability_dashboard",
     "create_confidence_calibration_chart",
     "create_eps_streak_analysis_chart",
+    "create_view_probability_dashboard",
     "export_probability_analytics_results",
     # Screening
     "create_enhanced_screener",
@@ -207,6 +245,17 @@ __all__ = [
     "create_sector_relative_ranking",
     "screen_garp_opportunities",
     "screen_high_yield_safe_dividends",
+    # InferenceData schema
+    "ARVIZ_AVAILABLE",
+    "EquityCoordinates",
+    "FeatureCoordinates",
+    "build_beat_probability_inference_data",
+    "build_credit_risk_inference_data",
+    "build_monte_carlo_inference_data",
+    "build_category_analysis_inference_data",
+    "load_equity_coordinates_from_db",
+    "load_feature_coordinates_from_db",
+    "summarize_inference_data",
     # Optimizations
     "dataframe_hash",
     "load_feature_data_from_db_cached",

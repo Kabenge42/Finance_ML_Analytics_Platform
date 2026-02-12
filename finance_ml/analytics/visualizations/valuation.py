@@ -22,8 +22,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# Dark theme for Plotly (consistent with other visualization modules)
-PLOTLY_TEMPLATE = "plotly_dark"
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
 
 # Default valuation metrics for analysis
 DEFAULT_VALUATION_METRICS = [

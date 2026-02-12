@@ -15,6 +15,19 @@ from typing import Optional
 import pandas as pd
 
 
+# =============================================================================
+# Column resolution helpers (align with equities_schema_metadata aliases)
+# =============================================================================
+
+
+def _resolve_col(df: pd.DataFrame, *candidates: str) -> str | None:
+    """Return the first column name present in df, or None."""
+    for col in candidates:
+        if col in df.columns:
+            return col
+    return None
+
+
 def create_enhanced_screener(
     df: pd.DataFrame,
     min_fscore: int = 5,
@@ -477,16 +490,13 @@ def screen_financial_health(
     if "current_ratio" in df.columns:
         mask &= df["current_ratio"] >= min_current_ratio
 
-    # Align with feature registry: interest_coverage (not interest_coverage_ratio)
-    interest_col = (
-        "interest_coverage" if "interest_coverage" in df.columns else "interest_coverage_ratio"
-    )
-    if interest_col in df.columns:
+    # Use _resolve_col for consistent alias resolution
+    interest_col = _resolve_col(df, "interest_coverage", "interest_coverage_ratio")
+    if interest_col is not None:
         mask &= df[interest_col] >= min_interest_coverage
 
-    # Align with feature registry: wc_ltm (not working_capital_ltm)
-    wc_col = "wc_ltm" if "wc_ltm" in df.columns else "working_capital_ltm"
-    if require_positive_wc and wc_col in df.columns:
+    wc_col = _resolve_col(df, "wc_ltm", "working_capital_ltm", "wc_fq")
+    if require_positive_wc and wc_col is not None:
         mask &= df[wc_col] > 0
 
     result = df[mask].copy()

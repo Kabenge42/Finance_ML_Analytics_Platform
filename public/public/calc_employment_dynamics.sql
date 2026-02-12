@@ -89,5 +89,5 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$;
 
-alter function calc_employment_dynamics(unknown) owner to postgres;
+alter function calc_employment_dynamics(text) owner to postgres;
 

@@ -13,7 +13,7 @@ Functions:
     - create_leverage_liquidity_quadrant: Leverage vs liquidity quadrant analysis
     - monte_carlo_price_target_simulation: Monte Carlo fair value simulation
     - bayesian_earnings_beat_model: Bayesian earnings beat probability
-    - analyze_distress_distribution: Distress risk distribution analysis
+    - analyze_distress_distribution_legacy: Distress risk distribution analysis
     - create_composite_quality_score: Multi-factor quality scoring
     - create_summary_dashboard: KPI summary dashboard
 """
@@ -41,6 +41,17 @@ from finance_ml.analytics.data_utils import (
     _get_fallback_feature_categories,
     compare_registry_with_local,
 )
+
+# --- InferenceData schema (ArviZ / xarray bridge) ---
+try:
+    from finance_ml.analytics.inference_schema import (
+        ARVIZ_AVAILABLE,
+        build_beat_probability_inference_data,
+        build_monte_carlo_inference_data,
+        summarize_inference_data,
+    )
+except ImportError:
+    ARVIZ_AVAILABLE = False
 
 from finance_ml.analytics.visualizations.valuation import (
     create_valuation_multiples_comparison,
@@ -72,8 +83,16 @@ from finance_ml.analytics.visualizations.growth_analysis import (
     create_sustainable_growth_analysis,
 )
 
-# Dark theme for Plotly
-PLOTLY_TEMPLATE = "plotly_dark"
+# Import shared constants from canonical source
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+
+# Re-export statistical functions from canonical source
+from finance_ml.analytics.statistical_analysis import (
+    monte_carlo_price_target_simulation,
+    bayesian_earnings_beat_model,
+    analyze_distress_distribution,
+)
+
 px.defaults.template = PLOTLY_TEMPLATE
 
 # Load categories dynamically at module level (with fallback)
@@ -524,167 +543,7 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
     return fig
 
 
-def monte_carlo_price_target_simulation(
-    df: pd.DataFrame,
-    n_simulations: int = 10000,
-    confidence_level: float = 0.99,
-    max_stocks: int = 10000,
-) -> pd.DataFrame:
-    """
-    Monte Carlo simulation of price targets based on analyst spread.
-
-    Uses the analyst price target range (high/low/median) to model
-    uncertainty and generate probabilistic fair value estimates.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame containing:
-        - ticker, name, industry, last_price
-        - price_target, price_target_high, price_target_low, price_target_median
-    n_simulations : int, default 10000
-        Number of Monte Carlo simulations per stock
-    confidence_level : float, default 0.95
-        Confidence level for VaR calculation
-    max_stocks : int, default 2000
-        Maximum number of stocks to simulate (for performance)
-    confidence_level : float, default 0.95
-        Confidence level for VaR calculation
-    max_stocks : int, default 1000
-        Maximum number of stocks to simulate (for performance)
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with simulation results including:
-        - ticker, name, industry, last_price
-        - expected_upside_pct, upside_std, var_5_pct
-        - prob_positive_upside, risk_reward_ratio
-    """
-    np.random.seed(42)
-
-    results = []
-
-    required_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
-    valid_df = df.dropna(subset=required_cols)
-
-    for _, row in valid_df.head(max_stocks).iterrows():
-        pt_low = row["price_target_low"]
-        pt_high = row["price_target_high"]
-        pt_median = row.get("price_target_median", row["price_target"])
-        last_price = row["last_price"]
-
-        if pt_high <= pt_low or last_price <= 0:
-            continue
-
-        # Model price target as triangular distribution (low, mode=median, high)
-        simulated_pts = np.random.triangular(pt_low, pt_median, pt_high, n_simulations)
-
-        # Calculate simulated upside
-        simulated_upside = (simulated_pts - last_price) / last_price * 100
-
-        # Statistics
-        var_5 = np.percentile(simulated_upside, 5)
-        expected_upside = np.mean(simulated_upside)
-        upside_std = np.std(simulated_upside)
-        prob_positive = (simulated_upside > 0).mean() * 100
-
-        results.append(
-            {
-                "ticker": row.get("ticker", ""),
-                "name": row.get("name", ""),
-                "sector": row.get("sector", ""),
-                "industry": row.get("industry", ""),
-                "region": row.get("region", ""),
-                "country": row.get("country", ""),
-                "exchange": row.get("exchange", ""),
-                "last_price": last_price,
-                "pt_median": pt_median,
-                "pt_spread": pt_high - pt_low,
-                "expected_upside_pct": expected_upside,
-                "upside_std": upside_std,
-                "var_5_pct": var_5,  # 5% Value at Risk
-                "prob_positive_upside": prob_positive,
-                "risk_reward_ratio": expected_upside / upside_std if upside_std > 0 else 0,
-            }
-        )
-
-    return pd.DataFrame(results)
-
-
-def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataFrame:
-    """
-    Bayesian model for earnings beat probability.
-
-    Uses EPS positive streak as prior evidence and updates posterior
-    based on recent performance.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame containing:
-        - ticker, name, industry
-        - eps_positive_streak (number of positive quarters in last n_total)
-    n_total : int, default 5
-        Total number of quarters in the observation window
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with Bayesian model results:
-        - ticker, name, industry, eps_positive_streak
-        - posterior_beat_prob, model_confidence, map_estimate
-    """
-    # Prior: Uniform belief across probability grid
-    p_grid = np.arange(0.1, 1.0, 0.1)  # 9 parameter values
-    uniform_prior = 1 / len(p_grid)
-
-    results = []
-
-    streak_col = "eps_positive_streak"
-    if streak_col not in df.columns:
-        return pd.DataFrame()
-
-    for _, row in df.dropna(subset=[streak_col]).iterrows():
-        n_beats = int(row[streak_col])
-        n_beats = min(n_beats, n_total)  # Cap at n_total
-
-        # Compute likelihood: P(data | p) = p^k * (1-p)^(n-k)
-        likelihoods = p_grid**n_beats * (1 - p_grid) ** (n_total - n_beats)
-
-        # Unnormalized posterior
-        posterior_unnorm = uniform_prior * likelihoods
-
-        # Normalize
-        posterior = posterior_unnorm / posterior_unnorm.sum()
-
-        # Posterior predictive: P(beat next quarter) = sum(p * posterior(p))
-        prob_beat_next = np.sum(p_grid * posterior)
-
-        # Confidence (inverse entropy proxy)
-        entropy = -np.sum(posterior * np.log(posterior + 1e-10))
-        confidence = 1 - entropy / np.log(len(p_grid))
-
-        results.append(
-            {
-                "ticker": row.get("ticker", ""),
-                "name": row.get("name", ""),
-                "sector": row.get("sector", ""),
-                "industry": row.get("industry", ""),
-                "region": row.get("region", ""),
-                "country": row.get("country", ""),
-                "exchange": row.get("exchange", ""),
-                "eps_positive_streak": n_beats,
-                "posterior_beat_prob": prob_beat_next,
-                "model_confidence": confidence,
-                "map_estimate": p_grid[np.argmax(posterior)],  # Maximum a posteriori
-            }
-        )
-
-    return pd.DataFrame(results)
-
-
-def analyze_distress_distribution(df: pd.DataFrame) -> Figure:
+def analyze_distress_distribution_legacy(df: pd.DataFrame) -> Figure:
     """
     Analyze distress risk score distribution with tail risk metrics.
 
@@ -1171,7 +1030,7 @@ def main():
         # Distress distribution
         if "distress_risk_score" in df.columns:
             print("  - Creating distress distribution analysis...")
-            fig_distress = analyze_distress_distribution(df)
+            fig_distress = analyze_distress_distribution_legacy(df)
             fig_distress.write_html(f"{output_dir}/feature_analytics_distress.html")
             print(f"    ✓ Saved to {output_dir}/feature_analytics_distress.html")
 
@@ -1305,6 +1164,21 @@ def main():
                 ]
                 print(top5.to_string(index=False))
 
+                # Build InferenceData for Monte Carlo simulation
+                if ARVIZ_AVAILABLE:
+                    try:
+                        idata_mc = build_monte_carlo_inference_data(
+                            mc_results,
+                            df,
+                            n_simulations=10000,
+                        )
+                        mc_summary = summarize_inference_data(idata_mc)
+                        print(
+                            f"    ✓ InferenceData (MC): {mc_summary.get('n_draws', 0)} simulations"
+                        )
+                    except Exception as e:
+                        logging.warning("InferenceData (MC) build failed: %s", e)
+
         # Bayesian earnings model
         if "eps_positive_streak" in df.columns:
             print("  - Running Bayesian earnings beat model...")
@@ -1314,6 +1188,22 @@ def main():
                 print(
                     f"    ✓ Exported {len(bayesian_results)} predictions to analytics.bayesian_earnings_model"
                 )
+
+                # Build InferenceData for beat probability
+                if ARVIZ_AVAILABLE and "posterior_alpha" in bayesian_results.columns:
+                    try:
+                        idata_beat = build_beat_probability_inference_data(
+                            bayesian_results,
+                            df,
+                            n_posterior_samples=4000,
+                            n_chains=4,
+                        )
+                        beat_summary = summarize_inference_data(idata_beat)
+                        print(
+                            f"    ✓ InferenceData (beat): {beat_summary.get('n_chains', 0)} chains × {beat_summary.get('n_draws', 0)} draws"
+                        )
+                    except Exception as e:
+                        logging.warning("InferenceData (beat) build failed: %s", e)
 
         # Composite quality score
         print("  - Creating composite quality scores...")
