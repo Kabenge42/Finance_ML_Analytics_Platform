@@ -1,0 +1,961 @@
+"""
+Probabilistic financial analysis visualizations (ArviZ-enhanced).
+
+This module provides interactive ArviZ-backed plots for Bayesian
+financial analysis, bridging the inference_schema.py InferenceData
+objects and the analytics.* database tables into rich Plotly dashboards.
+
+Functions:
+- create_posterior_return_forest: Forest plot of posterior expected returns
+- create_beat_probability_posterior: Posterior density of earnings beat probability
+- create_ruin_probability_diagnostic: Ruin probability MCMC diagnostics
+- create_mcse_convergence_panel: Monte Carlo Standard Error convergence
+- create_bayesian_category_ridge: Ridge plot of posterior feature means
+- create_tri_model_posterior_comparison: Overlaid posteriors from MC / Kalman / Achievement
+
+Data sources (postgres.analytics):
+    - monte_carlo_simulation
+    - earnings_probability_analysis
+    - eps_streak_analysis
+    - expected_returns_tri_model
+    - credit_risk_analysis
+    - profitability_distributions
+    - probability_analytics_summary
+
+ArviZ / arviz-plots integration:
+    When ``arviz`` is available the module generates InferenceData objects
+    via inference_schema.py and overlays ArviZ diagnostics (R-hat, ESS,
+    MCSE) onto the Plotly figures.  All functions degrade gracefully to
+    pure Plotly/Scipy when ArviZ is not installed.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Optional
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from scipy import stats
+
+from finance_ml.analytics.visualizations._shared import (
+    PLOTLY_TEMPLATE,
+    COLORS,
+    create_no_data_figure,
+)
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Lazy ArviZ import (matches project-wide pattern)
+# ---------------------------------------------------------------------------
+try:
+    import arviz as az
+
+    ARVIZ_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    az = None  # type: ignore[assignment]
+    ARVIZ_AVAILABLE = False
+
+
+def float_array(x) -> np.ndarray:
+    """Convert to a float64 numpy array (handles xarray scalars gracefully)."""
+    return np.asarray(x, dtype=np.float64)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 1. Posterior Return Forest Plot
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_posterior_return_forest(
+    idata_or_df: "az.InferenceData | pd.DataFrame",
+    var_name: str = "expected_return",
+    top_n: int = 30,
+    credible_interval: float = 0.94,
+    sort_by: str = "median",
+    title: Optional[str] = None,
+) -> go.Figure:
+    """
+    Forest plot of posterior expected returns per equity.
+
+    When *idata_or_df* is an ArviZ InferenceData (from
+    ``BayesianTechnicalResampler.build_inference_data`` or
+    ``build_monte_carlo_inference_data``), the plot extracts
+    posterior samples, computes credible intervals, and annotates R-hat / ESS.
+
+    Falls back to a simple credible-interval bar chart when only a
+    DataFrame (e.g. ``analytics.expected_returns_tri_model``) is given.
+
+    Parameters
+    ----------
+    idata_or_df : arviz.InferenceData or pd.DataFrame
+        Posterior samples or a summary DataFrame with columns:
+        ``ticker``, ``expected_upside_pct``, ``prob_positive_upside``.
+    var_name : str, default 'expected_return'
+        Variable name inside InferenceData posterior group.
+    top_n : int, default 30
+        Number of equities to display (sorted by *sort_by*).
+    credible_interval : float, default 0.94
+        Width of the credible interval (ETI).
+    sort_by : str, default 'median'
+        Sort criterion: 'median', 'mean', or 'hdi_width'.
+    title : str, optional
+        Custom figure title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    if not 0 < credible_interval < 1:
+        raise ValueError(f"credible_interval must be in (0, 1), got {credible_interval}")
+
+    title = title or f"Posterior Expected Returns — Top {top_n} Equities"
+
+    # ── ArviZ path ────────────────────────────────────────────────────────
+    if ARVIZ_AVAILABLE and az is not None and isinstance(idata_or_df, az.InferenceData):
+        return _forest_from_idata(idata_or_df, var_name, top_n, credible_interval, sort_by, title)
+
+    # ── DataFrame fallback ────────────────────────────────────────────────
+    if isinstance(idata_or_df, pd.DataFrame):
+        return _forest_from_dataframe(idata_or_df, top_n, credible_interval, title)
+
+    return create_no_data_figure(title)
+
+
+def _forest_from_idata(
+    idata,
+    var_name: str,
+    top_n: int,
+    ci: float,
+    sort_by: str,
+    title: str,
+) -> go.Figure:
+    """Build forest plot directly from InferenceData posterior samples."""
+    posterior = idata.posterior
+    if var_name not in posterior.data_vars:
+        return create_no_data_figure(f"{title} — variable '{var_name}' not found")
+
+    samples = posterior[var_name]  # (chain, draw, equity)
+    tickers = samples.coords["equity"].values
+
+    medians = float_array(samples.median(dim=("chain", "draw")).values)
+    means = float_array(samples.mean(dim=("chain", "draw")).values)
+
+    alpha = (1 - ci) / 2
+    lo = float_array(samples.quantile(alpha, dim=("chain", "draw")).values)
+    hi = float_array(samples.quantile(1 - alpha, dim=("chain", "draw")).values)
+
+    # Sort and slice
+    if sort_by == "median":
+        sort_vals = medians
+    elif sort_by == "hdi_width":
+        sort_vals = hi - lo
+    else:
+        sort_vals = means
+
+    order = np.argsort(sort_vals)[::-1][:top_n]
+    tickers, medians, means, lo, hi = (
+        tickers[order],
+        medians[order],
+        means[order],
+        lo[order],
+        hi[order],
+    )
+
+    # R-hat annotation (if > 1 chain)
+    rhat_text = ""
+    if samples.sizes["chain"] > 1:
+        try:
+            rhat = az.rhat(idata)
+            max_rhat = float(rhat[var_name].max().values)
+            rhat_text = f"  |  R̂ max = {max_rhat:.3f}"
+        except Exception:
+            pass
+
+    fig = go.Figure()
+    # CI bars
+    for i in range(len(tickers)):
+        fig.add_trace(
+            go.Scatter(
+                x=[lo[i], hi[i]],
+                y=[tickers[i], tickers[i]],
+                mode="lines",
+                line=dict(color=COLORS[0], width=4),
+                showlegend=False,
+                hovertemplate=f"<b>{tickers[i]}</b><br>{ci:.0%} CI: [{lo[i]:.1f}%, {hi[i]:.1f}%]<extra></extra>",
+            )
+        )
+    # Posterior medians
+    fig.add_trace(
+        go.Scatter(
+            x=medians,
+            y=tickers,
+            mode="markers",
+            marker=dict(size=8, color=COLORS[2], symbol="diamond"),
+            name="Median",
+        )
+    )
+    fig.add_vline(x=0, line_dash="dash", line_color="red", opacity=0.6)
+    fig.update_layout(
+        title=f"{title}{rhat_text}",
+        xaxis_title="Annualised Return (%)",
+        yaxis=dict(autorange="reversed"),
+        height=max(500, top_n * 22),
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+def _forest_from_dataframe(df: pd.DataFrame, top_n: int, ci: float, title: str) -> go.Figure:
+    """Fallback forest plot from a summary DataFrame."""
+    if "expected_upside_pct" not in df.columns or "ticker" not in df.columns:
+        return create_no_data_figure(f"{title} — missing columns")
+
+    plot_df = (
+        df.dropna(subset=["expected_upside_pct"]).nlargest(top_n, "expected_upside_pct").copy()
+    )
+    if plot_df.empty:
+        return create_no_data_figure(title)
+
+    # Approximate CI from upside_std if available
+    z = stats.norm.ppf(1 - (1 - ci) / 2)
+    if "upside_std" in plot_df.columns:
+        plot_df["lo"] = plot_df["expected_upside_pct"] - z * plot_df["upside_std"]
+        plot_df["hi"] = plot_df["expected_upside_pct"] + z * plot_df["upside_std"]
+    else:
+        # Additive fallback using overall std to avoid broken intervals
+        # on negative or zero upside values
+        overall_std = plot_df["expected_upside_pct"].std()
+        fallback_spread = z * max(overall_std * 0.3, 1.0) if not pd.isna(overall_std) else z * 1.0
+        plot_df["lo"] = plot_df["expected_upside_pct"] - fallback_spread
+        plot_df["hi"] = plot_df["expected_upside_pct"] + fallback_spread
+
+    fig = go.Figure()
+    for _, row in plot_df.iterrows():
+        fig.add_trace(
+            go.Scatter(
+                x=[row["lo"], row["hi"]],
+                y=[row["ticker"], row["ticker"]],
+                mode="lines",
+                line=dict(color=COLORS[0], width=4),
+                showlegend=False,
+                hovertemplate=(
+                    f"<b>{row['ticker']}</b><br>"
+                    f"Upside: {row['expected_upside_pct']:.1f}%<br>"
+                    f"{ci:.0%} CI: [{row['lo']:.1f}%, {row['hi']:.1f}%]<extra></extra>"
+                ),
+            )
+        )
+    fig.add_trace(
+        go.Scatter(
+            x=plot_df["expected_upside_pct"],
+            y=plot_df["ticker"],
+            mode="markers",
+            marker=dict(size=8, color=COLORS[2], symbol="diamond"),
+            name="Expected Upside",
+        )
+    )
+    fig.add_vline(x=0, line_dash="dash", line_color="red", opacity=0.6)
+    fig.update_layout(
+        title=title,
+        xaxis_title="Expected Upside (%)",
+        yaxis=dict(autorange="reversed"),
+        height=max(500, top_n * 22),
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 2. Earnings Beat Probability — Posterior Density
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_beat_probability_posterior(
+    idata_or_df: "az.InferenceData | pd.DataFrame",
+    tickers: Optional[list[str]] = None,
+    top_n: int = 12,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """
+    Posterior density plot for earnings beat probability per equity.
+
+    Leverages ``build_beat_probability_inference_data`` output or
+    the ``analytics.earnings_probability_analysis`` table directly.
+
+    Parameters
+    ----------
+    idata_or_df : arviz.InferenceData or pd.DataFrame
+        Beat probability posteriors.
+    tickers : list[str], optional
+        Specific tickers to plot. If None, picks top *top_n* by posterior.
+    top_n : int, default 12
+        Number of equities if *tickers* is None.
+    title : str, optional
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or "Posterior Earnings Beat Probability"
+
+    # ── ArviZ path ────────────────────────────────────────────────────────
+    if ARVIZ_AVAILABLE and az is not None and isinstance(idata_or_df, az.InferenceData):
+        return _beat_density_from_idata(idata_or_df, tickers, top_n, title)
+
+    # ── DataFrame fallback ────────────────────────────────────────────────
+    if isinstance(idata_or_df, pd.DataFrame):
+        return _beat_density_from_dataframe(idata_or_df, tickers, top_n, title)
+
+    return create_no_data_figure(title)
+
+
+def _beat_density_from_idata(idata, tickers, top_n, title) -> go.Figure:
+    """KDE overlays from InferenceData posterior."""
+    posterior = idata.posterior
+    var_name = "beat_probability" if "beat_probability" in posterior.data_vars else None
+    if var_name is None:
+        return create_no_data_figure(f"{title} — no beat_probability variable")
+
+    all_tickers = posterior.coords["equity"].values
+    if tickers is None:
+        medians = posterior[var_name].median(dim=("chain", "draw")).values
+        order = np.argsort(medians)[::-1][:top_n]
+        tickers = all_tickers[order]
+
+    fig = go.Figure()
+    for i, t in enumerate(tickers):
+        idx = np.where(all_tickers == t)[0]
+        if len(idx) == 0:
+            continue
+        samples = posterior[var_name].values[:, :, idx[0]].flatten()
+        x_kde = np.linspace(0, 1, 200)
+        try:
+            kde = stats.gaussian_kde(samples)
+            y_kde = kde(x_kde)
+        except Exception:
+            continue
+        fig.add_trace(
+            go.Scatter(
+                x=x_kde,
+                y=y_kde,
+                mode="lines",
+                name=str(t),
+                line=dict(width=2),
+                fill="tozeroy",
+                opacity=0.3,
+            )
+        )
+    fig.add_vline(x=0.5, line_dash="dash", line_color="gray", annotation_text="50%")
+    fig.update_layout(
+        title=title,
+        xaxis_title="P(Beat Next Quarter)",
+        yaxis_title="Density",
+        height=550,
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+def _beat_density_from_dataframe(df, tickers, top_n, title) -> go.Figure:
+    """Approximate Beta posterior from posterior_alpha / posterior_beta columns."""
+    required = {"ticker", "posterior_alpha", "posterior_beta"}
+    if not required.issubset(df.columns):
+        # Try simpler columns
+        if "posterior_beat_prob" in df.columns and "ticker" in df.columns:
+            return _beat_bar_fallback(df, tickers, top_n, title)
+        return create_no_data_figure(f"{title} — missing columns")
+
+    if tickers is None:
+        df_sorted = df.sort_values(
+            "posterior_beat_prob" if "posterior_beat_prob" in df.columns else "posterior_alpha",
+            ascending=False,
+        )
+        tickers = df_sorted["ticker"].head(top_n).tolist()
+
+    fig = go.Figure()
+    x_grid = np.linspace(0, 1, 200)
+    for t in tickers:
+        row = df[df["ticker"] == t]
+        if row.empty:
+            continue
+        a = float(row["posterior_alpha"].iloc[0])
+        b = float(row["posterior_beta"].iloc[0])
+        if pd.isna(a) or pd.isna(b) or a <= 0 or b <= 0:
+            continue
+        y = stats.beta.pdf(x_grid, a, b)
+        fig.add_trace(
+            go.Scatter(
+                x=x_grid,
+                y=y,
+                mode="lines",
+                name=str(t),
+                line=dict(width=2),
+                fill="tozeroy",
+                opacity=0.3,
+            )
+        )
+    fig.add_vline(x=0.5, line_dash="dash", line_color="gray", annotation_text="50%")
+    fig.update_layout(
+        title=title,
+        xaxis_title="P(Beat Next Quarter)",
+        yaxis_title="Beta Density",
+        height=550,
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+def _beat_bar_fallback(df, tickers, top_n, title) -> go.Figure:
+    """Simple horizontal bar when only point estimates are available."""
+    if tickers is None:
+        plot_df = df.nlargest(top_n, "posterior_beat_prob")
+    else:
+        plot_df = df[df["ticker"].isin(tickers)]
+
+    fig = go.Figure(
+        go.Bar(
+            y=plot_df["ticker"],
+            x=plot_df["posterior_beat_prob"],
+            orientation="h",
+            marker_color=[
+                COLORS[2] if v > 0.5 else COLORS[3] for v in plot_df["posterior_beat_prob"]
+            ],
+            hovertemplate="<b>%{y}</b><br>P(Beat): %{x:.2%}<extra></extra>",
+        )
+    )
+    fig.add_vline(x=0.5, line_dash="dash", line_color="gray")
+    fig.update_layout(
+        title=title,
+        xaxis_title="Posterior Beat Probability",
+        yaxis=dict(autorange="reversed"),
+        height=max(400, len(plot_df) * 22),
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 3. Ruin Probability MCMC Diagnostics
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_ruin_probability_diagnostic(
+    idata_or_df: "az.InferenceData | pd.DataFrame",
+    top_n: int = 20,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """
+    Four-panel diagnostic dashboard for ruin probability posteriors.
+
+    Panels:
+    1. Posterior density of ruin probability (top-risk equities)
+    2. Risk tier distribution (pie / bar)
+    3. Ruin prob vs distress_risk_score scatter
+    4. Convergence trace (if InferenceData with chains)
+
+    Uses ``build_credit_risk_inference_data`` output or
+    ``analytics.credit_risk_analysis`` directly.
+
+    Parameters
+    ----------
+    idata_or_df : arviz.InferenceData or pd.DataFrame
+        Ruin probability posteriors or credit risk summary.
+    top_n : int, default 20
+        Number of equities for density panel.
+    title : str, optional
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or "Ruin Probability — Bayesian Diagnostic Dashboard"
+
+    if isinstance(idata_or_df, pd.DataFrame):
+        return _ruin_diagnostic_from_df(idata_or_df, top_n, title)
+
+    if ARVIZ_AVAILABLE and az is not None and isinstance(idata_or_df, az.InferenceData):
+        return _ruin_diagnostic_from_idata(idata_or_df, top_n, title)
+
+    return create_no_data_figure(title)
+
+
+def _ruin_diagnostic_from_df(df: pd.DataFrame, top_n: int, title: str) -> go.Figure:
+    """Build diagnostic from credit_risk_analysis or ruin probability DataFrame."""
+    ruin_col = "ruin_probability" if "ruin_probability" in df.columns else "distress_probability"
+    risk_col = "risk_tier" if "risk_tier" in df.columns else "risk_level"
+    distress_col = (
+        "distress_risk_score" if "distress_risk_score" in df.columns else "altman_z_score"
+    )
+
+    if ruin_col not in df.columns:
+        return create_no_data_figure(f"{title} — no ruin/distress probability column")
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=(
+            f"Top {top_n} Highest Ruin Probability",
+            "Risk Tier Distribution",
+            (
+                f"Ruin Probability vs {distress_col.replace('_', ' ').title()}"
+                if distress_col in df.columns
+                else "Ruin Probability Histogram"
+            ),
+            "Sector Median Ruin Probability",
+        ),
+        specs=[[{"type": "bar"}, {"type": "pie"}], [{"type": "scatter"}, {"type": "bar"}]],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1,
+    )
+
+    # Panel 1: Top ruin probabilities
+    top = df.nlargest(top_n, ruin_col)
+    fig.add_trace(
+        go.Bar(
+            x=top["ticker"] if "ticker" in top.columns else top.index.astype(str),
+            y=top[ruin_col],
+            marker_color=[_ruin_color(v) for v in top[ruin_col]],
+            hovertemplate="<b>%{x}</b><br>P(Ruin): %{y:.2%}<extra></extra>",
+            showlegend=False,
+        ),
+        row=1,
+        col=1,
+    )
+    fig.update_xaxes(tickangle=-45, row=1, col=1)
+
+    # Panel 2: Risk tier pie
+    if risk_col in df.columns:
+        tier_counts = df[risk_col].value_counts()
+        fig.add_trace(
+            go.Pie(
+                labels=tier_counts.index.astype(str),
+                values=tier_counts.values,
+                marker_colors=[_tier_color(t) for t in tier_counts.index],
+                textinfo="label+percent",
+            ),
+            row=1,
+            col=2,
+        )
+
+    # Panel 3: Scatter vs distress score
+    if distress_col in df.columns:
+        sample = df.dropna(subset=[ruin_col, distress_col]).sample(
+            min(2000, len(df)),
+            random_state=42,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sample[distress_col],
+                y=sample[ruin_col],
+                mode="markers",
+                marker=dict(size=4, color=sample[ruin_col], colorscale="Reds", opacity=0.5),
+                hovertemplate="%{text}<br>%{x:.1f} / %{y:.2%}<extra></extra>",
+                text=sample.get("ticker", sample.index.astype(str)),
+                showlegend=False,
+            ),
+            row=2,
+            col=1,
+        )
+        fig.update_xaxes(title_text=distress_col.replace("_", " ").title(), row=2, col=1)
+        fig.update_yaxes(title_text="P(Ruin)", row=2, col=1)
+
+    # Panel 4: Sector medians
+    group_col = "sector" if "sector" in df.columns else "industry"
+    if group_col in df.columns:
+        sector_med = df.groupby(group_col)[ruin_col].median().sort_values(ascending=True).tail(20)
+        fig.add_trace(
+            go.Bar(
+                x=sector_med.values,
+                y=sector_med.index.astype(str),
+                orientation="h",
+                marker_color=[_ruin_color(v) for v in sector_med.values],
+                showlegend=False,
+            ),
+            row=2,
+            col=2,
+        )
+
+    fig.update_layout(
+        title=title,
+        height=900,
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+def _ruin_diagnostic_from_idata(idata, top_n, title) -> go.Figure:
+    """Build diagnostic panels using ArviZ InferenceData."""
+    posterior = idata.posterior
+    var_name = "ruin_probability"
+    if var_name not in posterior.data_vars:
+        return create_no_data_figure(f"{title} — no ruin_probability in posterior")
+
+    samples = posterior[var_name]  # (chain, draw, equity)
+    tickers = samples.coords["equity"].values
+    medians = float_array(samples.median(dim=("chain", "draw")).values)
+
+    # Reuse the DataFrame path with computed stats
+    summary_df = pd.DataFrame(
+        {
+            "ticker": tickers,
+            "ruin_probability": medians,
+        }
+    )
+    # Classify risk tiers
+    summary_df["risk_tier"] = pd.cut(
+        summary_df["ruin_probability"],
+        bins=[0, 0.1, 0.3, 0.6, 1.0],
+        labels=["Low Risk", "Moderate Risk", "High Risk", "Critical Risk"],
+    )
+    fig = _ruin_diagnostic_from_df(summary_df, top_n, title)
+
+    # Annotate convergence
+    if samples.sizes["chain"] > 1:
+        try:
+            rhat = az.rhat(idata)
+            max_rhat = float(rhat[var_name].max().values)
+            ess = az.ess(idata)
+            min_ess = float(ess[var_name].min().values)
+            fig.add_annotation(
+                xref="paper",
+                yref="paper",
+                x=1.0,
+                y=1.05,
+                text=f"R̂ max: {max_rhat:.3f}  |  ESS min: {min_ess:.0f}",
+                showarrow=False,
+                font=dict(size=11, color="white"),
+            )
+        except Exception:
+            pass
+
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 4. MCSE Convergence Panel
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_mcse_convergence_panel(
+    idata: "az.InferenceData",
+    var_name: str = "expected_return",
+    title: Optional[str] = None,
+) -> go.Figure:
+    """
+    Monte Carlo Standard Error convergence panel.
+
+    Shows MCSE as a function of draw count, annotated with ESS and R-hat.
+    Requires ArviZ InferenceData; returns a no-data figure otherwise.
+
+    Parameters
+    ----------
+    idata : arviz.InferenceData
+        Must contain a posterior group with *var_name*.
+    var_name : str
+        Variable to diagnose.
+    title : str, optional
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or f"MCSE Convergence — {var_name}"
+
+    if not ARVIZ_AVAILABLE or az is None:
+        return create_no_data_figure(f"{title} — ArviZ required")
+    if not isinstance(idata, az.InferenceData) or not hasattr(idata, "posterior"):
+        return create_no_data_figure(f"{title} — no posterior group")
+    if var_name not in idata.posterior.data_vars:
+        return create_no_data_figure(f"{title} — variable not found")
+
+    samples = idata.posterior[var_name]  # (chain, draw, equity)
+    n_chains = samples.sizes["chain"]
+    n_draws = samples.sizes["draw"]
+
+    # Compute running MCSE across draws for each chain (mean across equities)
+    draw_counts = np.arange(100, n_draws + 1, max(1, n_draws // 50))
+
+    fig = go.Figure()
+    for c in range(n_chains):
+        chain_samples = samples.isel(chain=c).values  # (draw, equity)
+        mcse_vals = []
+        for d in draw_counts:
+            sub = chain_samples[:d, :]
+            se = sub.std(axis=0) / np.sqrt(d)
+            mcse_vals.append(float(np.nanmean(se)))
+        fig.add_trace(
+            go.Scatter(
+                x=draw_counts,
+                y=mcse_vals,
+                mode="lines",
+                name=f"Chain {c}",
+                line=dict(width=2),
+            )
+        )
+
+    # Annotate ESS & R-hat
+    try:
+        ess = az.ess(idata)
+        rhat = az.rhat(idata)
+        min_ess = float(ess[var_name].min().values)
+        mean_ess = float(ess[var_name].mean().values)
+        max_rhat = float(rhat[var_name].max().values)
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            x=0.98,
+            y=0.98,
+            text=f"ESS min/mean: {min_ess:.0f}/{mean_ess:.0f}<br>R̂ max: {max_rhat:.4f}",
+            showarrow=False,
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0.6)",
+            bordercolor="gray",
+        )
+    except Exception:
+        pass
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Number of Draws",
+        yaxis_title="Mean MCSE (across equities)",
+        height=450,
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 5. Bayesian Category Ridge Plot
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_bayesian_category_ridge(
+    analysis_results: dict[str, dict],
+    category_name: str = "Profitability",
+    n_samples: int = 4000,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """
+    Ridge plot of posterior means for features within a category.
+
+    Uses the output of ``bayesian_category_analysis()`` from
+    ``statistical_analysis.py``.  Each feature's Normal posterior
+    N(posterior_mean, posterior_std) is rendered as a filled KDE.
+
+    Parameters
+    ----------
+    analysis_results : dict
+        Output from ``bayesian_category_analysis()``.
+    category_name : str
+        Category label for the title.
+    n_samples : int, default 4000
+        Number of draws for KDE estimation.
+    title : str, optional
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or f"Posterior Feature Distributions — {category_name}"
+
+    features = list(analysis_results.keys())
+    if not features:
+        return create_no_data_figure(title)
+
+    rng = np.random.default_rng(42)
+    fig = go.Figure()
+
+    for i, feat in enumerate(features):
+        info = analysis_results[feat]
+        pm = info.get("posterior_mean", 0)
+        ps = info.get("posterior_std", 1)
+        if ps <= 0:
+            continue
+
+        samples = rng.normal(pm, ps, n_samples)
+        x_kde = np.linspace(pm - 4 * ps, pm + 4 * ps, 200)
+        kde = stats.gaussian_kde(samples)
+        y_kde = kde(x_kde)
+
+        # Ridge offset
+        offset = i * 0.8
+        fig.add_trace(
+            go.Scatter(
+                x=x_kde,
+                y=y_kde + offset,
+                mode="lines",
+                line=dict(color=COLORS[i % len(COLORS)], width=2),
+                fill="tozeroy" if i == 0 else None,
+                name=feat,
+                hovertemplate=(
+                    f"<b>{feat}</b><br>"
+                    f"Posterior mean: {pm:.3f}<br>"
+                    f"95% CI: [{info.get('ci_95_low', 0):.3f}, {info.get('ci_95_high', 0):.3f}]<br>"
+                    f"P(>0): {info.get('prob_positive', 0):.1%}<extra></extra>"
+                ),
+            )
+        )
+        # Baseline for each ridge
+        fig.add_hline(y=offset, line_dash="dot", line_color="gray", opacity=0.2)
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Parameter Value",
+        yaxis_title="Feature (stacked density)",
+        yaxis=dict(
+            tickvals=[i * 0.8 for i in range(len(features))],
+            ticktext=features,
+        ),
+        height=max(450, len(features) * 80),
+        template=PLOTLY_TEMPLATE,
+        showlegend=False,
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 6. Tri-Model Posterior Comparison
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_tri_model_posterior_comparison(
+    tri_df: pd.DataFrame,
+    tickers: Optional[list[str]] = None,
+    top_n: int = 8,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """
+    Overlaid approximate posteriors from the three expected-return models.
+
+    For each equity, draws Normal posteriors centred on:
+    - Monte Carlo expected upside (spread from ``upside_std``)
+    - Kalman filtered upside (spread estimated from MC std)
+    - Price target achievement prob-weighted return
+
+    Uses ``analytics.expected_returns_tri_model`` as data source.
+
+    Parameters
+    ----------
+    tri_df : pd.DataFrame
+        Tri-model alignment DataFrame (expected_upside_pct,
+        filtered_upside, expected_return_prob_weighted, ticker).
+    tickers : list[str], optional
+        Specific tickers. If None, picks top *top_n* by agreement_score.
+    top_n : int, default 8
+        Equities to display.
+    title : str, optional
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or "Tri-Model Posterior Return Comparison"
+
+    required = {"ticker", "expected_upside_pct", "filtered_upside", "expected_return_prob_weighted"}
+    if not required.issubset(tri_df.columns):
+        return create_no_data_figure(f"{title} — missing columns")
+
+    if tickers is None:
+        sort_col = (
+            "agreement_score" if "agreement_score" in tri_df.columns else "expected_upside_pct"
+        )
+        selected = tri_df.nlargest(top_n, sort_col)
+        tickers = selected["ticker"].tolist()
+
+    n = len(tickers)
+    cols = min(4, n)
+    rows = (n + cols - 1) // cols
+
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=[str(t) for t in tickers],
+        vertical_spacing=0.08,
+        horizontal_spacing=0.06,
+    )
+
+    for idx, t in enumerate(tickers):
+        row_df = tri_df[tri_df["ticker"] == t]
+        if row_df.empty:
+            continue
+        r = row_df.iloc[0]
+        r_idx = idx // cols + 1
+        c_idx = idx % cols + 1
+
+        # Shared spread (use upside_std if present, else 10% of upside)
+        spread = abs(r.get("upside_std", abs(r["expected_upside_pct"]) * 0.15)) or 5.0
+        x_range = np.linspace(
+            min(r["expected_upside_pct"], r["filtered_upside"], r["expected_return_prob_weighted"])
+            - 3 * spread,
+            max(r["expected_upside_pct"], r["filtered_upside"], r["expected_return_prob_weighted"])
+            + 3 * spread,
+            200,
+        )
+
+        models = [
+            ("MC Upside", r["expected_upside_pct"], spread, COLORS[0]),
+            ("Kalman", r["filtered_upside"], spread * 0.8, COLORS[1]),
+            ("Achievm.", r["expected_return_prob_weighted"], spread * 1.2, COLORS[2]),
+        ]
+        for name, mu, s, color in models:
+            y = stats.norm.pdf(x_range, mu, s)
+            fig.add_trace(
+                go.Scatter(
+                    x=x_range,
+                    y=y,
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    name=name,
+                    showlegend=(idx == 0),
+                    legendgroup=name,
+                ),
+                row=r_idx,
+                col=c_idx,
+            )
+
+        fig.add_vline(x=0, line_dash="dash", line_color="red", opacity=0.3, row=r_idx, col=c_idx)
+
+    fig.update_layout(
+        title=title,
+        height=280 * rows,
+        template=PLOTLY_TEMPLATE,
+        legend=dict(orientation="h", yanchor="bottom", y=-0.05, xanchor="center", x=0.5),
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Helpers
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def _ruin_color(p: float) -> str:
+    """Map ruin probability to a traffic-light colour."""
+    if p >= 0.6:
+        return "#e74c3c"
+    if p >= 0.3:
+        return "#f39c12"
+    if p >= 0.1:
+        return "#3498db"
+    return "#00bc8c"
+
+
+def _tier_color(tier: str) -> str:
+    """Map risk tier label to colour."""
+    tier_lower = str(tier).lower()
+    if "critical" in tier_lower:
+        return "#e74c3c"
+    if "high" in tier_lower:
+        return "#f39c12"
+    if "moderate" in tier_lower:
+        return "#3498db"
+    return "#00bc8c"

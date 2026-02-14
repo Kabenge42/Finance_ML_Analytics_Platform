@@ -28,7 +28,11 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import (
+    PLOTLY_TEMPLATE,
+    COLORS,
+    create_no_data_figure,
+)
 
 # Metric display names
 METRIC_LABELS = {
@@ -48,34 +52,6 @@ METRIC_LABELS = {
     "cash_earnings_ratio": "Cash/Earnings Ratio",
     "earnings_persistence": "Earnings Persistence",
 }
-
-# Color scheme
-COLORS = [
-    "#0A7EA4",
-    "#00A878",
-    "#6C63FF",
-    "#FF6B6B",
-    "#4ECDC4",
-    "#FFD93D",
-    "#95E1D3",
-    "#F38181",
-]
-
-
-def _create_no_data_figure(title: str) -> go.Figure:
-    """Create a placeholder figure when no data is available."""
-    fig = go.Figure()
-    fig.add_annotation(
-        text="No data available",
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
-        showarrow=False,
-        font=dict(size=16),
-    )
-    fig.update_layout(title=title, template=PLOTLY_TEMPLATE)
-    return fig
 
 
 def create_earnings_surprise_dashboard(
@@ -114,7 +90,7 @@ def create_earnings_surprise_dashboard(
     has_group = group_col in df.columns
 
     if not has_surprise and not has_beat:
-        return _create_no_data_figure("Earnings Surprise Dashboard - No Data")
+        return create_no_data_figure("Earnings Surprise Dashboard - No Data")
 
     fig = make_subplots(
         rows=4,
@@ -272,12 +248,12 @@ def create_eps_trajectory_analysis(
     available_cols = [col for col in required_cols if col in df.columns]
 
     if not available_cols:
-        return _create_no_data_figure("EPS Trajectory Analysis - No Data")
+        return create_no_data_figure("EPS Trajectory Analysis - No Data")
 
     # Sort by trajectory score and get top N
     plot_df = df.dropna(subset=["eps_trajectory_score"]).copy()
     if len(plot_df) == 0:
-        return _create_no_data_figure("EPS Trajectory Analysis - No Data")
+        return create_no_data_figure("EPS Trajectory Analysis - No Data")
 
     plot_df = plot_df.nlargest(top_n, "eps_trajectory_score")
 
@@ -406,7 +382,7 @@ def create_earnings_quality_decomposition(
     available_cols = [col for col in quality_cols if col in df.columns]
 
     if not available_cols:
-        return _create_no_data_figure("Earnings Quality Decomposition - No Data")
+        return create_no_data_figure("Earnings Quality Decomposition - No Data")
 
     # Get values
     title_suffix = "(Median Values)"
@@ -525,7 +501,7 @@ def create_beat_rate_heatmap(
     available_cols = [col for col in consistency_cols if col in df.columns]
 
     if not available_cols or group_col not in df.columns:
-        return _create_no_data_figure("Earnings Consistency Heatmap - No Data")
+        return create_no_data_figure("Earnings Consistency Heatmap - No Data")
 
     groups = df[group_col].dropna().unique()
     data_matrix = []
@@ -599,7 +575,7 @@ def create_earnings_consistency_matrix(
     >>> fig.show()
     """
     if "eps_positive_streak" not in df.columns or "eps_improvement_count" not in df.columns:
-        return _create_no_data_figure("Earnings Consistency Matrix - No Data")
+        return create_no_data_figure("Earnings Consistency Matrix - No Data")
 
     fig = go.Figure()
 
@@ -713,7 +689,7 @@ def create_revision_momentum_chart(
     >>> fig.show()
     """
     if "revision_momentum_score" not in df.columns:
-        return _create_no_data_figure("Revision Momentum Chart - No Data")
+        return create_no_data_figure("Revision Momentum Chart - No Data")
 
     has_trends = "revision_trend_short" in df.columns and "revision_trend_medium" in df.columns
     has_posterior = "posterior_beat_prob" in df.columns
@@ -908,7 +884,7 @@ def create_gaap_divergence_plot(
     >>> fig.show()
     """
     if "gaap_norm_spread" not in df.columns:
-        return _create_no_data_figure("GAAP Divergence Plot - No Data")
+        return create_no_data_figure("GAAP Divergence Plot - No Data")
 
     has_posterior = "posterior_beat_prob" in df.columns
     has_momentum = "revision_momentum_score" in df.columns
@@ -1147,7 +1123,7 @@ def create_enhanced_beat_probability_dashboard(
     """
     required = ["posterior_beat_prob"]
     if not any(col in df.columns for col in required):
-        return _create_no_data_figure("Enhanced Beat Probability Dashboard - No Data")
+        return create_no_data_figure("Enhanced Beat Probability Dashboard - No Data")
 
     has_momentum = "revision_momentum_score" in df.columns
     has_spread = "gaap_norm_spread" in df.columns

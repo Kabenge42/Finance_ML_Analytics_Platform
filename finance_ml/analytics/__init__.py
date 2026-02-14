@@ -84,6 +84,8 @@ try:
         load_equity_coordinates_from_db,
         load_feature_coordinates_from_db,
         summarize_inference_data,
+        # NEW: Resampled technical returns
+        build_resampled_technical_inference_data,
     )
 except ImportError:
     ARVIZ_AVAILABLE = False
@@ -127,6 +129,10 @@ from finance_ml.analytics.statistical_analysis import (
     run_category_probability_analytics,
     run_all_views_probability_analytics,
     export_probability_view_results,
+    # NEW: Resampled Bayesian returns
+    BayesianTechnicalResampler,
+    ResampledReturnDistribution,
+    resampled_posterior_returns,
 )
 
 # Probability Analytics (NEW)
@@ -154,6 +160,9 @@ try:
         create_eps_streak_analysis_chart,
         create_view_probability_dashboard,
         export_probability_analytics_results,
+        # NEW: Resampled beat probability
+        ResampledBeatProbabilityModel,
+        ResampledBeatEstimate,
     )
 
     _PROBABILITY_ANALYTICS_AVAILABLE = True
@@ -232,6 +241,13 @@ __all__ = [
     "create_eps_streak_analysis_chart",
     "create_view_probability_dashboard",
     "export_probability_analytics_results",
+    # Resampled Bayesian enhancements
+    "BayesianTechnicalResampler",
+    "ResampledReturnDistribution",
+    "resampled_posterior_returns",
+    "ResampledBeatProbabilityModel",
+    "ResampledBeatEstimate",
+    "build_resampled_technical_inference_data",
     # Screening
     "create_enhanced_screener",
     "screen_earnings_quality",

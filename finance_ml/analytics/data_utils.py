@@ -20,6 +20,139 @@ if TYPE_CHECKING:
 
 from collections import defaultdict
 
+# ---------------------------------------------------------------------------
+# Probability export aggregation & row-limit helpers
+# ---------------------------------------------------------------------------
+
+# Maximum rows per prob_vw_features_* table before aggregation kicks in
+_PROB_EXPORT_ROW_LIMIT: int = 5_000
+
+
+@dataclass
+class ProbExportPolicy:
+    """
+    Controls how per-feature probability results are exported.
+
+    Parameters
+    ----------
+    max_rows : int
+        Hard cap on exported rows.  When the raw result exceeds this,
+        the ``aggregation`` strategy is applied automatically.
+    aggregation : str
+        One of ``"none"``, ``"by_feature"``, ``"by_isin"``, ``"by_sector"``.
+        ``"none"`` exports the raw per-ISIN × per-feature table (subject to
+        ``max_rows`` LIMIT).
+    top_n_isins : int or None
+        When set, only the top-N ISINs (by mean ``prob_above_median``) are
+        kept *before* any aggregation.  Useful for large universes.
+    """
+
+    max_rows: int = _PROB_EXPORT_ROW_LIMIT
+    aggregation: str = "none"  # "none" | "by_feature" | "by_isin" | "by_sector"
+    top_n_isins: int | None = None
+
+
+def aggregate_probability_results(
+    df: pd.DataFrame,
+    policy: ProbExportPolicy | None = None,
+) -> pd.DataFrame:
+    """
+    Apply aggregation and row-limit policy to a per-feature probability
+    DataFrame before database export.
+
+    The input is expected to have columns produced by
+    ``CategoryProbabilityAnalyzer.analyze_view`` or
+    ``export_probability_view_results``, including at least:
+
+    - ``feature``, ``value``, ``percentile``, ``z_score``, ``prob_above_median``
+    - identifier columns (``isin``, ``sector``, ``industry``, …)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw per-ISIN × per-feature probability results.
+    policy : ProbExportPolicy, optional
+        Export policy.  Defaults to auto-aggregate by feature when the
+        row count exceeds ``_PROB_EXPORT_ROW_LIMIT``.
+
+    Returns
+    -------
+    pd.DataFrame
+        Aggregated (or truncated) DataFrame ready for export.
+    """
+    if df.empty:
+        return df
+
+    policy = policy or ProbExportPolicy()
+
+    metric_cols = ["value", "percentile", "z_score", "prob_above_median"]
+    available_metrics = [c for c in metric_cols if c in df.columns]
+
+    # ── Optional: keep only top-N ISINs by mean prob_above_median ──
+    if policy.top_n_isins and "isin" in df.columns and "prob_above_median" in available_metrics:
+        isin_rank = (
+            df.groupby("isin")["prob_above_median"].mean().nlargest(policy.top_n_isins).index
+        )
+        df = df[df["isin"].isin(isin_rank)]
+
+    # ── Decide aggregation strategy ──
+    aggregation = policy.aggregation
+
+    # Auto-promote to "by_feature" when row count exceeds limit and
+    # the caller hasn't explicitly requested a different strategy.
+    if aggregation == "none" and len(df) > policy.max_rows:
+        aggregation = "by_feature"
+        logging.info(
+            "prob export: %d rows exceeds limit %d — auto-aggregating by feature",
+            len(df),
+            policy.max_rows,
+        )
+
+    if aggregation == "by_feature" and "feature" in df.columns:
+        agg_dict = {m: ["mean", "median", "std", "min", "max", "count"] for m in available_metrics}
+        result = df.groupby("feature").agg(agg_dict)
+        # Flatten MultiIndex columns  →  "value_mean", "percentile_std", …
+        result.columns = ["_".join(col).strip() for col in result.columns]
+        result = result.reset_index()
+        logging.info("Aggregated by feature: %d → %d rows", len(df), len(result))
+        return result
+
+    if aggregation == "by_isin" and "isin" in df.columns:
+        agg_dict = {m: ["mean", "median", "std"] for m in available_metrics}
+        group_cols = ["isin"]
+        # Keep first occurrence of useful identifier columns
+        id_first = {}
+        for c in ["ticker", "name", "sector", "industry", "region", "country", "exchange"]:
+            if c in df.columns:
+                id_first[c] = "first"
+        result = df.groupby(group_cols).agg({**agg_dict, **id_first})
+        result.columns = [
+            "_".join(col).strip() if isinstance(col, tuple) else col for col in result.columns
+        ]
+        result = result.reset_index()
+        logging.info("Aggregated by isin: %d → %d rows", len(df), len(result))
+        return result
+
+    if aggregation == "by_sector" and "sector" in df.columns and "feature" in df.columns:
+        agg_dict = {m: ["mean", "median", "std", "count"] for m in available_metrics}
+        result = df.groupby(["sector", "feature"]).agg(agg_dict)
+        result.columns = ["_".join(col).strip() for col in result.columns]
+        result = result.reset_index()
+        logging.info("Aggregated by sector×feature: %d → %d rows", len(df), len(result))
+        return result
+
+    # ── Fallback: apply hard LIMIT ──
+    if len(df) > policy.max_rows:
+        logging.warning(
+            "prob export: truncating %d rows to %d (LIMIT)",
+            len(df),
+            policy.max_rows,
+        )
+        df = df.head(policy.max_rows)
+
+    return df
+
+
 try:
     from sqlalchemy import create_engine, text
 except ImportError:  # pragma: no cover
@@ -416,9 +549,9 @@ def _build_feature_query(
     base_sql = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= :earnings_date
-          AND next_earnings <= CURRENT_DATE + :lookahead_days
-        ORDER BY next_earnings
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '1 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '1 months') AND size_class <> 'Small Cap'
+        ORDER BY next_earnings ASC
     """
     if limit is not None:
         base_sql += f" LIMIT {int(limit)}"
@@ -655,6 +788,7 @@ def validate_feature_alignment(df: pd.DataFrame, categories: dict) -> dict:
 
 def load_all_feature_views(
     db_url: Optional[str] = None,
+    earnings_date_filter: str = "2026-01-01",
     schema: str = "public",
     views: Optional[list[str]] = None,
     return_dict: bool = False,
@@ -711,7 +845,13 @@ def load_all_feature_views(
         logging.info("Loading view: %s", view_ref)
 
         try:
-            query = f"SELECT * FROM {view_ref}"
+            query = f"""
+        SELECT *
+        FROM {view_ref}
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '1 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '1 months') AND size_class <> 'Small Cap'
+        ORDER BY next_earnings ASC
+    """
             df_view = pd.read_sql(query, engine)
             result_dict[view_name] = df_view
             logging.info("Loaded %d rows from %s", len(df_view), view_name)

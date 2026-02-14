@@ -41,6 +41,8 @@ from finance_ml.analytics.data_utils import (
     export_to_db,
     export_to_csv,
     export_to_json,
+    ProbExportPolicy,
+    aggregate_probability_results,
 )
 
 # --- Feature analytics dashboards ---
@@ -203,6 +205,15 @@ from finance_ml.analytics.visualizations.growth_analysis import (
     create_growth_vs_profitability_quadrant,
     create_growth_acceleration_chart,
     create_sustainable_growth_analysis,
+)
+
+# --- Visualizations: probabilistic (ArviZ-backed) ---
+from finance_ml.analytics.visualizations.probability_viz import (
+    create_posterior_return_forest,
+    create_beat_probability_posterior,
+    create_ruin_probability_diagnostic,
+    create_bayesian_category_ridge,
+    create_tri_model_posterior_comparison,
 )
 
 # =============================================================================
@@ -881,8 +892,8 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
 def monte_carlo_price_target_simulation(
     df: pd.DataFrame,
     n_simulations: int = 10000,
-    confidence_level: float = 0.99,
-    max_stocks: int = 10000,
+    confidence_level: float = 0.95,
+    max_stocks: int = 6000,
 ) -> pd.DataFrame:
     """
     Monte Carlo simulation of price targets based on analyst spread.
@@ -966,10 +977,63 @@ def monte_carlo_price_target_simulation(
     return pd.DataFrame(results)
 
 
+# --- Module-level constants for bayesian_earnings_beat_model ---
+_BEAT_MODEL_P_GRID = np.arange(0.1, 1.0, 0.1)
+_BEAT_MODEL_ENTROPY_EPS = 1e-10
+_BEAT_MODEL_IDENTIFIER_COLS = (
+    "ticker",
+    "name",
+    "sector",
+    "industry",
+    "region",
+    "country",
+    "exchange",
+)
+
+
+def _compute_grid_posterior(
+    n_beats: int,
+    n_total: int,
+    p_grid: np.ndarray,
+    prior_weight: float,
+) -> tuple[float, float, float]:
+    """
+    Compute posterior beat probability, model confidence, and MAP estimate
+    using a discrete grid approximation.
+
+    Parameters
+    ----------
+    n_beats : int
+        Number of observed positive quarters (capped at n_total).
+    n_total : int
+        Total number of quarters in the observation window.
+    p_grid : np.ndarray
+        Discrete parameter grid for beat probability.
+    prior_weight : float
+        Uniform prior weight (1 / len(p_grid)).
+
+    Returns
+    -------
+    tuple[float, float, float]
+        (posterior_predictive_mean, model_confidence, map_estimate)
+    """
+    likelihoods = p_grid**n_beats * (1 - p_grid) ** (n_total - n_beats)
+    posterior_unnorm = prior_weight * likelihoods
+    posterior = posterior_unnorm / posterior_unnorm.sum()
+
+    posterior_predictive_mean = float(np.sum(p_grid * posterior))
+
+    entropy = -np.sum(posterior * np.log(posterior + _BEAT_MODEL_ENTROPY_EPS))
+    model_confidence = 1 - entropy / np.log(len(p_grid))
+
+    map_estimate = float(p_grid[np.argmax(posterior)])
+
+    return posterior_predictive_mean, model_confidence, map_estimate
+
+
 def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataFrame:
     """
     Bayesian model for earnings beat probability.
-
     Uses EPS positive streak as prior evidence and updates posterior
     based on recent performance.
 
@@ -989,51 +1053,35 @@ def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataF
         - ticker, name, industry, eps_positive_streak
         - posterior_beat_prob, model_confidence, map_estimate
     """
-    # Prior: Uniform belief across probability grid
-    p_grid = np.arange(0.1, 1.0, 0.1)  # 9 parameter values
-    uniform_prior = 1 / len(p_grid)
-
-    results = []
-
     streak_col = "eps_positive_streak"
     if streak_col not in df.columns:
         return pd.DataFrame()
 
+    p_grid = _BEAT_MODEL_P_GRID
+    prior_weight = 1 / len(p_grid)
+
+    results = []
+
     for _, row in df.dropna(subset=[streak_col]).iterrows():
-        n_beats = int(row[streak_col])
-        n_beats = min(n_beats, n_total)  # Cap at n_total
+        n_beats = min(int(row[streak_col]), n_total)
 
-        # Compute likelihood: P(data | p) = p^k * (1-p)^(n-k)
-        likelihoods = p_grid**n_beats * (1 - p_grid) ** (n_total - n_beats)
+        posterior_predictive_mean, confidence, map_estimate = _compute_grid_posterior(
+            n_beats,
+            n_total,
+            p_grid,
+            prior_weight,
+        )
 
-        # Unnormalized posterior
-        posterior_unnorm = uniform_prior * likelihoods
-
-        # Normalize
-        posterior = posterior_unnorm / posterior_unnorm.sum()
-
-        # Posterior predictive: P(beat next quarter) = sum(p * posterior(p))
-        prob_beat_next = np.sum(p_grid * posterior)
-
-        # Confidence (inverse entropy proxy)
-        entropy = -np.sum(posterior * np.log(posterior + 1e-10))
-        confidence = 1 - entropy / np.log(len(p_grid))
-
-        results.append(
+        record = {col: row.get(col, "") for col in _BEAT_MODEL_IDENTIFIER_COLS}
+        record.update(
             {
-                "ticker": row.get("ticker", ""),
-                "name": row.get("name", ""),
-                "sector": row.get("sector", ""),
-                "industry": row.get("industry", ""),
-                "region": row.get("region", ""),
-                "country": row.get("country", ""),
-                "exchange": row.get("exchange", ""),
                 "eps_positive_streak": n_beats,
-                "posterior_beat_prob": prob_beat_next,
+                "posterior_beat_prob": posterior_predictive_mean,
                 "model_confidence": confidence,
-                "map_estimate": p_grid[np.argmax(posterior)],  # Maximum a posteriori
+                "map_estimate": map_estimate,
             }
         )
+        results.append(record)
 
     return pd.DataFrame(results)
 
@@ -1446,17 +1494,162 @@ def create_summary_dashboard(df: pd.DataFrame) -> Figure:
     return fig
 
 
-def main():
-    """Main execution function demonstrating refactored modules."""
+# ═══════════════════════════════════════════════════════════════════════════════
+# Expected Returns Summary — Quad-Model Merge
+# ═══════════════════════════════════════════════════════════════════════════════
 
-    print("=" * 80)
-    print("MARKET ANALYTICS - REFACTORED VERSION")
-    print("=" * 80)
-    print()
+_SIGNAL_LABELS_4 = {
+    0: "Strong Bearish (0/4)",
+    1: "Bearish (1/4)",
+    2: "Neutral (2/4)",
+    3: "Bullish (3/4)",
+    4: "Strong Bullish (4/4)",
+}
 
-    # ========================================================================
-    # 0. OPTIMIZATION STATUS
-    # ========================================================================
+
+def build_expected_returns_summary(
+    mc: pd.DataFrame,
+    kal: pd.DataFrame,
+    pt: pd.DataFrame,
+    earn: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Merge four expected-return model results into a unified summary DataFrame.
+
+    Combines Monte Carlo simulation, Kalman-filtered price targets,
+    price target achievement, and earnings probability analysis into a
+    single ``expected_returns_summary`` table with direction agreement
+    scoring across all four models.
+
+    Follows the same pattern as the ``tri`` DataFrame in
+    ``ExpectedReturnsAnalytics.ipynb`` but extends it to four models.
+
+    Parameters
+    ----------
+    mc : pd.DataFrame
+        Monte Carlo simulation results (``analytics.monte_carlo_simulation``).
+    kal : pd.DataFrame
+        Kalman-filtered price targets (``analytics.kalman_filtered_price_targets``).
+    pt : pd.DataFrame
+        Price target achievement results (``analytics.price_target_achievement``).
+    earn : pd.DataFrame
+        Earnings probability analysis (``analytics.earnings_probability_analysis``).
+
+    Returns
+    -------
+    pd.DataFrame
+        Combined DataFrame with columns from each model and:
+        - ``mc_bullish``, ``kal_bullish``, ``pt_bullish``, ``earn_bullish``
+        - ``agreement_score`` (0–4)
+        - ``signal`` (human-readable label)
+    """
+    if mc.empty or kal.empty or pt.empty or earn.empty:
+        logging.warning(
+            "Expected returns summary skipped — one or more inputs empty "
+            "(mc=%d, kal=%d, pt=%d, earn=%d)",
+            len(mc),
+            len(kal),
+            len(pt),
+            len(earn),
+        )
+        return pd.DataFrame()
+
+    # Select identifier + key metric columns from MC (most complete identifiers)
+    id_cols_set = get_identifier_cols_set()
+    mc_id_cols = [c for c in mc.columns if c in id_cols_set]
+
+    # Additional columns to carry through from MC (market data & temporal metadata)
+    extra_cols = [
+        "trading_country",
+        "size_class",
+        "style_class",
+        "unit",
+        "fy_end",
+        "next_earnings_report",
+        "fy_end_date",
+        "income_statement_report_date",
+        "last_updated",
+        "next_earnings",
+        "next_fy_end_date",
+        "next_income_statement_report_date",
+        "next_earnings_status",
+        "next_earnings_when",
+        "next_fiscal_quarter",
+        "reporting_interval",
+        "market_cap",
+        "enterprise_value",
+        "last_price",
+        "price_target",
+        "price_target_high",
+        "price_target_low",
+        "price_target_median",
+        "volume_shrs",
+        "shares_outstanding",
+    ]
+    available_extra = [c for c in extra_cols if c in mc.columns]
+
+    mc_select = list(
+        set(
+            mc_id_cols + ["ticker", "expected_upside_pct", "prob_positive_upside"] + available_extra
+        )
+    )
+
+    summary = (
+        mc[mc_select]
+        .copy()
+        .merge(
+            kal[["ticker", "filtered_upside"]],
+            on="ticker",
+            how="inner",
+        )
+        .merge(
+            pt[
+                [
+                    "ticker",
+                    "expected_return_prob_weighted",
+                    "achievement_probability",
+                    "confidence_level",
+                ]
+            ],
+            on="ticker",
+            how="inner",
+        )
+        .merge(
+            earn[["ticker", "posterior_beat_prob", "confidence_score", "beat_classification"]],
+            on="ticker",
+            how="inner",
+        )
+    )
+
+    if summary.empty:
+        logging.warning("Expected returns summary: no overlapping tickers across all 4 models")
+        return summary
+
+    # Direction flags
+    summary["mc_bullish"] = summary["expected_upside_pct"] > 0
+    summary["kal_bullish"] = summary["filtered_upside"] > 0
+    summary["pt_bullish"] = summary["expected_return_prob_weighted"] > 0
+    summary["earn_bullish"] = summary["posterior_beat_prob"] > 0.5
+
+    # Agreement score: 0–4
+    summary["agreement_score"] = (
+        summary["mc_bullish"].astype(int)
+        + summary["kal_bullish"].astype(int)
+        + summary["pt_bullish"].astype(int)
+        + summary["earn_bullish"].astype(int)
+    )
+    summary["signal"] = summary["agreement_score"].map(_SIGNAL_LABELS_4)
+
+    logging.info(
+        "Expected returns summary: %d stocks, %d strong bullish (4/4)",
+        len(summary),
+        (summary["agreement_score"] == 4).sum(),
+    )
+    return summary
+
+
+def _print_optimization_status() -> None:
+    """Display optimization status summary."""
     opt_status = get_optimization_status()
     print("⚡ Optimization Status:")
     print(
@@ -1472,156 +1665,200 @@ def main():
     print(f"   Stats Cache:    {opt_status['stats_cache_size']} entries")
     print()
 
-    # ========================================================================
-    # 1. DATA LOADING AND PREPROCESSING
-    # ========================================================================
+
+def _load_and_preprocess_data() -> pd.DataFrame:
+    """Load feature data from DB (with fallback to sample data) and backfill columns."""
     print("📊 Step 1: Loading and preprocessing data...")
     print("-" * 80)
-
     try:
-        # Use cached loader for performance (subsequent runs skip DB round-trip)
         df = load_feature_data_from_db_cached()
         print(f"✓ Loaded {len(df):,} stocks with {len(df.columns)} features")
         print(f"   DataFrame hash: {dataframe_hash(df)[:12]}...")
 
-        # Backfill missing columns
         df = backfill_feature_columns(df)
         print(f"✓ Backfilled features, now have {len(df.columns)} columns")
 
-        # Compare registry with fallback to identify drift
         fallback = _get_fallback_feature_categories()
         diff_report = compare_registry_with_local(FEATURE_CATEGORIES, fallback)
         if diff_report["features_only_in_db"]:
             print("   📌 New features in registry (not in fallback):")
             for cat, feats in diff_report["features_only_in_db"].items():
                 print(f"      {cat}: {feats}")
-
     except Exception as e:
         print(f"⚠️  Could not load from database: {e}")
         print("   Using sample data for demonstration...")
-        # Create sample data for demonstration
-        df = pd.DataFrame(
-            {
-                "ticker": ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
-                "name": [
-                    "Apple Inc.",
-                    "Microsoft Corp.",
-                    "Alphabet Inc.",
-                    "Amazon.com Inc.",
-                    "Tesla Inc.",
-                ],
-                "industry": [
-                    "Technology",
-                    "Technology",
-                    "Technology",
-                    "Consumer",
-                    "Automotive",
-                ],
-                "market_cap": [3000000, 2800000, 1800000, 1600000, 800000],
-                "p_e_ratio": [28.5, 32.1, 25.3, 45.2, 65.8],
-                "piotroski_f_score": [8, 7, 8, 6, 5],
-                "distress_risk_score": [85, 82, 88, 75, 60],
-                "eps_trajectory_score": [75, 80, 78, 65, 55],
-                "fcf_positive_years": [5, 5, 5, 4, 3],
-            }
-        )
+        df = _create_sample_dataframe()
 
     print()
+    return df
 
-    # ========================================================================
-    # 2. FEATURE VALIDATION
-    # ========================================================================
+
+def _create_sample_dataframe() -> pd.DataFrame:
+    """Create sample data for demonstration when DB is unavailable."""
+    return pd.DataFrame(
+        {
+            "ticker": ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
+            "name": [
+                "Apple Inc.",
+                "Microsoft Corp.",
+                "Alphabet Inc.",
+                "Amazon.com Inc.",
+                "Tesla Inc.",
+            ],
+            "industry": [
+                "Technology",
+                "Technology",
+                "Technology",
+                "Consumer",
+                "Automotive",
+            ],
+            "market_cap": [3000000, 2800000, 1800000, 1600000, 800000],
+            "p_e_ratio": [28.5, 32.1, 25.3, 45.2, 65.8],
+            "piotroski_f_score": [8, 7, 8, 6, 5],
+            "distress_risk_score": [85, 82, 88, 75, 60],
+            "eps_trajectory_score": [75, 80, 78, 65, 55],
+            "fcf_positive_years": [5, 5, 5, 4, 3],
+        }
+    )
+
+
+def _validate_features(df: pd.DataFrame) -> None:
+    """Validate feature coverage against the feature registry."""
     print("📋 Step 2: Validating feature coverage...")
     print("-" * 80)
-
     validation = validate_feature_alignment(df, FEATURE_CATEGORIES)
     low_coverage = {k: v for k, v in validation.items() if v["coverage_pct"] < 80}
-
     if low_coverage:
         print("⚠️  Categories with <80% feature coverage:")
         for cat, info in low_coverage.items():
             print(f"   {cat}: {info['coverage_pct']:.1f}%")
     else:
         print("✓ All feature categories have ≥80% coverage")
-
     print()
 
-    # ========================================================================
-    # 3. FEATURE VIEW ANALYTICS
-    # ========================================================================
+
+def _run_view_analytics(views_dict: dict, view_mapping: dict) -> None:
+    """Run probability analytics on views and export results."""
+    from finance_ml.analytics.data_utils import export_view_analytics_results
+    from finance_ml.analytics.statistical_analysis import (
+        run_all_views_probability_analytics,
+    )
+
+    view_analytics = run_all_views_probability_analytics(views_dict, view_mapping)
+
+    print("\n💾 Exporting analytics to database...")
+    export_counts = export_view_analytics_results(view_analytics)
+    for table, count in export_counts.items():
+        print(f"   {table}: {count} rows")
+
+    _export_per_feature_probabilities(views_dict)
+
+
+def _export_per_feature_probabilities(views_dict: dict) -> None:
+    """Export per-feature probability metrics to prob_vw_features_* tables."""
+    from finance_ml.analytics.statistical_analysis import (
+        export_probability_view_results,
+    )
+
+    print("\n📊 Exporting per-feature probability metrics...")
+    id_cols = load_identifier_columns()
+    id_cols_set = set(id_cols)
+
+    prob_policy = ProbExportPolicy(
+        max_rows=5_000,
+        aggregation="by_feature",
+        top_n_isins=None,
+    )
+
+    for view_name, view_df in views_dict.items():
+        if view_df.empty:
+            continue
+        feature_cols = [c for c in view_df.columns if c not in id_cols_set]
+        rows_exported = export_probability_view_results(view_df, view_name, feature_cols, id_cols)
+        if rows_exported and rows_exported > 0:
+            print(f"   ✓ prob_{view_name}: {rows_exported} rows")
+
+
+def _generate_view_visualizations(views_dict: dict, view_mapping: dict) -> None:
+    """Generate per-view probability dashboards and enhanced analytics."""
+    print("\n📊 Generating view-specific visualizations...")
+    output_dir_views = Path("outputs/analytics/views")
+    output_dir_views.mkdir(parents=True, exist_ok=True)
+
+    id_cols_set = get_identifier_cols_set()
+    prob_policy = ProbExportPolicy(
+        max_rows=5_000,
+        aggregation="by_feature",
+        top_n_isins=None,
+    )
+
+    for view_name, view_df in views_dict.items():
+        if view_df.empty:
+            continue
+
+        category = view_mapping.get(view_name, view_name)
+        feature_cols = [c for c in view_df.columns if c not in id_cols_set]
+
+        if PROBABILITY_ANALYTICS_AVAILABLE:
+            _export_enhanced_view_analytics(view_df, view_name, category, feature_cols, prob_policy)
+
+        fig = create_view_probability_dashboard(view_df, view_name, category)
+        output_path = output_dir_views / f"{view_name}_dashboard.html"
+        fig.write_html(str(output_path))
+
+
+def _export_enhanced_view_analytics(
+    view_df, view_name, category, feature_cols, prob_policy
+) -> None:
+    """Run CategoryProbabilityAnalyzer and export aggregated results."""
+    analyzer = CategoryProbabilityAnalyzer(category)
+    view_prob_results = analyzer.analyze_view(view_df, feature_cols)
+    if not view_prob_results.empty:
+        view_prob_export = aggregate_probability_results(view_prob_results, prob_policy)
+        export_to_analytics_db(view_prob_export, f"prob_{view_name}")
+        print(
+            f"   📦 prob_{view_name}: "
+            f"{len(view_prob_results)} raw → "
+            f"{len(view_prob_export)} exported"
+        )
+
+
+def main():
+    """Main execution function demonstrating refactored modules."""
+    print("=" * 80)
+    print("MARKET ANALYTICS - REFACTORED VERSION")
+    print("=" * 80)
+    print()
+
+    _print_optimization_status()
+
+    df = _load_and_preprocess_data()
+
+    _validate_features(df)
+
     print("📊 Step 3: Loading all feature views...")
     print("-" * 80)
 
     from finance_ml.analytics.data_utils import (
         load_all_feature_views,
         get_view_category_labels,
-        export_view_analytics_results,
-    )
-    from finance_ml.analytics.statistical_analysis import (
-        run_all_views_probability_analytics,
-        export_probability_view_results,
     )
 
-    # Load all 17 vw_features views
     try:
         views_dict = load_all_feature_views(return_dict=True)
         print(f"✓ Loaded {len(views_dict)} feature views")
-
         for view_name, view_df in views_dict.items():
             if not view_df.empty:
                 print(f"   {view_name}: {len(view_df):,} rows, {len(view_df.columns)} columns")
 
-        # Run probability analytics on each view
-        print("\n📈 Running view-based probability analytics...")
         view_mapping = get_view_category_labels()
-        view_analytics = run_all_views_probability_analytics(views_dict, view_mapping)
 
-        # Export results to database
-        print("\n💾 Exporting analytics to database...")
-        export_counts = export_view_analytics_results(view_analytics)
-        for table, count in export_counts.items():
-            print(f"   {table}: {count} rows")
+        print("\n📈 Running view-based probability analytics...")
+        _run_view_analytics(views_dict, view_mapping)
 
-        # --- NEW: Export per-feature probability metrics to prob_vw_features_* tables ---
-        print("\n📊 Exporting per-feature probability metrics...")
-        id_cols = load_identifier_columns()
-        id_cols_set = set(id_cols)
-        for view_name, view_df in views_dict.items():
-            if view_df.empty:
-                continue
-            feature_cols = [c for c in view_df.columns if c not in id_cols_set]
-            rows_exported = export_probability_view_results(
-                view_df, view_name, feature_cols, id_cols
-            )
-            if rows_exported and rows_exported > 0:
-                print(f"   ✓ prob_{view_name}: {rows_exported} rows")
-
-        # Generate visualizations for each view
-        print("\n📊 Generating view-specific visualizations...")
-        output_dir_views = Path("outputs/analytics/views")
-        output_dir_views.mkdir(parents=True, exist_ok=True)
-
-        for view_name, view_df in views_dict.items():
-            if view_df.empty:
-                continue
-            category = view_mapping.get(view_name, view_name)
-
-            # Enhanced View Analytics using CategoryProbabilityAnalyzer
-            if PROBABILITY_ANALYTICS_AVAILABLE:
-                analyzer = CategoryProbabilityAnalyzer(category)
-                id_cols_set_viz = get_identifier_cols_set()
-                feature_cols = [c for c in view_df.columns if c not in id_cols_set_viz]
-                view_prob_results = analyzer.analyze_view(view_df, feature_cols)
-                if not view_prob_results.empty:
-                    # Export view-specific probability results
-                    export_to_analytics_db(view_prob_results, f"prob_{view_name}")
-
-            fig = create_view_probability_dashboard(view_df, view_name, category)
-            output_path = output_dir_views / f"{view_name}_probability.html"
-            fig.write_html(str(output_path))
-            print(f"   ✓ Saved {output_path.name}")
+        _generate_view_visualizations(views_dict, view_mapping)
     except Exception as e:
-        print(f"⚠️  Error in view-based analytics: {e}")
+        print(f"⚠️  View analytics failed: {e}")
 
     print()
 
@@ -1631,15 +1868,15 @@ def main():
     print("📈 Step 4: Running statistical analysis...")
     print("-" * 80)
 
-    # Bayesian analysis for profitability features
+    # Bayesian analysis for quality_risk features
     if "roe" in df.columns and len(df) > 50:
-        print("   Running Bayesian analysis on Profitability features...")
-        profitability_features = [
-            f for f in FEATURE_CATEGORIES.get("Profitability", []) if f in df.columns
+        print("   Running Bayesian analysis on Quality & Risk features...")
+        quality_risk_features = [
+            f for f in FEATURE_CATEGORIES.get("Quality & Risk", []) if f in df.columns
         ][:3]
-        bayesian_results = bayesian_category_analysis(df, "Profitability", profitability_features)
+        bayesian_results = bayesian_category_analysis(df, "Quality & Risk", quality_risk_features)
         if bayesian_results:
-            print(f"   ✓ Analyzed {len(bayesian_results)} profitability metrics")
+            print(f"   ✓ Analyzed {len(bayesian_results)} quality_risk metrics")
 
             # Build InferenceData for Bayesian category analysis
             if ARVIZ_AVAILABLE:
@@ -1647,8 +1884,8 @@ def main():
                     idata_cat = build_category_analysis_inference_data(
                         bayesian_results,
                         df,
-                        "Profitability",
-                        profitability_features,
+                        "Quality & Risk",
+                        quality_risk_features,
                     )
                     cat_summary = summarize_inference_data(idata_cat)
                     print(
@@ -1661,7 +1898,7 @@ def main():
     if all(col in df.columns for col in ["market_cap", "distress_risk_score"]):
         print("   Calculating investor's ruin probabilities (Numba-accelerated)...")
         ruin_df = fast_ruin_probability(df, n_simulations=2000, n_days=252)
-        high_risk_count = (ruin_df["ruin_probability"] > 0.6).sum()
+        high_risk_count = (ruin_df["ruin_probability"] > 0.75).sum()
         print(f"   ✓ Identified {high_risk_count} high-risk stocks ({len(ruin_df)} analyzed)")
 
         # Build InferenceData for credit risk / ruin probability
@@ -1690,14 +1927,14 @@ def main():
         required_mc_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
         if all(col in df.columns for col in required_mc_cols):
             print("  - Running Monte Carlo price target simulation...")
-            mc_results = monte_carlo_price_target_simulation(df, max_stocks=10000)
+            mc_results = monte_carlo_price_target_simulation(df, max_stocks=6000)
             if len(mc_results) > 0:
                 export_to_analytics_db(mc_results, "monte_carlo_simulation")
                 print(
                     f"    ✓ Exported {len(mc_results)} simulations to analytics.monte_carlo_simulation"
                 )
-                print(f"    Top 5 by risk-reward ratio:")
-                top5 = mc_results.nlargest(5, "risk_reward_ratio")[
+                print(f"    Top 25 by risk-reward ratio:")
+                top5 = mc_results.nlargest(25, "risk_reward_ratio")[
                     ["ticker", "name", "expected_upside_pct", "risk_reward_ratio"]
                 ]
                 print(top5.to_string(index=False))
@@ -2379,6 +2616,34 @@ def main():
             fig.write_html(output_dir / f"growth_waterfall_{ticker}.html")
             print(f"   ✓ Saved: growth_waterfall_{ticker}.html")
 
+        # --- NEW: Probabilistic Visualizations (probability_viz) ---
+        print("   Creating probabilistic visualizations...")
+
+        if "mc_results" in dir() and len(mc_results) > 0:
+            fig = create_posterior_return_forest(mc_results, top_n=25)
+            fig.write_html(output_dir / "posterior_return_forest.html")
+            print("   ✓ Saved: posterior_return_forest.html")
+
+        if "bayesian_results" in dir() and len(bayesian_results) > 0:
+            fig = create_beat_probability_posterior(bayesian_results, top_n=12)
+            fig.write_html(output_dir / "beat_probability_posterior.html")
+            print("   ✓ Saved: beat_probability_posterior.html")
+
+        if "ruin_df" in dir() and len(ruin_df) > 0:
+            fig = create_ruin_probability_diagnostic(ruin_df, top_n=20)
+            fig.write_html(output_dir / "ruin_probability_diagnostic.html")
+            print("   ✓ Saved: ruin_probability_diagnostic.html")
+
+        # Bayesian category ridge for Profitability
+        prof_features = [f for f in FEATURE_CATEGORIES.get("Profitability", []) if f in df.columns][
+            :5
+        ]
+        if prof_features:
+            prof_results = bayesian_category_analysis(df, "Profitability", prof_features)
+            fig = create_bayesian_category_ridge(prof_results, category_name="Profitability")
+            fig.write_html(output_dir / "bayesian_category_ridge_profitability.html")
+            print("   ✓ Saved: bayesian_category_ridge_profitability.html")
+
     except Exception as e:
         print(f"   ⚠️  Visualization error: {e}")
 
@@ -2461,6 +2726,77 @@ def main():
         export_to_json(kalman_df, kalman_cfg)
         print(f"   ✓ Exported {len(kalman_pt)} Kalman-filtered targets")
 
+    # --- NEW: Build & export expected_returns_summary (4-model merge) ---
+    #
+    # Combines: monte_carlo_simulation, kalman_filtered_price_targets,
+    #           price_target_achievement, earnings_probability_analysis
+    # into a single summary table analogous to the tri-model DataFrame
+    # in ExpectedReturnsAnalytics.ipynb, extended to 4 models.
+    _mc_for_summary = locals().get("mc_results", pd.DataFrame())
+    _kal_for_summary = locals().get("kalman_pt", pd.DataFrame())
+    _pt_for_summary = locals().get("pt_results", pd.DataFrame())
+    _earn_for_summary = locals().get("probability_results", pd.DataFrame())
+
+    if (
+        not _mc_for_summary.empty
+        and not _kal_for_summary.empty
+        and not _pt_for_summary.empty
+        and not _earn_for_summary.empty
+    ):
+        print("   Building expected_returns_summary (4-model merge)...")
+        expected_returns_summary = build_expected_returns_summary(
+            mc=_mc_for_summary,
+            kal=_kal_for_summary,
+            pt=_pt_for_summary,
+            earn=_earn_for_summary,
+        )
+        if len(expected_returns_summary) > 0:
+            summary_cfg = ExportConfig(table_name="expected_returns_summary")
+            summary_export_df = _reorder_with_identifiers(expected_returns_summary)
+            export_to_db(summary_export_df, summary_cfg)
+            export_to_csv(summary_export_df, summary_cfg)
+            export_to_json(summary_export_df, summary_cfg)
+            print(
+                f"   ✓ Exported {len(expected_returns_summary)} stocks to "
+                f"analytics.expected_returns_summary"
+            )
+            print(f"     Agreement distribution:")
+            for label in _SIGNAL_LABELS_4.values():
+                cnt = (expected_returns_summary["signal"] == label).sum()
+                if cnt > 0:
+                    print(f"       {label}: {cnt}")
+
+            # Generate tri-model posterior comparison visualization
+            tri_cols = {
+                "ticker",
+                "expected_upside_pct",
+                "filtered_upside",
+                "expected_return_prob_weighted",
+            }
+            if tri_cols.issubset(expected_returns_summary.columns):
+                try:
+                    fig = create_tri_model_posterior_comparison(
+                        expected_returns_summary,
+                        top_n=12,
+                    )
+                    fig.write_html(output_dir / "expected_returns_summary_posterior.html")
+                    print("   ✓ Saved: expected_returns_summary_posterior.html")
+                except Exception as e:
+                    print(f"   ⚠️  Posterior comparison chart failed: {e}")
+        else:
+            print("   ⚠️  Expected returns summary: no overlapping tickers across 4 models")
+    else:
+        missing_models = []
+        if _mc_for_summary.empty:
+            missing_models.append("monte_carlo_simulation")
+        if _kal_for_summary.empty:
+            missing_models.append("kalman_filtered_price_targets")
+        if _pt_for_summary.empty:
+            missing_models.append("price_target_achievement")
+        if _earn_for_summary.empty:
+            missing_models.append("earnings_probability_analysis")
+        print(f"   ⚠️  Expected returns summary skipped — missing: " f"{', '.join(missing_models)}")
+
     print()
 
     # ========================================================================
@@ -2486,6 +2822,7 @@ def main():
     print("  • visualizations.earnings_quality: Earnings quality charts")
     print("  • visualizations.quality_risk: Quality & risk assessment")
     print("  • visualizations.growth_analysis: Growth metrics analysis")
+    print("  • visualizations.probability_viz: Probabilistic ArviZ-backed charts")
     if PROBABILITY_ANALYTICS_AVAILABLE:
         print(
             "  • probability_analytics: Bayesian beat, credit risk, dividend safety, PT achievement"
@@ -2504,6 +2841,12 @@ def main():
         print(f"Dividend safety analysis completed: {len(dividend_results)} stocks")
     if pt_results is not None:
         print(f"Price target achievement analysis completed: {len(pt_results)} stocks")
+    if "expected_returns_summary" in locals() and len(expected_returns_summary) > 0:
+        full_consensus = (expected_returns_summary["agreement_score"] == 4).sum()
+        print(
+            f"Expected returns summary: {len(expected_returns_summary)} stocks, "
+            f"{full_consensus} full consensus (4/4)"
+        )
     print()
     print("Check the 'outputs/analytics/' directory for generated files.")
     print()

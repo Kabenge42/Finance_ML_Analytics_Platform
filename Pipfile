@@ -21,6 +21,7 @@ joblib = ">=1.4.0,<2.0.0"
 xlsxwriter = ">=3.2.0,<4.0.0"
 psutil = ">=6.0.0,<7.0.0"
 optuna = ">=4.1.0,<5.0.0"
+arviz = ">=0.19.0,<1.0.0"
 
 # Python <3.14 only packages
 catboost = { version = ">=1.2.5,<2.0.0", markers = "python_version < '3.14'" }

@@ -33,7 +33,7 @@ try:
     import arviz as az
 
     ARVIZ_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError, PermissionError, Exception):
     az = None  # type: ignore[assignment]
     ARVIZ_AVAILABLE = False
 
@@ -826,3 +826,57 @@ def summarize_inference_data(idata: Any) -> dict[str, Any]:
         summary["error"] = f"Unknown type: {type(idata)}"
 
     return summary
+
+
+# =============================================================================
+# 8. InferenceData Factory — Resampled Technical Returns
+# =============================================================================
+
+
+def build_resampled_technical_inference_data(
+    equities_df: pd.DataFrame,
+    freq: str = "1ME",
+    prior_return_mean: float = 0.08,
+    prior_return_std: float = 0.20,
+    n_posterior_samples: int = 4000,
+    n_chains: int = 4,
+    random_seed: int = 42,
+) -> "az.InferenceData | xr.Dataset | None":
+    """
+    Build ArviZ InferenceData from resampled technical return posteriors.
+
+    Delegates to ``BayesianTechnicalResampler`` from statistical_analysis.py
+    and wraps results in the standard InferenceData schema with equity
+    coordinates from equities_schema_metadata.
+
+    Parameters
+    ----------
+    equities_df : pd.DataFrame
+        Equities data with price snapshot columns + merged feature columns.
+    freq : str
+        Resampling frequency ('1W', '1ME', '1QE').
+    prior_return_mean : float
+        Prior expected annual return.
+    prior_return_std : float
+        Prior uncertainty on expected return.
+    n_posterior_samples : int
+        Posterior draws per chain.
+    n_chains : int
+        Number of chains.
+    random_seed : int
+        RNG seed.
+
+    Returns
+    -------
+    arviz.InferenceData, xr.Dataset, or None
+    """
+    from finance_ml.analytics.statistical_analysis import BayesianTechnicalResampler
+
+    resampler = BayesianTechnicalResampler(
+        prior_return_mean=prior_return_mean,
+        prior_return_std=prior_return_std,
+        n_posterior_samples=n_posterior_samples,
+        n_chains=n_chains,
+        random_seed=random_seed,
+    )
+    return resampler.build_inference_data(equities_df, freq=freq)

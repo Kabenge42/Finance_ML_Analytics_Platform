@@ -257,6 +257,28 @@ try:
 except ImportError:
     _category_exports = []
 
+# Import probabilistic ArviZ-backed visualization functions
+try:
+    from .probability_viz import (
+        create_posterior_return_forest,
+        create_beat_probability_posterior,
+        create_ruin_probability_diagnostic,
+        create_mcse_convergence_panel,
+        create_bayesian_category_ridge,
+        create_tri_model_posterior_comparison,
+    )
+
+    _probability_viz_exports = [
+        "create_posterior_return_forest",
+        "create_beat_probability_posterior",
+        "create_ruin_probability_diagnostic",
+        "create_mcse_convergence_panel",
+        "create_bayesian_category_ridge",
+        "create_tri_model_posterior_comparison",
+    ]
+except ImportError:
+    _probability_viz_exports = []
+
 # Shared exports
 _shared_exports = [
     "PLOTLY_TEMPLATE",
@@ -278,4 +300,5 @@ __all__ = (
     + _quality_risk_exports
     + _growth_analysis_exports
     + _category_exports
+    + _probability_viz_exports
 )

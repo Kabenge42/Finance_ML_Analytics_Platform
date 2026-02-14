@@ -22,7 +22,11 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import (
+    PLOTLY_TEMPLATE,
+    COLORS,
+    create_no_data_figure,
+)
 
 # Default valuation metrics for analysis
 DEFAULT_VALUATION_METRICS = [
@@ -48,22 +52,6 @@ METRIC_LABELS = {
     "eps_growth_yoy": "EPS Growth YoY",
     "revenue_growth_yoy": "Revenue Growth YoY",
 }
-
-
-def _create_no_data_figure(title: str) -> go.Figure:
-    """Create a placeholder figure when no data is available."""
-    fig = go.Figure()
-    fig.add_annotation(
-        text="No data available",
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
-        showarrow=False,
-        font=dict(size=16),
-    )
-    fig.update_layout(title=title, template=PLOTLY_TEMPLATE)
-    return fig
 
 
 def create_valuation_multiples_comparison(
@@ -101,7 +89,7 @@ def create_valuation_multiples_comparison(
     available_metrics = [col for col in metrics if col in df.columns]
 
     if not available_metrics:
-        return _create_no_data_figure("Valuation Multiples Comparison - No Data")
+        return create_no_data_figure("Valuation Multiples Comparison - No Data")
 
     # Calculate sector medians for comparison
     sector_medians = {}
@@ -229,7 +217,7 @@ def create_valuation_distribution_dashboard(
     available_metrics = [col for col in metrics if col in df.columns]
 
     if not available_metrics or group_col not in df.columns:
-        return _create_no_data_figure("Valuation Distribution Dashboard - No Data")
+        return create_no_data_figure("Valuation Distribution Dashboard - No Data")
 
     n_metrics = len(available_metrics)
     n_rows = n_metrics
@@ -325,7 +313,7 @@ def create_relative_valuation_matrix(
     available_metrics = [col for col in metrics if col in df.columns]
 
     if not available_metrics or group_col not in df.columns:
-        return _create_no_data_figure("Relative Valuation Matrix - No Data")
+        return create_no_data_figure("Relative Valuation Matrix - No Data")
 
     # Calculate Z-scores by group
     groups = df[group_col].dropna().unique()
@@ -419,7 +407,7 @@ def create_valuation_vs_growth_quadrant(
     >>> fig.show()
     """
     if valuation_metric not in df.columns or growth_metric not in df.columns:
-        return _create_no_data_figure("Valuation vs Growth Quadrant - No Data")
+        return create_no_data_figure("Valuation vs Growth Quadrant - No Data")
 
     # Filter valid data
     plot_df = df[[valuation_metric, growth_metric]].copy()
@@ -433,7 +421,7 @@ def create_valuation_vs_growth_quadrant(
     plot_df = plot_df.dropna(subset=[valuation_metric, growth_metric])
 
     if len(plot_df) == 0:
-        return _create_no_data_figure("Valuation vs Growth Quadrant - No Data")
+        return create_no_data_figure("Valuation vs Growth Quadrant - No Data")
 
     # Calculate medians for quadrant lines
     val_median = plot_df[valuation_metric].median()
@@ -595,12 +583,12 @@ def create_historical_valuation_percentile(
     >>> fig.show()
     """
     if metric not in df.columns:
-        return _create_no_data_figure("Historical Valuation Percentile - No Data")
+        return create_no_data_figure("Historical Valuation Percentile - No Data")
 
     valid_data = df[metric].dropna()
 
     if len(valid_data) == 0:
-        return _create_no_data_figure("Historical Valuation Percentile - No Data")
+        return create_no_data_figure("Historical Valuation Percentile - No Data")
 
     # Calculate percentiles
     percentiles = [10, 25, 50, 75, 90]

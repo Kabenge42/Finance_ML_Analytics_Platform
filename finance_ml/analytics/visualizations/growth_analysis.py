@@ -23,7 +23,11 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import (
+    PLOTLY_TEMPLATE,
+    COLORS,
+    create_no_data_figure,
+)
 
 # Metric display names - aligned with actual MV column names
 METRIC_LABELS = {
@@ -39,34 +43,6 @@ METRIC_LABELS = {
     "roic": "ROIC",
     "net_margin_pct": "Net Margin %",
 }
-
-# Color scheme
-COLORS = [
-    "#0A7EA4",
-    "#00A878",
-    "#6C63FF",
-    "#FF6B6B",
-    "#4ECDC4",
-    "#FFD93D",
-    "#95E1D3",
-    "#F38181",
-]
-
-
-def _create_no_data_figure(title: str) -> go.Figure:
-    """Create a placeholder figure when no data is available."""
-    fig = go.Figure()
-    fig.add_annotation(
-        text="No data available",
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
-        showarrow=False,
-        font=dict(size=16),
-    )
-    fig.update_layout(title=title, template=PLOTLY_TEMPLATE)
-    return fig
 
 
 def create_growth_waterfall_chart(
@@ -105,7 +81,7 @@ def create_growth_waterfall_chart(
     available_cols = [col for col in growth_cols if col in df.columns]
 
     if not available_cols:
-        return _create_no_data_figure("Growth Waterfall Chart - No Data")
+        return create_no_data_figure("Growth Waterfall Chart - No Data")
 
     # Get values
     title_suffix = "(Median Values)"
@@ -189,7 +165,7 @@ def create_growth_consistency_matrix(
     available_cols = [col for col in growth_cols if col in df.columns]
 
     if not available_cols or group_col not in df.columns:
-        return _create_no_data_figure("Growth Consistency Matrix - No Data")
+        return create_no_data_figure("Growth Consistency Matrix - No Data")
 
     # Calculate median growth by group
     groups = df[group_col].dropna().unique()
@@ -273,7 +249,7 @@ def create_growth_vs_profitability_quadrant(
     >>> fig.show()
     """
     if growth_metric not in df.columns or profitability_metric not in df.columns:
-        return _create_no_data_figure("Growth vs Profitability Quadrant - No Data")
+        return create_no_data_figure("Growth vs Profitability Quadrant - No Data")
 
     plot_df = df[[growth_metric, profitability_metric]].copy()
     if size_metric in df.columns:
@@ -288,7 +264,7 @@ def create_growth_vs_profitability_quadrant(
     plot_df = plot_df.dropna(subset=[growth_metric, profitability_metric])
 
     if len(plot_df) == 0:
-        return _create_no_data_figure("Growth vs Profitability Quadrant - No Data")
+        return create_no_data_figure("Growth vs Profitability Quadrant - No Data")
 
     fig = go.Figure()
 
@@ -429,11 +405,11 @@ def create_growth_acceleration_chart(
     cagr_col = "revenue_cagr_3y"
 
     if yoy_col not in df.columns:
-        return _create_no_data_figure("Growth Acceleration Chart - No Data")
+        return create_no_data_figure("Growth Acceleration Chart - No Data")
 
     plot_df = df.dropna(subset=[yoy_col]).copy()
     if len(plot_df) == 0:
-        return _create_no_data_figure("Growth Acceleration Chart - No Data")
+        return create_no_data_figure("Growth Acceleration Chart - No Data")
 
     # Calculate acceleration (YoY - CAGR)
     if cagr_col in plot_df.columns:
@@ -537,7 +513,7 @@ def create_sustainable_growth_analysis(
     >>> fig.show()
     """
     if "roe" not in df.columns:
-        return _create_no_data_figure("Sustainable Growth Analysis - No Data")
+        return create_no_data_figure("Sustainable Growth Analysis - No Data")
 
     fig = make_subplots(
         rows=2,

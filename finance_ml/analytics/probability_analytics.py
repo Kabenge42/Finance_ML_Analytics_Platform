@@ -33,6 +33,17 @@ from finance_ml.analytics.data_utils import export_to_analytics_db, load_identif
 
 logger = logging.getLogger(__name__)
 
+# Lazy ArviZ import (consistent with inference_schema.py)
+try:
+    import arviz as az
+    import xarray as xr
+
+    ARVIZ_AVAILABLE = True
+except (ImportError, OSError, PermissionError, Exception):
+    az = None  # type: ignore[assignment]
+    xr = None  # type: ignore[assignment]
+    ARVIZ_AVAILABLE = False
+
 
 # =============================================================================
 # TYPE DEFINITIONS
@@ -2506,6 +2517,304 @@ class CategoryProbabilityAnalyzer:
             return pd.DataFrame()
 
         return pd.concat(results, ignore_index=True)
+
+
+# =============================================================================
+# RESAMPLED BEAT PROBABILITY MODEL (ArviZ-enhanced)
+# =============================================================================
+
+
+@dataclass
+class ResampledBeatEstimate:
+    """Result container for resampled earnings beat probability with technical conditioning."""
+
+    ticker: str
+    name: str
+    sector: str
+    base_posterior_mean: float
+    resampled_posterior_mean: float
+    technical_adjustment: float
+    momentum_signal: float
+    volatility_regime_score: float
+    credible_interval_90: tuple[float, float]
+    credible_interval_95: tuple[float, float]
+    prob_beat_given_momentum: float
+    earnings_season_flag: Optional[int] = None
+    pre_earnings_window: Optional[int] = None
+
+
+class ResampledBeatProbabilityModel:
+    """
+    Extends EarningsBeatProbabilityModel with technical resampling priors.
+
+    Conditions the Beta posterior on technical signals from
+    ``vw_features_technical_analysis`` and ``vw_features_momentum``,
+    then uses multi-timeframe resampled returns as informative priors.
+
+    Parameters
+    ----------
+    base_model : EarningsBeatProbabilityModel
+        Pre-configured base model for standard Bayesian beat probabilities.
+    momentum_weight : float
+        Weight of momentum signal in prior adjustment (0–1).
+    volatility_weight : float
+        Weight of volatility regime in prior adjustment (0–1).
+    n_posterior_samples : int
+        Number of posterior draws for ArviZ output.
+    n_chains : int
+        Number of MCMC chains.
+    """
+
+    _MOMENTUM_COLS = [
+        "price_momentum_1m",
+        "price_momentum_3m",
+        "price_momentum_6m",
+        "range_52w_position",
+        "ema_crossover_20_50",
+    ]
+    _TECHNICAL_COLS = [
+        "ema_slope_20d",
+        "ema_trend_consistency",
+        "breakout_signal",
+        "volatility_compression",
+    ]
+    _TEMPORAL_COLS = [
+        "earnings_season_flag",
+        "pre_earnings_window",
+        "days_to_earnings",
+        "reporting_freshness_score",
+    ]
+    _EARNINGS_COLS = [
+        "eps_trajectory_score",
+        "eps_positive_streak",
+        "revision_quality_divergence",
+    ]
+
+    def __init__(
+        self,
+        base_model: Optional["EarningsBeatProbabilityModel"] = None,
+        momentum_weight: float = 0.3,
+        volatility_weight: float = 0.2,
+        n_posterior_samples: int = 4000,
+        n_chains: int = 4,
+        random_seed: int = 42,
+    ):
+        self.base_model = base_model or EarningsBeatProbabilityModel()
+        self.momentum_weight = np.clip(momentum_weight, 0, 1)
+        self.volatility_weight = np.clip(volatility_weight, 0, 1)
+        self.n_posterior_samples = n_posterior_samples
+        self.n_chains = n_chains
+        self.rng = np.random.default_rng(random_seed)
+
+    def _compute_momentum_signal(self, row: pd.Series) -> float:
+        """Composite momentum signal from available features (normalised to [-1, 1])."""
+        signals = []
+        for col in self._MOMENTUM_COLS:
+            if col in row.index and pd.notna(row[col]):
+                signals.append(float(row[col]))
+        if not signals:
+            return 0.0
+        raw = np.mean(signals)
+        return float(np.clip(raw / 100.0, -1.0, 1.0))
+
+    def _compute_volatility_regime(self, row: pd.Series) -> float:
+        """Volatility regime score (0=high vol, 1=low/compressed vol)."""
+        score = 0.5
+        if "volatility_compression" in row.index and pd.notna(row["volatility_compression"]):
+            score = float(np.clip(row["volatility_compression"], 0, 1))
+        elif "volatility_term_structure" in row.index and pd.notna(
+            row["volatility_term_structure"]
+        ):
+            score = float(np.clip(1.0 - abs(row["volatility_term_structure"]) / 100, 0, 1))
+        return score
+
+    def _adjust_prior(
+        self,
+        base_alpha: float,
+        base_beta: float,
+        momentum_signal: float,
+        vol_regime: float,
+    ) -> tuple[float, float]:
+        """
+        Adjust Beta prior parameters based on technical signals.
+
+        Positive momentum + low volatility → shift prior toward higher beat rate.
+        """
+        adjustment = (
+            self.momentum_weight * momentum_signal + self.volatility_weight * (vol_regime - 0.5) * 2
+        )
+        concentration = base_alpha + base_beta
+        shift = adjustment * 0.2 * concentration
+
+        adjusted_alpha = max(0.5, base_alpha + shift)
+        adjusted_beta = max(0.5, base_beta - shift)
+        return adjusted_alpha, adjusted_beta
+
+    def analyze(
+        self,
+        df: pd.DataFrame,
+        sector_col: str = "sector",
+        ticker_col: str = "ticker",
+    ) -> pd.DataFrame:
+        """
+        Run resampled beat probability analysis on equities DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Merged feature data (ideally from multiple vw_features_* views).
+        sector_col : str
+            Sector grouping column.
+        ticker_col : str
+            Ticker identifier column.
+
+        Returns
+        -------
+        pd.DataFrame
+            Enhanced beat probability results with technical conditioning.
+        """
+        base_results = self.base_model.analyze_dataframe_enhanced(
+            df, sector_col=sector_col, ticker_col=ticker_col
+        )
+        if base_results.empty:
+            return pd.DataFrame()
+
+        results = []
+        for _, row in base_results.iterrows():
+            ticker = row.get(ticker_col, row.get("ticker", ""))
+
+            orig_mask = (
+                df[ticker_col] == ticker
+                if ticker_col in df.columns
+                else pd.Series(False, index=df.index)
+            )
+            orig_row = df.loc[orig_mask].iloc[0] if orig_mask.any() else pd.Series(dtype=float)
+
+            momentum = self._compute_momentum_signal(orig_row)
+            vol_regime = self._compute_volatility_regime(orig_row)
+
+            base_alpha = row.get("posterior_alpha", 2.0)
+            base_beta = row.get("posterior_beta", 2.0)
+            base_mean = base_alpha / (base_alpha + base_beta)
+
+            adj_alpha, adj_beta = self._adjust_prior(base_alpha, base_beta, momentum, vol_regime)
+            adj_mean = adj_alpha / (adj_alpha + adj_beta)
+
+            ci_90 = (
+                float(stats.beta.ppf(0.05, adj_alpha, adj_beta)),
+                float(stats.beta.ppf(0.95, adj_alpha, adj_beta)),
+            )
+            ci_95 = (
+                float(stats.beta.ppf(0.025, adj_alpha, adj_beta)),
+                float(stats.beta.ppf(0.975, adj_alpha, adj_beta)),
+            )
+
+            results.append(
+                ResampledBeatEstimate(
+                    ticker=str(ticker),
+                    name=str(row.get("name", "")),
+                    sector=str(row.get(sector_col, row.get("sector", ""))),
+                    base_posterior_mean=float(base_mean),
+                    resampled_posterior_mean=float(adj_mean),
+                    technical_adjustment=float(adj_mean - base_mean),
+                    momentum_signal=momentum,
+                    volatility_regime_score=vol_regime,
+                    credible_interval_90=ci_90,
+                    credible_interval_95=ci_95,
+                    prob_beat_given_momentum=float(1.0 - stats.beta.cdf(0.5, adj_alpha, adj_beta)),
+                    earnings_season_flag=(
+                        int(orig_row["earnings_season_flag"])
+                        if "earnings_season_flag" in orig_row.index
+                        and pd.notna(orig_row.get("earnings_season_flag"))
+                        else None
+                    ),
+                    pre_earnings_window=(
+                        int(orig_row["pre_earnings_window"])
+                        if "pre_earnings_window" in orig_row.index
+                        and pd.notna(orig_row.get("pre_earnings_window"))
+                        else None
+                    ),
+                )
+            )
+
+        return pd.DataFrame([vars(r) for r in results])
+
+    def build_inference_data(
+        self,
+        df: pd.DataFrame,
+        sector_col: str = "sector",
+        ticker_col: str = "ticker",
+    ) -> "az.InferenceData | xr.Dataset | None":
+        """
+        Build ArviZ InferenceData from resampled beat probability posteriors.
+
+        Returns
+        -------
+        arviz.InferenceData, xr.Dataset, or None
+        """
+        result_df = self.analyze(df, sector_col=sector_col, ticker_col=ticker_col)
+        if result_df.empty:
+            return None
+
+        tickers = result_df["ticker"].values
+        n_equities = len(tickers)
+
+        base_results = self.base_model.analyze_dataframe_enhanced(
+            df, sector_col=sector_col, ticker_col=ticker_col
+        )
+
+        adj_alphas = np.full(n_equities, 2.0)
+        adj_betas = np.full(n_equities, 2.0)
+
+        for i, ticker in enumerate(tickers):
+            base_row = base_results.loc[base_results["ticker"] == ticker]
+            if base_row.empty:
+                continue
+            base_a = float(base_row["posterior_alpha"].iloc[0])
+            base_b = float(base_row["posterior_beta"].iloc[0])
+            mom = float(result_df.iloc[i]["momentum_signal"])
+            vol = float(result_df.iloc[i]["volatility_regime_score"])
+            adj_alphas[i], adj_betas[i] = self._adjust_prior(base_a, base_b, mom, vol)
+
+        posterior_samples = np.stack(
+            [
+                self.rng.beta(adj_alphas, adj_betas, size=(self.n_posterior_samples, n_equities))
+                for _ in range(self.n_chains)
+            ]
+        )
+
+        pp_samples = (self.rng.random(posterior_samples.shape) < posterior_samples).astype(int)
+
+        coords = {
+            "chain": np.arange(self.n_chains),
+            "draw": np.arange(self.n_posterior_samples),
+            "equity": tickers,
+        }
+
+        if ARVIZ_AVAILABLE and az is not None:
+            return az.from_dict(
+                posterior={"beat_probability": posterior_samples},
+                posterior_predictive={"beat_outcome": pp_samples},
+                observed_data={
+                    "base_posterior_mean": result_df["base_posterior_mean"].values,
+                    "momentum_signal": result_df["momentum_signal"].values,
+                },
+                constant_data={
+                    "momentum_weight": np.array([self.momentum_weight]),
+                    "volatility_weight": np.array([self.volatility_weight]),
+                },
+                coords=coords,
+                dims={
+                    "beat_probability": ["chain", "draw", "equity"],
+                    "beat_outcome": ["chain", "draw", "equity"],
+                },
+            )
+        elif xr is not None:
+            return xr.Dataset(
+                {"beat_probability": (["chain", "draw", "equity"], posterior_samples)},
+                coords=coords,
+            )
+        return None
 
 
 def create_view_probability_dashboard(

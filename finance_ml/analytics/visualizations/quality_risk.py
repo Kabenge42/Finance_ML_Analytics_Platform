@@ -24,7 +24,11 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import (
+    PLOTLY_TEMPLATE,
+    COLORS,
+    create_no_data_figure,
+)
 
 # Metric display names
 METRIC_LABELS = {
@@ -37,17 +41,6 @@ METRIC_LABELS = {
     "manipulation_probability": "Manipulation Probability",
 }
 
-# Color scheme
-COLORS = [
-    "#0A7EA4",
-    "#00A878",
-    "#6C63FF",
-    "#FF6B6B",
-    "#4ECDC4",
-    "#FFD93D",
-    "#95E1D3",
-    "#F38181",
-]
 
 # Altman Z-Score zones
 ALTMAN_ZONES = {
@@ -58,22 +51,6 @@ ALTMAN_ZONES = {
 
 # Beneish M-Score threshold
 BENEISH_THRESHOLD = -2.22  # Above this = likely manipulation
-
-
-def _create_no_data_figure(title: str) -> go.Figure:
-    """Create a placeholder figure when no data is available."""
-    fig = go.Figure()
-    fig.add_annotation(
-        text="No data available",
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
-        showarrow=False,
-        font=dict(size=16),
-    )
-    fig.update_layout(title=title, template=PLOTLY_TEMPLATE)
-    return fig
 
 
 def create_piotroski_fscore_breakdown(
@@ -106,11 +83,11 @@ def create_piotroski_fscore_breakdown(
     >>> fig.show()
     """
     if "piotroski_f_score" not in df.columns:
-        return _create_no_data_figure("Piotroski F-Score Breakdown - No Data")
+        return create_no_data_figure("Piotroski F-Score Breakdown - No Data")
 
     valid_data = df["piotroski_f_score"].dropna()
     if len(valid_data) == 0:
-        return _create_no_data_figure("Piotroski F-Score Breakdown - No Data")
+        return create_no_data_figure("Piotroski F-Score Breakdown - No Data")
 
     fig = make_subplots(
         rows=2,
@@ -238,11 +215,11 @@ def create_altman_zscore_distribution(
     >>> fig.show()
     """
     if "altman_z_score" not in df.columns:
-        return _create_no_data_figure("Altman Z-Score Distribution - No Data")
+        return create_no_data_figure("Altman Z-Score Distribution - No Data")
 
     valid_data = df["altman_z_score"].dropna()
     if len(valid_data) == 0:
-        return _create_no_data_figure("Altman Z-Score Distribution - No Data")
+        return create_no_data_figure("Altman Z-Score Distribution - No Data")
 
     fig = go.Figure()
 
@@ -360,7 +337,7 @@ def create_quality_risk_quadrant(
     >>> fig.show()
     """
     if quality_metric not in df.columns or risk_metric not in df.columns:
-        return _create_no_data_figure("Quality vs Risk Quadrant - No Data")
+        return create_no_data_figure("Quality vs Risk Quadrant - No Data")
 
     plot_df = df[[quality_metric, risk_metric]].copy()
     if color_by in df.columns:
@@ -373,7 +350,7 @@ def create_quality_risk_quadrant(
     plot_df = plot_df.dropna(subset=[quality_metric, risk_metric])
 
     if len(plot_df) == 0:
-        return _create_no_data_figure("Quality vs Risk Quadrant - No Data")
+        return create_no_data_figure("Quality vs Risk Quadrant - No Data")
 
     fig = go.Figure()
 
@@ -523,11 +500,11 @@ def create_beneish_mscore_analysis(
             break
 
     if score_col is None:
-        return _create_no_data_figure("Accounting Quality Analysis - No Data")
+        return create_no_data_figure("Accounting Quality Analysis - No Data")
 
     valid_data = df[score_col].dropna()
     if len(valid_data) == 0:
-        return _create_no_data_figure("Accounting Quality Analysis - No Data")
+        return create_no_data_figure("Accounting Quality Analysis - No Data")
 
     # Adapt thresholds and labels based on which column we resolved to
     if score_col == "beneish_m_score":
@@ -685,15 +662,15 @@ def create_risk_tier_sunburst(
     elif "altman_z_score" in df.columns:
         risk_col = "altman_z_score"
     else:
-        return _create_no_data_figure("Risk Tier Sunburst - No Data")
+        return create_no_data_figure("Risk Tier Sunburst - No Data")
 
     if sector_col not in df.columns:
-        return _create_no_data_figure("Risk Tier Sunburst - No Data")
+        return create_no_data_figure("Risk Tier Sunburst - No Data")
 
     # Create risk tiers
     plot_df = df[[sector_col, risk_col]].dropna().copy()
     if len(plot_df) == 0:
-        return _create_no_data_figure("Risk Tier Sunburst - No Data")
+        return create_no_data_figure("Risk Tier Sunburst - No Data")
 
     # Classify into risk tiers
     if risk_col == "altman_z_score":
@@ -786,7 +763,7 @@ def create_distress_early_warning_dashboard(
     has_distress = "distress_risk_score" in df.columns
 
     if not has_altman and not has_piotroski and not has_distress:
-        return _create_no_data_figure("Distress Early Warning Dashboard - No Data")
+        return create_no_data_figure("Distress Early Warning Dashboard - No Data")
 
     fig = make_subplots(
         rows=4,

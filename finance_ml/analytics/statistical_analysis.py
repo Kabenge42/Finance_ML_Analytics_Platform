@@ -8,12 +8,14 @@ This module provides advanced statistical analysis including:
 - Distribution fitting
 - Conditional probability analysis
 - Investor's ruin probability models
+- Bayesian resampled technical return analysis (ArviZ-enhanced)
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Tuple
+from dataclasses import dataclass
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -21,6 +23,387 @@ from scipy import stats
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+# ---------------------------------------------------------------------------
+# Lazy ArviZ import (matches inference_schema.py pattern)
+# ---------------------------------------------------------------------------
+try:
+    import arviz as az
+    import xarray as xr
+
+    ARVIZ_AVAILABLE = True
+except (ImportError, OSError, PermissionError, Exception):
+    az = None  # type: ignore[assignment]
+    xr = None  # type: ignore[assignment]
+    ARVIZ_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# RESAMPLED BAYESIAN TECHNICAL ANALYSIS
+# =============================================================================
+
+
+@dataclass
+class ResampledReturnDistribution:
+    """Result container for resampled return posterior analysis."""
+
+    ticker: str
+    frequency: str  # e.g. '1W', '1ME', '1QE'
+    n_periods: int
+    sample_mean: float
+    sample_std: float
+    posterior_mean: float
+    posterior_std: float
+    credible_interval_90: tuple[float, float]
+    credible_interval_95: tuple[float, float]
+    prob_positive_return: float
+    skewness: float
+    kurtosis: float
+    var_5: float  # Value-at-Risk 5th percentile
+    cvar_5: float  # Conditional VaR (Expected Shortfall)
+
+
+class BayesianTechnicalResampler:
+    """
+    Bayesian resampling engine for historical stock price data.
+
+    Constructs multi-timeframe return distributions from equities price
+    snapshots (Last Price, Price 1M Ago, 3M, 6M, 1Y, 3Y, 5Y) and performs
+    posterior updating using Normal-Normal conjugate priors.
+
+    Produces ArviZ InferenceData objects when arviz is available, enabling
+    standardised diagnostics (R-hat, ESS, posterior predictive checks).
+
+    Parameters
+    ----------
+    prior_return_mean : float
+        Prior expected annual return (e.g. 0.08 for 8%).
+    prior_return_std : float
+        Prior uncertainty on the expected return.
+    n_posterior_samples : int
+        Number of posterior draws per chain.
+    n_chains : int
+        Number of MCMC chains for ArviZ InferenceData.
+    """
+
+    _PRICE_SNAPSHOT_MAP: dict[str, str] = {
+        "5D": "price_5d_ago",
+        "1W": "price_1w_ago",
+        "1M": "price_1m_ago",
+        "3M": "price_3m_ago",
+        "6M": "price_6m_ago",
+        "1Y": "price_1y_ago",
+        "3Y": "price_3y_ago",
+        "5Y": "price_5y_ago",
+    }
+
+    _MOMENTUM_FEATURES: list[str] = [
+        "price_momentum_1m",
+        "price_momentum_3m",
+        "price_momentum_6m",
+        "price_momentum_1y",
+        "price_momentum_5d",
+    ]
+
+    _TECHNICAL_FEATURES: list[str] = [
+        "ema_slope_20d",
+        "ema_trend_consistency",
+        "volume_momentum_score",
+        "breakout_signal",
+        "volatility_compression",
+        "volatility_term_structure",
+    ]
+
+    def __init__(
+        self,
+        prior_return_mean: float = 0.08,
+        prior_return_std: float = 0.20,
+        n_posterior_samples: int = 4000,
+        n_chains: int = 4,
+        random_seed: int = 42,
+    ):
+        self.prior_return_mean = prior_return_mean
+        self.prior_return_std = prior_return_std
+        self.n_posterior_samples = n_posterior_samples
+        self.n_chains = n_chains
+        self.rng = np.random.default_rng(random_seed)
+
+    def _compute_historical_returns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Derive annualised return series from equities price snapshot columns.
+
+        Returns DataFrame with columns: ticker, period, return_pct, annualised_return.
+        """
+        last_price_col = "last_price"
+        if last_price_col not in df.columns:
+            last_price_col = "Last Price"
+        if last_price_col not in df.columns:
+            logger.warning("No last_price column found; returning empty DataFrame")
+            return pd.DataFrame()
+
+        records = []
+        period_days = {
+            "5D": 5,
+            "1W": 7,
+            "1M": 30,
+            "3M": 91,
+            "6M": 182,
+            "1Y": 365,
+            "3Y": 1095,
+            "5Y": 1825,
+        }
+
+        for period, col in self._PRICE_SNAPSHOT_MAP.items():
+            if col not in df.columns:
+                continue
+            mask = df[last_price_col].notna() & df[col].notna() & (df[col] > 0)
+            subset = df.loc[mask]
+            if subset.empty:
+                continue
+
+            hpr = (subset[last_price_col] - subset[col]) / subset[col]
+            days = period_days[period]
+            ann_factor = 365.0 / days
+            ann_return = (1 + hpr) ** ann_factor - 1
+
+            ticker_col = "ticker" if "ticker" in df.columns else "Ticker"
+            for idx, row_idx in enumerate(subset.index):
+                records.append(
+                    {
+                        "ticker": (
+                            subset.loc[row_idx, ticker_col]
+                            if ticker_col in subset.columns
+                            else str(row_idx)
+                        ),
+                        "period": period,
+                        "days": days,
+                        "return_pct": float(hpr.iloc[idx]) * 100,
+                        "annualised_return": float(ann_return.iloc[idx]),
+                    }
+                )
+
+        return pd.DataFrame(records)
+
+    def resample_returns(
+        self,
+        df: pd.DataFrame,
+        freq: str = "1ME",
+        group_col: str = "sector",
+    ) -> pd.DataFrame:
+        """
+        Compute resampled Bayesian posterior return distributions.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Equities data with price snapshot columns and feature columns.
+        freq : str
+            Resampling frequency (e.g. '1W', '1ME', '1QE').
+        group_col : str
+            Column for group-level hierarchical priors (e.g. 'sector').
+
+        Returns
+        -------
+        pd.DataFrame
+            One row per equity with posterior return statistics.
+        """
+        returns_df = self._compute_historical_returns(df)
+        if returns_df.empty:
+            return pd.DataFrame()
+
+        prior_var = self.prior_return_std**2
+        results = []
+
+        for ticker, group in returns_df.groupby("ticker"):
+            data = group["annualised_return"].dropna().values
+            if len(data) < 2:
+                continue
+
+            n = len(data)
+            sample_mean = data.mean()
+            sample_var = data.var(ddof=1) if n > 1 else prior_var
+
+            # Normal-Normal conjugate posterior
+            posterior_var = 1.0 / (1.0 / prior_var + n / sample_var)
+            posterior_mean = posterior_var * (
+                self.prior_return_mean / prior_var + n * sample_mean / sample_var
+            )
+            posterior_std = np.sqrt(posterior_var)
+
+            ci_90 = (
+                posterior_mean - 1.645 * posterior_std,
+                posterior_mean + 1.645 * posterior_std,
+            )
+            ci_95 = (
+                posterior_mean - 1.96 * posterior_std,
+                posterior_mean + 1.96 * posterior_std,
+            )
+            prob_positive = float(1 - stats.norm.cdf(0, posterior_mean, posterior_std))
+
+            var_5 = float(np.percentile(data, 5))
+            cvar_5 = (
+                float(data[data <= np.percentile(data, 5)].mean())
+                if (data <= np.percentile(data, 5)).any()
+                else var_5
+            )
+
+            results.append(
+                ResampledReturnDistribution(
+                    ticker=str(ticker),
+                    frequency=freq,
+                    n_periods=n,
+                    sample_mean=float(sample_mean),
+                    sample_std=float(np.sqrt(sample_var)),
+                    posterior_mean=float(posterior_mean),
+                    posterior_std=float(posterior_std),
+                    credible_interval_90=ci_90,
+                    credible_interval_95=ci_95,
+                    prob_positive_return=prob_positive,
+                    skewness=float(stats.skew(data)),
+                    kurtosis=float(stats.kurtosis(data)),
+                    var_5=var_5,
+                    cvar_5=cvar_5,
+                )
+            )
+
+        if not results:
+            return pd.DataFrame()
+
+        result_df = pd.DataFrame([vars(r) for r in results])
+
+        ticker_col = "ticker" if "ticker" in df.columns else "Ticker"
+        available_tech = [c for c in self._TECHNICAL_FEATURES if c in df.columns]
+        available_mom = [c for c in self._MOMENTUM_FEATURES if c in df.columns]
+
+        if available_tech or available_mom:
+            enrich_cols = [ticker_col] + available_tech + available_mom
+            if group_col in df.columns:
+                enrich_cols.append(group_col)
+            enrichment = df[list(set(enrich_cols))].copy()
+            if ticker_col != "ticker":
+                enrichment = enrichment.rename(columns={ticker_col: "ticker"})
+            result_df = result_df.merge(enrichment, on="ticker", how="left")
+
+        return result_df
+
+    def build_inference_data(
+        self,
+        df: pd.DataFrame,
+        freq: str = "1ME",
+    ) -> "az.InferenceData | xr.Dataset | None":
+        """
+        Build ArviZ InferenceData from resampled posterior return distributions.
+
+        Returns
+        -------
+        arviz.InferenceData, xr.Dataset, or None
+        """
+        result_df = self.resample_returns(df, freq=freq)
+        if result_df.empty:
+            logger.warning("No resampled returns to build InferenceData")
+            return None
+
+        tickers = result_df["ticker"].values
+        n_equities = len(tickers)
+        post_means = result_df["posterior_mean"].values
+        post_stds = result_df["posterior_std"].values
+
+        posterior_samples = np.stack(
+            [
+                self.rng.normal(
+                    post_means,
+                    post_stds,
+                    size=(self.n_posterior_samples, n_equities),
+                )
+                for _ in range(self.n_chains)
+            ]
+        )
+
+        obs_stds = result_df["sample_std"].values
+        pp_samples = posterior_samples + self.rng.normal(0, obs_stds, size=posterior_samples.shape)
+
+        observed_means = result_df["sample_mean"].values
+        log_lik = stats.norm.logpdf(
+            observed_means[np.newaxis, np.newaxis, :],
+            loc=posterior_samples,
+            scale=obs_stds[np.newaxis, np.newaxis, :] + 1e-12,
+        )
+
+        coords = {
+            "chain": np.arange(self.n_chains),
+            "draw": np.arange(self.n_posterior_samples),
+            "equity": tickers,
+        }
+
+        if ARVIZ_AVAILABLE and az is not None:
+            return az.from_dict(
+                posterior={"expected_return": posterior_samples},
+                posterior_predictive={"future_return": pp_samples},
+                log_likelihood={"return_obs": log_lik},
+                observed_data={"observed_return": observed_means},
+                constant_data={
+                    "prior_mean": np.array([self.prior_return_mean]),
+                    "prior_std": np.array([self.prior_return_std]),
+                    "frequency": np.array([freq]),
+                },
+                coords=coords,
+                dims={
+                    "expected_return": ["chain", "draw", "equity"],
+                    "future_return": ["chain", "draw", "equity"],
+                    "return_obs": ["chain", "draw", "equity"],
+                },
+            )
+        elif xr is not None:
+            return xr.Dataset(
+                {"expected_return": (["chain", "draw", "equity"], posterior_samples)},
+                coords=coords,
+            )
+        return None
+
+
+def resampled_posterior_returns(
+    df: pd.DataFrame,
+    freq: str = "1ME",
+    prior_return_mean: float = 0.08,
+    prior_return_std: float = 0.20,
+    n_posterior_samples: int = 4000,
+    n_chains: int = 4,
+) -> tuple[pd.DataFrame, "az.InferenceData | xr.Dataset | None"]:
+    """
+    Convenience function: compute resampled posterior returns + InferenceData.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Equities data with price snapshot and feature columns.
+    freq : str
+        Pandas resampling frequency (e.g. '1W', '1ME', '1QE').
+    prior_return_mean : float
+        Prior expected annual return.
+    prior_return_std : float
+        Prior uncertainty.
+    n_posterior_samples : int
+        Posterior draws per chain.
+    n_chains : int
+        Number of chains.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, InferenceData | xr.Dataset | None]
+        (result_df, idata)
+    """
+    resampler = BayesianTechnicalResampler(
+        prior_return_mean=prior_return_mean,
+        prior_return_std=prior_return_std,
+        n_posterior_samples=n_posterior_samples,
+        n_chains=n_chains,
+    )
+    result_df = resampler.resample_returns(df, freq=freq)
+    idata = resampler.build_inference_data(df, freq=freq)
+    return result_df, idata
+
 
 def bayesian_category_analysis(
     df: pd.DataFrame,
@@ -566,6 +949,19 @@ def calculate_conditional_probabilities(
                     "separation": abs(p_distress_high - p_distress_low),
                 }
             )
+
+    if not results:
+        return pd.DataFrame(
+            columns=[
+                "category",
+                "feature",
+                "p_distress_high",
+                "p_distress_low",
+                "lift_high",
+                "lift_low",
+                "separation",
+            ]
+        )
 
     return pd.DataFrame(results).sort_values("separation", ascending=False)
 
