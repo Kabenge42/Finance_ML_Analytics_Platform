@@ -545,8 +545,9 @@ def _ruin_diagnostic_from_df(df: pd.DataFrame, top_n: int, title: str) -> go.Fig
 
     # Panel 3: Scatter vs distress score
     if distress_col in df.columns:
-        sample = df.dropna(subset=[ruin_col, distress_col]).sample(
-            min(2000, len(df)),
+        df_dropped = df.dropna(subset=[ruin_col, distress_col])
+        sample = df_dropped.sample(
+            min(2000, len(df_dropped)),
             random_state=42,
         )
         fig.add_trace(

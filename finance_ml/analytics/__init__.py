@@ -47,7 +47,8 @@ from finance_ml.analytics.data_utils import (
     export_to_db,
     export_to_csv,
     export_to_json,
-)
+    reorder_with_identifiers,
+    )
 
 from finance_ml.analytics.feature_analytics import (
     PLOTLY_TEMPLATE,
@@ -58,7 +59,7 @@ from finance_ml.analytics.feature_analytics import (
     create_leverage_liquidity_quadrant,
     create_summary_dashboard,
     ensure_subplot_data,
-)
+    )
 
 # Performance optimizations
 from finance_ml.analytics.optimized_ops import (
@@ -69,7 +70,7 @@ from finance_ml.analytics.optimized_ops import (
     vectorized_zscore,
     vectorized_percentile_rank,
     get_optimization_status,
-)
+    )
 
 # InferenceData schema (ArviZ / xarray bridge)
 try:
@@ -86,7 +87,7 @@ try:
         summarize_inference_data,
         # NEW: Resampled technical returns
         build_resampled_technical_inference_data,
-    )
+        )
 except ImportError:
     ARVIZ_AVAILABLE = False
 
@@ -104,7 +105,7 @@ from finance_ml.analytics.screening import (
     create_sector_relative_ranking,
     screen_garp_opportunities,
     screen_high_yield_safe_dividends,
-)
+    )
 
 # Statistical analysis
 from finance_ml.analytics.statistical_analysis import (
@@ -133,7 +134,7 @@ from finance_ml.analytics.statistical_analysis import (
     BayesianTechnicalResampler,
     ResampledReturnDistribution,
     resampled_posterior_returns,
-)
+    )
 
 # Probability Analytics (NEW)
 try:
@@ -163,7 +164,7 @@ try:
         # NEW: Resampled beat probability
         ResampledBeatProbabilityModel,
         ResampledBeatEstimate,
-    )
+        )
 
     _PROBABILITY_ANALYTICS_AVAILABLE = True
 except ImportError:
@@ -203,6 +204,7 @@ __all__ = [
     "export_to_db",
     "export_to_csv",
     "export_to_json",
+    "reorder_with_identifiers",
     # Statistical analysis
     "bayesian_category_analysis",
     "metropolis_hastings_sampler",
@@ -280,4 +282,4 @@ __all__ = [
     "vectorized_zscore",
     "vectorized_percentile_rank",
     "get_optimization_status",
-]
+    ]

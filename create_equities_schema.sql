@@ -602,7 +602,7 @@ CREATE TABLE equities
     "# Hold Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Hold Ratings | alias: num_hold_ratings
     "# Buys Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Buys Ratings | alias: num_buys_ratings
     "# Sell Ratings"                                   NUMERIC DEFAULT 0,            -- count: # Sell Ratings | alias: num_sell_ratings
-    "# No Opinion Ratings"                    NUMERIC DEFAULT 0,                     -- count: # No Opinion Ratings | alias: num_no_opinion_ratings
+    "# No Opinion Ratings"                             NUMERIC DEFAULT 0,            -- count: # No Opinion Ratings | alias: num_no_opinion_ratings
     "Shrs Out"                                         NUMERIC DEFAULT 0,            -- count: Shares outstanding | alias: shares_outstanding
     "Shrs Out (-1FY)"                                  NUMERIC DEFAULT 0,            -- count: Shares outstanding (previous FY) | alias: shrs_out_1fy
     "Full Time Employees (FQ)"                         NUMERIC DEFAULT 0,            -- count: Full time employees (Fiscal Quarter) | alias: full_time_employees_fq
@@ -685,17 +685,17 @@ CREATE TABLE equities
     "Restructuring Charges (-2FY)"                     NUMERIC DEFAULT 0,            -- income_statement: Restructuring Charges (-2FY) | alias: restructuring_charges_2fy
     "Restructuring Charges (-3FY)"                     NUMERIC DEFAULT 0,            -- income_statement: Restructuring Charges (-3FY) | alias: restructuring_charges_3fy
     "Restructuring Charges (-4FY)"                     NUMERIC DEFAULT 0,            -- income_statement: Restructuring Charges (-4FY) | alias: restructuring_charges_4fy
-    "Interest And Investment Income (LTM)"    NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (LTM) | alias: interest_and_investment_income_ltm
-    "Interest And Investment Income (FQ)"     NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (FQ) | alias: interest_and_investment_income_fq
-    "Interest And Investment Income (FY)"     NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (FY) | alias: interest_and_investment_income_fy
-    "Interest And Investment Income (-1FQFQ)" NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-1FQFQ) | alias: interest_and_investment_income_1fqfq
-    "Interest And Investment Income (-2FQFQ)" NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-2FQFQ) | alias: interest_and_investment_income_2fqfq
-    "Interest And Investment Income (-3FQFQ)" NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-3FQFQ) | alias: interest_and_investment_income_3fqfq
-    "Interest And Investment Income (-4FQFQ)" NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-4FQFQ) | alias: interest_and_investment_income_4fqfq
-    "Interest And Investment Income (-1FY)"   NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-1FY) | alias: interest_and_investment_income_1fy
-    "Interest And Investment Income (-2FY)"   NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-2FY) | alias: interest_and_investment_income_2fy
-    "Interest And Investment Income (-3FY)"   NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-3FY) | alias: interest_and_investment_income_3fy
-    "Interest And Investment Income (-4FY)"   NUMERIC DEFAULT 0,                     -- income_statement: Interest And Investment Income (-4FY) | alias: interest_and_investment_income_4fy
+    "Interest And Investment Income (LTM)"             NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (LTM) | alias: interest_and_investment_income_ltm
+    "Interest And Investment Income (FQ)"              NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (FQ) | alias: interest_and_investment_income_fq
+    "Interest And Investment Income (FY)"              NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (FY) | alias: interest_and_investment_income_fy
+    "Interest And Investment Income (-1FQFQ)"          NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-1FQFQ) | alias: interest_and_investment_income_1fqfq
+    "Interest And Investment Income (-2FQFQ)"          NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-2FQFQ) | alias: interest_and_investment_income_2fqfq
+    "Interest And Investment Income (-3FQFQ)"          NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-3FQFQ) | alias: interest_and_investment_income_3fqfq
+    "Interest And Investment Income (-4FQFQ)"          NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-4FQFQ) | alias: interest_and_investment_income_4fqfq
+    "Interest And Investment Income (-1FY)"            NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-1FY) | alias: interest_and_investment_income_1fy
+    "Interest And Investment Income (-2FY)"            NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-2FY) | alias: interest_and_investment_income_2fy
+    "Interest And Investment Income (-3FY)"            NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-3FY) | alias: interest_and_investment_income_3fy
+    "Interest And Investment Income (-4FY)"            NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-4FY) | alias: interest_and_investment_income_4fy
 
     -- ===========================================
     -- FEATURE role

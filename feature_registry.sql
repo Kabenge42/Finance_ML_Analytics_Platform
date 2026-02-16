@@ -87,7 +87,7 @@ SELECT e."ISIN"            AS isin,
        e."Trading Country" AS trading_country,
        e."Exchange"        AS exchange,
        e."Sector"          AS sector,
-       e."Industry"                          AS industry,
+       e."Industry"        AS industry,
 
        -- CATEGORICAL columns from equities_schema_metadata
        e."Dividend Record (Frequency)"       AS dividend_record_frequency,

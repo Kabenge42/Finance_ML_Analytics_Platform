@@ -1765,9 +1765,9 @@ def _export_per_feature_probabilities(views_dict: dict) -> None:
     id_cols_set = set(id_cols)
 
     prob_policy = ProbExportPolicy(
-        max_rows=5_000,
+        max_rows=100,
         aggregation="by_feature",
-        top_n_isins=None,
+        top_n_isins=50,
     )
 
     for view_name, view_df in views_dict.items():
@@ -1787,9 +1787,9 @@ def _generate_view_visualizations(views_dict: dict, view_mapping: dict) -> None:
 
     id_cols_set = get_identifier_cols_set()
     prob_policy = ProbExportPolicy(
-        max_rows=5_000,
+        max_rows=100,
         aggregation="by_feature",
-        top_n_isins=None,
+        top_n_isins=50,
     )
 
     for view_name, view_df in views_dict.items():
@@ -1868,15 +1868,15 @@ def main():
     print("📈 Step 4: Running statistical analysis...")
     print("-" * 80)
 
-    # Bayesian analysis for quality_risk features
+    # Bayesian analysis for profitability features
     if "roe" in df.columns and len(df) > 50:
-        print("   Running Bayesian analysis on Quality & Risk features...")
-        quality_risk_features = [
-            f for f in FEATURE_CATEGORIES.get("Quality & Risk", []) if f in df.columns
+        print("   Running Bayesian analysis on Profitability features...")
+        profitability_features = [
+            f for f in FEATURE_CATEGORIES.get("Profitability", []) if f in df.columns
         ][:3]
-        bayesian_results = bayesian_category_analysis(df, "Quality & Risk", quality_risk_features)
+        bayesian_results = bayesian_category_analysis(df, "Profitability", profitability_features)
         if bayesian_results:
-            print(f"   ✓ Analyzed {len(bayesian_results)} quality_risk metrics")
+            print(f"   ✓ Analyzed {len(bayesian_results)} profitability metrics")
 
             # Build InferenceData for Bayesian category analysis
             if ARVIZ_AVAILABLE:
@@ -1884,8 +1884,8 @@ def main():
                     idata_cat = build_category_analysis_inference_data(
                         bayesian_results,
                         df,
-                        "Quality & Risk",
-                        quality_risk_features,
+                        "Profitability",
+                        profitability_features,
                     )
                     cat_summary = summarize_inference_data(idata_cat)
                     print(
@@ -2667,12 +2667,7 @@ def main():
                     stats_data.append(stats)
 
     # Helper to reorder DataFrame columns: identifier cols first, then the rest
-    identifier_cols = load_identifier_columns()
-
-    def _reorder_with_identifiers(result_df: pd.DataFrame) -> pd.DataFrame:
-        id_cols = [c for c in identifier_cols if c in result_df.columns]
-        other_cols = [c for c in result_df.columns if c not in id_cols]
-        return result_df[id_cols + other_cols]
+    from finance_ml.analytics.data_utils import reorder_with_identifiers as _reorder_with_identifiers
 
     if stats_data:
         stats_df = _reorder_with_identifiers(pd.DataFrame(stats_data))
@@ -2706,10 +2701,29 @@ def main():
             export_to_json(screen_df, screen_cfg)
             print(f"   ✓ Exported {len(screen_df)} stocks to analytics.{table}")
 
+    # Export Statistical Analysis Results
+    stat_exports = {
+        "probability_results": "earnings_probability_analysis",
+        "streak_results": "eps_streak_analysis",
+        "credit_results": "credit_risk_analysis",
+        "dividend_results": "dividend_safety_analysis",
+        "pt_results": "price_target_achievement",
+    }
+
+    for var_name, table in stat_exports.items():
+        # Exports statistical analysis results to database and files
+        if var_name in locals() and locals()[var_name] is not None and len(locals()[var_name]) > 0:
+            stat_cfg = ExportConfig(table_name=table)
+            stat_df = _reorder_with_identifiers(locals()[var_name])
+            export_to_db(stat_df, stat_cfg)
+            export_to_csv(stat_df, stat_cfg)
+            export_to_json(stat_df, stat_cfg)
+            print(f"   ✓ Exported {len(stat_df)} results to analytics.{table}")
+
     # --- NEW: Export composite scores ---
     if "ranked_df" in locals() and "composite_score" in ranked_df.columns:
         export_cols = ["composite_score"]
-        id_cols_present = [c for c in identifier_cols if c in ranked_df.columns]
+        id_cols_present = [c for c in get_identifier_cols_set() if c in ranked_df.columns]
         available = id_cols_present + [c for c in export_cols if c in ranked_df.columns]
         composite_cfg = ExportConfig(table_name="composite_quality_scores")
         export_to_db(ranked_df[available].head(200), composite_cfg)

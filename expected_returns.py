@@ -161,11 +161,11 @@ def _fetch_backfill_columns(
     join_col: str,
 ) -> pd.DataFrame:
     """
-    Load the specified columns from ``public.mv_all_stock_features``
+    Load the specified columns from ``public.equities``
     along with *join_col* for merging.
     """
     select_cols = [f'"{join_col}"'] + [f'"{c}"' for c in column_alias]
-    query = f"SELECT {', '.join(select_cols)} FROM public.mv_all_stock_features"
+    query = f"SELECT {', '.join(select_cols)} FROM public.equities"
     with engine.connect() as conn:
         return pd.read_sql(query, conn)
 
@@ -175,7 +175,7 @@ def _backfill_market_data_columns(
     db_url: Optional[str] = None,
 ) -> pd.DataFrame:
     """
-    Backfill missing market_data columns from ``public.mv_all_stock_features``
+    Backfill missing market_data columns from ``public.equities``
     using ``public.equities_schema_metadata`` to identify which columns have
     role = 'market_data'.
 
@@ -214,7 +214,7 @@ def _backfill_market_data_columns(
             return df
 
         logger.info(
-            "Backfilling %d missing market_data columns from public.mv_all_stock_features",
+            "Backfilling %d missing market_data columns from public.equities",
             len(missing_aliases),
         )
 
@@ -448,7 +448,7 @@ def run_earnings_beat_analysis(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         Beat probability results with ``posterior_beat_prob``,
         ``posterior_alpha``, ``posterior_beta``, ``confidence_score``,
-        ``beat_classification``, ``revision_momentum_score``, etc.
+        ``beat_classification``, ``gaap_revision_momentum``, etc.
     """
     model = EarningsBeatProbabilityModel()
     sector_col = "sector" if "sector" in df.columns else "industry"
@@ -1213,11 +1213,12 @@ def create_beat_vs_achievement_scatter(
 
 
 def _reorder_with_identifiers(df: pd.DataFrame) -> pd.DataFrame:
-    """Reorder DataFrame: identifier columns first (from vw_identifier_columns), then the rest."""
-    id_cols_all = load_identifier_columns()
-    id_present = [c for c in id_cols_all if c in df.columns]
-    other = [c for c in df.columns if c not in id_present]
-    return df[id_present + other]
+    """Reorder DataFrame: identifier columns first (from vw_identifier_columns), then the rest.
+
+    .. deprecated:: Use :func:`finance_ml.analytics.data_utils.reorder_with_identifiers` instead.
+    """
+    from finance_ml.analytics.data_utils import reorder_with_identifiers
+    return reorder_with_identifiers(df)
 
 
 def export_expected_returns_results(

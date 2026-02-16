@@ -15,7 +15,7 @@ Feature Categories leveraged (from feature_registry.sql vw_features_earnings):
 - eps_surprise_pct, eps_beat_count, eps_total_reports, eps_trajectory_score
 - eps_positive_streak, eps_improvement_count, earnings_quality_composite
 - accruals_ratio, cash_earnings_ratio, earnings_persistence
-- revision_momentum_score, gaap_norm_spread, revision_trend_short/medium
+- eps_revision_momentum, gaap_adj_eps_gap_pct, revision_trend_short/medium
 - posterior_beat_prob, quarterly_beat_streak, historical_beat_rate
 """
 
@@ -665,14 +665,14 @@ def create_revision_momentum_chart(
     Shows revision momentum score distribution, sector averages, and
     short/medium-term revision trend acceleration for top stocks.
 
-    Uses: revision_momentum_score, revision_trend_short, revision_trend_medium,
+    Uses: eps_revision_momentum, revision_trend_short, revision_trend_medium,
           posterior_beat_prob
 
     Parameters
     ----------
     df : pd.DataFrame
         Enhanced DataFrame from EarningsBeatProbabilityModel.analyze_dataframe_enhanced
-        or any DataFrame containing revision_momentum_score column.
+        or any DataFrame containing eps_revision_momentum column.
     top_n : int, default 30
         Number of top/bottom stocks to display in the bar chart.
     group_col : str, default 'sector'
@@ -688,7 +688,7 @@ def create_revision_momentum_chart(
     >>> fig = create_revision_momentum_chart(enhanced_df)
     >>> fig.show()
     """
-    if "revision_momentum_score" not in df.columns:
+    if "eps_revision_momentum" not in df.columns:
         return create_no_data_figure("Revision Momentum Chart - No Data")
 
     has_trends = "revision_trend_short" in df.columns and "revision_trend_medium" in df.columns
@@ -710,13 +710,13 @@ def create_revision_momentum_chart(
         vertical_spacing=0.10,
     )
 
-    momentum = df["revision_momentum_score"].dropna()
+    momentum = df["eps_revision_momentum"].dropna()
 
     # Panel 1: Momentum score distribution with sector overlay
     if has_group and len(momentum) > 0:
         groups = df[group_col].dropna().unique()
         for i, group in enumerate(groups):
-            group_data = df[df[group_col] == group]["revision_momentum_score"].dropna()
+            group_data = df[df[group_col] == group]["eps_revision_momentum"].dropna()
             if len(group_data) > 0:
                 fig.add_trace(
                     go.Histogram(
@@ -753,19 +753,19 @@ def create_revision_momentum_chart(
     )
 
     # Panel 2: Top/bottom stocks bar chart
-    plot_df = df.dropna(subset=["revision_momentum_score"]).copy()
+    plot_df = df.dropna(subset=["eps_revision_momentum"]).copy()
     if len(plot_df) > 0:
-        top = plot_df.nlargest(min(top_n, len(plot_df)), "revision_momentum_score")
-        bottom = plot_df.nsmallest(min(top_n, len(plot_df)), "revision_momentum_score")
+        top = plot_df.nlargest(min(top_n, len(plot_df)), "eps_revision_momentum")
+        bottom = plot_df.nsmallest(min(top_n, len(plot_df)), "eps_revision_momentum")
         bar_df = pd.concat([top, bottom]).drop_duplicates()
-        bar_df = bar_df.sort_values("revision_momentum_score", ascending=True)
+        bar_df = bar_df.sort_values("eps_revision_momentum", ascending=True)
 
         labels = (
             bar_df["ticker"].tolist()
             if "ticker" in bar_df.columns
             else [f"Stock {i}" for i in range(len(bar_df))]
         )
-        scores = bar_df["revision_momentum_score"].tolist()
+        scores = bar_df["eps_revision_momentum"].tolist()
         bar_colors = ["#00A878" if s >= 50 else "#E63946" for s in scores]
 
         fig.add_trace(
@@ -792,8 +792,8 @@ def create_revision_momentum_chart(
         trend_df = df[["revision_trend_short", "revision_trend_medium"]].dropna()
         if len(trend_df) > 0:
             color_vals = (
-                df.loc[trend_df.index, "revision_momentum_score"]
-                if "revision_momentum_score" in df.columns
+                df.loc[trend_df.index, "eps_revision_momentum"]
+                if "eps_revision_momentum" in df.columns
                 else None
             )
             fig.add_trace(
@@ -864,12 +864,12 @@ def create_gaap_divergence_plot(
     Shows the spread between GAAP and Normalized forward estimates, highlighting
     stocks with large divergence that may indicate accounting quality concerns.
 
-    Uses: gaap_norm_spread, posterior_beat_prob, revision_momentum_score
+    Uses: gaap_adj_eps_gap_pct, posterior_beat_prob, eps_revision_momentum
 
     Parameters
     ----------
     df : pd.DataFrame
-        Enhanced DataFrame containing gaap_norm_spread column.
+        Enhanced DataFrame containing gaap_adj_eps_gap_pct column.
     group_col : str, default 'sector'
         Column to group by for sector-level analysis.
 
@@ -883,11 +883,11 @@ def create_gaap_divergence_plot(
     >>> fig = create_gaap_divergence_plot(enhanced_df)
     >>> fig.show()
     """
-    if "gaap_norm_spread" not in df.columns:
+    if "gaap_adj_eps_gap_pct" not in df.columns:
         return create_no_data_figure("GAAP Divergence Plot - No Data")
 
     has_posterior = "posterior_beat_prob" in df.columns
-    has_momentum = "revision_momentum_score" in df.columns
+    has_momentum = "eps_revision_momentum" in df.columns
     has_group = group_col in df.columns
 
     n_cols = 1
@@ -906,7 +906,7 @@ def create_gaap_divergence_plot(
         vertical_spacing=0.08,
     )
 
-    spread = df["gaap_norm_spread"].dropna()
+    spread = df["gaap_adj_eps_gap_pct"].dropna()
 
     # Panel 1: Distribution histogram
     if len(spread) > 0:
@@ -943,7 +943,7 @@ def create_gaap_divergence_plot(
     if has_group:
         groups = df[group_col].dropna().unique()
         for i, group in enumerate(groups):
-            group_data = df[df[group_col] == group]["gaap_norm_spread"].dropna()
+            group_data = df[df[group_col] == group]["gaap_adj_eps_gap_pct"].dropna()
             if len(group_data) > 0:
                 fig.add_trace(
                     go.Box(
@@ -955,11 +955,11 @@ def create_gaap_divergence_plot(
                     col=1,
                 )
     elif has_posterior:
-        plot_df = df[["gaap_norm_spread", "posterior_beat_prob"]].dropna()
+        plot_df = df[["gaap_adj_eps_gap_pct", "posterior_beat_prob"]].dropna()
         if len(plot_df) > 0:
             fig.add_trace(
                 go.Scatter(
-                    x=plot_df["gaap_norm_spread"],
+                    x=plot_df["gaap_adj_eps_gap_pct"],
                     y=plot_df["posterior_beat_prob"],
                     mode="markers",
                     name="Spread vs Posterior",
@@ -971,13 +971,13 @@ def create_gaap_divergence_plot(
 
     # Panel 3: Spread vs posterior beat probability
     if has_posterior:
-        plot_df = df[["gaap_norm_spread", "posterior_beat_prob"]].dropna()
+        plot_df = df[["gaap_adj_eps_gap_pct", "posterior_beat_prob"]].dropna()
         if len(plot_df) > 0:
             # Color by absolute spread magnitude
-            abs_spread = plot_df["gaap_norm_spread"].abs()
+            abs_spread = plot_df["gaap_adj_eps_gap_pct"].abs()
             fig.add_trace(
                 go.Scatter(
-                    x=plot_df["gaap_norm_spread"],
+                    x=plot_df["gaap_adj_eps_gap_pct"],
                     y=plot_df["posterior_beat_prob"],
                     mode="markers",
                     name="Stocks",
@@ -1001,9 +1001,9 @@ def create_gaap_divergence_plot(
             )
     else:
         # Fallback: top divergent stocks bar chart
-        plot_df = df.dropna(subset=["gaap_norm_spread"]).copy()
+        plot_df = df.dropna(subset=["gaap_adj_eps_gap_pct"]).copy()
         if len(plot_df) > 0:
-            worst = plot_df.nsmallest(20, "gaap_norm_spread")
+            worst = plot_df.nsmallest(20, "gaap_adj_eps_gap_pct")
             labels = (
                 worst["ticker"].tolist()
                 if "ticker" in worst.columns
@@ -1012,7 +1012,7 @@ def create_gaap_divergence_plot(
             fig.add_trace(
                 go.Bar(
                     y=labels,
-                    x=worst["gaap_norm_spread"],
+                    x=worst["gaap_adj_eps_gap_pct"],
                     orientation="h",
                     name="Spread %",
                     marker_color="#E63946",
@@ -1023,12 +1023,12 @@ def create_gaap_divergence_plot(
 
     # Panel 4: Spread vs revision momentum
     if has_momentum:
-        plot_df = df[["gaap_norm_spread", "revision_momentum_score"]].dropna()
+        plot_df = df[["gaap_adj_eps_gap_pct", "eps_revision_momentum"]].dropna()
         if len(plot_df) > 0:
             fig.add_trace(
                 go.Scatter(
-                    x=plot_df["gaap_norm_spread"],
-                    y=plot_df["revision_momentum_score"],
+                    x=plot_df["gaap_adj_eps_gap_pct"],
+                    y=plot_df["eps_revision_momentum"],
                     mode="markers",
                     name="Spread vs Momentum",
                     marker=dict(size=8, color="#00A878", opacity=0.6),
@@ -1044,9 +1044,9 @@ def create_gaap_divergence_plot(
             )
     else:
         # Fallback: top divergent stocks
-        plot_df = df.dropna(subset=["gaap_norm_spread"]).copy()
+        plot_df = df.dropna(subset=["gaap_adj_eps_gap_pct"]).copy()
         if len(plot_df) > 0:
-            worst = plot_df.nsmallest(20, "gaap_norm_spread")
+            worst = plot_df.nsmallest(20, "gaap_adj_eps_gap_pct")
             labels = (
                 worst["ticker"].tolist()
                 if "ticker" in worst.columns
@@ -1055,7 +1055,7 @@ def create_gaap_divergence_plot(
             fig.add_trace(
                 go.Bar(
                     y=labels,
-                    x=worst["gaap_norm_spread"],
+                    x=worst["gaap_adj_eps_gap_pct"],
                     orientation="h",
                     name="Spread %",
                     marker_color="#FF6B6B",
@@ -1098,8 +1098,8 @@ def create_enhanced_beat_probability_dashboard(
     into a unified multi-panel visualization. Designed to work with output from
     EarningsBeatProbabilityModel.analyze_dataframe_enhanced.
 
-    Uses: posterior_beat_prob, historical_beat_rate, revision_momentum_score,
-          gaap_norm_spread, confidence_score, quarterly_beat_streak,
+    Uses: posterior_beat_prob, historical_beat_rate, eps_revision_momentum,
+          gaap_adj_eps_gap_pct, confidence_score, quarterly_beat_streak,
           classification_confidence, data_source
 
     Parameters
@@ -1125,8 +1125,8 @@ def create_enhanced_beat_probability_dashboard(
     if not any(col in df.columns for col in required):
         return create_no_data_figure("Enhanced Beat Probability Dashboard - No Data")
 
-    has_momentum = "revision_momentum_score" in df.columns
-    has_spread = "gaap_norm_spread" in df.columns
+    has_momentum = "eps_revision_momentum" in df.columns
+    has_spread = "gaap_adj_eps_gap_pct" in df.columns
     has_history = "historical_beat_rate" in df.columns
     has_streak = "quarterly_beat_streak" in df.columns
     has_confidence = "classification_confidence" in df.columns
@@ -1231,11 +1231,11 @@ def create_enhanced_beat_probability_dashboard(
 
     # Panel 3: Revision momentum vs posterior
     if has_momentum:
-        plot_df = df[["revision_momentum_score", "posterior_beat_prob"]].dropna()
+        plot_df = df[["eps_revision_momentum", "posterior_beat_prob"]].dropna()
         if len(plot_df) > 0:
             fig.add_trace(
                 go.Scatter(
-                    x=plot_df["revision_momentum_score"],
+                    x=plot_df["eps_revision_momentum"],
                     y=plot_df["posterior_beat_prob"],
                     mode="markers",
                     name="Momentum vs P(Beat)",
@@ -1257,12 +1257,12 @@ def create_enhanced_beat_probability_dashboard(
 
     # Panel 4: GAAP spread vs posterior
     if has_spread:
-        plot_df = df[["gaap_norm_spread", "posterior_beat_prob"]].dropna()
+        plot_df = df[["gaap_adj_eps_gap_pct", "posterior_beat_prob"]].dropna()
         if len(plot_df) > 0:
-            abs_spread = plot_df["gaap_norm_spread"].abs()
+            abs_spread = plot_df["gaap_adj_eps_gap_pct"].abs()
             fig.add_trace(
                 go.Scatter(
-                    x=plot_df["gaap_norm_spread"],
+                    x=plot_df["gaap_adj_eps_gap_pct"],
                     y=plot_df["posterior_beat_prob"],
                     mode="markers",
                     name="GAAP Spread vs P(Beat)",

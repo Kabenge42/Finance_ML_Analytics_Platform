@@ -25,7 +25,7 @@ from collections import defaultdict
 # ---------------------------------------------------------------------------
 
 # Maximum rows per prob_vw_features_* table before aggregation kicks in
-_PROB_EXPORT_ROW_LIMIT: int = 5_000
+_PROB_EXPORT_ROW_LIMIT: int = 500
 
 
 @dataclass
@@ -265,6 +265,27 @@ def load_identifier_columns(
 def get_identifier_cols_set() -> set[str]:
     """Return the identifier columns as a set (convenience helper)."""
     return set(load_identifier_columns())
+
+
+def reorder_with_identifiers(df: pd.DataFrame) -> pd.DataFrame:
+    """Reorder DataFrame columns: identifier columns first, then the rest.
+
+    Uses the canonical column order from ``vw_identifier_columns``.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to reorder.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with identifier columns first.
+    """
+    id_cols_all = load_identifier_columns()
+    id_present = [c for c in id_cols_all if c in df.columns]
+    other = [c for c in df.columns if c not in id_present]
+    return df[id_present + other]
 
 
 VW_FEATURES_VIEWS = [
@@ -549,8 +570,8 @@ def _build_feature_query(
     base_sql = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '1 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '1 months') AND size_class <> 'Small Cap'
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') AND size_class <> 'Small Cap'
         ORDER BY next_earnings ASC
     """
     if limit is not None:
@@ -848,8 +869,8 @@ def load_all_feature_views(
             query = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '1 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '1 months') AND size_class <> 'Small Cap'
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') AND size_class <> 'Small Cap'
         ORDER BY next_earnings ASC
     """
             df_view = pd.read_sql(query, engine)

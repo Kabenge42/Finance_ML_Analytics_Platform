@@ -28,7 +28,8 @@ finance_ml/analytics/
     ├── valuation.py            # Valuation analysis charts (669 lines) [NEW]
     ├── earnings_quality.py     # Earnings quality charts (658 lines) [NEW]
     ├── quality_risk.py         # Quality & risk charts (852 lines) [NEW]
-    └── growth_analysis.py      # Growth metrics charts (631 lines) [NEW]
+    ├── growth_analysis.py      # Growth metrics charts (631 lines) [NEW]
+    └── probability_viz.py      # Probabilistic ArviZ-backed charts (857 lines) [NEW]
 
 market_analytics.py             # Main demonstration script (935 lines)
 ```
@@ -38,8 +39,8 @@ market_analytics.py             # Main demonstration script (935 lines)
 - **Original**: 5208 lines (monolithic)
 - **Refactored**: ~10,500+ lines (modular, reusable, with enhanced features)
 - **Enhancement**: +100% additional functionality through new visualization, statistical, and optimization modules
-- **New Visualization Modules**: 4 modules with 21 new visualization functions covering valuation, earnings quality,
-  quality/risk, and growth analysis
+- **New Visualization Modules**: 5 modules with 27 new visualization functions covering valuation, earnings quality,
+  quality/risk, growth analysis, and probabilistic Bayesian diagnostics
 
 ---
 
@@ -453,7 +454,65 @@ accel_fig = create_growth_acceleration_chart(df, top_n=25)
 
 ---
 
-### 12. Enhanced Statistical Methods (New in `statistical_analysis.py`)
+### 12. `visualizations/probability_viz.py` (New)
+
+**Purpose**: Probabilistic financial analysis visualizations with ArviZ-enhanced Bayesian diagnostics
+
+**Key Functions**:
+
+- `create_posterior_return_forest()` - Forest plot of posterior expected returns (HDI + R-hat from InferenceData or CI
+  from DataFrame)
+- `create_beat_probability_posterior()` - Posterior density for earnings beat probability (Beta PDF / KDE / bar
+  fallback)
+- `create_ruin_probability_diagnostic()` - Four-panel diagnostic dashboard: top ruin probabilities, risk tier pie,
+  scatter vs distress score, sector medians
+- `create_mcse_convergence_panel()` - Monte Carlo Standard Error convergence per chain with ESS/R-hat annotations (ArviZ
+  required)
+- `create_bayesian_category_ridge()` - Ridge plot of posterior feature distributions from `bayesian_category_analysis()`
+  output
+- `create_tri_model_posterior_comparison()` - Overlaid Normal posteriors from Monte Carlo / Kalman / Achievement models
+
+**Design**: All functions accept either `arviz.InferenceData` (full ArviZ path with HDI, R-hat, ESS diagnostics) or
+`pd.DataFrame` (graceful fallback using `scipy.stats`). Uses `PLOTLY_TEMPLATE` and `COLORS` from `_shared.py`.
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.probability_viz import (
+    create_posterior_return_forest,
+    create_beat_probability_posterior,
+    create_ruin_probability_diagnostic,
+    create_mcse_convergence_panel,
+    create_bayesian_category_ridge,
+    create_tri_model_posterior_comparison,
+)
+from finance_ml.analytics.statistical_analysis import bayesian_category_analysis
+
+# Forest plot from Monte Carlo DataFrame
+fig = create_posterior_return_forest(mc_results, top_n=25)
+fig.write_html("outputs/analytics/posterior_return_forest.html")
+
+# Beat probability posterior from Bayesian earnings model
+fig = create_beat_probability_posterior(bayesian_results, top_n=12)
+fig.show()
+
+# Ruin probability diagnostic from credit risk DataFrame
+fig = create_ruin_probability_diagnostic(ruin_df, top_n=20)
+fig.write_html("outputs/analytics/ruin_probability_diagnostic.html")
+
+# Category ridge plot from Bayesian analysis output
+prof_results = bayesian_category_analysis(df, 'Profitability', ['roe', 'roa', 'roic'])
+fig = create_bayesian_category_ridge(prof_results, category_name='Profitability')
+fig.show()
+
+# Tri-model comparison from expected_returns_tri_model table
+fig = create_tri_model_posterior_comparison(tri_df, top_n=8)
+fig.write_html("outputs/analytics/tri_model_posterior_comparison.html")
+```
+
+---
+
+### 13. Enhanced Statistical Methods (New in `statistical_analysis.py`)
 
 **Purpose**: Advanced time series filtering, dependency modeling, and parallel MCMC
 
@@ -967,9 +1026,38 @@ For questions or issues with the refactored code:
 
 ---
 
-**Last Updated**: 2026-02-11
-**Version**: 2.3.0
-**Status**: Production Ready (DRY Identifier Columns Refactoring)
+**Last Updated**: 2026-02-12
+**Version**: 2.4.0
+**Status**: Production Ready (Probabilistic Visualization Integration)
+
+---
+
+## Changelog (v2.4.0)
+
+### Probabilistic Visualization Module (`probability_viz.py`)
+
+New `finance_ml/analytics/visualizations/probability_viz.py` module providing 6 ArviZ-backed
+probabilistic visualization functions with graceful DataFrame fallback:
+
+| Function                                | ArviZ Path                                 | DataFrame Fallback            | Database Source                           |
+|-----------------------------------------|--------------------------------------------|-------------------------------|-------------------------------------------|
+| `create_posterior_return_forest`        | HDI + R-hat from `InferenceData.posterior` | CI from `upside_std`          | `analytics.monte_carlo_simulation`        |
+| `create_beat_probability_posterior`     | Beta KDE from posterior samples            | `Beta(α, β)` PDF from columns | `analytics.earnings_probability_analysis` |
+| `create_ruin_probability_diagnostic`    | 4-panel with ESS/R-hat                     | Risk tier pie + sector bars   | `analytics.credit_risk_analysis`          |
+| `create_mcse_convergence_panel`         | Running MCSE per chain                     | *ArviZ required*              | Any `InferenceData`                       |
+| `create_bayesian_category_ridge`        | — (works from `dict`)                      | `Normal(μ, σ)` KDE            | `bayesian_category_analysis()` output     |
+| `create_tri_model_posterior_comparison` | —                                          | Normal approximation          | `analytics.expected_returns_tri_model`    |
+
+### Integration into Main Scripts and Notebooks
+
+| File                                                         | Changes                                                                                              |
+|--------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `market_analytics.py`                                        | Added `probability_viz` imports; generates 4 probabilistic visualizations in Step 7; updated summary |
+| `feature_analytics.py`                                       | Added `probability_viz` imports; generates probabilistic visualizations after growth analysis        |
+| `ExpectedReturnsAnalytics.ipynb`                             | Added probability_viz import cell and posterior forest + tri-model visualization cells               |
+| `financial_market_statistical_analysis.ipynb`                | Added probability_viz section (5.5) with category ridge and beat probability cells                   |
+| `feature_analytics.ipynb`                                    | Added probability_viz section with posterior forest, beat probability, and ruin diagnostic cells     |
+| `docs/improvement_plan/market_analysis_refactoring_guide.md` | Added section 12 for `probability_viz.py`; updated version to 2.4.0                                  |
 
 ---
 

@@ -29,9 +29,47 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy import stats
 
-from finance_ml.analytics.data_utils import export_to_analytics_db, load_identifier_columns
+from finance_ml.analytics.data_utils import (
+    export_to_analytics_db,
+    load_identifier_columns,
+    reorder_with_identifiers,
+    ExportConfig,
+    export_to_db,
+    export_to_csv,
+    export_to_json,
+)
 
 logger = logging.getLogger(__name__)
+
+# Identifier columns for model output propagation
+_IDENTIFIER_COLS_CACHE: list[str] | None = None
+
+
+def _get_identifier_cols() -> list[str]:
+    """Cached access to identifier columns for model output."""
+    global _IDENTIFIER_COLS_CACHE
+    if _IDENTIFIER_COLS_CACHE is None:
+        _IDENTIFIER_COLS_CACHE = load_identifier_columns()
+    return _IDENTIFIER_COLS_CACHE
+
+
+def _extract_identifiers(row: pd.Series) -> dict:
+    """Extract all available identifier columns from a DataFrame row."""
+    id_cols = _get_identifier_cols()
+    return {
+        col: row.get(col, None)
+        for col in id_cols
+        if col in row.index and pd.notna(row.get(col))
+    }
+
+
+# Columns that must be cast to numeric before export (Issue 7)
+_NUMERIC_CAST_COLS = [
+    "gaap_revision_momentum", "gaap_norm_spread", "revision_trend_short",
+    "revision_trend_medium", "eps_norm_est_fy1e", "eps_norm_est_ntm",
+    "eps_gaap_est_ntm", "eps_gaap_est_fy1e",
+]
+_INTEGER_CAST_COLS = ["analyst_count", "quarterly_beat_streak"]
 
 # Lazy ArviZ import (consistent with inference_schema.py)
 try:
@@ -142,7 +180,7 @@ class BeatProbabilityResult:
     eps_norm_est_fy1e: Optional[float] = None
     eps_gaap_est_ntm: Optional[float] = None
     eps_gaap_est_fy1e: Optional[float] = None
-    revision_momentum_score: Optional[float] = None
+    gaap_revision_momentum: Optional[float] = None
     gaap_norm_spread: Optional[float] = None
     # Next earnings context
     next_earnings_status: Optional[str] = None
@@ -444,7 +482,7 @@ class ForwardEstimateSignals:
     )
 
     @property
-    def revision_momentum_score(self) -> float:
+    def gaap_revision_momentum(self) -> float:
         """Compute a 0-100 momentum score from revision data.
 
         Uses recency-weighted scoring: each available revision contributes
@@ -810,28 +848,25 @@ class EarningsBeatProbabilityModel:
                 "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
             )
 
-            results.append(
-                {
-                    "ticker": ticker,
-                    "name": name,
-                    "sector": sector,
-                    "historical_beats": n_beats,
-                    "total_reports": n_total,
-                    "historical_beat_rate": n_beats / n_total,
-                    "prior_alpha": prior.alpha,
-                    "prior_beta": prior.beta,
-                    "posterior_alpha": prob_result["posterior_alpha"],
-                    "posterior_beta": prob_result["posterior_beta"],
-                    "posterior_beat_prob": prob_result["posterior_mean"],
-                    "posterior_std": prob_result["posterior_std"],
-                    "ci_90_lower": prob_result["credible_interval_90"][0],
-                    "ci_90_upper": prob_result["credible_interval_90"][1],
-                    "ci_95_lower": prob_result["credible_interval_95"][0],
-                    "ci_95_upper": prob_result["credible_interval_95"][1],
-                    "confidence_score": prob_result["confidence_score"],
-                    "beat_classification": beat_classification,
-                }
-            )
+            record = _extract_identifiers(row)
+            record.update({
+                "historical_beats": n_beats,
+                "total_reports": n_total,
+                "historical_beat_rate": n_beats / n_total,
+                "prior_alpha": prior.alpha,
+                "prior_beta": prior.beta,
+                "posterior_alpha": prob_result["posterior_alpha"],
+                "posterior_beta": prob_result["posterior_beta"],
+                "posterior_beat_prob": prob_result["posterior_mean"],
+                "posterior_std": prob_result["posterior_std"],
+                "ci_90_lower": prob_result["credible_interval_90"][0],
+                "ci_90_upper": prob_result["credible_interval_90"][1],
+                "ci_95_lower": prob_result["credible_interval_95"][0],
+                "ci_95_upper": prob_result["credible_interval_95"][1],
+                "confidence_score": prob_result["confidence_score"],
+                "beat_classification": beat_classification,
+            })
+            results.append(record)
 
         return pd.DataFrame(results)
 
@@ -880,7 +915,7 @@ class EarningsBeatProbabilityModel:
             n_total = reported_history.total_reports_count
 
         # --- Layer 2: Revision momentum pseudo-observations ---
-        momentum = forward_signals.revision_momentum_score  # 0-100
+        momentum = forward_signals.gaap_revision_momentum  # 0-100
         # Convert to pseudo beat fraction and scale
         pseudo_beat_frac = momentum / 100.0
         pseudo_n = self.MAX_REVISION_PSEUDO_OBS if forward_signals.has_sufficient_data else 0.0
@@ -1071,43 +1106,37 @@ class EarningsBeatProbabilityModel:
                 beat_classification = (
                     "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
                 )
-                results.append(
-                    {
-                        "ticker": ticker,
-                        "name": name,
-                        "sector": sector,
-                        "industry": row.get("industry", ""),
-                        "country": row.get("country", ""),
-                        "exchange": row.get("exchange", ""),
-                        "historical_beats": n_beats,
-                        "total_reports": effective_total,
-                        "dynamic_total_reports": dynamic_total,
-                        "historical_beat_rate": historical_beat_rate,
-                        "posterior_beat_prob": prob_result["posterior_mean"],
-                        "posterior_std": prob_result["posterior_std"],
-                        "ci_90_lower": prob_result["credible_interval_90"][0],
-                        "ci_90_upper": prob_result["credible_interval_90"][1],
-                        "ci_95_lower": prob_result["credible_interval_95"][0],
-                        "ci_95_upper": prob_result["credible_interval_95"][1],
-                        "confidence_score": prob_result["confidence_score"],
-                        "prior_influence_pct": prob_result["prior_influence_pct"],
-                        "effective_sample_size": prob_result["effective_sample_size"],
-                        "classification_confidence": prob_result["classification_confidence"],
-                        "beat_classification": beat_classification,
-                        "revision_momentum_score": forward_signals.revision_momentum_score,
-                        "gaap_norm_spread": forward_signals.gaap_norm_spread,
-                        "revision_trend_short": forward_signals.revision_trend_short,
-                        "revision_trend_medium": forward_signals.revision_trend_medium,
-                        "eps_norm_est_fy1e": forward_signals.eps_norm_fy1e,
-                        "eps_norm_est_ntm": forward_signals.eps_norm_ntm,
-                        "eps_gaap_est_ntm": forward_signals.eps_gaap_ntm,
-                        "eps_gaap_est_fy1e": forward_signals.eps_gaap_fy1e,
-                        "analyst_count": forward_signals.analyst_count,
-                        "next_earnings_status": row.get("next_earnings_status", None),
-                        "quarterly_beat_streak": history.quarterly_beat_streak(),
-                        "data_source": "forward_enhanced",
-                    }
-                )
+                record = _extract_identifiers(row)
+                record.update({
+                    "historical_beats": n_beats,
+                    "total_reports": effective_total,
+                    "dynamic_total_reports": dynamic_total,
+                    "historical_beat_rate": historical_beat_rate,
+                    "posterior_beat_prob": prob_result["posterior_mean"],
+                    "posterior_std": prob_result["posterior_std"],
+                    "ci_90_lower": prob_result["credible_interval_90"][0],
+                    "ci_90_upper": prob_result["credible_interval_90"][1],
+                    "ci_95_lower": prob_result["credible_interval_95"][0],
+                    "ci_95_upper": prob_result["credible_interval_95"][1],
+                    "confidence_score": prob_result["confidence_score"],
+                    "prior_influence_pct": prob_result["prior_influence_pct"],
+                    "effective_sample_size": prob_result["effective_sample_size"],
+                    "classification_confidence": prob_result["classification_confidence"],
+                    "beat_classification": beat_classification,
+                    "gaap_revision_momentum": forward_signals.gaap_revision_momentum,
+                    "gaap_norm_spread": forward_signals.gaap_norm_spread,
+                    "revision_trend_short": forward_signals.revision_trend_short,
+                    "revision_trend_medium": forward_signals.revision_trend_medium,
+                    "eps_norm_est_fy1e": forward_signals.eps_norm_fy1e,
+                    "eps_norm_est_ntm": forward_signals.eps_norm_ntm,
+                    "eps_gaap_est_ntm": forward_signals.eps_gaap_ntm,
+                    "eps_gaap_est_fy1e": forward_signals.eps_gaap_fy1e,
+                    "analyst_count": forward_signals.analyst_count,
+                    "next_earnings_status": row.get("next_earnings_status", None),
+                    "quarterly_beat_streak": history.quarterly_beat_streak(),
+                    "data_source": "forward_enhanced",
+                })
+                results.append(record)
             elif "eps_trajectory_score" in df.columns and not pd.isna(
                 row.get("eps_trajectory_score")
             ):
@@ -1134,47 +1163,41 @@ class EarningsBeatProbabilityModel:
                 prior_total = prior.alpha + prior.beta
                 post_total = prob_result["posterior_alpha"] + prob_result["posterior_beta"]
 
-                results.append(
-                    {
-                        "ticker": ticker,
-                        "name": name,
-                        "sector": sector,
-                        "industry": row.get("industry", ""),
-                        "country": row.get("country", ""),
-                        "exchange": row.get("exchange", ""),
-                        "historical_beats": n_beats,
-                        "total_reports": n_total,
-                        "dynamic_total_reports": dynamic_total,
-                        "historical_beat_rate": n_beats / n_total if n_total > 0 else 0.0,
-                        "prior_alpha": prior.alpha,
-                        "prior_beta": prior.beta,
-                        "posterior_alpha": prob_result["posterior_alpha"],
-                        "posterior_beta": prob_result["posterior_beta"],
-                        "posterior_beat_prob": prob_result["posterior_mean"],
-                        "posterior_std": prob_result["posterior_std"],
-                        "ci_90_lower": prob_result["credible_interval_90"][0],
-                        "ci_90_upper": prob_result["credible_interval_90"][1],
-                        "ci_95_lower": prob_result["credible_interval_95"][0],
-                        "ci_95_upper": prob_result["credible_interval_95"][1],
-                        "confidence_score": confidence_score,
-                        "prior_influence_pct": prior_total / post_total * 100.0,
-                        "effective_sample_size": post_total - prior_total,
-                        "classification_confidence": classification_confidence,
-                        "beat_classification": beat_classification,
-                        "revision_momentum_score": None,
-                        "gaap_norm_spread": None,
-                        "revision_trend_short": None,
-                        "revision_trend_medium": None,
-                        "eps_norm_est_fy1e": None,
-                        "eps_norm_est_ntm": None,
-                        "eps_gaap_est_ntm": None,
-                        "eps_gaap_est_fy1e": None,
-                        "analyst_count": None,
-                        "next_earnings_status": row.get("next_earnings_status", None),
-                        "quarterly_beat_streak": None,
-                        "data_source": "trajectory_proxy",
-                    }
-                )
+                record = _extract_identifiers(row)
+                record.update({
+                    "historical_beats": n_beats,
+                    "total_reports": n_total,
+                    "dynamic_total_reports": dynamic_total,
+                    "historical_beat_rate": n_beats / n_total if n_total > 0 else 0.0,
+                    "prior_alpha": prior.alpha,
+                    "prior_beta": prior.beta,
+                    "posterior_alpha": prob_result["posterior_alpha"],
+                    "posterior_beta": prob_result["posterior_beta"],
+                    "posterior_beat_prob": prob_result["posterior_mean"],
+                    "posterior_std": prob_result["posterior_std"],
+                    "ci_90_lower": prob_result["credible_interval_90"][0],
+                    "ci_90_upper": prob_result["credible_interval_90"][1],
+                    "ci_95_lower": prob_result["credible_interval_95"][0],
+                    "ci_95_upper": prob_result["credible_interval_95"][1],
+                    "confidence_score": confidence_score,
+                    "prior_influence_pct": prior_total / post_total * 100.0,
+                    "effective_sample_size": post_total - prior_total,
+                    "classification_confidence": classification_confidence,
+                    "beat_classification": beat_classification,
+                    "gaap_revision_momentum": None,
+                    "gaap_norm_spread": None,
+                    "revision_trend_short": None,
+                    "revision_trend_medium": None,
+                    "eps_norm_est_fy1e": None,
+                    "eps_norm_est_ntm": None,
+                    "eps_gaap_est_ntm": None,
+                    "eps_gaap_est_fy1e": None,
+                    "analyst_count": None,
+                    "next_earnings_status": row.get("next_earnings_status", None),
+                    "quarterly_beat_streak": None,
+                    "data_source": "trajectory_proxy",
+                })
+                results.append(record)
             # else: skip row with no data
 
         return pd.DataFrame(results)
@@ -1282,7 +1305,7 @@ class EPSStreakAnalyzer:
         # --- Forward estimate adjustment ---
         # If revision momentum is positive and streak is a beat, boost continuation
         if forward_signals is not None and forward_signals.has_sufficient_data:
-            momentum = forward_signals.revision_momentum_score  # 0-100
+            momentum = forward_signals.gaap_revision_momentum  # 0-100
             # Positive momentum reinforces beat streaks, undermines miss streaks
             momentum_adjustment = (momentum - 50.0) / 200.0  # Range: -0.25 to +0.25
             if streak_type == "beat":
@@ -1430,14 +1453,8 @@ class EPSStreakAnalyzer:
             effective_total = max(n_total_yoy, dynamic_total) if dynamic_total > 0 else n_total_yoy
             historical_beat_rate = n_beats_yoy / effective_total if effective_total > 0 else 0.0
 
-            results.append(
-                {
-                    "ticker": ticker,
-                    "name": name,
-                    "sector": sector,
-                    "industry": industry,
-                    "country": country,
-                    "exchange": exchange,
+            record = _extract_identifiers(row)
+            record.update({
                     "current_streak": result.current_streak,
                     "streak_type": result.streak_type,
                     "continuation_probability": result.streak_continuation_prob,
@@ -1446,14 +1463,15 @@ class EPSStreakAnalyzer:
                     "prediction_confidence": result.confidence_level,
                     "dynamic_total_reports": dynamic_total,
                     "historical_beat_rate": historical_beat_rate,
-                    "revision_momentum_score": (
-                        forward_signals.revision_momentum_score
+                    "gaap_revision_momentum": (
+                        forward_signals.gaap_revision_momentum
                         if forward_signals is not None
                         else None
                     ),
                     "next_earnings_status": row.get("next_earnings_status", None),
                 }
             )
+            results.append(record)
 
         return pd.DataFrame(results)
 
@@ -1749,14 +1767,8 @@ class CreditRiskProbabilityModel:
             elif prob > 0.3:
                 risk_level = "Medium"
 
-            results.append(
-                {
-                    "ticker": row.get("ticker", "N/A"),
-                    "name": row.get("name", "N/A"),
-                    "sector": row.get("sector", "N/A"),
-                    "industry": row.get("industry", "N/A"),
-                    "country": row.get("country", "N/A"),
-                    "exchange": row.get("exchange", "N/A"),
+            record = _extract_identifiers(row)
+            record.update({
                     "distress_probability": prob,
                     "liquidity_stress_score": liquidity_stress,
                     "cash_runway_months": cash_runway,
@@ -1765,13 +1777,11 @@ class CreditRiskProbabilityModel:
                     "interest_coverage": interest_coverage,
                     "quick_ratio": quick_ratio,
                     "risk_level": risk_level,
-                    "confidence_interval": (
-                        max(0, prob - ci_width),
-                        min(1, prob + ci_width),
-                    ),
-                    "data_quality_score": data_points / 5.0,  # NEW: Transparency metric
-                }
-            )
+                    "ci_lower": max(0, prob - ci_width),
+                    "ci_upper": min(1, prob + ci_width),
+                    "data_quality_score": data_points / 5.0,
+            })
+            results.append(record)
 
         return pd.DataFrame(results)
 
@@ -1867,14 +1877,8 @@ class DividendCutProbabilityModel:
             elif prob > 0.15:
                 risk_cat = "Monitor"
 
-            results.append(
-                {
-                    "ticker": row.get("ticker", "N/A"),
-                    "name": row.get("name", "N/A"),
-                    "sector": row.get("sector", "N/A"),
-                    "industry": row.get("industry", "N/A"),
-                    "country": row.get("country", "N/A"),
-                    "exchange": row.get("exchange", "N/A"),
+            record = _extract_identifiers(row)
+            record.update({
                     "dividend_cut_probability": prob,
                     "fcf_dividend_coverage": fcf_coverage,
                     "payout_ratio": payout_ratio,
@@ -1884,8 +1888,8 @@ class DividendCutProbabilityModel:
                     "sustainable_flag": sustainable_flag,
                     "safety_score": 100 * (1 - prob),
                     "risk_category": risk_cat,
-                }
-            )
+            })
+            results.append(record)
         return pd.DataFrame(results)
 
 
@@ -1978,14 +1982,8 @@ class PriceTargetAchievementModel:
 
             prob = min(0.90, max(0.05, base_prob + adjustments))
 
-            results.append(
-                {
-                    "ticker": row.get("ticker", "N/A"),
-                    "name": row.get("name", "N/A"),
-                    "sector": row.get("sector", "N/A"),
-                    "industry": row.get("industry", "N/A"),
-                    "country": row.get("country", "N/A"),
-                    "exchange": row.get("exchange", "N/A"),
+            record = _extract_identifiers(row)
+            record.update({
                     "achievement_probability": prob,
                     "upside_potential": upside,
                     "price_target_spread_pct": spread,
@@ -1998,8 +1996,8 @@ class PriceTargetAchievementModel:
                         if spread and spread < 20
                         else "Medium" if spread and spread < 35 else "Low"
                     ),
-                }
-            )
+            })
+            results.append(record)
         return pd.DataFrame(results)
 
 
@@ -2028,7 +2026,7 @@ def create_earnings_probability_dashboard(
         Plotly Figure with probability analysis dashboard
     """
     # Detect enhanced columns
-    has_momentum = "revision_momentum_score" in probability_df.columns
+    has_momentum = "gaap_revision_momentum" in probability_df.columns
     has_spread = "gaap_norm_spread" in probability_df.columns
     has_streak = "quarterly_beat_streak" in probability_df.columns
     is_enhanced = has_momentum or has_spread
@@ -2162,11 +2160,11 @@ def create_earnings_probability_dashboard(
 
     # 5. Enhanced panel: Revision momentum vs posterior (row 3, col 1)
     if is_enhanced and has_momentum:
-        plot_df = probability_df[["revision_momentum_score", "posterior_beat_prob"]].dropna()
+        plot_df = probability_df[["gaap_revision_momentum", "posterior_beat_prob"]].dropna()
         if len(plot_df) > 0:
             fig.add_trace(
                 go.Scatter(
-                    x=plot_df["revision_momentum_score"],
+                    x=plot_df["gaap_revision_momentum"],
                     y=plot_df["posterior_beat_prob"],
                     mode="markers",
                     name="Momentum vs P(Beat)",
@@ -2905,47 +2903,42 @@ def export_probability_analytics_results(
     Returns:
         Dictionary with export information
     """
-    from finance_ml.analytics.data_utils import load_identifier_columns
-
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    identifier_cols = load_identifier_columns()
     exports = {}
 
-    def _reorder_with_identifiers(df: pd.DataFrame) -> pd.DataFrame:
-        """Reorder DataFrame columns: identifier cols first, then the rest."""
-        id_cols = [c for c in identifier_cols if c in df.columns]
-        other_cols = [c for c in df.columns if c not in id_cols]
-        return df[id_cols + other_cols]
+    def _safe_export(df: pd.DataFrame, table_name: str, reorder: bool = True) -> None:
+        """Export a DataFrame via ExportConfig pipeline with error handling."""
+        try:
+            ordered = reorder_with_identifiers(df) if reorder else df
+            cfg = ExportConfig(
+                table_name=table_name,
+                output_dir=str(output_dir),
+            )
+            export_to_db(ordered, cfg)
+            export_to_csv(ordered, cfg)
+            export_to_json(ordered, cfg)
+            exports[f"{table_name}_db"] = f"analytics.{table_name}"
+            exports[f"{table_name}_csv"] = str(output_dir / f"{table_name}.csv")
+        except Exception as e:
+            logger.error("Failed to export %s: %s", table_name, e)
 
-    # 1. Export probability analysis to database
-    try:
-        ordered_prob = _reorder_with_identifiers(probability_df)
-        export_to_analytics_db(ordered_prob, "earnings_probability_analysis")
-        exports["probability_analysis_db"] = "analytics.earnings_probability_analysis"
-    except Exception as e:
-        logger.error(f"Failed to export probability analysis to database: {e}")
+    # Issue 7: Cast mixed-type columns to proper numeric dtypes before export
+    for col in _NUMERIC_CAST_COLS:
+        if col in probability_df.columns:
+            probability_df[col] = pd.to_numeric(probability_df[col], errors="coerce")
+    for col in _INTEGER_CAST_COLS:
+        if col in probability_df.columns:
+            probability_df[col] = pd.to_numeric(probability_df[col], errors="coerce").astype("Int64")
 
-    # Export probability analysis to CSV (optional fallback/backup)
-    prob_path = output_dir / "earnings_beat_probability_analysis.csv"
-    probability_df.to_csv(prob_path, index=False)
-    exports["probability_analysis_csv"] = str(prob_path)
+    # 1. Export probability analysis (Issue 3: table_name is canonical for both DB and CSV)
+    _safe_export(probability_df, "earnings_probability_analysis")
 
-    # 2. Export streak analysis to database
-    try:
-        ordered_streak = _reorder_with_identifiers(streak_df)
-        export_to_analytics_db(ordered_streak, "eps_streak_analysis")
-        exports["streak_analysis_db"] = "analytics.eps_streak_analysis"
-    except Exception as e:
-        logger.error(f"Failed to export streak analysis to database: {e}")
+    # 2. Export streak analysis
+    _safe_export(streak_df, "eps_streak_analysis")
 
-    # Export streak analysis to CSV
-    streak_path = output_dir / "eps_streak_analysis.csv"
-    streak_df.to_csv(streak_path, index=False)
-    exports["streak_analysis_csv"] = str(streak_path)
-
-    # 3. Export confidence metrics to database
+    # 3. Export confidence metrics
     if confidence_result:
         conf_df = pd.DataFrame(
             [
@@ -2959,90 +2952,60 @@ def export_probability_analytics_results(
                 }
             ]
         )
+        _safe_export(conf_df, "model_confidence_metrics", reorder=False)
+
+    # 4. Create and export summary statistics (Issue 6: validate columns first)
+    required_prob_cols = {"posterior_beat_prob", "beat_classification", "confidence_score"}
+    required_streak_cols = {"current_streak", "streak_type"}
+    missing_prob = required_prob_cols - set(probability_df.columns)
+    missing_streak = required_streak_cols - set(streak_df.columns)
+
+    if missing_prob or missing_streak:
+        logger.warning(
+            "Summary skipped — missing columns: prob=%s, streak=%s",
+            missing_prob or "none",
+            missing_streak or "none",
+        )
+    else:
         try:
-            export_to_analytics_db(conf_df, "model_confidence_metrics")
-            exports["confidence_metrics_db"] = "analytics.model_confidence_metrics"
+            summary_data = {
+                "metric": [
+                    "Total Stocks Analyzed",
+                    "Mean Posterior Beat Probability",
+                    "Median Posterior Beat Probability",
+                    "Stocks Classified as Likely Beat",
+                    "Mean Confidence Score",
+                    "Mean Streak Length",
+                    "Stocks with Beat Streak",
+                    "Stocks with Miss Streak",
+                ],
+                "value": [
+                    float(len(probability_df)),
+                    float(probability_df["posterior_beat_prob"].mean()),
+                    float(probability_df["posterior_beat_prob"].median()),
+                    float((probability_df["beat_classification"] == "likely_beat").sum()),
+                    float(probability_df["confidence_score"].mean()),
+                    float(streak_df["current_streak"].abs().mean()),
+                    float((streak_df["streak_type"] == "beat").sum()),
+                    float((streak_df["streak_type"] == "miss").sum()),
+                ],
+            }
+            summary_df = pd.DataFrame(summary_data)
+            _safe_export(summary_df, "probability_analytics_summary", reorder=False)
         except Exception as e:
-            logger.error(f"Failed to export confidence metrics to database: {e}")
-
-        # Export confidence metrics to CSV
-        conf_path = output_dir / "model_confidence_metrics.csv"
-        conf_df.to_csv(conf_path, index=False)
-        exports["confidence_metrics_csv"] = str(conf_path)
-
-    # 4. Create and export summary statistics to database
-    summary_data = {
-        "metric": [
-            "Total Stocks Analyzed",
-            "Mean Posterior Beat Probability",
-            "Median Posterior Beat Probability",
-            "Stocks Classified as Likely Beat",
-            "Mean Confidence Score",
-            "Mean Streak Length",
-            "Stocks with Beat Streak",
-            "Stocks with Miss Streak",
-        ],
-        "value": [
-            float(len(probability_df)),
-            float(probability_df["posterior_beat_prob"].mean()),
-            float(probability_df["posterior_beat_prob"].median()),
-            float((probability_df["beat_classification"] == "likely_beat").sum()),
-            float(probability_df["confidence_score"].mean()),
-            float(streak_df["current_streak"].abs().mean()),
-            float((streak_df["streak_type"] == "beat").sum()),
-            float((streak_df["streak_type"] == "miss").sum()),
-        ],
-    }
-    summary_df = pd.DataFrame(summary_data)
-    try:
-        export_to_analytics_db(summary_df, "probability_analytics_summary")
-        exports["summary_db"] = "analytics.probability_analytics_summary"
-    except Exception as e:
-        logger.error(f"Failed to export summary statistics to database: {e}")
-
-    # Export summary statistics to CSV
-    summary_path = output_dir / "probability_analytics_summary.csv"
-    summary_df.to_csv(summary_path, index=False)
-    exports["summary_csv"] = str(summary_path)
+            logger.error("Failed to compute/export summary statistics: %s", e)
 
     # 5. Export credit risk results
     if credit_risk_df is not None and len(credit_risk_df) > 0:
-        try:
-            ordered_credit = _reorder_with_identifiers(credit_risk_df)
-            export_to_analytics_db(ordered_credit, "credit_risk_analysis")
-            exports["credit_risk_db"] = "analytics.credit_risk_analysis"
-        except Exception as e:
-            logger.error(f"Failed to export credit risk analysis to database: {e}")
-
-        credit_path = output_dir / "credit_risk_analysis.csv"
-        credit_risk_df.to_csv(credit_path, index=False)
-        exports["credit_risk_csv"] = str(credit_path)
+        _safe_export(credit_risk_df, "credit_risk_analysis")
 
     # 6. Export dividend safety results
     if dividend_safety_df is not None and len(dividend_safety_df) > 0:
-        try:
-            ordered_div = _reorder_with_identifiers(dividend_safety_df)
-            export_to_analytics_db(ordered_div, "dividend_safety_analysis")
-            exports["dividend_safety_db"] = "analytics.dividend_safety_analysis"
-        except Exception as e:
-            logger.error(f"Failed to export dividend safety analysis to database: {e}")
-
-        div_path = output_dir / "dividend_safety_analysis.csv"
-        dividend_safety_df.to_csv(div_path, index=False)
-        exports["dividend_safety_csv"] = str(div_path)
+        _safe_export(dividend_safety_df, "dividend_safety_analysis")
 
     # 7. Export price target achievement results
     if price_target_df is not None and len(price_target_df) > 0:
-        try:
-            ordered_pt = _reorder_with_identifiers(price_target_df)
-            export_to_analytics_db(ordered_pt, "price_target_achievement")
-            exports["price_target_db"] = "analytics.price_target_achievement"
-        except Exception as e:
-            logger.error(f"Failed to export price target analysis to database: {e}")
+        _safe_export(price_target_df, "price_target_achievement")
 
-        pt_path = output_dir / "price_target_achievement.csv"
-        price_target_df.to_csv(pt_path, index=False)
-        exports["price_target_csv"] = str(pt_path)
-
-    logger.info(f"Exported probability analytics results to database and {output_dir}")
+    logger.info("Exported probability analytics results to database and %s", output_dir)
     return exports
