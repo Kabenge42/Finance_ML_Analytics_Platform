@@ -10,6 +10,7 @@ All functionality has been organized into logical modules:
 Usage:
     python market_analytics.py
 """
+
 from __future__ import annotations
 
 import logging
@@ -893,7 +894,7 @@ def monte_carlo_price_target_simulation(
     df: pd.DataFrame,
     n_simulations: int = 10000,
     confidence_level: float = 0.95,
-    max_stocks: int = 6000,
+    max_stocks: int = 7000,
 ) -> pd.DataFrame:
     """
     Monte Carlo simulation of price targets based on analyst spread.
@@ -933,6 +934,9 @@ def monte_carlo_price_target_simulation(
     required_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
     valid_df = df.dropna(subset=required_cols)
 
+    # Resolve identifier columns dynamically (same as price_target_achievement)
+    id_cols_set = get_identifier_cols_set()
+
     for _, row in valid_df.head(max_stocks).iterrows():
         pt_low = row["price_target_low"]
         pt_high = row["price_target_high"]
@@ -954,25 +958,42 @@ def monte_carlo_price_target_simulation(
         upside_std = np.std(simulated_upside)
         prob_positive = (simulated_upside > 0).mean() * 100
 
-        results.append(
+        # Extract all identifier columns from the row (DRY, like _extract_identifiers)
+        record = {
+            col: row.get(col, None)
+            for col in id_cols_set
+            if col in row.index and pd.notna(row.get(col))
+        }
+
+        # Market data columns (from equities, carried through MV)
+        for market_col in [
+            "market_cap",
+            "enterprise_value",
+            "last_price",
+            "price_target",
+            "price_target_high",
+            "price_target_low",
+            "price_target_median",
+            "volume_shrs",
+            "shares_outstanding",
+        ]:
+            if market_col in row.index and pd.notna(row.get(market_col)):
+                record[market_col] = row[market_col]
+
+        # MC-specific results
+        record.update(
             {
-                "ticker": row.get("ticker", ""),
-                "name": row.get("name", ""),
-                "sector": row.get("sector", ""),
-                "industry": row.get("industry", ""),
-                "region": row.get("region", ""),
-                "country": row.get("country", ""),
-                "exchange": row.get("exchange", ""),
                 "last_price": last_price,
                 "pt_median": pt_median,
                 "pt_spread": pt_high - pt_low,
                 "expected_upside_pct": expected_upside,
                 "upside_std": upside_std,
-                "var_5_pct": var_5,  # 5% Value at Risk
+                "var_5_pct": var_5,
                 "prob_positive_upside": prob_positive,
                 "risk_reward_ratio": expected_upside / upside_std if upside_std > 0 else 0,
             }
         )
+        results.append(record)
 
     return pd.DataFrame(results)
 
@@ -1558,24 +1579,8 @@ def build_expected_returns_summary(
     id_cols_set = get_identifier_cols_set()
     mc_id_cols = [c for c in mc.columns if c in id_cols_set]
 
-    # Additional columns to carry through from MC (market data & temporal metadata)
-    extra_cols = [
-        "trading_country",
-        "size_class",
-        "style_class",
-        "unit",
-        "fy_end",
-        "next_earnings_report",
-        "fy_end_date",
-        "income_statement_report_date",
-        "last_updated",
-        "next_earnings",
-        "next_fy_end_date",
-        "next_income_statement_report_date",
-        "next_earnings_status",
-        "next_earnings_when",
-        "next_fiscal_quarter",
-        "reporting_interval",
+    # Market data columns to carry through from MC
+    market_data_cols = [
         "market_cap",
         "enterprise_value",
         "last_price",
@@ -1586,11 +1591,13 @@ def build_expected_returns_summary(
         "volume_shrs",
         "shares_outstanding",
     ]
-    available_extra = [c for c in extra_cols if c in mc.columns]
+    available_market = [c for c in market_data_cols if c in mc.columns]
 
     mc_select = list(
         set(
-            mc_id_cols + ["ticker", "expected_upside_pct", "prob_positive_upside"] + available_extra
+            mc_id_cols
+            + ["ticker", "expected_upside_pct", "prob_positive_upside"]
+            + available_market
         )
     )
 
@@ -1751,33 +1758,6 @@ def _run_view_analytics(views_dict: dict, view_mapping: dict) -> None:
     for table, count in export_counts.items():
         print(f"   {table}: {count} rows")
 
-    _export_per_feature_probabilities(views_dict)
-
-
-def _export_per_feature_probabilities(views_dict: dict) -> None:
-    """Export per-feature probability metrics to prob_vw_features_* tables."""
-    from finance_ml.analytics.statistical_analysis import (
-        export_probability_view_results,
-    )
-
-    print("\n📊 Exporting per-feature probability metrics...")
-    id_cols = load_identifier_columns()
-    id_cols_set = set(id_cols)
-
-    prob_policy = ProbExportPolicy(
-        max_rows=100,
-        aggregation="by_feature",
-        top_n_isins=50,
-    )
-
-    for view_name, view_df in views_dict.items():
-        if view_df.empty:
-            continue
-        feature_cols = [c for c in view_df.columns if c not in id_cols_set]
-        rows_exported = export_probability_view_results(view_df, view_name, feature_cols, id_cols)
-        if rows_exported and rows_exported > 0:
-            print(f"   ✓ prob_{view_name}: {rows_exported} rows")
-
 
 def _generate_view_visualizations(views_dict: dict, view_mapping: dict) -> None:
     """Generate per-view probability dashboards and enhanced analytics."""
@@ -1927,7 +1907,7 @@ def main():
         required_mc_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
         if all(col in df.columns for col in required_mc_cols):
             print("  - Running Monte Carlo price target simulation...")
-            mc_results = monte_carlo_price_target_simulation(df, max_stocks=6000)
+            mc_results = monte_carlo_price_target_simulation(df, max_stocks=7000)
             if len(mc_results) > 0:
                 export_to_analytics_db(mc_results, "monte_carlo_simulation")
                 print(
@@ -1956,7 +1936,11 @@ def main():
 
     # --- NEW: Vectorized z-scores and percentile ranks (optimized_ops) ---
     print("   Computing vectorized z-scores and percentile ranks...")
-    zscore_cols = [c for c in ["roe", "roa", "p_e_ratio", "debt_to_equity"] if c in df.columns]
+    zscore_cols = [
+        c
+        for c in ["roe", "roa", "p_e_ratio", "p_b_ratio", "debt_to_equity", "ev_ebitda_ratio"]
+        if c in df.columns
+    ]
     if zscore_cols:
         df = vectorized_zscore(df, zscore_cols, group_col="industry")
         df = vectorized_percentile_rank(df, zscore_cols, group_col="industry")
@@ -1980,7 +1964,14 @@ def main():
     # --- NEW: Kalman-filtered momentum (statistical_analysis) ---
     momentum_cols = [
         c
-        for c in ["price_momentum_1m", "price_momentum_3m", "price_momentum_6m"]
+        for c in [
+            "price_momentum_5d",
+            "price_momentum_1m",
+            "price_momentum_3m",
+            "price_momentum_6m",
+            "price_momentum_1y",
+            "price_momentum_3y",
+        ]
         if c in df.columns
     ]
     if momentum_cols:
@@ -2022,8 +2013,8 @@ def main():
         print(f"   ✓ Hierarchical analysis for {len(hier_results)} sectors")
 
     # --- NEW: Distribution fitting by category (statistical_analysis) ---
-    for cat_name in ["Profitability", "Valuation Ratios"]:
-        cat_features = [f for f in FEATURE_CATEGORIES.get(cat_name, []) if f in df.columns][:3]
+    for cat_name in ["Earnings Quality", "Valuation Timeseries"]:
+        cat_features = [f for f in FEATURE_CATEGORIES.get(cat_name, []) if f in df.columns][:10]
         if cat_features:
             print(f"   Fitting distributions for {cat_name}...")
             dist_fits = fit_distributions_by_category(df, cat_name, cat_features)
@@ -2038,14 +2029,14 @@ def main():
         print("   Calculating conditional distress probabilities...")
         cond_probs = calculate_conditional_probabilities(df, FEATURE_CATEGORIES)
         if len(cond_probs) > 0:
-            top_predictors = cond_probs.nlargest(5, "separation")
+            top_predictors = cond_probs.nlargest(10, "separation")
             print(f"   ✓ Top distress predictors:")
             for _, p in top_predictors.iterrows():
                 print(f"      {p['feature']} ({p['category']}): separation={p['separation']:.3f}")
 
     # --- NEW: Per-category probability analytics pipeline (statistical_analysis) ---
     print("   Running per-category probability analytics...")
-    for cat_name, cat_feats in list(FEATURE_CATEGORIES.items())[:3]:
+    for cat_name, cat_feats in list(FEATURE_CATEGORIES.items())[:10]:
         available = [f for f in cat_feats if f in df.columns]
         if available:
             cat_results = run_category_probability_analytics(df, cat_name, available)
@@ -2667,7 +2658,9 @@ def main():
                     stats_data.append(stats)
 
     # Helper to reorder DataFrame columns: identifier cols first, then the rest
-    from finance_ml.analytics.data_utils import reorder_with_identifiers as _reorder_with_identifiers
+    from finance_ml.analytics.data_utils import (
+        reorder_with_identifiers as _reorder_with_identifiers,
+    )
 
     if stats_data:
         stats_df = _reorder_with_identifiers(pd.DataFrame(stats_data))

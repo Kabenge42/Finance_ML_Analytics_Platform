@@ -368,11 +368,7 @@ def run_monte_carlo_analysis(
         logger.warning("MC simulation skipped — missing columns: %s", missing)
         return pd.DataFrame()
 
-    mc = monte_carlo_price_target_simulation(
-        df,
-        n_simulations=n_simulations,
-        max_stocks=max_stocks,
-    )
+    mc = monte_carlo_price_target_simulation(df, n_simulations=n_simulations, max_stocks=max_stocks)
     logger.info("Monte Carlo simulation: %d stocks processed", len(mc))
     return mc
 
@@ -650,24 +646,8 @@ def build_expected_returns_summary(
     id_cols_set = get_identifier_cols_set()
     mc_id_cols = [c for c in mc.columns if c in id_cols_set]
 
-    # Additional columns to carry through from MC (market data & temporal metadata)
-    extra_cols = [
-        "trading_country",
-        "size_class",
-        "style_class",
-        "unit",
-        "fy_end",
-        "next_earnings_report",
-        "fy_end_date",
-        "income_statement_report_date",
-        "last_updated",
-        "next_earnings",
-        "next_fy_end_date",
-        "next_income_statement_report_date",
-        "next_earnings_status",
-        "next_earnings_when",
-        "next_fiscal_quarter",
-        "reporting_interval",
+    # Market data columns to carry through from MC
+    market_data_cols = [
         "market_cap",
         "enterprise_value",
         "last_price",
@@ -678,11 +658,13 @@ def build_expected_returns_summary(
         "volume_shrs",
         "shares_outstanding",
     ]
-    available_extra = [c for c in extra_cols if c in mc.columns]
+    available_market = [c for c in market_data_cols if c in mc.columns]
 
     mc_select = list(
         set(
-            mc_id_cols + ["ticker", "expected_upside_pct", "prob_positive_upside"] + available_extra
+            mc_id_cols
+            + ["ticker", "expected_upside_pct", "prob_positive_upside"]
+            + available_market
         )
     )
 
@@ -725,10 +707,10 @@ def build_expected_returns_summary(
 
     # Agreement score: 0–4
     summary["agreement_score"] = (
-        summary["mc_bullish"].astype(int)
-        + summary["kal_bullish"].astype(int)
-        + summary["pt_bullish"].astype(int)
-        + summary["earn_bullish"].astype(int)
+            summary["mc_bullish"].astype(int)
+            + summary["kal_bullish"].astype(int)
+            + summary["pt_bullish"].astype(int)
+            + summary["earn_bullish"].astype(int)
     )
     summary["signal"] = summary["agreement_score"].map(_SIGNAL_LABELS_4)
 

@@ -1190,7 +1190,18 @@ CREATE TEMP TABLE screening_staging
     "Interest And Investment Income (-1FY)"   TEXT,          -- alias: interest_and_investment_income_1fy
     "Interest And Investment Income (-2FY)"   TEXT,          -- alias: interest_and_investment_income_2fy
     "Interest And Investment Income (-3FY)"   TEXT,          -- alias: interest_and_investment_income_3fy
-    "Interest And Investment Income (-4FY)"   TEXT           -- alias: interest_and_investment_income_4fy
+    "Interest And Investment Income (-4FY)"   TEXT,           -- alias: interest_and_investment_income_4fy
+    "Effective Tax Rate - (Ratio) (LTM)"              TEXT,
+    "Effective Tax Rate - (Ratio) (FQ)"               TEXT,
+    "Effective Tax Rate - (Ratio) (-1FQFQ)"           TEXT,
+    "Effective Tax Rate - (Ratio) (-2FQFQ)"           TEXT,
+    "Effective Tax Rate - (Ratio) (-4FQFQ)"           TEXT,
+    "Effective Tax Rate - (Ratio) (-3FQFQ)"           TEXT,
+    "Effective Tax Rate - (Ratio) (FY)"               TEXT,
+    "Effective Tax Rate - (Ratio) (-1FY)"             TEXT,
+    "Effective Tax Rate - (Ratio) (-2FY)"             TEXT,
+    "Effective Tax Rate - (Ratio) (-3FY)"             TEXT,
+    "Effective Tax Rate - (Ratio) (-4FY)"             TEXT
 );
 -- ===================================================================
 -- DATA IMPORT EXECUTION
@@ -1864,9 +1875,20 @@ INSERT INTO equities ("Ticker", -- alias: ticker
                       "Interest And Investment Income (-2FY)", -- alias: interest_and_investment_income_2fy
                       "Interest And Investment Income (-3FY)", -- alias: interest_and_investment_income_3fy
                       "Interest And Investment Income (-4FY)", -- alias: interest_and_investment_income_4fy
-                      "Fiscal Month", -- alias: fiscal_month
-                      "Fiscal Quarter", -- alias: fiscal_quarter
-                      "Fiscal Year", -- alias: fiscal_year
+                       "Effective Tax Rate - (Ratio) (LTM)",
+                       "Effective Tax Rate - (Ratio) (FQ)",
+                       "Effective Tax Rate - (Ratio) (-1FQFQ)",
+                       "Effective Tax Rate - (Ratio) (-2FQFQ)",
+                       "Effective Tax Rate - (Ratio) (-4FQFQ)",
+                       "Effective Tax Rate - (Ratio) (-3FQFQ)",
+                       "Effective Tax Rate - (Ratio) (FY)",
+                       "Effective Tax Rate - (Ratio) (-1FY)",
+                       "Effective Tax Rate - (Ratio) (-2FY)",
+                       "Effective Tax Rate - (Ratio) (-3FY)",
+                       "Effective Tax Rate - (Ratio) (-4FY)",
+                       "Fiscal Month", -- alias: fiscal_month
+                       "Fiscal Quarter", -- alias: fiscal_quarter
+                       "Fiscal Year", -- alias: fiscal_year
                       "Reporting Lag") -- alias: reporting_lag
 SELECT NULLIF(TRIM(s."Ticker"), '')                                              AS ticker,
        NULLIF(TRIM(s."ISIN"), '')                                                AS isin,
@@ -2627,6 +2649,28 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
                 0)                                                               AS interest_and_investment_income_3fy,
        COALESCE(text_to_numeric_safe(s."Interest And Investment Income (-4FY)"),
                 0)                                                               AS interest_and_investment_income_4fy,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (LTM)"),
+                0)                                                               AS effective_tax_rate_ltm,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (FQ)"),
+                0)                                                               AS effective_tax_rate_fq,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (FY)"),
+                0)                                                               AS effective_tax_rate_fy,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-1FQFQ)"),
+                0)                                                               AS effective_tax_rate_1fqfq,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-2FQFQ)"),
+                0)                                                               AS effective_tax_rate_2fqfq,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-3FQFQ)"),
+                0)                                                               AS effective_tax_rate_3fqfq,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-4FQFQ)"),
+                0)                                                               AS effective_tax_rate_4fqfq,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-1FY)"),
+                0)                                                               AS effective_tax_rate_1fy,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-2FY)"),
+                0)                                                               AS effective_tax_rate_2fy,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-3FY)"),
+                0)                                                               AS effective_tax_rate_3fy,
+       COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-4FY)"),
+                0)                                                               AS effective_tax_rate_4fy,
        report_fiscal.fiscal_month                                                AS fiscal_month,
        report_fiscal.fiscal_quarter                                              AS fiscal_quarter,
        report_fiscal.fiscal_year                                                 AS fiscal_year,

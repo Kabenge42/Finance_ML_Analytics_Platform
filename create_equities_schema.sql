@@ -1,6 +1,9 @@
 -- Drop existing table if it exists
 DROP TABLE IF EXISTS equities CASCADE;
 
+ALTER TABLE equities
+    OWNER TO postgres;
+
 CREATE TABLE equities
 (
     -- ===========================================
@@ -696,6 +699,17 @@ CREATE TABLE equities
     "Interest And Investment Income (-2FY)"            NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-2FY) | alias: interest_and_investment_income_2fy
     "Interest And Investment Income (-3FY)"            NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-3FY) | alias: interest_and_investment_income_3fy
     "Interest And Investment Income (-4FY)"            NUMERIC DEFAULT 0,            -- income_statement: Interest And Investment Income (-4FY) | alias: interest_and_investment_income_4fy
+    "Effective Tax Rate - (Ratio) (LTM)"               NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_ltm
+    "Effective Tax Rate - (Ratio) (FQ)"                NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_fq
+    "Effective Tax Rate - (Ratio) (-1FQFQ)"            NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_1fqfq
+    "Effective Tax Rate - (Ratio) (-2FQFQ)"            NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_2fqfq
+    "Effective Tax Rate - (Ratio) (-4FQFQ)"            NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_4fqfq
+    "Effective Tax Rate - (Ratio) (-3FQFQ)"            NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_3fqfq
+    "Effective Tax Rate - (Ratio) (FY)"                NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_fy
+    "Effective Tax Rate - (Ratio) (-1FY)"              NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_1fy
+    "Effective Tax Rate - (Ratio) (-2FY)"              NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_2fy
+    "Effective Tax Rate - (Ratio) (-3FY)"              NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_3fy
+    "Effective Tax Rate - (Ratio) (-4FY)"              NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_4fy
 
     -- ===========================================
     -- FEATURE role
@@ -705,9 +719,6 @@ CREATE TABLE equities
     "Fiscal Year"                                      INTEGER,                      -- feature: Fiscal year from report date | alias: fiscal_year
     "Reporting Lag"                                    NUMERIC                       -- feature: Reporting Lag | alias: reporting_lag
 ) TABLESPACE pg_default;
-
-ALTER TABLE equities
-    OWNER TO postgres;
 COMMENT ON TABLE equities IS 'Equities screening data with financial metrics and company information';
 
 -- ============================================================
