@@ -730,7 +730,29 @@ SELECT
     cc.fcf_growth_yoy,
     cc.fcf_yield,
     cc.cfo_positive_years,
-    cc.fcf_positive_years                 AS fcf_positive_years_comp,
+    cc.fcf_positive_years     AS fcf_positive_years_comp,
+
+    -- calc_fcf_growth_estimates (NEW)
+    fge.fcf_est_fy1,
+    fge.fcf_est_fy2,
+    fge.fcf_est_fy3,
+    fge.fcf_est_fy4,
+    fge.fcf_est_fy5,
+    fge.fcf_est_growth_fy1_vs_ltm,
+    fge.fcf_est_growth_fy2_vs_fy1,
+    fge.fcf_est_growth_fy3_vs_fy2,
+    fge.fcf_est_growth_fy4_vs_fy3,
+    fge.fcf_est_growth_fy5_vs_fy4,
+    fge.fcf_est_cagr_3y,
+    fge.fcf_est_cagr_5y,
+    fge.fcf_est_margin_fy1,
+    fge.fcf_est_yield_fy1,
+    fge.fcf_est_growth_acceleration,
+    fge.fcf_est_growth_deceleration,
+    fge.fcf_est_trajectory_score,
+    fge.fcf_est_always_positive,
+    fge.fcf_est_vs_historical,
+    fge.fcf_est_capex_implied_ratio,
 
     -- =========================================================================
     -- SECTION 13: TEMPORAL (vw_features_temporal)
@@ -1006,6 +1028,7 @@ FROM vw_identifier_columns                               id
          LEFT JOIN calc_enhanced_cashflow_features()     ecff ON id.isin = ecff.isin
          LEFT JOIN calc_cashflow_temporal_features()     ctf ON id.isin = ctf.isin
          LEFT JOIN calc_cashflow_comprehensive()         cc ON id.isin = cc.isin
+         LEFT JOIN calc_fcf_growth_estimates()           fge ON id.isin = fge.isin
 
 -- Section 13: Temporal
          LEFT JOIN calc_temporal_features()              tf ON id.isin = tf.isin

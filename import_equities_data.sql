@@ -1201,7 +1201,12 @@ CREATE TEMP TABLE screening_staging
     "Effective Tax Rate - (Ratio) (-1FY)"             TEXT,
     "Effective Tax Rate - (Ratio) (-2FY)"             TEXT,
     "Effective Tax Rate - (Ratio) (-3FY)"             TEXT,
-    "Effective Tax Rate - (Ratio) (-4FY)"             TEXT
+    "Effective Tax Rate - (Ratio) (-4FY)"             TEXT,
+    "FCF - Est Avg (FY1E)"                              TEXT,          -- alias: fcf_est_avg_fy1e
+    "FCF - Est Avg (FY2E)"                              TEXT,          -- alias: fcf_est_avg_fy2e
+    "FCF - Est Avg (FY3E)"                              TEXT,          -- alias: fcf_est_avg_fy3e
+    "FCF - Est Avg (FY4E)"                              TEXT,          -- alias: fcf_est_avg_fy4e
+    "FCF - Est Avg (FY5E)"                              TEXT           -- alias: fcf_est_avg_fy5e
 );
 -- ===================================================================
 -- DATA IMPORT EXECUTION
@@ -1886,6 +1891,11 @@ INSERT INTO equities ("Ticker", -- alias: ticker
                        "Effective Tax Rate - (Ratio) (-2FY)",
                        "Effective Tax Rate - (Ratio) (-3FY)",
                        "Effective Tax Rate - (Ratio) (-4FY)",
+                       "FCF - Est Avg (FY1E)", -- alias: fcf_est_avg_fy1e
+                       "FCF - Est Avg (FY2E)", -- alias: fcf_est_avg_fy2e
+                       "FCF - Est Avg (FY3E)", -- alias: fcf_est_avg_fy3e
+                       "FCF - Est Avg (FY4E)", -- alias: fcf_est_avg_fy4e
+                       "FCF - Est Avg (FY5E)", -- alias: fcf_est_avg_fy5e
                        "Fiscal Month", -- alias: fiscal_month
                        "Fiscal Quarter", -- alias: fiscal_quarter
                        "Fiscal Year", -- alias: fiscal_year
@@ -2671,6 +2681,16 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
                 0)                                                               AS effective_tax_rate_3fy,
        COALESCE(text_to_numeric_safe(s."Effective Tax Rate - (Ratio) (-4FY)"),
                 0)                                                               AS effective_tax_rate_4fy,
+       COALESCE(text_to_numeric_safe(s."FCF - Est Avg (FY1E)"),
+                0)                                                               AS fcf_est_avg_fy1e,
+       COALESCE(text_to_numeric_safe(s."FCF - Est Avg (FY2E)"),
+                0)                                                               AS fcf_est_avg_fy2e,
+       COALESCE(text_to_numeric_safe(s."FCF - Est Avg (FY3E)"),
+                0)                                                               AS fcf_est_avg_fy3e,
+       COALESCE(text_to_numeric_safe(s."FCF - Est Avg (FY4E)"),
+                0)                                                               AS fcf_est_avg_fy4e,
+       COALESCE(text_to_numeric_safe(s."FCF - Est Avg (FY5E)"),
+                0)                                                               AS fcf_est_avg_fy5e,
        report_fiscal.fiscal_month                                                AS fiscal_month,
        report_fiscal.fiscal_quarter                                              AS fiscal_quarter,
        report_fiscal.fiscal_year                                                 AS fiscal_year,

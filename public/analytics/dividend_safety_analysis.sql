@@ -1,0 +1,47 @@
+create table analytics.dividend_safety_analysis
+(
+    isin                              text,
+    ticker                            text,
+    name                              text,
+    region                            text,
+    country                           text,
+    trading_country                   text,
+    exchange                          text,
+    sector                            text,
+    industry                          text,
+    dividend_record_frequency         text,
+    earnings_report_frequency         text,
+    fy_end                            text,
+    next_earnings_report              text,
+    next_earnings_status              text,
+    next_earnings_when                text,
+    next_fiscal_quarter               text,
+    reporting_interval                double precision,
+    size_class                        text,
+    style_class                       text,
+    unit                              text,
+    dividend_record_announce_date     date,
+    dividend_record_ex_date           date,
+    dividend_record_payable_date      date,
+    dividend_record_record_date       date,
+    fy_end_date                       date,
+    income_statement_report_date      date,
+    last_updated                      date,
+    next_earnings                     date,
+    next_fy_end_date                  date,
+    next_income_statement_report_date date,
+    reference_date                    date,
+    dividend_cut_probability          double precision,
+    fcf_dividend_coverage             double precision,
+    payout_ratio                      double precision,
+    dividend_streak                   bigint,
+    dividend_consistency              double precision,
+    yield_vs_5y_avg                   double precision,
+    sustainable_flag                  bigint,
+    safety_score                      double precision,
+    risk_category                     text
+);
+
+alter table analytics.dividend_safety_analysis
+    owner to postgres;
+

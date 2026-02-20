@@ -12,7 +12,7 @@ This module provides visualization functions for analyzing earnings quality:
 - Enhanced beat probability dashboards (three-layer evidence fusion)
 
 Feature Categories leveraged (from feature_registry.sql vw_features_earnings):
-- eps_surprise_pct, eps_beat_count, eps_total_reports, eps_trajectory_score
+- eps_surprise_pct, eps_positive_years, eps_positive_streak, eps_trajectory_score
 - eps_positive_streak, eps_improvement_count, earnings_quality_composite
 - accruals_ratio, cash_earnings_ratio, earnings_persistence
 - eps_revision_momentum, gaap_adj_eps_gap_pct, revision_trend_short/medium
@@ -32,16 +32,17 @@ from finance_ml.analytics.visualizations._shared import (
     PLOTLY_TEMPLATE,
     COLORS,
     create_no_data_figure,
+    resolve_column,
 )
 
 # Metric display names
 METRIC_LABELS = {
     "eps_surprise_pct": "EPS Surprise %",
     "eps_beat_count": "EPS Beat Count",
-    "eps_total_reports": "Total Reports",
-    "eps_trajectory_score": "EPS Trajectory Score",
-    "eps_positive_streak": "Positive Streak",
     "eps_positive_years": "Positive EPS Years",
+    "eps_total_reports": "Total Reports",
+    "eps_positive_streak": "Positive Streak",
+    "eps_trajectory_score": "EPS Trajectory Score",
     "eps_improvement_count": "Improvement Count",
     "earnings_quality_composite": "Quality Composite",
     "ni_adjustment_ratio": "NI Adjustment Ratio",
@@ -66,7 +67,7 @@ def create_earnings_surprise_dashboard(
     - Beat rate by sector
     - Surprise vs momentum correlation
 
-    Uses: eps_surprise_pct, eps_beat_count, eps_total_reports
+    Uses: eps_surprise_pct, eps_positive_years (or eps_beat_count), eps_positive_streak (or eps_total_reports)
 
     Parameters
     ----------
@@ -86,7 +87,9 @@ def create_earnings_surprise_dashboard(
     >>> fig.show()
     """
     has_surprise = "eps_surprise_pct" in df.columns
-    has_beat = "eps_beat_count" in df.columns and "eps_total_reports" in df.columns
+    beat_col = resolve_column(df, "eps_beat_count") or resolve_column(df, "eps_positive_years")
+    total_col = resolve_column(df, "eps_total_reports") or resolve_column(df, "eps_positive_streak")
+    has_beat = beat_col is not None and total_col is not None
     has_group = group_col in df.columns
 
     if not has_surprise and not has_beat:
@@ -136,8 +139,8 @@ def create_earnings_surprise_dashboard(
 
         for group in groups:
             group_data = df[df[group_col] == group]
-            total_beats = group_data["eps_beat_count"].sum()
-            total_reports = group_data["eps_total_reports"].sum()
+            total_beats = group_data[beat_col].sum()
+            total_reports = group_data[total_col].sum()
             if total_reports > 0:
                 beat_rate = (total_beats / total_reports) * 100
                 beat_rates.append(beat_rate)
@@ -182,7 +185,7 @@ def create_earnings_surprise_dashboard(
 
     # Panel 4: Beat Count Distribution
     if has_beat:
-        beat_data = df["eps_beat_count"].dropna()
+        beat_data = df[beat_col].dropna()
         if len(beat_data) > 0:
             fig.add_trace(
                 go.Histogram(

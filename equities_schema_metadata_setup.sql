@@ -1668,10 +1668,24 @@ VALUES
      'Effective Tax Rate - (Ratio) 4 fiscal years ago',
      'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
 
+    -- ===========================================
+    -- CASH_FLOW role: FCF Estimates
+    -- ===========================================
+    ('FCF - Est Avg (FY1E)', 'fcf_est_avg_fy1e', 'cash_flow', 1, 'FCF - Est Avg (FY1E)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('FCF - Est Avg (FY2E)', 'fcf_est_avg_fy2e', 'cash_flow', 1, 'FCF - Est Avg (FY2E)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('FCF - Est Avg (FY3E)', 'fcf_est_avg_fy3e', 'cash_flow', 1, 'FCF - Est Avg (FY3E)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('FCF - Est Avg (FY4E)', 'fcf_est_avg_fy4e', 'cash_flow', 1, 'FCF - Est Avg (FY4E)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('FCF - Est Avg (FY5E)', 'fcf_est_avg_fy5e', 'cash_flow', 1, 'FCF - Est Avg (FY5E)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+
 
     -- ===========================================
     -- FEATURE role (4 columns)
-    -- ===========================================
+    -- =========================================== 
     ('Fiscal Month', 'fiscal_month', 'feature', 1, 'Months between Income Statement Report Date and FY End Date',
      'INTEGER',
      CURRENT_TIMESTAMP),

@@ -25,7 +25,7 @@ from collections import defaultdict
 # ---------------------------------------------------------------------------
 
 # Maximum rows per prob_vw_features_* table before aggregation kicks in
-_PROB_EXPORT_ROW_LIMIT: int = 500
+_PROB_EXPORT_ROW_LIMIT: int = 100
 
 
 @dataclass
@@ -570,8 +570,8 @@ def _build_feature_query(
     base_sql = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') AND size_class <> 'Small Cap'
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '2 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '2 months') 
         ORDER BY next_earnings ASC
     """
     if limit is not None:
@@ -792,6 +792,7 @@ def validate_feature_alignment(df: pd.DataFrame, categories: dict) -> dict:
     """
     validation_results = {}
 
+    # Computes feature coverage per category; returns validation results
     for category, features in categories.items():
         available = [f for f in features if f in df.columns]
         missing = [f for f in features if f not in df.columns]
@@ -869,8 +870,8 @@ def load_all_feature_views(
             query = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') AND size_class <> 'Small Cap'
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '2 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '2 months') 
         ORDER BY next_earnings ASC
     """
             df_view = pd.read_sql(query, engine)
@@ -907,17 +908,146 @@ def load_all_feature_views(
     return merged_df if merged_df is not None else pd.DataFrame()
 
 
-def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
+def get_view_category_mapping(
+        db_url: Optional[str] = None,
+        schema: str = "public",
+        use_db: bool = True,
+) -> dict[str, dict[str, str | list[str]]]:
     """
     Return mapping of view names to feature categories and their feature columns.
 
-    Each entry includes the category label and the list of feature columns
-    (non-identifier columns) produced by the underlying vw_features view.
+    Dynamically loads feature columns from the database view metadata when
+    available, falling back to a hardcoded mapping.  The database approach
+    queries each view's column list and strips the identifier columns,
+    giving an always-up-to-date result.
+
+    Parameters
+    ----------
+    db_url : str, optional
+        SQLAlchemy database URL.  Falls back to DB_URL env var.
+    schema : str, default "public"
+        Schema containing the vw_features views.
+    use_db : bool, default True
+        Whether to attempt loading from the database.  Set False to
+        force the hardcoded fallback.
 
     Returns
     -------
     dict[str, dict[str, str | list[str]]]
-        Mapping from view name to dict with 'category' label and 'feature_cols' list
+        Mapping from view name to dict with 'category' label and 'feature_cols' list.
+    """
+    if use_db:
+        try:
+            return _load_view_category_mapping_from_db(db_url, schema)
+        except Exception as e:
+            logging.warning(
+                "Could not load view category mapping from DB: %s. Using fallback.",
+                e,
+            )
+
+    return _get_fallback_view_category_mapping()
+
+
+def _load_view_category_mapping_from_db(
+        db_url: Optional[str] = None,
+        schema: str = "public",
+) -> dict[str, dict[str, str | list[str]]]:
+    """
+    Build the view→category mapping by introspecting the actual DB views.
+
+    For each vw_features_* view, queries ``information_schema.columns`` to
+    get the real column list and subtracts identifier columns.  The category
+    label is derived from the ``calculated_features_registry`` table or
+    from the view name.
+    """
+    if create_engine is None or text is None:
+        raise ImportError("SQLAlchemy not available")
+
+    url = _resolve_db_url(db_url)
+    engine = create_engine(url)
+    identifier_cols = set(load_identifier_columns(db_url=url, schema=schema))
+
+    # ── Category labels from registry ──
+    category_label_sql = text(f"""
+        SELECT DISTINCT
+            source_function,
+            category
+        FROM {schema}.calculated_features_registry
+        WHERE source_function IS NOT NULL
+    """)
+
+    # ── View column metadata ──
+    view_cols_sql = text("""
+                         SELECT table_name, column_name
+                         FROM information_schema.columns
+                         WHERE table_schema = :schema
+                           AND table_name LIKE 'vw_features_%'
+                           AND table_name != 'vw_identifier_columns'
+                         ORDER BY table_name, ordinal_position
+                         """)
+
+    with engine.connect() as conn:
+        # Build function→category lookup
+        fn_rows = conn.execute(category_label_sql).fetchall()
+        fn_to_category: dict[str, str] = {}
+        for fn_name, category in fn_rows:
+            fn_to_category[fn_name] = category
+
+        # Build view→columns
+        col_rows = conn.execute(view_cols_sql, {"schema": schema}).fetchall()
+
+    # Group columns by view
+    view_columns: dict[str, list[str]] = defaultdict(list)
+    for table_name, column_name in col_rows:
+        view_columns[table_name].append(column_name)
+
+    # ── Derive category label per view ──
+    # Map from view suffix to human-readable label
+    _VIEW_CATEGORY_LABELS = {
+        "analyst_sentiment": "Analyst Sentiment",
+        "balance_sheet": "Balance Sheet",
+        "cashflow": "Cash Flow",
+        "composite_scores": "Composite Scores",
+        "cost_structure": "Cost Structure",
+        "dividends": "Dividend Features",
+        "earnings": "Earnings Quality",
+        "employment": "Employment Metrics",
+        "growth": "Growth Metrics",
+        "leverage_liquidity": "Leverage & Liquidity",
+        "momentum": "Momentum",
+        "profitability": "Profitability",
+        "quality_risk": "Quality & Risk",
+        "technical_analysis": "Technical Analysis",
+        "temporal": "Temporal Features",
+        "unusual_items": "Unusual Items",
+        "valuation_ratios": "Valuation Ratios",
+    }
+
+    mapping: dict[str, dict[str, str | list[str]]] = {}
+    for view_name, columns in view_columns.items():
+        feature_cols = [c for c in columns if c not in identifier_cols]
+        suffix = view_name.replace("vw_features_", "")
+        category = _VIEW_CATEGORY_LABELS.get(suffix, suffix.replace("_", " ").title())
+
+        mapping[view_name] = {
+            "category": category,
+            "feature_cols": feature_cols,
+        }
+
+    logging.info(
+        "Loaded view category mapping from DB: %d views, %d total features",
+        len(mapping),
+        sum(len(v["feature_cols"]) for v in mapping.values()),
+    )
+    return mapping
+
+
+def _get_fallback_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
+    """
+    Hardcoded fallback mapping aligned with the current database views.
+
+    This must be periodically synced with the actual view definitions.
+    Last synced: 2026-02-19.
     """
     return {
         "vw_features_analyst_sentiment": {
@@ -951,28 +1081,11 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "analyst_coverage_change_1y",
                 "pt_vs_price_momentum",
                 "analyst_coverage_trend",
-                # calc_price_target_achievement_features
-                # calc_forward_consensus_features
-                # calc_revenue_estimate_consensus
             ],
         },
         "vw_features_balance_sheet": {
             "category": "Balance Sheet",
             "feature_cols": [
-                # calc_balance_sheet_dynamics
-                "cash_to_assets_pct",
-                "cash_change_qoq",
-                "cash_vs_5y_avg",
-                "inventory_change_yoy",
-                "inventory_vs_5y_avg",
-                "receivables_change_yoy",
-                "receivables_vs_5y_avg",
-                "working_capital_vs_5y_avg",
-                "retained_earnings_vs_5y",
-                "intangibles_growth_flag",
-                "asset_quality_score",
-                "balance_sheet_strength",
-                "debt_maturity_risk",
                 # calc_total_assets_temporal
                 "assets_fq",
                 "assets_fy",
@@ -990,48 +1103,50 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "assets_3y_cagr",
                 "asset_growth_accel",
                 "asset_base_stable",
-                # calc_total_debt_temporal
-                "debt_fq",
-                "debt_fy",
-                "debt_ltm",
-                "debt_1fq",
-                "debt_2fq",
-                "debt_3fq",
-                "debt_4fq",
-                "debt_1fy",
-                "debt_2fy",
-                "debt_3fy",
-                "debt_4fy",
-                "debt_qoq_change",
-                "debt_yoy_change",
-                "debt_4q_trend",
-                "debt_3y_cagr",
-                "debt_deleveraging",
-                "debt_to_equity_trend",
-                # calc_working_capital_temporal
-                "wc_fq",
-                "wc_fy",
-                "wc_ltm",
-                "wc_5yavgfy",
-                "wc_1fq",
-                "wc_2fq",
-                "wc_3fq",
-                "wc_4fq",
-                "wc_1fy",
-                "wc_2fy",
-                "wc_3fy",
-                "wc_4fy",
-                "wc_qoq_change",
-                "wc_yoy_change",
-                "wc_4q_trend",
-                "wc_vs_5y_avg",
-                "wc_positive_quarters",
-                "wc_improving_flag",
-                "wc_volatility",
-                # calc_tangible_book_features
-                # calc_working_capital_deep_features
-                # calc_goodwill_temporal_features
                 # calc_inventory_temporal_features
+                "inventory_ltm",
+                "inventory_fq",
+                "inventory_fy",
+                "inventory_1fq",
+                "inventory_2fq",
+                "inventory_3fq",
+                "inventory_4fq",
+                "inventory_1fy",
+                "inventory_2fy",
+                "inventory_3fy",
+                "inventory_4fy",
+                "inventory_qoq_change",
+                "inventory_yoy_change",
+                "inventory_4q_trend",
+                "inventory_vs_5y_avg",
+                "inventory_days",
+                "inventory_turnover",
+                "inventory_to_revenue",
+                "inventory_to_assets",
+                "inventory_buildup_flag",
+                "inventory_reduction_flag",
+                "inventory_volatility",
+                # calc_goodwill_temporal_features
+                "goodwill_fq",
+                "goodwill_ltm",
+                "goodwill_fy",
+                "goodwill_1fq",
+                "goodwill_2fq",
+                "goodwill_3fq",
+                "goodwill_4fq",
+                "goodwill_1fy",
+                "goodwill_2fy",
+                "goodwill_3fy",
+                "goodwill_4fy",
+                "goodwill_qoq_change",
+                "goodwill_yoy_change",
+                "goodwill_3y_growth",
+                "goodwill_vs_5y_avg",
+                "recent_acquisition_flag",
+                "goodwill_accumulation_rate",
+                "goodwill_to_assets_trend",
+                "impairment_risk_score",
+                "goodwill_concentration",
             ],
         },
         "vw_features_cashflow": {
@@ -1094,166 +1209,46 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "fcf_fq",
                 "fcf_ltm",
                 "fcf_fy",
+                "cfo_growth_yoy_comp",
                 "fcf_growth_yoy",
+                "cfo_to_net_income_comp",
+                "fcf_margin_comp",
                 "fcf_yield",
                 "cfo_positive_years",
+                "fcf_positive_years_comp",
+                "cash_flow_quality_score_comp",
+                # calc_fcf_growth_estimates
+                "fcf_est_fy1",
+                "fcf_est_fy2",
+                "fcf_est_fy3",
+                "fcf_est_fy4",
+                "fcf_est_fy5",
+                "fcf_est_growth_fy1_vs_ltm",
+                "fcf_est_growth_fy2_vs_fy1",
+                "fcf_est_growth_fy3_vs_fy2",
+                "fcf_est_growth_fy4_vs_fy3",
+                "fcf_est_growth_fy5_vs_fy4",
+                "fcf_est_cagr_3y",
+                "fcf_est_cagr_5y",
+                "fcf_est_margin_fy1",
+                "fcf_est_yield_fy1",
+                "fcf_est_growth_acceleration",
+                "fcf_est_growth_deceleration",
+                "fcf_est_trajectory_score",
+                "fcf_est_always_positive",
+                "fcf_est_vs_historical",
+                "fcf_est_capex_implied_ratio",
             ],
         },
         "vw_features_composite_scores": {
             "category": "Composite Scores",
             "feature_cols": [
-                # calc_piotroski_f_score
+                # calc_composite_scores
                 "piotroski_f_score",
-                # calc_shareholder_dilution_features
                 "dilution_score",
-                # calc_quality_momentum_composite
                 "quality_momentum_score",
-            ],
-        },
-        "vw_features_cost_structure": {
-            "category": "Cost Structure",
-            "feature_cols": [
-                # calc_cost_structure_features
-                # calc_rnd_temporal_features
-                # calc_interest_income_features
-                # calc_investment_income_temporal
-            ],
-        },
-        "vw_features_dividends": {
-            "category": "Dividend Features",
-            "feature_cols": [
-                # calc_dividend_features
-                "dividend_streak",
-                "dividend_yield_ltm",
-                "dividend_yield_ntm",
-                "dividend_payout_ratio",
-                "fcf_dividend_coverage",
-                "buyback_yield",
-                "total_shareholder_yield",
-                "dividend_growth_expectation",
-                # calc_dividend_timing
-                "days_since_ex_date",
-                "days_to_payment",
-                "dividend_announced_flag",
-                "ex_date_approaching_flag",
-                "dividend_frequency_score",
-                "dividend_consistency",
-                "recent_dividend_change",
-                "dividend_yield_vs_5y_avg",
-                # calc_dividend_history_features
-                # calc_dividend_yield_comprehensive
-            ],
-        },
-        "vw_features_earnings": {
-            "category": "Earnings Quality",
-            "feature_cols": [
-                # calc_earnings_features
-                "eps_surprise_pct",
-                "revenue_surprise_pct",
-                "eps_adjustment_ratio",
-                "gaap_adj_eps_gap_pct",
-                "ebitda_adjustment_ratio",
-                "eps_quarterly_trend",
-                "eps_yoy_growth",
                 # calc_eps_trajectory_features
-                "eps_qoq_growth",
-                "eps_yoy_quarterly",
-                "eps_positive_streak",
-                "eps_cagr_3y",
-                "eps_cagr_5y",
-                "eps_growth_accel",
-                "eps_vs_5y_avg",
-                "eps_improvement_count",
                 "eps_trajectory_score",
-                "eps_stability",
-                # calc_gaap_adjusted_analytics
-                "eps_adjustment_spread_ltm",
-                "eps_adjustment_spread_fy",
-                "eps_adjustment_spread_1fy",
-                "eps_adjustment_spread_fq",
-                "eps_adjustment_spread_1fqfq",
-                "eps_adjustment_spread_2fqfq",
-                "eps_adjustment_spread_3fqfq",
-                "eps_adjustment_spread_4fqfq",
-                "eps_adjustment_spread_2fy",
-                "eps_adjustment_spread_3fy",
-                "eps_adjustment_spread_4fy",
-                "eps_adjustment_pct",
-                "net_income_adjustment_ratio_ltm",
-                "net_income_adjustment_ratio_fy",
-                "net_income_adjustment_ratio_1fy",
-                "net_income_adjustment_ratio_fq",
-                "net_income_adjustment_ratio_5yavgfq",
-                "net_income_adjustment_ratio_1fqfq",
-                "net_income_adjustment_ratio_2fqfq",
-                "net_income_adjustment_ratio_3fqfq",
-                "net_income_adjustment_ratio_4fqfq",
-                "net_income_adjustment_ratio_2fy",
-                "net_income_adjustment_ratio_3fy",
-                "net_income_adjustment_ratio_4fy",
-                "net_income_adjustment_pct",
-                "ebitda_adjustment_pct_ltm",
-                "ebitda_adjustment_pct_fy",
-                "ebitda_adjustment_pct_1fy",
-                "ebitda_adjustment_pct_fq",
-                "ebitda_adjustment_pct_1fqfq",
-                "ebitda_adjustment_pct_2fqfq",
-                "ebitda_adjustment_pct_3fqfq",
-                "ebitda_adjustment_pct_4fqfq",
-                "ebitda_adjustment_pct_2fy",
-                "ebitda_adjustment_pct_3fy",
-                "ebitda_adjustment_pct_4fy",
-                "ebit_adjustment_pct_ltm",
-                "ebit_adjustment_pct_fy",
-                "ebit_adjustment_pct_1fy",
-                "ebit_adjustment_pct_fq",
-                "ebit_adjustment_pct_1fqfq",
-                "ebit_adjustment_pct_2fqfq",
-                "ebit_adjustment_pct_3fqfq",
-                "ebit_adjustment_pct_4fqfq",
-                "ebit_adjustment_pct_2fy",
-                "ebit_adjustment_pct_3fy",
-                "ebit_adjustment_pct_4fy",
-                "earnings_quality_score",
-                "earnings_quality_warning",
-                "forward_eps_gaap_adj_spread",
-                # calc_gaap_revision_features
-                "gaap_revision_momentum",
-                "gaap_revision_1m",
-                "gaap_revision_3m",
-                "gaap_revision_6m",
-                "gaap_revision_1y",
-                "gaap_vs_norm_revision_spread",
-                "gaap_revision_acceleration",
-                "gaap_positive_revision_flag",
-                "revision_quality_divergence",
-                # calc_eps_comprehensive
-                "eps_basic_fq",
-                "eps_basic_ltm",
-                "eps_basic_fy",
-                "eps_adj_ltm",
-                "eps_norm_est_fy1e",
-                "eps_positive_years",
-                # calc_eps_continuing_features
-                "eps_cont_ltm",
-                "eps_cont_fq",
-                "eps_cont_fy",
-                "eps_cont_1fqfq",
-                "eps_cont_2fqfq",
-                "eps_cont_3fqfq",
-                "eps_cont_4fqfq",
-                "eps_cont_1fy",
-                "eps_cont_2fy",
-                "eps_cont_3fy",
-                "eps_cont_4fy",
-                "eps_cont_qoq_growth",
-                "eps_cont_yoy_growth",
-                "eps_cont_cagr_3y",
-                "eps_cont_vs_total_eps",
-                "eps_cont_positive_streak",
-                "eps_cont_trajectory_score",
-                "discontinued_ops_impact",
-                "core_earnings_stability",
                 # calc_net_income_comprehensive
                 "net_income_is_fq",
                 "net_income_is_ltm",
@@ -1281,6 +1276,170 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "net_income_yoy_quarterly",
                 "net_income_vs_5y_avg",
                 "normalized_ni_vs_5y_avg",
+            ],
+        },
+        "vw_features_cost_structure": {
+            "category": "Cost Structure",
+            "feature_cols": [
+                # calc_cost_structure_features
+                "cogs_to_revenue",
+                "opex_to_revenue",
+                "sga_to_revenue",
+                "rnd_to_revenue",
+                "interest_to_revenue",
+                "sga_trend_yoy",
+                "operating_leverage_proxy",
+                "cost_efficiency_score",
+                "marketing_to_revenue",
+                "marketing_trend_yoy",
+                "marketing_vs_5y_avg",
+                "sga_vs_5y_avg",
+                "sga_efficiency_trend",
+                # calc_rnd_temporal_features
+                "rnd_ltm",
+                "rnd_fq",
+                "rnd_fy",
+                "rnd_1fqfq",
+                "rnd_2fqfq",
+                "rnd_3fqfq",
+                "rnd_4fqfq",
+                "rnd_1fy",
+                "rnd_2fy",
+                "rnd_3fy",
+                "rnd_4fy",
+                "rnd_intensity_ltm",
+                "rnd_intensity_fy",
+                "rnd_intensity_trend",
+                "rnd_qoq_growth",
+                "rnd_yoy_growth",
+                "rnd_cagr_3y",
+                "rnd_per_employee",
+                "rnd_to_gross_profit",
+                "rnd_roi_proxy",
+                "rnd_increasing_flag",
+                "rnd_cut_flag",
+                "high_rnd_intensity_flag",
+                # calc_interest_income_features
+                "interest_income_ltm",
+                "interest_expense_ltm",
+                "net_interest_income",
+                "interest_coverage_ratio",
+                "interest_income_to_revenue",
+                "interest_expense_to_revenue",
+                "net_interest_margin_proxy",
+            ],
+        },
+        "vw_features_dividends": {
+            "category": "Dividend Features",
+            "feature_cols": [
+                # calc_dividend_features
+                "dividend_streak",
+                "dividend_yield_ltm",
+                "dividend_yield_ntm",
+                "dividend_payout_ratio",
+                "fcf_dividend_coverage",
+                "buyback_yield",
+                "total_shareholder_yield",
+                "dividend_growth_expectation",
+                # calc_dividend_timing
+                "days_since_ex_date",
+                "days_to_payment",
+                "dividend_announced_flag",
+                "ex_date_approaching_flag",
+                "dividend_frequency_score",
+                "dividend_consistency",
+                "recent_dividend_change",
+                "dividend_yield_vs_5y_avg",
+                # calc_dividend_yield_comprehensive
+                "div_yield_ltm",
+                "div_yield_ntm",
+                "div_yield_ind",
+                "div_yield_1fy_ind",
+                "div_yield_5y_avg",
+                "div_yield_vs_5y_avg",
+                "div_yield_growth_expected",
+                "dividend_streak_comp",
+                "high_yield_flag",
+                "sustainable_dividend_flag",
+            ],
+        },
+        "vw_features_earnings": {
+            "category": "Earnings Quality",
+            "feature_cols": [
+                # calc_earnings_features
+                "eps_surprise_pct",
+                "revenue_surprise_pct",
+                "eps_adjustment_ratio",
+                "gaap_adj_eps_gap_pct",
+                "ebitda_adjustment_ratio",
+                "eps_quarterly_trend",
+                "eps_yoy_growth",
+                # calc_eps_trajectory_features
+                "eps_qoq_growth",
+                "eps_yoy_quarterly",
+                "eps_positive_streak",
+                "eps_cagr_3y",
+                "eps_cagr_5y",
+                "eps_growth_accel",
+                "eps_vs_5y_avg",
+                "eps_improvement_count",
+                "eps_trajectory_score",
+                "eps_stability",
+                # calc_eps_comprehensive
+                "eps_basic_fq",
+                "eps_basic_ltm",
+                "eps_basic_fy",
+                "eps_adj_ltm",
+                "eps_norm_est_fy1e",
+                "eps_growth_yoy_comp",
+                "eps_cagr_3y_comp",
+                "eps_adjustment_ratio_comp",
+                "eps_positive_years",
+                "eps_trajectory_score_comp",
+                # calc_eps_continuing_features
+                "eps_cont_ltm",
+                "eps_cont_fq",
+                "eps_cont_fy",
+                "eps_cont_1fqfq",
+                "eps_cont_2fqfq",
+                "eps_cont_3fqfq",
+                "eps_cont_4fqfq",
+                "eps_cont_1fy",
+                "eps_cont_2fy",
+                "eps_cont_3fy",
+                "eps_cont_4fy",
+                "eps_cont_qoq_growth",
+                "eps_cont_yoy_growth",
+                "eps_cont_cagr_3y",
+                "eps_cont_vs_total_eps",
+                "eps_cont_positive_streak",
+                "eps_cont_trajectory_score",
+                "discontinued_ops_impact",
+                "core_earnings_stability",
+                # calc_gaap_adjusted_analytics (slimmed in view)
+                "eps_adjustment_spread_ltm",
+                "eps_adjustment_spread_fy",
+                "eps_adjustment_pct",
+                "net_income_adjustment_ratio_ltm",
+                "net_income_adjustment_ratio_fy",
+                "net_income_adjustment_pct",
+                "ebitda_adjustment_pct_ltm",
+                "ebitda_adjustment_pct_fy",
+                "ebit_adjustment_pct_ltm",
+                "ebit_adjustment_pct_fy",
+                "earnings_quality_score",
+                "earnings_quality_warning",
+                "forward_eps_gaap_adj_spread",
+                # calc_gaap_revision_features
+                "gaap_revision_momentum",
+                "gaap_revision_1m",
+                "gaap_revision_3m",
+                "gaap_revision_6m",
+                "gaap_revision_1y",
+                "gaap_vs_norm_revision_spread",
+                "gaap_revision_acceleration",
+                "gaap_positive_revision_flag",
+                "revision_quality_divergence",
             ],
         },
         "vw_features_employment": {
@@ -1331,81 +1490,52 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "forward_ebitda_margin",
                 "revenue_acceleration",
                 "estimate_confidence_score",
-                # calc_total_revenues_temporal
+                # calc_revenue_estimate_consensus
+                "revenue_est_avg_fy1e",
+                "revenue_est_med_fy1e",
+                "revenue_est_avg_ntm",
+                "revenue_est_med_ntm",
+                "revenue_avg_med_diff_pct",
+                "revenue_consensus_strength",
+                "revenue_revision_trend_rec",
+                "revenue_vs_current",
+                # calc_revenue_quarterly_features
                 "revenue_fq",
-                "revenue_ltm",
                 "revenue_fy",
+                "revenue_ltm",
+                "revenue_5y_avg",
+                "revenue_1fqfq",
+                "revenue_2fqfq",
+                "revenue_3fqfq",
+                "revenue_4fqfq",
                 "revenue_1fy",
+                "revenue_2fy",
+                "revenue_3fy",
+                "revenue_4fy",
+                "revenue_qoq_growth",
+                "revenue_qoq_2q",
+                "revenue_qoq_3q",
+                "revenue_qoq_4q",
+                "revenue_yoy_quarterly",
+                "revenue_2y_growth",
+                "revenue_3y_growth",
+                "revenue_4y_growth",
+                "revenue_cagr_3y",
+                "revenue_cagr_4y",
+                "revenue_4q_trend",
+                "revenue_4q_avg",
+                "revenue_fq_vs_4q_avg",
+                "revenue_growth_flag",
+                "revenue_stability_score",
+                "revenue_accelerating_flag",
+                "revenue_positive_qoq_streak",
+                # calc_total_revenues_temporal
                 "revenue_5yavgfq",
                 "revenue_5yavgltm",
                 "revenue_vs_5y_avg_fq",
                 "revenue_vs_5y_avg_ltm",
                 "revenue_fq_vs_avg",
                 "revenue_momentum",
-                # calc_gross_profit_temporal
-                "gp_fq",
-                "gp_fy",
-                "gp_ltm",
-                "gp_1fqfq",
-                "gp_2fqfq",
-                "gp_3fqfq",
-                "gp_4fqfq",
-                "gp_1fy",
-                "gp_2fy",
-                "gp_3fy",
-                "gp_4fy",
-                "gp_qoq_growth",
-                "gp_yoy_growth",
-                "gp_margin_fq",
-                "gp_margin_trend",
-                "gp_positive_quarters",
-                "gp_margin_expansion",
-                # calc_ebit_ebitda_comprehensive
-                "ebit_fq",
-                "ebit_ltm",
-                "ebit_fy",
-                "ebit_1fy",
-                "ebitda_fq",
-                "ebitda_ltm",
-                "ebitda_fy",
-                "ebitda_1fy",
-                "ebit_2fy",
-                "ebit_3fy",
-                "ebit_4fy",
-                "ebitda_2fy",
-                "ebitda_3fy",
-                "ebitda_4fy",
-                "ebit_1fqfq",
-                "ebit_2fqfq",
-                "ebit_3fqfq",
-                "ebit_4fqfq",
-                "ebitda_1fqfq",
-                "ebitda_2fqfq",
-                "ebitda_3fqfq",
-                "ebitda_4fqfq",
-                "ebit_5yavgfq",
-                "ebit_5yavgltm",
-                "ebitda_5yavgfq",
-                "ebitda_5yavgltm",
-                "ebit_adj_fq",
-                "ebit_adj_ltm",
-                "ebit_adj_fy",
-                "ebitda_adj_fq",
-                "ebitda_adj_ltm",
-                "ebitda_adj_fy",
-                "ebit_growth_yoy",
-                "ebitda_growth_yoy",
-                "ebit_margin_ltm",
-                "ebitda_margin_ltm",
-                "ebit_positive_years",
-                "ebitda_positive_years",
-                "ebit_qoq_growth",
-                "ebitda_qoq_growth",
-                "ebit_cagr_3y",
-                "ebitda_cagr_3y",
-                "ebit_vs_5y_avg",
-                "ebitda_vs_5y_avg",
-                # calc_revenue_quarterly_features
             ],
         },
         "vw_features_leverage_liquidity": {
@@ -1424,17 +1554,70 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "inventory_turnover",
                 "receivables_days",
                 "working_capital_turns",
-                # calc_financial_distress_features
-                "distress_risk_score",
-                "liquidity_stress_score",
-                "working_capital_trend",
-                "cash_runway_months",
-                "combined_distress_score",
-                "wc_deteriorating_flag",
-                "retained_earnings_growth",
-                "accumulated_deficit_flag",
-                "adequate_cash_buffer",
-                # calc_size_liquidity_features
+                # calc_balance_sheet_dynamics
+                "cash_to_assets_pct",
+                "cash_change_qoq",
+                "cash_vs_5y_avg",
+                "inventory_change_yoy",
+                "inventory_vs_5y_avg",
+                "receivables_change_yoy",
+                "receivables_vs_5y_avg",
+                "working_capital_vs_5y_avg",
+                "retained_earnings_vs_5y",
+                "intangibles_growth_flag",
+                "asset_quality_score",
+                "balance_sheet_strength",
+                "debt_maturity_risk",
+                # calc_working_capital_temporal
+                "wc_fq",
+                "wc_fy",
+                "wc_ltm",
+                "wc_5yavgfy",
+                "wc_1fq",
+                "wc_2fq",
+                "wc_3fq",
+                "wc_4fq",
+                "wc_1fy",
+                "wc_2fy",
+                "wc_3fy",
+                "wc_4fy",
+                "wc_qoq_change",
+                "wc_yoy_change",
+                "wc_4q_trend",
+                "wc_vs_5y_avg",
+                "wc_positive_quarters",
+                "wc_improving_flag",
+                "wc_volatility",
+                # calc_total_debt_temporal
+                "debt_fq",
+                "debt_fy",
+                "debt_ltm",
+                "debt_1fq",
+                "debt_2fq",
+                "debt_3fq",
+                "debt_4fq",
+                "debt_1fy",
+                "debt_2fy",
+                "debt_3fy",
+                "debt_4fy",
+                "debt_qoq_change",
+                "debt_yoy_change",
+                "debt_4q_trend",
+                "debt_3y_cagr",
+                "debt_deleveraging",
+                "debt_to_equity_trend",
+                # calc_working_capital_deep_features
+                "wc_ltm_deep",
+                "wc_fq_deep",
+                "wc_fy_deep",
+                "wc_to_revenue",
+                "wc_to_assets",
+                "wc_change_qoq_deep",
+                "wc_change_yoy_deep",
+                "days_working_capital",
+                "wc_efficiency_score",
+                "negative_wc_flag",
+                "wc_improvement_flag_deep",
             ],
         },
         "vw_features_momentum": {
@@ -1456,8 +1639,13 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "beta_momentum",
                 "volatility_regime",
                 # calc_long_term_momentum_features
-                # calc_volatility_surface_features
-                # calc_beta_risk_features
+                "price_momentum_1y_long",
+                "price_momentum_3y",
+                "price_momentum_5y",
+                "long_term_trend_score",
+                "price_vs_ema_250d_long",
+                "multi_year_high_flag",
+                "secular_trend_flag",
             ],
         },
         "vw_features_profitability": {
@@ -1480,6 +1668,61 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "ebitda_margin_trend",
                 "margin_expansion_flag",
                 "margin_stability_score",
+                # calc_ebit_ebitda_comprehensive
+                "ebit_fq",
+                "ebit_ltm",
+                "ebit_fy",
+                "ebit_1fy",
+                "ebit_2fy",
+                "ebit_3fy",
+                "ebit_4fy",
+                "ebitda_fq",
+                "ebitda_ltm",
+                "ebitda_fy",
+                "ebitda_1fy",
+                "ebitda_2fy",
+                "ebitda_3fy",
+                "ebitda_4fy",
+                "ebit_5yavgfq",
+                "ebit_5yavgltm",
+                "ebitda_5yavgfq",
+                "ebitda_5yavgltm",
+                "ebit_adj_fq",
+                "ebit_adj_ltm",
+                "ebit_adj_fy",
+                "ebitda_adj_fq",
+                "ebitda_adj_ltm",
+                "ebitda_adj_fy",
+                "ebit_growth_yoy",
+                "ebitda_growth_yoy",
+                "ebit_margin_ltm",
+                "ebitda_margin_ltm",
+                "ebit_positive_years",
+                "ebitda_positive_years",
+                "ebit_qoq_growth",
+                "ebitda_qoq_growth",
+                "ebit_cagr_3y",
+                "ebitda_cagr_3y",
+                "ebit_vs_5y_avg",
+                "ebitda_vs_5y_avg",
+                # calc_gross_profit_temporal
+                "gp_fq",
+                "gp_fy",
+                "gp_ltm",
+                "gp_1fqfq",
+                "gp_2fqfq",
+                "gp_3fqfq",
+                "gp_4fqfq",
+                "gp_1fy",
+                "gp_2fy",
+                "gp_3fy",
+                "gp_4fy",
+                "gp_qoq_growth",
+                "gp_yoy_growth",
+                "gp_margin_fq",
+                "gp_margin_trend",
+                "gp_positive_quarters",
+                "gp_margin_expansion",
             ],
         },
         "vw_features_quality_risk": {
@@ -1494,7 +1737,26 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "exceptional_items_to_ebitda",
                 "altman_z_score",
                 "altman_z_trend",
+                "current_ratio",
                 "quick_ratio",
+                # calc_beta_risk_features
+                "beta_1y",
+                "beta_5y",
+                "beta_spread",
+                "beta_trend",
+                "high_beta_flag",
+                "low_beta_flag",
+                "beta_stability_score",
+                # calc_financial_distress_features
+                "distress_risk_score",
+                "liquidity_stress_score",
+                "working_capital_trend",
+                "cash_runway_months",
+                "combined_distress_score",
+                "wc_deteriorating_flag",
+                "retained_earnings_growth",
+                "accumulated_deficit_flag",
+                "adequate_cash_buffer",
                 # calc_accounting_quality_features
                 "goodwill_change_rate",
                 "restructuring_intensity",
@@ -1512,7 +1774,9 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
                 "asset_writedown_frequency",
                 "restructuring_frequency",
                 "exceptional_items_total_ltm",
+                "exceptional_items_to_ebitda_comp",
                 "quality_issues_count_5y",
+                "accounting_quality_score_comp",
             ],
         },
         "vw_features_technical_analysis": {
@@ -1559,6 +1823,15 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
             "category": "Unusual Items",
             "feature_cols": [
                 # calc_unusual_items_features
+                "other_unusual_items_ltm",
+                "impairment_goodwill_ltm",
+                "asset_writedown_ltm",
+                "restructuring_charges_ltm",
+                "total_unusual_items",
+                "unusual_items_to_revenue",
+                "unusual_items_to_ebitda",
+                "has_unusual_items_flag",
+                "earnings_quality_impact",
             ],
         },
         "vw_features_valuation_ratios": {
@@ -1598,7 +1871,6 @@ def get_view_category_mapping() -> dict[str, dict[str, str | list[str]]]:
             ],
         },
     }
-
 
 def get_view_category_labels() -> dict[str, str]:
     """

@@ -244,12 +244,8 @@ class TestMonteCarloSimulation:
         from finance_ml.analytics.feature_analytics import monte_carlo_price_target_simulation
 
         # Run with different simulation counts - results should be similar but not identical
-        result_1k = monte_carlo_price_target_simulation(
-            sample_stock_features_df, n_simulations=1000
-        )
-        result_10k = monte_carlo_price_target_simulation(
-            sample_stock_features_df, n_simulations=10000
-        )
+        result_1k = monte_carlo_price_target_simulation(sample_stock_features_df, n_simulations=1000)
+        result_10k = monte_carlo_price_target_simulation(sample_stock_features_df, n_simulations=10000)
 
         # Both should return valid results
         assert len(result_1k) > 0

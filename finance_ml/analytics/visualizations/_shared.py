@@ -38,7 +38,7 @@ MV_COLUMN_ALIASES: dict[str, list[str]] = {
     ],
     "beneish_m_score": ["accounting_quality_score", "accruals_quality"],
     "eps_beat_count": ["eps_positive_years"],
-    "eps_total_reports": ["eps_positive_years"],
+    "eps_total_reports": ["eps_positive_streak"],
 }
 
 

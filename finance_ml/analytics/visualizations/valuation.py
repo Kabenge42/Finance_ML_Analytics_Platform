@@ -51,6 +51,7 @@ METRIC_LABELS = {
     "price_to_fcf": "Price/FCF",
     "eps_growth_yoy": "EPS Growth YoY",
     "revenue_growth_yoy": "Revenue Growth YoY",
+    "revenue_yoy_growth": "Revenue Growth YoY",
 }
 
 

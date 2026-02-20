@@ -1807,6 +1807,159 @@ WHERE p_isin IS NULL
 $$ LANGUAGE SQL;
 
 -- =============================================================================
+-- FCF Growth Estimates (NEW)
+-- Estimated free cash flow growth rates from consensus FCF forecasts
+-- Source columns: FCF - Est Avg (FY1E/FY2E/FY3E/FY4E/FY5E), FCF (LTM/FY),
+--                 Total Revenues (LTM), Market Cap, Capital Expenditure (LTM)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_fcf_growth_estimates(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                        TEXT,
+                -- Forward FCF estimates (raw pass-through for downstream use)
+                fcf_est_fy1                 NUMERIC,
+                fcf_est_fy2                 NUMERIC,
+                fcf_est_fy3                 NUMERIC,
+                fcf_est_fy4                 NUMERIC,
+                fcf_est_fy5                 NUMERIC,
+
+                -- YoY estimated growth rates
+                fcf_est_growth_fy1_vs_ltm   NUMERIC,  -- FY1E vs current LTM
+                fcf_est_growth_fy2_vs_fy1   NUMERIC,  -- FY2E vs FY1E
+                fcf_est_growth_fy3_vs_fy2   NUMERIC,  -- FY3E vs FY2E
+                fcf_est_growth_fy4_vs_fy3   NUMERIC,  -- FY4E vs FY3E
+                fcf_est_growth_fy5_vs_fy4   NUMERIC,  -- FY5E vs FY4E
+
+                -- Multi-year estimated CAGRs
+                fcf_est_cagr_3y             NUMERIC,  -- (FY3E / LTM)^(1/3) - 1
+                fcf_est_cagr_5y             NUMERIC,  -- (FY5E / LTM)^(1/5) - 1
+
+                -- Forward FCF margin estimates
+                fcf_est_margin_fy1          NUMERIC,  -- FY1E FCF / LTM Revenue
+                fcf_est_yield_fy1           NUMERIC,  -- FY1E FCF / Market Cap
+
+                -- Growth acceleration / deceleration
+                fcf_est_growth_acceleration NUMERIC,  -- FY2-FY1 growth minus FY1-LTM growth
+                fcf_est_growth_deceleration INTEGER,   -- 1 if growth is slowing across estimates
+
+                -- Estimate spread (dispersion across forward years)
+                fcf_est_trajectory_score    NUMERIC,  -- Pct of forward years with positive FCF
+                fcf_est_always_positive     INTEGER,   -- All 5 forward estimates positive
+
+                -- Conversion quality: estimated vs historical
+                fcf_est_vs_historical       NUMERIC,  -- FY1E growth vs last actual YoY growth
+                fcf_est_capex_implied_ratio NUMERIC   -- FY1E FCF / (LTM CFO - LTM CapEx proxy)
+            )
+    STABLE
+    PARALLEL SAFE
+AS
+$$
+SELECT "ISIN"                                                                      AS isin,
+
+       -- Raw forward estimates
+       "FCF - Est Avg (FY1E)"                                                      AS fcf_est_fy1,
+       "FCF - Est Avg (FY2E)"                                                      AS fcf_est_fy2,
+       "FCF - Est Avg (FY3E)"                                                      AS fcf_est_fy3,
+       "FCF - Est Avg (FY4E)"                                                      AS fcf_est_fy4,
+       "FCF - Est Avg (FY5E)"                                                      AS fcf_est_fy5,
+
+       -- YoY estimated growth rates (as percentages)
+       ("FCF - Est Avg (FY1E)" - "FCF (LTM)") /
+       NULLIF(ABS("FCF (LTM)"), 0) * 100                                           AS fcf_est_growth_fy1_vs_ltm,
+
+       ("FCF - Est Avg (FY2E)" - "FCF - Est Avg (FY1E)") /
+       NULLIF(ABS("FCF - Est Avg (FY1E)"), 0) * 100                                AS fcf_est_growth_fy2_vs_fy1,
+
+       ("FCF - Est Avg (FY3E)" - "FCF - Est Avg (FY2E)") /
+       NULLIF(ABS("FCF - Est Avg (FY2E)"), 0) * 100                                AS fcf_est_growth_fy3_vs_fy2,
+
+       ("FCF - Est Avg (FY4E)" - "FCF - Est Avg (FY3E)") /
+       NULLIF(ABS("FCF - Est Avg (FY3E)"), 0) * 100                                AS fcf_est_growth_fy4_vs_fy3,
+
+       ("FCF - Est Avg (FY5E)" - "FCF - Est Avg (FY4E)") /
+       NULLIF(ABS("FCF - Est Avg (FY4E)"), 0) * 100                                AS fcf_est_growth_fy5_vs_fy4,
+
+       -- 3-year estimated CAGR: (FY3E / LTM)^(1/3) - 1
+       CASE
+           WHEN "FCF (LTM)" > 0 AND "FCF - Est Avg (FY3E)" > 0
+               THEN (POWER("FCF - Est Avg (FY3E)" /
+                           NULLIF("FCF (LTM)", 0), 1.0 / 3.0) - 1) * 100
+           END                                                                     AS fcf_est_cagr_3y,
+
+       -- 5-year estimated CAGR: (FY5E / LTM)^(1/5) - 1
+       CASE
+           WHEN "FCF (LTM)" > 0 AND "FCF - Est Avg (FY5E)" > 0
+               THEN (POWER("FCF - Est Avg (FY5E)" /
+                           NULLIF("FCF (LTM)", 0), 1.0 / 5.0) - 1) * 100
+           END                                                                     AS fcf_est_cagr_5y,
+
+       -- Forward FCF margin (FY1E FCF as % of current revenue)
+       "FCF - Est Avg (FY1E)" /
+       NULLIF("Total Revenues (LTM)", 0) * 100                                     AS fcf_est_margin_fy1,
+
+       -- Forward FCF yield (FY1E FCF as % of market cap)
+       "FCF - Est Avg (FY1E)" /
+       NULLIF("Market Cap", 0) * 100                                               AS fcf_est_yield_fy1,
+
+       -- Growth acceleration: is FY2→FY1 growth faster than FY1→LTM growth?
+       (("FCF - Est Avg (FY2E)" - "FCF - Est Avg (FY1E)") /
+        NULLIF(ABS("FCF - Est Avg (FY1E)"), 0) * 100) -
+       (("FCF - Est Avg (FY1E)" - "FCF (LTM)") /
+        NULLIF(ABS("FCF (LTM)"), 0) * 100)                                         AS fcf_est_growth_acceleration,
+
+       -- Growth deceleration flag: each subsequent growth rate is lower
+       CASE
+           WHEN ("FCF - Est Avg (FY2E)" - "FCF - Est Avg (FY1E)") /
+                NULLIF(ABS("FCF - Est Avg (FY1E)"), 0) <
+                ("FCF - Est Avg (FY1E)" - "FCF (LTM)") /
+                NULLIF(ABS("FCF (LTM)"), 0)
+               AND ("FCF - Est Avg (FY3E)" - "FCF - Est Avg (FY2E)") /
+                   NULLIF(ABS("FCF - Est Avg (FY2E)"), 0) <
+                   ("FCF - Est Avg (FY2E)" - "FCF - Est Avg (FY1E)") /
+                   NULLIF(ABS("FCF - Est Avg (FY1E)"), 0)
+               THEN 1
+           ELSE 0
+           END                                                                     AS fcf_est_growth_deceleration,
+
+       -- Forward trajectory score: how many of 5 forward years have positive FCF
+       (CASE WHEN "FCF - Est Avg (FY1E)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "FCF - Est Avg (FY2E)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "FCF - Est Avg (FY3E)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "FCF - Est Avg (FY4E)" > 0 THEN 1 ELSE 0 END +
+        CASE WHEN "FCF - Est Avg (FY5E)" > 0 THEN 1 ELSE 0 END) / 5.0 * 100       AS fcf_est_trajectory_score,
+
+       -- All 5 forward estimates positive
+       CASE
+           WHEN "FCF - Est Avg (FY1E)" > 0
+               AND "FCF - Est Avg (FY2E)" > 0
+               AND "FCF - Est Avg (FY3E)" > 0
+               AND "FCF - Est Avg (FY4E)" > 0
+               AND "FCF - Est Avg (FY5E)" > 0
+               THEN 1
+           ELSE 0
+           END                                                                     AS fcf_est_always_positive,
+
+       -- Estimated vs historical: compare forward FY1 growth to last actual FY growth
+       (("FCF - Est Avg (FY1E)" - "FCF (LTM)") /
+        NULLIF(ABS("FCF (LTM)"), 0) * 100) -
+       (("FCF (FY)" - "FCF (-1FY)") /
+        NULLIF(ABS("FCF (-1FY)"), 0) * 100)                                        AS fcf_est_vs_historical,
+
+       -- Implied CapEx conversion: FY1E FCF relative to current LTM operating CF
+       "FCF - Est Avg (FY1E)" /
+       NULLIF(ABS("CFO (LTM)") - ABS(COALESCE("Capital Expenditure (LTM)", 0)), 0) AS fcf_est_capex_implied_ratio
+
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+COMMENT ON FUNCTION calc_fcf_growth_estimates(TEXT) IS
+    'Estimated free cash flow growth rates from consensus FCF forecasts (FY1E-FY5E).
+     Calculates YoY growth rates, 3Y/5Y CAGRs, growth acceleration, forward margins/yields,
+     and trajectory quality scores. Source: FCF - Est Avg (FY1E through FY5E).';
+
+-- =============================================================================
 -- SECTION 12: TEMPORAL FEATURES (OPTIMIZED)
 -- =============================================================================
 
@@ -5126,13 +5279,41 @@ SELECT id.*,
        cc.fcf_yield,
        cc.cfo_positive_years,
        cc.fcf_positive_years      AS fcf_positive_years_comp,
-       cc.cash_flow_quality_score AS cash_flow_quality_score_comp
+       cc.cash_flow_quality_score AS cash_flow_quality_score_comp,
+
+       -- =========================================================================
+       -- FCF GROWTH ESTIMATES (calc_fcf_growth_estimates) — NEW
+       -- Source columns: FCF - Est Avg (FY1E/FY2E/FY3E/FY4E/FY5E),
+       --                 FCF (LTM/FY/-1FY), Total Revenues (LTM), Market Cap,
+       --                 CFO (LTM), Capital Expenditure (LTM)
+       -- =========================================================================
+       fge.fcf_est_fy1,
+       fge.fcf_est_fy2,
+       fge.fcf_est_fy3,
+       fge.fcf_est_fy4,
+       fge.fcf_est_fy5,
+       fge.fcf_est_growth_fy1_vs_ltm,
+       fge.fcf_est_growth_fy2_vs_fy1,
+       fge.fcf_est_growth_fy3_vs_fy2,
+       fge.fcf_est_growth_fy4_vs_fy3,
+       fge.fcf_est_growth_fy5_vs_fy4,
+       fge.fcf_est_cagr_3y,
+       fge.fcf_est_cagr_5y,
+       fge.fcf_est_margin_fy1,
+       fge.fcf_est_yield_fy1,
+       fge.fcf_est_growth_acceleration,
+       fge.fcf_est_growth_deceleration,
+       fge.fcf_est_trajectory_score,
+       fge.fcf_est_always_positive,
+       fge.fcf_est_vs_historical,
+       fge.fcf_est_capex_implied_ratio
 
 FROM vw_identifier_columns                           id
          LEFT JOIN calc_cashflow_features()          cf USING (isin)
          LEFT JOIN calc_enhanced_cashflow_features() ecf USING (isin)
          LEFT JOIN calc_cashflow_temporal_features() ctf USING (isin)
-         LEFT JOIN calc_cashflow_comprehensive()     cc USING (isin);
+         LEFT JOIN calc_cashflow_comprehensive()     cc USING (isin)
+         LEFT JOIN calc_fcf_growth_estimates()       fge USING (isin);
 
 COMMENT ON VIEW vw_features_cashflow IS
     'Cash flow metrics including CFO, FCF, CapEx analysis, and cash flow quality.
@@ -6695,10 +6876,15 @@ VALUES
      'FCF consistency, CapEx efficiency, M&A sustainability', 'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
     ('calc_cashflow_temporal_features', 'Cash Flow', 12, 'Quarterly CF trends, burn rate, volatility, momentum',
      'engineer_cashflow_temporal_features', CURRENT_TIMESTAMP),
-    ('calc_cashflow_comprehensive', 'Cash Flow', 14, 'CFO, CFI, CFF, FCF for all periods, quality score',
-     'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
-
-    -- Temporal Functions
+            ('calc_cashflow_comprehensive', 'Cash Flow', 14, 'CFO, CFI, CFF, FCF for all periods, quality score',
+             'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
+    
+            -- NEW: FCF Growth Estimates
+            ('calc_fcf_growth_estimates', 'Cash Flow', 20,
+             'Estimated FCF growth rates from consensus forecasts (FY1E-FY5E), CAGRs, forward margins/yields, growth acceleration, trajectory quality',
+             'engineer_fcf_growth_estimate_features', CURRENT_TIMESTAMP),
+    
+            -- Temporal Functions
     ('calc_temporal_features', 'Temporal Patterns', 7, 'Fiscal calendar, earnings timing', 'engineer_temporal_features',
      CURRENT_TIMESTAMP),
     ('calc_fiscal_calendar_features', 'Temporal Patterns', 9, 'Days since report, quarter/FY flags, freshness score',
@@ -7309,6 +7495,51 @@ VALUES
     ('feat_self_funding_ratio', 'self_funding_ratio', 'Cash Flow', 'calc_cashflow_features',
      'Self-funding ratio (CFO/CFI)', ARRAY ['CFO (LTM)', 'CFI (LTM)'], 'CFO (LTM)', 'ratio', 'NUMERIC',
      CURRENT_TIMESTAMP),
+
+    -- FCF GROWTH ESTIMATE FEATURES (NEW)
+    ('feat_fcf_est_fy1', 'fcf_est_fy1', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Consensus FCF estimate FY+1', ARRAY ['FCF - Est Avg (FY1E)'], 'FCF - Est Avg (FY1E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_fy2', 'fcf_est_fy2', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Consensus FCF estimate FY+2', ARRAY ['FCF - Est Avg (FY2E)'], 'FCF - Est Avg (FY2E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_fy3', 'fcf_est_fy3', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Consensus FCF estimate FY+3', ARRAY ['FCF - Est Avg (FY3E)'], 'FCF - Est Avg (FY3E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_growth_fy1_vs_ltm', 'fcf_est_growth_fy1_vs_ltm', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Estimated FCF growth: FY1E vs LTM', ARRAY ['FCF - Est Avg (FY1E)', 'FCF (LTM)'], 'FCF - Est Avg (FY1E)',
+     'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_growth_fy2_vs_fy1', 'fcf_est_growth_fy2_vs_fy1', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Estimated FCF growth: FY2E vs FY1E', ARRAY ['FCF - Est Avg (FY2E)', 'FCF - Est Avg (FY1E)'],
+     'FCF - Est Avg (FY2E)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_cagr_3y', 'fcf_est_cagr_3y', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Estimated 3-year FCF CAGR (FY3E/LTM)', ARRAY ['FCF - Est Avg (FY3E)', 'FCF (LTM)'],
+     'FCF - Est Avg (FY3E)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_cagr_5y', 'fcf_est_cagr_5y', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Estimated 5-year FCF CAGR (FY5E/LTM)', ARRAY ['FCF - Est Avg (FY5E)', 'FCF (LTM)'],
+     'FCF - Est Avg (FY5E)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_margin_fy1', 'fcf_est_margin_fy1', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Forward FCF margin (FY1E / Revenue LTM)', ARRAY ['FCF - Est Avg (FY1E)', 'Total Revenues (LTM)'],
+     'FCF - Est Avg (FY1E)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_yield_fy1', 'fcf_est_yield_fy1', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Forward FCF yield (FY1E / Market Cap)', ARRAY ['FCF - Est Avg (FY1E)', 'Market Cap'],
+     'FCF - Est Avg (FY1E)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_growth_acceleration', 'fcf_est_growth_acceleration', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'FCF growth acceleration (FY2-FY1 growth minus FY1-LTM growth)',
+     ARRAY ['FCF - Est Avg (FY2E)', 'FCF - Est Avg (FY1E)', 'FCF (LTM)'], 'FCF - Est Avg (FY2E)',
+     'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_trajectory_score', 'fcf_est_trajectory_score', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Pct of 5 forward years with positive FCF (0-100)',
+     ARRAY ['FCF - Est Avg (FY1E)', 'FCF - Est Avg (FY2E)', 'FCF - Est Avg (FY3E)', 'FCF - Est Avg (FY4E)', 'FCF - Est Avg (FY5E)'],
+     'FCF - Est Avg (FY1E)', 'score', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_always_positive', 'fcf_est_always_positive', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'All 5 forward FCF estimates positive flag',
+     ARRAY ['FCF - Est Avg (FY1E)', 'FCF - Est Avg (FY2E)', 'FCF - Est Avg (FY3E)', 'FCF - Est Avg (FY4E)', 'FCF - Est Avg (FY5E)'],
+     'FCF - Est Avg (FY1E)', 'flag', 'INTEGER', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_vs_historical', 'fcf_est_vs_historical', 'Cash Flow', 'calc_fcf_growth_estimates',
+     'Forward FCF growth vs last actual YoY growth',
+     ARRAY ['FCF - Est Avg (FY1E)', 'FCF (LTM)', 'FCF (FY)', 'FCF (-1FY)'], 'FCF - Est Avg (FY1E)',
+     'difference', 'NUMERIC', CURRENT_TIMESTAMP),
 
     -- COMPOSITE SCORES
     ('feat_piotroski_f_score', 'piotroski_f_score', 'Composite Scores', 'calc_composite_scores',

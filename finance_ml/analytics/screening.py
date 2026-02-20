@@ -100,6 +100,10 @@ def create_enhanced_screener(
     if require_secular_trend and "secular_trend_flag" in df.columns:
         mask &= df["secular_trend_flag"] == 1
 
+    qm_col = _resolve_col(df, "quality_momentum_score", "quality_momentum")
+    if qm_col is not None:
+        mask &= df[qm_col] >= min_quality_momentum
+
     filtered = df[mask].copy()
 
     if sector_filter != "All":
@@ -278,8 +282,9 @@ def screen_growth_momentum(
     """
     mask = pd.Series([True] * len(df), index=df.index)
 
-    if "revenue_growth_yoy" in df.columns:
-        mask &= df["revenue_growth_yoy"] >= min_revenue_growth
+    rev_col = _resolve_col(df, "revenue_yoy_growth", "revenue_growth_yoy")
+    if rev_col is not None:
+        mask &= df[rev_col] >= min_revenue_growth
 
     if "eps_yoy_growth" in df.columns:
         mask &= df["eps_yoy_growth"] >= min_eps_growth
@@ -421,8 +426,9 @@ def screen_integrity_filtered_growth(
     mask = pd.Series([True] * len(df), index=df.index)
 
     # Growth
-    if "revenue_growth_yoy" in df.columns:
-        mask &= df["revenue_growth_yoy"] >= min_revenue_growth
+    rev_col = _resolve_col(df, "revenue_yoy_growth", "revenue_growth_yoy")
+    if rev_col is not None:
+        mask &= df[rev_col] >= min_revenue_growth
 
     # Integrity filters
     if "accounting_quality_score" in df.columns:
@@ -642,8 +648,8 @@ def screen_garp_opportunities(
     mask = pd.Series([True] * len(df), index=df.index)
 
     # Growth criteria
-    growth_col = "eps_yoy_growth" if "eps_yoy_growth" in df.columns else "revenue_growth_yoy"
-    if growth_col in df.columns:
+    growth_col = _resolve_col(df, "eps_yoy_growth", "revenue_yoy_growth", "revenue_growth_yoy")
+    if growth_col is not None:
         mask &= df[growth_col] >= min_eps_growth
 
     # Valuation criteria

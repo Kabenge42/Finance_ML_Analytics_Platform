@@ -8,6 +8,8 @@ SELECT id.isin,
        id.region,
        id.country,
        id.exchange,
+       e."Last Updated"                      AS last_updated,
+       e."Reference Date"                    AS reference_date,
        e."FY End Date"                       AS fy_end_date,
        e."Next FY End Date"                  AS next_fy_end_date,
        e."Next Earnings"                     AS next_earnings,
@@ -17,12 +19,12 @@ SELECT id.isin,
        e."Enterprise Value"                  AS enterprise_value,
        e."Last Price"                        AS last_price,
        e."Price Target"                      AS price_target,
-       e."Price Target - Median"             AS price_target_median,
-       e."Price Target (YTD Ago)"            AS price_target_ytd_ago,
        e."Price Target - Low"                AS price_target_low,
        e."Price Target - High"               AS price_target_high,
-       e."Volume (Shrs)"                     AS volume_shrs,
+       e."Price Target - Median"             AS price_target_median,
+       e."Price Target (YTD Ago)"            AS price_target_ytd_ago,
        e."Shrs Out"                          AS shares_outstanding,
+       e."Volume (Shrs)"                     AS volume_shrs,
        vf.p_e_ratio,
        vf.p_b_ratio,
        vf.ev_ebitda_ratio,
@@ -671,7 +673,6 @@ SELECT id.isin,
        iif.interest_expense_to_revenue,
        iif.net_interest_margin_proxy,
        cs.piotroski_f_score,
-       etf.eps_trajectory_score              AS composite_eps_trajectory_score,
        cs.dilution_score,
        cs.quality_momentum_score,
        nic.net_income_is_fq,
@@ -1049,7 +1050,7 @@ comment on materialized view mv_all_stock_features is 'Unified materialized view
     3. Technical Analysis (1 function)
     4. Profitability (4 functions)
     5. Earnings (6 functions)
-    6. Growth (5 functions)
+    6. Growth (4 functions)
     7. Quality & Risk (5 functions)
     8. Leverage & Liquidity (6 functions)
     9. Analyst Sentiment (2 functions)
@@ -1068,19 +1069,4 @@ alter materialized view mv_all_stock_features owner to postgres;
 
 create unique index idx_mv_all_stock_features_isin
     on mv_all_stock_features (isin);
-
-create index idx_mv_all_stock_features_ticker
-    on mv_all_stock_features (ticker);
-
-create index idx_mv_all_stock_features_sector_industry
-    on mv_all_stock_features (sector, industry);
-
-create index idx_mv_all_stock_features_region_country
-    on mv_all_stock_features (region, country, trading_country);
-
-create index idx_mv_all_stock_features_exchange
-    on mv_all_stock_features (exchange);
-
-create index idx_mv_all_stock_features_market_cap
-    on mv_all_stock_features (market_cap desc);
 

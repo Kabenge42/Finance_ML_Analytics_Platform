@@ -1,18 +1,5 @@
 create function calc_tangible_book_features(p_isin text DEFAULT NULL::text)
-    returns TABLE
-            (
-                isin                    text,
-                tangible_book_value_fy  numeric,
-                tangible_book_value_ltm numeric,
-                tangible_book_per_share numeric,
-                price_to_tangible_book  numeric,
-                tangible_equity_ratio   numeric,
-                intangibles_to_equity   numeric,
-                goodwill_to_equity      numeric,
-                tangible_asset_quality  numeric,
-                tbv_yoy_growth          numeric,
-                tbv_vs_calculated       numeric
-            )
+    returns TABLE(isin text, tangible_book_value_fy numeric, tangible_book_value_ltm numeric, tangible_book_per_share numeric, price_to_tangible_book numeric, tangible_equity_ratio numeric, intangibles_to_equity numeric, goodwill_to_equity numeric, tangible_asset_quality numeric, tbv_yoy_growth numeric, tbv_vs_calculated numeric)
     stable
     parallel safe
     language sql
@@ -36,7 +23,7 @@ SELECT "ISIN"                                                                   
                                NULLIF("Total Assets (LTM)", 0) * 100
                    ))                                                                         AS tangible_asset_quality,
        -- NEW: TBV growth (FY to LTM)
-       public.pct_change("TBV (LTM)"::NUMERIC, "TBV (FY)"::NUMERIC) AS tbv_yoy_growth,
+       public.pct_change("TBV (LTM)"::NUMERIC, "TBV (FY)"::NUMERIC)                           AS tbv_yoy_growth,
        -- Validation: compare native TBV to calculated (should be ~1.0)
        public.safe_divide("TBV (LTM)"::NUMERIC, "Total Equity (LTM)"::NUMERIC - COALESCE("Goodwill (LTM)", 0) -
                                                 COALESCE("Gross Intangible Assets (LTM)", 0)) AS tbv_vs_calculated

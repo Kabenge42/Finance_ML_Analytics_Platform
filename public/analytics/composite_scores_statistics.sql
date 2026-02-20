@@ -1,12 +1,10 @@
 create table analytics.composite_scores_statistics
 (
-    mean      double precision,
-    median    double precision,
-    std       double precision,
-    skewness  double precision,
-    kurtosis  double precision,
-    view_name text,
-    category  text
+    ticker          text,
+    name            text,
+    sector          text,
+    industry        text,
+    composite_score double precision
 );
 
 alter table analytics.composite_scores_statistics

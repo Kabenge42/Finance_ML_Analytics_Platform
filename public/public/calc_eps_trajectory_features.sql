@@ -1,18 +1,5 @@
 create function calc_eps_trajectory_features(p_isin text DEFAULT NULL::text)
-    returns TABLE
-            (
-                isin                  text,
-                eps_qoq_growth        numeric,
-                eps_yoy_quarterly     numeric,
-                eps_positive_streak   integer,
-                eps_cagr_3y           numeric,
-                eps_cagr_5y           numeric,
-                eps_growth_accel      numeric,
-                eps_vs_5y_avg         numeric,
-                eps_improvement_count integer,
-                eps_trajectory_score  numeric,
-                eps_stability         numeric
-            )
+    returns TABLE(isin text, eps_qoq_growth numeric, eps_yoy_quarterly numeric, eps_positive_streak integer, eps_cagr_3y numeric, eps_cagr_5y numeric, eps_growth_accel numeric, eps_vs_5y_avg numeric, eps_improvement_count integer, eps_trajectory_score numeric, eps_stability numeric)
     stable
     parallel safe
     language sql
@@ -99,7 +86,7 @@ SELECT "ISIN"                                                                AS 
                                                 "Net EPS - Basic (-2FY)" +
                                                 "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0), 0)
                           )
-           END AS eps_stability -- 0 = chaotic, 1 = perfectly stable
+           END                                                               AS eps_stability -- 0 = chaotic, 1 = perfectly stable
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;

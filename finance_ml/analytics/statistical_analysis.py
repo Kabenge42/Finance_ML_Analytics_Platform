@@ -471,7 +471,10 @@ def bayesian_category_analysis(
         # Probability that true mean > 0
         prob_positive = 1 - stats.norm.cdf(0, posterior_mean, posterior_std)
 
-        results[feature] = {
+        # Generate posterior samples for downstream use
+        samples = np.random.normal(posterior_mean, posterior_std, 4000)
+
+        feature_result = {
             "n_obs": n,
             "sample_mean": sample_mean,
             "sample_std": np.sqrt(sample_var),
@@ -481,6 +484,13 @@ def bayesian_category_analysis(
             "ci_95_high": ci_high,
             "prob_positive": prob_positive,
         }
+
+        if ARVIZ_AVAILABLE and az is not None:
+            feature_result["inference_data"] = az.from_dict(
+                posterior={"mu": samples.reshape(1, -1)},  # single chain
+            )
+
+        results[feature] = feature_result
 
     return results
 
@@ -492,6 +502,7 @@ def metropolis_hastings_sampler(
     proposal_std: float = 0.5,
     prior_mean: float = 0,
     prior_std: float = 10,
+    random_seed: int | None = None,
 ) -> Tuple[np.ndarray, float]:
     """
     Metropolis-Hastings MCMC sampler for estimating posterior of mean parameter.
@@ -524,6 +535,8 @@ def metropolis_hastings_sampler(
     >>> samples, acc_rate = metropolis_hastings_sampler(data, n_samples=5000)
     >>> print(f"Acceptance rate: {acc_rate:.2%}")
     """
+    rng = np.random.default_rng(random_seed)
+
     data_mean = np.mean(data)
     data_std = np.std(data)
     n = len(data)
@@ -543,24 +556,31 @@ def metropolis_hastings_sampler(
     current_log_post = log_posterior(current)
 
     for i in range(n_samples + burn_in):
+        # Adaptive proposal tuning during burn-in (~25% acceptance target)
+        if i < burn_in and i % 100 == 0 and i > 0:
+            accept_rate = accepted / i
+            if accept_rate < 0.2:
+                proposal_std *= 0.9
+            elif accept_rate > 0.3:
+                proposal_std *= 1.1
+
         # Propose new value
-        proposal = current + np.random.normal(0, proposal_std)
+        proposal = current + rng.standard_normal() * proposal_std
         proposal_log_post = log_posterior(proposal)
 
         # Acceptance ratio (log scale)
         log_alpha = proposal_log_post - current_log_post
 
         # Accept or reject
-        if np.log(np.random.random()) < log_alpha:
+        if np.log(rng.uniform()) < log_alpha:
             current = proposal
             current_log_post = proposal_log_post
-            if i >= burn_in:
-                accepted += 1
+            accepted += 1
 
         if i >= burn_in:
             samples[i - burn_in] = current
 
-    acceptance_rate = accepted / n_samples
+    acceptance_rate = accepted / (n_samples + burn_in)
 
     return samples, acceptance_rate
 
@@ -688,6 +708,21 @@ def hierarchical_mcmc_by_sector(
             "samples": samples,
             "n_obs": n,
         }
+
+    # Build multi-group InferenceData with sector-level coordinates
+    if ARVIZ_AVAILABLE and az is not None and results:
+        sector_names = list(results.keys())
+        sector_samples = [results[s]["samples"] for s in sector_names]
+        try:
+            idata = az.from_dict(
+                posterior={"sector_mu": np.stack(sector_samples)},
+                coords={"sector": sector_names},
+                dims={"sector_mu": ["sector"]},
+            )
+            result = {"sectors": results, "inference_data": idata}
+            return result
+        except Exception:
+            pass
 
     return results
 
@@ -974,8 +1009,8 @@ def calculate_conditional_probabilities(
 def monte_carlo_price_target_simulation(
     df: pd.DataFrame,
     n_simulations: int = 10000,
-    max_stocks: int = 10000,
-    confidence_level: float = 0.99,
+    max_stocks: int = 7000,
+    confidence_level: float = 0.95,
 ) -> pd.DataFrame:
     """
     Monte Carlo simulation of price targets based on analyst spread.
@@ -991,14 +1026,10 @@ def monte_carlo_price_target_simulation(
         - price_target, price_target_high, price_target_low, price_target_median
     n_simulations : int, default 10000
         Number of Monte Carlo simulations per stock
-    confidence_level : float, default 0.95
-        Confidence level for VaR calculation
-    max_stocks : int, default 2000
+    max_stocks : int, default 7000
         Maximum number of stocks to simulate (for performance)
     confidence_level : float, default 0.95
         Confidence level for VaR calculation
-    max_stocks : int, default 1000
-        Maximum number of stocks to simulate (for performance)
 
     Returns
     -------
@@ -1008,55 +1039,69 @@ def monte_carlo_price_target_simulation(
         - expected_upside_pct, upside_std, var_5_pct
         - prob_positive_upside, risk_reward_ratio
     """
-    np.random.seed(42)
-
-    results = []
+    rng = np.random.default_rng(42)
 
     required_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
-    valid_df = df.dropna(subset=required_cols)
+    valid_df = df.dropna(subset=required_cols).head(max_stocks).copy()
 
-    for _, row in valid_df.head().iterrows():
-        pt_low = row["price_target_low"]
-        pt_high = row["price_target_high"]
-        pt_median = row.get("price_target_median", row["price_target"])
-        last_price = row["last_price"]
+    # Filter invalid rows
+    valid_df = valid_df[
+        (valid_df["price_target_high"] > valid_df["price_target_low"])
+        & (valid_df["last_price"] > 0)
+    ]
 
-        if pt_high <= pt_low or last_price <= 0:
-            continue
+    if valid_df.empty:
+        return pd.DataFrame()
 
-        # Model price target as triangular distribution (low, mode=median, high)
-        simulated_pts = np.random.triangular(pt_low, pt_median, pt_high, n_simulations)
+    # Resolve median column
+    if "price_target_median" in valid_df.columns:
+        pt_median = valid_df["price_target_median"].fillna(valid_df["price_target"]).values
+    else:
+        pt_median = valid_df["price_target"].values
 
-        # Calculate simulated upside
-        simulated_upside = (simulated_pts - last_price) / last_price * 100
+    pt_low = valid_df["price_target_low"].values
+    pt_high = valid_df["price_target_high"].values
+    last_price = valid_df["last_price"].values
+    n_stocks = len(valid_df)
 
-        # Statistics
-        var_5 = np.percentile(simulated_upside, 5)
-        expected_upside = np.mean(simulated_upside)
-        upside_std = np.std(simulated_upside)
-        prob_positive = (simulated_upside > 0).mean() * 100
+    # Vectorized triangular simulation: (n_stocks, n_simulations)
+    simulated_pts = rng.triangular(
+        pt_low[:, np.newaxis],
+        pt_median[:, np.newaxis],
+        pt_high[:, np.newaxis],
+        size=(n_stocks, n_simulations),
+    )
 
-        results.append(
-            {
-                "ticker": row.get("ticker", ""),
-                "name": row.get("name", ""),
-                "sector": row.get("sector", ""),
-                "industry": row.get("industry", ""),
-                "region": row.get("region", ""),
-                "country": row.get("country", ""),
-                "exchange": row.get("exchange", ""),
-                "last_price": last_price,
-                "pt_median": pt_median,
-                "pt_spread": pt_high - pt_low,
-                "expected_upside_pct": expected_upside,
-                "upside_std": upside_std,
-                "var_5_pct": var_5,  # 5% Value at Risk
-                "prob_positive_upside": prob_positive,
-                "risk_reward_ratio": expected_upside / upside_std if upside_std > 0 else 0,
-            }
-        )
+    # Vectorized upside calculation
+    simulated_upside = (simulated_pts - last_price[:, np.newaxis]) / last_price[:, np.newaxis] * 100
 
-    return pd.DataFrame(results)
+    # Vectorized statistics across simulation axis
+    expected_upside = simulated_upside.mean(axis=1)
+    upside_std = simulated_upside.std(axis=1)
+    var_5 = np.percentile(simulated_upside, 5, axis=1)
+    prob_positive = (simulated_upside > 0).mean(axis=1) * 100
+    risk_reward = np.where(upside_std > 0, expected_upside / upside_std, 0.0)
+
+    # Build result DataFrame
+    result_df = pd.DataFrame({
+        "ticker": valid_df.get("ticker", pd.Series("", index=valid_df.index)).values,
+        "name": valid_df.get("name", pd.Series("", index=valid_df.index)).values,
+        "sector": valid_df.get("sector", pd.Series("", index=valid_df.index)).values,
+        "industry": valid_df.get("industry", pd.Series("", index=valid_df.index)).values,
+        "region": valid_df.get("region", pd.Series("", index=valid_df.index)).values,
+        "country": valid_df.get("country", pd.Series("", index=valid_df.index)).values,
+        "exchange": valid_df.get("exchange", pd.Series("", index=valid_df.index)).values,
+        "last_price": last_price,
+        "pt_median": pt_median,
+        "pt_spread": pt_high - pt_low,
+        "expected_upside_pct": expected_upside,
+        "upside_std": upside_std,
+        "var_5_pct": var_5,
+        "prob_positive_upside": prob_positive,
+        "risk_reward_ratio": risk_reward,
+    })
+
+    return result_df
 
 
 def kalman_filter_price_target(
@@ -1095,11 +1140,6 @@ def kalman_filter_price_target(
         - kalman_variance: Estimation uncertainty
         - kalman_gain: Filter gain at each step
         - signal_strength: Confidence in the estimate (1/variance)
-
-    Examples
-    --------
-    >>> kalman_df = kalman_filter_price_target(df)
-    >>> high_confidence = kalman_df[kalman_df['signal_strength'] > 10]
     """
     if observation_col not in df.columns or target_col not in df.columns:
         return pd.DataFrame(
@@ -1112,55 +1152,43 @@ def kalman_filter_price_target(
             ]
         )
 
-    results = []
+    # Filter valid rows
+    mask = df[observation_col].notna() & df[target_col].notna() & (df[observation_col] > 0) & (df[target_col] > 0)
+    valid_df = df.loc[mask].copy()
 
-    for idx, row in df.iterrows():
-        # Get observation and target
-        obs = row.get(observation_col)
-        target = row.get(target_col)
+    if valid_df.empty:
+        return pd.DataFrame()
 
-        # Skip if missing data
-        if pd.isna(obs) or pd.isna(target) or obs <= 0 or target <= 0:
-            continue
+    obs = valid_df[observation_col].values.astype(float)
+    z = valid_df[target_col].values.astype(float)
 
-        # Initialize state with observation
-        x_est = float(obs)
-        p_est = 1.0  # Initial covariance
+    # Vectorized single-step Kalman update (cross-sectional, not time-series)
+    x_pred = obs  # Initialize state with observation
+    p_pred = 1.0 + process_variance  # Initial covariance + process noise
 
-        # Measurement (analyst target)
-        z = float(target)
+    kalman_gain = p_pred / (p_pred + measurement_variance)
+    x_est = x_pred + kalman_gain * (z - x_pred)
+    p_est = (1 - kalman_gain) * p_pred
+    signal_strength = 1.0 / (p_est + 1e-10)
+    filtered_upside = np.where(obs > 0, (x_est - obs) / obs * 100, 0.0)
 
-        # Predict step (no control input, random walk model)
-        x_pred = x_est
-        p_pred = p_est + process_variance
+    result_df = pd.DataFrame({
+        "ticker": valid_df.get("ticker", pd.Series(valid_df.index.astype(str), index=valid_df.index)).values,
+        "name": valid_df.get("name", pd.Series("", index=valid_df.index)).values,
+        "sector": valid_df.get("sector", pd.Series("", index=valid_df.index)).values,
+        "industry": valid_df.get("industry", pd.Series("", index=valid_df.index)).values,
+        "country": valid_df.get("country", pd.Series("", index=valid_df.index)).values,
+        "exchange": valid_df.get("exchange", pd.Series("", index=valid_df.index)).values,
+        "kalman_estimate": x_est,
+        "kalman_variance": np.full(len(valid_df), p_est),
+        "kalman_gain": np.full(len(valid_df), kalman_gain),
+        "signal_strength": np.full(len(valid_df), signal_strength),
+        "original_price": obs,
+        "original_target": z,
+        "filtered_upside": filtered_upside,
+    })
 
-        # Update step
-        kalman_gain = p_pred / (p_pred + measurement_variance)
-        x_est = x_pred + kalman_gain * (z - x_pred)
-        p_est = (1 - kalman_gain) * p_pred
-
-        # Signal strength (inverse of variance)
-        signal_strength = 1.0 / (p_est + 1e-10)
-
-        results.append(
-            {
-                "ticker": row.get("ticker", str(idx)),
-                "name": row.get("name", ""),
-                "sector": row.get("sector", ""),
-                "industry": row.get("industry", ""),
-                "country": row.get("country", ""),
-                "exchange": row.get("exchange", ""),
-                "kalman_estimate": x_est,
-                "kalman_variance": p_est,
-                "kalman_gain": kalman_gain,
-                "signal_strength": signal_strength,
-                "original_price": obs,
-                "original_target": target,
-                "filtered_upside": (x_est - obs) / obs * 100 if obs > 0 else 0,
-            }
-        )
-
-    return pd.DataFrame(results)
+    return result_df
 
 
 def kalman_momentum_filter(
@@ -1443,8 +1471,10 @@ def parallel_mcmc_chains(
 
     def run_single_chain(seed: int) -> np.ndarray:
         """Run a single MCMC chain with given seed."""
-        np.random.seed(seed)
-        samples, _ = metropolis_hastings_sampler(data, n_samples=n_samples, burn_in=n_samples // 5)
+        samples, _ = metropolis_hastings_sampler(
+            data, n_samples=n_samples, burn_in=n_samples // 5,
+            random_seed=seed,
+        )
         return samples
 
     # Run chains
@@ -1456,9 +1486,6 @@ def parallel_mcmc_chains(
         # Sequential fallback
         chains = [run_single_chain(seed) for seed in range(n_chains)]
 
-    # Calculate Gelman-Rubin diagnostic
-    r_hat = _calculate_gelman_rubin(chains)
-
     # Combine samples
     combined_samples = np.concatenate(chains)
 
@@ -1466,11 +1493,9 @@ def parallel_mcmc_chains(
     chain_means = [np.mean(c) for c in chains]
     chain_stds = [np.std(c) for c in chains]
 
-    return {
+    result = {
         "chains": chains,
-        "r_hat": r_hat,
         "combined_samples": combined_samples,
-        "converged": r_hat < 1.1,
         "chain_means": chain_means,
         "chain_stds": chain_stds,
         "posterior_mean": np.mean(combined_samples),
@@ -1478,12 +1503,36 @@ def parallel_mcmc_chains(
         "ci_95": (np.percentile(combined_samples, 2.5), np.percentile(combined_samples, 97.5)),
     }
 
+    # Stack chains into array for ArviZ
+    chain_array = np.stack(chains)
+
+    if ARVIZ_AVAILABLE and az is not None:
+        try:
+            idata = az.from_dict(
+                posterior={"mu": chain_array.reshape(n_chains, 1, n_samples)
+                                           .transpose(0, 2, 1)},
+                coords={"chain": np.arange(n_chains), "draw": np.arange(n_samples)},
+            )
+            summary = az.summary(idata)
+            result["r_hat"] = float(summary["r_hat"].iloc[0])
+            result["ess_bulk"] = float(summary["ess_bulk"].iloc[0])
+            result["ess_tail"] = float(summary["ess_tail"].iloc[0])
+            result["inference_data"] = idata
+        except Exception:
+            result["r_hat"] = _calculate_gelman_rubin(chains)
+    else:
+        result["r_hat"] = _calculate_gelman_rubin(chains)
+
+    result["converged"] = result["r_hat"] < 1.1
+    return result
+
 
 def _calculate_gelman_rubin(chains: list) -> float:
     """
     Calculate R-hat (Gelman-Rubin) convergence diagnostic.
 
-    R-hat < 1.1 indicates convergence.
+    R-hat < 1.1 indicates convergence.  Delegates to ``az.rhat()``
+    (split-R-hat, more robust) when ArviZ is available.
 
     Parameters
     ----------
@@ -1495,6 +1544,14 @@ def _calculate_gelman_rubin(chains: list) -> float:
     float
         R-hat statistic
     """
+    if ARVIZ_AVAILABLE and az is not None:
+        try:
+            chain_array = np.stack(chains).reshape(len(chains), -1)
+            idata = az.from_dict(posterior={"x": chain_array[:, np.newaxis, :]})
+            return float(az.rhat(idata)["x"].values)
+        except Exception:
+            pass  # fall through to manual implementation
+
     m = len(chains)  # number of chains
     n = len(chains[0])  # samples per chain
 
@@ -1871,7 +1928,7 @@ def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataF
         - posterior_beat_prob, model_confidence, map_estimate
     """
     # Prior: Uniform belief across probability grid
-    p_grid = np.arange(0.1, 1.0, 0.1)  # 9 parameter values
+    p_grid = np.linspace(0.01, 0.99, 200)  # Fine-grained grid for smooth posterior
     uniform_prior = 1 / len(p_grid)
 
     results = []

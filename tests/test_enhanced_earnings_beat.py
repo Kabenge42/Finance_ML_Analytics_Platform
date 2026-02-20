@@ -514,24 +514,24 @@ class TestThreeLayerEvidenceFusion:
 
 class TestForwardEstimateSignals:
     def test_revision_momentum_all_positive(self, strong_upgrade_signals):
-        score = strong_upgrade_signals.revision_momentum_score
+        score = strong_upgrade_signals.gaap_revision_momentum
         assert score > 75.0
 
     def test_revision_momentum_all_negative(self, downgrade_signals):
-        score = downgrade_signals.revision_momentum_score
+        score = downgrade_signals.gaap_revision_momentum
         assert score < 30.0
 
     def test_revision_momentum_neutral(self, neutral_signals):
-        score = neutral_signals.revision_momentum_score
+        score = neutral_signals.gaap_revision_momentum
         assert 30.0 <= score <= 70.0
 
     def test_revision_momentum_empty(self):
         empty = ForwardEstimateSignals()
-        assert empty.revision_momentum_score == 50.0
+        assert empty.gaap_revision_momentum == 50.0
 
     def test_revision_momentum_partial_data(self):
         partial = ForwardEstimateSignals(revision_1w=2.0, revision_1m=1.5)
-        score = partial.revision_momentum_score
+        score = partial.gaap_revision_momentum
         assert score == 100.0
 
     def test_revision_momentum_weighting_favors_recent(self):
@@ -549,7 +549,7 @@ class TestForwardEstimateSignals:
             revision_6m=2.0,
             revision_1y=3.0,
         )
-        assert recent_positive.revision_momentum_score > recent_negative.revision_momentum_score
+        assert recent_positive.gaap_revision_momentum > recent_negative.gaap_revision_momentum
 
     def test_short_term_revision_trend(self, strong_upgrade_signals):
         trend = strong_upgrade_signals.revision_trend_short
@@ -580,7 +580,7 @@ class TestForwardEstimateSignals:
     def test_analyze_enhanced_df_carries_forward_signals(self, model, sample_enhanced_df):
         result = model.analyze_dataframe_enhanced(sample_enhanced_df)
         expected_columns = [
-            "revision_momentum_score",
+            "gaap_revision_momentum",
             "gaap_norm_spread",
             "revision_trend_short",
             "revision_trend_medium",
@@ -590,9 +590,9 @@ class TestForwardEstimateSignals:
         for col in expected_columns:
             assert col in result.columns, f"Missing enrichment column: {col}"
 
-    def test_revision_momentum_score_in_output_range(self, model, sample_enhanced_df):
+    def test_gaap_revision_momentum_in_output_range(self, model, sample_enhanced_df):
         result = model.analyze_dataframe_enhanced(sample_enhanced_df)
-        scores = result["revision_momentum_score"].dropna()
+        scores = result["gaap_revision_momentum"].dropna()
         assert (scores >= 0).all()
         assert (scores <= 100).all()
 
@@ -737,7 +737,7 @@ class TestEnhancedPipelineIntegration:
             "effective_sample_size",
             "classification_confidence",
             "beat_classification",
-            "revision_momentum_score",
+            "gaap_revision_momentum",
             "gaap_norm_spread",
             "revision_trend_short",
             "revision_trend_medium",

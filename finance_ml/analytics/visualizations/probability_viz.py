@@ -781,7 +781,16 @@ def create_bayesian_category_ridge(
         if ps <= 0:
             continue
 
-        samples = rng.normal(pm, ps, n_samples)
+        # Use ArviZ InferenceData samples when available (from updated
+        # bayesian_category_analysis), otherwise fall back to parametric draws.
+        idata = info.get("inference_data")
+        if ARVIZ_AVAILABLE and az is not None and idata is not None:
+            try:
+                samples = idata.posterior["mu"].values.flatten()
+            except Exception:
+                samples = rng.normal(pm, ps, n_samples)
+        else:
+            samples = rng.normal(pm, ps, n_samples)
         x_kde = np.linspace(pm - 4 * ps, pm + 4 * ps, 200)
         kde = stats.gaussian_kde(samples)
         y_kde = kde(x_kde)

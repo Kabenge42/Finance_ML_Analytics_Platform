@@ -60,7 +60,7 @@ def enhanced_df() -> pd.DataFrame:
             "ci_95_upper": np.random.uniform(0.65, 0.98, n),
             "classification_confidence": np.random.choice(["High", "Medium", "Low"], n),
             "beat_classification": np.random.choice(["likely_beat", "uncertain"], n),
-            "revision_momentum_score": np.random.uniform(10, 95, n),
+            "gaap_revision_momentum": np.random.uniform(10, 95, n),
             "gaap_norm_spread": np.random.uniform(-40, 5, n),
             "revision_trend_short": np.random.uniform(-3, 3, n),
             "revision_trend_medium": np.random.uniform(-2, 2, n),

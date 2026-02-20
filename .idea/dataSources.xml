@@ -12,11 +12,20 @@
         <property name="JdbcLog.Enabled" value="true" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
         <property name="JdbcLog.Config" value="handlers=java.util.logging.ConsoleHandler&#10;java.util.logging.ConsoleHandler.level=ALL" />
+        <property name="database.postgres.introspect.system.schemas" value="true" />
         <property name="JdbcLog.DebugSSL" value="all" />
+        <property name="auto-refresh-interval" value="15" />
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
       <keep-alive enable="true" />
       <time-zone>Europe/Zurich</time-zone>
+    </data-source>
+    <data-source source="LOCAL" name="analytics.sqlite" uuid="a9fd52ab-7922-4461-bccf-9a31ff5914f7">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:analytics.sqlite</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
 </project>

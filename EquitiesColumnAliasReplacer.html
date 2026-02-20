@@ -1,0 +1,27 @@
+// Iteratively replace based on the mapping
+// Sort by column name length (descending) to avoid partial replacements
+// e.g., "Revenue" should be replaced before "Rev"
+const sortedEntries = Object.entries(columnMapping)
+.sort(([a], [b]) => b.length - a.length);
+
+sortedEntries.forEach(([column_name, column_alias]) => {
+// Escape special regex characters in column names
+const escapedName = column_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Match: "column_name" (quoted) OR column_name (with word boundaries)
+// Also handles schema.table.column patterns
+const regex = new RegExp(
+`"${escapedName}"|(?<![\\w.])${escapedName}(?![\\w])`,
+'gi'
+);
+
+sqlText = sqlText.replace(regex, (match) => {
+// Preserve quoting style if original was quoted
+return match.startsWith('"') ? `"${column_alias}"` : column_alias;
+});
+});
+
+outputElement.innerText = sqlText;
+outputElement.style.color = "#6a8759"; // Change color to indicate success
+}
+

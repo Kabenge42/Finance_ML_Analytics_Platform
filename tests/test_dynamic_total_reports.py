@@ -179,7 +179,7 @@ class TestEPSStreakAnalyzerEnhanced(unittest.TestCase):
         res = analyzer.analyze_dataframe(df)
         self.assertIn("dynamic_total_reports", res.columns)
         self.assertIn("historical_beat_rate", res.columns)
-        self.assertIn("revision_momentum_score", res.columns)
+        self.assertIn("gaap_revision_momentum", res.columns)
         self.assertIn("next_earnings_status", res.columns)
 
     def test_compute_streak_with_forward_signals_adjusts_prob(self):

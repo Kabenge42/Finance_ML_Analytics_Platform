@@ -9,7 +9,7 @@ from typing import Optional
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS, resolve_column
 
 # =============================================================================
 # Layout defaults & helpers
@@ -227,6 +227,7 @@ def create_eps_trajectory_scatter(
 # =============================================================================
 
 _DEFAULT_GROWTH_COLS = [
+    "revenue_yoy_growth",
     "revenue_growth_yoy",
     "ebitda_growth_yoy",
     "eps_yoy_growth",
@@ -296,7 +297,7 @@ def create_revenue_vs_eps_growth_scatter(
     go.Figure
         Plotly scatter figure with reference lines
     """
-    x_col = "revenue_yoy_growth" if "revenue_yoy_growth" in df.columns else "revenue_growth_yoy"
+    x_col = resolve_column(df, "revenue_growth_yoy") or "revenue_growth_yoy"
     y_col = "eps_yoy_growth" if "eps_yoy_growth" in df.columns else "eps_growth_yoy"
     if x_col not in df.columns or y_col not in df.columns:
         return _no_data("Revenue Growth vs EPS Growth - No Data")

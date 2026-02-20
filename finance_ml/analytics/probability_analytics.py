@@ -53,23 +53,92 @@ def _get_identifier_cols() -> list[str]:
     return _IDENTIFIER_COLS_CACHE
 
 
+def compute_beta_confidence_score(
+    post_alpha: float | np.ndarray,
+    post_beta: float | np.ndarray,
+    prior_alpha: float = 2.0,
+    prior_beta: float = 2.0,
+    normalization_factor: float = 20.0,
+) -> float | np.ndarray:
+    """
+    Compute a multi-component confidence score for Beta posterior parameters.
+
+    Combines:
+    - Volume: effective sample size relative to normalization factor
+    - Concentration: inverse posterior variance (tighter = more confident)
+    - Decisiveness: distance of posterior mean from 0.5 (more extreme = more decisive)
+
+    Works with both scalar and vectorized (numpy array) inputs.
+
+    Parameters
+    ----------
+    post_alpha : float or np.ndarray
+        Posterior alpha parameter(s).
+    post_beta : float or np.ndarray
+        Posterior beta parameter(s).
+    prior_alpha : float
+        Prior alpha used (subtracted for effective sample size).
+    prior_beta : float
+        Prior beta used (subtracted for effective sample size).
+    normalization_factor : float
+        Scale factor for volume component (default 20).
+
+    Returns
+    -------
+    float or np.ndarray
+        Confidence score(s) in [0, 1].
+    """
+    prior_total = prior_alpha + prior_beta
+    total = post_alpha + post_beta
+    effective_sample = total - prior_total
+
+    volume_score = np.clip(effective_sample / normalization_factor, 0, 1)
+
+    posterior_mean = post_alpha / total
+    decisiveness = np.abs(posterior_mean - 0.5) * 2
+
+    variance = (post_alpha * post_beta) / (total ** 2 * (total + 1))
+    concentration_score = np.clip(1.0 / (1.0 + 20.0 * variance), 0, 1)
+
+    confidence = 0.4 * volume_score + 0.35 * concentration_score + 0.25 * decisiveness
+    return np.clip(confidence, 0.0, 1.0)
+
+
 def _extract_identifiers(row: pd.Series) -> dict:
     """Extract all available identifier columns from a DataFrame row."""
     id_cols = _get_identifier_cols()
     return {
-        col: row.get(col, None)
-        for col in id_cols
-        if col in row.index and pd.notna(row.get(col))
+        col: row.get(col, None) for col in id_cols if col in row.index and pd.notna(row.get(col))
     }
 
 
 # Columns that must be cast to numeric before export (Issue 7)
 _NUMERIC_CAST_COLS = [
-    "gaap_revision_momentum", "gaap_norm_spread", "revision_trend_short",
-    "revision_trend_medium", "eps_norm_est_fy1e", "eps_norm_est_ntm",
-    "eps_gaap_est_ntm", "eps_gaap_est_fy1e",
+    "gaap_revision_momentum",
+    "gaap_revison_1m",
+    "gaap_revison_3m",
+    "gaap_revison_6m",
+    "gaap_revison_1y",
+    "gaap_vs_norm_revision_spread",
+    "forward_eps_gaap_adj_spread",
+    "gaap_revision_acceleration",
+    "eps_surprise_pct",
+    "eps_norm_est_fy1e",
+    "eps_basic_fy",
+    "eps_adjustment_ratio",
+    "gaap_adj_eps_gap_pct",
+    "eps_quarterly_trend",
+    "eps_yoy_growth",
+    "eps_qoq_growth",
+    # FIX: These were exported as text due to mixed None/float
+    "gaap_norm_spread",
+    "revision_trend_short",
+    "revision_trend_medium",
+    "eps_norm_est_ntm",
+    "eps_gaap_est_ntm",
+    "eps_gaap_est_fy1e",
 ]
-_INTEGER_CAST_COLS = ["analyst_count", "quarterly_beat_streak"]
+_INTEGER_CAST_COLS = ["analyst_count", "quarterly_beat_streak","gaap_positive_revision_flag"]
 
 # Lazy ArviZ import (consistent with inference_schema.py)
 try:
@@ -597,6 +666,14 @@ class EarningsBeatProbabilityModel:
         self.default_prior = PriorParameters(prior_alpha, prior_beta)
         self.sector_priors = sector_priors or self._create_default_sector_priors()
 
+    @property
+    def prior_alpha(self) -> float:
+        return self.default_prior.alpha
+
+    @property
+    def prior_beta(self) -> float:
+        return self.default_prior.beta
+
     def _create_default_sector_priors(self) -> dict[str, PriorParameters]:
         """
         Create default sector-specific priors based on typical beat rates.
@@ -704,10 +781,10 @@ class EarningsBeatProbabilityModel:
 
     def _compute_confidence_score(self, alpha: float, beta: float) -> float:
         """
-        Compute confidence score based on effective sample size.
+        Compute confidence score based on effective sample size AND posterior certainty.
 
-        The confidence score reflects how much data supports the posterior
-        estimate, normalized to a 0-1 scale.
+        The confidence score reflects both how much data supports the posterior
+        estimate and how decisive the posterior is (distance from 0.5).
 
         Args:
             alpha: Posterior alpha parameter
@@ -716,9 +793,12 @@ class EarningsBeatProbabilityModel:
         Returns:
             Confidence score between 0 and 1
         """
-        effective_sample_size = alpha + beta - 2  # Subtract prior contribution
-        confidence = min(1.0, effective_sample_size / self.CONFIDENCE_NORMALIZATION_FACTOR)
-        return max(0.0, confidence)
+        return float(compute_beta_confidence_score(
+            alpha, beta,
+            prior_alpha=self.default_prior.alpha,
+            prior_beta=self.default_prior.beta,
+            normalization_factor=self.CONFIDENCE_NORMALIZATION_FACTOR,
+        ))
 
     def compute_posterior(
         self,
@@ -792,8 +872,8 @@ class EarningsBeatProbabilityModel:
     def analyze_dataframe(
         self,
         df: pd.DataFrame,
-        beats_col: str = "eps_beat_count",
-        total_col: str = "eps_total_reports",
+        beats_col: str = "eps_positive_years",
+        total_col: str = "eps_positive_streak",
         sector_col: str = "sector",
         ticker_col: str = "ticker",
         name_col: str = "name",
@@ -812,63 +892,93 @@ class EarningsBeatProbabilityModel:
         Returns:
             DataFrame with probability analysis results
         """
-        results = []
+        # --- Vectorized Beta-Binomial update ---
+        has_beats = beats_col in df.columns
+        has_total = total_col in df.columns
 
-        for _, row in df.iterrows():
-            # Handle missing data
-            n_beats = row.get(beats_col, 0)
-            n_total = row.get(total_col, 0)
-            sector = row.get(sector_col, None)
-            ticker = row.get(ticker_col, "UNKNOWN")
-            name = row.get(name_col, "UNKNOWN")
+        n_beats_series = df[beats_col].fillna(0).astype(int) if has_beats else pd.Series(0, index=df.index)
+        n_total_series = df[total_col].fillna(0).astype(int) if has_total else pd.Series(0, index=df.index)
 
-            if pd.isna(n_beats) or pd.isna(n_total) or n_total == 0:
-                # Use proxy from EPS trajectory if available
-                if "eps_trajectory_score" in df.columns and not pd.isna(
-                    row.get("eps_trajectory_score")
-                ):
-                    # Estimate beats from trajectory score (0-100 scale)
-                    trajectory = row["eps_trajectory_score"]
-                    n_total = 5  # Assume 5 quarters of data
-                    n_beats = int(trajectory / 100 * n_total)
-                else:
-                    continue
+        # Proxy fallback: use eps_trajectory_score when direct columns are missing/zero
+        proxy_mask = (n_total_series == 0)
+        if proxy_mask.any() and "eps_trajectory_score" in df.columns:
+            trajectory = df.loc[proxy_mask, "eps_trajectory_score"].fillna(50)
 
-            n_beats = int(n_beats)
-            n_total = int(n_total)
+            # Dynamic n_total: use available data columns or graduate by trajectory
+            if "eps_positive_years" in df.columns:
+                n_total_proxy = df.loc[proxy_mask, "eps_positive_years"].fillna(0).clip(lower=0)
+                n_total_proxy = n_total_proxy.clip(lower=3, upper=15).astype(int)
+            elif "eps_improvement_count" in df.columns:
+                n_total_proxy = df.loc[proxy_mask, "eps_improvement_count"].fillna(3).clip(lower=3, upper=15).astype(int)
+            else:
+                # Graduated proxy: higher trajectory scores imply more consistent data
+                n_total_proxy = pd.Series(
+                    np.where(trajectory >= 80, 8,
+                    np.where(trajectory >= 60, 6,
+                    np.where(trajectory >= 40, 5,
+                    np.where(trajectory >= 20, 4, 3)))),
+                    index=df.loc[proxy_mask].index,
+                )
+            n_total_series.loc[proxy_mask] = n_total_proxy
+            n_beats_series.loc[proxy_mask] = (trajectory / 100 * n_total_proxy).astype(int).clip(lower=0, upper=n_total_proxy)
 
-            if n_total == 0:
-                continue
+        # Drop rows still without data
+        valid = n_total_series > 0
+        if not valid.any():
+            return pd.DataFrame()
 
-            prob_result = self.compute_beat_probability(n_beats, n_total, sector)
-            prior = self._get_prior_parameters(sector, use_sector_prior=True)
+        df_valid = df.loc[valid].copy()
+        n_beats_valid = n_beats_series.loc[valid]
+        n_total_valid = n_total_series.loc[valid]
 
-            # Determine classification based on posterior mean vs default threshold
-            beat_classification = (
-                "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
-            )
+        # Vectorized posterior computation
+        post_alpha = self.prior_alpha + n_beats_valid
+        post_beta = self.prior_beta + (n_total_valid - n_beats_valid)
+        posterior_mean = post_alpha / (post_alpha + post_beta)
+        posterior_std = np.sqrt(
+            (post_alpha * post_beta)
+            / ((post_alpha + post_beta) ** 2 * (post_alpha + post_beta + 1))
+        )
 
-            record = _extract_identifiers(row)
-            record.update({
-                "historical_beats": n_beats,
-                "total_reports": n_total,
-                "historical_beat_rate": n_beats / n_total,
-                "prior_alpha": prior.alpha,
-                "prior_beta": prior.beta,
-                "posterior_alpha": prob_result["posterior_alpha"],
-                "posterior_beta": prob_result["posterior_beta"],
-                "posterior_beat_prob": prob_result["posterior_mean"],
-                "posterior_std": prob_result["posterior_std"],
-                "ci_90_lower": prob_result["credible_interval_90"][0],
-                "ci_90_upper": prob_result["credible_interval_90"][1],
-                "ci_95_lower": prob_result["credible_interval_95"][0],
-                "ci_95_upper": prob_result["credible_interval_95"][1],
-                "confidence_score": prob_result["confidence_score"],
-                "beat_classification": beat_classification,
-            })
-            results.append(record)
+        # Credible intervals (vectorized via scipy)
+        ci_90_lower = stats.beta.ppf(0.05, post_alpha, post_beta)
+        ci_90_upper = stats.beta.ppf(0.95, post_alpha, post_beta)
+        ci_95_lower = stats.beta.ppf(0.025, post_alpha, post_beta)
+        ci_95_upper = stats.beta.ppf(0.975, post_alpha, post_beta)
 
-        return pd.DataFrame(results)
+        # Multi-component confidence score (replaces constant concentration/20)
+        confidence_score = compute_beta_confidence_score(
+            post_alpha.values, post_beta.values,
+            prior_alpha=self.prior_alpha, prior_beta=self.prior_beta,
+            normalization_factor=self.CONFIDENCE_NORMALIZATION_FACTOR,
+        )
+
+        beat_classification = np.where(posterior_mean > 0.5, "likely_beat", "uncertain")
+
+        result_df = pd.DataFrame({
+            "historical_beats": n_beats_valid.values,
+            "total_reports": n_total_valid.values,
+            "historical_beat_rate": (n_beats_valid / n_total_valid).values,
+            "prior_alpha": self.prior_alpha,
+            "prior_beta": self.prior_beta,
+            "posterior_alpha": post_alpha.values,
+            "posterior_beta": post_beta.values,
+            "posterior_beat_prob": posterior_mean.values,
+            "posterior_std": posterior_std.values,
+            "ci_90_lower": ci_90_lower,
+            "ci_90_upper": ci_90_upper,
+            "ci_95_lower": ci_95_lower,
+            "ci_95_upper": ci_95_upper,
+            "confidence_score": np.asarray(confidence_score),
+            "beat_classification": beat_classification,
+        }, index=df_valid.index)
+
+        # Attach identifier columns
+        for id_col in _get_identifier_cols():
+            if id_col in df_valid.columns:
+                result_df[id_col] = df_valid[id_col].values
+
+        return result_df.reset_index(drop=True)
 
     # -----------------------------------------------------------------
     # Enhanced: Three-layer evidence fusion
@@ -1069,6 +1179,7 @@ class EarningsBeatProbabilityModel:
         """Analyze earnings beat probabilities using enhanced three-layer fusion.
 
         Falls back to trajectory-proxy method when forward data is unavailable.
+        Uses vectorized computation for the proxy path to improve performance.
 
         Args:
             df: DataFrame with equities data.
@@ -1079,27 +1190,42 @@ class EarningsBeatProbabilityModel:
         Returns:
             DataFrame with enriched probability analysis results.
         """
+        # Check which rows have forward data available
+        forward_col_keys = list(self._FORWARD_COL_MAP.keys())
+        has_any_forward = df[
+            [c for c in forward_col_keys if c in df.columns]
+        ].notna().any(axis=1) if any(c in df.columns for c in forward_col_keys) else pd.Series(False, index=df.index)
+
+        # Split into enhanced (row-by-row, needs dataclass construction) and proxy (vectorizable)
+        enhanced_mask = has_any_forward
+        proxy_mask = ~enhanced_mask & (
+            df["eps_trajectory_score"].notna() if "eps_trajectory_score" in df.columns
+            else pd.Series(False, index=df.index)
+        )
+
         results = []
 
-        for _, row in df.iterrows():
-            ticker = row.get(ticker_col, "UNKNOWN")
-            name = row.get(name_col, "UNKNOWN")
-            sector = row.get(sector_col, None)
+        # --- Enhanced path (row-by-row for forward signal construction) ---
+        if enhanced_mask.any():
+            for idx in df.index[enhanced_mask]:
+                row = df.loc[idx]
+                ticker = row.get(ticker_col, "UNKNOWN")
+                name = row.get(name_col, "UNKNOWN")
+                sector = row.get(sector_col, None)
 
-            forward_signals = self._row_to_forward_signals(row)
-            history = self._row_to_history(row)
+                forward_signals = self._row_to_forward_signals(row)
+                history = self._row_to_history(row)
 
-            if forward_signals is not None:
-                # Enhanced path
+                if forward_signals is None:
+                    continue
+
                 prob_result = self.compute_forward_adjusted_beat_probability(
                     reported_history=history,
                     forward_signals=forward_signals,
                     sector=sector,
                 )
                 n_beats, n_total = history.count_yoy_improvements()
-                # Dynamically derive total_reports from non-null reported data
                 dynamic_total = history.total_reports_count
-                # Use the larger of YoY pair count and dynamic count for beat rate
                 effective_total = max(n_total, dynamic_total) if dynamic_total > 0 else n_total
                 historical_beat_rate = n_beats / effective_total if effective_total > 0 else 0.0
 
@@ -1107,83 +1233,117 @@ class EarningsBeatProbabilityModel:
                     "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
                 )
                 record = _extract_identifiers(row)
-                record.update({
-                    "historical_beats": n_beats,
-                    "total_reports": effective_total,
-                    "dynamic_total_reports": dynamic_total,
-                    "historical_beat_rate": historical_beat_rate,
-                    "posterior_beat_prob": prob_result["posterior_mean"],
-                    "posterior_std": prob_result["posterior_std"],
-                    "ci_90_lower": prob_result["credible_interval_90"][0],
-                    "ci_90_upper": prob_result["credible_interval_90"][1],
-                    "ci_95_lower": prob_result["credible_interval_95"][0],
-                    "ci_95_upper": prob_result["credible_interval_95"][1],
-                    "confidence_score": prob_result["confidence_score"],
-                    "prior_influence_pct": prob_result["prior_influence_pct"],
-                    "effective_sample_size": prob_result["effective_sample_size"],
-                    "classification_confidence": prob_result["classification_confidence"],
-                    "beat_classification": beat_classification,
-                    "gaap_revision_momentum": forward_signals.gaap_revision_momentum,
-                    "gaap_norm_spread": forward_signals.gaap_norm_spread,
-                    "revision_trend_short": forward_signals.revision_trend_short,
-                    "revision_trend_medium": forward_signals.revision_trend_medium,
-                    "eps_norm_est_fy1e": forward_signals.eps_norm_fy1e,
-                    "eps_norm_est_ntm": forward_signals.eps_norm_ntm,
-                    "eps_gaap_est_ntm": forward_signals.eps_gaap_ntm,
-                    "eps_gaap_est_fy1e": forward_signals.eps_gaap_fy1e,
-                    "analyst_count": forward_signals.analyst_count,
-                    "next_earnings_status": row.get("next_earnings_status", None),
-                    "quarterly_beat_streak": history.quarterly_beat_streak(),
-                    "data_source": "forward_enhanced",
-                })
-                results.append(record)
-            elif "eps_trajectory_score" in df.columns and not pd.isna(
-                row.get("eps_trajectory_score")
-            ):
-                prior = self._get_prior_parameters(sector, True)
-                # Trajectory proxy fallback
-                trajectory = row["eps_trajectory_score"]
-                # Dynamically derive total from non-null reported data
-                dynamic_total = history.total_reports_count
-                n_total = dynamic_total if dynamic_total > 0 else 5
-                n_beats = int(trajectory / 100 * n_total)
-                prob_result = self.compute_beat_probability(n_beats, n_total, sector)
-                beat_classification = (
-                    "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
+                record.update(
+                    {
+                        "historical_beats": n_beats,
+                        "total_reports": effective_total,
+                        "dynamic_total_reports": dynamic_total,
+                        "historical_beat_rate": historical_beat_rate,
+                        "posterior_beat_prob": prob_result["posterior_mean"],
+                        "posterior_std": prob_result["posterior_std"],
+                        "ci_90_lower": prob_result["credible_interval_90"][0],
+                        "ci_90_upper": prob_result["credible_interval_90"][1],
+                        "ci_95_lower": prob_result["credible_interval_95"][0],
+                        "ci_95_upper": prob_result["credible_interval_95"][1],
+                        "confidence_score": prob_result["confidence_score"],
+                        "prior_influence_pct": prob_result["prior_influence_pct"],
+                        "effective_sample_size": prob_result["effective_sample_size"],
+                        "classification_confidence": prob_result["classification_confidence"],
+                        "beat_classification": beat_classification,
+                        "gaap_revision_momentum": forward_signals.gaap_revision_momentum,
+                        "gaap_norm_spread": forward_signals.gaap_norm_spread,
+                        "revision_trend_short": forward_signals.revision_trend_short,
+                        "revision_trend_medium": forward_signals.revision_trend_medium,
+                        "eps_norm_est_fy1e": forward_signals.eps_norm_fy1e,
+                        "eps_norm_est_ntm": forward_signals.eps_norm_ntm,
+                        "eps_gaap_est_ntm": forward_signals.eps_gaap_ntm,
+                        "eps_gaap_est_fy1e": forward_signals.eps_gaap_fy1e,
+                        "analyst_count": forward_signals.analyst_count,
+                        "next_earnings_status": row.get("next_earnings_status", None),
+                        "quarterly_beat_streak": history.quarterly_beat_streak(),
+                        "data_source": "forward_enhanced",
+                    }
                 )
-                confidence_score = prob_result["confidence_score"]
-                if confidence_score >= 0.6:
-                    classification_confidence = "High"
-                elif confidence_score >= 0.3:
-                    classification_confidence = "Medium"
-                else:
-                    classification_confidence = "Low"
+                results.append(record)
 
-                prior = self._get_prior_parameters(sector, True)
-                prior_total = prior.alpha + prior.beta
-                post_total = prob_result["posterior_alpha"] + prob_result["posterior_beta"]
+        # --- Proxy path (vectorized Beta-Binomial for trajectory scores) ---
+        if proxy_mask.any():
+            proxy_df = df.loc[proxy_mask].copy()
+            trajectory = proxy_df["eps_trajectory_score"].fillna(50)
 
+            # Dynamic n_total: use eps_positive_years or eps_improvement_count if available,
+            # else scale by trajectory score confidence band
+            if "eps_positive_years" in proxy_df.columns:
+                n_total_proxy = proxy_df["eps_positive_years"].fillna(0).clip(lower=0)
+                n_total_proxy = n_total_proxy.clip(lower=3, upper=15).astype(int)
+            elif "eps_improvement_count" in proxy_df.columns:
+                n_total_proxy = proxy_df["eps_improvement_count"].fillna(3).clip(lower=3, upper=15).astype(int)
+            else:
+                # Graduated proxy: higher trajectory scores imply more consistent data
+                n_total_proxy = pd.Series(
+                    np.where(trajectory >= 80, 8,
+                    np.where(trajectory >= 60, 6,
+                    np.where(trajectory >= 40, 5,
+                    np.where(trajectory >= 20, 4, 3)))),
+                    index=proxy_df.index,
+                )
+            n_beats_proxy = (trajectory / 100 * n_total_proxy).astype(int).clip(lower=0, upper=n_total_proxy)
+
+            # Vectorized posterior
+            prior = self.default_prior
+            post_alpha = prior.alpha + n_beats_proxy
+            post_beta = prior.beta + (n_total_proxy - n_beats_proxy)
+            posterior_mean = post_alpha / (post_alpha + post_beta)
+            posterior_std = np.sqrt(
+                (post_alpha * post_beta)
+                / ((post_alpha + post_beta) ** 2 * (post_alpha + post_beta + 1))
+            )
+            ci_90_lower = pd.Series(stats.beta.ppf(0.05, post_alpha, post_beta), index=proxy_df.index)
+            ci_90_upper = pd.Series(stats.beta.ppf(0.95, post_alpha, post_beta), index=proxy_df.index)
+            ci_95_lower = pd.Series(stats.beta.ppf(0.025, post_alpha, post_beta), index=proxy_df.index)
+            ci_95_upper = pd.Series(stats.beta.ppf(0.975, post_alpha, post_beta), index=proxy_df.index)
+            # Multi-component confidence score (replaces constant concentration/20)
+            prior_total = prior.alpha + prior.beta
+            confidence_score = pd.Series(
+                compute_beta_confidence_score(
+                    post_alpha.values, post_beta.values,
+                    prior_alpha=prior.alpha, prior_beta=prior.beta,
+                    normalization_factor=self.CONFIDENCE_NORMALIZATION_FACTOR,
+                ),
+                index=proxy_df.index,
+            )
+            concentration = post_alpha + post_beta
+            prior_influence = prior_total / concentration * 100.0
+            effective_sample = concentration - prior_total
+            beat_class = np.where(posterior_mean > 0.5, "likely_beat", "uncertain")
+            class_conf = np.where(
+                confidence_score >= 0.6, "High",
+                np.where(confidence_score >= 0.3, "Medium", "Low")
+            )
+
+            for i, idx in enumerate(proxy_df.index):
+                row = proxy_df.loc[idx]
                 record = _extract_identifiers(row)
                 record.update({
-                    "historical_beats": n_beats,
-                    "total_reports": n_total,
-                    "dynamic_total_reports": dynamic_total,
-                    "historical_beat_rate": n_beats / n_total if n_total > 0 else 0.0,
+                    "historical_beats": int(n_beats_proxy.iloc[i]),
+                    "total_reports": int(n_total_proxy.iloc[i]),
+                    "dynamic_total_reports": 0,
+                    "historical_beat_rate": float(n_beats_proxy.iloc[i] / n_total_proxy.iloc[i]),
                     "prior_alpha": prior.alpha,
                     "prior_beta": prior.beta,
-                    "posterior_alpha": prob_result["posterior_alpha"],
-                    "posterior_beta": prob_result["posterior_beta"],
-                    "posterior_beat_prob": prob_result["posterior_mean"],
-                    "posterior_std": prob_result["posterior_std"],
-                    "ci_90_lower": prob_result["credible_interval_90"][0],
-                    "ci_90_upper": prob_result["credible_interval_90"][1],
-                    "ci_95_lower": prob_result["credible_interval_95"][0],
-                    "ci_95_upper": prob_result["credible_interval_95"][1],
-                    "confidence_score": confidence_score,
-                    "prior_influence_pct": prior_total / post_total * 100.0,
-                    "effective_sample_size": post_total - prior_total,
-                    "classification_confidence": classification_confidence,
-                    "beat_classification": beat_classification,
+                    "posterior_alpha": float(post_alpha.iloc[i]),
+                    "posterior_beta": float(post_beta.iloc[i]),
+                    "posterior_beat_prob": float(posterior_mean.iloc[i]),
+                    "posterior_std": float(posterior_std.iloc[i]),
+                    "ci_90_lower": float(ci_90_lower.iloc[i]),
+                    "ci_90_upper": float(ci_90_upper.iloc[i]),
+                    "ci_95_lower": float(ci_95_lower.iloc[i]),
+                    "ci_95_upper": float(ci_95_upper.iloc[i]),
+                    "confidence_score": float(confidence_score.iloc[i]),
+                    "prior_influence_pct": float(prior_influence.iloc[i]),
+                    "effective_sample_size": float(effective_sample.iloc[i]),
+                    "classification_confidence": str(class_conf[i]),
+                    "beat_classification": str(beat_class[i]),
                     "gaap_revision_momentum": None,
                     "gaap_norm_spread": None,
                     "revision_trend_short": None,
@@ -1198,7 +1358,6 @@ class EarningsBeatProbabilityModel:
                     "data_source": "trajectory_proxy",
                 })
                 results.append(record)
-            # else: skip row with no data
 
         return pd.DataFrame(results)
 
@@ -1454,7 +1613,8 @@ class EPSStreakAnalyzer:
             historical_beat_rate = n_beats_yoy / effective_total if effective_total > 0 else 0.0
 
             record = _extract_identifiers(row)
-            record.update({
+            record.update(
+                {
                     "current_streak": result.current_streak,
                     "streak_type": result.streak_type,
                     "continuation_probability": result.streak_continuation_prob,
@@ -1598,16 +1758,24 @@ class ModelConfidenceEstimator:
                 auc = 0.5
 
         # Confidence intervals for predictions
-        ci_coverage = self._compute_ci_coverage(predicted_probs, actual_outcomes)
+        ci_coverage = self._compute_ci_coverage(
+            predicted_probs, actual_outcomes, n_observations=5
+        )
 
         # Overall confidence score (0-100)
-        # Weighted combination of metrics
-        overall = (
+        # Weighted combination of metrics with discrimination floor
+        base_score = (
             (1 - brier) * 30  # Lower brier is better
             + (1 - ece) * 30  # Lower ECE is better
             + auc * 40  # Higher AUC is better
         )
-        overall = min(100, max(0, overall))
+
+        # Penalty: AUC below 0.5 means model is anti-discriminating
+        if auc < 0.5:
+            discrimination_penalty = (0.5 - auc) * 60  # Up to -30 points
+            base_score -= discrimination_penalty
+
+        overall = min(100, max(0, base_score))
 
         return ModelConfidenceResult(
             model_name=model_name,
@@ -1621,17 +1789,19 @@ class ModelConfidenceEstimator:
         )
 
     def _compute_ci_coverage(
-        self, predicted_probs: np.ndarray, actual_outcomes: np.ndarray
+        self,
+        predicted_probs: np.ndarray,
+        actual_outcomes: np.ndarray,
+        n_observations: int = 5,
     ) -> dict:
         """Compute confidence interval coverage rates."""
-        # For Beta distribution CIs
         coverage_90 = 0.0
         coverage_95 = 0.0
         n = len(predicted_probs)
 
         for i, (prob, actual) in enumerate(zip(predicted_probs, actual_outcomes)):
-            # Approximate CI from probability
-            std = np.sqrt(prob * (1 - prob) / 10)  # Assume 10 observations
+            # Use actual observation count instead of hardcoded 10
+            std = np.sqrt(prob * (1 - prob) / max(n_observations, 1))
             ci_90 = (max(0, prob - 1.645 * std), min(1, prob + 1.645 * std))
             ci_95 = (max(0, prob - 1.96 * std), min(1, prob + 1.96 * std))
 
@@ -1768,7 +1938,8 @@ class CreditRiskProbabilityModel:
                 risk_level = "Medium"
 
             record = _extract_identifiers(row)
-            record.update({
+            record.update(
+                {
                     "distress_probability": prob,
                     "liquidity_stress_score": liquidity_stress,
                     "cash_runway_months": cash_runway,
@@ -1780,7 +1951,8 @@ class CreditRiskProbabilityModel:
                     "ci_lower": max(0, prob - ci_width),
                     "ci_upper": min(1, prob + ci_width),
                     "data_quality_score": data_points / 5.0,
-            })
+                }
+            )
             results.append(record)
 
         return pd.DataFrame(results)
@@ -1878,7 +2050,8 @@ class DividendCutProbabilityModel:
                 risk_cat = "Monitor"
 
             record = _extract_identifiers(row)
-            record.update({
+            record.update(
+                {
                     "dividend_cut_probability": prob,
                     "fcf_dividend_coverage": fcf_coverage,
                     "payout_ratio": payout_ratio,
@@ -1888,7 +2061,8 @@ class DividendCutProbabilityModel:
                     "sustainable_flag": sustainable_flag,
                     "safety_score": 100 * (1 - prob),
                     "risk_category": risk_cat,
-            })
+                }
+            )
             results.append(record)
         return pd.DataFrame(results)
 
@@ -1983,7 +2157,8 @@ class PriceTargetAchievementModel:
             prob = min(0.90, max(0.05, base_prob + adjustments))
 
             record = _extract_identifiers(row)
-            record.update({
+            record.update(
+                {
                     "achievement_probability": prob,
                     "upside_potential": upside,
                     "price_target_spread_pct": spread,
@@ -1996,7 +2171,8 @@ class PriceTargetAchievementModel:
                         if spread and spread < 20
                         else "Medium" if spread and spread < 35 else "Low"
                     ),
-            })
+                }
+            )
             results.append(record)
         return pd.DataFrame(results)
 
@@ -2648,36 +2824,20 @@ class ResampledBeatProbabilityModel:
         adjusted_beta = max(0.5, base_beta - shift)
         return adjusted_alpha, adjusted_beta
 
-    def analyze(
+    def _run_analysis(
         self,
         df: pd.DataFrame,
         sector_col: str = "sector",
         ticker_col: str = "ticker",
-    ) -> pd.DataFrame:
-        """
-        Run resampled beat probability analysis on equities DataFrame.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Merged feature data (ideally from multiple vw_features_* views).
-        sector_col : str
-            Sector grouping column.
-        ticker_col : str
-            Ticker identifier column.
-
-        Returns
-        -------
-        pd.DataFrame
-            Enhanced beat probability results with technical conditioning.
-        """
+    ) -> list[ResampledBeatEstimate]:
+        """Core analysis loop returning a list of ResampledBeatEstimate."""
         base_results = self.base_model.analyze_dataframe_enhanced(
             df, sector_col=sector_col, ticker_col=ticker_col
         )
         if base_results.empty:
-            return pd.DataFrame()
+            return []
 
-        results = []
+        results: list[ResampledBeatEstimate] = []
         for _, row in base_results.iterrows():
             ticker = row.get(ticker_col, row.get("ticker", ""))
 
@@ -2735,7 +2895,51 @@ class ResampledBeatProbabilityModel:
                 )
             )
 
-        return pd.DataFrame([vars(r) for r in results])
+        return results
+
+    def analyze(
+        self,
+        df: pd.DataFrame,
+        sector_col: str = "sector",
+        ticker_col: str = "ticker",
+    ) -> pd.DataFrame:
+        """
+        Run resampled beat probability analysis on equities DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Merged feature data (ideally from multiple vw_features_* views).
+        sector_col : str
+            Sector grouping column.
+        ticker_col : str
+            Ticker identifier column.
+
+        Returns
+        -------
+        pd.DataFrame
+            Enhanced beat probability results with technical conditioning.
+        """
+        estimates = self._run_analysis(df, sector_col=sector_col, ticker_col=ticker_col)
+        if not estimates:
+            return pd.DataFrame()
+
+        result_df = pd.DataFrame([vars(r) for r in estimates])
+
+        # Attach ESS and R-hat from InferenceData for quality control
+        if ARVIZ_AVAILABLE and az is not None and not result_df.empty:
+            try:
+                idata = self.build_inference_data(df, sector_col=sector_col, ticker_col=ticker_col)
+                if idata is not None:
+                    summary = az.summary(idata)
+                    if "ess_bulk" in summary.columns and len(summary) == len(result_df):
+                        result_df["ess_bulk"] = summary["ess_bulk"].values
+                    if "r_hat" in summary.columns and len(summary) == len(result_df):
+                        result_df["r_hat"] = summary["r_hat"].values
+            except Exception:
+                pass
+
+        return result_df
 
     def build_inference_data(
         self,
@@ -2750,7 +2954,10 @@ class ResampledBeatProbabilityModel:
         -------
         arviz.InferenceData, xr.Dataset, or None
         """
-        result_df = self.analyze(df, sector_col=sector_col, ticker_col=ticker_col)
+        estimates = self._run_analysis(df, sector_col=sector_col, ticker_col=ticker_col)
+        if not estimates:
+            return None
+        result_df = pd.DataFrame([vars(r) for r in estimates])
         if result_df.empty:
             return None
 
@@ -2930,7 +3137,9 @@ def export_probability_analytics_results(
             probability_df[col] = pd.to_numeric(probability_df[col], errors="coerce")
     for col in _INTEGER_CAST_COLS:
         if col in probability_df.columns:
-            probability_df[col] = pd.to_numeric(probability_df[col], errors="coerce").astype("Int64")
+            probability_df[col] = pd.to_numeric(probability_df[col], errors="coerce").astype(
+                "Int64"
+            )
 
     # 1. Export probability analysis (Issue 3: table_name is canonical for both DB and CSV)
     _safe_export(probability_df, "earnings_probability_analysis")

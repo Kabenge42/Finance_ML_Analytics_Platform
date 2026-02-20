@@ -29,6 +29,9 @@
       </formatting-settings>
     </DBN-SQL>
     <PostgresCodeStyleSettings version="7">
+      <option name="CUSTOM_TYPE_CASE" value="0" />
+      <option name="ALIAS_CASE" value="4" />
+      <option name="QUOTE_IDENTIFIER" value="1" />
       <option name="WITH_ALIGN_AS" value="true" />
       <option name="FROM_ALIGN_JOIN_TABLES" value="true" />
       <option name="FROM_ALIGN_ALIASES" value="true" />

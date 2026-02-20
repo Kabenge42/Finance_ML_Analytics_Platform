@@ -1,9 +1,6 @@
 -- Drop existing table if it exists
 DROP TABLE IF EXISTS equities CASCADE;
 
-ALTER TABLE equities
-    OWNER TO postgres;
-
 CREATE TABLE equities
 (
     -- ===========================================
@@ -710,6 +707,11 @@ CREATE TABLE equities
     "Effective Tax Rate - (Ratio) (-2FY)"              NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_2fy
     "Effective Tax Rate - (Ratio) (-3FY)"              NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_3fy
     "Effective Tax Rate - (Ratio) (-4FY)"              NUMERIC DEFAULT 0,            -- percentage: "Effective Tax Rate - (Ratio) (LTM)" | alias: effective_tax_rate_4fy
+    "FCF - Est Avg (FY1E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY1E) | alias: fcf_est_avg_fy1e
+    "FCF - Est Avg (FY2E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY2E) | alias: fcf_est_avg_fy2e
+    "FCF - Est Avg (FY3E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY3E) | alias: fcf_est_avg_fy3e
+    "FCF - Est Avg (FY4E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY4E) | alias: fcf_est_avg_fy4e
+    "FCF - Est Avg (FY5E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY5E) | alias: fcf_est_avg_fy5e
 
     -- ===========================================
     -- FEATURE role

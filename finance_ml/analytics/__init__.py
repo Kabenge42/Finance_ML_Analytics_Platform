@@ -164,6 +164,8 @@ try:
         # NEW: Resampled beat probability
         ResampledBeatProbabilityModel,
         ResampledBeatEstimate,
+        # Shared utility
+        compute_beta_confidence_score,
         )
 
     _PROBABILITY_ANALYTICS_AVAILABLE = True

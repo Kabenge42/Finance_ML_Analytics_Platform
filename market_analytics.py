@@ -890,116 +890,8 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
     return fig
 
 
-def monte_carlo_price_target_simulation(
-    df: pd.DataFrame,
-    n_simulations: int = 10000,
-    confidence_level: float = 0.95,
-    max_stocks: int = 7000,
-) -> pd.DataFrame:
-    """
-    Monte Carlo simulation of price targets based on analyst spread.
-
-    Uses the analyst price target range (high/low/median) to model
-    uncertainty and generate probabilistic fair value estimates.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame containing:
-        - ticker, name, industry, last_price
-        - price_target, price_target_high, price_target_low, price_target_median
-    n_simulations : int, default 10000
-        Number of Monte Carlo simulations per stock
-    confidence_level : float, default 0.95
-        Confidence level for VaR calculation
-    max_stocks : int, default 2000
-        Maximum number of stocks to simulate (for performance)
-    confidence_level : float, default 0.95
-        Confidence level for VaR calculation
-    max_stocks : int, default 1000
-        Maximum number of stocks to simulate (for performance)
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with simulation results including:
-        - ticker, name, industry, last_price
-        - expected_upside_pct, upside_std, var_5_pct
-        - prob_positive_upside, risk_reward_ratio
-    """
-    np.random.seed(42)
-
-    results = []
-
-    required_cols = ["price_target", "price_target_high", "price_target_low", "last_price"]
-    valid_df = df.dropna(subset=required_cols)
-
-    # Resolve identifier columns dynamically (same as price_target_achievement)
-    id_cols_set = get_identifier_cols_set()
-
-    for _, row in valid_df.head(max_stocks).iterrows():
-        pt_low = row["price_target_low"]
-        pt_high = row["price_target_high"]
-        pt_median = row.get("price_target_median", row["price_target"])
-        last_price = row["last_price"]
-
-        if pt_high <= pt_low or last_price <= 0:
-            continue
-
-        # Model price target as triangular distribution (low, mode=median, high)
-        simulated_pts = np.random.triangular(pt_low, pt_median, pt_high, n_simulations)
-
-        # Calculate simulated upside
-        simulated_upside = (simulated_pts - last_price) / last_price * 100
-
-        # Statistics
-        var_5 = np.percentile(simulated_upside, 5)
-        expected_upside = np.mean(simulated_upside)
-        upside_std = np.std(simulated_upside)
-        prob_positive = (simulated_upside > 0).mean() * 100
-
-        # Extract all identifier columns from the row (DRY, like _extract_identifiers)
-        record = {
-            col: row.get(col, None)
-            for col in id_cols_set
-            if col in row.index and pd.notna(row.get(col))
-        }
-
-        # Market data columns (from equities, carried through MV)
-        for market_col in [
-            "market_cap",
-            "enterprise_value",
-            "last_price",
-            "price_target",
-            "price_target_high",
-            "price_target_low",
-            "price_target_median",
-            "volume_shrs",
-            "shares_outstanding",
-        ]:
-            if market_col in row.index and pd.notna(row.get(market_col)):
-                record[market_col] = row[market_col]
-
-        # MC-specific results
-        record.update(
-            {
-                "last_price": last_price,
-                "pt_median": pt_median,
-                "pt_spread": pt_high - pt_low,
-                "expected_upside_pct": expected_upside,
-                "upside_std": upside_std,
-                "var_5_pct": var_5,
-                "prob_positive_upside": prob_positive,
-                "risk_reward_ratio": expected_upside / upside_std if upside_std > 0 else 0,
-            }
-        )
-        results.append(record)
-
-    return pd.DataFrame(results)
-
-
 # --- Module-level constants for bayesian_earnings_beat_model ---
-_BEAT_MODEL_P_GRID = np.arange(0.1, 1.0, 0.1)
+_BEAT_MODEL_P_GRID = np.linspace(0.01, 0.99, 50)  # 50 points for smoother posterior
 _BEAT_MODEL_ENTROPY_EPS = 1e-10
 _BEAT_MODEL_IDENTIFIER_COLS = (
     "ticker",
@@ -1638,7 +1530,7 @@ def build_expected_returns_summary(
     summary["pt_bullish"] = summary["expected_return_prob_weighted"] > 0
     summary["earn_bullish"] = summary["posterior_beat_prob"] > 0.5
 
-    # Agreement score: 0–4
+    # Discrete agreement score: 0–4 (backward-compatible)
     summary["agreement_score"] = (
         summary["mc_bullish"].astype(int)
         + summary["kal_bullish"].astype(int)
@@ -1646,6 +1538,21 @@ def build_expected_returns_summary(
         + summary["earn_bullish"].astype(int)
     )
     summary["signal"] = summary["agreement_score"].map(_SIGNAL_LABELS_4)
+
+    # Confidence-weighted agreement (continuous 0–4 scale)
+    mc_weight = summary["prob_positive_upside"].clip(0, 100) / 100.0
+    kal_weight = 0.5  # Kalman has uniform confidence (smoothing filter)
+    pt_weight = summary["confidence_level"].map(
+        {"High": 0.9, "Medium": 0.6, "Low": 0.3}
+    ).fillna(0.5)
+    earn_weight = summary["confidence_score"].clip(0, 1)
+
+    summary["weighted_agreement"] = (
+        summary["mc_bullish"].astype(float) * mc_weight
+        + summary["kal_bullish"].astype(float) * kal_weight
+        + summary["pt_bullish"].astype(float) * pt_weight
+        + summary["earn_bullish"].astype(float) * earn_weight
+    )
 
     logging.info(
         "Expected returns summary: %d stocks, %d strong bullish (4/4)",
@@ -2013,7 +1920,7 @@ def main():
         print(f"   ✓ Hierarchical analysis for {len(hier_results)} sectors")
 
     # --- NEW: Distribution fitting by category (statistical_analysis) ---
-    for cat_name in ["Earnings Quality", "Valuation Timeseries"]:
+    for cat_name in ["Earnings Quality", "Cash Flow"]:
         cat_features = [f for f in FEATURE_CATEGORIES.get(cat_name, []) if f in df.columns][:10]
         if cat_features:
             print(f"   Fitting distributions for {cat_name}...")
@@ -2023,6 +1930,7 @@ def main():
                     f"      {feat}: best={info['best_distribution']}, "
                     f"VaR(5%)={info['var_5_pct']:.2f}"
                 )
+            print(f"   ✓ Distribution fitting for {cat_name} completed")
 
     # --- NEW: Conditional probabilities P(Distress|Feature) (statistical_analysis) ---
     if "distress_risk_score" in df.columns:
@@ -2071,7 +1979,7 @@ def main():
         try:
             # Initialize models
             beat_model = EarningsBeatProbabilityModel()
-            streak_analyzer = EPSStreakAnalyzer(mean_reversion_weight=0.3)
+            streak_analyzer = EPSStreakAnalyzer(mean_reversion_weight=0.1)
             confidence_estimator = ModelConfidenceEstimator(n_bins=10)
 
             # --- Enhanced: Use three-layer evidence fusion when forward data available ---
@@ -2093,14 +2001,12 @@ def main():
                 if "eps_trajectory_score" in df.columns:
                     df_analysis = df.copy()
                     # Use eps_positive_years if available, else derive from trajectory score
-                    beats_col_name = "eps_beat_count"
-                    if "eps_positive_years" in df_analysis.columns:
-                        beats_col_name = "eps_positive_years"
-                    elif beats_col_name not in df_analysis.columns:
+                    beats_col_name = "eps_positive_years"
+                    if beats_col_name not in df_analysis.columns:
                         df_analysis[beats_col_name] = (
                             df_analysis["eps_trajectory_score"].fillna(50) / 100 * 5
                         ).astype(int)
-                    total_col_name = "eps_total_reports"
+                    total_col_name = "eps_positive_streak"
                     if total_col_name not in df_analysis.columns:
                         df_analysis[total_col_name] = 5
 
@@ -2172,28 +2078,52 @@ def main():
                         avg_total = streak_results["dynamic_total_reports"].mean()
                         print(f"   ✓ Avg dynamic total reports per stock: {avg_total:.1f}")
 
-            # Model Confidence Estimation (using simulated outcomes for demo)
+            # Model Confidence Estimation
             print("   Estimating model confidence metrics...")
 
             if probability_results is not None and len(probability_results) > 10:
-                # Simulate actual outcomes based on posterior probability
-                # In production, this would use actual historical outcomes
-                np.random.seed(42)
-                simulated_outcomes = (
-                    np.random.random(len(probability_results))
-                    < probability_results["posterior_beat_prob"].values
-                ).astype(float)
+                # Derive actual outcomes from eps_surprise_pct in the source DataFrame.
+                # A positive EPS surprise (actual > estimate) counts as a "beat" (1),
+                # otherwise it is a "miss" (0).
+                actual_outcomes = None
+                ticker_col = "ticker" if "ticker" in probability_results.columns else "isin"
 
-                confidence_result = confidence_estimator.compute_confidence_metrics(
-                    predicted_probs=probability_results["posterior_beat_prob"].values,
-                    actual_outcomes=simulated_outcomes,
-                    model_name="Bayesian Earnings Beat Model",
-                )
+                if (
+                    "eps_surprise_pct" in df.columns
+                    and ticker_col in probability_results.columns
+                    and ticker_col in df.columns
+                ):
+                    surprise_map = (
+                        df[[ticker_col, "eps_surprise_pct"]]
+                        .dropna(subset=["eps_surprise_pct"])
+                        .drop_duplicates(subset=[ticker_col])
+                        .set_index(ticker_col)["eps_surprise_pct"]
+                    )
+                    matched_surprise = probability_results[ticker_col].map(surprise_map)
+                    valid_mask = matched_surprise.notna()
 
-                print(f"   ✓ Brier Score: {confidence_result.brier_score:.4f}")
-                print(f"   ✓ Calibration Error: {confidence_result.calibration_error:.4f}")
-                print(f"   ✓ AUC-ROC: {confidence_result.discrimination_auc:.3f}")
-                print(f"   ✓ Overall Confidence: {confidence_result.overall_confidence:.1f}/100")
+                    if valid_mask.sum() > 10:
+                        actual_outcomes = (matched_surprise[valid_mask].values > 0).astype(
+                            np.float64
+                        )
+                        predicted_probs_aligned = probability_results.loc[
+                            valid_mask, "posterior_beat_prob"
+                        ].values
+
+                if actual_outcomes is not None:
+                    confidence_result = confidence_estimator.compute_confidence_metrics(
+                        predicted_probs=predicted_probs_aligned,
+                        actual_outcomes=actual_outcomes,
+                        model_name="Bayesian Earnings Beat Model",
+                    )
+                    print(f"   ✓ Brier Score: {confidence_result.brier_score:.4f}")
+                    print(f"   ✓ Calibration Error: {confidence_result.calibration_error:.4f}")
+                    print(f"   ✓ AUC-ROC: {confidence_result.discrimination_auc:.3f}")
+                    print(f"   ✓ Overall Confidence: {confidence_result.overall_confidence:.1f}/100")
+                else:
+                    print("   ⚠️  No historical outcomes available — skipping confidence metrics")
+                    print("   ℹ️  Provide actual beat/miss data to enable Brier, ECE, and AUC-ROC scoring")
+                    confidence_result = None
 
             # New Probability Models
             print("   Running Credit Risk, Dividend Cut, and Price Target models...")
@@ -2267,52 +2197,54 @@ def main():
     print("🔍 Step 6: Running stock screens...")
     print("-" * 80)
 
+    screening_results: dict[str, pd.DataFrame] = {}
+
     # Enhanced quality screener
     if all(col in df.columns for col in ["piotroski_f_score", "distress_risk_score"]):
-        quality_stocks = create_enhanced_screener(df, min_fscore=7, min_fcf_positive_years=4)
-        print(f"   ✓ Quality screen: {len(quality_stocks)} stocks")
+        screening_results["quality_stocks"] = create_enhanced_screener(df, min_fscore=7, min_fcf_positive_years=4)
+        print(f"   ✓ Quality screen: {len(screening_results['quality_stocks'])} stocks")
 
     # Value opportunities
     if "p_e_ratio" in df.columns and "upside_potential" in df.columns:
-        value_stocks = screen_value_opportunities(df, max_pe_ratio=100, min_upside_potential=20)
-        print(f"   ✓ Value screen: {len(value_stocks)} stocks")
+        screening_results["value_stocks"] = screen_value_opportunities(df, max_pe_ratio=100, min_upside_potential=20)
+        print(f"   ✓ Value screen: {len(screening_results['value_stocks'])} stocks")
 
     # Growth momentum
     if "revenue_yoy_growth" in df.columns or "revenue_growth_yoy" in df.columns:
-        growth_stocks = screen_growth_momentum(df, min_revenue_growth=5)
-        print(f"   ✓ Growth screen: {len(growth_stocks)} stocks")
+        screening_results["growth_stocks"] = screen_growth_momentum(df, min_revenue_growth=5)
+        print(f"   ✓ Growth screen: {len(screening_results['growth_stocks'])} stocks")
 
     # Financial health
     if "distress_risk_score" in df.columns:
-        healthy_stocks = screen_financial_health(df, min_distress_score=80)
-        print(f"   ✓ Financial health screen: {len(healthy_stocks)} stocks")
+        screening_results["healthy_stocks"] = screen_financial_health(df, min_distress_score=80)
+        print(f"   ✓ Financial health screen: {len(screening_results['healthy_stocks'])} stocks")
 
     # GARP opportunities
     if "peg_ratio" in df.columns:
-        garp_stocks = screen_garp_opportunities(df)
-        print(f"   ✓ GARP screen: {len(garp_stocks)} stocks")
+        screening_results["garp_stocks"] = screen_garp_opportunities(df)
+        print(f"   ✓ GARP screen: {len(screening_results['garp_stocks'])} stocks")
 
     # High-yield safe dividends
     if "dividend_yield" in df.columns or "dividend_yield_ltm" in df.columns:
-        safe_div_stocks = screen_high_yield_safe_dividends(df)
-        print(f"   ✓ High-yield safe dividend screen: {len(safe_div_stocks)} stocks")
+        screening_results["safe_div_stocks"] = screen_high_yield_safe_dividends(df)
+        print(f"   ✓ High-yield safe dividend screen: {len(screening_results['safe_div_stocks'])} stocks")
 
     # New Screens
-    reversion_stocks = screen_valuation_reversion_candidates(df)
-    growth_integrity_stocks = screen_integrity_filtered_growth(df)
-    print(f"   ✓ Valuation reversion screen: {len(reversion_stocks)} stocks")
-    print(f"   ✓ Integrity-filtered growth screen: {len(growth_integrity_stocks)} stocks")
+    screening_results["reversion_stocks"] = screen_valuation_reversion_candidates(df)
+    screening_results["growth_integrity_stocks"] = screen_integrity_filtered_growth(df)
+    print(f"   ✓ Valuation reversion screen: {len(screening_results['reversion_stocks'])} stocks")
+    print(f"   ✓ Integrity-filtered growth screen: {len(screening_results['growth_integrity_stocks'])} stocks")
 
     # --- NEW: Earnings quality screening (screening.py) ---
     if "earnings_quality_composite" in df.columns:
-        eq_stocks = screen_earnings_quality(df, min_quality_score=65)
-        print(f"   ✓ Earnings quality screen: {len(eq_stocks)} stocks")
+        screening_results["eq_stocks"] = screen_earnings_quality(df, min_quality_score=65)
+        print(f"   ✓ Earnings quality screen: {len(screening_results['eq_stocks'])} stocks")
 
     # --- NEW: Dividend quality screening (screening.py) ---
     div_yield_col = "dividend_yield_ltm" if "dividend_yield_ltm" in df.columns else "dividend_yield"
     if div_yield_col in df.columns:
-        dq_stocks = screen_dividend_quality(df, min_dividend_yield=2.5, min_dividend_streak=3)
-        print(f"   ✓ Dividend quality screen: {len(dq_stocks)} stocks")
+        screening_results["dq_stocks"] = screen_dividend_quality(df, min_dividend_yield=2.5, min_dividend_streak=3)
+        print(f"   ✓ Dividend quality screen: {len(screening_results['dq_stocks'])} stocks")
 
     # --- NEW: Composite ranking (screening.py) ---
     ranked_df = rank_stocks_by_composite_score(df, export=True)
@@ -2372,7 +2304,7 @@ def main():
                 fig.write_html(output_dir / "earnings_beat_probability_dashboard.html")
                 print("   ✓ Saved: outputs/analytics/earnings_beat_probability_dashboard.html")
 
-                if "confidence_result" in locals():
+                if confidence_result is not None:
                     print("   Creating model confidence calibration chart...")
                     fig = create_confidence_calibration_chart(confidence_result)
                     fig.write_html(output_dir / "model_confidence_calibration.html")
@@ -2685,10 +2617,10 @@ def main():
     }
 
     for var_name, table in screening_exports.items():
-        # Exports dataframes to database, CSV, and JSON formats
-        if var_name in locals() and len(locals()[var_name]) > 0:
+        screen_df = screening_results.get(var_name, pd.DataFrame())
+        if not screen_df.empty:
             screen_cfg = ExportConfig(table_name=table)
-            screen_df = _reorder_with_identifiers(locals()[var_name])
+            screen_df = _reorder_with_identifiers(screen_df)
             export_to_db(screen_df, screen_cfg)
             export_to_csv(screen_df, screen_cfg)
             export_to_json(screen_df, screen_cfg)
@@ -2739,10 +2671,14 @@ def main():
     #           price_target_achievement, earnings_probability_analysis
     # into a single summary table analogous to the tri-model DataFrame
     # in ExpectedReturnsAnalytics.ipynb, extended to 4 models.
-    _mc_for_summary = locals().get("mc_results", pd.DataFrame())
-    _kal_for_summary = locals().get("kalman_pt", pd.DataFrame())
-    _pt_for_summary = locals().get("pt_results", pd.DataFrame())
-    _earn_for_summary = locals().get("probability_results", pd.DataFrame())
+    _mc_raw = locals().get("mc_results")
+    _mc_for_summary = _mc_raw if isinstance(_mc_raw, pd.DataFrame) else pd.DataFrame()
+    _kal_raw = locals().get("kalman_pt")
+    _kal_for_summary = _kal_raw if isinstance(_kal_raw, pd.DataFrame) else pd.DataFrame()
+    _pt_raw = locals().get("pt_results")
+    _pt_for_summary = _pt_raw if isinstance(_pt_raw, pd.DataFrame) else pd.DataFrame()
+    _earn_raw = locals().get("probability_results")
+    _earn_for_summary = _earn_raw if isinstance(_earn_raw, pd.DataFrame) else pd.DataFrame()
 
     if (
         not _mc_for_summary.empty
