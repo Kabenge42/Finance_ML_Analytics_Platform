@@ -86,7 +86,7 @@ SELECT "ISIN"                                                                AS 
                                                 "Net EPS - Basic (-2FY)" +
                                                 "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0), 0)
                           )
-           END                                                               AS eps_stability -- 0 = chaotic, 1 = perfectly stable
+           END AS eps_stability -- 0 = chaotic, 1 = perfectly stable
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;

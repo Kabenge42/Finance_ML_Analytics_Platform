@@ -1006,12 +1006,8 @@ def calculate_conditional_probabilities(
 # =============================================================================
 
 
-def monte_carlo_price_target_simulation(
-    df: pd.DataFrame,
-    n_simulations: int = 10000,
-    max_stocks: int = 7000,
-    confidence_level: float = 0.95,
-) -> pd.DataFrame:
+def monte_carlo_price_target_simulation(df: pd.DataFrame, n_simulations: int = 25000, max_stocks: int = 7000,
+                                        confidence_level: float = 0.95) -> pd.DataFrame:
     """
     Monte Carlo simulation of price targets based on analyst spread.
 
@@ -1194,8 +1190,8 @@ def kalman_filter_price_target(
 def kalman_momentum_filter(
     df: pd.DataFrame,
     momentum_cols: list = None,
-    process_variance: float = 0.01,
-    measurement_variance: float = 0.1,
+    process_variance: float = 0.05,
+    measurement_variance: float = 0.25,
 ) -> pd.DataFrame:
     """
     Apply Kalman filter to smooth noisy momentum indicators.
@@ -1209,9 +1205,9 @@ def kalman_momentum_filter(
     momentum_cols : list, optional
         List of momentum column names. Default: ['price_momentum_1m',
         'price_momentum_3m', 'price_momentum_6m']
-    process_variance : float, default 0.01
+    process_variance : float, default 0.05
         Process noise variance
-    measurement_variance : float, default 0.1
+    measurement_variance : float, default 0.25
         Measurement noise variance
 
     Returns
@@ -1225,7 +1221,14 @@ def kalman_momentum_filter(
     >>> print(filtered_df['price_momentum_1m_filtered'].head())
     """
     if momentum_cols is None:
-        momentum_cols = ["price_momentum_1m", "price_momentum_3m", "price_momentum_6m"]
+        momentum_cols = ["price_momentum_1m",
+                         "price_momentum_3m",
+                         "price_momentum_6m",
+                         "price_momentum_1y",
+                         "price_momentum_5d",
+                         "price_momentum_3y",
+                         "price_momentum_5y"
+                         ]
 
     available_cols = [col for col in momentum_cols if col in df.columns]
 
@@ -1273,7 +1276,7 @@ def kalman_momentum_filter(
     return result
 
 
-def fit_gaussian_copula(df: pd.DataFrame, features: list, n_simulations: int = 10000) -> dict:
+def fit_gaussian_copula(df: pd.DataFrame, features: list, n_simulations: int = 25000) -> dict:
     """
     Fit Gaussian copula to capture dependency structure between features.
 
@@ -1303,7 +1306,7 @@ def fit_gaussian_copula(df: pd.DataFrame, features: list, n_simulations: int = 1
 
     Examples
     --------
-    >>> copula = fit_gaussian_copula(df, ['roe', 'debt_to_equity', 'p_e_ratio'])
+    >>> copula = fit_gaussian_copula(df,['roe', 'debt_to_equity', 'p_e_ratio'])
     >>> print(copula['correlation_matrix'])
     """
     # Filter to available features

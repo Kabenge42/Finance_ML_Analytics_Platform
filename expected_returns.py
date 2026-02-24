@@ -54,6 +54,8 @@ from finance_ml.analytics.data_utils import (
     export_to_json,
     ProbExportPolicy,
     aggregate_probability_results,
+    validate_feature_alignment,
+    compute_metric_statistics,
 )
 
 # --- Statistical analysis ---
@@ -79,7 +81,17 @@ from finance_ml.analytics.probability_analytics import (
 # --- Optimised operations ---
 from finance_ml.analytics.optimized_ops import (
     fast_monte_carlo_simulation,
+    fast_ruin_probability,
+    vectorized_zscore,
+    vectorized_percentile_rank,
     get_optimization_status,
+)
+
+# --- Screening (quality filtering of results) ---
+from finance_ml.analytics.screening import (
+    create_enhanced_screener,
+    screen_financial_health,
+    rank_stocks_by_composite_score,
 )
 
 # --- InferenceData schema (ArviZ / xarray bridge) ---
@@ -104,6 +116,12 @@ from finance_ml.analytics.visualizations.probability_viz import (
     create_tri_model_posterior_comparison,
 )
 
+# --- Quality & risk visualizations ---
+from finance_ml.analytics.visualizations.quality_risk import (
+    create_quality_risk_quadrant,
+    create_distress_early_warning_dashboard,
+)
+
 # --- Other visualizations ---
 from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
 
@@ -113,20 +131,174 @@ warnings.filterwarnings("ignore")
 
 logger = logging.getLogger(__name__)
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Helper: Per-Model Detailed Statistics
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def compute_model_detailed_statistics(
+    df: pd.DataFrame,
+    model_name: str,
+    key_columns: list[str],
+    group_col: str = "industry",
+) -> dict:
+    """
+    Compute granular statistics for a model's output DataFrame.
+
+    Uses ``compute_metric_statistics`` for each key column and adds
+    distribution shape metrics (skewness, kurtosis), inter-model
+    consistency indicators, and sector-level breakdowns.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Model output DataFrame.
+    model_name : str
+        Human-readable model name for logging.
+    key_columns : list[str]
+        Columns to compute statistics on.
+    group_col : str, default "industry"
+        Column for sector-level breakdown.
+
+    Returns
+    -------
+    dict
+        Nested dict: ``{column_name: {global_stats, distribution_shape, sector_breakdown}}``.
+    """
+    if df.empty:
+        logger.warning("compute_model_detailed_statistics: %s — empty DataFrame", model_name)
+        return {}
+
+    results = {}
+    for col in key_columns:
+        if col not in df.columns:
+            continue
+
+        # Core stats from compute_metric_statistics
+        base_stats = compute_metric_statistics(df[col])
+        if base_stats is None:
+            continue
+
+        series = pd.to_numeric(df[col], errors="coerce").dropna()
+
+        # Distribution shape metrics
+        shape_stats = {}
+        if len(series) > 3:
+            shape_stats["skewness"] = float(series.skew())
+            shape_stats["kurtosis"] = float(series.kurtosis())
+            shape_stats["iqr"] = float(base_stats["q75"] - base_stats["q25"])
+            shape_stats["coefficient_of_variation"] = (
+                float(series.std() / series.mean()) if series.mean() != 0 else None
+            )
+            # Tail risk: percentage beyond ±2 std deviations
+            mean, std = series.mean(), series.std()
+            if std > 0:
+                shape_stats["pct_beyond_2std"] = float(
+                    ((series < mean - 2 * std) | (series > mean + 2 * std)).sum()
+                    / len(series) * 100
+                )
+
+        # Sector-level breakdown
+        sector_breakdown = {}
+        if group_col in df.columns:
+            for sector, group in df.groupby(group_col):
+                sector_stats = compute_metric_statistics(group[col])
+                if sector_stats:
+                    sector_breakdown[str(sector)] = {
+                        "count": sector_stats["count"],
+                        "mean": sector_stats["mean"],
+                        "median": sector_stats["median"],
+                        "std": sector_stats["std"],
+                    }
+
+        results[col] = {
+            "global": base_stats,
+            "distribution_shape": shape_stats,
+            "sector_breakdown": sector_breakdown,
+        }
+
+    logger.info(
+        "%s: computed detailed statistics for %d / %d columns",
+        model_name, len(results), len(key_columns),
+    )
+    return results
+
+
+def print_model_statistics(
+    stats: dict,
+    model_name: str,
+    show_sectors: bool = False,
+    top_n_sectors: int = 5,
+) -> None:
+    """Pretty-print the detailed statistics from compute_model_detailed_statistics."""
+    if not stats:
+        return
+
+    print(f"\n  📊 {model_name} — Detailed Statistics:")
+    for col, info in stats.items():
+        g = info["global"]
+        s = info.get("distribution_shape", {})
+        print(f"    ▸ {col}:")
+        print(
+            f"        Count: {g['count']:,}  |  Mean: {g['mean']:.2f}  |  "
+            f"Median: {g['median']:.2f}  |  Std: {g['std']:.2f}"
+        )
+        print(
+            f"        Min: {g['min']:.2f}  |  Max: {g['max']:.2f}  |  "
+            f"IQR: [{g['q25']:.2f}, {g['q75']:.2f}]"
+        )
+        print(
+            f"        Positive: {g['positive_pct']:.1f}%  |  "
+            f"Missing: {g['missing_pct']:.1f}%"
+        )
+        if s:
+            print(
+                f"        Skew: {s.get('skewness', 0):.3f}  |  "
+                f"Kurtosis: {s.get('kurtosis', 0):.3f}  |  "
+                f"CV: {s.get('coefficient_of_variation', 0):.3f}"
+            )
+            if "pct_beyond_2std" in s:
+                print(f"        Outliers (>2σ): {s['pct_beyond_2std']:.1f}%")
+
+        if show_sectors and info.get("sector_breakdown"):
+            sorted_sectors = sorted(
+                info["sector_breakdown"].items(),
+                key=lambda x: x[1]["mean"],
+                reverse=True,
+            )[:top_n_sectors]
+            print(f"        Top {top_n_sectors} sectors by mean:")
+            for sector, sinfo in sorted_sectors:
+                print(
+                    f"          {sector}: mean={sinfo['mean']:.2f}, "
+                    f"median={sinfo['median']:.2f}, n={sinfo['count']}"
+                )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 1. Data Loading
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Views to load and merge for expected returns analysis
 _EXPECTED_RETURN_VIEWS = [
+    # ,Name
     "vw_features_analyst_sentiment",
-    "vw_features_profitability",
+    "vw_features_balance_sheet",
+    "vw_features_cashflow",
+    "vw_features_composite_scores",
+    "vw_features_cost_structure",
+    "vw_features_dividends",
     "vw_features_earnings",
-    "vw_features_temporal",
-    "vw_features_quality_risk",
+    "vw_features_employment",
     "vw_features_growth",
+    "vw_features_leverage_liquidity",
     "vw_features_momentum",
+    "vw_features_profitability",
+    "vw_features_quality_risk",
     "vw_features_technical_analysis",
+    "vw_features_temporal",
+    "vw_features_unusual_items",
+    "vw_features_valuation_ratios",
 ]
 
 
@@ -165,7 +337,7 @@ def _fetch_backfill_columns(
     along with *join_col* for merging.
     """
     select_cols = [f'"{join_col}"'] + [f'"{c}"' for c in column_alias]
-    query = f"SELECT {', '.join(select_cols)} FROM public.equities"
+    query = f"SELECT {', '.join(select_cols)} FROM public.mv_equities"
     with engine.connect() as conn:
         return pd.read_sql(query, conn)
 
@@ -278,6 +450,19 @@ def load_expected_returns_data(
     if df is not None and not df.empty:
         df = backfill_feature_columns(df)
         df = _backfill_market_data_columns(df, db_url=db_url)
+
+        # Validate feature coverage against expected categories
+        from finance_ml.analytics.feature_analytics import FEATURE_CATEGORIES
+
+        validation = validate_feature_alignment(df, FEATURE_CATEGORIES)
+        low_coverage = {k: v for k, v in validation.items() if v["coverage_pct"] < 50}
+        if low_coverage:
+            logger.warning(
+                "Low feature coverage in %d categories: %s",
+                len(low_coverage),
+                {k: f"{v['coverage_pct']:.0f}%" for k, v in low_coverage.items()},
+            )
+
         logger.info(
             "Loaded expected returns data: %d stocks × %d features",
             len(df),
@@ -370,6 +555,7 @@ def run_monte_carlo_analysis(
 
     mc = monte_carlo_price_target_simulation(df, n_simulations=n_simulations, max_stocks=max_stocks)
     logger.info("Monte Carlo simulation: %d stocks processed", len(mc))
+
     return mc
 
 
@@ -453,6 +639,87 @@ def run_earnings_beat_analysis(df: pd.DataFrame) -> pd.DataFrame:
     return beat
 
 
+def run_credit_risk_analysis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Run credit risk and ruin probability analysis.
+
+    Uses ``CreditRiskProbabilityModel`` for Bayesian distress estimation
+    and ``fast_ruin_probability`` for Monte Carlo ruin simulation.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Feature DataFrame with quality/risk columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        Credit risk results with ``distress_probability``, ``risk_level``,
+        and ``ruin_probability``.
+    """
+    # Bayesian credit risk model
+    credit_model = CreditRiskProbabilityModel()
+    credit = credit_model.analyze_dataframe(df)
+
+    # Merge with fast ruin probability (Numba-accelerated MC simulation)
+    ruin = fast_ruin_probability(df, n_simulations=2000, n_days=252)
+    if not ruin.empty and not credit.empty and "ticker" in ruin.columns:
+        credit = credit.merge(
+            ruin[["ticker", "ruin_probability", "survival_probability", "risk_tier"]],
+            on="ticker",
+            how="left",
+            suffixes=("", "_mc"),
+        )
+
+    logger.info("Credit risk analysis: %d stocks processed", len(credit))
+    return credit
+
+
+def filter_quality_stocks(
+    summary: pd.DataFrame,
+    source_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Apply quality screening to the expected returns summary.
+
+    Enriches the summary with a ``quality_tier`` from composite scoring
+    and flags financially healthy stocks.
+
+    Parameters
+    ----------
+    summary : pd.DataFrame
+        Expected returns summary (4-model merge).
+    source_df : pd.DataFrame
+        Original feature DataFrame for screening.
+
+    Returns
+    -------
+    pd.DataFrame
+        Summary enriched with ``composite_score`` and ``quality_tier``.
+    """
+    if summary.empty or source_df.empty:
+        return summary
+
+    # Rank by composite quality score
+    ranked = rank_stocks_by_composite_score(source_df)
+    if "composite_score" in ranked.columns and "ticker" in ranked.columns:
+        score_map = ranked.set_index("ticker")["composite_score"]
+        summary["composite_score"] = summary["ticker"].map(score_map)
+
+        summary["quality_tier"] = pd.cut(
+            summary["composite_score"],
+            bins=[0, 30, 50, 70, 100],
+            labels=["Low", "Below Avg", "Above Avg", "High"],
+        )
+        logger.info(
+            "Quality scoring: %d High, %d Above Avg",
+            (summary["quality_tier"] == "High").sum(),
+            (summary["quality_tier"] == "Above Avg").sum(),
+        )
+
+    return summary
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 3. Tri-Model & Quad-Model Alignment
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -507,12 +774,27 @@ def build_tri_model_alignment(
     # Select columns for merge — include identifier cols from MC (most complete)
     id_cols_set = get_identifier_cols_set()
     mc_id_cols = [c for c in mc.columns if c in id_cols_set]
-    mc_select = list(set(mc_id_cols + ["ticker", "expected_upside_pct", "prob_positive_upside"]))
+    mc_select = list(
+        set(
+            mc_id_cols
+            + [
+                "ticker",
+                "expected_upside_pct",
+                "prob_positive_upside",
+                "var_5_pct",
+                "risk_reward_ratio",
+            ]
+        )
+    )
 
     tri = (
         mc[mc_select]
         .copy()
-        .merge(kal[["ticker", "filtered_upside"]], on="ticker", how="inner")
+        .merge(
+            kal[["ticker", "filtered_upside", "kalman_estimate", "kalman_variance"]],
+            on="ticker",
+            how="inner",
+        )
         .merge(
             pt[
                 [
@@ -520,6 +802,9 @@ def build_tri_model_alignment(
                     "expected_return_prob_weighted",
                     "achievement_probability",
                     "confidence_level",
+                    "analyst_conviction",
+                    "eps_revision_momentum",
+                    "analyst_rating_normalized",
                 ]
             ],
             on="ticker",
@@ -603,6 +888,7 @@ def build_expected_returns_summary(
     kal: pd.DataFrame,
     pt: pd.DataFrame,
     earn: pd.DataFrame,
+    source_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """
     Merge four expected-return model results into a unified summary DataFrame.
@@ -611,6 +897,9 @@ def build_expected_returns_summary(
     price target achievement, and earnings probability analysis into a
     single ``expected_returns_summary`` table with direction agreement
     scoring across all four models.
+
+    Follows the same pattern as the ``tri`` DataFrame in
+    ``ExpectedReturnsAnalytics.ipynb`` but extends it to four models.
 
     Parameters
     ----------
@@ -622,6 +911,11 @@ def build_expected_returns_summary(
         Price target achievement results (``analytics.price_target_achievement``).
     earn : pd.DataFrame
         Earnings probability analysis (``analytics.earnings_probability_analysis``).
+    source_df : pd.DataFrame or None, optional
+        The underlying ``mv_all_stock_features`` DataFrame.  When provided,
+        identifier and market-data columns are joined from this source so
+        that the exported summary carries the full set of columns even when
+        individual model DataFrames only contain a subset.
 
     Returns
     -------
@@ -663,7 +957,8 @@ def build_expected_returns_summary(
     mc_select = list(
         set(
             mc_id_cols
-            + ["ticker", "expected_upside_pct", "prob_positive_upside"]
+            + ["ticker", "expected_upside_pct", "prob_positive_upside", "var_5_pct",
+               "risk_reward_ratio"]
             + available_market
         )
     )
@@ -672,7 +967,7 @@ def build_expected_returns_summary(
         mc[mc_select]
         .copy()
         .merge(
-            kal[["ticker", "filtered_upside"]],
+            kal[["ticker", "filtered_upside", "kalman_estimate"]],
             on="ticker",
             how="inner",
         )
@@ -681,8 +976,12 @@ def build_expected_returns_summary(
                 [
                     "ticker",
                     "expected_return_prob_weighted",
+                    "price_target_prob_weighted",
                     "achievement_probability",
                     "confidence_level",
+                    "analyst_conviction",
+                    "eps_revision_momentum",
+                    "analyst_rating_normalized",
                 ]
             ],
             on="ticker",
@@ -699,6 +998,22 @@ def build_expected_returns_summary(
         logger.warning("Expected returns summary: no overlapping tickers across all 4 models")
         return summary
 
+    # --- Enrich with identifier + market-data columns from source_df ---
+    if source_df is not None and "ticker" in source_df.columns:
+        id_cols_ordered = load_identifier_columns()
+        # Columns we want from source_df but don't already have in summary
+        desired_cols = id_cols_ordered + market_data_cols
+        missing_cols = [
+            c for c in desired_cols if c in source_df.columns and c not in summary.columns
+        ]
+        if missing_cols:
+            source_subset = source_df[["ticker"] + missing_cols].drop_duplicates(subset="ticker")
+            summary = summary.merge(source_subset, on="ticker", how="left")
+            logger.info(
+                "Enriched expected_returns_summary with %d columns from source_df",
+                len(missing_cols),
+            )
+
     # Direction flags
     summary["mc_bullish"] = summary["expected_upside_pct"] > 0
     summary["kal_bullish"] = summary["filtered_upside"] > 0
@@ -707,12 +1022,27 @@ def build_expected_returns_summary(
 
     # Agreement score: 0–4
     summary["agreement_score"] = (
-            summary["mc_bullish"].astype(int)
-            + summary["kal_bullish"].astype(int)
-            + summary["pt_bullish"].astype(int)
-            + summary["earn_bullish"].astype(int)
+        summary["mc_bullish"].astype(int)
+        + summary["kal_bullish"].astype(int)
+        + summary["pt_bullish"].astype(int)
+        + summary["earn_bullish"].astype(int)
     )
     summary["signal"] = summary["agreement_score"].map(_SIGNAL_LABELS_4)
+
+    # Confidence-weighted agreement (continuous 0–4 scale)
+    mc_weight = summary["prob_positive_upside"].clip(0, 100) / 100.0
+    kal_weight = 0.5  # Kalman has uniform confidence (smoothing filter)
+    pt_weight = (
+        summary["confidence_level"].map({"High": 0.9, "Medium": 0.6, "Low": 0.3}).fillna(0.5)
+    )
+    earn_weight = summary["confidence_score"].clip(0, 1)
+
+    summary["weighted_agreement"] = (
+        summary["mc_bullish"].astype(float) * mc_weight
+        + summary["kal_bullish"].astype(float) * kal_weight
+        + summary["pt_bullish"].astype(float) * pt_weight
+        + summary["earn_bullish"].astype(float) * earn_weight
+    )
 
     logger.info(
         "Expected returns summary: %d stocks, %d strong bullish (4/4)",
@@ -759,6 +1089,89 @@ def extract_strong_consensus(
     logger.info("Strong consensus picks: %d stocks", len(strong))
     return strong
 
+def compute_price_target_prob_weighted(
+        pt: pd.DataFrame,
+        source_df: pd.DataFrame,
+        price_col: str = "last_price",
+        return_col: str = "expected_return_prob_weighted",
+        output_col: str = "price_target_prob_weighted",
+) -> pd.DataFrame:
+    """
+    Calculate the expected price target from the probability-weighted return.
+
+    Merges ``last_price`` from the source feature DataFrame into the
+    Price Target Achievement results, then computes::
+
+        price_target_prob_weighted = last_price * (1 + expected_return_prob_weighted / 100)
+
+    The ``expected_return_prob_weighted`` column produced by
+    ``PriceTargetAchievementModel`` is ``upside_potential * achievement_probability``
+    expressed as a percentage, so we divide by 100 before applying it.
+
+    Parameters
+    ----------
+    pt : pd.DataFrame
+        Price Target Achievement results (from ``run_price_target_achievement``).
+        Must contain ``ticker`` and *return_col*.
+    source_df : pd.DataFrame
+        Original feature DataFrame containing ``ticker`` and *price_col*.
+    price_col : str, default "last_price"
+        Column in *source_df* with the current stock price.
+    return_col : str, default "expected_return_prob_weighted"
+        Column in *pt* with the probability-weighted expected return (%).
+    output_col : str, default "price_target_prob_weighted"
+        Name of the new column to create.
+
+    Returns
+    -------
+    pd.DataFrame
+        Copy of *pt* enriched with *price_col* and *output_col*.
+    """
+    if pt.empty:
+        logger.warning("compute_price_target_prob_weighted: empty input — skipping")
+        return pt
+
+    result = pt.copy()
+
+    # Merge last_price from the source DataFrame if not already present
+    if price_col not in result.columns:
+        if "ticker" not in source_df.columns or price_col not in source_df.columns:
+            logger.warning(
+                "Cannot compute %s — '%s' or 'ticker' missing from source_df",
+                output_col,
+                price_col,
+            )
+            result[output_col] = np.nan
+            return result
+
+        price_map = (
+            source_df[["ticker", price_col]]
+            .drop_duplicates(subset="ticker")
+            .set_index("ticker")[price_col]
+        )
+        result[price_col] = result["ticker"].map(price_map)
+
+    # Compute: price_target_prob_weighted = last_price * (1 + return_pct / 100)
+    with np.errstate(invalid="ignore"):
+        result[output_col] = (
+                result[price_col] * (1 + result[return_col] / 100.0)
+        )
+
+    result[output_col] = result[output_col].replace([np.inf, -np.inf], np.nan)
+
+    valid_count = result[output_col].notna().sum()
+    logger.info(
+        "Computed %s for %d / %d stocks (mean=%.2f)",
+        output_col,
+        valid_count,
+        len(result),
+        result[output_col].mean() if valid_count > 0 else 0.0,
+    )
+
+    return result
+
+
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 4. Analytical Helpers
@@ -799,6 +1212,126 @@ def compute_sector_expected_returns(tri: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def compute_sector_return_analytics(
+    summary: pd.DataFrame,
+    group_col: str = "industry",
+) -> pd.DataFrame:
+    """
+    Extended sector-level analytics with confidence intervals,
+    distribution shape, and hit-rate diagnostics.
+
+    Parameters
+    ----------
+    summary : pd.DataFrame
+        Expected returns summary (from ``build_expected_returns_summary``).
+    group_col : str, default "industry"
+        Column to group by.
+
+    Returns
+    -------
+    pd.DataFrame
+        Per-sector DataFrame with:
+        - Mean, median, std for each model
+        - 95% confidence interval for mean upside
+        - Skewness and kurtosis per sector
+        - Bullish hit rate (% with agreement_score >= 3)
+        - Full consensus rate (agreement_score == 4)
+        - Mean weighted_agreement
+        - Risk-adjusted return (mean_upside / std)
+    """
+    if summary.empty or group_col not in summary.columns:
+        return pd.DataFrame()
+
+    results = []
+    for sector, group in summary.groupby(group_col):
+        n = len(group)
+        row = {"sector": sector, "count": n}
+
+        for col, prefix in [
+            ("expected_upside_pct", "mc"),
+            ("filtered_upside", "kalman"),
+            ("expected_return_prob_weighted", "pt"),
+        ]:
+            if col in group.columns:
+                s = group[col].dropna()
+                row[f"{prefix}_mean"] = float(s.mean()) if len(s) > 0 else None
+                row[f"{prefix}_median"] = float(s.median()) if len(s) > 0 else None
+                row[f"{prefix}_std"] = float(s.std()) if len(s) > 1 else None
+                # 95% CI for mean
+                if len(s) > 1:
+                    se = s.std() / np.sqrt(len(s))
+                    row[f"{prefix}_ci_low"] = float(s.mean() - 1.96 * se)
+                    row[f"{prefix}_ci_high"] = float(s.mean() + 1.96 * se)
+                # Distribution shape
+                if len(s) > 3:
+                    row[f"{prefix}_skew"] = float(s.skew())
+                    row[f"{prefix}_kurtosis"] = float(s.kurtosis())
+
+        # Agreement metrics
+        if "agreement_score" in group.columns:
+            row["pct_bullish_3plus"] = float((group["agreement_score"] >= 3).mean() * 100)
+            row["pct_full_consensus"] = float((group["agreement_score"] == 4).mean() * 100)
+        if "weighted_agreement" in group.columns:
+            row["mean_weighted_agreement"] = float(group["weighted_agreement"].mean())
+
+        # Risk-adjusted return (Sharpe-like)
+        if "expected_upside_pct" in group.columns:
+            mc_mean = group["expected_upside_pct"].mean()
+            mc_std = group["expected_upside_pct"].std()
+            row["risk_adjusted_return"] = (
+                float(mc_mean / mc_std) if mc_std > 0 else None
+            )
+
+        # Beat probability mean
+        if "posterior_beat_prob" in group.columns:
+            row["mean_beat_prob"] = float(group["posterior_beat_prob"].mean())
+
+        results.append(row)
+
+    return (
+        pd.DataFrame(results)
+        .sort_values("mc_mean", ascending=False, na_position="last")
+        .reset_index(drop=True)
+    )
+
+
+def compute_return_zscore_ranks(
+    summary: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Add industry-relative z-scores and percentile ranks for key return metrics.
+
+    Uses ``vectorized_zscore`` and ``vectorized_percentile_rank`` from
+    ``optimized_ops`` for efficient computation.
+
+    Parameters
+    ----------
+    summary : pd.DataFrame
+        Expected returns summary with model outputs.
+
+    Returns
+    -------
+    pd.DataFrame
+        Summary enriched with z-score and percentile columns.
+    """
+    if summary.empty:
+        return summary
+
+    return_cols = [
+        c
+        for c in ["expected_upside_pct", "filtered_upside", "expected_return_prob_weighted"]
+        if c in summary.columns
+    ]
+    group_col = "industry" if "industry" in summary.columns else None
+
+    if return_cols:
+        summary = vectorized_zscore(summary, return_cols, group_col=group_col)
+        summary = vectorized_percentile_rank(summary, return_cols, group_col=group_col)
+        logger.info("Added z-scores and percentile ranks for %d return metrics", len(return_cols))
+
+    return summary
+
+
 def compute_cross_model_correlation(
     mc: pd.DataFrame,
     kal: pd.DataFrame,
@@ -832,14 +1365,211 @@ def compute_cross_model_correlation(
 
     if len(merged) > 50:
         try:
-            copula = fit_gaussian_copula(
-                merged,
-                features=["expected_upside_pct", "filtered_upside"],
-            )
+            copula = fit_gaussian_copula(merged, features=["expected_upside_pct", "filtered_upside"])
             if copula:
                 result["tail_dependence"] = copula.get("tail_dependence")
         except Exception as e:
             logger.debug("Copula fit skipped: %s", e)
+
+    return result
+
+
+def compute_cross_model_diagnostics(
+    summary: pd.DataFrame,
+) -> dict:
+    """
+    Comprehensive cross-model dispersion and convergence diagnostics.
+
+    Computes pairwise Pearson & Spearman correlations, mean absolute
+    dispersion between model returns, tail-agreement rates, and
+    identification of stocks where models strongly disagree.
+
+    Parameters
+    ----------
+    summary : pd.DataFrame
+        Expected returns summary (4-model merge) with columns:
+        ``expected_upside_pct``, ``filtered_upside``,
+        ``expected_return_prob_weighted``, ``posterior_beat_prob``.
+
+    Returns
+    -------
+    dict
+        Diagnostics including:
+        - ``pairwise_pearson``: pairwise Pearson correlation matrix
+        - ``pairwise_spearman``: pairwise Spearman rank correlation matrix
+        - ``mean_absolute_dispersion``: per-stock mean absolute deviation across models
+        - ``tail_agreement``: % of stocks where all 3 return models agree on sign
+        - ``high_dispersion_tickers``: top stocks with largest inter-model disagreement
+        - ``model_bias``: per-model mean return and systematic offset
+    """
+    if summary.empty:
+        return {}
+
+    return_cols = ["expected_upside_pct", "filtered_upside", "expected_return_prob_weighted"]
+    available_return_cols = [c for c in return_cols if c in summary.columns]
+    if len(available_return_cols) < 2:
+        return {}
+
+    returns_df = summary[available_return_cols].dropna()
+
+    # Pairwise correlations
+    pearson_corr = returns_df.corr(method="pearson").to_dict()
+    spearman_corr = returns_df.corr(method="spearman").to_dict()
+
+    # Mean absolute dispersion per stock (spread across models)
+    row_means = returns_df.mean(axis=1)
+    mad_per_stock = returns_df.sub(row_means, axis=0).abs().mean(axis=1)
+    summary_copy = summary.loc[returns_df.index].copy()
+    summary_copy["model_dispersion"] = mad_per_stock
+
+    # Tail agreement: all return models agree on direction
+    direction_agreement = (returns_df > 0).nunique(axis=1) == 1
+    tail_agreement_pct = float(direction_agreement.mean() * 100)
+
+    # High-dispersion tickers (models disagree the most)
+    high_disp = pd.DataFrame()
+    if "ticker" in summary.columns:
+        summary_copy["ticker"] = summary.loc[returns_df.index, "ticker"].values
+        high_disp = (
+            summary_copy.nlargest(20, "model_dispersion")[
+                ["ticker", "model_dispersion"] + available_return_cols
+            ]
+        )
+
+    # Per-model bias (mean return)
+    model_bias = {col: float(returns_df[col].mean()) for col in available_return_cols}
+
+    # Concordance: Kendall's tau across models
+    try:
+        from scipy.stats import kendalltau
+        concordance_pairs = {}
+        for i, c1 in enumerate(available_return_cols):
+            for c2 in available_return_cols[i + 1:]:
+                tau, p = kendalltau(returns_df[c1], returns_df[c2])
+                concordance_pairs[f"{c1} ↔ {c2}"] = {
+                    "kendall_tau": float(tau),
+                    "p_value": float(p),
+                }
+    except Exception:
+        concordance_pairs = {}
+
+    result = {
+        "pairwise_pearson": pearson_corr,
+        "pairwise_spearman": spearman_corr,
+        "kendall_concordance": concordance_pairs,
+        "mean_dispersion": float(mad_per_stock.mean()),
+        "median_dispersion": float(mad_per_stock.median()),
+        "tail_agreement_pct": tail_agreement_pct,
+        "high_dispersion_tickers": high_disp,
+        "model_bias": model_bias,
+        "n_stocks": len(returns_df),
+    }
+
+    logger.info(
+        "Cross-model diagnostics: tail agreement=%.1f%%, mean dispersion=%.2f",
+        tail_agreement_pct,
+        result["mean_dispersion"],
+    )
+    return result
+
+
+def compute_return_distribution_analytics(
+    mc: pd.DataFrame,
+    summary: pd.DataFrame | None = None,
+) -> dict:
+    """
+    Fit parametric distributions to MC simulation returns, compute
+    extended risk metrics (CVaR, Sortino-like downside deviation),
+    and segment the return distribution into risk/opportunity tiers.
+
+    Parameters
+    ----------
+    mc : pd.DataFrame
+        Monte Carlo simulation results with ``expected_upside_pct``,
+        ``var_5_pct``, ``prob_positive_upside``.
+    summary : pd.DataFrame, optional
+        If provided, also computes distribution stats for the
+        ensemble return (mean across models).
+
+    Returns
+    -------
+    dict
+        ``mc_distribution``: best-fit distribution, params, KS-test p-value
+        ``risk_metrics``: VaR 1%, CVaR 5%, downside deviation, max drawdown proxy
+        ``opportunity_tiers``: counts by tier (high-conviction, moderate, speculative, avoid)
+        ``ensemble_distribution``: stats for mean-of-models return (if summary provided)
+    """
+    result = {}
+
+    if mc.empty or "expected_upside_pct" not in mc.columns:
+        return result
+
+    upside = mc["expected_upside_pct"].dropna().values
+
+    # --- Parametric distribution fitting ---
+    best_dist = None
+    best_aic = np.inf
+    candidates = [sp_stats.norm, sp_stats.t, sp_stats.skewnorm, sp_stats.laplace]
+
+    for dist in candidates:
+        try:
+            params = dist.fit(upside)
+            log_lik = dist.logpdf(upside, *params).sum()
+            k = len(params)
+            aic = 2 * k - 2 * log_lik
+            if aic < best_aic:
+                best_aic = aic
+                best_dist = {
+                    "name": dist.name,
+                    "params": params,
+                    "aic": float(aic),
+                    "ks_statistic": float(sp_stats.kstest(upside, dist.cdf, args=params).statistic),
+                    "ks_pvalue": float(sp_stats.kstest(upside, dist.cdf, args=params).pvalue),
+                }
+        except Exception:
+            continue
+
+    result["mc_distribution"] = best_dist
+
+    # --- Extended risk metrics ---
+    var_1 = float(np.percentile(upside, 1))
+    var_5 = float(np.percentile(upside, 5))
+    cvar_5 = float(upside[upside <= var_5].mean()) if (upside <= var_5).any() else var_5
+    downside = upside[upside < 0]
+    downside_deviation = float(np.sqrt((downside ** 2).mean())) if len(downside) > 0 else 0.0
+
+    result["risk_metrics"] = {
+        "var_1_pct": var_1,
+        "var_5_pct": var_5,
+        "cvar_5_pct": cvar_5,
+        "downside_deviation": downside_deviation,
+        "upside_capture": float((upside > 0).mean() * 100),
+        "mean_positive_return": float(upside[upside > 0].mean()) if (upside > 0).any() else 0.0,
+        "mean_negative_return": float(downside.mean()) if len(downside) > 0 else 0.0,
+        "gain_loss_ratio": (
+            float(upside[upside > 0].mean() / abs(downside.mean()))
+            if len(downside) > 0 and downside.mean() != 0
+            else None
+        ),
+    }
+
+    # --- Opportunity tiers ---
+    result["opportunity_tiers"] = {
+        "high_conviction": int(((upside > 20) & (mc["prob_positive_upside"].values > 70)).sum())
+        if "prob_positive_upside" in mc.columns else 0,
+        "moderate": int(((upside > 0) & (upside <= 20)).sum()),
+        "speculative": int(((upside > 0) & (mc.get("prob_positive_upside", pd.Series(dtype=float)).values < 50)).sum())
+        if "prob_positive_upside" in mc.columns else 0,
+        "avoid": int((upside <= 0).sum()),
+    }
+
+    # --- Ensemble distribution (mean across models) ---
+    if summary is not None and not summary.empty:
+        ensemble_cols = ["expected_upside_pct", "filtered_upside", "expected_return_prob_weighted"]
+        available = [c for c in ensemble_cols if c in summary.columns]
+        if available:
+            ensemble_return = summary[available].mean(axis=1).dropna()
+            result["ensemble_distribution"] = compute_metric_statistics(ensemble_return)
 
     return result
 
@@ -1189,6 +1919,228 @@ def create_beat_vs_achievement_scatter(
     return fig
 
 
+def create_model_dispersion_dashboard(summary: pd.DataFrame) -> go.Figure:
+    """
+    Four-panel dashboard showing inter-model agreement/dispersion analytics.
+
+    Panels:
+    1. Distribution of model dispersion per stock
+    2. Agreement score vs weighted agreement scatter
+    3. Sector-level model consensus heatmap
+    4. High-dispersion stocks (models disagree the most)
+    """
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=(
+            "Inter-Model Dispersion Distribution",
+            "Discrete vs Weighted Agreement",
+            "Sector Consensus Rate (% All Bullish)",
+            "Highest Model Disagreement Stocks",
+        ),
+        specs=[
+            [{"type": "histogram"}, {"type": "scatter"}],
+            [{"type": "bar"}, {"type": "bar"}],
+        ],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1,
+    )
+
+    return_cols = ["expected_upside_pct", "filtered_upside", "expected_return_prob_weighted"]
+    available = [c for c in return_cols if c in summary.columns]
+    dispersion = pd.Series(dtype=float)
+
+    if len(available) >= 2:
+        returns_df = summary[available].dropna()
+        row_mean = returns_df.mean(axis=1)
+        dispersion = returns_df.sub(row_mean, axis=0).abs().mean(axis=1)
+
+        # Panel 1: Dispersion histogram
+        fig.add_trace(
+            go.Histogram(
+                x=dispersion, nbinsx=60, marker_color=COLORS[0], opacity=0.75,
+                name="Model Dispersion",
+            ),
+            row=1, col=1,
+        )
+        fig.add_vline(
+            x=dispersion.median(), line_dash="dot", line_color="green",
+            annotation_text=f"Median: {dispersion.median():.1f}", row=1, col=1,
+        )
+
+    # Panel 2: Discrete vs weighted agreement
+    if "agreement_score" in summary.columns and "weighted_agreement" in summary.columns:
+        sample = summary.dropna(subset=["agreement_score", "weighted_agreement"]).sample(
+            min(2000, len(summary)), random_state=42,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sample["agreement_score"],
+                y=sample["weighted_agreement"],
+                mode="markers",
+                marker=dict(size=4, opacity=0.4, color=COLORS[1]),
+                name="Stocks",
+                hovertemplate=(
+                    "Score: %{x}<br>Weighted: %{y:.2f}<extra></extra>"
+                ),
+            ),
+            row=1, col=2,
+        )
+
+    # Panel 3: Sector consensus rate
+    group_col = "industry" if "industry" in summary.columns else "sector"
+    if group_col in summary.columns and "agreement_score" in summary.columns:
+        consensus = (
+            summary.groupby(group_col)["agreement_score"]
+            .apply(lambda x: (x == 4).mean() * 100)
+            .sort_values(ascending=True)
+            .tail(20)
+        )
+        fig.add_trace(
+            go.Bar(
+                x=consensus.values, y=consensus.index.astype(str),
+                orientation="h", marker_color=COLORS[2], name="% Full Consensus",
+            ),
+            row=2, col=1,
+        )
+
+    # Panel 4: Highest disagreement stocks
+    if len(available) >= 2 and "ticker" in summary.columns and not dispersion.empty:
+        summary_disp = summary.copy()
+        summary_disp["_dispersion"] = dispersion
+        top_disagree = summary_disp.nlargest(15, "_dispersion")
+        fig.add_trace(
+            go.Bar(
+                x=top_disagree["_dispersion"],
+                y=top_disagree["ticker"],
+                orientation="h",
+                marker_color=COLORS[3],
+                name="Dispersion",
+            ),
+            row=2, col=2,
+        )
+
+    fig.update_layout(
+        title="Cross-Model Dispersion & Agreement Dashboard",
+        template=PLOTLY_TEMPLATE,
+        height=900,
+        showlegend=False,
+    )
+    return fig
+
+
+def create_return_distribution_fit_chart(mc: pd.DataFrame) -> go.Figure:
+    """
+    Overlay histogram of MC returns with fitted parametric distribution
+    and annotated risk metrics (VaR, CVaR, downside deviation).
+    """
+    upside = mc["expected_upside_pct"].dropna().clip(-100, 300)
+
+    fig = go.Figure()
+
+    # Histogram
+    fig.add_trace(
+        go.Histogram(
+            x=upside, nbinsx=100, histnorm="probability density",
+            marker_color=COLORS[0], opacity=0.6, name="Observed",
+        )
+    )
+
+    # Fit best distribution
+    x_range = np.linspace(upside.min(), upside.max(), 300)
+    for dist, color, label in [
+        (sp_stats.norm, COLORS[1], "Normal"),
+        (sp_stats.t, COLORS[2], "Student-t"),
+        (sp_stats.skewnorm, COLORS[3], "Skew-Normal"),
+    ]:
+        try:
+            params = dist.fit(upside)
+            pdf = dist.pdf(x_range, *params)
+            fig.add_trace(
+                go.Scatter(
+                    x=x_range, y=pdf, mode="lines",
+                    line=dict(color=color, width=2),
+                    name=label,
+                )
+            )
+        except Exception:
+            continue
+
+    # Risk metric annotations
+    var_5 = float(np.percentile(upside, 5))
+    cvar_5 = float(upside[upside <= var_5].mean()) if (upside <= var_5).any() else var_5
+    fig.add_vline(x=var_5, line_dash="dash", line_color="red",
+                  annotation_text=f"VaR 5%: {var_5:.1f}%")
+    fig.add_vline(x=cvar_5, line_dash="dot", line_color="darkred",
+                  annotation_text=f"CVaR 5%: {cvar_5:.1f}%")
+    fig.add_vline(x=0, line_dash="dash", line_color="gray", opacity=0.5)
+
+    fig.update_layout(
+        title="MC Return Distribution — Parametric Fit Overlay",
+        xaxis_title="Expected Upside (%)",
+        yaxis_title="Density",
+        template=PLOTLY_TEMPLATE,
+        height=550,
+    )
+    return fig
+
+
+def create_sector_return_analytics_heatmap(
+    sector_analytics: pd.DataFrame,
+) -> go.Figure:
+    """
+    Enhanced sector heatmap including confidence intervals, consensus rates,
+    risk-adjusted returns, and beat probabilities.
+    """
+    if sector_analytics.empty or "sector" not in sector_analytics.columns:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No sector analytics data", x=0.5, y=0.5,
+            xref="paper", yref="paper", showarrow=False,
+        )
+        return fig
+
+    display_cols = [
+        c for c in [
+            "mc_mean", "mc_median", "kalman_mean", "pt_mean",
+            "pct_full_consensus", "mean_weighted_agreement",
+            "risk_adjusted_return", "mean_beat_prob",
+        ]
+        if c in sector_analytics.columns
+    ]
+    if not display_cols:
+        return go.Figure()
+
+    heatmap_data = sector_analytics.set_index("sector")[display_cols]
+
+    # Rename for display
+    rename_map = {
+        "mc_mean": "MC Mean %",
+        "mc_median": "MC Median %",
+        "kalman_mean": "Kalman Mean %",
+        "pt_mean": "Achiev. Mean %",
+        "pct_full_consensus": "Full Consensus %",
+        "mean_weighted_agreement": "Wtd Agreement",
+        "risk_adjusted_return": "Risk-Adj Return",
+        "mean_beat_prob": "Mean P(Beat)",
+    }
+    heatmap_data = heatmap_data.rename(columns=rename_map)
+
+    fig = px.imshow(
+        heatmap_data.round(2),
+        color_continuous_scale="RdYlGn",
+        text_auto=True,
+        aspect="auto",
+        title="Sector Expected Returns — Enhanced Analytics Heatmap",
+        labels={"color": "Value"},
+    )
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        height=max(600, len(sector_analytics) * 28),
+    )
+    return fig
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 6. Export Utilities
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1200,6 +2152,7 @@ def _reorder_with_identifiers(df: pd.DataFrame) -> pd.DataFrame:
     .. deprecated:: Use :func:`finance_ml.analytics.data_utils.reorder_with_identifiers` instead.
     """
     from finance_ml.analytics.data_utils import reorder_with_identifiers
+
     return reorder_with_identifiers(df)
 
 
@@ -1211,6 +2164,7 @@ def export_expected_returns_results(
     strong: pd.DataFrame,
     beat: pd.DataFrame,
     summary: pd.DataFrame = None,
+    credit: pd.DataFrame = None,
     output_dir: str = "outputs/analytics",
 ) -> dict[str, str]:
     """
@@ -1218,7 +2172,7 @@ def export_expected_returns_results(
 
     Parameters
     ----------
-    mc, pt, kal, tri, strong, beat, summary : pd.DataFrame
+    mc, pt, kal, tri, strong, beat, summary, credit : pd.DataFrame
         Model result DataFrames.
     output_dir : str
         Directory for HTML visualization exports.
@@ -1239,6 +2193,7 @@ def export_expected_returns_results(
         (strong, "strong_consensus_picks"),
         (beat, "earnings_probability_analysis"),
         (summary, "expected_returns_summary"),
+        (credit, "credit_risk_analysis"),
     ]
     for df, table in _EXPORT_PAIRS:
         if df is not None and not df.empty:
@@ -1323,6 +2278,29 @@ def main():
         print(f"  Mean upside:  {mc['expected_upside_pct'].mean():.1f}%")
         print(f"  Median upside: {mc['expected_upside_pct'].median():.1f}%")
         print(f"  Positive prob (mean): {mc['prob_positive_upside'].mean():.1f}%")
+
+        # NEW: Detailed MC statistics
+        mc_stats = compute_model_detailed_statistics(
+            mc, "Monte Carlo",
+            ["expected_upside_pct", "prob_positive_upside", "var_5_pct", "risk_reward_ratio"],
+        )
+        print_model_statistics(mc_stats, "Monte Carlo Simulation", show_sectors=True, top_n_sectors=5)
+
+        # NEW: Distribution fitting and risk decomposition
+        dist_analytics = compute_return_distribution_analytics(mc)
+        if dist_analytics.get("mc_distribution"):
+            d = dist_analytics["mc_distribution"]
+            print(f"\n  📐 Best-fit distribution: {d['name']} (AIC={d['aic']:.1f}, KS p={d['ks_pvalue']:.3f})")
+        if dist_analytics.get("risk_metrics"):
+            rm = dist_analytics["risk_metrics"]
+            print(f"  📉 VaR 1%: {rm['var_1_pct']:.1f}%  |  CVaR 5%: {rm['cvar_5_pct']:.1f}%")
+            print(f"     Downside deviation: {rm['downside_deviation']:.2f}")
+            if rm.get("gain_loss_ratio"):
+                print(f"     Gain/Loss ratio: {rm['gain_loss_ratio']:.2f}")
+        if dist_analytics.get("opportunity_tiers"):
+            t = dist_analytics["opportunity_tiers"]
+            print(f"  🏷️  Tiers: High-conviction={t['high_conviction']}, "
+                  f"Moderate={t['moderate']}, Speculative={t['speculative']}, Avoid={t['avoid']}")
     print()
 
     # ========================================================================
@@ -1335,7 +2313,41 @@ def main():
     if not pt.empty:
         print(f"✓ {len(pt):,} stocks analyzed")
         print(f"  Mean achievement prob: {pt['achievement_probability'].mean():.3f}")
+        print(f"  Median achievement prob: {pt['achievement_probability'].median():.3f}")
         print(f"  Mean prob-weighted return: {pt['expected_return_prob_weighted'].mean():.1f}%")
+        print(f"  Median prob-weighted return: {pt['expected_return_prob_weighted'].median():.1f}%")
+        print(f"  Std prob-weighted return: {pt['expected_return_prob_weighted'].std():.1f}%")
+
+        # Confidence level breakdown
+        if "confidence_level" in pt.columns:
+            conf_counts = pt["confidence_level"].value_counts()
+            print("  Confidence breakdown:")
+            for level in ["High", "Medium", "Low"]:
+                cnt = conf_counts.get(level, 0)
+                print(f"    {level}: {cnt}")
+
+        # Probability-weighted expected price target
+        pt = compute_price_target_prob_weighted(pt, df)
+        if "price_target_prob_weighted" in pt.columns:
+            valid_pt = pt.dropna(subset=["price_target_prob_weighted", "last_price"])
+            if not valid_pt.empty:
+                mean_price = valid_pt["last_price"].mean()
+                mean_target = valid_pt["price_target_prob_weighted"].mean()
+                median_target = valid_pt["price_target_prob_weighted"].median()
+                print(f"  Prob-weighted price targets ({len(valid_pt):,} stocks):")
+                print(f"    Mean last price:          {mean_price:>10.2f}")
+                print(f"    Mean target (prob-wtd):    {mean_target:>10.2f}")
+                print(f"    Median target (prob-wtd):  {median_target:>10.2f}")
+                implied_return = (mean_target / mean_price - 1) * 100 if mean_price > 0 else 0
+                print(f"    Implied avg return:        {implied_return:>9.1f}%")
+
+            # NEW: Detailed PT achievement statistics
+            pt_stats = compute_model_detailed_statistics(
+                pt, "Price Target Achievement",
+                ["achievement_probability", "expected_return_prob_weighted",
+                 "analyst_conviction", "eps_revision_momentum"],
+            )
+            print_model_statistics(pt_stats, "Price Target Achievement", show_sectors=True)
     print()
 
     # ========================================================================
@@ -1350,6 +2362,13 @@ def main():
         print(f"  Mean filtered upside: {kal['filtered_upside'].mean():.1f}%")
         if "signal_strength" in kal.columns:
             print(f"  Mean signal strength: {kal['signal_strength'].mean():.2f}")
+
+        # NEW: Detailed Kalman statistics
+        kal_stats = compute_model_detailed_statistics(
+            kal, "Kalman Filter",
+            ["filtered_upside", "kalman_variance", "signal_strength"],
+        )
+        print_model_statistics(kal_stats, "Kalman Filter", show_sectors=True)
     print()
 
     # ========================================================================
@@ -1365,6 +2384,25 @@ def main():
         if "beat_classification" in beat.columns:
             likely = (beat["beat_classification"] == "likely_beat").sum()
             print(f"  Classified as 'likely_beat': {likely}")
+    print()
+
+    # ========================================================================
+    # 5b. CREDIT RISK & FINANCIAL HEALTH
+    # ========================================================================
+    print("🛡️ Step 5b: Credit risk & financial health analysis...")
+    print("-" * 80)
+
+    credit = run_credit_risk_analysis(df)
+    if not credit.empty:
+        high_risk = (
+            credit["risk_level"].isin(["High", "Distressed"]).sum()
+            if "risk_level" in credit.columns
+            else 0
+        )
+        print(f"✓ {len(credit):,} stocks analyzed")
+        print(f"  High/Distressed risk: {high_risk}")
+        if "ruin_probability" in credit.columns:
+            print(f"  Mean ruin probability: {credit['ruin_probability'].mean():.3f}")
     print()
 
     # ========================================================================
@@ -1399,16 +2437,53 @@ def main():
     print("📋 Step 7: Building expected_returns_summary (4-model merge)...")
     print("-" * 80)
 
-    summary = build_expected_returns_summary(mc, kal, pt, beat)
+    summary = build_expected_returns_summary(mc, kal, pt, beat, source_df=df)
     if not summary.empty:
         print(f"  ✓ {len(summary):,} stocks in expected_returns_summary")
         full_consensus = (summary["agreement_score"] == 4).sum()
         print(f"  Full consensus (4/4): {full_consensus} stocks")
+
+        # Enrich with quality scoring and financial health filtering
+        summary = filter_quality_stocks(summary, df)
+        if "quality_tier" in summary.columns:
+            high_quality_bullish = (
+                (summary["agreement_score"] == 4)
+                & (summary["quality_tier"].isin(["High", "Above Avg"]))
+            ).sum()
+            print(f"  High-quality full consensus: {high_quality_bullish} stocks")
+
+        # Add z-score and percentile ranks
+        summary = compute_return_zscore_ranks(summary)
+
         print("  Agreement distribution:")
         for label in _SIGNAL_LABELS_4.values():
             cnt = (summary["signal"] == label).sum()
             if cnt > 0:
                 print(f"    {label}: {cnt}")
+
+        # NEW: Cross-model convergence diagnostics
+        cross_diag = compute_cross_model_diagnostics(summary)
+        if cross_diag:
+            print(f"\n  🔬 Cross-Model Diagnostics:")
+            print(f"     Direction agreement: {cross_diag['tail_agreement_pct']:.1f}%")
+            print(f"     Mean inter-model dispersion: {cross_diag['mean_dispersion']:.2f}")
+            print(f"     Median inter-model dispersion: {cross_diag['median_dispersion']:.2f}")
+            for pair, info in cross_diag.get("kendall_concordance", {}).items():
+                print(f"     Kendall τ ({pair}): {info['kendall_tau']:.3f} (p={info['p_value']:.4f})")
+            print(f"     Model biases: {cross_diag['model_bias']}")
+
+        # NEW: Sector-level return analytics
+        sector_analytics = compute_sector_return_analytics(summary)
+        if not sector_analytics.empty:
+            print(f"\n  🏢 Sector Analytics: {len(sector_analytics)} sectors")
+            top_sectors = sector_analytics.head(5)
+            for _, row in top_sectors.iterrows():
+                consensus = row.get("pct_full_consensus", 0)
+                ra = row.get("risk_adjusted_return", 0)
+                print(
+                    f"     {row['sector']}: MC mean={row.get('mc_mean', 0):.1f}%, "
+                    f"consensus={consensus:.0f}%, risk-adj={ra:.2f}"
+                )
     else:
         print("  ⚠️ Expected returns summary: no overlapping tickers across 4 models")
     print()
@@ -1479,6 +2554,25 @@ def main():
             )
             print("   ✓ er_earnings_probability_dashboard.html")
 
+        # Quality-risk visualizations (from quality_risk module)
+        if not df.empty:
+            create_quality_risk_quadrant(df).write_html(
+                output_dir / "er_quality_risk_quadrant.html"
+            )
+            print("   ✓ er_quality_risk_quadrant.html")
+
+            create_distress_early_warning_dashboard(df).write_html(
+                output_dir / "er_distress_early_warning.html"
+            )
+            print("   ✓ er_distress_early_warning.html")
+
+        # Ruin probability diagnostic (from probability_viz)
+        if not credit.empty and "ruin_probability" in credit.columns:
+            create_ruin_probability_diagnostic(credit, top_n=20).write_html(
+                output_dir / "er_ruin_probability_diagnostic.html"
+            )
+            print("   ✓ er_ruin_probability_diagnostic.html")
+
         # Expected returns summary posterior comparison
         if not summary.empty:
             tri_cols = {
@@ -1492,6 +2586,28 @@ def main():
                     output_dir / "er_expected_returns_summary_posterior.html"
                 )
                 print("   ✓ er_expected_returns_summary_posterior.html")
+
+                # NEW: Model dispersion dashboard
+                create_model_dispersion_dashboard(summary).write_html(
+                    output_dir / "er_model_dispersion_dashboard.html"
+                )
+                print("   ✓ er_model_dispersion_dashboard.html")
+
+            # NEW: Return distribution fit overlay
+            if not mc.empty:
+                create_return_distribution_fit_chart(mc).write_html(
+                    output_dir / "er_return_distribution_fit.html"
+                )
+                print("   ✓ er_return_distribution_fit.html")
+
+            # NEW: Enhanced sector analytics heatmap
+            if not summary.empty:
+                sector_analytics = compute_sector_return_analytics(summary)
+                if not sector_analytics.empty:
+                    create_sector_return_analytics_heatmap(sector_analytics).write_html(
+                        output_dir / "er_sector_return_analytics.html"
+                    )
+                    print("   ✓ er_sector_return_analytics.html")
 
         # Bayesian category ridge for analyst sentiment features
         sentiment_features = [
@@ -1572,6 +2688,7 @@ def main():
         strong=strong,
         beat=beat,
         summary=summary,
+        credit=credit,
         output_dir=str(output_dir),
     )
     for name, dest in exports.items():

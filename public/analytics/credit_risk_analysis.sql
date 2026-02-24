@@ -41,7 +41,10 @@ create table analytics.credit_risk_analysis
     risk_level                        text,
     ci_lower                          double precision,
     ci_upper                          double precision,
-    data_quality_score                double precision
+    data_quality_score                double precision,
+    ruin_probability                  double precision,
+    survival_probability              double precision,
+    risk_tier                         text
 );
 
 alter table analytics.credit_risk_analysis

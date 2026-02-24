@@ -346,9 +346,7 @@ class TestEnhancementB_StatisticalIntegrations:
     def test_fit_gaussian_copula_works(self, comprehensive_stock_df):
         from finance_ml.analytics.statistical_analysis import fit_gaussian_copula
 
-        result = fit_gaussian_copula(
-            comprehensive_stock_df, ["roe", "p_e_ratio"], n_simulations=100
-        )
+        result = fit_gaussian_copula(comprehensive_stock_df, ["roe", "p_e_ratio"], n_simulations=100)
         assert "features" in result
         assert "n_observations" in result
 

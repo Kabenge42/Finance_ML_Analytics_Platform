@@ -1,9 +1,9 @@
 create table equities_schema_metadata
 (
-    column_name    text                        not null
+    column_name    text                          not null
         primary key,
-    column_alias   text      default '_'::text not null,
-    role           text                        not null,
+    column_alias   text      default 'n/a'::text not null,
+    role           text                          not null,
     column_count   integer,
     description    text,
     ddl_equivalent text,

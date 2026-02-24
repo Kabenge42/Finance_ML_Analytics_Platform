@@ -66,7 +66,7 @@ SELECT "ISIN"                                                                   
        public.safe_divide("Total Revenues (FQ)"::NUMERIC,
                           ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
                            "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
-                          4.0)                                                                   AS revenue_fq_vs_4q_avg,
+                          4.0) AS revenue_fq_vs_4q_avg,
        -- Growth flag: 1 if growing YoY
        CASE
            WHEN "Total Revenues (FY)" > "Total Revenues (-1FY)" THEN 1

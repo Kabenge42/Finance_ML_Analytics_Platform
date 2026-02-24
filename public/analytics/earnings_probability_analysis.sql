@@ -50,16 +50,16 @@ create table analytics.earnings_probability_analysis
     effective_sample_size             double precision,
     classification_confidence         text,
     beat_classification               text,
-    gaap_revision_momentum            double precision,
+    gaap_revision_momentum            text,
     gaap_norm_spread                  text,
     revision_trend_short              text,
     revision_trend_medium             text,
-    eps_norm_est_fy1e                 double precision,
+    eps_norm_est_fy1e                 text,
     eps_norm_est_ntm                  text,
     eps_gaap_est_ntm                  text,
     eps_gaap_est_fy1e                 text,
-    analyst_count                     bigint,
-    quarterly_beat_streak             bigint,
+    analyst_count                     text,
+    quarterly_beat_streak             text,
     data_source                       text
 );
 

@@ -570,8 +570,8 @@ def _build_feature_query(
     base_sql = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '2 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '2 months') 
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '12 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '12 months') 
         ORDER BY next_earnings ASC
     """
     if limit is not None:
@@ -870,8 +870,8 @@ def load_all_feature_views(
             query = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '2 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '2 months') 
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '12 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '12 months') 
         ORDER BY next_earnings ASC
     """
             df_view = pd.read_sql(query, engine)

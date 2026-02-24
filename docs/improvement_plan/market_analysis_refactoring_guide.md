@@ -537,10 +537,7 @@ kalman_results = kalman_filter_price_target(df)
 smoothed_targets = kalman_results['kalman_estimate']
 
 # Copula dependency modeling
-copula_result = fit_gaussian_copula(
-    df,
-    features=['roe', 'roa', 'debt_to_equity', 'current_ratio']
-)
+copula_result = fit_gaussian_copula(df, features=['roe', 'roa', 'debt_to_equity', 'current_ratio'])
 print(f"Tail dependence: {copula_result['tail_dependence']}")
 
 # Parallel MCMC with convergence diagnostics

@@ -97,4 +97,4 @@ dash-bootstrap-components>= 1.6.0, <4.0.0
 flask>= 3.0.0, <4.0.0
 ipython>= 8.28.0, <11.0.0
 python-dotenv
-numba
+numba<0.70.0

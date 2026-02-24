@@ -49,34 +49,38 @@ from finance_ml.analytics.visualizations._shared import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Layout constants
+# ---------------------------------------------------------------------------
+_CI_LINE_WIDTH = 4
+_MEDIAN_MARKER_SIZE = 8
+_MIN_FOREST_HEIGHT = 500
+_ROW_HEIGHT_PX = 22
+
+# ---------------------------------------------------------------------------
 # Lazy ArviZ import (matches project-wide pattern)
 # ---------------------------------------------------------------------------
 try:
     import arviz as az
-
     ARVIZ_AVAILABLE = True
 except ImportError:  # pragma: no cover
     az = None  # type: ignore[assignment]
     ARVIZ_AVAILABLE = False
 
-
 def float_array(x) -> np.ndarray:
     """Convert to a float64 numpy array (handles xarray scalars gracefully)."""
     return np.asarray(x, dtype=np.float64)
-
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. Posterior Return Forest Plot
 # ═══════════════════════════════════════════════════════════════════════════
 
-
 def create_posterior_return_forest(
-    idata_or_df: "az.InferenceData | pd.DataFrame",
-    var_name: str = "expected_return",
-    top_n: int = 30,
-    credible_interval: float = 0.94,
-    sort_by: str = "median",
-    title: Optional[str] = None,
+        idata_or_df: "az.InferenceData | pd.DataFrame",
+        var_name: str = "expected_return",
+        top_n: int = 30,
+        credible_interval: float = 0.94,
+        sort_by: str = "median",
+        title: Optional[str] = None,
 ) -> go.Figure:
     """
     Forest plot of posterior expected returns per equity.
@@ -125,13 +129,107 @@ def create_posterior_return_forest(
     return create_no_data_figure(title)
 
 
+# ---------------------------------------------------------------------------
+# Shared forest-plot figure builder
+# ---------------------------------------------------------------------------
+
+def _build_forest_figure(
+        tickers: np.ndarray,
+        medians: np.ndarray,
+        lo: np.ndarray,
+        hi: np.ndarray,
+        credible_interval: float,
+        title: str,
+) -> go.Figure:
+    """Construct the Plotly forest-plot figure from pre-computed arrays."""
+    fig = go.Figure()
+
+    for i in range(len(tickers)):
+        fig.add_trace(
+            go.Scatter(
+                x=[lo[i], hi[i]],
+                y=[tickers[i], tickers[i]],
+                mode="lines",
+                line=dict(color=COLORS[0], width=_CI_LINE_WIDTH),
+                showlegend=False,
+                hovertemplate=(
+                    f"<b>{tickers[i]}</b><br>"
+                    f"{credible_interval:.0%} CI: [{lo[i]:.1f}%, {hi[i]:.1f}%]"
+                    f"<extra></extra>"
+                ),
+            )
+        )
+
+    fig.add_trace(
+        go.Scatter(
+            x=medians,
+            y=tickers,
+            mode="markers",
+            marker=dict(size=_MEDIAN_MARKER_SIZE, color=COLORS[2], symbol="diamond"),
+            name="Median",
+        )
+    )
+
+    fig.add_vline(x=0, line_dash="dash", line_color="red", opacity=0.6)
+    fig.update_layout(
+        title=title,
+        xaxis_title="Annualised Return (%)",
+        yaxis=dict(autorange="reversed"),
+        height=max(_MIN_FOREST_HEIGHT, len(tickers) * _ROW_HEIGHT_PX),
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Posterior helpers
+# ---------------------------------------------------------------------------
+
+def _sort_and_slice_posterior(
+        tickers: np.ndarray,
+        medians: np.ndarray,
+        means: np.ndarray,
+        lo: np.ndarray,
+        hi: np.ndarray,
+        sort_by: str,
+        top_n: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sort arrays by the chosen criterion and return the top-*n* slice.
+
+    Returns (tickers, medians, lo, hi) after sorting and slicing.
+    """
+    sort_key = {
+        "median": medians,
+        "hdi_width": hi - lo,
+    }
+    sort_vals = sort_key.get(sort_by, means)
+    order = np.argsort(sort_vals)[::-1][:top_n]
+    return tickers[order], medians[order], lo[order], hi[order]
+
+
+def _compute_rhat_annotation(
+        idata: "az.InferenceData",
+        var_name: str,
+        n_chains: int,
+) -> str:
+    """Return an R-hat annotation string, or empty if unavailable."""
+    if n_chains <= 1:
+        return ""
+    try:
+        rhat = az.rhat(idata)
+        max_rhat = float(rhat[var_name].max().values)
+        return f"  |  R̂ max = {max_rhat:.3f}"
+    except Exception:
+        return ""
+
+
 def _forest_from_idata(
-    idata,
-    var_name: str,
-    top_n: int,
-    ci: float,
-    sort_by: str,
-    title: str,
+        idata: "az.InferenceData",
+        var_name: str,
+        top_n: int,
+        credible_interval: float,
+        sort_by: str,
+        title: str,
 ) -> go.Figure:
     """Build forest plot directly from InferenceData posterior samples."""
     posterior = idata.posterior
@@ -143,73 +241,26 @@ def _forest_from_idata(
 
     medians = float_array(samples.median(dim=("chain", "draw")).values)
     means = float_array(samples.mean(dim=("chain", "draw")).values)
-
-    alpha = (1 - ci) / 2
+    alpha = (1 - credible_interval) / 2
     lo = float_array(samples.quantile(alpha, dim=("chain", "draw")).values)
     hi = float_array(samples.quantile(1 - alpha, dim=("chain", "draw")).values)
 
-    # Sort and slice
-    if sort_by == "median":
-        sort_vals = medians
-    elif sort_by == "hdi_width":
-        sort_vals = hi - lo
-    else:
-        sort_vals = means
-
-    order = np.argsort(sort_vals)[::-1][:top_n]
-    tickers, medians, means, lo, hi = (
-        tickers[order],
-        medians[order],
-        means[order],
-        lo[order],
-        hi[order],
+    tickers, medians, lo, hi = _sort_and_slice_posterior(
+        tickers, medians, means, lo, hi, sort_by, top_n,
     )
 
-    # R-hat annotation (if > 1 chain)
-    rhat_text = ""
-    if samples.sizes["chain"] > 1:
-        try:
-            rhat = az.rhat(idata)
-            max_rhat = float(rhat[var_name].max().values)
-            rhat_text = f"  |  R̂ max = {max_rhat:.3f}"
-        except Exception:
-            pass
+    rhat_text = _compute_rhat_annotation(idata, var_name, samples.sizes["chain"])
+    display_title = f"{title}{rhat_text}"
 
-    fig = go.Figure()
-    # CI bars
-    for i in range(len(tickers)):
-        fig.add_trace(
-            go.Scatter(
-                x=[lo[i], hi[i]],
-                y=[tickers[i], tickers[i]],
-                mode="lines",
-                line=dict(color=COLORS[0], width=4),
-                showlegend=False,
-                hovertemplate=f"<b>{tickers[i]}</b><br>{ci:.0%} CI: [{lo[i]:.1f}%, {hi[i]:.1f}%]<extra></extra>",
-            )
-        )
-    # Posterior medians
-    fig.add_trace(
-        go.Scatter(
-            x=medians,
-            y=tickers,
-            mode="markers",
-            marker=dict(size=8, color=COLORS[2], symbol="diamond"),
-            name="Median",
-        )
-    )
-    fig.add_vline(x=0, line_dash="dash", line_color="red", opacity=0.6)
-    fig.update_layout(
-        title=f"{title}{rhat_text}",
-        xaxis_title="Annualised Return (%)",
-        yaxis=dict(autorange="reversed"),
-        height=max(500, top_n * 22),
-        template=PLOTLY_TEMPLATE,
-    )
-    return fig
+    return _build_forest_figure(tickers, medians, lo, hi, credible_interval, display_title)
 
 
-def _forest_from_dataframe(df: pd.DataFrame, top_n: int, ci: float, title: str) -> go.Figure:
+def _forest_from_dataframe(
+        df: pd.DataFrame,
+        top_n: int,
+        credible_interval: float,
+        title: str,
+) -> go.Figure:
     """Fallback forest plot from a summary DataFrame."""
     if "expected_upside_pct" not in df.columns or "ticker" not in df.columns:
         return create_no_data_figure(f"{title} — missing columns")
@@ -221,7 +272,7 @@ def _forest_from_dataframe(df: pd.DataFrame, top_n: int, ci: float, title: str) 
         return create_no_data_figure(title)
 
     # Approximate CI from upside_std if available
-    z = stats.norm.ppf(1 - (1 - ci) / 2)
+    z = stats.norm.ppf(1 - (1 - credible_interval) / 2)
     if "upside_std" in plot_df.columns:
         plot_df["lo"] = plot_df["expected_upside_pct"] - z * plot_df["upside_std"]
         plot_df["hi"] = plot_df["expected_upside_pct"] + z * plot_df["upside_std"]
@@ -240,12 +291,12 @@ def _forest_from_dataframe(df: pd.DataFrame, top_n: int, ci: float, title: str) 
                 x=[row["lo"], row["hi"]],
                 y=[row["ticker"], row["ticker"]],
                 mode="lines",
-                line=dict(color=COLORS[0], width=4),
+                line=dict(color=COLORS[0], width=_CI_LINE_WIDTH),
                 showlegend=False,
                 hovertemplate=(
                     f"<b>{row['ticker']}</b><br>"
                     f"Upside: {row['expected_upside_pct']:.1f}%<br>"
-                    f"{ci:.0%} CI: [{row['lo']:.1f}%, {row['hi']:.1f}%]<extra></extra>"
+                    f"{credible_interval:.0%} CI: [{row['lo']:.1f}%, {row['hi']:.1f}%]<extra></extra>"
                 ),
             )
         )
@@ -254,7 +305,7 @@ def _forest_from_dataframe(df: pd.DataFrame, top_n: int, ci: float, title: str) 
             x=plot_df["expected_upside_pct"],
             y=plot_df["ticker"],
             mode="markers",
-            marker=dict(size=8, color=COLORS[2], symbol="diamond"),
+            marker=dict(size=_MEDIAN_MARKER_SIZE, color=COLORS[2], symbol="diamond"),
             name="Expected Upside",
         )
     )
@@ -263,7 +314,7 @@ def _forest_from_dataframe(df: pd.DataFrame, top_n: int, ci: float, title: str) 
         title=title,
         xaxis_title="Expected Upside (%)",
         yaxis=dict(autorange="reversed"),
-        height=max(500, top_n * 22),
+        height=max(_MIN_FOREST_HEIGHT, top_n * _ROW_HEIGHT_PX),
         template=PLOTLY_TEMPLATE,
     )
     return fig

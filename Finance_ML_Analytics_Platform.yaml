@@ -333,7 +333,7 @@ dependencies:
   - pydantic-core=2.41.4=py311h114bc41_0
   - pydantic-settings=2.10.1=py311haa95532_0
   - pyerfa=2.0.1.5=py311h827c3e9_0
-  - pygments=2.19.1=py311haa95532_0
+  - pygments=2.99.1=py311haa95532_0
   - pyjwt=2.10.1=py311haa95532_0
   - pyopengl=3.1.1a1=py311haa95532_0
   - pyparsing=3.0.9=py311haa95532_0
@@ -409,10 +409,10 @@ dependencies:
   - tbb=2022.0.0=h214f63a_0
   - tbb-devel=2022.0.0=h214f63a_0
   - tblib=3.1.0=py311haa95532_0
-  - tensorboard=2.19.0=py311haa95532_0
+  - tensorboard=2.99.0=py311haa95532_0
   - tensorboard-data-server=0.7.0=py311haa95532_1
-  - tensorflow=2.19.1=cpu_py311h6605a60_0
-  - tensorflow-base=2.19.1=cpu_py311h4cf5749_0
+  - tensorflow=2.99.1=cpu_py311h6605a60_0
+  - tensorflow-base=2.99.1=cpu_py311h4cf5749_0
   - termcolor=2.1.0=py311haa95532_0
   - terminado=0.18.1=py311haa95532_0
   - threadpoolctl=3.5.0=py311h746a85d_0

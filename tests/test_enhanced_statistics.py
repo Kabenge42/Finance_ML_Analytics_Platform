@@ -205,18 +205,14 @@ class TestFitGaussianCopula:
         """Function should return a dictionary."""
         from finance_ml.analytics.statistical_analysis import fit_gaussian_copula
 
-        result = fit_gaussian_copula(
-            sample_features_df, features=["roe", "debt_to_equity", "p_e_ratio"]
-        )
+        result = fit_gaussian_copula(sample_features_df, features=["roe", "debt_to_equity", "p_e_ratio"])
         assert isinstance(result, dict)
 
     def test_output_keys(self, sample_features_df):
         """Output should have expected keys."""
         from finance_ml.analytics.statistical_analysis import fit_gaussian_copula
 
-        result = fit_gaussian_copula(
-            sample_features_df, features=["roe", "debt_to_equity", "p_e_ratio"]
-        )
+        result = fit_gaussian_copula(sample_features_df, features=["roe", "debt_to_equity", "p_e_ratio"])
 
         expected_keys = [
             "correlation_matrix",
@@ -262,9 +258,7 @@ class TestFitGaussianCopula:
         """Tail dependence should have lower and upper matrices."""
         from finance_ml.analytics.statistical_analysis import fit_gaussian_copula
 
-        result = fit_gaussian_copula(
-            sample_features_df, features=["roe", "debt_to_equity", "p_e_ratio"]
-        )
+        result = fit_gaussian_copula(sample_features_df, features=["roe", "debt_to_equity", "p_e_ratio"])
 
         tail_dep = result["tail_dependence"]
         assert "lower" in tail_dep
