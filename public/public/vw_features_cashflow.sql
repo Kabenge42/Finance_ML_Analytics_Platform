@@ -16,7 +16,12 @@ create view vw_features_cashflow
              cfo_positive_quarters, cfi_negative_quarters, cff_pattern_score, cash_burn_rate, cf_volatility_score,
              operating_cf_momentum, financing_dependency, cfo_fq, cfo_ltm, cfo_fy, fcf_fq, fcf_ltm, fcf_fy,
              cfo_growth_yoy_comp, fcf_growth_yoy, cfo_to_net_income_comp, fcf_margin_comp, fcf_yield,
-             cfo_positive_years, fcf_positive_years_comp, cash_flow_quality_score_comp)
+             cfo_positive_years, fcf_positive_years_comp, cash_flow_quality_score_comp, fcf_est_fy1, fcf_est_fy2,
+             fcf_est_fy3, fcf_est_fy4, fcf_est_fy5, fcf_est_growth_fy1_vs_ltm, fcf_est_growth_fy2_vs_fy1,
+             fcf_est_growth_fy3_vs_fy2, fcf_est_growth_fy4_vs_fy3, fcf_est_growth_fy5_vs_fy4, fcf_est_cagr_3y,
+             fcf_est_cagr_5y, fcf_est_margin_fy1, fcf_est_yield_fy1, fcf_est_growth_acceleration,
+             fcf_est_growth_deceleration, fcf_est_trajectory_score, fcf_est_always_positive, fcf_est_vs_historical,
+             fcf_est_capex_implied_ratio)
 as
 SELECT id.isin,
        id.ticker,
@@ -109,7 +114,27 @@ SELECT id.isin,
        cc.fcf_yield,
        cc.cfo_positive_years,
        cc.fcf_positive_years      AS fcf_positive_years_comp,
-       cc.cash_flow_quality_score AS cash_flow_quality_score_comp
+       cc.cash_flow_quality_score AS cash_flow_quality_score_comp,
+       fge.fcf_est_fy1,
+       fge.fcf_est_fy2,
+       fge.fcf_est_fy3,
+       fge.fcf_est_fy4,
+       fge.fcf_est_fy5,
+       fge.fcf_est_growth_fy1_vs_ltm,
+       fge.fcf_est_growth_fy2_vs_fy1,
+       fge.fcf_est_growth_fy3_vs_fy2,
+       fge.fcf_est_growth_fy4_vs_fy3,
+       fge.fcf_est_growth_fy5_vs_fy4,
+       fge.fcf_est_cagr_3y,
+       fge.fcf_est_cagr_5y,
+       fge.fcf_est_margin_fy1,
+       fge.fcf_est_yield_fy1,
+       fge.fcf_est_growth_acceleration,
+       fge.fcf_est_growth_deceleration,
+       fge.fcf_est_trajectory_score,
+       fge.fcf_est_always_positive,
+       fge.fcf_est_vs_historical,
+       fge.fcf_est_capex_implied_ratio
 FROM vw_identifier_columns                           id
          LEFT JOIN calc_cashflow_features()          cf(isin, cfo_to_net_income, fcf_to_net_income, fcf_margin,
                                                         cfo_growth_yoy, fcf_positive_ratio, acquisition_intensity,
@@ -133,7 +158,16 @@ FROM vw_identifier_columns                           id
          LEFT JOIN calc_cashflow_comprehensive()     cc(isin, cfo_fq, cfo_ltm, cfo_fy, fcf_fq, fcf_ltm, fcf_fy,
                                                         cfo_growth_yoy, fcf_growth_yoy, cfo_to_net_income, fcf_margin,
                                                         fcf_yield, cfo_positive_years, fcf_positive_years,
-                                                        cash_flow_quality_score) USING (isin);
+                                                        cash_flow_quality_score) USING (isin)
+         LEFT JOIN calc_fcf_growth_estimates()       fge(isin, fcf_est_fy1, fcf_est_fy2, fcf_est_fy3, fcf_est_fy4,
+                                                         fcf_est_fy5, fcf_est_growth_fy1_vs_ltm,
+                                                         fcf_est_growth_fy2_vs_fy1, fcf_est_growth_fy3_vs_fy2,
+                                                         fcf_est_growth_fy4_vs_fy3, fcf_est_growth_fy5_vs_fy4,
+                                                         fcf_est_cagr_3y, fcf_est_cagr_5y, fcf_est_margin_fy1,
+                                                         fcf_est_yield_fy1, fcf_est_growth_acceleration,
+                                                         fcf_est_growth_deceleration, fcf_est_trajectory_score,
+                                                         fcf_est_always_positive, fcf_est_vs_historical,
+                                                         fcf_est_capex_implied_ratio) USING (isin);
 
 comment on view vw_features_cashflow is 'Cash flow metrics including CFO, FCF, CapEx analysis, and cash flow quality.
     Source functions: calc_cashflow_features, calc_enhanced_cashflow_features,

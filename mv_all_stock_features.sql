@@ -50,13 +50,13 @@ SELECT
     e."Market Cap"                        AS market_cap,
     e."Enterprise Value"                  AS enterprise_value,
     e."Last Price"                        AS last_price,
-    e."Price Target"           AS price_target,
-    e."Price Target - Low"     AS price_target_low,
-    e."Price Target - High"    AS price_target_high,
-    e."Price Target - Median"  AS price_target_median,
-    e."Price Target (YTD Ago)" AS price_target_ytd_ago,
+    e."Price Target"                      AS price_target,
+    e."Price Target - Low"                AS price_target_low,
+    e."Price Target - High"               AS price_target_high,
+    e."Price Target - Median"             AS price_target_median,
+    e."Price Target (YTD Ago)"            AS price_target_ytd_ago,
     e."Shrs Out"                          AS shares_outstanding,
-    e."Volume (Shrs)"          AS volume_shrs,
+    e."Volume (Shrs)"                     AS volume_shrs,
 
     -- =========================================================================
     -- SECTION 1: VALUATION RATIOS (vw_features_valuation_ratios)

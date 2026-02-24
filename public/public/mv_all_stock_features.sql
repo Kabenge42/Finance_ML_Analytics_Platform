@@ -2,34 +2,48 @@ create materialized view mv_all_stock_features as
 SELECT id.isin,
        id.ticker,
        id.name,
-       id.industry,
-       id.sector,
-       id.trading_country,
        id.region,
        id.country,
+       id.trading_country,
        id.exchange,
-       e."Last Updated"                      AS last_updated,
-       e."Reference Date"                    AS reference_date,
-       e."FY End Date"                       AS fy_end_date,
-       e."Next FY End Date"                  AS next_fy_end_date,
-       e."Next Earnings"                     AS next_earnings,
-       e."Income Statement Report Date"      AS income_statement_report_date,
-       e."Next Income Statement Report Date" AS next_income_statement_report_date,
-       e."Market Cap"                        AS market_cap,
-       e."Enterprise Value"                  AS enterprise_value,
-       e."Last Price"                        AS last_price,
-       e."Price Target"                      AS price_target,
-       e."Price Target - Low"                AS price_target_low,
-       e."Price Target - High"               AS price_target_high,
-       e."Price Target - Median"             AS price_target_median,
-       e."Price Target (YTD Ago)"            AS price_target_ytd_ago,
-       e."Shrs Out"                          AS shares_outstanding,
-       e."Volume (Shrs)"                     AS volume_shrs,
+       id.sector,
+       id.industry,
+       id.dividend_record_frequency,
+       id.earnings_report_frequency,
+       id.fy_end,
+       id.next_earnings_report,
+       id.next_earnings_status,
+       id.next_earnings_when,
+       id.next_fiscal_quarter,
+       id.reporting_interval,
+       id.size_class,
+       id.style_class,
+       id.unit,
+       id.dividend_record_announce_date,
+       id.dividend_record_ex_date,
+       id.dividend_record_payable_date,
+       id.dividend_record_record_date,
+       id.fy_end_date,
+       id.income_statement_report_date,
+       id.last_updated,
+       id.next_earnings,
+       id.next_fy_end_date,
+       id.next_income_statement_report_date,
+       id.reference_date,
+       e."Market Cap"            AS market_cap,
+       e."Enterprise Value"      AS enterprise_value,
+       e."Last Price"            AS last_price,
+       e."Price Target"          AS price_target,
+       e."Price Target - High"   AS price_target_high,
+       e."Price Target - Low"    AS price_target_low,
+       e."Price Target - Median" AS price_target_median,
+       e."Volume (Shrs)"         AS volume_shrs,
+       e."Shrs Out"              AS shares_outstanding,
        vf.p_e_ratio,
        vf.p_b_ratio,
        vf.ev_ebitda_ratio,
        vf.ev_sales_ratio,
-       vf.dividend_yield                     AS valuation_dividend_yield,
+       vf.dividend_yield         AS valuation_dividend_yield,
        vf.peg_ratio,
        vts.ev_sales_trend_1y,
        vts.ev_ebitda_momentum,
@@ -271,7 +285,7 @@ SELECT id.isin,
        grf.gaap_positive_revision_flag,
        grf.revision_quality_divergence,
        gf.revenue_growth_yoy,
-       gf.ebitda_growth_yoy                  AS growth_ebitda_growth_yoy,
+       gf.ebitda_growth_yoy      AS growth_ebitda_growth_yoy,
        gf.operating_income_growth,
        gf.fcf_growth,
        gf.revenue_cagr_5y,
@@ -554,7 +568,7 @@ SELECT id.isin,
        cc.fcf_growth_yoy,
        cc.fcf_yield,
        cc.cfo_positive_years,
-       cc.fcf_positive_years                 AS fcf_positive_years_comp,
+       cc.fcf_positive_years     AS fcf_positive_years_comp,
        tf.fiscal_quarter,
        tf.fiscal_month,
        tf.fiscal_year,
@@ -601,9 +615,9 @@ SELECT id.isin,
        itf.inventory_qoq_change,
        itf.inventory_yoy_change,
        itf.inventory_4q_trend,
-       itf.inventory_vs_5y_avg               AS inventory_vs_5y_avg_itf,
+       itf.inventory_vs_5y_avg   AS inventory_vs_5y_avg_itf,
        itf.inventory_days,
-       itf.inventory_turnover                AS inventory_turnover_itf,
+       itf.inventory_turnover    AS inventory_turnover_itf,
        itf.inventory_to_revenue,
        itf.inventory_to_assets,
        itf.inventory_buildup_flag,
@@ -673,6 +687,7 @@ SELECT id.isin,
        iif.interest_expense_to_revenue,
        iif.net_interest_margin_proxy,
        cs.piotroski_f_score,
+       etf.eps_trajectory_score  AS composite_eps_trajectory_score,
        cs.dilution_score,
        cs.quality_momentum_score,
        nic.net_income_is_fq,
@@ -703,14 +718,14 @@ SELECT id.isin,
        nic.normalized_ni_vs_5y_avg,
        uif.other_unusual_items_ltm,
        uif.impairment_goodwill_ltm,
-       uif.asset_writedown_ltm               AS unusual_asset_writedown_ltm,
+       uif.asset_writedown_ltm   AS unusual_asset_writedown_ltm,
        uif.restructuring_charges_ltm,
        uif.total_unusual_items,
        uif.unusual_items_to_revenue,
        uif.unusual_items_to_ebitda,
        uif.has_unusual_items_flag,
        uif.earnings_quality_impact,
-       CURRENT_TIMESTAMP                     AS feature_calculated_at
+       CURRENT_TIMESTAMP         AS feature_calculated_at
 FROM vw_identifier_columns                               id
          JOIN      equities                              e ON id.isin = e."ISIN"
          LEFT JOIN calc_valuation_features()             vf(isin, p_e_ratio, p_b_ratio, ev_ebitda_ratio, ev_sales_ratio,
@@ -1050,7 +1065,7 @@ comment on materialized view mv_all_stock_features is 'Unified materialized view
     3. Technical Analysis (1 function)
     4. Profitability (4 functions)
     5. Earnings (6 functions)
-    6. Growth (4 functions)
+    6. Growth (5 functions)
     7. Quality & Risk (5 functions)
     8. Leverage & Liquidity (6 functions)
     9. Analyst Sentiment (2 functions)
@@ -1069,4 +1084,19 @@ alter materialized view mv_all_stock_features owner to postgres;
 
 create unique index idx_mv_all_stock_features_isin
     on mv_all_stock_features (isin);
+
+create index idx_mv_all_stock_features_ticker
+    on mv_all_stock_features (ticker);
+
+create index idx_mv_all_stock_features_sector_industry
+    on mv_all_stock_features (sector, industry);
+
+create index idx_mv_all_stock_features_region_country
+    on mv_all_stock_features (region, country, trading_country);
+
+create index idx_mv_all_stock_features_exchange
+    on mv_all_stock_features (exchange);
+
+create index idx_mv_all_stock_features_market_cap
+    on mv_all_stock_features (market_cap desc);
 

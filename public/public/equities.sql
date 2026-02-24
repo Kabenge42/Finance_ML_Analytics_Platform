@@ -648,6 +648,22 @@ create table equities
     "Interest And Investment Income (-2FY)"            numeric default 0,
     "Interest And Investment Income (-3FY)"            numeric default 0,
     "Interest And Investment Income (-4FY)"            numeric default 0,
+    "Effective Tax Rate - (Ratio) (LTM)"               numeric default 0,
+    "Effective Tax Rate - (Ratio) (FQ)"                numeric default 0,
+    "Effective Tax Rate - (Ratio) (-1FQFQ)"            numeric default 0,
+    "Effective Tax Rate - (Ratio) (-2FQFQ)"            numeric default 0,
+    "Effective Tax Rate - (Ratio) (-4FQFQ)"            numeric default 0,
+    "Effective Tax Rate - (Ratio) (-3FQFQ)"            numeric default 0,
+    "Effective Tax Rate - (Ratio) (FY)"                numeric default 0,
+    "Effective Tax Rate - (Ratio) (-1FY)"              numeric default 0,
+    "Effective Tax Rate - (Ratio) (-2FY)"              numeric default 0,
+    "Effective Tax Rate - (Ratio) (-3FY)"              numeric default 0,
+    "Effective Tax Rate - (Ratio) (-4FY)"              numeric default 0,
+    "FCF - Est Avg (FY1E)"                             numeric default 0,
+    "FCF - Est Avg (FY2E)"                             numeric default 0,
+    "FCF - Est Avg (FY3E)"                             numeric default 0,
+    "FCF - Est Avg (FY4E)"                             numeric default 0,
+    "FCF - Est Avg (FY5E)"                             numeric default 0,
     "Fiscal Month"                                     integer,
     "Fiscal Quarter"                                   integer,
     "Fiscal Year"                                      integer,
@@ -658,6 +674,9 @@ comment on table equities is 'Equities screening data with financial metrics and
 
 alter table equities
     owner to postgres;
+
+create index idx_equities_geography
+    on equities ("Region", "Country", "Exchange");
 
 create index idx_equities_classification
     on equities ("Sector", "Industry", "Size Class", "Style Class");
@@ -670,10 +689,4 @@ create index idx_equities_fiscal
 
 create index idx_equities_market_cap
     on equities ("Market Cap" desc);
-
-create index idx_equities_geography
-    on equities ("Region", "Country");
-
-create index idx_equities_exchange
-    on equities ("Exchange", "Trading Country");
 

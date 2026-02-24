@@ -318,9 +318,9 @@ dividend_fig = create_dividend_streak_timeline(df)
 
 ```python
 from finance_ml.analytics.statistical_analysis import (
-    kalman_filter_price_target,
-    fit_gaussian_copula,
-    parallel_mcmc_chains
+   kalman_filter_price_target,
+   fit_gaussian_copula,
+   parallel_mcmc_chains
 )
 
 # Kalman filter for price targets
@@ -328,17 +328,14 @@ kalman_results = kalman_filter_price_target(df)
 smoothed_targets = kalman_results['kalman_estimate']
 
 # Copula dependency modeling
-copula_result = fit_gaussian_copula(
-    df,
-    features=['roe', 'roa', 'debt_to_equity', 'current_ratio']
-)
+copula_result = fit_gaussian_copula(df, features=['roe', 'roa', 'debt_to_equity', 'current_ratio'])
 print(f"Tail dependence: {copula_result['tail_dependence']}")
 
 # Parallel MCMC with convergence diagnostics
 mcmc_result = parallel_mcmc_chains(
-    data=df['roe'].dropna().values,
-    n_chains=4,
-    n_samples=10000
+   data=df['roe'].dropna().values,
+   n_chains=4,
+   n_samples=10000
 )
 print(f"R-hat convergence: {mcmc_result['r_hat']:.3f}")
 print(f"Converged: {mcmc_result['converged']}")

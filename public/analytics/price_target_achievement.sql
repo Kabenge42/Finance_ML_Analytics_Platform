@@ -38,7 +38,9 @@ create table analytics.price_target_achievement
     eps_revision_momentum             double precision,
     analyst_rating_normalized         double precision,
     expected_return_prob_weighted     double precision,
-    confidence_level                  text
+    confidence_level                  text,
+    last_price                        double precision,
+    price_target_prob_weighted        double precision
 );
 
 alter table analytics.price_target_achievement

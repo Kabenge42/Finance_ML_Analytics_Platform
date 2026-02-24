@@ -1425,6 +1425,7 @@ def build_expected_returns_summary(
     kal: pd.DataFrame,
     pt: pd.DataFrame,
     earn: pd.DataFrame,
+    source_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """
     Merge four expected-return model results into a unified summary DataFrame.
@@ -1447,6 +1448,11 @@ def build_expected_returns_summary(
         Price target achievement results (``analytics.price_target_achievement``).
     earn : pd.DataFrame
         Earnings probability analysis (``analytics.earnings_probability_analysis``).
+    source_df : pd.DataFrame or None, optional
+        The underlying ``mv_all_stock_features`` DataFrame.  When provided,
+        identifier and market-data columns are joined from this source so
+        that the exported summary carries the full set of columns even when
+        individual model DataFrames only contain a subset.
 
     Returns
     -------
@@ -1471,7 +1477,7 @@ def build_expected_returns_summary(
     id_cols_set = get_identifier_cols_set()
     mc_id_cols = [c for c in mc.columns if c in id_cols_set]
 
-    # Market data columns to carry through from MC
+    # Market data columns to carry through
     market_data_cols = [
         "market_cap",
         "enterprise_value",
@@ -1524,6 +1530,22 @@ def build_expected_returns_summary(
         logging.warning("Expected returns summary: no overlapping tickers across all 4 models")
         return summary
 
+    # --- Enrich with identifier + market-data columns from source_df ---
+    if source_df is not None and "ticker" in source_df.columns:
+        id_cols_ordered = load_identifier_columns()
+        # Columns we want from source_df but don't already have in summary
+        desired_cols = id_cols_ordered + market_data_cols
+        missing_cols = [
+            c for c in desired_cols if c in source_df.columns and c not in summary.columns
+        ]
+        if missing_cols:
+            source_subset = source_df[["ticker"] + missing_cols].drop_duplicates(subset="ticker")
+            summary = summary.merge(source_subset, on="ticker", how="left")
+            logging.info(
+                "Enriched expected_returns_summary with %d columns from source_df",
+                len(missing_cols),
+            )
+
     # Direction flags
     summary["mc_bullish"] = summary["expected_upside_pct"] > 0
     summary["kal_bullish"] = summary["filtered_upside"] > 0
@@ -1542,9 +1564,9 @@ def build_expected_returns_summary(
     # Confidence-weighted agreement (continuous 0–4 scale)
     mc_weight = summary["prob_positive_upside"].clip(0, 100) / 100.0
     kal_weight = 0.5  # Kalman has uniform confidence (smoothing filter)
-    pt_weight = summary["confidence_level"].map(
-        {"High": 0.9, "Medium": 0.6, "Low": 0.3}
-    ).fillna(0.5)
+    pt_weight = (
+        summary["confidence_level"].map({"High": 0.9, "Medium": 0.6, "Low": 0.3}).fillna(0.5)
+    )
     earn_weight = summary["confidence_score"].clip(0, 1)
 
     summary["weighted_agreement"] = (
@@ -1920,7 +1942,14 @@ def main():
         print(f"   ✓ Hierarchical analysis for {len(hier_results)} sectors")
 
     # --- NEW: Distribution fitting by category (statistical_analysis) ---
-    for cat_name in ["Earnings Quality", "Cash Flow"]:
+    for cat_name in [
+        "Earnings Quality",
+        "Momentum & Technical",
+        "Valuation Timeseries",
+        "Valuation Ratios",
+        "Profitability",
+        "Growth",
+    ]:
         cat_features = [f for f in FEATURE_CATEGORIES.get(cat_name, []) if f in df.columns][:10]
         if cat_features:
             print(f"   Fitting distributions for {cat_name}...")
@@ -2119,10 +2148,14 @@ def main():
                     print(f"   ✓ Brier Score: {confidence_result.brier_score:.4f}")
                     print(f"   ✓ Calibration Error: {confidence_result.calibration_error:.4f}")
                     print(f"   ✓ AUC-ROC: {confidence_result.discrimination_auc:.3f}")
-                    print(f"   ✓ Overall Confidence: {confidence_result.overall_confidence:.1f}/100")
+                    print(
+                        f"   ✓ Overall Confidence: {confidence_result.overall_confidence:.1f}/100"
+                    )
                 else:
                     print("   ⚠️  No historical outcomes available — skipping confidence metrics")
-                    print("   ℹ️  Provide actual beat/miss data to enable Brier, ECE, and AUC-ROC scoring")
+                    print(
+                        "   ℹ️  Provide actual beat/miss data to enable Brier, ECE, and AUC-ROC scoring"
+                    )
                     confidence_result = None
 
             # New Probability Models
@@ -2201,12 +2234,16 @@ def main():
 
     # Enhanced quality screener
     if all(col in df.columns for col in ["piotroski_f_score", "distress_risk_score"]):
-        screening_results["quality_stocks"] = create_enhanced_screener(df, min_fscore=7, min_fcf_positive_years=4)
+        screening_results["quality_stocks"] = create_enhanced_screener(
+            df, min_fscore=7, min_fcf_positive_years=4
+        )
         print(f"   ✓ Quality screen: {len(screening_results['quality_stocks'])} stocks")
 
     # Value opportunities
     if "p_e_ratio" in df.columns and "upside_potential" in df.columns:
-        screening_results["value_stocks"] = screen_value_opportunities(df, max_pe_ratio=100, min_upside_potential=20)
+        screening_results["value_stocks"] = screen_value_opportunities(
+            df, max_pe_ratio=100, min_upside_potential=20
+        )
         print(f"   ✓ Value screen: {len(screening_results['value_stocks'])} stocks")
 
     # Growth momentum
@@ -2227,13 +2264,17 @@ def main():
     # High-yield safe dividends
     if "dividend_yield" in df.columns or "dividend_yield_ltm" in df.columns:
         screening_results["safe_div_stocks"] = screen_high_yield_safe_dividends(df)
-        print(f"   ✓ High-yield safe dividend screen: {len(screening_results['safe_div_stocks'])} stocks")
+        print(
+            f"   ✓ High-yield safe dividend screen: {len(screening_results['safe_div_stocks'])} stocks"
+        )
 
     # New Screens
     screening_results["reversion_stocks"] = screen_valuation_reversion_candidates(df)
     screening_results["growth_integrity_stocks"] = screen_integrity_filtered_growth(df)
     print(f"   ✓ Valuation reversion screen: {len(screening_results['reversion_stocks'])} stocks")
-    print(f"   ✓ Integrity-filtered growth screen: {len(screening_results['growth_integrity_stocks'])} stocks")
+    print(
+        f"   ✓ Integrity-filtered growth screen: {len(screening_results['growth_integrity_stocks'])} stocks"
+    )
 
     # --- NEW: Earnings quality screening (screening.py) ---
     if "earnings_quality_composite" in df.columns:
@@ -2243,7 +2284,9 @@ def main():
     # --- NEW: Dividend quality screening (screening.py) ---
     div_yield_col = "dividend_yield_ltm" if "dividend_yield_ltm" in df.columns else "dividend_yield"
     if div_yield_col in df.columns:
-        screening_results["dq_stocks"] = screen_dividend_quality(df, min_dividend_yield=2.5, min_dividend_streak=3)
+        screening_results["dq_stocks"] = screen_dividend_quality(
+            df, min_dividend_yield=2.5, min_dividend_streak=3
+        )
         print(f"   ✓ Dividend quality screen: {len(screening_results['dq_stocks'])} stocks")
 
     # --- NEW: Composite ranking (screening.py) ---
@@ -2692,6 +2735,7 @@ def main():
             kal=_kal_for_summary,
             pt=_pt_for_summary,
             earn=_earn_for_summary,
+            source_df=df,
         )
         if len(expected_returns_summary) > 0:
             summary_cfg = ExportConfig(table_name="expected_returns_summary")

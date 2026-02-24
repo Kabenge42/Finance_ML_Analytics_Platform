@@ -1,2 +1,2 @@
-model_name                  ,brier_score        ,log_loss          ,calibration_error  ,discrimination_auc,overall_confidence
-Bayesian Earnings Beat Model,0.23753519870589612,0.6671744297729164,0.02389813993824258,0.6181741181741183,76.88396456764056
+model_name,brier_score,log_loss,calibration_error,discrimination_auc,overall_confidence
+Bayesian Earnings Beat Model,0.2679671680736834,0.7325530334857258,0.18843197344944576,0.46324411687419464,62.632437441725585

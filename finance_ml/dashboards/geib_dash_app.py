@@ -30,61 +30,168 @@ except ImportError:
     PROB_VIZ_AVAILABLE = False
     print("⚠️ Probabilistic visualizations not available")
 
+# Import expected_returns visualization functions for dynamic artifact generation
+try:
+    from expected_returns_v3 import (
+        create_mc_return_distribution,
+        create_sector_risk_reward_scatter,
+        create_sector_heatmap,
+        create_strong_consensus_bar,
+        create_var_analysis,
+        create_beat_vs_achievement_scatter,
+        create_model_dispersion_dashboard,
+        create_return_distribution_fit_chart,
+        create_sector_return_analytics_heatmap,
+        create_screening_summary_chart,
+        extract_strong_consensus,
+        compute_sector_expected_returns,
+        compute_sector_return_analytics,
+    )
+    from finance_ml.analytics.visualizations.quality_risk import (
+        create_quality_risk_quadrant,
+        create_distress_early_warning_dashboard,
+    )
+    from finance_ml.analytics.visualizations.probability_viz import (
+        create_bayesian_category_ridge,
+        create_ruin_probability_diagnostic as create_ruin_prob_diagnostic_viz,
+    )
+    from finance_ml.analytics.probability_analytics import (
+        create_earnings_probability_dashboard,
+    )
+    ER_VIZ_AVAILABLE = True
+except ImportError as _er_import_err:
+    ER_VIZ_AVAILABLE = False
+    print(f"⚠️ Expected returns visualization functions not available: {_er_import_err}")
+
+from plotly.subplots import make_subplots
+from typing import Tuple
+
 # Project root path for consistent path resolution
 PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# =============================================================================
+# Standardized Color Scheme Configuration
+# =============================================================================
+
+COLORS = {
+    "background_main": "#121212",      # Main app background
+    "background_panel": "#1E1E1E",     # Panel/Card background
+    "background_input": "#2D2D2D",     # Dropdowns and inputs
+    "text_primary": "#FFFFFF",         # Primary text
+    "text_secondary": "#B3B3B3",       # Subtitles and labels
+    "border": "#333333",               # Subtle borders
+    # Semantic Colors
+    "primary": "#375A7F",              # Primary brand color (Blue)
+    "success": "#63BE7B",              # Positive/High (Green)
+    "warning": "#FFEB84",              # Neutral/Medium (Yellow)
+    "danger": "#F8696B",               # Negative/Low (Red)
+    "info": "#3498DB",                 # Informational
+}
 
 # =============================================================================
 # Table Formatting Configuration
 # =============================================================================
 
 TABLE_STYLE_HEADER = {
-    "backgroundColor": "#375a7f",  # Primary Blue
-    "color": "#ffffff",
+    "backgroundColor": COLORS["primary"],
+    "color": COLORS["text_primary"],
     "fontWeight": "bold",
-    "border": "1px solid #444",
+    "border": f"1px solid {COLORS['border']}",
     "textAlign": "center",
 }
 
 TABLE_STYLE_CELL = {
-    "backgroundColor": "#222",
-    "color": "#ffffff",
-    "border": "1px solid #444",
-    "padding": "8px",
-    "fontFamily": "Arial",
+    "backgroundColor": COLORS["background_panel"],
+    "color": COLORS["text_primary"],
+    "border": f"1px solid {COLORS['border']}",
+    "padding": "10px",
+    "fontFamily": "Arial, sans-serif",
     "fontSize": "13px",
 }
 
 TABLE_STYLE_DATA_CONDITIONAL = [
-    {"if": {"row_index": "odd"}, "backgroundColor": "#2c2c2c"},
+    {"if": {"row_index": "odd"}, "backgroundColor": "#252525"},
     # Conditional formatting for upside/return columns (0-100 scale)
     {
         "if": {"column_id": "expected_upside_pct", "filter_query": "{expected_upside_pct} > 15"},
-        "color": "#00bc8c", "fontWeight": "bold"  # Success Green
+        "color": COLORS["success"], "fontWeight": "bold"
     },
     {
         "if": {"column_id": "expected_upside_pct", "filter_query": "{expected_upside_pct} < 0"},
-        "color": "#e74c3c"  # Danger Red
+        "color": COLORS["danger"], "fontWeight": "bold"
     },
     {
         "if": {"column_id": "filtered_upside", "filter_query": "{filtered_upside} > 15"},
-        "color": "#00bc8c", "fontWeight": "bold"
+        "color": COLORS["success"], "fontWeight": "bold"
     },
     {
         "if": {"column_id": "filtered_upside", "filter_query": "{filtered_upside} < 0"},
-        "color": "#e74c3c"
+        "color": COLORS["danger"], "fontWeight": "bold"
     },
     {
         "if": {"column_id": "expected_return_prob_weighted", "filter_query": "{expected_return_prob_weighted} > 10"},
-        "color": "#00bc8c", "fontWeight": "bold"
+        "color": COLORS["success"], "fontWeight": "bold"
     },
     # Conditional formatting for probability (0-1 scale)
     {
         "if": {"column_id": "achievement_probability", "filter_query": "{achievement_probability} > 0.7"},
-        "color": "#00bc8c", "fontWeight": "bold"
+        "color": COLORS["success"], "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "achievement_probability", "filter_query": "{achievement_probability} >= 0.4 && {achievement_probability} <= 0.7"},
+        "color": COLORS["warning"], "fontWeight": "bold"
     },
     {
         "if": {"column_id": "achievement_probability", "filter_query": "{achievement_probability} < 0.4"},
-        "color": "#f39c12"  # Warning Orange
+        "color": COLORS["danger"], "fontWeight": "bold"
+    },
+    # Z-score conditional formatting (highlight extreme values)
+    {
+        "if": {"column_id": "expected_upside_pct_zscore", "filter_query": "{expected_upside_pct_zscore} > 1.5"},
+        "color": COLORS["success"], "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "expected_upside_pct_zscore", "filter_query": "{expected_upside_pct_zscore} < -1.5"},
+        "color": COLORS["danger"], "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "filtered_upside_zscore", "filter_query": "{filtered_upside_zscore} > 1.5"},
+        "color": COLORS["success"], "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "filtered_upside_zscore", "filter_query": "{filtered_upside_zscore} < -1.5"},
+        "color": COLORS["danger"], "fontWeight": "bold"
+    },
+    # Percentile conditional formatting (top/bottom quartile)
+    {
+        "if": {"column_id": "expected_upside_pct_pctile", "filter_query": "{expected_upside_pct_pctile} > 75"},
+        "color": COLORS["success"], "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "expected_upside_pct_pctile", "filter_query": "{expected_upside_pct_pctile} < 25"},
+        "color": COLORS["danger"], "fontWeight": "bold"
+    },
+    # Composite score
+    {
+        "if": {"column_id": "composite_score", "filter_query": "{composite_score} > 0.7"},
+        "color": COLORS["success"], "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "composite_score", "filter_query": "{composite_score} < 0.3"},
+        "color": COLORS["danger"], "fontWeight": "bold"
+    },
+    # Quality tier color coding
+    {
+        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "premium"'},
+        "color": "#FFD700", "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "high"'},
+        "color": COLORS["success"], "fontWeight": "bold"
+    },
+    {
+        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "low"'},
+        "color": COLORS["danger"], "fontWeight": "bold"
     },
 ]
 
@@ -96,7 +203,9 @@ def get_formatted_columns(cols_list):
         spec = {"id": col, "name": col.replace("_", " ").capitalize()}
 
         # Currency formatting
-        if col in ["last_price", "price_target", "market_cap", "enterprise_value"]:
+        if col in ["last_price", "price_target", "price_target_high", "price_target_low",
+                    "price_target_median", "price_target_prob_weighted", "price_target_mc",
+                    "kalman_estimate", "market_cap", "enterprise_value"]:
             spec.update({
                 "type": "numeric",
                 "format": Format(precision=2, scheme=Scheme.fixed, group=True).symbol(Symbol.yes).symbol_prefix("$")
@@ -110,10 +219,41 @@ def get_formatted_columns(cols_list):
             })
 
         # Percentage formatting (for probability columns in 0-1 scale)
-        elif col in ["achievement_probability", "posterior_beat_prob", "confidence_score"]:
+        elif col in ["achievement_probability", "posterior_beat_prob", "confidence_score",
+                      "prob_positive_upside", "weighted_agreement"]:
             spec.update({
                 "type": "numeric",
                 "format": Format(precision=2, scheme=Scheme.percentage)
+            })
+
+        # Percentile formatting (0-100 scale, no suffix needed but show as rank)
+        elif col in ["expected_upside_pct_pctile", "filtered_upside_pctile",
+                      "expected_return_prob_weighted_pctile"]:
+            spec.update({
+                "type": "numeric",
+                "format": Format(precision=1, scheme=Scheme.fixed).symbol(Symbol.yes).symbol_suffix("th")
+            })
+
+        # Z-score formatting
+        elif col in ["expected_upside_pct_zscore", "filtered_upside_zscore",
+                      "expected_return_prob_weighted_zscore"]:
+            spec.update({
+                "type": "numeric",
+                "format": Format(precision=2, scheme=Scheme.fixed).symbol(Symbol.yes).symbol_suffix("σ")
+            })
+
+        # Integer scores
+        elif col in ["agreement_score"]:
+            spec.update({
+                "type": "numeric",
+                "format": Format(precision=0, scheme=Scheme.fixed)
+            })
+
+        # Composite / weighted scores
+        elif col in ["composite_score", "kelly_pct"]:
+            spec.update({
+                "type": "numeric",
+                "format": Format(precision=3, scheme=Scheme.fixed)
             })
 
         formatted.append(spec)
@@ -136,7 +276,12 @@ FILTER_CONFIG = [
     {"label": "Size Class",          "id": "size-class-dropdown",          "column": "size_class",          "width": "18%"},
     {"label": "Unit",                "id": "unit-dropdown",                "column": "unit",                "width": "18%"},
     {"label": "Beat Classification", "id": "beat-classification-dropdown", "column": "beat_classification", "width": "18%"},
-    {"label": "Confidence Level",    "id": "confidence-dropdown",          "column": "confidence_level",    "width": "23%"},
+    {"label": "Confidence Level",    "id": "confidence-dropdown",          "column": "confidence_level",    "width": "18%"},
+    {"label": "Quality Tier",        "id": "quality-tier-dropdown",        "column": "quality_tier",        "width": "18%"},
+    {"label": "Dividend Frequency",  "id": "div-freq-dropdown",            "column": "dividend_record_frequency", "width": "18%"},
+    {"label": "Earnings Frequency",  "id": "earn-freq-dropdown",           "column": "earnings_report_frequency", "width": "18%"},
+    {"label": "Next Earnings Status","id": "next-earn-status-dropdown",    "column": "next_earnings_status","width": "18%"},
+    {"label": "Next Earnings When",  "id": "next-earn-when-dropdown",      "column": "next_earnings_when",  "width": "18%"},
 ]
 
 # All filter dropdown IDs (for callbacks)
@@ -158,14 +303,14 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
         dropdowns.append(
             html.Div(
                 [
-                    html.Label(f["label"], className="filter-label"),
+                    html.Label(f["label"], className="filter-label", style={"color": COLORS["text_secondary"]}),
                     dcc.Dropdown(
                         id=f["id"],
                         multi=True,
                         options=build_filter_options(dataframe, f["column"]),
                         style={
-                            "backgroundColor": "#333",
-                            "color": "white",
+                            "backgroundColor": COLORS["background_input"],
+                            "color": "black",  # Note: Dropdown text usually requires dark color unless fully overridden by CSS
                         },
                         className="custom-dropdown",
                     ),
@@ -181,7 +326,7 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
                 [
                     html.H4(
                         "Filters",
-                        style={"marginBottom": "10px", "color": "white", "display": "inline-block"},
+                        style={"marginBottom": "10px", "color": COLORS["text_primary"], "display": "inline-block"},
                     ),
                     html.Button(
                         "Reset Filters",
@@ -189,12 +334,13 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
                         n_clicks=0,
                         style={
                             "marginLeft": "20px",
-                            "backgroundColor": "#e74c3c",
-                            "color": "white",
+                            "backgroundColor": COLORS["danger"],
+                            "color": COLORS["text_primary"],
                             "border": "none",
                             "padding": "5px 15px",
-                            "borderRadius": "3px",
+                            "borderRadius": "4px",
                             "cursor": "pointer",
+                            "fontWeight": "bold",
                         },
                     ),
                 ]
@@ -206,9 +352,10 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
         ],
         style={
             "padding": "20px",
-            "backgroundColor": "#222",
+            "backgroundColor": COLORS["background_panel"],
             "margin": "10px",
-            "borderRadius": "5px",
+            "borderRadius": "8px",
+            "border": f"1px solid {COLORS['border']}",
         },
     )
 
@@ -240,8 +387,8 @@ def collect_filter_values(*args) -> dict:
     """
     Zip filter arguments (in FILTER_CONFIG order) into a {column: values} dict.
 
-    Usage inside a callback that receives all 12 filter inputs first:
-        filter_values = collect_filter_values(*args[:12])
+    Usage inside a callback that receives all filter inputs first:
+        filter_values = collect_filter_values(*args[:len(FILTER_CONFIG)])
     """
     return {
         cfg["column"]: val
@@ -285,17 +432,29 @@ KELLY_MIN_CONFIDENCE_OPTIONS = [
 KELLY_BAR_COLOR_OPTIONS = [
     {"label": "None", "value": "none"},
     {"label": "Sector", "value": "sector"},
+    {"label": "Industry", "value": "industry"},
+    {"label": "Currency", "value": "unit"},
+    {"label": "Exchange", "value": "exchange"},
     {"label": "Confidence Level", "value": "confidence_level"},
+    {"label": "Quality Tier", "value": "quality_tier"},
+    {"label": "Signal", "value": "signal"},
+    {"label": "Country", "value": "country"},
 ]
 
 KELLY_SCATTER_COLOR_OPTIONS = [
     {"label": "None", "value": "none"},
     {"label": "Confidence Level", "value": "confidence_level"},
+    {"label": "Quality Tier", "value": "quality_tier"},
+    {"label": "Signal", "value": "signal"},
+    {"label": "Country", "value": "country"},
 ]
 
 KELLY_SCATTER_SIZE_OPTIONS = [
     {"label": "None", "value": "none"},
     {"label": "Achievement Probability", "value": "achievement_probability"},
+    {"label": "Composite Score", "value": "composite_score"},
+    {"label": "Market Cap", "value": "market_cap"},
+    {"label": "Upside Percentile", "value": "expected_upside_pct_pctile"},
 ]
 
 
@@ -357,8 +516,133 @@ def calculate_kelly_metrics(
 
 
 # =============================================================================
+# Efficient Frontier Helper Functions
+# =============================================================================
+
+
+def _ef_estimate_covariance_matrix(dataframe: pd.DataFrame, selected_tickers: list) -> pd.DataFrame:
+    """Estimate covariance matrix from sector/industry correlations for the efficient frontier."""
+    n = len(selected_tickers)
+    cov_matrix = np.eye(n) * 0.04
+
+    sector_map = {}
+    for ticker in selected_tickers:
+        ticker_data = dataframe[dataframe['ticker'] == ticker]
+        if len(ticker_data) > 0:
+            sector_map[ticker] = ticker_data['sector'].iloc[0]
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            sector_i = sector_map.get(selected_tickers[i], "Unknown")
+            sector_j = sector_map.get(selected_tickers[j], "Unknown")
+            correlation = 0.6 if sector_i == sector_j else 0.3
+            volatility_i = 0.25
+            volatility_j = 0.25
+            cov_matrix[i, j] = correlation * volatility_i * volatility_j
+            cov_matrix[j, i] = cov_matrix[i, j]
+
+    return pd.DataFrame(cov_matrix, index=selected_tickers, columns=selected_tickers)
+
+
+def _ef_generate_random_portfolios(
+        expected_returns: np.ndarray,
+        cov_matrix: pd.DataFrame,
+        num_portfolios: int,
+        risk_free_rate: float,
+        constraint_type: str,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Generate random portfolio combinations for the efficient frontier."""
+    n_assets = len(expected_returns)
+    portfolio_returns = np.zeros(num_portfolios)
+    portfolio_volatilities = np.zeros(num_portfolios)
+    portfolio_sharpe_ratios = np.zeros(num_portfolios)
+    portfolio_weights = np.zeros((num_portfolios, n_assets))
+
+    np.random.seed(42)
+
+    for i in range(num_portfolios):
+        if constraint_type == "long_short":
+            weights = np.random.normal(0, 0.3, n_assets)
+            weights = weights / np.sum(np.abs(weights))
+        else:  # long_only or sector_neutral
+            weights = np.random.dirichlet(np.ones(n_assets))
+
+        port_return = np.sum(weights * expected_returns)
+        port_variance = np.dot(weights, np.dot(cov_matrix.values, weights))
+        port_volatility = np.sqrt(port_variance)
+        sharpe = (port_return - risk_free_rate / 100) / port_volatility if port_volatility > 0 else 0
+
+        portfolio_returns[i] = port_return
+        portfolio_volatilities[i] = port_volatility
+        portfolio_sharpe_ratios[i] = sharpe
+        portfolio_weights[i] = weights
+
+    return portfolio_returns, portfolio_volatilities, portfolio_sharpe_ratios, portfolio_weights
+
+
+def _ef_find_optimal_portfolios(
+        expected_returns: np.ndarray,
+        cov_matrix: pd.DataFrame,
+        risk_free_rate: float,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Find maximum Sharpe ratio and minimum variance portfolios."""
+    n_assets = len(expected_returns)
+
+    min_var_weights = np.ones(n_assets) / n_assets
+    min_var_return = np.sum(min_var_weights * expected_returns)
+    min_var_volatility = np.sqrt(np.dot(min_var_weights, np.dot(cov_matrix.values, min_var_weights)))
+
+    max_sharpe_weights = np.ones(n_assets) / n_assets
+    max_sharpe_return = np.sum(max_sharpe_weights * expected_returns)
+    max_sharpe_volatility = np.sqrt(np.dot(max_sharpe_weights, np.dot(cov_matrix.values, max_sharpe_weights)))
+
+    return min_var_weights, max_sharpe_weights, np.array([min_var_volatility, max_sharpe_volatility])
+
+
+# =============================================================================
 # Artifact Helper Functions
 # =============================================================================
+
+
+def load_plotly_figure_from_html(html_path):
+    """Extract Plotly figure (data + layout) from a self-contained Plotly HTML file."""
+    import json as _json
+    try:
+        with open(html_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        idx = content.rfind('Plotly.newPlot')
+        if idx < 0:
+            return None
+        call_text = content[idx:]
+        # Extract data array
+        start = call_text.index('[')
+        depth, end = 0, start
+        for i, c in enumerate(call_text[start:], start):
+            if c == '[':
+                depth += 1
+            elif c == ']':
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        data = _json.loads(call_text[start:end + 1])
+        # Extract layout object
+        rest = call_text[end + 1:].lstrip(' ,\n\r\t')
+        l_start = rest.index('{')
+        depth, l_end = 0, l_start
+        for i, c in enumerate(rest[l_start:], l_start):
+            if c == '{':
+                depth += 1
+            elif c == '}':
+                depth -= 1
+                if depth == 0:
+                    l_end = i
+                    break
+        layout = _json.loads(rest[l_start:l_end + 1])
+        return go.Figure(data=data, layout=layout)
+    except Exception as e:
+        print(f"⚠️ Failed to load Plotly figure from {html_path}: {e}")
+        return None
 
 
 def get_artifact_path(artifact_name: str, artifact_type: str = "html") -> Path:
@@ -479,8 +763,17 @@ def load_geib_data():
         numeric_cols = [
             'prob_positive_upside', 'last_price', 'expected_upside_pct',
             'filtered_upside', 'expected_return_prob_weighted',
-            'achievement_probability', 'posterior_beat_prob', 
-            'confidence_score', 'agreement_score'
+            'achievement_probability', 'posterior_beat_prob',
+            'confidence_score', 'agreement_score', 'weighted_agreement',
+            'composite_score', 'market_cap', 'enterprise_value',
+            'price_target', 'price_target_high', 'price_target_low',
+            'price_target_median', 'price_target_prob_weighted', 'kalman_estimate',
+            'volume_shrs',
+            'expected_upside_pct_zscore', 'filtered_upside_zscore',
+            'expected_return_prob_weighted_zscore',
+            'expected_upside_pct_pctile', 'filtered_upside_pctile',
+            'expected_return_prob_weighted_pctile',
+            'reporting_interval',
         ]
         for col in numeric_cols:
             if col in data['summary'].columns:
@@ -531,6 +824,10 @@ df_earnings = all_data['earnings']
 df_credit = all_data['credit']
 df_confidence = all_data["model_confidence"]
 
+# Load the return distribution fit artifact figure at startup
+_return_dist_fit_path = PROJECT_ROOT / "outputs" / "analytics" / "er_return_distribution_fit.html"
+_return_dist_fit_fig = load_plotly_figure_from_html(_return_dist_fit_path)
+
 # Initialize Dash app
 app = dash.Dash(
     __name__,
@@ -539,43 +836,56 @@ app = dash.Dash(
 )
 server = app.server
 
+# Flask route to serve HTML artifacts from outputs/analytics
+@server.route("/artifacts/<path:filename>")
+def serve_artifact(filename):
+    """Serve HTML artifact files from the outputs/analytics directory."""
+    artifacts_dir = str(PROJECT_ROOT / "outputs" / "analytics")
+    return send_from_directory(artifacts_dir, filename)
+
+
 # Add custom CSS for dropdown selection highlighting
-app.index_string = '''
+app.index_string = f'''
     <!DOCTYPE html>
     <html>
         <head>
-            {%metas%}
-            <title>{%title%}</title>
-            {%favicon%}
-            {%css%}
+            {{%metas%}}
+            <title>{{%title%}}</title>
+            {{%favicon%}}
+            {{%css%}}
             <style>
                 /* Highlight selected values in multi-dropdown */
-                .Select-value {
-                    background-color: #111 !important;
-                    border: 1px solid #444 !important;
-                    color: white !important;
-                }
-                .Select-value-icon {
-                    border-right: 1px solid #444 !important;
-                    color: #e74c3c !important;
-                }
-                .Select-value-icon:hover {
-                    background-color: #e74c3c !important;
-                    color: white !important;
-                }
-                .filter-label {
-                    color: #adb5bd;
+                .Select-value {{
+                    background-color: {COLORS["primary"]} !important;
+                    border: 1px solid {COLORS["border"]} !important;
+                    color: {COLORS["text_primary"]} !important;
+                }}
+                .Select-value-icon {{
+                    border-right: 1px solid {COLORS["border"]} !important;
+                    color: {COLORS["text_primary"]} !important;
+                }}
+                .Select-value-icon:hover {{
+                    background-color: {COLORS["danger"]} !important;
+                    color: {COLORS["text_primary"]} !important;
+                }}
+                .filter-label {{
+                    color: {COLORS["text_secondary"]};
                     font-weight: bold;
                     font-size: 0.9rem;
-                }
+                }}
+                /* Global Background */
+                body {{
+                    background-color: {COLORS["background_main"]};
+                    color: {COLORS["text_primary"]};
+                }}
             </style>
         </head>
         <body>
-            {%app_entry%}
+            {{%app_entry%}}
             <footer>
-                {%config%}
-                {%scripts%}
-                {%renderer%}
+                {{%config%}}
+                {{%scripts%}}
+                {{%renderer%}}
             </footer>
         </body>
     </html>
@@ -584,18 +894,20 @@ app.index_string = '''
 # Layout
 app.layout = html.Div(
     [
-        html.H1("🌍 Global Equity Analytics Dashboard (GEIB)", style={"textAlign": "center"}),
+        html.H1("🌍 Global Equity Analytics Dashboard (GEIB)", style={"textAlign": "center", "marginTop": "20px"}),
         html.P(
-            "Expected Returns Analysis from Tri-Model Consensus (Monte Carlo, Kalman Filter, Price Target Achievement)",
-            style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+            "Expected Returns Analysis from Quad-Model Consensus (Monte Carlo, Kalman Filter, Price Target Achievement, Earnings Beat)",
+            style={"textAlign": "center", "fontStyle": "italic", "color": COLORS["text_secondary"]},
         ),
         # Status indicator
         html.Div(
             id="status-indicator",
             children=[
                 html.Span(
-                    f"✅ Data Loaded: {len(df):,} stocks" if len(df) > 0 else "⚠️ No data loaded",
-                    style={"margin": "0 10px", "color": "green" if len(df) > 0 else "orange"},
+                    f"✅ Data Loaded: {len(df):,} stocks | Last Updated: {df['last_updated'].max()}" if len(df) > 0 and "last_updated" in df.columns else (
+                    f"✅ Data Loaded: {len(df):,} stocks" if len(df) > 0 else "⚠️ No data loaded"
+                ),
+                    style={"margin": "0 10px", "color": COLORS["success"] if len(df) > 0 else COLORS["warning"]},
                 )
             ],
             style={"textAlign": "center", "padding": "10px"},
@@ -616,17 +928,36 @@ app.layout = html.Div(
                         html.Div(
                             [
                                 dcc.Graph(id="returns-scatter"),
+                                dcc.Graph(id="artifact-er-summary-posterior"),
                                 # Price Target vs Current Price Scatter Controls
                                 html.Div(
                                     [
                                         html.H4("Price Target vs Current Price", style={"textAlign": "center", "marginBottom": "10px"}),
                                         html.P(
-                                            "Scatter plot showing analyst price targets versus current stock prices. Points above the diagonal line indicate upside potential.",
+                                            "Scatter plot showing price target vs current price with upside potential. "
+                                            "Points above the diagonal indicate upside potential; points below indicate downside risk.",
                                             style={"textAlign": "center", "fontStyle": "italic", "color": "#999", "marginBottom": "15px"},
                                         ),
                                         html.Div(
                                             style={"display": "flex", "flexDirection": "row", "flexWrap": "wrap", "rowGap": "10px", "alignItems": "center", "marginBottom": "15px", "justifyContent": "center"},
                                             children=[
+                                                html.Div(
+                                                    children=[
+                                                        html.Label("Price Target Metric:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
+                                                        dcc.Dropdown(
+                                                            id="pt-scatter-metric-control",
+                                                            options=[
+                                                                {"label": "Price Target Median", "value": "price_target_median"},
+                                                                {"label": "Kalman Estimate", "value": "kalman_estimate"},
+                                                                {"label": "Price Target Prob Weighted", "value": "price_target_prob_weighted"},
+                                                            ],
+                                                            value="price_target_median",
+                                                            style={"minWidth": "200px", "color": "black"},
+                                                            searchable=False,
+                                                        ),
+                                                    ],
+                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
+                                                ),
                                                 html.Div(
                                                     children=[
                                                         html.Label("Size Encoding:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
@@ -663,33 +994,56 @@ app.layout = html.Div(
                                                     ],
                                                     style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
                                                 ),
+                                            ],
+                                        ),
+                                        html.Div(
+                                            style={"display": "flex", "flexDirection": "row", "flexWrap": "wrap", "rowGap": "10px", "alignItems": "center", "marginBottom": "15px", "justifyContent": "center"},
+                                            children=[
                                                 html.Div(
                                                     children=[
                                                         html.Label("Last Price Range:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
-                                                        dcc.RangeSlider(
-                                                            id="pt-scatter-last-price-slider",
-                                                            min=0,
-                                                            max=1000,
-                                                            step=10,
-                                                            value=[0, 1000],
-                                                            marks={0: "$0", 250: "$250", 500: "$500", 750: "$750", 1000: "$1000+"},
-                                                        ),
+                                                        html.Div([
+                                                            dcc.Input(
+                                                                id="pt-scatter-price-min",
+                                                                type="number",
+                                                                placeholder="Min",
+                                                                debounce=True,
+                                                                style={"width": "100px", "color": "black"},
+                                                            ),
+                                                            html.Span(" - ", style={"margin": "0 8px", "alignSelf": "center", "color": "white"}),
+                                                            dcc.Input(
+                                                                id="pt-scatter-price-max",
+                                                                type="number",
+                                                                placeholder="Max",
+                                                                debounce=True,
+                                                                style={"width": "100px", "color": "black"},
+                                                            ),
+                                                        ], style={"display": "flex", "alignItems": "center", "flexWrap": "wrap"}),
                                                     ],
-                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px", "minWidth": "250px"},
+                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
                                                 ),
                                                 html.Div(
                                                     children=[
                                                         html.Label("Price Target Range:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
-                                                        dcc.RangeSlider(
-                                                            id="pt-scatter-price-target-slider",
-                                                            min=0,
-                                                            max=1000,
-                                                            step=10,
-                                                            value=[0, 1000],
-                                                            marks={0: "$0", 250: "$250", 500: "$500", 750: "$750", 1000: "$1000+"},
-                                                        ),
+                                                        html.Div([
+                                                            dcc.Input(
+                                                                id="pt-scatter-target-min",
+                                                                type="number",
+                                                                placeholder="Min",
+                                                                debounce=True,
+                                                                style={"width": "100px", "color": "black"},
+                                                            ),
+                                                            html.Span(" - ", style={"margin": "0 8px", "alignSelf": "center", "color": "white"}),
+                                                            dcc.Input(
+                                                                id="pt-scatter-target-max",
+                                                                type="number",
+                                                                placeholder="Max",
+                                                                debounce=True,
+                                                                style={"width": "100px", "color": "black"},
+                                                            ),
+                                                        ], style={"display": "flex", "alignItems": "center", "flexWrap": "wrap"}),
                                                     ],
-                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px", "minWidth": "250px"},
+                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
                                                 ),
                                             ],
                                         ),
@@ -698,7 +1052,7 @@ app.layout = html.Div(
                                 ),
                                 dcc.Loading(
                                     type="circle",
-                                    children=[dcc.Graph(id="price_target_vs_current_scatter", style={"minHeight": "550px"})],
+                                    children=[dcc.Graph(id="price_target_vs_current_scatter", style={"minHeight": "550px", "height": "calc(100vh - 600px)"})],
                                 ),
                             ]
                         )
@@ -723,13 +1077,19 @@ app.layout = html.Div(
                                 html.H3(
                                     "High Conviction Opportunities", style={"textAlign": "center", "margin": "20px"}
                                 ),
+                                dcc.Graph(id="artifact-er-strong-consensus"),
                                 dash_table.DataTable(
                                     id="top-opportunities-table",
                                     columns=get_formatted_columns([
-                                        "ticker", "name", "sector", "last_price", "price_target",
+                                        "ticker", "name", "sector", "quality_tier", "last_price",
+                                        "price_target", "price_target_low", "price_target_high",
+                                        "price_target_median", "price_target_mc", "price_target_prob_weighted", "kalman_estimate",
                                         "expected_upside_pct", "filtered_upside",
                                         "expected_return_prob_weighted", "achievement_probability",
-                                        "confidence_level", "signal"
+                                        "posterior_beat_prob", "beat_classification",
+                                        "agreement_score", "weighted_agreement",
+                                        "composite_score", "confidence_level", "signal",
+                                        "expected_upside_pct_pctile", "filtered_upside_zscore",
                                     ]),
                                     page_size=15,
                                     sort_action="native",
@@ -738,6 +1098,14 @@ app.layout = html.Div(
                                     style_header=TABLE_STYLE_HEADER,
                                     style_cell=TABLE_STYLE_CELL,
                                     style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
+                                ),
+                                # Screening Summary
+                                html.Div(
+                                    [
+                                        html.H4("Stock Screening Summary", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="artifact-er-screening-summary"),
+                                    ],
+                                    style={"margin": "10px"},
                                 ),
                             ]
                         )
@@ -750,6 +1118,241 @@ app.layout = html.Div(
                             [
                                 dcc.Graph(id="signal-breakdown"),
                                 dcc.Graph(id="regional-performance"),
+                                dcc.Graph(id="artifact-er-sector-heatmap"),
+                                dcc.Graph(id="artifact-er-sector-risk-reward"),
+                                # Sector Return Analytics Heatmap
+                                html.Div(
+                                    [
+                                        html.H4("Sector Return Analytics", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="artifact-er-sector-return-analytics"),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                                # Model Dispersion Dashboard
+                                html.Div(
+                                    [
+                                        html.H4("Model Dispersion Dashboard", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="artifact-er-model-dispersion"),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                            ]
+                        )
+                    ],
+                ),
+                dcc.Tab(
+                    label="📊 Z-Score & Percentile Ranking",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Cross-Sectional Z-Score & Percentile Analysis",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Identify statistical outliers and relative positioning across the universe using z-scores and percentile ranks.",
+                                    style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+                                ),
+                                # Z-Score controls
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Label("Metric:", style={"color": "white"}),
+                                                dcc.Dropdown(
+                                                    id="zscore-metric-dropdown",
+                                                    options=[
+                                                        {"label": "Expected Upside %", "value": "expected_upside_pct"},
+                                                        {"label": "Filtered Upside", "value": "filtered_upside"},
+                                                        {"label": "Prob-Weighted Return", "value": "expected_return_prob_weighted"},
+                                                    ],
+                                                    value="expected_upside_pct",
+                                                    style={"color": "black"},
+                                                ),
+                                            ],
+                                            style={"width": "20%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Label("Color By:", style={"color": "white"}),
+                                                dcc.Dropdown(
+                                                    id="zscore-color-dropdown",
+                                                    options=[
+                                                        {"label": "Sector", "value": "sector"},
+                                                        {"label": "Quality Tier", "value": "quality_tier"},
+                                                        {"label": "Signal", "value": "signal"},
+                                                        {"label": "Confidence Level", "value": "confidence_level"},
+                                                        {"label": "None", "value": "none"},
+                                                    ],
+                                                    value="quality_tier",
+                                                    style={"color": "black"},
+                                                ),
+                                            ],
+                                            style={"width": "20%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Label("Size By:", style={"color": "white"}),
+                                                dcc.Dropdown(
+                                                    id="zscore-size-dropdown",
+                                                    options=[
+                                                        {"label": "Composite Score", "value": "composite_score"},
+                                                        {"label": "Market Cap", "value": "market_cap"},
+                                                        {"label": "Confidence Score", "value": "confidence_score"},
+                                                        {"label": "None", "value": "none"},
+                                                    ],
+                                                    value="composite_score",
+                                                    style={"color": "black"},
+                                                ),
+                                            ],
+                                            style={"width": "20%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Label("Z-Score Threshold:", style={"color": "white"}),
+                                                dcc.Slider(
+                                                    id="zscore-threshold-slider",
+                                                    min=0.5,
+                                                    max=3.0,
+                                                    step=0.25,
+                                                    value=1.5,
+                                                    marks={0.5: "0.5σ", 1.0: "1σ", 1.5: "1.5σ", 2.0: "2σ", 2.5: "2.5σ", 3.0: "3σ"},
+                                                    tooltip={"placement": "bottom", "always_visible": True},
+                                                ),
+                                            ],
+                                            style={"width": "30%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                    ],
+                                    style={"backgroundColor": "#333", "padding": "10px", "borderRadius": "5px", "margin": "10px"},
+                                ),
+                                html.Div(id="zscore-kpi-cards", style={"margin": "10px"}),
+                                dbc.Row(
+                                    [
+                                        dbc.Col([dcc.Graph(id="zscore-scatter-plot")], width=6),
+                                        dbc.Col([dcc.Graph(id="percentile-distribution-plot")], width=6),
+                                    ]
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col([dcc.Graph(id="zscore-sector-box-plot")], width=6),
+                                        dbc.Col([dcc.Graph(id="composite-vs-percentile-plot")], width=6),
+                                    ]
+                                ),
+                                # Z-Score ranked table
+                                html.Div(
+                                    [
+                                        html.H4("Top Statistical Outliers (by Z-Score)", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dash_table.DataTable(
+                                            id="zscore-ranking-table",
+                                            columns=get_formatted_columns([
+                                                "ticker", "name", "country", "trading_country", "unit",  "exchange", "industry", "sector", "quality_tier",
+                                                "expected_upside_pct", "expected_upside_pct_zscore", "expected_upside_pct_pctile",
+                                                "filtered_upside", "filtered_upside_zscore", "filtered_upside_pctile",
+                                                "expected_return_prob_weighted_zscore", "expected_return_prob_weighted_pctile",
+                                                "posterior_beat_prob", "beat_classification",
+                                                "agreement_score", "weighted_agreement",
+                                                "composite_score", "confidence_level", "signal", "price_target_prob_weighted",
+                                                "price_target_mc"
+                                            ]),
+                                            page_size=20,
+                                            sort_action="native",
+                                            filter_action="native",
+                                            style_table={"overflowX": "auto"},
+                                            style_header=TABLE_STYLE_HEADER,
+                                            style_cell=TABLE_STYLE_CELL,
+                                            style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
+                                        ),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                            ]
+                        )
+                    ],
+                ),
+                dcc.Tab(
+                    label="📅 Earnings Calendar & Events",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Earnings Calendar & Corporate Events",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Track upcoming earnings dates, dividend schedules, and fiscal year milestones for filtered stocks.",
+                                    style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Label("Days Ahead:", style={"color": "white"}),
+                                                dcc.Dropdown(
+                                                    id="earnings-days-ahead",
+                                                    options=[
+                                                        {"label": "7 days", "value": 7},
+                                                        {"label": "14 days", "value": 14},
+                                                        {"label": "30 days", "value": 30},
+                                                        {"label": "60 days", "value": 60},
+                                                        {"label": "90 days", "value": 90},
+                                                    ],
+                                                    value=30,
+                                                    style={"color": "black"},
+                                                ),
+                                            ],
+                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Label("Sort By:", style={"color": "white"}),
+                                                dcc.Dropdown(
+                                                    id="earnings-sort-by",
+                                                    options=[
+                                                        {"label": "Next Earnings Date", "value": "next_earnings"},
+                                                        {"label": "Expected Upside", "value": "expected_upside_pct"},
+                                                        {"label": "Composite Score", "value": "composite_score"},
+                                                    ],
+                                                    value="next_earnings",
+                                                    style={"color": "black"},
+                                                ),
+                                            ],
+                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                    ],
+                                    style={"backgroundColor": "#333", "padding": "10px", "borderRadius": "5px", "margin": "10px"},
+                                ),
+                                html.Div(id="earnings-calendar-kpis", style={"margin": "10px"}),
+                                dbc.Row(
+                                    [
+                                        dbc.Col([dcc.Graph(id="earnings-timeline-chart")], width=7),
+                                        dbc.Col([dcc.Graph(id="earnings-by-status-chart")], width=5),
+                                    ]
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Upcoming Earnings Reports", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dash_table.DataTable(
+                                            id="earnings-calendar-table",
+                                            columns=get_formatted_columns([
+                                                "ticker", "name", "country","trading_country", "exchange", "sector", "industry", "next_earnings",
+                                                "next_earnings_status", "next_earnings_when",
+                                                "next_fiscal_quarter", "earnings_report_frequency",
+                                                "expected_upside_pct", "posterior_beat_prob", "beat_classification",
+                                                "agreement_score", "composite_score",
+                                                "signal", "quality_tier",
+                                            ]),
+                                            page_size=20,
+                                            sort_action="native",
+                                            filter_action="native",
+                                            style_table={"overflowX": "auto"},
+                                            style_header=TABLE_STYLE_HEADER,
+                                            style_cell=TABLE_STYLE_CELL,
+                                            style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
+                                        ),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                                html.Div(id="artifact-er-earnings-prob-dashboard"),
                             ]
                         )
                     ],
@@ -880,6 +1483,8 @@ app.layout = html.Div(
                                                     options=[
                                                         {"label": "None", "value": "none"},
                                                         {"label": "Signal", "value": "signal"},
+                                                        {"label": "Quality Tier", "value": "quality_tier"},
+                                                        {"label": "Confidence Level", "value": "confidence_level"},
                                                     ],
                                                     value="signal",
                                                     style={"color": "black"},
@@ -934,6 +1539,7 @@ app.layout = html.Div(
                                         dbc.Col([dcc.Graph(id="risk-reward-scatter")], width=6),
                                     ]
                                 ),
+                                html.Div(id="artifact-er-quality-risk-quadrant"),
                             ]
                         )
                     ],
@@ -971,6 +1577,33 @@ app.layout = html.Div(
                                     [
                                         dbc.Col([dcc.Graph(id="category-ridge-plot")], width=12),
                                     ]
+                                ),
+                                dcc.Graph(id="artifact-er-posterior-return-forest"),
+                                dcc.Graph(id="artifact-er-beat-prob-posterior"),
+                                dcc.Graph(id="artifact-er-beat-vs-achievement"),
+                                dcc.Graph(id="artifact-er-ruin-prob-diagnostic"),
+                                # Bayesian Ridge Plots (Profitability & Sentiment)
+                                html.Div(
+                                    [
+                                        html.H4("Bayesian Profitability Ridge Plot", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="artifact-er-bayesian-profitability-ridge"),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Bayesian Sentiment Ridge Plot", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="artifact-er-bayesian-sentiment-ridge"),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                                # Distress Early Warning
+                                html.Div(
+                                    [
+                                        html.H4("Distress Early Warning Dashboard", style={"textAlign": "center", "marginTop": "20px"}),
+                                        html.Div(id="artifact-er-distress-early-warning"),
+                                    ],
+                                    style={"margin": "10px"},
                                 ),
                             ]
                         )
@@ -1225,7 +1858,7 @@ app.layout = html.Div(
                                                     id="mc-target-return",
                                                     min=0.0,
                                                     max=20.0,
-                                                    step=0.5,
+                                                    step=0.1,
                                                     value=0.0,
                                                     marks={i: f"{i}%" for i in range(0, 25, 5)},
                                                     tooltip={"placement": "bottom", "always_visible": True},
@@ -1297,7 +1930,7 @@ app.layout = html.Div(
                                         dbc.Col(
                                             [
                                                 html.H4(
-                                                    "Return Distribution",
+                                                    "Return Distribution Fit",
                                                     style={"textAlign": "center"},
                                                 ),
                                                 dcc.Graph(id="mc-distribution-chart"),
@@ -1305,6 +1938,16 @@ app.layout = html.Div(
                                             width=6,
                                         ),
                                     ]
+                                ),
+                                dcc.Graph(id="artifact-er-mc-distribution"),
+                                dcc.Graph(id="artifact-er-var-analysis"),
+                                # Return Distribution Fit
+                                html.Div(
+                                    [
+                                        html.H4("Return Distribution Fit Analysis", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="artifact-er-return-distribution-fit"),
+                                    ],
+                                    style={"margin": "10px"},
                                 ),
                             ]
                         )
@@ -1371,6 +2014,8 @@ app.layout = html.Div(
                                                     id="capm-size-encoding",
                                                     options=[
                                                         {"label": "Market Cap", "value": "market_cap"},
+                                                        {"label": "Enterprise Value", "value": "enterprise_value"},
+                                                        {"label": "Composite Score", "value": "composite_score"},
                                                         {"label": "None", "value": "none"},
                                                     ],
                                                     value="market_cap",
@@ -1582,9 +2227,10 @@ app.layout = html.Div(
                                         dash_table.DataTable(
                                             id="kelly-positions-table",
                                             columns=get_formatted_columns([
-                                                "ticker", "sector", "last_price", "price_target",
+                                                "ticker", "name", "country", "trading_country", "unit",  "exchange", "industry", "sector", "quality_tier", "last_price", "price_target","price_target_mc","price_target_prob_weighted",
                                                 "filtered_upside", "achievement_probability",
-                                                "confidence_level", "kelly_pct"
+                                                "composite_score", "confidence_level", "signal", "kelly_pct",
+
                                             ]),
                                             page_size=15,
                                             sort_action="native",
@@ -1595,6 +2241,124 @@ app.layout = html.Div(
                                         ),
                                     ],
                                     style={"margin": "10px"},
+                                ),
+                            ]
+                        )
+                    ],
+                ),
+                dcc.Tab(
+                    label="📈 Efficient Frontier",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Efficient Frontier: Risk-Return Portfolio Optimization",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Explore optimal portfolio allocations by analyzing the risk-return tradeoff curve. "
+                                    "Select stocks and adjust parameters to find the best portfolio combinations.",
+                                    style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+                                ),
+                                # Efficient Frontier Controls
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Label("Select Stocks:", style={"color": "white", "fontWeight": "bold"}),
+                                                dcc.Dropdown(
+                                                    id="ef-stock-selector",
+                                                    options=(
+                                                        [
+                                                            {"label": f"{row['ticker']} - {row['name'][:30]}", "value": row['ticker']}
+                                                            for _, row in df.nlargest(50, 'market_cap').iterrows()
+                                                        ]
+                                                        if len(df) > 0 and all(c in df.columns for c in ['ticker', 'name', 'market_cap'])
+                                                        else []
+                                                    ),
+                                                    value=(
+                                                        df.nlargest(50, 'market_cap').head(10)['ticker'].tolist()
+                                                        if len(df) > 0 and 'market_cap' in df.columns
+                                                        else []
+                                                    ),
+                                                    multi=True,
+                                                    style={"color": "black", "minWidth": "300px"},
+                                                ),
+                                            ],
+                                            style={"width": "30%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Label("Risk-Free Rate:", style={"color": "white", "fontWeight": "bold"}),
+                                                dcc.Dropdown(
+                                                    id="ef-risk-free-rate",
+                                                    options=[
+                                                        {"label": "0%", "value": 0.0},
+                                                        {"label": "2%", "value": 2.0},
+                                                        {"label": "3%", "value": 3.0},
+                                                        {"label": "4%", "value": 4.0},
+                                                        {"label": "5%", "value": 5.0},
+                                                    ],
+                                                    value=3.0,
+                                                    style={"color": "black"},
+                                                    searchable=False,
+                                                ),
+                                            ],
+                                            style={"width": "12%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Label("Constraint Type:", style={"color": "white", "fontWeight": "bold"}),
+                                                dcc.Dropdown(
+                                                    id="ef-constraint-type",
+                                                    options=[
+                                                        {"label": "Long Only", "value": "long_only"},
+                                                        {"label": "Long/Short", "value": "long_short"},
+                                                        {"label": "Sector Neutral", "value": "sector_neutral"},
+                                                    ],
+                                                    value="long_only",
+                                                    style={"color": "black"},
+                                                    searchable=False,
+                                                ),
+                                            ],
+                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Label("Number of Portfolios:", style={"color": "white", "fontWeight": "bold"}),
+                                                dcc.Dropdown(
+                                                    id="ef-num-portfolios",
+                                                    options=[
+                                                        {"label": "100", "value": 100},
+                                                        {"label": "500", "value": 500},
+                                                        {"label": "1,000", "value": 1000},
+                                                        {"label": "5,000", "value": 5000},
+                                                    ],
+                                                    value=500,
+                                                    style={"color": "black"},
+                                                    searchable=False,
+                                                ),
+                                            ],
+                                            style={"width": "12%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                    ],
+                                    style={
+                                        "backgroundColor": "#333",
+                                        "padding": "10px",
+                                        "borderRadius": "5px",
+                                        "margin": "10px",
+                                    },
+                                ),
+                                dcc.Loading(
+                                    type="circle",
+                                    children=[
+                                        dcc.Graph(id="ef-frontier-graph", style={"minHeight": "550px", "height": "calc(100vh - 600px)"}),
+                                    ],
+                                ),
+                                html.Pre(id="ef-error-display", style={"color": "red", "margin": "10px 0"}),
+                                html.Div(
+                                    id="ef-portfolio-table",
+                                    style={"marginTop": "20px", "overflowX": "auto", "margin": "10px"},
                                 ),
                             ]
                         )
@@ -1715,6 +2479,24 @@ def _reset_filters(_n):
         Output("beat-prob-posterior", "figure"),
         Output("ruin-diagnostic", "figure"),
         Output("category-ridge-plot", "figure"),
+        # Dynamic artifact outputs
+        Output("artifact-er-summary-posterior", "figure"),
+        Output("artifact-er-strong-consensus", "figure"),
+        Output("artifact-er-sector-heatmap", "figure"),
+        Output("artifact-er-sector-risk-reward", "figure"),
+        Output("artifact-er-quality-risk-quadrant", "children"),
+        Output("artifact-er-posterior-return-forest", "figure"),
+        Output("artifact-er-beat-prob-posterior", "figure"),
+        Output("artifact-er-beat-vs-achievement", "figure"),
+        Output("artifact-er-ruin-prob-diagnostic", "figure"),
+        # New v3 artifact outputs
+        Output("artifact-er-screening-summary", "figure"),
+        Output("artifact-er-sector-return-analytics", "figure"),
+        Output("artifact-er-model-dispersion", "figure"),
+        Output("artifact-er-bayesian-profitability-ridge", "figure"),
+        Output("artifact-er-bayesian-sentiment-ridge", "figure"),
+        Output("artifact-er-distress-early-warning", "children"),
+        Output("artifact-er-return-distribution-fit", "figure"),
     ],
     [Input(f["id"], "value") for f in FILTER_CONFIG]
     + [
@@ -1746,7 +2528,11 @@ def update_dashboard(*args):
     # 3. Handle Empty States
     if filtered_df.empty:
         empty_fig = go.Figure().update_layout(title="No data matching selected filters")
-        return [[]] + [empty_fig] * 13
+        return (
+            [[]] + [empty_fig] * 13
+            + [empty_fig] * 4 + [html.Div()] + [empty_fig] * 4
+            + [empty_fig] * 5 + [html.Div()] + [empty_fig]
+        )
 
     # ---------------------------------------------------------
     # Visualization Logic
@@ -1811,6 +2597,8 @@ def update_dashboard(*args):
         avg_expected_return = filtered_df["expected_return_prob_weighted"].mean()
         high_confidence = len(filtered_df[filtered_df["confidence_level"] == "high"]) if "confidence_level" in filtered_df.columns else 0
         strong_buy = len(filtered_df[filtered_df["signal"] == "Strong Bullish (4/4)"]) if "signal" in filtered_df.columns else 0
+        avg_composite = filtered_df["composite_score"].mean() if "composite_score" in filtered_df.columns else 0
+        premium_tier = len(filtered_df[filtered_df["quality_tier"] == "premium"]) if "quality_tier" in filtered_df.columns else 0
 
         kpi_cards = [
             dbc.Card(
@@ -1820,7 +2608,7 @@ def update_dashboard(*args):
                 ]),
                 color="primary",
                 inverse=True,
-                style={"width": "23%", "textAlign": "center"},
+                style={"width": "18%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody([
@@ -1829,7 +2617,7 @@ def update_dashboard(*args):
                 ]),
                 color="success" if avg_expected_return > 0 else "danger",
                 inverse=True,
-                style={"width": "23%", "textAlign": "center"},
+                style={"width": "18%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody([
@@ -1838,7 +2626,7 @@ def update_dashboard(*args):
                 ]),
                 color="info",
                 inverse=True,
-                style={"width": "23%", "textAlign": "center"},
+                style={"width": "18%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody([
@@ -1847,7 +2635,25 @@ def update_dashboard(*args):
                 ]),
                 color="warning",
                 inverse=True,
-                style={"width": "23%", "textAlign": "center"},
+                style={"width": "18%", "textAlign": "center"},
+            ),
+            dbc.Card(
+                dbc.CardBody([
+                    html.H4("Avg Composite Score", className="card-title"),
+                    html.H2(f"{avg_composite:.3f}", className="card-text"),
+                ]),
+                color="secondary",
+                inverse=True,
+                style={"width": "13%", "textAlign": "center"},
+            ),
+            dbc.Card(
+                dbc.CardBody([
+                    html.H4("Premium Tier", className="card-title"),
+                    html.H2(f"{premium_tier}", className="card-text"),
+                ]),
+                color="dark",
+                inverse=True,
+                style={"width": "13%", "textAlign": "center"},
             ),
         ]
 
@@ -1916,17 +2722,32 @@ def update_dashboard(*args):
             "exchange",
             "sector",
             "industry",
+            "quality_tier",
             "next_earnings",
+            "next_earnings_status",
             "market_cap",
+            "enterprise_value",
             "last_price",
             "price_target",
+            "price_target_mc",
+            "price_target_low",
+            "price_target_high",
+            "price_target_median",
             "expected_upside_pct",
+            "kalman_estimate",
+            "price_target_prob_weighted",
             "filtered_upside",
             "expected_return_prob_weighted",
             "achievement_probability",
+            "composite_score",
             "confidence_level",
             "signal",
             "agreement_score",
+            "weighted_agreement",
+            "expected_upside_pct_zscore",
+            "expected_upside_pct_pctile",
+            "filtered_upside_zscore",
+            "filtered_upside_pctile",
         ]
         cols_available = [c for c in cols_to_show if c in filtered_df.columns]
         sort_col = "expected_return_prob_weighted" if "expected_return_prob_weighted" in filtered_df.columns else filtered_df.columns[0]
@@ -1951,26 +2772,26 @@ def update_dashboard(*args):
             template="plotly_dark",
         )
 
-    # Regional Performance
-    regional_perf = {}
-    if not filtered_df.empty and "region" in filtered_df.columns and "expected_return_prob_weighted" in filtered_df.columns:
-        regional_stats = (
+    # Performance by Currency
+    unit_perf = {}
+    if not filtered_df.empty and "unit" in filtered_df.columns and "expected_return_prob_weighted" in filtered_df.columns:
+        unit_stats = (
             filtered_df
-            .groupby("region")
+            .groupby("unit")
             ["expected_return_prob_weighted"]
             .agg(["mean", "median", "count"])
             .reset_index()
         )
-        regional_perf = px.bar(
-            regional_stats,
-            x="region",
+        unit_perf = px.bar(
+            unit_stats,
+            x="unit",
             y="mean",
-            title="Average Expected Return by Region",
-            labels={"mean": "Avg Expected Return (%)", "region": "Region"},
+            title="Average Expected Return by Currency",
+            labels={"mean": "Avg Expected Return (%)", "unit": "Currency"},
             template="plotly_dark",
             text="count",
         )
-        regional_perf.update_traces(texttemplate='n=%{text}', textposition='outside')
+        unit_perf.update_traces(texttemplate='n=%{text}', textposition='outside')
 
     # Ranking Bar Chart (Top 50)
     ranking_bar = {}
@@ -1981,9 +2802,10 @@ def update_dashboard(*args):
             x='ev_score',
             y='ticker',
             orientation='h',
-            color='confidence_level',
+            color='quality_tier' if 'quality_tier' in top_50.columns else 'confidence_level',
             title=f"Top 50 Stocks by {scoring_method.replace('_', ' ').title()} Score",
-            labels={'ev_score': 'Expected Value Score', 'ticker': 'Ticker', 'confidence_level': 'Confidence Level'},
+            labels={'ev_score': 'Expected Value Score', 'ticker': 'Ticker',
+                    'confidence_level': 'Confidence Level', 'quality_tier': 'Quality Tier'},
             template="plotly_dark",
             height=800
         )
@@ -1992,24 +2814,41 @@ def update_dashboard(*args):
     # Risk vs Reward Scatter
     risk_reward_scatter = {}
     if not ranking_df.empty and 'risk_score' in ranking_df.columns and 'reward_score' in ranking_df.columns:
+        scatter_color_col = None
+        if scatter_color == 'signal':
+            scatter_color_col = 'signal'
+        elif scatter_color == 'quality_tier' and 'quality_tier' in ranking_df.columns:
+            scatter_color_col = 'quality_tier'
+        elif scatter_color == 'confidence_level' and 'confidence_level' in ranking_df.columns:
+            scatter_color_col = 'confidence_level'
+
+        rr_size = None
+        if 'composite_score' in ranking_df.columns and ranking_df['composite_score'].min() >= 0:
+            rr_size = 'composite_score'
+        elif ranking_df['ev_score'].min() >= 0:
+            rr_size = 'ev_score'
+
         risk_reward_scatter = px.scatter(
             ranking_df,
             x='risk_score',
             y='reward_score',
-            color='signal' if scatter_color == 'signal' else None,
-            size='ev_score' if ranking_df['ev_score'].min() >= 0 else None,
-            hover_data=['ticker', 'name', 'sector', 'ev_score', 'risk_adjusted_return', 'sharpe_like_ratio'],
+            color=scatter_color_col,
+            size=rr_size,
+            hover_data=['ticker', 'name', 'sector', 'quality_tier', 'composite_score',
+                        'ev_score', 'risk_adjusted_return', 'sharpe_like_ratio'],
             title="Risk vs Reward Analysis",
             labels={
                 'risk_score': 'Risk Score (Uncertainty & Disagreement)',
                 'reward_score': 'Reward Score (Upside & Beat Prob)',
                 'ev_score': 'Expected Value Score',
                 'risk_adjusted_return': 'Risk-Adj Return',
-                'sharpe_like_ratio': 'Sharpe-like Ratio'
+                'sharpe_like_ratio': 'Sharpe-like Ratio',
+                'composite_score': 'Composite Score',
+                'quality_tier': 'Quality Tier'
             },
             template="plotly_dark"
         )
-        if scatter_color == 'signal':
+        if scatter_color_col:
             risk_reward_scatter.update_traces(marker=dict(sizemin=5))
 
     # Probabilistic Visualizations
@@ -2069,6 +2908,200 @@ def update_dashboard(*args):
             except Exception as e:
                 print(f"Error generating ridge plot: {e}")
 
+    # ---------------------------------------------------------
+    # Dynamic Artifact Visualizations (filter-aware replacements)
+    # ---------------------------------------------------------
+    empty_artifact = go.Figure().update_layout(
+        title="Visualization not available", template="plotly_dark"
+    )
+
+    # Apply global filters to auxiliary data sources
+    filtered_tri = apply_global_filters(df_tri, filter_values)
+    filtered_earnings = apply_global_filters(df_earnings, filter_values)
+    filtered_credit = apply_global_filters(df_credit, filter_values)
+
+    # 1. Expected Returns Summary Posterior (MC distribution)
+    art_summary_posterior = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            if "expected_upside_pct" in filtered_df.columns and "prob_positive_upside" in filtered_df.columns:
+                art_summary_posterior = create_mc_return_distribution(filtered_df)
+        except Exception as e:
+            print(f"Error generating summary posterior: {e}")
+
+    # 2. Strong Consensus Bar
+    art_strong_consensus = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_tri.empty:
+        try:
+            strong = extract_strong_consensus(filtered_tri)
+            art_strong_consensus = create_strong_consensus_bar(strong)
+        except Exception as e:
+            print(f"Error generating strong consensus: {e}")
+
+    # 3. Sector Heatmap
+    art_sector_heatmap = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_tri.empty:
+        try:
+            art_sector_heatmap = create_sector_heatmap(filtered_tri)
+        except Exception as e:
+            print(f"Error generating sector heatmap: {e}")
+
+    # 4. Sector Risk-Reward
+    art_sector_risk_reward = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            art_sector_risk_reward = create_sector_risk_reward_scatter(filtered_df)
+        except Exception as e:
+            print(f"Error generating sector risk-reward: {e}")
+
+    # 5. Quality-Risk Quadrant (returns html.Div with multiple subplots)
+    art_quality_risk = html.Div()
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            qr_fig = create_quality_risk_quadrant(filtered_df)
+            art_quality_risk = html.Div([
+                html.H4("Quality-Risk Quadrant Analysis", style={"textAlign": "center", "marginTop": "20px"}),
+                dcc.Graph(figure=qr_fig),
+            ])
+        except Exception as e:
+            print(f"Error generating quality-risk quadrant: {e}")
+
+    # 6. Posterior Return Forest (artifact version using filtered data)
+    art_posterior_forest = empty_artifact
+    if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            art_posterior_forest = probability_viz.create_posterior_return_forest(
+                filtered_df, top_n=30, title="Posterior Return Forest (Filtered)"
+            )
+        except Exception as e:
+            print(f"Error generating posterior forest artifact: {e}")
+
+    # 7. Beat Probability Posterior (artifact version)
+    art_beat_prob = empty_artifact
+    if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_earnings.empty:
+        try:
+            art_beat_prob = probability_viz.create_beat_probability_posterior(
+                filtered_earnings, tickers=prob_tickers, top_n=12,
+                title="Beat Probability Posterior (Filtered)"
+            )
+        except Exception as e:
+            print(f"Error generating beat probability posterior artifact: {e}")
+
+    # 8. Beat vs Achievement Scatter
+    art_beat_vs_achievement = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_earnings.empty and not filtered_df.empty:
+        try:
+            art_beat_vs_achievement = create_beat_vs_achievement_scatter(
+                filtered_earnings, filtered_df
+            )
+        except Exception as e:
+            print(f"Error generating beat vs achievement: {e}")
+
+    # 9. Ruin Probability Diagnostic (artifact version)
+    art_ruin_diag = empty_artifact
+    if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_credit.empty:
+        try:
+            art_ruin_diag = probability_viz.create_ruin_probability_diagnostic(
+                filtered_credit, top_n=20,
+                title="Ruin Probability Diagnostic (Filtered)"
+            )
+        except Exception as e:
+            print(f"Error generating ruin diagnostic artifact: {e}")
+
+    # ---------------------------------------------------------
+    # New v3 Artifact Visualizations
+    # ---------------------------------------------------------
+
+    # 10. Screening Summary Chart
+    art_screening_summary = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            # Build lightweight screening dict from filtered data
+            screens = {}
+            if "composite_score" in filtered_df.columns:
+                screens["high_composite"] = filtered_df.nlargest(
+                    min(50, len(filtered_df)), "composite_score"
+                )
+            if "quality_tier" in filtered_df.columns:
+                screens["quality_stocks"] = filtered_df[
+                    filtered_df["quality_tier"].isin(["Premium", "High"])
+                ]
+            if screens:
+                art_screening_summary = create_screening_summary_chart(screens)
+        except Exception as e:
+            print(f"Error generating screening summary: {e}")
+
+    # 11. Sector Return Analytics Heatmap
+    art_sector_return_analytics = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            sector_analytics = compute_sector_return_analytics(filtered_df)
+            if not sector_analytics.empty:
+                art_sector_return_analytics = create_sector_return_analytics_heatmap(
+                    sector_analytics
+                )
+        except Exception as e:
+            print(f"Error generating sector return analytics: {e}")
+
+    # 12. Model Dispersion Dashboard
+    art_model_dispersion = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            art_model_dispersion = create_model_dispersion_dashboard(filtered_df)
+        except Exception as e:
+            print(f"Error generating model dispersion dashboard: {e}")
+
+    # 13. Bayesian Profitability Ridge Plot
+    art_bayesian_prof_ridge = empty_artifact
+    if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            prof_features = ["roe", "roa", "roic", "operating_margin", "net_margin"]
+            available_prof = [f for f in prof_features if f in filtered_df.columns]
+            if available_prof:
+                sample = filtered_df.sample(min(1000, len(filtered_df)), random_state=42)
+                prof_results = bayesian_category_analysis(sample, "Profitability", available_prof)
+                art_bayesian_prof_ridge = probability_viz.create_bayesian_category_ridge(
+                    prof_results, category_name="Profitability"
+                )
+        except Exception as e:
+            print(f"Error generating bayesian profitability ridge: {e}")
+
+    # 14. Bayesian Sentiment Ridge Plot
+    art_bayesian_sent_ridge = empty_artifact
+    if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            sent_features = ["analyst_rating", "num_analysts", "short_interest_pct",
+                             "insider_ownership_pct", "institutional_ownership_pct"]
+            available_sent = [f for f in sent_features if f in filtered_df.columns]
+            if available_sent:
+                sample = filtered_df.sample(min(1000, len(filtered_df)), random_state=42)
+                sent_results = bayesian_category_analysis(sample, "Sentiment", available_sent)
+                art_bayesian_sent_ridge = probability_viz.create_bayesian_category_ridge(
+                    sent_results, category_name="Sentiment"
+                )
+        except Exception as e:
+            print(f"Error generating bayesian sentiment ridge: {e}")
+
+    # 15. Distress Early Warning Dashboard
+    art_distress_warning = html.Div()
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            dew_fig = create_distress_early_warning_dashboard(filtered_df)
+            art_distress_warning = html.Div([
+                html.H4("Distress Early Warning", style={"textAlign": "center", "marginTop": "10px"}),
+                dcc.Graph(figure=dew_fig),
+            ])
+        except Exception as e:
+            print(f"Error generating distress early warning: {e}")
+
+    # 16. Return Distribution Fit Chart
+    art_return_dist_fit = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            art_return_dist_fit = create_return_distribution_fit_chart(filtered_df)
+        except Exception as e:
+            print(f"Error generating return distribution fit: {e}")
+
     return (
         kpi_cards,
         returns_scatter,
@@ -2076,7 +3109,7 @@ def update_dashboard(*args):
         confidence_distribution,
         top_opportunities_data,
         signal_breakdown,
-        regional_perf,
+        unit_perf,
         ranking_bar,
         risk_reward_scatter,
         posterior_forest,
@@ -2084,6 +3117,24 @@ def update_dashboard(*args):
         beat_prob_post,
         ruin_diag,
         ridge_plot,
+        # Dynamic artifact outputs
+        art_summary_posterior,
+        art_strong_consensus,
+        art_sector_heatmap,
+        art_sector_risk_reward,
+        art_quality_risk,
+        art_posterior_forest,
+        art_beat_prob,
+        art_beat_vs_achievement,
+        art_ruin_diag,
+        # New v3 artifact outputs
+        art_screening_summary,
+        art_sector_return_analytics,
+        art_model_dispersion,
+        art_bayesian_prof_ridge,
+        art_bayesian_sent_ridge,
+        art_distress_warning,
+        art_return_dist_fit,
     )
 
 
@@ -2096,10 +3147,13 @@ def update_dashboard(*args):
     Output("price_target_vs_current_scatter", "figure"),
     [Input(f["id"], "value") for f in FILTER_CONFIG]
     + [
+        Input("pt-scatter-metric-control", "value"),
         Input("pt-scatter-size-control", "value"),
         Input("pt-scatter-color-control", "value"),
-        Input("pt-scatter-last-price-slider", "value"),
-        Input("pt-scatter-price-target-slider", "value"),
+        Input("pt-scatter-price-min", "value"),
+        Input("pt-scatter-price-max", "value"),
+        Input("pt-scatter-target-min", "value"),
+        Input("pt-scatter-target-max", "value"),
     ],
 )
 def update_price_target_scatter(*args):
@@ -2109,7 +3163,7 @@ def update_price_target_scatter(*args):
     num_filters = len(FILTER_CONFIG)
     filter_values = collect_filter_values(*args[:num_filters])
 
-    size_encoding, color_encoding, last_price_range, price_target_range = args[num_filters:]
+    price_target_metric, size_encoding, color_encoding, price_min, price_max, target_min, target_max = args[num_filters:]
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
@@ -2125,48 +3179,70 @@ def update_price_target_scatter(*args):
         if filtered_df.empty:
             return empty_fig
 
+        # Default selections
+        price_target_metric = price_target_metric or "price_target_median"
+        size_encoding = size_encoding or "expected_upside_pct"
+        color_encoding = color_encoding or "sector"
+
         # Select required columns
-        required_cols = ["last_price", "price_target", "expected_upside_pct", "market_cap",
-                         "volume_shrs", "sector", "confidence_level", "beat_classification", "ticker", "name"]
+        required_cols = ["last_price", "price_target_median", "kalman_estimate",
+                         "price_target_prob_weighted", "expected_upside_pct",
+                         "market_cap", "volume_shrs", "sector", "confidence_level",
+                         "beat_classification", "ticker", "name", "industry",
+                         "country", "trading_country", "exchange"]
         available_cols = [c for c in required_cols if c in filtered_df.columns]
         plot_df = filtered_df[available_cols].copy()
 
         # Ensure numeric types
-        for col in ["last_price", "price_target", "expected_upside_pct", "market_cap", "volume_shrs"]:
+        for col in ["last_price", "price_target_median", "kalman_estimate",
+                     "price_target_prob_weighted", "expected_upside_pct",
+                     "market_cap", "volume_shrs"]:
             if col in plot_df.columns:
                 plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce")
 
-        plot_df = plot_df.dropna(subset=["last_price", "price_target"])
+        plot_df = plot_df.dropna(subset=["last_price", price_target_metric])
 
         if plot_df.empty:
             return empty_fig
 
-        # Apply price range filters
-        size_encoding = size_encoding or "expected_upside_pct"
-        color_encoding = color_encoding or "sector"
-        last_price_range = last_price_range or [0, 1000]
-        price_target_range = price_target_range or [0, 1000]
+        # Apply last price range filters
+        if price_min is not None and price_min != "":
+            plot_df = plot_df[plot_df["last_price"] >= float(price_min)]
+        if price_max is not None and price_max != "":
+            plot_df = plot_df[plot_df["last_price"] <= float(price_max)]
 
-        plot_df = plot_df[
-            (plot_df["last_price"] >= last_price_range[0]) & (plot_df["last_price"] <= last_price_range[1])
-        ]
-        plot_df = plot_df[
-            (plot_df["price_target"] >= price_target_range[0]) & (plot_df["price_target"] <= price_target_range[1])
-        ]
+        # Apply price target range filters
+        if target_min is not None and target_min != "":
+            plot_df = plot_df[plot_df[price_target_metric] >= float(target_min)]
+        if target_max is not None and target_max != "":
+            plot_df = plot_df[plot_df[price_target_metric] <= float(target_max)]
 
         if plot_df.empty:
             empty_range = go.Figure()
             empty_range.update_layout(
-                title="No data available for selected price range",
+                title="No data available after filtering",
                 template="plotly_dark",
-                annotations=[{"text": "Adjust the price range sliders", "showarrow": False, "font": {"size": 20}}],
+                annotations=[{"text": "No data matches the selected filters", "showarrow": False, "font": {"size": 20}}],
             )
             return empty_range
 
-        # Normalize size column
+        # Normalize size column by scaling values between 4 and 24
         size_col = None if size_encoding == "none" else size_encoding
         if size_col and size_col in plot_df.columns:
-            plot_df["size_normalized"] = plot_df[size_col].clip(lower=0) + 1
+            plot_df["size_normalized"] = plot_df[size_col].copy()
+            min_val = plot_df["size_normalized"].min()
+            max_val = plot_df["size_normalized"].max()
+
+            if min_val < 0:
+                plot_df["size_normalized"] = plot_df["size_normalized"] - min_val
+                min_val = 0
+                max_val = plot_df["size_normalized"].max()
+
+            if max_val > 0:
+                plot_df["size_normalized"] = (plot_df["size_normalized"] / max_val) * 20 + 4
+            else:
+                plot_df["size_normalized"] = 6
+
             size_col = "size_normalized"
         elif size_col and size_col not in plot_df.columns:
             size_col = None
@@ -2179,57 +3255,48 @@ def update_price_target_scatter(*args):
         scatter_kwargs = dict(
             data_frame=plot_df,
             x="last_price",
-            y="price_target",
+            y=price_target_metric,
             size=size_col,
             hover_data={
                 "ticker": True,
                 "name": True,
+                "sector": True,
+                "industry": True,
+                "country": True,
+                "trading_country": True,
+                "exchange": True,
                 "last_price": ":.2f",
-                "price_target": ":.2f",
+                price_target_metric: ":.2f",
                 "expected_upside_pct": ":.2f",
-            },
-            labels={
-                "last_price": "Current Price ($)",
-                "price_target": "Price Target ($)",
-                "expected_upside_pct": "Expected Upside (%)",
-                "market_cap": "Market Cap ($M)",
-                "volume_shrs": "Volume (Shares)",
-                "sector": "Sector",
-                "confidence_level": "Confidence Level",
-                "beat_classification": "Beat Classification",
             },
             template="plotly_dark",
         )
+
         if color_col:
             scatter_kwargs["color"] = color_col
 
         fig = px.scatter(**scatter_kwargs)
 
-        if size_col:
-            fig.update_traces(marker=dict(sizemin=6))
-
         # Add diagonal fair-value line (y = x)
-        x_min = plot_df["last_price"].min()
-        x_max = plot_df["last_price"].max()
-        y_min = plot_df["price_target"].min()
-        y_max = plot_df["price_target"].max()
-        axis_min = min(x_min, y_min) * 0.9
-        axis_max = max(x_max, y_max) * 1.1
+        max_val = max(plot_df["last_price"].max(), plot_df[price_target_metric].max()) * 1.05
+        min_val = min(plot_df["last_price"].min(), plot_df[price_target_metric].min()) * 0.95
 
         fig.add_shape(
             type="line",
-            x0=axis_min, y0=axis_min,
-            x1=axis_max, y1=axis_max,
+            x0=min_val, y0=min_val,
+            x1=max_val, y1=max_val,
             line=dict(color="gray", dash="dash", width=2),
+            name="Fair Value (y=x)",
         )
+
+        fig.update_xaxes(title_text="Last Price")
+        fig.update_yaxes(title_text=price_target_metric.replace("_", " ").title())
 
         fig.update_layout(
             title="Price Target vs Current Price",
-            xaxis_title="Current Price ($)",
-            yaxis_title="Price Target ($)",
             hovermode="closest",
-            xaxis=dict(type="log"),
-            yaxis=dict(type="log"),
+            minreducedwidth=400,
+            minreducedheight=400,
         )
 
         if color_col:
@@ -2247,11 +3314,303 @@ def update_price_target_scatter(*args):
         return error_fig
 
 
+# =============================================================================
+# Z-Score & Percentile Ranking Tab Callback
+# =============================================================================
+
+
+@app.callback(
+    [
+        Output("zscore-kpi-cards", "children"),
+        Output("zscore-scatter-plot", "figure"),
+        Output("percentile-distribution-plot", "figure"),
+        Output("zscore-sector-box-plot", "figure"),
+        Output("composite-vs-percentile-plot", "figure"),
+        Output("zscore-ranking-table", "data"),
+    ],
+    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    + [
+        Input("zscore-metric-dropdown", "value"),
+        Input("zscore-color-dropdown", "value"),
+        Input("zscore-size-dropdown", "value"),
+        Input("zscore-threshold-slider", "value"),
+    ],
+)
+def update_zscore_tab(*args):
+    """Update Z-Score & Percentile Ranking tab visualizations."""
+    num_filters = len(FILTER_CONFIG)
+    filter_values = collect_filter_values(*args[:num_filters])
+    metric, color_by, size_by, zscore_threshold = args[num_filters:]
+
+    filtered_df = apply_global_filters(df, filter_values)
+    empty_fig = go.Figure().update_layout(title="No data available", template="plotly_dark")
+
+    if filtered_df.empty:
+        return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig, []
+
+    # Column mapping for selected metric
+    metric_map = {
+        "expected_upside_pct": ("expected_upside_pct_zscore", "expected_upside_pct_pctile"),
+        "filtered_upside": ("filtered_upside_zscore", "filtered_upside_pctile"),
+        "expected_return_prob_weighted": ("expected_return_prob_weighted_zscore", "expected_return_prob_weighted_pctile"),
+    }
+    zscore_col, pctile_col = metric_map.get(metric, ("expected_upside_pct_zscore", "expected_upside_pct_pctile"))
+
+    # KPI Cards
+    kpi_cards = html.Div()
+    if zscore_col in filtered_df.columns and pctile_col in filtered_df.columns:
+        above_threshold = (filtered_df[zscore_col] > zscore_threshold).sum()
+        below_threshold = (filtered_df[zscore_col] < -zscore_threshold).sum()
+        top_quartile = (filtered_df[pctile_col] >= 75).sum()
+        bottom_quartile = (filtered_df[pctile_col] <= 25).sum()
+        mean_composite = filtered_df["composite_score"].mean() if "composite_score" in filtered_df.columns else 0
+
+        kpi_cards = dbc.Row(
+            [
+                dbc.Col(dbc.Card(dbc.CardBody([html.H5(f"Z > {zscore_threshold}σ (Outlier High)"), html.H3(f"{above_threshold:,}")]), color="success", inverse=True), width=2),
+                dbc.Col(dbc.Card(dbc.CardBody([html.H5(f"Z < -{zscore_threshold}σ (Outlier Low)"), html.H3(f"{below_threshold:,}")]), color="danger", inverse=True), width=2),
+                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Top Quartile (≥75th)"), html.H3(f"{top_quartile:,}")]), color="info", inverse=True), width=2),
+                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Bottom Quartile (≤25th)"), html.H3(f"{bottom_quartile:,}")]), color="warning", inverse=True), width=2),
+                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Mean Composite Score"), html.H3(f"{mean_composite:.3f}")]), color="primary", inverse=True), width=2),
+                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Universe Size"), html.H3(f"{len(filtered_df):,}")]), color="secondary", inverse=True), width=2),
+            ],
+            style={"marginBottom": "10px"},
+        )
+
+    # 1. Z-Score vs Percentile scatter
+    zscore_scatter = empty_fig
+    if zscore_col in filtered_df.columns and pctile_col in filtered_df.columns:
+        scatter_kwargs = dict(
+            data_frame=filtered_df,
+            x=pctile_col,
+            y=zscore_col,
+            hover_data=["ticker", "name", "sector", metric],
+            labels={
+                pctile_col: f"{metric.replace('_', ' ').title()} Percentile",
+                zscore_col: f"{metric.replace('_', ' ').title()} Z-Score",
+            },
+            template="plotly_dark",
+        )
+        if color_by != "none" and color_by in filtered_df.columns:
+            scatter_kwargs["color"] = color_by
+        if size_by != "none" and size_by in filtered_df.columns:
+            filtered_df_plot = filtered_df.copy()
+            filtered_df_plot[f"{size_by}_plot"] = filtered_df_plot[size_by].clip(lower=0.01)
+            scatter_kwargs["data_frame"] = filtered_df_plot
+            scatter_kwargs["size"] = f"{size_by}_plot"
+
+        zscore_scatter = px.scatter(**scatter_kwargs)
+        zscore_scatter.update_traces(marker=dict(sizemin=4))
+        zscore_scatter.add_hline(y=zscore_threshold, line_dash="dash", line_color=COLORS["success"], annotation_text=f"+{zscore_threshold}σ")
+        zscore_scatter.add_hline(y=-zscore_threshold, line_dash="dash", line_color=COLORS["danger"], annotation_text=f"-{zscore_threshold}σ")
+        zscore_scatter.update_layout(title=f"Z-Score vs Percentile: {metric.replace('_', ' ').title()}")
+
+    # 2. Percentile distribution histogram
+    pctile_hist = empty_fig
+    if pctile_col in filtered_df.columns:
+        pctile_hist = px.histogram(
+            filtered_df,
+            x=pctile_col,
+            nbins=20,
+            title=f"Percentile Distribution: {metric.replace('_', ' ').title()}",
+            labels={pctile_col: "Percentile Rank"},
+            template="plotly_dark",
+            color_discrete_sequence=["#375a7f"],
+        )
+        pctile_hist.add_vline(x=50, line_dash="dash", line_color="white", annotation_text="Median")
+
+    # 3. Z-Score box plot by sector
+    sector_box = empty_fig
+    if zscore_col in filtered_df.columns and "sector" in filtered_df.columns:
+        sector_box = px.box(
+            filtered_df,
+            x="sector",
+            y=zscore_col,
+            color="quality_tier" if "quality_tier" in filtered_df.columns else None,
+            title=f"Z-Score Distribution by Sector: {metric.replace('_', ' ').title()}",
+            labels={zscore_col: "Z-Score", "sector": "Sector"},
+            template="plotly_dark",
+        )
+        sector_box.add_hline(y=0, line_dash="solid", line_color="gray")
+        sector_box.update_xaxes(tickangle=-45)
+
+    # 4. Composite Score vs Percentile
+    composite_pctile = empty_fig
+    if "composite_score" in filtered_df.columns and pctile_col in filtered_df.columns:
+        cp_kwargs = dict(
+            data_frame=filtered_df,
+            x="composite_score",
+            y=pctile_col,
+            hover_data=["ticker", "name", "sector", "quality_tier"],
+            labels={
+                "composite_score": "Composite Score",
+                pctile_col: f"{metric.replace('_', ' ').title()} Percentile",
+            },
+            template="plotly_dark",
+            title="Composite Score vs Percentile Rank",
+        )
+        if "quality_tier" in filtered_df.columns:
+            cp_kwargs["color"] = "quality_tier"
+        composite_pctile = px.scatter(**cp_kwargs)
+        composite_pctile.update_traces(marker=dict(sizemin=4, size=6))
+
+    # 5. Table data
+    table_cols = [
+        "ticker", "name", "sector", "quality_tier",
+        "expected_upside_pct", "expected_upside_pct_zscore", "expected_upside_pct_pctile",
+        "filtered_upside", "filtered_upside_zscore", "filtered_upside_pctile",
+        "expected_return_prob_weighted_zscore", "expected_return_prob_weighted_pctile",
+        "composite_score", "confidence_level", "signal",
+    ]
+    available_table_cols = [c for c in table_cols if c in filtered_df.columns]
+    sort_col = zscore_col if zscore_col in filtered_df.columns else "expected_upside_pct"
+    table_data = (
+        filtered_df
+        .nlargest(50, sort_col)
+        [available_table_cols]
+        .to_dict("records")
+    )
+
+    return kpi_cards, zscore_scatter, pctile_hist, sector_box, composite_pctile, table_data
+
+
+# =============================================================================
+# Earnings Calendar & Events Tab Callback
+# =============================================================================
+
+
+@app.callback(
+    [
+        Output("earnings-calendar-kpis", "children"),
+        Output("earnings-timeline-chart", "figure"),
+        Output("earnings-by-status-chart", "figure"),
+        Output("earnings-calendar-table", "data"),
+        Output("artifact-er-earnings-prob-dashboard", "children"),
+    ],
+    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    + [
+        Input("earnings-days-ahead", "value"),
+        Input("earnings-sort-by", "value"),
+    ],
+)
+def update_earnings_calendar(*args):
+    """Update Earnings Calendar & Events tab."""
+    num_filters = len(FILTER_CONFIG)
+    filter_values = collect_filter_values(*args[:num_filters])
+    days_ahead, sort_by = args[num_filters:]
+
+    filtered_df = apply_global_filters(df, filter_values)
+    empty_fig = go.Figure().update_layout(title="No data available", template="plotly_dark")
+
+    if filtered_df.empty or "next_earnings" not in filtered_df.columns:
+        return html.Div("No earnings data available"), empty_fig, empty_fig, [], html.Div()
+
+    # Parse dates and filter to upcoming window
+    earn_df = filtered_df.copy()
+    earn_df["next_earnings"] = pd.to_datetime(earn_df["next_earnings"], errors="coerce")
+    today = pd.Timestamp.now().normalize()
+    days_ahead = days_ahead or 30
+    cutoff = today + pd.Timedelta(days=days_ahead)
+
+    upcoming = earn_df[
+        (earn_df["next_earnings"] >= today) & (earn_df["next_earnings"] <= cutoff)
+    ].copy()
+
+    # KPI Cards
+    total_upcoming = len(upcoming)
+    confirmed = (upcoming["next_earnings_status"] == "confirmed").sum() if "next_earnings_status" in upcoming.columns else 0
+    estimated = (upcoming["next_earnings_status"] == "estimated").sum() if "next_earnings_status" in upcoming.columns else 0
+    this_week = upcoming[upcoming["next_earnings"] <= today + pd.Timedelta(days=7)].shape[0]
+
+    kpi_cards = dbc.Row(
+        [
+            dbc.Col(dbc.Card(dbc.CardBody([html.H5(f"Reporting ({days_ahead}d)"), html.H3(f"{total_upcoming:,}")]), color="primary", inverse=True), width=3),
+            dbc.Col(dbc.Card(dbc.CardBody([html.H5("Confirmed"), html.H3(f"{confirmed:,}")]), color="success", inverse=True), width=3),
+            dbc.Col(dbc.Card(dbc.CardBody([html.H5("Estimated"), html.H3(f"{estimated:,}")]), color="warning", inverse=True), width=3),
+            dbc.Col(dbc.Card(dbc.CardBody([html.H5("This Week"), html.H3(f"{this_week:,}")]), color="info", inverse=True), width=3),
+        ],
+        style={"marginBottom": "10px"},
+    )
+
+    # Timeline chart
+    timeline_fig = empty_fig
+    if not upcoming.empty:
+        upcoming["date_str"] = upcoming["next_earnings"].dt.strftime("%Y-%m-%d")
+        daily_counts = upcoming.groupby("date_str").size().reset_index(name="count")
+        daily_counts = daily_counts.sort_values("date_str")
+
+        timeline_fig = px.bar(
+            daily_counts,
+            x="date_str",
+            y="count",
+            title=f"Earnings Reports Timeline (Next {days_ahead} Days)",
+            labels={"date_str": "Date", "count": "Number of Reports"},
+            template="plotly_dark",
+            color_discrete_sequence=["#375a7f"],
+        )
+        timeline_fig.update_xaxes(tickangle=-45)
+
+    # Status breakdown
+    status_fig = empty_fig
+    if not upcoming.empty and "next_earnings_status" in upcoming.columns:
+        status_counts = upcoming.groupby("next_earnings_status").size().reset_index(name="count")
+        status_fig = px.pie(
+            status_counts,
+            values="count",
+            names="next_earnings_status",
+            title="Earnings Report Status Breakdown",
+            template="plotly_dark",
+            color_discrete_sequence=px.colors.qualitative.Set2,
+        )
+
+    # Table data
+    sort_by = sort_by or "next_earnings"
+    table_cols = [
+        "ticker", "name", "country","trading_country", "exchange", "sector", "industry", "next_earnings",
+        "next_earnings_status", "next_earnings_when",
+        "next_fiscal_quarter", "earnings_report_frequency",
+        "expected_upside_pct", "composite_score",
+        "signal", "quality_tier",
+    ]
+    available_cols = [c for c in table_cols if c in upcoming.columns]
+
+    if sort_by in upcoming.columns:
+        ascending = True if sort_by == "next_earnings" else False
+        table_df = upcoming.sort_values(sort_by, ascending=ascending)[available_cols].head(50)
+    else:
+        table_df = upcoming[available_cols].head(50)
+
+    # Convert dates to strings for table display
+    if "next_earnings" in table_df.columns:
+        table_df = table_df.copy()
+        table_df["next_earnings"] = table_df["next_earnings"].dt.strftime("%Y-%m-%d")
+
+    table_data = table_df.to_dict("records")
+
+    # Earnings Probability Dashboard artifact
+    art_earnings_prob = html.Div()
+    if ER_VIZ_AVAILABLE:
+        filtered_earnings = apply_global_filters(df_earnings, filter_values)
+        if not filtered_earnings.empty and "posterior_beat_prob" in filtered_earnings.columns:
+            try:
+                ep_fig = create_earnings_probability_dashboard(filtered_earnings)
+                art_earnings_prob = html.Div([
+                    html.H4("Earnings Probability Dashboard", style={"textAlign": "center", "marginTop": "20px"}),
+                    dcc.Graph(figure=ep_fig),
+                ])
+            except Exception as e:
+                print(f"Error generating earnings probability dashboard: {e}")
+
+    return kpi_cards, timeline_fig, status_fig, table_data, art_earnings_prob
+
+
 @app.callback(
     [
         Output("mc-percentile-chart", "figure"),
         Output("mc-distribution-chart", "figure"),
         Output("mc-stats-display", "children"),
+        Output("artifact-er-mc-distribution", "figure"),
+        Output("artifact-er-var-analysis", "figure"),
     ],
     [Input(f["id"], "value") for f in FILTER_CONFIG]
     + [
@@ -2293,7 +3652,8 @@ def update_monte_carlo(*args):
             template="plotly_dark",
             annotations=[{"text": "No valid data for simulation", "showarrow": False, "font": {"size": 16}}]
         )
-        return empty_fig, empty_fig, html.Div("No data available for simulation", style={"color": "red"})
+        empty_artifact = go.Figure().update_layout(title="No data available", template="plotly_dark")
+        return empty_fig, empty_fig, html.Div("No data available for simulation", style={"color": "red"}), empty_artifact, empty_artifact
 
     # Percentile Distribution Chart
     percentiles = np.arange(0, 101, 1)
@@ -2315,34 +3675,65 @@ def update_monte_carlo(*args):
         template="plotly_dark"
     )
 
-    # Return Distribution Chart
-    min_return = portfolio_returns.min()
-    max_return = portfolio_returns.max()
-    bucket_width = 10
-    bucket_edges = np.arange(
-        np.floor(min_return / bucket_width) * bucket_width,
-        np.ceil(max_return / bucket_width) * bucket_width + bucket_width,
-        bucket_width
-    )
-    counts, _ = np.histogram(portfolio_returns, bins=bucket_edges)
-    bucket_labels = [f"{bucket_edges[i]:.0f}% to {bucket_edges[i+1]:.0f}%" for i in range(len(bucket_edges) - 1)]
-
+    # Return Distribution Fit Chart — dynamically built from MC simulation results
     fig_distribution = go.Figure()
-    fig_distribution.add_trace(go.Bar(
-        x=bucket_labels,
-        y=counts,
-        name="Frequency",
-        marker_color="#375a7f",
-        marker_line_width=0
-    ))
+    try:
+        from scipy import stats as sp_stats
+
+        # Histogram of simulated portfolio returns (probability density)
+        fig_distribution.add_trace(go.Histogram(
+            x=portfolio_returns, nbinsx=100, histnorm="probability density",
+            name="Observed", marker_color="#0A7EA4", opacity=0.6,
+        ))
+
+        # Fit parametric distributions to the simulated returns
+        x_fit = np.linspace(portfolio_returns.min(), portfolio_returns.max(), 500)
+
+        # Normal fit
+        mu_n, sigma_n = sp_stats.norm.fit(portfolio_returns)
+        fig_distribution.add_trace(go.Scatter(
+            x=x_fit, y=sp_stats.norm.pdf(x_fit, mu_n, sigma_n),
+            mode="lines", name="Normal", line=dict(color="#00A878", width=2),
+        ))
+
+        # Student-t fit
+        df_t, loc_t, scale_t = sp_stats.t.fit(portfolio_returns)
+        fig_distribution.add_trace(go.Scatter(
+            x=x_fit, y=sp_stats.t.pdf(x_fit, df_t, loc_t, scale_t),
+            mode="lines", name="Student-t", line=dict(color="#6C63FF", width=2),
+        ))
+
+        # Skew-Normal fit
+        a_sn, loc_sn, scale_sn = sp_stats.skewnorm.fit(portfolio_returns)
+        fig_distribution.add_trace(go.Scatter(
+            x=x_fit, y=sp_stats.skewnorm.pdf(x_fit, a_sn, loc_sn, scale_sn),
+            mode="lines", name="Skew-Normal", line=dict(color="#FF6B6B", width=2),
+        ))
+    except Exception as e:
+        print(f"Distribution fit failed, falling back to histogram: {e}")
+        fig_distribution = go.Figure()
+        fig_distribution.add_trace(go.Histogram(
+            x=portfolio_returns, nbinsx=100, histnorm="probability density",
+            name="Observed", marker_color="#0A7EA4", opacity=0.6,
+        ))
+
     fig_distribution.update_layout(
-        xaxis_title="Return Bucket",
-        yaxis_title="Frequency (Number of Simulations)",
-        hovermode="x",
-        margin=dict(l=60, r=20, t=20, b=80),
-        xaxis=dict(tickangle=-45),
-        template="plotly_dark"
+        title="MC Return Distribution — Parametric Fit Overlay",
+        xaxis_title="Simulated Portfolio Return (%)",
+        yaxis_title="Density",
+        hovermode="x unified",
+        margin=dict(l=60, r=20, t=40, b=60),
+        template="plotly_dark",
     )
+
+    # Add target return vertical line when set
+    if target_return and target_return > 0:
+        fig_distribution.add_vline(
+            x=target_return, line_dash="dash", line_color="orange", line_width=2,
+            annotation_text=f"Target: {target_return:.1f}%",
+            annotation_position="top right",
+            annotation_font_color="orange",
+        )
 
     # Stats Display
     stats_content = html.Div([
@@ -2361,7 +3752,22 @@ def update_monte_carlo(*args):
         html.Span(f"Percentiles: 5th: {stats['p5']:.2f}% | 25th: {stats['p25']:.2f}% | 50th: {stats['p50']:.2f}% | 75th: {stats['p75']:.2f}% | 95th: {stats['p95']:.2f}%"),
     ])
 
-    return fig_percentile, fig_distribution, stats_content
+    # Dynamic artifact: MC Return Distribution & VaR Analysis
+    art_mc_dist = go.Figure().update_layout(title="MC Distribution not available", template="plotly_dark")
+    art_var = go.Figure().update_layout(title="VaR Analysis not available", template="plotly_dark")
+    if ER_VIZ_AVAILABLE and not mc_df.empty:
+        try:
+            if "expected_upside_pct" in mc_df.columns and "prob_positive_upside" in mc_df.columns:
+                art_mc_dist = create_mc_return_distribution(mc_df)
+        except Exception as e:
+            print(f"Error generating MC distribution artifact: {e}")
+        try:
+            if "var_5_pct" in mc_df.columns:
+                art_var = create_var_analysis(mc_df)
+        except Exception as e:
+            print(f"Error generating VaR analysis artifact: {e}")
+
+    return fig_percentile, fig_distribution, stats_content, art_mc_dist, art_var
 
 
 # =============================================================================
@@ -2637,6 +4043,17 @@ def update_safety_rails(*args):
         "signal",
         "confidence_level",
         "beat_classification",
+        "composite_score",
+        "quality_tier",
+        "weighted_agreement",
+        "expected_upside_pct_zscore",
+        "expected_upside_pct_pctile",
+        "filtered_upside_zscore",
+        "filtered_upside_pctile",
+        "next_earnings",
+        "next_earnings_status",
+        "price_target_high",
+        "price_target_low",
     ]
     for col in key_columns:
         if col in filtered_df.columns:
@@ -2663,7 +4080,9 @@ def update_safety_rails(*args):
 
     # 2. Outlier Detection Chart
     outlier_fig = go.Figure()
-    numeric_cols = ["expected_upside_pct", "filtered_upside", "prob_positive_upside"]
+    numeric_cols = ["expected_upside_pct", "filtered_upside", "prob_positive_upside",
+                    "composite_score", "weighted_agreement",
+                    "expected_upside_pct_zscore", "filtered_upside_zscore"]
     outlier_data = []
     for col in numeric_cols:
         if col in filtered_df.columns:
@@ -3098,13 +4517,13 @@ def update_beta_capm(*args):
             template="plotly_dark",
         )
 
-        if size_encoding == "market_cap" and "market_cap" in filtered_df.columns:
-            scatter_kwargs["size"] = "market_cap"
-            scatter_kwargs["hover_data"]["market_cap"] = ":.0f"
+        if size_encoding != "none" and size_encoding in filtered_df.columns:
+            scatter_kwargs["size"] = size_encoding
+            scatter_kwargs["hover_data"][size_encoding] = ":.0f"
 
         scatter_fig = px.scatter(**scatter_kwargs)
 
-        if size_encoding == "market_cap":
+        if size_encoding != "none":
             scatter_fig.update_traces(marker=dict(sizemin=6))
 
         scatter_fig.update_layout(
@@ -3388,16 +4807,17 @@ def update_kelly_criterion(*args):
 
         # ----- Positions Table -----
         table_cols = [
-            "ticker", "name", "sector", "industry", "exchange",
-            "last_price", "price_target", "filtered_upside",
-            "prob_positive_upside", "confidence_score", "achievement_probability",
+            "ticker", "name", "country", "trading_country", "unit",  "sector", "industry", "exchange",
+            "last_price", "price_target","price_target_mc",
+            "filtered_upside", "prob_positive_upside", "confidence_score","composite_score", "quality_tier" , "achievement_probability",
             "confidence_level", "signal", "kelly_pct",
+            "price_target_prob_weighted"
         ]
         available_cols = [c for c in table_cols if c in kelly_df.columns]
         table_df = kelly_df.nlargest(50, "kelly_pct")[available_cols].copy()
 
         # Round numeric columns for display
-        for col in ["filtered_upside", "prob_positive_upside", "confidence_score", "achievement_probability", "kelly_pct", "last_price", "price_target"]:
+        for col in ["filtered_upside", "prob_positive_upside", "confidence_score", "achievement_probability", "kelly_pct", "last_price", "price_target", "price_target_mc", "price_target_prob_weighted"]:
             if col in table_df.columns:
                 table_df[col] = table_df[col].round(3)
 
@@ -3409,6 +4829,240 @@ def update_kelly_criterion(*args):
         scatter_error = error_msg
 
     return bar_fig, bar_error, scatter_fig, scatter_error, kpi_summary, table_data
+
+
+# =============================================================================
+# Efficient Frontier Callback
+# =============================================================================
+
+
+@app.callback(
+    [
+        Output("ef-frontier-graph", "figure"),
+        Output("ef-portfolio-table", "children"),
+        Output("ef-error-display", "children"),
+    ],
+    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    + [
+        Input("ef-stock-selector", "value"),
+        Input("ef-risk-free-rate", "value"),
+        Input("ef-constraint-type", "value"),
+        Input("ef-num-portfolios", "value"),
+    ],
+)
+def update_efficient_frontier(*args):
+    """Update Efficient Frontier visualization based on filters and parameters."""
+    import traceback as tb
+
+    num_filters = len(FILTER_CONFIG)
+    filter_values = collect_filter_values(*args[:num_filters])
+
+    stock_selector, risk_free_rate, constraint_type, num_portfolios = args[num_filters:]
+
+    # Defaults
+    risk_free_rate = risk_free_rate if risk_free_rate is not None else 3.0
+    constraint_type = constraint_type if constraint_type is not None else "long_only"
+    num_portfolios = num_portfolios if num_portfolios is not None else 500
+
+    empty_fig = go.Figure()
+    empty_fig.update_layout(
+        title="No data available",
+        template="plotly_dark",
+        annotations=[{"text": "No data matches the selected filters", "showarrow": False, "font": {"size": 16}}],
+    )
+
+    try:
+        # Apply all global filters
+        filtered_df = apply_global_filters(df, filter_values)
+
+        if filtered_df.empty:
+            return empty_fig, "", ""
+
+        # Determine selected tickers
+        if not stock_selector or len(stock_selector) == 0:
+            selected_tickers = filtered_df.nlargest(10, 'market_cap')['ticker'].tolist()
+        else:
+            selected_tickers = stock_selector if isinstance(stock_selector, list) else [stock_selector]
+
+        # Keep only tickers present in filtered data
+        df_selected = filtered_df[filtered_df['ticker'].isin(selected_tickers)].copy()
+        selected_tickers = df_selected['ticker'].unique().tolist()
+
+        if len(selected_tickers) < 2:
+            info_fig = go.Figure()
+            info_fig.update_layout(
+                title="Insufficient data",
+                template="plotly_dark",
+                annotations=[{"text": "Need at least 2 stocks for portfolio optimization", "showarrow": False, "font": {"size": 20}}],
+            )
+            return info_fig, "", ""
+
+        # Compute expected returns from the data
+        expected_returns = []
+        for ticker in selected_tickers:
+            ticker_data = df_selected[df_selected['ticker'] == ticker]
+            if len(ticker_data) > 0 and 'expected_upside_pct' in ticker_data.columns:
+                ret = ticker_data['expected_upside_pct'].iloc[0]
+                ret = float(ret) / 100.0 if pd.notna(ret) else 0.05
+            else:
+                ret = 0.05
+            expected_returns.append(ret)
+        expected_returns = np.array(expected_returns)
+
+        # Estimate covariance matrix
+        cov_matrix = _ef_estimate_covariance_matrix(filtered_df, selected_tickers)
+
+        # Generate random portfolios
+        portfolio_returns, portfolio_volatilities, portfolio_sharpe_ratios, portfolio_weights = (
+            _ef_generate_random_portfolios(
+                expected_returns, cov_matrix, num_portfolios, risk_free_rate, constraint_type
+            )
+        )
+
+        if len(portfolio_returns) == 0 or portfolio_volatilities.max() == 0:
+            return empty_fig, "", "Could not generate valid portfolio combinations."
+
+        # Find optimal portfolios
+        min_var_weights, max_sharpe_weights, opt_volatilities = _ef_find_optimal_portfolios(
+            expected_returns, cov_matrix, risk_free_rate
+        )
+        min_var_return = np.sum(min_var_weights * expected_returns)
+        max_sharpe_return = np.sum(max_sharpe_weights * expected_returns)
+        max_sharpe_volatility = opt_volatilities[1]
+        max_sharpe_ratio = (
+            (max_sharpe_return - risk_free_rate / 100) / max_sharpe_volatility
+            if max_sharpe_volatility > 0 else 0
+        )
+
+        # Build the scatter plot
+        scatter_df = pd.DataFrame({
+            'Volatility': portfolio_volatilities * 100,
+            'Return': portfolio_returns * 100,
+            'Sharpe Ratio': portfolio_sharpe_ratios,
+        })
+
+        fig = px.scatter(
+            scatter_df,
+            x='Volatility',
+            y='Return',
+            color='Sharpe Ratio',
+            color_continuous_scale='Viridis',
+            labels={'Volatility': 'Portfolio Volatility (%)', 'Return': 'Expected Return (%)'},
+            hover_data={'Volatility': ':.2f', 'Return': ':.2f', 'Sharpe Ratio': ':.3f'},
+            template="plotly_dark",
+        )
+
+        # Min Variance marker
+        fig.add_trace(go.Scatter(
+            x=[opt_volatilities[0] * 100],
+            y=[min_var_return * 100],
+            mode='markers',
+            marker=dict(size=15, color='red', symbol='star', line=dict(color='darkred', width=2)),
+            name='Min Variance',
+            hovertemplate='<b>Min Variance Portfolio</b><br>Volatility: %{x:.2f}%<br>Return: %{y:.2f}%<extra></extra>',
+        ))
+
+        # Max Sharpe marker
+        fig.add_trace(go.Scatter(
+            x=[max_sharpe_volatility * 100],
+            y=[max_sharpe_return * 100],
+            mode='markers',
+            marker=dict(size=15, color='gold', symbol='star', line=dict(color='orange', width=2)),
+            name='Max Sharpe Ratio',
+            hovertemplate=(
+                f'<b>Max Sharpe Ratio Portfolio</b><br>'
+                f'Volatility: %{{x:.2f}}%<br>Return: %{{y:.2f}}%<br>'
+                f'Sharpe: {max_sharpe_ratio:.3f}<extra></extra>'
+            ),
+        ))
+
+        fig.update_layout(
+            title="Efficient Frontier: Risk-Return Tradeoff",
+            xaxis_title='Portfolio Volatility (Annualized %)',
+            yaxis_title='Expected Return (Annualized %)',
+            hovermode='closest',
+            coloraxis_colorbar=dict(title='Sharpe Ratio'),
+        )
+
+        # Build portfolio summary table
+        table_data = []
+        for i in range(min(10, len(portfolio_weights))):
+            row = {'Portfolio': f'P{i + 1}'}
+            for j, ticker in enumerate(selected_tickers):
+                row[ticker] = f'{portfolio_weights[i, j]:.2%}'
+            row['Return'] = f'{portfolio_returns[i]:.2%}'
+            row['Volatility'] = f'{portfolio_volatilities[i]:.2%}'
+            row['Sharpe'] = f'{portfolio_sharpe_ratios[i]:.3f}'
+            table_data.append(row)
+
+        # Append optimal portfolios
+        min_var_row = {'Portfolio': '⭐ Min Variance'}
+        for j, ticker in enumerate(selected_tickers):
+            min_var_row[ticker] = f'{min_var_weights[j]:.2%}'
+        min_var_row['Return'] = f'{min_var_return:.2%}'
+        min_var_row['Volatility'] = f'{opt_volatilities[0]:.2%}'
+        min_var_row['Sharpe'] = (
+            f'{(min_var_return - risk_free_rate / 100) / opt_volatilities[0]:.3f}'
+            if opt_volatilities[0] > 0 else 'N/A'
+        )
+        table_data.append(min_var_row)
+
+        max_sharpe_row = {'Portfolio': '⭐ Max Sharpe'}
+        for j, ticker in enumerate(selected_tickers):
+            max_sharpe_row[ticker] = f'{max_sharpe_weights[j]:.2%}'
+        max_sharpe_row['Return'] = f'{max_sharpe_return:.2%}'
+        max_sharpe_row['Volatility'] = f'{max_sharpe_volatility:.2%}'
+        max_sharpe_row['Sharpe'] = f'{max_sharpe_ratio:.3f}'
+        table_data.append(max_sharpe_row)
+
+        table_df = pd.DataFrame(table_data)
+
+        # Render as a styled DataTable
+        table_component = dash_table.DataTable(
+            data=table_df.to_dict("records"),
+            columns=[{"name": c, "id": c} for c in table_df.columns],
+            page_size=15,
+            sort_action="native",
+            style_table={"overflowX": "auto"},
+            style_header=TABLE_STYLE_HEADER,
+            style_cell=TABLE_STYLE_CELL,
+            style_data_conditional=[
+                {"if": {"row_index": "odd"}, "backgroundColor": "#252525"},
+                {
+                    "if": {"filter_query": '{Portfolio} contains "⭐"'},
+                    "backgroundColor": "#2a3f5f",
+                    "fontWeight": "bold",
+                },
+            ],
+        )
+
+        return fig, table_component, ""
+
+    except Exception as e:
+        error_msg = f"Error updating efficient frontier: {str(e)}\n{tb.format_exc()}"
+        return empty_fig, "", error_msg
+
+
+@app.callback(
+    Output("ef-stock-selector", "options"),
+    [Input(f["id"], "value") for f in FILTER_CONFIG],
+)
+def update_ef_stock_options(*args):
+    """Update stock selector options based on global filters."""
+    try:
+        filter_values = collect_filter_values(*args)
+        filtered_df = apply_global_filters(df, filter_values)
+
+        if filtered_df.empty or 'market_cap' not in filtered_df.columns:
+            return []
+
+        df_sorted = filtered_df.nlargest(50, 'market_cap')
+        return [
+            {"label": f"{row['ticker']} - {row['name'][:30]}", "value": row['ticker']}
+            for _, row in df_sorted.iterrows()
+        ]
+    except Exception:
+        return []
 
 
 if __name__ == "__main__":

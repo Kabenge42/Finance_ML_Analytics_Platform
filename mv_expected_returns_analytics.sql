@@ -1,8 +1,30 @@
 -- expected_returns.sql
 -- Materialized view for Expected Returns Analytics (v2.5)
 -- Data source for: Monte Carlo, Kalman Filter, Price Target Achievement, Earnings Beat models
+--
+-- Prerequisites: Run the following scripts BEFORE this one:
+--   1. create_helper_functions.sql  (safe_divide, pct_change, calc_change_ratio, etc.)
+--   2. feature_registry.sql         (calc_valuation_features, calc_sentiment_features, etc.)
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS mv_expected_returns AS
+-- Pre-flight check: ensure prerequisite functions exist
+DO
+$$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'safe_divide') THEN
+            RAISE EXCEPTION 'Required function safe_divide() does not exist. Run create_helper_functions.sql first.';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'calc_valuation_features') THEN
+            RAISE EXCEPTION 'Required function calc_valuation_features() does not exist. Run feature_registry.sql first.';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'calc_sentiment_features') THEN
+            RAISE EXCEPTION 'Required function calc_sentiment_features() does not exist. Run feature_registry.sql first.';
+        END IF;
+    END
+$$;
+
+DROP MATERIALIZED VIEW IF EXISTS mv_expected_returns CASCADE;
+
+CREATE MATERIALIZED VIEW mv_expected_returns AS
 SELECT
     -- ═══════════════════════════════════════════════════════════════════════════════
     -- IDENTIFIER COLUMNS (from vw_identifier_columns)
@@ -34,27 +56,65 @@ SELECT
     e."Market Cap"                        AS market_cap,
     e."Enterprise Value"                  AS enterprise_value,
     e."Last Price"                        AS last_price,
-    e."Price Target"                      AS price_target,
+    e."Price Target"                        AS price_target,
+    e."Price Target - Median"                AS price_target_median,
+    e."Price Target (YTD Ago)"            AS price_target_ytd_ago,
     e."Price Target - Low"                AS price_target_low,
     e."Price Target - High"               AS price_target_high,
-    e."Price Target - Median"             AS price_target_median,
-    e."Price Target (YTD Ago)"            AS price_target_ytd_ago,
     e."Shrs Out"                          AS shares_outstanding,
     e."Volume (Shrs)"                     AS volume_shrs,
-    e."52W High"                          AS high_52w,
-    e."52W Low"                           AS low_52w,
-    e."Beta - 1Y"                         AS beta_1y,
-    e."Beta - 5Y"                         AS beta_5y,
+    e."52W High/Adj"                      AS "52w_high_adj",
+    e."52W Low/Adj"                       AS "52w_low_adj",
+    e."Beta (1Y)"                         AS beta_1y,
+    e."Beta (2Y)"                         AS beta_2y,
+    e."Beta (5Y)"                         AS beta_5y,
+
 
     -- ═══════════════════════════════════════════════════════════════════════════════
     -- PRICE MOMENTUM COLUMNS (for Monte Carlo / Kalman models)
     -- ═══════════════════════════════════════════════════════════════════════════════
-    e."Price - 1W Ago"                    AS price_1w_ago,
-    e."Price - 1M Ago"                    AS price_1m_ago,
-    e."Price - 3M Ago"                    AS price_3m_ago,
-    e."Price - 6M Ago"                    AS price_6m_ago,
-    e."Price - 1Y Ago"                    AS price_1y_ago,
-    e."Price - 5Y Ago"                    AS price_5y_ago,
+
+    e."Price (5D Ago)"                    AS price_5d_ago,
+    e."Price (1W Ago)"                    AS price_1w_ago,
+    e."Price (1M Ago)"                    AS price_1m_ago,
+    e."Price (3M Ago)"                    AS price_3m_ago,
+    e."Price (6M Ago)"                    AS price_6m_ago,
+    e."Price (1Y Ago)"                    AS price_1y_ago,
+    e."Price (3Y Ago)"                    AS price_3y_ago,
+    e."Price (5Y Ago)"                    AS price_5y_ago,
+    e."Price (QTD Ago)"                   AS price_qtd_ago,
+    e."Price Target (1W Ago)"             AS price_target_1w_ago,
+    e."Price Target (1M Ago)"             AS price_target_1m_ago,
+    e."Price Target (3M Ago)"             AS price_target_3m_ago,
+    e."Price Target (6M Ago)"             AS price_target_6m_ago,
+    e."Price Target (MTD Ago)"            AS price_target_mtd_ago,
+    e."Price Target (QTD Ago)"            AS price_target_qtd_ago,
+    e."Price Target (1Y Ago)"             AS price_target_1y_ago,
+    e."Price Target - High (1W Ago)"      AS price_target_high_1w_ago,
+    e."Price Target - High (1M Ago)"      AS price_target_high_1m_ago,
+    e."Price Target - High (6M Ago)"      AS price_target_high_6m_ago,
+    e."Price Target - High (MTD Ago)"     AS price_target_high_mtd_ago,
+    e."Price Target - High (3M Ago)"      AS price_target_high_3m_ago,
+    e."Price Target - High (QTD Ago)"     AS price_target_high_qtd_ago,
+    e."Price Target - High (1Y Ago)"      AS price_target_high_1y_ago,
+    e."Price Target - High (YTD Ago)"     AS price_target_high_ytd_ago,
+    e."Price Target - Low (1W Ago)"       AS price_target_low_1w_ago,
+    e."Price Target - Low (1M Ago)"       AS price_target_low_1m_ago,
+    e."Price Target - Low (3M Ago)"       AS price_target_low_3m_ago,
+    e."Price Target - Low (6M Ago)"       AS price_target_low_6m_ago,
+    e."Price Target - Low (MTD Ago)"      AS price_target_low_mtd_ago,
+    e."Price Target - Low (QTD Ago)"      AS price_target_low_qtd_ago,
+    e."Price Target - Low (YTD Ago)"      AS price_target_low_ytd_ago,
+    e."Price Target - Low (1Y Ago)"       AS price_target_low_1y_ago,
+    e."Price Target - Median (1W Ago)"    AS price_target_median_1w_ago,
+    e."Price Target - Median (1M Ago)"    AS price_target_median_1m_ago,
+    e."Price Target - Median (3M Ago)"    AS price_target_median_3m_ago,
+    e."Price Target - Median (6M Ago)"    AS price_target_median_6m_ago,
+    e."Price Target - Median (MTD Ago)"   AS price_target_median_mtd_ago,
+    e."Price Target - Median (QTD Ago)"   AS price_target_median_qtd_ago,
+    e."Price Target - Median (YTD Ago)"   AS price_target_median_ytd_ago,
+    e."Price Target - Median (1Y Ago)"    AS price_target_median_1y_ago,
+
 
     -- ═══════════════════════════════════════════════════════════════════════════════
     -- VALUATION RATIOS (for expected return models)
@@ -275,104 +335,117 @@ SELECT
     -- ═══════════════════════════════════════════════════════════════════════════════
     CURRENT_TIMESTAMP                     AS feature_calculated_at
 
-FROM vw_identifier_columns                            id
-         JOIN      equities                           e ON id.isin = e."ISIN"
-         LEFT JOIN calc_valuation_features()          vf(isin, p_e_ratio, p_b_ratio, ev_ebitda_ratio, ev_sales_ratio,
-                                                         dividend_yield, peg_ratio) ON id.isin = vf.isin
-         LEFT JOIN calc_sentiment_features()          sf(isin, analyst_bullish_pct, analyst_bearish_pct,
-                                                         analyst_neutral_pct, analyst_conviction, upside_potential,
-                                                         price_target_spread_pct, price_target_revision_1m,
-                                                         price_target_revision_3m, eps_revision_momentum,
-                                                         analyst_rating_normalized, analyst_coverage_quality)
+FROM public.vw_identifier_columns                            id
+         JOIN      public.equities                           e ON id.isin = e."ISIN"
+         LEFT JOIN public.calc_valuation_features()          vf(isin, p_e_ratio, p_b_ratio, ev_ebitda_ratio,
+                                                                ev_sales_ratio,
+                                                                dividend_yield, peg_ratio) ON id.isin = vf.isin
+         LEFT JOIN public.calc_sentiment_features()          sf(isin, analyst_bullish_pct, analyst_bearish_pct,
+                                                                analyst_neutral_pct, analyst_conviction,
+                                                                upside_potential,
+                                                                price_target_spread_pct, price_target_revision_1m,
+                                                                price_target_revision_3m, eps_revision_momentum,
+                                                                analyst_rating_normalized, analyst_coverage_quality)
                    ON id.isin = sf.isin
-         LEFT JOIN calc_price_target_dynamics()       ptd(isin, pt_momentum_1w, pt_momentum_1m, pt_momentum_3m,
-                                                          pt_momentum_6m, pt_momentum_1y, pt_median_momentum_1m,
-                                                          pt_median_momentum_3m, pt_acceleration_short,
-                                                          pt_acceleration_long, pt_consensus_convergence,
-                                                          analyst_coverage_change_1m, analyst_coverage_change_3m,
-                                                          analyst_coverage_change_1y, pt_vs_price_momentum,
-                                                          analyst_coverage_trend) ON id.isin = ptd.isin
-         LEFT JOIN calc_momentum_features()           mf(isin, price_momentum_1m, price_momentum_3m,
-                                                         price_momentum_6m, price_momentum_1y, price_momentum_5d,
-                                                         ema_crossover_20_50, ema_crossover_50_250, price_vs_ema_20d,
-                                                         price_vs_ema_250d, pct_off_52w_high, pct_above_52w_low,
-                                                         range_52w_position, beta_momentum, volatility_regime)
+         LEFT JOIN public.calc_price_target_dynamics()       ptd(isin, pt_momentum_1w, pt_momentum_1m, pt_momentum_3m,
+                                                                 pt_momentum_6m, pt_momentum_1y, pt_median_momentum_1m,
+                                                                 pt_median_momentum_3m, pt_acceleration_short,
+                                                                 pt_acceleration_long, pt_consensus_convergence,
+                                                                 analyst_coverage_change_1m, analyst_coverage_change_3m,
+                                                                 analyst_coverage_change_1y, pt_vs_price_momentum,
+                                                                 analyst_coverage_trend) ON id.isin = ptd.isin
+         LEFT JOIN public.calc_momentum_features()           mf(isin, price_momentum_1m, price_momentum_3m,
+                                                                price_momentum_6m, price_momentum_1y, price_momentum_5d,
+                                                                ema_crossover_20_50, ema_crossover_50_250,
+                                                                price_vs_ema_20d,
+                                                                price_vs_ema_250d, pct_off_52w_high, pct_above_52w_low,
+                                                                range_52w_position, beta_momentum, volatility_regime)
                    ON id.isin = mf.isin
-         LEFT JOIN calc_earnings_features()           ef(isin, eps_surprise_pct, revenue_surprise_pct,
-                                                         eps_adjustment_ratio, gaap_adj_eps_gap_pct,
-                                                         ebitda_adjustment_ratio, eps_quarterly_trend,
-                                                         eps_yoy_growth) ON id.isin = ef.isin
-         LEFT JOIN calc_eps_trajectory_features()     etf(isin, eps_qoq_growth, eps_yoy_quarterly,
-                                                          eps_positive_streak, eps_cagr_3y, eps_cagr_5y,
-                                                          eps_growth_accel, eps_vs_5y_avg, eps_improvement_count,
-                                                          eps_trajectory_score, eps_stability) ON id.isin = etf.isin
-         LEFT JOIN calc_eps_comprehensive()           ec(isin, eps_basic_fq, eps_basic_ltm, eps_basic_fy,
-                                                         eps_adj_ltm, eps_norm_est_fy1e, eps_growth_yoy, eps_cagr_3y,
-                                                         eps_adjustment_ratio, eps_positive_years,
-                                                         eps_trajectory_score) ON id.isin = ec.isin
-         LEFT JOIN calc_profitability_features()      pf(isin, roe, roa, gross_margin_pct, operating_margin_pct,
-                                                         net_margin_pct, ebitda_margin_pct, roic, rnd_intensity,
-                                                         equity_multiplier) ON id.isin = pf.isin
-         LEFT JOIN calc_growth_features()             gf(isin, revenue_growth_yoy, ebitda_growth_yoy,
-                                                         operating_income_growth, fcf_growth, revenue_cagr_5y,
-                                                         forward_revenue_growth, revenue_vs_5y_avg)
+         LEFT JOIN public.calc_earnings_features()           ef(isin, eps_surprise_pct, revenue_surprise_pct,
+                                                                eps_adjustment_ratio, gaap_adj_eps_gap_pct,
+                                                                ebitda_adjustment_ratio, eps_quarterly_trend,
+                                                                eps_yoy_growth) ON id.isin = ef.isin
+         LEFT JOIN public.calc_eps_trajectory_features()     etf(isin, eps_qoq_growth, eps_yoy_quarterly,
+                                                                 eps_positive_streak, eps_cagr_3y, eps_cagr_5y,
+                                                                 eps_growth_accel, eps_vs_5y_avg, eps_improvement_count,
+                                                                 eps_trajectory_score, eps_stability)
+                   ON id.isin = etf.isin
+         LEFT JOIN public.calc_eps_comprehensive()           ec(isin, eps_basic_fq, eps_basic_ltm, eps_basic_fy,
+                                                                eps_adj_ltm, eps_norm_est_fy1e, eps_growth_yoy,
+                                                                eps_cagr_3y,
+                                                                eps_adjustment_ratio, eps_positive_years,
+                                                                eps_trajectory_score) ON id.isin = ec.isin
+         LEFT JOIN public.calc_profitability_features()      pf(isin, roe, roa, gross_margin_pct, operating_margin_pct,
+                                                                net_margin_pct, ebitda_margin_pct, roic, rnd_intensity,
+                                                                equity_multiplier) ON id.isin = pf.isin
+         LEFT JOIN public.calc_growth_features()             gf(isin, revenue_growth_yoy, ebitda_growth_yoy,
+                                                                operating_income_growth, fcf_growth, revenue_cagr_5y,
+                                                                forward_revenue_growth, revenue_vs_5y_avg)
                    ON id.isin = gf.isin
-         LEFT JOIN calc_revenue_quarterly_features()  rqf(isin, revenue_fq, revenue_fy, revenue_ltm, revenue_5y_avg,
-                                                          revenue_1fqfq, revenue_2fqfq, revenue_3fqfq, revenue_4fqfq,
-                                                          revenue_1fy, revenue_2fy, revenue_3fy, revenue_4fy,
-                                                          revenue_yoy_growth, revenue_vs_5y_avg, revenue_ltm_vs_fy,
-                                                          revenue_fq_vs_5y_avg_fq, revenue_qoq_growth,
-                                                          revenue_qoq_2q, revenue_qoq_3q, revenue_qoq_4q,
-                                                          revenue_yoy_quarterly, revenue_2y_growth,
-                                                          revenue_3y_growth, revenue_4y_growth, revenue_cagr_3y,
-                                                          revenue_cagr_4y, revenue_4q_trend, revenue_4q_avg,
-                                                          revenue_fq_vs_4q_avg, revenue_growth_flag,
-                                                          revenue_stability_score, revenue_accelerating_flag,
-                                                          revenue_positive_qoq_streak) ON id.isin = rqf.isin
-         LEFT JOIN calc_quality_features()            qf(isin, has_goodwill_impairment, has_asset_writedown,
-                                                         has_restructuring, goodwill_to_assets_pct,
-                                                         intangible_intensity, exceptional_items_to_ebitda,
-                                                         altman_z_score, altman_z_trend, current_ratio, quick_ratio)
+         LEFT JOIN public.calc_revenue_quarterly_features()  rqf(isin, revenue_fq, revenue_fy, revenue_ltm,
+                                                                 revenue_5y_avg,
+                                                                 revenue_1fqfq, revenue_2fqfq, revenue_3fqfq,
+                                                                 revenue_4fqfq,
+                                                                 revenue_1fy, revenue_2fy, revenue_3fy, revenue_4fy,
+                                                                 revenue_yoy_growth, revenue_vs_5y_avg,
+                                                                 revenue_ltm_vs_fy,
+                                                                 revenue_fq_vs_5y_avg_fq, revenue_qoq_growth,
+                                                                 revenue_qoq_2q, revenue_qoq_3q, revenue_qoq_4q,
+                                                                 revenue_yoy_quarterly, revenue_2y_growth,
+                                                                 revenue_3y_growth, revenue_4y_growth, revenue_cagr_3y,
+                                                                 revenue_cagr_4y, revenue_4q_trend, revenue_4q_avg,
+                                                                 revenue_fq_vs_4q_avg, revenue_growth_flag,
+                                                                 revenue_stability_score, revenue_accelerating_flag,
+                                                                 revenue_positive_qoq_streak) ON id.isin = rqf.isin
+         LEFT JOIN public.calc_quality_features()            qf(isin, has_goodwill_impairment, has_asset_writedown,
+                                                                has_restructuring, goodwill_to_assets_pct,
+                                                                intangible_intensity, exceptional_items_to_ebitda,
+                                                                altman_z_score, altman_z_trend, current_ratio,
+                                                                quick_ratio)
                    ON id.isin = qf.isin
-         LEFT JOIN calc_financial_distress_features() fdf(isin, distress_risk_score, liquidity_stress_score,
-                                                          working_capital_trend, cash_runway_months,
-                                                          combined_distress_score, wc_deteriorating_flag,
-                                                          retained_earnings_growth, accumulated_deficit_flag,
-                                                          adequate_cash_buffer) ON id.isin = fdf.isin
-         LEFT JOIN calc_beta_risk_features()          br(isin, beta_1y, beta_5y, beta_spread, beta_trend,
-                                                         high_beta_flag, low_beta_flag, beta_stability_score)
+         LEFT JOIN public.calc_financial_distress_features() fdf(isin, distress_risk_score, liquidity_stress_score,
+                                                                 working_capital_trend, cash_runway_months,
+                                                                 combined_distress_score, wc_deteriorating_flag,
+                                                                 retained_earnings_growth, accumulated_deficit_flag,
+                                                                 adequate_cash_buffer) ON id.isin = fdf.isin
+         LEFT JOIN public.calc_beta_risk_features()          br(isin, beta_1y, beta_5y, beta_spread, beta_trend,
+                                                                high_beta_flag, low_beta_flag, beta_stability_score)
                    ON id.isin = br.isin
-         LEFT JOIN calc_composite_scores()            cs(isin, piotroski_f_score, dilution_score, quality_momentum_score)
+         LEFT JOIN public.calc_composite_scores()            cs(isin, piotroski_f_score, dilution_score, quality_momentum_score)
                    ON id.isin = cs.isin
-         LEFT JOIN calc_leverage_features()           lf(isin, debt_to_equity, debt_to_assets, equity_ratio,
-                                                         interest_coverage, current_ratio, cash_ratio,
-                                                         working_capital_ratio) ON id.isin = lf.isin
-         LEFT JOIN calc_cashflow_features()           cf(isin, cfo_to_net_income, fcf_to_net_income, fcf_margin,
-                                                         cfo_growth_yoy, fcf_positive_ratio, acquisition_intensity,
-                                                         self_funding_ratio) ON id.isin = cf.isin
-         LEFT JOIN calc_cashflow_comprehensive()      cc(isin, cfo_fq, cfo_ltm, cfo_fy, fcf_fq, fcf_ltm, fcf_fy,
-                                                         cfo_growth_yoy, fcf_growth_yoy, cfo_to_net_income,
-                                                         fcf_margin, fcf_yield, cfo_positive_years,
-                                                         fcf_positive_years, cash_flow_quality_score)
+         LEFT JOIN public.calc_leverage_features()           lf(isin, debt_to_equity, debt_to_assets, equity_ratio,
+                                                                interest_coverage, current_ratio, cash_ratio,
+                                                                working_capital_ratio) ON id.isin = lf.isin
+         LEFT JOIN public.calc_cashflow_features()           cf(isin, cfo_to_net_income, fcf_to_net_income, fcf_margin,
+                                                                cfo_growth_yoy, fcf_positive_ratio,
+                                                                acquisition_intensity,
+                                                                self_funding_ratio) ON id.isin = cf.isin
+         LEFT JOIN public.calc_cashflow_comprehensive()      cc(isin, cfo_fq, cfo_ltm, cfo_fy, fcf_fq, fcf_ltm, fcf_fy,
+                                                                cfo_growth_yoy, fcf_growth_yoy, cfo_to_net_income,
+                                                                fcf_margin, fcf_yield, cfo_positive_years,
+                                                                fcf_positive_years, cash_flow_quality_score)
                    ON id.isin = cc.isin
-         LEFT JOIN calc_dividend_features()           df(isin, dividend_streak, dividend_yield_ltm,
-                                                         dividend_yield_ntm, dividend_payout_ratio,
-                                                         fcf_dividend_coverage, buyback_yield,
-                                                         total_shareholder_yield, dividend_growth_expectation)
+         LEFT JOIN public.calc_dividend_features()           df(isin, dividend_streak, dividend_yield_ltm,
+                                                                dividend_yield_ntm, dividend_payout_ratio,
+                                                                fcf_dividend_coverage, buyback_yield,
+                                                                total_shareholder_yield, dividend_growth_expectation)
                    ON id.isin = df.isin
-         LEFT JOIN calc_technical_analysis_features() ta(isin, ema_slope_20d, ema_trend_consistency,
-                                                         price_vs_ema_100d, near_52w_high_flag, near_52w_low_flag,
-                                                         volume_momentum_score, breakout_signal, high_volume_flag,
-                                                         low_volume_flag, volatility_compression,
-                                                         volatility_term_structure) ON id.isin = ta.isin
-         LEFT JOIN calc_temporal_features()           tf(isin, fiscal_quarter, fiscal_month, fiscal_year,
-                                                         days_to_earnings, earnings_report_recency, reporting_lag,
-                                                         fiscal_year_progress) ON id.isin = tf.isin
-         LEFT JOIN calc_fiscal_calendar_features()    fcf_cal(isin, days_since_last_report, days_to_fy_end,
-                                                              is_quarter_end_month, is_fy_end_month,
-                                                              earnings_season_flag, pre_earnings_window,
-                                                              post_earnings_window, reporting_freshness_score,
-                                                              fiscal_quarter_progress) ON id.isin = fcf_cal.isin;
+         LEFT JOIN public.calc_technical_analysis_features() ta(isin, ema_slope_20d, ema_trend_consistency,
+                                                                price_vs_ema_100d, near_52w_high_flag,
+                                                                near_52w_low_flag,
+                                                                volume_momentum_score, breakout_signal,
+                                                                high_volume_flag,
+                                                                low_volume_flag, volatility_compression,
+                                                                volatility_term_structure) ON id.isin = ta.isin
+         LEFT JOIN public.calc_temporal_features()           tf(isin, fiscal_quarter, fiscal_month, fiscal_year,
+                                                                days_to_earnings, earnings_report_recency,
+                                                                reporting_lag,
+                                                                fiscal_year_progress) ON id.isin = tf.isin
+         LEFT JOIN public.calc_fiscal_calendar_features()    fcf_cal(isin, days_since_last_report, days_to_fy_end,
+                                                                     is_quarter_end_month, is_fy_end_month,
+                                                                     earnings_season_flag, pre_earnings_window,
+                                                                     post_earnings_window, reporting_freshness_score,
+                                                                     fiscal_quarter_progress) ON id.isin = fcf_cal.isin;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- COMMENTS & INDEXES

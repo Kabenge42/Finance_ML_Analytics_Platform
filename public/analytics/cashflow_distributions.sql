@@ -60,7 +60,27 @@ create table analytics.cashflow_distributions
     fcf_yield                    text,
     cfo_positive_years           text,
     fcf_positive_years_comp      text,
-    cash_flow_quality_score_comp text
+    cash_flow_quality_score_comp text,
+    fcf_est_fy1                  text,
+    fcf_est_fy2                  text,
+    fcf_est_fy3                  text,
+    fcf_est_fy4                  text,
+    fcf_est_fy5                  text,
+    fcf_est_growth_fy1_vs_ltm    text,
+    fcf_est_growth_fy2_vs_fy1    text,
+    fcf_est_growth_fy3_vs_fy2    text,
+    fcf_est_growth_fy4_vs_fy3    text,
+    fcf_est_growth_fy5_vs_fy4    text,
+    fcf_est_cagr_3y              text,
+    fcf_est_cagr_5y              text,
+    fcf_est_margin_fy1           text,
+    fcf_est_yield_fy1            text,
+    fcf_est_growth_acceleration  text,
+    fcf_est_growth_deceleration  text,
+    fcf_est_trajectory_score     text,
+    fcf_est_always_positive      text,
+    fcf_est_vs_historical        text,
+    fcf_est_capex_implied_ratio  text
 );
 
 alter table analytics.cashflow_distributions
